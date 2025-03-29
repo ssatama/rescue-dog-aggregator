@@ -27,6 +27,7 @@ CREATE TABLE dogs (
     age_text VARCHAR(100),              -- Age as provided by the source (e.g., "2 years")
     sex VARCHAR(50),
     size VARCHAR(50),                   -- Small, Medium, Large, etc.
+    language VARCHAR(10) DEFAULT 'en',  -- ISO 639-1 language code for the original content
     
     -- Extended properties as JSON - stores all additional fields
     properties JSONB,                   -- Flexible storage for all other attributes
