@@ -43,22 +43,20 @@ This project is in the early development stage. The foundation is set up, but ma
 - **Extensible Scraper Architecture**: Makes it easy to add support for new rescue organizations
 - **Environment-based Configuration**: Secure credential management for database connections
 
-## Usage
-
-### Setting Up the Database
-
-```bash
-python main.py --setup
-
 ## Getting Started
 
-*Coming soon*
+### Running the Scraper
+
+1. Set up your database credentials in a `.env` file (see `.env.sample`)
+2. Set up the database: `python main.py --setup`
+3. Run the Pets in Turkey scraper: `python main.py --pit`
+4. View the collected data: `python utils/view_sample_dogs.py`
 
 ## Roadmap
 
 - ✅ Flexible database schema with multilingual support
 - ✅ Base scraper architecture
-- 🔄 Organization-specific scraper for Pets in Turkey (in progress)
+- ✅ Organization-specific scraper for Pets in Turkey
 - 🔄 Data collection and storage (in progress)
 - ⏳ API development
 - ⏳ Frontend development

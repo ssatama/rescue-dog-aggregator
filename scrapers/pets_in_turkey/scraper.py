@@ -154,12 +154,17 @@ class PetsInTurkeyScraper(BaseScraper):
     def _parse_special_case(self, text):
         """Parse the dog container using a special-case approach for this specific page structure.
         
-        This parser handles the specific structure where the height info appears as a separate line
-        and throws off the attribute-value alignment.
+        This parser handles the unique structure of the Pets in Turkey website, where:
+        1. Dog profiles have a specific section structure: name, description, attributes, values
+        2. Height information appears as a separate line item after weight, without its own label
+        3. This extra height line shifts the alignment between attribute labels and values
+        
+        The parser detects this special structure and ensures attributes are correctly mapped
+        to their values despite the unusual layout.
         
         Args:
             text: Container text containing dog information
-            
+                
         Returns:
             Dictionary containing dog attributes
         """
