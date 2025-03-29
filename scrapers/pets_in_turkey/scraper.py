@@ -20,7 +20,26 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from scrapers.base_scraper import BaseScraper
 
 class PetsInTurkeyScraper(BaseScraper):
-    """Scraper for Pets in Turkey organization."""
+    """Scraper for Pets in Turkey organization.
+    
+    This scraper handles the extraction of dog data from the Pets in Turkey website.
+    Due to the complex structure of the website (built with Wix), complete data extraction
+    is challenging. The current implementation:
+    
+    1. Successfully extracts all dog names
+    2. Finds and cleans up dog image URLs
+    3. Creates proper links back to the adoption pages
+    4. Uses default values for breed, age, sex, and size fields
+    
+    Future improvements could include:
+    - Enhanced extraction of breed, sex, and age information
+    - More accurate size determination
+    - Additional dog details
+    
+    The website's structure made it particularly difficult to reliably extract all 
+    structured data fields, so a compromise was made to prioritize getting basic 
+    identification data correctly first.
+    """
     
     def __init__(self, organization_id, organization_name="Pets in Turkey"):
         """Initialize the Pets in Turkey scraper."""
