@@ -43,6 +43,13 @@ This project is in the early development stage. The foundation is set up, but ma
 - **Extensible Scraper Architecture**: Makes it easy to add support for new rescue organizations
 - **Environment-based Configuration**: Secure credential management for database connections
 
+## Usage
+
+### Setting Up the Database
+
+```bash
+python main.py --setup
+
 ## Getting Started
 
 *Coming soon*
