@@ -1,18 +1,13 @@
-# config.py
+import os
+import getpass
+
+# Get system username as the likely PostgreSQL user
+system_user = getpass.getuser()
 
 # Database configuration
 DB_CONFIG = {
-    'host': 'localhost',
-    'database': 'rescue_dogs',
-    'user': 'postgres',
-    'password': 'password'  
-}
-
-# Scraper configuration
-SCRAPER_CONFIG = {
-    'pets_in_turkey': {
-        'base_url': 'https://www.petsinturkey.org',
-        'dogs_url': 'https://www.petsinturkey.org/dogs',
-        'scrape_interval_hours': 24,  # Scrape once per day
-    }
+    'host': os.environ.get('DB_HOST', 'localhost'),
+    'database': os.environ.get('DB_NAME', 'rescue_dogs'),
+    'user': os.environ.get('DB_USER', system_user),  # Use system username as default
+    'password': os.environ.get('DB_PASSWORD', '')  # Empty default password
 }
