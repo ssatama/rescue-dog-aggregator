@@ -3,10 +3,12 @@ import Link from 'next/link';
 export default function OrganizationCard({ organization }) {
   // Using placeholder data if no organization is provided
   const name = organization?.name || "Sample Organization";
-  const location = organization?.location || "Unknown Location";
+  const location = organization?.city ? 
+    (organization.country ? `${organization.city}, ${organization.country}` : organization.city) : 
+    (organization?.country || "Unknown Location");
   const description = organization?.description || "No description available";
-  const websiteUrl = organization?.websiteUrl || "#";
-  const logoUrl = organization?.logoUrl || null;
+  const websiteUrl = organization?.website_url || "#";
+  const logoUrl = organization?.logo_url || null;
   const id = organization?.id || "0";
 
   return (

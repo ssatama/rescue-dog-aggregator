@@ -1,46 +1,33 @@
 // src/app/organizations/page.jsx
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '../../components/layout/Layout';
 import OrganizationCard from '../../components/organizations/OrganizationCard';
+import Loading from '../../components/ui/Loading';
+import { getOrganizations } from '../../services/organizationsService';
 
 export default function OrganizationsPage() {
-  // Mock data for organizations - will come from your API later
-  const [organizations] = useState([
-    {
-      id: 1,
-      name: "Pets in Turkey",
-      location: "Izmir, Turkey",
-      description: "A Swiss registered non-profit dog rescue organization in Izmir, Turkey.",
-      websiteUrl: "https://www.petsinturkey.org",
-      logoUrl: null
-    },
-    {
-      id: 2,
-      name: "Berlin Animal Shelter",
-      location: "Berlin, Germany",
-      description: "The largest animal shelter in Europe, providing refuge for thousands of animals every year.",
-      websiteUrl: "https://example.com/berlin-shelter",
-      logoUrl: null
-    },
-    {
-      id: 3,
-      name: "Golden Hearts Rescue",
-      location: "Munich, Germany",
-      description: "Specializing in Golden Retrievers and other retrievers in need of loving homes.",
-      websiteUrl: "https://example.com/golden-hearts",
-      logoUrl: null
-    },
-    {
-      id: 4,
-      name: "Paws & Claws Sanctuary",
-      location: "Hamburg, Germany",
-      description: "A no-kill shelter dedicated to finding permanent homes for all animals in our care.",
-      websiteUrl: "https://example.com/paws-claws",
-      logoUrl: null
-    }
-  ]);
+  const [organizations, setOrganizations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      try {
+        setLoading(true);
+        const data = await getOrganizations();
+        setOrganizations(data);
+      } catch (err) {
+        console.error('Error fetching organizations:', err);
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrganizations();
+  }, []);
 
   return (
     <Layout>
@@ -51,12 +38,37 @@ export default function OrganizationsPage() {
           you're supporting their mission to save more animals.
         </p>
         
-        {/* Organizations grid using the OrganizationCard component */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {organizations.map((org) => (
-            <OrganizationCard key={org.id} organization={org} />
-          ))}
-        </div>
+        {/* Error state */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+            <p>There was an error loading organizations. Please try again later.</p>
+            <button
+              onClick={() => fetchOrganizations()}
+              className="mt-2 text-sm font-medium text-red-700 underline"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+        
+        {/* Loading state */}
+        {loading ? (
+          <Loading />
+        ) : organizations.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {organizations.map((org) => (
+              <OrganizationCard key={org.id} organization={org} />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            <h3 className="text-xl font-medium text-gray-900 mb-2">No Organizations Found</h3>
+            <p className="text-gray-600">We couldn't find any rescue organizations in our database.</p>
+          </div>
+        )}
       </div>
     </Layout>
   );
