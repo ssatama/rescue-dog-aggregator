@@ -1,4 +1,4 @@
-# clear_dogs.py
+# clear_animals.py (renamed from clear_dogs.py)
 
 import sys
 import os
@@ -31,8 +31,8 @@ def connect_to_database():
         print(f"Database connection error: {e}")
         return None
 
-def clear_dogs():
-    """Clear all dogs from the database."""
+def clear_animals():
+    """Clear all animals from the database."""
     # Load environment variables
     load_dotenv()
     
@@ -43,19 +43,22 @@ def clear_dogs():
     try:
         cursor = conn.cursor()
         
-        # Get count of dogs before clearing
-        cursor.execute("SELECT COUNT(*) FROM dogs")
+        # Get count of animals before clearing
+        cursor.execute("SELECT COUNT(*) FROM animals")
         count_before = cursor.fetchone()[0]
-        print(f"Current number of dogs in database: {count_before}")
+        print(f"Current number of animals in database: {count_before}")
         
         # Ask for confirmation
-        confirm = input("Are you sure you want to delete all dogs? (yes/no): ")
+        confirm = input("Are you sure you want to delete all animals? (yes/no): ")
         if confirm.lower() != 'yes':
             print("Operation cancelled.")
             return
         
-        # Delete all dogs
-        cursor.execute("DELETE FROM dogs")
+        # Delete all animal images first (due to foreign key constraints)
+        cursor.execute("DELETE FROM animal_images")
+        
+        # Delete all animals
+        cursor.execute("DELETE FROM animals")
         
         # Delete all scrape logs as well
         cursor.execute("DELETE FROM scrape_logs")
@@ -64,16 +67,16 @@ def clear_dogs():
         conn.commit()
         
         # Get count after clearing
-        cursor.execute("SELECT COUNT(*) FROM dogs")
+        cursor.execute("SELECT COUNT(*) FROM animals")
         count_after = cursor.fetchone()[0]
         
-        print(f"Dogs deleted: {count_before - count_after}")
-        print(f"Remaining dogs: {count_after}")
+        print(f"Animals deleted: {count_before - count_after}")
+        print(f"Remaining animals: {count_after}")
         
         # Close the cursor
         cursor.close()
     except Exception as e:
-        print(f"Error clearing dogs: {e}")
+        print(f"Error clearing animals: {e}")
         conn.rollback()
     finally:
         # Close the connection
@@ -82,4 +85,4 @@ def clear_dogs():
             print("Database connection closed")
 
 if __name__ == "__main__":
-    clear_dogs()
+    clear_animals()

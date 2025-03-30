@@ -31,7 +31,7 @@ class PetsInTurkeyScraper(BaseScraper):
     
     def __init__(self, organization_id, organization_name="Pets in Turkey"):
         """Initialize the Pets in Turkey scraper."""
-        super().__init__(organization_id, organization_name)
+        super().__init__(organization_id, organization_name, animal_type="dog")
         self.base_url = "https://www.petsinturkey.org/dogs"
         self.driver = None
     

@@ -8,8 +8,9 @@ from dotenv import load_dotenv
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-# Import the scraper and config
-from scrapers.pets_in_turkey.scraper import PetsInTurkeyScraper
+# Import the scrapers and config
+from scrapers.pets_in_turkey.dogs_scraper import PetsInTurkeyScraper
+from scrapers.pets_in_turkey.cats_scraper import PetsInTurkeyCatsScraper
 from config import DB_CONFIG
 
 def get_organization_id(organization_name="Pets in Turkey"):
@@ -48,11 +49,11 @@ def get_organization_id(organization_name="Pets in Turkey"):
         return None
 
 def main():
-    """Run the Pets in Turkey scraper."""
+    """Run the Pets in Turkey scrapers."""
     # Load environment variables from .env file
     load_dotenv()
     
-    print("Starting Pets in Turkey scraper...")
+    print("Starting Pets in Turkey scrapers...")
     
     # Get the organization ID
     organization_id = get_organization_id()
@@ -62,14 +63,31 @@ def main():
         print("Please make sure the organization is added to the database.")
         return
     
-    # Create and run the scraper
-    scraper = PetsInTurkeyScraper(organization_id)
-    success = scraper.run()
+    # Create and run the dog scraper
+    print("\n=== Running Dogs Scraper ===")
+    dog_scraper = PetsInTurkeyScraper(organization_id)
+    dog_success = dog_scraper.run()
     
-    if success:
-        print("Pets in Turkey scraper completed successfully.")
+    if dog_success:
+        print("Pets in Turkey dogs scraper completed successfully.")
     else:
-        print("Pets in Turkey scraper encountered errors.")
+        print("Pets in Turkey dogs scraper encountered errors.")
+    
+    # Create and run the cat scraper
+    print("\n=== Running Cats Scraper ===")
+    cat_scraper = PetsInTurkeyCatsScraper(organization_id)
+    cat_success = cat_scraper.run()
+    
+    if cat_success:
+        print("Pets in Turkey cats scraper completed successfully.")
+    else:
+        print("Pets in Turkey cats scraper encountered errors.")
+    
+    # Final status
+    if dog_success and cat_success:
+        print("\nAll Pets in Turkey scrapers completed successfully.")
+    else:
+        print("\nSome Pets in Turkey scrapers encountered errors.")
 
 if __name__ == "__main__":
     main()

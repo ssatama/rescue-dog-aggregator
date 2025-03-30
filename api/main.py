@@ -23,6 +23,8 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(dogs.router, prefix="/api/animals", tags=["animals"])
+# Keep the old endpoint for backward compatibility
 app.include_router(dogs.router, prefix="/api/dogs", tags=["dogs"])
 app.include_router(organizations.router, prefix="/api/organizations", tags=["organizations"])
 

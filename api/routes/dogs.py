@@ -5,14 +5,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 import psycopg2
 
 from api.dependencies import get_db_connection
-from api.models.dog import Dog, DogWithImages, DogImage
+from api.models.dog import Animal, AnimalWithImages, AnimalImage
 
 router = APIRouter()
 
-@router.get("/", response_model=List[Dog])
-def get_dogs(
+@router.get("/", response_model=List[Animal])
+def get_animals(
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(20, ge=1, le=100, description="Items per page"),
+    animal_type: Optional[str] = Query("dog", description="Type of animal (dog, cat)"),
     breed: Optional[str] = None,
     sex: Optional[str] = None,
     size: Optional[str] = None,
@@ -22,17 +23,21 @@ def get_dogs(
     conn=Depends(get_db_connection)
 ):
     """
-    Get all dogs with filtering and pagination.
+    Get all animals with filtering and pagination.
     
-    Returns a list of dogs matching the specified filters.
+    Returns a list of animals matching the specified filters.
     """
     try:
         # Build SQL query with filters
         query = """
-            SELECT * FROM dogs
+            SELECT * FROM animals
             WHERE 1=1
         """
         params = []
+        
+        # Add animal_type filter
+        query += " AND animal_type = %s"
+        params.append(animal_type)
         
         # Add filters if provided
         if breed:
@@ -68,43 +73,43 @@ def get_dogs(
         # Execute query
         cursor = conn.cursor()
         cursor.execute(query, params)
-        dogs = cursor.fetchall()
+        animals = cursor.fetchall()
         
-        return list(dogs)
+        return list(animals)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-@router.get("/{dog_id}", response_model=DogWithImages)
-def get_dog(dog_id: int, conn=Depends(get_db_connection)):
+@router.get("/{animal_id}", response_model=AnimalWithImages)
+def get_animal(animal_id: int, conn=Depends(get_db_connection)):
     """
-    Get a specific dog by ID.
+    Get a specific animal by ID.
     
-    Returns detailed information about the requested dog including all images.
+    Returns detailed information about the requested animal including all images.
     """
     try:
-        # Get dog details
+        # Get animal details
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT * FROM dogs
+            SELECT * FROM animals
             WHERE id = %s
-        """, (dog_id,))
+        """, (animal_id,))
         
-        dog = cursor.fetchone()
+        animal = cursor.fetchone()
         
-        if not dog:
-            raise HTTPException(status_code=404, detail="Dog not found")
+        if not animal:
+            raise HTTPException(status_code=404, detail="Animal not found")
         
-        # Get dog images
+        # Get animal images
         cursor.execute("""
-            SELECT * FROM dog_images
-            WHERE dog_id = %s
+            SELECT * FROM animal_images
+            WHERE animal_id = %s
             ORDER BY is_primary DESC
-        """, (dog_id,))
+        """, (animal_id,))
         
         images = cursor.fetchall()
         
         # Create response
-        result = dict(dog)
+        result = dict(animal)
         result["images"] = list(images)
         
         return result

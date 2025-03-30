@@ -4,25 +4,30 @@ from typing import Dict, List, Optional, Any
 from pydantic import BaseModel, Field
 from datetime import datetime
 
-class DogImage(BaseModel):
-    """Schema for a dog image."""
+class AnimalImage(BaseModel):
+    """Schema for an animal image."""
     id: int
     image_url: str
     is_primary: bool = False
 
-class DogBase(BaseModel):
-    """Base schema with common dog attributes."""
+class AnimalBase(BaseModel):
+    """Base schema with common animal attributes."""
     name: str
+    animal_type: str = "dog"
     breed: Optional[str] = None
+    standardized_breed: Optional[str] = None
     age_text: Optional[str] = None
+    age_min_months: Optional[int] = None
+    age_max_months: Optional[int] = None
     sex: Optional[str] = None
     size: Optional[str] = None
+    standardized_size: Optional[str] = None
     status: str = "available"
     primary_image_url: Optional[str] = None
     adoption_url: str
     
-class Dog(DogBase):
-    """Complete dog schema including database fields."""
+class Animal(AnimalBase):
+    """Complete animal schema including database fields."""
     id: int
     organization_id: int
     external_id: Optional[str] = None
@@ -32,15 +37,18 @@ class Dog(DogBase):
     updated_at: datetime
     last_scraped_at: Optional[datetime] = None
     
-class DogWithImages(Dog):
-    """Dog with its associated images."""
-    images: List[DogImage] = []
+class AnimalWithImages(Animal):
+    """Animal with its associated images."""
+    images: List[AnimalImage] = []
     
-class DogFilter(BaseModel):
-    """Schema for filtering dogs."""
+class AnimalFilter(BaseModel):
+    """Schema for filtering animals."""
+    animal_type: Optional[str] = "dog"
     breed: Optional[str] = None
+    standardized_breed: Optional[str] = None
     sex: Optional[str] = None
     size: Optional[str] = None
+    standardized_size: Optional[str] = None
     status: Optional[str] = None
     organization_id: Optional[int] = None
     
