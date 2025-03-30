@@ -1,4 +1,9 @@
-import './globals.css'
+// src/app/layout.js
+import './globals.css';
+import { Inter } from 'next/font/google';
+
+// Use Inter font instead of Geist (which isn't directly available in next/font/google)
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
   title: 'Rescue Dog Aggregator',
@@ -8,7 +13,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }

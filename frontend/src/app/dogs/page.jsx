@@ -24,8 +24,69 @@ export default function DogsPage() {
   const [breeds, setBreeds] = useState(["Any breed"]);
   const [activeFilterCount, setActiveFilterCount] = useState(0);
   
-  // Function to fetch dogs - wrapped in useCallback to prevent unnecessary recreations
+  // Reset trigger - increment this to force a data reload even if filters appear unchanged
+  const [resetTrigger, setResetTrigger] = useState(0);
+  
+  // Direct API call function for resetting filters
+  const resetAndFetchAllDogs = useCallback(() => {
+    console.log("Direct reset and fetch all dogs triggered");
+    
+    // Reset all filter state immediately
+    setBreedFilter("Any breed");
+    setSexFilter("Any");
+    setSizeFilter("Any size");
+    setAgeFilter("Any age");
+    setSearchQuery("");
+    
+    // Set loading state
+    setLoading(true);
+    
+    // Make a direct API call with minimal parameters
+    getDogs({
+      page: 1,
+      limit: 20
+    })
+      .then(data => {
+        console.log("Direct API call received:", data.length, "dogs");
+        setDogs(data);
+        setHasMore(data.length === 20);
+        // Also update breeds dropdown
+        if (data.length > 0) {
+          const uniqueBreeds = [...new Set(data.map(dog => dog.breed).filter(Boolean))];
+          setBreeds(["Any breed", ...uniqueBreeds.sort()]);
+        }
+      })
+      .catch(err => {
+        console.error("Error in direct API call:", err);
+        setError(err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+      
+    // Force reset of other state as well
+    setPage(1);
+    setResetTrigger(prev => prev + 1);
+  }, []);
+  
+  // Clear all filters function - now uses the direct API call
+  const clearFilters = useCallback(() => {
+    console.log("Clear filters triggered - using direct API call");
+    resetAndFetchAllDogs();
+  }, [resetAndFetchAllDogs]);
+  
+  // Function to fetch dogs with hybrid filtering approach
   const fetchDogs = useCallback(async (isNewSearch = false) => {
+    console.log("Fetching dogs with filters:", {
+      breedFilter, 
+      sexFilter, 
+      sizeFilter, 
+      ageFilter, 
+      searchQuery, 
+      page: isNewSearch ? 1 : page,
+      resetTrigger
+    });
+    
     if (isNewSearch) {
       setPage(1);
       setDogs([]);
@@ -35,41 +96,85 @@ export default function DogsPage() {
     setError(null);
     
     try {
-      // Build API params from filters
+      // Build API params from filters - ONLY include parameters the backend supports
       const params = {
         page: isNewSearch ? 1 : page,
         limit: 20,
       };
       
-      // Add filters
+      // Only add supported filters to API request
       if (breedFilter !== "Any breed") params.breed = breedFilter;
       if (sexFilter !== "Any") params.sex = sexFilter;
-      if (sizeFilter !== "Any size") params.size = sizeFilter;
-      
-      // Handle age filter - backend would need to support this
-      if (ageFilter === "Puppy") params.age_group = "puppy";
-      else if (ageFilter === "Young") params.age_group = "young";
-      else if (ageFilter === "Adult") params.age_group = "adult";
-      else if (ageFilter === "Senior") params.age_group = "senior";
-      
-      // Add search query if present
       if (searchQuery) params.search = searchQuery;
       
-      const data = await getDogs(params);
+      // NOTE: We intentionally don't add size or age_group to API request parameters
+      // to avoid sending parameters the backend doesn't support
       
-      if (isNewSearch) {
-        setDogs(data);
-      } else {
-        setDogs(prev => [...prev, ...data]);
+      console.log("Sending API request with params:", params);
+      
+      const data = await getDogs(params);
+      console.log("Received data:", data.length, "results");
+      
+      // Apply frontend filtering for size and age if those filters are active
+      let filteredData = [...data];
+      
+      // Apply size filter in frontend if selected
+      if (sizeFilter !== "Any size") {
+        console.log("Applying size filter in frontend:", sizeFilter);
+        filteredData = filteredData.filter(dog => {
+          // Match size based on what's in the database
+          if (!dog.size) return false;
+          
+          const dogSize = String(dog.size).toLowerCase();
+          const filterSize = sizeFilter.toLowerCase();
+          
+          return dogSize.includes(filterSize);
+        });
       }
       
-      // Check if we have more data to load
+      // Apply age filter in frontend if selected
+      if (ageFilter !== "Any age") {
+        console.log("Applying age filter in frontend:", ageFilter);
+        filteredData = filteredData.filter(dog => {
+          if (!dog.age_text) return false;
+          
+          const ageText = String(dog.age_text).toLowerCase();
+          
+          switch (ageFilter) {
+            case "Puppy":
+              return ageText.includes("puppy") || 
+                     ageText.includes("month") || 
+                     (ageText.includes("year") && parseInt(ageText) <= 1);
+            case "Young":
+              return ageText.includes("young") || 
+                     (ageText.includes("year") && parseInt(ageText) > 1 && parseInt(ageText) <= 3);
+            case "Adult":
+              return ageText.includes("adult") || 
+                     (ageText.includes("year") && parseInt(ageText) > 3 && parseInt(ageText) <= 8);
+            case "Senior":
+              return ageText.includes("senior") || 
+                     (ageText.includes("year") && parseInt(ageText) > 8);
+            default:
+              return true;
+          }
+        });
+      }
+      
+      console.log("After frontend filtering:", filteredData.length, "results");
+      
+      if (isNewSearch) {
+        setDogs(filteredData);
+      } else {
+        setDogs(prev => [...prev, ...filteredData]);
+      }
+      
+      // Check if we have more data to load - based on original data from API
       setHasMore(data.length === params.limit);
       
       // If this is the first load, extract unique breeds for filter
       if ((page === 1 || isNewSearch) && data.length > 0) {
         const uniqueBreeds = [...new Set(data.map(dog => dog.breed).filter(Boolean))];
-        setBreeds(["Any breed", ...uniqueBreeds]);
+        setBreeds(["Any breed", ...uniqueBreeds.sort()]);
       }
       
     } catch (err) {
@@ -78,16 +183,19 @@ export default function DogsPage() {
     } finally {
       setLoading(false);
     }
-  }, [breedFilter, sexFilter, sizeFilter, ageFilter, searchQuery, page]);
+  }, [breedFilter, sexFilter, sizeFilter, ageFilter, searchQuery, page, resetTrigger]);
   
-  // Initial load
+  // Initial load - fetch dogs when the component first mounts
   useEffect(() => {
+    console.log("Initial data load");
     fetchDogs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
-  // When filters change
+  // When filters change or reset is triggered
   useEffect(() => {
+    console.log("Filters changed or reset triggered");
+    
     // Calculate active filter count
     let count = 0;
     if (breedFilter !== "Any breed") count++;
@@ -97,45 +205,37 @@ export default function DogsPage() {
     if (searchQuery) count++;
     setActiveFilterCount(count);
     
-    // Always trigger on filter changes, not just when we already have dogs
-    // This ensures new data is fetched even when returning to default filters
+    // Always trigger a data fetch with the current filters
     fetchDogs(true);
+    
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [breedFilter, sexFilter, sizeFilter, ageFilter, searchQuery]);
+  }, [breedFilter, sexFilter, sizeFilter, ageFilter, searchQuery, resetTrigger]);
   
   // Load more data when page changes
   useEffect(() => {
     if (page > 1) {
+      console.log("Page changed - fetching more data");
       fetchDogs();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
   
-  // Clear all filters and explicitly fetch new data
-  const clearFilters = () => {
-    setBreedFilter("Any breed");
-    setSexFilter("Any");
-    setSizeFilter("Any size");
-    setAgeFilter("Any age");
-    setSearchQuery("");
-    
-    // Force a fetch with default parameters after clearing filters
-    // Using setTimeout to ensure state updates have been processed
-    setTimeout(() => {
-      fetchDogs(true);
-    }, 0);
-  };
-  
-  // Load more handler
+  // Handle loading more results
   const handleLoadMore = () => {
     if (!loading && hasMore) {
       setPage(prev => prev + 1);
     }
   };
 
-  // Handle search input changes with debounce (prevents excessive API calls)
+  // Handle search input changes
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
+  };
+  
+  // Handle direct API reload (for error state)
+  const handleRetry = () => {
+    console.log("Retry triggered");
+    resetAndFetchAllDogs();
   };
 
   return (
@@ -154,6 +254,7 @@ export default function DogsPage() {
               <button 
                 onClick={clearFilters}
                 className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
+                aria-label="Clear all filters"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -172,6 +273,7 @@ export default function DogsPage() {
                 value={searchQuery}
                 onChange={handleSearchChange}
                 className="w-full px-4 py-2 pl-10 pr-4 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                aria-label="Search dogs by name or breed"
               />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -182,6 +284,7 @@ export default function DogsPage() {
                 <button 
                   onClick={() => setSearchQuery("")}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  aria-label="Clear search"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -194,9 +297,10 @@ export default function DogsPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* Breed filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Breed</label>
+              <label htmlFor="breed-filter" className="block text-sm font-medium text-gray-700 mb-1">Breed</label>
               <div className="relative">
                 <select
+                  id="breed-filter"
                   value={breedFilter}
                   onChange={(e) => setBreedFilter(e.target.value)}
                   className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 pr-8"
@@ -215,9 +319,10 @@ export default function DogsPage() {
             
             {/* Sex filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Sex</label>
+              <label htmlFor="sex-filter" className="block text-sm font-medium text-gray-700 mb-1">Sex</label>
               <div className="relative">
                 <select
+                  id="sex-filter"
                   value={sexFilter}
                   onChange={(e) => setSexFilter(e.target.value)}
                   className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 pr-8"
@@ -236,9 +341,10 @@ export default function DogsPage() {
             
             {/* Size filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Size</label>
+              <label htmlFor="size-filter" className="block text-sm font-medium text-gray-700 mb-1">Size</label>
               <div className="relative">
                 <select
+                  id="size-filter"
                   value={sizeFilter}
                   onChange={(e) => setSizeFilter(e.target.value)}
                   className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 pr-8"
@@ -258,9 +364,10 @@ export default function DogsPage() {
             
             {/* Age filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
+              <label htmlFor="age-filter" className="block text-sm font-medium text-gray-700 mb-1">Age</label>
               <div className="relative">
                 <select
+                  id="age-filter"
                   value={ageFilter}
                   onChange={(e) => setAgeFilter(e.target.value)}
                   className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 pr-8"
@@ -292,7 +399,7 @@ export default function DogsPage() {
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
             <p>There was an error loading dogs. Please try again later.</p>
             <button
-              onClick={() => fetchDogs(true)}
+              onClick={handleRetry}
               className="mt-2 text-sm font-medium text-red-700 underline"
             >
               Retry
@@ -332,7 +439,7 @@ export default function DogsPage() {
             <h3 className="text-xl font-medium text-gray-900 mb-2">No dogs found</h3>
             <p className="text-gray-600 mb-4">No dogs match your current filter criteria.</p>
             <button 
-              onClick={clearFilters}
+              onClick={resetAndFetchAllDogs}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               Clear all filters
