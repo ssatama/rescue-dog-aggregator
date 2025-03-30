@@ -19,7 +19,24 @@ This project aims to:
 
 ⚠️ **Work In Progress** ⚠️
 
-This project is in the early development stage. The foundation is set up, but many features are still being implemented.
+This project is in active development with basic functionality now working.
+
+### Completed Features:
+- Backend API with FastAPI
+- Database setup with PostgreSQL
+- Web scraper for "Pets in Turkey" organization
+- Frontend UI with Next.js and Tailwind CSS including:
+  - Home page with introduction
+  - Dogs catalog with filtering UI
+  - Detailed dog view pages
+  - Organizations listing
+  - About page with mission statement
+  
+### In Progress:
+- Connecting frontend to backend API
+- Additional scraper support for more organizations
+- Filter functionality implementation
+- Mobile optimization
 
 ## Project Structure
 
@@ -30,37 +47,37 @@ This project is in the early development stage. The foundation is set up, but ma
   - `schema.sql`: Flexible database schema with multilingual support
   - `db_setup.py`: Initial database setup script
   - `db_update.py`: Script for updating existing database with schema changes
-- `api/`: Backend API for frontend consumption (coming soon)
-- `frontend/`: React frontend (to be added later)
-- `notebooks/`: Jupyter notebooks for exploration and testing
-- `data/`: Local data storage
-- `config.py`: Configuration settings with environment variable support
-
-## Features
-
-- **Flexible Database Schema**: Supports varied data fields from different organizations
-- **Multilingual Support**: Automatically detects and stores the original language of listings
-- **Extensible Scraper Architecture**: Makes it easy to add support for new rescue organizations
-- **Environment-based Configuration**: Secure credential management for database connections
+- `api/`: Backend API for frontend consumption
+  - `routes/`: API endpoints
+  - `models/`: Data schemas
+  - `dependencies.py`: Shared dependencies (DB connection, etc.)
+- `frontend/`: Next.js frontend application
+  - `src/app/`: Page components
+  - `src/components/`: Reusable UI components
+  - `src/utils/`: Utility functions
 
 ## Getting Started
 
-### Running the Scraper
+### Backend Setup
 
 1. Set up your database credentials in a `.env` file (see `.env.sample`)
 2. Set up the database: `python main.py --setup`
 3. Run the Pets in Turkey scraper: `python main.py --pit`
-4. View the collected data: `python utils/view_sample_dogs.py`
+4. Start the API server: `python run_api.py`
 
-## Roadmap
+### Frontend Setup
 
-- ✅ Flexible database schema with multilingual support
-- ✅ Base scraper architecture
-- ✅ Organization-specific scraper for Pets in Turkey
-- 🔄 Data collection and storage (in progress)
-- ⏳ API development
-- ⏳ Frontend development
-- ⏳ Deployment and hosting
+1. Navigate to the frontend directory: `cd frontend`
+2. Install dependencies: `npm install`
+3. Start the development server: `npm run dev`
+4. Visit http://localhost:3000 in your browser
+
+## Technology Stack
+
+- **Backend**: Python, FastAPI, PostgreSQL
+- **Frontend**: Next.js, React, Tailwind CSS
+- **Data Collection**: Web scraping with BeautifulSoup, Selenium
+- **Deployment**: (Coming soon)
 
 ## Contributing
 
