@@ -1,6 +1,8 @@
+import './globals.css'
+
 export const metadata = {
-  title: "Rescue Dog Aggregator",
-  description: "Find your perfect rescue dog from multiple organizations, all in one place.",
+  title: 'Rescue Dog Aggregator',
+  description: 'Find your perfect rescue dog from multiple organizations, all in one place.',
 };
 
 export default function RootLayout({ children }) {
