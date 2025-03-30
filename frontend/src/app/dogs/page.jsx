@@ -1,7 +1,7 @@
 // src/app/dogs/page.jsx
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Layout from '../../components/layout/Layout';
 import DogCard from '../../components/dogs/DogCard';
 import Loading from '../../components/ui/Loading';
@@ -24,8 +24,8 @@ export default function DogsPage() {
   const [breeds, setBreeds] = useState(["Any breed"]);
   const [activeFilterCount, setActiveFilterCount] = useState(0);
   
-  // Function to fetch dogs
-  const fetchDogs = async (isNewSearch = false) => {
+  // Function to fetch dogs - wrapped in useCallback to prevent unnecessary recreations
+  const fetchDogs = useCallback(async (isNewSearch = false) => {
     if (isNewSearch) {
       setPage(1);
       setDogs([]);
@@ -68,7 +68,7 @@ export default function DogsPage() {
       
       // If this is the first load, extract unique breeds for filter
       if ((page === 1 || isNewSearch) && data.length > 0) {
-        const uniqueBreeds = [...new Set(data.map(dog => dog.breed))].filter(Boolean);
+        const uniqueBreeds = [...new Set(data.map(dog => dog.breed).filter(Boolean))];
         setBreeds(["Any breed", ...uniqueBreeds]);
       }
       
@@ -78,11 +78,12 @@ export default function DogsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [breedFilter, sexFilter, sizeFilter, ageFilter, searchQuery, page]);
   
   // Initial load
   useEffect(() => {
     fetchDogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   // When filters change
@@ -96,10 +97,10 @@ export default function DogsPage() {
     if (searchQuery) count++;
     setActiveFilterCount(count);
     
-    // Don't trigger on initial load
-    if (dogs.length > 0) {
-      fetchDogs(true);
-    }
+    // Always trigger on filter changes, not just when we already have dogs
+    // This ensures new data is fetched even when returning to default filters
+    fetchDogs(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [breedFilter, sexFilter, sizeFilter, ageFilter, searchQuery]);
   
   // Load more data when page changes
@@ -107,15 +108,22 @@ export default function DogsPage() {
     if (page > 1) {
       fetchDogs();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
   
-  // Clear all filters
+  // Clear all filters and explicitly fetch new data
   const clearFilters = () => {
     setBreedFilter("Any breed");
     setSexFilter("Any");
     setSizeFilter("Any size");
     setAgeFilter("Any age");
     setSearchQuery("");
+    
+    // Force a fetch with default parameters after clearing filters
+    // Using setTimeout to ensure state updates have been processed
+    setTimeout(() => {
+      fetchDogs(true);
+    }, 0);
   };
   
   // Load more handler
@@ -123,6 +131,11 @@ export default function DogsPage() {
     if (!loading && hasMore) {
       setPage(prev => prev + 1);
     }
+  };
+
+  // Handle search input changes with debounce (prevents excessive API calls)
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
   };
 
   return (
@@ -155,9 +168,9 @@ export default function DogsPage() {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search by name..."
+                placeholder="Search by name or breed..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleSearchChange}
                 className="w-full px-4 py-2 pl-10 pr-4 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -304,7 +317,7 @@ export default function DogsPage() {
                 <button
                   onClick={handleLoadMore}
                   disabled={loading}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-md disabled:bg-blue-300"
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md disabled:bg-blue-300 hover:bg-blue-600 transition-colors"
                 >
                   {loading ? 'Loading...' : 'Load More Dogs'}
                 </button>

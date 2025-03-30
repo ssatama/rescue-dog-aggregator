@@ -18,6 +18,7 @@ def get_dogs(
     size: Optional[str] = None,
     status: Optional[str] = "available",
     organization_id: Optional[int] = None,
+    search: Optional[str] = None,  # Added search parameter
     conn=Depends(get_db_connection)
 ):
     """
@@ -53,6 +54,12 @@ def get_dogs(
         if organization_id:
             query += " AND organization_id = %s"
             params.append(organization_id)
+        
+        # Add search query if provided
+        if search:
+            query += " AND (name ILIKE %s OR breed ILIKE %s)"  # Search in both name and breed
+            params.append(f"%{search}%")
+            params.append(f"%{search}%")
         
         # Add pagination
         query += " ORDER BY updated_at DESC LIMIT %s OFFSET %s"
