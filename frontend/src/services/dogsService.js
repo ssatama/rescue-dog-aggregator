@@ -8,6 +8,80 @@ import { get } from '../utils/api';
  * @returns {Promise} - Resolved promise with dogs data
  */
 export async function getDogs(params = {}) {
+  // Enhanced to support both legacy and standardized parameters
+  return get('/api/dogs', params);
+}
+
+/**
+ * Fetch dogs with standardized breed filtering
+ * @param {string} standardizedBreed - Standardized breed name
+ * @param {Object} additionalParams - Additional filter parameters
+ * @returns {Promise} - Resolved promise with filtered dogs data
+ */
+export async function getDogsByStandardizedBreed(standardizedBreed, additionalParams = {}) {
+  return get('/api/dogs', { 
+    standardized_breed: standardizedBreed, 
+    ...additionalParams 
+  });
+}
+
+/**
+ * Fetch dogs by breed group
+ * @param {string} breedGroup - Dog breed group (Sporting, Hound, Working, etc.)
+ * @param {Object} additionalParams - Additional filter parameters
+ * @returns {Promise} - Resolved promise with filtered dogs data
+ */
+export async function getDogsByBreedGroup(breedGroup, additionalParams = {}) {
+  return get('/api/dogs', { 
+    breed_group: breedGroup, 
+    ...additionalParams 
+  });
+}
+
+/**
+ * Fetch dogs with standardized size filtering
+ * @param {string} standardizedSize - Standardized size (Tiny, Small, Medium, Large, XLarge)
+ * @param {Object} additionalParams - Additional filter parameters
+ * @returns {Promise} - Resolved promise with filtered dogs data
+ */
+export async function getDogsByStandardizedSize(standardizedSize, additionalParams = {}) {
+  return get('/api/dogs', { 
+    standardized_size: standardizedSize, 
+    ...additionalParams 
+  });
+}
+
+/**
+ * Fetch dogs by age category
+ * @param {string} ageCategory - Age category (Puppy, Young, Adult, Senior)
+ * @param {Object} additionalParams - Additional filter parameters
+ * @returns {Promise} - Resolved promise with filtered dogs data
+ */
+export async function getDogsByAgeCategory(ageCategory, additionalParams = {}) {
+  return get('/api/dogs', { 
+    age_category: ageCategory, 
+    ...additionalParams 
+  });
+}
+
+/**
+ * Fetch dogs by age range in months
+ * @param {number} minAge - Minimum age in months
+ * @param {number} maxAge - Maximum age in months
+ * @param {Object} additionalParams - Additional filter parameters
+ * @returns {Promise} - Resolved promise with filtered dogs data
+ */
+export async function getDogsByAgeRange(minAge, maxAge, additionalParams = {}) {
+  const params = { ...additionalParams };
+  
+  if (minAge !== undefined && minAge !== null) {
+    params.min_age_months = minAge;
+  }
+  
+  if (maxAge !== undefined && maxAge !== null) {
+    params.max_age_months = maxAge;
+  }
+  
   return get('/api/dogs', params);
 }
 
@@ -21,28 +95,19 @@ export async function getDogById(id) {
 }
 
 /**
- * Fetch dogs with specific breed
- * @param {string} breed - Dog breed to filter by
- * @returns {Promise} - Resolved promise with filtered dogs data
+ * Fetch available breed groups
+ * @returns {Promise} - Resolved promise with available breed groups
  */
-export async function getDogsByBreed(breed) {
-  return get('/api/dogs', { breed });
+export async function getBreedGroups() {
+  return get('/api/dogs/breeds/groups');
 }
 
 /**
- * Fetch dogs with specific size
- * @param {string} size - Dog size to filter by (Small, Medium, Large)
- * @returns {Promise} - Resolved promise with filtered dogs data
+ * Fetch available standardized breeds
+ * @param {string} breedGroup - Optional filter by breed group
+ * @returns {Promise} - Resolved promise with available standardized breeds
  */
-export async function getDogsBySize(size) {
-  return get('/api/dogs', { size });
-}
-
-/**
- * Fetch dogs by status
- * @param {string} status - Status to filter by (available, pending, adopted)
- * @returns {Promise} - Resolved promise with filtered dogs data
- */
-export async function getDogsByStatus(status = 'available') {
-  return get('/api/dogs', { status });
+export async function getStandardizedBreeds(breedGroup = null) {
+  const params = breedGroup ? { breed_group: breedGroup } : {};
+  return get('/api/dogs/breeds/standardized', params);
 }

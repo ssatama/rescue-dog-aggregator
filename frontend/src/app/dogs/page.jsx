@@ -5,14 +5,19 @@ import { useState, useEffect, useCallback } from 'react';
 import Layout from '../../components/layout/Layout';
 import DogCard from '../../components/dogs/DogCard';
 import Loading from '../../components/ui/Loading';
-import { getDogs } from '../../services/dogsService';
+import { 
+  getDogs, 
+  getStandardizedBreeds, 
+  getDogsByStandardizedBreed 
+} from '../../services/dogsService';
 
 export default function DogsPage() {
   // State for filters
-  const [breedFilter, setBreedFilter] = useState("Any breed");
+  const [standardizedBreedFilter, setStandardizedBreedFilter] = useState("Any breed");
+  const [breedGroupFilter, setBreedGroupFilter] = useState("Any group");
   const [sexFilter, setSexFilter] = useState("Any");
   const [sizeFilter, setSizeFilter] = useState("Any size");
-  const [ageFilter, setAgeFilter] = useState("Any age");
+  const [ageCategoryFilter, setAgeCategoryFilter] = useState("Any age");
   const [searchQuery, setSearchQuery] = useState("");
   
   // API related state
@@ -21,21 +26,84 @@ export default function DogsPage() {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [breeds, setBreeds] = useState(["Any breed"]);
+  const [standardizedBreeds, setStandardizedBreeds] = useState(["Any breed"]);
+  const [breedGroups, setBreedGroups] = useState([
+    "Any group", "Sporting", "Hound", "Working", "Terrier", 
+    "Toy", "Non-Sporting", "Herding", "Mixed", "Unknown"
+  ]);
   const [activeFilterCount, setActiveFilterCount] = useState(0);
   
   // Reset trigger - increment this to force a data reload even if filters appear unchanged
   const [resetTrigger, setResetTrigger] = useState(0);
+
+  // Fetch standardized breeds from the API
+  useEffect(() => {
+    async function fetchBreeds() {
+      try {
+        // In a real implementation, we would call the API
+        // For now, let's use our hardcoded list as the API isn't ready yet
+        // const breeds = await getStandardizedBreeds(breedGroupFilter !== "Any group" ? breedGroupFilter : null);
+        
+        // Mock implementation until API is ready
+        let mockBreeds = ["Any breed"];
+        
+        // Filter breeds by group if a group is selected
+        if (breedGroupFilter === "Sporting") {
+          mockBreeds = mockBreeds.concat([
+            "Labrador Retriever", "Golden Retriever", "Cocker Spaniel", 
+            "English Springer Spaniel", "Pointer", "Setter", "Weimaraner"
+          ]);
+        } else if (breedGroupFilter === "Hound") {
+          mockBreeds = mockBreeds.concat([
+            "Beagle", "Dachshund", "Basset Hound", "Bloodhound", 
+            "Greyhound", "Whippet", "Afghan Hound"
+          ]);
+        } else if (breedGroupFilter === "Working") {
+          mockBreeds = mockBreeds.concat([
+            "Boxer", "Rottweiler", "Doberman Pinscher", "Great Dane", 
+            "Mastiff", "Saint Bernard", "Siberian Husky"
+          ]);
+        } else if (breedGroupFilter === "Terrier") {
+          mockBreeds = mockBreeds.concat([
+            "American Pit Bull Terrier", "Bull Terrier", "Jack Russell Terrier", 
+            "Yorkshire Terrier", "West Highland White Terrier", "Airedale Terrier"
+          ]);
+        } else if (breedGroupFilter === "Mixed") {
+          mockBreeds = mockBreeds.concat([
+            "Mixed Breed", "Labrador Retriever Mix", "Shepherd Mix", "Terrier Mix"
+          ]);
+        } else if (breedGroupFilter === "Any group") {
+          // Add some popular breeds from various groups
+          mockBreeds = mockBreeds.concat([
+            "Labrador Retriever", "German Shepherd", "Golden Retriever", 
+            "American Pit Bull Terrier", "Beagle", "Poodle", "Mixed Breed"
+          ]);
+        }
+        
+        setStandardizedBreeds(mockBreeds);
+        
+        // If current breed isn't in the filtered list, reset to "Any breed"
+        if (!mockBreeds.includes(standardizedBreedFilter) && breedGroupFilter !== "Any group") {
+          setStandardizedBreedFilter("Any breed");
+        }
+      } catch (err) {
+        console.error('Error fetching breeds:', err);
+      }
+    }
+    
+    fetchBreeds();
+  }, [breedGroupFilter, standardizedBreedFilter]);
   
   // Direct API call function for resetting filters
   const resetAndFetchAllDogs = useCallback(() => {
     console.log("Direct reset and fetch all dogs triggered");
     
     // Reset all filter state immediately
-    setBreedFilter("Any breed");
+    setStandardizedBreedFilter("Any breed");
+    setBreedGroupFilter("Any group");
     setSexFilter("Any");
     setSizeFilter("Any size");
-    setAgeFilter("Any age");
+    setAgeCategoryFilter("Any age");
     setSearchQuery("");
     
     // Set loading state
@@ -50,11 +118,6 @@ export default function DogsPage() {
         console.log("Direct API call received:", data.length, "dogs");
         setDogs(data);
         setHasMore(data.length === 20);
-        // Also update breeds dropdown
-        if (data.length > 0) {
-          const uniqueBreeds = [...new Set(data.map(dog => dog.breed).filter(Boolean))];
-          setBreeds(["Any breed", ...uniqueBreeds.sort()]);
-        }
       })
       .catch(err => {
         console.error("Error in direct API call:", err);
@@ -78,10 +141,11 @@ export default function DogsPage() {
   // Function to fetch dogs with hybrid filtering approach
   const fetchDogs = useCallback(async (isNewSearch = false) => {
     console.log("Fetching dogs with filters:", {
-      breedFilter, 
+      standardizedBreedFilter, 
+      breedGroupFilter,
       sexFilter, 
       sizeFilter, 
-      ageFilter, 
+      ageCategoryFilter, 
       searchQuery, 
       page: isNewSearch ? 1 : page,
       resetTrigger
@@ -96,86 +160,64 @@ export default function DogsPage() {
     setError(null);
     
     try {
-      // Build API params from filters - ONLY include parameters the backend supports
+      // Build API params from filters - only include parameters the backend supports
       const params = {
         page: isNewSearch ? 1 : page,
         limit: 20,
       };
       
-      // Only add supported filters to API request
-      if (breedFilter !== "Any breed") params.breed = breedFilter;
-      if (sexFilter !== "Any") params.sex = sexFilter;
-      if (searchQuery) params.search = searchQuery;
+      // Add standardized breed filter
+      if (standardizedBreedFilter !== "Any breed") {
+        params.standardized_breed = standardizedBreedFilter;
+      }
       
-      // NOTE: We intentionally don't add size or age_group to API request parameters
-      // to avoid sending parameters the backend doesn't support
+      // Add breed group filter
+      if (breedGroupFilter !== "Any group") {
+        params.breed_group = breedGroupFilter;
+      }
+      
+      // Add sex filter
+      if (sexFilter !== "Any") {
+        params.sex = sexFilter;
+      }
+      
+      // Add standardized size filter
+      if (sizeFilter !== "Any size") {
+        // Map UI size values to backend standardized size values
+        const sizeMapping = {
+          "Tiny": "Tiny",
+          "Small": "Small",
+          "Medium": "Medium",
+          "Large": "Large",
+          "Extra Large": "XLarge"
+        };
+        
+        params.standardized_size = sizeMapping[sizeFilter] || sizeFilter;
+      }
+      
+      // Add age category filter
+      if (ageCategoryFilter !== "Any age") {
+        params.age_category = ageCategoryFilter;
+      }
+      
+      // Add search query
+      if (searchQuery) {
+        params.search = searchQuery;
+      }
       
       console.log("Sending API request with params:", params);
       
       const data = await getDogs(params);
       console.log("Received data:", data.length, "results");
       
-      // Apply frontend filtering for size and age if those filters are active
-      let filteredData = [...data];
-      
-      // Apply size filter in frontend if selected
-      if (sizeFilter !== "Any size") {
-        console.log("Applying size filter in frontend:", sizeFilter);
-        filteredData = filteredData.filter(dog => {
-          // Match size based on what's in the database
-          if (!dog.size) return false;
-          
-          const dogSize = String(dog.size).toLowerCase();
-          const filterSize = sizeFilter.toLowerCase();
-          
-          return dogSize.includes(filterSize);
-        });
-      }
-      
-      // Apply age filter in frontend if selected
-      if (ageFilter !== "Any age") {
-        console.log("Applying age filter in frontend:", ageFilter);
-        filteredData = filteredData.filter(dog => {
-          if (!dog.age_text) return false;
-          
-          const ageText = String(dog.age_text).toLowerCase();
-          
-          switch (ageFilter) {
-            case "Puppy":
-              return ageText.includes("puppy") || 
-                     ageText.includes("month") || 
-                     (ageText.includes("year") && parseInt(ageText) <= 1);
-            case "Young":
-              return ageText.includes("young") || 
-                     (ageText.includes("year") && parseInt(ageText) > 1 && parseInt(ageText) <= 3);
-            case "Adult":
-              return ageText.includes("adult") || 
-                     (ageText.includes("year") && parseInt(ageText) > 3 && parseInt(ageText) <= 8);
-            case "Senior":
-              return ageText.includes("senior") || 
-                     (ageText.includes("year") && parseInt(ageText) > 8);
-            default:
-              return true;
-          }
-        });
-      }
-      
-      console.log("After frontend filtering:", filteredData.length, "results");
-      
       if (isNewSearch) {
-        setDogs(filteredData);
+        setDogs(data);
       } else {
-        setDogs(prev => [...prev, ...filteredData]);
+        setDogs(prev => [...prev, ...data]);
       }
       
-      // Check if we have more data to load - based on original data from API
+      // Check if we have more data to load
       setHasMore(data.length === params.limit);
-      
-      // If this is the first load, extract unique breeds for filter
-      if ((page === 1 || isNewSearch) && data.length > 0) {
-        const uniqueBreeds = [...new Set(data.map(dog => dog.breed).filter(Boolean))];
-        setBreeds(["Any breed", ...uniqueBreeds.sort()]);
-      }
       
     } catch (err) {
       setError(err);
@@ -183,7 +225,7 @@ export default function DogsPage() {
     } finally {
       setLoading(false);
     }
-  }, [breedFilter, sexFilter, sizeFilter, ageFilter, searchQuery, page, resetTrigger]);
+  }, [standardizedBreedFilter, breedGroupFilter, sexFilter, sizeFilter, ageCategoryFilter, searchQuery, page, resetTrigger]);
   
   // Initial load - fetch dogs when the component first mounts
   useEffect(() => {
@@ -198,10 +240,11 @@ export default function DogsPage() {
     
     // Calculate active filter count
     let count = 0;
-    if (breedFilter !== "Any breed") count++;
+    if (standardizedBreedFilter !== "Any breed") count++;
+    if (breedGroupFilter !== "Any group") count++;
     if (sexFilter !== "Any") count++;
     if (sizeFilter !== "Any size") count++;
-    if (ageFilter !== "Any age") count++;
+    if (ageCategoryFilter !== "Any age") count++;
     if (searchQuery) count++;
     setActiveFilterCount(count);
     
@@ -209,7 +252,7 @@ export default function DogsPage() {
     fetchDogs(true);
     
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [breedFilter, sexFilter, sizeFilter, ageFilter, searchQuery, resetTrigger]);
+  }, [standardizedBreedFilter, breedGroupFilter, sexFilter, sizeFilter, ageCategoryFilter, searchQuery, resetTrigger]);
   
   // Load more data when page changes
   useEffect(() => {
@@ -294,22 +337,44 @@ export default function DogsPage() {
             </div>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Breed filter */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
+            {/* Breed Group filter - NEW */}
+            <div>
+              <label htmlFor="breed-group-filter" className="block text-sm font-medium text-gray-700 mb-1">Breed Group</label>
+              <div className="relative">
+                <select
+                  id="breed-group-filter"
+                  value={breedGroupFilter}
+                  onChange={(e) => setBreedGroupFilter(e.target.value)}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 pr-8"
+                >
+                  {breedGroups.map((group) => (
+                    <option key={group} value={group}>{group}</option>
+                  ))}
+                </select>
+                {breedGroupFilter !== "Any group" && (
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-2">
+                    <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Standardized Breed filter - UPDATED */}
             <div>
               <label htmlFor="breed-filter" className="block text-sm font-medium text-gray-700 mb-1">Breed</label>
               <div className="relative">
                 <select
                   id="breed-filter"
-                  value={breedFilter}
-                  onChange={(e) => setBreedFilter(e.target.value)}
+                  value={standardizedBreedFilter}
+                  onChange={(e) => setStandardizedBreedFilter(e.target.value)}
                   className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 pr-8"
                 >
-                  {breeds.map((breed) => (
+                  {standardizedBreeds.map((breed) => (
                     <option key={breed} value={breed}>{breed}</option>
                   ))}
                 </select>
-                {breedFilter !== "Any breed" && (
+                {standardizedBreedFilter !== "Any breed" && (
                   <div className="absolute inset-y-0 right-0 flex items-center pr-2">
                     <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
                   </div>
@@ -339,7 +404,7 @@ export default function DogsPage() {
               </div>
             </div>
             
-            {/* Size filter */}
+            {/* Size filter - UPDATED to use standardized sizes */}
             <div>
               <label htmlFor="size-filter" className="block text-sm font-medium text-gray-700 mb-1">Size</label>
               <div className="relative">
@@ -350,9 +415,11 @@ export default function DogsPage() {
                   className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 pr-8"
                 >
                   <option>Any size</option>
+                  <option>Tiny</option>
                   <option>Small</option>
                   <option>Medium</option>
                   <option>Large</option>
+                  <option>Extra Large</option>
                 </select>
                 {sizeFilter !== "Any size" && (
                   <div className="absolute inset-y-0 right-0 flex items-center pr-2">
@@ -362,14 +429,14 @@ export default function DogsPage() {
               </div>
             </div>
             
-            {/* Age filter */}
+            {/* Age filter - UPDATED to use age categories */}
             <div>
               <label htmlFor="age-filter" className="block text-sm font-medium text-gray-700 mb-1">Age</label>
               <div className="relative">
                 <select
                   id="age-filter"
-                  value={ageFilter}
-                  onChange={(e) => setAgeFilter(e.target.value)}
+                  value={ageCategoryFilter}
+                  onChange={(e) => setAgeCategoryFilter(e.target.value)}
                   className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 pr-8"
                 >
                   <option>Any age</option>
@@ -378,7 +445,7 @@ export default function DogsPage() {
                   <option>Adult</option>
                   <option>Senior</option>
                 </select>
-                {ageFilter !== "Any age" && (
+                {ageCategoryFilter !== "Any age" && (
                   <div className="absolute inset-y-0 right-0 flex items-center pr-2">
                     <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
                   </div>
