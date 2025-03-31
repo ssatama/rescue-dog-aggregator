@@ -1,6 +1,6 @@
 # Rescue Dog Aggregator
 
-An open-source web platform that aggregates rescue dogs from multiple organizations, starting with "Pets in Turkey" from Izmir and expanding to other rescue organizations worldwide. The platform standardizes information, supports multiple languages, and presents it in a user-friendly interface that links back to the original rescue organizations.
+An open-source web platform that aggregates rescue dogs from multiple organizations, standardizes information, and presents it in a user-friendly interface that links back to the original rescue organizations.
 
 ## Project Overview
 
@@ -19,7 +19,7 @@ This project aims to:
 
 ⚠️ **Work In Progress** ⚠️
 
-This project is in active development with basic functionality now working.
+The project is in active development with basic functionality working.
 
 ### Completed Features:
 - Backend API with FastAPI
@@ -31,12 +31,25 @@ This project is in active development with basic functionality now working.
   - Detailed dog view pages
   - Organizations listing
   - About page with mission statement
-  
+- Data standardization:
+  - Breed standardization (mapping various breed names to consistent standards)
+  - Size standardization (standardized size categories: Tiny, Small, Medium, Large, XLarge)
+  - Age categorization (Puppy, Young, Adult, Senior)
+  - Multilingual support preparation
+
 ### In Progress:
-- Connecting frontend to backend API
+- Frontend integration of standardized fields:
+  - Displaying standardized breed information
+  - Filtering by standardized attributes
+  - Enhanced dog cards and detail views
+- API refinement for standardized filtering
 - Additional scraper support for more organizations
-- Filter functionality implementation
-- Mobile optimization
+- Mobile optimization improvements
+
+### Known Issues:
+- Filter functionality not fully working with standardized fields
+- Dog cards sometimes display original rather than standardized breeds
+- Frontend/backend integration needs improvement for standardized data
 
 ## Project Structure
 
@@ -46,7 +59,7 @@ This project is in active development with basic functionality now working.
 - `database/`: Database schema and operations
   - `schema.sql`: Flexible database schema with multilingual support
   - `db_setup.py`: Initial database setup script
-  - `db_update.py`: Script for updating existing database with schema changes
+  - `db_migration_phase2.py`: Schema migration for standardization support
 - `api/`: Backend API for frontend consumption
   - `routes/`: API endpoints
   - `models/`: Data schemas
@@ -55,6 +68,8 @@ This project is in active development with basic functionality now working.
   - `src/app/`: Page components
   - `src/components/`: Reusable UI components
   - `src/utils/`: Utility functions
+- `utils/`: Utility scripts
+  - `standardization.py`: Data standardization utilities
 
 ## Getting Started
 
@@ -63,7 +78,9 @@ This project is in active development with basic functionality now working.
 1. Set up your database credentials in a `.env` file (see `.env.sample`)
 2. Set up the database: `python main.py --setup`
 3. Run the Pets in Turkey scraper: `python main.py --pit`
-4. Start the API server: `python run_api.py`
+4. Apply database migrations: `python database/db_migration_phase2.py --action=migrate`
+5. Run standardization: `python utils/apply_standardization_to_db.py`
+6. Start the API server: `python run_api.py`
 
 ### Frontend Setup
 

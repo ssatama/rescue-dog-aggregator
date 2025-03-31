@@ -112,7 +112,8 @@ export default function DogsPage() {
     // Make a direct API call with minimal parameters
     getDogs({
       page: 1,
-      limit: 20
+      limit: 20,
+      animal_type: "dog"
     })
       .then(data => {
         console.log("Direct API call received:", data.length, "dogs");
@@ -147,8 +148,7 @@ export default function DogsPage() {
       sizeFilter, 
       ageCategoryFilter, 
       searchQuery, 
-      page: isNewSearch ? 1 : page,
-      resetTrigger
+      page: isNewSearch ? 1 : page
     });
     
     if (isNewSearch) {
@@ -160,15 +160,18 @@ export default function DogsPage() {
     setError(null);
     
     try {
-      // Build API params from filters - only include parameters the backend supports
+      // Build API params from filters - try both standard and legacy parameters
       const params = {
         page: isNewSearch ? 1 : page,
         limit: 20,
+        animal_type: "dog", // Ensure we're only getting dogs
       };
       
-      // Add standardized breed filter
+      // Add standardized breed filter with fallback to regular breed
       if (standardizedBreedFilter !== "Any breed") {
         params.standardized_breed = standardizedBreedFilter;
+        // Also include regular breed as fallback for older API versions
+        params.breed = standardizedBreedFilter;
       }
       
       // Add breed group filter
@@ -181,7 +184,7 @@ export default function DogsPage() {
         params.sex = sexFilter;
       }
       
-      // Add standardized size filter
+      // Add standardized size filter with fallback
       if (sizeFilter !== "Any size") {
         // Map UI size values to backend standardized size values
         const sizeMapping = {
@@ -192,12 +195,30 @@ export default function DogsPage() {
           "Extra Large": "XLarge"
         };
         
-        params.standardized_size = sizeMapping[sizeFilter] || sizeFilter;
+        const mappedSize = sizeMapping[sizeFilter] || sizeFilter;
+        params.standardized_size = mappedSize;
+        // Also include regular size as fallback
+        params.size = mappedSize;
       }
       
       // Add age category filter
       if (ageCategoryFilter !== "Any age") {
         params.age_category = ageCategoryFilter;
+        
+        // Add age_min_months and age_max_months as fallback parameters
+        if (ageCategoryFilter === "Puppy") {
+          params.min_age_months = 0;
+          params.max_age_months = 12;
+        } else if (ageCategoryFilter === "Young") {
+          params.min_age_months = 12;
+          params.max_age_months = 36;
+        } else if (ageCategoryFilter === "Adult") {
+          params.min_age_months = 36;
+          params.max_age_months = 96;
+        } else if (ageCategoryFilter === "Senior") {
+          params.min_age_months = 96;
+          params.max_age_months = null;
+        }
       }
       
       // Add search query
@@ -225,7 +246,7 @@ export default function DogsPage() {
     } finally {
       setLoading(false);
     }
-  }, [standardizedBreedFilter, breedGroupFilter, sexFilter, sizeFilter, ageCategoryFilter, searchQuery, page, resetTrigger]);
+  }, [standardizedBreedFilter, breedGroupFilter, sexFilter, sizeFilter, ageCategoryFilter, searchQuery, page]);
   
   // Initial load - fetch dogs when the component first mounts
   useEffect(() => {

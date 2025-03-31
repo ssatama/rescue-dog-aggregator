@@ -17,36 +17,53 @@ The project aims to increase visibility for rescue dogs and help them find homes
 The system consists of four main components:
 
 1. **Data Collection Layer**: Web scrapers to gather dog listings from various sources
-2. **Data Storage Layer**: PostgreSQL database with a flexible schema
-3. **API Layer**: Backend services to expose the data
+2. **Data Storage Layer**: PostgreSQL database with a flexible schema and standardization support
+3. **API Layer**: Backend services to expose the data with filtering capabilities
 4. **Presentation Layer**: React frontend for users to browse and search
 
 ## Data Flow
 
 1. Scrapers collect data from rescue organization websites
 2. Data is cleaned, standardized, and stored in the database
-3. API endpoints expose the data to the frontend
+   - Breed standardization is applied
+   - Age text is parsed into standardized month ranges
+   - Size descriptions are mapped to standard categories
+3. API endpoints expose the standardized data to the frontend
 4. Frontend presents the data in a user-friendly interface
 5. Users can click through to the original rescue sites for adoption
 
-## Scraping Strategy
+## Standardization Process
 
-The project uses a modular scraping architecture with:
+A key feature of this platform is data standardization:
 
-1. A base scraper class (`BaseScraper`) that handles common functionality
-2. Organization-specific scrapers that extend the base class
-3. Each scraper is responsible for:
-   - Navigating to the organization's website
-   - Extracting dog listings
-   - Standardizing the data
-   - Handling language detection
-   - Saving to the database
+1. **Breed Standardization**
+   - Maps various breed descriptions to consistent names
+   - Groups breeds into categories (Sporting, Hound, Working, etc.)
+   - Handles mixed breeds consistently
 
-## Code Patterns and Conventions
+2. **Age Standardization**
+   - Converts text descriptions ("2 years old", "6 months", etc.) to month ranges
+   - Categorizes into Puppy (<12 months), Young (1-3 years), Adult (3-8 years), Senior (8+ years)
 
-- All scrapers inherit from the `BaseScraper` abstract base class
-- Organization-specific scrapers implement the `collect_data` method
-- Python naming conventions: snake_case for variables and functions
-- Clear error handling and logging
-- Database operations are encapsulated
-- Configuration via environment variables
+3. **Size Standardization**
+   - Normalizes size descriptions to consistent categories:
+     - Tiny, Small, Medium, Large, Extra Large
+
+4. **Multilingual Support**
+   - Detects original content language
+   - Preserves original text while adding standardized fields
+
+## Current Development Focus
+
+1. **Frontend Integration**: Enhancing the frontend to fully utilize standardized data
+2. **API Refinement**: Improving filtering and search capabilities
+3. **Quality Assurance**: Ensuring consistent data presentation
+4. **Expanding Sources**: Adding more rescue organizations
+
+## Future Enhancements
+
+1. Advanced filtering by additional attributes (good with kids, cats, etc.)
+2. User accounts and favorites
+3. Adoption application tracking
+4. Analytics to measure impact
+5. Multilingual interface

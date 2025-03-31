@@ -8,9 +8,17 @@ import { get } from '../utils/api';
  * @returns {Promise} - Resolved promise with dogs data
  */
 export async function getDogs(params = {}) {
-  // Enhanced to support both legacy and standardized parameters
-  return get('/api/dogs', params);
-}
+    console.log("API call with params:", params);
+    
+    // Format any null or undefined values
+    const cleanParams = Object.fromEntries(
+      Object.entries(params).filter(([_, v]) => v != null)
+    );
+    
+    console.log("Cleaned params:", cleanParams);
+    
+    return get('/api/dogs', cleanParams);
+  }
 
 /**
  * Fetch dogs with standardized breed filtering

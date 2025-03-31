@@ -1,9 +1,9 @@
-// src/components/dogs/DogCard.jsx
 import Link from 'next/link';
 
 export default function DogCard({ dog }) {
   // Using placeholder data if no dog is provided
   const name = dog?.name || "Sample Dog";
+  // IMPORTANT: Always prioritize standardized breed
   const breed = dog?.standardized_breed || dog?.breed || "Mixed Breed";
   const breedGroup = dog?.breed_group || null;
   const ageText = dog?.age_text || "Adult";
