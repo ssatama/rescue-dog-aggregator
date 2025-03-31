@@ -15,11 +15,17 @@ def get_animals(
     limit: int = Query(20, ge=1, le=100, description="Items per page"),
     animal_type: Optional[str] = Query("dog", description="Type of animal (dog, cat)"),
     breed: Optional[str] = None,
+    standardized_breed: Optional[str] = None,
+    breed_group: Optional[str] = None,
     sex: Optional[str] = None,
     size: Optional[str] = None,
+    standardized_size: Optional[str] = None,
+    age_category: Optional[str] = None,
+    min_age_months: Optional[int] = None,
+    max_age_months: Optional[int] = None,
     status: Optional[str] = "available",
     organization_id: Optional[int] = None,
-    search: Optional[str] = None,  # Added search parameter
+    search: Optional[str] = None,
     conn=Depends(get_db_connection)
 ):
     """
@@ -44,6 +50,16 @@ def get_animals(
             query += " AND breed ILIKE %s"
             params.append(f"%{breed}%")
         
+        # Add standardized breed filter
+        if standardized_breed:
+            query += " AND standardized_breed = %s"
+            params.append(standardized_breed)
+        
+        # Add breed group filter
+        if breed_group:
+            query += " AND properties->>'breed_group' = %s"
+            params.append(breed_group)
+        
         if sex:
             query += " AND sex = %s"
             params.append(sex)
@@ -51,6 +67,31 @@ def get_animals(
         if size:
             query += " AND size = %s"
             params.append(size)
+        
+        # Add standardized size filter
+        if standardized_size:
+            query += " AND standardized_size = %s"
+            params.append(standardized_size)
+        
+        # Add age range filters
+        if min_age_months is not None:
+            query += " AND (age_min_months >= %s OR age_max_months >= %s)"
+            params.extend([min_age_months, min_age_months])
+        
+        if max_age_months is not None:
+            query += " AND (age_min_months <= %s)"
+            params.append(max_age_months)
+        
+        # Add age category filter using the age ranges
+        if age_category:
+            if age_category.lower() == 'puppy':
+                query += " AND age_min_months < 12"
+            elif age_category.lower() == 'young':
+                query += " AND age_min_months >= 12 AND age_min_months < 36"
+            elif age_category.lower() == 'adult':
+                query += " AND age_min_months >= 36 AND age_min_months < 96"
+            elif age_category.lower() == 'senior':
+                query += " AND age_min_months >= 96"
         
         if status:
             query += " AND status = %s"
@@ -62,9 +103,8 @@ def get_animals(
         
         # Add search query if provided
         if search:
-            query += " AND (name ILIKE %s OR breed ILIKE %s)"  # Search in both name and breed
-            params.append(f"%{search}%")
-            params.append(f"%{search}%")
+            query += " AND (name ILIKE %s OR breed ILIKE %s OR standardized_breed ILIKE %s)"
+            params.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
         
         # Add pagination
         query += " ORDER BY updated_at DESC LIMIT %s OFFSET %s"

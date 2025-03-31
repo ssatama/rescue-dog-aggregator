@@ -10,6 +10,8 @@ from langdetect import detect
 
 # Import config
 from config import DB_CONFIG
+# Import the standardization utilities
+from utils.standardization import standardize_breed, standardize_age
 
 class BaseScraper(ABC):
     """Base scraper class that all organization-specific scrapers will inherit from."""
@@ -169,6 +171,28 @@ class BaseScraper(ABC):
                            'age_max_months', 'sex', 'size', 'standardized_size', 'external_id', 
                            'language', 'animal_type'}
             properties = {k: v for k, v in animal_data.items() if k not in core_fields}
+
+           # Apply standardization to breed field
+            if breed:
+                standardized_breed, breed_group, size_estimate = standardize_breed(breed)
+                animal_data['standardized_breed'] = standardized_breed
+                standardized_breed = standardized_breed  # Update the local variable for the SQL query
+                
+                # Add breed_group to properties
+                properties['breed_group'] = breed_group
+                
+                # Only set standardized_size if it's not already set
+                if size_estimate and not standardized_size:
+                    animal_data['standardized_size'] = size_estimate
+                    standardized_size = size_estimate  # Update the local variable for the SQL query
+
+            # Apply standardization to age field
+            if age_text:
+                age_info = standardize_age(age_text)
+                animal_data['age_min_months'] = age_info['age_min_months']
+                animal_data['age_max_months'] = age_info['age_max_months']
+                age_min_months = age_info['age_min_months']  # Update the local variable for the SQL query
+                age_max_months = age_info['age_max_months']  # Update the local variable for the SQL query
             
             cursor = self.conn.cursor()
             
