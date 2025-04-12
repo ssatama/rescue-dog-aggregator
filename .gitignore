@@ -15,18 +15,21 @@ ENV/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+exploration/.ipynb_checkpoints/
 
-# Local data files
+# Local data files (ignore all files in data/, but keep the directory via .gitkeep)
 data/*
 !data/.gitkeep
 
 # Environment variables
 .env
+.env.local
 
 # IDE specific files
 .idea/
 .vscode/
 *.swp
+*.swo
 
 # Testing artifacts
 .coverage
@@ -34,16 +37,6 @@ coverage/
 htmlcov/
 .pytest_cache/
 test-results/
-__pycache__/
-*.pyc
-
-# Environment and IDE
-.env
-.env.local
-.vscode/
-.idea/
-*.swp
-*.swo
 
 # Logs
 *.log
@@ -56,10 +49,3 @@ frontend/.next/
 frontend/out/
 frontend/build/
 frontend/node_modules/
-
-# Data files except .gitkeep
-data/*
-!data/.gitkeep
-
-# Exploration notebooks checkpoints
-exploration/.ipynb_checkpoints/

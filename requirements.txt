@@ -1,11 +1,33 @@
-requests
-beautifulsoup4
-pandas
-selenium
-webdriver-manager
-psycopg2-binary
-jupyter
-langdetect==1.0.9
-python-dotenv==1.0.0
-fastapi==0.104.1
-uvicorn==0.23.2
+# === Core Web Framework ===
+fastapi>=0.110.0,<0.111.0  # Using a recent stable version range
+uvicorn[standard]>=0.29.0,<0.30.0 # Includes performance extras
+
+# === HTTP Client ===
+# Often a dependency of fastapi/TestClient, ensuring compatibility
+httpx>=0.27.0,<0.28.0
+
+# === Database ===
+psycopg2-binary>=2.9.9,<2.10.0 # For PostgreSQL
+
+# === Web Scraping & Parsing ===
+requests>=2.31.0,<2.32.0
+beautifulsoup4>=4.12.3,<4.13.0
+selenium>=4.18.0,<4.19.0
+webdriver-manager>=4.0.0,<4.1.0
+
+# === Data Handling ===
+pandas>=2.1.0,<2.2.0 # Using a recent pandas version range
+
+# === Utilities ===
+langdetect==1.0.9 # Keeping your specific version
+python-dotenv==1.0.0 # Keeping your specific version
+
+# === Testing ===
+pytest>=8.0.0,<9.0.0
+pytest-asyncio>=0.23.0,<0.24.0
+pytest-cov>=4.1.0,<4.2.0
+pytest-mock>=3.12.0,<3.13.0
+
+# === Development Tools ===
+jupyter>=1.0.0,<2.0.0 # For notebooks if used
+# Consider adding 'notebook' or 'jupyterlab' if you use them directly
