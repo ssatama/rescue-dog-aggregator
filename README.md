@@ -71,6 +71,36 @@ The project is in active development with basic functionality working.
 - `utils/`: Utility scripts
   - `standardization.py`: Data standardization utilities
 
+## Testing
+
+Rescue Dog Aggregator has comprehensive test coverage for both backend and frontend components.
+
+### Backend Tests
+
+```bash
+# Run all backend tests
+pytest
+
+# Run with coverage
+pytest --cov=.
+```
+
+### Frontend Tests
+
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Run all frontend tests
+npm test
+```
+
+### Continuous Integration
+
+Tests automatically run on GitHub Actions when pushing to or creating pull requests against the main branch.
+
+For detailed testing documentation, see [TESTING.md](./TESTING.md).
+
 ## Getting Started
 
 ### Backend Setup
