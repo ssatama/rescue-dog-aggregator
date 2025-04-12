@@ -5,3 +5,10 @@ export default function Loading() {
       </div>
     );
   }
+export default function Loading() {
+  return (
+    <div className="..." data-testid="loading">
+      <div className="..."></div>
+    </div>
+  );
+}
