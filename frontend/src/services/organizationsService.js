@@ -26,8 +26,9 @@ export async function getOrganizationById(id) {
  * @returns {Promise} - Resolved promise with dogs data
  */
 export async function getOrganizationDogs(id, params = {}) {
-  return get('/api/dogs', {
+  return get('/api/animals', {
     ...params,
-    organization_id: id
+    organization_id: id,
+    animal_type: 'dog' // Also explicitly filter for dogs here
   });
 }

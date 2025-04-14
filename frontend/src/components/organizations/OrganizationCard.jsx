@@ -1,4 +1,12 @@
 import Link from 'next/link';
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function OrganizationCard({ organization }) {
   // Using placeholder data if no organization is provided
@@ -12,9 +20,8 @@ export default function OrganizationCard({ organization }) {
   const id = organization?.id || "0";
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
-      {/* Logo/Image area */}
-      <div className="p-6 flex justify-center items-center bg-gray-50">
+    <Card className="overflow-hidden flex flex-col h-full transition-shadow duration-300 hover:shadow-lg">
+      <CardHeader className="p-6 flex justify-center items-center bg-gray-50">
         {logoUrl ? (
           <img 
             src={logoUrl} 
@@ -28,32 +35,33 @@ export default function OrganizationCard({ organization }) {
             </span>
           </div>
         )}
-      </div>
+      </CardHeader>
       
-      {/* Organization info */}
-      <div className="p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-2">{name}</h3>
+      <CardContent className="p-6 flex flex-col flex-grow">
+        <CardTitle className="text-xl font-bold text-gray-800 mb-2">{name}</CardTitle>
         <p className="text-gray-600 text-sm mb-2">{location}</p>
-        <p className="text-gray-700 mb-4 line-clamp-3">{description}</p>
-        
-        <div className="flex space-x-3">
-          <a 
-            href={websiteUrl} 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="flex-1 inline-block text-center bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm transition-colors"
-          >
-            Visit Website
-          </a>
+        <p className="text-gray-700 mb-4 line-clamp-3 flex-grow">{description}</p>
+      </CardContent>
+
+      <CardFooter className="p-6 pt-0">
+        <div className="flex space-x-3 w-full">
+          <Button asChild size="sm" className="flex-1">
+            <a 
+              href={websiteUrl} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+            >
+              Visit Website
+            </a>
+          </Button>
           
-          <Link 
-            href={`/organizations/${id}`}
-            className="flex-1 inline-block text-center bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-md text-sm transition-colors"
-          >
-            View Dogs
+          <Link href={`/organizations/${id}`} passHref legacyBehavior>
+            <Button as="a" variant="secondary" size="sm" className="flex-1">
+              View Dogs
+            </Button>
           </Link>
         </div>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 }

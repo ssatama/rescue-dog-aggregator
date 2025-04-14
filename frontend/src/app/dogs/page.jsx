@@ -5,11 +5,31 @@ import { useState, useEffect, useCallback } from 'react';
 import Layout from '../../components/layout/Layout';
 import DogCard from '../../components/dogs/DogCard';
 import Loading from '../../components/ui/Loading';
-import { 
-  getDogs, 
-  getStandardizedBreeds, 
-  getDogsByStandardizedBreed 
-} from '../../services/dogsService';
+import {
+  getAnimals, // <<< Change this line
+  getStandardizedBreeds,
+  getBreedGroups,
+  // getAnimalsByStandardizedBreed // Rename if you renamed this in the service too
+} from '../../services/animalsService';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"; // Import shadcn Select components
+import { Button } from "@/components/ui/button"; // Import Button
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetClose // Optional: For a close button inside
+} from "@/components/ui/sheet"; // Import Sheet components
+import { Filter } from 'lucide-react'; // Import an icon for the button
+import FilterControls from '../../components/dogs/FilterControls'; // <<< Import the new component
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // <<< Import Alert components
 
 export default function DogsPage() {
   // State for filters
@@ -35,6 +55,14 @@ export default function DogsPage() {
   
   // Reset trigger - increment this to force a data reload even if filters appear unchanged
   const [resetTrigger, setResetTrigger] = useState(0);
+
+  // *** NEW: State for mobile filter sheet ***
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+
+  // Define options for filters that don't come from API (or have fixed values)
+  const sexOptions = ["Any", "Male", "Female"];
+  const sizeOptions = ["Any size", "Tiny", "Small", "Medium", "Large", "Extra Large"];
+  const ageOptions = ["Any age", "Puppy", "Young", "Adult", "Senior"];
 
   // Fetch standardized breeds from the API
   useEffect(() => {
@@ -97,7 +125,7 @@ export default function DogsPage() {
   // Direct API call function for resetting filters
   const resetAndFetchAllDogs = useCallback(() => {
     console.log("Direct reset and fetch all dogs triggered");
-    
+
     // Reset all filter state immediately
     setStandardizedBreedFilter("Any breed");
     setBreedGroupFilter("Any group");
@@ -105,34 +133,38 @@ export default function DogsPage() {
     setSizeFilter("Any size");
     setAgeCategoryFilter("Any age");
     setSearchQuery("");
-    
+
     // Set loading state
     setLoading(true);
-    
+    setError(null); // Clear previous errors
+
     // Make a direct API call with minimal parameters
-    getDogs({
-      page: 1,
-      limit: 20,
-      animal_type: "dog"
+    // CORRECTED FUNCTION CALL HERE
+    getAnimals({ // <<< Use getAnimals
+      limit: 20, // Fetch initial page size
+      offset: 0, // Start from the beginning
+      // animal_type: "dog" // Backend likely defaults or doesn't need this
     })
       .then(data => {
-        console.log("Direct API call received:", data.length, "dogs");
+        console.log("Direct API call received:", data.length, "animals");
         setDogs(data);
         setHasMore(data.length === 20);
       })
       .catch(err => {
         console.error("Error in direct API call:", err);
-        setError(err);
+        setError('Failed to load animals. Please try refreshing.'); // Set error state
+        setDogs([]); // Clear dogs on error
+        setHasMore(false);
       })
       .finally(() => {
         setLoading(false);
       });
-      
+
     // Force reset of other state as well
     setPage(1);
-    setResetTrigger(prev => prev + 1);
-  }, []);
-  
+    setResetTrigger(prev => prev + 1); // Trigger useEffect for filters if needed
+  }, []); // Removed dependencies as it should be static
+
   // Clear all filters function - now uses the direct API call
   const clearFilters = useCallback(() => {
     console.log("Clear filters triggered - using direct API call");
@@ -140,114 +172,56 @@ export default function DogsPage() {
   }, [resetAndFetchAllDogs]);
   
   // Function to fetch dogs with hybrid filtering approach
-  const fetchDogs = useCallback(async (isNewSearch = false) => {
-    console.log("Fetching dogs with filters:", {
-      standardizedBreedFilter, 
-      breedGroupFilter,
-      sexFilter, 
-      sizeFilter, 
-      ageCategoryFilter, 
-      searchQuery, 
-      page: isNewSearch ? 1 : page
-    });
-    
-    if (isNewSearch) {
-      setPage(1);
-      setDogs([]);
-    }
-    
-    setLoading(true);
-    setError(null);
-    
+  const fetchDogs = useCallback(async (reset = false) => {
+    setLoading(true); // Set loading true at the start
+
+    const currentPage = reset ? 1 : page;
+    const currentOffset = (currentPage - 1) * 20;
+
+    const params = {
+      limit: 20,
+      offset: currentOffset,
+      search: searchQuery || null,
+      standardized_breed: standardizedBreedFilter !== "Any breed" ? standardizedBreedFilter : null,
+      breed_group: breedGroupFilter !== "Any group" ? breedGroupFilter : null,
+      sex: sexFilter !== "Any" ? sexFilter : null,
+      standardized_size: sizeFilter !== "Any size" ? mapUiSizeToStandardized(sizeFilter) : null, // Assuming mapUiSizeToStandardized exists
+      age_category: ageCategoryFilter !== "Any age" ? ageCategoryFilter : null,
+    };
+
     try {
-      // Build API params from filters - try both standard and legacy parameters
-      const params = {
-        page: isNewSearch ? 1 : page,
-        limit: 20,
-        animal_type: "dog", // Ensure we're only getting dogs
-      };
-      
-      // Add standardized breed filter with fallback to regular breed
-      if (standardizedBreedFilter !== "Any breed") {
-        params.standardized_breed = standardizedBreedFilter;
-        // Also include regular breed as fallback for older API versions
-        params.breed = standardizedBreedFilter;
-      }
-      
-      // Add breed group filter
-      if (breedGroupFilter !== "Any group") {
-        params.breed_group = breedGroupFilter;
-      }
-      
-      // Add sex filter
-      if (sexFilter !== "Any") {
-        params.sex = sexFilter;
-      }
-      
-      // Add standardized size filter with fallback
-      if (sizeFilter !== "Any size") {
-        // Map UI size values to backend standardized size values
-        const sizeMapping = {
-          "Tiny": "Tiny",
-          "Small": "Small",
-          "Medium": "Medium",
-          "Large": "Large",
-          "Extra Large": "XLarge"
-        };
-        
-        const mappedSize = sizeMapping[sizeFilter] || sizeFilter;
-        params.standardized_size = mappedSize;
-        // Also include regular size as fallback
-        params.size = mappedSize;
-      }
-      
-      // Add age category filter
-      if (ageCategoryFilter !== "Any age") {
-        params.age_category = ageCategoryFilter;
-        
-        // Add age_min_months and age_max_months as fallback parameters
-        if (ageCategoryFilter === "Puppy") {
-          params.min_age_months = 0;
-          params.max_age_months = 12;
-        } else if (ageCategoryFilter === "Young") {
-          params.min_age_months = 12;
-          params.max_age_months = 36;
-        } else if (ageCategoryFilter === "Adult") {
-          params.min_age_months = 36;
-          params.max_age_months = 96;
-        } else if (ageCategoryFilter === "Senior") {
-          params.min_age_months = 96;
-          params.max_age_months = null;
+      const newAnimals = await getAnimals(params);
+
+      // *** FIX: Ensure uniqueness when appending ***
+      setDogs(prevDogs => {
+        if (reset) {
+          return newAnimals; // Replace entirely on reset
+        } else {
+          // Create a Set of existing IDs for quick lookup
+          const existingIds = new Set(prevDogs.map(dog => dog.id));
+          // Filter out animals that are already in the state
+          const uniqueNewAnimals = newAnimals.filter(dog => !existingIds.has(dog.id));
+          // Append only the unique new animals
+          return [...prevDogs, ...uniqueNewAnimals];
         }
-      }
-      
-      // Add search query
-      if (searchQuery) {
-        params.search = searchQuery;
-      }
-      
-      console.log("Sending API request with params:", params);
-      
-      const data = await getDogs(params);
-      console.log("Received data:", data.length, "results");
-      
-      if (isNewSearch) {
-        setDogs(data);
-      } else {
-        setDogs(prev => [...prev, ...data]);
-      }
-      
-      // Check if we have more data to load
-      setHasMore(data.length === params.limit);
-      
+      });
+
+      setHasMore(newAnimals.length === 20);
+      setError(null);
     } catch (err) {
-      setError(err);
-      console.error('Error fetching dogs:', err);
+      console.error("Failed to fetch animals:", err);
+      // Only set error if it's not a reset (initial load/filter change)
+      // Avoid showing error just because load more failed temporarily
+      if (reset || page === 1) {
+         setError('Failed to load animals. Please try refreshing.');
+      }
+      setHasMore(false); // Stop loading more on error
     } finally {
       setLoading(false);
     }
-  }, [standardizedBreedFilter, breedGroupFilter, sexFilter, sizeFilter, ageCategoryFilter, searchQuery, page]);
-  
+  // Add mapUiSizeToStandardized if it's defined outside and used
+  }, [page, searchQuery, standardizedBreedFilter, breedGroupFilter, sexFilter, sizeFilter, ageCategoryFilter, resetTrigger]); // Keep dependencies
+
   // Initial load - fetch dogs when the component first mounts
   useEffect(() => {
     console.log("Initial data load");
@@ -258,8 +232,8 @@ export default function DogsPage() {
   // When filters change or reset is triggered
   useEffect(() => {
     console.log("Filters changed or reset triggered");
-    
-    // Calculate active filter count
+
+    // *** MOVE activeFilterCount calculation here ***
     let count = 0;
     if (standardizedBreedFilter !== "Any breed") count++;
     if (breedGroupFilter !== "Any group") count++;
@@ -267,13 +241,13 @@ export default function DogsPage() {
     if (sizeFilter !== "Any size") count++;
     if (ageCategoryFilter !== "Any age") count++;
     if (searchQuery) count++;
-    setActiveFilterCount(count);
-    
+    setActiveFilterCount(count); // Set the count based on current filter states
+
     // Always trigger a data fetch with the current filters
-    fetchDogs(true);
-    
+    fetchDogs(true); // Reset pagination when filters change
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [standardizedBreedFilter, breedGroupFilter, sexFilter, sizeFilter, ageCategoryFilter, searchQuery, resetTrigger]);
+  }, [standardizedBreedFilter, breedGroupFilter, sexFilter, sizeFilter, ageCategoryFilter, searchQuery, resetTrigger]); // Keep original dependencies
   
   // Load more data when page changes
   useEffect(() => {
@@ -302,239 +276,256 @@ export default function DogsPage() {
     resetAndFetchAllDogs();
   };
 
+  // *** NEW: Derive active filter chips ***
+  const activeFilters = [];
+  if (searchQuery) {
+    activeFilters.push({ id: 'search', type: 'Search', value: searchQuery, label: `Search: "${searchQuery}"` });
+  }
+  if (breedGroupFilter !== "Any group") {
+    activeFilters.push({ id: 'breedGroup', type: 'Breed Group', value: breedGroupFilter, label: `Group: ${breedGroupFilter}` });
+  }
+  if (standardizedBreedFilter !== "Any breed") {
+    activeFilters.push({ id: 'breed', type: 'Breed', value: standardizedBreedFilter, label: `Breed: ${standardizedBreedFilter}` });
+  }
+  if (sexFilter !== "Any") {
+    activeFilters.push({ id: 'sex', type: 'Sex', value: sexFilter, label: `Sex: ${sexFilter}` });
+  }
+  if (sizeFilter !== "Any size") {
+    activeFilters.push({ id: 'size', type: 'Size', value: sizeFilter, label: `Size: ${sizeFilter}` });
+  }
+  if (ageCategoryFilter !== "Any age") {
+    activeFilters.push({ id: 'age', type: 'Age', value: ageCategoryFilter, label: `Age: ${ageCategoryFilter}` });
+  }
+  // *** REMOVE THIS useEffect for activeFilterCount ***
+  // useEffect(() => {
+  //   setActiveFilterCount(activeFilters.length);
+  // }, [activeFilters]); // Depend on the derived array
+
+  // *** ADD THIS LOG ***
+  console.log("Active Filters Array:", activeFilters);
+
+  // *** NEW: Function to remove a specific filter chip ***
+  const removeFilter = (filterId) => {
+    switch (filterId) {
+      case 'search':
+        setSearchQuery("");
+        break;
+      case 'breedGroup':
+        setBreedGroupFilter("Any group");
+        break;
+      case 'breed':
+        setStandardizedBreedFilter("Any breed");
+        break;
+      case 'sex':
+        setSexFilter("Any");
+        break;
+      case 'size':
+        setSizeFilter("Any size");
+        break;
+      case 'age':
+        setAgeCategoryFilter("Any age");
+        break;
+      default:
+        break;
+    }
+    // The useEffect watching filter state will trigger fetchDogs(true)
+  };
+
+  // *** NEW: Function to clear search query ***
+  const clearSearch = () => {
+    setSearchQuery("");
+  };
+
+  // *** Prepare props for FilterControls ***
+  const filterControlProps = {
+    searchQuery,
+    handleSearchChange,
+    clearSearch, // Pass the clear function
+    breedGroupFilter,
+    setBreedGroupFilter,
+    breedGroups,
+    standardizedBreedFilter,
+    setStandardizedBreedFilter,
+    standardizedBreeds,
+    sexFilter,
+    setSexFilter,
+    sexOptions,
+    sizeFilter,
+    setSizeFilter,
+    sizeOptions,
+    ageCategoryFilter,
+    setAgeCategoryFilter,
+    ageOptions,
+  };
+
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Find Your Perfect Rescue Dog</h1>
-        <p className="text-lg text-gray-600 mb-8">
-          Browse available rescue dogs from multiple organizations. Use the filters to find your perfect match.
-        </p>
-        
-        {/* Filters section */}
-        <div className="bg-gray-100 p-4 rounded-lg mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="font-semibold">Filters</h2>
+      {/* Use flex layout for sidebar and main content on medium screens and up */}
+      <div className="max-w-7xl mx-auto md:flex md:gap-8">
+
+        {/* --- Mobile Filter Button & Sheet --- */}
+        <div className="md:hidden p-4 flex justify-between items-center border-b border-gray-200">
+          <h2 className="font-semibold">Filters</h2>
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Filter className="h-4 w-4 mr-2" />
+                Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-full max-w-xs sm:max-w-sm overflow-y-auto"> {/* Added overflow */}
+              <SheetHeader>
+                <SheetTitle>Filters</SheetTitle>
+              </SheetHeader>
+              <div className="p-4">
+                <FilterControls {...filterControlProps} />
+                {/* Optional: Add a button inside the sheet to close it */}
+                <SheetClose asChild className="mt-6 w-full">
+                  <Button>Apply Filters</Button>
+                </SheetClose>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+
+        {/* --- Desktop Filter Sidebar --- */}
+        {/* Hidden on small screens, visible as a sidebar on medium+ */}
+        <aside className="hidden md:block md:w-64 lg:w-72 xl:w-80 md:flex-shrink-0 p-4 border-r border-gray-200">
+          <div className="sticky top-4"> {/* Make sidebar sticky */}
+            <h2 className="font-semibold mb-4">Filters</h2>
             {activeFilterCount > 0 && (
-              <button 
+              <Button
+                variant="link" // Use link variant for text-like appearance
+                size="sm"      // Use small size
                 onClick={clearFilters}
-                className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
+                // Keep flex, mb, adjust padding/height for link variant, ensure color
+                className="text-blue-600 hover:text-blue-800 flex items-center mb-4 p-0 h-auto"
                 aria-label="Clear all filters"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
-                Clear all filters
-              </button>
+                Clear all filters ({activeFilterCount})
+              </Button>
             )}
+            <FilterControls {...filterControlProps} />
           </div>
-          
-          {/* Search input */}
-          <div className="mb-4">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search by name or breed..."
-                value={searchQuery}
-                onChange={handleSearchChange}
-                className="w-full px-4 py-2 pl-10 pr-4 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                aria-label="Search dogs by name or breed"
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              {searchQuery && (
-                <button 
-                  onClick={() => setSearchQuery("")}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  aria-label="Clear search"
+        </aside>
+
+        {/* --- Main Content Area --- */}
+        <main className="flex-1 p-4"> {/* Takes remaining space */}
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">Find Your Perfect Rescue Dog</h1>
+          <p className="text-lg text-gray-600 mb-8">
+            Browse available rescue dogs from multiple organizations. Use the filters to find your perfect match.
+          </p>
+
+          {/* *** REMOVE the old filter container *** */}
+          {/* <div className="bg-gray-100 p-4 rounded-lg mb-8"> ... </div> */}
+
+          {/* Active Filter Chips Display */}
+          {activeFilters.length > 0 && (
+            <div className="mb-6 flex flex-wrap gap-2 items-center">
+              <span className="text-sm font-medium text-gray-700 mr-2">Active Filters:</span>
+              {activeFilters.map((filter) => (
+                <span
+                  key={filter.id}
+                  className="inline-flex items-center bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
-            {/* Breed Group filter - NEW */}
-            <div>
-              <label htmlFor="breed-group-filter" className="block text-sm font-medium text-gray-700 mb-1">Breed Group</label>
-              <div className="relative">
-                <select
-                  id="breed-group-filter"
-                  value={breedGroupFilter}
-                  onChange={(e) => setBreedGroupFilter(e.target.value)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 pr-8"
-                >
-                  {breedGroups.map((group) => (
-                    <option key={group} value={group}>{group}</option>
-                  ))}
-                </select>
-                {breedGroupFilter !== "Any group" && (
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-2">
-                    <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Standardized Breed filter - UPDATED */}
-            <div>
-              <label htmlFor="breed-filter" className="block text-sm font-medium text-gray-700 mb-1">Breed</label>
-              <div className="relative">
-                <select
-                  id="breed-filter"
-                  value={standardizedBreedFilter}
-                  onChange={(e) => setStandardizedBreedFilter(e.target.value)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 pr-8"
-                >
-                  {standardizedBreeds.map((breed) => (
-                    <option key={breed} value={breed}>{breed}</option>
-                  ))}
-                </select>
-                {standardizedBreedFilter !== "Any breed" && (
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-2">
-                    <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Sex filter */}
-            <div>
-              <label htmlFor="sex-filter" className="block text-sm font-medium text-gray-700 mb-1">Sex</label>
-              <div className="relative">
-                <select
-                  id="sex-filter"
-                  value={sexFilter}
-                  onChange={(e) => setSexFilter(e.target.value)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 pr-8"
-                >
-                  <option>Any</option>
-                  <option>Male</option>
-                  <option>Female</option>
-                </select>
-                {sexFilter !== "Any" && (
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-2">
-                    <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Size filter - UPDATED to use standardized sizes */}
-            <div>
-              <label htmlFor="size-filter" className="block text-sm font-medium text-gray-700 mb-1">Size</label>
-              <div className="relative">
-                <select
-                  id="size-filter"
-                  value={sizeFilter}
-                  onChange={(e) => setSizeFilter(e.target.value)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 pr-8"
-                >
-                  <option>Any size</option>
-                  <option>Tiny</option>
-                  <option>Small</option>
-                  <option>Medium</option>
-                  <option>Large</option>
-                  <option>Extra Large</option>
-                </select>
-                {sizeFilter !== "Any size" && (
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-2">
-                    <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Age filter - UPDATED to use age categories */}
-            <div>
-              <label htmlFor="age-filter" className="block text-sm font-medium text-gray-700 mb-1">Age</label>
-              <div className="relative">
-                <select
-                  id="age-filter"
-                  value={ageCategoryFilter}
-                  onChange={(e) => setAgeCategoryFilter(e.target.value)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 pr-8"
-                >
-                  <option>Any age</option>
-                  <option>Puppy</option>
-                  <option>Young</option>
-                  <option>Adult</option>
-                  <option>Senior</option>
-                </select>
-                {ageCategoryFilter !== "Any age" && (
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-2">
-                    <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          {/* Filter results count */}
-          <div className="mt-4 text-sm text-gray-600">
-            Found {dogs.length} {dogs.length === 1 ? 'dog' : 'dogs'}
-            {activeFilterCount > 0 && ` matching your ${activeFilterCount} ${activeFilterCount === 1 ? 'filter' : 'filters'}`}
-          </div>
-        </div>
-        
-        {/* Error state */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-            <p>There was an error loading dogs. Please try again later.</p>
-            <button
-              onClick={handleRetry}
-              className="mt-2 text-sm font-medium text-red-700 underline"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-        
-        {/* Initial loading state */}
-        {loading && dogs.length === 0 ? (
-          <Loading />
-        ) : dogs.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {dogs.map((dog) => (
-                <DogCard key={dog.id} dog={dog} />
+                  {filter.label}
+                  {/* Chip remove button (standard button is fine here) */}
+                  <button
+                    onClick={() => removeFilter(filter.id)}
+                    className="ml-1.5 flex-shrink-0 inline-flex items-center justify-center h-4 w-4 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-500 focus:outline-none focus:bg-blue-500 focus:text-white"
+                    aria-label={`Remove ${filter.type} filter`}
+                  >
+                    <svg className="h-2 w-2" stroke="currentColor" fill="none" viewBox="0 0 8 8">
+                      <path strokeLinecap="round" strokeWidth="1.5" d="M1 1l6 6m0-6L1 7" />
+                    </svg>
+                  </button>
+                </span>
               ))}
+              {/* *** REPLACE THIS BUTTON *** */}
+              <Button
+                variant="link"
+                size="sm" // Match original text-sm
+                onClick={clearFilters}
+                className="text-blue-600 hover:text-blue-800 ml-2 p-0 h-auto" // Adjust classes for link variant
+                aria-label="Clear all filters"
+              >
+                Clear All
+              </Button>
             </div>
-            
-            {/* Load more button */}
-            {hasMore && (
-              <div className="mt-8 text-center">
-                <button
-                  onClick={handleLoadMore}
-                  disabled={loading}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-md disabled:bg-blue-300 hover:bg-blue-600 transition-colors"
+          )}
+
+          {/* *** REPLACE Error state div with Alert *** */}
+          {error && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>
+                {error} {/* Display the error message from state */}
+                {/* Keep the Retry button inside */}
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={handleRetry}
+                  className="mt-2 text-red-700 hover:text-red-800 p-0 h-auto block" // Make it block to appear below text
                 >
-                  {loading ? 'Loading...' : 'Load More Dogs'}
-                </button>
+                  Retry
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Loading / Results / No Results */}
+          {loading && dogs.length === 0 ? (
+            <Loading />
+          ) : dogs.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"> {/* Adjusted grid cols */}
+                {dogs.map((dog) => (
+                  <DogCard key={dog.id} dog={dog} />
+                ))}
               </div>
-            )}
-          </>
-        ) : (
-          <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
-            </svg>
-            <h3 className="text-xl font-medium text-gray-900 mb-2">No dogs found</h3>
-            <p className="text-gray-600 mb-4">No dogs match your current filter criteria.</p>
-            <button 
-              onClick={resetAndFetchAllDogs}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Clear all filters
-            </button>
-          </div>
-        )}
-      </div>
+
+              {/* Load more button */}
+              {hasMore && (
+                <div className="mt-8 text-center">
+                  <Button onClick={handleLoadMore} disabled={loading}>
+                    {loading ? 'Loading...' : 'Load More Dogs'}
+                  </Button>
+                </div>
+              )}
+            </>
+          ) : (
+            // *** No Dogs Found State ***
+            <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">No Dogs Found</h3>
+              <p className="text-gray-600 mb-4">
+                Try adjusting your filters or clearing them to see all available dogs.
+              </p>
+              {/* *** ENSURE THIS USES DEFAULT BUTTON STYLE *** */}
+              <Button onClick={resetAndFetchAllDogs}>
+                Clear all filters
+              </Button>
+            </div>
+          )}
+        </main> {/* End Main Content Area */}
+
+      </div> {/* End Flex container */}
     </Layout>
   );
 }
+
+// Helper function (if not already defined elsewhere)
+// Make sure this function exists or adjust the params building logic
+const mapUiSizeToStandardized = (uiSize) => {
+  // Example mapping, adjust based on your actual needs
+  const mapping = {
+    "Tiny": "Tiny",
+    "Small": "Small",
+    "Medium": "Medium",
+    "Large": "Large",
+    "Extra Large": "XLarge", // Match backend if it uses XLarge
+  };
+  return mapping[uiSize] || null;
+};

@@ -6,7 +6,10 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Layout from '../../../components/layout/Layout';
 import Loading from '../../../components/ui/Loading';
-import { getDogById } from '../../../services/dogsService';
+import { Button } from "@/components/ui/button"; // <<< Import Button
+import { getAnimalById } from '../../../services/animalsService';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // <<< Import Alert components
+import { Badge } from "@/components/ui/badge"; // <<< Import Badge component
 
 export default function DogDetailPage() {
   const params = useParams();
@@ -20,7 +23,7 @@ export default function DogDetailPage() {
     const fetchDogData = async () => {
       try {
         setLoading(true);
-        const data = await getDogById(dogId);
+        const data = await getAnimalById(dogId);
         console.log("Dog data:", data); // For debugging
         setDog(data);
       } catch (err) {
@@ -49,22 +52,8 @@ export default function DogDetailPage() {
         }
       }
     }
-    return dog.age_text || 'Unknown age';
-  };
-
-  // Get size category color
-  const getSizeColor = (size) => {
-    if (!size) return 'bg-gray-100 text-gray-800';
-    
-    switch(size.toLowerCase()) {
-      case 'tiny': return 'bg-indigo-100 text-indigo-800';
-      case 'small': return 'bg-green-100 text-green-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'large': return 'bg-orange-100 text-orange-800';
-      case 'xlarge':
-      case 'extra large': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+    // *** Return null instead of 'Unknown age' if age_text is also missing ***
+    return dog.age_text || null;
   };
 
   if (loading) {
@@ -81,13 +70,18 @@ export default function DogDetailPage() {
     return (
       <Layout>
         <div className="max-w-4xl mx-auto p-4">
-          <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
-            <h2 className="text-xl font-bold text-red-700">Dog Not Found</h2>
-            <p>Sorry, we couldn't find the dog you're looking for.</p>
-            <Link href="/dogs" className="mt-4 inline-block text-blue-500 hover:underline">
-              Return to dogs listing
-            </Link>
-          </div>
+          <Alert variant="destructive">
+            <AlertTitle>Dog Not Found</AlertTitle>
+            <AlertDescription>
+              Sorry, we couldn't find the dog you're looking for.
+              {/* Keep the return link inside */}
+              <Link href="/dogs" passHref>
+                <Button variant="link" className="mt-4 text-red-700 hover:text-red-800 p-0 h-auto block"> {/* Adjusted color for destructive alert */}
+                  Return to dogs listing
+                </Button>
+              </Link>
+            </AlertDescription>
+          </Alert>
         </div>
       </Layout>
     );
@@ -96,11 +90,10 @@ export default function DogDetailPage() {
   return (
     <Layout>
       <div className="max-w-4xl mx-auto p-4">
-        <Link 
-          href="/dogs" 
-          className="inline-flex items-center text-blue-500 hover:text-blue-700 mb-6"
-        >
-          ← Back to all dogs
+        <Link href="/dogs" passHref>
+          <Button variant="link" className="inline-flex items-center text-blue-500 hover:text-blue-700 mb-6 p-0 h-auto">
+            ← Back to all dogs
+          </Button>
         </Link>
         
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -165,59 +158,61 @@ export default function DogDetailPage() {
                   
                   {/* Breed group */}
                   {dog.breed_group && dog.breed_group !== 'Unknown' && (
-                    <span className="inline-block bg-gray-100 text-gray-700 text-sm px-2 py-0.5 rounded mt-1">
+                    <Badge variant="secondary" className="mt-1"> {/* Use secondary variant */}
                       {dog.breed_group} Group
-                    </span>
+                    </Badge>
                   )}
                 </div>
                 
                 {/* Main attributes */}
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3 mb-6">
-                  {/* Age */}
-                  <div>
-                    <h2 className="text-sm font-medium text-gray-500">Age</h2>
-                    <p className="text-gray-800">{formatAge(dog)}</p>
-                  </div>
-                  
-                  {/* Sex */}
-                  <div>
-                    <h2 className="text-sm font-medium text-gray-500">Sex</h2>
-                    <div className="flex items-center">
-                      {dog.sex?.toLowerCase() === 'male' ? (
-                        <>
-                          <span className="text-blue-500 mr-1">♂</span>
-                          <span>Male</span>
-                        </>
-                      ) : dog.sex?.toLowerCase() === 'female' ? (
-                        <>
-                          <span className="text-pink-500 mr-1">♀</span>
-                          <span>Female</span>
-                        </>
-                      ) : (
-                        <span>Unknown</span>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Size */}
-                  <div>
-                    <h2 className="text-sm font-medium text-gray-500">Size</h2>
+                  {/* Age - *** Conditionally render the entire div *** */}
+                  {formatAge(dog) && ( // Check if formatAge returns a value
                     <div>
-                      <span className={`inline-block px-2 py-0.5 rounded text-sm ${getSizeColor(dog.standardized_size || dog.size)}`}>
-                        {dog.standardized_size || dog.size || 'Unknown'}
-                      </span>
+                      <h2 className="text-sm font-medium text-gray-500">Age</h2>
+                      <p className="text-gray-800">{formatAge(dog)}</p>
                     </div>
-                  </div>
-                  
-                  {/* Weight (if available) */}
+                  )}
+
+                  {/* Sex - Conditionally render the entire div if sex is unknown */}
+                  {dog.sex && dog.sex.toLowerCase() !== 'unknown' ? ( // Check if sex is known
+                    <div>
+                      <h2 className="text-sm font-medium text-gray-500">Sex</h2>
+                      <div className="flex items-center">
+                        {dog.sex.toLowerCase() === 'male' ? (
+                          <>
+                            <span className="text-blue-500 mr-1">♂</span>
+                            <span>Male</span>
+                          </>
+                        ) : ( // Assumes female if not male and not unknown
+                          <>
+                            <span className="text-pink-500 mr-1">♀</span>
+                            <span>Female</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ) : null /* Render nothing if sex is unknown */}
+
+                  {/* Size - Already conditionally rendered */}
+                  {(dog.standardized_size || dog.size) && (
+                    <div>
+                      <h2 className="text-sm font-medium text-gray-500">Size</h2>
+                      <Badge variant="secondary">
+                        {dog.standardized_size || dog.size}
+                      </Badge>
+                    </div>
+                  )}
+
+                  {/* Weight - Already conditionally rendered */}
                   {dog.properties?.weight && (
                     <div>
                       <h2 className="text-sm font-medium text-gray-500">Weight</h2>
                       <p className="text-gray-800">{dog.properties.weight}</p>
                     </div>
                   )}
-                  
-                  {/* Neutered/Spayed status (if available) */}
+
+                  {/* Neutered/Spayed - Already conditionally rendered */}
                   {dog.properties?.neutered_spayed && (
                     <div>
                       <h2 className="text-sm font-medium text-gray-500">
@@ -238,32 +233,35 @@ export default function DogDetailPage() {
                 
                 {/* Adoption button */}
                 {dog.status === 'available' && (
-                  <a 
-                    href={dog.adoption_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="block w-full text-center bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded"
-                  >
-                    Adopt {dog.name}
-                  </a>
+                  <Button asChild className="w-full bg-green-600 hover:bg-green-700">
+                    <a
+                      href={dog.adoption_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Adopt {dog.name}
+                    </a>
+                  </Button>
                 )}
-                
+
                 {/* Link to organization */}
                 {dog.organization_id && (
                   <div className="mt-4 text-center">
-                    <Link 
+                    <Link
                       href={`/organizations/${dog.organization_id}`}
-                      className="text-blue-500 hover:underline"
+                      passHref
                     >
-                      View Rescue Organization
+                      <Button variant="link" className="text-blue-500 hover:text-blue-700 p-0 h-auto">
+                        View Rescue Organization
+                      </Button>
                     </Link>
                   </div>
                 )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+              </div> {/* End Details column */}
+            </div> {/* End flex container */}
+          </div> {/* End padding div */}
+        </div> {/* End card div */}
+      </div> {/* End max-width container */}
     </Layout>
   );
 }
