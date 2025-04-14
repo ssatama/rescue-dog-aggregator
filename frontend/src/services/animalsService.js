@@ -54,9 +54,12 @@ export async function getAnimalsByStandardizedBreed(standardizedBreed, additiona
  */
 export const getRandomAnimals = async (limit = 3) => {
   try {
-    // Assuming your API endpoint is /api/animals/random
-    // Double-check this path if needed
-    const data = await get('/api/animals/random', { limit });
+    const endpointPath = '/api/animals/random'; // Define path clearly
+    const params = { limit };
+    // --- Add this log ---
+    console.log(`[animalsService] Calling get with endpoint: ${endpointPath} and params:`, params);
+    // --- End log ---
+    const data = await get(endpointPath, params);
     return data;
   } catch (error) {
     console.error(`Error fetching random animals: ${error}`);

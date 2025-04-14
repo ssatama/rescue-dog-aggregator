@@ -10,8 +10,12 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
  * @returns {Promise} - Resolved promise with response data
  */
 export async function fetchApi(endpoint, options = {}) {
-  const url = `${API_BASE_URL}${endpoint}`;
-  
+  const url = `${API_BASE_URL}${endpoint}`; // Endpoint here is relative already
+
+  // --- Add this log ---
+  console.log(`[api.js fetchApi] Fetching absolute URL: ${url}`);
+  // --- End log ---
+
   // Default options
   const defaultOptions = {
     headers: {
@@ -61,7 +65,11 @@ export function get(endpoint, params = {}) {
     .join('&');
   
   const url = queryString ? `${endpoint}?${queryString}` : endpoint;
-  
+
+  // --- Add this log ---
+  console.log(`[api.js get] Calling fetchApi with relative URL: ${url}`);
+  // --- End log ---
+
   return fetchApi(url);
 }
 

@@ -4,13 +4,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Import routes
-from api.routes import dogs, organizations
+from api.routes import animals, organizations
+from api.routes import dogs as dogs_legacy_router
 
 # Create FastAPI app
 app = FastAPI(
     title="Rescue Dog Aggregator API",
     description="API for accessing rescue dog data from various organizations",
-    version="0.1.0"
+    version="0.1.0",
 )
 
 # Add CORS middleware
@@ -23,10 +24,15 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(dogs.router, prefix="/api/animals", tags=["animals"])
+app.include_router(animals.router, prefix="/api/animals", tags=["animals"])
 # Keep the old endpoint for backward compatibility
-app.include_router(dogs.router, prefix="/api/dogs", tags=["dogs"])
-app.include_router(organizations.router, prefix="/api/organizations", tags=["organizations"])
+app.include_router(
+    dogs_legacy_router.router, prefix="/api/dogs", tags=["dogs (legacy)"]
+)
+app.include_router(
+    organizations.router, prefix="/api/organizations", tags=["organizations"]
+)
+
 
 @app.get("/", tags=["root"])
 async def root():
@@ -34,9 +40,11 @@ async def root():
     return {
         "message": "Welcome to the Rescue Dog Aggregator API",
         "version": "0.1.0",
-        "documentation": "/docs"
+        "documentation": "/docs",
     }
+
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("api.main:app", host="127.0.0.1", port=8000, reload=True)

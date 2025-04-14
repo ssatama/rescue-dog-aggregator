@@ -16,8 +16,8 @@ from api.models.dog import Animal, AnimalImage, AnimalWithImages
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Change prefix and tags
-router = APIRouter(prefix="/api/animals", tags=["animals"])
+# --- CHANGE HERE: Remove the prefix argument ---
+router = APIRouter(tags=["animals"])  # Prefix removed
 
 
 # Helper to fetch images for an animal
@@ -278,6 +278,10 @@ async def get_random_animals(
         cursor.execute(query, {"limit": limit})
         rows = cursor.fetchall()
 
+        # --- Add this log ---
+        logger.info(f"Fetched {len(rows)} rows from database for random animals.")
+        # --- End log ---
+
         for animal_dict in rows:
             try:  # Add try block for each animal processing
                 org_data = None
@@ -330,6 +334,24 @@ async def get_random_animals(
                     "description": properties_dict.get("description"),
                     "organization": org_data,
                 }
+
+                # --- Add this logging ---
+                logger.info(
+                    f"Data types before Pydantic validation for ID {animal_model_data.get('id')}:"
+                )
+                logger.info(
+                    f"  id: {animal_model_data.get('id')} (type: {type(animal_model_data.get('id'))})"
+                )
+                logger.info(
+                    f"  organization_id: {animal_model_data.get('organization_id')} (type: {type(animal_model_data.get('organization_id'))})"
+                )
+                logger.info(
+                    f"  age_min_months: {animal_model_data.get('age_min_months')} (type: {type(animal_model_data.get('age_min_months'))})"
+                )
+                logger.info(
+                    f"  age_max_months: {animal_model_data.get('age_max_months')} (type: {type(animal_model_data.get('age_max_months'))})"
+                )
+                # --- End logging ---
 
                 # Use Animal model, not AnimalWithImages
                 animal_obj = Animal(**animal_model_data)
