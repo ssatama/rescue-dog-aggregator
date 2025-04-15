@@ -2,109 +2,93 @@
 Pytest configuration file for API integration tests.
 
 Sets up a connection to a real test database and manages test data.
+Uses dependency overrides for TestClient database access.
 """
 
 import os
 import sys
 import pytest
-from unittest.mock import patch
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from fastapi.testclient import TestClient
+from fastapi import HTTPException  # <<< Import HTTPException globally
 
 # Add project root to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from api.main import app
+from api.dependencies import get_db_cursor  # Import the original dependency
 
 # Set TESTING environment variable early
 os.environ["TESTING"] = "true"
 print("\n[conftest] Set TESTING environment variable.")
 
-# Now import config, which should see TESTING=true
-from config import DB_CONFIG
-
-# --- Credentials expected by the CI database service ---
-CI_DB_USER = "postgres"
-CI_DB_PASSWORD = "postgres"
+# --- Credentials for the TEST database ---
+TEST_DB_USER = "postgres"
+TEST_DB_PASSWORD = "postgres"
 TEST_DB_NAME = "test_rescue_dogs"
 TEST_DB_HOST = "localhost"
 # ---
 
 
-# Mock environment variables - This directs the FastAPI app via TestClient
-@pytest.fixture(scope="session", autouse=True)
-def mock_env_variables():
-    """Mock environment variables for the entire test session."""
-    print("\n[conftest mock_env_variables] Setting up mocked environment variables...")
-    # Use credentials matching the CI database service
-    test_db_settings = {
-        "DB_HOST": TEST_DB_HOST,
-        "DB_NAME": TEST_DB_NAME,
-        "DB_USER": CI_DB_USER,  # <<< Use CI user
-        "DB_PASSWORD": CI_DB_PASSWORD,  # <<< Use CI password
-        "TESTING": "true",
-    }
-    with patch.dict(os.environ, test_db_settings, clear=True):
-        print(
-            f"[conftest mock_env_variables] Patched os.environ for tests: DB_NAME={os.environ.get('DB_NAME')}, DB_USER={os.environ.get('DB_USER')}, TESTING={os.environ.get('TESTING')}"
-        )
-        yield
-    print("[conftest mock_env_variables] Restored original environment variables.")
-    if "TESTING" in os.environ:
-        del os.environ["TESTING"]
-        print("[conftest] Cleaned up TESTING environment variable.")
-
-
-# --- Real Test Database Fixtures ---
-
-
-@pytest.fixture(scope="session")
-def real_db_connection():
-    """Create a real database connection FOR TEST SETUP/TEARDOWN to the test DB."""
-    # Use credentials matching the CI database service
-    test_config = {
+# --- Dependency Override Function ---
+# This function provides connections/cursors for BOTH setup and request handling
+def override_get_db_cursor():
+    """Dependency override that connects to the TEST database."""
+    conn = None
+    cursor = None
+    test_db_params = {
         "host": TEST_DB_HOST,
-        "user": CI_DB_USER,  # <<< Use CI user
-        "password": CI_DB_PASSWORD,  # <<< Use CI password
+        "user": TEST_DB_USER,
+        "password": TEST_DB_PASSWORD,
         "database": TEST_DB_NAME,
     }
     print(
-        f"\n[conftest real_db_connection] Attempting to connect fixture to DB: {test_config['database']} as user {test_config['user']}"
+        f"[conftest override_get_db_cursor] Attempting connect with: {test_db_params['database']} user {test_db_params['user']}"
     )
-
-    if test_config["database"] != TEST_DB_NAME:
-        pytest.fail(
-            f"real_db_connection fixture trying to connect to NON-TEST database: {test_config['database']}",
-            pytrace=False,
-        )
-
-    conn = None
     try:
-        conn = psycopg2.connect(**test_config)
+        conn = psycopg2.connect(**test_db_params)
+        # Set isolation level if needed, though default Read Committed should be fine
+        # conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED)
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         print(
-            f"[conftest real_db_connection] Fixture connected successfully to {test_config['database']}."
+            f"[conftest override_get_db_cursor] Override connected successfully to {test_db_params['database']}."
         )
-        yield conn
-    except psycopg2.OperationalError as e:
-        pytest.fail(
-            f"Failed to connect fixture to TEST database '{test_config['database']}': {e}",
-            pytrace=False,
-        )
+        yield cursor  # Provide the cursor
+        conn.commit()  # Commit changes made using this cursor
+    except Exception as e:
+        print(f"[conftest override_get_db_cursor] Override connection error: {e}")
+        if conn:
+            conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Test DB dependency error: {e}")
     finally:
+        if cursor:
+            cursor.close()
         if conn:
             conn.close()
             print(
-                f"[conftest real_db_connection] Fixture connection to {test_config['database']} closed."
+                f"[conftest override_get_db_cursor] Override connection to {test_db_params['database']} closed."
             )
 
 
+# --- REMOVE real_db_connection fixture ---
+# @pytest.fixture(scope="session")
+# def real_db_connection():
+#     ... # Removed this entire fixture
+
+
+# --- Test Data Management Fixture ---
+# MODIFIED: Now uses the override_get_db_cursor logic directly
 @pytest.fixture(scope="function", autouse=True)
-def manage_test_data(real_db_connection):
-    """Fixture to clear relevant tables and insert necessary test data before each test."""
+def manage_test_data():
+    """Fixture to clear tables and insert test data using the override connection logic."""
     print("[conftest manage_test_data] Setting up data for test function...")
-    conn = real_db_connection
-    cursor = conn.cursor()
+    # Get a cursor using the same logic as the dependency override
+    # We need to manually iterate the generator returned by override_get_db_cursor
+    cursor_generator = override_get_db_cursor()
+    cursor = next(cursor_generator)  # Get the cursor yielded by the override
+    conn = cursor.connection  # Get the underlying connection from the cursor
+
     try:
         # Clear tables
         print("[conftest manage_test_data] Clearing test tables...")
@@ -124,7 +108,7 @@ def manage_test_data(real_db_connection):
         cursor.execute(org_sql)
         print("[conftest manage_test_data] Base test data inserted.")
 
-        # Insert specific animal data (example)
+        # Insert specific animal data
         male_dog_sql = """
         INSERT INTO animals (id, name, animal_type, sex, status, organization_id, adoption_url, properties, primary_image_url, created_at, updated_at)
         VALUES (9001, 'Test Male Dog', 'dog', 'Male', 'available', 901, 'http://example.com/9001', '{}', 'http://example.com/male.jpg', NOW(), NOW())
@@ -136,28 +120,42 @@ def manage_test_data(real_db_connection):
         cursor.execute(male_dog_sql)
         print("[conftest manage_test_data] Specific test animals inserted.")
 
+        # --- IMPORTANT: Commit the setup data using the connection from the override ---
         conn.commit()
-        cursor.close()
-        print("[conftest manage_test_data] Data setup complete.")
-        yield
+        print("[conftest manage_test_data] Data setup complete and committed.")
+
+        yield  # Test runs here
+
+        # Teardown is implicitly handled by the next test's setup clearing tables
         print(
             "[conftest manage_test_data] Teardown for test function (data cleared by next setup)."
         )
+
     except Exception as e:
-        conn.rollback()
-        cursor.close()
+        if conn:
+            conn.rollback()
         pytest.fail(
             f"[conftest manage_test_data] Error during test data management: {e}",
             pytrace=False,
         )
+    finally:
+        # Ensure the generator's finally block runs to close connection/cursor
+        try:
+            # Signal the generator to proceed to its finally block
+            next(cursor_generator, None)
+        except StopIteration:
+            pass  # Expected when generator finishes
 
 
-# --- TestClient Fixture ---
+# --- TestClient Fixture with Dependency Override ---
+# This remains the same, applying the override
 @pytest.fixture(scope="module")
 def client():
-    """Pytest fixture to create a TestClient for the API."""
-    print("\n[conftest client] Creating TestClient...")
+    """Pytest fixture to create a TestClient for the API with DB dependency override."""
+    print("\n[conftest client] Creating TestClient with dependency override...")
+    app.dependency_overrides[get_db_cursor] = override_get_db_cursor
     with TestClient(app) as test_client:
         print("[conftest client] TestClient created.")
         yield test_client
-    print("[conftest client] TestClient finished.")
+    app.dependency_overrides = {}
+    print("[conftest client] TestClient finished and dependency override cleared.")

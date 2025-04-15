@@ -40,6 +40,20 @@ jobs:
         python -m pip install --upgrade pip
         pip install pytest pytest-cov pytest-mock pytest-asyncio
         pip install -r requirements.txt
+
+    - name: Grant permissions to test user
+      # Runs after postgres service is healthy
+      env:
+        PGPASSWORD: postgres # Use the service password
+      run: |
+        # Wait a few seconds just in case the health check passes slightly before fully ready
+        sleep 5
+        # Grant privileges on existing tables and future tables in the public schema
+        psql -h localhost -U postgres -d test_rescue_dogs -p 5432 -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO postgres;"
+        psql -h localhost -U postgres -d test_rescue_dogs -p 5432 -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO postgres;"
+        psql -h localhost -U postgres -d test_rescue_dogs -p 5432 -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO postgres;"
+        psql -h localhost -U postgres -d test_rescue_dogs -p 5432 -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO postgres;"
+        echo "Granted privileges to postgres user on test_rescue_dogs database."
         
     - name: Run tests
       env:
