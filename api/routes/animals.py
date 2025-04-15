@@ -93,7 +93,7 @@ async def get_animals(
             query += " AND breed = %s"
             params.append(breed)
         if breed_group:
-            query += " AND breed_group = %s"
+            query += " AND properties->>'breed_group' = %s"  # Query JSON field
             params.append(breed_group)
         if sex and sex.lower() != "any":
             query += " AND sex = %s"
@@ -332,7 +332,6 @@ async def get_random_animals(
                     "last_scraped_at": animal_dict.get("last_scraped_at"),
                     "language": animal_dict.get("language"),
                     "description": properties_dict.get("description"),
-                    "organization": org_data,
                 }
 
                 # --- Add this logging ---
@@ -390,7 +389,7 @@ async def get_animal_by_id(
     )  # Log cursor ID
     try:
         query = """
-            SELECT id, name, animal_type, breed, standardized_breed, breed_group,
+            SELECT id, name, animal_type, breed, standardized_breed,
                    age_text, age_min_months, age_max_months, sex, size, standardized_size,
                    status, adoption_url, primary_image_url, organization_id, external_id,
                    properties, created_at, updated_at, last_scraped_at, language
@@ -418,12 +417,20 @@ async def get_animal_by_id(
             elif "properties" not in row_dict:
                 row_dict["properties"] = {}
 
+            # --- Add Logging before Animal validation ---
+            logger.info(
+                f"--- Data before Animal validation for ID {row_dict.get('id')} ---"
+            )
+            for key, value in row_dict.items():
+                logger.info(f"  {key}: {repr(value)} (type: {type(value)})")
+            # --- End Logging ---
+
             # Create base Animal object
-            base_animal = Animal(**row_dict)
+            base_animal = Animal(**row_dict)  # <<< Potential failure point 1
 
         except ValidationError as pydantic_err:
             logger.error(
-                f"Pydantic validation error for animal ID {row_dict.get('id')}: {pydantic_err}\nData: {row_dict}"
+                f"Pydantic validation error for Animal ID {row_dict.get('id')}: {pydantic_err}\nData: {row_dict}"
             )
             raise HTTPException(status_code=500, detail="Error processing animal data")
         except Exception as e:
@@ -448,11 +455,37 @@ async def get_animal_by_id(
         animal_data_for_response = base_animal.model_dump()
         animal_data_for_response["primary_image_url"] = final_primary_image_url
         animal_data_for_response["images"] = fetched_images
-        animal_with_images = AnimalWithImages(**animal_data_for_response)
+
+        # --- Add Logging before AnimalWithImages validation ---
+        logger.info(
+            f"--- Data before AnimalWithImages validation for ID {animal_data_for_response.get('id')} ---"
+        )
+        for key, value in animal_data_for_response.items():
+            # Avoid logging potentially large image list details directly
+            if key == "images":
+                logger.info(
+                    f"  {key}: List of {len(value)} images (type: {type(value)})"
+                )
+            else:
+                logger.info(f"  {key}: {repr(value)} (type: {type(value)})")
+        # --- End Logging ---
+
+        try:  # Add try/except specifically around the final validation
+            animal_with_images = AnimalWithImages(
+                **animal_data_for_response
+            )  # <<< Potential failure point 2
+        except ValidationError as pydantic_err:
+            logger.error(
+                f"Pydantic validation error for AnimalWithImages ID {animal_data_for_response.get('id')}: {pydantic_err}\nData: {animal_data_for_response}"
+            )
+            raise HTTPException(
+                status_code=500, detail="Error processing final animal data with images"
+            )
 
         return animal_with_images
 
     except HTTPException as http_exc:
+        # This will correctly re-raise the 404 if it was raised earlier
         raise http_exc
     except psycopg2.Error as db_err:
         logger.error(f"Database error fetching animal {animal_id}: {db_err}")

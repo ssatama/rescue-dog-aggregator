@@ -164,4 +164,21 @@ class TestAnimalsAPI:
         else:
             print("Warning: No animals returned from /api/dogs")
 
+    def test_get_random_animals(self, client: TestClient):
+        """Test GET /api/animals/random endpoint."""
+        response = client.get("/api/animals/random?limit=2")  # Request 2 random animals
+        assert response.status_code == 200  # Check route exists and is successful
+        data = response.json()
+        assert isinstance(data, list)
+        assert len(data) <= 2  # Check limit is respected (can be 0, 1, or 2)
+        if len(data) > 0:
+            # Check structure of the first animal if any are returned
+            first_dog = data[0]
+            assert "id" in first_dog
+            assert "name" in first_dog
+            assert (
+                "images" not in first_dog
+            )  # /random uses Animal model, not AnimalWithImages
+            assert "organization_id" in first_dog  # Check for organization ID
+
     # Add other tests from your original file here, making sure they accept 'client'

@@ -6,16 +6,15 @@ from typing import Generator
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from fastapi import HTTPException
-
-# Remove contextmanager import if no longer needed
-# from contextlib import contextmanager
-import logging  # Import logging
+import logging
 
 # Add project root to path so we can import config
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import DB_CONFIG
+from config import DB_CONFIG  # DB_CONFIG is imported here
 
-logger = logging.getLogger(__name__)  # Setup logger for this module
+# Ensure logger is configured (config.py might do this, but being explicit is safe)
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
+logger = logging.getLogger(__name__)
 
 
 # Keep the original get_db_connection if dogs_legacy_router uses it
@@ -59,7 +58,13 @@ def get_db_cursor() -> Generator[RealDictCursor, None, None]:
     conn = None
     cursor = None
     try:
-        # Build connection parameters
+        # --- ADDED DEBUG LOGGING ---
+        logger.info(
+            f"[dependencies.py get_db_cursor] Using DB_CONFIG: database={DB_CONFIG.get('database')}, user={DB_CONFIG.get('user')}, host={DB_CONFIG.get('host')}"
+        )
+        # --- END DEBUG LOGGING ---
+
+        # Build connection parameters (using the imported DB_CONFIG)
         conn_params = {
             "host": DB_CONFIG["host"],
             "user": DB_CONFIG["user"],
@@ -68,37 +73,57 @@ def get_db_cursor() -> Generator[RealDictCursor, None, None]:
         if DB_CONFIG["password"]:
             conn_params["password"] = DB_CONFIG["password"]
 
-        conn = psycopg2.connect(**conn_params)
-        logger.debug(f"Cursor Connection opened: {id(conn)}")
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
-        logger.debug(f"Cursor created: {id(cursor)} for connection {id(conn)}")
-        yield cursor  # Provide the cursor to the endpoint
+        # --- ADDED DEBUG LOGGING ---
+        logger.info(
+            f"[dependencies.py get_db_cursor] Attempting psycopg2.connect with params: database={conn_params.get('database')}, user={conn_params.get('user')}, host={conn_params.get('host')}, password={'******' if conn_params.get('password') else 'None'}"
+        )
+        # --- END DEBUG LOGGING ---
 
-        # After the endpoint finishes successfully, commit changes
-        logger.debug(f"Committing transaction for connection {id(conn)}")
+        conn = psycopg2.connect(**conn_params)
+        logger.debug(f"Cursor Connection opened: {id(conn)}")  # Changed level to debug
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        logger.debug(
+            f"Cursor created: {id(cursor)} for connection {id(conn)}"
+        )  # Changed level to debug
+        yield cursor
+
+        logger.debug(
+            f"Committing transaction for connection {id(conn)}"
+        )  # Changed level to debug
         conn.commit()
 
+    except HTTPException as http_exc:  # Keep the specific HTTPException handling
+        logger.warning(
+            f"[dependencies.py get_db_cursor] HTTPException caught, rolling back: {http_exc.detail}"
+        )
+        if conn:
+            conn.rollback()
+        raise http_exc
     except psycopg2.Error as db_err:
-        # Rollback on database error
-        logger.error(f"Database error in dependency, rolling back: {db_err}")
+        logger.error(
+            f"[dependencies.py get_db_cursor] Database error, rolling back: {db_err}"
+        )
         if conn:
             conn.rollback()
         raise HTTPException(
             status_code=500, detail=f"Database dependency error: {db_err}"
         )
     except Exception as e:
-        # Rollback on any other error
-        logger.exception(f"Unexpected error in dependency, rolling back: {e}")
+        logger.exception(
+            f"[dependencies.py get_db_cursor] Unexpected error, rolling back: {e}"
+        )
         if conn:
             conn.rollback()
         raise HTTPException(
-            status_code=500, detail=f"Internal server error in dependency: {e}"
+            status_code=500,
+            detail=f"Internal server error in dependency: {type(e).__name__}: {e}",
         )
     finally:
-        # Ensure cursor and connection are closed regardless of success or error
         if cursor:
-            logger.debug(f"Cursor closing: {id(cursor)}")
+            logger.debug(f"Cursor closing: {id(cursor)}")  # Changed level to debug
             cursor.close()
         if conn:
-            logger.debug(f"Cursor Connection closing: {id(conn)}")
+            logger.debug(
+                f"Cursor Connection closing: {id(conn)}"
+            )  # Changed level to debug
             conn.close()

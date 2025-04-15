@@ -3,8 +3,9 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 import psycopg2
+from psycopg2.extras import RealDictCursor
 
-from api.dependencies import get_db_connection
+from api.dependencies import get_db_cursor
 from api.models.dog import Animal, AnimalWithImages, AnimalImage
 
 router = APIRouter()
@@ -27,7 +28,7 @@ def get_animals(
     status: Optional[str] = "available",
     organization_id: Optional[int] = None,
     search: Optional[str] = None,
-    conn=Depends(get_db_connection),
+    cursor: RealDictCursor = Depends(get_db_cursor),
 ):
     """
     Get all animals with filtering and pagination.
@@ -37,7 +38,8 @@ def get_animals(
     try:
         # Build SQL query with filters
         query = """
-            SELECT * FROM animals
+            SELECT id, name, animal_type, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, status, primary_image_url, adoption_url, organization_id, external_id, language, properties, created_at, updated_at, last_scraped_at
+            FROM animals
             WHERE 1=1
         """
         params = []
@@ -114,17 +116,16 @@ def get_animals(
         params.extend([limit, (page - 1) * limit])
 
         # Execute query
-        cursor = conn.cursor()
-        cursor.execute(query, params)
+        cursor.execute(query, tuple(params))
         animals = cursor.fetchall()
 
-        return list(animals)
+        return animals
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 
 @router.get("/{animal_id}", response_model=AnimalWithImages)
-def get_animal(animal_id: int, conn=Depends(get_db_connection)):
+def get_animal(animal_id: int, cursor: RealDictCursor = Depends(get_db_cursor)):
     """
     Get a specific animal by ID.
 
@@ -132,10 +133,10 @@ def get_animal(animal_id: int, conn=Depends(get_db_connection)):
     """
     try:
         # Get animal details
-        cursor = conn.cursor()
         cursor.execute(
             """
-            SELECT * FROM animals
+            SELECT id, name, animal_type, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, status, primary_image_url, adoption_url, organization_id, external_id, language, properties, created_at, updated_at, last_scraped_at
+            FROM animals
             WHERE id = %s
         """,
             (animal_id,),
@@ -149,7 +150,8 @@ def get_animal(animal_id: int, conn=Depends(get_db_connection)):
         # Get animal images
         cursor.execute(
             """
-            SELECT * FROM animal_images
+            SELECT id, animal_id, image_url, is_primary, created_at
+            FROM animal_images
             WHERE animal_id = %s
             ORDER BY is_primary DESC
         """,
@@ -160,7 +162,7 @@ def get_animal(animal_id: int, conn=Depends(get_db_connection)):
 
         # Create response
         result = dict(animal)
-        result["images"] = list(images)
+        result["images"] = images
 
         return result
     except psycopg2.Error as e:
@@ -174,22 +176,22 @@ def get_random_animals(
     ),
     animal_type: Optional[str] = Query("dog", description="Type of animal"),
     status: Optional[str] = Query("available", description="Animal status"),
-    conn=Depends(get_db_connection),
+    cursor: RealDictCursor = Depends(get_db_cursor),
 ):
     """Get random animals for featured section."""
     try:
-        cursor = conn.cursor()
         cursor.execute(
             """
-            SELECT * FROM animals 
+            SELECT id, name, animal_type, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, status, primary_image_url, adoption_url, organization_id, external_id, language, properties, created_at, updated_at, last_scraped_at
+            FROM animals
             WHERE animal_type = %s AND status = %s
-            ORDER BY RANDOM() 
+            ORDER BY RANDOM()
             LIMIT %s
         """,
             (animal_type, status, limit),
         )
 
         animals = cursor.fetchall()
-        return list(animals)
+        return animals
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
