@@ -1,4 +1,3 @@
-// rescue-dog-aggregator/frontend/src/components/dogs/FilterControls.jsx
 "use client"; // Needs client-side interactivity
 
 import {
@@ -10,7 +9,9 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"; // <<< Import Input component
-import { PawPrint, Users, Tag, Ruler, Calendar } from 'lucide-react';
+// --- NEW: Import location icons ---
+import { PawPrint, Users, Tag, Ruler, Calendar, MapPin, Globe, LocateFixed, Search } from 'lucide-react'; // Added Search icon
+// --- END NEW ---
 import { X } from 'lucide-react'; // Import X icon for clear button
 
 // Define props expected by this component
@@ -34,133 +35,217 @@ export default function FilterControls({
   ageCategoryFilter,
   setAgeCategoryFilter,
   ageOptions,
+  // --- NEW: Location Filter Props ---
+  locationCountryFilter,
+  setLocationCountryFilter,
+  locationCountries,
+  availableCountryFilter,
+  setAvailableCountryFilter,
+  availableCountries,
+  availableRegionFilter,
+  setAvailableRegionFilter,
+  availableRegions,
+  // --- END NEW ---
 }) {
   return (
-    <div className="space-y-4"> {/* Add spacing between elements */}
-      {/* Search input - USING SHADCN/UI INPUT */}
-      <div className="relative">
-        {/* Search Icon (optional but recommended) */}
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
-        {/* Replace <input> with Input */}
+    // --- MODIFIED: Change grid to single column for vertical stacking ---
+    <div className="grid grid-cols-1 gap-4">
+
+      {/* Search Input */}
+      <div className="relative"> {/* Removed col-span */}
+        <label htmlFor="search-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
+          {/* Use Search icon */}
+          <Search className="h-4 w-4 mr-2 text-gray-500" />
+          Search
+        </label>
         <Input
+          id="search-filter"
           type="text"
-          placeholder="Search by name or breed..."
+          placeholder="Name or breed..."
           value={searchQuery}
           onChange={handleSearchChange}
-          className="pl-10 pr-10" // Add padding for icon and clear button
-          aria-label="Search dogs by name or breed"
+          className="pr-8" // Add padding for the clear button
         />
-        {/* Clear button */}
         {searchQuery && (
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={clearSearch}
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0" // Position button inside input
+            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0 text-gray-500 hover:text-gray-700 mt-3" // Added mt-3 to align with input box
             aria-label="Clear search"
           >
-            <X className="h-4 w-4" />
+            <X size={16} />
           </Button>
         )}
       </div>
 
-      {/* Grid of Select components */}
-      {/* Use grid-cols-1 for stacking in sidebar/sheet */}
-      <div className="grid grid-cols-1 gap-4">
-        {/* Breed Group filter */}
-        <div>
-          <label htmlFor="breed-group-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
-            <Users className="h-4 w-4 mr-2 text-gray-500" /> {/* Icon */}
-            Breed Group
-          </label>
-          <Select value={breedGroupFilter} onValueChange={setBreedGroupFilter}>
-            <SelectTrigger className="w-full" id="breed-group-filter">
-              <SelectValue placeholder="Select breed group" />
-            </SelectTrigger>
-            <SelectContent>
-              {breedGroups.map((group) => (
-                <SelectItem key={group} value={group}>{group}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Standardized Breed filter */}
-        <div>
-          <label htmlFor="breed-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
-            <PawPrint className="h-4 w-4 mr-2 text-gray-500" /> {/* Icon */}
-            Breed
-          </label>
-          <Select value={standardizedBreedFilter} onValueChange={setStandardizedBreedFilter}>
-            <SelectTrigger className="w-full" id="breed-filter">
-              <SelectValue placeholder="Select breed" />
-            </SelectTrigger>
-            <SelectContent>
-              {standardizedBreeds.map((breed) => (
-                <SelectItem key={breed} value={breed}>{breed}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Sex filter */}
-        <div>
-          <label htmlFor="sex-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
-            <Tag className="h-4 w-4 mr-2 text-gray-500" /> {/* Icon (using Tag as placeholder) */}
-            Sex
-          </label>
-          <Select value={sexFilter} onValueChange={setSexFilter}>
-            <SelectTrigger className="w-full" id="sex-filter">
-              <SelectValue placeholder="Select sex" />
-            </SelectTrigger>
-            <SelectContent>
-              {sexOptions.map((option) => (
-                <SelectItem key={option} value={option}>{option}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Size filter */}
-        <div>
-          <label htmlFor="size-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
-            <Ruler className="h-4 w-4 mr-2 text-gray-500" /> {/* Icon */}
-            Size
-          </label>
-          <Select value={sizeFilter} onValueChange={setSizeFilter}>
-            <SelectTrigger className="w-full" id="size-filter">
-              <SelectValue placeholder="Select size" />
-            </SelectTrigger>
-            <SelectContent>
-              {sizeOptions.map((option) => (
-                <SelectItem key={option} value={option}>{option}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Age filter */}
-        <div>
-          <label htmlFor="age-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
-            <Calendar className="h-4 w-4 mr-2 text-gray-500" /> {/* Icon */}
-            Age
-          </label>
-          <Select value={ageCategoryFilter} onValueChange={setAgeCategoryFilter}>
-            <SelectTrigger className="w-full" id="age-filter">
-              <SelectValue placeholder="Select age" />
-            </SelectTrigger>
-            <SelectContent>
-              {ageOptions.map((option) => (
-                <SelectItem key={option} value={option}>{option}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      {/* Breed Group Filter */}
+      <div>
+        <label htmlFor="breed-group-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
+          <Users className="h-4 w-4 mr-2 text-gray-500" />
+          Breed Group
+        </label>
+        <Select value={breedGroupFilter} onValueChange={setBreedGroupFilter}>
+          <SelectTrigger id="breed-group-filter">
+            <SelectValue placeholder="Any group" />
+          </SelectTrigger>
+          <SelectContent>
+            {breedGroups.map((group) => (
+              <SelectItem key={group} value={group}>
+                {group}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
-    </div>
+
+      {/* Standardized Breed Filter */}
+      <div>
+        <label htmlFor="breed-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
+          <PawPrint className="h-4 w-4 mr-2 text-gray-500" />
+          Breed
+        </label>
+        <Select value={standardizedBreedFilter} onValueChange={setStandardizedBreedFilter}>
+          <SelectTrigger id="breed-filter">
+            <SelectValue placeholder="Any breed" />
+          </SelectTrigger>
+          <SelectContent>
+            {standardizedBreeds.map((breed) => (
+              <SelectItem key={breed} value={breed}>
+                {breed}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Sex Filter */}
+      <div>
+        <label htmlFor="sex-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
+          <Tag className="h-4 w-4 mr-2 text-gray-500" /> {/* Using Tag as placeholder */}
+          Sex
+        </label>
+        <Select value={sexFilter} onValueChange={setSexFilter}>
+          <SelectTrigger id="sex-filter">
+            <SelectValue placeholder="Any sex" />
+          </SelectTrigger>
+          <SelectContent>
+            {sexOptions.map((sex) => (
+              <SelectItem key={sex} value={sex}>
+                {sex}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Size Filter */}
+      <div>
+        <label htmlFor="size-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
+          <Ruler className="h-4 w-4 mr-2 text-gray-500" />
+          Size
+        </label>
+        <Select value={sizeFilter} onValueChange={setSizeFilter}>
+          <SelectTrigger id="size-filter">
+            <SelectValue placeholder="Any size" />
+          </SelectTrigger>
+          <SelectContent>
+            {sizeOptions.map((size) => (
+              <SelectItem key={size} value={size}>
+                {size}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Age Category Filter */}
+      <div>
+        <label htmlFor="age-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
+          <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+          Age
+        </label>
+        <Select value={ageCategoryFilter} onValueChange={setAgeCategoryFilter}>
+          <SelectTrigger id="age-filter">
+            <SelectValue placeholder="Any age" />
+          </SelectTrigger>
+          <SelectContent>
+            {ageOptions.map((age) => (
+              <SelectItem key={age} value={age}>
+                {age}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* --- NEW: Location Filters with Labels --- */}
+      {/* Location Country Filter */}
+      <div>
+        <label htmlFor="location-country-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
+          <MapPin className="h-4 w-4 mr-2 text-gray-500" />
+          Located In
+        </label>
+        <Select value={locationCountryFilter} onValueChange={setLocationCountryFilter}>
+          <SelectTrigger id="location-country-filter">
+            <SelectValue placeholder="Any country" />
+          </SelectTrigger>
+          <SelectContent>
+            {locationCountries.map((country) => (
+              <SelectItem key={country} value={country}>
+                {country}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Available To Country Filter */}
+      <div>
+        <label htmlFor="available-country-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
+          <Globe className="h-4 w-4 mr-2 text-gray-500" />
+          Ships To Country
+        </label>
+        <Select value={availableCountryFilter} onValueChange={setAvailableCountryFilter}>
+          <SelectTrigger id="available-country-filter">
+            <SelectValue placeholder="Any country" />
+          </SelectTrigger>
+          <SelectContent>
+            {availableCountries.map((country) => (
+              <SelectItem key={country} value={country}>
+                {country}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Available To Region Filter */}
+      <div>
+        <label htmlFor="available-region-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
+          <LocateFixed className="h-4 w-4 mr-2 text-gray-500" />
+          Ships To Region
+        </label>
+        <Select
+          value={availableRegionFilter}
+          onValueChange={setAvailableRegionFilter}
+          // Disable if no country is selected or only "Any country" is available
+          disabled={!availableCountryFilter || availableCountryFilter === "Any country" || availableRegions.length <= 1}
+        >
+          <SelectTrigger id="available-region-filter">
+            <SelectValue placeholder="Any region" />
+          </SelectTrigger>
+          <SelectContent>
+            {availableRegions.map((region) => (
+              <SelectItem key={region} value={region}>
+                {region}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {/* --- END NEW --- */}
+
+    </div> // --- MODIFIED: Close the outer grid div ---
   );
 }

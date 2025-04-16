@@ -62,6 +62,17 @@ CREATE TABLE scrape_logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Service Regions (Where organizations can adopt TO)
+CREATE TABLE service_regions (
+    id SERIAL PRIMARY KEY,
+    organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    country VARCHAR(100) NOT NULL, -- Country the organization serves
+    region VARCHAR(100),           -- Specific region/state within the country (optional)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- Ensure an organization doesn't have duplicate entries for the same country/region pair
+    UNIQUE (organization_id, country, region)
+);
+
 -- Indexes for Performance
 CREATE INDEX idx_dogs_organization ON dogs(organization_id);
 CREATE INDEX idx_dogs_status ON dogs(status);
@@ -75,3 +86,8 @@ CREATE INDEX idx_dogs_breed_gin ON dogs USING gin(to_tsvector('english', breed))
 
 -- For JSON properties search
 CREATE INDEX idx_dogs_properties ON dogs USING gin(properties);
+
+-- Indexes for service_regions
+CREATE INDEX idx_service_regions_organization ON service_regions(organization_id);
+CREATE INDEX idx_service_regions_country ON service_regions(country);
+CREATE INDEX idx_service_regions_region ON service_regions(region);

@@ -8,12 +8,33 @@ import { get } from '../utils/api'; // Assuming api utility exists
  * @returns {Promise<Array>} - Promise resolving to an array of animal objects.
  */
 export async function getAnimals(params = {}) {
-  console.log("Fetching animals with params:", params); // Keep for debugging if needed
-  // Remove null/undefined values before sending
+  console.log("Fetching animals with params:", params);
+  // Remove null/undefined/default values before sending
   const cleanParams = Object.fromEntries(
-    Object.entries(params).filter(([_, v]) => v != null && v !== '' && v !== 'Any' && v !== 'Any size' && v !== 'Any age' && v !== 'Any breed' && v !== 'Any group')
+    Object.entries(params).filter(([key, v]) =>
+        v != null &&
+        v !== '' &&
+        !(key === 'sex' && v === 'Any') &&
+        !(key === 'standardized_size' && v === 'Any size') && // Check standardized_size
+        !(key === 'age_category' && v === 'Any age') &&
+        !(key === 'standardized_breed' && v === 'Any breed') &&
+        !(key === 'breed_group' && v === 'Any group') &&
+        !(key === 'location_country' && v === 'Any country') &&
+        !(key === 'available_to_country' && v === 'Any country') &&
+        !(key === 'available_to_region' && v === 'Any region')
+    )
   );
-  // CHANGE PATH HERE
+
+  // Ensure animal_type is always sent if not explicitly provided otherwise
+  if (!cleanParams.animal_type) {
+    cleanParams.animal_type = 'dog';
+  }
+  // Ensure status is 'available' if not explicitly provided otherwise
+  if (!cleanParams.status) {
+      cleanParams.status = 'available';
+  }
+
+  console.log("Cleaned params for API:", cleanParams);
   return get('/api/animals', cleanParams);
 }
 
@@ -23,10 +44,7 @@ export async function getAnimals(params = {}) {
  * @returns {Promise<object>} - Promise resolving to the animal object.
  */
 export async function getAnimalById(id) {
-  if (!id) {
-    throw new Error("Animal ID is required.");
-  }
-  // CHANGE PATH HERE
+  console.log(`Fetching animal by ID: ${id}`);
   return get(`/api/animals/${id}`);
 }
 
@@ -37,14 +55,13 @@ export async function getAnimalById(id) {
  * @returns {Promise<Array>} - Promise resolving to an array of animal objects.
  */
 export async function getAnimalsByStandardizedBreed(standardizedBreed, additionalParams = {}) {
-  if (!standardizedBreed) {
-    throw new Error("Standardized breed is required.");
-  }
-  // CHANGE PATH HERE
-  return get('/api/animals', {
+  const params = {
+    ...additionalParams,
     standardized_breed: standardizedBreed,
-    ...additionalParams
-  });
+    animal_type: 'dog' // Ensure we are fetching dogs
+  };
+  console.log("Fetching animals by standardized breed:", params);
+  return getAnimals(params);
 }
 
 /**
@@ -53,21 +70,12 @@ export async function getAnimalsByStandardizedBreed(standardizedBreed, additiona
  * @returns {Promise<Array>} - A promise that resolves to an array of animal objects.
  */
 export const getRandomAnimals = async (limit = 3) => {
-  try {
-    const endpointPath = '/api/animals/random'; // Define path clearly
-    const params = { limit };
-    // --- Add this log ---
-    console.log(`[animalsService] Calling get with endpoint: ${endpointPath} and params:`, params);
-    // --- End log ---
-    const data = await get(endpointPath, params);
-    return data;
-  } catch (error) {
-    console.error(`Error fetching random animals: ${error}`);
-    throw error; // Re-throw the error to be handled by the component
-  }
+  console.log(`Fetching ${limit} random animals`);
+  // The backend /random endpoint now defaults to dogs and available status
+  return get('/api/animals/random', { limit });
 };
 
-// --- Add functions for new meta endpoints ---
+// --- Meta Endpoints ---
 
 /**
  * Fetches a distinct list of standardized breeds.
@@ -75,12 +83,12 @@ export const getRandomAnimals = async (limit = 3) => {
  * @returns {Promise<Array<string>>} - Promise resolving to an array of breed names.
  */
 export async function getStandardizedBreeds(breedGroup = null) {
-    const params = {};
-    if (breedGroup && breedGroup !== 'Any group') {
-        params.breed_group = breedGroup;
-    }
-    // CHANGE PATH HERE
-    return get('/api/animals/meta/breeds', params);
+  const params = {};
+  if (breedGroup && breedGroup !== 'Any group') {
+    params.breed_group = breedGroup;
+  }
+  console.log("Fetching standardized breeds with params:", params);
+  return get('/api/animals/meta/breeds', params);
 }
 
 /**
@@ -88,13 +96,42 @@ export async function getStandardizedBreeds(breedGroup = null) {
  * @returns {Promise<Array<string>>} - Promise resolving to an array of breed group names.
  */
 export async function getBreedGroups() {
-    // CHANGE PATH HERE
-    return get('/api/animals/meta/breed_groups');
+  console.log("Fetching breed groups");
+  return get('/api/animals/meta/breed_groups');
 }
 
+// --- NEW: Location Meta Endpoints ---
 
-// --- Keep or update other specific functions if needed ---
-// Example: If you had getFeaturedDogs, decide if it should be getFeaturedAnimals
-// export async function getFeaturedAnimals(limit = 4) {
-//   return get('/api/animals', { limit: limit, /* add other criteria? */ });
-// }
+/**
+ * Fetches a distinct list of countries where organizations are located.
+ * @returns {Promise<Array<string>>} - Promise resolving to an array of country names.
+ */
+export async function getLocationCountries() {
+  console.log("Fetching location countries");
+  return get('/api/animals/meta/location_countries');
+}
+
+/**
+ * Fetches a distinct list of countries organizations can adopt to.
+ * @returns {Promise<Array<string>>} - Promise resolving to an array of country names.
+ */
+export async function getAvailableCountries() {
+  console.log("Fetching available-to countries");
+  return get('/api/animals/meta/available_countries');
+}
+
+/**
+ * Fetches a distinct list of regions within a specific country organizations can adopt to.
+ * @param {string} country - The country to fetch regions for.
+ * @returns {Promise<Array<string>>} - Promise resolving to an array of region names.
+ */
+export async function getAvailableRegions(country) {
+  if (!country || country === 'Any country') {
+    console.log("Skipping fetch for available regions - no country selected.");
+    return Promise.resolve([]); // Return empty array if no country specified
+  }
+  console.log(`Fetching available regions for country: ${country}`);
+  return get('/api/animals/meta/available_regions', { country });
+}
+
+// --- END NEW ---

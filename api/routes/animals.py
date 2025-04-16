@@ -1,54 +1,41 @@
+import psycopg2
+import logging
 from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import List, Optional
 from psycopg2.extras import RealDictCursor
-import json
-import logging  # Ensure logging is imported
-import psycopg2
 from pydantic import ValidationError
 
-# *** IMPORT the central dependency ***
 from api.dependencies import get_db_cursor
-
-# Import AnimalWithImages as well
 from api.models.dog import Animal, AnimalImage, AnimalWithImages
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --- CHANGE HERE: Remove the prefix argument ---
-router = APIRouter(tags=["animals"])  # Prefix removed
+router = APIRouter(tags=["animals"])
 
 
-# Helper to fetch images for an animal
 def fetch_animal_images(cursor: RealDictCursor, animal_id: int) -> List[AnimalImage]:
     images = []
     try:
         cursor.execute(
-            "SELECT id, animal_id, image_url, is_primary, created_at FROM animal_images WHERE animal_id = %s ORDER BY is_primary DESC, created_at DESC",
+            """
+            SELECT id, image_url, is_primary
+            FROM animal_images
+            WHERE animal_id = %s
+            ORDER BY is_primary DESC, id ASC
+            """,
             (animal_id,),
         )
-        image_rows = cursor.fetchall()
-        for img_dict in image_rows:
-            try:
-                images.append(AnimalImage(**img_dict))
-            except ValidationError as img_err:  # Catch Pydantic errors specifically
-                logger.error(
-                    f"Pydantic validation error for AnimalImage ID {img_dict.get('id')}: {img_err}\nData: {img_dict}"
-                )
-            except Exception as e:
-                logger.error(
-                    f"Unexpected error mapping row to AnimalImage model for image ID {img_dict.get('id')}: {e}\nData: {img_dict}"
-                )
-
-    except psycopg2.Error as db_err:  # Catch DB errors specifically
-        logger.error(f"Database error fetching images for animal {animal_id}: {db_err}")
+        images = cursor.fetchall()
+    except psycopg2.Error as db_err:
+        logger.error(f"DB error fetching images for animal {animal_id}: {db_err}")
     except Exception as e:
-        logger.error(f"Unexpected error fetching images for animal {animal_id}: {e}")
+        logger.exception(
+            f"Unexpected error fetching images for animal {animal_id}: {e}"
+        )
     return images
 
 
-# --- Main Animal Listing ---
 @router.get("/", response_model=List[AnimalWithImages])
 async def get_animals(
     limit: int = Query(20, ge=1, le=100),
@@ -63,137 +50,173 @@ async def get_animals(
     age_category: Optional[str] = Query(None),
     animal_type: Optional[str] = Query("dog"),
     status: Optional[str] = Query("available"),
+    location_country: Optional[str] = Query(
+        None, description="Filter by the country the animal is located in"
+    ),
+    available_to_country: Optional[str] = Query(
+        None, description="Filter by country the animal can be adopted to"
+    ),
+    available_to_region: Optional[str] = Query(
+        None,
+        description="Filter by region within a country the animal can be adopted to",
+    ),
+    organization_id: Optional[int] = Query(None),
     cursor: RealDictCursor = Depends(get_db_cursor),
 ):
-    logger.info(f"--- get_animals received cursor: {id(cursor)} ---")  # Log cursor ID
-    animals_to_return = []
+    """Get all animals with filtering, pagination, and location support."""
     try:
-        query = """
-            SELECT id, name, animal_type, breed, standardized_breed, breed_group,
-                   age_text, age_min_months, age_max_months, sex, size, standardized_size,
-                   status, adoption_url, primary_image_url, organization_id, external_id,
-                   properties, created_at, updated_at, last_scraped_at, language
-            FROM animals
-            WHERE 1=1
+        # Base query selects distinct animals and joins with organizations
+        # Use 'a' alias for animals and 'o' for organizations
+        query_base = """
+            SELECT DISTINCT a.id, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
+                   a.age_text, a.age_min_months, a.age_max_months, a.sex, a.size, a.standardized_size,
+                   a.status, a.primary_image_url, a.adoption_url, a.organization_id, a.external_id,
+                   a.language, a.properties, a.created_at, a.updated_at, a.last_scraped_at
+            FROM animals a
+            JOIN organizations o ON a.organization_id = o.id
         """
-        params = []
+        # Conditionally join service_regions if needed for filtering
+        joins = ""
+        conditions = [
+            "a.animal_type = %s",
+            "o.active = TRUE",
+        ]  # Always filter by type and active org
+        params = [animal_type]
 
-        # --- Filtering Logic ---
-        if animal_type:
-            query += " AND animal_type = %s"
-            params.append(animal_type)
-        if search:
-            search_term = f"%{search}%"
-            query += " AND (LOWER(name) LIKE LOWER(%s) OR LOWER(breed) LIKE LOWER(%s) OR LOWER(standardized_breed) LIKE LOWER(%s))"
-            params.extend([search_term, search_term, search_term])
-        if standardized_breed:
-            query += " AND standardized_breed = %s"
-            params.append(standardized_breed)
-        elif breed:  # Only apply non-standardized breed if standardized isn't used
-            query += " AND breed = %s"
-            params.append(breed)
-        if breed_group:
-            query += " AND properties->>'breed_group' = %s"  # Query JSON field
-            params.append(breed_group)
-        if sex and sex.lower() != "any":
-            query += " AND sex = %s"
-            params.append(sex)
-        if standardized_size and standardized_size.lower() != "any size":
-            query += " AND standardized_size = %s"
-            params.append(standardized_size)
-        elif (
-            size and size.lower() != "any size"
-        ):  # Only apply non-standardized size if standardized isn't used
-            query += " AND size = %s"
-            params.append(size)
-        if age_category and age_category.lower() != "any age":
-            min_months, max_months = None, None
-            if age_category == "Puppy":
-                min_months, max_months = 0, 11
-            elif age_category == "Young":
-                min_months, max_months = 12, 35
-            elif age_category == "Adult":
-                min_months, max_months = 36, 83
-            elif age_category == "Senior":
-                min_months = 84
-            # Apply age filters if valid range found
-            if min_months is not None:
-                query += " AND age_min_months >= %s"
-                params.append(min_months)
-            if max_months is not None:
-                # Use age_max_months for upper bound check if available, else age_min_months
-                query += " AND COALESCE(age_max_months, age_min_months) <= %s"
-                params.append(max_months)
+        # --- NEW: Add JOIN for service_regions if filtering by available_to ---
+        if available_to_country or available_to_region:
+            joins += (
+                " JOIN service_regions sr ON a.organization_id = sr.organization_id"
+            )
+        # --- END NEW ---
+
+        # Add status filter if provided
         if status:
-            query += " AND status = %s"
+            conditions.append("a.status = %s")
             params.append(status)
-        # --- End Filtering ---
 
-        query += " ORDER BY updated_at DESC, created_at DESC LIMIT %s OFFSET %s"
+        # Add search filter (name or breed)
+        if search:
+            conditions.append(
+                "(a.name ILIKE %s OR a.breed ILIKE %s OR a.standardized_breed ILIKE %s)"
+            )
+            search_term = f"%{search}%"
+            params.extend([search_term, search_term, search_term])
+
+        # Add breed filters
+        if breed:
+            conditions.append("a.breed = %s")
+            params.append(breed)
+        if standardized_breed:
+            conditions.append("a.standardized_breed = %s")
+            params.append(standardized_breed)
+        if breed_group:
+            conditions.append("a.breed_group = %s")
+            params.append(breed_group)
+
+        # Add sex filter
+        if sex:
+            conditions.append("a.sex = %s")
+            params.append(sex)
+
+        # Add size filters
+        if size:
+            conditions.append("a.size = %s")
+            params.append(size)
+        if standardized_size:
+            conditions.append("a.standardized_size = %s")
+            params.append(standardized_size)
+
+        # Add age category filter (maps category to month ranges)
+        if age_category:
+            age_conditions = []
+            if age_category == "Puppy":  # < 12 months
+                age_conditions.append("(a.age_max_months < 12)")
+            elif age_category == "Young":  # 12 to 36 months
+                age_conditions.append(
+                    "(a.age_min_months >= 12 AND a.age_max_months <= 36)"
+                )
+            elif age_category == "Adult":  # 36 to 96 months (3 to 8 years)
+                age_conditions.append(
+                    "(a.age_min_months >= 36 AND a.age_max_months <= 96)"
+                )
+            elif age_category == "Senior":  # > 96 months (8+ years)
+                age_conditions.append("(a.age_min_months >= 96)")
+            if age_conditions:
+                conditions.append(f"({' OR '.join(age_conditions)})")
+
+        # Add organization ID filter
+        if organization_id:
+            conditions.append("a.organization_id = %s")
+            params.append(organization_id)
+
+        # --- NEW: Location Filters ---
+        if location_country:
+            # Filter based on the organization's location
+            conditions.append("o.country = %s")
+            params.append(location_country)
+
+        if available_to_country:
+            # Filter based on service_regions country
+            conditions.append("sr.country = %s")
+            params.append(available_to_country)
+
+        if (
+            available_to_region and available_to_country
+        ):  # Region only makes sense with country
+            # Filter based on service_regions region
+            conditions.append("sr.region = %s")
+            params.append(available_to_region)
+        # --- END NEW ---
+
+        # Construct the final query
+        where_clause = " AND ".join(conditions)
+        query = f"{query_base}{joins} WHERE {where_clause} ORDER BY a.last_scraped_at DESC, a.id DESC LIMIT %s OFFSET %s"
         params.extend([limit, offset])
 
-        logger.info(f"Executing query: {cursor.mogrify(query, tuple(params))}")
+        logger.debug(f"Executing query: {query} with params: {params}")
         cursor.execute(query, tuple(params))
-        rows = cursor.fetchall()
+        animal_rows = cursor.fetchall()
+        logger.info(f"Found {len(animal_rows)} animals matching criteria.")
 
-        for row_dict in rows:
+        # Fetch images for each animal and combine
+        animals_with_images = []
+        for animal_dict in animal_rows:
             try:
-                # Handle properties JSON string
-                if "properties" in row_dict and isinstance(row_dict["properties"], str):
+                animal_images = fetch_animal_images(cursor, animal_dict["id"])
+                # Ensure properties is a dict, not string, before validation
+                if isinstance(animal_dict.get("properties"), str):
                     try:
-                        row_dict["properties"] = json.loads(row_dict["properties"])
+                        animal_dict["properties"] = json.loads(
+                            animal_dict["properties"]
+                        )
                     except json.JSONDecodeError:
                         logger.warning(
-                            f"Could not decode properties JSON for animal ID {row_dict.get('id')}: {row_dict['properties']}"
+                            f"Could not parse properties JSON for animal {animal_dict['id']}, setting to empty dict."
                         )
-                        row_dict["properties"] = {}
-                elif "properties" not in row_dict:
-                    row_dict["properties"] = {}
+                        animal_dict["properties"] = {}
+                elif animal_dict.get("properties") is None:
+                    animal_dict["properties"] = {}
 
-                # Create the base Animal object
-                base_animal = Animal(**row_dict)
-
-                # Fetch images
-                fetched_images = fetch_animal_images(cursor, base_animal.id)
-
-                # Determine the final primary image URL
-                final_primary_image_url = base_animal.primary_image_url
-                if not final_primary_image_url and fetched_images:
-                    primary = next(
-                        (img for img in fetched_images if img.is_primary), None
-                    )
-                    if primary:
-                        final_primary_image_url = primary.image_url
-                    elif fetched_images:
-                        final_primary_image_url = fetched_images[0].image_url
-
-                # Create AnimalWithImages using the corrected method
-                animal_data_for_response = base_animal.model_dump()
-                animal_data_for_response["primary_image_url"] = final_primary_image_url
-                animal_data_for_response["images"] = fetched_images
-                animal_with_images = AnimalWithImages(**animal_data_for_response)
-
-                animals_to_return.append(animal_with_images)
-
-            except ValidationError as pydantic_err:
-                logger.error(
-                    f"Pydantic validation error processing animal row ID {row_dict.get('id')}: {pydantic_err}\nData: {row_dict}"
+                animal_model = AnimalWithImages(**animal_dict, images=animal_images)
+                animals_with_images.append(animal_model)
+            except ValidationError as animal_err:
+                logger.warning(
+                    f"Skipping animal {animal_dict.get('id', 'N/A')} due to validation error: {animal_err} for data {animal_dict}"
                 )
-            except Exception as e:
+            except Exception as fetch_err:
                 logger.error(
-                    f"Unexpected error processing animal row ID {row_dict.get('id')}: {e}\nData: {row_dict}"
+                    f"Error processing animal {animal_dict.get('id', 'N/A')} after query: {fetch_err}"
                 )
+
+        return animals_with_images
 
     except psycopg2.Error as db_err:
-        logger.exception(f"Database error fetching animals: {db_err}")
-        raise HTTPException(status_code=500, detail="Database error fetching animals")
+        logger.error(f"Database error in get_animals: {db_err}")
+        raise HTTPException(status_code=500, detail=f"Database query error: {db_err}")
     except Exception as e:
-        logger.exception(f"Unexpected error fetching animals: {e}")
-        raise HTTPException(
-            status_code=500, detail="Internal server error fetching animals"
-        )
-
-    return animals_to_return
+        logger.exception(f"Unexpected error in get_animals: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 # --- Meta Endpoints ---
@@ -202,181 +225,183 @@ async def get_distinct_breeds(
     breed_group: Optional[str] = Query(None),
     cursor: RealDictCursor = Depends(get_db_cursor),
 ):
-    breeds = []
+    """Get distinct standardized breeds, optionally filtered by breed group."""
     try:
-        query = "SELECT DISTINCT standardized_breed FROM animals WHERE standardized_breed IS NOT NULL AND standardized_breed != ''"
+        query = "SELECT DISTINCT standardized_breed FROM animals WHERE standardized_breed IS NOT NULL"
         params = []
         if breed_group:
             query += " AND breed_group = %s"
             params.append(breed_group)
         query += " ORDER BY standardized_breed"
         cursor.execute(query, tuple(params))
-        rows = cursor.fetchall()
-        breeds = [row["standardized_breed"] for row in rows]
-    except psycopg2.Error as db_err:
-        logger.error(f"Database error fetching distinct breeds: {db_err}")
-        raise HTTPException(status_code=500, detail="Database error fetching breeds")
+        breeds = [row["standardized_breed"] for row in cursor.fetchall()]
+        return breeds
     except Exception as e:
-        logger.error(f"Unexpected error fetching distinct breeds: {e}")
-        raise HTTPException(
-            status_code=500, detail="Internal server error fetching breeds"
-        )
-    return breeds
+        logger.error(f"Error fetching distinct breeds: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch breed list")
 
 
 @router.get("/meta/breed_groups", response_model=List[str])
 async def get_distinct_breed_groups(
     cursor: RealDictCursor = Depends(get_db_cursor),
 ):
-    groups = []
+    """Get distinct breed groups."""
     try:
-        query = "SELECT DISTINCT breed_group FROM animals WHERE breed_group IS NOT NULL AND breed_group != '' ORDER BY breed_group"
-        cursor.execute(query)
-        rows = cursor.fetchall()
-        groups = [row["breed_group"] for row in rows]
-    except psycopg2.Error as db_err:
-        logger.error(f"Database error fetching distinct breed groups: {db_err}")
-        raise HTTPException(
-            status_code=500, detail="Database error fetching breed groups"
+        cursor.execute(
+            "SELECT DISTINCT breed_group FROM animals WHERE breed_group IS NOT NULL ORDER BY breed_group"
         )
+        groups = [row["breed_group"] for row in cursor.fetchall()]
+        return groups
     except Exception as e:
-        logger.error(f"Unexpected error fetching distinct breed groups: {e}")
-        raise HTTPException(
-            status_code=500, detail="Internal server error fetching breed groups"
+        logger.error(f"Error fetching distinct breed groups: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch breed group list")
+
+
+# --- NEW: Location Countries Meta Endpoint ---
+@router.get(
+    "/meta/location_countries",
+    response_model=List[str],
+    summary="Get Distinct Location Countries",
+)
+async def get_distinct_location_countries(
+    cursor: RealDictCursor = Depends(get_db_cursor),
+):
+    """Get a distinct list of countries where organizations are located."""
+    try:
+        # Query distinct, non-null, non-empty countries from the organizations table
+        cursor.execute(
+            """
+            SELECT DISTINCT country
+            FROM organizations
+            WHERE country IS NOT NULL AND country != '' AND active = TRUE
+            ORDER BY country ASC
+            """
         )
-    return groups
+        results = cursor.fetchall()
+        # Extract the country name from each dictionary in the results
+        countries = [row["country"] for row in results]
+        return countries
+    except psycopg2.Error as db_err:
+        logger.error(f"Database error fetching distinct location countries: {db_err}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(db_err)}")
+    except Exception as e:
+        logger.exception(f"Unexpected error fetching distinct location countries: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+# --- END NEW ---
+
+
+# --- NEW: Available-To Countries Meta Endpoint ---
+@router.get(
+    "/meta/available_countries",
+    response_model=List[str],
+    summary="Get Distinct Available-To Countries",
+)
+async def get_distinct_available_countries(
+    cursor: RealDictCursor = Depends(get_db_cursor),
+):
+    """Get a distinct list of countries organizations can adopt to (from service_regions)."""
+    try:
+        # Query distinct, non-null, non-empty countries from the service_regions table
+        # Also join with organizations to ensure we only consider active orgs
+        cursor.execute(
+            """
+            SELECT DISTINCT sr.country
+            FROM service_regions sr
+            JOIN organizations o ON sr.organization_id = o.id
+            WHERE sr.country IS NOT NULL AND sr.country != '' AND o.active = TRUE
+            ORDER BY sr.country ASC
+            """
+        )
+        results = cursor.fetchall()
+        countries = [row["country"] for row in results]
+        return countries
+    except psycopg2.Error as db_err:
+        logger.error(f"Database error fetching distinct available countries: {db_err}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(db_err)}")
+    except Exception as e:
+        logger.exception(f"Unexpected error fetching distinct available countries: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+# --- END NEW ---
+
+
+# --- NEW: Available-To Regions Meta Endpoint ---
+@router.get(
+    "/meta/available_regions",
+    response_model=List[str],
+    summary="Get Distinct Available-To Regions for a Country",
+)
+async def get_distinct_available_regions(
+    country: str = Query(
+        ..., description="Country to get regions for"
+    ),  # Make country required
+    cursor: RealDictCursor = Depends(get_db_cursor),
+):
+    """Get a distinct list of regions within a specific country organizations can adopt to."""
+    try:
+        # Query distinct, non-null, non-empty regions for the specified country
+        # Also join with organizations to ensure we only consider active orgs
+        cursor.execute(
+            """
+            SELECT DISTINCT sr.region
+            FROM service_regions sr
+            JOIN organizations o ON sr.organization_id = o.id
+            WHERE sr.country = %s AND sr.region IS NOT NULL AND sr.region != '' AND o.active = TRUE
+            ORDER BY sr.region ASC
+            """,
+            (country,),  # Pass the country as a parameter
+        )
+        results = cursor.fetchall()
+        regions = [row["region"] for row in results]
+        return regions
+    except psycopg2.Error as db_err:
+        logger.error(
+            f"Database error fetching distinct available regions for {country}: {db_err}"
+        )
+        raise HTTPException(status_code=500, detail=f"Database error: {str(db_err)}")
+    except Exception as e:
+        logger.exception(
+            f"Unexpected error fetching distinct available regions for {country}: {e}"
+        )
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+# --- END NEW ---
 
 
 # --- Random Animal Endpoint ---
 @router.get("/random", response_model=List[Animal], summary="Get Random Animals")
 async def get_random_animals(
-    limit: int = Query(3, ge=1, le=10),
+    limit: int = Query(
+        3, ge=1, le=10, description="Number of random animals to return"
+    ),
+    # Removed animal_type query parameter as we always want dogs
+    status: Optional[str] = Query("available", description="Animal status"),
     cursor: RealDictCursor = Depends(get_db_cursor),
 ):
-    logger.info(
-        f"--- get_random_animals received cursor: {id(cursor)} ---"
-    )  # Log cursor ID
-    animals_data = []
+    """Get random available dogs for featured section."""
     try:
         query = """
-            SELECT
-                a.id, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
-                a.age_text, a.age_min_months, a.age_max_months, a.sex, a.size, a.standardized_size,
-                a.status, a.adoption_url, a.primary_image_url, a.organization_id, a.external_id,
-                a.properties, a.created_at, a.updated_at, a.last_scraped_at, a.language,
-                o.name as organization_name,
-                o.city as organization_city,
-                o.country as organization_country,
-                o.website_url as organization_website_url,
-                o.logo_url as organization_logo_url
-            FROM animals a
-            LEFT JOIN organizations o ON a.organization_id = o.id
-            WHERE a.animal_type = 'dog' AND a.status = 'available'
+            SELECT id, name, animal_type, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, status, primary_image_url, adoption_url, organization_id, external_id, language, properties, created_at, updated_at, last_scraped_at
+            FROM animals
+            WHERE animal_type = 'dog' AND status = %s
             ORDER BY RANDOM()
-            LIMIT %(limit)s
+            LIMIT %s
         """
-        cursor.execute(query, {"limit": limit})
-        rows = cursor.fetchall()
+        params = [status, limit]
 
-        # --- Add this log ---
-        logger.info(f"Fetched {len(rows)} rows from database for random animals.")
-        # --- End log ---
-
-        for animal_dict in rows:
-            try:  # Add try block for each animal processing
-                org_data = None
-                if animal_dict.get("organization_id") is not None:
-                    org_data = {
-                        "id": animal_dict.get("organization_id"),
-                        "name": animal_dict.get("organization_name"),
-                        "city": animal_dict.get("organization_city"),
-                        "country": animal_dict.get("organization_country"),
-                        "website_url": animal_dict.get("organization_website_url"),
-                        "logo_url": animal_dict.get("organization_logo_url"),
-                    }
-
-                properties_dict = {}
-                raw_properties = animal_dict.get("properties")
-                if isinstance(raw_properties, str):
-                    try:
-                        properties_dict = json.loads(raw_properties)
-                    except json.JSONDecodeError:
-                        logger.warning(
-                            f"Could not decode properties JSON for random animal ID {animal_dict.get('id')}"
-                        )
-                        pass
-                elif isinstance(raw_properties, dict):
-                    properties_dict = raw_properties
-
-                animal_model_data = {
-                    "id": animal_dict.get("id"),
-                    "name": animal_dict.get("name"),
-                    "animal_type": animal_dict.get("animal_type"),
-                    "breed": animal_dict.get("breed"),
-                    "standardized_breed": animal_dict.get("standardized_breed"),
-                    "breed_group": animal_dict.get("breed_group"),
-                    "age_text": animal_dict.get("age_text"),
-                    "age_min_months": animal_dict.get("age_min_months"),
-                    "age_max_months": animal_dict.get("age_max_months"),
-                    "sex": animal_dict.get("sex"),
-                    "size": animal_dict.get("size"),
-                    "standardized_size": animal_dict.get("standardized_size"),
-                    "status": animal_dict.get("status"),
-                    "adoption_url": animal_dict.get("adoption_url"),
-                    "primary_image_url": animal_dict.get("primary_image_url"),
-                    "organization_id": animal_dict.get("organization_id"),
-                    "external_id": animal_dict.get("external_id"),
-                    "properties": properties_dict,
-                    "created_at": animal_dict.get("created_at"),
-                    "updated_at": animal_dict.get("updated_at"),
-                    "last_scraped_at": animal_dict.get("last_scraped_at"),
-                    "language": animal_dict.get("language"),
-                    "description": properties_dict.get("description"),
-                }
-
-                # --- Add this logging ---
-                logger.info(
-                    f"Data types before Pydantic validation for ID {animal_model_data.get('id')}:"
-                )
-                logger.info(
-                    f"  id: {animal_model_data.get('id')} (type: {type(animal_model_data.get('id'))})"
-                )
-                logger.info(
-                    f"  organization_id: {animal_model_data.get('organization_id')} (type: {type(animal_model_data.get('organization_id'))})"
-                )
-                logger.info(
-                    f"  age_min_months: {animal_model_data.get('age_min_months')} (type: {type(animal_model_data.get('age_min_months'))})"
-                )
-                logger.info(
-                    f"  age_max_months: {animal_model_data.get('age_max_months')} (type: {type(animal_model_data.get('age_max_months'))})"
-                )
-                # --- End logging ---
-
-                # Use Animal model, not AnimalWithImages
-                animal_obj = Animal(**animal_model_data)
-                animals_data.append(animal_obj)
-
-            except ValidationError as pydantic_err:
-                logger.error(
-                    f"Pydantic validation error for random animal ID {animal_dict.get('id')}: {pydantic_err}\nData: {animal_model_data}"
-                )
-            except Exception as e:
-                logger.error(
-                    f"Unexpected error creating Animal model for random animal ID {animal_dict.get('id')}: {e}\nData: {animal_model_data}"
-                )
-
+        cursor.execute(query, params)
+        animals = cursor.fetchall()
+        return animals
     except psycopg2.Error as db_err:
         logger.error(f"Database error fetching random animals: {db_err}")
-        raise HTTPException(
-            status_code=500, detail="Database error fetching random animals"
-        )
+        raise HTTPException(status_code=500, detail=f"Database error: {str(db_err)}")
     except Exception as e:
         logger.exception(f"Unexpected error fetching random animals: {e}")
-        raise HTTPException(
-            status_code=500, detail="Internal server error fetching random animals"
-        )
-
-    return animals_data
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 # --- Single Animal Detail ---
@@ -384,128 +409,33 @@ async def get_random_animals(
 async def get_animal_by_id(
     animal_id: int, cursor: RealDictCursor = Depends(get_db_cursor)
 ):
-    logger.info(
-        f"--- get_animal_by_id received cursor: {id(cursor)} ---"
-    )  # Log cursor ID
+    """Get a specific animal by ID, including its images."""
     try:
-        query = """
-            SELECT id, name, animal_type, breed, standardized_breed,
-                   age_text, age_min_months, age_max_months, sex, size, standardized_size,
-                   status, adoption_url, primary_image_url, organization_id, external_id,
-                   properties, created_at, updated_at, last_scraped_at, language
-            FROM animals
-            WHERE id = %s
-        """
-        cursor.execute(query, (animal_id,))
-        row_dict = cursor.fetchone()
+        cursor.execute("SELECT * FROM animals WHERE id = %s", (animal_id,))
+        animal_dict = cursor.fetchone()
 
-        if not row_dict:
-            raise HTTPException(
-                status_code=404, detail=f"Animal with ID {animal_id} not found"
-            )
+        if not animal_dict:
+            raise HTTPException(status_code=404, detail="Animal not found")
 
+        # --- FIX: Fetch images BEFORE creating the final model ---
+        animal_images = fetch_animal_images(cursor, animal_id)
         try:
-            # Handle properties JSON string
-            if "properties" in row_dict and isinstance(row_dict["properties"], str):
-                try:
-                    row_dict["properties"] = json.loads(row_dict["properties"])
-                except json.JSONDecodeError:
-                    logger.warning(
-                        f"Could not decode properties JSON for animal ID {row_dict.get('id')}: {row_dict['properties']}"
-                    )
-                    row_dict["properties"] = {}
-            elif "properties" not in row_dict:
-                row_dict["properties"] = {}
-
-            # --- Add Logging before Animal validation ---
-            logger.info(
-                f"--- Data before Animal validation for ID {row_dict.get('id')} ---"
-            )
-            for key, value in row_dict.items():
-                logger.info(f"  {key}: {repr(value)} (type: {type(value)})")
-            # --- End Logging ---
-
-            # Create base Animal object
-            base_animal = Animal(**row_dict)  # <<< Potential failure point 1
-
-        except ValidationError as pydantic_err:
-            logger.error(
-                f"Pydantic validation error for Animal ID {row_dict.get('id')}: {pydantic_err}\nData: {row_dict}"
-            )
-            raise HTTPException(status_code=500, detail="Error processing animal data")
-        except Exception as e:
-            logger.error(
-                f"Unexpected error creating Animal model for ID {row_dict.get('id')}: {e}\nData: {row_dict}"
-            )
-            raise HTTPException(status_code=500, detail="Error processing animal data")
-
-        # Fetch images
-        fetched_images = fetch_animal_images(cursor, base_animal.id)
-
-        # Determine the final primary image URL
-        final_primary_image_url = base_animal.primary_image_url
-        if not final_primary_image_url and fetched_images:
-            primary = next((img for img in fetched_images if img.is_primary), None)
-            if primary:
-                final_primary_image_url = primary.image_url
-            elif fetched_images:
-                final_primary_image_url = fetched_images[0].image_url
-
-        # Create AnimalWithImages using the corrected method
-        animal_data_for_response = base_animal.model_dump()
-        animal_data_for_response["primary_image_url"] = final_primary_image_url
-        animal_data_for_response["images"] = fetched_images
-
-        # --- Add Logging before AnimalWithImages validation ---
-        logger.info(
-            f"--- Data before AnimalWithImages validation for ID {animal_data_for_response.get('id')} ---"
-        )
-        for key, value in animal_data_for_response.items():
-            # Avoid logging potentially large image list details directly
-            if key == "images":
-                logger.info(
-                    f"  {key}: List of {len(value)} images (type: {type(value)})"
-                )
-            else:
-                logger.info(f"  {key}: {repr(value)} (type: {type(value)})")
-        # --- End Logging ---
-
-        try:  # Add try/except specifically around the final validation
-            animal_with_images = AnimalWithImages(
-                **animal_data_for_response
-            )  # <<< Potential failure point 2
-        except ValidationError as pydantic_err:
-            logger.error(
-                f"Pydantic validation error for AnimalWithImages ID {animal_data_for_response.get('id')}: {pydantic_err}\nData: {animal_data_for_response}"
-            )
+            # Create AnimalWithImages directly
+            animal = AnimalWithImages(**animal_dict, images=animal_images)
+        except ValidationError as animal_err:
+            logger.error(f"Validation error for animal ID {animal_id}: {animal_err}")
             raise HTTPException(
-                status_code=500, detail="Error processing final animal data with images"
+                status_code=500, detail="Error processing animal data from database."
             )
+        # --- END FIX ---
 
-        return animal_with_images
+        return animal
 
     except HTTPException as http_exc:
-        # This will correctly re-raise the 404 if it was raised earlier
         raise http_exc
     except psycopg2.Error as db_err:
-        logger.error(f"Database error fetching animal {animal_id}: {db_err}")
-        raise HTTPException(
-            status_code=500, detail="Internal server error fetching animal details"
-        )
+        logger.error(f"Database error fetching animal ID {animal_id}: {db_err}")
+        raise HTTPException(status_code=500, detail=f"Database query error: {db_err}")
     except Exception as e:
-        logger.exception(f"Unexpected error fetching animal {animal_id}: {e}")
-        raise HTTPException(
-            status_code=500, detail="Internal server error fetching animal details"
-        )
-
-
-# Helper function (if not already defined elsewhere)
-def mapUiSizeToStandardized(uiSize):
-    mapping = {
-        "Tiny": "Tiny",
-        "Small": "Small",
-        "Medium": "Medium",
-        "Large": "Large",
-        "Extra Large": "XLarge",
-    }
-    return mapping.get(uiSize)
+        logger.exception(f"Unexpected error fetching animal ID {animal_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {e}")

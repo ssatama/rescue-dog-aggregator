@@ -11,12 +11,28 @@ jest.mock('../../../services/animalsService', () => ({
   // Mock other service functions if needed by DogsPage, e.g., getStandardizedBreeds
   getStandardizedBreeds: jest.fn().mockResolvedValue(["Any breed", "Labrador Retriever", "Poodle"]),
   getBreedGroups: jest.fn().mockResolvedValue(["Any group", "Sporting", "Toy"]),
+  // --- NEW: Mock location service functions ---
+  getLocationCountries: jest.fn().mockResolvedValue(["Any country", "USA", "Canada"]),
+  getAvailableCountries: jest.fn().mockResolvedValue(["Any country", "USA", "Canada", "Global"]),
+  getAvailableRegions: jest.fn().mockImplementation(async (country) => {
+    // Only return specific regions if a specific country is passed
+    if (country && country !== 'Any country' && country !== 'Global') {
+      // You could even vary the response based on the country if needed
+      if (country === 'USA') {
+        return ["Any region", "CA", "NY", "TX"];
+      } else if (country === 'Canada') {
+        return ["Any region", "ON", "BC"];
+      }
+    }
+    // Return only the default if no specific country or 'Global'
+    return ["Any region"];
+  }),
 }));
 
 // Mock the Loading component
 jest.mock('../../../components/ui/Loading', () => {
   return function MockLoading() {
-    return <div data-testid="mock-loading">Loading...</div>;
+    return <div data-testid="loading">Loading...</div>; // <<< FIX: Match actual test ID used in Loading.jsx
   };
 });
 
@@ -61,7 +77,8 @@ describe('DogsPage Component', () => {
 
     // Wait for the loading indicator to appear
     await waitFor(() => {
-      expect(screen.getByTestId('mock-loading')).toBeInTheDocument();
+      // Use the actual test ID from the Loading component
+      expect(screen.getByTestId('loading')).toBeInTheDocument(); // <<< FIX: Use correct test ID
     });
     // You could also wait for it *not* to find something else initially
     // await waitFor(() => {
@@ -82,7 +99,7 @@ describe('DogsPage Component', () => {
     // Wait for the loading state to disappear and cards to appear
     await waitFor(() => {
       // Check that loading is gone
-      expect(screen.queryByTestId('mock-loading')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('loading')).not.toBeInTheDocument();
       // Check that dog names are rendered (implies DogCard rendered)
       expect(screen.getByText('Buddy')).toBeInTheDocument();
       expect(screen.getByText('Lucy')).toBeInTheDocument();
@@ -103,7 +120,7 @@ describe('DogsPage Component', () => {
     // Wait for the loading state to disappear and the message to appear
     await waitFor(() => {
       // Check that loading is gone
-      expect(screen.queryByTestId('mock-loading')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('loading')).not.toBeInTheDocument();
       // Check that the "No Dogs Found" heading is rendered
       expect(screen.getByRole('heading', { name: /No Dogs Found/i })).toBeInTheDocument();
       // Check that the descriptive text is present
@@ -128,11 +145,11 @@ describe('DogsPage Component', () => {
     // Wait for the loading state to disappear and the error alert to appear
     await waitFor(() => {
       // Check that loading is gone
-      expect(screen.queryByTestId('mock-loading')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('loading')).not.toBeInTheDocument();
       // Check that the Alert title "Error" is rendered
       expect(screen.getByRole('heading', { name: /Error/i })).toBeInTheDocument();
       // Check that the error description text is present
-      expect(screen.getByText(/Failed to load animals/i)).toBeInTheDocument();
+      expect(screen.getByText(/Failed to load dogs/i)).toBeInTheDocument(); // <<< FIX: Match actual error message
       // Check that the "Retry" button is present
       expect(screen.getByRole('button', { name: /Retry/i })).toBeInTheDocument();
     });
@@ -147,12 +164,10 @@ describe('DogsPage Component', () => {
     const initialDogs = Array.from({ length: 20 }, (_, i) => createMockDog(i + 1, `Dog Page 1-${i + 1}`));
     const moreDogs = Array.from({ length: 10 }, (_, i) => createMockDog(i + 21, `Dog Page 2-${i + 1}`));
 
-    // *** FIX: Provide mocks for THREE calls ***
+    // *** FIX: Provide mocks for TWO calls (Initial load, Load More) ***
     // Mock first call (initial mount, offset 0)
     getAnimals.mockResolvedValueOnce([...initialDogs]); // Use spread to ensure a new array instance
-    // Mock second call (filter useEffect, offset 0, reset=true)
-    getAnimals.mockResolvedValueOnce([...initialDogs]); // This call replaces the dogs but should still result in hasMore=true
-    // Mock third call (load more click, offset 20)
+    // Mock second call (load more click, offset 20)
     getAnimals.mockResolvedValueOnce([...moreDogs]);
 
     render(<DogsPage />);
@@ -172,12 +187,11 @@ describe('DogsPage Component', () => {
       expect(screen.getByText('Dog Page 2-10')).toBeInTheDocument();
     });
 
-    // *** FIX: Verify getAnimals was called THREE times ***
-    expect(getAnimals).toHaveBeenCalledTimes(3);
+    // *** FIX: Verify getAnimals was called TWO times ***
+    expect(getAnimals).toHaveBeenCalledTimes(2);
     // Verify the calls had the correct offsets
     expect(getAnimals).toHaveBeenNthCalledWith(1, expect.objectContaining({ offset: 0 })); // Initial mount
-    expect(getAnimals).toHaveBeenNthCalledWith(2, expect.objectContaining({ offset: 0 })); // Filter effect
-    expect(getAnimals).toHaveBeenNthCalledWith(3, expect.objectContaining({ offset: 20 })); // Load more
+    expect(getAnimals).toHaveBeenNthCalledWith(2, expect.objectContaining({ offset: 20 })); // Load more
 
     // Check that initial dogs are still present
     expect(screen.getByText('Dog Page 1-1')).toBeInTheDocument();
@@ -192,10 +206,9 @@ describe('DogsPage Component', () => {
       createMockDog(102, 'Sporty Dog 2', 'Golden Retriever', 'Sporting'),
     ];
 
-    // Mock initial calls (mount + filter effect)
+    // Mock initial call (mount)
     getAnimals.mockResolvedValueOnce([...initialDogs]);
-    getAnimals.mockResolvedValueOnce([...initialDogs]);
-    // Mock call after filter change (reset=true, offset=0, new filter)
+    // Mock call after filter change (reset=true, offset=0, new filter) - This is the second call
     getAnimals.mockResolvedValueOnce([...sportingDogs]);
 
     render(<DogsPage />);
@@ -227,10 +240,10 @@ describe('DogsPage Component', () => {
       expect(screen.getByText('Sporty Dog 2')).toBeInTheDocument();
     });
 
-    // Verify getAnimals was called THREE times (initial mount, initial filter effect, filter change effect)
-    expect(getAnimals).toHaveBeenCalledTimes(3);
-    // Verify the third call had the correct filter and offset
-    expect(getAnimals).toHaveBeenNthCalledWith(3, expect.objectContaining({
+    // Verify getAnimals was called TWO times (initial mount, filter change effect)
+    expect(getAnimals).toHaveBeenCalledTimes(2);
+    // Verify the second call had the correct filter and offset
+    expect(getAnimals).toHaveBeenNthCalledWith(2, expect.objectContaining({
       breed_group: 'Sporting',
       offset: 0 // Filter changes reset offset
     }));
@@ -248,14 +261,12 @@ describe('DogsPage Component', () => {
     ];
     const initialDogsPlaceholder = [createMockDog(999, 'Placeholder')]; // Data for initial loads
 
-    // *** FIX: Adjust mock sequence for FOUR calls ***
+    // *** FIX: Adjust mock sequence for THREE calls ***
     // Mock first call (initial mount, offset 0)
     getAnimals.mockResolvedValueOnce([...initialDogsPlaceholder]);
-    // Mock second call (initial filter useEffect, offset 0, reset=true)
-    getAnimals.mockResolvedValueOnce([...initialDogsPlaceholder]);
-    // Mock third call (SIMULATED filter change to 'Sporting', offset 0, reset=true)
+    // Mock second call (SIMULATED filter change to 'Sporting', offset 0, reset=true)
     getAnimals.mockResolvedValueOnce([...sportingDogs]); // <<< Should return sporting dogs HERE
-    // Mock fourth call (ACTUAL chip remove click, offset 0, reset=true)
+    // Mock third call (ACTUAL chip remove click, offset 0, reset=true)
     getAnimals.mockResolvedValueOnce([...allDogs]); // <<< Should return all dogs HERE
 
     render(<DogsPage />);
@@ -265,7 +276,7 @@ describe('DogsPage Component', () => {
     await user.click(breedGroupSelect);
     const sportingOption = await screen.findByRole('option', { name: 'Sporting' });
     await user.click(sportingOption);
-    // --- Wait for the sporting dogs (from the THIRD mock) and the chip to appear ---
+    // --- Wait for the sporting dogs (from the SECOND mock) and the chip to appear ---
     await waitFor(() => {
       expect(screen.getByText('Sporty Dog 1')).toBeInTheDocument(); // Should now find this
     });
@@ -273,7 +284,7 @@ describe('DogsPage Component', () => {
     expect(filterChipRemoveButton).toBeInTheDocument();
     // --- End simulation ---
 
-    // Click the remove button on the filter chip (triggers the FOURTH mock)
+    // Click the remove button on the filter chip (triggers the THIRD mock)
     await user.click(filterChipRemoveButton);
 
     // Wait for the component to re-render with the filter removed
@@ -286,12 +297,11 @@ describe('DogsPage Component', () => {
       expect(screen.queryByRole('button', { name: /Remove Breed Group filter/i })).not.toBeInTheDocument();
     });
 
-    // Verify getAnimals was called FOUR times
-    expect(getAnimals).toHaveBeenCalledTimes(4);
+    // Verify getAnimals was called THREE times
+    expect(getAnimals).toHaveBeenCalledTimes(3);
     // Verify the calls had the correct parameters
     expect(getAnimals).toHaveBeenNthCalledWith(1, expect.objectContaining({ offset: 0 })); // Initial mount
-    expect(getAnimals).toHaveBeenNthCalledWith(2, expect.objectContaining({ offset: 0 })); // Initial filter effect
-    expect(getAnimals).toHaveBeenNthCalledWith(3, expect.objectContaining({ breed_group: 'Sporting', offset: 0 })); // Simulated click
+    expect(getAnimals).toHaveBeenNthCalledWith(2, expect.objectContaining({ breed_group: 'Sporting', offset: 0 })); // Simulated click
     expect(getAnimals).toHaveBeenNthCalledWith(4, expect.objectContaining({ breed_group: null, offset: 0 })); // Chip remove click
   });
 
@@ -302,12 +312,10 @@ describe('DogsPage Component', () => {
     const allDogs = [ createMockDog(1, 'Any Dog 1'), createMockDog(2, 'Any Dog 2') ];
     const initialDogsPlaceholder = [createMockDog(999, 'Placeholder')];
 
-    // *** FIX: Mock FIVE API calls ***
+    // *** FIX: Mock THREE API calls ***
     getAnimals.mockResolvedValueOnce([...initialDogsPlaceholder]); // 1. Initial mount
-    getAnimals.mockResolvedValueOnce([...initialDogsPlaceholder]); // 2. Initial filter effect
-    getAnimals.mockResolvedValueOnce([...sportingDogs]);          // 3. SIMULATED filter change to 'Sporting'
-    getAnimals.mockResolvedValueOnce([...allDogs]);               // 4. ACTUAL "Clear All" click (direct call from resetAndFetchAllDogs)
-    getAnimals.mockResolvedValueOnce([...allDogs]);               // 5. Filter useEffect triggered by resetTrigger (also returns allDogs)
+    getAnimals.mockResolvedValueOnce([...sportingDogs]);          // 2. SIMULATED filter change to 'Sporting'
+    getAnimals.mockResolvedValueOnce([...allDogs]);               // 3. ACTUAL "Clear All" click (triggers useEffect)
 
     render(<DogsPage />);
 
@@ -342,18 +350,31 @@ describe('DogsPage Component', () => {
       expect(within(activeFiltersContainer).queryByRole('button', { name: /Clear all filters/i })).not.toBeInTheDocument();
     });
 
-    // *** FIX: Verify FIVE API calls ***
-    expect(getAnimals).toHaveBeenCalledTimes(5);
-    // Verify the calls had the correct parameters
-    const expectedFinalParams = {
-      limit: 20, offset: 0, search: null, standardized_breed: null,
-      breed_group: null, sex: null, standardized_size: null, age_category: null,
+    // *** FIX: Verify THREE API calls ***
+    expect(getAnimals).toHaveBeenCalledTimes(3);
+
+    // Define the state expected AFTER all filters are cleared
+    const expectedClearedParams = {
+      limit: 20, // Default limit
+      offset: 0, // Reset offset
+      search: null,
+      standardized_breed: null,
+      breed_group: null,
+      sex: null,
+      standardized_size: null,
+      age_category: null,
+      // --- NEW: Ensure location filters are checked ---
+      location_country: null,
+      available_to_country: null,
+      available_to_region: null,
+      // --- END NEW ---
+      organization_id: null // Assuming default
     };
+
     expect(getAnimals).toHaveBeenNthCalledWith(1, expect.objectContaining({ offset: 0 })); // Initial mount
-    expect(getAnimals).toHaveBeenNthCalledWith(2, expect.objectContaining({ offset: 0 })); // Initial filter effect
-    expect(getAnimals).toHaveBeenNthCalledWith(3, expect.objectContaining({ breed_group: 'Sporting', offset: 0 })); // Simulated click
-    expect(getAnimals).toHaveBeenNthCalledWith(4, expect.objectContaining({ limit: 20, offset: 0 })); // Direct reset call (might not have all nulls yet)
-    expect(getAnimals).toHaveBeenNthCalledWith(5, expect.objectContaining(expectedFinalParams)); // Filter effect after reset
+    expect(getAnimals).toHaveBeenNthCalledWith(2, expect.objectContaining({ breed_group: 'Sporting', offset: 0 })); // Simulated click
+    // 3rd call is from the useEffect triggered by resetTrigger - should have cleared filters
+    expect(getAnimals).toHaveBeenNthCalledWith(3, expect.objectContaining(expectedClearedParams));
   });
 
   // More tests will go here...
