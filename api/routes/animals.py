@@ -227,12 +227,23 @@ async def get_distinct_breeds(
 ):
     """Get distinct standardized breeds, optionally filtered by breed group."""
     try:
-        query = "SELECT DISTINCT standardized_breed FROM animals WHERE standardized_breed IS NOT NULL"
+        query = """
+            SELECT DISTINCT standardized_breed 
+            FROM animals 
+            WHERE standardized_breed IS NOT NULL
+              AND standardized_breed != ''
+              AND standardized_breed NOT IN ('Yes', 'No', 'Unknown') 
+              AND LENGTH(standardized_breed) > 1
+              AND status = 'available'
+        """
         params = []
-        if breed_group:
-            query += " AND breed_group = %s"
+
+        if breed_group and breed_group != "Any group":
+            query += " AND properties->>'breed_group' = %s"
             params.append(breed_group)
+
         query += " ORDER BY standardized_breed"
+
         cursor.execute(query, tuple(params))
         breeds = [row["standardized_breed"] for row in cursor.fetchall()]
         return breeds
@@ -242,15 +253,37 @@ async def get_distinct_breeds(
 
 
 @router.get("/meta/breed_groups", response_model=List[str])
-async def get_distinct_breed_groups(
-    cursor: RealDictCursor = Depends(get_db_cursor),
-):
+async def get_distinct_breed_groups(cursor: RealDictCursor = Depends(get_db_cursor)):
     """Get distinct breed groups."""
     try:
+        # First try getting breed groups from the properties field
         cursor.execute(
-            "SELECT DISTINCT breed_group FROM animals WHERE breed_group IS NOT NULL ORDER BY breed_group"
+            """
+            SELECT DISTINCT properties->>'breed_group' as breed_group
+            FROM animals
+            WHERE properties->>'breed_group' IS NOT NULL 
+              AND properties->>'breed_group' != ''
+              AND properties->>'breed_group' NOT IN ('Unknown')
+              AND status = 'available'
+            ORDER BY breed_group
+        """
         )
+
         groups = [row["breed_group"] for row in cursor.fetchall()]
+
+        # If no breed groups found, return default list
+        if not groups:
+            return [
+                "Sporting",
+                "Hound",
+                "Working",
+                "Terrier",
+                "Toy",
+                "Non-Sporting",
+                "Herding",
+                "Mixed",
+            ]
+
         return groups
     except Exception as e:
         logger.error(f"Error fetching distinct breed groups: {e}")
