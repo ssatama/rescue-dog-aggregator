@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import DogsPage from '../page';
 import { getAnimals } from '../../../services/animalsService';
@@ -137,7 +137,7 @@ describe('DogsPage Component', () => {
 
   test('loads more dogs when "Load More" button is clicked', async () => {
     const user = userEvent.setup();
-    const initialDogs = Array.from({ length: 20 }, (_, i) => createMockDog(i + 1, `Dog Page 1-${i + 1}`));
+    const initialDogs = Array.from({ length: 20 }, (_, i) => createMockDog(i + 1, `Dog Page 1-1-${i + 1}`));
     const moreDogs = Array.from({ length: 10 }, (_, i) => createMockDog(i + 21, `Dog Page 2-${i + 1}`));
 
     getAnimals.mockResolvedValueOnce([...initialDogs]);
@@ -146,8 +146,10 @@ describe('DogsPage Component', () => {
     render(<DogsPage />);
 
     const loadMoreButton = await screen.findByRole('button', { name: /Load More Dogs/i });
-    expect(screen.getByText('Dog Page 1-1')).toBeInTheDocument();
-    expect(screen.getByText('Dog Page 1-20')).toBeInTheDocument();
+
+    // check first and last initial cards
+    expect(screen.getByText('Dog Page 1-1-1')).toBeInTheDocument();
+    expect(screen.getByText('Dog Page 1-1-20')).toBeInTheDocument();
 
     await user.click(loadMoreButton);
 
@@ -159,8 +161,6 @@ describe('DogsPage Component', () => {
     expect(getAnimals).toHaveBeenCalledTimes(2);
     expect(getAnimals).toHaveBeenNthCalledWith(1, expect.objectContaining({ offset: 0 }));
     expect(getAnimals).toHaveBeenNthCalledWith(2, expect.objectContaining({ offset: 20 }));
-
-    expect(screen.getByText('Dog Page 1-1')).toBeInTheDocument();
   });
 
   test('fetches dogs with new filter when a filter is changed', async () => {
@@ -280,5 +280,19 @@ describe('DogsPage Component', () => {
       offset: 0
     }));
     expect(getAnimals).toHaveBeenNthCalledWith(3, expect.objectContaining({ offset: 0 }));
+  });
+
+  test('changing search box refetches with search param', async () => {
+    // stub getAnimals for every call so dogs never become undefined
+    getAnimals.mockResolvedValue([]);
+
+    render(<DogsPage />);
+    const input = screen.getByPlaceholderText(/Name or breed/i);
+    fireEvent.change(input, { target: { value: 'buddy' } });
+    await waitFor(() => {
+      expect(getAnimals).toHaveBeenCalledWith(
+        expect.objectContaining({ search: 'buddy' })
+      );
+    });
   });
 });

@@ -1,5 +1,12 @@
-// Add to src/utils/__tests__/api.test.js:
 import { get } from '../api';
+
+// Silence console.error calls in this suite
+beforeAll(() => {
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+});
+afterAll(() => {
+  console.error.mockRestore();
+});
 
 // Mock global fetch
 global.fetch = jest.fn();
@@ -24,5 +31,30 @@ describe('API Utilities', () => {
     // Assert fetch was called correctly
     expect(global.fetch).toHaveBeenCalled();
     expect(global.fetch.mock.calls[0][0]).toContain('/test-endpoint');
+  });
+});
+
+describe('get()', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('calls fetch with correct URL and query string', async () => {
+    const fakeJson = { foo: 'bar' };
+    global.fetch.mockResolvedValue({ ok: true, json: () => Promise.resolve(fakeJson) });
+    const result = await get('/dogs', { limit: 5, search: 'rex' });
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/dogs?limit=5&search=rex'),
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    expect(result).toEqual(fakeJson);
+  });
+
+  it('throws on non‑ok response', async () => {
+    global.fetch.mockResolvedValue({
+      ok: false,
+      status: 500,
+      statusText: 'Oops',
+      json: jest.fn().mockResolvedValue({}) // stub json() so .catch() branch runs
+    });
+    await expect(get('/dogs')).rejects.toThrow('API error: 500 Oops');
   });
 });

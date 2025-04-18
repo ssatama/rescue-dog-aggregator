@@ -97,4 +97,26 @@ describe('<FilterControls />', () => {
     await user.click(await screen.findByRole('option', { name: 'US' }));
     expect(mockProps.setAvailableCountryFilter).toHaveBeenCalledWith('US');
   });
+
+  it('disables "Ships To Region" when no country is selected', () => {
+    render(
+      <FilterControls
+        {...mockProps}
+        availableCountryFilter="Any country"
+        availableRegions={['Any region', 'CA']}
+      />
+    );
+    expect(screen.getByLabelText(/Ships To Region/i)).toBeDisabled();
+  });
+
+  it('enables "Ships To Region" when a real country is selected', () => {
+    render(
+      <FilterControls
+        {...mockProps}
+        availableCountryFilter="US"
+        availableRegions={['Any region', 'CA']}
+      />
+    );
+    expect(screen.getByLabelText(/Ships To Region/i)).toBeEnabled();
+  });
 });
