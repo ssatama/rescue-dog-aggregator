@@ -20,10 +20,7 @@ export default function OrganizationCard({ organization }) {
   const id = organization?.id || "0";
 
   return (
-    <Link
-      href={`/organizations/${id}`}
-      className="block rounded-lg border hover:shadow-lg overflow-hidden"
-    >
+    <div className="block rounded-lg border hover:shadow-lg overflow-hidden">
       <Card className="overflow-hidden flex flex-col h-full transition-shadow duration-300 hover:shadow-lg">
         <CardHeader className="p-6 flex justify-center items-center bg-gray-50">
           {logoUrl ? (
@@ -59,14 +56,14 @@ export default function OrganizationCard({ organization }) {
               </a>
             </Button>
             
-            <Link href={`/organizations/${id}`} passHref legacyBehavior>
-              <Button as="a" variant="secondary" size="sm" className="flex-1">
+            <Link href={`/organizations/${id}`}>
+              <Button variant="secondary" size="sm" className="flex-1">
                 View Dogs
               </Button>
             </Link>
           </div>
         </CardFooter>
       </Card>
-    </Link>
+    </div>
   );
 }

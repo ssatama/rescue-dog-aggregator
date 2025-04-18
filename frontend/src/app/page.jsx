@@ -15,6 +15,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [organizationFilter, setOrganizationFilter] = useState("Any organization");
+  const [organizations, setOrganizations] = useState([]);
 
   const fetchFeaturedDogs = async () => {
     try {
