@@ -32,7 +32,14 @@ describe('animalsService', () => {
     await getAnimals(filters);
     
     // Check that get was called with correct parameters
-    expect(get).toHaveBeenCalledWith('/api/animals', filters);
+    expect(get).toHaveBeenCalledWith(
+      '/api/animals',
+      expect.objectContaining({
+        ...filters,
+        animal_type: 'dog',
+        status: 'available',
+      })
+    );
   });
   
   test('getAnimalById calls API with correct ID', async () => {

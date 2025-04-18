@@ -8,11 +8,13 @@ import Loading from '../components/ui/Loading'; // Import Loading
 import { Button } from '@/components/ui/button'; // Import Button (optional, for retry)
 import { getRandomAnimals } from '../services/animalsService'; // Import the new service function
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Import Alert
+import { getOrganizations } from '../services/organizationsService'; // new
 
 export default function Home() {
   const [featuredDogs, setFeaturedDogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [organizationFilter, setOrganizationFilter] = useState("Any organization");
 
   const fetchFeaturedDogs = async () => {
     try {
@@ -31,6 +33,19 @@ export default function Home() {
   useEffect(() => {
     fetchFeaturedDogs();
   }, []); // Fetch on initial mount
+
+  // --- Fetch Organizations ---
+  useEffect(() => {
+    const fetchOrgs = async () => {
+      try {
+        const orgs = await getOrganizations();
+        setOrganizations(["Any organization", ...orgs]);
+      } catch (err) {
+        console.error("Failed to fetch organizations:", err);
+      }
+    };
+    fetchOrgs();
+  }, []);
 
   return (
     <Layout>

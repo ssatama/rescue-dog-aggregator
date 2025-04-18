@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"; // <<< Import Input component
 // --- NEW: Import location icons ---
-import { PawPrint, Users, Tag, Ruler, Calendar, MapPin, Globe, LocateFixed, Search } from 'lucide-react'; // Added Search icon
+import { PawPrint, Home, Tag, Ruler, Calendar, MapPin, Globe, LocateFixed, Search } from 'lucide-react'; // Added Search icon
 // --- END NEW ---
 import { X } from 'lucide-react'; // Import X icon for clear button
 
@@ -20,9 +20,14 @@ export default function FilterControls({
   searchQuery,
   handleSearchChange,
   clearSearch, // Function to clear search
-  breedGroupFilter,
-  setBreedGroupFilter,
-  breedGroups,
+  // — Removed breedGroup props —
+  // breedGroupFilter,
+  // setBreedGroupFilter,
+  // breedGroups,
+  // — Added organization props —
+  organizationFilter,
+  setOrganizationFilter,
+  organizations, // now array of {id,name}
   standardizedBreedFilter,
   setStandardizedBreedFilter,
   standardizedBreeds,
@@ -79,20 +84,23 @@ export default function FilterControls({
         )}
       </div>
 
-      {/* Breed Group Filter */}
+      {/* New Rescue Organization Filter */}
       <div>
-        <label htmlFor="breed-group-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
-          <Users className="h-4 w-4 mr-2 text-gray-500" />
-          Breed Group
+        <label htmlFor="organization-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
+          <Home className="h-4 w-4 mr-2 text-gray-500" />
+          Rescue Organization
         </label>
-        <Select value={breedGroupFilter} onValueChange={setBreedGroupFilter}>
-          <SelectTrigger id="breed-group-filter">
-            <SelectValue placeholder="Any group" />
+        <Select value={organizationFilter} onValueChange={setOrganizationFilter}>
+          <SelectTrigger id="organization-filter">
+            <SelectValue placeholder="Any organization" />
           </SelectTrigger>
           <SelectContent>
-            {breedGroups.map((group) => (
-              <SelectItem key={group} value={group}>
-                {group}
+            {organizations.map(org => (
+              <SelectItem
+                key={org.id ?? "any"}
+                value={org.id != null ? org.id.toString() : "any"} // "any" = reset
+              >
+                {org.name}
               </SelectItem>
             ))}
           </SelectContent>

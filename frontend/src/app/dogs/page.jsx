@@ -10,11 +10,11 @@ import Loading from '../../components/ui/Loading';
 import {
   getAnimals,
   getStandardizedBreeds,
-  getBreedGroups,
   getLocationCountries,
   getAvailableCountries,
   getAvailableRegions,
 } from '../../services/animalsService';
+import { getOrganizations } from '../../services/organizationsService';
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -45,7 +45,6 @@ const mapUiSizeToStandardized = (uiSize) => {
 export default function DogsPage() {
   // ... (Keep all state variables: filters, API state, options state, etc.) ...
   const [standardizedBreedFilter, setStandardizedBreedFilter] = useState("Any breed");
-  const [breedGroupFilter, setBreedGroupFilter] = useState("Any group");
   const [sexFilter, setSexFilter] = useState("Any");
   const [sizeFilter, setSizeFilter] = useState("Any size");
   const [ageCategoryFilter, setAgeCategoryFilter] = useState("Any age");
@@ -53,6 +52,7 @@ export default function DogsPage() {
   const [locationCountryFilter, setLocationCountryFilter] = useState("Any country");
   const [availableCountryFilter, setAvailableCountryFilter] = useState("Any country");
   const [availableRegionFilter, setAvailableRegionFilter] = useState("Any region");
+  const [organizationFilter, setOrganizationFilter] = useState("any");       // "any" => no filter
 
   const [dogs, setDogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,10 +62,10 @@ export default function DogsPage() {
   const [loadingMore, setLoadingMore] = useState(false);
 
   const [standardizedBreeds, setStandardizedBreeds] = useState(["Any breed"]);
-  const [breedGroups, setBreedGroups] = useState(["Any group"]);
   const [locationCountries, setLocationCountries] = useState(["Any country"]);
   const [availableCountries, setAvailableCountries] = useState(["Any country"]);
   const [availableRegions, setAvailableRegions] = useState(["Any region"]);
+  const [organizations, setOrganizations] = useState([{ id: null, name: "Any organization" }]);
 
   const [activeFilterCount, setActiveFilterCount] = useState(0);
   const [resetTrigger, setResetTrigger] = useState(0);
@@ -76,32 +76,22 @@ export default function DogsPage() {
   const ageOptions = ["Any age", "Puppy", "Young", "Adult", "Senior"];
 
   // ... (Keep all useEffect hooks for fetching options and data) ...
-  // --- Fetch Breed Groups ---
-  useEffect(() => {
-    const fetchGroups = async () => {
-      try {
-        const groups = await getBreedGroups();
-        setBreedGroups(["Any group", ...groups]);
-      } catch (err) {
-        console.error("Failed to fetch breed groups:", err);
-      }
-    };
-    fetchGroups();
-  }, []);
 
   // --- Fetch Standardized Breeds (depends on breed group) ---
   useEffect(() => {
     const fetchBreeds = async () => {
       try {
-        const breeds = await getStandardizedBreeds(breedGroupFilter === "Any group" ? null : breedGroupFilter);
-        setStandardizedBreeds(["Any breed", ...breeds]);
+        const raw = await getStandardizedBreeds();
+        // drop any placeholder from the payload
+        const filtered = raw.filter(b => b !== "Any breed");
+        setStandardizedBreeds(["Any breed", ...filtered]);
       } catch (err) {
         console.error("Failed to fetch standardized breeds:", err);
         setStandardizedBreeds(["Any breed"]);
       }
     };
     fetchBreeds();
-  }, [breedGroupFilter]);
+  }, []);
 
   // --- Fetch Location Options ---
   useEffect(() => {
@@ -139,6 +129,15 @@ export default function DogsPage() {
     fetchRegions();
   }, [availableCountryFilter]);
 
+  // --- Fetch Organizations ---
+  useEffect(() => {
+    getOrganizations()
+      .then(orgs =>
+        setOrganizations([{ id: null, name: "Any organization" }, ...orgs])
+      )
+      .catch(err => console.error("Failed to fetch organizations:", err));
+  }, []);
+
   // --- Main Data Fetching Logic ---
   const fetchDogs = useCallback(async (currentPage = 1, loadMore = false) => {
     if (!loadMore) {
@@ -157,7 +156,7 @@ export default function DogsPage() {
       offset,
       search: searchQuery || null,
       standardized_breed: standardizedBreedFilter === "Any breed" ? null : standardizedBreedFilter,
-      breed_group: breedGroupFilter === "Any group" ? null : breedGroupFilter,
+      organization_id: organizationFilter === "any" ? null : organizationFilter,   // will be e.g. "5" or null
       sex: sexFilter === "Any" ? null : sexFilter,
       standardized_size: mapUiSizeToStandardized(sizeFilter),
       age_category: ageCategoryFilter === "Any age" ? null : ageCategoryFilter,
@@ -182,7 +181,7 @@ export default function DogsPage() {
       setLoadingMore(false);
     }
   }, [
-      searchQuery, standardizedBreedFilter, breedGroupFilter, sexFilter, sizeFilter, ageCategoryFilter,
+      searchQuery, standardizedBreedFilter, organizationFilter, sexFilter, sizeFilter, ageCategoryFilter,
       locationCountryFilter, availableCountryFilter, availableRegionFilter,
       resetTrigger
     ]);
@@ -204,7 +203,7 @@ export default function DogsPage() {
     let count = 0;
     if (searchQuery) count++;
     if (standardizedBreedFilter !== "Any breed") count++;
-    if (breedGroupFilter !== "Any group") count++;
+    if (organizationFilter !== "any") count++;
     if (sexFilter !== "Any") count++;
     if (sizeFilter !== "Any size") count++;
     if (ageCategoryFilter !== "Any age") count++;
@@ -213,7 +212,7 @@ export default function DogsPage() {
     if (availableRegionFilter !== "Any region") count++;
     setActiveFilterCount(count);
   }, [
-      searchQuery, standardizedBreedFilter, breedGroupFilter, sexFilter, sizeFilter, ageCategoryFilter,
+      searchQuery, standardizedBreedFilter, organizationFilter, sexFilter, sizeFilter, ageCategoryFilter,
       locationCountryFilter, availableCountryFilter, availableRegionFilter
     ]);
 
@@ -221,7 +220,7 @@ export default function DogsPage() {
   const resetFilters = () => {
     setSearchQuery("");
     setStandardizedBreedFilter("Any breed");
-    setBreedGroupFilter("Any group");
+    setOrganizationFilter("any");
     setSexFilter("Any");
     setSizeFilter("Any size");
     setAgeCategoryFilter("Any age");
@@ -238,7 +237,7 @@ export default function DogsPage() {
     switch (filterType) {
       case 'search': setSearchQuery(""); break;
       case 'breed': setStandardizedBreedFilter("Any breed"); break;
-      case 'group': setBreedGroupFilter("Any group"); break;
+      case 'organization': setOrganizationFilter("any"); break;
       case 'sex': setSexFilter("Any"); break;
       case 'size': setSizeFilter("Any size"); break;
       case 'age': setAgeCategoryFilter("Any age"); break;
@@ -270,7 +269,13 @@ export default function DogsPage() {
     const filters = [];
     if (searchQuery) filters.push({ type: 'search', label: `Search: "${searchQuery}"` });
     if (standardizedBreedFilter !== "Any breed") filters.push({ type: 'breed', label: standardizedBreedFilter });
-    if (breedGroupFilter !== "Any group") filters.push({ type: 'group', label: `${breedGroupFilter} Group` });
+
+    if (organizationFilter !== "any") {
+      // find the matching org object
+      const sel = organizations.find(o => o.id?.toString() === organizationFilter);
+      filters.push({ type: 'organization', label: sel?.name ?? organizationFilter });
+    }
+
     if (sexFilter !== "Any") filters.push({ type: 'sex', label: sexFilter });
     if (sizeFilter !== "Any size") filters.push({ type: 'size', label: sizeFilter });
     if (ageCategoryFilter !== "Any age") filters.push({ type: 'age', label: ageCategoryFilter });
@@ -286,7 +291,11 @@ export default function DogsPage() {
         {filters.map(filter => (
           <Badge key={filter.type} variant="secondary" className="flex items-center gap-1">
             {filter.label}
-            <button onClick={() => clearFilter(filter.type)} className="ml-1 p-0.5 rounded-full hover:bg-gray-300">
+            <button
+              onClick={() => clearFilter(filter.type)}
+              aria-label={`Remove ${filter.label} filter`}
+              className="ml-1 p-0.5 rounded-full hover:bg-gray-300"
+            >
               <X size={12} />
             </button>
           </Badge>
@@ -317,9 +326,9 @@ export default function DogsPage() {
                 searchQuery={searchQuery}
                 handleSearchChange={handleSearchChange}
                 clearSearch={clearSearch}
-                breedGroupFilter={breedGroupFilter}
-                setBreedGroupFilter={setBreedGroupFilter}
-                breedGroups={breedGroups}
+                organizationFilter={organizationFilter}
+                setOrganizationFilter={setOrganizationFilter}
+                organizations={organizations}
                 standardizedBreedFilter={standardizedBreedFilter}
                 setStandardizedBreedFilter={setStandardizedBreedFilter}
                 standardizedBreeds={standardizedBreeds}
@@ -370,9 +379,9 @@ export default function DogsPage() {
                       searchQuery={searchQuery}
                       handleSearchChange={handleSearchChange}
                       clearSearch={clearSearch}
-                      breedGroupFilter={breedGroupFilter}
-                      setBreedGroupFilter={setBreedGroupFilter}
-                      breedGroups={breedGroups}
+                      organizationFilter={organizationFilter}
+                      setOrganizationFilter={setOrganizationFilter}
+                      organizations={organizations}
                       standardizedBreedFilter={standardizedBreedFilter}
                       setStandardizedBreedFilter={setStandardizedBreedFilter}
                       standardizedBreeds={standardizedBreeds}
