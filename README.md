@@ -108,7 +108,7 @@ For detailed testing documentation, see [TESTING.md](./TESTING.md).
 1. Set up your database credentials in a `.env` file (see `.env.sample`)
 2. Set up the database: `python main.py --setup`
 3. Run the Pets in Turkey scraper: `python main.py --pit`
-4. Apply database migrations: `python database/db_migration_phase2.py --action=migrate`
+4. Database is already migrated. To check status: `python database/check_db_status.py`
 5. Run standardization: `python utils/apply_standardization_to_db.py`
 6. Start the API server: `python run_api.py`
 

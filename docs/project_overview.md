@@ -17,7 +17,7 @@ The project aims to increase visibility for rescue dogs and help them find homes
 The system consists of four main components:
 
 1. **Data Collection Layer**: Web scrapers to gather dog listings from various sources
-2. **Data Storage Layer**: PostgreSQL database with a flexible schema and standardization support
+2. **Data Storage Layer**: PostgreSQL database with a flexible schema and standardization support (using `animals` table for future extensibility, currently dogs only)
 3. **API Layer**: Backend services to expose the data with filtering capabilities
 4. **Presentation Layer**: React frontend for users to browse and search
 

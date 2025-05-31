@@ -17,39 +17,6 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message
 logger = logging.getLogger(__name__)
 
 
-# Keep the original get_db_connection if dogs_legacy_router uses it
-def get_db_connection() -> Generator:
-    """
-    Create and yield a database connection for use in API endpoints.
-    Connection is automatically closed after use.
-    """
-    conn = None
-    try:
-        # Build connection parameters
-        conn_params = {
-            "host": DB_CONFIG["host"],
-            "user": DB_CONFIG["user"],
-            "database": DB_CONFIG["database"],
-        }
-        if DB_CONFIG["password"]:
-            conn_params["password"] = DB_CONFIG["password"]
-        conn = psycopg2.connect(**conn_params)
-        logger.debug(f"DB Connection opened: {id(conn)}")
-        yield conn
-    except psycopg2.Error as db_err:
-        logger.error(f"Database connection error: {db_err}")
-        raise HTTPException(
-            status_code=500, detail=f"Database connection error: {db_err}"
-        )
-    except Exception as e:
-        logger.exception(f"Internal server error during DB connection: {e}")
-        raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
-    finally:
-        if conn:
-            logger.debug(f"DB Connection closing: {id(conn)}")
-            conn.close()
-
-
 def get_db_cursor() -> Generator[RealDictCursor, None, None]:
     """
     Dependency that provides a database cursor (RealDictCursor).

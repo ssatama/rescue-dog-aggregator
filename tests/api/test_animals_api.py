@@ -149,21 +149,6 @@ class TestAnimalsAPI:
         assert "detail" in data
         assert "not found" in data["detail"].lower()
 
-    def test_legacy_dogs_endpoint(self, client: TestClient):  # Add client fixture
-        """Test the legacy /api/dogs endpoint works."""
-        response = client.get("/api/dogs")
-        assert response.status_code == 200
-        data = response.json()
-        assert isinstance(data, list)
-
-        if len(data) > 0:
-            first_dog = data[0]
-            assert "id" in first_dog
-            assert "name" in first_dog
-            assert "breed" in first_dog or "standardized_breed" in first_dog
-        else:
-            print("Warning: No animals returned from /api/dogs")
-
     def test_get_random_animals(self, client: TestClient):
         """Test GET /api/animals/random endpoint."""
         response = client.get("/api/animals/random?limit=2")  # Request 2 random animals

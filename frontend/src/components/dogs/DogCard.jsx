@@ -31,7 +31,8 @@ export default function DogCard({ dog }) {
           <img
             src={imageUrl}
             alt={name}
-            className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105" // Added hover effect
+            // no hover‑zoom, use contain so you see the entire dog
+            className="w-full h-auto object-contain"
             // Add error handling for images
             onError={(e) => {
               e.target.onerror = null; // prevent infinite loop

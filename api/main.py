@@ -5,7 +5,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Import routes
 from api.routes import animals, organizations
-from api.routes import dogs as dogs_legacy_router
 
 # Create FastAPI app
 app = FastAPI(
@@ -25,10 +24,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(animals.router, prefix="/api/animals", tags=["animals"])
-# Keep the old endpoint for backward compatibility
-app.include_router(
-    dogs_legacy_router.router, prefix="/api/dogs", tags=["dogs (legacy)"]
-)
+
 app.include_router(
     organizations.router, prefix="/api/organizations", tags=["organizations"]
 )

@@ -1,5 +1,5 @@
 -- Source Organizations
-CREATE TABLE organizations (
+CREATE TABLE IF NOT EXISTS organizations (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     website_url TEXT NOT NULL,
@@ -12,44 +12,49 @@ CREATE TABLE organizations (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Dogs
-CREATE TABLE dogs (
+-- Animals (Dogs only for now)
+CREATE TABLE IF NOT EXISTS animals (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     organization_id INTEGER NOT NULL REFERENCES organizations(id),
-    external_id VARCHAR(255),           -- ID from the source website (if available)
-    primary_image_url TEXT,             -- Main image URL
-    adoption_url TEXT NOT NULL,         -- Link to adopt/learn more
-    status VARCHAR(50) DEFAULT 'available',  -- available, pending, adopted
+    animal_type VARCHAR(50) NOT NULL DEFAULT 'dog',
+    external_id VARCHAR(255),
+    primary_image_url TEXT,
+    adoption_url TEXT NOT NULL,
+    status VARCHAR(50) DEFAULT 'available',
     
-    -- Core searchable fields that most sites will have
+    -- Core searchable fields
     breed VARCHAR(255),
-    age_text VARCHAR(100),              -- Age as provided by the source (e.g., "2 years")
+    standardized_breed VARCHAR(100),
+    age_text VARCHAR(100),
+    age_min_months INTEGER,
+    age_max_months INTEGER,
     sex VARCHAR(50),
-    size VARCHAR(50),                   -- Small, Medium, Large, etc.
-    language VARCHAR(10) DEFAULT 'en',  -- ISO 639-1 language code for the original content
+    size VARCHAR(50),
+    standardized_size VARCHAR(50),
+    language VARCHAR(10) DEFAULT 'en',
     
-    -- Extended properties as JSON - stores all additional fields
-    properties JSONB,                   -- Flexible storage for all other attributes
+    -- Extended properties as JSON
+    properties JSONB,
     
     -- Metadata
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_scraped_at TIMESTAMP,
-    source_last_updated TIMESTAMP       -- When the source last updated this dog (if available)
+    source_last_updated TIMESTAMP
 );
 
--- Additional Dog Images
-CREATE TABLE dog_images (
+-- Animal Images
+CREATE TABLE IF NOT EXISTS animal_images (
     id SERIAL PRIMARY KEY,
-    dog_id INTEGER NOT NULL REFERENCES dogs(id) ON DELETE CASCADE,
+    animal_id INTEGER NOT NULL REFERENCES animals(id) ON DELETE CASCADE,
     image_url TEXT NOT NULL,
     is_primary BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Scrape Logs
-CREATE TABLE scrape_logs (
+CREATE TABLE IF NOT EXISTS scrape_logs (
     id SERIAL PRIMARY KEY,
     organization_id INTEGER NOT NULL REFERENCES organizations(id),
     started_at TIMESTAMP NOT NULL,
@@ -57,37 +62,38 @@ CREATE TABLE scrape_logs (
     dogs_found INTEGER,
     dogs_added INTEGER,
     dogs_updated INTEGER,
-    status VARCHAR(50) NOT NULL,        -- success, error, partial
+    status VARCHAR(50) NOT NULL,
     error_message TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Service Regions (Where organizations can adopt TO)
-CREATE TABLE service_regions (
+-- Service Regions
+CREATE TABLE IF NOT EXISTS service_regions (
     id SERIAL PRIMARY KEY,
     organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-    country VARCHAR(100) NOT NULL, -- Country the organization serves
-    region VARCHAR(100),           -- Specific region/state within the country (optional)
+    country VARCHAR(100) NOT NULL,
+    region VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    -- Ensure an organization doesn't have duplicate entries for the same country/region pair
     UNIQUE (organization_id, country, region)
 );
 
 -- Indexes for Performance
-CREATE INDEX idx_dogs_organization ON dogs(organization_id);
-CREATE INDEX idx_dogs_status ON dogs(status);
-CREATE INDEX idx_dogs_breed ON dogs(breed);
-CREATE INDEX idx_dogs_sex ON dogs(sex);
-CREATE INDEX idx_dogs_size ON dogs(size);
+CREATE INDEX IF NOT EXISTS idx_animals_organization ON animals(organization_id);
+CREATE INDEX IF NOT EXISTS idx_animals_status ON animals(status);
+CREATE INDEX IF NOT EXISTS idx_animals_breed ON animals(breed);
+CREATE INDEX IF NOT EXISTS idx_animals_sex ON animals(sex);
+CREATE INDEX IF NOT EXISTS idx_animals_size ON animals(size);
+CREATE INDEX IF NOT EXISTS idx_animals_animal_type ON animals(animal_type);
+CREATE INDEX IF NOT EXISTS idx_animals_standardized_breed ON animals(standardized_breed);
+CREATE INDEX IF NOT EXISTS idx_animals_standardized_size ON animals(standardized_size);
 
--- For text search
-CREATE INDEX idx_dogs_name_gin ON dogs USING gin(to_tsvector('english', name));
-CREATE INDEX idx_dogs_breed_gin ON dogs USING gin(to_tsvector('english', breed));
+-- Text search indexes
+CREATE INDEX IF NOT EXISTS idx_animals_name_gin ON animals USING gin(to_tsvector('english', name));
+CREATE INDEX IF NOT EXISTS idx_animals_breed_gin ON animals USING gin(to_tsvector('english', breed));
 
--- For JSON properties search
-CREATE INDEX idx_dogs_properties ON dogs USING gin(properties);
+-- JSON properties index
+CREATE INDEX IF NOT EXISTS idx_animals_properties ON animals USING gin(properties);
 
--- Indexes for service_regions
-CREATE INDEX idx_service_regions_organization ON service_regions(organization_id);
-CREATE INDEX idx_service_regions_country ON service_regions(country);
-CREATE INDEX idx_service_regions_region ON service_regions(region);
+-- Service regions indexes
+CREATE INDEX IF NOT EXISTS idx_service_regions_organization ON service_regions(organization_id);
+CREATE INDEX IF NOT EXISTS idx_service_regions_country ON service_regions(country);
