@@ -1,5 +1,6 @@
 import cloudinary
 import cloudinary.uploader
+import cloudinary.api
 import requests
 import hashlib
 import os
@@ -35,6 +36,19 @@ class CloudinaryService:
             logger.warning("No image URL provided")
             return None, False
 
+        # Check if Cloudinary is properly configured
+        if not all(
+            [
+                os.getenv("CLOUDINARY_CLOUD_NAME"),
+                os.getenv("CLOUDINARY_API_KEY"),
+                os.getenv("CLOUDINARY_API_SECRET"),
+            ]
+        ):
+            logger.error(
+                "Cloudinary not properly configured. Missing environment variables."
+            )
+            return None, False
+
         try:
             # Create a unique public_id using URL hash to avoid duplicates
             url_hash = hashlib.md5(image_url.encode()).hexdigest()[:8]
@@ -54,6 +68,8 @@ class CloudinaryService:
             except cloudinary.exceptions.NotFound:
                 # Image doesn't exist, proceed with upload
                 pass
+            except Exception as e:
+                logger.warning(f"Could not check existing image: {e}")
 
             # Download the image first with timeout and headers
             headers = {
@@ -80,17 +96,11 @@ class CloudinaryService:
                 )
                 return None, False
 
-            # Upload to Cloudinary
+            # Upload to Cloudinary with minimal parameters
             result = cloudinary.uploader.upload(
                 response.content,
                 public_id=public_id,
-                folder="rescue_dogs",
-                resource_type="image",
                 overwrite=False,  # Don't overwrite existing images
-                format="auto",  # Auto-detect best format
-                quality="auto:good",  # Automatic quality optimization
-                fetch_format="auto",  # Serve best format to browsers
-                transformation=[{"quality": "auto:good"}, {"fetch_format": "auto"}],
             )
 
             logger.info(f"Successfully uploaded image to Cloudinary: {public_id}")

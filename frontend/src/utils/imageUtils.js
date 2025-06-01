@@ -2,81 +2,37 @@
 
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 
-// Temporary: disable Cloudinary until we implement upload flow
-const USE_CLOUDINARY = false;
-
-console.log('🔍 DEBUG: CLOUDINARY_CLOUD_NAME =', CLOUDINARY_CLOUD_NAME);
+// Enable Cloudinary now that we have upload flow
+const USE_CLOUDINARY = true;
 
 const PLACEHOLDER_IMAGE = '/placeholder-dog.svg';
 
 /**
- * Generate Cloudinary transformation URL for an image
- * @param {string} originalUrl - Original image URL
- * @param {Object} options - Transformation options
- * @returns {string} Transformed image URL or fallback
+ * Check if URL is from Cloudinary
  */
-export function getCloudinaryUrl(originalUrl, options = {}) {
-  // Return placeholder if no URL provided
-  if (!originalUrl) {
-    return PLACEHOLDER_IMAGE;
-  }
-
-  // Return original URL if Cloudinary not configured
-  if (!CLOUDINARY_CLOUD_NAME) {
-    console.warn('Cloudinary not configured, using original image URL');
-    return originalUrl;
-  }
-
-  // Default transformation options
-  const defaultOptions = {
-    width: 300,
-    height: 300,
-    crop: 'fill',
-    quality: 'auto',
-    format: 'auto',
-    gravity: 'face', // Focus on faces (great for dog portraits)
-  };
-
-  const transformOptions = { ...defaultOptions, ...options };
-
-  // Build transformation string
-  const transformations = Object.entries(transformOptions)
-    .map(([key, value]) => {
-      // Map common options to Cloudinary parameters
-      const paramMap = {
-        width: 'w',
-        height: 'h',
-        crop: 'c',
-        quality: 'q',
-        format: 'f',
-        gravity: 'g',
-      };
-      const param = paramMap[key] || key;
-      return `${param}_${value}`;
-    })
-    .join(',');
-
-  // Generate Cloudinary fetch URL
-  const cloudinaryUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/${transformations}/${encodeURIComponent(originalUrl)}`;
-
-  return cloudinaryUrl;
+function isCloudinaryUrl(url) {
+  return url && url.includes('res.cloudinary.com');
 }
 
 /**
  * Get optimized image URL for dog cards (square thumbnails)
- * @param {string} originalUrl - Original image URL
- * @returns {string} Optimized thumbnail URL
  */
 export function getDogThumbnail(originalUrl) {
   if (!originalUrl) {
     return PLACEHOLDER_IMAGE;
   }
   
-  if (!USE_CLOUDINARY || !CLOUDINARY_CLOUD_NAME) {
-    return originalUrl; // Use original for now
+  // If it's already a Cloudinary URL, add thumbnail transformations
+  if (isCloudinaryUrl(originalUrl)) {
+    return originalUrl.replace('/upload/', '/upload/w_300,h_300,c_fill,q_auto,f_auto,g_face/');
   }
   
-  // Cloudinary code (disabled)
+  // If Cloudinary is disabled or not configured, use original
+  if (!USE_CLOUDINARY || !CLOUDINARY_CLOUD_NAME) {
+    return originalUrl;
+  }
+  
+  // Fallback: use Cloudinary fetch (though this should rarely happen now)
   try {
     const encodedUrl = encodeURIComponent(originalUrl);
     return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/w_300,h_300,c_fill,q_auto,f_auto,g_face/${encodedUrl}`;
@@ -86,20 +42,23 @@ export function getDogThumbnail(originalUrl) {
 }
 
 /**
- * Get optimized image URL for dog detail pages (preserve aspect ratio)
- * @param {string} originalUrl - Original image URL
- * @returns {string} Optimized detail image URL
+ * Get optimized image URL for dog detail pages
  */
 export function getDogDetailImage(originalUrl) {
   if (!originalUrl) {
     return PLACEHOLDER_IMAGE;
   }
   
-  if (!USE_CLOUDINARY || !CLOUDINARY_CLOUD_NAME) {
-    return originalUrl; // Use original for now
+  // If it's already a Cloudinary URL, add detail transformations
+  if (isCloudinaryUrl(originalUrl)) {
+    return originalUrl.replace('/upload/', '/upload/w_800,h_600,c_fit,q_auto,f_auto/');
   }
   
-  // Cloudinary code (disabled)
+  if (!USE_CLOUDINARY || !CLOUDINARY_CLOUD_NAME) {
+    return originalUrl;
+  }
+  
+  // Fallback: use Cloudinary fetch
   try {
     const encodedUrl = encodeURIComponent(originalUrl);
     return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/w_800,h_600,c_fit,q_auto,f_auto/${encodedUrl}`;
@@ -109,21 +68,25 @@ export function getDogDetailImage(originalUrl) {
 }
 
 /**
- * Handle image loading errors with fallback
- * @param {Event} event - Image error event
- * @param {string} originalUrl - Original image URL to try as fallback
+ * Enhanced error handling with original URL fallback
  */
 export function handleImageError(event, originalUrl) {
-  if (event.target.src !== originalUrl && originalUrl) {
+  const currentSrc = event.target.src;
+  
+  // If current source is Cloudinary and we have original URL, try original
+  if (isCloudinaryUrl(currentSrc) && originalUrl && !isCloudinaryUrl(originalUrl)) {
+    console.warn('Cloudinary image failed, trying original:', originalUrl);
     event.target.src = originalUrl;
-  } else {
+    return;
+  }
+  
+  // If we've tried original or don't have it, use placeholder
+  if (currentSrc !== PLACEHOLDER_IMAGE) {
     event.target.src = PLACEHOLDER_IMAGE;
   }
   
-  event.target.onerror = (e) => {
-    e.target.src = PLACEHOLDER_IMAGE;
-    e.target.onerror = null;
-  };
+  // Prevent infinite error loops
+  event.target.onerror = null;
 }
 
 /**

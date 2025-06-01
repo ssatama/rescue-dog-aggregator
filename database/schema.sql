@@ -41,7 +41,10 @@ CREATE TABLE IF NOT EXISTS animals (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_scraped_at TIMESTAMP,
-    source_last_updated TIMESTAMP
+    source_last_updated TIMESTAMP,
+    
+    -- Add column to store original image URLs for fallback
+    original_image_url TEXT
 );
 
 -- Animal Images
@@ -50,7 +53,10 @@ CREATE TABLE IF NOT EXISTS animal_images (
     animal_id INTEGER NOT NULL REFERENCES animals(id) ON DELETE CASCADE,
     image_url TEXT NOT NULL,
     is_primary BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Add column to store original image URLs for fallback
+    original_image_url TEXT
 );
 
 -- Scrape Logs
@@ -97,3 +103,7 @@ CREATE INDEX IF NOT EXISTS idx_animals_properties ON animals USING gin(propertie
 -- Service regions indexes
 CREATE INDEX IF NOT EXISTS idx_service_regions_organization ON service_regions(organization_id);
 CREATE INDEX IF NOT EXISTS idx_service_regions_country ON service_regions(country);
+
+-- Add index for performance
+CREATE INDEX IF NOT EXISTS idx_animals_original_image_url ON animals(original_image_url);
+CREATE INDEX IF NOT EXISTS idx_animal_images_original_image_url ON animal_images(original_image_url);

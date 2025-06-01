@@ -12,6 +12,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from fastapi.testclient import TestClient
 from fastapi import HTTPException  # <<< Import HTTPException globally
+from unittest.mock import patch
 
 # Add project root to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -144,3 +145,17 @@ def client():
     # Clear overrides after test
     app.dependency_overrides.clear()
     print("[conftest client] TestClient finished and dependency override cleared.")
+
+
+@pytest.fixture(autouse=True)
+def disable_cloudinary_in_tests():
+    """Automatically disable Cloudinary for all tests."""
+    with patch.dict(
+        "os.environ",
+        {
+            "CLOUDINARY_CLOUD_NAME": "",
+            "CLOUDINARY_API_KEY": "",
+            "CLOUDINARY_API_SECRET": "",
+        },
+    ):
+        yield
