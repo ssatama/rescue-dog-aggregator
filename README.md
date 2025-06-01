@@ -17,6 +17,12 @@ Next.js/Tailwind interface, including social media share buttons on each detail 
 
 ## Features
 
+
+- Cloudinary Image Processing: Automated image upload, optimization, and CDN delivery
+- Comprehensive Error Handling: Graceful degradation for all failure scenarios
+- Security Hardening: SQL injection prevention, input validation, sensitive data protection
+- Critical Test Coverage: Integration, security, resilience, and data consistency testing
+- Performance Optimization: Image CDN, query optimization, lazy loading
 - Web scrapers for multiple rescue organizations (currently “Pets in Turkey”)
 - PostgreSQL schema with `animals` + `animal_images` + `organizations` tables
 - FastAPI backend with:

@@ -10,7 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import ShareButton from '../../../components/ui/ShareButton';
 import SocialMediaLinks from '../../../components/ui/SocialMediaLinks';
-import { getDogDetailImage, getDogThumbnail, handleImageError } from '../../../utils/imageUtils';
+import { getDogDetailImage, getDogSmallThumbnail, handleImageError } from '../../../utils/imageUtils';
 
 export default function DogDetailPage() {
   const params = useParams();
@@ -105,7 +105,7 @@ export default function DogDetailPage() {
                   <img 
                     src={getDogDetailImage(dog.primary_image_url)} 
                     alt={dog.name} 
-                    className="w-full h-64 md:h-80 object-cover rounded-lg"
+                    className="w-full h-64 md:h-80 object-contain rounded-lg"
                     onError={(e) => handleImageError(e, dog.primary_image_url)}
                   />
                 ) : (
@@ -119,9 +119,9 @@ export default function DogDetailPage() {
                     {dog.images.slice(0, 4).map((image, index) => (
                       <img 
                         key={image.id || index} 
-                        src={getDogThumbnail(image.image_url)} 
+                        src={getDogSmallThumbnail(image.image_url)} 
                         alt={`${dog.name} - photo ${index + 1}`} 
-                        className="w-full h-16 object-cover rounded-md"
+                        className="w-full h-16 object-contain rounded-md"
                         onError={(e) => handleImageError(e, image.image_url)}
                       />
                     ))}

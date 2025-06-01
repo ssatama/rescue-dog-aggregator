@@ -24,7 +24,8 @@ export function getDogThumbnail(originalUrl) {
   
   // If it's already a Cloudinary URL, add thumbnail transformations
   if (isCloudinaryUrl(originalUrl)) {
-    return originalUrl.replace('/upload/', '/upload/w_300,h_300,c_fill,q_auto,f_auto,g_face/');
+    // Use c_fill with g_auto for better face/subject detection instead of g_face
+    return originalUrl.replace('/upload/', '/upload/w_300,h_300,c_fill,g_auto,q_auto,f_auto/');
   }
   
   // If Cloudinary is disabled or not configured, use original
@@ -32,10 +33,10 @@ export function getDogThumbnail(originalUrl) {
     return originalUrl;
   }
   
-  // Fallback: use Cloudinary fetch (though this should rarely happen now)
+  // Fallback: use Cloudinary fetch
   try {
     const encodedUrl = encodeURIComponent(originalUrl);
-    return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/w_300,h_300,c_fill,q_auto,f_auto,g_face/${encodedUrl}`;
+    return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/w_300,h_300,c_fill,g_auto,q_auto,f_auto/${encodedUrl}`;
   } catch (error) {
     return originalUrl;
   }
@@ -51,6 +52,7 @@ export function getDogDetailImage(originalUrl) {
   
   // If it's already a Cloudinary URL, add detail transformations
   if (isCloudinaryUrl(originalUrl)) {
+    // Use c_fit instead of c_fill to maintain aspect ratio and show full image
     return originalUrl.replace('/upload/', '/upload/w_800,h_600,c_fit,q_auto,f_auto/');
   }
   
@@ -62,6 +64,31 @@ export function getDogDetailImage(originalUrl) {
   try {
     const encodedUrl = encodeURIComponent(originalUrl);
     return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/w_800,h_600,c_fit,q_auto,f_auto/${encodedUrl}`;
+  } catch (error) {
+    return originalUrl;
+  }
+}
+
+/**
+ * Get image URL for smaller thumbnails (like in additional images)
+ */
+export function getDogSmallThumbnail(originalUrl) {
+  if (!originalUrl) {
+    return PLACEHOLDER_IMAGE;
+  }
+  
+  if (isCloudinaryUrl(originalUrl)) {
+    // Small thumbnails with c_fit to avoid weird cropping
+    return originalUrl.replace('/upload/', '/upload/w_150,h_150,c_fit,q_auto,f_auto/');
+  }
+  
+  if (!USE_CLOUDINARY || !CLOUDINARY_CLOUD_NAME) {
+    return originalUrl;
+  }
+  
+  try {
+    const encodedUrl = encodeURIComponent(originalUrl);
+    return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/w_150,h_150,c_fit,q_auto,f_auto/${encodedUrl}`;
   } catch (error) {
     return originalUrl;
   }
