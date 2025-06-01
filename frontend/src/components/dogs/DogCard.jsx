@@ -2,21 +2,23 @@ import Link from 'next/link';
 import {
   Card,
   CardContent,
-  CardFooter, // Optional, if you want a distinct footer area
+  CardFooter,
   CardHeader,
   CardTitle,
-  // CardDescription // Use if you have a subtitle under the title
-} from "@/components/ui/card"; // <<< Import Card components
-import { Badge } from "@/components/ui/badge"; // <<< Import Badge component
-import { Button } from "@/components/ui/button"; // <<< Import Button
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import SocialMediaLinks from '../ui/SocialMediaLinks';
+import { getDogThumbnail, handleImageError } from '../../utils/imageUtils';
+
 
 export default function DogCard({ dog }) {
   // Basic validation or default values
   const name = dog?.name || "Unknown Dog";
   const breed = dog?.standardized_breed || dog?.breed || "Unknown Breed";
-  const breedGroup = dog?.breed_group; // <<< Get breed group
-  const imageUrl = dog?.primary_image_url || '/placeholder-dog.svg'; // Use a placeholder
+  const breedGroup = dog?.breed_group;
+  const originalImageUrl = dog?.primary_image_url;
+  const optimizedImageUrl = getDogThumbnail(originalImageUrl);
   const location = dog?.organization?.city ?
     (dog.organization.country ? `${dog.organization.city}, ${dog.organization.country}` : dog.organization.city) :
     "Unknown Location";
@@ -25,27 +27,21 @@ export default function DogCard({ dog }) {
   const orgSocialMedia = dog?.organization?.social_media;
 
   return (
-    // *** Replace outer div with Card ***
-    <Card className="overflow-hidden flex flex-col h-full group transition-shadow duration-300 hover:shadow-lg"> {/* Added hover shadow */}
-      <CardHeader className="p-0 relative"> {/* Remove padding for image */}
-        <Link href={`/dogs/${id}`} className="block relative" aria-label={`View details for ${name}`}> {/* Added aria-label */}
+    <Card className="overflow-hidden flex flex-col h-full group transition-shadow duration-300 hover:shadow-lg">
+      <CardHeader className="p-0 relative">
+        <Link href={`/dogs/${id}`} className="block relative" aria-label={`View details for ${name}`}>
           {/* Image */}
           <img
-            src={imageUrl}
+            src={optimizedImageUrl}
             alt={name}
-            // no hover‑zoom, use contain so you see the entire dog
             className="w-full h-auto object-contain"
-            // Add error handling for images
-            onError={(e) => {
-              e.target.onerror = null; // prevent infinite loop
-              e.target.src = '/placeholder-dog.svg'; // fallback to placeholder
-            }}
+            onError={(e) => handleImageError(e, originalImageUrl)}
           />
           {/* Status Badge (optional) */}
           {status !== 'available' && (
              <Badge
-               variant={status === 'adopted' ? "secondary" : "default"} // Use secondary for adopted, default (yellowish?) for pending
-               className="absolute top-2 right-2" // Position badge
+               variant={status === 'adopted' ? "secondary" : "default"}
+               className="absolute top-2 right-2"
              >
                {status.charAt(0).toUpperCase() + status.slice(1)}
              </Badge>
@@ -53,22 +49,20 @@ export default function DogCard({ dog }) {
         </Link>
       </CardHeader>
 
-      {/* Use CardContent for the main text body */}
-      <CardContent className="p-4 flex flex-col flex-grow"> {/* Add flex-grow to push footer down */}
-        <CardTitle className="text-lg font-bold mb-1 truncate group-hover:text-blue-600"> {/* Add hover effect */}
+      <CardContent className="p-4 flex flex-col flex-grow">
+        <CardTitle className="text-lg font-bold mb-1 truncate group-hover:text-blue-600">
           <Link href={`/dogs/${id}`} className="hover:underline">
             {name}
           </Link>
         </CardTitle>
-        <p className="text-sm text-gray-600 mb-1 truncate">{breed}</p> {/* Reduced margin */}
-        {/* *** Add Breed Group Badge *** */}
+        <p className="text-sm text-gray-600 mb-1 truncate">{breed}</p>
         {breedGroup && breedGroup !== 'Unknown' && (
-          <Badge variant="outline" className="text-xs mb-2 w-fit"> {/* Use outline, fit width */}
+          <Badge variant="outline" className="text-xs mb-2 w-fit">
             {breedGroup} Group
           </Badge>
         )}
         <p className="text-xs text-gray-500 flex-grow">
-          {location !== "Unknown Location" ? location : <>&nbsp;</>} {/* Render location or non-breaking space */}
+          {location !== "Unknown Location" ? location : <>&nbsp;</>}
         </p>
 
         {/* Organization Social Media */}
@@ -80,18 +74,14 @@ export default function DogCard({ dog }) {
         )}
       </CardContent>
 
-      {/* Optional: Use CardFooter for actions or less important info */}
-      <CardFooter className="p-4 pt-0"> {/* Remove top padding */}
-         {/* Link wraps the Button */}
-         <Link href={`/dogs/${id}`} passHref className="w-full"> {/* Link takes full width */}
-           {/* Button is now a direct child, no asChild or legacyBehavior needed */}
+      <CardFooter className="p-4 pt-0">
+         <Link href={`/dogs/${id}`} passHref className="w-full">
            <Button
              size="sm"
-             variant="outline" // Use outline variant
-             className="w-full" // Keep full width
-             // Default outline variant usually handles hover states well
+             variant="outline"
+             className="w-full"
            >
-             Adopt {name} {/* Change text to "Adopt {dog.name}" */}
+             Adopt {name}
            </Button>
          </Link>
       </CardFooter>

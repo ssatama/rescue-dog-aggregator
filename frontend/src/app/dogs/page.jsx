@@ -27,6 +27,7 @@ import {
 import { Filter, X } from 'lucide-react';
 import FilterControls from '../../components/dogs/FilterControls';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
 import { Badge } from "@/components/ui/badge";
 
 // Helper function to map UI size to standardized size

@@ -10,6 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import ShareButton from '../../../components/ui/ShareButton';
 import SocialMediaLinks from '../../../components/ui/SocialMediaLinks';
+import { getDogDetailImage, getDogThumbnail, handleImageError } from '../../../utils/imageUtils';
 
 export default function DogDetailPage() {
   const params = useParams();
@@ -101,7 +102,12 @@ export default function DogDetailPage() {
             <div className="flex flex-col md:flex-row gap-6">
               <div className="md:w-1/2">
                 {dog.primary_image_url ? (
-                  <img src={dog.primary_image_url} alt={dog.name} className="w-full h-64 md:h-80 object-cover rounded-lg" />
+                  <img 
+                    src={getDogDetailImage(dog.primary_image_url)} 
+                    alt={dog.name} 
+                    className="w-full h-64 md:h-80 object-cover rounded-lg"
+                    onError={(e) => handleImageError(e, dog.primary_image_url)}
+                  />
                 ) : (
                   <div className="w-full h-64 md:h-80 bg-gray-200 rounded-lg flex items-center justify-center">
                     <p className="text-gray-500">No image available</p>
@@ -111,7 +117,13 @@ export default function DogDetailPage() {
                 {dog.images && dog.images.length > 1 && (
                   <div className="mt-3 grid grid-cols-4 gap-2">
                     {dog.images.slice(0, 4).map((image, index) => (
-                      <img key={image.id || index} src={image.image_url} alt={`${dog.name} - photo ${index + 1}`} className="w-full h-16 object-cover rounded-md" />
+                      <img 
+                        key={image.id || index} 
+                        src={getDogThumbnail(image.image_url)} 
+                        alt={`${dog.name} - photo ${index + 1}`} 
+                        className="w-full h-16 object-cover rounded-md"
+                        onError={(e) => handleImageError(e, image.image_url)}
+                      />
                     ))}
                   </div>
                 )}
