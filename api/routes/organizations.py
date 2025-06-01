@@ -20,8 +20,10 @@ def get_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
     try:
         cursor.execute(
             """
-            SELECT * FROM organizations
-            WHERE active = TRUE
+            SELECT id, name, website_url, description, country, city, 
+                   logo_url, social_media, active, created_at, updated_at
+            FROM organizations 
+            WHERE active = true
             ORDER BY name
         """
         )
@@ -44,8 +46,10 @@ def get_organization(
     try:
         cursor.execute(
             """
-            SELECT * FROM organizations
-            WHERE id = %s
+            SELECT id, name, website_url, description, country, city, 
+                   logo_url, social_media, active, created_at, updated_at
+            FROM organizations 
+            WHERE id = %s AND active = true
         """,
             (organization_id,),
         )

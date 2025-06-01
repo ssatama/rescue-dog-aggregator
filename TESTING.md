@@ -1,117 +1,73 @@
 # Testing Guide for Rescue Dog Aggregator
 
-This document explains how to run tests and add new tests to the project.
+This project includes both backend (Pytest) and frontend (Jest) tests.
+
+---
 
 ## Backend Tests
 
-The backend uses pytest for testing. These tests verify:
-- Standardization utilities (breed, age, size)
-- Scraper functionality
-- API endpoints
-- Database operations
-
-### Running Backend Tests
+Run from the project root:
 
 ```bash
-# Run all tests
 pytest
-
-# Run with coverage
-pytest --cov=.
-
-# Run specific test file
-pytest tests/utils/test_standardization.py
 ```
 
-### Test Structure
+- Tests live under `tests/`:
+  - `tests/utils/` – standardization, audit scripts  
+  - `tests/scrapers/` – BaseScraper + org-specific  
+  - `tests/api/` – integration tests against FastAPI endpoints  
 
-Backend tests are organized in the `tests` directory:
-- `tests/utils/` - Tests for utility functions
-- `tests/scrapers/` - Tests for web scrapers
-- `tests/api/` - Tests for API endpoints
+### Test Database
+
+- Uses a Postgres test database `test_rescue_dogs`  
+- Override provided in `tests/conftest.py` to point FastAPI’s `get_db_cursor` to the test DB.  
+- Data fixtures clear & re-insert base records per test.
+
+---
 
 ## Frontend Tests
 
-The frontend uses Jest and React Testing Library for testing. These tests verify:
-- React components render correctly
-- API service functions work as expected
-- Standardized fields are properly displayed
-
-### Running Frontend Tests
+Run from the `frontend/` directory:
 
 ```bash
-# Navigate to frontend directory
-cd frontend
-
-# Run all tests
 npm test
-
-# Run tests in watch mode (rerun on changes)
-npm run test:watch
 ```
 
-### Test Structure
+Key directories:
 
-Frontend tests are placed alongside the code they test:
-- `src/components/dogs/__tests__/` - Tests for dog components
-- `src/utils/__tests__/` - Tests for utility functions
-- `src/services/__tests__/` - Tests for API services
-- `src/app/**/__tests__/` - Tests for page components
+- `src/components/.../__tests__` – UI component unit tests  
+- `src/services/.../__tests__`   – API helper mocks  
+- `src/app/.../__tests__`        – Page component tests  
+
+### New Social Media Share Tests
+
+- `<SocialMediaLinks>` unit tests confirm only the passed networks render  
+- DogDetailPage and OrgDetailPage tests verify share links appear when `social_media`  
+  data is present and are hidden when the object is empty.  
+
+---
 
 ## Continuous Integration
 
-Tests automatically run on GitHub Actions when:
-- Pushing to the main branch
-- Creating a pull request to main branch
+On each PR or push to `main`, GitHub Actions runs:
 
-See the workflow configuration in `.github/workflows/tests.yml`
+1. `pytest --cov=.`  
+2. `npm ci && npm test`
+
+Ensure **all** tests pass before merging.
+
+---
 
 ## Adding New Tests
 
-### Adding Backend Tests
+### Backend
 
-1. Create a new test file in the appropriate directory under `tests/`
-2. Name the file `test_*.py`
-3. Use pytest fixtures from `conftest.py` where appropriate
-4. Run the tests to make sure they pass
+1. Create `tests/.../test_<feature>.py`  
+2. Use fixtures from `tests/conftest.py` for DB access  
+3. Run `pytest tests/.../test_<feature>.py` to verify
 
-Example:
-```python
-# tests/utils/test_new_feature.py
-import pytest
-from utils.new_feature import my_function
+### Frontend
 
-def test_my_function():
-    result = my_function(test_input)
-    assert result == expected_output
-```
-
-### Adding Frontend Tests
-
-1. Create a test file in the appropriate `__tests__` directory
-2. Name the file `*.test.jsx` or `*.test.js`
-3. Mock dependencies as needed
-4. Run the tests to make sure they pass
-
-Example:
-```javascript
-// src/components/new-component/__tests__/NewComponent.test.jsx
-import React from 'react';
-import { render, screen } from '@testing-library/react';
-import NewComponent from '../NewComponent';
-
-describe('NewComponent', () => {
-  test('renders correctly', () => {
-    render(<NewComponent />);
-    expect(screen.getByText('Expected Text')).toBeInTheDocument();
-  });
-});
-```
-
-## Test Coverage Goals
-
-We aim for:
-- 80%+ coverage overall
-- 90%+ for core business logic (standardization)
-- 80%+ for UI components
-- 100% for utility functions
+1. Create `*.test.jsx` next to the code under `src/`  
+2. Mock external dependencies (services, next/navigation) via Jest  
+3. Run `npm test <yourFile>.test.jsx`

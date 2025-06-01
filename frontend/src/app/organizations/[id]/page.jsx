@@ -8,6 +8,7 @@ import Layout from '../../../components/layout/Layout';
 import DogCard from '../../../components/dogs/DogCard';
 import Loading from '../../../components/ui/Loading';
 import { getOrganizationById, getOrganizationDogs } from '../../../services/organizationsService';
+import SocialMediaLinks from '../../../components/ui/SocialMediaLinks';
 
 export default function OrganizationDetailPage() {
   const params = useParams();
@@ -123,10 +124,18 @@ export default function OrganizationDetailPage() {
                   className="inline-flex items-center text-blue-500 hover:underline"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                   </svg>
                   Visit Website
                 </a>
+              )}
+              
+              {/* Social Media Links */}
+              {organization.social_media && Object.keys(organization.social_media).length > 0 && (
+                <div className="mt-3">
+                  <p className="text-sm text-gray-600 mb-2">Follow us on social media:</p>
+                  <SocialMediaLinks socialMedia={organization.social_media} className="justify-start" />
+                </div>
               )}
             </div>
           </div>

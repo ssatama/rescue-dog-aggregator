@@ -1,12 +1,15 @@
-// first, mock the service so getAnimalById is a jest.fn()
+import React from 'react';
+import { render, screen, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import DogDetailPage from '../page';
+import { getAnimalById } from '../../../../services/animalsService';
+
+// mock the service
 jest.mock('../../../../services/animalsService', () => ({
   getAnimalById: jest.fn()
 }));
 
-// next, mock Loading
-jest.mock('../../../../components/ui/Loading', () => () => <div data-testid="loading"/>);
-
-// and mock next/navigation (must include usePathname so Header won't crash)
+// mock next/navigation
 jest.mock('next/navigation', () => ({
   useParams: () => ({ id: '1' }),
   useRouter: () => ({ back: jest.fn() }),
@@ -14,11 +17,8 @@ jest.mock('next/navigation', () => ({
   useSearchParams: () => ({ get: () => null }),
 }));
 
-import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
-import DogDetailPage from '../page';
-import { getAnimalById } from '../../../../services/animalsService';
-import '@testing-library/jest-dom';
+// mock Loading
+jest.mock('../../../../components/ui/Loading', () => () => <div data-testid="loading"/>);
 
 // suppress React/console error noise during tests
 beforeAll(() => {
@@ -83,5 +83,73 @@ describe('DogDetailPage', () => {
     
     // Should show loading state
     expect(screen.getByTestId('loading')).toBeInTheDocument();
+  });
+});
+
+describe('DogDetailPage – share buttons', () => {
+  it('renders SocialMediaLinks with the org social_media URLs', async () => {
+    // arrange: return a dog whose organization.social_media has two links
+    getAnimalById.mockResolvedValueOnce({
+      id: 1,
+      name: 'Rover',
+      primary_image_url: 'https://img/rover.jpg',
+      status: 'available',
+      sex: 'Male',
+      standardized_breed: 'Beagle',
+      breed_group: 'Hound',
+      properties: {},
+      organization: {
+        id: 2,
+        name: 'Pets in Turkey',
+        social_media: {
+          facebook: 'https://fb.test/pets',
+          instagram: 'https://insta.test/pets'
+        }
+      }
+    });
+
+    render(<DogDetailPage />);
+
+    // wait for loading to disappear
+    await waitFor(() =>
+      expect(screen.queryByTestId('loading')).not.toBeInTheDocument()
+    );
+
+    // now the share links should be in the document
+    expect(
+      screen.getByRole('link', { name: /facebook/i })
+    ).toHaveAttribute('href', 'https://fb.test/pets');
+
+    expect(
+      screen.getByRole('link', { name: /instagram/i })
+    ).toHaveAttribute('href', 'https://insta.test/pets');
+  });
+
+  it('does not render share links when organization.social_media is empty', async () => {
+    getAnimalById.mockResolvedValueOnce({
+      id: 1,
+      name: 'Rover',
+      primary_image_url: 'https://img.test/rover.jpg',
+      status: 'available',
+      sex: 'Male',
+      standardized_breed: 'Beagle',
+      breed_group: 'Hound',
+      properties: {},
+      organization: {
+        id: 2,
+        name: 'Pets in Turkey',
+        social_media: {}   // ← empty
+      }
+    });
+
+    render(<DogDetailPage />);
+
+    await waitFor(() =>
+      expect(screen.queryByTestId('loading')).not.toBeInTheDocument()
+    );
+
+    // no social links
+    expect(screen.queryByRole('link', { name: /facebook/i })).toBeNull();
+    expect(screen.queryByRole('link', { name: /instagram/i })).toBeNull();
   });
 });

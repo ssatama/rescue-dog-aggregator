@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import SocialMediaLinks from '../ui/SocialMediaLinks';
 
 export default function OrganizationCard({ organization }) {
   // Using placeholder data if no organization is provided
@@ -17,6 +18,7 @@ export default function OrganizationCard({ organization }) {
   const description = organization?.description || "No description available";
   const websiteUrl = organization?.website_url || "#";
   const logoUrl = organization?.logo_url || null;
+  const socialMedia = organization?.social_media || {};
   const id = organization?.id || "0";
 
   return (
@@ -42,6 +44,14 @@ export default function OrganizationCard({ organization }) {
           <CardTitle className="text-xl font-bold text-gray-800 mb-2">{name}</CardTitle>
           <p className="text-gray-600 text-sm mb-2">{location}</p>
           <p className="text-gray-700 mb-4 line-clamp-3 flex-grow">{description}</p>
+          
+          {/* Social Media Links */}
+          {socialMedia && Object.keys(socialMedia).length > 0 && (
+            <div className="mt-2 pt-2 border-t border-gray-100">
+              <p className="text-xs text-gray-500 mb-2">Follow us:</p>
+              <SocialMediaLinks socialMedia={socialMedia} className="justify-start" />
+            </div>
+          )}
         </CardContent>
 
         <CardFooter className="p-6 pt-0">

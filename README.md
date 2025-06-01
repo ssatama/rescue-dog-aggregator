@@ -1,131 +1,128 @@
 # Rescue Dog Aggregator
 
-An open-source web platform that aggregates rescue dogs from multiple organizations, standardizes information, and presents it in a user-friendly interface that links back to the original rescue organizations.
+An open-source web platform that aggregates rescue dogs from multiple organizations,  
+standardizes the data into a consistent format, and presents it in a user-friendly  
+Next.js/Tailwind interface, including social media share buttons on each detail page.
 
-## Project Overview
+## Table of Contents
 
-This project aims to:
-- Create a single, well-designed destination for people to find rescue dogs
-- Enhance the discovery experience by providing a unified, user-friendly interface for multiple rescue organizations
-- Help more dogs find homes by increasing their visibility
-- Support rescue organizations by directing qualified adopters to them
-- Bridge language barriers with multilingual support to connect dogs with potential adopters worldwide
-- Standardize varied data formats into a consistent, searchable structure
-- Provide rich filtering options that may not be available on the original rescue sites
-- Track adoption metrics to measure impact and improve the platform over time
-- Build an open-source solution that allows the community to add support for more rescue organizations
+- [Features](#features)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)  
+  - [Backend](#backend)  
+  - [Frontend](#frontend)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Contributing](#contributing)
 
-## Current Status
+## Features
 
-⚠️ **Work In Progress** ⚠️
-
-The project is in active development with basic functionality working.
-
-### Completed Features:
-- Backend API with FastAPI
-- Database setup with PostgreSQL
-- Web scraper for "Pets in Turkey" organization
-- Frontend UI with Next.js and Tailwind CSS including:
-  - Home page with introduction
-  - Dogs catalog with filtering UI
-  - Detailed dog view pages
-  - Organizations listing
-  - About page with mission statement
-- Data standardization:
-  - Breed standardization (mapping various breed names to consistent standards)
-  - Size standardization (standardized size categories: Tiny, Small, Medium, Large, XLarge)
-  - Age categorization (Puppy, Young, Adult, Senior)
-  - Multilingual support preparation
-
-### In Progress:
-- Frontend integration of standardized fields:
-  - Displaying standardized breed information
-  - Filtering by standardized attributes
-  - Enhanced dog cards and detail views
-- API refinement for standardized filtering
-- Additional scraper support for more organizations
-- Mobile optimization improvements
-
-### Known Issues:
-- Filter functionality not fully working with standardized fields
-- Dog cards sometimes display original rather than standardized breeds
-- Frontend/backend integration needs improvement for standardized data
+- Web scrapers for multiple rescue organizations (currently “Pets in Turkey”)
+- PostgreSQL schema with `animals` + `animal_images` + `organizations` tables
+- FastAPI backend with:
+  - `/api/animals` list & filter endpoint
+  - `/api/animals/{id}` detail endpoint
+  - `/api/organizations` list & `/api/organizations/{id}` detail
+  - Nested `organization` object on every animal, including `social_media: { facebook, instagram, … }`  
+- Next.js/Tailwind frontend:
+  - Dog catalog with filters
+  - Dog detail pages showing standardized data
+  - Organization listing & detail pages
+  - Reusable `<SocialMediaLinks>` component (renders only the passed networks)
+  - Share buttons for Facebook/Instagram/Twitter/LinkedIn where available
+- Comprehensive test coverage:
+  - Pytest for backend unit & integration tests (uses a test database override fixture)
+  - Jest + React Testing Library for frontend components and page‐level tests
+  - 80%+ coverage on core logic and UI
 
 ## Project Structure
 
-- `scrapers/`: Web scraping modules for different rescue organizations
-  - `base_scraper.py`: Abstract base class for all organization-specific scrapers
-  - `pets_in_turkey/`: Specific scraper for Pets in Turkey organization
-- `database/`: Database schema and operations
-  - `schema.sql`: Flexible database schema with multilingual support
-  - `db_setup.py`: Initial database setup script
-  - `db_migration_phase2.py`: Schema migration for standardization support
-- `api/`: Backend API for frontend consumption
-  - `routes/`: API endpoints
-  - `models/`: Data schemas
-  - `dependencies.py`: Shared dependencies (DB connection, etc.)
-- `frontend/`: Next.js frontend application
-  - `src/app/`: Page components
-  - `src/components/`: Reusable UI components
-  - `src/utils/`: Utility functions
-- `utils/`: Utility scripts
-  - `standardization.py`: Data standardization utilities
-
-## Testing
-
-Rescue Dog Aggregator has comprehensive test coverage for both backend and frontend components.
-
-### Backend Tests
-
-```bash
-# Run all backend tests
-pytest
-
-# Run with coverage
-pytest --cov=.
 ```
-
-### Frontend Tests
-
-```bash
-# Navigate to frontend directory
-cd frontend
-
-# Run all frontend tests
-npm test
+.
+├── api/                  # FastAPI routes & Pydantic models
+├── database/             # schema, migrations, archive
+├── scrapers/             # web scraper modules (BaseScraper + org-specific)
+├── utils/                # standardization, data audit, scripts
+├── frontend/             # Next.js app (React + Tailwind)
+│   ├── src/
+│   │   ├── app/          # page components
+│   │   ├── components/   # shared React UI components
+│   │   ├── services/     # API client functions
+│   │   └── utils/
+├── tests/                # Pytest tests (api, scrapers, utils)
+├── TESTING.md            # testing guide
+└── README.md             # this file
 ```
-
-### Continuous Integration
-
-Tests automatically run on GitHub Actions when pushing to or creating pull requests against the main branch.
-
-For detailed testing documentation, see [TESTING.md](./TESTING.md).
 
 ## Getting Started
 
-### Backend Setup
+### Backend
 
-1. Set up your database credentials in a `.env` file (see `.env.sample`)
-2. Set up the database: `python main.py --setup`
-3. Run the Pets in Turkey scraper: `python main.py --pit`
-4. Database is already migrated. To check status: `python database/check_db_status.py`
-5. Run standardization: `python utils/apply_standardization_to_db.py`
-6. Start the API server: `python run_api.py`
+1. Copy `.env.sample` → `.env` and fill in your Postgres credentials.  
+2. Initialize the database and tables:
+   ```bash
+   python main.py --setup
+   ```
+3. Run the “Pets in Turkey” scraper:
+   ```bash
+   python main.py --pit
+   ```
+4. (Optional) Apply standardization:
+   ```bash
+   python utils/apply_standardization_to_db.py
+   ```
+5. Start the API server:
+   ```bash
+   uvicorn api.main:app --reload --port 8000
+   ```
+6. Visit `http://localhost:8000/docs` for interactive Swagger UI.
 
-### Frontend Setup
+### Frontend
 
-1. Navigate to the frontend directory: `cd frontend`
-2. Install dependencies: `npm install`
-3. Start the development server: `npm run dev`
-4. Visit http://localhost:3000 in your browser
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Open `http://localhost:3000` in your browser.
 
-## Technology Stack
+## Testing
 
-- **Backend**: Python, FastAPI, PostgreSQL
-- **Frontend**: Next.js, React, Tailwind CSS
-- **Data Collection**: Web scraping with BeautifulSoup, Selenium
-- **Deployment**: (Coming soon)
+### Backend
 
-## Contributing
+```bash
+# Run all tests
+pytest
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+# Run with coverage report
+pytest --cov=.
+
+# Run a single test file
+pytest tests/api/test_animals_api.py -q
+```
+
+Tests use `tests/conftest.py` to spin up a TestClient with a dependency override pointing at `test_rescue_dogs`.
+
+### Frontend
+
+```bash
+cd frontend
+
+# Run all
+npm test
+
+# Run pattern
+npm test page.test.jsx
+```
+
+We use Jest + React Testing Library.  Key test suites cover:
+- Utility functions (`src/utils`)
+- API service mocks (`src/services`)
+- UI components (`src/components/**/__tests__`)
+- Page components (`src/app/**/__tests__`)
+
+## Deployment
+
+- **Backend**: deploy FastAPI (e.g. to Heroku, AWS, DigitalOcean)
+- **Frontend**: deploy Next.js on Vercel  
+  Follow the instructions in `frontend/README.md` or [Vercel docs](https://vercel.com/new).

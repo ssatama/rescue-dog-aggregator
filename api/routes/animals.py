@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import List, Optional
 from psycopg2.extras import RealDictCursor
 from pydantic import ValidationError
+import json
 
 from api.dependencies import get_db_cursor
 from api.models.dog import Animal, AnimalImage, AnimalWithImages
@@ -71,9 +72,14 @@ async def get_animals(
             SELECT DISTINCT a.id, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
                    a.age_text, a.age_min_months, a.age_max_months, a.sex, a.size, a.standardized_size,
                    a.status, a.primary_image_url, a.adoption_url, a.organization_id, a.external_id,
-                   a.language, a.properties, a.created_at, a.updated_at, a.last_scraped_at
+                   a.language, a.properties, a.created_at, a.updated_at, a.last_scraped_at,
+                   o.name as org_name, 
+                   o.city as org_city, 
+                   o.country as org_country,
+                   o.website_url as org_website_url,
+                   o.social_media as org_social_media
             FROM animals a
-            JOIN organizations o ON a.organization_id = o.id
+            LEFT JOIN organizations o ON a.organization_id = o.id
         """
         # Conditionally join service_regions if needed for filtering
         joins = ""
@@ -179,35 +185,36 @@ async def get_animals(
         animal_rows = cursor.fetchall()
         logger.info(f"Found {len(animal_rows)} animals matching criteria.")
 
-        # Fetch images for each animal and combine
         animals_with_images = []
-        for animal_dict in animal_rows:
-            try:
-                animal_images = fetch_animal_images(cursor, animal_dict["id"])
-                # Ensure properties is a dict, not string, before validation
-                if isinstance(animal_dict.get("properties"), str):
-                    try:
-                        animal_dict["properties"] = json.loads(
-                            animal_dict["properties"]
-                        )
-                    except json.JSONDecodeError:
-                        logger.warning(
-                            f"Could not parse properties JSON for animal {animal_dict['id']}, setting to empty dict."
-                        )
-                        animal_dict["properties"] = {}
-                elif animal_dict.get("properties") is None:
-                    animal_dict["properties"] = {}
+        for row in animal_rows:
+            # parse JSON properties
+            if isinstance(row.get("properties"), str):
+                try:
+                    row["properties"] = json.loads(row["properties"])
+                except json.JSONDecodeError:
+                    row["properties"] = {}
+            elif row.get("properties") is None:
+                row["properties"] = {}
 
-                animal_model = AnimalWithImages(**animal_dict, images=animal_images)
-                animals_with_images.append(animal_model)
-            except ValidationError as animal_err:
-                logger.warning(
-                    f"Skipping animal {animal_dict.get('id', 'N/A')} due to validation error: {animal_err} for data {animal_dict}"
-                )
-            except Exception as fetch_err:
-                logger.error(
-                    f"Error processing animal {animal_dict.get('id', 'N/A')} after query: {fetch_err}"
-                )
+            # build nested organization
+            organization = None
+            if row.get("org_name"):
+                organization = {
+                    "id": row["organization_id"],
+                    "name": row["org_name"],
+                    "city": row["org_city"],
+                    "country": row["org_country"],
+                    "website_url": row["org_website_url"],
+                    "social_media": row["org_social_media"] or {},
+                }
+
+            # strip out raw org_* keys
+            clean = {k: v for k, v in row.items() if not k.startswith("org_")}
+            clean["organization"] = organization
+
+            # fetch images
+            images = fetch_animal_images(cursor, clean["id"])
+            animals_with_images.append(AnimalWithImages(**clean, images=images))
 
         return animals_with_images
 
@@ -444,7 +451,24 @@ async def get_animal_by_id(
 ):
     """Get a specific animal by ID, including its images."""
     try:
-        cursor.execute("SELECT * FROM animals WHERE id = %s", (animal_id,))
+        cursor.execute(
+            """
+            SELECT a.id, a.name, a.breed, a.standardized_breed, a.breed_group,
+                   a.age_text, a.age_min_months, a.age_max_months,
+                   a.sex, a.size, a.standardized_size, a.status, a.properties,
+                   a.primary_image_url, a.adoption_url, a.created_at, a.updated_at,
+                   a.organization_id,
+                   o.name as org_name, 
+                   o.city as org_city, 
+                   o.country as org_country,
+                   o.website_url as org_website_url,
+                   o.social_media as org_social_media
+            FROM animals a 
+            LEFT JOIN organizations o ON a.organization_id = o.id 
+            WHERE a.id = %s
+            """,
+            (animal_id,),
+        )
         animal_dict = cursor.fetchone()
 
         if not animal_dict:
@@ -453,8 +477,39 @@ async def get_animal_by_id(
         # --- FIX: Fetch images BEFORE creating the final model ---
         animal_images = fetch_animal_images(cursor, animal_id)
         try:
-            # Create AnimalWithImages directly
-            animal = AnimalWithImages(**animal_dict, images=animal_images)
+            # Ensure properties is a dict, not string, before validation
+            if isinstance(animal_dict.get("properties"), str):
+                try:
+                    animal_dict["properties"] = json.loads(animal_dict["properties"])
+                except json.JSONDecodeError:
+                    logger.warning(
+                        f"Could not parse properties JSON for animal {animal_id}, setting to empty dict."
+                    )
+                    animal_dict["properties"] = {}
+            elif animal_dict.get("properties") is None:
+                animal_dict["properties"] = {}
+
+            # Build organization data if present
+            organization_data = None
+            if animal_dict.get("org_name"):
+                organization_data = {
+                    "id": animal_dict["organization_id"],
+                    "name": animal_dict["org_name"],
+                    "city": animal_dict["org_city"],
+                    "country": animal_dict["org_country"],
+                    "website_url": animal_dict["org_website_url"],
+                    "social_media": animal_dict["org_social_media"] or {},
+                }
+
+            # Remove the org_ prefixed fields and add the nested organization
+            clean_animal_dict = {
+                k: v for k, v in animal_dict.items() if not k.startswith("org_")
+            }
+            clean_animal_dict["organization"] = organization_data
+
+            # Create AnimalWithImages with cleaned data
+            animal = AnimalWithImages(**clean_animal_dict, images=animal_images)
+            return animal
         except ValidationError as animal_err:
             logger.error(f"Validation error for animal ID {animal_id}: {animal_err}")
             raise HTTPException(
@@ -462,10 +517,9 @@ async def get_animal_by_id(
             )
         # --- END FIX ---
 
-        return animal
-
-    except HTTPException as http_exc:
-        raise http_exc
+    except HTTPException:
+        # re-raise 404
+        raise
     except psycopg2.Error as db_err:
         logger.error(f"Database error fetching animal ID {animal_id}: {db_err}")
         raise HTTPException(status_code=500, detail=f"Database query error: {db_err}")

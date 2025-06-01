@@ -35,46 +35,20 @@ TEST_DB_HOST = "localhost"
 # This function provides connections/cursors for BOTH setup and request handling
 def override_get_db_cursor():
     """Dependency override that connects to the TEST database."""
-    conn = None
-    cursor = None
     test_db_params = {
         "host": TEST_DB_HOST,
         "user": TEST_DB_USER,
         "password": TEST_DB_PASSWORD,
         "database": TEST_DB_NAME,
     }
-    print(
-        f"[conftest override_get_db_cursor] Attempting connect with: {test_db_params['database']} user {test_db_params['user']}"
-    )
+    conn = psycopg2.connect(**test_db_params)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     try:
-        conn = psycopg2.connect(**test_db_params)
-        # Set isolation level if needed, though default Read Committed should be fine
-        # conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED)
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
-        print(
-            f"[conftest override_get_db_cursor] Override connected successfully to {test_db_params['database']}."
-        )
-        yield cursor  # Provide the cursor
-        conn.commit()  # Commit changes made using this cursor
-    except Exception as e:
-        print(f"[conftest override_get_db_cursor] Override connection error: {e}")
-        if conn:
-            conn.rollback()
-        raise HTTPException(status_code=500, detail=f"Test DB dependency error: {e}")
+        yield cursor
+        conn.commit()
     finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
-            print(
-                f"[conftest override_get_db_cursor] Override connection to {test_db_params['database']} closed."
-            )
-
-
-# --- REMOVE real_db_connection fixture ---
-# @pytest.fixture(scope="session")
-# def real_db_connection():
-#     ... # Removed this entire fixture
+        cursor.close()
+        conn.close()
 
 
 # --- Test Data Management Fixture ---
@@ -101,9 +75,12 @@ def manage_test_data():
         # Insert base data
         print("[conftest manage_test_data] Inserting base test data...")
         org_sql = """
-        INSERT INTO organizations (id, name, website_url, country, city, active)
-        VALUES (901, 'Test Organization', 'http://example.com', 'Testland', 'Testville', TRUE)
-        ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, website_url = EXCLUDED.website_url;
+        INSERT INTO organizations (id, name, website_url, country, city, active, social_media)
+        VALUES (901, 'Test Organization', 'http://example.com', 'Testland', 'Testville', TRUE, '{"facebook": "https://facebook.com/testorg", "instagram": "https://instagram.com/testorg"}')
+        ON CONFLICT (id) DO UPDATE SET 
+            name = EXCLUDED.name, 
+            website_url = EXCLUDED.website_url,
+            social_media = EXCLUDED.social_media;
         """
         cursor.execute(org_sql)
         print("[conftest manage_test_data] Base test data inserted.")
@@ -118,24 +95,24 @@ def manage_test_data():
             primary_image_url = EXCLUDED.primary_image_url, updated_at = NOW();
         """
         cursor.execute(male_dog_sql)
-        print("[conftest manage_test_data] Specific test animals inserted.")
+        print("[conftest.manage_test_data] Specific test animals inserted.")
 
         # --- IMPORTANT: Commit the setup data using the connection from the override ---
         conn.commit()
-        print("[conftest manage_test_data] Data setup complete and committed.")
+        print("[conftest.manage_test_data] Data setup complete and committed.")
 
         yield  # Test runs here
 
         # Teardown is implicitly handled by the next test's setup clearing tables
         print(
-            "[conftest manage_test_data] Teardown for test function (data cleared by next setup)."
+            "[conftest.manage_test_data] Teardown for test function (data cleared by next setup)."
         )
 
     except Exception as e:
         if conn:
             conn.rollback()
         pytest.fail(
-            f"[conftest manage_test_data] Error during test data management: {e}",
+            f"[conftest.manage_test_data] Error during test data management: {e}",
             pytrace=False,
         )
     finally:
@@ -153,9 +130,17 @@ def manage_test_data():
 def client():
     """Pytest fixture to create a TestClient for the API with DB dependency override."""
     print("\n[conftest client] Creating TestClient with dependency override...")
+
+    # Clear any existing overrides first
+    app.dependency_overrides.clear()
+
+    # Set our override
     app.dependency_overrides[get_db_cursor] = override_get_db_cursor
+
     with TestClient(app) as test_client:
         print("[conftest client] TestClient created.")
         yield test_client
-    app.dependency_overrides = {}
+
+    # Clear overrides after test
+    app.dependency_overrides.clear()
     print("[conftest client] TestClient finished and dependency override cleared.")

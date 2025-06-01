@@ -1,4 +1,7 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Rescue Dog Aggregator (Frontend)
+
+This is a Next.js + Tailwind CSS application that consumes the FastAPI backend  
+(locally at `http://localhost:8000` by default, configurable via `NEXT_PUBLIC_API_URL`).
 
 ## Getting Started
 
@@ -20,17 +23,48 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+frontend/
+├── src/
+│   ├── app/           # Next.js App Router pages
+│   │   ├── dogs/      # List + Detail pages for dogs
+│   │   └── organizations/
+│   ├── components/    # Shared UI (cards, form controls, SocialMediaLinks, etc.)
+│   ├── services/      # API helper functions (animalsService, organizationsService)
+│   └── utils/         # Helpers (formatters, etc.)
+├── jest.config.js
+├── jest.setup.js      # Next.js mocks for image/link/navigation
+└── package.json
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `npm run dev` – Development server  
+- `npm run build` – Build for production  
+- `npm run start` – Start production build  
+- `npm test` – Run all Jest tests  
+- `npm run test:watch` – Watch mode
 
-## Deploy on Vercel
+## Tests
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Component tests: `src/components/**/__tests__/*.test.jsx`  
+- Page tests: `src/app/**/__tests__/*.test.jsx`  
+- Service tests: `src/services/**/__tests__`  
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Social media share tests have been added to verify the new `<SocialMediaLinks>` component  
+and that both dog-detail and org-detail pages render share links correctly.
+
+## Environment
+
+Configure the backend API host with:
+
+```bash
+export NEXT_PUBLIC_API_URL="http://localhost:8000"
+```
+
+## Deployment
+
+Recommended: push this directory to Vercel (it auto-detects Next.js).  
+See the [Next.js deploying docs](https://nextjs.org/docs/deployment).

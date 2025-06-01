@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card"; // <<< Import Card components
 import { Badge } from "@/components/ui/badge"; // <<< Import Badge component
 import { Button } from "@/components/ui/button"; // <<< Import Button
+import SocialMediaLinks from '../ui/SocialMediaLinks';
 
 export default function DogCard({ dog }) {
   // Basic validation or default values
@@ -21,6 +22,7 @@ export default function DogCard({ dog }) {
     "Unknown Location";
   const id = dog?.id || "0";
   const status = dog?.status || 'unknown';
+  const orgSocialMedia = dog?.organization?.social_media;
 
   return (
     // *** Replace outer div with Card ***
@@ -69,11 +71,13 @@ export default function DogCard({ dog }) {
           {location !== "Unknown Location" ? location : <>&nbsp;</>} {/* Render location or non-breaking space */}
         </p>
 
-        {/* Optional: Add tags/badges here if needed */}
-        {/* <div className="mt-2 flex flex-wrap gap-1">
-          {dog.sex && <span className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">{dog.sex}</span>}
-          {dog.age_category && <span className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">{dog.age_category}</span>}
-        </div> */}
+        {/* Organization Social Media */}
+        {orgSocialMedia && Object.keys(orgSocialMedia).length > 0 && (
+          <div className="mt-2 pt-2 border-t border-gray-100">
+            <p className="text-xs text-gray-500 mb-1">Follow rescue org:</p>
+            <SocialMediaLinks socialMedia={orgSocialMedia} className="justify-start" />
+          </div>
+        )}
       </CardContent>
 
       {/* Optional: Use CardFooter for actions or less important info */}

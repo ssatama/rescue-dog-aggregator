@@ -1,19 +1,11 @@
-import pytest
 from fastapi.testclient import TestClient
+import pytest
 from unittest.mock import patch, MagicMock  # Keep mock if used elsewhere in the class
 from datetime import datetime
 import json
 
 # Import the FastAPI app
 from api.main import app
-
-
-# Define a fixture for the TestClient
-@pytest.fixture(scope="module")  # Scope can be adjusted (e.g., "function") if needed
-def client():
-    """Pytest fixture to create a TestClient for the API."""
-    with TestClient(app) as test_client:
-        yield test_client
 
 
 class TestAnimalsAPI:
@@ -166,4 +158,52 @@ class TestAnimalsAPI:
             )  # /random uses Animal model, not AnimalWithImages
             assert "organization_id" in first_dog  # Check for organization ID
 
-    # Add other tests from your original file here, making sure they accept 'client'
+    def test_get_animals_includes_organization_social_media(self, client: TestClient):
+        """Test that animals list response includes organization social_media field."""
+        response = client.get("/api/animals?limit=5")
+        assert response.status_code == 200
+
+        animals = response.json()
+        assert isinstance(animals, list)
+
+        # Find an animal that has an organization
+        animal_with_org = None
+        for animal in animals:
+            if animal.get("organization") is not None:
+                animal_with_org = animal
+                break
+
+        # If we found an animal with organization, test the structure
+        if animal_with_org:
+            org = animal_with_org["organization"]
+            assert isinstance(org, dict)
+            assert "id" in org
+            assert "name" in org
+            assert "social_media" in org
+            assert isinstance(org["social_media"], dict)
+
+            # Test that animal still has expected fields
+            assert "id" in animal_with_org
+            assert "name" in animal_with_org
+            assert "breed" in animal_with_org
+
+    def test_get_animal_by_id_includes_organization_social_media(self, client):
+        """Test that animal detail response includes organization.social_media."""
+        # grab one animal
+        resp = client.get("/api/animals?limit=1")
+        assert resp.status_code == 200
+        animals = resp.json()
+        assert animals, "Expected at least one animal in the list"
+
+        animal_id = animals[0]["id"]
+        detail = client.get(f"/api/animals/{animal_id}")
+        assert detail.status_code == 200
+        a = detail.json()
+
+        # must have nested org dict
+        assert "organization" in a and a["organization"] is not None
+        org = a["organization"]
+        assert isinstance(org, dict)
+        assert "id" in org
+        assert "name" in org
+        assert "social_media" in org and isinstance(org["social_media"], dict)
