@@ -49,3 +49,6 @@ frontend/.next/
 frontend/out/
 frontend/build/
 frontend/node_modules/
+
+# Otherwise ignored files
+screenshots/

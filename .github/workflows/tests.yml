@@ -85,3 +85,145 @@ jobs:
       
     - name: Run tests
       run: npm test
+
+  end-to-end-tests:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: test_rescue_dogs
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        cd frontend && npm ci
+    
+    - name: Set up test database
+      env:
+        TESTING: true
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_NAME: test_rescue_dogs
+        DB_USER: postgres
+        DB_PASSWORD: postgres
+      run: |
+        python -c "
+        import psycopg2
+        import os
+        from database.schema import create_schema
+        
+        conn = psycopg2.connect(
+            host=os.getenv('DB_HOST'),
+            port=os.getenv('DB_PORT'), 
+            database=os.getenv('DB_NAME'),
+            user=os.getenv('DB_USER'),
+            password=os.getenv('DB_PASSWORD')
+        )
+        create_schema(conn)
+        conn.close()
+        "
+    
+    - name: Start backend server
+      env:
+        TESTING: true
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_NAME: test_rescue_dogs
+        DB_USER: postgres
+        DB_PASSWORD: postgres
+        CLOUDINARY_CLOUD_NAME: ""
+        CLOUDINARY_API_KEY: ""
+        CLOUDINARY_API_SECRET: ""
+      run: |
+        uvicorn api.main:app --host 0.0.0.0 --port 8000 &
+        sleep 10  # Wait for server to start
+    
+    - name: Test full workflow
+      env:
+        TESTING: true
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_NAME: test_rescue_dogs
+        DB_USER: postgres
+        DB_PASSWORD: postgres
+        CLOUDINARY_CLOUD_NAME: ""
+        CLOUDINARY_API_KEY: ""
+        CLOUDINARY_API_SECRET: ""
+      run: |
+        # Test config system end-to-end
+        python manage.py validate-configs
+        python manage.py sync-organizations --dry-run
+        
+        # Test API endpoints
+        curl -f http://localhost:8000/api/animals || exit 1
+        curl -f http://localhost:8000/api/organizations || exit 1
+
+  lint-and-format:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+    
+    - name: Install dependencies including linting tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Check Python code formatting with Black
+      run: black --check --diff .
+    
+    - name: Check Python imports with isort  
+      run: isort --check-only --diff .
+    
+    - name: Lint Python code with flake8
+      run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    
+    - name: Type check with mypy (optional - can be strict)
+      run: mypy --ignore-missing-imports . || true  # Non-blocking for now
+    
+    - name: Set up Node.js for frontend linting
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install frontend dependencies
+      working-directory: ./frontend
+      run: npm ci
+    
+    - name: Lint frontend code
+      working-directory: ./frontend
+      run: npm run lint
