@@ -27,7 +27,8 @@ class TestBaseScraper:
                 """Mock implementation for testing."""
                 return animal_id, "updated"
 
-        return MockScraper(organization_id=1, organization_name="Test Organization")
+        # Use only organization_id (removed organization_name parameter)
+        return MockScraper(organization_id=1)
 
     @patch.dict(
         "os.environ",
@@ -139,45 +140,6 @@ class TestBaseScraper:
             "CLOUDINARY_API_SECRET": "",
         },
     )
-    def test_save_animal_images(self, mock_scraper):
-        """Test saving animal images to the database."""
-        # Mock database connection and cursor
-        mock_scraper.conn = Mock()
-        mock_cursor = Mock()
-        mock_scraper.conn.cursor.return_value = mock_cursor
-
-        # Mock the fetchone result for getting animal name
-        mock_cursor.fetchone.return_value = ["Test Dog"]  # Return animal name
-
-        # Test data
-        animal_id = 1
-        image_urls = [
-            "http://example.com/image1.jpg",
-            "http://example.com/image2.jpg",
-            "http://example.com/image3.jpg",
-        ]
-
-        # Execute method
-        result = mock_scraper.save_animal_images(animal_id, image_urls)
-
-        # Verify cursor was called correctly
-        # Should be: 1 DELETE + 1 SELECT (animal name) + 3 INSERTs = 5 total
-        assert mock_cursor.execute.call_count >= 4  # At least delete + select + inserts
-
-        # Verify commit was called
-        mock_scraper.conn.commit.assert_called_once()
-
-        # Verify result
-        assert result is True
-
-    @patch.dict(
-        "os.environ",
-        {
-            "CLOUDINARY_CLOUD_NAME": "",
-            "CLOUDINARY_API_KEY": "",
-            "CLOUDINARY_API_SECRET": "",
-        },
-    )
     @patch("scrapers.base_scraper.detect")
     def test_detect_language(self, mock_detect, mock_scraper):
         """Test language detection functionality."""
@@ -256,6 +218,47 @@ class TestBaseScraper:
         }
         for key, value in expected_args.items():
             assert mock_complete_log.call_args[1][key] == value
+
+        # Verify result
+        assert result is True
+
+    @patch.dict(
+        "os.environ",
+        {
+            "CLOUDINARY_CLOUD_NAME": "",
+            "CLOUDINARY_API_KEY": "",
+            "CLOUDINARY_API_SECRET": "",
+        },
+    )
+    @patch("scrapers.base_scraper.json")
+    def test_save_animal_images(self, mock_json, mock_scraper):
+        """Test saving animal images to the database."""
+        # Mock database connection and cursor
+        mock_scraper.conn = Mock()
+        mock_cursor = Mock()
+        mock_scraper.conn.cursor.return_value = mock_cursor
+
+        # Mock the fetchone result for getting animal name
+        mock_cursor.fetchone.return_value = ["Test Dog"]  # Return animal name
+
+        # Test data
+        animal_id = 1
+        image_urls = [
+            "http://example.com/image1.jpg",
+            "http://example.com/image2.jpg",
+            "http://example.com/image3.jpg",
+        ]
+
+        # Execute method
+        result = mock_scraper.save_animal_images(animal_id, image_urls)
+
+        # Verify cursor was called correctly
+        # Should be: 1 DELETE + 1 SELECT (animal name) + 3 INSERTs = 5 total
+        # But since we have the organization_name fix, this should work
+        assert mock_cursor.execute.call_count >= 4  # At least delete + select + inserts
+
+        # Verify commit was called
+        mock_scraper.conn.commit.assert_called_once()
 
         # Verify result
         assert result is True

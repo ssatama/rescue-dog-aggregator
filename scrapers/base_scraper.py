@@ -8,9 +8,14 @@ from datetime import datetime
 import psycopg2
 from langdetect import detect
 import sys
+import time
+from typing import Optional
 
 # Import config
 from config import DB_CONFIG
+from utils.config_loader import ConfigLoader
+from utils.config_models import OrganizationConfig
+from utils.org_sync import OrganizationSyncManager
 
 # Import the standardization utilities
 from utils.standardization import standardize_breed, standardize_age
@@ -23,17 +28,51 @@ from utils.cloudinary_service import CloudinaryService
 class BaseScraper(ABC):
     """Base scraper class that all organization-specific scrapers will inherit from."""
 
-    def __init__(self, organization_id, organization_name, animal_type="dog"):
-        """Initialize the base scraper.
+    def __init__(
+        self, organization_id: Optional[int] = None, config_id: Optional[str] = None
+    ):
+        """Initialize the scraper.
 
         Args:
-            organization_id: ID of the organization in the database
-            organization_name: Name of the organization
-            animal_type: Type of animal (dog, cat)
+            organization_id: Database organization ID (legacy mode)
+            config_id: Config-based organization ID (new mode)
         """
-        self.organization_id = organization_id
-        self.organization_name = organization_name
-        self.animal_type = animal_type.lower()  # Normalize to lowercase
+        # Handle both legacy and config-based initialization
+        if config_id:
+            # New config-based mode
+            self.config_loader = ConfigLoader()
+            self.org_config = self.config_loader.load_config(config_id)
+
+            # Ensure organization exists in database
+            sync_manager = OrganizationSyncManager(self.config_loader)
+            self.organization_id, _ = sync_manager.sync_organization(self.org_config)
+
+            # Use config for scraper settings
+            scraper_config = self.org_config.get_scraper_config_dict()
+            self.rate_limit_delay = scraper_config.get("rate_limit_delay", 1.0)
+            self.max_retries = scraper_config.get("max_retries", 3)
+            self.timeout = scraper_config.get("timeout", 30)
+
+            # Set organization name from config
+            self.organization_name = self.org_config.name
+
+        elif organization_id:
+            # Legacy mode - direct database ID
+            self.organization_id = organization_id
+            self.org_config = None
+
+            # Default scraper settings
+            self.rate_limit_delay = 1.0
+            self.max_retries = 3
+            self.timeout = 30
+
+            # For legacy mode, use a default organization name
+            self.organization_name = f"Organization ID {organization_id}"
+
+        else:
+            raise ValueError("Either organization_id or config_id must be provided")
+
+        self.animal_type = "dog"  # Default animal type, can be overridden
         self.logger = self._setup_logger()
         self.conn = None
         self.scrape_log_id = None
@@ -42,7 +81,7 @@ class BaseScraper(ABC):
     def _setup_logger(self):
         """Set up a logger for the scraper."""
         logger = logging.getLogger(
-            f"scraper.{self.organization_name}.{self.animal_type}"
+            f"scraper.{self.get_organization_name()}.{self.animal_type}"
         )
         logger.setLevel(logging.INFO)
 
@@ -291,7 +330,7 @@ class BaseScraper(ABC):
         try:
             # Collect data using the organization-specific implementation
             self.logger.info(
-                f"Starting scrape for {self.organization_name} {self.animal_type}s"
+                f"Starting scrape for {self.get_organization_name()} {self.animal_type}s"
             )
             animals_data = self.collect_data()
             self.logger.info(
@@ -355,3 +394,21 @@ class BaseScraper(ABC):
             List of dictionaries, each containing data for one animal
         """
         pass
+
+    def get_organization_name(self) -> str:
+        """Get organization name for logging."""
+        if self.org_config:
+            return self.org_config.get_display_name()
+        else:
+            # Fallback for legacy mode
+            return f"Organization ID {self.organization_id}"
+
+    def get_rate_limit_delay(self) -> float:
+        """Get rate limit delay from config or default."""
+        return self.rate_limit_delay
+
+    # Add method to respect rate limiting
+    def respect_rate_limit(self):
+        """Sleep for the configured rate limit delay."""
+        if self.rate_limit_delay > 0:
+            time.sleep(self.rate_limit_delay)

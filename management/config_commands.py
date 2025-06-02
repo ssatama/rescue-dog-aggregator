@@ -1,0 +1,277 @@
+import argparse
+import json
+import sys
+import os
+from pathlib import Path
+from typing import List, Optional
+import logging
+
+# Add the project root directory to Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from utils.config_loader import ConfigLoader
+from utils.org_sync import OrganizationSyncManager
+from utils.config_scraper_runner import ConfigScraperRunner
+
+
+class ConfigManager:
+    """Command-line interface for managing configurations."""
+
+    def __init__(self):
+        """Initialize the config manager."""
+        self.config_loader = ConfigLoader()
+        self.sync_manager = OrganizationSyncManager(self.config_loader)
+        self.scraper_runner = ConfigScraperRunner(self.config_loader)
+        self.logger = logging.getLogger(__name__)
+
+    def list_organizations(self, enabled_only: bool = False):
+        """List all organizations from configs.
+
+        Args:
+            enabled_only: Only show enabled organizations
+        """
+        try:
+            configs = self.config_loader.load_all_configs()
+
+            print("🏢 Available Organizations:")
+            print("=" * 50)
+
+            for config_id, config in configs.items():
+                if enabled_only and not config.enabled:
+                    continue
+
+                status = "✅ ENABLED" if config.enabled else "❌ DISABLED"
+                print(f"{config.get_display_name()}")
+                print(f"  Status: {status}")
+                print(f"  Scraper: {config.scraper.class_name}")
+                print(f"  Module: {config.scraper.module}")
+                print()
+
+        except Exception as e:
+            print(f"❌ Error listing organizations: {e}")
+
+    def show_organization(self, config_id: str):
+        """Show detailed information about an organization.
+
+        Args:
+            config_id: Organization config ID
+        """
+        try:
+            config = self.config_loader.load_config(config_id)
+
+            print(f"🏢 Organization Details: {config.get_display_name()}")
+            print("=" * 50)
+            print(f"Config ID: {config.id}")
+            print(f"Schema Version: {config.schema_version}")
+            print(f"Status: {'✅ ENABLED' if config.enabled else '❌ DISABLED'}")
+            print()
+
+            print("📧 Contact Information:")
+            print(f"  Email: {config.metadata.contact.email}")
+            print(f"  Phone: {config.metadata.contact.phone}")
+            print()
+
+            print("🌐 Online Presence:")
+            print(f"  Website: {config.metadata.website_url}")
+            print(f"  Facebook: {config.metadata.social_media.facebook}")
+            print(f"  Instagram: {config.metadata.social_media.instagram}")
+            print(f"  Twitter: {config.metadata.social_media.twitter}")
+            print()
+
+            print("📍 Location:")
+            print(
+                f"  Primary: {config.metadata.location.city}, {config.metadata.location.country}"
+            )
+            print("  Service Regions:")
+            for region in config.metadata.service_regions:
+                print(f"    - {region}")
+            print()
+
+            print("📄 Description:")
+            print(f"  {config.metadata.description}")
+            print()
+
+            # Validation
+            warnings = config.validate_business_rules()
+            if warnings:
+                print("⚠️  Validation Warnings:")
+                for warning in warnings:
+                    print(f"    - {warning}")
+            else:
+                print("✅ No validation warnings")
+
+        except Exception as e:
+            print(f"❌ Error showing organization '{config_id}': {e}")
+
+    def sync_organizations(self, dry_run: bool = False):
+        """Sync organizations to database.
+
+        Args:
+            dry_run: Only show what would be done, don't make changes
+        """
+        try:
+            if dry_run:
+                print("🔍 Dry run - checking what would be synced...")
+                status = self.sync_manager.get_sync_status()
+
+                print("📊 Sync Status:")
+                print(f"  Total configs: {status['total_configs']}")
+                print(f"  Organizations in database: {status['total_db_orgs']}")
+                print(f"  Already synced: {status['synced']}")
+                print()
+
+                if status["missing_from_db"]:
+                    print("➕ Would create:")
+                    for config_id in status["missing_from_db"]:
+                        print(f"    - {config_id}")
+
+                if status["needs_update"]:
+                    print("🔄 Would update:")
+                    for config_id in status["needs_update"]:
+                        print(f"    - {config_id}")
+
+                if status["orphaned_in_db"]:
+                    print("🗑️  Orphaned in database:")
+                    for config_id in status["orphaned_in_db"]:
+                        print(f"    - {config_id}")
+            else:
+                print("🔄 Syncing organizations to database...")
+                results = self.sync_manager.sync_all_organizations()
+
+                if results["success"]:
+                    print("✅ Sync completed successfully!")
+                    print(f"📊 Results:")
+                    print(f"  ➕ Created: {results['created']}")
+                    print(f"  🔄 Updated: {results['updated']}")
+                    print(f"  📊 Total processed: {results['processed']}")
+                else:
+                    print("❌ Sync failed!")
+                    for error in results.get("errors", []):
+                        print(f"  Error: {error}")
+
+        except Exception as e:
+            print(f"❌ Error syncing organizations: {e}")
+
+    def run_scraper(self, config_id: str):
+        """Run a specific scraper.
+
+        Args:
+            config_id: Organization config ID
+        """
+        try:
+            print(f"🚀 Running scraper for: {config_id}")
+            result = self.scraper_runner.run_scraper(config_id)
+
+            if result["success"]:
+                print("✅ Scraper completed successfully!")
+                print(f"Organization: {result['organization']}")
+                print(f"Animals found: {result.get('animals_found', 0)}")
+            else:
+                print("❌ Scraper failed!")
+                print(f"Error: {result['error']}")
+
+        except Exception as e:
+            print(f"❌ Error running scraper: {e}")
+
+    def validate_configs(self):
+        """Validate all configuration files."""
+        try:
+            configs = self.config_loader.load_all_configs()
+
+            print("🔍 Validating configurations...")
+            print("=" * 50)
+
+            total_configs = len(configs)
+            configs_with_warnings = 0
+
+            for config_id, config in configs.items():
+                warnings = config.validate_business_rules()
+
+                if warnings:
+                    configs_with_warnings += 1
+                    print(f"⚠️  {config.get_display_name()} ({config_id}):")
+                    for warning in warnings:
+                        print(f"    - {warning}")
+                    print()
+                else:
+                    print(f"✅ {config.get_display_name()} ({config_id})")
+
+            print("=" * 50)
+            print(f"📊 Summary:")
+            print(f"  Total configs: {total_configs}")
+            print(f"  Configs with warnings: {configs_with_warnings}")
+            print(f"  Valid configs: {total_configs - configs_with_warnings}")
+
+        except Exception as e:
+            print(f"❌ Error validating configs: {e}")
+
+
+def main():
+    """Main CLI entry point."""
+    parser = argparse.ArgumentParser(description="Manage config-driven scrapers")
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # List command
+    list_parser = subparsers.add_parser("list", help="List organizations")
+    list_parser.add_argument(
+        "--enabled-only", action="store_true", help="Show only enabled organizations"
+    )
+
+    # Show command
+    show_parser = subparsers.add_parser("show", help="Show organization details")
+    show_parser.add_argument("config_id", help="Organization config ID")
+
+    # Sync command
+    sync_parser = subparsers.add_parser("sync", help="Sync organizations to database")
+    sync_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be synced without making changes",
+    )
+
+    # Run command
+    run_parser = subparsers.add_parser("run", help="Run scraper for organization")
+    run_parser.add_argument("config_id", help="Organization config ID")
+    run_parser.add_argument(
+        "--no-sync",
+        action="store_true",
+        help="Don't sync organization to database first",
+    )
+
+    # Run-all command
+    run_all_parser = subparsers.add_parser("run-all", help="Run all enabled scrapers")
+    run_all_parser.add_argument(
+        "--no-sync",
+        action="store_true",
+        help="Don't sync organizations to database first",
+    )
+
+    # Validate command
+    validate_parser = subparsers.add_parser(
+        "validate", help="Validate configuration files"
+    )
+
+    args = parser.parse_args()
+
+    if not args.command:
+        parser.print_help()
+        return
+
+    manager = ConfigManager()
+
+    if args.command == "list":
+        manager.list_organizations(enabled_only=args.enabled_only)
+    elif args.command == "show":
+        manager.show_organization(args.config_id)
+    elif args.command == "sync":
+        manager.sync_organizations(dry_run=args.dry_run)
+    elif args.command == "run":
+        manager.run_scraper(args.config_id, sync_first=not args.no_sync)
+    elif args.command == "run-all":
+        manager.run_all_scrapers(sync_first=not args.no_sync)
+    elif args.command == "validate":
+        manager.validate_configs()
+
+
+if __name__ == "__main__":
+    main()

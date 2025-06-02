@@ -1,5 +1,20 @@
 # Scraper Design
 
+## Configuration-Driven Architecture
+
+As of 2024, the scraper system uses a configuration-driven approach where scrapers are defined via YAML configuration files rather than hardcoded references. This provides:
+
+- **Easy deployment**: Add new organizations without code changes
+- **Flexible configuration**: Per-organization settings for rate limiting, timeouts, etc.
+- **Automatic database sync**: Organizations sync from configs to database
+- **Management commands**: CLI tools for validation and management
+
+See [configuration_system.md](configuration_system.md) for detailed configuration guide.
+
+## Legacy Note
+
+The system maintains backward compatibility with existing scrapers while transitioning to the config-driven approach.
+
 ## Scraper Architecture
 
 The Rescue Dog Aggregator uses a modular scraper architecture to collect data from different rescue organizations.

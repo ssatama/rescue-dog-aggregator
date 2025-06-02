@@ -71,3 +71,51 @@ Ensure **all** tests pass before merging.
 1. Create `*.test.jsx` next to the code under `src/`  
 2. Mock external dependencies (services, next/navigation) via Jest  
 3. Run `npm test <yourFile>.test.jsx`
+
+---
+
+## Configuration System Tests
+
+The config system has comprehensive test coverage:
+
+```bash
+# Run config system tests
+pytest tests/config/ -v
+
+# Specific test suites
+pytest tests/config/test_config_loader.py -v      # Config loading & validation
+pytest tests/config/test_org_sync.py -v           # Database synchronization  
+pytest tests/config/test_management_commands.py -v # CLI commands
+pytest tests/config/test_config_integration.py -v  # End-to-end workflows
+```
+
+#### Test Coverage
+
+- **Config Loading**: YAML parsing, validation, error handling
+- **Organization Sync**: Database operations, conflict resolution
+- **Management Commands**: CLI interface, output formatting
+- **Integration**: Complete workflows from config to scraper execution
+- **Error Handling**: Malformed configs, missing files, database failures
+
+#### Adding Config Tests
+
+When adding new config functionality:
+
+1. **Unit tests**: Test individual components in isolation
+2. **Integration tests**: Test complete workflows
+3. **Error handling**: Test failure scenarios
+4. **Validation**: Test configuration schema validation
+
+Example test structure:
+```python
+def test_new_config_feature(temp_config_dir):
+    """Test new configuration feature."""
+    # Create test config
+    config_data = {...}
+    
+    # Test the feature
+    result = feature_function(config_data)
+    
+    # Assert expected behavior
+    assert result.success is True
+```

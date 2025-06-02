@@ -1,134 +1,179 @@
 # Rescue Dog Aggregator
 
-An open-source web platform that aggregates rescue dogs from multiple organizations,  
-standardizes the data into a consistent format, and presents it in a user-friendly  
-Next.js/Tailwind interface, including social media share buttons on each detail page.
+An open-source web platform that aggregates rescue dogs from multiple organizations using a **flexible configuration system**, standardizes the data, and presents it in a user-friendly Next.js interface.
 
-## Table of Contents
+## 🌟 Key Features
 
-- [Features](#features)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)  
-  - [Backend](#backend)  
-  - [Frontend](#frontend)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
+- **🔧 Configuration-Driven Architecture**: Add new rescue organizations via YAML config files
+- **🔄 Automatic Data Standardization**: Breed, age, and size normalization across sources
+- **☁️ Cloudinary Image Processing**: Automated image optimization and CDN delivery
+- **🔒 Production-Ready Security**: SQL injection prevention, input validation, comprehensive error handling
+- **🧪 Comprehensive Testing**: 93%+ test coverage including integration, security, and resilience tests
+- **🌐 Tech Stack**: FastAPI backend, Next.js frontend, PostgreSQL database
 
-## Features
+## 🏗️ Architecture Overview
 
+### Configuration System
+Organizations are defined via YAML configuration files:
 
-- Cloudinary Image Processing: Automated image upload, optimization, and CDN delivery
-- Comprehensive Error Handling: Graceful degradation for all failure scenarios
-- Security Hardening: SQL injection prevention, input validation, sensitive data protection
-- Critical Test Coverage: Integration, security, resilience, and data consistency testing
-- Performance Optimization: Image CDN, query optimization, lazy loading
-- Web scrapers for multiple rescue organizations (currently “Pets in Turkey”)
-- PostgreSQL schema with `animals` + `animal_images` + `organizations` tables
-- FastAPI backend with:
-  - `/api/animals` list & filter endpoint
-  - `/api/animals/{id}` detail endpoint
-  - `/api/organizations` list & `/api/organizations/{id}` detail
-  - Nested `organization` object on every animal, including `social_media: { facebook, instagram, … }`  
-- Next.js/Tailwind frontend:
-  - Dog catalog with filters
-  - Dog detail pages showing standardized data
-  - Organization listing & detail pages
-  - Reusable `<SocialMediaLinks>` component (renders only the passed networks)
-  - Share buttons for Facebook/Instagram/Twitter/LinkedIn where available
-- Comprehensive test coverage:
-  - Pytest for backend unit & integration tests (uses a test database override fixture)
-  - Jest + React Testing Library for frontend components and page‐level tests
-  - 80%+ coverage on core logic and UI
-
-## Project Structure
-
-```
-.
-├── api/                  # FastAPI routes & Pydantic models
-├── database/             # schema, migrations, archive
-├── scrapers/             # web scraper modules (BaseScraper + org-specific)
-├── utils/                # standardization, data audit, scripts
-├── frontend/             # Next.js app (React + Tailwind)
-│   ├── src/
-│   │   ├── app/          # page components
-│   │   ├── components/   # shared React UI components
-│   │   ├── services/     # API client functions
-│   │   └── utils/
-├── tests/                # Pytest tests (api, scrapers, utils)
-├── TESTING.md            # testing guide
-└── README.md             # this file
+```yaml
+# configs/organizations/example-org.yaml
+schema_version: "1.0"
+id: "example-org"
+name: "Example Rescue Organization"
+enabled: true
+scraper:
+  class_name: "ExampleScraper"
+  module: "scrapers.example"
+  config:
+    rate_limit_delay: 2.0
+    max_retries: 3
+metadata:
+  website_url: "https://example-rescue.org"
+  description: "A wonderful rescue organization"
+  location:
+    country: "US"
+    city: "Example City"
+  contact:
+    email: "info@example-rescue.org"
 ```
 
-## Getting Started
+### Data Flow
+1. **Config Loading**: YAML files define organization scrapers
+2. **Organization Sync**: Configs auto-sync to database
+3. **Data Collection**: Scrapers gather dog listings from websites
+4. **Standardization**: AI-powered normalization of breed, age, size data
+5. **API Exposure**: RESTful endpoints serve standardized data
+6. **Frontend Display**: React interface with advanced filtering
 
-### Backend
+## 🚀 Quick Start
 
-1. Copy `.env.sample` → `.env` and fill in your Postgres credentials.  
-2. Initialize the database and tables:
+### Prerequisites
+- Python 3.9+
+- PostgreSQL
+- Node.js 16+
+- Cloudinary account (for image processing)
+
+### Backend Setup
+
+1. **Environment Configuration**
+   ```bash
+   cp .env.sample .env
+   # Edit .env with your database and Cloudinary credentials
+   ```
+
+2. **Database Initialization**
    ```bash
    python main.py --setup
    ```
-3. Run the “Pets in Turkey” scraper:
+
+3. **Add Organizations**
    ```bash
-   python main.py --pit
+   # Add organization configs to configs/organizations/
+   python manage.py sync-organizations
    ```
-4. (Optional) Apply standardization:
+
+4. **Run Scrapers**
    ```bash
-   python utils/apply_standardization_to_db.py
+   python manage.py run-scraper pets-in-turkey
+   # or run all enabled scrapers:
+   python manage.py run-all-scrapers
    ```
-5. Start the API server:
+
+5. **Start API Server**
    ```bash
    uvicorn api.main:app --reload --port 8000
    ```
-6. Visit `http://localhost:8000/docs` for interactive Swagger UI.
 
-### Frontend
+### Frontend Setup
 
 ```bash
 cd frontend
 npm install
 npm run dev
+# Open http://localhost:3000
 ```
-Open `http://localhost:3000` in your browser.
 
-## Testing
+## 🔧 Configuration Management
 
-### Backend
+### Adding New Organizations
 
+1. **Create Config File**
+   ```bash
+   # Create configs/organizations/new-org.yaml
+   python manage.py validate-configs  # Verify syntax
+   ```
+
+2. **Sync to Database**
+   ```bash
+   python manage.py sync-organizations
+   ```
+
+3. **Implement Scraper** (if needed)
+   ```python
+   # scrapers/new_org/scraper.py
+   from scrapers.base_scraper import BaseScraper
+   
+   class NewOrgScraper(BaseScraper):
+       def collect_data(self):
+           # Implementation here
+           pass
+   ```
+
+### Management Commands
+
+```bash
+# List all organizations
+python manage.py list-organizations
+
+# Show specific organization details  
+python manage.py show-organization pets-in-turkey
+
+# Validate all config files
+python manage.py validate-configs
+
+# Sync configs to database (dry run)
+python manage.py sync-organizations --dry-run
+```
+
+## 🧪 Testing
+
+### Backend Tests
 ```bash
 # Run all tests
 pytest
 
-# Run with coverage report
-pytest --cov=.
-
-# Run a single test file
-pytest tests/api/test_animals_api.py -q
+# Run specific test suites
+pytest tests/config/ -v          # Config system tests
+pytest tests/integration/ -v     # Integration tests
+pytest tests/security/ -v        # Security tests
 ```
 
-Tests use `tests/conftest.py` to spin up a TestClient with a dependency override pointing at `test_rescue_dogs`.
-
-### Frontend
-
+### Frontend Tests
 ```bash
 cd frontend
-
-# Run all
 npm test
-
-# Run pattern
-npm test page.test.jsx
 ```
 
-We use Jest + React Testing Library.  Key test suites cover:
-- Utility functions (`src/utils`)
-- API service mocks (`src/services`)
-- UI components (`src/components/**/__tests__`)
-- Page components (`src/app/**/__tests__`)
+## 📊 Data Standardization
 
-## Deployment
+The system automatically standardizes:
 
-- **Backend**: deploy FastAPI (e.g. to Heroku, AWS, DigitalOcean)
-- **Frontend**: deploy Next.js on Vercel  
-  Follow the instructions in `frontend/README.md` or [Vercel docs](https://vercel.com/new).
+- **Breeds**: Maps variants to standard names + breed groups
+- **Ages**: Converts text to month ranges + categories (Puppy/Young/Adult/Senior)  
+- **Sizes**: Normalizes to consistent categories (Tiny/Small/Medium/Large/XL)
+
+See [docs/data_standardization.md](docs/data_standardization.md) for details.
+
+## 🚀 Production Deployment
+
+See [docs/production_deployment.md](docs/production_deployment.md) for comprehensive production setup including:
+
+- Environment configuration
+- Security hardening
+- Monitoring setup
+- Performance optimization
+
+---
+
+**Built with ❤️ to help rescue dogs find their forever homes** 🐕

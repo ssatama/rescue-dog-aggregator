@@ -31,7 +31,8 @@ class TestErrorResilience:
             def update_animal(self, animal_id, animal_data):
                 return animal_id, "updated"
 
-        return TestScraper(organization_id=1, organization_name="Test Org")
+        # Use only organization_id (removed organization_name parameter)
+        return TestScraper(organization_id=1)
 
     @patch.dict(
         "os.environ",

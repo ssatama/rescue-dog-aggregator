@@ -1,0 +1,31 @@
+schema_version: "1.0"
+id: "pets-in-turkey"
+name: "Pets in Turkey"
+enabled: true
+
+scraper:
+  class_name: "PetsInTurkeyScraper" 
+  module: "pets_in_turkey.dogs_scraper"
+  config:
+    rate_limit_delay: 1.0
+    max_retries: 3
+    timeout: 30
+    headless: true
+
+metadata:
+  website_url: "https://www.petsinturkey.com"
+  social_media:
+    facebook: "https://www.facebook.com/petsinturkey"
+    instagram: "https://www.instagram.com/petsinturkey"
+  location:
+    country: "TR"
+    region: "Izmir"
+    city: "Izmir"
+  service_regions:
+    - country: "TR"
+      regions: ["Izmir"]
+    - country: "EU"
+      regions: ["Germany", "Netherlands", "Belgium"]
+  contact:
+    email: "info@petsinturkey.com"
+  description: "Pets in Turkey is a rescue organization helping dogs and cats find homes in Turkey and throughout Europe."
