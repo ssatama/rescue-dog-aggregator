@@ -1,11 +1,16 @@
 import os
 import getpass
 import logging
-import sys  # <<< Import sys
+import sys
+from typing import List
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure basic logging if not already set up elsewhere
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
-logger = logging.getLogger(__name__)  # Get logger for this module
+logger = logging.getLogger(__name__)
 
 # --- ADD: Safety Check ---
 IS_TESTING = os.environ.get("TESTING") == "true"
@@ -37,18 +42,12 @@ logger.info(f"[config.py] Default DB name based on TESTING flag: {default_db_nam
 # Database configuration
 DB_CONFIG = {
     "host": db_host_env or "localhost",
-    "database": db_name_env or default_db_name,  # <<< Use default_db_name
-    "user": db_user_env
-    or (
-        "test_user" if IS_TESTING else system_user
-    ),  # <<< Default user based on TESTING
-    "password": db_password_env
-    or ("test_password" if IS_TESTING else ""),  # <<< Default password based on TESTING
+    "database": db_name_env or default_db_name,
+    "user": db_user_env or ("test_user" if IS_TESTING else system_user),
+    "password": db_password_env or ("test_password" if IS_TESTING else ""),
 }
 
 # --- ADD: Final Safety Check ---
-# If TESTING is true, ensure the final database name is the test database.
-# If TESTING is false, ensure the final database name is NOT the test database.
 final_db_name = DB_CONFIG["database"]
 logger.info(f"[config.py] Final DB_CONFIG constructed with database: {final_db_name}")
 
@@ -58,13 +57,12 @@ if IS_TESTING and final_db_name != "test_rescue_dogs":
     )
     sys.exit(
         "CRITICAL SAFETY ERROR: Test environment configured to use non-test database."
-    )  # Hard exit
+    )
 
 if not IS_TESTING and final_db_name == "test_rescue_dogs":
     logger.warning(
         f"SAFETY WARNING: TESTING is false but DB_CONFIG is set to the test database '{final_db_name}'. Check environment."
     )
-    # Allow non-test environment to connect to test DB if explicitly configured via env vars, but log warning.
 
 # --- END ADD ---
 
@@ -74,3 +72,87 @@ logger.info(f"[config.py]   host: {DB_CONFIG['host']}")
 logger.info(f"[config.py]   database: {DB_CONFIG['database']}")
 logger.info(f"[config.py]   user: {DB_CONFIG['user']}")
 logger.info(f"[config.py]   password: {'******' if DB_CONFIG['password'] else 'None'}")
+
+# === CORS Security Configuration ===
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
+
+
+def parse_cors_origins() -> List[str]:
+    """Parse and validate ALLOWED_ORIGINS from environment variable."""
+    origins_env = os.getenv("ALLOWED_ORIGINS", "")
+
+    # Default origins based on environment
+    if not origins_env:
+        if ENVIRONMENT == "development":
+            default_origins = [
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "http://localhost:3001",  # Alternative port
+            ]
+            logger.warning(
+                f"No ALLOWED_ORIGINS set in development. Using defaults: {default_origins}"
+            )
+            return default_origins
+        else:
+            # Production requires explicit configuration
+            raise ValueError(
+                "ALLOWED_ORIGINS must be set in production environment. "
+                "Example: ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com"
+            )
+
+    # Parse comma-separated origins
+    origins = [origin.strip() for origin in origins_env.split(",") if origin.strip()]
+
+    # Validate each origin
+    validated_origins = []
+    for origin in origins:
+        if not (origin.startswith("http://") or origin.startswith("https://")):
+            logger.error(
+                f"Invalid origin format: {origin}. Must start with http:// or https://"
+            )
+            continue
+
+        # Warn about http:// in production
+        if ENVIRONMENT == "production" and origin.startswith("http://"):
+            logger.warning(f"HTTP origin in production is insecure: {origin}")
+
+        validated_origins.append(origin)
+
+    if not validated_origins:
+        raise ValueError("No valid origins found in ALLOWED_ORIGINS")
+
+    return validated_origins
+
+
+# Parse CORS configuration
+ALLOWED_ORIGINS = parse_cors_origins()
+CORS_ALLOW_CREDENTIALS = os.getenv("CORS_ALLOW_CREDENTIALS", "false").lower() == "true"
+
+# CORS settings for different environments
+if ENVIRONMENT == "production":
+    # Stricter settings for production
+    CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    CORS_ALLOW_HEADERS = [
+        "Content-Type",
+        "Authorization",
+        "Accept",
+        "Origin",
+        "X-Requested-With",
+    ]
+    CORS_MAX_AGE = 3600  # Cache preflight for 1 hour
+else:
+    # More permissive for development
+    CORS_ALLOW_METHODS = ["*"]
+    CORS_ALLOW_HEADERS = ["*"]
+    CORS_MAX_AGE = 86400  # Cache preflight for 24 hours
+
+# === Cloudinary Configuration ===
+CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME", "")
+CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY", "")
+CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET", "")
+
+# Log CORS configuration on startup (but not sensitive data)
+logger.info(f"[config.py] Environment: {ENVIRONMENT}")
+logger.info(f"[config.py] CORS allowed origins: {ALLOWED_ORIGINS}")
+logger.info(f"[config.py] CORS credentials allowed: {CORS_ALLOW_CREDENTIALS}")
+logger.info(f"[config.py] CORS methods: {CORS_ALLOW_METHODS}")

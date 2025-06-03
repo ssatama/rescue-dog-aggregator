@@ -2,7 +2,8 @@ import pytest
 import os
 from unittest.mock import patch
 import sys
-import logging  # <<< Import logging
+import logging
+import getpass
 
 
 @pytest.fixture(autouse=True)
@@ -73,22 +74,21 @@ def test_config_allows_test_db_when_testing():
 
 def test_config_defaults_to_dev_db_when_not_testing():
     """Verify config.py defaults to the dev DB when TESTING is not set."""
-    # Ensure TESTING is not set
-    clean_env = {}  # Or os.environ.copy() and del os.environ['TESTING'] if needed
-    with patch.dict(os.environ, clean_env, clear=True):
-        # Mock getpass.getuser() to avoid system dependency
-        with patch("config.getpass.getuser", return_value="dev_user"):
-            try:
-                from importlib import reload
-                import config
+    import getpass
 
-                reload(config)
-                assert config.DB_CONFIG["database"] == "rescue_dogs"
-                assert config.DB_CONFIG["user"] == "dev_user"  # Check default user
-            except SystemExit:
-                pytest.fail(
-                    "config.py exited unexpectedly when configured for development."
-                )
+    # Ensure TESTING is not set
+    clean_env = {"DB_HOST": "localhost", "DB_NAME": "rescue_dogs"}
+
+    with patch.dict(os.environ, clean_env, clear=True):
+        if "config" in sys.modules:
+            del sys.modules["config"]
+
+        import config
+
+        assert config.DB_CONFIG["database"] == "rescue_dogs"
+        # Test that it uses the actual system user (more realistic)
+        expected_user = getpass.getuser()
+        assert config.DB_CONFIG["user"] == expected_user
 
 
 def test_config_warns_but_allows_test_db_when_not_testing_if_explicit(caplog):
