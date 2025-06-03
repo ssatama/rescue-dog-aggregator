@@ -85,6 +85,12 @@ metadata:
    uvicorn api.main:app --reload --port 8000
    ```
 
+6. **Important CORS Configuration:**
+
+  - ALLOWED_ORIGINS: Comma-separated list of allowed frontend URLs
+  - ENVIRONMENT: Set to 'development' or 'production'
+  - Example: ALLOWED_ORIGINS=http://localhost:3000,https://yourdomain.com
+
 ### Frontend Setup
 
 ```bash
@@ -135,6 +141,23 @@ python manage.py validate-configs
 # Sync configs to database (dry run)
 python manage.py sync-organizations --dry-run
 ```
+
+## 🔒 Security Configuration
+
+### CORS Setup
+The API implements strict CORS policies for production security:
+
+- **Development**: Defaults to `http://localhost:3000` if not configured
+- **Production**: Requires explicit `ALLOWED_ORIGINS` configuration
+- Configure via environment variables in `.env`
+- Multiple origins supported (comma-separated)
+
+### Environment Variables
+See `.env.sample` for all configuration options including:
+- Database credentials
+- CORS allowed origins
+- Cloudinary API keys
+- Environment mode (development/production)
 
 ## 🧪 Testing
 

@@ -74,6 +74,33 @@ service = CloudinaryService()
 print('Cloudinary configured:', service.cloudinary_service is not None)
 "
 ```
+## CORS Configuration
+
+### Production CORS Setup
+
+1. **Set Allowed Origins**
+   ```bash
+   # Only include your actual frontend domains
+   ALLOWED_ORIGINS=https://rescuedogs.com,https://www.rescuedogs.com```
+
+2. **Verify CORS Headers**
+
+# Test from your frontend domain
+ ```bash
+    curl -H "Origin: https://rescuedogs.com" \
+     -H "Access-Control-Request-Method: GET" \
+     -H "Access-Control-Request-Headers: X-Requested-With" \
+     -X OPTIONS \
+     https://api.rescuedogs.com/api/animals```
+
+2. **Common CORS Issues**
+
+- Missing origin in ALLOWED_ORIGINS
+- Using http:// instead of https:// in production
+- Trailing slashes in origins (remove them)
+- Frontend and API on different subdomains not configured
+
+# Should return proper CORS headers
 
 ## Deployment Steps
 
@@ -155,6 +182,13 @@ Monitor for these key events:
 1. Monitor database query performance
 2. Check Cloudinary bandwidth usage
 3. Verify frontend bundle size
+
+**CORS errors:**
+1. Check ALLOWED_ORIGINS includes your frontend URL
+2. Verify no trailing slashes in origin URLs
+3. Ensure ENVIRONMENT is set to 'production'
+4. Check browser console for specific CORS error messages
+5. Verify API returns correct headers with curl test
 
 ### Emergency Procedures
 
