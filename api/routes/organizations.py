@@ -6,6 +6,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from api.dependencies import get_db_cursor
 from api.models.organization import Organization
+import json
 
 router = APIRouter()
 
@@ -29,6 +30,17 @@ def get_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
         )
 
         organizations = cursor.fetchall()
+
+        # Parse social_media JSON strings if needed
+        for org in organizations:
+            if org.get("social_media") and isinstance(org["social_media"], str):
+                try:
+                    org["social_media"] = json.loads(org["social_media"])
+                except json.JSONDecodeError:
+                    org["social_media"] = {}
+            elif org.get("social_media") is None:
+                org["social_media"] = {}
+
         return organizations
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
@@ -59,6 +71,20 @@ def get_organization(
         if not organization:
             raise HTTPException(status_code=404, detail="Organization not found")
 
+        # Parse social_media JSON string if needed
+        if organization.get("social_media") and isinstance(
+            organization["social_media"], str
+        ):
+            try:
+                organization["social_media"] = json.loads(organization["social_media"])
+            except json.JSONDecodeError:
+                organization["social_media"] = {}
+        elif organization.get("social_media") is None:
+            organization["social_media"] = {}
+
         return organization
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 404)
+        raise
     except psycopg2.Error as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

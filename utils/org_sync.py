@@ -138,30 +138,29 @@ class OrganizationSyncManager:
 
         return False
 
-    def _build_social_media_json(self, config: OrganizationConfig) -> str:
-        """Build social media JSON from config."""
+    def _build_social_media_json(self, config: OrganizationConfig) -> dict:
+        """Build social media dict from config."""
         social = config.metadata.social_media
 
         social_data = {}
 
         # Only add fields that have values
         if social.facebook:
-            social_data["facebook"] = social.facebook
+            social_data["facebook"] = str(social.facebook)
         if social.instagram:
-            social_data["instagram"] = social.instagram
+            social_data["instagram"] = str(social.instagram)
         if social.twitter:
-            social_data["twitter"] = social.twitter
+            social_data["twitter"] = str(social.twitter)
         if social.youtube:
-            social_data["youtube"] = social.youtube
+            social_data["youtube"] = str(social.youtube)
         if social.linkedin:
-            social_data["linkedin"] = social.linkedin
+            social_data["linkedin"] = str(social.linkedin)
 
-        # Check if the code is mistakenly looking for website in social media
-        # when it should be looking at metadata.website_url
+        # Add website URL to social media if present
         if hasattr(config.metadata, "website_url") and config.metadata.website_url:
-            social_data["website"] = config.metadata.website_url
+            social_data["website"] = str(config.metadata.website_url)
 
-        return json.dumps(social_data) if social_data else "{}"
+        return social_data  # Return dict, not JSON string
 
     def create_organization(self, config: OrganizationConfig) -> int:
         """Create a new organization from config.
@@ -172,7 +171,7 @@ class OrganizationSyncManager:
         Returns:
             Database ID of created organization
         """
-        social_media = self._build_social_media_json(config)
+        social_media = self._build_social_media_json(config)  # Now returns dict
 
         cursor = get_db_cursor()
         try:
@@ -189,7 +188,9 @@ class OrganizationSyncManager:
                     config.name,
                     str(config.metadata.website_url),
                     config.metadata.description,
-                    psycopg2.extras.Json(social_media),  # Use Json adapter for JSONB
+                    psycopg2.extras.Json(
+                        social_media
+                    ),  # This will properly encode the dict
                     config.id,  # config_id
                     datetime.now(),  # last_config_sync
                     datetime.now(),  # created_at
@@ -214,7 +215,7 @@ class OrganizationSyncManager:
             org_id: Database ID of organization to update
             config: Organization configuration
         """
-        social_media = self._build_social_media_json(config)
+        social_media = self._build_social_media_json(config)  # Now returns dict
 
         cursor = get_db_cursor()
         try:
@@ -233,7 +234,9 @@ class OrganizationSyncManager:
                     config.name,
                     str(config.metadata.website_url),
                     config.metadata.description,
-                    psycopg2.extras.Json(social_media),  # Use Json adapter for JSONB
+                    psycopg2.extras.Json(
+                        social_media
+                    ),  # This will properly encode the dict
                     datetime.now(),  # last_config_sync
                     datetime.now(),  # updated_at
                     org_id,
