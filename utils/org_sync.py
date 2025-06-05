@@ -162,6 +162,114 @@ class OrganizationSyncManager:
 
         return social_data  # Return dict, not JSON string
 
+    def _sync_service_regions(self, org_id: int, config: OrganizationConfig) -> None:
+        """Sync service regions for an organization.
+
+        Args:
+            org_id: Database ID of organization
+            config: Organization configuration
+        """
+        cursor = get_db_cursor()
+        try:
+            # First, delete existing service regions for this organization
+            cursor.execute(
+                "DELETE FROM service_regions WHERE organization_id = %s", (org_id,)
+            )
+
+            # Parse and insert service regions from config
+            service_regions = config.metadata.service_regions
+            if not service_regions:
+                self.logger.debug(
+                    f"No service regions defined for organization {org_id}"
+                )
+                cursor.connection.commit()
+                return
+
+            regions_added = 0
+
+            for region_data in service_regions:
+                if isinstance(region_data, str):
+                    # Handle flattened format: "Country: Region"
+                    if ": " in region_data:
+                        country, region = region_data.split(": ", 1)
+                        cursor.execute(
+                            """
+                            INSERT INTO service_regions (organization_id, country, region, created_at, updated_at)
+                            VALUES (%s, %s, %s, %s, %s)
+                            """,
+                            (
+                                org_id,
+                                country.strip(),
+                                region.strip(),
+                                datetime.now(),
+                                datetime.now(),
+                            ),
+                        )
+                        regions_added += 1
+                    else:
+                        # Assume it's just a country
+                        cursor.execute(
+                            """
+                            INSERT INTO service_regions (organization_id, country, region, created_at, updated_at)
+                            VALUES (%s, %s, %s, %s, %s)
+                            """,
+                            (
+                                org_id,
+                                region_data.strip(),
+                                None,
+                                datetime.now(),
+                                datetime.now(),
+                            ),
+                        )
+                        regions_added += 1
+                elif isinstance(region_data, dict):
+                    # Handle structured format from config
+                    country = region_data.get("country", "")
+                    regions = region_data.get("regions", [])
+
+                    if not regions:
+                        # Just country, no specific regions
+                        cursor.execute(
+                            """
+                            INSERT INTO service_regions (organization_id, country, region, created_at, updated_at)
+                            VALUES (%s, %s, %s, %s, %s)
+                            """,
+                            (org_id, country, None, datetime.now(), datetime.now()),
+                        )
+                        regions_added += 1
+                    else:
+                        # Country with specific regions
+                        for region in regions:
+                            cursor.execute(
+                                """
+                                INSERT INTO service_regions (organization_id, country, region, created_at, updated_at)
+                                VALUES (%s, %s, %s, %s, %s)
+                                """,
+                                (
+                                    org_id,
+                                    country,
+                                    region,
+                                    datetime.now(),
+                                    datetime.now(),
+                                ),
+                            )
+                            regions_added += 1
+
+            cursor.connection.commit()
+            self.logger.info(
+                f"Synced {regions_added} service regions for organization {org_id}"
+            )
+
+        except Exception as e:
+            cursor.connection.rollback()
+            self.logger.error(
+                f"Failed to sync service regions for organization {org_id}: {e}"
+            )
+            raise
+        finally:
+            cursor.close()
+            cursor.connection.close()
+
     def create_organization(self, config: OrganizationConfig) -> int:
         """Create a new organization from config.
 
@@ -203,10 +311,20 @@ class OrganizationSyncManager:
             self.logger.info(
                 f"Created organization '{config.name}' with ID {org_id} from config '{config.id}'"
             )
-            return org_id
         finally:
             cursor.close()
             cursor.connection.close()
+
+        # Sync service regions in a separate transaction
+        try:
+            self._sync_service_regions(org_id, config)
+        except Exception as e:
+            self.logger.error(
+                f"Failed to sync service regions for new organization {org_id}: {e}"
+            )
+            # Don't fail the whole operation if service regions fail
+
+        return org_id
 
     def update_organization(self, org_id: int, config: OrganizationConfig) -> None:
         """Update existing organization from config.
@@ -250,6 +368,15 @@ class OrganizationSyncManager:
         finally:
             cursor.close()
             cursor.connection.close()
+
+        # Sync service regions in a separate transaction
+        try:
+            self._sync_service_regions(org_id, config)
+        except Exception as e:
+            self.logger.error(
+                f"Failed to sync service regions for organization {org_id}: {e}"
+            )
+            # Don't fail the whole operation if service regions fail
 
     def sync_organization(self, config: OrganizationConfig) -> Tuple[int, bool]:
         """Sync a single organization from config to database.
@@ -393,6 +520,9 @@ class OrganizationSyncManager:
                 if self._should_update_org(db_org, config):
                     needs_update.append(config_id)
 
+            # Check service regions status
+            service_regions_status = self._get_service_regions_status()
+
             return {
                 "total_configs": len(configs),
                 "total_db_orgs": len(db_orgs),
@@ -401,8 +531,46 @@ class OrganizationSyncManager:
                 "orphaned_in_db": list(orphaned_db_orgs),
                 "needs_update": needs_update,
                 "up_to_date": len(synced_configs) - len(needs_update),
+                "service_regions": service_regions_status,
             }
 
         except Exception as e:
             self.logger.error(f"Failed to get sync status: {e}")
             return {"error": str(e)}
+
+    def _get_service_regions_status(self) -> Dict[str, any]:
+        """Get service regions sync status."""
+        cursor = get_db_cursor()
+        try:
+            # Count total service regions
+            cursor.execute("SELECT COUNT(*) FROM service_regions")
+            total_regions = cursor.fetchone()[0]
+
+            # Count organizations with service regions
+            cursor.execute(
+                """
+                SELECT COUNT(DISTINCT organization_id) 
+                FROM service_regions
+                """
+            )
+            orgs_with_regions = cursor.fetchone()[0]
+
+            # Count total organizations
+            cursor.execute("SELECT COUNT(*) FROM organizations WHERE active = TRUE")
+            total_orgs = cursor.fetchone()[0]
+
+            return {
+                "total_service_regions": total_regions,
+                "organizations_with_regions": orgs_with_regions,
+                "total_organizations": total_orgs,
+                "coverage_percentage": round(
+                    (orgs_with_regions / total_orgs * 100) if total_orgs > 0 else 0, 1
+                ),
+            }
+
+        except Exception as e:
+            self.logger.error(f"Failed to get service regions status: {e}")
+            return {"error": str(e)}
+        finally:
+            cursor.close()
+            cursor.connection.close()

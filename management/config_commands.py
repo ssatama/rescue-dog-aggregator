@@ -75,39 +75,78 @@ class ConfigManager:
             print(f"  Website: {config.metadata.website_url}")
             print(f"  Facebook: {config.metadata.social_media.facebook}")
             print(f"  Instagram: {config.metadata.social_media.instagram}")
-            print(f"  Twitter: {config.metadata.social_media.twitter}")
             print()
 
             print("📍 Location:")
-            print(
-                f"  Primary: {config.metadata.location.city}, {config.metadata.location.country}"
-            )
-            print("  Service Regions:")
-            for region in config.metadata.service_regions:
-                print(f"    - {region}")
+            print(f"  Country: {config.metadata.location.country}")
+            print(f"  City: {config.metadata.location.city}")
             print()
 
-            print("📄 Description:")
-            print(f"  {config.metadata.description}")
+            # Show service regions
+            print("🗺️  Service Regions:")
+            if config.metadata.service_regions:
+                for region in config.metadata.service_regions:
+                    if isinstance(region, str):
+                        print(f"  - {region}")
+                    elif isinstance(region, dict):
+                        country = region.get("country", "Unknown")
+                        regions = region.get("regions", [])
+                        if regions:
+                            for r in regions:
+                                print(f"  - {country}: {r}")
+                        else:
+                            print(f"  - {country} (all regions)")
+            else:
+                print("  No service regions defined")
             print()
 
-            # Validation
+            print("🔧 Scraper Configuration:")
+            print(f"  Class: {config.scraper.class_name}")
+            print(f"  Module: {config.scraper.module}")
+
+            # Fix: Handle ScraperConfig object properly
+            if hasattr(config.scraper, "config") and config.scraper.config:
+                print("  Settings:")
+                scraper_config = config.scraper.config
+
+                # Check if it's a dictionary or a config object
+                if hasattr(scraper_config, "__dict__"):
+                    # It's a config object, get its attributes
+                    for key, value in scraper_config.__dict__.items():
+                        if not key.startswith("_"):  # Skip private attributes
+                            print(f"    {key}: {value}")
+                elif hasattr(scraper_config, "items"):
+                    # It's a dictionary
+                    for key, value in scraper_config.items():
+                        print(f"    {key}: {value}")
+                else:
+                    # Unknown type, just show the string representation
+                    print(f"    Config: {scraper_config}")
+            else:
+                print("  Settings: None")
+            print()
+
+            # Show validation warnings
             warnings = config.validate_business_rules()
             if warnings:
                 print("⚠️  Validation Warnings:")
                 for warning in warnings:
-                    print(f"    - {warning}")
+                    print(f"  - {warning}")
             else:
                 print("✅ No validation warnings")
 
         except Exception as e:
-            print(f"❌ Error showing organization '{config_id}': {e}")
+            print(f"❌ Error showing organization: {e}")
+            # Add debug info to help troubleshoot
+            import traceback
+
+            print(f"Debug info: {traceback.format_exc()}")
 
     def sync_organizations(self, dry_run: bool = False):
         """Sync organizations to database.
 
         Args:
-            dry_run: Only show what would be done, don't make changes
+            dry_run: Only show what would be synced, don't make changes
         """
         try:
             if dry_run:
@@ -119,6 +158,19 @@ class ConfigManager:
                 print(f"  Organizations in database: {status['total_db_orgs']}")
                 print(f"  Already synced: {status['synced']}")
                 print()
+
+                # NEW: Show service regions status
+                if "service_regions" in status:
+                    sr_status = status["service_regions"]
+                    print("🗺️  Service Regions Status:")
+                    print(
+                        f"  Total service regions: {sr_status.get('total_service_regions', 0)}"
+                    )
+                    print(
+                        f"  Organizations with regions: {sr_status.get('organizations_with_regions', 0)}"
+                    )
+                    print(f"  Coverage: {sr_status.get('coverage_percentage', 0)}%")
+                    print()
 
                 if status["missing_from_db"]:
                     print("➕ Would create:")
@@ -144,6 +196,7 @@ class ConfigManager:
                     print(f"  ➕ Created: {results['created']}")
                     print(f"  🔄 Updated: {results['updated']}")
                     print(f"  📊 Total processed: {results['processed']}")
+                    print(f"  🗺️  Service regions synced for all organizations")
                 else:
                     print("❌ Sync failed!")
                     for error in results.get("errors", []):

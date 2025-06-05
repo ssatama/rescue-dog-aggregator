@@ -106,13 +106,14 @@ npm run dev
 
 1. **Create Config File**
    ```bash
-   # Create configs/organizations/new-org.yaml
-   python manage.py validate-configs  # Verify syntax
+   # Create configs/organizations/new-org.yaml with service regions
+   python management/config_commands.py validate  # Verify syntax
    ```
 
-2. **Sync to Database**
+2. **Sync to Database** 
    ```bash
-   python manage.py sync-organizations
+   # This automatically syncs organizations AND service regions
+   python management/config_commands.py sync
    ```
 
 3. **Implement Scraper** (if needed)
@@ -130,73 +131,32 @@ npm run dev
 
 ```bash
 # List all organizations
-python manage.py list-organizations
+python management/config_commands.py list
 
-# Show specific organization details  
-python manage.py show-organization pets-in-turkey
+# Show specific organization details (includes service regions)
+python management/config_commands.py show pets-in-turkey
 
 # Validate all config files
-python manage.py validate-configs
+python management/config_commands.py validate
 
-# Sync configs to database (dry run)
-python manage.py sync-organizations --dry-run
+# Sync configs to database (includes service regions)
+python management/config_commands.py sync --dry-run  # Preview changes
+python management/config_commands.py sync           # Apply changes
+
+# Run scrapers
+python management/config_commands.py run pets-in-turkey
+python management/config_commands.py run-all
 ```
 
-## 🔒 Security Configuration
+### Location-Based Filtering
 
-### CORS Setup
-The API implements strict CORS policies for production security:
+After syncing organizations, location-based filtering becomes available:
 
-- **Development**: Defaults to `http://localhost:3000` if not configured
-- **Production**: Requires explicit `ALLOWED_ORIGINS` configuration
-- Configure via environment variables in `.env`
-- Multiple origins supported (comma-separated)
-
-### Environment Variables
-See `.env.sample` for all configuration options including:
-- Database credentials
-- CORS allowed origins
-- Cloudinary API keys
-- Environment mode (development/production)
-
-## 🧪 Testing
-
-### Backend Tests
 ```bash
-# Run all tests
-pytest
+# API endpoints for location data
+curl "http://localhost:8000/api/animals/meta/available_countries"
+curl "http://localhost:8000/api/animals/meta/available_regions?country=US"
 
-# Run specific test suites
-pytest tests/config/ -v          # Config system tests
-pytest tests/integration/ -v     # Integration tests
-pytest tests/security/ -v        # Security tests
+# Filter animals by location
+curl "http://localhost:8000/api/animals?country=US&region=CA"
 ```
-
-### Frontend Tests
-```bash
-cd frontend
-npm test
-```
-
-## 📊 Data Standardization
-
-The system automatically standardizes:
-
-- **Breeds**: Maps variants to standard names + breed groups
-- **Ages**: Converts text to month ranges + categories (Puppy/Young/Adult/Senior)  
-- **Sizes**: Normalizes to consistent categories (Tiny/Small/Medium/Large/XL)
-
-See [docs/data_standardization.md](docs/data_standardization.md) for details.
-
-## 🚀 Production Deployment
-
-See [docs/production_deployment.md](docs/production_deployment.md) for comprehensive production setup including:
-
-- Environment configuration
-- Security hardening
-- Monitoring setup
-- Performance optimization
-
----
-
-**Built with ❤️ to help rescue dogs find their forever homes** 🐕
