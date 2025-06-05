@@ -5,7 +5,7 @@ const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 // Enable Cloudinary now that we have upload flow
 const USE_CLOUDINARY = true;
 
-const PLACEHOLDER_IMAGE = '/placeholder-dog.svg';
+const PLACEHOLDER_IMAGE = '/placeholder_dog.svg';
 
 /**
  * Check if URL is from Cloudinary

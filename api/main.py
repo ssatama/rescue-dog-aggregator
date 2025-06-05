@@ -6,6 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 # Import routes
 from api.routes import animals, organizations
 
+from datetime import datetime
+
 # Import CORS configuration
 from config import (
     ALLOWED_ORIGINS,
@@ -22,6 +24,23 @@ app = FastAPI(
     description="API for accessing rescue dog data from various organizations",
     version="0.1.0",
 )
+
+
+@app.get("/health", tags=["health"])
+async def health_check():
+    """Health check endpoint."""
+    from utils.cloudinary_service import CloudinaryService
+
+    cloudinary_status = CloudinaryService.get_status()
+
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "0.1.0",
+        "environment": ENVIRONMENT,
+        "services": {"cloudinary": cloudinary_status},
+    }
+
 
 # Add CORS middleware with secure configuration
 app.add_middleware(

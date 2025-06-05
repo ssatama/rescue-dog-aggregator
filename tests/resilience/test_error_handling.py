@@ -81,7 +81,8 @@ class TestErrorResilience:
         )
 
         assert success is False
-        assert url is None
+        # Updated: Should return original URL as fallback, not None
+        assert url == "https://example.com/slow-image.jpg"
 
     @patch.dict(
         "os.environ",
@@ -154,4 +155,5 @@ class TestErrorResilience:
         )
 
         assert success is False
-        assert url is None
+        # Updated: Should return original URL as fallback, not None
+        assert url == "https://example.com/fake-image.jpg"

@@ -85,7 +85,8 @@ class TestCloudinaryIntegration:
         )
 
         assert success is False
-        assert cloudinary_url is None
+        # Updated: Should return original URL as fallback, not None
+        assert cloudinary_url == "https://example.com/test.jpg"
 
     @patch.dict(
         "os.environ",
@@ -107,7 +108,8 @@ class TestCloudinaryIntegration:
         )
 
         assert success is False
-        assert cloudinary_url is None
+        # Updated: Should return original URL as fallback, not None
+        assert cloudinary_url == "https://example.com/unreachable.jpg"
 
     @patch.dict(
         "os.environ",

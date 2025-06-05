@@ -1,3 +1,5 @@
+# utils/cloudinary_service.py - Backward compatible version
+
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
@@ -9,18 +11,64 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Configure Cloudinary
-cloudinary.config(
-    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
-    api_key=os.getenv("CLOUDINARY_API_KEY"),
-    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
-    secure=True,
-)
+
+class CloudinaryConfigurationError(Exception):
+    """Raised when Cloudinary is not properly configured."""
+
+    pass
 
 
 class CloudinaryService:
+    _config_checked = False
+    _config_valid = False
+
+    @classmethod
+    def _check_configuration(cls):
+        """Check Cloudinary configuration once and cache result."""
+        if cls._config_checked:
+            return cls._config_valid
+
+        cls._config_checked = True
+
+        required_vars = [
+            "CLOUDINARY_CLOUD_NAME",
+            "CLOUDINARY_API_KEY",
+            "CLOUDINARY_API_SECRET",
+        ]
+        missing_vars = [var for var in required_vars if not os.getenv(var)]
+
+        if missing_vars:
+            logger.info(
+                f"Cloudinary not configured (missing: {', '.join(missing_vars)}). "
+                "Using original image URLs."
+            )
+            cls._config_valid = False
+            return False
+
+        # Configure Cloudinary
+        cloudinary.config(
+            cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+            api_key=os.getenv("CLOUDINARY_API_KEY"),
+            api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+            secure=True,
+        )
+
+        cls._config_valid = True
+        logger.info("Cloudinary successfully configured")
+        return True
+
+    @classmethod
+    def is_configured(cls):
+        """Check if Cloudinary is properly configured."""
+        return cls._check_configuration()
+
     @staticmethod
-    def upload_image_from_url(image_url, animal_name, organization_name="unknown"):
+    def upload_image_from_url(
+        image_url,
+        animal_name,
+        organization_name="unknown",
+        raise_on_missing_config=False,
+    ):
         """
         Upload image to Cloudinary from URL and return the optimized URL.
 
@@ -28,26 +76,28 @@ class CloudinaryService:
             image_url (str): Original image URL
             animal_name (str): Name of the animal for folder organization
             organization_name (str): Organization name for folder organization
+            raise_on_missing_config (bool): If True, raise exception when Cloudinary not configured
 
         Returns:
-            tuple: (cloudinary_url, success_boolean)
+            tuple: (cloudinary_url_or_original_url, success_boolean)
+
+        Raises:
+            CloudinaryConfigurationError: If raise_on_missing_config=True and Cloudinary not configured
         """
         if not image_url:
             logger.warning("No image URL provided")
             return None, False
 
-        # Check if Cloudinary is properly configured
-        if not all(
-            [
-                os.getenv("CLOUDINARY_CLOUD_NAME"),
-                os.getenv("CLOUDINARY_API_KEY"),
-                os.getenv("CLOUDINARY_API_SECRET"),
-            ]
-        ):
-            logger.error(
-                "Cloudinary not properly configured. Missing environment variables."
-            )
-            return None, False
+        # Check configuration
+        if not CloudinaryService._check_configuration():
+            if raise_on_missing_config:
+                raise CloudinaryConfigurationError(
+                    "Cloudinary not properly configured. Missing environment variables."
+                )
+
+            # Fallback: return original URL with success=False (indicates fallback)
+            logger.debug(f"Cloudinary not configured, using original URL: {image_url}")
+            return image_url, False
 
         try:
             # Create a unique public_id using URL hash to avoid duplicates
@@ -63,7 +113,7 @@ class CloudinaryService:
             try:
                 existing = cloudinary.api.resource(public_id)
                 if existing:
-                    logger.info(f"Image already exists in Cloudinary: {public_id}")
+                    logger.debug(f"Image already exists in Cloudinary: {public_id}")
                     return existing["secure_url"], True
             except cloudinary.exceptions.NotFound:
                 # Image doesn't exist, proceed with upload
@@ -80,10 +130,10 @@ class CloudinaryService:
             response.raise_for_status()
 
             if response.status_code != 200:
-                logger.error(
+                logger.warning(
                     f"Failed to download image {image_url}: HTTP {response.status_code}"
                 )
-                return None, False
+                return image_url, False  # Return original URL as fallback
 
             # Check content type
             content_type = response.headers.get("content-type", "").lower()
@@ -94,27 +144,32 @@ class CloudinaryService:
                 logger.warning(
                     f"Invalid content type for image {image_url}: {content_type}"
                 )
-                return None, False
+                return image_url, False  # Return original URL as fallback
 
             # Upload to Cloudinary with minimal parameters
             result = cloudinary.uploader.upload(
                 response.content,
                 public_id=public_id,
                 overwrite=False,  # Don't overwrite existing images
+                resource_type="image",
+                format="auto",  # Auto-optimize format
+                quality="auto",  # Auto-optimize quality
             )
 
             logger.info(f"Successfully uploaded image to Cloudinary: {public_id}")
             return result["secure_url"], True
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Network error downloading image {image_url}: {e}")
-            return None, False
+            logger.warning(f"Network error downloading image {image_url}: {e}")
+            return image_url, False  # Return original URL as fallback
+
         except cloudinary.exceptions.Error as e:
-            logger.error(f"Cloudinary error uploading image {image_url}: {e}")
-            return None, False
+            logger.warning(f"Cloudinary error uploading image {image_url}: {e}")
+            return image_url, False  # Return original URL as fallback
+
         except Exception as e:
-            logger.error(f"Unexpected error uploading image {image_url}: {e}")
-            return None, False
+            logger.warning(f"Unexpected error uploading image {image_url}: {e}")
+            return image_url, False  # Return original URL as fallback
 
     @staticmethod
     def get_optimized_url(cloudinary_url, transformation_options=None):
@@ -126,9 +181,13 @@ class CloudinaryService:
             transformation_options (dict): Cloudinary transformation options
 
         Returns:
-            str: Optimized URL
+            str: Optimized URL or original URL if not a Cloudinary URL
         """
         if not cloudinary_url or "cloudinary.com" not in cloudinary_url:
+            return cloudinary_url
+
+        if not CloudinaryService.is_configured():
+            logger.debug("Cloudinary not configured, returning original URL")
             return cloudinary_url
 
         try:
@@ -153,3 +212,13 @@ class CloudinaryService:
             logger.error(f"Error generating optimized URL for {cloudinary_url}: {e}")
 
         return cloudinary_url
+
+    @staticmethod
+    def get_status():
+        """Get Cloudinary service status for health checks."""
+        return {
+            "configured": CloudinaryService.is_configured(),
+            "cloud_name": os.getenv("CLOUDINARY_CLOUD_NAME", "Not set"),
+            "api_key_set": bool(os.getenv("CLOUDINARY_API_KEY")),
+            "api_secret_set": bool(os.getenv("CLOUDINARY_API_SECRET")),
+        }
