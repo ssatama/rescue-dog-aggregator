@@ -6,6 +6,7 @@ import Layout from '../../components/layout/Layout';
 import OrganizationCard from '../../components/organizations/OrganizationCard';
 import Loading from '../../components/ui/Loading';
 import { getOrganizations } from '../../services/organizationsService';
+import { reportError } from '../../utils/logger';
 
 export default function OrganizationsPage() {
   const [organizations, setOrganizations] = useState([]);
@@ -19,7 +20,7 @@ export default function OrganizationsPage() {
         const data = await getOrganizations();
         setOrganizations(data);
       } catch (err) {
-        console.error('Error fetching organizations:', err);
+        reportError('Error fetching organizations', { error: err.message });
         setError(err);
       } finally {
         setLoading(false);

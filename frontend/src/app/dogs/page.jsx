@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Layout from '../../components/layout/Layout';
 import DogCard from '../../components/dogs/DogCard';
+import DogCardErrorBoundary from '../../components/error/DogCardErrorBoundary';
 import Loading from '../../components/ui/Loading';
 import {
   getAnimals,
@@ -27,6 +28,7 @@ import {
 import { Filter, X } from 'lucide-react';
 import FilterControls from '../../components/dogs/FilterControls';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { reportError } from '../../utils/logger';
 
 import { Badge } from "@/components/ui/badge";
 
@@ -87,7 +89,7 @@ export default function DogsPage() {
         const filtered = raw.filter(b => b !== "Any breed");
         setStandardizedBreeds(["Any breed", ...filtered]);
       } catch (err) {
-        console.error("Failed to fetch standardized breeds:", err);
+        reportError("Failed to fetch standardized breeds", { error: err.message });
         setStandardizedBreeds(["Any breed"]);
       }
     };
@@ -105,7 +107,7 @@ export default function DogsPage() {
         setLocationCountries(["Any country", ...locCountries]);
         setAvailableCountries(["Any country", ...availCountries]);
       } catch (err) {
-        console.error("Failed to fetch location metadata:", err);
+        reportError("Failed to fetch location metadata", { error: err.message });
       }
     };
     fetchLocationMeta();
@@ -119,7 +121,7 @@ export default function DogsPage() {
           const regions = await getAvailableRegions(availableCountryFilter);
           setAvailableRegions(["Any region", ...regions]);
         } catch (err) {
-          console.error(`Failed to fetch regions for ${availableCountryFilter}:`, err);
+          reportError(`Failed to fetch regions for ${availableCountryFilter}`, { error: err.message });
           setAvailableRegions(["Any region"]);
         }
       } else {
@@ -136,7 +138,7 @@ export default function DogsPage() {
       .then(orgs =>
         setOrganizations([{ id: null, name: "Any organization" }, ...orgs])
       )
-      .catch(err => console.error("Failed to fetch organizations:", err));
+      .catch(err => reportError("Failed to fetch organizations", { error: err.message }));
   }, []);
 
   // --- Main Data Fetching Logic ---
@@ -174,7 +176,7 @@ export default function DogsPage() {
       setHasMore(newDogs.length === limit);
       setPage(currentPage);
     } catch (err) {
-      console.error("Error fetching dogs:", err);
+      reportError("Error fetching dogs", { error: err.message, params: cleanParams });
       setError("Failed to load dogs. Please try again.");
       setHasMore(false);
     } finally {
@@ -437,7 +439,9 @@ export default function DogsPage() {
             {!loading && dogs.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"> {/* Adjusted grid for main area */}
                 {dogs.map((dog) => (
-                  <DogCard key={dog.id} dog={dog} />
+                  <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
+                    <DogCard dog={dog} />
+                  </DogCardErrorBoundary>
                 ))}
               </div>
             )}

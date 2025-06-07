@@ -42,11 +42,21 @@ isort .
 ```bash
 cd frontend
 npm install
-npm run dev          # Development server on port 3000
+npm run dev          # Development server (usually port 3001)
 npm run build        # Production build
 npm run lint         # ESLint
-npm test             # Jest tests
+npm test             # Jest tests (95+ tests across 17 suites)
 npm run test:watch   # Jest watch mode
+
+# Full verification (recommended before commits)
+npm test && npm run build && npm run lint
+
+# Run specific test categories
+npm test -- src/__tests__/security/          # Security tests
+npm test -- src/__tests__/performance/       # Performance tests  
+npm test -- src/__tests__/accessibility/     # Accessibility tests
+npm test -- src/components/                  # Component tests
+npm test -- src/app/                         # Page tests
 ```
 
 ## Architecture Overview
@@ -71,11 +81,15 @@ This is a **configuration-driven rescue dog aggregation platform** with these ke
 - **Models**: Pydantic models in `api/models/`
 - **Database**: Connection utilities in `utils/db.py`
 
-### 4. Frontend (Next.js)
-- **Pages**: Dog listings (`/dogs`), organization pages (`/organizations`)
+### 4. Frontend (Next.js 15 with App Router)
+- **Architecture**: Server/Client component separation for SEO optimization
+- **Pages**: Dog listings (`/dogs`), organization pages (`/organizations`) with dynamic metadata
 - **Components**: Modular UI in `src/components/` with shadcn/ui components
 - **Services**: API communication in `src/services/`
-- **Testing**: Jest with React Testing Library
+- **Testing**: Jest with React Testing Library (95+ tests across 17 suites)
+- **Security**: XSS prevention, content sanitization, input validation
+- **Performance**: Lazy loading, image optimization, component memoization
+- **Accessibility**: ARIA labels, keyboard navigation, screen reader support
 
 ## Key Development Patterns
 
@@ -112,14 +126,23 @@ This is a **configuration-driven rescue dog aggregation platform** with these ke
   - `assess_data_quality()` - Automatic quality scoring (0-1) based on field completeness
   - `calculate_scrape_duration()` - Performance tracking
 
-### Testing Strategy
+### Testing Strategy (Test-Driven Development)
 - **Backend**: Pytest with test database isolation in `tests/conftest.py`
-- **Frontend**: Jest with component and integration tests
-- **Coverage**: 93%+ including security, resilience, and integration tests
+- **Frontend**: Jest with component and integration tests (95+ tests, 17 suites)
+  - **TDD Approach**: Red-Green-Refactor cycle for all new features
+  - **Test Categories**: Security, performance, accessibility, build quality
+  - **Component Tests**: All UI components with React Testing Library
+  - **Page Tests**: Full page rendering and user interaction flows
+  - **Security Tests**: XSS prevention, content sanitization validation
+  - **Performance Tests**: Lazy loading, image optimization verification
+  - **Accessibility Tests**: ARIA compliance, keyboard navigation
+- **Coverage**: 93%+ backend, 95+ frontend tests including security, resilience, and integration
 - **Critical Tests**: SQL injection prevention, network failure handling, data consistency
 - **Production-Ready Testing**: Test-driven development approach with:
   - `tests/api/test_availability_filtering.py` - API filtering by availability and confidence
   - `tests/scrapers/test_base_scraper.py` - Complete scraper lifecycle and error handling
+  - `src/__tests__/security/content-sanitization.test.js` - Frontend security validation
+  - `src/__tests__/performance/optimization.test.jsx` - Performance optimization tests
   - Comprehensive test coverage for availability management, stale data detection, and metrics
 
 ### API Features (Production-Ready)
@@ -136,10 +159,52 @@ This is a **configuration-driven rescue dog aggregation platform** with these ke
 - Preview changes: `python management/config_commands.py sync --dry-run`
 - View specific org: `python management/config_commands.py show org-name`
 
+### Frontend Architecture Details (2024 TDD Implementation)
+
+#### Server/Client Component Separation
+- **Server Components** (for SEO metadata generation):
+  - `src/app/dogs/[id]/page.jsx` - Dog detail metadata
+  - `src/app/organizations/[id]/page.jsx` - Organization metadata
+- **Client Components** (for interactivity):
+  - `src/app/dogs/[id]/DogDetailClient.jsx` - Dog detail UI and state
+  - `src/app/organizations/[id]/OrganizationDetailClient.jsx` - Organization UI and state
+
+#### Security Implementation
+- **Content Sanitization**: `src/utils/security.js` with `sanitizeText()` and `sanitizeHtml()`
+- **XSS Prevention**: All user-generated content sanitized before rendering
+- **URL Validation**: `isValidUrl()` utility for external link validation
+- **Production Logging**: Development-only logger in `src/utils/logger.js`
+
+#### Performance Optimizations
+- **Lazy Loading**: `src/components/ui/LazyImage.jsx` with IntersectionObserver
+- **Image Optimization**: Cloudinary transformations with fallback handling
+- **Component Memoization**: `React.memo` for expensive components
+- **Error Boundaries**: Resilient error handling with retry functionality
+
+#### Accessibility Features
+- **ARIA Labels**: Comprehensive labeling for screen readers
+- **Keyboard Navigation**: Full keyboard support and focus management
+- **Semantic HTML**: Proper heading hierarchy and landmark usage
+- **Screen Reader Support**: Descriptive text and announcements
+
+#### Error Handling
+- **Error Boundaries**: `src/components/error/ErrorBoundary.jsx` with retry capability
+- **Specific Boundaries**: `src/components/error/DogCardErrorBoundary.jsx` for card components
+- **Graceful Degradation**: Fallback states for failed data loads
+- **User-Friendly Messages**: Clear error communication without technical details
+
+#### Key Utilities
+- **Logger**: `src/utils/logger.js` - Development-only logging (no console in production)
+- **Security**: `src/utils/security.js` - Content sanitization and XSS prevention
+- **Image Utils**: `src/utils/imageUtils.js` - Cloudinary integration and error handling
+- **API**: `src/utils/api.js` - Centralized API configuration and error handling
+
 ### Image Processing
 - Cloudinary integration handles uploads during scraping
 - Automatic optimization (format, quality, transformations)
 - Fallback to original URLs on upload failures
+- Frontend lazy loading with intersection observer
+- Error handling for failed image loads
 
 ## Environment Requirements
 - Python 3.9+ with dependencies in `requirements.txt`
@@ -172,9 +237,46 @@ DB_NAME=test_rescue_dogs psql -d test_rescue_dogs -f database/migrations/001_add
 DB_NAME=test_rescue_dogs psql -d test_rescue_dogs -f database/migrations/002_add_detailed_metrics.sql
 ```
 
+## Troubleshooting Common Issues
+
+### Frontend Build/Development Issues
+
+#### Server/Client Component Conflicts
+**Error**: `You are attempting to export 'generateMetadata' from a component marked with 'use client'`
+**Solution**: Separate generateMetadata (server component) from interactive components (client component)
+
+#### Missing Component Imports  
+**Error**: `Cannot find module './DogDetailClient'`
+**Solution**: Ensure client components exist when referenced by server components
+
+#### Test Failures
+**Error**: `IntersectionObserver is not defined`
+**Solution**: IntersectionObserver mock is configured in `jest.setup.js`
+
+**Error**: `Cannot find module` in tests
+**Solution**: Check `jest.setup.js` for proper Next.js component mocking
+
+#### Performance Issues
+**Problem**: Slow image loading
+**Solution**: Use `LazyImage` component with Cloudinary optimization
+
+**Problem**: Unnecessary re-renders
+**Solution**: Implement `React.memo` for expensive components
+
+### Development Best Practices
+1. **Always run tests before changes**: `npm test`
+2. **Follow TDD approach**: Write tests first, then implement
+3. **Maintain lint compliance**: `npm run lint` should pass
+4. **Verify builds**: `npm run build` should succeed
+5. **Use proper logging**: No console statements in production code
+6. **Sanitize content**: Use security utilities for all user content
+
 ## Production Readiness Features
 - **Weekly Scraping Support**: Designed for production schedules with stale data management
 - **Error Recovery**: Partial failure detection prevents false positives
 - **Data Quality**: Automatic quality scoring and comprehensive metrics
 - **User Experience**: Only reliable, recently-seen animals shown by default
 - **Monitoring**: Detailed JSONB metrics for troubleshooting and optimization
+- **Frontend Security**: XSS prevention, content sanitization, input validation
+- **Frontend Performance**: Lazy loading, image optimization, component memoization
+- **Frontend Accessibility**: ARIA compliance, keyboard navigation, screen reader support

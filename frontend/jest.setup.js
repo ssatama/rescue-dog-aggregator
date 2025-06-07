@@ -19,6 +19,15 @@ if (typeof window !== 'undefined') {
       // Basic mock implementation - does nothing, but prevents the error
     };
   }
+
+  // Mock IntersectionObserver for lazy loading tests
+  if (!window.IntersectionObserver) {
+    window.IntersectionObserver = jest.fn(() => ({
+      observe: jest.fn(),
+      unobserve: jest.fn(),
+      disconnect: jest.fn(),
+    }));
+  }
 }
 
 // Mock Next.js router

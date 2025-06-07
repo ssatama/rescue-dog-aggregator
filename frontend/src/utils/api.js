@@ -1,5 +1,7 @@
 // src/utils/api.js
 
+import { logger, reportError } from './logger';
+
 // Base API URL - configurable based on environment
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -12,9 +14,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 export async function fetchApi(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`; // Endpoint here is relative already
 
-  // --- Add this log ---
-  console.log(`[api.js fetchApi] Fetching absolute URL: ${url}`);
-  // --- End log ---
+  logger.log(`[api.js fetchApi] Fetching absolute URL: ${url}`);
 
   // Default options
   const defaultOptions = {
@@ -46,7 +46,7 @@ export async function fetchApi(endpoint, options = {}) {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('API request failed:', error);
+    reportError('API request failed', { endpoint, error: error.message });
     throw error;
   }
 }
@@ -66,9 +66,7 @@ export function get(endpoint, params = {}) {
   
   const url = queryString ? `${endpoint}?${queryString}` : endpoint;
 
-  // --- Add this log ---
-  console.log(`[api.js get] Calling fetchApi with relative URL: ${url}`);
-  // --- End log ---
+  logger.log(`[api.js get] Calling fetchApi with relative URL: ${url}`);
 
   return fetchApi(url);
 }

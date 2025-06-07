@@ -1,6 +1,7 @@
 // This file contains functions to interact with the animal-related API endpoints.
 
 import { get } from '../utils/api'; // Assuming api utility exists
+import { logger } from '../utils/logger';
 
 /**
  * Fetches a list of animals based on provided filters.
@@ -8,7 +9,7 @@ import { get } from '../utils/api'; // Assuming api utility exists
  * @returns {Promise<Array>} - Promise resolving to an array of animal objects.
  */
 export async function getAnimals(params = {}) {
-  console.log("Fetching animals with params:", params);
+  logger.log("Fetching animals with params:", params);
   // Remove null/undefined/default values before sending
   const cleanParams = Object.fromEntries(
     Object.entries(params).filter(([key, v]) =>
@@ -34,7 +35,7 @@ export async function getAnimals(params = {}) {
       cleanParams.status = 'available';
   }
 
-  console.log("Cleaned params for API:", cleanParams);
+  logger.log("Cleaned params for API:", cleanParams);
   return get('/api/animals', cleanParams);
 }
 
@@ -44,7 +45,7 @@ export async function getAnimals(params = {}) {
  * @returns {Promise<object>} - Promise resolving to the animal object.
  */
 export async function getAnimalById(id) {
-  console.log(`Fetching animal by ID: ${id}`);
+  logger.log(`Fetching animal by ID: ${id}`);
   return get(`/api/animals/${id}`);
 }
 
@@ -60,7 +61,7 @@ export async function getAnimalsByStandardizedBreed(standardizedBreed, additiona
     standardized_breed: standardizedBreed,
     animal_type: 'dog' // Ensure we are fetching dogs
   };
-  console.log("Fetching animals by standardized breed:", params);
+  logger.log("Fetching animals by standardized breed:", params);
   return getAnimals(params);
 }
 
@@ -70,7 +71,7 @@ export async function getAnimalsByStandardizedBreed(standardizedBreed, additiona
  * @returns {Promise<Array>} - A promise that resolves to an array of animal objects.
  */
 export const getRandomAnimals = async (limit = 3) => {
-  console.log(`Fetching ${limit} random animals`);
+  logger.log(`Fetching ${limit} random animals`);
   // The backend /random endpoint now defaults to dogs and available status
   return get('/api/animals/random', { limit });
 };
@@ -87,7 +88,7 @@ export async function getStandardizedBreeds(breedGroup = null) {
   if (breedGroup && breedGroup !== 'Any group') {
     params.breed_group = breedGroup;
   }
-  console.log("Fetching standardized breeds with params:", params);
+  logger.log("Fetching standardized breeds with params:", params);
   return get('/api/animals/meta/breeds', params);
 }
 
@@ -96,7 +97,7 @@ export async function getStandardizedBreeds(breedGroup = null) {
  * @returns {Promise<Array<string>>} - Promise resolving to an array of breed group names.
  */
 export async function getBreedGroups() {
-  console.log("Fetching breed groups");
+  logger.log("Fetching breed groups");
   return get('/api/animals/meta/breed_groups');
 }
 
@@ -107,7 +108,7 @@ export async function getBreedGroups() {
  * @returns {Promise<Array<string>>} - Promise resolving to an array of country names.
  */
 export async function getLocationCountries() {
-  console.log("Fetching location countries");
+  logger.log("Fetching location countries");
   return get('/api/animals/meta/location_countries');
 }
 
@@ -116,7 +117,7 @@ export async function getLocationCountries() {
  * @returns {Promise<Array<string>>} - Promise resolving to an array of country names.
  */
 export async function getAvailableCountries() {
-  console.log("Fetching available-to countries");
+  logger.log("Fetching available-to countries");
   return get('/api/animals/meta/available_countries');
 }
 
@@ -127,10 +128,10 @@ export async function getAvailableCountries() {
  */
 export async function getAvailableRegions(country) {
   if (!country || country === 'Any country') {
-    console.log("Skipping fetch for available regions - no country selected.");
+    logger.log("Skipping fetch for available regions - no country selected.");
     return Promise.resolve([]); // Return empty array if no country specified
   }
-  console.log(`Fetching available regions for country: ${country}`);
+  logger.log(`Fetching available regions for country: ${country}`);
   return get('/api/animals/meta/available_regions', { country });
 }
 

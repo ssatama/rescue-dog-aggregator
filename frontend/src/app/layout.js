@@ -6,8 +6,31 @@ import { Inter } from 'next/font/google';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'Rescue Dog Aggregator',
-  description: 'Find your perfect rescue dog from multiple organizations, all in one place.',
+  title: 'Rescue Dog Aggregator - Find Your Perfect Rescue Dog',
+  description: 'Find your perfect rescue dog from multiple organizations, all in one place. Browse available dogs for adoption and connect with rescue organizations.',
+  keywords: 'rescue dogs, dog adoption, pet rescue, animal shelter, adopt a dog, rescue organizations',
+  openGraph: {
+    title: 'Rescue Dog Aggregator - Find Your Perfect Rescue Dog',
+    description: 'Find your perfect rescue dog from multiple organizations, all in one place. Browse available dogs for adoption and connect with rescue organizations.',
+    type: 'website',
+    siteName: 'Rescue Dog Aggregator'
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Rescue Dog Aggregator - Find Your Perfect Rescue Dog',
+    description: 'Find your perfect rescue dog from multiple organizations, all in one place.'
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
 export default function RootLayout({ children }) {

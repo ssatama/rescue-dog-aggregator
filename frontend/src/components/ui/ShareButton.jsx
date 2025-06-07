@@ -8,6 +8,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { reportError } from '../../utils/logger';
+import { validateUrl, sanitizeText } from '../../utils/security';
 
 export default function ShareButton({ 
   url, 
@@ -19,13 +21,18 @@ export default function ShareButton({
 }) {
   const [copied, setCopied] = useState(false);
 
+  // Sanitize and validate inputs
+  const safeUrl = url && validateUrl(url) ? url : window.location.href;
+  const safeTitle = sanitizeText(title || '');
+  const safeText = sanitizeText(text || '');
+
   const handleNativeShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title, text, url });
+        await navigator.share({ title: safeTitle, text: safeText, url: safeUrl });
       } catch (err) {
         if (err.name !== 'AbortError') {
-          console.error('Error sharing:', err);
+          reportError('Error sharing', { error: err.message, url: safeUrl, title: safeTitle });
         }
       }
     }
@@ -33,17 +40,17 @@ export default function ShareButton({
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(safeUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy:', err);
+      reportError('Failed to copy link', { error: err.message, url: safeUrl });
     }
   };
 
   const handleSocialShare = (platform) => {
-    const encodedUrl = encodeURIComponent(url);
-    const encodedText = encodeURIComponent(text);
+    const encodedUrl = encodeURIComponent(safeUrl);
+    const encodedText = encodeURIComponent(safeText);
     
     const urls = {
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,

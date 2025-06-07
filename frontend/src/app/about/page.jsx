@@ -2,6 +2,22 @@ import Layout from '../../components/layout/Layout';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button'; // If needed for CTAs
 
+export const metadata = {
+  title: 'About Us - Rescue Dog Aggregator',
+  description: 'Learn about our mission to connect loving homes with rescue dogs in need. Discover how we work with rescue organizations to simplify the dog adoption process.',
+  openGraph: {
+    title: 'About Rescue Dog Aggregator',
+    description: 'Learn about our mission to connect loving homes with rescue dogs in need. Discover how we work with rescue organizations to simplify the dog adoption process.',
+    type: 'website',
+    siteName: 'Rescue Dog Aggregator'
+  },
+  twitter: {
+    card: 'summary',
+    title: 'About Rescue Dog Aggregator',
+    description: 'Learn about our mission to connect loving homes with rescue dogs in need.'
+  }
+};
+
 export default function AboutPage() {
   return (
     <Layout>

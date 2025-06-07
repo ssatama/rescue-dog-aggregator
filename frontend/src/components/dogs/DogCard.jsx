@@ -1,3 +1,4 @@
+import React from 'react';
 import Link from 'next/link';
 import {
   Card,
@@ -9,32 +10,38 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import SocialMediaLinks from '../ui/SocialMediaLinks';
+import LazyImage from '../ui/LazyImage';
 import { getDogThumbnail, handleImageError } from '../../utils/imageUtils';
+import { sanitizeText } from '../../utils/security';
 
 
-export default function DogCard({ dog }) {
-  // Basic validation or default values
-  const name = dog?.name || "Unknown Dog";
-  const breed = dog?.standardized_breed || dog?.breed || "Unknown Breed";
-  const breedGroup = dog?.breed_group;
+const DogCard = React.memo(function DogCard({ dog }) {
+  // Basic validation or default values with sanitization
+  const name = sanitizeText(dog?.name || "Unknown Dog");
+  const breed = sanitizeText(dog?.standardized_breed || dog?.breed || "Unknown Breed");
+  const breedGroup = sanitizeText(dog?.breed_group);
   const originalImageUrl = dog?.primary_image_url;
   const optimizedImageUrl = getDogThumbnail(originalImageUrl);
   const location = dog?.organization?.city ?
-    (dog.organization.country ? `${dog.organization.city}, ${dog.organization.country}` : dog.organization.city) :
+    (dog.organization.country ? sanitizeText(`${dog.organization.city}, ${dog.organization.country}`) : sanitizeText(dog.organization.city)) :
     "Unknown Location";
   const id = dog?.id || "0";
-  const status = dog?.status || 'unknown';
+  const status = sanitizeText(dog?.status || 'unknown');
   const orgSocialMedia = dog?.organization?.social_media;
 
   return (
     <Card className="overflow-hidden flex flex-col h-full group transition-shadow duration-300 hover:shadow-lg">
       <CardHeader className="p-0 relative">
-        <Link href={`/dogs/${id}`} className="block relative" aria-label={`View details for ${name}`}>
-          {/* Image */}
-          <img
+        <Link 
+          href={`/dogs/${id}`} 
+          className="block relative" 
+          aria-label={`View details for ${name.replace(/&[^;]+;/g, '')}`}
+        >
+          {/* Optimized Lazy Image */}
+          <LazyImage
             src={optimizedImageUrl}
-            alt={name}
-            className="w-full h-auto object-contain"
+            alt={name.replace(/&[^;]+;/g, '')}
+            className="w-full h-64 object-cover"
             onError={(e) => handleImageError(e, originalImageUrl)}
           />
           {/* Status Badge (optional) */}
@@ -52,7 +59,7 @@ export default function DogCard({ dog }) {
       <CardContent className="p-4 flex flex-col flex-grow">
         <CardTitle className="text-lg font-bold mb-1 truncate group-hover:text-blue-600">
           <Link href={`/dogs/${id}`} className="hover:underline">
-            {name}
+            <h3>{name}</h3>
           </Link>
         </CardTitle>
         <p className="text-sm text-gray-600 mb-1 truncate">{breed}</p>
@@ -87,4 +94,6 @@ export default function DogCard({ dog }) {
       </CardFooter>
     </Card>
   );
-}
+});
+
+export default DogCard;

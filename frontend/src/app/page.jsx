@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react'; // Import hooks
 import Layout from '../components/layout/Layout';
 import Link from 'next/link';
 import DogCard from '../components/dogs/DogCard'; // Import DogCard
+import DogCardErrorBoundary from '../components/error/DogCardErrorBoundary';
 import Loading from '../components/ui/Loading'; // Import Loading
 import { Button } from '@/components/ui/button'; // Import Button (optional, for retry)
 import { getRandomAnimals } from '../services/animalsService'; // Import the new service function
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Import Alert
 import { getOrganizations } from '../services/organizationsService'; // new
+import { reportError } from '../utils/logger';
 
 export default function Home() {
   const [featuredDogs, setFeaturedDogs] = useState([]);
@@ -24,7 +26,7 @@ export default function Home() {
       const data = await getRandomAnimals(3); // Fetch 3 random dogs
       setFeaturedDogs(data);
     } catch (err) {
-      console.error("Error fetching featured dogs:", err);
+      reportError("Error fetching featured dogs", { error: err.message });
       setError("Could not load featured dogs. Please try again later.");
     } finally {
       setLoading(false);
@@ -42,7 +44,7 @@ export default function Home() {
         const orgs = await getOrganizations();
         setOrganizations(["Any organization", ...orgs]);
       } catch (err) {
-        console.error("Failed to fetch organizations:", err);
+        reportError("Failed to fetch organizations", { error: err.message });
       }
     };
     fetchOrgs();
@@ -92,7 +94,9 @@ export default function Home() {
           {!loading && !error && featuredDogs.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"> {/* Responsive grid */}
               {featuredDogs.map((dog) => (
-                <DogCard key={dog.id} dog={dog} />
+                <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
+                  <DogCard dog={dog} />
+                </DogCardErrorBoundary>
               ))}
             </div>
           )}

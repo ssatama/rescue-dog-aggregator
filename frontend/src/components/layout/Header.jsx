@@ -23,8 +23,17 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white shadow sticky top-0 z-50"> {/* Make header sticky */}
-      <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
+    <>
+      {/* Skip to main content link for accessibility */}
+      <a 
+        href="#main-content" 
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-blue-600 text-white px-4 py-2 rounded z-50"
+      >
+        Skip to main content
+      </a>
+      
+      <header className="bg-white shadow sticky top-0 z-50"> {/* Make header sticky */}
+        <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4" aria-label="Main navigation">
         <div className="flex justify-between items-center">
           {/* Logo/Home link */}
           <div>
@@ -93,7 +102,8 @@ export default function Header() {
             </Link>
           </div>
         )}
-      </nav>
-    </header>
+        </nav>
+      </header>
+    </>
   );
 }

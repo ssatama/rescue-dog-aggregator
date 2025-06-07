@@ -1,5 +1,7 @@
 // frontend/src/utils/imageUtils.js
 
+import { logger } from './logger';
+
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 
 // Enable Cloudinary now that we have upload flow
@@ -102,7 +104,7 @@ export function handleImageError(event, originalUrl) {
   
   // If current source is Cloudinary and we have original URL, try original
   if (isCloudinaryUrl(currentSrc) && originalUrl && !isCloudinaryUrl(originalUrl)) {
-    console.warn('Cloudinary image failed, trying original:', originalUrl);
+    logger.warn('Cloudinary image failed, trying original:', originalUrl);
     event.target.src = originalUrl;
     return;
   }
