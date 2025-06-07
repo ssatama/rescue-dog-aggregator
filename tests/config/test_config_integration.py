@@ -1,7 +1,7 @@
 import pytest
 import tempfile
 import yaml
-import shutil  
+import shutil
 from pathlib import Path
 from unittest.mock import patch, Mock
 from io import StringIO
@@ -158,3 +158,71 @@ class TestConfigIntegration:
                 assert scraper.max_retries == 5
                 assert scraper.timeout == 45
                 assert scraper.organization_name == "Test Organization"
+
+    def test_scraper_module_import_integration(self):
+        """Test that scrapers can actually be imported and instantiated from real configs."""
+        from utils.config_loader import ConfigLoader
+        from utils.config_scraper_runner import ConfigScraperRunner
+
+        # Use the real config loader (not mocked)
+        loader = ConfigLoader()
+        runner = ConfigScraperRunner(loader)
+
+        try:
+            # Load all real configs
+            configs = loader.load_all_configs()
+
+            # Test each enabled config can import and instantiate its scraper
+            for config_id, config in configs.items():
+                if config.enabled:
+                    print(f"Testing scraper import for: {config_id}")
+
+                    # This should not raise ImportError
+                    scraper_class = runner._import_scraper_class(config)
+
+                    # Verify we got a class
+                    assert callable(
+                        scraper_class
+                    ), f"Scraper class for {config_id} is not callable"
+
+                    # Verify it has the expected name
+                    assert (
+                        scraper_class.__name__ == config.scraper.class_name
+                    ), f"Class name mismatch for {config_id}: got {scraper_class.__name__}, expected {config.scraper.class_name}"
+
+                    # Try to instantiate it (with mocked org lookup to avoid DB dependency)
+                    with patch("utils.org_sync.get_db_connection") as mock_conn:
+                        mock_cursor = Mock()
+                        mock_cursor.fetchone.return_value = [1]  # Mock org ID
+                        mock_conn.return_value.__enter__.return_value.cursor.return_value.__enter__.return_value = (
+                            mock_cursor
+                        )
+
+                        try:
+                            # This tests the actual instantiation path
+                            result = runner.run_scraper(config_id, sync_first=False)
+
+                            # Should not fail due to import errors
+                            if not result[
+                                "success"
+                            ] and "No module named" in result.get("error", ""):
+                                pytest.fail(
+                                    f"Module import failed for {config_id}: {result['error']}"
+                                )
+
+                        except ImportError as e:
+                            pytest.fail(
+                                f"Failed to import scraper for {config_id}: {e}"
+                            )
+                        except Exception as e:
+                            # Other errors are OK (missing DB, etc.) - we just want to test imports
+                            if "No module named" in str(e):
+                                pytest.fail(
+                                    f"Module import failed for {config_id}: {e}"
+                                )
+                            # Else: expected errors like DB connection issues are fine
+
+        except Exception as e:
+            if "No module named" in str(e):
+                pytest.fail(f"Config integration test failed with import error: {e}")
+            raise

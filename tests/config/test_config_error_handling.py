@@ -83,7 +83,8 @@ class TestConfigErrorHandling:
 
         mock_loader = Mock()
         mock_config = Mock()
-        mock_config.get_full_module_path.return_value = "nonexistent.module"
+        # FIX: Set string values instead of Mock objects
+        mock_config.scraper.module = "nonexistent.module"
         mock_config.scraper.class_name = "NonexistentClass"
         mock_loader.load_config.return_value = mock_config
 

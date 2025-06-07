@@ -205,19 +205,28 @@ class ConfigManager:
         except Exception as e:
             print(f"❌ Error syncing organizations: {e}")
 
-    def run_scraper(self, config_id: str):
+    def run_scraper(self, config_id: str, sync_first: bool = True):
         """Run a specific scraper.
 
         Args:
             config_id: Organization config ID
+            sync_first: Whether to sync organizations before running
         """
         try:
+            if sync_first:
+                print("🔄 Syncing organizations to database before scraping...")
+                sync_res = self.sync_manager.sync_all_organizations()
+                if not sync_res.get("success"):
+                    print(
+                        "⚠️ Warning: organization sync reported errors, continuing to scraper"
+                    )
+
             print(f"🚀 Running scraper for: {config_id}")
             result = self.scraper_runner.run_scraper(config_id)
 
             if result["success"]:
                 print("✅ Scraper completed successfully!")
-                print(f"Organization: {result['organization']}")
+                print(f"Organization: {result.get('organization', config_id)}")
                 print(f"Animals found: {result.get('animals_found', 0)}")
             else:
                 print("❌ Scraper failed!")
@@ -225,6 +234,44 @@ class ConfigManager:
 
         except Exception as e:
             print(f"❌ Error running scraper: {e}")
+
+    def run_all_scrapers(self, sync_first: bool = True):
+        """Run all enabled scrapers."""
+        try:
+            if sync_first:
+                print("🔄 Syncing organizations to database before running scrapers...")
+                sync_res = self.sync_manager.sync_all_organizations()
+                if not sync_res.get("success"):
+                    print(
+                        "⚠️ Warning: organization sync reported errors, continuing to scrapers"
+                    )
+
+            print("🚀 Running all enabled scrapers...")
+            print("=" * 50)
+
+            res = self.scraper_runner.run_all_enabled_scrapers()
+
+            # Loop through the per-org results
+            total_animals_found = 0
+            for result in res.get("results", []):
+                if result.get("success"):
+                    org_name = result.get("organization", "Unknown Organization")
+                    animals_found = result.get("animals_found", 0)
+                    total_animals_found += animals_found
+                    print(f"✅ {org_name}: {animals_found} animals found")
+                else:
+                    print(
+                        f"❌ Error in {result.get('organization')}: {result.get('error')}"
+                    )
+
+            print("=" * 50)
+            print(f"🐾 Total animals found: {total_animals_found}")
+            print(
+                f"📊 Overall: {res.get('successful',0)} succeeded, {res.get('failed',0)} failed out of {res.get('total_orgs',0)} orgs"
+            )
+
+        except Exception as e:
+            print(f"❌ Error running all scrapers: {e}")
 
     def validate_configs(self):
         """Validate all configuration files."""

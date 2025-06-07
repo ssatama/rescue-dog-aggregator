@@ -55,17 +55,23 @@ class ConfigScraperRunner:
             AttributeError: If class not found in module
         """
         try:
-            module_path = config.get_full_module_path()
+            module_path = config.scraper.module
+            class_name = config.scraper.class_name
+
             module = importlib.import_module(module_path)
+            scraper_class = getattr(module, class_name)
+
+            self.logger.info(f"Successfully imported {class_name} from {module_path}")
+            return scraper_class
+
         except ImportError as e:
-            raise ImportError(f"Failed to import scraper module '{module_path}': {e}")
-
-        if not hasattr(module, config.scraper.class_name):
-            raise AttributeError(
-                f"Class {config.scraper.class_name} not found in module {module_path}"
+            self.logger.error(f"Failed to import module '{module_path}': {e}")
+            raise
+        except AttributeError as e:
+            self.logger.error(
+                f"Class '{class_name}' not found in module '{module_path}': {e}"
             )
-
-        return getattr(module, config.scraper.class_name)
+            raise
 
     def _create_scraper_instance(self, scraper_class, config_id: str):
         """Create scraper instance with proper configuration.
@@ -101,24 +107,45 @@ class ConfigScraperRunner:
                     "error": f"Organization '{config.get_display_name()}' is disabled for scraping",
                 }
 
-            # Sync organization if requested
-            if sync_first:
-                sync_manager = OrganizationSyncManager(self.config_loader)
-                org_id, created = sync_manager.sync_organization(config)
-
-            # Import and create scraper
+            # Import scraper class
             scraper_class = self._import_scraper_class(config)
-            scraper = self._create_scraper_instance(scraper_class, config_id)
+
+            # Get organization database ID
+            # Try to get from config first, fallback to database lookup
+            try:
+                organization_id = getattr(config, "organization_db_id", None)
+                if not organization_id:
+                    # Fallback: sync first to ensure org exists in DB
+                    from utils.org_sync import OrganizationSyncManager
+
+                    sync_manager = OrganizationSyncManager(self.config_loader)
+                    organization_id, created = sync_manager.sync_organization(config)
+            except Exception as e:
+                return {
+                    "success": False,
+                    "config_id": config_id,
+                    "error": f"Could not determine organization ID: {e}",
+                }
+
+            # Create scraper instance with organization_id
+            scraper = scraper_class(organization_id=organization_id)
 
             # Run scraper
-            data = scraper.collect_data()
+            success = scraper.run()
 
-            return {
-                "success": True,
-                "config_id": config_id,
-                "organization": config.get_display_name(),
-                "animals_found": len(data) if data else 0,
-            }
+            if success:
+                return {
+                    "success": True,
+                    "config_id": config_id,
+                    "organization": config.get_display_name(),
+                    "animals_found": getattr(scraper, "animals_found", 0),
+                }
+            else:
+                return {
+                    "success": False,
+                    "config_id": config_id,
+                    "error": "Scraper returned False (check logs for details)",
+                }
 
         except Exception as e:
             self.logger.error(f"Error running scraper for {config_id}: {e}")
