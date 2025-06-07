@@ -951,6 +951,131 @@ class BaseScraper(ABC):
             self.logger.error(f"Error detecting partial failure: {e}")
             return False
 
+    def detect_catastrophic_failure(self, animals_found, absolute_minimum=3):
+        """Detect catastrophic scraper failures (zero or extremely low animal counts).
+        
+        This method detects complete scraper failures or situations where the count
+        is so low that it's almost certainly a system error rather than reality.
+        
+        Args:
+            animals_found: Number of animals found in current scrape
+            absolute_minimum: Absolute minimum count below which failure is assumed
+            
+        Returns:
+            True if catastrophic failure detected, False otherwise
+        """
+        # Handle invalid inputs
+        if animals_found < 0:
+            self.logger.error(
+                f"Invalid negative animal count: {animals_found} for organization_id {self.organization_id}"
+            )
+            return True
+            
+        # Zero animals is always catastrophic
+        if animals_found == 0:
+            self.logger.error(
+                f"Catastrophic failure detected: Zero animals found for organization_id {self.organization_id}. "
+                f"This indicates complete scraper failure or website unavailability."
+            )
+            return True
+            
+        # Check against absolute minimum threshold
+        if animals_found < absolute_minimum:
+            self.logger.error(
+                f"Catastrophic failure detected: Only {animals_found} animals found for organization_id {self.organization_id} "
+                f"(below absolute minimum of {absolute_minimum}). This likely indicates scraper malfunction."
+            )
+            return True
+            
+        return False
+
+    def detect_partial_failure(self, animals_found, threshold_percentage=0.5, absolute_minimum=3, minimum_historical_scrapes=3):
+        """Enhanced partial failure detection with absolute minimums and better error handling.
+        
+        Args:
+            animals_found: Number of animals found in current scrape
+            threshold_percentage: Minimum percentage of historical average to consider normal
+            absolute_minimum: Absolute minimum count below which failure is assumed
+            minimum_historical_scrapes: Minimum historical scrapes needed for reliable comparison
+            
+        Returns:
+            True if potential partial failure detected, False otherwise
+        """
+        try:
+            # First check for catastrophic failure
+            if self.detect_catastrophic_failure(animals_found, absolute_minimum):
+                return True
+                
+            cursor = self.conn.cursor()
+            
+            # Get historical average of animals found (configurable number of successful scrapes)
+            cursor.execute(
+                """
+                SELECT AVG(dogs_found), COUNT(*) 
+                FROM scrape_logs 
+                WHERE organization_id = %s 
+                AND status = 'success' 
+                AND dogs_found > 0
+                ORDER BY started_at DESC 
+                LIMIT %s
+                """,
+                (self.organization_id, minimum_historical_scrapes * 3)  # Get more data for reliable average
+            )
+            
+            result = cursor.fetchone()
+            cursor.close()
+            
+            if not result or not result[0] or (len(result) > 1 and result[1] < minimum_historical_scrapes):
+                # No historical data or insufficient data - use absolute minimum
+                scrape_count = result[1] if (result and len(result) > 1) else 0
+                self.logger.info(
+                    f"Insufficient historical data for organization_id {self.organization_id} "
+                    f"({scrape_count} scrapes). Using absolute minimum threshold."
+                )
+                
+                if animals_found < absolute_minimum:
+                    self.logger.warning(
+                        f"Potential failure detected: {animals_found} animals found "
+                        f"(below absolute minimum of {absolute_minimum}) for new organization"
+                    )
+                    return True
+                return False
+            
+            historical_average = float(result[0])
+            percentage_threshold = historical_average * threshold_percentage
+            
+            # Use the higher of percentage threshold or absolute minimum
+            effective_threshold = max(percentage_threshold, absolute_minimum)
+            
+            is_partial_failure = animals_found < effective_threshold
+            
+            if is_partial_failure:
+                self.logger.warning(
+                    f"Potential partial failure detected: found {animals_found} animals "
+                    f"(historical avg: {historical_average:.1f}, percentage threshold: {percentage_threshold:.1f}, "
+                    f"absolute minimum: {absolute_minimum}, effective threshold: {effective_threshold:.1f})"
+                )
+            
+            return is_partial_failure
+            
+        except Exception as e:
+            self.logger.error(f"Error detecting partial failure: {e}")
+            # Default to safe mode - assume potential failure to prevent data loss
+            return True
+
+    def detect_scraper_failure(self, animals_found, threshold_percentage=0.5, absolute_minimum=3):
+        """Combined failure detection method that checks both catastrophic and partial failures.
+        
+        Args:
+            animals_found: Number of animals found in current scrape
+            threshold_percentage: Minimum percentage of historical average to consider normal
+            absolute_minimum: Absolute minimum count below which failure is assumed
+            
+        Returns:
+            True if any type of failure detected, False otherwise
+        """
+        return self.detect_partial_failure(animals_found, threshold_percentage, absolute_minimum)
+
     def handle_scraper_failure(self, error_message):
         """Handle scraper failure without affecting animal availability.
         

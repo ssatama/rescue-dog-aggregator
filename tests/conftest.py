@@ -147,6 +147,19 @@ def client():
     print("[conftest client] TestClient finished and dependency override cleared.")
 
 
+@pytest.fixture(scope="module")
+def api_client_no_auth():
+    """Pytest fixture for unauthenticated API client testing."""
+    print("\n[conftest api_client_no_auth] Creating unauthenticated TestClient...")
+    
+    # Create client without any authentication or special overrides
+    with TestClient(app) as test_client:
+        print("[conftest api_client_no_auth] Unauthenticated TestClient created.")
+        yield test_client
+    
+    print("[conftest api_client_no_auth] Unauthenticated TestClient finished.")
+
+
 @pytest.fixture(autouse=True)
 def disable_cloudinary_in_tests():
     """Automatically disable Cloudinary for all tests."""

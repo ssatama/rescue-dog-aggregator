@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Import routes
-from api.routes import animals, organizations
+from api.routes import animals, organizations, monitoring
 
 from datetime import datetime
 
@@ -26,20 +26,7 @@ app = FastAPI(
 )
 
 
-@app.get("/health", tags=["health"])
-async def health_check():
-    """Health check endpoint."""
-    from utils.cloudinary_service import CloudinaryService
-
-    cloudinary_status = CloudinaryService.get_status()
-
-    return {
-        "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
-        "version": "0.1.0",
-        "environment": ENVIRONMENT,
-        "services": {"cloudinary": cloudinary_status},
-    }
+# Enhanced health check is now handled by monitoring routes
 
 
 # Add CORS middleware with secure configuration
@@ -67,6 +54,9 @@ app.include_router(animals.router, prefix="/api/animals", tags=["animals"])
 app.include_router(
     organizations.router, prefix="/api/organizations", tags=["organizations"]
 )
+
+# Include monitoring routes (no prefix for health check compatibility)
+app.include_router(monitoring.router, tags=["monitoring"])
 
 
 @app.get("/", tags=["root"])

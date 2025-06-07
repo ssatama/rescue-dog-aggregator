@@ -185,8 +185,9 @@ class TestBaseScraper:
     @patch.object(BaseScraper, "start_scrape_log")
     @patch.object(BaseScraper, "save_animal")
     @patch.object(BaseScraper, "complete_scrape_log")
+    @patch.object(BaseScraper, "detect_partial_failure")
     def test_run_success(
-        self, mock_complete_log, mock_save, mock_start_log, mock_connect, mock_scraper
+        self, mock_failure_detection, mock_complete_log, mock_save, mock_start_log, mock_connect, mock_scraper
     ):
         """Test successful run of the scraper."""
         # Configure mocks
@@ -197,6 +198,7 @@ class TestBaseScraper:
             (2, "added"),
         ]  # ID and action for each dog
         mock_complete_log.return_value = True
+        mock_failure_detection.return_value = False  # No failure detected
 
         # Set a mock connection
         mock_scraper.conn = Mock()

@@ -94,3 +94,62 @@ def get_db_cursor() -> Generator[RealDictCursor, None, None]:
                 f"Cursor Connection closing: {id(conn)}"
             )  # Changed level to debug
             conn.close()
+
+
+def get_database_connection() -> Generator[psycopg2.extensions.connection, None, None]:
+    """
+    Dependency that provides a database connection.
+    Used for monitoring endpoints that need direct connection access.
+    """
+    conn = None
+    try:
+        logger.info(
+            f"[dependencies.py get_database_connection] Using DB_CONFIG: database={DB_CONFIG.get('database')}, user={DB_CONFIG.get('user')}, host={DB_CONFIG.get('host')}"
+        )
+
+        # Build connection parameters
+        conn_params = {
+            "host": DB_CONFIG["host"],
+            "user": DB_CONFIG["user"],
+            "database": DB_CONFIG["database"],
+        }
+        if DB_CONFIG["password"]:
+            conn_params["password"] = DB_CONFIG["password"]
+
+        conn = psycopg2.connect(**conn_params)
+        logger.debug(f"Monitoring Connection opened: {id(conn)}")
+        yield conn
+
+        logger.debug(f"Committing transaction for monitoring connection {id(conn)}")
+        conn.commit()
+
+    except HTTPException as http_exc:
+        logger.warning(
+            f"[dependencies.py get_database_connection] HTTPException caught, rolling back: {http_exc.detail}"
+        )
+        if conn:
+            conn.rollback()
+        raise http_exc
+    except psycopg2.Error as db_err:
+        logger.error(
+            f"[dependencies.py get_database_connection] Database error, rolling back: {db_err}"
+        )
+        if conn:
+            conn.rollback()
+        raise HTTPException(
+            status_code=500, detail=f"Database dependency error: {db_err}"
+        )
+    except Exception as e:
+        logger.exception(
+            f"[dependencies.py get_database_connection] Unexpected error, rolling back: {e}"
+        )
+        if conn:
+            conn.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error in dependency: {type(e).__name__}: {e}",
+        )
+    finally:
+        if conn:
+            logger.debug(f"Monitoring Connection closing: {id(conn)}")
+            conn.close()
