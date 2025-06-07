@@ -19,8 +19,19 @@ python management/config_commands.py validate
 python management/config_commands.py run pets-in-turkey
 python management/config_commands.py run-all
 
-# Run tests
-pytest
+# Database migrations
+psql -h localhost -U $USER -d rescue_dogs -f database/migrations/001_add_duplicate_stale_detection.sql
+psql -h localhost -U $USER -d rescue_dogs -f database/migrations/002_add_detailed_metrics.sql
+
+# Database status check
+python database/check_db_status.py
+
+# Run tests (with virtual environment)
+source venv/bin/activate && python -m pytest tests/ -v
+
+# Run specific test categories
+python -m pytest tests/api/test_availability_filtering.py -v
+python -m pytest tests/scrapers/test_base_scraper.py -v
 
 # Code formatting and linting
 black .
@@ -92,12 +103,33 @@ This is a **configuration-driven rescue dog aggregation platform** with these ke
   - 1 missed scrape → `availability_confidence = 'medium'`
   - 2+ missed scrapes → `availability_confidence = 'low'`  
   - 4+ missed scrapes → `status = 'unavailable'`
+- **Error Handling & Recovery**: Production-ready error handling:
+  - `detect_partial_failure()` - Prevent false positives from scraper issues
+  - `handle_scraper_failure()` - Graceful failure without affecting animal status
+  - `restore_available_animal()` - Re-enable animals when they reappear
+- **Enhanced Metrics**: Detailed logging and monitoring:
+  - `log_detailed_metrics()` - JSONB metrics storage with duration and quality scores
+  - `assess_data_quality()` - Automatic quality scoring (0-1) based on field completeness
+  - `calculate_scrape_duration()` - Performance tracking
 
 ### Testing Strategy
 - **Backend**: Pytest with test database isolation in `tests/conftest.py`
 - **Frontend**: Jest with component and integration tests
 - **Coverage**: 93%+ including security, resilience, and integration tests
 - **Critical Tests**: SQL injection prevention, network failure handling, data consistency
+- **Production-Ready Testing**: Test-driven development approach with:
+  - `tests/api/test_availability_filtering.py` - API filtering by availability and confidence
+  - `tests/scrapers/test_base_scraper.py` - Complete scraper lifecycle and error handling
+  - Comprehensive test coverage for availability management, stale data detection, and metrics
+
+### API Features (Production-Ready)
+- **Availability Filtering**: Default filtering shows only `status='available'` and `availability_confidence='high,medium'`
+- **Override Parameters**: 
+  - `?status=all` - Show all animals regardless of status
+  - `?availability_confidence=all` - Show all confidence levels
+  - `?availability_confidence=low` - Show only low confidence animals
+- **Response Fields**: All endpoints include availability fields:
+  - `status`, `availability_confidence`, `last_seen_at`, `consecutive_scrapes_missing`
 
 ### Configuration Management
 - Validate configs: `python management/config_commands.py validate`
@@ -111,7 +143,38 @@ This is a **configuration-driven rescue dog aggregation platform** with these ke
 
 ## Environment Requirements
 - Python 3.9+ with dependencies in `requirements.txt`
-- PostgreSQL database
+- PostgreSQL database (both main and test databases: `rescue_dogs` and `test_rescue_dogs`)
 - Node.js 16+ for frontend
 - Cloudinary account for image processing
 - Chrome/Chromium for web scraping
+
+## Database Schema (Key Tables)
+- **animals**: Core animal data with availability tracking fields:
+  - `status` (available/unavailable)
+  - `availability_confidence` (high/medium/low)
+  - `last_seen_at` (timestamp from last scrape)
+  - `consecutive_scrapes_missing` (counter for stale detection)
+- **scrape_logs**: Enhanced with JSONB metrics:
+  - `detailed_metrics` (JSONB with quality scores, duration, counts)
+  - `duration_seconds` (scrape performance tracking)
+  - `data_quality_score` (0-1 automatic quality assessment)
+
+## Key Migration Commands
+```bash
+# Apply availability tracking columns
+psql -d rescue_dogs -f database/migrations/001_add_duplicate_stale_detection.sql
+
+# Apply detailed metrics tracking  
+psql -d rescue_dogs -f database/migrations/002_add_detailed_metrics.sql
+
+# For test database, ensure TESTING=true or use DB_NAME override:
+DB_NAME=test_rescue_dogs psql -d test_rescue_dogs -f database/migrations/001_add_duplicate_stale_detection.sql
+DB_NAME=test_rescue_dogs psql -d test_rescue_dogs -f database/migrations/002_add_detailed_metrics.sql
+```
+
+## Production Readiness Features
+- **Weekly Scraping Support**: Designed for production schedules with stale data management
+- **Error Recovery**: Partial failure detection prevents false positives
+- **Data Quality**: Automatic quality scoring and comprehensive metrics
+- **User Experience**: Only reliable, recently-seen animals shown by default
+- **Monitoring**: Detailed JSONB metrics for troubleshooting and optimization

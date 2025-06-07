@@ -43,6 +43,9 @@ class Animal(AnimalBase):
     created_at: datetime
     updated_at: datetime
     last_scraped_at: Optional[datetime] = None
+    availability_confidence: Optional[str] = "high"
+    last_seen_at: Optional[datetime] = None
+    consecutive_scrapes_missing: Optional[int] = 0
 
 
 class AnimalWithImages(Animal):

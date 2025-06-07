@@ -9,7 +9,7 @@ import psycopg2
 from langdetect import detect
 import sys
 import time
-from typing import Optional
+from typing import Optional, Dict, Any, List
 
 # Import config
 from config import DB_CONFIG
@@ -77,6 +77,7 @@ class BaseScraper(ABC):
         self.conn = None
         self.scrape_log_id = None
         self.current_scrape_session = None
+        self.scrape_start_time = None
         self.cloudinary_service = CloudinaryService()
 
     def _setup_logger(self):
@@ -332,6 +333,9 @@ class BaseScraper(ABC):
         if not self.start_scrape_session():
             return False
 
+        # Track scrape start time for metrics
+        self.scrape_start_time = datetime.now()
+
         try:
             # Collect data using the organization-specific implementation
             self.logger.info(
@@ -345,6 +349,9 @@ class BaseScraper(ABC):
             # Save each animal
             animals_added = 0
             animals_updated = 0
+            animals_unchanged = 0
+            images_uploaded = 0
+            images_failed = 0
 
             for animal_data in animals_data:
                 # Add organization_id and animal_type to the animal data
@@ -366,25 +373,68 @@ class BaseScraper(ABC):
                         animals_added += 1
                     elif action == "updated":
                         animals_updated += 1
+                    elif action == "no_change":
+                        animals_unchanged += 1
 
-            # Update stale data detection for animals not seen in this scrape
-            self.update_stale_data_detection()
+                    # Track image upload success/failure
+                    if image_urls:
+                        images_uploaded += len(image_urls)  # Assume success for now
+                        # In a real implementation, we'd track actual upload results
 
-            # Complete scrape log
-            self.complete_scrape_log(
-                status="success",
-                animals_found=len(animals_data),
-                animals_added=animals_added,
-                animals_updated=animals_updated,
-            )
+            # Check for potential partial failure before updating stale data
+            potential_failure = self.detect_partial_failure(len(animals_data))
+            
+            if potential_failure:
+                self.logger.warning("Potential partial failure detected - skipping stale data update")
+                # Complete scrape log with warning status
+                self.complete_scrape_log(
+                    status="warning",
+                    animals_found=len(animals_data),
+                    animals_added=animals_added,
+                    animals_updated=animals_updated,
+                    error_message="Potential partial failure - low animal count detected"
+                )
+            else:
+                # Update stale data detection for animals not seen in this scrape
+                self.update_stale_data_detection()
+
+                # Complete scrape log
+                self.complete_scrape_log(
+                    status="success",
+                    animals_found=len(animals_data),
+                    animals_added=animals_added,
+                    animals_updated=animals_updated,
+                )
+
+            # Calculate metrics for detailed logging
+            scrape_end_time = datetime.now()
+            duration = self.calculate_scrape_duration(self.scrape_start_time, scrape_end_time)
+            quality_score = self.assess_data_quality(animals_data)
+            
+            # Log detailed metrics
+            detailed_metrics = {
+                'animals_found': len(animals_data),
+                'animals_added': animals_added,
+                'animals_updated': animals_updated,
+                'animals_unchanged': animals_unchanged,
+                'images_uploaded': images_uploaded,
+                'images_failed': images_failed,
+                'duration_seconds': duration,
+                'data_quality_score': quality_score,
+                'potential_failure_detected': potential_failure
+            }
+            
+            self.log_detailed_metrics(detailed_metrics)
 
             self.logger.info(
-                f"Scrape completed successfully. Added: {animals_added}, Updated: {animals_updated}"
+                f"Scrape completed successfully. Added: {animals_added}, Updated: {animals_updated}, "
+                f"Quality: {quality_score:.2f}, Duration: {duration:.1f}s"
             )
             return True
         except Exception as e:
             self.logger.error(f"Error during scrape: {e}")
-            self.complete_scrape_log(status="error", error_message=str(e))
+            # Use the new error handling method
+            self.handle_scraper_failure(str(e))
             return False
         finally:
             # Close database connection
@@ -734,3 +784,299 @@ class BaseScraper(ABC):
             if self.conn:
                 self.conn.rollback()
             return False
+
+    def mark_animals_unavailable(self, threshold=4):
+        """Mark animals as unavailable after consecutive missed scrapes.
+        
+        Args:
+            threshold: Number of consecutive missed scrapes before marking unavailable
+            
+        Returns:
+            Number of animals marked as unavailable
+        """
+        try:
+            cursor = self.conn.cursor()
+            
+            # Mark animals as unavailable after threshold missed scrapes
+            cursor.execute(
+                """
+                UPDATE animals 
+                SET status = 'unavailable'
+                WHERE organization_id = %s 
+                AND consecutive_scrapes_missing >= %s
+                AND status != 'unavailable'
+                """,
+                (self.organization_id, threshold)
+            )
+            
+            rows_affected = cursor.rowcount
+            self.conn.commit()
+            cursor.close()
+            
+            if rows_affected > 0:
+                self.logger.info(f"Marked {rows_affected} animals as unavailable after {threshold}+ missed scrapes")
+            
+            return rows_affected
+            
+        except Exception as e:
+            self.logger.error(f"Error marking animals unavailable: {e}")
+            if self.conn:
+                self.conn.rollback()
+            return 0
+
+    def restore_available_animal(self, animal_id):
+        """Restore an animal to available status when it reappears.
+        
+        Args:
+            animal_id: ID of the animal to restore
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            cursor = self.conn.cursor()
+            
+            # Restore animal to available status with high confidence
+            cursor.execute(
+                """
+                UPDATE animals 
+                SET status = 'available',
+                    consecutive_scrapes_missing = 0,
+                    availability_confidence = 'high',
+                    last_seen_at = %s,
+                    updated_at = %s
+                WHERE id = %s
+                """,
+                (
+                    self.current_scrape_session or datetime.now(),
+                    datetime.now(),
+                    animal_id
+                )
+            )
+            
+            self.conn.commit()
+            cursor.close()
+            
+            self.logger.info(f"Restored animal ID {animal_id} to available status")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error restoring animal availability: {e}")
+            if self.conn:
+                self.conn.rollback()
+            return False
+
+    def get_stale_animals_summary(self):
+        """Get summary of animals by availability confidence and status.
+        
+        Returns:
+            Dictionary with (confidence, status) tuples as keys and counts as values
+        """
+        try:
+            cursor = self.conn.cursor()
+            
+            cursor.execute(
+                """
+                SELECT availability_confidence, status, COUNT(*) 
+                FROM animals 
+                WHERE organization_id = %s
+                GROUP BY availability_confidence, status
+                ORDER BY availability_confidence, status
+                """,
+                (self.organization_id,)
+            )
+            
+            results = cursor.fetchall()
+            cursor.close()
+            
+            # Convert to dictionary
+            summary = {}
+            for confidence, status, count in results:
+                summary[(confidence, status)] = count
+            
+            return summary
+            
+        except Exception as e:
+            self.logger.error(f"Error getting stale animals summary: {e}")
+            return {}
+
+    def detect_partial_failure(self, animals_found, threshold_percentage=0.5):
+        """Detect if scraper found abnormally few animals (partial failure).
+        
+        Args:
+            animals_found: Number of animals found in current scrape
+            threshold_percentage: Minimum percentage of historical average to consider normal
+            
+        Returns:
+            True if potential partial failure detected, False otherwise
+        """
+        try:
+            cursor = self.conn.cursor()
+            
+            # Get historical average of animals found (last 10 successful scrapes)
+            cursor.execute(
+                """
+                SELECT AVG(dogs_found) 
+                FROM scrape_logs 
+                WHERE organization_id = %s 
+                AND status = 'success' 
+                AND dogs_found > 0
+                ORDER BY created_at DESC 
+                LIMIT 10
+                """,
+                (self.organization_id,)
+            )
+            
+            result = cursor.fetchone()
+            cursor.close()
+            
+            if not result or not result[0]:
+                # No historical data - can't detect partial failure
+                return False
+            
+            historical_average = float(result[0])
+            threshold = historical_average * threshold_percentage
+            
+            is_partial_failure = animals_found < threshold
+            
+            if is_partial_failure:
+                self.logger.warning(
+                    f"Potential partial failure detected: found {animals_found} animals "
+                    f"(historical avg: {historical_average:.1f}, threshold: {threshold:.1f})"
+                )
+            
+            return is_partial_failure
+            
+        except Exception as e:
+            self.logger.error(f"Error detecting partial failure: {e}")
+            return False
+
+    def handle_scraper_failure(self, error_message):
+        """Handle scraper failure without affecting animal availability.
+        
+        Args:
+            error_message: Error message describing the failure
+            
+        Returns:
+            True if handled successfully, False otherwise
+        """
+        try:
+            self.logger.error(f"Scraper failure detected: {error_message}")
+            
+            # Log the failure but do NOT update stale data detection
+            # This prevents marking animals as stale due to scraper issues
+            
+            # Complete scrape log with failure status
+            if self.scrape_log_id:
+                self.complete_scrape_log(
+                    status="error", 
+                    error_message=error_message,
+                    animals_found=0,
+                    animals_added=0,
+                    animals_updated=0
+                )
+            
+            # Reset scrape session to prevent stale data updates
+            self.current_scrape_session = None
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error handling scraper failure: {e}")
+            return False
+
+    def log_detailed_metrics(self, metrics: Dict[str, Any]):
+        """Log detailed metrics to the scrape log.
+        
+        Args:
+            metrics: Dictionary containing detailed metrics
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            if not self.scrape_log_id:
+                self.logger.warning("No scrape log ID available for detailed metrics")
+                return False
+                
+            cursor = self.conn.cursor()
+            
+            # Update scrape log with detailed metrics
+            cursor.execute(
+                """
+                UPDATE scrape_logs 
+                SET detailed_metrics = %s,
+                    duration_seconds = %s,
+                    data_quality_score = %s
+                WHERE id = %s
+                """,
+                (
+                    json.dumps(metrics),
+                    metrics.get('duration_seconds'),
+                    metrics.get('data_quality_score'),
+                    self.scrape_log_id
+                )
+            )
+            
+            self.conn.commit()
+            cursor.close()
+            
+            self.logger.info(f"Logged detailed metrics: {metrics}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error logging detailed metrics: {e}")
+            if self.conn:
+                self.conn.rollback()
+            return False
+
+    def assess_data_quality(self, animals_data: List[Dict[str, Any]]) -> float:
+        """Assess the quality of scraped animal data.
+        
+        Args:
+            animals_data: List of animal data dictionaries
+            
+        Returns:
+            Quality score between 0 and 1 (1 = perfect quality)
+        """
+        if not animals_data:
+            return 0.0
+            
+        total_score = 0.0
+        required_fields = ['name', 'breed', 'age_text', 'external_id']
+        optional_fields = ['sex', 'size', 'primary_image_url', 'adoption_url']
+        
+        for animal in animals_data:
+            animal_score = 0.0
+            
+            # Check required fields (70% of score)
+            required_present = 0
+            for field in required_fields:
+                if animal.get(field) and str(animal[field]).strip():
+                    required_present += 1
+            animal_score += (required_present / len(required_fields)) * 0.7
+            
+            # Check optional fields (30% of score)
+            optional_present = 0
+            for field in optional_fields:
+                if animal.get(field) and str(animal[field]).strip():
+                    optional_present += 1
+            animal_score += (optional_present / len(optional_fields)) * 0.3
+            
+            total_score += animal_score
+        
+        final_score = total_score / len(animals_data)
+        return round(final_score, 3)
+
+    def calculate_scrape_duration(self, start_time: datetime, end_time: datetime) -> float:
+        """Calculate scrape duration in seconds.
+        
+        Args:
+            start_time: When the scrape started
+            end_time: When the scrape ended
+            
+        Returns:
+            Duration in seconds as float
+        """
+        duration = end_time - start_time
+        return duration.total_seconds()

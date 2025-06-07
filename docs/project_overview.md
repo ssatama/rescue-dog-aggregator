@@ -23,14 +23,22 @@ The system consists of four main components:
 
 ## Data Flow
 
-1. Scrapers collect data from rescue organization websites
-2. Data is cleaned, standardized, and stored in the database
+1. **Data Collection**: Scrapers collect data from rescue organization websites with session tracking
+2. **Data Processing**: Data is cleaned, standardized, and stored in the database
    - Breed standardization is applied
    - Age text is parsed into standardized month ranges
    - Size descriptions are mapped to standard categories
-3. API endpoints expose the standardized data to the frontend
-4. Frontend presents the data in a user-friendly interface
-5. Users can click through to the original rescue sites for adoption
+   - Language detection and automatic tagging
+3. **Availability Management**: Production-ready lifecycle tracking
+   - Session-based stale data detection across scraping cycles
+   - Automatic confidence scoring (high → medium → low → unavailable)
+   - Partial failure detection prevents false positives
+4. **Quality Assessment**: Automatic data quality scoring (0-1 scale) based on field completeness
+5. **API Exposure**: RESTful endpoints with smart default filtering
+   - Only reliable animals (available + high/medium confidence) shown by default
+   - Override parameters available for comprehensive views
+6. **Frontend Display**: User-friendly interface focused on adoptable animals
+7. **Adoption Flow**: Users click through to original rescue sites for adoption
 
 ## Standardization Process
 
@@ -67,6 +75,28 @@ The system now includes comprehensive image processing via Cloudinary:
 
 ## Production Readiness
 
+### Weekly Scraping Architecture
+
+The system is designed for production deployment with weekly scraping schedules:
+
+- **Stale Data Detection**: Animals are tracked across scraping sessions with automatic lifecycle management
+- **Availability Confidence Levels**: 
+  - `high`: Recently seen in scrape (0 missed scrapes)
+  - `medium`: 1 missed scrape  
+  - `low`: 2-3 missed scrapes
+  - `unavailable`: 4+ missed scrapes
+- **Error Recovery**: Partial failure detection prevents false positives when scrapers encounter issues
+- **User Experience**: API defaults ensure users only see reliable, recently-seen animals
+
+### Enhanced Monitoring & Metrics
+
+Production-ready monitoring with comprehensive tracking:
+
+- **JSONB Metrics**: Detailed scrape statistics stored as structured data
+- **Quality Scoring**: Automatic assessment of data completeness (0-1 scale)
+- **Performance Tracking**: Duration monitoring and optimization insights
+- **Failure Detection**: Smart algorithms distinguish between website changes and scraper issues
+
 ### Critical Test Coverage
 
 Beyond standard unit tests, the system includes critical production-readiness testing:
@@ -75,6 +105,8 @@ Beyond standard unit tests, the system includes critical production-readiness te
 - **Resilience Testing**: Database failures, network timeouts, malformed data handling
 - **Integration Testing**: End-to-end Cloudinary upload, complete data workflows  
 - **Data Consistency Testing**: Standardization reliability, edge cases, idempotency
+- **Availability Management Testing**: Stale data detection, confidence scoring, error handling
+- **Test-Driven Development**: All production features implemented with comprehensive test coverage
 
 ### Error Handling
 
@@ -83,6 +115,8 @@ Comprehensive error handling ensures graceful degradation:
 - Database connection issues are logged and retried
 - API errors return consistent error responses
 - Frontend displays user-friendly error messages with retry options
+- Scraper failures don't affect existing animal availability status
+- Partial failure detection prevents false unavailable status
 
 ### Performance Optimization
 
@@ -90,3 +124,5 @@ Comprehensive error handling ensures graceful degradation:
 - Database query optimization with proper indexing
 - Frontend lazy loading and progressive enhancement
 - API response caching and pagination
+- Smart default filtering reduces unnecessary data transfer
+- JSONB metrics storage for efficient monitoring queries

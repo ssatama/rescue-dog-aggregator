@@ -561,3 +561,336 @@ class TestScrapeSessionTracking:
         
         # Verify result
         assert result is True
+
+
+class TestAvailabilityStatusManagement:
+    """Test availability status management and animal lifecycle."""
+
+    @pytest.fixture
+    def availability_scraper(self):
+        """Create a scraper for availability management tests."""
+        
+        class AvailabilityScraper(BaseScraper):
+            def collect_data(self):
+                return []
+        
+        return AvailabilityScraper(organization_id=1)
+
+    @patch.dict(
+        "os.environ",
+        {
+            "CLOUDINARY_CLOUD_NAME": "",
+            "CLOUDINARY_API_KEY": "",
+            "CLOUDINARY_API_SECRET": "",
+        },
+    )
+    def test_mark_animals_unavailable_after_threshold(self, availability_scraper):
+        """Test that animals are marked unavailable after consecutive missed scrapes."""
+        # Mock database connection and cursor
+        availability_scraper.conn = Mock()
+        mock_cursor = Mock()
+        availability_scraper.conn.cursor.return_value = mock_cursor
+        
+        # Set current scrape session
+        availability_scraper.current_scrape_session = datetime(2024, 1, 15, 10, 30, 0)
+        
+        # Mock cursor to return number of affected rows
+        mock_cursor.rowcount = 5
+        
+        # Test
+        result = availability_scraper.mark_animals_unavailable(threshold=4)
+        
+        # Verify SQL query was executed with correct threshold
+        mock_cursor.execute.assert_called_once()
+        call_args = mock_cursor.execute.call_args[0]
+        assert "UPDATE animals" in call_args[0]
+        assert "status = 'unavailable'" in call_args[0]
+        assert "consecutive_scrapes_missing >= %s" in call_args[0]
+        assert call_args[1] == (availability_scraper.organization_id, 4)
+        
+        # Verify result
+        assert result == 5
+
+    @patch.dict(
+        "os.environ",
+        {
+            "CLOUDINARY_CLOUD_NAME": "",
+            "CLOUDINARY_API_KEY": "",
+            "CLOUDINARY_API_SECRET": "",
+        },
+    )
+    def test_restore_available_animals(self, availability_scraper):
+        """Test restoring animals to available status when they reappear."""
+        # Mock database connection and cursor
+        availability_scraper.conn = Mock()
+        mock_cursor = Mock()
+        availability_scraper.conn.cursor.return_value = mock_cursor
+        
+        # Test
+        result = availability_scraper.restore_available_animal(123)
+        
+        # Verify SQL query was executed
+        mock_cursor.execute.assert_called_once()
+        call_args = mock_cursor.execute.call_args[0]
+        assert "UPDATE animals" in call_args[0]
+        assert "status = 'available'" in call_args[0]
+        assert "consecutive_scrapes_missing = 0" in call_args[0]
+        assert "availability_confidence = 'high'" in call_args[0]
+        assert "last_seen_at = %s" in call_args[0]
+        assert "updated_at = %s" in call_args[0]
+        assert call_args[1][2] == 123  # animal_id is the third parameter
+        
+        # Verify result
+        assert result is True
+
+    @patch.dict(
+        "os.environ",
+        {
+            "CLOUDINARY_CLOUD_NAME": "",
+            "CLOUDINARY_API_KEY": "",
+            "CLOUDINARY_API_SECRET": "",
+        },
+    )
+    def test_get_stale_animals_summary(self, availability_scraper):
+        """Test getting summary of stale animals for monitoring."""
+        # Mock database connection and cursor
+        availability_scraper.conn = Mock()
+        mock_cursor = Mock()
+        availability_scraper.conn.cursor.return_value = mock_cursor
+        
+        # Mock cursor to return stale animals summary
+        mock_cursor.fetchall.return_value = [
+            ('high', 'available', 10),
+            ('medium', 'available', 5),
+            ('low', 'available', 3),
+            ('low', 'unavailable', 2)
+        ]
+        
+        # Test
+        result = availability_scraper.get_stale_animals_summary()
+        
+        # Verify query was executed
+        mock_cursor.execute.assert_called_once()
+        call_args = mock_cursor.execute.call_args[0]
+        assert "GROUP BY availability_confidence, status" in call_args[0]
+        assert "organization_id = %s" in call_args[0]
+        assert call_args[1] == (availability_scraper.organization_id,)
+        
+        # Verify result
+        expected = {
+            ('high', 'available'): 10,
+            ('medium', 'available'): 5,
+            ('low', 'available'): 3,
+            ('low', 'unavailable'): 2
+        }
+        assert result == expected
+
+
+class TestScraperErrorHandling:
+    """Test error handling and failure recovery in scrapers."""
+
+    @pytest.fixture
+    def error_scraper(self):
+        """Create a scraper for error handling tests."""
+        
+        class ErrorScraper(BaseScraper):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.should_fail = False
+                
+            def collect_data(self):
+                if self.should_fail:
+                    raise Exception("Simulated scraper failure")
+                return [{"name": "Test Dog", "external_id": "test-1"}]
+        
+        return ErrorScraper(organization_id=1)
+
+    @patch.dict(
+        "os.environ",
+        {
+            "CLOUDINARY_CLOUD_NAME": "",
+            "CLOUDINARY_API_KEY": "",
+            "CLOUDINARY_API_SECRET": "",
+        },
+    )
+    def test_scraper_failure_does_not_update_stale_data(self, error_scraper):
+        """Test that scraper failures don't incorrectly mark animals as stale."""
+        # Mock database connection
+        error_scraper.conn = Mock()
+        mock_cursor = Mock()
+        error_scraper.conn.cursor.return_value = mock_cursor
+        
+        # Mock successful connection and scrape log creation
+        mock_cursor.fetchone.return_value = (1,)  # scrape_log_id
+        
+        # Configure scraper to fail
+        error_scraper.should_fail = True
+        
+        # Test run
+        with patch.object(error_scraper, 'connect_to_database', return_value=True), \
+             patch.object(error_scraper, 'start_scrape_log', return_value=True), \
+             patch.object(error_scraper, 'start_scrape_session', return_value=True), \
+             patch.object(error_scraper, 'update_stale_data_detection') as mock_stale_update, \
+             patch.object(error_scraper, 'complete_scrape_log', return_value=True):
+            
+            result = error_scraper.run()
+        
+        # Verify scraper failed
+        assert result is False
+        
+        # Verify stale data detection was NOT called during failure
+        mock_stale_update.assert_not_called()
+
+    @patch.dict(
+        "os.environ",
+        {
+            "CLOUDINARY_CLOUD_NAME": "",
+            "CLOUDINARY_API_KEY": "",
+            "CLOUDINARY_API_SECRET": "",
+        },
+    )
+    def test_partial_scraper_failure_detection(self, error_scraper):
+        """Test detection of abnormally low animal counts (partial failures)."""
+        # Mock database connection and cursor
+        error_scraper.conn = Mock()
+        mock_cursor = Mock()
+        error_scraper.conn.cursor.return_value = mock_cursor
+        
+        # Mock historical average of 50 animals
+        mock_cursor.fetchone.return_value = (50.0,)  # avg_animals_found
+        
+        # Test with suspiciously low count (10 animals, 20% of average)
+        result = error_scraper.detect_partial_failure(animals_found=10)
+        
+        # Verify query was executed to get historical average
+        mock_cursor.execute.assert_called_once()
+        call_args = mock_cursor.execute.call_args[0]
+        assert "AVG(dogs_found)" in call_args[0]
+        assert "organization_id = %s" in call_args[0]
+        
+        # Should detect as potential failure (< 50% of average)
+        assert result is True
+
+    @patch.dict(
+        "os.environ",
+        {
+            "CLOUDINARY_CLOUD_NAME": "",
+            "CLOUDINARY_API_KEY": "",
+            "CLOUDINARY_API_SECRET": "",
+        },
+    )
+    def test_normal_count_not_flagged_as_failure(self, error_scraper):
+        """Test that normal animal counts are not flagged as failures."""
+        # Mock database connection and cursor
+        error_scraper.conn = Mock()
+        mock_cursor = Mock()
+        error_scraper.conn.cursor.return_value = mock_cursor
+        
+        # Mock historical average of 50 animals
+        mock_cursor.fetchone.return_value = (50.0,)
+        
+        # Test with normal count (45 animals, 90% of average)
+        result = error_scraper.detect_partial_failure(animals_found=45)
+        
+        # Should NOT detect as failure (> 50% of average)
+        assert result is False
+
+
+class TestEnhancedLogging:
+    """Test enhanced logging and metrics tracking."""
+
+    @pytest.fixture
+    def logging_scraper(self):
+        """Create a scraper for logging tests."""
+        
+        class LoggingScraper(BaseScraper):
+            def collect_data(self):
+                return [{"name": "Test Dog", "external_id": "test-1"}]
+        
+        return LoggingScraper(organization_id=1)
+
+    @patch.dict(
+        "os.environ",
+        {
+            "CLOUDINARY_CLOUD_NAME": "",
+            "CLOUDINARY_API_KEY": "",
+            "CLOUDINARY_API_SECRET": "",
+        },
+    )
+    def test_detailed_scrape_metrics_logging(self, logging_scraper):
+        """Test that detailed metrics are logged during scrape."""
+        # Mock database connection and cursor
+        logging_scraper.conn = Mock()
+        mock_cursor = Mock()
+        logging_scraper.conn.cursor.return_value = mock_cursor
+        
+        # Mock scrape log ID
+        logging_scraper.scrape_log_id = 123
+        
+        # Test data
+        metrics = {
+            'animals_found': 25,
+            'animals_added': 5,
+            'animals_updated': 15,
+            'animals_unchanged': 5,
+            'images_uploaded': 30,
+            'images_failed': 2,
+            'duration_seconds': 120.5,
+            'data_quality_score': 0.95
+        }
+        
+        # Test
+        result = logging_scraper.log_detailed_metrics(metrics)
+        
+        # Verify detailed metrics were logged to database
+        mock_cursor.execute.assert_called_once()
+        call_args = mock_cursor.execute.call_args[0]
+        assert "UPDATE scrape_logs" in call_args[0]
+        assert "detailed_metrics = %s" in call_args[0]
+        
+        # Verify result
+        assert result is True
+
+    @patch.dict(
+        "os.environ",
+        {
+            "CLOUDINARY_CLOUD_NAME": "",
+            "CLOUDINARY_API_KEY": "",
+            "CLOUDINARY_API_SECRET": "",
+        },
+    )
+    def test_data_quality_assessment(self, logging_scraper):
+        """Test data quality assessment during scraping."""
+        # Test data with various quality issues
+        animals_data = [
+            {"name": "Good Dog", "breed": "Labrador", "age_text": "3 years", "external_id": "good-1"},
+            {"name": "", "breed": "Unknown", "age_text": "", "external_id": "poor-1"},  # Poor quality
+            {"name": "OK Dog", "breed": "", "age_text": "young", "external_id": "ok-1"},  # Medium quality
+        ]
+        
+        # Test
+        quality_score = logging_scraper.assess_data_quality(animals_data)
+        
+        # Should be between 0 and 1, with lower score due to quality issues
+        assert 0 <= quality_score <= 1
+        assert quality_score < 1.0  # Not perfect due to quality issues
+
+    @patch.dict(
+        "os.environ",
+        {
+            "CLOUDINARY_CLOUD_NAME": "",
+            "CLOUDINARY_API_KEY": "",
+            "CLOUDINARY_API_SECRET": "",
+        },
+    )
+    def test_scrape_duration_tracking(self, logging_scraper):
+        """Test that scrape duration is properly tracked."""
+        # Mock time tracking
+        start_time = datetime(2024, 1, 15, 10, 0, 0)
+        end_time = datetime(2024, 1, 15, 10, 2, 30)  # 2.5 minutes later
+        
+        # Calculate duration
+        duration = logging_scraper.calculate_scrape_duration(start_time, end_time)
+        
+        # Should be 150 seconds (2.5 minutes)
+        assert duration == 150.0

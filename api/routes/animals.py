@@ -62,6 +62,10 @@ async def get_animals(
         description="Filter by region within a country the animal can be adopted to",
     ),
     organization_id: Optional[int] = Query(None),
+    availability_confidence: Optional[str] = Query(
+        "high,medium", 
+        description="Filter by availability confidence: 'high', 'medium', 'low', or 'all'"
+    ),
     cursor: RealDictCursor = Depends(get_db_cursor),
 ):
     """Get all animals with filtering, pagination, and location support."""
@@ -73,6 +77,7 @@ async def get_animals(
                    a.age_text, a.age_min_months, a.age_max_months, a.sex, a.size, a.standardized_size,
                    a.status, a.primary_image_url, a.adoption_url, a.organization_id, a.external_id,
                    a.language, a.properties, a.created_at, a.updated_at, a.last_scraped_at,
+                   a.availability_confidence, a.last_seen_at, a.consecutive_scrapes_missing,
                    o.name as org_name, 
                    o.city as org_city, 
                    o.country as org_country,
@@ -97,9 +102,21 @@ async def get_animals(
         # --- END NEW ---
 
         # Add status filter if provided
-        if status:
+        if status and status != "all":
             conditions.append("a.status = %s")
             params.append(status)
+
+        # Add availability confidence filter
+        if availability_confidence and availability_confidence != "all":
+            confidence_levels = [level.strip() for level in availability_confidence.split(",")]
+            if len(confidence_levels) == 1:
+                conditions.append("a.availability_confidence = %s")
+                params.append(confidence_levels[0])
+            else:
+                # Multiple confidence levels
+                placeholders = ",".join(["%s"] * len(confidence_levels))
+                conditions.append(f"a.availability_confidence IN ({placeholders})")
+                params.extend(confidence_levels)
 
         # Add search filter (name or breed)
         if search:
