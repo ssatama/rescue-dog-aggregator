@@ -76,6 +76,7 @@ class BaseScraper(ABC):
         self.logger = self._setup_logger()
         self.conn = None
         self.scrape_log_id = None
+        self.current_scrape_session = None
         self.cloudinary_service = CloudinaryService()
 
     def _setup_logger(self):
@@ -327,6 +328,10 @@ class BaseScraper(ABC):
         if not self.start_scrape_log():
             return False
 
+        # Start scrape session for stale data tracking
+        if not self.start_scrape_session():
+            return False
+
         try:
             # Collect data using the organization-specific implementation
             self.logger.info(
@@ -361,6 +366,9 @@ class BaseScraper(ABC):
                         animals_added += 1
                     elif action == "updated":
                         animals_updated += 1
+
+            # Update stale data detection for animals not seen in this scrape
+            self.update_stale_data_detection()
 
             # Complete scrape log
             self.complete_scrape_log(
@@ -412,3 +420,317 @@ class BaseScraper(ABC):
         """Sleep for the configured rate limit delay."""
         if self.rate_limit_delay > 0:
             time.sleep(self.rate_limit_delay)
+
+    def get_existing_animal(self, external_id, organization_id):
+        """Check if an animal already exists in the database.
+        
+        Args:
+            external_id: External ID of the animal
+            organization_id: Organization ID
+            
+        Returns:
+            Tuple of (id, name, updated_at) if found, None otherwise
+        """
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                "SELECT id, name, updated_at FROM animals WHERE external_id = %s AND organization_id = %s",
+                (external_id, organization_id)
+            )
+            result = cursor.fetchone()
+            cursor.close()
+            return result
+        except Exception as e:
+            self.logger.error(f"Error checking existing animal: {e}")
+            if self.conn:
+                self.conn.rollback()
+            return None
+
+    def create_animal(self, animal_data):
+        """Create a new animal in the database.
+        
+        Args:
+            animal_data: Dictionary containing animal information
+            
+        Returns:
+            Tuple of (animal_id, "added") if successful, (None, "error") if failed
+        """
+        try:
+            cursor = self.conn.cursor()
+            
+            # Detect language from animal data
+            description_text = f"{animal_data.get('name', '')} {animal_data.get('breed', '')} {animal_data.get('age_text', '')}"
+            language = self.detect_language(description_text)
+            
+            # Apply standardization
+            standardized_breed = standardize_breed(animal_data.get('breed', ''))
+            age_info = standardize_age(animal_data.get('age_text', ''))
+            age_months_min = age_info.get('age_min_months')
+            age_months_max = age_info.get('age_max_months')
+            
+            # Prepare values for insertion
+            current_time = datetime.now()
+            
+            cursor.execute(
+                """
+                INSERT INTO animals (
+                    name, organization_id, animal_type, external_id,
+                    primary_image_url, original_image_url, adoption_url, status,
+                    breed, standardized_breed, age_text, age_min_months, age_max_months,
+                    sex, size, language, properties,
+                    created_at, updated_at, last_scraped_at, last_seen_at,
+                    consecutive_scrapes_missing, availability_confidence
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s, %s
+                )
+                RETURNING id
+                """,
+                (
+                    animal_data.get('name'),
+                    animal_data.get('organization_id'),
+                    animal_data.get('animal_type', 'dog'),
+                    animal_data.get('external_id'),
+                    animal_data.get('primary_image_url'),
+                    animal_data.get('original_image_url'),
+                    animal_data.get('adoption_url'),
+                    animal_data.get('status', 'available'),
+                    animal_data.get('breed'),
+                    standardized_breed,
+                    animal_data.get('age_text'),
+                    age_months_min,
+                    age_months_max,
+                    animal_data.get('sex'),
+                    animal_data.get('size'),
+                    language,
+                    None,  # properties (JSONB)
+                    current_time,  # created_at
+                    current_time,  # updated_at
+                    current_time,  # last_scraped_at
+                    current_time,  # last_seen_at
+                    0,  # consecutive_scrapes_missing
+                    'high'  # availability_confidence
+                )
+            )
+            
+            animal_id = cursor.fetchone()[0]
+            self.conn.commit()
+            cursor.close()
+            
+            self.logger.info(f"Created new animal with ID {animal_id}: {animal_data.get('name')}")
+            return animal_id, "added"
+            
+        except Exception as e:
+            self.logger.error(f"Error creating animal: {e}")
+            if self.conn:
+                self.conn.rollback()
+            return None, "error"
+
+    def update_animal(self, animal_id, animal_data):
+        """Update an existing animal in the database.
+        
+        Args:
+            animal_id: ID of the animal to update
+            animal_data: Dictionary containing new animal information
+            
+        Returns:
+            Tuple of (animal_id, action) where action is "updated" or "no_change"
+        """
+        try:
+            cursor = self.conn.cursor()
+            
+            # Get current animal data to check for changes
+            cursor.execute(
+                """
+                SELECT name, breed, age_text, sex, primary_image_url, status
+                FROM animals WHERE id = %s
+                """,
+                (animal_id,)
+            )
+            current_data = cursor.fetchone()
+            
+            if not current_data:
+                cursor.close()
+                return None, "error"
+            
+            # Compare fields to detect changes
+            current_name, current_breed, current_age, current_sex, current_image, current_status = current_data
+            
+            changes_detected = (
+                animal_data.get('name') != current_name or
+                animal_data.get('breed') != current_breed or
+                animal_data.get('age_text') != current_age or
+                animal_data.get('sex') != current_sex or
+                animal_data.get('primary_image_url') != current_image or
+                animal_data.get('status') != current_status
+            )
+            
+            if not changes_detected:
+                # No changes detected, but still update last_seen_at if we have a scrape session
+                if self.current_scrape_session:
+                    cursor.execute(
+                        """
+                        UPDATE animals 
+                        SET last_seen_at = %s, 
+                            consecutive_scrapes_missing = 0,
+                            availability_confidence = 'high'
+                        WHERE id = %s
+                        """,
+                        (self.current_scrape_session, animal_id)
+                    )
+                    self.conn.commit()
+                
+                cursor.close()
+                return animal_id, "no_change"
+            
+            # Apply standardization to new data
+            standardized_breed = standardize_breed(animal_data.get('breed', ''))
+            age_info = standardize_age(animal_data.get('age_text', ''))
+            age_months_min = age_info.get('age_min_months')
+            age_months_max = age_info.get('age_max_months')
+            
+            # Detect language
+            description_text = f"{animal_data.get('name', '')} {animal_data.get('breed', '')} {animal_data.get('age_text', '')}"
+            language = self.detect_language(description_text)
+            
+            # Update with changes
+            current_time = datetime.now()
+            
+            cursor.execute(
+                """
+                UPDATE animals SET
+                    name = %s, breed = %s, standardized_breed = %s,
+                    age_text = %s, age_min_months = %s, age_max_months = %s,
+                    sex = %s, size = %s, language = %s,
+                    primary_image_url = %s, original_image_url = %s,
+                    adoption_url = %s, status = %s,
+                    updated_at = %s, last_scraped_at = %s, last_seen_at = %s,
+                    consecutive_scrapes_missing = 0, availability_confidence = 'high'
+                WHERE id = %s
+                """,
+                (
+                    animal_data.get('name'),
+                    animal_data.get('breed'),
+                    standardized_breed,
+                    animal_data.get('age_text'),
+                    age_months_min,
+                    age_months_max,
+                    animal_data.get('sex'),
+                    animal_data.get('size'),
+                    language,
+                    animal_data.get('primary_image_url'),
+                    animal_data.get('original_image_url'),
+                    animal_data.get('adoption_url'),
+                    animal_data.get('status', 'available'),
+                    current_time,  # updated_at
+                    current_time,  # last_scraped_at
+                    self.current_scrape_session or current_time,  # last_seen_at
+                    animal_id
+                )
+            )
+            
+            self.conn.commit()
+            cursor.close()
+            
+            self.logger.info(f"Updated animal ID {animal_id}: {animal_data.get('name')}")
+            return animal_id, "updated"
+            
+        except Exception as e:
+            self.logger.error(f"Error updating animal: {e}")
+            if self.conn:
+                self.conn.rollback()
+            return None, "error"
+
+    def start_scrape_session(self):
+        """Start a new scrape session for tracking stale data.
+        
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            self.current_scrape_session = datetime.now()
+            self.logger.info(f"Started scrape session at {self.current_scrape_session}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error starting scrape session: {e}")
+            return False
+
+    def mark_animal_as_seen(self, animal_id):
+        """Mark an animal as seen in the current scrape session.
+        
+        Args:
+            animal_id: ID of the animal to mark as seen
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            if not self.current_scrape_session:
+                self.logger.warning("No active scrape session when marking animal as seen")
+                return False
+                
+            cursor = self.conn.cursor()
+            cursor.execute(
+                """
+                UPDATE animals 
+                SET last_seen_at = %s, 
+                    consecutive_scrapes_missing = 0,
+                    availability_confidence = 'high'
+                WHERE id = %s
+                """,
+                (self.current_scrape_session, animal_id)
+            )
+            self.conn.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            self.logger.error(f"Error marking animal as seen: {e}")
+            if self.conn:
+                self.conn.rollback()
+            return False
+
+    def update_stale_data_detection(self):
+        """Update stale data detection for animals not seen in current scrape.
+        
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            if not self.current_scrape_session:
+                self.logger.warning("No active scrape session for stale data detection")
+                return False
+                
+            cursor = self.conn.cursor()
+            
+            # Update animals not seen in current scrape
+            cursor.execute(
+                """
+                UPDATE animals 
+                SET consecutive_scrapes_missing = consecutive_scrapes_missing + 1,
+                    availability_confidence = CASE 
+                        WHEN consecutive_scrapes_missing = 0 THEN 'medium'
+                        WHEN consecutive_scrapes_missing >= 1 THEN 'low'
+                        ELSE availability_confidence
+                    END,
+                    status = CASE
+                        WHEN consecutive_scrapes_missing >= 3 THEN 'unavailable'
+                        ELSE status
+                    END
+                WHERE organization_id = %s 
+                AND (last_seen_at IS NULL OR last_seen_at < %s)
+                """,
+                (self.organization_id, self.current_scrape_session)
+            )
+            
+            rows_affected = cursor.rowcount
+            self.conn.commit()
+            cursor.close()
+            
+            self.logger.info(f"Updated stale data detection for {rows_affected} animals")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error updating stale data detection: {e}")
+            if self.conn:
+                self.conn.rollback()
+            return False

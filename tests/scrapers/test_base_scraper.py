@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import Mock, patch, MagicMock
+from datetime import datetime, timedelta
 from scrapers.base_scraper import BaseScraper
 
 
@@ -260,5 +261,303 @@ class TestBaseScraper:
         # Verify commit was called
         mock_scraper.conn.commit.assert_called_once()
 
+        # Verify result
+        assert result is True
+
+
+class TestBaseCRUDMethods:
+    """Test the database CRUD methods that need to be implemented in BaseScraper."""
+
+    @pytest.fixture
+    def concrete_scraper(self):
+        """Create a concrete implementation of BaseScraper for testing CRUD methods."""
+        
+        class ConcreteScraper(BaseScraper):
+            def collect_data(self):
+                return []
+        
+        return ConcreteScraper(organization_id=1)
+
+    @patch.dict(
+        "os.environ",
+        {
+            "CLOUDINARY_CLOUD_NAME": "",
+            "CLOUDINARY_API_KEY": "",
+            "CLOUDINARY_API_SECRET": "",
+        },
+    )
+    def test_get_existing_animal_found(self, concrete_scraper):
+        """Test get_existing_animal when animal exists."""
+        # Mock database connection and cursor
+        concrete_scraper.conn = Mock()
+        mock_cursor = Mock()
+        concrete_scraper.conn.cursor.return_value = mock_cursor
+        
+        # Mock cursor to return existing animal
+        mock_cursor.fetchone.return_value = (123, "Test Dog", "2024-01-01")
+        
+        # Test
+        result = concrete_scraper.get_existing_animal("test-123", 1)
+        
+        # Verify query was executed
+        mock_cursor.execute.assert_called_once_with(
+            "SELECT id, name, updated_at FROM animals WHERE external_id = %s AND organization_id = %s",
+            ("test-123", 1)
+        )
+        
+        # Verify result
+        assert result == (123, "Test Dog", "2024-01-01")
+
+    @patch.dict(
+        "os.environ",
+        {
+            "CLOUDINARY_CLOUD_NAME": "",
+            "CLOUDINARY_API_KEY": "",
+            "CLOUDINARY_API_SECRET": "",
+        },
+    )
+    def test_get_existing_animal_not_found(self, concrete_scraper):
+        """Test get_existing_animal when animal doesn't exist."""
+        # Mock database connection and cursor
+        concrete_scraper.conn = Mock()
+        mock_cursor = Mock()
+        concrete_scraper.conn.cursor.return_value = mock_cursor
+        
+        # Mock cursor to return None (no animal found)
+        mock_cursor.fetchone.return_value = None
+        
+        # Test
+        result = concrete_scraper.get_existing_animal("nonexistent", 1)
+        
+        # Verify result
+        assert result is None
+
+    @patch.dict(
+        "os.environ",
+        {
+            "CLOUDINARY_CLOUD_NAME": "",
+            "CLOUDINARY_API_KEY": "",
+            "CLOUDINARY_API_SECRET": "",
+        },
+    )
+    def test_create_animal_success(self, concrete_scraper):
+        """Test create_animal method."""
+        # Mock database connection and cursor
+        concrete_scraper.conn = Mock()
+        mock_cursor = Mock()
+        concrete_scraper.conn.cursor.return_value = mock_cursor
+        
+        # Mock cursor to return new animal ID
+        mock_cursor.fetchone.return_value = (456,)
+        
+        # Test data
+        animal_data = {
+            "name": "New Dog",
+            "external_id": "new-123",
+            "organization_id": 1,
+            "animal_type": "dog",
+            "breed": "Labrador",
+            "age_text": "3 years",
+            "sex": "Male",
+            "adoption_url": "http://example.com/adopt/new-123",
+            "primary_image_url": "http://example.com/image.jpg",
+            "status": "available"
+        }
+        
+        # Test
+        animal_id, action = concrete_scraper.create_animal(animal_data)
+        
+        # Verify INSERT was executed
+        mock_cursor.execute.assert_called_once()
+        call_args = mock_cursor.execute.call_args[0]
+        assert "INSERT INTO animals" in call_args[0]
+        assert "last_seen_at" in call_args[0]  # Should include stale data columns
+        
+        # Verify result
+        assert animal_id == 456
+        assert action == "added"
+
+    @patch.dict(
+        "os.environ",
+        {
+            "CLOUDINARY_CLOUD_NAME": "",
+            "CLOUDINARY_API_KEY": "",
+            "CLOUDINARY_API_SECRET": "",
+        },
+    )
+    def test_update_animal_with_changes(self, concrete_scraper):
+        """Test update_animal when changes are detected."""
+        # Mock database connection and cursor
+        concrete_scraper.conn = Mock()
+        mock_cursor = Mock()
+        concrete_scraper.conn.cursor.return_value = mock_cursor
+        
+        # Mock existing animal data
+        mock_cursor.fetchone.return_value = (
+            "Old Name", "Old Breed", "2 years", "Female", "old-url.jpg", "available"
+        )
+        
+        # Test data with changes
+        animal_data = {
+            "name": "Updated Name",  # Changed
+            "breed": "Old Breed",    # Same
+            "age_text": "3 years",   # Changed
+            "sex": "Female",         # Same
+            "primary_image_url": "old-url.jpg",  # Same
+            "status": "available"    # Same
+        }
+        
+        # Test
+        animal_id, action = concrete_scraper.update_animal(123, animal_data)
+        
+        # Verify SELECT to get current data was executed
+        assert mock_cursor.execute.call_count >= 1
+        
+        # Verify result
+        assert animal_id == 123
+        assert action == "updated"
+
+    @patch.dict(
+        "os.environ",
+        {
+            "CLOUDINARY_CLOUD_NAME": "",
+            "CLOUDINARY_API_KEY": "",
+            "CLOUDINARY_API_SECRET": "",
+        },
+    )
+    def test_update_animal_no_changes(self, concrete_scraper):
+        """Test update_animal when no changes are detected."""
+        # Mock database connection and cursor
+        concrete_scraper.conn = Mock()
+        mock_cursor = Mock()
+        concrete_scraper.conn.cursor.return_value = mock_cursor
+        
+        # Mock existing animal data (identical to update data)
+        mock_cursor.fetchone.return_value = (
+            "Same Name", "Same Breed", "2 years", "Female", "same-url.jpg", "available"
+        )
+        
+        # Test data (no changes)
+        animal_data = {
+            "name": "Same Name",
+            "breed": "Same Breed", 
+            "age_text": "2 years",
+            "sex": "Female",
+            "primary_image_url": "same-url.jpg",
+            "status": "available"
+        }
+        
+        # Test
+        animal_id, action = concrete_scraper.update_animal(123, animal_data)
+        
+        # Verify result
+        assert animal_id == 123
+        assert action == "no_change"
+
+
+class TestScrapeSessionTracking:
+    """Test scrape session tracking and stale data detection."""
+
+    @pytest.fixture
+    def session_scraper(self):
+        """Create a scraper for session tracking tests."""
+        
+        class SessionScraper(BaseScraper):
+            def collect_data(self):
+                return [
+                    {"name": "Dog 1", "external_id": "dog-1"},
+                    {"name": "Dog 2", "external_id": "dog-2"}
+                ]
+        
+        return SessionScraper(organization_id=1)
+
+    @patch.dict(
+        "os.environ",
+        {
+            "CLOUDINARY_CLOUD_NAME": "",
+            "CLOUDINARY_API_KEY": "",
+            "CLOUDINARY_API_SECRET": "",
+        },
+    )
+    def test_start_scrape_session(self, session_scraper):
+        """Test starting a new scrape session."""
+        # Mock database connection and cursor
+        session_scraper.conn = Mock()
+        mock_cursor = Mock()
+        session_scraper.conn.cursor.return_value = mock_cursor
+        
+        # Mock datetime for consistent testing
+        test_time = datetime(2024, 1, 15, 10, 30, 0)
+        
+        # Test
+        with patch('scrapers.base_scraper.datetime') as mock_datetime:
+            mock_datetime.now.return_value = test_time
+            result = session_scraper.start_scrape_session()
+        
+        # Verify session was started
+        assert result is True
+        assert session_scraper.current_scrape_session == test_time
+
+    @patch.dict(
+        "os.environ",
+        {
+            "CLOUDINARY_CLOUD_NAME": "",
+            "CLOUDINARY_API_KEY": "",
+            "CLOUDINARY_API_SECRET": "",
+        },
+    )
+    def test_update_stale_data_detection(self, session_scraper):
+        """Test updating stale data detection after scrape."""
+        # Mock database connection and cursor
+        session_scraper.conn = Mock()
+        mock_cursor = Mock()
+        session_scraper.conn.cursor.return_value = mock_cursor
+        
+        # Set current scrape session
+        session_scraper.current_scrape_session = datetime(2024, 1, 15, 10, 30, 0)
+        
+        # Test
+        result = session_scraper.update_stale_data_detection()
+        
+        # Verify stale data query was executed
+        mock_cursor.execute.assert_called()
+        call_args = mock_cursor.execute.call_args[0]
+        assert "consecutive_scrapes_missing" in call_args[0]
+        assert "availability_confidence" in call_args[0]
+        
+        # Verify result
+        assert result is True
+
+    @patch.dict(
+        "os.environ",
+        {
+            "CLOUDINARY_CLOUD_NAME": "",
+            "CLOUDINARY_API_KEY": "",
+            "CLOUDINARY_API_SECRET": "",
+        },
+    )
+    def test_mark_animal_as_seen(self, session_scraper):
+        """Test marking an animal as seen in current scrape."""
+        # Mock database connection and cursor
+        session_scraper.conn = Mock()
+        mock_cursor = Mock()
+        session_scraper.conn.cursor.return_value = mock_cursor
+        
+        # Set current scrape session
+        test_time = datetime(2024, 1, 15, 10, 30, 0)
+        session_scraper.current_scrape_session = test_time
+        
+        # Test
+        result = session_scraper.mark_animal_as_seen(123)
+        
+        # Verify animal was marked as seen
+        mock_cursor.execute.assert_called_once()
+        call_args = mock_cursor.execute.call_args[0]
+        assert "UPDATE animals" in call_args[0]
+        assert "last_seen_at = %s" in call_args[0]
+        assert "consecutive_scrapes_missing = 0" in call_args[0]
+        assert "availability_confidence = 'high'" in call_args[0]
+        assert call_args[1] == (test_time, 123)
+        
         # Verify result
         assert result is True
