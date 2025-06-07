@@ -264,12 +264,29 @@ DB_NAME=test_rescue_dogs psql -d test_rescue_dogs -f database/migrations/002_add
 **Solution**: Implement `React.memo` for expensive components
 
 ### Development Best Practices
-1. **Always run tests before changes**: `npm test`
+1. **Always run tests before changes**: `npm test` (frontend), `pytest tests/` (backend)
 2. **Follow TDD approach**: Write tests first, then implement
-3. **Maintain lint compliance**: `npm run lint` should pass
+3. **Maintain code quality**: Run linting before commits
 4. **Verify builds**: `npm run build` should succeed
 5. **Use proper logging**: No console statements in production code
 6. **Sanitize content**: Use security utilities for all user content
+
+### Pre-Commit Code Quality Checks
+```bash
+# Backend formatting and linting (required before commits)
+source venv/bin/activate
+black .                    # Format code with Black
+isort .                    # Sort imports
+flake8 --exclude=venv .    # Check for syntax errors
+python -m pytest tests/   # Run all backend tests
+
+# Frontend checks
+cd frontend
+npm test && npm run build && npm run lint
+
+# Full verification workflow
+source venv/bin/activate && black . && isort . && flake8 --exclude=venv . && python -m pytest tests/ && cd frontend && npm test && npm run build && npm run lint
+```
 
 ## Production Readiness Features
 - **Weekly Scraping Support**: Designed for production schedules with stale data management

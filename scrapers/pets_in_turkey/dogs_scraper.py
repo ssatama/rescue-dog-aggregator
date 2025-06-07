@@ -1,18 +1,19 @@
 # scrapers/pets_in_turkey/scraper.py
 
-import time
 import json
+import os
 import re
+import sys
+import time
+
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
-import sys
-import os
 
 # Add the project root directory to Python path
 sys.path.append(

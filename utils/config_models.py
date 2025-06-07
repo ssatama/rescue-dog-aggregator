@@ -1,5 +1,6 @@
-from typing import List, Optional, Dict, Any, Union
-from pydantic import BaseModel, field_validator, ConfigDict
+from typing import Any, Dict, List, Optional, Union
+
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class ServiceRegion(BaseModel):

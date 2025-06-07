@@ -1,7 +1,8 @@
+import os
+import sys
+
 import pytest
 from fastapi.testclient import TestClient
-import sys
-import os
 
 # Add project root to path
 sys.path.append(

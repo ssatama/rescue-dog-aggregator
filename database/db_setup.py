@@ -2,9 +2,9 @@
 
 import os
 import sys
+
 import psycopg2
-from psycopg2 import sql
-from psycopg2 import errors
+from psycopg2 import errors, sql
 
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

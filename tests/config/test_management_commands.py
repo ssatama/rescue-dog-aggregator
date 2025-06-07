@@ -1,7 +1,8 @@
-import pytest
-from unittest.mock import patch, Mock
-from io import StringIO
 import sys
+from io import StringIO
+from unittest.mock import Mock, patch
+
+import pytest
 
 from management.config_commands import ConfigManager
 

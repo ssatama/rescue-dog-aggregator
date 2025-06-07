@@ -1,8 +1,9 @@
 # database/db_migration_phase2.py
 
-import sys
-import os
 import argparse
+import os
+import sys
+
 import psycopg2
 from psycopg2 import sql
 

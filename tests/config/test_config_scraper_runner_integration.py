@@ -1,12 +1,13 @@
-import pytest
-import tempfile
-import yaml
 import shutil
+import tempfile
 from pathlib import Path
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
 
-from utils.config_scraper_runner import ConfigScraperRunner
+import pytest
+import yaml
+
 from utils.config_loader import ConfigLoader
+from utils.config_scraper_runner import ConfigScraperRunner
 
 
 class TestConfigScraperRunnerIntegration:

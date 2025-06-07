@@ -1,15 +1,16 @@
-import pytest
-import tempfile
-import yaml
 import shutil
-from pathlib import Path
-from unittest.mock import patch, Mock
+import tempfile
 from io import StringIO
+from pathlib import Path
+from unittest.mock import Mock, patch
+
+import pytest
+import yaml
 
 from utils.config_loader import ConfigLoader, ConfigValidationError
-from utils.org_sync import OrganizationSyncManager
-from utils.config_scraper_runner import ConfigScraperRunner
 from utils.config_models import OrganizationConfig
+from utils.config_scraper_runner import ConfigScraperRunner
+from utils.org_sync import OrganizationSyncManager
 
 
 class TestConfigIntegration:

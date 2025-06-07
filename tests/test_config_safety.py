@@ -1,9 +1,10 @@
-import pytest
-import os
-from unittest.mock import patch
-import sys
-import logging
 import getpass
+import logging
+import os
+import sys
+from unittest.mock import patch
+
+import pytest
 
 
 @pytest.fixture(autouse=True)
@@ -39,6 +40,7 @@ def test_config_fails_if_testing_uses_dev_db():
         with pytest.raises(SystemExit) as excinfo:
             # Import config dynamically within the patched environment
             from importlib import reload
+
             import config  # Import for the first time or reload if already imported
 
             reload(config)
@@ -60,6 +62,7 @@ def test_config_allows_test_db_when_testing():
         try:
             # Import config dynamically
             from importlib import reload
+
             import config
 
             reload(config)
@@ -107,6 +110,7 @@ def test_config_warns_but_allows_test_db_when_not_testing_if_explicit(caplog):
             )  # <<< Capture WARNING level from 'config' logger
 
             from importlib import reload
+
             import config  # Import for the first time or reload if already imported
 
             reload(config)

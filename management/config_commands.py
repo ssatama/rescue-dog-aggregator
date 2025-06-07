@@ -1,17 +1,17 @@
 import argparse
 import json
-import sys
+import logging
 import os
+import sys
 from pathlib import Path
 from typing import List, Optional
-import logging
 
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.config_loader import ConfigLoader
-from utils.org_sync import OrganizationSyncManager
 from utils.config_scraper_runner import ConfigScraperRunner
+from utils.org_sync import OrganizationSyncManager
 
 
 class ConfigManager:

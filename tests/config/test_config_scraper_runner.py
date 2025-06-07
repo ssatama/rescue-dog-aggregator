@@ -1,9 +1,10 @@
-import pytest
-from unittest.mock import patch, Mock, MagicMock
 import importlib.util
+from unittest.mock import MagicMock, Mock, patch
 
-from utils.config_scraper_runner import ConfigScraperRunner
+import pytest
+
 from utils.config_loader import ConfigLoader
+from utils.config_scraper_runner import ConfigScraperRunner
 
 
 class TestConfigScraperRunner:

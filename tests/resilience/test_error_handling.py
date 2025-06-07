@@ -1,7 +1,8 @@
-import pytest
-from unittest.mock import patch, Mock
-import sys
 import os
+import sys
+from unittest.mock import Mock, patch
+
+import pytest
 
 # Add project root to path
 sys.path.append(
@@ -68,10 +69,10 @@ class TestErrorResilience:
     @patch("utils.cloudinary_service.requests.get")
     def test_image_download_timeout_handling(self, mock_requests):
         """Test handling of image download timeouts."""
-        from utils.cloudinary_service import CloudinaryService
-
         # Mock timeout
         import requests
+
+        from utils.cloudinary_service import CloudinaryService
 
         mock_requests.side_effect = requests.exceptions.Timeout("Request timeout")
 

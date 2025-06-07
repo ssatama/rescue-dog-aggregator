@@ -3,10 +3,11 @@ Script to migrate existing images to Cloudinary.
 Run this ONCE after implementing the upload flow.
 """
 
-import sys
-import os
-import psycopg2
 import logging
+import os
+import sys
+
+import psycopg2
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -15,8 +16,8 @@ load_dotenv()
 # Add the project root to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.cloudinary_service import CloudinaryService
 import config
+from utils.cloudinary_service import CloudinaryService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

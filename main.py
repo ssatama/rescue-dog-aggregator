@@ -4,10 +4,11 @@ Main script for running the Rescue Dog Aggregator scrapers.
 Run specific scrapers or all scrapers using command line arguments.
 """
 
-import os
-import sys
 import argparse
 import logging
+import os
+import sys
+
 from dotenv import load_dotenv
 from webdriver_manager.chrome import ChromeDriverManager
 

@@ -1,7 +1,8 @@
-import pytest
-from unittest.mock import patch, Mock
-import sys
 import os
+import sys
+from unittest.mock import Mock, patch
+
+import pytest
 
 # Add project root to path
 sys.path.append(

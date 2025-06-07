@@ -4,8 +4,9 @@ Database status checker for Rescue Dog Aggregator.
 Verifies the current database structure matches expectations.
 """
 
-import sys
 import os
+import sys
+
 import psycopg2
 
 # Add the project root directory to Python path

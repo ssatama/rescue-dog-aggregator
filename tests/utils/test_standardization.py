@@ -1,9 +1,10 @@
 import pytest
+
 from utils.standardization import (
-    standardize_breed,
-    standardize_age,
-    get_size_from_breed,
     apply_standardization,
+    get_size_from_breed,
+    standardize_age,
+    standardize_breed,
 )
 
 

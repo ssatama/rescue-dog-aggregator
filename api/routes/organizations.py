@@ -1,12 +1,14 @@
 # api/routes/organizations.py
 
+import json
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException
+
 import psycopg2
+from fastapi import APIRouter, Depends, HTTPException
 from psycopg2.extras import RealDictCursor
+
 from api.dependencies import get_db_cursor
 from api.models.organization import Organization
-import json
 
 router = APIRouter()
 

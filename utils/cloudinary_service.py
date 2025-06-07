@@ -1,13 +1,14 @@
 # utils/cloudinary_service.py - Backward compatible version
 
-import cloudinary
-import cloudinary.uploader
-import cloudinary.api
-import requests
 import hashlib
+import logging
 import os
 from urllib.parse import urlparse
-import logging
+
+import cloudinary
+import cloudinary.api
+import cloudinary.uploader
+import requests
 
 logger = logging.getLogger(__name__)
 

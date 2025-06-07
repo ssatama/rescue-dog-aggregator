@@ -1,13 +1,14 @@
-import pytest
-import sys
 import os
+import sys
+
+import pytest
 
 # Add project root to path
 sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 
-from utils.standardization import standardize_breed, standardize_age
+from utils.standardization import standardize_age, standardize_breed
 
 
 class TestDataConsistency:

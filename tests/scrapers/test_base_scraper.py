@@ -1,6 +1,8 @@
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timedelta
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
+
 from scrapers.base_scraper import BaseScraper
 
 

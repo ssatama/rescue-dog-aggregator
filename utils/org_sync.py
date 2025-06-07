@@ -1,15 +1,15 @@
+import json
 import logging
-from typing import Dict, List, Optional, Set, Tuple
 from datetime import datetime
+from typing import Dict, List, Optional, Set, Tuple
+
 import psycopg2
 from psycopg2.extras import RealDictCursor
-import json
-
-from utils.config_loader import ConfigLoader
-from utils.config_models import OrganizationConfig
 
 # Use the same database connection pattern as your existing code
 from config import DB_CONFIG
+from utils.config_loader import ConfigLoader
+from utils.config_models import OrganizationConfig
 
 
 class OrganizationSyncError(Exception):

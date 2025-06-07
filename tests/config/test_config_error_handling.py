@@ -1,8 +1,9 @@
-import pytest
 import tempfile
-import yaml
 from pathlib import Path
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
+
+import pytest
+import yaml
 
 from utils.config_loader import ConfigLoader, ConfigLoadError
 

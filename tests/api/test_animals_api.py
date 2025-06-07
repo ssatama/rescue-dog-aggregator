@@ -1,8 +1,9 @@
-from fastapi.testclient import TestClient
-import pytest
-from unittest.mock import patch, MagicMock  # Keep mock if used elsewhere in the class
-from datetime import datetime
 import json
+from datetime import datetime
+from unittest.mock import MagicMock, patch  # Keep mock if used elsewhere in the class
+
+import pytest
+from fastapi.testclient import TestClient
 
 # Import the FastAPI app
 from api.main import app

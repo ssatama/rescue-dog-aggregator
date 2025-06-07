@@ -1,15 +1,16 @@
 # scrapers/base_scraper.py
 
-import os
 import json
 import logging
-from abc import ABC, abstractmethod
-from datetime import datetime
-import psycopg2
-from langdetect import detect
+import os
 import sys
 import time
-from typing import Optional, Dict, Any, List
+from abc import ABC, abstractmethod
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+import psycopg2
+from langdetect import detect
 
 # Import config
 from config import DB_CONFIG
@@ -18,7 +19,7 @@ from utils.config_models import OrganizationConfig
 from utils.org_sync import OrganizationSyncManager
 
 # Import the standardization utilities
-from utils.standardization import standardize_breed, standardize_age
+from utils.standardization import standardize_age, standardize_breed
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -383,16 +384,18 @@ class BaseScraper(ABC):
 
             # Check for potential partial failure before updating stale data
             potential_failure = self.detect_partial_failure(len(animals_data))
-            
+
             if potential_failure:
-                self.logger.warning("Potential partial failure detected - skipping stale data update")
+                self.logger.warning(
+                    "Potential partial failure detected - skipping stale data update"
+                )
                 # Complete scrape log with warning status
                 self.complete_scrape_log(
                     status="warning",
                     animals_found=len(animals_data),
                     animals_added=animals_added,
                     animals_updated=animals_updated,
-                    error_message="Potential partial failure - low animal count detected"
+                    error_message="Potential partial failure - low animal count detected",
                 )
             else:
                 # Update stale data detection for animals not seen in this scrape
@@ -408,22 +411,24 @@ class BaseScraper(ABC):
 
             # Calculate metrics for detailed logging
             scrape_end_time = datetime.now()
-            duration = self.calculate_scrape_duration(self.scrape_start_time, scrape_end_time)
+            duration = self.calculate_scrape_duration(
+                self.scrape_start_time, scrape_end_time
+            )
             quality_score = self.assess_data_quality(animals_data)
-            
+
             # Log detailed metrics
             detailed_metrics = {
-                'animals_found': len(animals_data),
-                'animals_added': animals_added,
-                'animals_updated': animals_updated,
-                'animals_unchanged': animals_unchanged,
-                'images_uploaded': images_uploaded,
-                'images_failed': images_failed,
-                'duration_seconds': duration,
-                'data_quality_score': quality_score,
-                'potential_failure_detected': potential_failure
+                "animals_found": len(animals_data),
+                "animals_added": animals_added,
+                "animals_updated": animals_updated,
+                "animals_unchanged": animals_unchanged,
+                "images_uploaded": images_uploaded,
+                "images_failed": images_failed,
+                "duration_seconds": duration,
+                "data_quality_score": quality_score,
+                "potential_failure_detected": potential_failure,
             }
-            
+
             self.log_detailed_metrics(detailed_metrics)
 
             self.logger.info(
@@ -473,11 +478,11 @@ class BaseScraper(ABC):
 
     def get_existing_animal(self, external_id, organization_id):
         """Check if an animal already exists in the database.
-        
+
         Args:
             external_id: External ID of the animal
             organization_id: Organization ID
-            
+
         Returns:
             Tuple of (id, name, updated_at) if found, None otherwise
         """
@@ -485,7 +490,7 @@ class BaseScraper(ABC):
             cursor = self.conn.cursor()
             cursor.execute(
                 "SELECT id, name, updated_at FROM animals WHERE external_id = %s AND organization_id = %s",
-                (external_id, organization_id)
+                (external_id, organization_id),
             )
             result = cursor.fetchone()
             cursor.close()
@@ -498,29 +503,29 @@ class BaseScraper(ABC):
 
     def create_animal(self, animal_data):
         """Create a new animal in the database.
-        
+
         Args:
             animal_data: Dictionary containing animal information
-            
+
         Returns:
             Tuple of (animal_id, "added") if successful, (None, "error") if failed
         """
         try:
             cursor = self.conn.cursor()
-            
+
             # Detect language from animal data
             description_text = f"{animal_data.get('name', '')} {animal_data.get('breed', '')} {animal_data.get('age_text', '')}"
             language = self.detect_language(description_text)
-            
+
             # Apply standardization
-            standardized_breed = standardize_breed(animal_data.get('breed', ''))
-            age_info = standardize_age(animal_data.get('age_text', ''))
-            age_months_min = age_info.get('age_min_months')
-            age_months_max = age_info.get('age_max_months')
-            
+            standardized_breed = standardize_breed(animal_data.get("breed", ""))
+            age_info = standardize_age(animal_data.get("age_text", ""))
+            age_months_min = age_info.get("age_min_months")
+            age_months_max = age_info.get("age_max_months")
+
             # Prepare values for insertion
             current_time = datetime.now()
-            
+
             cursor.execute(
                 """
                 INSERT INTO animals (
@@ -537,21 +542,21 @@ class BaseScraper(ABC):
                 RETURNING id
                 """,
                 (
-                    animal_data.get('name'),
-                    animal_data.get('organization_id'),
-                    animal_data.get('animal_type', 'dog'),
-                    animal_data.get('external_id'),
-                    animal_data.get('primary_image_url'),
-                    animal_data.get('original_image_url'),
-                    animal_data.get('adoption_url'),
-                    animal_data.get('status', 'available'),
-                    animal_data.get('breed'),
+                    animal_data.get("name"),
+                    animal_data.get("organization_id"),
+                    animal_data.get("animal_type", "dog"),
+                    animal_data.get("external_id"),
+                    animal_data.get("primary_image_url"),
+                    animal_data.get("original_image_url"),
+                    animal_data.get("adoption_url"),
+                    animal_data.get("status", "available"),
+                    animal_data.get("breed"),
                     standardized_breed,
-                    animal_data.get('age_text'),
+                    animal_data.get("age_text"),
                     age_months_min,
                     age_months_max,
-                    animal_data.get('sex'),
-                    animal_data.get('size'),
+                    animal_data.get("sex"),
+                    animal_data.get("size"),
                     language,
                     None,  # properties (JSONB)
                     current_time,  # created_at
@@ -559,17 +564,19 @@ class BaseScraper(ABC):
                     current_time,  # last_scraped_at
                     current_time,  # last_seen_at
                     0,  # consecutive_scrapes_missing
-                    'high'  # availability_confidence
-                )
+                    "high",  # availability_confidence
+                ),
             )
-            
+
             animal_id = cursor.fetchone()[0]
             self.conn.commit()
             cursor.close()
-            
-            self.logger.info(f"Created new animal with ID {animal_id}: {animal_data.get('name')}")
+
+            self.logger.info(
+                f"Created new animal with ID {animal_id}: {animal_data.get('name')}"
+            )
             return animal_id, "added"
-            
+
         except Exception as e:
             self.logger.error(f"Error creating animal: {e}")
             if self.conn:
@@ -578,43 +585,50 @@ class BaseScraper(ABC):
 
     def update_animal(self, animal_id, animal_data):
         """Update an existing animal in the database.
-        
+
         Args:
             animal_id: ID of the animal to update
             animal_data: Dictionary containing new animal information
-            
+
         Returns:
             Tuple of (animal_id, action) where action is "updated" or "no_change"
         """
         try:
             cursor = self.conn.cursor()
-            
+
             # Get current animal data to check for changes
             cursor.execute(
                 """
                 SELECT name, breed, age_text, sex, primary_image_url, status
                 FROM animals WHERE id = %s
                 """,
-                (animal_id,)
+                (animal_id,),
             )
             current_data = cursor.fetchone()
-            
+
             if not current_data:
                 cursor.close()
                 return None, "error"
-            
+
             # Compare fields to detect changes
-            current_name, current_breed, current_age, current_sex, current_image, current_status = current_data
-            
+            (
+                current_name,
+                current_breed,
+                current_age,
+                current_sex,
+                current_image,
+                current_status,
+            ) = current_data
+
             changes_detected = (
-                animal_data.get('name') != current_name or
-                animal_data.get('breed') != current_breed or
-                animal_data.get('age_text') != current_age or
-                animal_data.get('sex') != current_sex or
-                animal_data.get('primary_image_url') != current_image or
-                animal_data.get('status') != current_status
+                animal_data.get("name") != current_name
+                or animal_data.get("breed") != current_breed
+                or animal_data.get("age_text") != current_age
+                or animal_data.get("sex") != current_sex
+                or animal_data.get("primary_image_url") != current_image
+                or animal_data.get("status") != current_status
             )
-            
+
             if not changes_detected:
                 # No changes detected, but still update last_seen_at if we have a scrape session
                 if self.current_scrape_session:
@@ -626,26 +640,26 @@ class BaseScraper(ABC):
                             availability_confidence = 'high'
                         WHERE id = %s
                         """,
-                        (self.current_scrape_session, animal_id)
+                        (self.current_scrape_session, animal_id),
                     )
                     self.conn.commit()
-                
+
                 cursor.close()
                 return animal_id, "no_change"
-            
+
             # Apply standardization to new data
-            standardized_breed = standardize_breed(animal_data.get('breed', ''))
-            age_info = standardize_age(animal_data.get('age_text', ''))
-            age_months_min = age_info.get('age_min_months')
-            age_months_max = age_info.get('age_max_months')
-            
+            standardized_breed = standardize_breed(animal_data.get("breed", ""))
+            age_info = standardize_age(animal_data.get("age_text", ""))
+            age_months_min = age_info.get("age_min_months")
+            age_months_max = age_info.get("age_max_months")
+
             # Detect language
             description_text = f"{animal_data.get('name', '')} {animal_data.get('breed', '')} {animal_data.get('age_text', '')}"
             language = self.detect_language(description_text)
-            
+
             # Update with changes
             current_time = datetime.now()
-            
+
             cursor.execute(
                 """
                 UPDATE animals SET
@@ -659,32 +673,34 @@ class BaseScraper(ABC):
                 WHERE id = %s
                 """,
                 (
-                    animal_data.get('name'),
-                    animal_data.get('breed'),
+                    animal_data.get("name"),
+                    animal_data.get("breed"),
                     standardized_breed,
-                    animal_data.get('age_text'),
+                    animal_data.get("age_text"),
                     age_months_min,
                     age_months_max,
-                    animal_data.get('sex'),
-                    animal_data.get('size'),
+                    animal_data.get("sex"),
+                    animal_data.get("size"),
                     language,
-                    animal_data.get('primary_image_url'),
-                    animal_data.get('original_image_url'),
-                    animal_data.get('adoption_url'),
-                    animal_data.get('status', 'available'),
+                    animal_data.get("primary_image_url"),
+                    animal_data.get("original_image_url"),
+                    animal_data.get("adoption_url"),
+                    animal_data.get("status", "available"),
                     current_time,  # updated_at
                     current_time,  # last_scraped_at
                     self.current_scrape_session or current_time,  # last_seen_at
-                    animal_id
-                )
+                    animal_id,
+                ),
             )
-            
+
             self.conn.commit()
             cursor.close()
-            
-            self.logger.info(f"Updated animal ID {animal_id}: {animal_data.get('name')}")
+
+            self.logger.info(
+                f"Updated animal ID {animal_id}: {animal_data.get('name')}"
+            )
             return animal_id, "updated"
-            
+
         except Exception as e:
             self.logger.error(f"Error updating animal: {e}")
             if self.conn:
@@ -693,7 +709,7 @@ class BaseScraper(ABC):
 
     def start_scrape_session(self):
         """Start a new scrape session for tracking stale data.
-        
+
         Returns:
             True if successful, False otherwise
         """
@@ -707,18 +723,20 @@ class BaseScraper(ABC):
 
     def mark_animal_as_seen(self, animal_id):
         """Mark an animal as seen in the current scrape session.
-        
+
         Args:
             animal_id: ID of the animal to mark as seen
-            
+
         Returns:
             True if successful, False otherwise
         """
         try:
             if not self.current_scrape_session:
-                self.logger.warning("No active scrape session when marking animal as seen")
+                self.logger.warning(
+                    "No active scrape session when marking animal as seen"
+                )
                 return False
-                
+
             cursor = self.conn.cursor()
             cursor.execute(
                 """
@@ -728,7 +746,7 @@ class BaseScraper(ABC):
                     availability_confidence = 'high'
                 WHERE id = %s
                 """,
-                (self.current_scrape_session, animal_id)
+                (self.current_scrape_session, animal_id),
             )
             self.conn.commit()
             cursor.close()
@@ -741,7 +759,7 @@ class BaseScraper(ABC):
 
     def update_stale_data_detection(self):
         """Update stale data detection for animals not seen in current scrape.
-        
+
         Returns:
             True if successful, False otherwise
         """
@@ -749,9 +767,9 @@ class BaseScraper(ABC):
             if not self.current_scrape_session:
                 self.logger.warning("No active scrape session for stale data detection")
                 return False
-                
+
             cursor = self.conn.cursor()
-            
+
             # Update animals not seen in current scrape
             cursor.execute(
                 """
@@ -769,16 +787,18 @@ class BaseScraper(ABC):
                 WHERE organization_id = %s 
                 AND (last_seen_at IS NULL OR last_seen_at < %s)
                 """,
-                (self.organization_id, self.current_scrape_session)
+                (self.organization_id, self.current_scrape_session),
             )
-            
+
             rows_affected = cursor.rowcount
             self.conn.commit()
             cursor.close()
-            
-            self.logger.info(f"Updated stale data detection for {rows_affected} animals")
+
+            self.logger.info(
+                f"Updated stale data detection for {rows_affected} animals"
+            )
             return True
-            
+
         except Exception as e:
             self.logger.error(f"Error updating stale data detection: {e}")
             if self.conn:
@@ -787,16 +807,16 @@ class BaseScraper(ABC):
 
     def mark_animals_unavailable(self, threshold=4):
         """Mark animals as unavailable after consecutive missed scrapes.
-        
+
         Args:
             threshold: Number of consecutive missed scrapes before marking unavailable
-            
+
         Returns:
             Number of animals marked as unavailable
         """
         try:
             cursor = self.conn.cursor()
-            
+
             # Mark animals as unavailable after threshold missed scrapes
             cursor.execute(
                 """
@@ -806,18 +826,20 @@ class BaseScraper(ABC):
                 AND consecutive_scrapes_missing >= %s
                 AND status != 'unavailable'
                 """,
-                (self.organization_id, threshold)
+                (self.organization_id, threshold),
             )
-            
+
             rows_affected = cursor.rowcount
             self.conn.commit()
             cursor.close()
-            
+
             if rows_affected > 0:
-                self.logger.info(f"Marked {rows_affected} animals as unavailable after {threshold}+ missed scrapes")
-            
+                self.logger.info(
+                    f"Marked {rows_affected} animals as unavailable after {threshold}+ missed scrapes"
+                )
+
             return rows_affected
-            
+
         except Exception as e:
             self.logger.error(f"Error marking animals unavailable: {e}")
             if self.conn:
@@ -826,16 +848,16 @@ class BaseScraper(ABC):
 
     def restore_available_animal(self, animal_id):
         """Restore an animal to available status when it reappears.
-        
+
         Args:
             animal_id: ID of the animal to restore
-            
+
         Returns:
             True if successful, False otherwise
         """
         try:
             cursor = self.conn.cursor()
-            
+
             # Restore animal to available status with high confidence
             cursor.execute(
                 """
@@ -850,16 +872,16 @@ class BaseScraper(ABC):
                 (
                     self.current_scrape_session or datetime.now(),
                     datetime.now(),
-                    animal_id
-                )
+                    animal_id,
+                ),
             )
-            
+
             self.conn.commit()
             cursor.close()
-            
+
             self.logger.info(f"Restored animal ID {animal_id} to available status")
             return True
-            
+
         except Exception as e:
             self.logger.error(f"Error restoring animal availability: {e}")
             if self.conn:
@@ -868,13 +890,13 @@ class BaseScraper(ABC):
 
     def get_stale_animals_summary(self):
         """Get summary of animals by availability confidence and status.
-        
+
         Returns:
             Dictionary with (confidence, status) tuples as keys and counts as values
         """
         try:
             cursor = self.conn.cursor()
-            
+
             cursor.execute(
                 """
                 SELECT availability_confidence, status, COUNT(*) 
@@ -883,36 +905,36 @@ class BaseScraper(ABC):
                 GROUP BY availability_confidence, status
                 ORDER BY availability_confidence, status
                 """,
-                (self.organization_id,)
+                (self.organization_id,),
             )
-            
+
             results = cursor.fetchall()
             cursor.close()
-            
+
             # Convert to dictionary
             summary = {}
             for confidence, status, count in results:
                 summary[(confidence, status)] = count
-            
+
             return summary
-            
+
         except Exception as e:
             self.logger.error(f"Error getting stale animals summary: {e}")
             return {}
 
     def detect_partial_failure(self, animals_found, threshold_percentage=0.5):
         """Detect if scraper found abnormally few animals (partial failure).
-        
+
         Args:
             animals_found: Number of animals found in current scrape
             threshold_percentage: Minimum percentage of historical average to consider normal
-            
+
         Returns:
             True if potential partial failure detected, False otherwise
         """
         try:
             cursor = self.conn.cursor()
-            
+
             # Get historical average of animals found (last 10 successful scrapes)
             cursor.execute(
                 """
@@ -924,43 +946,43 @@ class BaseScraper(ABC):
                 ORDER BY created_at DESC 
                 LIMIT 10
                 """,
-                (self.organization_id,)
+                (self.organization_id,),
             )
-            
+
             result = cursor.fetchone()
             cursor.close()
-            
+
             if not result or not result[0]:
                 # No historical data - can't detect partial failure
                 return False
-            
+
             historical_average = float(result[0])
             threshold = historical_average * threshold_percentage
-            
+
             is_partial_failure = animals_found < threshold
-            
+
             if is_partial_failure:
                 self.logger.warning(
                     f"Potential partial failure detected: found {animals_found} animals "
                     f"(historical avg: {historical_average:.1f}, threshold: {threshold:.1f})"
                 )
-            
+
             return is_partial_failure
-            
+
         except Exception as e:
             self.logger.error(f"Error detecting partial failure: {e}")
             return False
 
     def detect_catastrophic_failure(self, animals_found, absolute_minimum=3):
         """Detect catastrophic scraper failures (zero or extremely low animal counts).
-        
+
         This method detects complete scraper failures or situations where the count
         is so low that it's almost certainly a system error rather than reality.
-        
+
         Args:
             animals_found: Number of animals found in current scrape
             absolute_minimum: Absolute minimum count below which failure is assumed
-            
+
         Returns:
             True if catastrophic failure detected, False otherwise
         """
@@ -970,7 +992,7 @@ class BaseScraper(ABC):
                 f"Invalid negative animal count: {animals_found} for organization_id {self.organization_id}"
             )
             return True
-            
+
         # Zero animals is always catastrophic
         if animals_found == 0:
             self.logger.error(
@@ -978,7 +1000,7 @@ class BaseScraper(ABC):
                 f"This indicates complete scraper failure or website unavailability."
             )
             return True
-            
+
         # Check against absolute minimum threshold
         if animals_found < absolute_minimum:
             self.logger.error(
@@ -986,18 +1008,24 @@ class BaseScraper(ABC):
                 f"(below absolute minimum of {absolute_minimum}). This likely indicates scraper malfunction."
             )
             return True
-            
+
         return False
 
-    def detect_partial_failure(self, animals_found, threshold_percentage=0.5, absolute_minimum=3, minimum_historical_scrapes=3):
+    def detect_partial_failure(
+        self,
+        animals_found,
+        threshold_percentage=0.5,
+        absolute_minimum=3,
+        minimum_historical_scrapes=3,
+    ):
         """Enhanced partial failure detection with absolute minimums and better error handling.
-        
+
         Args:
             animals_found: Number of animals found in current scrape
             threshold_percentage: Minimum percentage of historical average to consider normal
             absolute_minimum: Absolute minimum count below which failure is assumed
             minimum_historical_scrapes: Minimum historical scrapes needed for reliable comparison
-            
+
         Returns:
             True if potential partial failure detected, False otherwise
         """
@@ -1005,9 +1033,9 @@ class BaseScraper(ABC):
             # First check for catastrophic failure
             if self.detect_catastrophic_failure(animals_found, absolute_minimum):
                 return True
-                
+
             cursor = self.conn.cursor()
-            
+
             # Get historical average of animals found (configurable number of successful scrapes)
             cursor.execute(
                 """
@@ -1019,20 +1047,27 @@ class BaseScraper(ABC):
                 ORDER BY started_at DESC 
                 LIMIT %s
                 """,
-                (self.organization_id, minimum_historical_scrapes * 3)  # Get more data for reliable average
+                (
+                    self.organization_id,
+                    minimum_historical_scrapes * 3,
+                ),  # Get more data for reliable average
             )
-            
+
             result = cursor.fetchone()
             cursor.close()
-            
-            if not result or not result[0] or (len(result) > 1 and result[1] < minimum_historical_scrapes):
+
+            if (
+                not result
+                or not result[0]
+                or (len(result) > 1 and result[1] < minimum_historical_scrapes)
+            ):
                 # No historical data or insufficient data - use absolute minimum
                 scrape_count = result[1] if (result and len(result) > 1) else 0
                 self.logger.info(
                     f"Insufficient historical data for organization_id {self.organization_id} "
                     f"({scrape_count} scrapes). Using absolute minimum threshold."
                 )
-                
+
                 if animals_found < absolute_minimum:
                     self.logger.warning(
                         f"Potential failure detected: {animals_found} animals found "
@@ -1040,82 +1075,86 @@ class BaseScraper(ABC):
                     )
                     return True
                 return False
-            
+
             historical_average = float(result[0])
             percentage_threshold = historical_average * threshold_percentage
-            
+
             # Use the higher of percentage threshold or absolute minimum
             effective_threshold = max(percentage_threshold, absolute_minimum)
-            
+
             is_partial_failure = animals_found < effective_threshold
-            
+
             if is_partial_failure:
                 self.logger.warning(
                     f"Potential partial failure detected: found {animals_found} animals "
                     f"(historical avg: {historical_average:.1f}, percentage threshold: {percentage_threshold:.1f}, "
                     f"absolute minimum: {absolute_minimum}, effective threshold: {effective_threshold:.1f})"
                 )
-            
+
             return is_partial_failure
-            
+
         except Exception as e:
             self.logger.error(f"Error detecting partial failure: {e}")
             # Default to safe mode - assume potential failure to prevent data loss
             return True
 
-    def detect_scraper_failure(self, animals_found, threshold_percentage=0.5, absolute_minimum=3):
+    def detect_scraper_failure(
+        self, animals_found, threshold_percentage=0.5, absolute_minimum=3
+    ):
         """Combined failure detection method that checks both catastrophic and partial failures.
-        
+
         Args:
             animals_found: Number of animals found in current scrape
             threshold_percentage: Minimum percentage of historical average to consider normal
             absolute_minimum: Absolute minimum count below which failure is assumed
-            
+
         Returns:
             True if any type of failure detected, False otherwise
         """
-        return self.detect_partial_failure(animals_found, threshold_percentage, absolute_minimum)
+        return self.detect_partial_failure(
+            animals_found, threshold_percentage, absolute_minimum
+        )
 
     def handle_scraper_failure(self, error_message):
         """Handle scraper failure without affecting animal availability.
-        
+
         Args:
             error_message: Error message describing the failure
-            
+
         Returns:
             True if handled successfully, False otherwise
         """
         try:
             self.logger.error(f"Scraper failure detected: {error_message}")
-            
+
             # Log the failure but do NOT update stale data detection
             # This prevents marking animals as stale due to scraper issues
-            
+
             # Complete scrape log with failure status
             if self.scrape_log_id:
                 self.complete_scrape_log(
-                    status="error", 
+                    status="error",
                     error_message=error_message,
                     animals_found=0,
                     animals_added=0,
-                    animals_updated=0
+                    animals_updated=0,
                 )
-            
+
             # Reset scrape session to prevent stale data updates
             self.current_scrape_session = None
-            
+
             return True
-            
+
         except Exception as e:
             self.logger.error(f"Error handling scraper failure: {e}")
             return False
 
     def log_detailed_metrics(self, metrics: Dict[str, Any]):
         """Log detailed metrics to the scrape log.
-        
+
         Args:
             metrics: Dictionary containing detailed metrics
-            
+
         Returns:
             True if successful, False otherwise
         """
@@ -1123,9 +1162,9 @@ class BaseScraper(ABC):
             if not self.scrape_log_id:
                 self.logger.warning("No scrape log ID available for detailed metrics")
                 return False
-                
+
             cursor = self.conn.cursor()
-            
+
             # Update scrape log with detailed metrics
             cursor.execute(
                 """
@@ -1137,18 +1176,18 @@ class BaseScraper(ABC):
                 """,
                 (
                     json.dumps(metrics),
-                    metrics.get('duration_seconds'),
-                    metrics.get('data_quality_score'),
-                    self.scrape_log_id
-                )
+                    metrics.get("duration_seconds"),
+                    metrics.get("data_quality_score"),
+                    self.scrape_log_id,
+                ),
             )
-            
+
             self.conn.commit()
             cursor.close()
-            
+
             self.logger.info(f"Logged detailed metrics: {metrics}")
             return True
-            
+
         except Exception as e:
             self.logger.error(f"Error logging detailed metrics: {e}")
             if self.conn:
@@ -1157,49 +1196,51 @@ class BaseScraper(ABC):
 
     def assess_data_quality(self, animals_data: List[Dict[str, Any]]) -> float:
         """Assess the quality of scraped animal data.
-        
+
         Args:
             animals_data: List of animal data dictionaries
-            
+
         Returns:
             Quality score between 0 and 1 (1 = perfect quality)
         """
         if not animals_data:
             return 0.0
-            
+
         total_score = 0.0
-        required_fields = ['name', 'breed', 'age_text', 'external_id']
-        optional_fields = ['sex', 'size', 'primary_image_url', 'adoption_url']
-        
+        required_fields = ["name", "breed", "age_text", "external_id"]
+        optional_fields = ["sex", "size", "primary_image_url", "adoption_url"]
+
         for animal in animals_data:
             animal_score = 0.0
-            
+
             # Check required fields (70% of score)
             required_present = 0
             for field in required_fields:
                 if animal.get(field) and str(animal[field]).strip():
                     required_present += 1
             animal_score += (required_present / len(required_fields)) * 0.7
-            
+
             # Check optional fields (30% of score)
             optional_present = 0
             for field in optional_fields:
                 if animal.get(field) and str(animal[field]).strip():
                     optional_present += 1
             animal_score += (optional_present / len(optional_fields)) * 0.3
-            
+
             total_score += animal_score
-        
+
         final_score = total_score / len(animals_data)
         return round(final_score, 3)
 
-    def calculate_scrape_duration(self, start_time: datetime, end_time: datetime) -> float:
+    def calculate_scrape_duration(
+        self, start_time: datetime, end_time: datetime
+    ) -> float:
         """Calculate scrape duration in seconds.
-        
+
         Args:
             start_time: When the scrape started
             end_time: When the scrape ended
-            
+
         Returns:
             Duration in seconds as float
         """

@@ -7,18 +7,19 @@ Uses dependency overrides for TestClient database access.
 
 import os
 import sys
-import pytest
-import psycopg2
-from psycopg2.extras import RealDictCursor
-from fastapi.testclient import TestClient
-from fastapi import HTTPException  # <<< Import HTTPException globally
 from unittest.mock import patch
+
+import psycopg2
+import pytest
+from fastapi import HTTPException  # <<< Import HTTPException globally
+from fastapi.testclient import TestClient
+from psycopg2.extras import RealDictCursor
 
 # Add project root to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from api.main import app
 from api.dependencies import get_db_cursor  # Import the original dependency
+from api.main import app
 
 # Set TESTING environment variable early
 os.environ["TESTING"] = "true"
@@ -151,12 +152,12 @@ def client():
 def api_client_no_auth():
     """Pytest fixture for unauthenticated API client testing."""
     print("\n[conftest api_client_no_auth] Creating unauthenticated TestClient...")
-    
+
     # Create client without any authentication or special overrides
     with TestClient(app) as test_client:
         print("[conftest api_client_no_auth] Unauthenticated TestClient created.")
         yield test_client
-    
+
     print("[conftest api_client_no_auth] Unauthenticated TestClient finished.")
 
 

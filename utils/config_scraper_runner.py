@@ -1,6 +1,6 @@
-import logging
 import importlib
-from typing import List, Dict, Any, Optional
+import logging
+from typing import Any, Dict, List, Optional
 
 from utils.config_loader import ConfigLoader
 from utils.org_sync import OrganizationSyncManager

@@ -1,19 +1,19 @@
 # api/main.py
 
+from datetime import datetime
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Import routes
-from api.routes import animals, organizations, monitoring
-
-from datetime import datetime
+from api.routes import animals, monitoring, organizations
 
 # Import CORS configuration
 from config import (
     ALLOWED_ORIGINS,
     CORS_ALLOW_CREDENTIALS,
-    CORS_ALLOW_METHODS,
     CORS_ALLOW_HEADERS,
+    CORS_ALLOW_METHODS,
     CORS_MAX_AGE,
     ENVIRONMENT,
 )

@@ -1,12 +1,13 @@
 # api/dependencies.py
 
+import logging
 import os
 import sys
 from typing import Generator
+
 import psycopg2
-from psycopg2.extras import RealDictCursor
 from fastapi import HTTPException
-import logging
+from psycopg2.extras import RealDictCursor
 
 # Add project root to path so we can import config
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

@@ -1,10 +1,11 @@
-import psycopg2
+import json
 import logging
-from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import List, Optional
+
+import psycopg2
+from fastapi import APIRouter, Depends, HTTPException, Query
 from psycopg2.extras import RealDictCursor
 from pydantic import ValidationError
-import json
 
 from api.dependencies import get_db_cursor
 from api.models.dog import Animal, AnimalImage, AnimalWithImages
@@ -63,8 +64,8 @@ async def get_animals(
     ),
     organization_id: Optional[int] = Query(None),
     availability_confidence: Optional[str] = Query(
-        "high,medium", 
-        description="Filter by availability confidence: 'high', 'medium', 'low', or 'all'"
+        "high,medium",
+        description="Filter by availability confidence: 'high', 'medium', 'low', or 'all'",
     ),
     cursor: RealDictCursor = Depends(get_db_cursor),
 ):
@@ -108,7 +109,9 @@ async def get_animals(
 
         # Add availability confidence filter
         if availability_confidence and availability_confidence != "all":
-            confidence_levels = [level.strip() for level in availability_confidence.split(",")]
+            confidence_levels = [
+                level.strip() for level in availability_confidence.split(",")
+            ]
             if len(confidence_levels) == 1:
                 conditions.append("a.availability_confidence = %s")
                 params.append(confidence_levels[0])

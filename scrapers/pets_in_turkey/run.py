@@ -2,6 +2,7 @@
 
 import os
 import sys
+
 import psycopg2
 from dotenv import load_dotenv
 
@@ -10,9 +11,10 @@ sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 
+from config import DB_CONFIG
+
 # Import the scrapers and config
 from scrapers.pets_in_turkey.dogs_scraper import PetsInTurkeyScraper
-from config import DB_CONFIG
 
 
 def get_organization_id(organization_name="Pets in Turkey"):
