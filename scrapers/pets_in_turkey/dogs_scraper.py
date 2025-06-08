@@ -429,7 +429,19 @@ class PetsInTurkeyScraper(BaseScraper):
 
         except Exception as e:
             self.logger.error(f"Error parsing container: {e}")
-            return dog_data
+            # Return default dog data structure on error
+            return {
+                "name": "",
+                "breed": "Unknown",
+                "age_text": "Unknown",
+                "sex": "Unknown",
+                "properties": {
+                    "weight": "",
+                    "height": "",
+                    "neutered_spayed": "Unknown",
+                    "description": "",
+                },
+            }
 
     def _find_image_for_container(self, container):
         """Find an image URL for a dog container.
