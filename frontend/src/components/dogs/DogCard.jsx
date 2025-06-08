@@ -18,7 +18,12 @@ import { sanitizeText } from '../../utils/security';
 const DogCard = React.memo(function DogCard({ dog }) {
   // Basic validation or default values with sanitization
   const name = sanitizeText(dog?.name || "Unknown Dog");
-  const breed = sanitizeText(dog?.standardized_breed || dog?.breed || "Unknown Breed");
+  
+  // Handle breed display - hide if unknown
+  const rawBreed = dog?.standardized_breed || dog?.breed;
+  const isUnknownBreed = !rawBreed || rawBreed === 'Unknown' || rawBreed.toLowerCase() === 'unknown';
+  const breed = isUnknownBreed ? null : sanitizeText(rawBreed);
+  
   const breedGroup = sanitizeText(dog?.breed_group);
   const originalImageUrl = dog?.primary_image_url;
   const optimizedImageUrl = getDogThumbnail(originalImageUrl);
@@ -62,7 +67,9 @@ const DogCard = React.memo(function DogCard({ dog }) {
             <h3>{name}</h3>
           </Link>
         </CardTitle>
-        <p className="text-sm text-gray-600 mb-1 truncate">{breed}</p>
+        {breed && (
+          <p className="text-sm text-gray-600 mb-1 truncate">{breed}</p>
+        )}
         {breedGroup && breedGroup !== 'Unknown' && (
           <Badge variant="outline" className="text-xs mb-2 w-fit">
             {breedGroup} Group

@@ -564,7 +564,7 @@ class BaseScraper(ABC):
                     final_size,
                     final_standardized_size,
                     language,
-                    None,  # properties (JSONB)
+                    json.dumps(animal_data.get("properties")) if animal_data.get("properties") else None,  # properties (JSONB)
                     current_time,  # created_at
                     current_time,  # updated_at
                     current_time,  # last_scraped_at
@@ -677,7 +677,7 @@ class BaseScraper(ABC):
                     age_text = %s, age_min_months = %s, age_max_months = %s,
                     sex = %s, size = %s, standardized_size = %s, language = %s,
                     primary_image_url = %s, original_image_url = %s,
-                    adoption_url = %s, status = %s,
+                    adoption_url = %s, status = %s, properties = %s,
                     updated_at = %s, last_scraped_at = %s, last_seen_at = %s,
                     consecutive_scrapes_missing = 0, availability_confidence = 'high'
                 WHERE id = %s
@@ -698,6 +698,7 @@ class BaseScraper(ABC):
                     animal_data.get("original_image_url"),
                     animal_data.get("adoption_url"),
                     animal_data.get("status", "available"),
+                    json.dumps(animal_data.get("properties")) if animal_data.get("properties") else None,  # properties
                     current_time,  # updated_at
                     current_time,  # last_scraped_at
                     self.current_scrape_session or current_time,  # last_seen_at

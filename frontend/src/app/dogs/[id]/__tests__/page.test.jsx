@@ -153,3 +153,71 @@ describe('DogDetailPage – share buttons', () => {
     expect(screen.queryByRole('link', { name: /instagram/i })).toBeNull();
   });
 });
+
+describe('DogDetailPage - Breed Display', () => {
+  it('hides breed section when breed is Unknown', async () => {
+    const mockDog = {
+      id: 1,
+      name: 'Rover',
+      breed: 'Unknown',
+      standardized_breed: 'Unknown',
+      primary_image_url: 'https://img.test/rover.jpg',
+      status: 'available',
+      properties: {},
+      sex: 'Male',
+    };
+    getAnimalById.mockResolvedValue(mockDog);
+
+    render(<DogDetailPage />);
+
+    await waitFor(() => expect(screen.queryByTestId('loading')).not.toBeInTheDocument());
+
+    // Should not show breed section at all when Unknown
+    expect(screen.queryByText('Breed')).not.toBeInTheDocument();
+    expect(screen.queryByText('Unknown')).not.toBeInTheDocument();
+  });
+
+  it('hides breed section when breed is missing', async () => {
+    const mockDog = {
+      id: 1,
+      name: 'Rover',
+      breed: null,
+      standardized_breed: null,
+      primary_image_url: 'https://img.test/rover.jpg',
+      status: 'available',
+      properties: {},
+      sex: 'Male',
+    };
+    getAnimalById.mockResolvedValue(mockDog);
+
+    render(<DogDetailPage />);
+
+    await waitFor(() => expect(screen.queryByTestId('loading')).not.toBeInTheDocument());
+
+    // Should not show breed section when breed is missing
+    expect(screen.queryByText('Breed')).not.toBeInTheDocument();
+  });
+
+  it('shows known breed normally', async () => {
+    const mockDog = {
+      id: 1,
+      name: 'Rover',
+      breed: 'Golden Retriever',
+      standardized_breed: 'Golden Retriever',
+      breed_group: 'Sporting',
+      primary_image_url: 'https://img.test/rover.jpg',
+      status: 'available',
+      properties: {},
+      sex: 'Male',
+    };
+    getAnimalById.mockResolvedValue(mockDog);
+
+    render(<DogDetailPage />);
+
+    await waitFor(() => expect(screen.queryByTestId('loading')).not.toBeInTheDocument());
+
+    // Should show actual breed
+    expect(screen.getByText('Golden Retriever')).toBeInTheDocument();
+    expect(screen.getByText('Sporting Group')).toBeInTheDocument();
+  });
+});

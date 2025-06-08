@@ -111,8 +111,9 @@ describe('SEO Meta Tags', () => {
         openGraph: {
           title: 'Happy Paws Rescue - Dog Rescue Organization',
           description: 'Learn about Happy Paws Rescue and their available dogs for adoption. Dedicated to rescuing and rehoming dogs in need.',
-          type: 'organization',
-          siteName: 'Rescue Dog Aggregator'
+          type: 'website',
+          siteName: 'Rescue Dog Aggregator',
+          url: 'https://rescuedogaggregator.com/organizations/1'
         },
         twitter: {
           card: 'summary',
@@ -120,6 +121,24 @@ describe('SEO Meta Tags', () => {
           description: 'Learn about Happy Paws Rescue and their available dogs for adoption.'
         }
       });
+    });
+
+    test('should only allow valid OpenGraph types', async () => {
+      const mockOrg = {
+        id: 1,
+        name: 'Test Org',
+        description: 'Test description'
+      };
+
+      getOrganizationById.mockResolvedValue(mockOrg);
+
+      const metadata = await generateOrgMetadata({ params: { id: '1' } });
+
+      // Valid OpenGraph types according to specification
+      const validTypes = ['website', 'article', 'profile', 'book', 'video.movie', 'video.episode', 'video.tv_show', 'video.other', 'music.song', 'music.album', 'music.playlist', 'music.radio_station'];
+      
+      expect(validTypes).toContain(metadata.openGraph.type);
+      expect(metadata.openGraph.type).toBe('website');
     });
   });
 

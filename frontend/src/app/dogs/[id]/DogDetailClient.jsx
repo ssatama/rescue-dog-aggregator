@@ -134,18 +134,30 @@ export default function DogDetailClient({ params }) {
               <div className="md:w-1/2">
                 <h1 className="text-3xl font-bold mb-2">{sanitizeText(dog.name)}</h1>
                 
-                <div className="mb-4">
-                  <h2 className="text-lg font-semibold text-gray-700">Breed</h2>
-                  <div className="flex flex-wrap gap-1 items-center">
-                    <span className="text-gray-800">{sanitizeText(dog.standardized_breed || dog.breed || 'Unknown')}</span>
-                    {dog.standardized_breed && dog.breed && dog.standardized_breed !== dog.breed && (
-                      <span className="text-sm text-gray-500 ml-2">(originally listed as: {sanitizeText(dog.breed)})</span>
-                    )}
-                  </div>
-                  {dog.breed_group && dog.breed_group !== 'Unknown' && (
-                    <Badge variant="secondary" className="mt-1">{sanitizeText(dog.breed_group)} Group</Badge>
-                  )}
-                </div>
+                {/* Only show breed section if we have a known breed */}
+                {(() => {
+                  const breed = dog.standardized_breed || dog.breed;
+                  const isUnknownBreed = !breed || breed === 'Unknown' || breed.toLowerCase() === 'unknown';
+                  
+                  if (isUnknownBreed) {
+                    return null; // Hide the entire breed section for unknown breeds
+                  }
+                  
+                  return (
+                    <div className="mb-4">
+                      <h2 className="text-lg font-semibold text-gray-700">Breed</h2>
+                      <div className="flex flex-wrap gap-1 items-center">
+                        <span className="text-gray-800">{sanitizeText(breed)}</span>
+                        {dog.standardized_breed && dog.breed && dog.standardized_breed !== dog.breed && (
+                          <span className="text-sm text-gray-500 ml-2">(originally listed as: {sanitizeText(dog.breed)})</span>
+                        )}
+                      </div>
+                      {dog.breed_group && dog.breed_group !== 'Unknown' && (
+                        <Badge variant="secondary" className="mt-1">{sanitizeText(dog.breed_group)} Group</Badge>
+                      )}
+                    </div>
+                  );
+                })()}
                 
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3 mb-6">
                   {formatAge(dog) && (

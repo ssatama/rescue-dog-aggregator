@@ -48,20 +48,38 @@ describe('DogCard Component', () => {
     const incompleteData = {
       id: 2,
       name: 'Max',
-      // Missing other fields
+      status: 'available', // Add status to avoid unknown status badge
+      // Missing other fields like breed
     };
     
     render(<DogCard dog={incompleteData} />);
     
     // Should still render with fallback values
     expect(screen.getByText('Max')).toBeInTheDocument();
-    // Check for fallback breed
-    expect(screen.getByText('Unknown Breed')).toBeInTheDocument();
-    // Check for fallback location (or lack thereof)
-    // Depending on how you handle missing location, adjust this check
-    // Example: expect(screen.getByText('Unknown Location')).toBeInTheDocument();
+    // Should not show breed section when missing
+    expect(screen.queryByText('Unknown Breed')).not.toBeInTheDocument();
+    expect(screen.queryByText('Unknown')).not.toBeInTheDocument();
     // Check button text
     expect(screen.getByText('Adopt Max')).toBeInTheDocument();
 
+  });
+
+  test('hides breed when Unknown', () => {
+    const dogWithUnknownBreed = {
+      id: 3,
+      name: 'Luna',
+      standardized_breed: 'Unknown',
+      breed: 'Unknown',
+      status: 'available', // Specify status to avoid status badge interference
+    };
+    
+    render(<DogCard dog={dogWithUnknownBreed} />);
+    
+    // Should render name
+    expect(screen.getByText('Luna')).toBeInTheDocument();
+    // Should not show breed line when it's Unknown
+    expect(screen.queryByText('Unknown')).not.toBeInTheDocument();
+    // Should still have the adopt button
+    expect(screen.getByText('Adopt Luna')).toBeInTheDocument();
   });
 });

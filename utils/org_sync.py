@@ -306,7 +306,10 @@ class OrganizationSyncManager:
                 ),
             )
 
-            org_id = cursor.fetchone()[0]
+            result = cursor.fetchone()
+            if result is None:
+                raise OrganizationSyncError("INSERT did not return an ID")
+            org_id = result[0]  # Fix: Use index instead of dict key
             cursor.connection.commit()
             self.logger.info(
                 f"Created organization '{config.name}' with ID {org_id} from config '{config.id}'"

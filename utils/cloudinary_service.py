@@ -153,7 +153,6 @@ class CloudinaryService:
                 public_id=public_id,
                 overwrite=False,  # Don't overwrite existing images
                 resource_type="image",
-                format="auto",  # Auto-optimize format
                 quality="auto",  # Auto-optimize quality
             )
 

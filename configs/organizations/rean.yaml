@@ -1,0 +1,28 @@
+schema_version: "1.0"
+id: "rean"
+name: "REAN (Rescuing European Animals in Need)"
+enabled: true
+
+scraper:
+  class_name: "REANScraper"
+  module: "scrapers.rean.dogs_scraper"
+  config:
+    rate_limit_delay: 2.5
+    max_retries: 3
+    timeout: 30
+
+metadata:
+  website_url: "https://rean.org.uk"
+  description: "UK charity rescuing dogs from Romanian shelters and streets, transporting to UK homes"
+  location:
+    country: "GB"
+    city: "Norfolk"
+  contact:
+    email: "reanrescue@outlook.com"
+  social_media:
+    facebook: "https://www.facebook.com/REAN.CO.UK"
+  service_regions:
+    - country: "RO"
+      regions: ["all"]
+    - country: "GB"
+      regions: ["all"]
