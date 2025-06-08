@@ -335,8 +335,11 @@ class REANScraper(BaseScraper):
         try:
             # Split on '/:/'' which marks the start of transformations
             if '/::/' in wsimg_url:
-                # Handle double colon format
+                # Handle double colon format (note the extra slash)
                 clean_url = wsimg_url.split('/::/')[0]
+            elif '/::' in wsimg_url:
+                # Handle double colon format without slash
+                clean_url = wsimg_url.split('/::')[0]
             elif '/:/' in wsimg_url:
                 # Handle single colon format (more common)
                 clean_url = wsimg_url.split('/:/')[0]
@@ -353,11 +356,14 @@ class REANScraper(BaseScraper):
 
     def associate_images_with_dogs(self, dog_data_list: List[Dict[str, Any]], image_urls: List[str]) -> List[Dict[str, Any]]:
         """
-        Associate extracted images with specific dogs using position-based matching.
+        Associate extracted images with specific dogs using improved matching algorithms.
         
-        Since REAN's website presents dogs and images in order, we use positional
-        association as the primary strategy. This is the most reliable method
-        for GoDaddy Website Builder pages.
+        This method addresses the "off by one" image association issue by implementing
+        multiple strategies to correctly match images to dogs:
+        
+        1. Smart offset detection for header/navigation images
+        2. Content-aware filtering of non-dog images 
+        3. Fallback to position-based matching with offset correction
         
         Args:
             dog_data_list: List of dog data dictionaries
@@ -369,18 +375,29 @@ class REANScraper(BaseScraper):
         if not dog_data_list:
             return []
             
-        self.logger.info(f"Associating {len(image_urls)} images with {len(dog_data_list)} dogs")
+        self.logger.info(f"Associating {len(image_urls)} images with {len(dog_data_list)} dogs using improved matching")
         
-        # Create a copy of the dog data to avoid modifying the original
+        # Step 1: Filter out obvious non-dog images with enhanced filtering
+        filtered_images = self._filter_non_dog_images(image_urls)
+        self.logger.info(f"Filtered {len(image_urls)} raw images down to {len(filtered_images)} potential dog images")
+        
+        # Step 2: Detect and correct for common offset patterns
+        offset = self._detect_image_offset(filtered_images, len(dog_data_list))
+        if offset > 0:
+            self.logger.info(f"Detected image offset of {offset} - adjusting association strategy")
+        
+        # Step 3: Associate images with dogs using corrected positioning
         enriched_dogs = []
         
         for i, dog_data in enumerate(dog_data_list):
             enriched_dog = dog_data.copy()
             
-            # Position-based association: match by index
-            if i < len(image_urls):
-                enriched_dog["primary_image_url"] = image_urls[i]
-                self.logger.debug(f"Associated image {i+1} with dog '{dog_data.get('name', 'Unknown')}'")
+            # Apply offset correction for association
+            image_index = i + offset
+            
+            if image_index < len(filtered_images):
+                enriched_dog["primary_image_url"] = filtered_images[image_index]
+                self.logger.debug(f"Associated image {image_index+1} (offset-corrected) with dog '{dog_data.get('name', 'Unknown')}'")
             else:
                 # No image available for this dog
                 self.logger.debug(f"No image available for dog '{dog_data.get('name', 'Unknown')}'")
@@ -389,9 +406,430 @@ class REANScraper(BaseScraper):
         
         # Log summary
         dogs_with_images = sum(1 for dog in enriched_dogs if "primary_image_url" in dog)
-        self.logger.info(f"Successfully associated images with {dogs_with_images}/{len(dog_data_list)} dogs")
+        self.logger.info(f"Successfully associated images with {dogs_with_images}/{len(dog_data_list)} dogs (offset: {offset})")
         
         return enriched_dogs
+    
+    def _filter_non_dog_images(self, image_urls: List[str]) -> List[str]:
+        """
+        Enhanced filtering to remove non-dog images more effectively.
+        
+        Args:
+            image_urls: List of image URLs to filter
+            
+        Returns:
+            List of URLs that are likely to be dog photos
+        """
+        filtered_images = []
+        
+        for url in image_urls:
+            # Skip if basic REAN image validation fails
+            if not self._is_valid_rean_image(url):
+                continue
+            
+            # Enhanced filtering for common non-dog image patterns
+            url_lower = url.lower()
+            
+            # More comprehensive exclusion patterns
+            exclude_patterns = [
+                'logo', 'icon', 'favicon', 'header', 'footer', 
+                'background', 'banner', 'button', 'arrow', 'nav',
+                'menu', 'social', 'contact', 'about', 'home',
+                'placeholder', 'default', 'blank', 'spacer'
+            ]
+            
+            # Skip images that match exclusion patterns
+            if any(pattern in url_lower for pattern in exclude_patterns):
+                self.logger.debug(f"Filtered out non-dog image: {url[:50]}...")
+                continue
+            
+            # Size-based filtering (if possible to determine from URL)
+            # Very small images are likely icons or decorative elements
+            if any(size_indicator in url_lower for size_indicator in ['_16x16', '_32x32', '_64x64', '_thumb']):
+                self.logger.debug(f"Filtered out small/thumbnail image: {url[:50]}...")
+                continue
+            
+            # This image passed all filters
+            filtered_images.append(url)
+            self.logger.debug(f"Accepted potential dog image: {url[:50]}...")
+        
+        return filtered_images
+    
+    def _detect_image_offset(self, filtered_images: List[str], num_dogs: int) -> int:
+        """
+        Detect if there's a systematic offset in image positioning.
+        
+        This addresses the common issue where header/navigation images
+        cause a consistent "off by one" association problem.
+        
+        Args:
+            filtered_images: List of filtered image URLs
+            num_dogs: Number of dogs to associate images with
+            
+        Returns:
+            Offset to apply to image indexing (0 means no offset needed)
+        """
+        if not filtered_images or num_dogs == 0:
+            return 0
+        
+        # Pattern 1: If we have exactly one more image than dogs,
+        # it's likely there's one header/navigation image at the start
+        if len(filtered_images) == num_dogs + 1:
+            self.logger.debug("Detected potential header image - applying offset of 1")
+            return 1
+        
+        # Pattern 2: If we have significantly more images than dogs,
+        # there might be multiple header/footer images
+        if len(filtered_images) > num_dogs * 1.5:
+            # Use heuristic: assume first 1-2 images are likely non-dog
+            if len(filtered_images) >= num_dogs + 2:
+                self.logger.debug("Detected multiple header/footer images - applying offset of 2")
+                return 2
+            else:
+                self.logger.debug("Detected single header image - applying offset of 1")
+                return 1
+        
+        # Pattern 3: Perfect match or fewer images than dogs - no offset needed
+        self.logger.debug("No systematic offset detected - using direct association")
+        return 0
+
+    def extract_dogs_with_images_unified(self, url: str, page_type: str) -> List[Dict[str, Any]]:
+        """
+        Extract dogs and their images in a single pass using DOM structure.
+        
+        This unified approach maintains the spatial relationship between text and images
+        by processing each dog container as a complete unit, eliminating the "off by one"
+        image association issues.
+        
+        Args:
+            url: The URL to scrape
+            page_type: Type of page (romania/uk_foster)
+            
+        Returns:
+            List of dog data dictionaries with correctly associated images
+        """
+        try:
+            # Configure Chrome options for headless operation
+            chrome_options = Options()
+            chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.add_argument("--user-agent=Mozilla/5.0 (compatible; RescueDogAggregator/1.0)")
+            
+            self.logger.info(f"Starting unified browser extraction for: {url}")
+            driver = webdriver.Chrome(options=chrome_options)
+            
+            try:
+                # Load the page
+                driver.get(url)
+                self.logger.info("Page loaded, waiting for JavaScript and lazy loading...")
+                
+                # Wait for initial page load and JavaScript execution
+                time.sleep(5)
+                
+                # Trigger lazy loading by scrolling
+                self._trigger_comprehensive_lazy_loading(driver)
+                
+                # Wait for images to load after scrolling
+                time.sleep(3)
+                
+                # Extract dogs using unified DOM approach
+                dogs_data = self._extract_dogs_from_dom(driver, page_type)
+                
+                self.logger.info(f"Successfully extracted {len(dogs_data)} dogs with unified approach")
+                return dogs_data
+                
+            finally:
+                driver.quit()
+                
+        except Exception as e:
+            self.logger.error(f"Error during unified browser extraction: {e}")
+            # Fallback to legacy method if unified approach fails
+            self.logger.info("Falling back to legacy extraction method...")
+            return self._extract_dogs_legacy_fallback(url, page_type)
+
+    def _trigger_comprehensive_lazy_loading(self, driver):
+        """
+        Comprehensively trigger lazy loading for all images on the page.
+        
+        Args:
+            driver: Selenium WebDriver instance
+        """
+        try:
+            # Get total page height
+            total_height = driver.execute_script("return document.body.scrollHeight")
+            
+            # Progressive scroll to ensure all images load
+            self.logger.debug("Triggering comprehensive lazy loading...")
+            
+            # Scroll to bottom first
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(2)
+            
+            # Scroll back to top
+            driver.execute_script("window.scrollTo(0, 0);")
+            time.sleep(1)
+            
+            # Progressive scroll in smaller increments
+            current_position = 0
+            scroll_increment = 300
+            
+            while current_position < total_height:
+                driver.execute_script(f"window.scrollTo(0, {current_position});")
+                time.sleep(0.5)  # Allow images to load
+                current_position += scroll_increment
+            
+            # Final scroll to bottom and back to top
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(2)
+            driver.execute_script("window.scrollTo(0, 0);")
+            time.sleep(1)
+            
+            self.logger.debug("Lazy loading trigger completed")
+            
+        except Exception as e:
+            self.logger.warning(f"Error during lazy loading trigger: {e}")
+
+    def _extract_dogs_from_dom(self, driver, page_type: str) -> List[Dict[str, Any]]:
+        """
+        Extract dog data from DOM using unified container approach.
+        
+        Args:
+            driver: Selenium WebDriver instance
+            page_type: Type of page (romania/uk_foster)
+            
+        Returns:
+            List of dog data dictionaries with images
+        """
+        dogs_data = []
+        
+        try:
+            # Find all dog containers using the discovered DOM structure
+            dog_containers = self._find_dog_containers(driver)
+            self.logger.info(f"Found {len(dog_containers)} dog containers in DOM")
+            
+            for i, container in enumerate(dog_containers):
+                try:
+                    # Extract all data from this single container
+                    dog_data = self._extract_single_dog_from_container(container, page_type, i+1)
+                    
+                    if dog_data and dog_data.get("name"):
+                        dogs_data.append(dog_data)
+                        self.logger.debug(f"Successfully extracted dog: {dog_data.get('name')}")
+                    else:
+                        self.logger.warning(f"Container {i+1} did not yield valid dog data")
+                        
+                except Exception as e:
+                    self.logger.error(f"Error extracting from container {i+1}: {e}")
+                    continue
+            
+            return dogs_data
+            
+        except Exception as e:
+            self.logger.error(f"Error during DOM extraction: {e}")
+            return []
+
+    def _find_dog_containers(self, driver):
+        """
+        Find dog containers using robust CSS selectors.
+        
+        Args:
+            driver: Selenium WebDriver instance
+            
+        Returns:
+            List of WebDriver elements representing dog containers
+        """
+        # Try multiple CSS selectors based on DOM investigation
+        selectors_to_try = [
+            "div.x-el-article",  # Primary selector from investigation
+            "div.x.c1-5",        # Alternative selector
+            "div[class*='x-el-article']",  # Partial class match
+            "div[class*='c1-5']",          # Another partial match
+        ]
+        
+        for selector in selectors_to_try:
+            try:
+                containers = driver.find_elements(By.CSS_SELECTOR, selector)
+                if containers:
+                    self.logger.debug(f"Found {len(containers)} containers with selector: {selector}")
+                    # Validate containers have expected dog content
+                    valid_containers = self._validate_dog_containers(containers)
+                    if valid_containers:
+                        self.logger.info(f"Using selector '{selector}' - found {len(valid_containers)} valid dog containers")
+                        return valid_containers
+                        
+            except Exception as e:
+                self.logger.debug(f"Selector '{selector}' failed: {e}")
+                continue
+        
+        # Fallback: try to find containers with h3 headers (dog names)
+        self.logger.warning("Primary selectors failed, trying fallback approach...")
+        try:
+            # Find all h3 elements and get their parent containers
+            h3_elements = driver.find_elements(By.TAG_NAME, "h3")
+            containers = []
+            for h3 in h3_elements:
+                # Check if this h3 contains dog-like content
+                text = h3.text.strip()
+                if any(pattern in text.lower() for pattern in ["months old", "years old"]):
+                    # Get the parent container that likely contains the full dog info
+                    parent = h3.find_element(By.XPATH, "./..")
+                    containers.append(parent)
+            
+            if containers:
+                self.logger.info(f"Fallback approach found {len(containers)} potential dog containers")
+                return containers
+                
+        except Exception as e:
+            self.logger.error(f"Fallback container detection failed: {e}")
+        
+        return []
+
+    def _validate_dog_containers(self, containers):
+        """
+        Validate that containers actually contain dog information.
+        
+        Args:
+            containers: List of WebDriver elements
+            
+        Returns:
+            List of validated containers
+        """
+        valid_containers = []
+        
+        for container in containers:
+            try:
+                # Check if container has expected dog content structure
+                text_content = container.text.strip()
+                
+                # Must contain age information to be a valid dog container
+                if any(pattern in text_content.lower() for pattern in 
+                       ["months old", "years old", "vaccinated", "chipped"]):
+                    valid_containers.append(container)
+                    
+            except Exception as e:
+                self.logger.debug(f"Error validating container: {e}")
+                continue
+        
+        return valid_containers
+
+    def _extract_single_dog_from_container(self, container, page_type: str, container_num: int) -> Dict[str, Any]:
+        """
+        Extract complete dog data from a single DOM container.
+        
+        Args:
+            container: WebDriver element representing the dog container
+            page_type: Type of page (romania/uk_foster)
+            container_num: Container number for logging
+            
+        Returns:
+            Dictionary with dog data including correctly associated image
+        """
+        try:
+            # Extract text content from container
+            full_text = container.text.strip()
+            
+            # Extract dog data using existing text processing logic
+            dog_data = self.extract_dog_data(full_text, page_type)
+            
+            if not dog_data or not dog_data.get("name"):
+                self.logger.debug(f"Container {container_num} did not yield valid dog data from text: {full_text[:100]}...")
+                return None
+            
+            # Extract image from the same container
+            image_url = self._extract_image_from_container(container, dog_data.get("name"), container_num)
+            
+            # Associate the image with the dog data
+            if image_url:
+                dog_data["primary_image_url"] = image_url
+                self.logger.debug(f"Successfully associated image for {dog_data.get('name')}: {image_url[:50]}...")
+            else:
+                self.logger.debug(f"No valid image found for {dog_data.get('name')} in container {container_num}")
+            
+            return dog_data
+            
+        except Exception as e:
+            self.logger.error(f"Error extracting dog from container {container_num}: {e}")
+            return None
+
+    def _extract_image_from_container(self, container, dog_name: str, container_num: int) -> Optional[str]:
+        """
+        Extract image URL from a dog container.
+        
+        Args:
+            container: WebDriver element representing the dog container
+            dog_name: Name of the dog for logging
+            container_num: Container number for logging
+            
+        Returns:
+            Image URL if found and valid, None otherwise
+        """
+        try:
+            # Find image element within this container
+            img_elements = container.find_elements(By.TAG_NAME, "img")
+            
+            for img in img_elements:
+                # Get image source - try multiple attributes for dynamic loading
+                img_src = img.get_attribute("src")
+                data_src = img.get_attribute("data-src")
+                
+                # Prefer data-src for lazy loading, fallback to src
+                actual_src = data_src if data_src else img_src
+                
+                if actual_src and self._is_valid_rean_image(actual_src):
+                    # Clean the URL for Cloudinary compatibility
+                    cleaned_url = self._clean_wsimg_url(actual_src)
+                    self.logger.debug(f"Found valid image for {dog_name}: {cleaned_url[:50]}...")
+                    return cleaned_url
+                else:
+                    self.logger.debug(f"Skipping invalid image for {dog_name}: {actual_src[:50] if actual_src else 'No src'}...")
+            
+            self.logger.debug(f"No valid images found in container {container_num} for {dog_name}")
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"Error extracting image from container {container_num}: {e}")
+            return None
+
+    def _extract_dogs_legacy_fallback(self, url: str, page_type: str) -> List[Dict[str, Any]]:
+        """
+        Fallback to legacy extraction method if unified approach fails.
+        
+        Args:
+            url: The URL to scrape
+            page_type: Type of page (romania/uk_foster)
+            
+        Returns:
+            List of dog data using legacy approach
+        """
+        try:
+            self.logger.info("Executing legacy fallback extraction...")
+            
+            # Use the original approach as fallback
+            html_content = self.scrape_page(url)
+            if not html_content:
+                return []
+            
+            dog_blocks = self.extract_dog_content_from_html(html_content)
+            available_images = self.extract_images_with_browser(url)
+            
+            dog_data_list = []
+            for entry in dog_blocks:
+                dog_data = self.extract_dog_data(entry, page_type)
+                if dog_data and dog_data.get("name"):
+                    dog_data_list.append(dog_data)
+            
+            # Use the improved association logic
+            enriched_dog_data_list = self.associate_images_with_dogs(dog_data_list, available_images)
+            
+            self.logger.info(f"Legacy fallback extracted {len(enriched_dog_data_list)} dogs")
+            return enriched_dog_data_list
+            
+        except Exception as e:
+            self.logger.error(f"Legacy fallback also failed: {e}")
+            return []
 
     def scrape_animals(self) -> List[Dict[str, Any]]:
         """
@@ -408,42 +846,12 @@ class REANScraper(BaseScraper):
             for page_type, page_path in self.pages.items():
                 self.logger.info(f"Scraping {page_type} page: {page_path}")
 
-                # Scrape the page
-                html_content = self.scrape_page(f"{self.base_url}{page_path}")
-                if not html_content:
-                    self.logger.warning(f"Failed to scrape {page_type} page")
-                    continue
-
-                # Extract dog content blocks from HTML
-                dog_blocks = self.extract_dog_content_from_html(html_content)
-                self.logger.info(
-                    f"Found {len(dog_blocks)} dog content blocks on {page_type} page"
-                )
-                
-                # Extract actual images using browser automation
+                # Use unified extraction to get dogs with correctly associated images
                 page_url = f"{self.base_url}{page_path}"
-                available_images = self.extract_images_with_browser(page_url)
+                enriched_dog_data_list = self.extract_dogs_with_images_unified(page_url, page_type)
                 self.logger.info(
-                    f"Found {len(available_images)} real images on {page_type} page via browser"
+                    f"Found {len(enriched_dog_data_list)} dogs with unified extraction on {page_type} page"
                 )
-
-                # Process dog entries and extract basic data
-                dog_data_list = []
-                for entry in dog_blocks:
-                    try:
-                        dog_data = self.extract_dog_data(entry, page_type)
-                        if dog_data and dog_data.get("name"):
-                            dog_data_list.append(dog_data)
-                        else:
-                            self.logger.warning(
-                                f"Skipping entry with no valid name: {entry[:100]}..."
-                            )
-                    except Exception as e:
-                        self.logger.error(f"Error processing dog entry: {e}")
-                        continue
-
-                # Associate images with dogs using position-based matching
-                enriched_dog_data_list = self.associate_images_with_dogs(dog_data_list, available_images)
                 
                 # Convert to standardized format and add to results
                 for dog_data in enriched_dog_data_list:
@@ -967,6 +1375,10 @@ class REANScraper(BaseScraper):
             Standardized animal data dictionary
         """
         name = dog_data.get("name", "Unknown")
+        
+        # Handle None name gracefully
+        if name is None:
+            name = "Unknown"
 
         # Create external ID from name and page type
         external_id = f"rean-{page_type}-{name.lower().replace(' ', '-')}"
@@ -978,6 +1390,11 @@ class REANScraper(BaseScraper):
             # Fallback for legacy mode
             adoption_url = "https://rean.org.uk"
 
+        # Handle properties safely - ensure it's a dictionary
+        properties = dog_data.get("properties", {})
+        if not isinstance(properties, dict):
+            properties = {}
+
         standardized_data = {
             "external_id": external_id,
             "name": name,
@@ -986,7 +1403,7 @@ class REANScraper(BaseScraper):
             "animal_type": "dog",
             "age_text": dog_data.get("age_text"),
             "language": "en",
-            "properties": dog_data.get("properties", {}),
+            "properties": properties,
         }
         
         # Add image URL if available
@@ -1005,8 +1422,8 @@ class REANScraper(BaseScraper):
                     f"Could not standardize age '{dog_data['age_text']}': {e}"
                 )
 
-        # Set size if predicted
-        size_prediction = dog_data.get("properties", {}).get("size_prediction")
+        # Set size if predicted - use safe properties access
+        size_prediction = properties.get("size_prediction")
         if size_prediction:
             standardized_data["size"] = size_prediction
             standardized_data["standardized_size"] = size_prediction

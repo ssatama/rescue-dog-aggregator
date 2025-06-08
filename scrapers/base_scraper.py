@@ -935,56 +935,6 @@ class BaseScraper(ABC):
             self.logger.error(f"Error getting stale animals summary: {e}")
             return {}
 
-    def detect_partial_failure(self, animals_found, threshold_percentage=0.5):
-        """Detect if scraper found abnormally few animals (partial failure).
-
-        Args:
-            animals_found: Number of animals found in current scrape
-            threshold_percentage: Minimum percentage of historical average to consider normal
-
-        Returns:
-            True if potential partial failure detected, False otherwise
-        """
-        try:
-            cursor = self.conn.cursor()
-
-            # Get historical average of animals found (last 10 successful scrapes)
-            cursor.execute(
-                """
-                SELECT AVG(dogs_found) 
-                FROM scrape_logs 
-                WHERE organization_id = %s 
-                AND status = 'success' 
-                AND dogs_found > 0
-                ORDER BY created_at DESC 
-                LIMIT 10
-                """,
-                (self.organization_id,),
-            )
-
-            result = cursor.fetchone()
-            cursor.close()
-
-            if not result or not result[0]:
-                # No historical data - can't detect partial failure
-                return False
-
-            historical_average = float(result[0])
-            threshold = historical_average * threshold_percentage
-
-            is_partial_failure = animals_found < threshold
-
-            if is_partial_failure:
-                self.logger.warning(
-                    f"Potential partial failure detected: found {animals_found} animals "
-                    f"(historical avg: {historical_average:.1f}, threshold: {threshold:.1f})"
-                )
-
-            return is_partial_failure
-
-        except Exception as e:
-            self.logger.error(f"Error detecting partial failure: {e}")
-            return False
 
     def detect_catastrophic_failure(self, animals_found, absolute_minimum=3):
         """Detect catastrophic scraper failures (zero or extremely low animal counts).
@@ -1050,15 +1000,19 @@ class BaseScraper(ABC):
             cursor = self.conn.cursor()
 
             # Get historical average of animals found (configurable number of successful scrapes)
+            # Use subquery to handle ORDER BY properly with aggregate functions
             cursor.execute(
                 """
                 SELECT AVG(dogs_found), COUNT(*) 
-                FROM scrape_logs 
-                WHERE organization_id = %s 
-                AND status = 'success' 
-                AND dogs_found > 0
-                ORDER BY started_at DESC 
-                LIMIT %s
+                FROM (
+                    SELECT dogs_found
+                    FROM scrape_logs 
+                    WHERE organization_id = %s 
+                    AND status = 'success' 
+                    AND dogs_found > 0
+                    ORDER BY started_at DESC 
+                    LIMIT %s
+                ) recent_scrapes
                 """,
                 (
                     self.organization_id,
