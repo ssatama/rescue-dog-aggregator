@@ -518,10 +518,14 @@ class BaseScraper(ABC):
             language = self.detect_language(description_text)
 
             # Apply standardization
-            standardized_breed = standardize_breed(animal_data.get("breed", ""))
+            standardized_breed, breed_group, size_estimate = standardize_breed(animal_data.get("breed", ""))
             age_info = standardize_age(animal_data.get("age_text", ""))
             age_months_min = age_info.get("age_min_months")
             age_months_max = age_info.get("age_max_months")
+            
+            # Use size estimate if no size provided
+            final_size = animal_data.get("size") or animal_data.get("standardized_size")
+            final_standardized_size = animal_data.get("standardized_size") or size_estimate
 
             # Prepare values for insertion
             current_time = datetime.now()
@@ -531,12 +535,12 @@ class BaseScraper(ABC):
                 INSERT INTO animals (
                     name, organization_id, animal_type, external_id,
                     primary_image_url, original_image_url, adoption_url, status,
-                    breed, standardized_breed, age_text, age_min_months, age_max_months,
-                    sex, size, language, properties,
+                    breed, standardized_breed, breed_group, age_text, age_min_months, age_max_months,
+                    sex, size, standardized_size, language, properties,
                     created_at, updated_at, last_scraped_at, last_seen_at,
                     consecutive_scrapes_missing, availability_confidence
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                     %s, %s, %s, %s, %s, %s
                 )
                 RETURNING id
@@ -552,11 +556,13 @@ class BaseScraper(ABC):
                     animal_data.get("status", "available"),
                     animal_data.get("breed"),
                     standardized_breed,
+                    breed_group,
                     animal_data.get("age_text"),
                     age_months_min,
                     age_months_max,
                     animal_data.get("sex"),
-                    animal_data.get("size"),
+                    final_size,
+                    final_standardized_size,
                     language,
                     None,  # properties (JSONB)
                     current_time,  # created_at
@@ -648,10 +654,14 @@ class BaseScraper(ABC):
                 return animal_id, "no_change"
 
             # Apply standardization to new data
-            standardized_breed = standardize_breed(animal_data.get("breed", ""))
+            standardized_breed, breed_group, size_estimate = standardize_breed(animal_data.get("breed", ""))
             age_info = standardize_age(animal_data.get("age_text", ""))
             age_months_min = age_info.get("age_min_months")
             age_months_max = age_info.get("age_max_months")
+            
+            # Use size estimate if no size provided
+            final_size = animal_data.get("size") or animal_data.get("standardized_size")
+            final_standardized_size = animal_data.get("standardized_size") or size_estimate
 
             # Detect language
             description_text = f"{animal_data.get('name', '')} {animal_data.get('breed', '')} {animal_data.get('age_text', '')}"
@@ -663,9 +673,9 @@ class BaseScraper(ABC):
             cursor.execute(
                 """
                 UPDATE animals SET
-                    name = %s, breed = %s, standardized_breed = %s,
+                    name = %s, breed = %s, standardized_breed = %s, breed_group = %s,
                     age_text = %s, age_min_months = %s, age_max_months = %s,
-                    sex = %s, size = %s, language = %s,
+                    sex = %s, size = %s, standardized_size = %s, language = %s,
                     primary_image_url = %s, original_image_url = %s,
                     adoption_url = %s, status = %s,
                     updated_at = %s, last_scraped_at = %s, last_seen_at = %s,
@@ -676,11 +686,13 @@ class BaseScraper(ABC):
                     animal_data.get("name"),
                     animal_data.get("breed"),
                     standardized_breed,
+                    breed_group,
                     animal_data.get("age_text"),
                     age_months_min,
                     age_months_max,
                     animal_data.get("sex"),
-                    animal_data.get("size"),
+                    final_size,
+                    final_standardized_size,
                     language,
                     animal_data.get("primary_image_url"),
                     animal_data.get("original_image_url"),

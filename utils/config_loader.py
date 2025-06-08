@@ -48,7 +48,7 @@ class ConfigLoader:
     def _load_schema(self) -> dict:
         """Load and cache the JSON schema."""
         if self._schema_cache is None:
-            schema_file = self.schema_dir / "organization.json"
+            schema_file = self.schema_dir / "organization.schema.json"
             if schema_file.exists():
                 with open(schema_file, "r", encoding="utf-8") as f:
                     self._schema_cache = json.load(f)

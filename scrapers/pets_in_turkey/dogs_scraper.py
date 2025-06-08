@@ -64,16 +64,28 @@ class PetsInTurkeyScraper(BaseScraper):
             chrome_options.add_argument("--headless")  # Run in headless mode
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")  # Disable GPU for stability
+            chrome_options.add_argument("--disable-extensions")  # Disable extensions
+            chrome_options.add_argument("--window-size=1920,1080")  # Set window size
 
             # Set up the WebDriver
             service = Service(ChromeDriverManager().install())
             driver = webdriver.Chrome(service=service, options=chrome_options)
             driver.set_page_load_timeout(60)  # Increased timeout
+            driver.implicitly_wait(10)  # Add implicit wait
 
             self.logger.info("Selenium WebDriver set up successfully")
             return driver
         except Exception as e:
             self.logger.error(f"Error setting up Selenium: {e}")
+            return None
+
+    def _safe_driver_operation(self, operation, *args, **kwargs):
+        """Safely execute a driver operation with error handling."""
+        try:
+            return operation(*args, **kwargs)
+        except Exception as e:
+            self.logger.error(f"Driver operation failed: {e}")
             return None
 
     def collect_data(self):
@@ -180,10 +192,15 @@ class PetsInTurkeyScraper(BaseScraper):
             self.logger.error(traceback.format_exc())
 
         finally:
-            # Close the WebDriver
+            # Close the WebDriver with proper error handling
             if self.driver:
-                self.driver.quit()
-                self.logger.info("Selenium WebDriver closed")
+                try:
+                    self.driver.quit()
+                    self.logger.info("Selenium WebDriver closed successfully")
+                except Exception as cleanup_error:
+                    self.logger.warning(f"Error during WebDriver cleanup: {cleanup_error}")
+                finally:
+                    self.driver = None  # Ensure driver reference is cleared
 
         return dogs_data
 

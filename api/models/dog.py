@@ -23,6 +23,7 @@ class AnimalBase(BaseModel):
     animal_type: str = "dog"
     breed: Optional[str] = None
     standardized_breed: Optional[str] = None
+    breed_group: Optional[str] = None
     age_text: Optional[str] = None
     age_min_months: Optional[int] = None
     age_max_months: Optional[int] = None
