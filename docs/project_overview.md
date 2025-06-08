@@ -14,12 +14,39 @@ The project aims to increase visibility for rescue dogs and help them find homes
 
 ## System Architecture
 
-The system consists of four main components:
+The system consists of four main components with modern, production-ready implementations:
 
-1. **Data Collection Layer**: Web scrapers to gather dog listings from various sources
-2. **Data Storage Layer**: PostgreSQL database with a flexible schema and standardization support (using `animals` table for future extensibility, currently dogs only)
-3. **API Layer**: Backend services to expose the data with filtering capabilities
-4. **Presentation Layer**: React frontend for users to browse and search
+### 1. Data Collection Layer
+**Configuration-driven web scrapers** with advanced extraction capabilities:
+- **Unified DOM-based extraction** for modern websites with lazy loading
+- **Production-ready CRUD operations** with session tracking and availability management
+- **Advanced error handling** with graceful fallback mechanisms
+- **Quality assessment** and comprehensive metrics collection
+
+### 2. Data Storage Layer
+**PostgreSQL database** with production-ready features:
+- Flexible schema using `animals` table (future-extensible beyond dogs)
+- **Availability tracking** with confidence levels and lifecycle management
+- **Enhanced metrics storage** with JSONB for detailed monitoring
+- **Standardization support** for breeds, ages, sizes, and languages
+
+### 3. API Layer (FastAPI)
+**Modern backend services** with comprehensive capabilities:
+- **Smart default filtering** showing only reliable, recently-seen animals
+- **Availability confidence system** (high/medium/low/unavailable)
+- **Override parameters** for administrative and debugging purposes
+- **CORS configuration** for secure frontend integration
+- **Robust error handling** with consistent response formats
+
+### 4. Presentation Layer (Next.js 15)
+**Modern React frontend** with production-ready architecture:
+- **Next.js 15 App Router** with Server/Client component separation
+- **Dynamic metadata generation** for SEO optimization
+- **Security features** including XSS prevention and content sanitization
+- **Performance optimizations** with lazy loading and component memoization
+- **Accessibility features** with ARIA compliance and keyboard navigation
+- **Comprehensive error boundaries** with graceful degradation
+- **Test-driven development** with 95+ tests across 17 suites
 
 ## Data Flow
 
@@ -120,9 +147,108 @@ Comprehensive error handling ensures graceful degradation:
 
 ### Performance Optimization
 
+**Backend Performance:**
 - Cloudinary CDN for global image delivery
 - Database query optimization with proper indexing
-- Frontend lazy loading and progressive enhancement
 - API response caching and pagination
 - Smart default filtering reduces unnecessary data transfer
 - JSONB metrics storage for efficient monitoring queries
+
+**Frontend Performance:**
+- **Lazy image loading** with IntersectionObserver for optimized loading
+- **Component memoization** with React.memo for expensive components
+- **Image optimization** through Cloudinary transformations and fallback handling
+- **Progressive enhancement** for graceful degradation
+- **Code splitting** and modern bundling techniques
+- **SEO optimization** with Server/Client component separation
+
+## Frontend Architecture (Next.js 15)
+
+### Server/Client Component Separation
+
+**Server Components** (for SEO and metadata):
+- Dynamic metadata generation for dog detail pages (`generateMetadata`)
+- Organization profile metadata with structured data
+- Server-side rendering for improved search engine indexing
+- Static content generation where applicable
+
+**Client Components** (for interactivity):
+- Dog detail interface with state management (`DogDetailClient.jsx`)
+- Organization detail interface (`OrganizationDetailClient.jsx`)
+- Interactive filtering and search components
+- User interface controls and form handling
+
+### Security Implementation
+
+**XSS Prevention:**
+- Content sanitization using `DOMPurify` for all user-generated content
+- Input validation and sanitization utilities (`src/utils/security.js`)
+- URL validation for external links (`isValidUrl()`)
+- Safe HTML rendering with sanitization
+
+**Development Security:**
+- Development-only logging (no console statements in production)
+- Secure handling of external resources
+- Content Security Policy considerations
+
+### Accessibility Features
+
+**ARIA Compliance:**
+- Comprehensive ARIA labels for all interactive elements
+- Proper semantic HTML structure with landmark roles
+- Screen reader optimized content descriptions
+- Focus management for keyboard navigation
+
+**Keyboard Navigation:**
+- Full keyboard support for all interactive elements
+- Logical tab order and focus indicators
+- Skip links for content navigation
+- Accessible form controls and validation
+
+### Error Handling & User Experience
+
+**Error Boundaries:**
+- Component-level error boundaries (`DogCardErrorBoundary.jsx`)
+- Global error boundary with retry functionality (`ErrorBoundary.jsx`)
+- Graceful degradation for failed data loads
+- User-friendly error messages without technical details
+
+**Loading States:**
+- Skeleton loading for improved perceived performance
+- Progressive image loading with placeholders
+- Loading indicators for async operations
+- Offline state handling
+
+### Test-Driven Development Approach
+
+**Comprehensive Test Coverage (95+ tests across 17 suites):**
+
+**Security Tests:**
+- XSS prevention validation (`content-sanitization.test.js`)
+- Input sanitization verification
+- External link validation testing
+
+**Performance Tests:**
+- Lazy loading functionality (`optimization.test.jsx`)
+- Component memoization verification
+- Image optimization testing
+
+**Accessibility Tests:**
+- ARIA compliance validation (`a11y.test.jsx`)
+- Keyboard navigation testing
+- Screen reader compatibility
+
+**Component Tests:**
+- All UI components with React Testing Library
+- User interaction flow testing
+- State management validation
+
+**Integration Tests:**
+- Full page rendering tests
+- API integration validation
+- Error handling verification
+
+**Build Quality Tests:**
+- Production build validation
+- Bundle analysis and optimization
+- Performance regression testing

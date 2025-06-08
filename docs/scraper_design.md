@@ -250,3 +250,97 @@ Each organization's website is unique, so the scrapers use various techniques:
 - JavaScript execution with Selenium
 - Regular expressions for text extraction
 - Flexible matching for inconsistent data
+
+### Advanced Extraction Techniques
+
+#### Unified DOM-Based Extraction (2024 Enhancement)
+
+For complex websites with dynamic content and lazy loading, the system now supports unified DOM-based extraction that maintains spatial relationships between content and images:
+
+**Key Features:**
+- **Container-Based Processing**: Extract complete dog information from individual DOM containers
+- **Spatial Relationship Preservation**: Maintain association between text and images within the same container
+- **Lazy Loading Handling**: Comprehensive scrolling patterns to trigger dynamic image loading
+- **Robust Selector Strategies**: Multiple CSS selector fallbacks for container detection
+- **Error Recovery**: Graceful fallback to legacy methods if unified approach fails
+
+**Implementation Pattern:**
+```python
+class AdvancedScraper(BaseScraper):
+    def extract_dogs_with_images_unified(self, url: str, page_type: str) -> List[Dict[str, Any]]:
+        """
+        Extract dogs and images in unified DOM approach.
+        
+        Eliminates "off by one" association issues by processing
+        each dog container as a complete unit.
+        """
+        try:
+            # Configure browser for dynamic content
+            driver = self._setup_browser()
+            driver.get(url)
+            
+            # Trigger comprehensive lazy loading
+            self._trigger_comprehensive_lazy_loading(driver)
+            
+            # Find dog containers using robust selectors
+            containers = self._find_dog_containers(driver)
+            
+            # Extract complete data from each container
+            dogs_data = []
+            for container in containers:
+                dog_data = self._extract_single_dog_from_container(container, page_type)
+                if dog_data:
+                    dogs_data.append(dog_data)
+            
+            return dogs_data
+            
+        except Exception as e:
+            # Graceful fallback to legacy method
+            return self._extract_dogs_legacy_fallback(url, page_type)
+```
+
+**Benefits:**
+- Eliminates image association errors common with position-based matching
+- Handles modern websites with lazy loading and dynamic content
+- Maintains backwards compatibility through fallback mechanisms
+- Provides robust error handling for production environments
+
+#### Container Detection Strategies
+
+**Primary Selectors** (tried in order):
+```css
+div.x-el-article    /* Primary container class */
+div.x.c1-5          /* Alternative container class */
+div[class*='x-el-article']  /* Partial class matching */
+div[class*='c1-5']          /* Fallback partial matching */
+```
+
+**Fallback Detection:**
+- H3-based detection for finding dog name headers
+- Parent container traversal to find complete content blocks
+- Content validation to ensure containers have expected dog information
+
+#### Lazy Loading Management
+
+**Comprehensive Scrolling Pattern:**
+1. Initial scroll to bottom to trigger all lazy loading
+2. Return to top for systematic processing
+3. Progressive scroll in small increments (300px)
+4. Multiple scroll cycles to ensure all images load
+5. Final verification scroll to catch any remaining dynamic content
+
+This approach ensures that all images are properly loaded before extraction, preventing missing images due to lazy loading delays.
+
+#### Error Recovery & Fallbacks
+
+**Graceful Degradation:**
+- If unified extraction fails, automatically falls back to legacy methods
+- Partial failure detection prevents false stale data marking
+- Container validation ensures only valid dog containers are processed
+- Image validation filters out placeholders and non-dog images
+
+**Production Reliability:**
+- Comprehensive error logging for debugging
+- Session tracking maintains data consistency
+- Quality scoring validates extraction success
+- Metrics collection enables monitoring and optimization

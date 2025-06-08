@@ -469,6 +469,135 @@ GROUP BY DATE_TRUNC('day', updated_at)
 ORDER BY time;
 ```
 
+## Advanced Scraping Features (2024 Updates)
+
+### Unified DOM Extraction Monitoring
+
+Monitor the new unified DOM extraction approach for supported organizations:
+
+```sql
+-- Check unified extraction success rates
+SELECT 
+    o.name,
+    COUNT(CASE WHEN sl.detailed_metrics->>'unified_extraction_used' = 'true' THEN 1 END) as unified_count,
+    COUNT(CASE WHEN sl.detailed_metrics->>'fallback_to_legacy' = 'true' THEN 1 END) as fallback_count,
+    COUNT(*) as total_scrapes
+FROM scrape_logs sl
+JOIN organizations o ON sl.organization_id = o.id
+WHERE sl.started_at > NOW() - INTERVAL '30 days'
+  AND o.name IN ('REAN')  -- Organizations using unified extraction
+GROUP BY o.id, o.name;
+```
+
+### Image Association Quality
+
+Monitor image association accuracy with the new unified approach:
+
+```sql
+-- Check image association success
+SELECT 
+    o.name,
+    COUNT(CASE WHEN a.primary_image_url IS NOT NULL THEN 1 END) as animals_with_images,
+    COUNT(*) as total_animals,
+    ROUND(COUNT(CASE WHEN a.primary_image_url IS NOT NULL THEN 1 END) * 100.0 / COUNT(*), 2) as image_success_rate
+FROM animals a
+JOIN organizations o ON a.organization_id = o.id
+WHERE a.created_at > NOW() - INTERVAL '7 days'
+GROUP BY o.id, o.name
+ORDER BY image_success_rate DESC;
+```
+
+### Troubleshooting Unified Extraction
+
+```bash
+# Debug unified extraction issues
+python -c "
+from scrapers.rean.dogs_scraper import REANScraper
+scraper = REANScraper(config_id='rean')
+try:
+    # Test unified extraction specifically
+    url = 'https://rean.org.uk/dogs-%26-puppies-in-romania'
+    dogs = scraper.extract_dogs_with_images_unified(url, 'romania')
+    print(f'Unified extraction found {len(dogs)} dogs')
+    
+    # Check image associations
+    with_images = [d for d in dogs if d.get('primary_image_url')]
+    print(f'{len(with_images)} dogs have associated images')
+    
+    # Sample output
+    if dogs:
+        sample = dogs[0]
+        print(f'Sample dog: {sample.get(\"name\")} - Image: {sample.get(\"primary_image_url\", \"None\")[:50]}...')
+        
+except Exception as e:
+    print(f'Unified extraction error: {e}')
+    print('Checking fallback to legacy method...')
+"
+```
+
+## Enhanced Monitoring & Metrics
+
+### Quality Score Analysis
+
+Monitor the enhanced quality scoring system:
+
+```sql
+-- Detailed quality score breakdown
+SELECT 
+    o.name,
+    AVG(sl.data_quality_score) as avg_quality,
+    AVG((sl.detailed_metrics->>'required_fields_score')::float) as required_fields_avg,
+    AVG((sl.detailed_metrics->>'optional_fields_score')::float) as optional_fields_avg,
+    COUNT(*) as scrape_count
+FROM scrape_logs sl
+JOIN organizations o ON sl.organization_id = o.id
+WHERE sl.started_at > NOW() - INTERVAL '30 days'
+  AND sl.data_quality_score IS NOT NULL
+GROUP BY o.id, o.name
+ORDER BY avg_quality DESC;
+```
+
+### Session Tracking Validation
+
+Ensure session tracking is working correctly:
+
+```sql
+-- Verify session tracking consistency
+SELECT 
+    o.name,
+    COUNT(DISTINCT a.last_session_start) as session_count,
+    MAX(a.last_session_start) as latest_session,
+    COUNT(CASE WHEN a.last_seen_at > NOW() - INTERVAL '7 days' THEN 1 END) as recently_seen
+FROM animals a
+JOIN organizations o ON a.organization_id = o.id
+WHERE a.status = 'available'
+GROUP BY o.id, o.name
+ORDER BY latest_session DESC;
+```
+
+### Availability Transition Monitoring
+
+Track availability confidence transitions:
+
+```sql
+-- Monitor availability confidence changes
+SELECT 
+    availability_confidence,
+    consecutive_scrapes_missing,
+    COUNT(*) as animal_count,
+    AVG(EXTRACT(days FROM NOW() - last_seen_at)) as avg_days_since_seen
+FROM animals
+WHERE status = 'available'
+GROUP BY availability_confidence, consecutive_scrapes_missing
+ORDER BY 
+    CASE availability_confidence 
+        WHEN 'high' THEN 1 
+        WHEN 'medium' THEN 2 
+        WHEN 'low' THEN 3 
+    END,
+    consecutive_scrapes_missing;
+```
+
 ## Best Practices
 
 ### Configuration Management
@@ -476,23 +605,63 @@ ORDER BY time;
 - Test configuration changes in staging first
 - Use `--dry-run` before applying sync operations
 - Maintain backup of working configurations
+- **Test unified extraction** after configuration changes
 
 ### Data Integrity
 - Monitor availability confidence distributions
 - Set up alerts for sudden drops in animal counts
 - Regularly verify API filtering is working correctly
 - Check that new animals get proper confidence scoring
+- **Validate image association accuracy** for unified extraction
 
 ### Security
 - Use environment variables for sensitive data
 - Rotate database credentials regularly
 - Monitor for unusual access patterns
 - Keep scraper dependencies updated
+- **Monitor browser automation security** for Selenium-based scrapers
+
+### Performance Optimization
+- **Monitor unified extraction performance** vs. legacy methods
+- Set appropriate rate limits for browser automation
+- Use headless browser mode for better performance
+- Monitor memory usage during browser automation
+- **Optimize lazy loading trigger patterns** based on website behavior
+
+### Error Recovery
+- **Test fallback mechanisms** from unified to legacy extraction
+- Monitor partial failure detection accuracy
+- Validate error recovery doesn't affect existing data
+- Set up alerts for consistent extraction method failures
+- **Document website structure changes** that may affect unified extraction
 
 ### Documentation
 - Document any custom modifications to scrapers
 - Keep runbooks updated for common issues
 - Document performance tuning decisions
 - Maintain incident response procedures
+- **Document unified extraction selector strategies** for each organization
+- **Maintain troubleshooting guides** for image association issues
 
-This guide provides a comprehensive foundation for managing weekly scraping operations in production. Adapt the monitoring thresholds and alert frequencies based on your specific needs and organization requirements.
+### Production Readiness Checklist
+
+**Before deploying new scrapers**:
+- [ ] Unified extraction tested with real website data
+- [ ] Image association accuracy validated
+- [ ] Fallback to legacy method confirmed working
+- [ ] Session tracking validated
+- [ ] Quality scoring algorithms tested
+- [ ] Error boundaries and recovery tested
+- [ ] Performance benchmarks established
+- [ ] Monitoring and alerting configured
+
+**Weekly operations review**:
+- [ ] Check unified extraction success rates
+- [ ] Verify image association quality
+- [ ] Review availability confidence distributions
+- [ ] Validate session tracking consistency
+- [ ] Monitor data quality trends
+- [ ] Review error logs for extraction issues
+- [ ] Performance comparison: unified vs. legacy methods
+
+This enhanced guide provides comprehensive coverage for managing the modern, production-ready scraping system with unified DOM extraction, advanced availability management, and robust monitoring capabilities. Adapt the monitoring thresholds and procedures based on your specific operational requirements and organization needs.

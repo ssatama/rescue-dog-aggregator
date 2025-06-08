@@ -195,3 +195,220 @@ These migrations add:
 - JSONB metrics and performance columns to `scrape_logs` table
 - Appropriate indexes for efficient querying
 - Default values for existing records
+
+## Advanced Standardization Features
+
+### Language Detection and Multilingual Support
+
+The system now includes automatic language detection for international rescue organizations:
+
+```python
+# Automatic language detection
+def detect_language(text: str) -> str:
+    """Detect language of animal description text."""
+    # Uses langdetect library for automatic detection
+    # Supports major European languages: en, es, fr, de, it, nl, etc.
+    return detected_language or 'en'  # Default to English
+```
+
+**Language Field Usage**:
+- `language` field stores detected language code (ISO 639-1)
+- Enables language-specific text processing
+- Supports multilingual search and filtering
+- Preserves original language content for authenticity
+
+### Enhanced Breed Mapping
+
+The breed standardization system includes comprehensive mapping:
+
+**Breed Normalization Examples**:
+```python
+breed_mappings = {
+    # Mix variations
+    "lab mix": "Labrador Retriever Mix",
+    "pitt bull mix": "Pit Bull Mix", 
+    "shepherd mix": "German Shepherd Mix",
+    
+    # Regional variations
+    "alsatian": "German Shepherd",
+    "grey hound": "Greyhound",
+    
+    # Size descriptors
+    "small terrier": "Terrier (Small)",
+    "large spaniel": "Spaniel (Large)",
+    
+    # Multi-language support
+    "perro sin raza": "Mixed Breed",  # Spanish
+    "croisé": "Mixed Breed",          # French
+    "mischling": "Mixed Breed"        # German
+}
+```
+
+**Breed Group Classifications**:
+- **Sporting**: Retrievers, Pointers, Setters, Spaniels
+- **Hound**: Beagles, Bloodhounds, Greyhounds, Basset Hounds
+- **Working**: Rottweilers, Boxers, Great Danes, Mastiffs
+- **Terrier**: Bull Terriers, Jack Russell, Yorkshire Terrier
+- **Toy**: Chihuahuas, Pugs, Maltese, Pomeranians
+- **Non-Sporting**: Bulldogs, Poodles, Dalmatians
+- **Herding**: German Shepherds, Border Collies, Australian Shepherds
+- **Mixed**: Any combination or unknown pure breed
+- **Unknown**: Cannot be determined from available information
+
+### Advanced Age Processing
+
+Enhanced age standardization handles complex descriptions:
+
+**Age Pattern Recognition**:
+```python
+age_patterns = {
+    # Numerical patterns
+    r"(\d+)\s+years?\s+old": lambda m: int(m.group(1)) * 12,
+    r"(\d+)\s+months?\s+old": lambda m: int(m.group(1)),
+    r"(\d+\.5)\s+years?": lambda m: int(float(m.group(1)) * 12),
+    
+    # Descriptive patterns
+    r"puppy|puppies": 6,      # Average puppy age
+    r"young|juvenile": 18,    # Young adult
+    r"adult": 48,             # Middle age
+    r"senior|elderly": 96,    # Senior dog
+    
+    # Multi-language patterns
+    r"cachorro": 6,           # Spanish: puppy
+    r"joven": 18,             # Spanish: young
+    r"adulto": 48,            # Spanish: adult
+    r"anciano": 96            # Spanish: senior
+}
+```
+
+**Age Categories**:
+- **Puppy**: 0-12 months
+- **Young**: 1-3 years (12-36 months)
+- **Adult**: 3-7 years (36-84 months)
+- **Senior**: 7+ years (84+ months)
+
+### Size Standardization with Weight Integration
+
+Enhanced size mapping includes weight-based classification:
+
+**Size Determination Logic**:
+```python
+def determine_size(weight_kg: float = None, size_text: str = None) -> str:
+    """Determine standardized size from weight or description."""
+    
+    # Weight-based classification (most accurate)
+    if weight_kg:
+        if weight_kg < 5: return "Tiny"
+        elif weight_kg < 15: return "Small"
+        elif weight_kg < 30: return "Medium"
+        elif weight_kg < 45: return "Large"
+        else: return "Extra Large"
+    
+    # Text-based classification (fallback)
+    if size_text:
+        size_lower = size_text.lower()
+        if any(term in size_lower for term in ['tiny', 'teacup', 'mini']):
+            return "Tiny"
+        elif any(term in size_lower for term in ['small', 'little', 'compact']):
+            return "Small"
+        elif any(term in size_lower for term in ['medium', 'mid-size', 'average']):
+            return "Medium"
+        elif any(term in size_lower for term in ['large', 'big']):
+            return "Large"
+        elif any(term in size_lower for term in ['extra large', 'giant', 'massive']):
+            return "Extra Large"
+    
+    return "Unknown"
+```
+
+### Image Processing and Standardization
+
+Image handling includes comprehensive processing:
+
+**Image Standardization Pipeline**:
+1. **URL Validation**: Verify image URLs are accessible
+2. **Format Detection**: Identify image format (JPEG, PNG, WebP)
+3. **Cloudinary Upload**: Upload to CDN with transformations
+4. **Fallback Preservation**: Keep original URLs for error recovery
+5. **Quality Assessment**: Evaluate image quality and completeness
+
+**Image Transformations**:
+```python
+cloudinary_transforms = {
+    'thumbnail': 'w_300,h_300,c_fill,g_auto,q_auto,f_auto',
+    'detail': 'w_800,h_600,c_fit,q_auto,f_auto',
+    'card': 'w_400,h_300,c_fill,g_auto,q_auto,f_auto'
+}
+```
+
+### Standardization Quality Validation
+
+Quality validation ensures standardization effectiveness:
+
+**Validation Checks**:
+```python
+def validate_standardization_quality(animal_data: dict) -> dict:
+    """Validate quality of standardized data."""
+    
+    quality_issues = []
+    
+    # Breed validation
+    if animal_data.get('standardized_breed') == 'Unknown' and animal_data.get('breed'):
+        quality_issues.append('breed_not_standardized')
+    
+    # Age validation
+    if not animal_data.get('age_min_months') and animal_data.get('age_text'):
+        quality_issues.append('age_not_parsed')
+    
+    # Size validation
+    if animal_data.get('standardized_size') == 'Unknown' and animal_data.get('size'):
+        quality_issues.append('size_not_standardized')
+    
+    return {
+        'quality_score': calculate_quality_score(animal_data),
+        'issues': quality_issues,
+        'completeness': calculate_completeness(animal_data)
+    }
+```
+
+## Data Flow and Processing
+
+### Standardization Pipeline
+
+1. **Raw Data Extraction**: Scrapers collect original data from websites
+2. **Language Detection**: Automatic language identification
+3. **Field Standardization**: Apply breed, age, and size mapping
+4. **Quality Assessment**: Calculate completeness and accuracy scores
+5. **Image Processing**: Upload and optimize images via Cloudinary
+6. **Database Storage**: Store both original and standardized data
+7. **Availability Tracking**: Initialize confidence and session tracking
+
+### Error Handling and Recovery
+
+**Standardization Error Recovery**:
+- Preserve original data when standardization fails
+- Log standardization errors for analysis
+- Provide fallback values for critical fields
+- Mark quality issues for manual review
+
+**Data Consistency Checks**:
+- Validate age ranges are logical (min ≤ max)
+- Ensure breed groups match standardized breeds
+- Verify size categories align with weight data
+- Check language detection accuracy
+
+### Performance Optimization
+
+**Caching and Efficiency**:
+- Cache frequent breed mappings in memory
+- Batch standardization operations
+- Index standardized fields for fast querying
+- Use JSONB for flexible property storage
+
+**Monitoring and Metrics**:
+- Track standardization success rates
+- Monitor quality score distributions
+- Alert on declining standardization accuracy
+- Performance metrics for processing time
+
+This comprehensive standardization system ensures data quality and consistency across all rescue organizations while preserving original information for transparency and debugging purposes.
