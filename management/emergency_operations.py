@@ -5,6 +5,8 @@ Provides operational commands for emergency recovery, rollback procedures,
 and data integrity management during scraper failures.
 """
 
+from utils.config_loader import ConfigLoader
+from config import DB_CONFIG
 import argparse
 import json
 import logging
@@ -14,13 +16,9 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 import psycopg2
-from psycopg2.extras import RealDictCursor
 
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from config import DB_CONFIG
-from utils.config_loader import ConfigLoader
 
 
 class EmergencyOperations:
@@ -53,9 +51,9 @@ class EmergencyOperations:
             # Check active scrapers
             cursor.execute(
                 """
-                SELECT COUNT(*) 
-                FROM scrape_logs 
-                WHERE status = 'running' 
+                SELECT COUNT(*)
+                FROM scrape_logs
+                WHERE status = 'running'
                 AND started_at >= %s
             """,
                 (datetime.now() - timedelta(hours=4),),
@@ -67,8 +65,8 @@ class EmergencyOperations:
             # Check recent failures (last 24 hours)
             cursor.execute(
                 """
-                SELECT COUNT(*) 
-                FROM scrape_logs 
+                SELECT COUNT(*)
+                FROM scrape_logs
                 WHERE status IN ('error', 'warning')
                 AND started_at >= %s
             """,
@@ -81,8 +79,8 @@ class EmergencyOperations:
             # Calculate total scrapes for failure rate
             cursor.execute(
                 """
-                SELECT COUNT(*) 
-                FROM scrape_logs 
+                SELECT COUNT(*)
+                FROM scrape_logs
                 WHERE started_at >= %s
             """,
                 (datetime.now() - timedelta(hours=24),),
@@ -115,7 +113,8 @@ class EmergencyOperations:
             critical_errors = []
             for row in cursor.fetchall():
                 critical_errors.append(
-                    {"organization": row[0], "error": row[1], "timestamp": row[2]}
+                    {"organization": row[0],
+                        "error": row[1], "timestamp": row[2]}
                 )
 
             status["critical_errors"] = critical_errors
@@ -151,7 +150,8 @@ class EmergencyOperations:
 
         except Exception as e:
             self.logger.error(f"Error during emergency stop: {e}")
-            return {"success": False, "error": str(e), "timestamp": datetime.now()}
+            return {"success": False, "error": str(
+                e), "timestamp": datetime.now()}
 
     def emergency_disable_organization(
         self, organization_id: int, reason: str
@@ -171,7 +171,8 @@ class EmergencyOperations:
                 f"EMERGENCY DISABLE: Organization {organization_id} - {reason}"
             )
 
-            success = self._disable_organization_scrapers(organization_id, reason)
+            success = self._disable_organization_scrapers(
+                organization_id, reason)
 
             return {
                 "success": success,
@@ -181,7 +182,8 @@ class EmergencyOperations:
             }
 
         except Exception as e:
-            self.logger.error(f"Error disabling organization {organization_id}: {e}")
+            self.logger.error(
+                f"Error disabling organization {organization_id}: {e}")
             return {
                 "success": False,
                 "organization_id": organization_id,
@@ -189,7 +191,8 @@ class EmergencyOperations:
                 "timestamp": datetime.now(),
             }
 
-    def execute_emergency_recovery(self, organization_id: int) -> Dict[str, Any]:
+    def execute_emergency_recovery(
+            self, organization_id: int) -> Dict[str, Any]:
         """
         Execute complete emergency recovery workflow for an organization.
 
@@ -265,7 +268,8 @@ class EmergencyOperations:
                 "completed_at": datetime.now(),
             }
 
-            self.logger.warning(f"EMERGENCY RECOVERY COMPLETED: {recovery_summary}")
+            self.logger.warning(
+                f"EMERGENCY RECOVERY COMPLETED: {recovery_summary}")
 
             return {
                 "success": True,
@@ -305,8 +309,8 @@ class EmergencyOperations:
             # Mark all running scrapes as 'stopped'
             cursor.execute(
                 """
-                UPDATE scrape_logs 
-                SET status = 'stopped', 
+                UPDATE scrape_logs
+                SET status = 'stopped',
                     completed_at = %s,
                     error_message = 'Emergency stop initiated'
                 WHERE status = 'running'
@@ -327,7 +331,8 @@ class EmergencyOperations:
             self.logger.error(f"Error stopping scrapers: {e}")
             return {"stopped": 0, "failed": 1, "error": str(e)}
 
-    def _disable_organization_scrapers(self, organization_id: int, reason: str) -> bool:
+    def _disable_organization_scrapers(
+            self, organization_id: int, reason: str) -> bool:
         """Disable scraping for a specific organization."""
         try:
             # This would integrate with the config system to disable the organization
@@ -339,14 +344,16 @@ class EmergencyOperations:
             # Stop any running scrapes for this organization
             cursor.execute(
                 """
-                UPDATE scrape_logs 
+                UPDATE scrape_logs
                 SET status = 'stopped',
                     completed_at = %s,
                     error_message = %s
-                WHERE organization_id = %s 
+                WHERE organization_id = %s
                 AND status = 'running'
             """,
-                (datetime.now(), f"Emergency disable: {reason}", organization_id),
+                (datetime.now(),
+                 f"Emergency disable: {reason}",
+                 organization_id),
             )
 
             conn.commit()
@@ -356,7 +363,8 @@ class EmergencyOperations:
             return True
 
         except Exception as e:
-            self.logger.error(f"Error disabling organization {organization_id}: {e}")
+            self.logger.error(
+                f"Error disabling organization {organization_id}: {e}")
             return False
 
     def _check_recovery_operations(self) -> Dict[str, Any]:
@@ -370,7 +378,8 @@ class EmergencyOperations:
             "operations": [],
         }
 
-    def _validate_operation_safety(self, organization_id: int) -> Dict[str, Any]:
+    def _validate_operation_safety(
+            self, organization_id: int) -> Dict[str, Any]:
         """
         Validate that it's safe to perform emergency operations.
 
@@ -389,10 +398,10 @@ class EmergencyOperations:
 
             cursor.execute(
                 """
-                SELECT COUNT(*) 
-                FROM scrape_logs 
+                SELECT COUNT(*)
+                FROM scrape_logs
                 WHERE organization_id = %s
-                AND status = 'running' 
+                AND status = 'running'
                 AND started_at >= %s
             """,
                 (organization_id, datetime.now() - timedelta(hours=2)),
@@ -400,13 +409,14 @@ class EmergencyOperations:
 
             active_scrapers = cursor.fetchone()[0] or 0
             if active_scrapers > 0:
-                reasons.append(f"Active scraper running ({active_scrapers} found)")
+                reasons.append(
+                    f"Active scraper running ({active_scrapers} found)")
 
             # Check for recent backup
             cursor.execute(
                 """
-                SELECT COUNT(*) 
-                FROM scrape_logs 
+                SELECT COUNT(*)
+                FROM scrape_logs
                 WHERE organization_id = %s
                 AND status = 'backup'
                 AND started_at >= %s
@@ -433,7 +443,8 @@ class EmergencyOperations:
 
         except Exception as e:
             self.logger.error(f"Error validating operation safety: {e}")
-            return {"safe": False, "reasons": [f"Safety validation error: {str(e)}"]}
+            return {"safe": False, "reasons": [
+                f"Safety validation error: {str(e)}"]}
 
     def _get_db_connection(self):
         """Get database connection."""
@@ -455,7 +466,8 @@ class RollbackManager:
         """Initialize rollback manager."""
         self.logger = logging.getLogger(f"{__name__}.RollbackManager")
 
-    def get_available_snapshots(self, organization_id: int) -> List[Dict[str, Any]]:
+    def get_available_snapshots(
+            self, organization_id: int) -> List[Dict[str, Any]]:
         """
         Get available data snapshots for rollback.
 
@@ -487,7 +499,8 @@ class RollbackManager:
                     f"Are you sure you want to rollback organization {organization_id} to snapshot {snapshot_id}? (yes/no): "
                 )
                 if confirmation.lower() != "yes":
-                    return {"success": False, "reason": "Operation cancelled by user"}
+                    return {"success": False,
+                            "reason": "Operation cancelled by user"}
             except EOFError:
                 # Handle non-interactive environments
                 return {
@@ -521,7 +534,8 @@ class RollbackManager:
                     "backup_id": backup_result.get("backup_id"),
                 }
 
-            rollback_result = self._rollback_scrape_session(organization_id, session_id)
+            rollback_result = self._rollback_scrape_session(
+                organization_id, session_id)
             rollback_result["backup_id"] = backup_result.get("backup_id")
 
             return rollback_result
@@ -532,7 +546,8 @@ class RollbackManager:
             )
             return {"success": False, "error": str(e)}
 
-    def create_data_backup(self, organization_id: int, reason: str) -> Dict[str, Any]:
+    def create_data_backup(self, organization_id: int,
+                           reason: str) -> Dict[str, Any]:
         """
         Create emergency data backup for an organization.
 
@@ -554,16 +569,16 @@ class RollbackManager:
             # Get recent successful scrape sessions as snapshots
             cursor.execute(
                 """
-                SELECT 
+                SELECT
                     CONCAT('snap_', TO_CHAR(started_at, 'YYYYMMDD_HH24MISS')) as snapshot_id,
                     started_at as created_at,
                     organization_id,
                     dogs_found as animals_count,
                     id as scrape_session_id
-                FROM scrape_logs 
-                WHERE organization_id = %s 
+                FROM scrape_logs
+                WHERE organization_id = %s
                 AND status = 'success'
-                ORDER BY started_at DESC 
+                ORDER BY started_at DESC
                 LIMIT 10
             """,
                 (organization_id,),
@@ -621,8 +636,8 @@ class RollbackManager:
             # Remove animals added after the snapshot time
             cursor.execute(
                 """
-                DELETE FROM animals 
-                WHERE organization_id = %s 
+                DELETE FROM animals
+                WHERE organization_id = %s
                 AND created_at > %s
             """,
                 (organization_id, snapshot_time),
@@ -630,14 +645,15 @@ class RollbackManager:
 
             animals_removed = cursor.rowcount
 
-            # Restore availability status for animals that existed at snapshot time
+            # Restore availability status for animals that existed at snapshot
+            # time
             cursor.execute(
                 """
-                UPDATE animals 
+                UPDATE animals
                 SET status = 'available',
                     consecutive_scrapes_missing = 0,
                     availability_confidence = 'high'
-                WHERE organization_id = %s 
+                WHERE organization_id = %s
                 AND created_at <= %s
             """,
                 (organization_id, snapshot_time),
@@ -675,9 +691,9 @@ class RollbackManager:
 
             cursor.execute(
                 """
-                SELECT id FROM scrape_logs 
-                WHERE organization_id = %s 
-                ORDER BY started_at DESC 
+                SELECT id FROM scrape_logs
+                WHERE organization_id = %s
+                ORDER BY started_at DESC
                 LIMIT 1
             """,
                 (organization_id,),
@@ -708,8 +724,8 @@ class RollbackManager:
             # Get the scrape session details
             cursor.execute(
                 """
-                SELECT started_at, dogs_added, dogs_updated 
-                FROM scrape_logs 
+                SELECT started_at, dogs_added, dogs_updated
+                FROM scrape_logs
                 WHERE id = %s AND organization_id = %s
             """,
                 (session_id, organization_id),
@@ -727,8 +743,8 @@ class RollbackManager:
             # Remove animals added in this session
             cursor.execute(
                 """
-                DELETE FROM animals 
-                WHERE organization_id = %s 
+                DELETE FROM animals
+                WHERE organization_id = %s
                 AND created_at >= %s
                 AND last_scraped_at >= %s
             """,
@@ -740,10 +756,10 @@ class RollbackManager:
             # Reset animals that were updated in this session
             cursor.execute(
                 """
-                UPDATE animals 
+                UPDATE animals
                 SET last_seen_at = %s,
                     consecutive_scrapes_missing = consecutive_scrapes_missing + 1
-                WHERE organization_id = %s 
+                WHERE organization_id = %s
                 AND last_scraped_at >= %s
                 AND created_at < %s
             """,
@@ -760,7 +776,7 @@ class RollbackManager:
             # Mark the scrape log as rolled back
             cursor.execute(
                 """
-                UPDATE scrape_logs 
+                UPDATE scrape_logs
                 SET status = 'rolled_back',
                     error_message = 'Session rolled back due to emergency recovery'
                 WHERE id = %s
@@ -788,7 +804,8 @@ class RollbackManager:
             self.logger.error(f"Error rolling back session {session_id}: {e}")
             return {"success": False, "error": str(e)}
 
-    def _create_backup(self, organization_id: int, reason: str) -> Dict[str, Any]:
+    def _create_backup(self, organization_id: int,
+                       reason: str) -> Dict[str, Any]:
         """Create a data backup for an organization."""
         try:
             backup_id = (
@@ -807,14 +824,16 @@ class RollbackManager:
             )
             animals_count = cursor.fetchone()[0]
 
-            # Create backup entry (this would be a proper backup table in production)
+            # Create backup entry (this would be a proper backup table in
+            # production)
             cursor.execute(
                 """
-                INSERT INTO scrape_logs 
+                INSERT INTO scrape_logs
                 (organization_id, started_at, status, dogs_found, error_message)
                 VALUES (%s, %s, 'backup', %s, %s)
             """,
-                (organization_id, datetime.now(), animals_count, f"Backup: {reason}"),
+                (organization_id, datetime.now(),
+                 animals_count, f"Backup: {reason}"),
             )
 
             conn.commit()
@@ -837,7 +856,8 @@ class RollbackManager:
             }
 
         except Exception as e:
-            self.logger.error(f"Error creating backup for org {organization_id}: {e}")
+            self.logger.error(
+                f"Error creating backup for org {organization_id}: {e}")
             return {"backup_id": None, "error": str(e)}
 
     def _get_db_connection(self):
@@ -927,7 +947,8 @@ class DataRecoveryManager:
         """
         return self._restore_from_backup(organization_id, backup_id)
 
-    def validate_data_consistency(self, organization_id: int) -> Dict[str, Any]:
+    def validate_data_consistency(
+            self, organization_id: int) -> Dict[str, Any]:
         """
         Validate data consistency after recovery.
 
@@ -948,8 +969,8 @@ class DataRecoveryManager:
             # Check for missing required fields
             cursor.execute(
                 """
-                SELECT COUNT(*) FROM animals 
-                WHERE organization_id = %s 
+                SELECT COUNT(*) FROM animals
+                WHERE organization_id = %s
                 AND (name IS NULL OR name = '' OR external_id IS NULL OR external_id = '')
             """,
                 (organization_id,),
@@ -960,10 +981,10 @@ class DataRecoveryManager:
             cursor.execute(
                 """
                 SELECT COUNT(*) FROM (
-                    SELECT external_id, COUNT(*) 
-                    FROM animals 
-                    WHERE organization_id = %s 
-                    GROUP BY external_id 
+                    SELECT external_id, COUNT(*)
+                    FROM animals
+                    WHERE organization_id = %s
+                    GROUP BY external_id
                     HAVING COUNT(*) > 1
                 ) duplicates
             """,
@@ -984,10 +1005,10 @@ class DataRecoveryManager:
             # Check for corrupted records (basic heuristics)
             cursor.execute(
                 """
-                SELECT COUNT(*) FROM animals 
-                WHERE organization_id = %s 
+                SELECT COUNT(*) FROM animals
+                WHERE organization_id = %s
                 AND (
-                    LENGTH(name) > 100 OR 
+                    LENGTH(name) > 100 OR
                     LENGTH(breed) > 100 OR
                     created_at > NOW() OR
                     updated_at < created_at
@@ -1011,7 +1032,8 @@ class DataRecoveryManager:
 
             # Calculate integrity score (1.0 = perfect)
             total_issues = missing_fields + duplicate_ids + corrupted_records
-            integrity_score = max(0.0, 1.0 - (total_issues / max(total_animals, 1)))
+            integrity_score = max(
+                0.0, 1.0 - (total_issues / max(total_animals, 1)))
 
             return {
                 "corrupted_records": corrupted_records,
@@ -1037,9 +1059,9 @@ class DataRecoveryManager:
             # Set default names for animals without names
             cursor.execute(
                 """
-                UPDATE animals 
+                UPDATE animals
                 SET name = CONCAT('Animal_', id)
-                WHERE organization_id = %s 
+                WHERE organization_id = %s
                 AND (name IS NULL OR name = '')
             """,
                 (organization_id,),
@@ -1050,9 +1072,9 @@ class DataRecoveryManager:
             # Set default external_ids for animals without them
             cursor.execute(
                 """
-                UPDATE animals 
+                UPDATE animals
                 SET external_id = CONCAT('auto_', id)
-                WHERE organization_id = %s 
+                WHERE organization_id = %s
                 AND (external_id IS NULL OR external_id = '')
             """,
                 (organization_id,),
@@ -1085,11 +1107,11 @@ class DataRecoveryManager:
             # Find duplicates and keep the most recent one
             cursor.execute(
                 """
-                DELETE FROM animals a1 
-                USING animals a2 
-                WHERE a1.organization_id = %s 
+                DELETE FROM animals a1
+                USING animals a2
+                WHERE a1.organization_id = %s
                 AND a2.organization_id = %s
-                AND a1.external_id = a2.external_id 
+                AND a1.external_id = a2.external_id
                 AND a1.id < a2.id
             """,
                 (organization_id, organization_id),
@@ -1145,10 +1167,10 @@ class DataRecoveryManager:
             # Count animals with images
             cursor.execute(
                 """
-                SELECT COUNT(DISTINCT a.id) 
-                FROM animals a 
+                SELECT COUNT(DISTINCT a.id)
+                FROM animals a
                 LEFT JOIN animal_images ai ON a.id = ai.animal_id
-                WHERE a.organization_id = %s 
+                WHERE a.organization_id = %s
                 AND ai.id IS NOT NULL
             """,
                 (organization_id,),
@@ -1159,7 +1181,7 @@ class DataRecoveryManager:
             cursor.execute(
                 """
                 SELECT COUNT(DISTINCT external_id)::float / COUNT(*)
-                FROM animals 
+                FROM animals
                 WHERE organization_id = %s
             """,
                 (organization_id,),
@@ -1220,7 +1242,8 @@ class EmergencyOperationsCommands:
 
     def rollback_organization(self, organization_id: int) -> Dict[str, Any]:
         """Execute rollback command for organization."""
-        return self.emergency_ops.rollback_manager.rollback_last_scrape(organization_id)
+        return self.emergency_ops.rollback_manager.rollback_last_scrape(
+            organization_id)
 
     def create_backup(
         self, organization_id: int, reason: str = "Manual backup"
@@ -1304,7 +1327,8 @@ def main():
 
         elif args.command == "rollback":
             result = cli.rollback_organization(args.organization_id)
-            print(f"🔄 Rollback Results for Organization {args.organization_id}:")
+            print(
+                f"🔄 Rollback Results for Organization {args.organization_id}:")
             print(json.dumps(result, indent=2, default=str))
 
         elif args.command == "backup":
@@ -1313,7 +1337,8 @@ def main():
             print(json.dumps(result, indent=2, default=str))
 
         elif args.command == "recover":
-            result = cli.emergency_ops.execute_emergency_recovery(args.organization_id)
+            result = cli.emergency_ops.execute_emergency_recovery(
+                args.organization_id)
             print(
                 f"🚨 Emergency Recovery Results for Organization {args.organization_id}:"
             )

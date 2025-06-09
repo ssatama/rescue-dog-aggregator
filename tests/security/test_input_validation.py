@@ -1,3 +1,4 @@
+from api.main import app  # Fixed import path
 import os
 import sys
 
@@ -6,14 +7,19 @@ from fastapi.testclient import TestClient
 
 # Add project root to path
 sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(
+                os.path.abspath(__file__))))
 )
 
-from api.main import app  # Fixed import path
 
 client = TestClient(app)
 
 
+@pytest.mark.slow
+@pytest.mark.database
+@pytest.mark.api
 class TestSecurity:
     """Test security aspects of the application."""
 
@@ -37,16 +43,19 @@ class TestSecurity:
             ], f"Unexpected status for search input: {malicious_input}"
 
             # Test breed parameter
-            response = client.get(f"/api/animals?standardized_breed={malicious_input}")
+            response = client.get(
+                f"/api/animals?standardized_breed={malicious_input}")
             assert response.status_code in [
                 200,
                 422,
             ], f"Unexpected status for breed input: {malicious_input}"
 
-            # If response is 200, verify it returns valid JSON and doesn't crash
+            # If response is 200, verify it returns valid JSON and doesn't
+            # crash
             if response.status_code == 200:
                 data = response.json()
-                assert isinstance(data, list), "Response should be a list of animals"
+                assert isinstance(
+                    data, list), "Response should be a list of animals"
 
     def test_parameter_limits(self):
         """Test that API parameters have reasonable limits."""
@@ -71,7 +80,8 @@ class TestSecurity:
         """Test CORS configuration is reasonable."""
         response = client.options("/api/animals")
         # Should handle OPTIONS request without crashing
-        assert response.status_code in [200, 405], "Should handle OPTIONS request"
+        assert response.status_code in [
+            200, 405], "Should handle OPTIONS request"
 
     def test_no_sensitive_data_exposure(self):
         """Test that sensitive data is not exposed in API responses."""

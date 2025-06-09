@@ -1,7 +1,7 @@
 import shutil
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 import yaml
@@ -10,6 +10,9 @@ from utils.config_loader import ConfigLoader
 from utils.config_scraper_runner import ConfigScraperRunner
 
 
+@pytest.mark.slow
+@pytest.mark.file_io
+@pytest.mark.integration
 class TestConfigScraperRunnerIntegration:
     """Integration tests for ConfigScraperRunner using real config files."""
 
@@ -68,7 +71,8 @@ class TestConfigScraperRunnerIntegration:
             loader = ConfigLoader()
             runner = ConfigScraperRunner(loader)
 
-            # This should fail gracefully when trying to import non-existent module
+            # This should fail gracefully when trying to import non-existent
+            # module
             result = runner.run_scraper("test-org", sync_first=False)
 
             assert result["success"] is False

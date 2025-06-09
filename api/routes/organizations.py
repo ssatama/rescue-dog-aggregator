@@ -23,9 +23,9 @@ def get_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
     try:
         cursor.execute(
             """
-            SELECT id, name, website_url, description, country, city, 
+            SELECT id, name, website_url, description, country, city,
                    logo_url, social_media, active, created_at, updated_at
-            FROM organizations 
+            FROM organizations
             WHERE active = true
             ORDER BY name
         """
@@ -35,7 +35,8 @@ def get_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
 
         # Parse social_media JSON strings if needed
         for org in organizations:
-            if org.get("social_media") and isinstance(org["social_media"], str):
+            if org.get("social_media") and isinstance(
+                    org["social_media"], str):
                 try:
                     org["social_media"] = json.loads(org["social_media"])
                 except json.JSONDecodeError:
@@ -45,7 +46,9 @@ def get_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
 
         return organizations
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error: {str(e)}")
 
 
 @router.get("/{organization_id}", response_model=Organization)
@@ -60,9 +63,9 @@ def get_organization(
     try:
         cursor.execute(
             """
-            SELECT id, name, website_url, description, country, city, 
+            SELECT id, name, website_url, description, country, city,
                    logo_url, social_media, active, created_at, updated_at
-            FROM organizations 
+            FROM organizations
             WHERE id = %s AND active = true
         """,
             (organization_id,),
@@ -71,14 +74,17 @@ def get_organization(
         organization = cursor.fetchone()
 
         if not organization:
-            raise HTTPException(status_code=404, detail="Organization not found")
+            raise HTTPException(
+                status_code=404,
+                detail="Organization not found")
 
         # Parse social_media JSON string if needed
         if organization.get("social_media") and isinstance(
             organization["social_media"], str
         ):
             try:
-                organization["social_media"] = json.loads(organization["social_media"])
+                organization["social_media"] = json.loads(
+                    organization["social_media"])
             except json.JSONDecodeError:
                 organization["social_media"] = {}
         elif organization.get("social_media") is None:
@@ -89,4 +95,6 @@ def get_organization(
         # Re-raise HTTP exceptions (like 404)
         raise
     except psycopg2.Error as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error: {str(e)}")

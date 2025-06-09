@@ -8,6 +8,7 @@ import yaml
 from utils.config_loader import ConfigLoader, ConfigLoadError
 
 
+@pytest.mark.file_io
 class TestConfigErrorHandling:
     """Test error handling in config system."""
 

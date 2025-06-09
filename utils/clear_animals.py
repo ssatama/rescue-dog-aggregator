@@ -1,14 +1,14 @@
 # clear_animals.py (renamed from clear_dogs.py)
 
+from config import DB_CONFIG
+from dotenv import load_dotenv
+import psycopg2
 import os
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import psycopg2
-from dotenv import load_dotenv
 
 # Import configuration
-from config import DB_CONFIG
 
 
 def connect_to_database():
@@ -52,7 +52,8 @@ def clear_animals():
         print(f"Current number of animals in database: {count_before}")
 
         # Ask for confirmation
-        confirm = input("Are you sure you want to delete all animals? (yes/no): ")
+        confirm = input(
+            "Are you sure you want to delete all animals? (yes/no): ")
         if confirm.lower() != "yes":
             print("Operation cancelled.")
             return

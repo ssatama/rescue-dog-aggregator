@@ -1,6 +1,5 @@
 import json
 import logging
-from functools import lru_cache
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -68,7 +67,8 @@ class ConfigLoader:
                 }
         return self._schema_cache
 
-    def _validate_against_schema(self, config_data: dict, config_file: Path) -> None:
+    def _validate_against_schema(
+            self, config_data: dict, config_file: Path) -> None:
         """Validate config data against JSON schema."""
         try:
             schema = self._load_schema()
@@ -79,7 +79,8 @@ class ConfigLoader:
                 f"Schema validation failed for {config_file}: {e.message}"
             )
         except Exception as e:
-            self.logger.warning(f"Schema validation error for {config_file}: {e}")
+            self.logger.warning(
+                f"Schema validation error for {config_file}: {e}")
 
     def _load_yaml_file(self, file_path: Path) -> dict:
         """Load and parse a YAML configuration file."""
@@ -108,7 +109,8 @@ class ConfigLoader:
                 f"Config ID '{actual_id}' does not match filename '{expected_id}' in {config_file}"
             )
 
-    def _validate_schema_version(self, config_data: dict, config_file: Path) -> None:
+    def _validate_schema_version(
+            self, config_data: dict, config_file: Path) -> None:
         """Validate schema version is supported."""
         schema_version = config_data.get("schema_version", "1.0")
         supported_versions = ["1.0"]
@@ -154,7 +156,8 @@ class ConfigLoader:
         # Create and validate Pydantic model
         try:
             config = OrganizationConfig(**config_data)
-            self.logger.info(f"Successfully loaded config for organization '{org_id}'")
+            self.logger.info(
+                f"Successfully loaded config for organization '{org_id}'")
             return config
         except Exception as e:
             raise ConfigValidationError(
@@ -176,7 +179,8 @@ class ConfigLoader:
         configs = {}
 
         if not self.config_dir.exists():
-            self.logger.warning(f"Config directory does not exist: {self.config_dir}")
+            self.logger.warning(
+                f"Config directory does not exist: {self.config_dir}")
             return configs
 
         for config_file in self.config_dir.glob("*.yaml"):

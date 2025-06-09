@@ -3,6 +3,8 @@ Script to migrate existing images to Cloudinary.
 Run this ONCE after implementing the upload flow.
 """
 
+from utils.cloudinary_service import CloudinaryService
+import config
 import logging
 import os
 import sys
@@ -16,8 +18,6 @@ load_dotenv()
 # Add the project root to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import config
-from utils.cloudinary_service import CloudinaryService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -35,8 +35,8 @@ def migrate_existing_images():
         cursor.execute(
             """
             SELECT id, name, primary_image_url, organization_id
-            FROM animals 
-            WHERE primary_image_url IS NOT NULL 
+            FROM animals
+            WHERE primary_image_url IS NOT NULL
             AND primary_image_url NOT LIKE '%cloudinary.com%'
             ORDER BY id
         """
@@ -49,7 +49,8 @@ def migrate_existing_images():
 
         for animal_id, name, image_url, org_id in animals:
             # Get organization name
-            cursor.execute("SELECT name FROM organizations WHERE id = %s", (org_id,))
+            cursor.execute(
+                "SELECT name FROM organizations WHERE id = %s", (org_id,))
             org_result = cursor.fetchone()
             org_name = org_result[0] if org_result else "unknown"
 
@@ -64,7 +65,7 @@ def migrate_existing_images():
                 # Update database with Cloudinary URL and store original
                 cursor.execute(
                     """
-                    UPDATE animals 
+                    UPDATE animals
                     SET primary_image_url = %s, original_image_url = %s
                     WHERE id = %s
                 """,
@@ -77,14 +78,15 @@ def migrate_existing_images():
                 # Store original URL in fallback column
                 cursor.execute(
                     """
-                    UPDATE animals 
+                    UPDATE animals
                     SET original_image_url = %s
                     WHERE id = %s
                 """,
                     (image_url, animal_id),
                 )
 
-                logger.warning(f"❌ Failed to migrate {name}, kept original URL")
+                logger.warning(
+                    f"❌ Failed to migrate {name}, kept original URL")
 
             # Commit every 10 records
             if animal_id % 10 == 0:

@@ -1,14 +1,14 @@
+from utils.standardization import standardize_age, standardize_breed
 import os
 import sys
 
-import pytest
-
 # Add project root to path
 sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(
+                os.path.abspath(__file__))))
 )
-
-from utils.standardization import standardize_age, standardize_breed
 
 
 class TestDataConsistency:
@@ -25,7 +25,8 @@ class TestDataConsistency:
 
         for original in test_breeds:
             first_pass = standardize_breed(original)
-            second_pass = standardize_breed(first_pass[0])  # Standardize the result
+            second_pass = standardize_breed(
+                first_pass[0])  # Standardize the result
 
             assert (
                 first_pass[0] == second_pass[0]
@@ -62,7 +63,8 @@ class TestDataConsistency:
             results = [standardize_age(age) for age in age_group]
 
             # All should produce the same age category
-            categories = [r["age_category"] for r in results if r["age_category"]]
+            categories = [r["age_category"]
+                          for r in results if r["age_category"]]
             if len(categories) > 1:
                 # Allow some flexibility - puppies might be categorized slightly differently
                 # but should be consistent within reasonable bounds
@@ -175,7 +177,8 @@ class TestDataConsistency:
 
     def test_descriptive_age_consistency(self):
         """Test that descriptive age terms are handled consistently."""
-        # Based on the existing test_standardization.py, these are the terms that actually work
+        # Based on the existing test_standardization.py, these are the terms
+        # that actually work
         descriptive_ages = [
             ("puppy", "Puppy"),
             ("young adult", "Young"),  # Changed from "young" to "young adult"

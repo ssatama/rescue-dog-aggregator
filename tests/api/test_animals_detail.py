@@ -6,6 +6,9 @@ from api.main import app
 client = TestClient(app)
 
 
+@pytest.mark.slow
+@pytest.mark.database
+@pytest.mark.api
 class TestAnimalDetail:
     def test_get_animal_by_valid_id(self):
         # First fetch one animal to know a valid ID

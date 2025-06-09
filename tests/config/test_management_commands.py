@@ -1,4 +1,3 @@
-import sys
 from io import StringIO
 from unittest.mock import Mock, patch
 
@@ -7,6 +6,9 @@ import pytest
 from management.config_commands import ConfigManager
 
 
+@pytest.mark.slow
+@pytest.mark.integration
+@pytest.mark.management
 class TestManagementCommands:
     """Test the management command interface."""
 
@@ -139,7 +141,7 @@ class TestManagementCommands:
         # Location
         mock_location = Mock()
         mock_location.country = "US"
-        
+
         mock_location.city = "Test City"
         mock_metadata.location = mock_location
 

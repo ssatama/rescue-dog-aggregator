@@ -1,6 +1,5 @@
 import shutil
 import tempfile
-from io import StringIO
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -8,11 +7,12 @@ import pytest
 import yaml
 
 from utils.config_loader import ConfigLoader, ConfigValidationError
-from utils.config_models import OrganizationConfig
-from utils.config_scraper_runner import ConfigScraperRunner
 from utils.org_sync import OrganizationSyncManager
 
 
+@pytest.mark.slow
+@pytest.mark.file_io
+@pytest.mark.integration
 class TestConfigIntegration:
     """Test the complete config-driven workflow integration."""
 
@@ -80,7 +80,8 @@ class TestConfigIntegration:
     def test_config_validation_errors(self, temp_config_dir):
         """Test config validation catches errors."""
         # Create invalid config
-        invalid_config_dir = Path(temp_config_dir) / "configs" / "organizations"
+        invalid_config_dir = Path(temp_config_dir) / \
+            "configs" / "organizations"
         invalid_config = {
             "schema_version": "1.0",
             "id": "invalid-org",
@@ -149,7 +150,8 @@ class TestConfigIntegration:
 
             # Mock database operations
             with patch("utils.org_sync.get_db_cursor") as mock_cursor:
-                mock_cursor.return_value.fetchone.return_value = [1]  # Return org ID
+                mock_cursor.return_value.fetchone.return_value = {
+                    'id': 1}  # Return org ID as dict for RealDictCursor
 
                 # Create scraper with config
                 scraper = TestScraper(config_id="test-org")
@@ -191,7 +193,8 @@ class TestConfigIntegration:
                         scraper_class.__name__ == config.scraper.class_name
                     ), f"Class name mismatch for {config_id}: got {scraper_class.__name__}, expected {config.scraper.class_name}"
 
-                    # Try to instantiate it (with mocked org lookup to avoid DB dependency)
+                    # Try to instantiate it (with mocked org lookup to avoid DB
+                    # dependency)
                     with patch("utils.org_sync.get_db_connection") as mock_conn:
                         mock_cursor = Mock()
                         mock_cursor.fetchone.return_value = [1]  # Mock org ID
@@ -201,7 +204,8 @@ class TestConfigIntegration:
 
                         try:
                             # This tests the actual instantiation path
-                            result = runner.run_scraper(config_id, sync_first=False)
+                            result = runner.run_scraper(
+                                config_id, sync_first=False)
 
                             # Should not fail due to import errors
                             if not result[
@@ -216,14 +220,17 @@ class TestConfigIntegration:
                                 f"Failed to import scraper for {config_id}: {e}"
                             )
                         except Exception as e:
-                            # Other errors are OK (missing DB, etc.) - we just want to test imports
+                            # Other errors are OK (missing DB, etc.) - we just
+                            # want to test imports
                             if "No module named" in str(e):
                                 pytest.fail(
                                     f"Module import failed for {config_id}: {e}"
                                 )
-                            # Else: expected errors like DB connection issues are fine
+                            # Else: expected errors like DB connection issues
+                            # are fine
 
         except Exception as e:
             if "No module named" in str(e):
-                pytest.fail(f"Config integration test failed with import error: {e}")
+                pytest.fail(
+                    f"Config integration test failed with import error: {e}")
             raise

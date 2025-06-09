@@ -1,3 +1,4 @@
+from utils.cloudinary_service import CloudinaryService
 import os
 import sys
 from unittest.mock import Mock, patch
@@ -6,12 +7,16 @@ import pytest
 
 # Add project root to path
 sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(
+                os.path.abspath(__file__))))
 )
 
-from utils.cloudinary_service import CloudinaryService
 
-
+@pytest.mark.slow
+@pytest.mark.network
+@pytest.mark.integration
 class TestCloudinaryIntegration:
     """Test the complete image upload flow from scraper to frontend."""
 

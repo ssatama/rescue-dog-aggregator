@@ -1,16 +1,15 @@
 # database/db_update.py
 
+from config import DB_CONFIG
 import os
 import sys
 
 import psycopg2
-from psycopg2 import sql
 
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import configuration
-from config import DB_CONFIG
 
 
 def connect_to_database():
@@ -46,7 +45,7 @@ def update_schema(conn):
         try:
             cursor.execute(
                 """
-                ALTER TABLE dogs 
+                ALTER TABLE dogs
                 ADD COLUMN IF NOT EXISTS language VARCHAR(10) DEFAULT 'en'
             """
             )

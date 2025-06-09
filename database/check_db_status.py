@@ -4,6 +4,7 @@ Database status checker for Rescue Dog Aggregator.
 Verifies the current database structure matches expectations.
 """
 
+from config import DB_CONFIG
 import os
 import sys
 
@@ -11,7 +12,6 @@ import psycopg2
 
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import DB_CONFIG
 
 
 def check_database_status():
@@ -42,8 +42,8 @@ def check_database_status():
         # Check which tables exist
         cursor.execute(
             """
-            SELECT tablename 
-            FROM pg_tables 
+            SELECT tablename
+            FROM pg_tables
             WHERE schemaname = 'public'
             ORDER BY tablename;
         """
@@ -76,8 +76,8 @@ def check_database_status():
         print("\n📊 Animal types in database:")
         cursor.execute(
             """
-            SELECT animal_type, COUNT(*) 
-            FROM animals 
+            SELECT animal_type, COUNT(*)
+            FROM animals
             GROUP BY animal_type
         """
         )

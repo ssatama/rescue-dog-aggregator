@@ -23,5 +23,6 @@ class Organization(BaseModel):
     social_media: Dict[str, str] = Field(default_factory=dict)
 
     class Config:
-        # ignore any extra keys (so if we ever back‐fill more later, tests won’t break)
+        # ignore any extra keys (so if we ever back‐fill more later, tests
+        # won’t break)
         extra = "ignore"

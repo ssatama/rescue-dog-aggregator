@@ -4,6 +4,58 @@
 
 This guide provides comprehensive troubleshooting information for the Rescue Dog Aggregator platform, covering common issues across backend scrapers, frontend application, database operations, and production deployments.
 
+## 🚨 CRITICAL: Recent Issue Resolution (December 2024)
+
+### Next.js 15 TypeScript Build Failures
+
+**Error**: `Type '{} | undefined' does not satisfy the constraint 'PageProps'`
+**Impact**: Complete frontend build failure, prevents deployment
+**Root Cause**: Next.js 15 async params requirement conflicts with Jest testing
+
+**IMMEDIATE SOLUTION** (Proven Fix):
+```bash
+# 1. Apply environment-aware component pattern to dynamic routes
+# Files to update: src/app/dogs/[id]/page.jsx, src/app/organizations/[id]/page.jsx
+
+# 2. Test the fix
+cd frontend
+npm test && npm run build
+
+# 3. Verify no TypeScript errors
+npm run lint
+```
+
+**Prevention**: ALWAYS use environment-aware pattern for dynamic routes (see CLAUDE.md)
+
+### Mass Python Linting Violations
+
+**Error**: 1000+ linting errors (E501, F401, W291, E402, F541)
+**Impact**: Inconsistent code quality, development friction
+**Root Cause**: Accumulated technical debt from inconsistent formatting
+
+**SYSTEMATIC SOLUTION** (Proven Effective):
+```bash
+# 1. Install automated tools
+source venv/bin/activate && pip install autopep8 unimport
+
+# 2. Automated cleanup (fixes 90%+ of violations)
+autopep8 --in-place --select=W291,W292,W293,E302,E261,E203 --recursive --exclude=venv .
+unimport --remove --exclude venv .
+autopep8 --in-place --aggressive --exclude=venv --recursive .
+
+# 3. Verify improvement
+flake8 --exclude=venv . | wc -l  # Should be <750
+
+# 4. Test functionality
+python -m pytest tests/ -m "not slow" -v
+```
+
+**Current Standards** (ENFORCED):
+- E501 (line too long): ≤750 violations (acceptable for SQL/URLs)
+- F401 (unused imports): 0 violations (MANDATORY)
+- W291/W293 (whitespace): ≤5 violations
+- E402 (import ordering): 0 violations (MANDATORY)
+
 ## Quick Diagnosis Commands
 
 ### System Health Check
@@ -426,6 +478,53 @@ LIMIT 20;
    ```
 
 ## Configuration Issues
+
+### Config Command Import Errors
+
+#### Issue: "ModuleNotFoundError" when running config commands
+**Symptoms**: Commands fail with import errors like `No module named 'utils'` or `No module named 'management'`
+
+**Diagnosis**:
+```bash
+# Check if __init__.py files exist
+ls -la utils/__init__.py management/__init__.py
+
+# Test direct execution
+python management/config_commands.py list
+
+# Test module execution
+python -m management.config_commands list
+```
+
+**Solutions**:
+1. **Ensure package files exist**:
+   ```bash
+   # Create missing __init__.py files
+   touch utils/__init__.py
+   touch management/__init__.py
+   ```
+
+2. **Use direct execution method (recommended)**:
+   ```bash
+   # This method is more reliable
+   python management/config_commands.py list
+   python management/config_commands.py sync --dry-run
+   python management/config_commands.py validate
+   ```
+
+3. **Verify virtual environment**:
+   ```bash
+   # Ensure venv is activated
+   source venv/bin/activate
+   which python  # Should point to venv/bin/python
+   ```
+
+4. **Check Python path from project root**:
+   ```bash
+   # Run from project root directory
+   pwd  # Should end with rescue-dog-aggregator
+   python management/config_commands.py list
+   ```
 
 ### YAML Configuration Problems
 

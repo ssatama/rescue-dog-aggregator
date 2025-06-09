@@ -6,6 +6,9 @@ from api.main import app
 client = TestClient(app)
 
 
+@pytest.mark.slow
+@pytest.mark.database
+@pytest.mark.api
 class TestRandomAnimals:
     def test_default_limit(self):
         """GET /api/animals/random should return 3 dogs by default."""

@@ -5,6 +5,8 @@ import pytest
 from utils.db import connect_to_database
 
 
+@pytest.mark.slow
+@pytest.mark.database
 class TestDatabaseUtils:
     @patch("utils.db.psycopg2")
     def test_connect_to_database_success(self, mock_psycopg2):

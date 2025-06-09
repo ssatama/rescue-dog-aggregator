@@ -9,10 +9,11 @@ This module provides functions to standardize dog data including:
 """
 
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 # Define breed mapping dictionary - comprehensive list covering common breeds
-# Format: "Original breed pattern": ("Standardized breed", "Breed group", "Size estimate")
+# Format: "Original breed pattern": ("Standardized breed", "Breed group",
+# "Size estimate")
 BREED_MAPPING = {
     # Sporting Group
     "labrador": ("Labrador Retriever", "Sporting", "Large"),
@@ -164,7 +165,8 @@ def standardize_breed(breed_text: str) -> Tuple[str, str, Optional[str]]:
         if original in clean_text:
             # If we find a mix indicator, adjust the standardized breed name
             if (
-                any(mix_word in clean_text for mix_word in ["mix", "cross", "mixed"])
+                any(mix_word in clean_text for mix_word in [
+                    "mix", "cross", "mixed"])
                 and " Mix" not in standardized[0]
             ):
                 return f"{standardized[0]} Mix", "Mixed", standardized[2]
@@ -184,11 +186,13 @@ def standardize_breed(breed_text: str) -> Tuple[str, str, Optional[str]]:
         return "Mixed Breed", "Mixed", None
 
     # If no match found, use the original with Unknown group
-    capitalized_breed = " ".join(word.capitalize() for word in clean_text.split())
+    capitalized_breed = " ".join(word.capitalize()
+                                 for word in clean_text.split())
     return capitalized_breed, "Unknown", None
 
 
-def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optional[int]]:
+def parse_age_text(
+        age_text: str) -> Tuple[Optional[str], Optional[int], Optional[int]]:
     """
     Parse age text into a standardized age category and month range.
 
@@ -203,13 +207,13 @@ def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optiona
 
     age_text = str(age_text).lower().strip()
 
-    # Define age categories
-    categories = {
-        "Puppy": (0, 12),  # 0-12 months
-        "Young": (12, 36),  # 1-3 years
-        "Adult": (36, 96),  # 3-8 years
-        "Senior": (96, 240),  # 8+ years
-    }
+    # Define age categories (defined but not currently used)
+    # categories = {
+    #     "Puppy": (0, 12),  # 0-12 months
+    #     "Young": (12, 36),  # 1-3 years
+    #     "Adult": (36, 96),  # 3-8 years
+    #     "Senior": (96, 240),  # 8+ years
+    # }
 
     # Check for years pattern (e.g., "2 years", "2.5 y/o")
     years_match = re.search(
@@ -246,7 +250,8 @@ def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optiona
         return "Puppy", months, min(months + 2, 12)
 
     # Check for descriptive terms
-    if any(term in age_text for term in ["puppy", "pup", "baby", "young puppy"]):
+    if any(term in age_text for term in [
+           "puppy", "pup", "baby", "young puppy"]):
         return "Puppy", 2, 10
     elif any(
         term in age_text for term in ["young adult", "adolescent", "juvenile", "teen"]
@@ -345,11 +350,13 @@ def apply_standardization(animal_data: Dict) -> Dict:
 
     # Standardize breed
     if "breed" in result and result["breed"]:
-        std_breed, breed_group, size_estimate = standardize_breed(result["breed"])
+        std_breed, breed_group, size_estimate = standardize_breed(
+            result["breed"])
         result["standardized_breed"] = std_breed
         result["breed_group"] = breed_group
 
-        # Set size estimate if we don't already have a size and we got an estimate
+        # Set size estimate if we don't already have a size and we got an
+        # estimate
         if "size" not in result or not result["size"]:
             result["standardized_size"] = size_estimate
 

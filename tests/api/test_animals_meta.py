@@ -6,6 +6,9 @@ from api.main import app  # adjust import if your FastAPI app lives elsewhere
 client = TestClient(app)
 
 
+@pytest.mark.slow
+@pytest.mark.database
+@pytest.mark.api
 class TestAnimalsMeta:
     @pytest.mark.parametrize(
         "endpoint, key",
@@ -44,7 +47,8 @@ class TestAnimalsMeta:
             pytest.skip("No countries present to test regions")
         country = countries[0]
 
-        resp = client.get(f"/api/animals/meta/available_regions?country={country}")
+        resp = client.get(
+            f"/api/animals/meta/available_regions?country={country}")
         assert resp.status_code == 200, resp.text
         regions = resp.json()
         assert isinstance(regions, list)

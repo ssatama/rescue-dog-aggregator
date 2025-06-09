@@ -11,7 +11,7 @@ import { getOrganizationById, getOrganizationDogs } from '../../../services/orga
 import SocialMediaLinks from '../../../components/ui/SocialMediaLinks';
 import { reportError } from '../../../utils/logger';
 
-export default function OrganizationDetailClient({ params }) {
+export default function OrganizationDetailClient({ params = {} }) {
   const urlParams = useParams();
   const organizationId = params?.id || urlParams?.id;
   

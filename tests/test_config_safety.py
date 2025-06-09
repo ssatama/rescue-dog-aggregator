@@ -1,4 +1,3 @@
-import getpass
 import logging
 import os
 import sys
@@ -120,8 +119,10 @@ def test_config_warns_but_allows_test_db_when_not_testing_if_explicit(caplog):
             assert config.DB_CONFIG["user"] == "explicit_user"
 
             # <<< Check captured logs instead of mock >>>
-            assert any("SAFETY WARNING" in record.message for record in caplog.records)
-            assert any(record.levelname == "WARNING" for record in caplog.records)
+            assert any(
+                "SAFETY WARNING" in record.message for record in caplog.records)
+            assert any(
+                record.levelname == "WARNING" for record in caplog.records)
             # <<< End log check >>>
 
         except SystemExit:

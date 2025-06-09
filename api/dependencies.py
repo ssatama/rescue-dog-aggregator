@@ -1,5 +1,6 @@
 # api/dependencies.py
 
+from config import DB_CONFIG  # DB_CONFIG is imported here
 import logging
 import os
 import sys
@@ -11,10 +12,12 @@ from psycopg2.extras import RealDictCursor
 
 # Add project root to path so we can import config
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import DB_CONFIG  # DB_CONFIG is imported here
 
-# Ensure logger is configured (config.py might do this, but being explicit is safe)
-logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
+
+# Ensure logger is configured (config.py might do this, but being explicit
+# is safe)
+logging.basicConfig(level=logging.INFO,
+                    format="%(levelname)s:%(name)s:%(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -48,7 +51,8 @@ def get_db_cursor() -> Generator[RealDictCursor, None, None]:
         # --- END DEBUG LOGGING ---
 
         conn = psycopg2.connect(**conn_params)
-        logger.debug(f"Cursor Connection opened: {id(conn)}")  # Changed level to debug
+        # Changed level to debug
+        logger.debug(f"Cursor Connection opened: {id(conn)}")
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         logger.debug(
             f"Cursor created: {id(cursor)} for connection {id(conn)}"
@@ -88,7 +92,8 @@ def get_db_cursor() -> Generator[RealDictCursor, None, None]:
         )
     finally:
         if cursor:
-            logger.debug(f"Cursor closing: {id(cursor)}")  # Changed level to debug
+            # Changed level to debug
+            logger.debug(f"Cursor closing: {id(cursor)}")
             cursor.close()
         if conn:
             logger.debug(
@@ -97,7 +102,8 @@ def get_db_cursor() -> Generator[RealDictCursor, None, None]:
             conn.close()
 
 
-def get_database_connection() -> Generator[psycopg2.extensions.connection, None, None]:
+def get_database_connection(
+) -> Generator[psycopg2.extensions.connection, None, None]:
     """
     Dependency that provides a database connection.
     Used for monitoring endpoints that need direct connection access.
@@ -121,7 +127,8 @@ def get_database_connection() -> Generator[psycopg2.extensions.connection, None,
         logger.debug(f"Monitoring Connection opened: {id(conn)}")
         yield conn
 
-        logger.debug(f"Committing transaction for monitoring connection {id(conn)}")
+        logger.debug(
+            f"Committing transaction for monitoring connection {id(conn)}")
         conn.commit()
 
     except HTTPException as http_exc:

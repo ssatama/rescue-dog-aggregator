@@ -1,5 +1,6 @@
+from utils.config_models import OrganizationConfig
 import json
-import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -9,14 +10,14 @@ import yaml
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from utils.config_models import OrganizationConfig
-
 
 def test_config_models():
     """Test that our config models work with the YAML file we created."""
 
     # Load the YAML config (path relative to project root)
-    config_path = project_root / "configs" / "organizations" / "pets-in-turkey.yaml"
+    config_path = (
+        project_root / "configs" / "organizations" / "pets-in-turkey.yaml"
+    )
 
     with open(config_path, "r") as f:
         config_data = yaml.safe_load(f)
@@ -37,7 +38,7 @@ def test_config_models():
         # Test validation
         warnings = config.validate_business_rules()
         if warnings:
-            print(f"\n⚠️  Business rule warnings:")
+            print("\n⚠️  Business rule warnings:")
             for warning in warnings:
                 print(f"  - {warning}")
         else:
@@ -55,18 +56,13 @@ def test_config_models():
 
 if __name__ == "__main__":
     # Install required dependency first
-    import subprocess
-    import sys
-
     try:
-        import pydantic
-        import yaml
+        import pydantic  # noqa: F401
     except ImportError:
         print("Installing required dependencies...")
         subprocess.check_call(
             [sys.executable, "-m", "pip", "install", "pydantic", "PyYAML"]
         )
-        import pydantic
-        import yaml
+        import pydantic  # noqa: F401
 
     test_config_models()

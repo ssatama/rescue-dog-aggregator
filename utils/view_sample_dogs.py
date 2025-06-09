@@ -1,14 +1,15 @@
 # view_sample_dogs.py
 
+from config import DB_CONFIG
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import psycopg2
 from dotenv import load_dotenv
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 # Import configuration
-from config import DB_CONFIG
 
 
 def connect_to_database():

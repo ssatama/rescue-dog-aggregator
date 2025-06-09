@@ -1,6 +1,6 @@
 # api/main.py
 
-from datetime import datetime
+import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -40,8 +40,6 @@ app.add_middleware(
 )
 
 # Log CORS configuration on startup
-import logging
-
 logger = logging.getLogger(__name__)
 logger.info(f"CORS configured for {ENVIRONMENT} environment:")
 logger.info(f"  Allowed origins: {ALLOWED_ORIGINS}")

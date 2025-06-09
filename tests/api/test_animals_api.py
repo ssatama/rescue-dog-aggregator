@@ -1,14 +1,13 @@
 import json
 from datetime import datetime
-from unittest.mock import MagicMock, patch  # Keep mock if used elsewhere in the class
 
 import pytest
 from fastapi.testclient import TestClient
 
-# Import the FastAPI app
-from api.main import app
 
-
+@pytest.mark.slow
+@pytest.mark.database
+@pytest.mark.api
 class TestAnimalsAPI:
     # Sample animal data (useful for potential future tests or reference)
     sample_animal = {
@@ -70,12 +69,14 @@ class TestAnimalsAPI:
             # Or handle the empty case if it's valid under some conditions
             print("Warning: No animals returned from /api/animals")
 
-    def test_get_animals_with_filters(self, client: TestClient):  # Add client fixture
+    # Add client fixture
+    def test_get_animals_with_filters(self, client: TestClient):
         """Test GET /api/animals with various filters."""
         # Test basic breeds filter
         response = client.get("/api/animals?breed=Lab")
         assert response.status_code == 200
-        # Potential improvement: Assert that results actually contain 'Lab' if possible
+        # Potential improvement: Assert that results actually contain 'Lab' if
+        # possible
 
         # Test sex filter
         response = client.get("/api/animals?sex=Male")
@@ -83,7 +84,8 @@ class TestAnimalsAPI:
         # Potential improvement: Assert that results are actually 'Male'
 
         # Test multiple filters
-        response = client.get("/api/animals?size=Large&sex=Male&status=available")
+        response = client.get(
+            "/api/animals?size=Large&sex=Male&status=available")
         assert response.status_code == 200
 
         # Test standardized size if supported
@@ -99,7 +101,8 @@ class TestAnimalsAPI:
 
     def test_get_animal_by_id(self, client: TestClient):  # Add client fixture
         """Test GET /api/animals/{id} or /api/dogs/{id} endpoint."""
-        response = client.get("/api/animals?limit=1")  # Get just one animal to test
+        response = client.get(
+            "/api/animals?limit=1")  # Get just one animal to test
         assert response.status_code == 200
         animals = response.json()
 
@@ -113,7 +116,8 @@ class TestAnimalsAPI:
         # Try the primary endpoint first
         detail_response = client.get(f"/api/animals/{animal_id}")
 
-        # Fallback to legacy if needed (optional, depends if you want to keep supporting it)
+        # Fallback to legacy if needed (optional, depends if you want to keep
+        # supporting it)
         if detail_response.status_code == 404:
             print(
                 f"Note: /api/animals/{animal_id} not found, trying /api/dogs/{animal_id}"
@@ -144,7 +148,8 @@ class TestAnimalsAPI:
 
     def test_get_random_animals(self, client: TestClient):
         """Test GET /api/animals/random endpoint."""
-        response = client.get("/api/animals/random?limit=2")  # Request 2 random animals
+        response = client.get(
+            "/api/animals/random?limit=2")  # Request 2 random animals
         assert response.status_code == 200  # Check route exists and is successful
         data = response.json()
         assert isinstance(data, list)
@@ -159,7 +164,8 @@ class TestAnimalsAPI:
             )  # /random uses Animal model, not AnimalWithImages
             assert "organization_id" in first_dog  # Check for organization ID
 
-    def test_get_animals_includes_organization_social_media(self, client: TestClient):
+    def test_get_animals_includes_organization_social_media(
+            self, client: TestClient):
         """Test that animals list response includes organization social_media field."""
         response = client.get("/api/animals?limit=5")
         assert response.status_code == 200

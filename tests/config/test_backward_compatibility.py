@@ -5,6 +5,7 @@ import pytest
 from scrapers.base_scraper import BaseScraper
 
 
+@pytest.mark.file_io
 class TestBackwardCompatibility:
     """Test that config changes don't break existing functionality."""
 
@@ -115,7 +116,8 @@ class TestBackwardCompatibility:
 
             mock_config = Mock()
             mock_config.name = "Pets in Turkey"
-            mock_config.get_scraper_config_dict.return_value = {"rate_limit_delay": 1.0}
+            mock_config.get_scraper_config_dict.return_value = {
+                "rate_limit_delay": 1.0}
 
             mock_loader.return_value.load_config.return_value = mock_config
             mock_sync.return_value.sync_organization.return_value = (2, False)
@@ -124,7 +126,8 @@ class TestBackwardCompatibility:
             with patch(
                 "utils.config_loader.ConfigLoader.load_config", return_value=mock_config
             ):
-                scraper_config = PetsInTurkeyScraper(config_id="pets-in-turkey")
+                scraper_config = PetsInTurkeyScraper(
+                    config_id="pets-in-turkey")
 
             assert scraper_config.organization_id == 2
             assert scraper_config.organization_name == "Pets in Turkey"

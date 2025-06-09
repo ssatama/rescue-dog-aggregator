@@ -1,9 +1,7 @@
 # utils/db.py
 
-import os
 
 import psycopg2
-from dotenv import load_dotenv
 
 from config import DB_CONFIG
 

@@ -1,16 +1,16 @@
 # database/db_setup.py
 
+from config import DB_CONFIG
 import os
 import sys
 
 import psycopg2
-from psycopg2 import errors, sql
+from psycopg2 import errors
 
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import configuration
-from config import DB_CONFIG
 
 
 def connect_to_database():
@@ -31,7 +31,8 @@ def connect_to_database():
         return conn
 
     except psycopg2.OperationalError as e:
-        # Handle case where database doesn't exist (optional, depends on workflow)
+        # Handle case where database doesn't exist (optional, depends on
+        # workflow)
         if f'database "{DB_CONFIG["database"]}" does not exist' in str(e):
             print(
                 f"Database '{DB_CONFIG['database']}' does not exist. Please create it first."

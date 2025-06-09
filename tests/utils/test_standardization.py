@@ -8,6 +8,8 @@ from utils.standardization import (
 )
 
 
+@pytest.mark.slow
+@pytest.mark.computation
 class TestBreedStandardization:
     def test_exact_breed_match(self):
         """Test exact matches against the breed mapping dictionary."""
@@ -32,7 +34,8 @@ class TestBreedStandardization:
             "Mixed",
             "Large",
         )
-        # Change the expectation for "golden mix" to match your current implementation
+        # Change the expectation for "golden mix" to match your current
+        # implementation
         assert (
             standardize_breed("golden mix")[1] == "Mixed"
         )  # Just check that it's recognized as Mixed type
@@ -41,7 +44,8 @@ class TestBreedStandardization:
     def test_unknown_breed(self):
         """Test handling of unknown breeds."""
         result = standardize_breed("unknown breed")
-        assert result[0] == "Unknown"  # Change from "Unknown Breed" to "Unknown"
+        # Change from "Unknown Breed" to "Unknown"
+        assert result[0] == "Unknown"
         assert result[1] == "Unknown"
         assert result[2] is None
 
@@ -64,6 +68,8 @@ class TestBreedStandardization:
         assert standardize_breed(None) == ("Unknown", "Unknown", None)
 
 
+@pytest.mark.slow
+@pytest.mark.computation
 class TestAgeStandardization:
     def test_years_format(self):
         """Test parsing of age expressed in years."""
@@ -120,6 +126,8 @@ class TestAgeStandardization:
         assert result["age_category"] is None
 
 
+@pytest.mark.slow
+@pytest.mark.computation
 class TestSizeEstimation:
     def test_size_from_known_breed(self):
         """Test size estimation from known breeds."""
@@ -140,10 +148,15 @@ class TestSizeEstimation:
         assert get_size_from_breed("Some Random Breed") is None
 
 
+@pytest.mark.slow
+@pytest.mark.computation
 class TestFullStandardization:
     def test_apply_standardization_complete_data(self):
         """Test full standardization with complete data."""
-        animal_data = {"breed": "labrador retriever", "age_text": "2 years", "size": ""}
+        animal_data = {
+            "breed": "labrador retriever",
+            "age_text": "2 years",
+            "size": ""}
         result = apply_standardization(animal_data)
 
         assert result["standardized_breed"] == "Labrador Retriever"
@@ -171,4 +184,5 @@ class TestFullStandardization:
         result = apply_standardization(animal_data)
 
         assert result["standardized_breed"] == "Labrador Retriever"
-        assert result["standardized_size"] == "Medium"  # Should keep existing value
+        # Should keep existing value
+        assert result["standardized_size"] == "Medium"

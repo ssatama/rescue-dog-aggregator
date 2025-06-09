@@ -6,14 +6,14 @@ This script reads all dog records from the database, applies standardization rul
 and updates the standardized fields.
 """
 
+from utils.standardization import standardize_age, standardize_breed
+from utils.db import connect_to_database
 import json
 import os
 import sys
 
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.db import connect_to_database
-from utils.standardization import standardize_age, standardize_breed
 
 
 def apply_standardization_to_database():
@@ -30,7 +30,7 @@ def apply_standardization_to_database():
         print("Fetching all dogs from database...")
         cursor.execute(
             """
-            SELECT id, breed, age_text, properties FROM animals 
+            SELECT id, breed, age_text, properties FROM animals
             WHERE animal_type = 'dog'
         """
         )
@@ -53,13 +53,15 @@ def apply_standardization_to_database():
 
             # Parse properties json
             try:
-                properties = json.loads(properties_json) if properties_json else {}
-            except:
+                properties = json.loads(
+                    properties_json) if properties_json else {}
+            except BaseException:
                 properties = {}
 
             # Standardize breed
             if breed:
-                std_breed, breed_group, size_estimate = standardize_breed(breed)
+                std_breed, breed_group, size_estimate = standardize_breed(
+                    breed)
                 updates.append("standardized_breed = %s")
                 params.append(std_breed)
 
@@ -68,9 +70,11 @@ def apply_standardization_to_database():
                 updates.append("properties = %s")
                 params.append(json.dumps(properties))
 
-                # Only set standardized_size if we have an estimate and current value is NULL
+                # Only set standardized_size if we have an estimate and current
+                # value is NULL
                 cursor.execute(
-                    "SELECT standardized_size FROM animals WHERE id = %s", (dog_id,)
+                    "SELECT standardized_size FROM animals WHERE id = %s", (
+                        dog_id,)
                 )
                 current_size = cursor.fetchone()[0]
 
@@ -96,7 +100,8 @@ def apply_standardization_to_database():
                 params.append(dog_id)
 
                 # Build update query
-                query = "UPDATE animals SET " + ", ".join(updates) + " WHERE id = %s"
+                query = "UPDATE animals SET " + \
+                    ", ".join(updates) + " WHERE id = %s"
 
                 # Execute update
                 cursor.execute(query, params)

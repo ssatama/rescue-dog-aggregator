@@ -1,5 +1,7 @@
 # scrapers/pets_in_turkey/run.py
 
+from scrapers.pets_in_turkey.dogs_scraper import PetsInTurkeyScraper
+from config import DB_CONFIG
 import os
 import sys
 
@@ -8,13 +10,14 @@ from dotenv import load_dotenv
 
 # Add the project root directory to Python path
 sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(
+                os.path.abspath(__file__))))
 )
 
-from config import DB_CONFIG
 
 # Import the scrapers and config
-from scrapers.pets_in_turkey.dogs_scraper import PetsInTurkeyScraper
 
 
 def get_organization_id(organization_name="Pets in Turkey"):
@@ -37,7 +40,8 @@ def get_organization_id(organization_name="Pets in Turkey"):
 
         # Query for the organization ID
         cursor.execute(
-            "SELECT id FROM organizations WHERE name = %s", (organization_name,)
+            "SELECT id FROM organizations WHERE name = %s", (
+                organization_name,)
         )
 
         result = cursor.fetchone()

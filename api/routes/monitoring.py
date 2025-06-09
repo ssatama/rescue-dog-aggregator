@@ -7,9 +7,7 @@ Provides visibility into scraper performance, failure detection, and system heal
 import logging
 import time
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
-
-import psycopg2
+from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
@@ -66,7 +64,8 @@ async def health_check(db_conn=Depends(get_database_connection)):
         cursor.execute("SELECT 1")
         cursor.fetchone()
         cursor.close()
-        db_response_time = (time.time() - db_start) * 1000  # Convert to milliseconds
+        db_response_time = (time.time() - db_start) * \
+            1000  # Convert to milliseconds
 
         db_status = {
             "status": "connected",
@@ -80,7 +79,10 @@ async def health_check(db_conn=Depends(get_database_connection)):
 
     except Exception as e:
         logger.error(f"Health check database error: {e}")
-        db_status = {"status": "error", "error": str(e), "response_time_ms": None}
+        db_status = {
+            "status": "error",
+            "error": str(e),
+            "response_time_ms": None}
         overall_status = "unhealthy"
 
     return HealthStatus(
@@ -104,8 +106,8 @@ async def get_scraper_status(db_conn=Depends(get_database_connection)):
         # Get all organizations
         cursor.execute(
             """
-            SELECT id, name, created_at 
-            FROM organizations 
+            SELECT id, name, created_at
+            FROM organizations
             ORDER BY name
         """
         )
@@ -119,12 +121,12 @@ async def get_scraper_status(db_conn=Depends(get_database_connection)):
             # Get latest scrape log for this organization
             cursor.execute(
                 """
-                SELECT 
-                    started_at, completed_at, status, dogs_found, 
+                SELECT
+                    started_at, completed_at, status, dogs_found,
                     error_message, duration_seconds, data_quality_score
-                FROM scrape_logs 
-                WHERE organization_id = %s 
-                ORDER BY started_at DESC 
+                FROM scrape_logs
+                WHERE organization_id = %s
+                ORDER BY started_at DESC
                 LIMIT 1
             """,
                 (org_id,),
@@ -135,14 +137,14 @@ async def get_scraper_status(db_conn=Depends(get_database_connection)):
             # Get 24h metrics for this organization
             cursor.execute(
                 """
-                SELECT 
+                SELECT
                     COUNT(*) as total_scrapes,
                     COUNT(*) FILTER (WHERE status IN ('error', 'warning')) as failed_scrapes,
                     AVG(dogs_found) as avg_animals,
                     AVG(duration_seconds) as avg_duration,
                     AVG(data_quality_score) as avg_quality
-                FROM scrape_logs 
-                WHERE organization_id = %s 
+                FROM scrape_logs
+                WHERE organization_id = %s
                 AND started_at >= %s
             """,
                 (org_id, datetime.now() - timedelta(hours=24)),
@@ -188,11 +190,11 @@ async def get_scraper_status(db_conn=Depends(get_database_connection)):
                 # Get recent failure pattern
                 cursor.execute(
                     """
-                    SELECT status, error_message 
-                    FROM scrape_logs 
-                    WHERE organization_id = %s 
+                    SELECT status, error_message
+                    FROM scrape_logs
+                    WHERE organization_id = %s
                     AND status IN ('error', 'warning')
-                    ORDER BY started_at DESC 
+                    ORDER BY started_at DESC
                     LIMIT 5
                 """,
                     (org_id,),
@@ -203,7 +205,8 @@ async def get_scraper_status(db_conn=Depends(get_database_connection)):
                     failure_detection["last_failure_type"] = recent_failures[0][
                         1
                     ]  # error_message
-                    failure_detection["consecutive_failures"] = len(recent_failures)
+                    failure_detection["consecutive_failures"] = len(
+                        recent_failures)
 
             # Build performance metrics
             performance_metrics = {
@@ -267,8 +270,8 @@ async def get_individual_scraper_details(
         # Get organization info
         cursor.execute(
             """
-            SELECT name, created_at 
-            FROM organizations 
+            SELECT name, created_at
+            FROM organizations
             WHERE id = %s
         """,
             (organization_id,),
@@ -276,19 +279,21 @@ async def get_individual_scraper_details(
 
         org_info = cursor.fetchone()
         if not org_info:
-            raise HTTPException(status_code=404, detail="Organization not found")
+            raise HTTPException(
+                status_code=404,
+                detail="Organization not found")
 
         org_name, org_created = org_info
 
         # Get recent scrapes (last 10)
         cursor.execute(
             """
-            SELECT 
+            SELECT
                 started_at, completed_at, status, dogs_found, dogs_added, dogs_updated,
                 error_message, duration_seconds, data_quality_score, detailed_metrics
-            FROM scrape_logs 
-            WHERE organization_id = %s 
-            ORDER BY started_at DESC 
+            FROM scrape_logs
+            WHERE organization_id = %s
+            ORDER BY started_at DESC
             LIMIT 10
         """,
             (organization_id,),
@@ -314,7 +319,7 @@ async def get_individual_scraper_details(
         # Get performance metrics (last 30 days)
         cursor.execute(
             """
-            SELECT 
+            SELECT
                 COUNT(*) as total_scrapes,
                 COUNT(*) FILTER (WHERE status = 'success') as successful_scrapes,
                 AVG(dogs_found) as avg_animals,
@@ -322,8 +327,8 @@ async def get_individual_scraper_details(
                 AVG(data_quality_score) as avg_quality,
                 MIN(dogs_found) as min_animals,
                 MAX(dogs_found) as max_animals
-            FROM scrape_logs 
-            WHERE organization_id = %s 
+            FROM scrape_logs
+            WHERE organization_id = %s
             AND started_at >= %s
         """,
             (organization_id, datetime.now() - timedelta(days=30)),
@@ -344,8 +349,8 @@ async def get_individual_scraper_details(
         cursor.execute(
             """
             SELECT status, error_message, COUNT(*) as count
-            FROM scrape_logs 
-            WHERE organization_id = %s 
+            FROM scrape_logs
+            WHERE organization_id = %s
             AND status IN ('error', 'warning')
             AND started_at >= %s
             GROUP BY status, error_message
@@ -378,12 +383,14 @@ async def get_individual_scraper_details(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting scraper details for org {organization_id}: {e}")
+        logger.error(
+            f"Error getting scraper details for org {organization_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/monitoring/failures")
-async def get_failure_detection_metrics(db_conn=Depends(get_database_connection)):
+async def get_failure_detection_metrics(
+        db_conn=Depends(get_database_connection)):
     """
     Get failure detection metrics and recent failure analysis.
 
@@ -399,12 +406,12 @@ async def get_failure_detection_metrics(db_conn=Depends(get_database_connection)
 
             cursor.execute(
                 """
-                SELECT 
+                SELECT
                     SUM(CASE WHEN error_message LIKE %s THEN 1 ELSE 0 END) as catastrophic_failures,
                     SUM(CASE WHEN error_message LIKE %s THEN 1 ELSE 0 END) as partial_failures,
                     SUM(CASE WHEN (error_message LIKE %s OR error_message LIKE %s) THEN 1 ELSE 0 END) as database_errors,
                     COUNT(*) as total_failures
-                FROM scrape_logs 
+                FROM scrape_logs
                 WHERE status IN ('error', 'warning')
                 AND started_at >= %s
             """,
@@ -433,21 +440,23 @@ async def get_failure_detection_metrics(db_conn=Depends(get_database_connection)
             database_errors = database_errors or 0
             total_failures = total_failures or 0
         else:
-            logger.warning(f"Unexpected failure_counts result: {failure_counts}")
+            logger.warning(
+                f"Unexpected failure_counts result: {failure_counts}")
             catastrophic, partial, database_errors, total_failures = 0, 0, 0, 0
 
         # Get total scrapes for failure rate calculation
         cursor.execute(
             """
-            SELECT COUNT(*) 
-            FROM scrape_logs 
+            SELECT COUNT(*)
+            FROM scrape_logs
             WHERE started_at >= %s
         """,
             (twenty_four_hours_ago,),
         )
 
         total_scrapes_result = cursor.fetchone()
-        total_scrapes = (total_scrapes_result[0] if total_scrapes_result else 0) or 0
+        total_scrapes = (
+            total_scrapes_result[0] if total_scrapes_result else 0) or 0
 
         failure_summary = {
             "catastrophic_failures_24h": catastrophic or 0,
@@ -460,8 +469,8 @@ async def get_failure_detection_metrics(db_conn=Depends(get_database_connection)
         # Get recent failures with context
         cursor.execute(
             """
-            SELECT 
-                sl.started_at, o.name, sl.status, sl.dogs_found, 
+            SELECT
+                sl.started_at, o.name, sl.status, sl.dogs_found,
                 sl.error_message, sl.detailed_metrics
             FROM scrape_logs sl
             JOIN organizations o ON sl.organization_id = o.id
@@ -505,7 +514,8 @@ async def get_failure_detection_metrics(db_conn=Depends(get_database_connection)
                     }
                 )
             except IndexError as e:
-                logger.warning(f"Incomplete failure record: {failure}, error: {e}")
+                logger.warning(
+                    f"Incomplete failure record: {failure}, error: {e}")
                 continue
 
         # Current thresholds configuration
@@ -546,14 +556,14 @@ async def get_performance_metrics(db_conn=Depends(get_database_connection)):
         # Get scraper performance metrics (last 7 days)
         cursor.execute(
             """
-            SELECT 
+            SELECT
                 AVG(duration_seconds) as avg_duration,
                 AVG(data_quality_score) as avg_quality,
                 COUNT(*) FILTER (WHERE status = 'success') as successful,
                 COUNT(*) as total,
                 SUM(dogs_found) as total_animals,
                 AVG(dogs_found) as avg_animals_per_scrape
-            FROM scrape_logs 
+            FROM scrape_logs
             WHERE started_at >= %s
         """,
             (datetime.now() - timedelta(days=7),),
@@ -576,10 +586,10 @@ async def get_performance_metrics(db_conn=Depends(get_database_connection)):
         # Get database connection pool info (basic version)
         cursor.execute(
             """
-            SELECT 
-                state, 
+            SELECT
+                state,
                 COUNT(*) as count
-            FROM pg_stat_activity 
+            FROM pg_stat_activity
             WHERE datname = %s
             GROUP BY state
         """,
@@ -593,9 +603,9 @@ async def get_performance_metrics(db_conn=Depends(get_database_connection)):
         # Get currently running scrapers (approximation)
         cursor.execute(
             """
-            SELECT COUNT(*) 
-            FROM scrape_logs 
-            WHERE status = 'running' 
+            SELECT COUNT(*)
+            FROM scrape_logs
+            WHERE status = 'running'
             AND started_at >= %s
         """,
             (datetime.now() - timedelta(hours=2),),
@@ -673,17 +683,17 @@ async def get_active_alerts(db_conn=Depends(get_database_connection)):
         cursor.execute(
             """
             WITH recent_failures AS (
-                SELECT 
+                SELECT
                     organization_id,
                     COUNT(*) as consecutive_failures,
                     MAX(started_at) as last_failure
-                FROM scrape_logs 
+                FROM scrape_logs
                 WHERE status IN ('error', 'warning')
                 AND started_at >= %s
                 GROUP BY organization_id
                 HAVING COUNT(*) >= 2
             )
-            SELECT 
+            SELECT
                 rf.organization_id, o.name, rf.consecutive_failures, rf.last_failure
             FROM recent_failures rf
             JOIN organizations o ON rf.organization_id = o.id

@@ -1,12 +1,10 @@
 # scrapers/pets_in_turkey/scraper.py
 
-import json
+from scrapers.base_scraper import BaseScraper
 import os
 import re
 import sys
 import time
-
-from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -17,11 +15,13 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 # Add the project root directory to Python path
 sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(
+                os.path.abspath(__file__))))
 )
 
 # Import the base scraper
-from scrapers.base_scraper import BaseScraper
 
 
 class PetsInTurkeyScraper(BaseScraper):
@@ -51,7 +51,8 @@ class PetsInTurkeyScraper(BaseScraper):
             # Legacy mode
             super().__init__(organization_id=organization_id)
         else:
-            raise ValueError("Either organization_id or config_id must be provided")
+            raise ValueError(
+                "Either organization_id or config_id must be provided")
 
         self.base_url = "https://www.petsinturkey.org/dogs"
         self.driver = None
@@ -64,9 +65,12 @@ class PetsInTurkeyScraper(BaseScraper):
             chrome_options.add_argument("--headless")  # Run in headless mode
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
-            chrome_options.add_argument("--disable-gpu")  # Disable GPU for stability
-            chrome_options.add_argument("--disable-extensions")  # Disable extensions
-            chrome_options.add_argument("--window-size=1920,1080")  # Set window size
+            # Disable GPU for stability
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument(
+                "--disable-extensions")  # Disable extensions
+            chrome_options.add_argument(
+                "--window-size=1920,1080")  # Set window size
 
             # Set up the WebDriver
             service = Service(ChromeDriverManager().install())
@@ -139,10 +143,11 @@ class PetsInTurkeyScraper(BaseScraper):
                     for _ in range(5):
                         try:
                             if container.find_element(By.XPATH, ".."):
-                                container = container.find_element(By.XPATH, "..")
+                                container = container.find_element(
+                                    By.XPATH, "..")
                             else:
                                 break
-                        except:
+                        except BaseException:
                             break
 
                     # Extract the container text for analysis
@@ -181,7 +186,8 @@ class PetsInTurkeyScraper(BaseScraper):
                             )
 
                 except Exception as e:
-                    self.logger.error(f"Error processing breed element {idx}: {e}")
+                    self.logger.error(
+                        f"Error processing breed element {idx}: {e}")
 
             self.logger.info(f"Collected data for {len(dogs_data)} dogs")
 
@@ -198,7 +204,9 @@ class PetsInTurkeyScraper(BaseScraper):
                     self.driver.quit()
                     self.logger.info("Selenium WebDriver closed successfully")
                 except Exception as cleanup_error:
-                    self.logger.warning(f"Error during WebDriver cleanup: {cleanup_error}")
+                    self.logger.warning(
+                        f"Error during WebDriver cleanup: {cleanup_error}"
+                    )
                 finally:
                     self.driver = None  # Ensure driver reference is cleared
 
@@ -288,7 +296,8 @@ class PetsInTurkeyScraper(BaseScraper):
             # Find where values start (after all "Adopt Me" lines)
             values_start_idx = adopt_idx
             while (
-                values_start_idx < len(lines) and lines[values_start_idx] == "Adopt Me"
+                values_start_idx < len(
+                    lines) and lines[values_start_idx] == "Adopt Me"
             ):
                 values_start_idx += 1
 
@@ -337,14 +346,16 @@ class PetsInTurkeyScraper(BaseScraper):
                 return dog_data
 
             # For other dogs, analyze the values more carefully
-            # Typically the order is: Breed, Weight, Height (sometimes part of weight), Age, Sex, Neutered
+            # Typically the order is: Breed, Weight, Height (sometimes part of
+            # weight), Age, Sex, Neutered
 
             # First, handle direct attributes
             if "Breed" in attr_map and attr_map["Breed"] < len(values):
                 dog_data["breed"] = values[attr_map["Breed"]]
 
             if height_idx != -1:
-                # If height is a separate line, weight is the previous line and we have to shift ages and sexes
+                # If height is a separate line, weight is the previous line and
+                # we have to shift ages and sexes
                 if "Weight" in attr_map and height_idx > 0:
                     dog_data["properties"]["weight"] = values[height_idx - 1]
                     dog_data["properties"]["height"] = height_value
@@ -371,7 +382,8 @@ class PetsInTurkeyScraper(BaseScraper):
                         r"height:?\s*(\d+\s*cm)", weight_val, re.IGNORECASE
                     )
                     if height_in_weight:
-                        dog_data["properties"]["height"] = height_in_weight.group(0)
+                        dog_data["properties"]["height"] = height_in_weight.group(
+                            0)
                         dog_data["properties"]["weight"] = re.sub(
                             r"height:?\s*\d+\s*cm", "", weight_val, flags=re.IGNORECASE
                         ).strip()
@@ -384,7 +396,8 @@ class PetsInTurkeyScraper(BaseScraper):
                 if "Sex" in attr_map and attr_map["Sex"] < len(values):
                     dog_data["sex"] = values[attr_map["Sex"]]
 
-                if "Neutered" in attr_map and attr_map["Neutered"] < len(values):
+                if "Neutered" in attr_map and attr_map["Neutered"] < len(
+                        values):
                     dog_data["properties"]["neutered_spayed"] = values[
                         attr_map["Neutered"]
                     ]
@@ -394,7 +407,8 @@ class PetsInTurkeyScraper(BaseScraper):
                     ]
 
             # ==== STEP 6: Detect and correct common patterns of misalignment ====
-            # If sex value looks like a measurement and age value looks like a sex, swap them
+            # If sex value looks like a measurement and age value looks like a
+            # sex, swap them
             if dog_data["sex"] and re.search(
                 r"\d+\s*kg|\d+\s*cm", dog_data["sex"], re.IGNORECASE
             ):
@@ -410,7 +424,8 @@ class PetsInTurkeyScraper(BaseScraper):
             if dog_data["sex"] and not re.search(
                 r"male|female", dog_data["sex"], re.IGNORECASE
             ):
-                # Look for Male/Female in other values including neutered_spayed
+                # Look for Male/Female in other values including
+                # neutered_spayed
                 if "neutered_spayed" in dog_data["properties"] and re.search(
                     r"male|female",
                     dog_data["properties"]["neutered_spayed"],
@@ -423,7 +438,8 @@ class PetsInTurkeyScraper(BaseScraper):
                             attr_map["Sex"] + 2
                         ]
                     else:
-                        dog_data["properties"]["neutered_spayed"] = "Yes"  # Default
+                        # Default
+                        dog_data["properties"]["neutered_spayed"] = "Yes"
 
             return dog_data
 

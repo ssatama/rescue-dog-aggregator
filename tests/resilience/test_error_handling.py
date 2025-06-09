@@ -1,3 +1,4 @@
+from scrapers.base_scraper import BaseScraper
 import os
 import sys
 from unittest.mock import Mock, patch
@@ -6,12 +7,15 @@ import pytest
 
 # Add project root to path
 sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(
+                os.path.abspath(__file__))))
 )
 
-from scrapers.base_scraper import BaseScraper
 
-
+@pytest.mark.slow
+@pytest.mark.network
 class TestErrorResilience:
     """Test system resilience to various failure scenarios."""
 
@@ -74,7 +78,8 @@ class TestErrorResilience:
 
         from utils.cloudinary_service import CloudinaryService
 
-        mock_requests.side_effect = requests.exceptions.Timeout("Request timeout")
+        mock_requests.side_effect = requests.exceptions.Timeout(
+            "Request timeout")
 
         service = CloudinaryService()
         url, success = service.upload_image_from_url(

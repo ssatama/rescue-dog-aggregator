@@ -1,11 +1,13 @@
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, Mock, patch
+from datetime import datetime
+from unittest.mock import Mock, patch
 
 import pytest
 
 from scrapers.base_scraper import BaseScraper
 
 
+@pytest.mark.slow
+@pytest.mark.database
 class TestBaseScraper:
     @pytest.fixture
     def mock_scraper(self):
@@ -269,17 +271,19 @@ class TestBaseScraper:
         assert result is True
 
 
+@pytest.mark.slow
+@pytest.mark.database
 class TestBaseCRUDMethods:
     """Test the database CRUD methods that need to be implemented in BaseScraper."""
 
     @pytest.fixture
     def concrete_scraper(self):
         """Create a concrete implementation of BaseScraper for testing CRUD methods."""
-        
+
         class ConcreteScraper(BaseScraper):
             def collect_data(self):
                 return []
-        
+
         return ConcreteScraper(organization_id=1)
 
     @patch.dict(
@@ -296,19 +300,19 @@ class TestBaseCRUDMethods:
         concrete_scraper.conn = Mock()
         mock_cursor = Mock()
         concrete_scraper.conn.cursor.return_value = mock_cursor
-        
+
         # Mock cursor to return existing animal
         mock_cursor.fetchone.return_value = (123, "Test Dog", "2024-01-01")
-        
+
         # Test
         result = concrete_scraper.get_existing_animal("test-123", 1)
-        
+
         # Verify query was executed
         mock_cursor.execute.assert_called_once_with(
             "SELECT id, name, updated_at FROM animals WHERE external_id = %s AND organization_id = %s",
             ("test-123", 1)
         )
-        
+
         # Verify result
         assert result == (123, "Test Dog", "2024-01-01")
 
@@ -326,13 +330,13 @@ class TestBaseCRUDMethods:
         concrete_scraper.conn = Mock()
         mock_cursor = Mock()
         concrete_scraper.conn.cursor.return_value = mock_cursor
-        
+
         # Mock cursor to return None (no animal found)
         mock_cursor.fetchone.return_value = None
-        
+
         # Test
         result = concrete_scraper.get_existing_animal("nonexistent", 1)
-        
+
         # Verify result
         assert result is None
 
@@ -350,10 +354,10 @@ class TestBaseCRUDMethods:
         concrete_scraper.conn = Mock()
         mock_cursor = Mock()
         concrete_scraper.conn.cursor.return_value = mock_cursor
-        
+
         # Mock cursor to return new animal ID
         mock_cursor.fetchone.return_value = (456,)
-        
+
         # Test data
         animal_data = {
             "name": "New Dog",
@@ -367,16 +371,17 @@ class TestBaseCRUDMethods:
             "primary_image_url": "http://example.com/image.jpg",
             "status": "available"
         }
-        
+
         # Test
         animal_id, action = concrete_scraper.create_animal(animal_data)
-        
+
         # Verify INSERT was executed
         mock_cursor.execute.assert_called_once()
         call_args = mock_cursor.execute.call_args[0]
         assert "INSERT INTO animals" in call_args[0]
-        assert "last_seen_at" in call_args[0]  # Should include stale data columns
-        
+        # Should include stale data columns
+        assert "last_seen_at" in call_args[0]
+
         # Verify result
         assert animal_id == 456
         assert action == "added"
@@ -395,12 +400,12 @@ class TestBaseCRUDMethods:
         concrete_scraper.conn = Mock()
         mock_cursor = Mock()
         concrete_scraper.conn.cursor.return_value = mock_cursor
-        
+
         # Mock existing animal data
         mock_cursor.fetchone.return_value = (
             "Old Name", "Old Breed", "2 years", "Female", "old-url.jpg", "available"
         )
-        
+
         # Test data with changes
         animal_data = {
             "name": "Updated Name",  # Changed
@@ -410,13 +415,13 @@ class TestBaseCRUDMethods:
             "primary_image_url": "old-url.jpg",  # Same
             "status": "available"    # Same
         }
-        
+
         # Test
         animal_id, action = concrete_scraper.update_animal(123, animal_data)
-        
+
         # Verify SELECT to get current data was executed
         assert mock_cursor.execute.call_count >= 1
-        
+
         # Verify result
         assert animal_id == 123
         assert action == "updated"
@@ -435,44 +440,46 @@ class TestBaseCRUDMethods:
         concrete_scraper.conn = Mock()
         mock_cursor = Mock()
         concrete_scraper.conn.cursor.return_value = mock_cursor
-        
+
         # Mock existing animal data (identical to update data)
         mock_cursor.fetchone.return_value = (
             "Same Name", "Same Breed", "2 years", "Female", "same-url.jpg", "available"
         )
-        
+
         # Test data (no changes)
         animal_data = {
             "name": "Same Name",
-            "breed": "Same Breed", 
+            "breed": "Same Breed",
             "age_text": "2 years",
             "sex": "Female",
             "primary_image_url": "same-url.jpg",
             "status": "available"
         }
-        
+
         # Test
         animal_id, action = concrete_scraper.update_animal(123, animal_data)
-        
+
         # Verify result
         assert animal_id == 123
         assert action == "no_change"
 
 
+@pytest.mark.slow
+@pytest.mark.database
 class TestScrapeSessionTracking:
     """Test scrape session tracking and stale data detection."""
 
     @pytest.fixture
     def session_scraper(self):
         """Create a scraper for session tracking tests."""
-        
+
         class SessionScraper(BaseScraper):
             def collect_data(self):
                 return [
                     {"name": "Dog 1", "external_id": "dog-1"},
                     {"name": "Dog 2", "external_id": "dog-2"}
                 ]
-        
+
         return SessionScraper(organization_id=1)
 
     @patch.dict(
@@ -489,15 +496,15 @@ class TestScrapeSessionTracking:
         session_scraper.conn = Mock()
         mock_cursor = Mock()
         session_scraper.conn.cursor.return_value = mock_cursor
-        
+
         # Mock datetime for consistent testing
         test_time = datetime(2024, 1, 15, 10, 30, 0)
-        
+
         # Test
         with patch('scrapers.base_scraper.datetime') as mock_datetime:
             mock_datetime.now.return_value = test_time
             result = session_scraper.start_scrape_session()
-        
+
         # Verify session was started
         assert result is True
         assert session_scraper.current_scrape_session == test_time
@@ -516,19 +523,20 @@ class TestScrapeSessionTracking:
         session_scraper.conn = Mock()
         mock_cursor = Mock()
         session_scraper.conn.cursor.return_value = mock_cursor
-        
+
         # Set current scrape session
-        session_scraper.current_scrape_session = datetime(2024, 1, 15, 10, 30, 0)
-        
+        session_scraper.current_scrape_session = datetime(
+            2024, 1, 15, 10, 30, 0)
+
         # Test
         result = session_scraper.update_stale_data_detection()
-        
+
         # Verify stale data query was executed
         mock_cursor.execute.assert_called()
         call_args = mock_cursor.execute.call_args[0]
         assert "consecutive_scrapes_missing" in call_args[0]
         assert "availability_confidence" in call_args[0]
-        
+
         # Verify result
         assert result is True
 
@@ -546,14 +554,14 @@ class TestScrapeSessionTracking:
         session_scraper.conn = Mock()
         mock_cursor = Mock()
         session_scraper.conn.cursor.return_value = mock_cursor
-        
+
         # Set current scrape session
         test_time = datetime(2024, 1, 15, 10, 30, 0)
         session_scraper.current_scrape_session = test_time
-        
+
         # Test
         result = session_scraper.mark_animal_as_seen(123)
-        
+
         # Verify animal was marked as seen
         mock_cursor.execute.assert_called_once()
         call_args = mock_cursor.execute.call_args[0]
@@ -562,22 +570,25 @@ class TestScrapeSessionTracking:
         assert "consecutive_scrapes_missing = 0" in call_args[0]
         assert "availability_confidence = 'high'" in call_args[0]
         assert call_args[1] == (test_time, 123)
-        
+
         # Verify result
         assert result is True
 
 
+@pytest.mark.slow
+@pytest.mark.database
+@pytest.mark.computation
 class TestAvailabilityStatusManagement:
     """Test availability status management and animal lifecycle."""
 
     @pytest.fixture
     def availability_scraper(self):
         """Create a scraper for availability management tests."""
-        
+
         class AvailabilityScraper(BaseScraper):
             def collect_data(self):
                 return []
-        
+
         return AvailabilityScraper(organization_id=1)
 
     @patch.dict(
@@ -588,22 +599,24 @@ class TestAvailabilityStatusManagement:
             "CLOUDINARY_API_SECRET": "",
         },
     )
-    def test_mark_animals_unavailable_after_threshold(self, availability_scraper):
+    def test_mark_animals_unavailable_after_threshold(
+            self, availability_scraper):
         """Test that animals are marked unavailable after consecutive missed scrapes."""
         # Mock database connection and cursor
         availability_scraper.conn = Mock()
         mock_cursor = Mock()
         availability_scraper.conn.cursor.return_value = mock_cursor
-        
+
         # Set current scrape session
-        availability_scraper.current_scrape_session = datetime(2024, 1, 15, 10, 30, 0)
-        
+        availability_scraper.current_scrape_session = datetime(
+            2024, 1, 15, 10, 30, 0)
+
         # Mock cursor to return number of affected rows
         mock_cursor.rowcount = 5
-        
+
         # Test
         result = availability_scraper.mark_animals_unavailable(threshold=4)
-        
+
         # Verify SQL query was executed with correct threshold
         mock_cursor.execute.assert_called_once()
         call_args = mock_cursor.execute.call_args[0]
@@ -611,7 +624,7 @@ class TestAvailabilityStatusManagement:
         assert "status = 'unavailable'" in call_args[0]
         assert "consecutive_scrapes_missing >= %s" in call_args[0]
         assert call_args[1] == (availability_scraper.organization_id, 4)
-        
+
         # Verify result
         assert result == 5
 
@@ -629,10 +642,10 @@ class TestAvailabilityStatusManagement:
         availability_scraper.conn = Mock()
         mock_cursor = Mock()
         availability_scraper.conn.cursor.return_value = mock_cursor
-        
+
         # Test
         result = availability_scraper.restore_available_animal(123)
-        
+
         # Verify SQL query was executed
         mock_cursor.execute.assert_called_once()
         call_args = mock_cursor.execute.call_args[0]
@@ -643,7 +656,7 @@ class TestAvailabilityStatusManagement:
         assert "last_seen_at = %s" in call_args[0]
         assert "updated_at = %s" in call_args[0]
         assert call_args[1][2] == 123  # animal_id is the third parameter
-        
+
         # Verify result
         assert result is True
 
@@ -661,7 +674,7 @@ class TestAvailabilityStatusManagement:
         availability_scraper.conn = Mock()
         mock_cursor = Mock()
         availability_scraper.conn.cursor.return_value = mock_cursor
-        
+
         # Mock cursor to return stale animals summary
         mock_cursor.fetchall.return_value = [
             ('high', 'available', 10),
@@ -669,17 +682,17 @@ class TestAvailabilityStatusManagement:
             ('low', 'available', 3),
             ('low', 'unavailable', 2)
         ]
-        
+
         # Test
         result = availability_scraper.get_stale_animals_summary()
-        
+
         # Verify query was executed
         mock_cursor.execute.assert_called_once()
         call_args = mock_cursor.execute.call_args[0]
         assert "GROUP BY availability_confidence, status" in call_args[0]
         assert "organization_id = %s" in call_args[0]
         assert call_args[1] == (availability_scraper.organization_id,)
-        
+
         # Verify result
         expected = {
             ('high', 'available'): 10,
@@ -690,23 +703,25 @@ class TestAvailabilityStatusManagement:
         assert result == expected
 
 
+@pytest.mark.slow
+@pytest.mark.database
 class TestScraperErrorHandling:
     """Test error handling and failure recovery in scrapers."""
 
     @pytest.fixture
     def error_scraper(self):
         """Create a scraper for error handling tests."""
-        
+
         class ErrorScraper(BaseScraper):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.should_fail = False
-                
+
             def collect_data(self):
                 if self.should_fail:
                     raise Exception("Simulated scraper failure")
                 return [{"name": "Test Dog", "external_id": "test-1"}]
-        
+
         return ErrorScraper(organization_id=1)
 
     @patch.dict(
@@ -723,25 +738,25 @@ class TestScraperErrorHandling:
         error_scraper.conn = Mock()
         mock_cursor = Mock()
         error_scraper.conn.cursor.return_value = mock_cursor
-        
+
         # Mock successful connection and scrape log creation
         mock_cursor.fetchone.return_value = (1,)  # scrape_log_id
-        
+
         # Configure scraper to fail
         error_scraper.should_fail = True
-        
+
         # Test run
         with patch.object(error_scraper, 'connect_to_database', return_value=True), \
-             patch.object(error_scraper, 'start_scrape_log', return_value=True), \
-             patch.object(error_scraper, 'start_scrape_session', return_value=True), \
-             patch.object(error_scraper, 'update_stale_data_detection') as mock_stale_update, \
-             patch.object(error_scraper, 'complete_scrape_log', return_value=True):
-            
+                patch.object(error_scraper, 'start_scrape_log', return_value=True), \
+                patch.object(error_scraper, 'start_scrape_session', return_value=True), \
+                patch.object(error_scraper, 'update_stale_data_detection') as mock_stale_update, \
+                patch.object(error_scraper, 'complete_scrape_log', return_value=True):
+
             result = error_scraper.run()
-        
+
         # Verify scraper failed
         assert result is False
-        
+
         # Verify stale data detection was NOT called during failure
         mock_stale_update.assert_not_called()
 
@@ -759,19 +774,19 @@ class TestScraperErrorHandling:
         error_scraper.conn = Mock()
         mock_cursor = Mock()
         error_scraper.conn.cursor.return_value = mock_cursor
-        
+
         # Mock historical average of 50 animals
         mock_cursor.fetchone.return_value = (50.0,)  # avg_animals_found
-        
+
         # Test with suspiciously low count (10 animals, 20% of average)
         result = error_scraper.detect_partial_failure(animals_found=10)
-        
+
         # Verify query was executed to get historical average
         mock_cursor.execute.assert_called_once()
         call_args = mock_cursor.execute.call_args[0]
         assert "AVG(dogs_found)" in call_args[0]
         assert "organization_id = %s" in call_args[0]
-        
+
         # Should detect as potential failure (< 50% of average)
         assert result is True
 
@@ -789,28 +804,30 @@ class TestScraperErrorHandling:
         error_scraper.conn = Mock()
         mock_cursor = Mock()
         error_scraper.conn.cursor.return_value = mock_cursor
-        
+
         # Mock historical average of 50 animals
         mock_cursor.fetchone.return_value = (50.0,)
-        
+
         # Test with normal count (45 animals, 90% of average)
         result = error_scraper.detect_partial_failure(animals_found=45)
-        
+
         # Should NOT detect as failure (> 50% of average)
         assert result is False
 
 
+@pytest.mark.slow
+@pytest.mark.database
 class TestEnhancedLogging:
     """Test enhanced logging and metrics tracking."""
 
     @pytest.fixture
     def logging_scraper(self):
         """Create a scraper for logging tests."""
-        
+
         class LoggingScraper(BaseScraper):
             def collect_data(self):
                 return [{"name": "Test Dog", "external_id": "test-1"}]
-        
+
         return LoggingScraper(organization_id=1)
 
     @patch.dict(
@@ -827,10 +844,10 @@ class TestEnhancedLogging:
         logging_scraper.conn = Mock()
         mock_cursor = Mock()
         logging_scraper.conn.cursor.return_value = mock_cursor
-        
+
         # Mock scrape log ID
         logging_scraper.scrape_log_id = 123
-        
+
         # Test data
         metrics = {
             'animals_found': 25,
@@ -842,16 +859,16 @@ class TestEnhancedLogging:
             'duration_seconds': 120.5,
             'data_quality_score': 0.95
         }
-        
+
         # Test
         result = logging_scraper.log_detailed_metrics(metrics)
-        
+
         # Verify detailed metrics were logged to database
         mock_cursor.execute.assert_called_once()
         call_args = mock_cursor.execute.call_args[0]
         assert "UPDATE scrape_logs" in call_args[0]
         assert "detailed_metrics = %s" in call_args[0]
-        
+
         # Verify result
         assert result is True
 
@@ -867,14 +884,19 @@ class TestEnhancedLogging:
         """Test data quality assessment during scraping."""
         # Test data with various quality issues
         animals_data = [
-            {"name": "Good Dog", "breed": "Labrador", "age_text": "3 years", "external_id": "good-1"},
-            {"name": "", "breed": "Unknown", "age_text": "", "external_id": "poor-1"},  # Poor quality
-            {"name": "OK Dog", "breed": "", "age_text": "young", "external_id": "ok-1"},  # Medium quality
+            {"name": "Good Dog",
+             "breed": "Labrador",
+             "age_text": "3 years",
+             "external_id": "good-1"},
+            {"name": "", "breed": "Unknown", "age_text": "",
+                "external_id": "poor-1"},  # Poor quality
+            {"name": "OK Dog", "breed": "", "age_text": "young",
+                "external_id": "ok-1"},  # Medium quality
         ]
-        
+
         # Test
         quality_score = logging_scraper.assess_data_quality(animals_data)
-        
+
         # Should be between 0 and 1, with lower score due to quality issues
         assert 0 <= quality_score <= 1
         assert quality_score < 1.0  # Not perfect due to quality issues
@@ -892,9 +914,10 @@ class TestEnhancedLogging:
         # Mock time tracking
         start_time = datetime(2024, 1, 15, 10, 0, 0)
         end_time = datetime(2024, 1, 15, 10, 2, 30)  # 2.5 minutes later
-        
+
         # Calculate duration
-        duration = logging_scraper.calculate_scrape_duration(start_time, end_time)
-        
+        duration = logging_scraper.calculate_scrape_duration(
+            start_time, end_time)
+
         # Should be 150 seconds (2.5 minutes)
         assert duration == 150.0

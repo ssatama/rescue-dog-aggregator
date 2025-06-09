@@ -1,5 +1,6 @@
 # scrapers/base_scraper.py
 
+from utils.cloudinary_service import CloudinaryService
 import json
 import logging
 import os
@@ -15,15 +16,12 @@ from langdetect import detect
 # Import config
 from config import DB_CONFIG
 from utils.config_loader import ConfigLoader
-from utils.config_models import OrganizationConfig
 from utils.org_sync import OrganizationSyncManager
 
 # Import the standardization utilities
 from utils.standardization import standardize_age, standardize_breed
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from utils.cloudinary_service import CloudinaryService
 
 
 class BaseScraper(ABC):
@@ -46,7 +44,8 @@ class BaseScraper(ABC):
 
             # Ensure organization exists in database
             sync_manager = OrganizationSyncManager(self.config_loader)
-            self.organization_id, _ = sync_manager.sync_organization(self.org_config)
+            self.organization_id, _ = sync_manager.sync_organization(
+                self.org_config)
 
             # Use config for scraper settings
             scraper_config = self.org_config.get_scraper_config_dict()
@@ -71,7 +70,8 @@ class BaseScraper(ABC):
             self.organization_name = f"Organization ID {organization_id}"
 
         else:
-            raise ValueError("Either organization_id or config_id must be provided")
+            raise ValueError(
+                "Either organization_id or config_id must be provided")
 
         self.animal_type = "dog"  # Default animal type, can be overridden
         self.logger = self._setup_logger()
@@ -129,8 +129,8 @@ class BaseScraper(ABC):
             cursor = self.conn.cursor()
             cursor.execute(
                 """
-                INSERT INTO scrape_logs 
-                (organization_id, started_at, status) 
+                INSERT INTO scrape_logs
+                (organization_id, started_at, status)
                 VALUES (%s, %s, %s)
                 RETURNING id
                 """,
@@ -139,7 +139,8 @@ class BaseScraper(ABC):
             self.scrape_log_id = cursor.fetchone()[0]
             self.conn.commit()
             cursor.close()
-            self.logger.info(f"Created scrape log with ID: {self.scrape_log_id}")
+            self.logger.info(
+                f"Created scrape log with ID: {self.scrape_log_id}")
             return True
         except Exception as e:
             self.logger.error(f"Error creating scrape log: {e}")
@@ -160,8 +161,8 @@ class BaseScraper(ABC):
             cursor = self.conn.cursor()
             cursor.execute(
                 """
-                UPDATE scrape_logs 
-                SET completed_at = %s, status = %s, 
+                UPDATE scrape_logs
+                SET completed_at = %s, status = %s,
                     dogs_found = %s, dogs_added = %s, dogs_updated = %s,
                     error_message = %s
                 WHERE id = %s
@@ -240,7 +241,8 @@ class BaseScraper(ABC):
 
             # Check if animal already exists by external_id and organization
             existing_animal = self.get_existing_animal(
-                animal_data.get("external_id"), animal_data.get("organization_id")
+                animal_data.get("external_id"), animal_data.get(
+                    "organization_id")
             )
 
             if existing_animal:
@@ -279,7 +281,8 @@ class BaseScraper(ABC):
             )
 
             # Get animal name for Cloudinary folder organization
-            cursor.execute("SELECT name FROM animals WHERE id = %s", (animal_id,))
+            cursor.execute(
+                "SELECT name FROM animals WHERE id = %s", (animal_id,))
             result = cursor.fetchone()
             animal_name = result[0] if result else "unknown"
 
@@ -293,7 +296,8 @@ class BaseScraper(ABC):
                     image_url, animal_name, self.organization_name
                 )
 
-                # Use Cloudinary URL if successful, otherwise fallback to original
+                # Use Cloudinary URL if successful, otherwise fallback to
+                # original
                 final_url = cloudinary_url if success else image_url
 
                 cursor.execute(
@@ -379,8 +383,10 @@ class BaseScraper(ABC):
 
                     # Track image upload success/failure
                     if image_urls:
-                        images_uploaded += len(image_urls)  # Assume success for now
-                        # In a real implementation, we'd track actual upload results
+                        # Assume success for now
+                        images_uploaded += len(image_urls)
+                        # In a real implementation, we'd track actual upload
+                        # results
 
             # Check for potential partial failure before updating stale data
             potential_failure = self.detect_partial_failure(len(animals_data))
@@ -398,7 +404,8 @@ class BaseScraper(ABC):
                     error_message="Potential partial failure - low animal count detected",
                 )
             else:
-                # Update stale data detection for animals not seen in this scrape
+                # Update stale data detection for animals not seen in this
+                # scrape
                 self.update_stale_data_detection()
 
                 # Complete scrape log
@@ -518,14 +525,19 @@ class BaseScraper(ABC):
             language = self.detect_language(description_text)
 
             # Apply standardization
-            standardized_breed, breed_group, size_estimate = standardize_breed(animal_data.get("breed", ""))
+            standardized_breed, breed_group, size_estimate = standardize_breed(
+                animal_data.get("breed", "")
+            )
             age_info = standardize_age(animal_data.get("age_text", ""))
             age_months_min = age_info.get("age_min_months")
             age_months_max = age_info.get("age_max_months")
-            
+
             # Use size estimate if no size provided
-            final_size = animal_data.get("size") or animal_data.get("standardized_size")
-            final_standardized_size = animal_data.get("standardized_size") or size_estimate
+            final_size = animal_data.get(
+                "size") or animal_data.get("standardized_size")
+            final_standardized_size = (
+                animal_data.get("standardized_size") or size_estimate
+            )
 
             # Prepare values for insertion
             current_time = datetime.now()
@@ -564,7 +576,11 @@ class BaseScraper(ABC):
                     final_size,
                     final_standardized_size,
                     language,
-                    json.dumps(animal_data.get("properties")) if animal_data.get("properties") else None,  # properties (JSONB)
+                    (
+                        json.dumps(animal_data.get("properties"))
+                        if animal_data.get("properties")
+                        else None
+                    ),  # properties (JSONB)
                     current_time,  # created_at
                     current_time,  # updated_at
                     current_time,  # last_scraped_at
@@ -636,12 +652,13 @@ class BaseScraper(ABC):
             )
 
             if not changes_detected:
-                # No changes detected, but still update last_seen_at if we have a scrape session
+                # No changes detected, but still update last_seen_at if we have
+                # a scrape session
                 if self.current_scrape_session:
                     cursor.execute(
                         """
-                        UPDATE animals 
-                        SET last_seen_at = %s, 
+                        UPDATE animals
+                        SET last_seen_at = %s,
                             consecutive_scrapes_missing = 0,
                             availability_confidence = 'high'
                         WHERE id = %s
@@ -654,14 +671,19 @@ class BaseScraper(ABC):
                 return animal_id, "no_change"
 
             # Apply standardization to new data
-            standardized_breed, breed_group, size_estimate = standardize_breed(animal_data.get("breed", ""))
+            standardized_breed, breed_group, size_estimate = standardize_breed(
+                animal_data.get("breed", "")
+            )
             age_info = standardize_age(animal_data.get("age_text", ""))
             age_months_min = age_info.get("age_min_months")
             age_months_max = age_info.get("age_max_months")
-            
+
             # Use size estimate if no size provided
-            final_size = animal_data.get("size") or animal_data.get("standardized_size")
-            final_standardized_size = animal_data.get("standardized_size") or size_estimate
+            final_size = animal_data.get(
+                "size") or animal_data.get("standardized_size")
+            final_standardized_size = (
+                animal_data.get("standardized_size") or size_estimate
+            )
 
             # Detect language
             description_text = f"{animal_data.get('name', '')} {animal_data.get('breed', '')} {animal_data.get('age_text', '')}"
@@ -698,7 +720,11 @@ class BaseScraper(ABC):
                     animal_data.get("original_image_url"),
                     animal_data.get("adoption_url"),
                     animal_data.get("status", "available"),
-                    json.dumps(animal_data.get("properties")) if animal_data.get("properties") else None,  # properties
+                    (
+                        json.dumps(animal_data.get("properties"))
+                        if animal_data.get("properties")
+                        else None
+                    ),  # properties
                     current_time,  # updated_at
                     current_time,  # last_scraped_at
                     self.current_scrape_session or current_time,  # last_seen_at
@@ -728,7 +754,8 @@ class BaseScraper(ABC):
         """
         try:
             self.current_scrape_session = datetime.now()
-            self.logger.info(f"Started scrape session at {self.current_scrape_session}")
+            self.logger.info(
+                f"Started scrape session at {self.current_scrape_session}")
             return True
         except Exception as e:
             self.logger.error(f"Error starting scrape session: {e}")
@@ -753,8 +780,8 @@ class BaseScraper(ABC):
             cursor = self.conn.cursor()
             cursor.execute(
                 """
-                UPDATE animals 
-                SET last_seen_at = %s, 
+                UPDATE animals
+                SET last_seen_at = %s,
                     consecutive_scrapes_missing = 0,
                     availability_confidence = 'high'
                 WHERE id = %s
@@ -778,7 +805,8 @@ class BaseScraper(ABC):
         """
         try:
             if not self.current_scrape_session:
-                self.logger.warning("No active scrape session for stale data detection")
+                self.logger.warning(
+                    "No active scrape session for stale data detection")
                 return False
 
             cursor = self.conn.cursor()
@@ -786,9 +814,9 @@ class BaseScraper(ABC):
             # Update animals not seen in current scrape
             cursor.execute(
                 """
-                UPDATE animals 
+                UPDATE animals
                 SET consecutive_scrapes_missing = consecutive_scrapes_missing + 1,
-                    availability_confidence = CASE 
+                    availability_confidence = CASE
                         WHEN consecutive_scrapes_missing = 0 THEN 'medium'
                         WHEN consecutive_scrapes_missing >= 1 THEN 'low'
                         ELSE availability_confidence
@@ -797,7 +825,7 @@ class BaseScraper(ABC):
                         WHEN consecutive_scrapes_missing >= 3 THEN 'unavailable'
                         ELSE status
                     END
-                WHERE organization_id = %s 
+                WHERE organization_id = %s
                 AND (last_seen_at IS NULL OR last_seen_at < %s)
                 """,
                 (self.organization_id, self.current_scrape_session),
@@ -833,9 +861,9 @@ class BaseScraper(ABC):
             # Mark animals as unavailable after threshold missed scrapes
             cursor.execute(
                 """
-                UPDATE animals 
+                UPDATE animals
                 SET status = 'unavailable'
-                WHERE organization_id = %s 
+                WHERE organization_id = %s
                 AND consecutive_scrapes_missing >= %s
                 AND status != 'unavailable'
                 """,
@@ -874,7 +902,7 @@ class BaseScraper(ABC):
             # Restore animal to available status with high confidence
             cursor.execute(
                 """
-                UPDATE animals 
+                UPDATE animals
                 SET status = 'available',
                     consecutive_scrapes_missing = 0,
                     availability_confidence = 'high',
@@ -892,7 +920,8 @@ class BaseScraper(ABC):
             self.conn.commit()
             cursor.close()
 
-            self.logger.info(f"Restored animal ID {animal_id} to available status")
+            self.logger.info(
+                f"Restored animal ID {animal_id} to available status")
             return True
 
         except Exception as e:
@@ -912,8 +941,8 @@ class BaseScraper(ABC):
 
             cursor.execute(
                 """
-                SELECT availability_confidence, status, COUNT(*) 
-                FROM animals 
+                SELECT availability_confidence, status, COUNT(*)
+                FROM animals
                 WHERE organization_id = %s
                 GROUP BY availability_confidence, status
                 ORDER BY availability_confidence, status
@@ -934,7 +963,6 @@ class BaseScraper(ABC):
         except Exception as e:
             self.logger.error(f"Error getting stale animals summary: {e}")
             return {}
-
 
     def detect_catastrophic_failure(self, animals_found, absolute_minimum=3):
         """Detect catastrophic scraper failures (zero or extremely low animal counts).
@@ -994,7 +1022,8 @@ class BaseScraper(ABC):
         """
         try:
             # First check for catastrophic failure
-            if self.detect_catastrophic_failure(animals_found, absolute_minimum):
+            if self.detect_catastrophic_failure(
+                    animals_found, absolute_minimum):
                 return True
 
             cursor = self.conn.cursor()
@@ -1003,14 +1032,14 @@ class BaseScraper(ABC):
             # Use subquery to handle ORDER BY properly with aggregate functions
             cursor.execute(
                 """
-                SELECT AVG(dogs_found), COUNT(*) 
+                SELECT AVG(dogs_found), COUNT(*)
                 FROM (
                     SELECT dogs_found
-                    FROM scrape_logs 
-                    WHERE organization_id = %s 
-                    AND status = 'success' 
+                    FROM scrape_logs
+                    WHERE organization_id = %s
+                    AND status = 'success'
                     AND dogs_found > 0
-                    ORDER BY started_at DESC 
+                    ORDER BY started_at DESC
                     LIMIT %s
                 ) recent_scrapes
                 """,
@@ -1028,7 +1057,8 @@ class BaseScraper(ABC):
                 or not result[0]
                 or (len(result) > 1 and result[1] < minimum_historical_scrapes)
             ):
-                # No historical data or insufficient data - use absolute minimum
+                # No historical data or insufficient data - use absolute
+                # minimum
                 scrape_count = result[1] if (result and len(result) > 1) else 0
                 self.logger.info(
                     f"Insufficient historical data for organization_id {self.organization_id} "
@@ -1062,7 +1092,8 @@ class BaseScraper(ABC):
 
         except Exception as e:
             self.logger.error(f"Error detecting partial failure: {e}")
-            # Default to safe mode - assume potential failure to prevent data loss
+            # Default to safe mode - assume potential failure to prevent data
+            # loss
             return True
 
     def detect_scraper_failure(
@@ -1127,7 +1158,8 @@ class BaseScraper(ABC):
         """
         try:
             if not self.scrape_log_id:
-                self.logger.warning("No scrape log ID available for detailed metrics")
+                self.logger.warning(
+                    "No scrape log ID available for detailed metrics")
                 return False
 
             cursor = self.conn.cursor()
@@ -1135,7 +1167,7 @@ class BaseScraper(ABC):
             # Update scrape log with detailed metrics
             cursor.execute(
                 """
-                UPDATE scrape_logs 
+                UPDATE scrape_logs
                 SET detailed_metrics = %s,
                     duration_seconds = %s,
                     data_quality_score = %s

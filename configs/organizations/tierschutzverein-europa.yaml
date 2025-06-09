@@ -1,0 +1,29 @@
+schema_version: "1.0"
+id: "tierschutzverein-europa"
+name: "Tierschutzverein Europa e.V."
+enabled: true  # Enabled for testing implementation
+
+scraper:
+  class_name: "TierschutzvereinEuropaScraper"
+  module: "scrapers.tierschutzverein_europa.dogs_scraper"
+  config:
+    rate_limit_delay: 3.0
+    max_retries: 3
+    timeout: 30
+    headless: true
+
+metadata:
+  website_url: "https://tierschutzverein-europa.de"
+  description: "German rescue organization helping dogs from Spain and Romania find homes in Germany"
+  location:
+    country: "DE"
+    city: "Freiburg"
+  service_regions:
+    - country: "DE"
+      regions: ["all"]
+    - country: "ES"
+      regions: ["all"]
+    - country: "RO"
+      regions: ["all"]
+  contact:
+    email: "gessinger@tsv-europa.de"

@@ -14,7 +14,7 @@ import { getDogDetailImage, getDogSmallThumbnail, handleImageError } from '../..
 import { reportError } from '../../../utils/logger';
 import { sanitizeText, sanitizeHtml } from '../../../utils/security';
 
-export default function DogDetailClient({ params }) {
+export default function DogDetailClient({ params = {} }) {
   const urlParams = useParams();
   const dogId = params?.id || urlParams?.id;
   const [dog, setDog] = useState(null);

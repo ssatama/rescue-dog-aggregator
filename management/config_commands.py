@@ -1,17 +1,15 @@
 import argparse
-import json
 import logging
 import os
 import sys
-from pathlib import Path
-from typing import List, Optional
 
-# Add the project root directory to Python path
+# Add the project root directory to Python path BEFORE imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.config_loader import ConfigLoader
-from utils.config_scraper_runner import ConfigScraperRunner
-from utils.org_sync import OrganizationSyncManager
+# Now import local modules after path is set
+from utils.org_sync import OrganizationSyncManager  # noqa: E402
+from utils.config_scraper_runner import ConfigScraperRunner  # noqa: E402
+from utils.config_loader import ConfigLoader  # noqa: E402
 
 
 class ConfigManager:
@@ -155,7 +153,8 @@ class ConfigManager:
 
                 print("📊 Sync Status:")
                 print(f"  Total configs: {status['total_configs']}")
-                print(f"  Organizations in database: {status['total_db_orgs']}")
+                print(
+                    f"  Organizations in database: {status['total_db_orgs']}")
                 print(f"  Already synced: {status['synced']}")
                 print()
 
@@ -169,7 +168,8 @@ class ConfigManager:
                     print(
                         f"  Organizations with regions: {sr_status.get('organizations_with_regions', 0)}"
                     )
-                    print(f"  Coverage: {sr_status.get('coverage_percentage', 0)}%")
+                    print(
+                        f"  Coverage: {sr_status.get('coverage_percentage', 0)}%")
                     print()
 
                 if status["missing_from_db"]:
@@ -192,11 +192,11 @@ class ConfigManager:
 
                 if results["success"]:
                     print("✅ Sync completed successfully!")
-                    print(f"📊 Results:")
+                    print("📊 Results:")
                     print(f"  ➕ Created: {results['created']}")
                     print(f"  🔄 Updated: {results['updated']}")
                     print(f"  📊 Total processed: {results['processed']}")
-                    print(f"  🗺️  Service regions synced for all organizations")
+                    print("  🗺️  Service regions synced for all organizations")
                 else:
                     print("❌ Sync failed!")
                     for error in results.get("errors", []):
@@ -255,7 +255,8 @@ class ConfigManager:
             total_animals_found = 0
             for result in res.get("results", []):
                 if result.get("success"):
-                    org_name = result.get("organization", "Unknown Organization")
+                    org_name = result.get(
+                        "organization", "Unknown Organization")
                     animals_found = result.get("animals_found", 0)
                     total_animals_found += animals_found
                     print(f"✅ {org_name}: {animals_found} animals found")
@@ -297,7 +298,7 @@ class ConfigManager:
                     print(f"✅ {config.get_display_name()} ({config_id})")
 
             print("=" * 50)
-            print(f"📊 Summary:")
+            print("📊 Summary:")
             print(f"  Total configs: {total_configs}")
             print(f"  Configs with warnings: {configs_with_warnings}")
             print(f"  Valid configs: {total_configs - configs_with_warnings}")
@@ -308,8 +309,10 @@ class ConfigManager:
 
 def main():
     """Main CLI entry point."""
-    parser = argparse.ArgumentParser(description="Manage config-driven scrapers")
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    parser = argparse.ArgumentParser(
+        description="Manage config-driven scrapers")
+    subparsers = parser.add_subparsers(
+        dest="command", help="Available commands")
 
     # List command
     list_parser = subparsers.add_parser("list", help="List organizations")
@@ -318,11 +321,13 @@ def main():
     )
 
     # Show command
-    show_parser = subparsers.add_parser("show", help="Show organization details")
+    show_parser = subparsers.add_parser(
+        "show", help="Show organization details")
     show_parser.add_argument("config_id", help="Organization config ID")
 
     # Sync command
-    sync_parser = subparsers.add_parser("sync", help="Sync organizations to database")
+    sync_parser = subparsers.add_parser(
+        "sync", help="Sync organizations to database")
     sync_parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -330,7 +335,8 @@ def main():
     )
 
     # Run command
-    run_parser = subparsers.add_parser("run", help="Run scraper for organization")
+    run_parser = subparsers.add_parser(
+        "run", help="Run scraper for organization")
     run_parser.add_argument("config_id", help="Organization config ID")
     run_parser.add_argument(
         "--no-sync",
@@ -339,7 +345,8 @@ def main():
     )
 
     # Run-all command
-    run_all_parser = subparsers.add_parser("run-all", help="Run all enabled scrapers")
+    run_all_parser = subparsers.add_parser(
+        "run-all", help="Run all enabled scrapers")
     run_all_parser.add_argument(
         "--no-sync",
         action="store_true",

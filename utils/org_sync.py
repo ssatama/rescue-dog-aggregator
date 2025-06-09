@@ -1,7 +1,6 @@
-import json
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, Optional, Tuple
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -72,7 +71,7 @@ class OrganizationSyncManager:
                 """
                 SELECT id, name, website_url, description, social_media,
                        config_id, last_config_sync, created_at, updated_at
-                FROM organizations 
+                FROM organizations
                 WHERE config_id IS NOT NULL
             """
             )
@@ -85,10 +84,12 @@ class OrganizationSyncManager:
             cursor.close()
             cursor.connection.close()
 
-        self.logger.debug(f"Found {len(orgs)} organizations with config_id in database")
+        self.logger.debug(
+            f"Found {len(orgs)} organizations with config_id in database")
         return orgs
 
-    def _should_update_org(self, db_org: dict, config: OrganizationConfig) -> bool:
+    def _should_update_org(self, db_org: dict,
+                           config: OrganizationConfig) -> bool:
         """Determine if database organization should be updated from config.
 
         Args:
@@ -157,12 +158,14 @@ class OrganizationSyncManager:
             social_data["linkedin"] = str(social.linkedin)
 
         # Add website URL to social media if present
-        if hasattr(config.metadata, "website_url") and config.metadata.website_url:
+        if hasattr(config.metadata,
+                   "website_url") and config.metadata.website_url:
             social_data["website"] = str(config.metadata.website_url)
 
         return social_data  # Return dict, not JSON string
 
-    def _sync_service_regions(self, org_id: int, config: OrganizationConfig) -> None:
+    def _sync_service_regions(self, org_id: int,
+                              config: OrganizationConfig) -> None:
         """Sync service regions for an organization.
 
         Args:
@@ -173,7 +176,8 @@ class OrganizationSyncManager:
         try:
             # First, delete existing service regions for this organization
             cursor.execute(
-                "DELETE FROM service_regions WHERE organization_id = %s", (org_id,)
+                "DELETE FROM service_regions WHERE organization_id = %s", (
+                    org_id,)
             )
 
             # Parse and insert service regions from config
@@ -279,7 +283,8 @@ class OrganizationSyncManager:
         Returns:
             Database ID of created organization
         """
-        social_media = self._build_social_media_json(config)  # Now returns dict
+        social_media = self._build_social_media_json(
+            config)  # Now returns dict
 
         cursor = get_db_cursor()
         try:
@@ -309,7 +314,8 @@ class OrganizationSyncManager:
             result = cursor.fetchone()
             if result is None:
                 raise OrganizationSyncError("INSERT did not return an ID")
-            org_id = result[0]  # Fix: Use index instead of dict key
+            # Use dict key since we're using RealDictCursor
+            org_id = result["id"]
             cursor.connection.commit()
             self.logger.info(
                 f"Created organization '{config.name}' with ID {org_id} from config '{config.id}'"
@@ -329,14 +335,16 @@ class OrganizationSyncManager:
 
         return org_id
 
-    def update_organization(self, org_id: int, config: OrganizationConfig) -> None:
+    def update_organization(self, org_id: int,
+                            config: OrganizationConfig) -> None:
         """Update existing organization from config.
 
         Args:
             org_id: Database ID of organization to update
             config: Organization configuration
         """
-        social_media = self._build_social_media_json(config)  # Now returns dict
+        social_media = self._build_social_media_json(
+            config)  # Now returns dict
 
         cursor = get_db_cursor()
         try:
@@ -381,7 +389,8 @@ class OrganizationSyncManager:
             )
             # Don't fail the whole operation if service regions fail
 
-    def sync_organization(self, config: OrganizationConfig) -> Tuple[int, bool]:
+    def sync_organization(
+            self, config: OrganizationConfig) -> Tuple[int, bool]:
         """Sync a single organization from config to database.
 
         Args:
@@ -486,8 +495,8 @@ class OrganizationSyncManager:
         try:
             cursor.execute(
                 """
-                SELECT config_id, id 
-                FROM organizations 
+                SELECT config_id, id
+                FROM organizations
                 WHERE config_id IS NOT NULL
             """
             )
@@ -547,27 +556,29 @@ class OrganizationSyncManager:
         try:
             # Count total service regions
             cursor.execute("SELECT COUNT(*) FROM service_regions")
-            total_regions = cursor.fetchone()[0]
+            total_regions = cursor.fetchone()["count"]
 
             # Count organizations with service regions
             cursor.execute(
                 """
-                SELECT COUNT(DISTINCT organization_id) 
+                SELECT COUNT(DISTINCT organization_id)
                 FROM service_regions
                 """
             )
-            orgs_with_regions = cursor.fetchone()[0]
+            orgs_with_regions = cursor.fetchone()["count"]
 
             # Count total organizations
-            cursor.execute("SELECT COUNT(*) FROM organizations WHERE active = TRUE")
-            total_orgs = cursor.fetchone()[0]
+            cursor.execute(
+                "SELECT COUNT(*) FROM organizations WHERE active = TRUE")
+            total_orgs = cursor.fetchone()["count"]
 
             return {
                 "total_service_regions": total_regions,
                 "organizations_with_regions": orgs_with_regions,
                 "total_organizations": total_orgs,
                 "coverage_percentage": round(
-                    (orgs_with_regions / total_orgs * 100) if total_orgs > 0 else 0, 1
+                    (orgs_with_regions / total_orgs *
+                     100) if total_orgs > 0 else 0, 1
                 ),
             }
 

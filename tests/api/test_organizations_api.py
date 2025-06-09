@@ -1,13 +1,12 @@
 import pytest
 from fastapi.testclient import TestClient
 
-# Import the FastAPI app (adjust path if necessary)
-# Assuming conftest.py adds the project root to sys.path
-from api.main import app
-
 # TestClient fixture will be injected from tests/conftest.py
 
 
+@pytest.mark.slow
+@pytest.mark.database
+@pytest.mark.api
 class TestOrganizationsAPI:
 
     def test_get_organizations_success(self, client: TestClient):
@@ -25,7 +24,8 @@ class TestOrganizationsAPI:
             assert "name" in org
             assert "website_url" in org
             assert "active" in org
-            assert org["active"] is True  # Endpoint should only return active ones
+            # Endpoint should only return active ones
+            assert org["active"] is True
 
     def test_get_organization_by_id_success(self, client: TestClient):
         """Test GET /api/organizations/{id} for an existing organization."""
@@ -60,7 +60,8 @@ class TestOrganizationsAPI:
         assert "name" in organization
         assert "website_url" in organization
 
-    def test_get_organizations_list_includes_social_media(self, client: TestClient):
+    def test_get_organizations_list_includes_social_media(
+            self, client: TestClient):
         """Test that organizations list response includes social_media field for each org."""
         response = client.get("/api/organizations")
         assert response.status_code == 200

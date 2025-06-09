@@ -55,7 +55,8 @@ class OrganizationMetadata(BaseModel):
     contact: ContactInfo = ContactInfo()
     social_media: SocialMedia = SocialMedia()
     location: Location = Location()
-    service_regions: Union[List[str], List[ServiceRegion]] = []  # Allow both formats
+    service_regions: Union[List[str],
+                           List[ServiceRegion]] = []  # Allow both formats
 
     @field_validator("service_regions")
     @classmethod

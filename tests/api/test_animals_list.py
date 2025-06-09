@@ -6,6 +6,9 @@ from api.main import app
 client = TestClient(app)
 
 
+@pytest.mark.slow
+@pytest.mark.database
+@pytest.mark.api
 class TestAnimalsList:
 
     def test_pagination_offset(self):

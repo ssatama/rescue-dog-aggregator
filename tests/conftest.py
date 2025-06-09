@@ -5,21 +5,20 @@ Sets up a connection to a real test database and manages test data.
 Uses dependency overrides for TestClient database access.
 """
 
+from api.main import app
+from api.dependencies import get_db_cursor  # Import the original dependency
 import os
 import sys
 from unittest.mock import patch
 
 import psycopg2
 import pytest
-from fastapi import HTTPException  # <<< Import HTTPException globally
 from fastapi.testclient import TestClient
 from psycopg2.extras import RealDictCursor
 
 # Add project root to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from api.dependencies import get_db_cursor  # Import the original dependency
-from api.main import app
 
 # Set TESTING environment variable early
 os.environ["TESTING"] = "true"
@@ -34,7 +33,8 @@ TEST_DB_HOST = "localhost"
 
 
 # --- Dependency Override Function ---
-# This function provides connections/cursors for BOTH setup and request handling
+# This function provides connections/cursors for BOTH setup and request
+# handling
 def override_get_db_cursor():
     """Dependency override that connects to the TEST database."""
     test_db_params = {
@@ -60,7 +60,8 @@ def manage_test_data():
     """Fixture to clear tables and insert test data using the override connection logic."""
     print("[conftest manage_test_data] Setting up data for test function...")
     # Get a cursor using the same logic as the dependency override
-    # We need to manually iterate the generator returned by override_get_db_cursor
+    # We need to manually iterate the generator returned by
+    # override_get_db_cursor
     cursor_generator = override_get_db_cursor()
     cursor = next(cursor_generator)  # Get the cursor yielded by the override
     conn = cursor.connection  # Get the underlying connection from the cursor
@@ -79,8 +80,8 @@ def manage_test_data():
         org_sql = """
         INSERT INTO organizations (id, name, website_url, country, city, active, social_media)
         VALUES (901, 'Test Organization', 'http://example.com', 'Testland', 'Testville', TRUE, '{"facebook": "https://facebook.com/testorg", "instagram": "https://instagram.com/testorg"}')
-        ON CONFLICT (id) DO UPDATE SET 
-            name = EXCLUDED.name, 
+        ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name,
             website_url = EXCLUDED.website_url,
             social_media = EXCLUDED.social_media;
         """
@@ -105,7 +106,8 @@ def manage_test_data():
 
         yield  # Test runs here
 
-        # Teardown is implicitly handled by the next test's setup clearing tables
+        # Teardown is implicitly handled by the next test's setup clearing
+        # tables
         print(
             "[conftest.manage_test_data] Teardown for test function (data cleared by next setup)."
         )

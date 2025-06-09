@@ -1,5 +1,4 @@
-import importlib.util
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -7,6 +6,8 @@ from utils.config_loader import ConfigLoader
 from utils.config_scraper_runner import ConfigScraperRunner
 
 
+@pytest.mark.slow
+@pytest.mark.file_io
 class TestConfigScraperRunner:
     """Test the config-driven scraper runner."""
 
@@ -69,7 +70,8 @@ class TestConfigScraperRunner:
         assert scrapers[0]["enabled"] is True
         assert scrapers[0]["scraper_class"] == "TestScraper"
 
-    def test_import_scraper_class_success(self, mock_config_loader, mock_scraper_class):
+    def test_import_scraper_class_success(
+            self, mock_config_loader, mock_scraper_class):
         """Test successful scraper class import."""
         runner = ConfigScraperRunner(mock_config_loader)
         config = mock_config_loader.load_config.return_value
@@ -93,7 +95,8 @@ class TestConfigScraperRunner:
         with patch("importlib.import_module") as mock_import:
             mock_import.side_effect = ImportError("Module not found")
 
-            # FIX: Match the actual error message pattern from the implementation
+            # FIX: Match the actual error message pattern from the
+            # implementation
             with pytest.raises(ImportError, match="Module not found"):
                 runner._import_scraper_class(config)
 
@@ -138,7 +141,8 @@ class TestConfigScraperRunner:
     @pytest.mark.skip(
         reason="Complex mocking issues with JSON serialization - functionality verified through integration tests"
     )
-    def test_run_all_enabled_scrapers(self, mock_config_loader, mock_scraper_class):
+    def test_run_all_enabled_scrapers(
+            self, mock_config_loader, mock_scraper_class):
         """Test running all enabled scrapers."""
         # Test skipped due to complex mocking challenges with BaseScraper JSON serialization
         # The ConfigScraperRunner functionality is verified through:
@@ -147,7 +151,8 @@ class TestConfigScraperRunner:
         # 3. Other unit tests covering the individual components
         pass
 
-    def test_run_all_enabled_scrapers_no_organizations(self, mock_config_loader):
+    def test_run_all_enabled_scrapers_no_organizations(
+            self, mock_config_loader):
         """Test running scrapers when no organizations are enabled."""
         mock_config_loader.get_enabled_orgs.return_value = []
 

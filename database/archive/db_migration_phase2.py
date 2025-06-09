@@ -1,17 +1,16 @@
 # database/db_migration_phase2.py
 
+from config import DB_CONFIG
 import argparse
 import os
 import sys
 
 import psycopg2
-from psycopg2 import sql
 
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import configuration
-from config import DB_CONFIG
 
 
 def connect_to_database():
@@ -51,7 +50,8 @@ def migrate_database():
         # Step 1: Create backup of existing tables (as views first for safety)
         print("Creating backup views of existing tables...")
         # --- FIX: Use correct table names ---
-        cursor.execute("CREATE OR REPLACE VIEW animals_backup AS SELECT * FROM animals")
+        cursor.execute(
+            "CREATE OR REPLACE VIEW animals_backup AS SELECT * FROM animals")
         cursor.execute(
             "CREATE OR REPLACE VIEW animal_images_backup AS SELECT * FROM animal_images"
         )
@@ -205,14 +205,16 @@ def migrate_database():
             raise
 
         # Step 6: Copy data from backup view to new animals table (if animals table was newly created or empty)
-        # This step might need adjustment based on whether you expect data loss or want to merge
+        # This step might need adjustment based on whether you expect data loss
+        # or want to merge
         print("Copying data from animals_backup view to animals table...")
         try:
             # Check if animals table is empty before copying
             cursor.execute("SELECT COUNT(*) FROM animals")
             if cursor.fetchone()[0] == 0:
                 # Map columns carefully, especially if schema changed slightly
-                # Assuming animals_backup has the old schema and animals has the new one
+                # Assuming animals_backup has the old schema and animals has
+                # the new one
                 cursor.execute(
                     """
                      INSERT INTO animals (
@@ -240,7 +242,8 @@ def migrate_database():
                 )
         except psycopg2.errors.UndefinedTable:
             print("Info: animals_backup view does not exist. Skipping data copy.")
-            # No rollback needed here as it's an expected state if run multiple times
+            # No rollback needed here as it's an expected state if run multiple
+            # times
         except Exception as copy_error:
             print(f"Error copying data from animals_backup: {copy_error}")
             raise  # Stop migration on copy error
@@ -299,10 +302,12 @@ def migrate_database():
             )
             raise  # Stop migration on copy error
         except Exception as copy_img_error:
-            print(f"Error copying data from animal_images_backup: {copy_img_error}")
+            print(
+                f"Error copying data from animal_images_backup: {copy_img_error}")
             raise  # Stop migration on copy error
 
-        # Step 9: Add indexes (moved after table creation and potential data copy)
+        # Step 9: Add indexes (moved after table creation and potential data
+        # copy)
         print("Adding indexes to new tables...")
         try:
             cursor.execute(
@@ -378,7 +383,8 @@ def rollback_migration():
 
         # Drop new tables/indexes if they exist
         print("Dropping new tables and indexes...")
-        cursor.execute("DROP INDEX IF EXISTS idx_service_regions_org_country_region;")
+        cursor.execute(
+            "DROP INDEX IF EXISTS idx_service_regions_org_country_region;")
         cursor.execute("DROP TABLE IF EXISTS service_regions CASCADE;")
         cursor.execute("DROP TABLE IF EXISTS breed_standards CASCADE;")
         cursor.execute("DROP TABLE IF EXISTS size_standards CASCADE;")
@@ -393,7 +399,8 @@ def rollback_migration():
         print("Restoring tables from backup views...")
         # --- FIX: Restore animals and animal_images ---
         try:
-            cursor.execute("CREATE TABLE animals AS SELECT * FROM animals_backup;")
+            cursor.execute(
+                "CREATE TABLE animals AS SELECT * FROM animals_backup;")
             print("Restored 'animals' table from 'animals_backup'.")
         except psycopg2.errors.UndefinedTable:
             print("Info: 'animals_backup' view not found. Cannot restore 'animals'.")
@@ -410,7 +417,8 @@ def rollback_migration():
             )
             # Need to rename dog_id back if the backup view still has it
             # This assumes the backup view HAS dog_id. If not, adjust.
-            # cursor.execute("ALTER TABLE animal_images RENAME COLUMN animal_id TO dog_id;") # Optional: Rename back if needed
+            # cursor.execute("ALTER TABLE animal_images RENAME COLUMN animal_id
+            # TO dog_id;") # Optional: Rename back if needed
             print("Restored 'animal_images' table from 'animal_images_backup'.")
         except psycopg2.errors.UndefinedTable:
             print(
@@ -478,7 +486,8 @@ def finalize_migration():
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Database migration for Phase 2")
+    parser = argparse.ArgumentParser(
+        description="Database migration for Phase 2")
     parser.add_argument(
         "--action",
         choices=["migrate", "rollback", "finalize"],

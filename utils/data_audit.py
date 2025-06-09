@@ -7,8 +7,8 @@ This script extracts unique values from the animals table for dogs and saves the
 for manual analysis. It focuses on breed, size, and age text fields to prepare for standardization.
 """
 
+from utils.db import connect_to_database
 import csv
-import json
 import os
 import re
 import sys
@@ -16,7 +16,6 @@ from collections import Counter
 
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.db import connect_to_database
 
 
 def extract_unique_values():
@@ -33,10 +32,10 @@ def extract_unique_values():
         print("Extracting unique breed values...")
         cursor.execute(
             """
-            SELECT breed, COUNT(*) as count 
-            FROM animals 
+            SELECT breed, COUNT(*) as count
+            FROM animals
             WHERE animal_type = 'dog' AND breed IS NOT NULL
-            GROUP BY breed 
+            GROUP BY breed
             ORDER BY count DESC
         """
         )
@@ -46,10 +45,10 @@ def extract_unique_values():
         print("Extracting unique size values...")
         cursor.execute(
             """
-            SELECT size, COUNT(*) as count 
-            FROM animals 
+            SELECT size, COUNT(*) as count
+            FROM animals
             WHERE animal_type = 'dog' AND size IS NOT NULL
-            GROUP BY size 
+            GROUP BY size
             ORDER BY count DESC
         """
         )
@@ -59,10 +58,10 @@ def extract_unique_values():
         print("Extracting unique age text values...")
         cursor.execute(
             """
-            SELECT age_text, COUNT(*) as count 
-            FROM animals 
+            SELECT age_text, COUNT(*) as count
+            FROM animals
             WHERE animal_type = 'dog' AND age_text IS NOT NULL
-            GROUP BY age_text 
+            GROUP BY age_text
             ORDER BY count DESC
         """
         )
@@ -72,10 +71,10 @@ def extract_unique_values():
         print("Extracting unique sex values...")
         cursor.execute(
             """
-            SELECT sex, COUNT(*) as count 
-            FROM animals 
+            SELECT sex, COUNT(*) as count
+            FROM animals
             WHERE animal_type = 'dog' AND sex IS NOT NULL
-            GROUP BY sex 
+            GROUP BY sex
             ORDER BY count DESC
         """
         )
@@ -99,8 +98,8 @@ def extract_unique_values():
         print("Analyzing property fields...")
         cursor.execute(
             """
-            SELECT id, properties 
-            FROM animals 
+            SELECT id, properties
+            FROM animals
             WHERE animal_type = 'dog' AND properties IS NOT NULL
         """
         )
@@ -171,16 +170,22 @@ def analyze_properties(properties_data):
 
     # Export property values
     if weight_values:
-        export_to_csv(weight_values, "weight_values.csv", ["animal_id", "weight"])
+        export_to_csv(
+            weight_values, "weight_values.csv", [
+                "animal_id", "weight"])
     if height_values:
-        export_to_csv(height_values, "height_values.csv", ["animal_id", "height"])
+        export_to_csv(
+            height_values, "height_values.csv", [
+                "animal_id", "height"])
     if neutered_values:
         export_to_csv(
-            neutered_values, "neutered_values.csv", ["animal_id", "neutered_spayed"]
+            neutered_values, "neutered_values.csv", [
+                "animal_id", "neutered_spayed"]
         )
     if other_relevant:
         export_to_csv(
-            other_relevant, "other_properties.csv", ["animal_id", "property", "value"]
+            other_relevant, "other_properties.csv", [
+                "animal_id", "property", "value"]
         )
 
 
@@ -258,7 +263,8 @@ def create_standardization_templates(breed_data, size_data, age_data):
                 months_max = months_min + 12  # Approximate range
 
             # Look for patterns like "6 months"
-            months_match = re.search(r"(\d+)\s*(?:months?|mo)", str(age).lower())
+            months_match = re.search(
+                r"(\d+)\s*(?:months?|mo)", str(age).lower())
             if months_match:
                 months_min = int(months_match.group(1))
                 months_max = months_min + 1
@@ -294,7 +300,8 @@ def create_standardization_templates(breed_data, size_data, age_data):
                 months_min = 96
                 months_max = 240  # 20 years as upper bound
 
-            writer.writerow([age, count, age_value, months_min, months_max, ""])
+            writer.writerow(
+                [age, count, age_value, months_min, months_max, ""])
 
     print("\nCreated standardization templates:")
     print("- data/audit/breed_standardization.csv")
