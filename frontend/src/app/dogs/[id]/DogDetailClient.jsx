@@ -88,6 +88,27 @@ export default function DogDetailClient({ params = {} }) {
   return (
     <Layout>
       <div className="max-w-4xl mx-auto p-4">
+        {/* Breadcrumb Navigation */}
+        <nav aria-label="Breadcrumb" className="mb-4">
+          <ol className="flex items-center space-x-2 text-sm text-gray-500">
+            <li>
+              <Link href="/" className="hover:text-gray-700">
+                Home
+              </Link>
+            </li>
+            <li className="flex items-center">
+              <span className="mx-2">/</span>
+              <Link href="/dogs" className="hover:text-gray-700">
+                Find Dogs
+              </Link>
+            </li>
+            <li className="flex items-center">
+              <span className="mx-2">/</span>
+              <span className="text-gray-900 font-medium">{dog?.name || 'Loading...'}</span>
+            </li>
+          </ol>
+        </nav>
+
         <Link href="/dogs" passHref>
           <Button variant="link" className="inline-flex items-center text-blue-500 hover:text-blue-700 mb-6 p-0 h-auto">
             ← Back to all dogs
@@ -102,31 +123,56 @@ export default function DogDetailClient({ params = {} }) {
           )}
           
           <div className="p-6">
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="md:w-1/2">
+            <div className="flex flex-col gap-6">
+              {/* Hero Image Section - Full Width */}
+              <div className="w-full" data-testid="hero-image-container">
                 <HeroImageWithBlurredBackground
                   src={dog.primary_image_url}
                   alt={dog.name}
                   onError={(e) => handleImageError(e, dog.primary_image_url)}
                 />
-                
-                {dog.images && dog.images.length > 1 && (
-                  <div className="mt-3 grid grid-cols-4 gap-2">
-                    {dog.images.slice(0, 4).map((image, index) => (
-                      <img 
-                        key={image.id || index} 
-                        src={getThumbnailImage(image.image_url)} 
-                        alt={`${dog.name} - photo ${index + 1}`} 
-                        className="w-full aspect-square object-cover rounded-md"
-                        onError={(e) => handleImageError(e, image.image_url)}
-                      />
-                    ))}
-                  </div>
-                )}
               </div>
               
-              <div className="md:w-1/2">
-                <h1 className="text-title mb-2">{sanitizeText(dog.name)}</h1>
+              {/* Content Section - Below Hero */}
+              <div className="w-full">
+                {/* Header with name and action icons */}
+                <div className="flex justify-between items-start mb-4">
+                  <h1 className="text-title">{sanitizeText(dog.name)}</h1>
+                  
+                  {/* Action bar with heart and share icons */}
+                  <div className="flex items-center space-x-2" data-testid="action-bar">
+                    {/* Heart/Favorite icon */}
+                    <button 
+                      className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                      data-testid="heart-icon"
+                      aria-label="Add to favorites"
+                    >
+                      <svg 
+                        className="w-6 h-6 text-gray-600 hover:text-red-500 transition-colors" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth={2} 
+                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+                        />
+                      </svg>
+                    </button>
+                    
+                    {/* Share icon */}
+                    <ShareButton
+                      url={typeof window !== 'undefined' ? window.location.href : ''}
+                      title={`Meet ${dog.name} - Available for Adoption`}
+                      text={`${dog.name} is a ${dog.standardized_breed || dog.breed || 'lovely dog'} looking for a forever home.`}
+                      variant="ghost"
+                      size="sm"
+                      className="p-2 rounded-full hover:bg-gray-100"
+                    />
+                  </div>
+                </div>
                 
                 {/* Only show breed section if we have a known breed */}
                 {(() => {
@@ -153,47 +199,69 @@ export default function DogDetailClient({ params = {} }) {
                   );
                 })()}
                 
-                <div className="grid grid-cols-2 gap-x-4 gap-y-3 mb-6">
+                {/* Metadata Cards with Icons */}
+                <div className="grid grid-cols-2 gap-3 mb-6" data-testid="metadata-cards">
                   {formatAge(dog) && (
-                    <div>
-                      <h2 className="text-small font-medium text-gray-500">Age</h2>
-                      <p className="text-gray-800">{formatAge(dog)}</p>
+                    <div className="bg-purple-50 rounded-lg p-3 flex items-center space-x-2">
+                      <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                        <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-xs text-purple-600 font-medium">Age</p>
+                        <p className="text-sm font-semibold text-gray-800">{formatAge(dog)}</p>
+                      </div>
                     </div>
                   )}
 
                   {dog.sex && dog.sex.toLowerCase() !== 'unknown' && (
-                    <div>
-                      <h2 className="text-small font-medium text-gray-500">Sex</h2>
-                      <div className="flex items-center">
-                        {dog.sex.toLowerCase() === 'male' ? (
-                          <><span className="text-blue-500 mr-1">♂</span><span>Male</span></>
-                        ) : (
-                          <><span className="text-pink-500 mr-1">♀</span><span>Female</span></>
-                        )}
+                    <div className={`rounded-lg p-3 flex items-center space-x-2 ${
+                      dog.sex.toLowerCase() === 'male' ? 'bg-blue-50' : 'bg-pink-50'
+                    }`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        dog.sex.toLowerCase() === 'male' ? 'bg-blue-100' : 'bg-pink-100'
+                      }`}>
+                        <span className={`text-lg font-bold ${
+                          dog.sex.toLowerCase() === 'male' ? 'text-blue-600' : 'text-pink-600'
+                        }`}>
+                          {dog.sex.toLowerCase() === 'male' ? '♂' : '♀'}
+                        </span>
+                      </div>
+                      <div>
+                        <p className={`text-xs font-medium ${
+                          dog.sex.toLowerCase() === 'male' ? 'text-blue-600' : 'text-pink-600'
+                        }`}>Gender</p>
+                        <p className="text-sm font-semibold text-gray-800">{dog.sex}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {(dog.standardized_breed || dog.breed) && !(dog.standardized_breed === 'Unknown' || dog.breed === 'Unknown') && (
+                    <div className="bg-green-50 rounded-lg p-3 flex items-center space-x-2">
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-xs text-green-600 font-medium">Breed</p>
+                        <p className="text-sm font-semibold text-gray-800">{dog.standardized_breed || dog.breed}</p>
                       </div>
                     </div>
                   )}
 
                   {(dog.standardized_size || dog.size) && (
-                    <div>
-                      <h2 className="text-small font-medium text-gray-500">Size</h2>
-                      <Badge variant="secondary">{dog.standardized_size || dog.size}</Badge>
-                    </div>
-                  )}
-
-                  {dog.properties?.weight && (
-                    <div>
-                      <h2 className="text-small font-medium text-gray-500">Weight</h2>
-                      <p className="text-gray-800">{dog.properties.weight}</p>
-                    </div>
-                  )}
-
-                  {dog.properties?.neutered_spayed && (
-                    <div>
-                      <h2 className="text-small font-medium text-gray-500">
-                        {dog.sex?.toLowerCase() === 'female' ? 'Spayed' : 'Neutered'}
-                      </h2>
-                      <p className="text-gray-800">{dog.properties.neutered_spayed}</p>
+                    <div className="bg-orange-50 rounded-lg p-3 flex items-center space-x-2">
+                      <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                        <svg className="w-4 h-4 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-xs text-orange-600 font-medium">Size</p>
+                        <p className="text-sm font-semibold text-gray-800">{dog.standardized_size || dog.size}</p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -242,16 +310,6 @@ export default function DogDetailClient({ params = {} }) {
                     </a>
                   </Button>
                 )}
-
-                <div className="mt-3">
-                  <ShareButton
-                    url={typeof window !== 'undefined' ? window.location.href : ''}
-                    title={`Meet ${dog.name} - Available for Adoption`}
-                    text={`${dog.name} is a ${dog.standardized_breed || dog.breed || 'lovely dog'} looking for a forever home.`}
-                    variant="secondary"
-                    className="w-full"
-                  />
-                </div>
               </div>
             </div>
           </div>

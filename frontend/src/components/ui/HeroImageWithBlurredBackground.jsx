@@ -10,7 +10,8 @@ export const HeroImageWithBlurredBackground = ({
   src, 
   alt, 
   className = '', 
-  onError = () => {} 
+  onError = () => {},
+  useGradientFallback = false
 }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -44,15 +45,21 @@ export const HeroImageWithBlurredBackground = ({
 
   return (
     <div className={`relative w-full aspect-[16/9] rounded-lg overflow-hidden ${className}`}>
-      {/* Blurred background layer */}
-      <div 
-        className="absolute inset-0 w-full h-full bg-cover bg-center"
-        style={{
-          backgroundImage: `url(${blurredBackgroundSrc})`,
-          filter: 'blur(20px)',
-          transform: 'scale(1.1)', // Slightly scale to hide blur edges
-        }}
-      />
+      {/* Background layer - either blurred image or gradient */}
+      {useGradientFallback ? (
+        // Gradient background fallback
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200" />
+      ) : (
+        // Blurred background layer
+        <div 
+          className="absolute inset-0 w-full h-full bg-cover bg-center"
+          style={{
+            backgroundImage: `url(${blurredBackgroundSrc})`,
+            filter: 'blur(20px)',
+            transform: 'scale(1.1)', // Slightly scale to hide blur edges
+          }}
+        />
+      )}
       
       {/* Semi-transparent overlay for better contrast */}
       <div className="absolute inset-0 bg-black bg-opacity-20" />

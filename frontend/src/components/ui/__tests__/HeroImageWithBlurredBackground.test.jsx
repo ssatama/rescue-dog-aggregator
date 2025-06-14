@@ -180,4 +180,29 @@ describe('HeroImageWithBlurredBackground', () => {
       expect(container).toHaveClass('rounded-lg');
     });
   });
+
+  describe('Hero image enhancements', () => {
+    it('should use object-contain for proper dog display without cropping', () => {
+      render(<HeroImageWithBlurredBackground {...mockProps} />);
+      
+      const img = screen.getByRole('img');
+      expect(img).toHaveClass('object-contain');
+    });
+
+    it('should support gradient background as fallback', () => {
+      const { container } = render(<HeroImageWithBlurredBackground {...mockProps} useGradientFallback={true} />);
+      
+      // Should have gradient background when specified
+      const gradientBackground = container.querySelector('.bg-gradient-to-br');
+      expect(gradientBackground).toBeInTheDocument();
+    });
+
+    it('should work without blurred background when gradient fallback is enabled', () => {
+      const { container } = render(<HeroImageWithBlurredBackground {...mockProps} useGradientFallback={true} />);
+      
+      // Should not have blurred background when gradient fallback is enabled
+      const blurredBackground = container.querySelector('.absolute.inset-0.bg-cover.bg-center[style*="blur"]');
+      expect(blurredBackground).not.toBeInTheDocument();
+    });
+  });
 });

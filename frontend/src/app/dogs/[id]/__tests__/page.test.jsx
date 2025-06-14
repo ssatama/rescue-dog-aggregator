@@ -56,12 +56,11 @@ describe('DogDetailPage', () => {
     expect(screen.getByRole('heading', { name: /Rover/i })).toBeInTheDocument();
     // image
     expect(screen.getByRole('img', { name: /Rover/i })).toHaveAttribute('src', mockDog.primary_image_url);
-    // breed + group
-    expect(screen.getByText('Beagle')).toBeInTheDocument();
+    // breed + group (may appear in multiple places now)
+    expect(screen.getAllByText('Beagle').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Hound Group')).toBeInTheDocument();
-    // weight & sex
-    expect(screen.getByText(/20 lbs/i)).toBeInTheDocument();
-    expect(screen.getByText(/Male/i)).toBeInTheDocument();
+    // sex (appears in metadata cards)
+    expect(screen.getAllByText(/Male/i).length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows an error message when API returns 404', async () => {
@@ -216,8 +215,187 @@ describe('DogDetailPage - Breed Display', () => {
 
     await waitFor(() => expect(screen.queryByTestId('loading')).not.toBeInTheDocument());
 
-    // Should show actual breed
-    expect(screen.getByText('Golden Retriever')).toBeInTheDocument();
+    // Should show actual breed (may appear in multiple places now)
+    expect(screen.getAllByText('Golden Retriever').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Sporting Group')).toBeInTheDocument();
+  });
+});
+
+describe('DogDetailPage - Hero Layout', () => {
+  it('displays hero image above content in vertical layout', async () => {
+    const mockDog = {
+      id: 1,
+      name: 'Rover',
+      breed: 'Golden Retriever',
+      standardized_breed: 'Golden Retriever',
+      primary_image_url: 'https://img.test/rover.jpg',
+      status: 'available',
+      properties: { description: 'A lovely dog' },
+      sex: 'Male',
+      organization: { name: 'Test Rescue', id: 1 }
+    };
+    getAnimalById.mockResolvedValue(mockDog);
+
+    const { container } = render(<DogDetailPage />);
+
+    await waitFor(() => expect(screen.queryByTestId('loading')).not.toBeInTheDocument());
+
+    // Check that main content container uses vertical layout (flex-col)
+    const mainContent = container.querySelector('.flex.flex-col');
+    expect(mainContent).toBeInTheDocument();
+
+    // Hero image should come before text content
+    const image = screen.getByRole('img', { name: /Rover/i });
+    const heading = screen.getByRole('heading', { level: 1, name: /Rover/i });
+    
+    // Image should come before heading in DOM order
+    expect(image.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('uses full-width hero image container', async () => {
+    const mockDog = {
+      id: 1,
+      name: 'Rover',
+      primary_image_url: 'https://img.test/rover.jpg',
+      status: 'available',
+      properties: {},
+      sex: 'Male',
+    };
+    getAnimalById.mockResolvedValue(mockDog);
+
+    const { container } = render(<DogDetailPage />);
+
+    await waitFor(() => expect(screen.queryByTestId('loading')).not.toBeInTheDocument());
+
+    // Hero image container should be full width
+    const heroContainer = container.querySelector('[data-testid="hero-image-container"]');
+    expect(heroContainer).toBeInTheDocument();
+    expect(heroContainer).toHaveClass('w-full');
+  });
+
+  it('displays breadcrumb navigation above hero image', async () => {
+    const mockDog = {
+      id: 1,
+      name: 'Shadow',
+      primary_image_url: 'https://img.test/shadow.jpg',
+      status: 'available',
+      properties: {},
+      sex: 'Male',
+    };
+    getAnimalById.mockResolvedValue(mockDog);
+
+    render(<DogDetailPage />);
+
+    await waitFor(() => expect(screen.queryByTestId('loading')).not.toBeInTheDocument());
+
+    // Check breadcrumb navigation - look within the breadcrumb nav specifically
+    const breadcrumbNav = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(breadcrumbNav).toBeInTheDocument();
+    
+    // Within the breadcrumb, check for the links and text
+    const homeLinks = screen.getAllByText('Home');
+    const findDogsLinks = screen.getAllByText('Find Dogs');
+    const shadowTexts = screen.getAllByText('Shadow');
+    
+    // There should be at least one of each (breadcrumb + possibly header)
+    expect(homeLinks.length).toBeGreaterThanOrEqual(1);
+    expect(findDogsLinks.length).toBeGreaterThanOrEqual(1);
+    expect(shadowTexts.length).toBeGreaterThanOrEqual(1);
+
+    // Check specific breadcrumb links by finding within breadcrumb nav
+    const homeLink = screen.getByRole('link', { name: 'Home' });
+    const dogsLinks = screen.getAllByRole('link', { name: 'Find Dogs' });
+    
+    expect(homeLink).toHaveAttribute('href', '/');
+    expect(dogsLinks[0]).toHaveAttribute('href', '/dogs');
+  });
+
+  it('displays heart and share icons in top-right of content area', async () => {
+    const mockDog = {
+      id: 1,
+      name: 'Shadow',
+      primary_image_url: 'https://img.test/shadow.jpg',
+      status: 'available',
+      properties: {},
+      sex: 'Male',
+    };
+    getAnimalById.mockResolvedValue(mockDog);
+
+    render(<DogDetailPage />);
+
+    await waitFor(() => expect(screen.queryByTestId('loading')).not.toBeInTheDocument());
+
+    // Check for heart icon
+    const heartIcon = screen.getByTestId('heart-icon');
+    expect(heartIcon).toBeInTheDocument();
+
+    // Check for share icon (should be in the action bar, not at bottom)
+    const actionBar = screen.getByTestId('action-bar');
+    expect(actionBar).toBeInTheDocument();
+    
+    // Both icons should be in the action bar
+    expect(actionBar).toContainElement(heartIcon);
+  });
+
+  it('displays metadata cards with icons in new layout', async () => {
+    const mockDog = {
+      id: 1,
+      name: 'Shadow',
+      primary_image_url: 'https://img.test/shadow.jpg',
+      status: 'available',
+      properties: {},
+      sex: 'Male',
+      age_text: 'Unknown',
+      standardized_breed: 'Terrier Mix',
+      standardized_size: 'Medium Size',
+    };
+    getAnimalById.mockResolvedValue(mockDog);
+
+    const { container } = render(<DogDetailPage />);
+
+    await waitFor(() => expect(screen.queryByTestId('loading')).not.toBeInTheDocument());
+
+    // Check for metadata cards container
+    const metadataCards = container.querySelector('[data-testid="metadata-cards"]');
+    expect(metadataCards).toBeInTheDocument();
+
+    // Check for individual metadata badges - using getAllByText for items that appear multiple times
+    expect(screen.getByText('Unknown')).toBeInTheDocument(); // Age
+    expect(screen.getByText('Male')).toBeInTheDocument(); // Gender
+    expect(screen.getAllByText('Terrier Mix').length).toBeGreaterThanOrEqual(1); // Breed (appears in multiple places)
+    expect(screen.getByText('Medium Size')).toBeInTheDocument(); // Size
+  });
+
+  it('maintains responsive layout structure on all screen sizes', async () => {
+    const mockDog = {
+      id: 1,
+      name: 'Shadow',
+      primary_image_url: 'https://img.test/shadow.jpg',
+      status: 'available',
+      properties: {},
+      sex: 'Male',
+      standardized_breed: 'Terrier Mix',
+    };
+    getAnimalById.mockResolvedValue(mockDog);
+
+    const { container } = render(<DogDetailPage />);
+
+    await waitFor(() => expect(screen.queryByTestId('loading')).not.toBeInTheDocument());
+
+    // Hero image should always be full width
+    const heroContainer = container.querySelector('[data-testid="hero-image-container"]');
+    expect(heroContainer).toHaveClass('w-full');
+
+    // Main layout should be flex-col (vertical) on all screen sizes
+    const mainLayout = container.querySelector('.flex.flex-col.gap-6');
+    expect(mainLayout).toBeInTheDocument();
+
+    // Metadata cards should use grid layout
+    const metadataCards = container.querySelector('[data-testid="metadata-cards"]');
+    expect(metadataCards).toHaveClass('grid', 'grid-cols-2');
+
+    // Action bar should use flexbox for proper icon alignment
+    const actionBar = container.querySelector('[data-testid="action-bar"]');
+    expect(actionBar).toHaveClass('flex', 'items-center');
   });
 });
