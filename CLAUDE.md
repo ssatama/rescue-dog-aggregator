@@ -778,9 +778,56 @@ echo "✅ CODEBASE CLEANED - Retry validation"
 - **Debugging**: Comprehensive logging with structured JSONB metrics for troubleshooting
 
 ## 📚 Documentation & Resources
-- **Comprehensive Docs**: See `docs/` directory for detailed guides
-- **Architecture Guide**: `docs/frontend_architecture.md` - Complete Next.js 15 implementation
-- **Development Workflow**: `docs/development_workflow.md` - TDD methodology and quality standards
-- **Test Optimization**: `docs/test_optimization_guide.md` - Complete speed-optimized testing strategy (217 fast tests in 45s vs 249 slow tests)
-- **Troubleshooting**: `docs/troubleshooting_guide.md` - Common issues and solutions
-- **Production Guide**: `docs/weekly_scraping_guide.md` - Production operations and monitoring
+
+### 📖 Complete Documentation Directory (`docs/`)
+All comprehensive guides and references are located in the `docs/` directory:
+
+#### 🏢 Project & Architecture
+- **`docs/project_overview.md`** - High-level system overview and goals
+- **`docs/frontend_architecture.md`** - Complete Next.js 15 + App Router implementation patterns
+- **`docs/production_deployment.md`** - Production deployment and infrastructure setup
+
+#### 🛠️ Development & Testing
+- **`docs/development_workflow.md`** - TDD methodology, quality standards, and development best practices
+- **`docs/test_optimization_guide.md`** - Speed-optimized testing strategy (217 fast tests in 45s vs 249 slow tests)
+- **`docs/troubleshooting_guide.md`** - Common issues, solutions, and debugging strategies
+
+#### 🤖 Data Collection & Processing
+- **`docs/scraper_design.md`** - Scraper architecture, unified DOM extraction, and implementation patterns
+- **`docs/data_standardization.md`** - AI-powered normalization, breed mapping, and quality assessment
+- **`docs/weekly_scraping_guide.md`** - Production operations, monitoring, and availability management
+
+#### ⚙️ Configuration & API
+- **`docs/configuration_system.md`** - YAML-driven configuration management and validation
+- **`docs/api_reference.md`** - Complete API documentation with smart filtering and availability parameters
+
+#### 🎯 User Experience & Optimization
+- **`docs/cta_optimization_guide.md`** - CTA optimization system, favorites management, and mobile UX patterns
+
+### 📋 Quick Reference for Common Tasks
+
+#### 🔍 Finding Specific Information
+- **Architecture questions** → `docs/frontend_architecture.md` or `docs/project_overview.md`
+- **Setup and deployment** → `docs/production_deployment.md`
+- **Development workflow** → `docs/development_workflow.md`
+- **Testing strategies** → `docs/test_optimization_guide.md`
+- **Scraper implementation** → `docs/scraper_design.md`
+- **Configuration management** → `docs/configuration_system.md`
+- **API usage** → `docs/api_reference.md`
+- **User experience features** → `docs/cta_optimization_guide.md`
+- **Production operations** → `docs/weekly_scraping_guide.md`
+- **Issue resolution** → `docs/troubleshooting_guide.md`
+- **Data processing** → `docs/data_standardization.md`
+
+#### 🚀 Essential Reading Order
+1. **Start Here**: `docs/project_overview.md` - Understanding the system
+2. **Development**: `docs/development_workflow.md` - Development practices
+3. **Architecture**: `docs/frontend_architecture.md` - Technical implementation
+4. **Testing**: `docs/test_optimization_guide.md` - Quality assurance
+5. **Production**: `docs/production_deployment.md` - Deployment and operations
+
+### 💡 Documentation Usage Tips
+- **All documentation is comprehensive** - Each guide contains both conceptual explanations and practical examples
+- **Cross-references provided** - Guides reference each other for related topics
+- **Production-ready focus** - All documentation reflects current production implementation
+- **Regularly updated** - Documentation stays current with codebase changes
