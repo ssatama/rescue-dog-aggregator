@@ -11,6 +11,7 @@ import { getRandomAnimals } from '../services/animalsService'; // Import the new
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Import Alert
 import { getOrganizations } from '../services/organizationsService'; // new
 import { reportError } from '../utils/logger';
+import { preloadImages } from '../utils/imageUtils';
 
 export default function Home() {
   const [featuredDogs, setFeaturedDogs] = useState([]);
@@ -25,6 +26,12 @@ export default function Home() {
       setError(null);
       const data = await getRandomAnimals(3); // Fetch 3 random dogs
       setFeaturedDogs(data);
+      
+      // Preload critical above-fold images for better perceived performance
+      if (data && data.length > 0) {
+        const imageUrls = data.map(dog => dog.primary_image_url).filter(Boolean);
+        preloadImages(imageUrls);
+      }
     } catch (err) {
       reportError("Error fetching featured dogs", { error: err.message });
       setError("Could not load featured dogs. Please try again later.");
@@ -55,10 +62,10 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"> {/* Added padding */}
         {/* Hero Section */}
         <div className="text-center my-12 md:my-20"> {/* Adjusted vertical margin */}
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4"> {/* Removed lg:text-6xl */}
+          <h1 className="text-hero text-gray-900 mb-6">
             Find Your Perfect Rescue Companion
           </h1>
-          <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-3xl mx-auto"> {/* Adjusted text color */}
+          <p className="text-body text-gray-600 mb-8 max-w-3xl mx-auto">
             Browse available dogs from multiple rescue organizations, all in one place. Give a loving home to a dog in need.
           </p>
           <Link href="/dogs" passHref>
@@ -70,7 +77,7 @@ export default function Home() {
 
         {/* Featured Dogs Section */}
         <div className="my-12 md:my-20"> {/* Added section spacing */}
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-10">
+          <h2 className="text-section text-center text-gray-900 mb-10">
             Featured Dogs Waiting for a Home
           </h2>
 
@@ -93,9 +100,9 @@ export default function Home() {
           {/* Dog Cards Grid */}
           {!loading && !error && featuredDogs.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"> {/* Responsive grid */}
-              {featuredDogs.map((dog) => (
+              {featuredDogs.map((dog, index) => (
                 <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
-                  <DogCard dog={dog} />
+                  <DogCard dog={dog} priority={index === 0} />
                 </DogCardErrorBoundary>
               ))}
             </div>
@@ -103,7 +110,7 @@ export default function Home() {
 
           {/* No Dogs State (Optional, if API might return empty) */}
           {!loading && !error && featuredDogs.length === 0 && (
-             <p className="text-center text-gray-500">No featured dogs available at the moment.</p>
+             <p className="text-center text-body text-gray-500">No featured dogs available at the moment.</p>
           )}
         </div>
       </div>

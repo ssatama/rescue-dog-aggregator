@@ -2,8 +2,13 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
 
-// Use Inter font instead of Geist (which isn't directly available in next/font/google)
-const inter = Inter({ subsets: ['latin'] });
+// Use Inter variable font with all required weights
+const inter = Inter({ 
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-inter',
+  display: 'swap'
+});
 
 export const metadata = {
   title: 'Rescue Dog Aggregator - Find Your Perfect Rescue Dog',
@@ -36,7 +41,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={`${inter.variable} font-inter`}>{children}</body>
     </html>
   );
 }

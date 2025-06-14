@@ -1,9 +1,10 @@
-from scrapers.base_scraper import BaseScraper
 import os
 import sys
 from unittest.mock import Mock, patch
 
 import pytest
+
+from scrapers.base_scraper import BaseScraper
 
 # Add project root to path
 sys.path.append(

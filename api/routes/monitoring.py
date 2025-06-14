@@ -8,6 +8,7 @@ import logging
 import time
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
@@ -79,10 +80,8 @@ async def health_check(db_conn=Depends(get_database_connection)):
 
     except Exception as e:
         logger.error(f"Health check database error: {e}")
-        db_status = {
-            "status": "error",
-            "error": str(e),
-            "response_time_ms": None}
+        db_status = {"status": "error", "error": str(
+            e), "response_time_ms": None}
         overall_status = "unhealthy"
 
     return HealthStatus(
@@ -280,8 +279,7 @@ async def get_individual_scraper_details(
         org_info = cursor.fetchone()
         if not org_info:
             raise HTTPException(
-                status_code=404,
-                detail="Organization not found")
+                status_code=404, detail="Organization not found")
 
         org_name, org_created = org_info
 
@@ -389,8 +387,7 @@ async def get_individual_scraper_details(
 
 
 @router.get("/monitoring/failures")
-async def get_failure_detection_metrics(
-        db_conn=Depends(get_database_connection)):
+async def get_failure_detection_metrics(db_conn=Depends(get_database_connection)):
     """
     Get failure detection metrics and recent failure analysis.
 

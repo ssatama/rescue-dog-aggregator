@@ -180,8 +180,7 @@ class REANScraper(BaseScraper):
         dog_images = []
         for img_url in available_images:
             # Skip obvious logos and icons
-            if any(term in img_url.lower()
-                   for term in ["logo", "icon", "favicon"]):
+            if any(term in img_url.lower() for term in ["logo", "icon", "favicon"]):
                 continue
             dog_images.append(img_url)
 
@@ -521,8 +520,7 @@ class REANScraper(BaseScraper):
 
         return filtered_images
 
-    def _detect_image_offset(
-            self, filtered_images: List[str], num_dogs: int) -> int:
+    def _detect_image_offset(self, filtered_images: List[str], num_dogs: int) -> int:
         """
         Detect if there's a systematic offset in image positioning.
 
@@ -676,8 +674,7 @@ class REANScraper(BaseScraper):
         except Exception as e:
             self.logger.warning(f"Error during lazy loading trigger: {e}")
 
-    def _extract_dogs_from_dom(
-            self, driver, page_type: str) -> List[Dict[str, Any]]:
+    def _extract_dogs_from_dom(self, driver, page_type: str) -> List[Dict[str, Any]]:
         """
         Extract dog data from DOM using unified container approach.
 
@@ -1014,8 +1011,8 @@ class REANScraper(BaseScraper):
                         continue
 
                 # Rate limiting between pages
-                if page_type != list(
-                        self.pages.keys())[-1]:  # Not the last page
+                # Not the last page
+                if page_type != list(self.pages.keys())[-1]:
                     time.sleep(self.rate_limit_delay)
 
             self.logger.info(
@@ -1131,13 +1128,8 @@ class REANScraper(BaseScraper):
         if match:
             name = match.group(1).strip()
             # Filter out descriptive words to get the actual name
-            descriptive_words = [
-                "little",
-                "friendly",
-                "sweet",
-                "puppy",
-                "big",
-                "soft"]
+            descriptive_words = ["little", "friendly",
+                                 "sweet", "puppy", "big", "soft"]
             name_words = name.split()
             actual_name = []
             for word in name_words:
@@ -1151,8 +1143,7 @@ class REANScraper(BaseScraper):
         words = text.strip().split()[:5]  # Check first 5 words
         for word in words:
             if word[0].isupper() and word.isalpha() and len(word) > 2:
-                if word.lower() not in [
-                        "little", "sweet", "puppy", "this", "the"]:
+                if word.lower() not in ["little", "sweet", "puppy", "this", "the"]:
                     return word
 
         return None
@@ -1405,9 +1396,7 @@ class REANScraper(BaseScraper):
 
         # Remove update timestamps that might be at the end
         text = re.sub(
-            r"\(Updated \d{1,2}/\d{1,2}/\d{2,4}\)$",
-            "",
-            text).strip()
+            r"\(Updated \d{1,2}/\d{1,2}/\d{2,4}\)$", "", text).strip()
 
         # Try to extract the story part (usually after name and age info)
         # Look for narrative content that comes after basic info
@@ -1620,8 +1609,7 @@ class REANScraper(BaseScraper):
         try:
             # Extract number and unit
             match = re.search(
-                r"(\d+(?:\.\d+)?)\s+(months?|years?)",
-                age_text.lower())
+                r"(\d+(?:\.\d+)?)\s+(months?|years?)", age_text.lower())
             if not match:
                 return None
 

@@ -191,8 +191,7 @@ def standardize_breed(breed_text: str) -> Tuple[str, str, Optional[str]]:
     return capitalized_breed, "Unknown", None
 
 
-def parse_age_text(
-        age_text: str) -> Tuple[Optional[str], Optional[int], Optional[int]]:
+def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optional[int]]:
     """
     Parse age text into a standardized age category and month range.
 
@@ -250,8 +249,7 @@ def parse_age_text(
         return "Puppy", months, min(months + 2, 12)
 
     # Check for descriptive terms
-    if any(term in age_text for term in [
-           "puppy", "pup", "baby", "young puppy"]):
+    if any(term in age_text for term in ["puppy", "pup", "baby", "young puppy"]):
         return "Puppy", 2, 10
     elif any(
         term in age_text for term in ["young adult", "adolescent", "juvenile", "teen"]

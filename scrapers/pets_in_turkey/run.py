@@ -1,19 +1,18 @@
 # scrapers/pets_in_turkey/run.py
 
-from scrapers.pets_in_turkey.dogs_scraper import PetsInTurkeyScraper
-from config import DB_CONFIG
 import os
 import sys
 
 import psycopg2
 from dotenv import load_dotenv
 
+from config import DB_CONFIG
+from scrapers.pets_in_turkey.dogs_scraper import PetsInTurkeyScraper
+
 # Add the project root directory to Python path
 sys.path.append(
-    os.path.dirname(
-        os.path.dirname(
-            os.path.dirname(
-                os.path.abspath(__file__))))
+    os.path.dirname(os.path.dirname(
+        os.path.dirname(os.path.abspath(__file__))))
 )
 
 

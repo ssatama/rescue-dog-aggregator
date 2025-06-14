@@ -33,8 +33,8 @@ export default function OrganizationsPage() {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Rescue Organizations</h1>
-        <p className="text-lg text-gray-600 mb-8">
+        <h1 className="text-title text-gray-900 mb-4">Rescue Organizations</h1>
+        <p className="text-body text-gray-600 mb-8">
           These organizations work tirelessly to rescue and rehome dogs. By adopting through them, 
           you're supporting their mission to save more animals.
         </p>
@@ -45,7 +45,7 @@ export default function OrganizationsPage() {
             <p>There was an error loading organizations. Please try again later.</p>
             <button
               onClick={() => fetchOrganizations()}
-              className="mt-2 text-sm font-medium text-red-700 underline"
+              className="mt-2 text-small font-medium text-red-700 underline"
             >
               Retry
             </button>
@@ -66,8 +66,8 @@ export default function OrganizationsPage() {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
-            <h3 className="text-xl font-medium text-gray-900 mb-2">No Organizations Found</h3>
-            <p className="text-gray-600">We couldn't find any rescue organizations in our database.</p>
+            <h3 className="text-card-title text-gray-900 mb-2">No Organizations Found</h3>
+            <p className="text-body text-gray-600">We couldn't find any rescue organizations in our database.</p>
           </div>
         )}
       </div>

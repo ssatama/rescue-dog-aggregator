@@ -315,7 +315,7 @@ export default function DogsPage() {
     <Layout>
       {/* --- MODIFIED: Restore Outer Container --- */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Find Your New Best Friend</h1>
+        <h1 className="text-title text-gray-900 mb-6">Find Your New Best Friend</h1>
 
         {/* --- MODIFIED: Add Grid for Sidebar + Main Content --- */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -323,7 +323,7 @@ export default function DogsPage() {
           {/* --- MODIFIED: Sidebar for Desktop Filters --- */}
           <aside className="hidden md:block md:col-span-1">
             <div className="sticky top-8 bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-              <h2 className="text-xl font-semibold mb-4 text-gray-800">Filters</h2>
+              <h2 className="text-card-title text-gray-800 mb-4">Filters</h2>
               {/* Desktop Filter Controls */}
               <FilterControls
                 searchQuery={searchQuery}

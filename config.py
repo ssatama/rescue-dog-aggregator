@@ -10,9 +10,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configure basic logging if not already set up elsewhere
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(levelname)s:%(name)s:%(message)s")
+logging.basicConfig(level=logging.INFO,
+                    format="%(levelname)s:%(name)s:%(message)s")
 logger = logging.getLogger(__name__)
 
 # --- ADD: Safety Check ---
@@ -134,8 +133,7 @@ def parse_cors_origins() -> List[str]:
 # Parse CORS configuration
 ALLOWED_ORIGINS = parse_cors_origins()
 CORS_ALLOW_CREDENTIALS = os.getenv(
-    "CORS_ALLOW_CREDENTIALS",
-    "false").lower() == "true"
+    "CORS_ALLOW_CREDENTIALS", "false").lower() == "true"
 
 # CORS settings for different environments
 if ENVIRONMENT == "production":

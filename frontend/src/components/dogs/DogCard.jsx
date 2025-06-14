@@ -11,11 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import SocialMediaLinks from '../ui/SocialMediaLinks';
 import LazyImage from '../ui/LazyImage';
-import { getDogThumbnail, handleImageError } from '../../utils/imageUtils';
+import { getCatalogCardImageWithPosition, handleImageError } from '../../utils/imageUtils';
 import { sanitizeText } from '../../utils/security';
 
 
-const DogCard = React.memo(function DogCard({ dog }) {
+const DogCard = React.memo(function DogCard({ dog, priority = false }) {
   // Basic validation or default values with sanitization
   const name = sanitizeText(dog?.name || "Unknown Dog");
   
@@ -26,7 +26,7 @@ const DogCard = React.memo(function DogCard({ dog }) {
   
   const breedGroup = sanitizeText(dog?.breed_group);
   const originalImageUrl = dog?.primary_image_url;
-  const optimizedImageUrl = getDogThumbnail(originalImageUrl);
+  const { src: optimizedImageUrl, position: objectPosition } = getCatalogCardImageWithPosition(originalImageUrl);
   const location = dog?.organization?.city ?
     (dog.organization.country ? sanitizeText(`${dog.organization.city}, ${dog.organization.country}`) : sanitizeText(dog.organization.city)) :
     "Unknown Location";
@@ -42,11 +42,14 @@ const DogCard = React.memo(function DogCard({ dog }) {
           className="block relative" 
           aria-label={`View details for ${name.replace(/&[^;]+;/g, '')}`}
         >
-          {/* Optimized Lazy Image */}
+          {/* Optimized Lazy Image with 4:3 aspect ratio and progressive loading */}
           <LazyImage
             src={optimizedImageUrl}
             alt={name.replace(/&[^;]+;/g, '')}
-            className="w-full h-64 object-cover"
+            className="w-full aspect-[4/3] object-cover"
+            style={{ objectPosition }}
+            enableProgressiveLoading={true}
+            priority={priority}
             onError={(e) => handleImageError(e, originalImageUrl)}
           />
           {/* Status Badge (optional) */}
@@ -62,27 +65,27 @@ const DogCard = React.memo(function DogCard({ dog }) {
       </CardHeader>
 
       <CardContent className="p-4 flex flex-col flex-grow">
-        <CardTitle className="text-lg font-bold mb-1 truncate group-hover:text-blue-600">
+        <CardTitle className="mb-1 truncate group-hover:text-blue-600">
           <Link href={`/dogs/${id}`} className="hover:underline">
             <h3>{name}</h3>
           </Link>
         </CardTitle>
         {breed && (
-          <p className="text-sm text-gray-600 mb-1 truncate">{breed}</p>
+          <p className="text-small text-gray-600 mb-1 truncate">{breed}</p>
         )}
         {breedGroup && breedGroup !== 'Unknown' && (
-          <Badge variant="outline" className="text-xs mb-2 w-fit">
+          <Badge variant="outline" className="text-tiny mb-2 w-fit">
             {breedGroup} Group
           </Badge>
         )}
-        <p className="text-xs text-gray-500 flex-grow">
+        <p className="text-tiny text-gray-500 flex-grow">
           {location !== "Unknown Location" ? location : <>&nbsp;</>}
         </p>
 
         {/* Organization Social Media */}
         {orgSocialMedia && Object.keys(orgSocialMedia).length > 0 && (
           <div className="mt-2 pt-2 border-t border-gray-100">
-            <p className="text-xs text-gray-500 mb-1">Follow rescue org:</p>
+            <p className="text-tiny text-gray-500 mb-1">Follow rescue org:</p>
             <SocialMediaLinks socialMedia={orgSocialMedia} className="justify-start" />
           </div>
         )}

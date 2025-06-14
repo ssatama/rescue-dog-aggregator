@@ -16,8 +16,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["animals"])
 
 
-def fetch_animal_images(cursor: RealDictCursor,
-                        animal_id: int) -> List[AnimalImage]:
+def fetch_animal_images(cursor: RealDictCursor, animal_id: int) -> List[AnimalImage]:
     images = []
     try:
         cursor.execute(
@@ -308,8 +307,7 @@ async def get_distinct_breeds(
 
 
 @router.get("/meta/breed_groups", response_model=List[str])
-async def get_distinct_breed_groups(
-        cursor: RealDictCursor = Depends(get_db_cursor)):
+async def get_distinct_breed_groups(cursor: RealDictCursor = Depends(get_db_cursor)):
     """Get distinct breed groups."""
     try:
         # First try getting breed groups from the properties field
@@ -474,8 +472,7 @@ async def get_distinct_available_regions(
 
 
 # --- Random Animal Endpoint ---
-@router.get("/random",
-            response_model=List[Animal], summary="Get Random Animals")
+@router.get("/random", response_model=List[Animal], summary="Get Random Animals")
 async def get_random_animals(
     limit: int = Query(
         3, ge=1, le=10, description="Number of random animals to return"

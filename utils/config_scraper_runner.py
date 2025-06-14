@@ -86,8 +86,7 @@ class ConfigScraperRunner:
         """
         return scraper_class(config_id=config_id)
 
-    def run_scraper(self, config_id: str,
-                    sync_first: bool = True) -> Dict[str, Any]:
+    def run_scraper(self, config_id: str, sync_first: bool = True) -> Dict[str, Any]:
         """Run a specific scraper by config ID.
 
         Args:

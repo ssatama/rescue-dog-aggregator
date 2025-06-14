@@ -6,10 +6,11 @@ import sys
 # Add the project root directory to Python path BEFORE imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from utils.config_loader import ConfigLoader  # noqa: E402
+from utils.config_scraper_runner import ConfigScraperRunner  # noqa: E402
+
 # Now import local modules after path is set
 from utils.org_sync import OrganizationSyncManager  # noqa: E402
-from utils.config_scraper_runner import ConfigScraperRunner  # noqa: E402
-from utils.config_loader import ConfigLoader  # noqa: E402
 
 
 class ConfigManager:

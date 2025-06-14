@@ -1,10 +1,10 @@
 # scrapers/pets_in_turkey/scraper.py
 
-from scrapers.base_scraper import BaseScraper
 import os
 import re
 import sys
 import time
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -13,12 +13,12 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
+from scrapers.base_scraper import BaseScraper
+
 # Add the project root directory to Python path
 sys.path.append(
-    os.path.dirname(
-        os.path.dirname(
-            os.path.dirname(
-                os.path.abspath(__file__))))
+    os.path.dirname(os.path.dirname(
+        os.path.dirname(os.path.abspath(__file__))))
 )
 
 # Import the base scraper
@@ -396,8 +396,7 @@ class PetsInTurkeyScraper(BaseScraper):
                 if "Sex" in attr_map and attr_map["Sex"] < len(values):
                     dog_data["sex"] = values[attr_map["Sex"]]
 
-                if "Neutered" in attr_map and attr_map["Neutered"] < len(
-                        values):
+                if "Neutered" in attr_map and attr_map["Neutered"] < len(values):
                     dog_data["properties"]["neutered_spayed"] = values[
                         attr_map["Neutered"]
                     ]

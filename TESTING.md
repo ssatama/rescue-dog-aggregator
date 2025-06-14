@@ -1,6 +1,6 @@
 # Testing Guide for Rescue Dog Aggregator
 
-This project follows a **Test-Driven Development (TDD)** approach with comprehensive coverage across both backend (Python/Pytest) and frontend (React/Jest) components. The testing strategy ensures production readiness through security, performance, accessibility, and reliability validation.
+This project follows a **Test-Driven Development (TDD)** approach with comprehensive coverage across both backend (Python/Pytest) and frontend (React/Jest) components. The testing strategy ensures production readiness through security, performance, accessibility, and reliability validation. Recent improvements include advanced speed optimization with 217 fast tests completing in 45 seconds.
 
 ## Testing Philosophy
 
@@ -18,15 +18,43 @@ The project maintains **95+ tests across 17 test suites** with focus on:
 Run from the project root:
 
 ```bash
-# Full test suite with virtual environment
-source venv/bin/activate && python -m pytest tests/ -v
+# Speed-optimized development workflow
+source venv/bin/activate
 
-# Quick test run
-pytest
+# FAST: Core business logic across ALL modules (60+ tests in ~1s)
+python -m pytest tests/ -m "unit" -v
+
+# COMPLETE: All fast tests across entire codebase (217 tests in ~45s)
+python -m pytest tests/ -m "not slow" -v
+
+# COMPREHENSIVE: Full integration testing (512 total tests)
+python -m pytest tests/ -v
 
 # Specific test categories
 python -m pytest tests/api/test_availability_filtering.py -v
 python -m pytest tests/scrapers/test_base_scraper.py -v
+```
+
+### Speed-Optimized Test Architecture (NEW)
+
+The testing system now includes advanced speed optimization:
+
+**Test Markers & Performance**:
+- `@pytest.mark.unit` - Pure logic tests (60+ tests, <1 second)
+- `@pytest.mark.fast` - Tests with minimal I/O (complete suite in ~45s)
+- `@pytest.mark.slow` - Integration tests requiring expensive operations
+- `@pytest.mark.database` - Tests requiring database operations
+- `@pytest.mark.selenium` - WebDriver automation tests
+- `@pytest.mark.network` - Network simulation tests
+
+**Fast Test Files** (NEW - for rapid development):
+```bash
+# Core business logic tests across ALL modules
+python -m pytest tests/api/test_api_logic_fast.py -v                    # API logic (15 tests)
+python -m pytest tests/config/test_config_logic_fast.py -v              # Config logic (14 tests)
+python -m pytest tests/scrapers/test_rean_scraper_fast.py -v            # Core REAN logic (16 tests)
+python -m pytest tests/scrapers/test_rean_unified_extraction_fast.py -v # Unified extraction (12 tests)
+python -m pytest tests/scrapers/test_rean_error_handling_fast.py -v     # Error handling (16 tests)
 ```
 
 - Tests live under `tests/`:
@@ -237,13 +265,30 @@ Advanced testing for social media integration:
 
 **Backend Verification**:
 ```bash
-# Complete backend validation
+# Speed-optimized pre-commit validation (RECOMMENDED)
 source venv/bin/activate
-black .                    # Code formatting
-isort .                    # Import sorting
-flake8 --exclude=venv .    # Linting
-python -m pytest tests/ --cov=. --cov-report=term-missing -v
+black .                                      # Code formatting
+isort .                                      # Import sorting
+python -m pytest tests/ -m "not slow" -v    # Fast comprehensive suite (217 tests, ~45s)
+
+# Full validation (for thorough verification)
+flake8 --exclude=venv .                      # Linting
+python -m pytest tests/ --cov=. --cov-report=term-missing -v  # Complete coverage
 ```
+
+### Recent Test Infrastructure Improvements
+
+**Speed Optimization Results**:
+- **Development**: 217 non-slow tests in 45s across ALL modules (vs 120+ seconds with slow tests)
+- **Unit Tests**: 60+ core logic tests in ~1s across ALL modules
+- **Complete Coverage**: Fast tests span API, config, database, scrapers, security, and management
+
+**Test Stability Improvements**:
+- Fixed database schema detection for "CREATE TABLE IF NOT EXISTS" patterns
+- Enhanced requirements file validation for pip includes (`-r requirements.txt`)
+- Improved path handling for cross-platform compatibility
+- Added comprehensive directory filtering for development artifacts
+- Refined sensitive file detection for development environments
 
 **Frontend Verification**:
 ```bash

@@ -19,8 +19,7 @@ from scrapers.base_scraper import BaseScraper
 class TierschutzvereinEuropaScraper(BaseScraper):
     """Tierschutzverein Europa e.V. scraper for German rescue dogs."""
 
-    def __init__(self, config_id="tierschutzverein-europa",
-                 organization_id=None):
+    def __init__(self, config_id="tierschutzverein-europa", organization_id=None):
         """Initialize Tierschutzverein Europa scraper with configuration."""
         if organization_id is not None:
             # Legacy mode - use organization_id
@@ -202,9 +201,8 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
             # Build full adoption URL
             adoption_url = (
-                urljoin(
-                    self.base_url,
-                    href) if not href.startswith("http") else href
+                urljoin(self.base_url, href) if not href.startswith(
+                    "http") else href
             )
 
             # Basic validation
@@ -269,20 +267,15 @@ class TierschutzvereinEuropaScraper(BaseScraper):
     def _is_valid_dog_link(self, name: str, text: str, href: str) -> bool:
         """Validate that this link represents a real dog listing."""
         # Skip obvious non-dog pages
-        invalid_patterns = [
-            "mitgliedschaft",
-            "spende",
-            "kontakt",
-            "home",
-            "about"]
+        invalid_patterns = ["mitgliedschaft",
+                            "spende", "kontakt", "home", "about"]
         href_lower = href.lower()
 
         if any(pattern in href_lower for pattern in invalid_patterns):
             return False
 
         # Check for reasonable name
-        if not name or len(name) < 2 or name.lower() in [
-                "ihre", "mehr", "info"]:
+        if not name or len(name) < 2 or name.lower() in ["ihre", "mehr", "info"]:
             return False
 
         # URL should contain the dog listing pattern
@@ -524,13 +517,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         age = self.extract_age_from_text(details)
         if age:
             age_normalized = (
-                age.lower().replace(
-                    "ä",
-                    "ae").replace(
-                    "ö",
-                    "oe").replace(
-                    "ü",
-                    "ue")
+                age.lower().replace("ä", "ae").replace("ö", "oe").replace("ü", "ue")
             )
             age_normalized = re.sub(r"[^\w]", "-", age_normalized)
             base_id = f"{normalized_name}-{age_normalized}"
@@ -617,8 +604,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         # Otherwise, be conservative and skip
         return False
 
-    def extract_data_from_article_text(
-            self, article_text: str) -> Dict[str, Any]:
+    def extract_data_from_article_text(self, article_text: str) -> Dict[str, Any]:
         """Extract dog data from article text structure found during DOM investigation."""
         result = {}
 
@@ -642,8 +628,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             result["breed"] = breed_match.group(1).strip()
 
         gender_match = re.search(
-            r"Geschlecht:\s*(männlich|weiblich)",
-            article_text)
+            r"Geschlecht:\s*(männlich|weiblich)", article_text)
         if gender_match:
             gender = gender_match.group(1)
             result["sex"] = "Rüde" if gender == "männlich" else "Hündin"
@@ -674,8 +659,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
         return ""
 
-    def extract_profile_image_from_images(
-            self, images: List[tuple]) -> Optional[str]:
+    def extract_profile_image_from_images(self, images: List[tuple]) -> Optional[str]:
         """Extract profile image URL from list of (url, alt_text) tuples.
 
         Based on investigation, profile images are typically the third image
@@ -790,8 +774,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
             for link in links:
                 href = link.get_attribute("href")
-                if href and "/tiervermittlung/" in href and href.count(
-                        "/") >= 4:
+                if href and "/tiervermittlung/" in href and href.count("/") >= 4:
                     external_id = self.extract_external_id_from_url(href)
                     adoption_url = href
                     break

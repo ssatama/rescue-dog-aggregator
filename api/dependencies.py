@@ -1,6 +1,5 @@
 # api/dependencies.py
 
-from config import DB_CONFIG  # DB_CONFIG is imported here
 import logging
 import os
 import sys
@@ -9,6 +8,8 @@ from typing import Generator
 import psycopg2
 from fastapi import HTTPException
 from psycopg2.extras import RealDictCursor
+
+from config import DB_CONFIG  # DB_CONFIG is imported here
 
 # Add project root to path so we can import config
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -102,8 +103,7 @@ def get_db_cursor() -> Generator[RealDictCursor, None, None]:
             conn.close()
 
 
-def get_database_connection(
-) -> Generator[psycopg2.extensions.connection, None, None]:
+def get_database_connection() -> Generator[psycopg2.extensions.connection, None, None]:
     """
     Dependency that provides a database connection.
     Used for monitoring endpoints that need direct connection access.

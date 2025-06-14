@@ -6,6 +6,43 @@ This guide provides comprehensive troubleshooting information for the Rescue Dog
 
 ## 🚨 CRITICAL: Recent Issue Resolution (December 2024)
 
+### Backend Test Infrastructure Failures
+
+**Error**: Multiple pytest failures in configuration and filesystem validation tests
+**Impact**: 7 out of 7 backend validation tests failing, preventing development workflow
+**Root Cause**: Schema detection patterns, path handling inconsistencies, requirements file validation
+
+**SYSTEMATIC SOLUTION** (Proven Fix):
+```bash
+# 1. Apply comprehensive test infrastructure fixes
+source venv/bin/activate
+
+# 2. Verify all 7 previously failing tests now pass
+python -m pytest tests/config/test_configuration_validation.py -v
+python -m pytest tests/filesystem/test_file_integrity.py -v
+
+# 3. Run speed-optimized complete test suite
+python -m pytest tests/ -m "not slow" -v  # 217 tests in ~45s
+
+# 4. Verify test performance improvements
+python -m pytest tests/ -m "unit" -v      # 60+ tests in ~1s
+```
+
+**Key Fixes Applied**:
+- **Database Schema Detection**: Enhanced to handle "CREATE TABLE IF NOT EXISTS" patterns
+- **Requirements File Validation**: Added support for pip includes (`-r requirements.txt`) and options
+- **Path Handling**: Fixed cross-platform compatibility using consistent pathlib.Path methods
+- **Directory Filtering**: Added comprehensive exclusion for __pycache__ and development artifacts
+- **Sensitive File Detection**: Refined to allow development .env files while maintaining security
+- **Module Conflict Logic**: Improved to check conflicts only within same namespace
+
+**Prevention**: Use the new speed-optimized testing workflow for development:
+```bash
+# Fast development cycle (recommended)
+python -m pytest tests/ -m "unit" -v                 # Core logic validation (~1s)
+python -m pytest tests/ -m "not slow" -v             # Complete fast suite (~45s)
+```
+
 ### Next.js 15 TypeScript Build Failures
 
 **Error**: `Type '{} | undefined' does not satisfy the constraint 'PageProps'`

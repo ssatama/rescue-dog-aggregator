@@ -5,8 +5,6 @@ Provides operational commands for emergency recovery, rollback procedures,
 and data integrity management during scraper failures.
 """
 
-from utils.config_loader import ConfigLoader
-from config import DB_CONFIG
 import argparse
 import json
 import logging
@@ -16,6 +14,9 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 import psycopg2
+
+from config import DB_CONFIG
+from utils.config_loader import ConfigLoader
 
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -150,8 +151,7 @@ class EmergencyOperations:
 
         except Exception as e:
             self.logger.error(f"Error during emergency stop: {e}")
-            return {"success": False, "error": str(
-                e), "timestamp": datetime.now()}
+            return {"success": False, "error": str(e), "timestamp": datetime.now()}
 
     def emergency_disable_organization(
         self, organization_id: int, reason: str
@@ -191,8 +191,7 @@ class EmergencyOperations:
                 "timestamp": datetime.now(),
             }
 
-    def execute_emergency_recovery(
-            self, organization_id: int) -> Dict[str, Any]:
+    def execute_emergency_recovery(self, organization_id: int) -> Dict[str, Any]:
         """
         Execute complete emergency recovery workflow for an organization.
 
@@ -331,8 +330,7 @@ class EmergencyOperations:
             self.logger.error(f"Error stopping scrapers: {e}")
             return {"stopped": 0, "failed": 1, "error": str(e)}
 
-    def _disable_organization_scrapers(
-            self, organization_id: int, reason: str) -> bool:
+    def _disable_organization_scrapers(self, organization_id: int, reason: str) -> bool:
         """Disable scraping for a specific organization."""
         try:
             # This would integrate with the config system to disable the organization
@@ -352,8 +350,7 @@ class EmergencyOperations:
                 AND status = 'running'
             """,
                 (datetime.now(),
-                 f"Emergency disable: {reason}",
-                 organization_id),
+                 f"Emergency disable: {reason}", organization_id),
             )
 
             conn.commit()
@@ -378,8 +375,7 @@ class EmergencyOperations:
             "operations": [],
         }
 
-    def _validate_operation_safety(
-            self, organization_id: int) -> Dict[str, Any]:
+    def _validate_operation_safety(self, organization_id: int) -> Dict[str, Any]:
         """
         Validate that it's safe to perform emergency operations.
 
@@ -443,8 +439,7 @@ class EmergencyOperations:
 
         except Exception as e:
             self.logger.error(f"Error validating operation safety: {e}")
-            return {"safe": False, "reasons": [
-                f"Safety validation error: {str(e)}"]}
+            return {"safe": False, "reasons": [f"Safety validation error: {str(e)}"]}
 
     def _get_db_connection(self):
         """Get database connection."""
@@ -466,8 +461,7 @@ class RollbackManager:
         """Initialize rollback manager."""
         self.logger = logging.getLogger(f"{__name__}.RollbackManager")
 
-    def get_available_snapshots(
-            self, organization_id: int) -> List[Dict[str, Any]]:
+    def get_available_snapshots(self, organization_id: int) -> List[Dict[str, Any]]:
         """
         Get available data snapshots for rollback.
 
@@ -499,8 +493,7 @@ class RollbackManager:
                     f"Are you sure you want to rollback organization {organization_id} to snapshot {snapshot_id}? (yes/no): "
                 )
                 if confirmation.lower() != "yes":
-                    return {"success": False,
-                            "reason": "Operation cancelled by user"}
+                    return {"success": False, "reason": "Operation cancelled by user"}
             except EOFError:
                 # Handle non-interactive environments
                 return {
@@ -546,8 +539,7 @@ class RollbackManager:
             )
             return {"success": False, "error": str(e)}
 
-    def create_data_backup(self, organization_id: int,
-                           reason: str) -> Dict[str, Any]:
+    def create_data_backup(self, organization_id: int, reason: str) -> Dict[str, Any]:
         """
         Create emergency data backup for an organization.
 
@@ -804,8 +796,7 @@ class RollbackManager:
             self.logger.error(f"Error rolling back session {session_id}: {e}")
             return {"success": False, "error": str(e)}
 
-    def _create_backup(self, organization_id: int,
-                       reason: str) -> Dict[str, Any]:
+    def _create_backup(self, organization_id: int, reason: str) -> Dict[str, Any]:
         """Create a data backup for an organization."""
         try:
             backup_id = (
@@ -947,8 +938,7 @@ class DataRecoveryManager:
         """
         return self._restore_from_backup(organization_id, backup_id)
 
-    def validate_data_consistency(
-            self, organization_id: int) -> Dict[str, Any]:
+    def validate_data_consistency(self, organization_id: int) -> Dict[str, Any]:
         """
         Validate data consistency after recovery.
 
@@ -1242,8 +1232,7 @@ class EmergencyOperationsCommands:
 
     def rollback_organization(self, organization_id: int) -> Dict[str, Any]:
         """Execute rollback command for organization."""
-        return self.emergency_ops.rollback_manager.rollback_last_scrape(
-            organization_id)
+        return self.emergency_ops.rollback_manager.rollback_last_scrape(organization_id)
 
     def create_backup(
         self, organization_id: int, reason: str = "Manual backup"

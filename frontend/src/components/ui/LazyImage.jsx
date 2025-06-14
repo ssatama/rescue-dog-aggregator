@@ -1,5 +1,5 @@
 /**
- * LazyImage component with loading states and optimization
+ * LazyImage component with progressive loading and optimization
  */
 import React, { useState, useRef, useEffect } from 'react';
 
@@ -10,14 +10,41 @@ export const LazyImage = ({
   placeholder = null,
   onLoad = () => {},
   onError = () => {},
+  enableProgressiveLoading = false,
+  priority = false, // High priority images load immediately (above-fold)
   ...props 
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
+  const [isInView, setIsInView] = useState(priority); // Priority images start as in-view
   const [hasError, setHasError] = useState(false);
+  const [lowQualityLoaded, setLowQualityLoaded] = useState(false);
+  const [blurPlaceholderLoaded, setBlurPlaceholderLoaded] = useState(false);
   const imgRef = useRef(null);
+  
+  // Generate progressive loading URLs if enabled
+  const generateProgressiveUrls = (originalSrc) => {
+    if (!originalSrc || !enableProgressiveLoading) return {};
+    
+    if (originalSrc.includes('res.cloudinary.com')) {
+      return {
+        lowQuality: originalSrc.replace('/upload/', '/upload/q_20,f_auto/'),
+        blurPlaceholder: originalSrc.replace('/upload/', '/upload/w_50,q_auto,e_blur:300,f_auto/')
+      };
+    }
+    
+    // For non-Cloudinary URLs, we can only do basic progressive loading
+    return {
+      lowQuality: originalSrc,
+      blurPlaceholder: null
+    };
+  };
+
+  const { lowQuality: lowQualitySrc, blurPlaceholder: blurPlaceholderSrc } = generateProgressiveUrls(src);
 
   useEffect(() => {
+    // Skip intersection observer for priority images - they load immediately
+    if (priority) return;
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -25,7 +52,10 @@ export const LazyImage = ({
           observer.disconnect();
         }
       },
-      { threshold: 0.1 }
+      { 
+        threshold: 0.1,
+        rootMargin: '200px' // Load images 200px before they enter viewport
+      }
     );
 
     if (imgRef.current) {
@@ -33,7 +63,15 @@ export const LazyImage = ({
     }
 
     return () => observer.disconnect();
-  }, []);
+  }, [priority]);
+
+  const handleBlurPlaceholderLoad = () => {
+    setBlurPlaceholderLoaded(true);
+  };
+
+  const handleLowQualityLoad = () => {
+    setLowQualityLoaded(true);
+  };
 
   const handleLoad = (e) => {
     setIsLoaded(true);
@@ -71,18 +109,48 @@ export const LazyImage = ({
 
   return (
     <div ref={imgRef} className="relative">
-      {!isLoaded && (placeholder || defaultPlaceholder)}
+      {/* Stage 1: Default placeholder until we have any image loaded */}
+      {!blurPlaceholderLoaded && !lowQualityLoaded && !isLoaded && (placeholder || defaultPlaceholder)}
       
       {isInView && (
-        <img
-          src={src}
-          alt={alt}
-          className={`${className} ${isLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
-          loading="lazy"
-          onLoad={handleLoad}
-          onError={handleError}
-          {...props}
-        />
+        <>
+          {/* Stage 1: Blur placeholder (immediate) */}
+          {enableProgressiveLoading && blurPlaceholderSrc && !lowQualityLoaded && !isLoaded && (
+            <img
+              src={blurPlaceholderSrc}
+              alt={alt}
+              className={`${className} ${blurPlaceholderLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100`}
+              loading="lazy"
+              onLoad={handleBlurPlaceholderLoad}
+              onError={handleError}
+              {...props}
+            />
+          )}
+          
+          {/* Stage 2: Low quality image */}
+          {enableProgressiveLoading && lowQualitySrc && !isLoaded && (
+            <img
+              src={lowQualitySrc}
+              alt={alt}
+              className={`${className} ${lowQualityLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-200 ${blurPlaceholderLoaded || lowQualityLoaded ? 'absolute inset-0' : ''}`}
+              loading="lazy"
+              onLoad={handleLowQualityLoad}
+              onError={handleError}
+              {...props}
+            />
+          )}
+          
+          {/* Stage 3: Full quality image */}
+          <img
+            src={src}
+            alt={alt}
+            className={`${className} ${isLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300 ${enableProgressiveLoading && (blurPlaceholderLoaded || lowQualityLoaded) && !isLoaded ? 'absolute inset-0' : ''}`}
+            loading="lazy"
+            onLoad={handleLoad}
+            onError={handleError}
+            {...props}
+          />
+        </>
       )}
     </div>
   );

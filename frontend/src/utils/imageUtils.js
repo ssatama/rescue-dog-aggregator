@@ -17,7 +17,61 @@ function isCloudinaryUrl(url) {
 }
 
 /**
- * Get optimized image URL for dog cards (square thumbnails)
+ * Get optimized image URL for home page featured dog cards (4:3 aspect ratio)
+ */
+export function getHomeCardImage(originalUrl) {
+  if (!originalUrl) {
+    return PLACEHOLDER_IMAGE;
+  }
+  
+  // If it's already a Cloudinary URL, add home card transformations
+  if (isCloudinaryUrl(originalUrl)) {
+    return originalUrl.replace('/upload/', '/upload/w_400,h_300,c_fill,g_auto:subject,q_auto,f_auto/');
+  }
+  
+  // If Cloudinary is disabled or not configured, use original
+  if (!USE_CLOUDINARY || !CLOUDINARY_CLOUD_NAME) {
+    return originalUrl;
+  }
+  
+  // Fallback: use Cloudinary fetch
+  try {
+    const encodedUrl = encodeURIComponent(originalUrl);
+    return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/w_400,h_300,c_fill,g_auto:subject,q_auto,f_auto/${encodedUrl}`;
+  } catch (error) {
+    return originalUrl;
+  }
+}
+
+/**
+ * Get optimized image URL for catalog grid cards (4:3 aspect ratio)
+ */
+export function getCatalogCardImage(originalUrl) {
+  if (!originalUrl) {
+    return PLACEHOLDER_IMAGE;
+  }
+  
+  // If it's already a Cloudinary URL, add catalog card transformations
+  if (isCloudinaryUrl(originalUrl)) {
+    return originalUrl.replace('/upload/', '/upload/w_320,h_240,c_fill,g_auto:subject,q_auto,f_auto/');
+  }
+  
+  // If Cloudinary is disabled or not configured, use original
+  if (!USE_CLOUDINARY || !CLOUDINARY_CLOUD_NAME) {
+    return originalUrl;
+  }
+  
+  // Fallback: use Cloudinary fetch
+  try {
+    const encodedUrl = encodeURIComponent(originalUrl);
+    return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/w_320,h_240,c_fill,g_auto:subject,q_auto,f_auto/${encodedUrl}`;
+  } catch (error) {
+    return originalUrl;
+  }
+}
+
+/**
+ * Get optimized image URL for dog cards (square thumbnails) - LEGACY - use getCatalogCardImage for new implementations
  */
 export function getDogThumbnail(originalUrl) {
   if (!originalUrl) {
@@ -45,7 +99,34 @@ export function getDogThumbnail(originalUrl) {
 }
 
 /**
- * Get optimized image URL for dog detail pages
+ * Get optimized image URL for dog detail hero images (16:9 aspect ratio with background fill)
+ */
+export function getDetailHeroImage(originalUrl) {
+  if (!originalUrl) {
+    return PLACEHOLDER_IMAGE;
+  }
+  
+  // If it's already a Cloudinary URL, add hero transformations
+  if (isCloudinaryUrl(originalUrl)) {
+    // Use c_pad with b_auto:predominant for background fill in 16:9 aspect ratio
+    return originalUrl.replace('/upload/', '/upload/w_800,h_450,c_pad,b_auto:predominant,q_auto,f_auto/');
+  }
+  
+  if (!USE_CLOUDINARY || !CLOUDINARY_CLOUD_NAME) {
+    return originalUrl;
+  }
+  
+  // Fallback: use Cloudinary fetch
+  try {
+    const encodedUrl = encodeURIComponent(originalUrl);
+    return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/w_800,h_450,c_pad,b_auto:predominant,q_auto,f_auto/${encodedUrl}`;
+  } catch (error) {
+    return originalUrl;
+  }
+}
+
+/**
+ * Get optimized image URL for dog detail pages - LEGACY - use getDetailHeroImage for new implementations
  */
 export function getDogDetailImage(originalUrl) {
   if (!originalUrl) {
@@ -72,7 +153,32 @@ export function getDogDetailImage(originalUrl) {
 }
 
 /**
- * Get image URL for smaller thumbnails (like in additional images)
+ * Get optimized image URL for gallery thumbnails (1:1 square aspect ratio)
+ */
+export function getThumbnailImage(originalUrl) {
+  if (!originalUrl) {
+    return PLACEHOLDER_IMAGE;
+  }
+  
+  if (isCloudinaryUrl(originalUrl)) {
+    // Square thumbnails with smart cropping for galleries
+    return originalUrl.replace('/upload/', '/upload/w_150,h_150,c_fill,g_auto:subject,q_auto,f_auto/');
+  }
+  
+  if (!USE_CLOUDINARY || !CLOUDINARY_CLOUD_NAME) {
+    return originalUrl;
+  }
+  
+  try {
+    const encodedUrl = encodeURIComponent(originalUrl);
+    return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/w_150,h_150,c_fill,g_auto:subject,q_auto,f_auto/${encodedUrl}`;
+  } catch (error) {
+    return originalUrl;
+  }
+}
+
+/**
+ * Get image URL for smaller thumbnails (like in additional images) - LEGACY - use getThumbnailImage for new implementations
  */
 export function getDogSmallThumbnail(originalUrl) {
   if (!originalUrl) {
@@ -119,6 +225,53 @@ export function handleImageError(event, originalUrl) {
 }
 
 /**
+ * Get smart object positioning based on image characteristics
+ * @param {string} imageUrl - Image URL to analyze
+ * @param {string} context - Context where image is used ('card', 'hero', 'thumbnail')
+ * @returns {string} CSS object-position value
+ */
+export function getSmartObjectPosition(imageUrl, context = 'card') {
+  // Default positioning strategies based on context
+  const positionStrategies = {
+    card: 'center 40%', // Focus on upper body/face for cards
+    hero: 'center center', // Centered for hero images
+    thumbnail: 'center center' // Centered for small thumbnails
+  };
+  
+  // For now, return context-based positioning
+  // Future enhancement: analyze image dimensions or add manual hints
+  return positionStrategies[context] || 'center center';
+}
+
+/**
+ * Enhanced card image with smart positioning for standing dogs
+ */
+export function getCatalogCardImageWithPosition(originalUrl) {
+  if (!originalUrl) {
+    return { src: PLACEHOLDER_IMAGE, position: 'center center' };
+  }
+  
+  const src = getCatalogCardImage(originalUrl);
+  const position = getSmartObjectPosition(originalUrl, 'card');
+  
+  return { src, position };
+}
+
+/**
+ * Enhanced hero image with smart positioning
+ */
+export function getDetailHeroImageWithPosition(originalUrl) {
+  if (!originalUrl) {
+    return { src: PLACEHOLDER_IMAGE, position: 'center center' };
+  }
+  
+  const src = getDetailHeroImage(originalUrl);
+  const position = getSmartObjectPosition(originalUrl, 'hero');
+  
+  return { src, position };
+}
+
+/**
  * Preload critical images to improve perceived performance
  * @param {Array<string>} imageUrls - Array of image URLs to preload
  */
@@ -129,7 +282,7 @@ export function preloadImages(imageUrls) {
     const link = document.createElement('link');
     link.rel = 'preload';
     link.as = 'image';
-    link.href = getDogThumbnail(url);
+    link.href = getCatalogCardImage(url); // Use new catalog card image
     document.head.appendChild(link);
   });
 }

@@ -1,9 +1,10 @@
-from utils.cloudinary_service import CloudinaryService
 import os
 import sys
 from unittest.mock import Mock, patch
 
 import pytest
+
+from utils.cloudinary_service import CloudinaryService
 
 # Add project root to path
 sys.path.append(

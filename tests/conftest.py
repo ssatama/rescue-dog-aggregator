@@ -5,8 +5,6 @@ Sets up a connection to a real test database and manages test data.
 Uses dependency overrides for TestClient database access.
 """
 
-from api.main import app
-from api.dependencies import get_db_cursor  # Import the original dependency
 import os
 import sys
 from unittest.mock import patch
@@ -15,6 +13,9 @@ import psycopg2
 import pytest
 from fastapi.testclient import TestClient
 from psycopg2.extras import RealDictCursor
+
+from api.dependencies import get_db_cursor  # Import the original dependency
+from api.main import app
 
 # Add project root to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

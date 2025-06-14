@@ -41,9 +41,10 @@ psql -d rescue_dogs -f database/migrations/002_add_detailed_metrics.sql
 source venv/bin/activate && python -m pytest tests/ -v
 
 # ⚡ SPEED-OPTIMIZED TEST WORKFLOW (Recommended for Development)
-# Fast unit tests across ALL directories (60+ tests in ~1s - 100x faster than slow tests):
-python -m pytest tests/ -m "unit" -v                      # Core business logic across ALL modules
-python -m pytest tests/ -m "not slow" -v                  # All fast tests (217 tests in ~45s - COMPLETE SUITE)
+# ULTRA-FAST unit tests across ALL directories (82+ tests in <1s - 200x faster than slow tests):
+python -m pytest tests/ -m "unit" -v                      # Pure logic tests across ALL modules (<1s)
+python -m pytest tests/ -m "fast" -v                      # Fast tests with minimal I/O (1-5s)
+python -m pytest tests/ -m "not slow" -v                  # All non-slow tests (~45s - COMPLETE SUITE)
 
 # Fast test files for specific components:
 python -m pytest tests/api/test_api_logic_fast.py -v                    # API logic (15 tests)

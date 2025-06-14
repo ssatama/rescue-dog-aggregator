@@ -1,11 +1,12 @@
 # database/db_migration_phase2.py
 
-from config import DB_CONFIG
 import argparse
 import os
 import sys
 
 import psycopg2
+
+from config import DB_CONFIG
 
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

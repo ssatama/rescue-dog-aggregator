@@ -1,11 +1,12 @@
 # database/db_setup.py
 
-from config import DB_CONFIG
 import os
 import sys
 
 import psycopg2
 from psycopg2 import errors
+
+from config import DB_CONFIG
 
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

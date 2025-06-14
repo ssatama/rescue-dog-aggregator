@@ -1,6 +1,5 @@
 # scrapers/base_scraper.py
 
-from utils.cloudinary_service import CloudinaryService
 import json
 import logging
 import os
@@ -15,6 +14,7 @@ from langdetect import detect
 
 # Import config
 from config import DB_CONFIG
+from utils.cloudinary_service import CloudinaryService
 from utils.config_loader import ConfigLoader
 from utils.org_sync import OrganizationSyncManager
 
@@ -1022,8 +1022,7 @@ class BaseScraper(ABC):
         """
         try:
             # First check for catastrophic failure
-            if self.detect_catastrophic_failure(
-                    animals_found, absolute_minimum):
+            if self.detect_catastrophic_failure(animals_found, absolute_minimum):
                 return True
 
             cursor = self.conn.cursor()

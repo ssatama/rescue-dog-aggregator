@@ -1,6 +1,7 @@
-from utils.standardization import standardize_age, standardize_breed
 import os
 import sys
+
+from utils.standardization import standardize_age, standardize_breed
 
 # Add project root to path
 sys.path.append(

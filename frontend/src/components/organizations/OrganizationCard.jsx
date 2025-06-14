@@ -8,6 +8,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import SocialMediaLinks from '../ui/SocialMediaLinks';
+import LazyImage from '../ui/LazyImage';
+import { handleImageError } from '../../utils/imageUtils';
 
 export default function OrganizationCard({ organization }) {
   // Using placeholder data if no organization is provided
@@ -26,10 +28,18 @@ export default function OrganizationCard({ organization }) {
       <Card className="overflow-hidden flex flex-col h-full transition-shadow duration-300 hover:shadow-lg">
         <CardHeader className="p-6 flex justify-center items-center bg-gray-50">
           {logoUrl ? (
-            <img 
+            <LazyImage 
               src={logoUrl} 
               alt={name} 
               className="h-24 object-contain"
+              onError={(e) => handleImageError(e, logoUrl)}
+              placeholder={
+                <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center animate-pulse">
+                  <span className="text-2xl font-bold text-blue-500">
+                    {name.charAt(0)}
+                  </span>
+                </div>
+              }
             />
           ) : (
             <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center">
@@ -41,14 +51,14 @@ export default function OrganizationCard({ organization }) {
         </CardHeader>
         
         <CardContent className="p-6 flex flex-col flex-grow">
-          <CardTitle className="text-xl font-bold text-gray-800 mb-2">{name}</CardTitle>
-          <p className="text-gray-600 text-sm mb-2">{location}</p>
-          <p className="text-gray-700 mb-4 line-clamp-3 flex-grow">{description}</p>
+          <CardTitle className="text-gray-800 mb-2">{name}</CardTitle>
+          <p className="text-gray-600 text-small mb-2">{location}</p>
+          <p className="text-body text-gray-700 mb-4 line-clamp-3 flex-grow">{description}</p>
           
           {/* Social Media Links */}
           {socialMedia && Object.keys(socialMedia).length > 0 && (
             <div className="mt-2 pt-2 border-t border-gray-100">
-              <p className="text-xs text-gray-500 mb-2">Follow us:</p>
+              <p className="text-tiny text-gray-500 mb-2">Follow us:</p>
               <SocialMediaLinks socialMedia={socialMedia} className="justify-start" />
             </div>
           )}

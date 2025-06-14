@@ -6,11 +6,12 @@ This script reads all dog records from the database, applies standardization rul
 and updates the standardized fields.
 """
 
-from utils.standardization import standardize_age, standardize_breed
-from utils.db import connect_to_database
 import json
 import os
 import sys
+
+from utils.db import connect_to_database
+from utils.standardization import standardize_age, standardize_breed
 
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

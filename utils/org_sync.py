@@ -88,8 +88,7 @@ class OrganizationSyncManager:
             f"Found {len(orgs)} organizations with config_id in database")
         return orgs
 
-    def _should_update_org(self, db_org: dict,
-                           config: OrganizationConfig) -> bool:
+    def _should_update_org(self, db_org: dict, config: OrganizationConfig) -> bool:
         """Determine if database organization should be updated from config.
 
         Args:
@@ -158,14 +157,12 @@ class OrganizationSyncManager:
             social_data["linkedin"] = str(social.linkedin)
 
         # Add website URL to social media if present
-        if hasattr(config.metadata,
-                   "website_url") and config.metadata.website_url:
+        if hasattr(config.metadata, "website_url") and config.metadata.website_url:
             social_data["website"] = str(config.metadata.website_url)
 
         return social_data  # Return dict, not JSON string
 
-    def _sync_service_regions(self, org_id: int,
-                              config: OrganizationConfig) -> None:
+    def _sync_service_regions(self, org_id: int, config: OrganizationConfig) -> None:
         """Sync service regions for an organization.
 
         Args:
@@ -335,8 +332,7 @@ class OrganizationSyncManager:
 
         return org_id
 
-    def update_organization(self, org_id: int,
-                            config: OrganizationConfig) -> None:
+    def update_organization(self, org_id: int, config: OrganizationConfig) -> None:
         """Update existing organization from config.
 
         Args:
@@ -389,8 +385,7 @@ class OrganizationSyncManager:
             )
             # Don't fail the whole operation if service regions fail
 
-    def sync_organization(
-            self, config: OrganizationConfig) -> Tuple[int, bool]:
+    def sync_organization(self, config: OrganizationConfig) -> Tuple[int, bool]:
         """Sync a single organization from config to database.
 
         Args:

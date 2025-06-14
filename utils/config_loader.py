@@ -67,8 +67,7 @@ class ConfigLoader:
                 }
         return self._schema_cache
 
-    def _validate_against_schema(
-            self, config_data: dict, config_file: Path) -> None:
+    def _validate_against_schema(self, config_data: dict, config_file: Path) -> None:
         """Validate config data against JSON schema."""
         try:
             schema = self._load_schema()
@@ -109,8 +108,7 @@ class ConfigLoader:
                 f"Config ID '{actual_id}' does not match filename '{expected_id}' in {config_file}"
             )
 
-    def _validate_schema_version(
-            self, config_data: dict, config_file: Path) -> None:
+    def _validate_schema_version(self, config_data: dict, config_file: Path) -> None:
         """Validate schema version is supported."""
         schema_version = config_data.get("schema_version", "1.0")
         supported_versions = ["1.0"]

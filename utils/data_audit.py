@@ -7,12 +7,13 @@ This script extracts unique values from the animals table for dogs and saves the
 for manual analysis. It focuses on breed, size, and age text fields to prepare for standardization.
 """
 
-from utils.db import connect_to_database
 import csv
 import os
 import re
 import sys
 from collections import Counter
+
+from utils.db import connect_to_database
 
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -170,13 +171,11 @@ def analyze_properties(properties_data):
 
     # Export property values
     if weight_values:
-        export_to_csv(
-            weight_values, "weight_values.csv", [
-                "animal_id", "weight"])
+        export_to_csv(weight_values, "weight_values.csv",
+                      ["animal_id", "weight"])
     if height_values:
-        export_to_csv(
-            height_values, "height_values.csv", [
-                "animal_id", "height"])
+        export_to_csv(height_values, "height_values.csv",
+                      ["animal_id", "height"])
     if neutered_values:
         export_to_csv(
             neutered_values, "neutered_values.csv", [

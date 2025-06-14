@@ -35,8 +35,7 @@ def get_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
 
         # Parse social_media JSON strings if needed
         for org in organizations:
-            if org.get("social_media") and isinstance(
-                    org["social_media"], str):
+            if org.get("social_media") and isinstance(org["social_media"], str):
                 try:
                     org["social_media"] = json.loads(org["social_media"])
                 except json.JSONDecodeError:
@@ -47,8 +46,7 @@ def get_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
         return organizations
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Database error: {str(e)}")
+            status_code=500, detail=f"Database error: {str(e)}")
 
 
 @router.get("/{organization_id}", response_model=Organization)
@@ -75,8 +73,7 @@ def get_organization(
 
         if not organization:
             raise HTTPException(
-                status_code=404,
-                detail="Organization not found")
+                status_code=404, detail="Organization not found")
 
         # Parse social_media JSON string if needed
         if organization.get("social_media") and isinstance(
@@ -96,5 +93,4 @@ def get_organization(
         raise
     except psycopg2.Error as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Database error: {str(e)}")
+            status_code=500, detail=f"Database error: {str(e)}")

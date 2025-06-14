@@ -10,7 +10,7 @@ export default function Header() {
   // Helper function to determine link classes
   const getLinkClasses = (href) => {
     const isActive = pathname === href;
-    return `px-3 py-2 rounded-md text-sm font-medium ${
+    return `px-3 py-2 rounded-md text-small font-medium ${
       isActive
         ? 'bg-red-100 text-red-700' // Active styles
         : 'text-gray-700 hover:bg-gray-100 hover:text-red-500' // Default styles
@@ -37,7 +37,7 @@ export default function Header() {
         <div className="flex justify-between items-center">
           {/* Logo/Home link */}
           <div>
-            <Link href="/" className="text-2xl font-bold text-red-600 hover:text-red-700 tracking-tight">
+            <Link href="/" className="text-section font-extrabold text-red-600 hover:text-red-700">
               Rescue Dog Aggregator
             </Link>
           </div>

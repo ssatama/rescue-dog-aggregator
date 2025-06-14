@@ -1,10 +1,12 @@
 # clear_animals.py (renamed from clear_dogs.py)
 
-from config import DB_CONFIG
-from dotenv import load_dotenv
-import psycopg2
 import os
 import sys
+
+import psycopg2
+from dotenv import load_dotenv
+
+from config import DB_CONFIG
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

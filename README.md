@@ -8,7 +8,7 @@ An open-source web platform that aggregates rescue dogs from multiple organizati
 - **🔄 Automatic Data Standardization**: Breed, age, and size normalization across sources
 - **☁️ Cloudinary Image Processing**: Automated image optimization and CDN delivery
 - **🔒 Production-Ready Security**: SQL injection prevention, input validation, comprehensive error handling
-- **🧪 Comprehensive Testing**: 93%+ test coverage including integration, security, and resilience tests
+- **🧪 Comprehensive Testing**: 93%+ test coverage with advanced speed optimization (217 fast tests in 45s)
 - **🗓️ Weekly Scraping Support**: Production-ready with stale data detection and availability management
 - **📊 Enhanced Metrics & Monitoring**: JSONB-based detailed tracking with quality scoring
 - **🎯 Smart Availability Filtering**: Users see only reliable, recently-seen animals by default
@@ -114,6 +114,59 @@ cd frontend
 npm install
 npm run dev
 # Open http://localhost:3000
+```
+
+## 🧪 Testing & Quality Assurance
+
+### Speed-Optimized Testing Architecture
+
+The project includes comprehensive testing with advanced speed optimization:
+
+**Backend Testing (Python/Pytest)**:
+```bash
+# Speed-optimized development workflow
+source venv/bin/activate
+
+# FAST: Core business logic across ALL modules (60+ tests in ~1s)
+python -m pytest tests/ -m "unit" -v
+
+# COMPLETE: All fast tests across entire codebase (217 tests in ~45s)
+python -m pytest tests/ -m "not slow" -v
+
+# COMPREHENSIVE: Full integration testing (512 total tests)
+python -m pytest tests/ -v
+```
+
+**Frontend Testing (Jest/React Testing Library)**:
+```bash
+cd frontend
+
+# Run all frontend tests (190+ tests in ~3s)
+npm test
+
+# Watch mode for development
+npm run test:watch
+
+# Test specific categories
+npm test -- src/__tests__/security/          # XSS prevention, sanitization
+npm test -- src/__tests__/performance/       # Lazy loading, optimization
+npm test -- src/__tests__/accessibility/     # ARIA compliance, keyboard nav
+```
+
+**Test Categories & Performance**:
+- **Unit Tests**: Pure logic validation (60+ tests, <1 second)
+- **Fast Tests**: Complete suite excluding slow operations (217 tests, ~45 seconds)
+- **Integration Tests**: Database, Selenium, network operations (full suite)
+- **Security Tests**: XSS prevention, input validation, content sanitization
+- **Performance Tests**: Lazy loading, memoization, bundle optimization
+
+**Quality Gates**:
+```bash
+# MANDATORY: Pre-commit validation workflow
+source venv/bin/activate && \
+black . && isort . && \
+python -m pytest tests/ -m "not slow" -v && \
+cd frontend && npm test && npm run build && npm run lint
 ```
 
 ## 🔧 Configuration Management

@@ -1,9 +1,10 @@
-from api.main import app  # Fixed import path
 import os
 import sys
 
 import pytest
 from fastapi.testclient import TestClient
+
+from api.main import app  # Fixed import path
 
 # Add project root to path
 sys.path.append(

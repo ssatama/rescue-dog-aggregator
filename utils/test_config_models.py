@@ -1,10 +1,11 @@
-from utils.config_models import OrganizationConfig
 import json
 import subprocess
 import sys
 from pathlib import Path
 
 import yaml
+
+from utils.config_models import OrganizationConfig
 
 # Add project root to Python path
 project_root = Path(__file__).parent.parent

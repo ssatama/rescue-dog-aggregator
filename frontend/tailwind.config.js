@@ -8,6 +8,66 @@ module.exports = {
   ],
   theme: {
   	extend: {
+  		fontFamily: {
+  			'inter': ['var(--font-inter)', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+  			'sans': ['var(--font-inter)', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+  		},
+  		fontSize: {
+  			'hero': ['var(--font-size-hero)', { 
+  				lineHeight: 'var(--line-height-tight)', 
+  				letterSpacing: 'var(--letter-spacing-tight)',
+  				fontWeight: 'var(--font-weight-extrabold)'
+  			}],
+  			'title': ['var(--font-size-title)', { 
+  				lineHeight: 'var(--line-height-snug)', 
+  				letterSpacing: 'var(--letter-spacing-tight)',
+  				fontWeight: 'var(--font-weight-bold)'
+  			}],
+  			'section': ['var(--font-size-section)', { 
+  				lineHeight: 'var(--line-height-compact)', 
+  				letterSpacing: 'var(--letter-spacing-tight)',
+  				fontWeight: 'var(--font-weight-bold)'
+  			}],
+  			'card-title': ['var(--font-size-card)', { 
+  				lineHeight: 'var(--line-height-compact)', 
+  				letterSpacing: 'var(--letter-spacing-normal)',
+  				fontWeight: 'var(--font-weight-semibold)'
+  			}],
+  			'body': ['var(--font-size-body)', { 
+  				lineHeight: 'var(--line-height-relaxed)', 
+  				letterSpacing: 'var(--letter-spacing-normal)',
+  				fontWeight: 'var(--font-weight-normal)'
+  			}],
+  			'small': ['var(--font-size-small)', { 
+  				lineHeight: 'var(--line-height-relaxed)', 
+  				letterSpacing: 'var(--letter-spacing-wide)',
+  				fontWeight: 'var(--font-weight-normal)'
+  			}],
+  			'tiny': ['var(--font-size-tiny)', { 
+  				lineHeight: 'var(--line-height-compact)', 
+  				letterSpacing: 'var(--letter-spacing-wide)',
+  				fontWeight: 'var(--font-weight-medium)'
+  			}],
+  		},
+  		fontWeight: {
+  			'normal': 'var(--font-weight-normal)',
+  			'medium': 'var(--font-weight-medium)',
+  			'semibold': 'var(--font-weight-semibold)',
+  			'bold': 'var(--font-weight-bold)',
+  			'extrabold': 'var(--font-weight-extrabold)',
+  		},
+  		letterSpacing: {
+  			'tight': 'var(--letter-spacing-tight)',
+  			'normal': 'var(--letter-spacing-normal)',
+  			'wide': 'var(--letter-spacing-wide)',
+  		},
+  		lineHeight: {
+  			'tight': 'var(--line-height-tight)',
+  			'snug': 'var(--line-height-snug)',
+  			'compact': 'var(--line-height-compact)',
+  			'relaxed': 'var(--line-height-relaxed)',
+  			'loose': 'var(--line-height-loose)',
+  		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
