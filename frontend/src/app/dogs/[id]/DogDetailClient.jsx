@@ -202,69 +202,50 @@ export default function DogDetailClient({ params = {} }) {
                   );
                 })()}
                 
-                {/* Metadata Cards with Icons */}
-                <div className="grid grid-cols-2 gap-3 mb-8" data-testid="metadata-cards">
-                  {formatAge(dog) && (
-                    <div className="bg-purple-50 rounded-lg p-3 flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                        <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-xs text-purple-600 font-medium">Age</p>
-                        <p className="text-sm font-semibold text-gray-800">{formatAge(dog)}</p>
-                      </div>
+                {/* Quick Info Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" data-testid="metadata-cards">
+                  {/* Age Card - Always show, display "Age Unknown" if no age data */}
+                  <div className="bg-purple-50 rounded-lg p-4 text-center">
+                    <div className="text-2xl mb-2">🎂</div>
+                    <p className="text-xs text-purple-600 font-medium mb-1">Age</p>
+                    <p className="text-sm font-semibold text-gray-800">
+                      {formatAge(dog) || 'Age Unknown'}
+                    </p>
+                  </div>
+
+                  {/* Sex Card - Always show, display sex or "Unknown" */}
+                  <div className="bg-blue-50 rounded-lg p-4 text-center">
+                    <div className="text-2xl mb-2">
+                      {dog.sex && dog.sex.toLowerCase() === 'male' ? '♂️' : 
+                       dog.sex && dog.sex.toLowerCase() === 'female' ? '♀️' : '❓'}
+                    </div>
+                    <p className="text-xs text-blue-600 font-medium mb-1">Gender</p>
+                    <p className="text-sm font-semibold text-gray-800">
+                      {dog.sex && dog.sex.toLowerCase() !== 'unknown' ? dog.sex : 'Unknown'}
+                    </p>
+                  </div>
+
+                  {/* Breed Card - Only show if breed is known and not "Unknown" */}
+                  {(dog.standardized_breed || dog.breed) && 
+                   !(dog.standardized_breed === 'Unknown' || dog.breed === 'Unknown' || 
+                     dog.standardized_breed?.toLowerCase() === 'unknown' || dog.breed?.toLowerCase() === 'unknown') && (
+                    <div className="bg-green-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl mb-2">🐕</div>
+                      <p className="text-xs text-green-600 font-medium mb-1">Breed</p>
+                      <p className="text-sm font-semibold text-gray-800">
+                        {dog.standardized_breed || dog.breed}
+                      </p>
                     </div>
                   )}
 
-                  {dog.sex && dog.sex.toLowerCase() !== 'unknown' && (
-                    <div className={`rounded-lg p-3 flex items-center space-x-2 ${
-                      dog.sex.toLowerCase() === 'male' ? 'bg-blue-50' : 'bg-pink-50'
-                    }`}>
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        dog.sex.toLowerCase() === 'male' ? 'bg-blue-100' : 'bg-pink-100'
-                      }`}>
-                        <span className={`text-lg font-bold ${
-                          dog.sex.toLowerCase() === 'male' ? 'text-blue-600' : 'text-pink-600'
-                        }`}>
-                          {dog.sex.toLowerCase() === 'male' ? '♂' : '♀'}
-                        </span>
-                      </div>
-                      <div>
-                        <p className={`text-xs font-medium ${
-                          dog.sex.toLowerCase() === 'male' ? 'text-blue-600' : 'text-pink-600'
-                        }`}>Gender</p>
-                        <p className="text-sm font-semibold text-gray-800">{dog.sex}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {(dog.standardized_breed || dog.breed) && !(dog.standardized_breed === 'Unknown' || dog.breed === 'Unknown') && (
-                    <div className="bg-green-50 rounded-lg p-3 flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                        <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-xs text-green-600 font-medium">Breed</p>
-                        <p className="text-sm font-semibold text-gray-800">{dog.standardized_breed || dog.breed}</p>
-                      </div>
-                    </div>
-                  )}
-
+                  {/* Size Card - Only show if size data exists */}
                   {(dog.standardized_size || dog.size) && (
-                    <div className="bg-orange-50 rounded-lg p-3 flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                        <svg className="w-4 h-4 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-xs text-orange-600 font-medium">Size</p>
-                        <p className="text-sm font-semibold text-gray-800">{dog.standardized_size || dog.size}</p>
-                      </div>
+                    <div className="bg-orange-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl mb-2">📏</div>
+                      <p className="text-xs text-orange-600 font-medium mb-1">Size</p>
+                      <p className="text-sm font-semibold text-gray-800">
+                        {dog.standardized_size || dog.size}
+                      </p>
                     </div>
                   )}
                 </div>

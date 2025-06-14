@@ -360,7 +360,7 @@ describe('DogDetailPage - Hero Layout', () => {
     expect(metadataCards).toBeInTheDocument();
 
     // Check for individual metadata badges - using getAllByText for items that appear multiple times
-    expect(screen.getByText('Unknown')).toBeInTheDocument(); // Age
+    expect(screen.getByText('Unknown')).toBeInTheDocument(); // Age (age_text: 'Unknown')
     expect(screen.getByText('Male')).toBeInTheDocument(); // Gender
     expect(screen.getAllByText('Terrier Mix').length).toBeGreaterThanOrEqual(1); // Breed (appears in multiple places)
     expect(screen.getByText('Medium Size')).toBeInTheDocument(); // Size
@@ -392,7 +392,7 @@ describe('DogDetailPage - Hero Layout', () => {
 
     // Metadata cards should use grid layout
     const metadataCards = container.querySelector('[data-testid="metadata-cards"]');
-    expect(metadataCards).toHaveClass('grid', 'grid-cols-2');
+    expect(metadataCards).toHaveClass('grid', 'grid-cols-2', 'md:grid-cols-4');
 
     // Action bar should use flexbox for proper icon alignment
     const actionBar = container.querySelector('[data-testid="action-bar"]');
