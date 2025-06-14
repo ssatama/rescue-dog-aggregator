@@ -12,6 +12,7 @@ import ShareButton from '../../../components/ui/ShareButton';
 import SocialMediaLinks from '../../../components/ui/SocialMediaLinks';
 import { getDetailHeroImageWithPosition, getThumbnailImage, handleImageError } from '../../../utils/imageUtils';
 import HeroImageWithBlurredBackground from '../../../components/ui/HeroImageWithBlurredBackground';
+import OrganizationSection from '../../../components/organizations/OrganizationSection';
 import { reportError } from '../../../utils/logger';
 import { sanitizeText, sanitizeHtml } from '../../../utils/security';
 
@@ -21,6 +22,7 @@ export default function DogDetailClient({ params = {} }) {
   const [dog, setDog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   
   useEffect(() => {
     const fetchDogData = async () => {
@@ -53,6 +55,37 @@ export default function DogDetailClient({ params = {} }) {
       }
     }
     return dog.age_text || null;
+  };
+
+  // Description processing utilities
+  const getDescriptionText = (dog) => {
+    return dog.properties?.description || '';
+  };
+
+  const getPlainTextLength = (htmlString) => {
+    // Create a temporary element to strip HTML tags for character counting
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlString;
+    return tempDiv.textContent || tempDiv.innerText || '';
+  };
+
+  const shouldShowReadMore = (description) => {
+    if (!description) return false;
+    const plainText = getPlainTextLength(description);
+    return plainText.length > 200;
+  };
+
+  const getTruncatedDescription = (description) => {
+    if (!description) return '';
+    const plainText = getPlainTextLength(description);
+    if (plainText.length <= 200) return description;
+    
+    // Find a good breaking point near 200 characters
+    const truncated = plainText.substring(0, 200);
+    const lastSpace = truncated.lastIndexOf(' ');
+    const breakPoint = lastSpace > 150 ? lastSpace : 200;
+    
+    return plainText.substring(0, breakPoint) + '...';
   };
 
   if (loading) {
@@ -250,40 +283,66 @@ export default function DogDetailClient({ params = {} }) {
                   )}
                 </div>
                 
-                {dog.properties?.description && (
-                  <div className="mb-8">
-                    <h2 className="text-2xl font-semibold text-gray-800 mb-4">About {sanitizeText(dog.name)}</h2>
-                    <div 
-                      className="text-base leading-relaxed text-gray-700"
-                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(dog.properties.description) }}
-                    />
-                  </div>
-                )}
-                
-                {/* Organization Info Section */}
-                {dog.organization && (
-                  <div className="mb-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
-                    <h3 className="text-2xl font-semibold text-gray-800 mb-4">
-                      Rescue Organization
-                    </h3>
-                    <p className="text-base leading-relaxed text-gray-700 mb-4">{dog.organization.name}</p>
+                {/* Enhanced About Section - Always Show */}
+                <div className="mb-8" data-testid="about-section">
+                  <h2 className="text-2xl font-semibold text-gray-800 mb-4">About {sanitizeText(dog.name)}</h2>
+                  
+                  {(() => {
+                    const description = getDescriptionText(dog);
+                    const hasDescription = description.trim().length > 0;
+                    const showReadMore = shouldShowReadMore(description);
                     
-                    {/* Organization Social Media */}
-                    {dog.organization.social_media && Object.keys(dog.organization.social_media).length > 0 && (
-                      <div className="mb-4">
-                        <p className="text-sm text-gray-600 mb-3">Follow this rescue:</p>
-                        <SocialMediaLinks 
-                          socialMedia={dog.organization.social_media} 
-                          className="justify-start" 
+                    if (!hasDescription) {
+                      // Empty state with fallback message
+                      return (
+                        <div className="prose max-w-none">
+                          <p className="text-base leading-relaxed text-gray-700 italic" data-testid="empty-description">
+                            Contact the rescue to learn more about {sanitizeText(dog.name)}.
+                          </p>
+                        </div>
+                      );
+                    }
+                    
+                    // Description exists - show with read more functionality
+                    const displayDescription = isDescriptionExpanded 
+                      ? description 
+                      : showReadMore 
+                        ? getTruncatedDescription(description)
+                        : description;
+                    
+                    return (
+                      <div className="prose max-w-none">
+                        <div 
+                          className="text-base leading-relaxed text-gray-700 transition-all duration-300 ease-in-out"
+                          data-testid="description-content"
+                          dangerouslySetInnerHTML={{ 
+                            __html: sanitizeHtml(isDescriptionExpanded ? description : displayDescription)
+                          }}
                         />
+                        
+                        {showReadMore && (
+                          <div className="mt-3">
+                            <button
+                              onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                              className="text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded px-1"
+                              data-testid="read-more-button"
+                            >
+                              {isDescriptionExpanded ? 'Show less' : 'Read more'}
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    
-                    <Link href={`/organizations/${dog.organization_id}`}>
-                      <Button variant="outline" size="sm" className="w-full">
-                        View Organization Profile
-                      </Button>
-                    </Link>
+                    );
+                  })()}
+                </div>
+                
+                {/* Organization Section */}
+                {dog.organization && (
+                  <div className="mb-8">
+                    <OrganizationSection 
+                      organization={dog.organization} 
+                      organizationId={dog.organization_id}
+                    />
                   </div>
                 )}
                 
