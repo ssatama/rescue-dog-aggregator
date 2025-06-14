@@ -13,6 +13,9 @@ import SocialMediaLinks from '../../../components/ui/SocialMediaLinks';
 import { getDetailHeroImageWithPosition, getThumbnailImage, handleImageError } from '../../../utils/imageUtils';
 import HeroImageWithBlurredBackground from '../../../components/ui/HeroImageWithBlurredBackground';
 import OrganizationSection from '../../../components/organizations/OrganizationSection';
+import MobileStickyBar from '../../../components/ui/MobileStickyBar';
+import FavoriteButton from '../../../components/ui/FavoriteButton';
+import { ToastProvider } from '../../../components/ui/Toast';
 import { reportError } from '../../../utils/logger';
 import { sanitizeText, sanitizeHtml } from '../../../utils/security';
 
@@ -119,7 +122,8 @@ export default function DogDetailClient({ params = {} }) {
   }
 
   return (
-    <Layout>
+    <ToastProvider>
+      <Layout>
       <div className="max-w-4xl mx-auto p-4">
         {/* Breadcrumb Navigation */}
         <nav aria-label="Breadcrumb" className="mb-8">
@@ -176,36 +180,18 @@ export default function DogDetailClient({ params = {} }) {
                   </div>
                   
                   {/* Action bar with heart and share icons */}
-                  <div className="flex items-center space-x-2" data-testid="action-bar">
-                    {/* Heart/Favorite icon */}
-                    <button 
-                      className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-                      data-testid="heart-icon"
-                      aria-label="Add to favorites"
-                    >
-                      <svg 
-                        className="w-6 h-6 text-gray-600 hover:text-red-500 transition-colors" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth={2} 
-                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
-                        />
-                      </svg>
-                    </button>
+                  <div className="flex items-center space-x-1" data-testid="action-bar">
+                    {/* Favorite Button */}
+                    <FavoriteButton dog={dog} variant="header" className="rounded-full" />
                     
-                    {/* Share icon */}
+                    {/* Share Button */}
                     <ShareButton
                       url={typeof window !== 'undefined' ? window.location.href : ''}
                       title={`Meet ${dog.name} - Available for Adoption`}
                       text={`${dog.name} is a ${dog.standardized_breed || dog.breed || 'lovely dog'} looking for a forever home.`}
                       variant="ghost"
                       size="sm"
-                      className="p-2 rounded-full hover:bg-gray-100"
+                      className="p-2 rounded-full hover:bg-gray-100 transition-all duration-200"
                     />
                   </div>
                 </div>
@@ -349,12 +335,22 @@ export default function DogDetailClient({ params = {} }) {
                 {/* CTA Section */}
                 {dog.status === 'available' && (
                   <div className="mb-8">
-                    <Button asChild className="w-full bg-green-600 hover:bg-green-700 text-lg py-3">
-                      <a href={dog.adoption_url} target="_blank" rel="noopener noreferrer">
-                        Adopt {dog.name}
-                      </a>
-                    </Button>
-                    <p className="text-sm text-gray-500 text-center mt-2">You'll be redirected to the rescue organization's website</p>
+                    <div className="flex justify-center">
+                      <Button asChild className="w-full sm:w-auto sm:min-w-[280px] sm:max-w-[400px] bg-blue-600 hover:bg-blue-700 text-white text-lg py-4 px-8 shadow-lg hover:shadow-xl transition-all duration-200 rounded-lg">
+                        <a href={dog.adoption_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
+                          <svg 
+                            className="w-5 h-5 mr-3" 
+                            fill="currentColor" 
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                          </svg>
+                          Start Adoption Process
+                        </a>
+                      </Button>
+                    </div>
+                    <p className="text-sm text-gray-500 text-center mt-3">You'll be redirected to the rescue organization's website</p>
                   </div>
                 )}
               </div>
@@ -362,6 +358,10 @@ export default function DogDetailClient({ params = {} }) {
           </div>
         </div>
       </div>
+      
+      {/* Mobile Sticky Bar */}
+      <MobileStickyBar dog={dog} />
     </Layout>
+    </ToastProvider>
   );
 }

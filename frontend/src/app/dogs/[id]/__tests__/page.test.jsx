@@ -311,16 +311,16 @@ describe('DogDetailPage - Hero Layout', () => {
 
     await waitFor(() => expect(screen.queryByTestId('loading')).not.toBeInTheDocument());
 
-    // Check for heart icon
-    const heartIcon = screen.getByTestId('heart-icon');
-    expect(heartIcon).toBeInTheDocument();
+    // Check for favorite button (now uses FavoriteButton component)
+    const favoriteButton = screen.getByTestId('header-favorite-button');
+    expect(favoriteButton).toBeInTheDocument();
 
     // Check for share icon (should be in the action bar, not at bottom)
     const actionBar = screen.getByTestId('action-bar');
     expect(actionBar).toBeInTheDocument();
     
-    // Both icons should be in the action bar
-    expect(actionBar).toContainElement(heartIcon);
+    // Both favorite button and share button should be in the action bar
+    expect(actionBar).toContainElement(favoriteButton);
   });
 
   it('displays metadata cards with icons in new layout', async () => {

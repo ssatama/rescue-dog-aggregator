@@ -25,11 +25,12 @@ The project follows strict TDD methodology:
 
 **ENHANCED Code Quality Gates (MANDATORY)**:
 - 93%+ test coverage (backend) - ENFORCED
-- 106 frontend tests passing (18 suites) - REQUIRED
+- 120+ frontend tests passing (20+ suites) including CTA optimization coverage - REQUIRED
 - Python linting: ≤750 E501, 0 F401, ≤5 W291, 0 E402 - ENFORCED  
 - Next.js 15 TypeScript build successful - CRITICAL
 - Security vulnerability scans passing - REQUIRED
 - Environment-aware component patterns for dynamic routes - MANDATORY
+- CTA optimization components (favorites, toast, mobile UX) fully tested - ENFORCED
 
 ## Development Environment Setup
 
@@ -390,6 +391,135 @@ describe('DynamicPage', () => {
 });
 ```
 
+## CTA Optimization Development Patterns
+
+### Component Development Workflow
+
+**Step 1: Component Setup with ToastProvider**
+```javascript
+// Always wrap CTA components with ToastProvider
+import { ToastProvider } from '../components/ui/Toast';
+
+function App() {
+  return (
+    <ToastProvider>
+      <YourComponent />
+    </ToastProvider>
+  );
+}
+```
+
+**Step 2: Environment-Aware Storage**
+```javascript
+// Use FavoritesManager for all localStorage operations
+import { FavoritesManager } from '../utils/favorites';
+
+// GOOD: Safe across SSR/client environments
+const favorites = FavoritesManager.getFavorites();
+
+// BAD: Breaks in SSR
+const favorites = JSON.parse(localStorage.getItem('favorites'));
+```
+
+**Step 3: Mobile-First Responsive Design**
+```javascript
+// Always implement mobile-first with desktop overrides
+<div className="w-full md:w-auto md:min-w-[280px]">
+  <Button className="w-full md:w-auto">
+    Action Button
+  </Button>
+</div>
+
+// Mobile-only components
+<MobileStickyBar className="md:hidden" />
+```
+
+### Testing Patterns for CTA Components
+
+**localStorage Mock Setup**:
+```javascript
+// jest.setup.js or individual test file
+const localStorageMock = {
+  getItem: jest.fn(),
+  setItem: jest.fn(),
+  removeItem: jest.fn(),
+  clear: jest.fn(),
+};
+
+Object.defineProperty(global, 'localStorage', {
+  value: localStorageMock,
+  writable: true
+});
+```
+
+**Toast Testing with act()**:
+```javascript
+import { act, waitFor } from '@testing-library/react';
+
+test('toast auto-dismisses after timeout', async () => {
+  jest.useFakeTimers();
+  
+  // Trigger toast
+  act(() => {
+    fireEvent.click(button);
+  });
+
+  // Fast-forward time
+  act(() => {
+    jest.advanceTimersByTime(3000);
+  });
+
+  await waitFor(() => {
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  jest.useRealTimers();
+});
+```
+
+**Accessibility Testing Pattern**:
+```javascript
+test('component has proper ARIA attributes', () => {
+  render(<FavoriteButton dog={mockDog} variant="header" />);
+  
+  const button = screen.getByTestId('header-favorite-button');
+  expect(button).toHaveAttribute('aria-label');
+  
+  const icon = button.querySelector('svg');
+  expect(icon).toHaveAttribute('aria-hidden', 'true');
+});
+```
+
+### Error Handling Patterns
+
+**Toast Error Feedback**:
+```javascript
+try {
+  const result = FavoritesManager.addFavorite(dogId, dogData);
+  if (result.success) {
+    showToast(result.message, 'success');
+  } else {
+    showToast(result.message, 'error');
+  }
+} catch (error) {
+  showToast('Failed to update favorites', 'error');
+}
+```
+
+**Graceful Component Fallbacks**:
+```javascript
+// Always handle missing data gracefully
+export default function FavoriteButton({ dog, variant = 'header' }) {
+  if (!dog?.id) {
+    // Render button but disable functionality
+    return <button disabled>♡</button>;
+  }
+  
+  // Normal functionality
+  return <InteractiveFavoriteButton dog={dog} variant={variant} />;
+}
+```
+
 ## Code Quality Workflow
 
 ### ENHANCED Pre-Commit Quality Checks (Post-Issue Resolution)
@@ -406,7 +536,7 @@ python -m pytest tests/ -m "not slow" -v            # Fast tests (REQUIRED - 230
 
 # Step 2: Frontend Quality (Next.js 15) - CRITICAL for TypeScript
 cd frontend
-npm test                                             # All 106 tests (REQUIRED)
+npm test                                             # All 120+ tests including CTA optimization (REQUIRED)
 npm run build                                        # TypeScript build (CRITICAL)
 npm run lint                                         # ESLint (REQUIRED)
 

@@ -78,6 +78,12 @@ pytest tests/scrapers/ -v
 - `tests/scrapers/test_rean_unified_extraction_fast.py` - Unified extraction logic
 - `tests/scrapers/test_rean_error_handling_fast.py` - Error handling logic
 
+### Frontend Test Files (Complete CTA Coverage)
+- `frontend/src/components/ui/__tests__/FavoriteButton.test.jsx` - 25+ tests for favorite functionality
+- `frontend/src/components/ui/__tests__/MobileStickyBar.test.jsx` - 20+ tests for mobile UX
+- `frontend/src/components/ui/__tests__/Toast.test.jsx` - 15+ tests for notification system
+- `frontend/src/utils/__tests__/favorites.test.js` - 25+ tests for localStorage management
+
 ### Slow Test Files (Enhanced)
 - `tests/scrapers/rean/test_rean_scraper.py` - Full WebDriver tests with markers
 - `tests/scrapers/test_rean_unified_extraction.py` - Integration tests with mocked sleep
@@ -114,13 +120,17 @@ pytest tests/scrapers/ -v
 
 ### After Optimization
 ```bash
-# Fast unit tests
+# Fast unit tests (Backend)
 pytest tests/scrapers/test_rean_*_fast.py -v
 # Result: 44 passed in 0.32s ⚡
 
-# Non-slow tests  
+# Non-slow tests (Backend)
 pytest tests/scrapers/ -m "not slow" -q
 # Result: 179 passed in 45.28s (vs 120+ seconds before)
+
+# Frontend tests (Complete CTA coverage)
+cd frontend && npm test
+# Result: 120+ tests across 20+ suites in ~3s ⚡
 
 # Slow tests (when needed)
 pytest tests/scrapers/ -m "slow" -v
@@ -171,13 +181,29 @@ def test_extract_name_patterns(self, scraper):
 3. **Flexible Execution**: Choose speed vs thoroughness based on context
 4. **CI Optimization**: Fast PR validation, thorough pre-merge testing
 5. **Better Developer Experience**: Tests complete in seconds, not minutes
+6. **Complete Frontend Coverage**: CTA optimization features fully tested (120+ tests)
+7. **Cross-Platform Optimization**: Both backend (Python) and frontend (JavaScript) optimized
 
 ## Best Practices
 
+### Backend Testing (Python)
 1. **Run fast tests during development**: `pytest -m "unit"`
 2. **Run non-slow tests before commits**: `pytest -m "not slow"`
 3. **Run all tests before major releases**: `pytest tests/`
 4. **Use slow tests for debugging complex issues**: `pytest -m "slow"`
 5. **Keep both test types in sync**: Update fast tests when changing logic
+
+### Frontend Testing (JavaScript)
+1. **Run tests during development**: `npm test` (fast by default)
+2. **Use watch mode for active development**: `npm run test:watch`
+3. **Test specific components**: `npm test -- src/components/ui/__tests__/`
+4. **Verify build before commits**: `npm run build && npm test`
+5. **Check test coverage**: Ensure CTA components maintain high coverage
+
+### Combined Workflow
+1. **Development cycle**: Fast backend unit tests + frontend tests (~4 seconds total)
+2. **Pre-commit validation**: Non-slow backend + all frontend tests (~48 seconds total)
+3. **CI/CD pipeline**: Full test suite including slow integration tests
+4. **Feature development**: TDD approach with test-first implementation
 
 This optimization maintains the project's commitment to comprehensive testing while dramatically improving development velocity.
