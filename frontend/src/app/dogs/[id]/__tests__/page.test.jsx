@@ -387,7 +387,7 @@ describe('DogDetailPage - Hero Layout', () => {
     expect(heroContainer).toHaveClass('w-full');
 
     // Main layout should be flex-col (vertical) on all screen sizes
-    const mainLayout = container.querySelector('.flex.flex-col.gap-6');
+    const mainLayout = container.querySelector('.flex.flex-col.gap-8');
     expect(mainLayout).toBeInTheDocument();
 
     // Metadata cards should use grid layout

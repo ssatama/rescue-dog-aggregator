@@ -89,8 +89,8 @@ export default function DogDetailClient({ params = {} }) {
     <Layout>
       <div className="max-w-4xl mx-auto p-4">
         {/* Breadcrumb Navigation */}
-        <nav aria-label="Breadcrumb" className="mb-4">
-          <ol className="flex items-center space-x-2 text-sm text-gray-500">
+        <nav aria-label="Breadcrumb" className="mb-8">
+          <ol className="flex items-center space-x-2 text-sm text-gray-600">
             <li>
               <Link href="/" className="hover:text-gray-700">
                 Home
@@ -110,7 +110,7 @@ export default function DogDetailClient({ params = {} }) {
         </nav>
 
         <Link href="/dogs" passHref>
-          <Button variant="link" className="inline-flex items-center text-blue-500 hover:text-blue-700 mb-6 p-0 h-auto">
+          <Button variant="link" className="inline-flex items-center text-blue-500 hover:text-blue-700 mb-8 p-0 h-auto">
             ← Back to all dogs
           </Button>
         </Link>
@@ -123,7 +123,7 @@ export default function DogDetailClient({ params = {} }) {
           )}
           
           <div className="p-6">
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-8">
               {/* Hero Image Section - Full Width */}
               <div className="w-full" data-testid="hero-image-container">
                 <HeroImageWithBlurredBackground
@@ -135,9 +135,12 @@ export default function DogDetailClient({ params = {} }) {
               
               {/* Content Section - Below Hero */}
               <div className="w-full">
-                {/* Header with name and action icons */}
-                <div className="flex justify-between items-start mb-4">
-                  <h1 className="text-title">{sanitizeText(dog.name)}</h1>
+                {/* Header with name, tagline and action icons */}
+                <div className="flex justify-between items-start mb-8">
+                  <div>
+                    <h1 className="text-3xl sm:text-4xl font-bold mb-2">{sanitizeText(dog.name)}</h1>
+                    <p className="text-xl text-gray-600">Looking for a loving home</p>
+                  </div>
                   
                   {/* Action bar with heart and share icons */}
                   <div className="flex items-center space-x-2" data-testid="action-bar">
@@ -184,23 +187,23 @@ export default function DogDetailClient({ params = {} }) {
                   }
                   
                   return (
-                    <div className="mb-4">
-                      <h2 className="text-card-title text-gray-700">Breed</h2>
+                    <div className="mb-8">
+                      <h2 className="text-2xl font-semibold text-gray-800 mb-3">Breed</h2>
                       <div className="flex flex-wrap gap-1 items-center">
-                        <span className="text-gray-800">{sanitizeText(breed)}</span>
+                        <span className="text-base leading-relaxed text-gray-800">{sanitizeText(breed)}</span>
                         {dog.standardized_breed && dog.breed && dog.standardized_breed !== dog.breed && (
-                          <span className="text-small text-gray-500 ml-2">(originally listed as: {sanitizeText(dog.breed)})</span>
+                          <span className="text-sm text-gray-500 ml-2">(originally listed as: {sanitizeText(dog.breed)})</span>
                         )}
                       </div>
                       {dog.breed_group && dog.breed_group !== 'Unknown' && (
-                        <Badge variant="secondary" className="mt-1">{sanitizeText(dog.breed_group)} Group</Badge>
+                        <Badge variant="secondary" className="mt-2">{sanitizeText(dog.breed_group)} Group</Badge>
                       )}
                     </div>
                   );
                 })()}
                 
                 {/* Metadata Cards with Icons */}
-                <div className="grid grid-cols-2 gap-3 mb-6" data-testid="metadata-cards">
+                <div className="grid grid-cols-2 gap-3 mb-8" data-testid="metadata-cards">
                   {formatAge(dog) && (
                     <div className="bg-purple-50 rounded-lg p-3 flex items-center space-x-2">
                       <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
@@ -267,10 +270,10 @@ export default function DogDetailClient({ params = {} }) {
                 </div>
                 
                 {dog.properties?.description && (
-                  <div className="mb-6">
-                    <h2 className="text-card-title text-gray-700 mb-2">About {sanitizeText(dog.name)}</h2>
+                  <div className="mb-8">
+                    <h2 className="text-2xl font-semibold text-gray-800 mb-4">About {sanitizeText(dog.name)}</h2>
                     <div 
-                      className="text-gray-600"
+                      className="text-base leading-relaxed text-gray-700"
                       dangerouslySetInnerHTML={{ __html: sanitizeHtml(dog.properties.description) }}
                     />
                   </div>
@@ -278,16 +281,16 @@ export default function DogDetailClient({ params = {} }) {
                 
                 {/* Organization Info Section */}
                 {dog.organization && (
-                  <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                    <h3 className="text-card-title text-gray-800 mb-2">
+                  <div className="mb-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
+                    <h3 className="text-2xl font-semibold text-gray-800 mb-4">
                       Rescue Organization
                     </h3>
-                    <p className="text-gray-700 mb-2">{dog.organization.name}</p>
+                    <p className="text-base leading-relaxed text-gray-700 mb-4">{dog.organization.name}</p>
                     
                     {/* Organization Social Media */}
                     {dog.organization.social_media && Object.keys(dog.organization.social_media).length > 0 && (
-                      <div className="mb-3">
-                        <p className="text-small text-gray-600 mb-2">Follow this rescue:</p>
+                      <div className="mb-4">
+                        <p className="text-sm text-gray-600 mb-3">Follow this rescue:</p>
                         <SocialMediaLinks 
                           socialMedia={dog.organization.social_media} 
                           className="justify-start" 
@@ -303,12 +306,16 @@ export default function DogDetailClient({ params = {} }) {
                   </div>
                 )}
                 
+                {/* CTA Section */}
                 {dog.status === 'available' && (
-                  <Button asChild className="w-full bg-green-600 hover:bg-green-700">
-                    <a href={dog.adoption_url} target="_blank" rel="noopener noreferrer">
-                      Adopt {dog.name}
-                    </a>
-                  </Button>
+                  <div className="mb-8">
+                    <Button asChild className="w-full bg-green-600 hover:bg-green-700 text-lg py-3">
+                      <a href={dog.adoption_url} target="_blank" rel="noopener noreferrer">
+                        Adopt {dog.name}
+                      </a>
+                    </Button>
+                    <p className="text-sm text-gray-500 text-center mt-2">You'll be redirected to the rescue organization's website</p>
+                  </div>
                 )}
               </div>
             </div>
