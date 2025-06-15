@@ -1,1011 +1,156 @@
 # CLAUDE.md
 
-This file provides comprehensive guidance to Claude Code (claude.ai/code) when working with this rescue dog aggregation platform. This is a **production-ready, test-driven system** with advanced scraping capabilities, modern frontend architecture, and comprehensive availability management.
+Quick reference for Claude Code when working with the Rescue Dog Aggregator platform.
 
-## 🎯 Quick Context & Purpose
+## 🎯 Project Overview
 
-**What This System Does**: Aggregates rescue dog listings from multiple organizations worldwide, standardizes the data, and presents it through a user-friendly web interface that directs adopters back to original rescue organizations.
+**What**: Production-ready platform aggregating rescue dogs from multiple organizations, standardizing data, and presenting it through a modern web interface.
 
-**Key Problem Solved**: Recently fixed critical image association bug in REAN scraper where dogs were getting wrong images (e.g., Toby getting Bobbie's image). Solution: unified DOM-based extraction that maintains spatial relationships between text and images within containers.
+**Tech Stack**: 
+- Backend: Python/FastAPI, PostgreSQL, Cloudinary
+- Frontend: Next.js 15, React, Tailwind CSS
+- Scraping: YAML-driven configuration system
 
-**Architecture Philosophy**: Configuration-driven, test-first development with production-ready error handling, availability management, and comprehensive monitoring.
+**Key Achievement**: Fixed critical image association bug using unified DOM extraction.
 
-## Essential Commands
+## 🚀 Essential Commands
 
-### Backend Development
+### Setup & Run
 ```bash
-# 🚀 QUICK START (Essential setup)
-python main.py --setup                                  # Database setup
-uvicorn api.main:app --reload --port 8000              # Run API server
+# Backend
+python main.py --setup                    # Initial database setup
+uvicorn api.main:app --reload            # Run API (port 8000)
 
-# 📊 CONFIGURATION MANAGEMENT (YAML-based)
-# Both execution methods supported (use either approach):
-python management/config_commands.py list              # List all organizations (direct execution)
-python -m management.config_commands list              # List all organizations (module execution)
-python management/config_commands.py sync              # Sync configs to database
-python management/config_commands.py validate          # Validate all configs
-python management/config_commands.py run rean          # Run REAN scraper (unified extraction)
-python management/config_commands.py run-all           # Run all scrapers
+# Frontend  
+cd frontend && npm run dev               # Run frontend (port 3000)
 
-# Additional config operations:
-python management/config_commands.py sync --dry-run    # Preview sync changes
-python management/config_commands.py show rean         # Show organization details
-
-# 🗄️ DATABASE OPERATIONS
-python database/check_db_status.py                     # Health check
-# Apply production migrations (CRITICAL for availability management):
-psql -d rescue_dogs -f database/migrations/001_add_duplicate_stale_detection.sql
-psql -d rescue_dogs -f database/migrations/002_add_detailed_metrics.sql
-
-# 🧪 TESTING (TDD Approach - 93%+ coverage required)
-source venv/bin/activate && python -m pytest tests/ -v
-
-# ⚡ SPEED-OPTIMIZED TEST WORKFLOW (Recommended for Development)
-# ULTRA-FAST unit tests across ALL directories (82+ tests in <1s - 200x faster than slow tests):
-python -m pytest tests/ -m "unit" -v                      # Pure logic tests across ALL modules (<1s)
-python -m pytest tests/ -m "fast" -v                      # Fast tests with minimal I/O (1-5s)
-python -m pytest tests/ -m "not slow" -v                  # All non-slow tests (~45s - COMPLETE SUITE)
-
-# Fast test files for specific components:
-python -m pytest tests/api/test_api_logic_fast.py -v                    # API logic (15 tests)
-python -m pytest tests/config/test_config_logic_fast.py -v              # Config logic (14 tests)
-python -m pytest tests/scrapers/test_rean_scraper_fast.py -v            # Core REAN logic (16 tests)
-python -m pytest tests/scrapers/test_rean_unified_extraction_fast.py -v # Unified extraction logic (12 tests)  
-python -m pytest tests/scrapers/test_rean_error_handling_fast.py -v     # Error handling logic (16 tests)
-
-# 🔍 COMPREHENSIVE TESTING (For pre-commit validation)
-# Slow integration tests with full automation (use when thorough validation needed):
-python -m pytest tests/ -m "slow" -v                      # ALL slow tests (249 tests - database, selenium, network)
-python -m pytest tests/ -m "selenium" -v                  # WebDriver automation tests
-python -m pytest tests/ -m "network" -v                   # Network simulation tests  
-python -m pytest tests/ -m "database" -v                  # Database integration tests
-
-# Test specific areas:
-python -m pytest tests/api/test_availability_filtering.py -v    # API filtering
-python -m pytest tests/scrapers/test_base_scraper.py -v        # Scraper lifecycle  
-python -m pytest tests/scrapers/test_rean_unified_extraction.py -v  # Unified extraction (slow, comprehensive)
-
-# 🎨 CODE QUALITY (MANDATORY before commits - Prevents build failures)
-# Step 1: Automated Formatting (REQUIRED)
-source venv/bin/activate && black . && isort .        # Format and organize imports
-
-# Step 2: Linting Validation (ENFORCED)
-flake8 --exclude=venv .                                # Check code quality standards
-
-# Step 3: Full Quality Verification (COMPREHENSIVE)
-source venv/bin/activate && black . && isort . && \
-autopep8 --in-place --exclude=venv --recursive . && \
-python -m pytest tests/ -m "not slow" -v              # Complete quality + testing pipeline
+# Scraping
+python management/config_commands.py list      # List organizations
+python management/config_commands.py run pets-in-turkey  # Run specific scraper
+python management/config_commands.py run-all   # Run all scrapers
 ```
 
-### Frontend Development (Next.js 15 + App Router)
+### Testing
 ```bash
-cd frontend
+# Fast tests only (recommended during development)
+pytest tests/ -m "not slow" -v          # ~45 seconds
 
-# 🚀 QUICK START
-npm install                                  # Install dependencies
-npm run dev                                  # Development server (port 3000)
+# Run specific test categories
+pytest tests/ -m "unit" -v              # Ultra-fast unit tests
+pytest tests/ -m "api" -v               # API tests only
 
-# 🧪 TESTING (95+ tests across 17 suites - TDD required)
-npm test                                     # Run all tests
-npm run test:watch                           # Watch mode for development
-
-# Test by category (comprehensive coverage):
-npm test -- src/__tests__/security/          # 🔒 XSS prevention, sanitization
-npm test -- src/__tests__/performance/       # ⚡ Lazy loading, memoization
-npm test -- src/__tests__/accessibility/     # ♿ ARIA compliance, keyboard nav
-npm test -- src/__tests__/integration/       # 🔗 API integration, metadata
-npm test -- src/components/                  # 🧩 Component tests
-npm test -- src/app/                         # 📄 Page tests (Server/Client separation)
-
-# 🎨 CODE QUALITY & BUILD
-npm run lint                                 # ESLint validation  
-npm run build                                # Production build verification
-npm run analyze                              # Bundle size analysis
-
-# ✅ FULL VERIFICATION (MANDATORY before commits - Prevents TypeScript build failures)
-npm test && npm run build && npm run lint
-
-# 🚨 NEXT.JS 15 CRITICAL PATTERNS (Environment-Aware Components)
-# When creating dynamic route pages ([id]), use environment-aware pattern:
-# ❌ NEVER: Simple function components (breaks Next.js 15 TypeScript)
-# ❌ NEVER: Direct async params (breaks Jest tests)
-# ✅ ALWAYS: Environment-aware dual components (see pattern below)
-```
-
-### 🔧 Troubleshooting Common Issues
-
-#### Config Command Import Errors
-If you encounter `ModuleNotFoundError` when running config commands:
-
-```bash
-# Solution 1: Ensure __init__.py files exist
-touch utils/__init__.py
-touch management/__init__.py
-
-# Solution 2: Use direct execution method (recommended)
-python management/config_commands.py list
-
-# Solution 3: Alternative module execution
-python -m management.config_commands list
-
-# Solution 4: Verify virtual environment is activated
-source venv/bin/activate && python management/config_commands.py list
-```
-
-#### Database Connection Issues
-```bash
-# Check database status
-python database/check_db_status.py
-
-# Verify environment variables
-echo $DB_HOST $DB_NAME $DB_USER
-
-# Test basic connectivity
-psql -d rescue_dogs -c "SELECT 1;"
+# Frontend tests
+cd frontend && npm test
 ```
 
 ## 🏗️ Architecture Overview
 
-This is a **production-ready, configuration-driven rescue dog aggregation platform** with advanced capabilities:
-
-### 1. 📊 Configuration System (YAML-Driven)
-- **Organizations**: Defined in `configs/organizations/*.yaml` files
-- **Auto-Sync**: YAML configs sync to database via `management/config_commands.py sync`
-- **Validation**: Schema enforcement via `configs/schemas/organization.schema.json`
-- **Modularity**: Each organization specifies scraper class and module path
-- **Service Regions**: Geographic service area definitions for targeted matching
-
-### 2. 🤖 Data Collection & Standardization (Production-Ready)
-- **Base Scraper**: `scrapers/base_scraper.py` - comprehensive foundation with CRUD operations
-- **Unified DOM Extraction**: Advanced scraping for modern websites (e.g., REAN) that maintains spatial relationships
-- **Legacy Fallback**: Graceful degradation to traditional scraping methods
-- **Standardization**: AI-powered normalization for breeds, ages, sizes, languages
-- **Image Processing**: Cloudinary integration with optimization and fallback handling
-- **Database**: PostgreSQL with enhanced `animals` table and availability tracking
-
-### 3. 🚀 API Layer (FastAPI with Smart Filtering)
-- **Entry Point**: `api/main.py` with CORS and production configuration
-- **Smart Defaults**: Only shows `status='available'` with `availability_confidence='high,medium'`
-- **Override Parameters**: Admin access with `?status=all` and `?availability_confidence=all`
-- **Routes**: `api/routes/animals.py` (filtering) and `api/routes/organizations.py`
-- **Models**: Pydantic models in `api/models/` with availability fields
-- **Database**: Enhanced connection utilities in `utils/db.py`
-
-### 4. 🎨 Frontend (Next.js 15 + App Router - Modern Architecture)
-- **Server/Client Separation**: SEO-optimized metadata generation + interactive UI
-- **Dynamic Routing**: Dog details (`/dogs/[id]`) and organization pages with metadata
-- **Security**: XSS prevention, content sanitization, URL validation
-- **Performance**: Lazy loading, image optimization, React.memo for expensive components
-- **Accessibility**: ARIA compliance, keyboard navigation, screen reader support
-- **Error Handling**: Error boundaries with retry functionality and graceful degradation
-- **Testing**: 95+ tests across 17 suites covering security, performance, accessibility
-
-## 🛠️ Key Development Patterns & Critical Knowledge
-
-### 🔧 Adding New Scrapers (Configuration-Driven Approach)
-1. **Create YAML Config**: `configs/organizations/org-name.yaml` with scraper class and module
-2. **Implement Scraper**: Extend `BaseScraper` in `scrapers/org_name/` - gets CRUD operations automatically
-3. **Sync to Database**: `python management/config_commands.py sync`
-4. **Test Implementation**: `python management/config_commands.py run org-name`
-5. **Choose Extraction Method**: 
-   - Simple sites: Use `scrape_page()` + `extract_dog_content_from_html()`
-   - Dynamic sites: Use `extract_dogs_with_images_unified()` (like REAN) for DOM-based extraction
-
-### 🚨 CRITICAL: Unified DOM Extraction (Recent Implementation)
-**Problem Solved**: REAN scraper had "off by one" image association errors (Toby getting Bobbie's image)
-**Solution**: `extract_dogs_with_images_unified()` method maintains spatial relationships between text and images
-
-**When to Use Unified Extraction**:
-- Websites with lazy loading images
-- Dynamic content that requires browser automation  
-- When images and text need to stay associated within DOM containers
-
-**Key Files**:
-- `scrapers/rean/dogs_scraper.py` - Reference implementation
-- `tests/scrapers/test_rean_unified_extraction.py` - Comprehensive test suite (11 tests)
-
-**Implementation Pattern**:
-```python
-def extract_dogs_with_images_unified(self, url: str, page_type: str):
-    """Extract dogs maintaining DOM spatial relationships."""
-    # 1. Use Selenium WebDriver for dynamic content
-    # 2. Trigger comprehensive lazy loading with scrolling
-    # 3. Find dog containers using robust CSS selectors
-    # 4. Extract complete data from each container
-    # 5. Graceful fallback to legacy method if unified fails
+### Backend Structure
+```
+api/           # FastAPI application
+scrapers/      # Organization-specific scrapers  
+configs/       # YAML configuration files
+management/    # CLI commands
+utils/         # Shared utilities
 ```
 
-### 🗄️ Database Operations (Production-Ready Availability Management)
-- **Setup**: `python main.py --setup` initializes schema and initial data
-- **Critical Migrations**: MUST apply for availability tracking:
-  ```bash
-  psql -d rescue_dogs -f database/migrations/001_add_duplicate_stale_detection.sql
-  psql -d rescue_dogs -f database/migrations/002_add_detailed_metrics.sql
-  ```
-- **Health Checks**: `python database/check_db_status.py`
-- **Key Tables**:
-  - `animals`: Core data + availability fields (`status`, `availability_confidence`, `last_seen_at`)
-  - `scrape_logs`: Enhanced with JSONB `detailed_metrics` and `data_quality_score`
-
-### 📊 Availability Management System (Production-Ready Weekly Scraping)
-**Critical Feature**: Designed for weekly production schedules with intelligent stale data detection
-
-**CRUD Operations** (Automatic in BaseScraper):
-- `get_existing_animal()` - Check if animal exists by external_id
-- `create_animal()` - Insert new animals with standardization + confidence='high'
-- `update_animal()` - Update existing animals with change detection + reset confidence
-
-**Session Tracking Lifecycle**:
-```python
-# In scrape_animals() method:
-self.start_scrape_session()        # Initialize session timestamp
-# ... scraping logic ...
-self.mark_animal_as_seen(animal_id) # Mark found animals  
-self.update_stale_data_detection()   # Update confidence for unseen animals
+### Frontend Structure  
+```
+frontend/src/
+  app/         # Next.js 15 app router pages
+  components/  # React components
+  services/    # API clients
+  utils/       # Helper functions
 ```
 
-**Automatic Availability Transitions**:
-- **0 missed scrapes** → `availability_confidence = 'high'` (default for users)
-- **1 missed scrape** → `availability_confidence = 'medium'` (still shown to users)
-- **2-3 missed scrapes** → `availability_confidence = 'low'` (hidden by default)
-- **4+ missed scrapes** → `status = 'unavailable'` (completely hidden)
+### Key Patterns
+1. **Configuration-Driven Scrapers**: Add new organizations via YAML
+2. **Unified DOM Extraction**: Maintains spatial relationships for accurate scraping
+3. **Smart API Defaults**: Only shows available dogs with high confidence
+4. **Server/Client Separation**: SEO-optimized with dynamic client components
 
-**Error Recovery & Resilience**:
-- `detect_partial_failure()` - Prevents false stale marking from scraper issues
-- `handle_scraper_failure()` - Graceful failure without affecting existing data
-- `restore_available_animal()` - Re-enables animals when they reappear
+## 🔧 Common Tasks
 
-**Enhanced Monitoring**:
-- `log_detailed_metrics()` - JSONB storage with quality scores, duration, counts
-- `assess_data_quality()` - Automatic 0-1 scoring based on field completeness  
-- Performance tracking and failure detection for production monitoring
+### Add New Scraper
+1. Create `configs/organizations/new-org.yaml`
+2. Implement scraper in `scrapers/new_org/`
+3. Run `python management/config_commands.py sync`
+4. Test with `python management/config_commands.py run new-org`
 
-### 🧪 Testing Strategy (Strict TDD - Red-Green-Refactor)
-**Philosophy**: All features implemented test-first. 93%+ backend coverage, 95+ frontend tests required.
+### Modify Dog Detail Page
+- Main component: `frontend/src/app/dogs/[id]/DogDetailClient.jsx`
+- Image utilities: `frontend/src/utils/imageUtils.js`
+- Security utilities: `frontend/src/utils/security.js`
 
-**🚀 Speed-Optimized Test Architecture** (100x faster development cycles):
-- **Fast Unit Tests** (`@pytest.mark.unit`): 60+ tests in ~1s - Core business logic across ALL modules
-- **Fast Complete Suite** (`-m "not slow"`): 217 tests in ~45s - ALL fast tests across entire codebase
-- **Slow Integration Tests** (`@pytest.mark.slow`): 249 tests with database/selenium/network operations
-- **Development Workflow**: Run complete fast suite by default, slow tests on demand for thorough validation
-
-**Backend Testing** (Pytest + PostgreSQL):
-- **Test Database**: Isolated `test_rescue_dogs` with same migrations as production
-- **Fast Test Files** (New - for rapid development across ALL modules):
-  - `tests/api/test_api_logic_fast.py` - API business logic (15 tests)
-  - `tests/config/test_config_logic_fast.py` - Config validation logic (14 tests)
-  - `tests/scrapers/test_rean_scraper_fast.py` - Core REAN logic (16 tests)
-  - `tests/scrapers/test_rean_unified_extraction_fast.py` - Unified extraction logic (12 tests)
-  - `tests/scrapers/test_rean_error_handling_fast.py` - Error handling logic (16 tests)
-- **Comprehensive Test Files** (Enhanced with markers across ALL directories):
-  - `tests/api/test_*` - All API tests (13 files) - marked `@pytest.mark.slow` + `@pytest.mark.database` + `@pytest.mark.api`
-  - `tests/config/test_*` - Config integration tests - marked `@pytest.mark.slow` + `@pytest.mark.file_io`
-  - `tests/database/test_*` - Database setup and operations - marked `@pytest.mark.slow` + `@pytest.mark.database`
-  - `tests/integration/test_*` - Integration tests - marked `@pytest.mark.slow` + `@pytest.mark.network`
-  - `tests/management/test_*` - Management operations - marked `@pytest.mark.slow` + `@pytest.mark.management`
-  - `tests/security/test_*` - Security validation - marked `@pytest.mark.slow` + `@pytest.mark.database`
-  - `tests/utils/test_*` - Utility functions - marked `@pytest.mark.slow` + `@pytest.mark.computation`
-  - `tests/scrapers/test_*` - All scraper tests - marked `@pytest.mark.slow` + appropriate category markers
-
-**Test Categories & Markers** (Complete System):
-- `@pytest.mark.unit` - Fast business logic tests (60+ tests in ~1s, recommended for development)
-- `@pytest.mark.slow` - Integration tests requiring expensive operations (249 tests)
-- `@pytest.mark.database` - Tests requiring database operations (API, CRUD, migrations)
-- `@pytest.mark.selenium` - WebDriver automation tests (with mocked `time.sleep` for speed)
-- `@pytest.mark.network` - Network simulation tests (Cloudinary, HTTP requests, timeouts)
-- `@pytest.mark.file_io` - File I/O operations (config loading, temporary files)
-- `@pytest.mark.computation` - Time-consuming computations (failure detection, standardization)
-- `@pytest.mark.management` - Management and emergency operations
-- `@pytest.mark.api` - API endpoint testing
-- `@pytest.mark.integration` - Cross-module integration tests
-
-**Frontend Testing** (Jest + React Testing Library):
-- **20+ Test Suites, 120+ Individual Tests**:
-  - `src/__tests__/security/content-sanitization.test.js` - XSS prevention
-  - `src/__tests__/performance/optimization.test.jsx` - Lazy loading, memoization
-  - `src/__tests__/accessibility/a11y.test.jsx` - ARIA compliance, keyboard nav
-  - `src/__tests__/integration/` - API integration, metadata validation
-  - `src/components/**/__tests__/` - All UI components with React Testing Library (includes CTA components)
-  - `src/app/**/__tests__/` - Page tests including Server/Client separation
-  - `src/utils/__tests__/` - Utility function tests including favorites management
-
-**Critical Production Tests**:
-- Availability management lifecycle
-- Unified DOM extraction accuracy  
-- Image association correctness (fixed "off by one" image issues)
-- Error boundary functionality
-- Security vulnerability prevention
-- CTA optimization functionality (favorites, toast notifications, mobile sticky bar)
-- localStorage cross-environment compatibility
-- Toast notification system with proper cleanup
-- Lazy-loaded components with IntersectionObserver mocking
-- Scroll animation testing with accessibility support
-
-**Speed Optimization Results** (Complete Test Suite):
-- **Development**: 217 non-slow tests in 45s across ALL modules (vs 120+ seconds with slow tests)
-- **Unit Tests**: 60+ core logic tests in ~1s across ALL modules (vs 11+ seconds each for integration tests)
-- **Complete Coverage**: Fast tests span API, config, database utils, scrapers, security, and management
-- **CI Pipeline**: Fast PR validation with comprehensive pre-merge testing across entire codebase
-
-### 🚀 API Features (Smart User Experience)
-**Key Innovation**: API defaults ensure users only see reliable, recently-seen animals
-
-**Smart Default Filtering** (User-Focused):
-- Shows only `status='available'` AND `availability_confidence IN ('high', 'medium')`
-- Hides stale/unreliable listings automatically
-- Provides excellent user experience without manual filtering
-
-**Admin/Developer Override Parameters**:
-- `?status=all` - Show all animals regardless of status (for admin use)
-- `?availability_confidence=all` - Show all confidence levels (debugging)
-- `?availability_confidence=low` - Show only low confidence animals (monitoring)
-
-**Enhanced Response Fields**:
-- Standard fields: `name`, `breed`, `age_text`, `primary_image_url`, `adoption_url`
-- Availability fields: `status`, `availability_confidence`, `last_seen_at`, `consecutive_scrapes_missing`
-- Quality fields: Available in detailed views for monitoring
-
-### ⚙️ Configuration Management (YAML-Driven)
-**Key Commands**:
-- `python management/config_commands.py validate` - Validate all YAML configs
-- `python management/config_commands.py sync --dry-run` - Preview database changes
-- `python management/config_commands.py show rean` - View specific organization details
-- `python management/config_commands.py list` - List all configured organizations
-
-**Configuration Files**:
-- `configs/organizations/*.yaml` - Organization definitions
-- `configs/schemas/organization.schema.json` - Validation schema
-- Each config specifies scraper class, module path, and service regions
-
-### 🎨 Frontend Architecture (Next.js 15 + Modern Patterns)
-
-#### 🔄 Server/Client Component Separation (SEO + Interactivity)
-**CRITICAL ARCHITECTURE PATTERN** - Required for Next.js 15:
-
-**Server Components** (Metadata + SEO):
-- `src/app/dogs/[id]/page.jsx` - generateMetadata() for dog details
-- `src/app/organizations/page.jsx` - Organization metadata + structured data  
-- `src/app/about/page.jsx` - About page with metadata
-
-**Client Components** (User Interaction):
-- `src/app/dogs/[id]/DogDetailClient.jsx` - Interactive UI, state management
-- `src/app/organizations/OrganizationsClient.jsx` - API calls, state management
-- No About client component needed (static content)
-
-**🚨 MANDATORY RULES**:
-- **NEVER mix `'use client'` with `export const metadata`** - causes build errors
-- **ALL pages with metadata MUST be server components**
-- **Interactive logic MUST be in separate client components**
-- **Import client components into server components, never the reverse**
-
-**✅ CORRECT Pattern**:
-```javascript
-// src/app/organizations/page.jsx (Server Component)
-import OrganizationsClient from './OrganizationsClient';
-
-export const metadata = { ... };  // ✅ Server component only
-
-export default function OrganizationsPage() {
-  return <OrganizationsClient />;  // ✅ Import client component
-}
-
-// src/app/organizations/OrganizationsClient.jsx (Client Component)  
-"use client";
-// All useState, useEffect, API calls here
-```
-
-#### 🎯 CTA Optimization System (Production-Ready User Engagement)
-**Complete User Experience Enhancement** with modern interaction patterns:
-
-**Core Features Implemented**:
-- **Organization Section**: Gray card design with home icon, organization name, and dual action links
-- **Favorites Management**: Client-side localStorage persistence with cross-environment handling
-- **Toast Notifications**: User feedback system with auto-dismiss and manual close
-- **Mobile Sticky Bar**: Bottom-fixed action bar for mobile users (favorite + contact)
-- **Enhanced Primary CTA**: Blue button with heart icon and "Start Adoption Process" text
-- **Round Header Buttons**: Modernized share/favorite buttons with proper positioning
-
-**Key Components**:
-- `src/components/organizations/OrganizationSection.jsx` - Structured organization display
-- `src/components/ui/FavoriteButton.jsx` - Reusable favorite button with variants
-- `src/components/ui/MobileStickyBar.jsx` - Mobile-only sticky bottom bar
-- `src/components/ui/Toast.jsx` - Toast notification system with ToastProvider context
-- `src/utils/favorites.js` - Complete localStorage management with error handling
-
-**Design Patterns**:
-- **Environment-Aware Storage**: Safe localStorage access across SSR/client environments
-- **Context-Based Notifications**: ToastProvider pattern for app-wide toast management  
-- **Variant-Based Components**: Flexible UI components with multiple display modes
-- **Mobile-First Responsive**: Dedicated mobile interactions with desktop fallbacks
-
-**Usage Examples**:
-```javascript
-// Toast notifications
-const { showToast } = useToast();
-showToast('Added to favorites!', 'success');
-
-// Favorites management
-const result = FavoritesManager.addFavorite(dogId, dogData);
-if (result.success) {
-  showToast(result.message, 'success');
-}
-
-// Environment-aware localStorage
-const favorites = FavoritesManager.getFavorites(); // Safe across SSR/client
-```
-
-#### 🔒 Security Implementation (XSS Prevention)
-- **Content Sanitization**: `src/utils/security.js` with `sanitizeText()` and `sanitizeHtml()`
-- **Input Validation**: All user content sanitized before rendering
-- **URL Validation**: `isValidUrl()` utility for safe external links
-- **Production Safety**: Development-only logger prevents console leaks
-
-#### ⚡ Performance Optimizations (Polish & Speed)
-- **Lazy Loading**: `src/components/ui/LazyImage.jsx` with IntersectionObserver
-- **Progressive Image Loading**: `HeroImageWithBlurredBackground.jsx` - blur-to-sharp transitions
-- **Skeleton Loading States**: `DogDetailSkeleton.jsx` - comprehensive loading skeletons with shimmer animations
-- **Scroll-Based Animations**: `useScrollAnimation.js` - fade-in animations with accessibility support
-- **Related Dogs Lazy Loading**: Section only loads when visible using intersection observer
-- **Image Optimization**: Cloudinary transformations + fallback handling
-- **Component Memoization**: `React.memo` and `useCallback` for expensive renders
-- **Error Boundaries**: Enhanced with retry functionality (max 3 attempts)
-
-#### ♿ Accessibility Features (WCAG Compliant)
-- **ARIA Labels**: Comprehensive screen reader support
-- **Keyboard Navigation**: Full keyboard accessibility + focus management
-- **Semantic HTML**: Proper heading hierarchy and landmark usage
-- **Testing**: Automated accessibility tests in test suite
-
-#### 🛡️ Error Handling (Graceful Degradation)
-- **Global Boundary**: `src/components/error/ErrorBoundary.jsx` with retry
-- **Component-Specific**: `src/components/error/DogCardErrorBoundary.jsx`
-- **Fallback States**: User-friendly error messages
-- **Production Ready**: No technical details exposed to users
-
-#### 🔧 Key Utilities (Core Infrastructure)
-- **Logger**: `src/utils/logger.js` - Development-only (production-safe)
-- **Security**: `src/utils/security.js` - XSS prevention toolkit
-- **Images**: `src/utils/imageUtils.js` - Cloudinary optimization + error handling
-- **API**: `src/utils/api.js` - Centralized configuration + error handling
-- **Favorites**: `src/utils/favorites.js` - Client-side localStorage management with error handling
-
-### 📸 Image Processing (Production CDN Pipeline)
-- **Backend**: Cloudinary integration handles uploads during scraping
-- **Optimization**: Automatic format/quality/transformation optimization
-- **Fallback**: Original URLs preserved for error recovery
-- **Frontend**: Lazy loading with IntersectionObserver in `LazyImage.jsx`
-- **Error Handling**: Graceful degradation for failed image loads
-- **Performance**: Multiple size variants (thumbnail, card, detail) for different use cases
-
-## 🌍 Environment Requirements
-- **Python 3.9+** with dependencies in `requirements.txt` (backend API + scrapers)
-- **PostgreSQL** databases: `rescue_dogs` (main) + `test_rescue_dogs` (testing)
-- **Node.js 18+** for frontend (Next.js 15 requires modern Node)
-- **Cloudinary account** for image CDN and optimization
-- **Chrome/Chromium** for web scraping (Selenium WebDriver for unified extraction)
-
-### 🔧 Development Ports (CRITICAL)
-- **Frontend**: `http://localhost:3000` (Next.js dev server)
-- **Backend API**: `http://localhost:8000` (FastAPI with uvicorn)
-- **NEVER run multiple Next.js servers simultaneously** - causes routing conflicts
-
-## 🗄️ Database Schema (Production-Ready Tables)
-
-### `animals` Table (Core Data + Availability Tracking)
-**Key Fields**:
-- `name`, `breed`, `age_text`, `size` - Basic animal info
-- `primary_image_url`, `adoption_url` - Media and adoption links
-- **Availability Fields** (Critical for production):
-  - `status` (available/unavailable) 
-  - `availability_confidence` (high/medium/low)
-  - `last_seen_at` (timestamp from last successful scrape)
-  - `consecutive_scrapes_missing` (counter for automatic transitions)
-  - `last_session_start` (tracks which scrape session last saw this animal)
-
-### `scrape_logs` Table (Enhanced Monitoring)
-**Performance & Quality Tracking**:
-- `detailed_metrics` (JSONB with comprehensive statistics)
-- `duration_seconds` (scrape performance monitoring)
-- `data_quality_score` (0-1 automatic assessment)
-- `dogs_found`, `dogs_added`, `dogs_updated` (operation counts)
-
-**Example detailed_metrics JSONB**:
-```json
-{
-  "animals_found": 25,
-  "data_quality_score": 0.87, 
-  "potential_failure_detected": false,
-  "unified_extraction_used": true
-}
-```
-
-## 🔧 Critical Migration Commands (MUST RUN)
+### Database Operations
 ```bash
-# 🚨 PRODUCTION: Apply availability tracking (CRITICAL)
-psql -d rescue_dogs -f database/migrations/001_add_duplicate_stale_detection.sql
-psql -d rescue_dogs -f database/migrations/002_add_detailed_metrics.sql
-
-# 🧪 TESTING: Apply same migrations to test database
-DB_NAME=test_rescue_dogs psql -d test_rescue_dogs -f database/migrations/001_add_duplicate_stale_detection.sql
-DB_NAME=test_rescue_dogs psql -d test_rescue_dogs -f database/migrations/002_add_detailed_metrics.sql
-
-# ✅ Verify migrations applied correctly
-psql -d rescue_dogs -c "SELECT availability_confidence, last_seen_at FROM animals LIMIT 1;"
+python management/availability_manager.py update-availability  # Update dog status
+python database/check_db_status.py                            # Health check
 ```
 
-## 🚨 Critical Troubleshooting Guide
+## 📚 Detailed Documentation
 
-### 🎨 Frontend Issues (Next.js 15 + App Router)
+- **Development Workflow**: [`docs/development_workflow.md`](docs/development_workflow.md)
+- **Frontend Architecture**: [`docs/frontend_architecture.md`](docs/frontend_architecture.md)
+- **Testing Guide**: [`docs/test_optimization_guide.md`](docs/test_optimization_guide.md)
+- **Scraping Guide**: [`docs/weekly_scraping_guide.md`](docs/weekly_scraping_guide.md)
+- **Troubleshooting**: [`docs/troubleshooting_guide.md`](docs/troubleshooting_guide.md)
 
-#### 🚨 CRITICAL: "missing required error components, refreshing..." Error
-**Symptoms**: 
-- Blank pages showing only "missing required error components, refreshing..." text
-- Header navigation to Organizations/About pages failing
-- Works for some pages but not others
+## ⚠️ Critical Knowledge
 
-**Root Causes & Solutions**:
+### Image Handling
+- **Problem**: Dogs getting wrong images (e.g., Toby getting Bobbie's image)
+- **Solution**: Use `extract_dogs_with_images_unified()` for DOM-based extraction
+- **Frontend**: Images use Cloudinary with fallback to original URLs
 
-**1. Multiple Next.js Development Servers Conflict**:
+### Data Constraints
+- Limited fields: name, breed, age, sex, size (sometimes), description, organization
+- Single image per dog (no galleries)
+- No location tracking or geolocation features
+
+### Environment Variables
 ```bash
-# Problem: Multiple dev servers running on different ports
-# Check for conflicting processes:
-lsof -i :3000
-lsof -i :3001
+# Required for production
+DATABASE_URL=postgresql://...
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
 
-# Solution: Kill all Next.js processes and restart clean
-pkill -f "next-server"
-pkill -f "next dev"
-cd frontend && rm -rf .next && npm run dev
+# Frontend
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-**2. Next.js 15 Server/Client Component Architecture Violations**:
+### Common Issues & Solutions
+
+**Missing availability columns**: Run migrations
 ```bash
-# Problem: Mixing 'use client' with export const metadata
-# WRONG - causes build failures:
-"use client";
-export const metadata = { ... };  // ❌ FORBIDDEN
-
-# CORRECT - separate server and client components:
-# Server component (page.jsx):
-import ClientComponent from './ClientComponent';
-export const metadata = { ... };  // ✅ Server component only
-export default function Page() { return <ClientComponent />; }
-
-# Client component (ClientComponent.jsx):
-"use client";
-// All interactive logic here
+python database/run_critical_migrations.py
 ```
 
-**3. Build Cache Corruption**:
+**Linting errors**: Auto-fix most issues
 ```bash
-# Problem: Corrupted .next directory after process kills
-# Solution: Clean restart
-cd frontend
-rm -rf .next
-rm -rf node_modules/.cache
-npm run dev
+black . && isort . && autopep8 --in-place --recursive .
 ```
 
-**Immediate Fix Workflow**:
+**Import errors in frontend**: Check if running from correct directory
 ```bash
-# 1. Kill all Next.js processes
-pkill -f "next"
-
-# 2. Clean build artifacts  
-cd frontend && rm -rf .next
-
-# 3. Check for architecture violations
-grep -r "\"use client\"" src/app/*/page.jsx  # Should return nothing
-
-# 4. Restart development server
-npm run dev  # Should start on port 3000
-
-# 5. Test problematic pages
-curl http://localhost:3000/organizations
-curl http://localhost:3000/about
+cd frontend && npm run dev  # Must run from frontend/
 ```
 
-#### ❌ Server/Client Component Conflicts
-**Error**: `You are attempting to export 'generateMetadata' from a component marked with 'use client'`
-**Solution**: NEVER mix `'use client'` with `generateMetadata()` - separate into Server (metadata) + Client (UI) components
+## 🚦 Quality Standards
 
-#### ❌ Missing Component References
-**Error**: `Cannot find module './DogDetailClient'`  
-**Solution**: Ensure Client components exist when Server components reference them
+- Backend test coverage: 93%+ required
+- Frontend: 95+ tests across 17 suites
+- All PRs must pass: `pytest tests/ -m "not slow"`
+- Follow existing patterns in codebase
 
-#### ❌ Test Infrastructure Issues
-**Error**: `IntersectionObserver is not defined`
-**Solution**: Mock configured in `jest.setup.js` - check configuration
+## 🔗 Quick Links
 
-#### 🧪 Testing Lazy-Loaded Components (IntersectionObserver)
-**Challenge**: Components using IntersectionObserver for lazy loading need special test handling
-**Solution Pattern**:
-```javascript
-// Mock useScrollAnimation hook in tests
-jest.mock('../../../hooks/useScrollAnimation', () => ({
-  useScrollAnimation: (options = {}) => {
-    const ref = React.useRef();
-    return [ref, true]; // Always visible in tests
-  },
-  ScrollAnimationWrapper: ({ children, ...props }) => <div {...props}>{children}</div>
-}));
-```
-**Key Points**:
-- Mock hooks to return visible state immediately
-- Wrap renders in `act()` for async state updates
-- Use `waitFor()` for API calls triggered by visibility
-- Test loading, success, and error states separately
+- [API Docs](http://localhost:8000/docs) (when running)
+- [Database Schema](database/schema.sql)
+- [Component Library](frontend/src/components/README.md)
+- [Scraper Configs](configs/organizations/)
 
-#### ❌ Performance Problems
-**Slow image loading**: Use `LazyImage` component with Cloudinary optimization
-**Unnecessary re-renders**: Implement `React.memo` for expensive components
+---
 
-#### ❌ CTA Optimization Issues
-
-#### ❌ Toast Notifications Not Appearing
-**Problem**: Toast messages don't show up or disappear immediately
-**Solution**: Ensure component is wrapped with `ToastProvider` and check timer cleanup
-
-#### ❌ localStorage Errors in SSR
-**Problem**: `localStorage is not defined` during server-side rendering
-**Solution**: Use `FavoritesManager` utility which handles SSR/client environments safely
-
-#### ❌ Favorites Not Persisting
-**Problem**: Favorite state doesn't persist across page reloads
-**Solution**: Check `localStorage` permissions and storage quota. Use `FavoritesManager.getFavorites()` for debugging
-
-#### ❌ Mobile Sticky Bar Not Showing
-**Problem**: Sticky bar doesn't appear on mobile devices
-**Solution**: Check `md:hidden` class is applied and component has `isVisible={true}` prop
-
-#### 🚨 CRITICAL: Next.js 15 TypeScript Build Failures
-**Error**: `Type '{} | undefined' does not satisfy the constraint 'PageProps'`
-**Root Cause**: Next.js 15 requires async params handling, but this breaks Jest tests
-**Solution**: MANDATORY Environment-Aware Component Pattern (see below)
-
-**❌ BROKEN Pattern (causes build failures)**:
-```javascript
-// DON'T DO THIS - breaks TypeScript build
-export default function PageComponent({ params }) {
-  return <ClientComponent params={params} />;
-}
-
-// DON'T DO THIS - breaks Jest tests  
-export default async function PageComponent({ params }) {
-  const resolvedParams = await params;
-  return <ClientComponent params={resolvedParams} />;
-}
-```
-
-**✅ REQUIRED Pattern (Next.js 15 + Jest compatible)**:
-```javascript
-// Environment-aware component (MANDATORY for dynamic routes)
-const isTestEnvironment = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
-
-// Synchronous version for Jest tests
-function PageComponent() {
-  return <ClientComponent />;
-}
-
-// Asynchronous version for Next.js 15 production
-async function PageComponentAsync({ params }) {
-  try {
-    if (params) await params;
-  } catch {
-    // Client component handles params via useParams()
-  }
-  return <ClientComponent />;
-}
-
-// Export the appropriate version based on environment
-export default isTestEnvironment ? PageComponent : PageComponentAsync;
-```
-
-**Implementation Requirements**:
-1. **Client components MUST use `useParams()`** internally (not rely on props)
-2. **Server components handle metadata only** (via `generateMetadata`)
-3. **Environment detection MUST be robust** (`typeof process !== 'undefined'`)
-4. **Error handling MUST be graceful** (try/catch around params)
-
-**Files Using This Pattern**:
-- `src/app/dogs/[id]/page.jsx` - Dog detail pages
-- `src/app/organizations/[id]/page.jsx` - Organization detail pages
-
-### 🤖 Scraper Issues (Unified DOM Extraction)
-
-#### ❌ Image Association Problems
-**Problem**: Dogs getting wrong images (like Toby/Bobbie issue)
-**Solution**: Use `extract_dogs_with_images_unified()` method - maintains DOM spatial relationships
-
-#### ❌ Lazy Loading Failures  
-**Problem**: Missing images due to lazy loading
-**Solution**: Check `_trigger_comprehensive_lazy_loading()` - may need longer delays
-
-### 🗄️ Database Issues
-
-#### ❌ Missing Availability Columns
-**Error**: Column `availability_confidence` doesn't exist
-**Solution**: Run critical migrations (see migration commands above)
-
-### 🐍 Python Linting Issues (Code Quality Failures)
-
-#### 🚨 CRITICAL: Mass Linting Violations (1000+ errors)
-**Problem**: Large number of E501, F401, W291, E402 violations preventing clean development
-**Root Cause**: Accumulated technical debt from inconsistent formatting standards
-**Solution**: Systematic automated cleanup approach (PROVEN EFFECTIVE)
-
-**Step 1: Install Tools**:
-```bash
-source venv/bin/activate && pip install autopep8 unimport
-```
-
-**Step 2: Automated Fixes** (fixes 90%+ of violations):
-```bash
-# Fix whitespace issues (W291, W293) - 99% success rate
-autopep8 --in-place --select=W291,W292,W293,E302,E261,E203 --recursive --exclude=venv .
-
-# Remove unused imports (F401) - 97% success rate  
-unimport --remove --exclude venv .
-
-# Fix line length issues in critical files (E501) - significant improvement
-autopep8 --in-place --max-line-length=79 --select=E501 api/ scrapers/base_scraper.py utils/
-
-# Comprehensive cleanup
-autopep8 --in-place --aggressive --exclude=venv --recursive .
-```
-
-**Step 3: Manual Fixes** (remaining critical issues):
-```bash
-# Fix import ordering (E402) - must fix manually in:
-# - api/dependencies.py, api/main.py 
-# - utils/view_sample_dogs.py
-# - utils/test_config_models.py
-
-# Fix f-string placeholders (F541) - must fix manually:
-# Replace f"text" with "text" when no variables used
-```
-
-#### ❌ E501 Line Too Long Errors
-**Problem**: Lines exceed 79 characters
-**Solutions**:
-- **Automated**: `autopep8 --in-place --max-line-length=79 --select=E501 [file]`
-- **Manual**: Break long lines, use implicit line continuation
-- **Acceptable**: SQL queries, URLs, long descriptions (up to 750 total violations OK)
-
-#### ❌ F401 Unused Import Errors  
-**Problem**: Imported modules not used
-**Solution**: `unimport --remove --exclude venv .` (97% automated success rate)
-
-#### ❌ E402 Import Not At Top
-**Problem**: Module imports after other code
-**Solution**: Move imports to top of file (manual fix required)
-
-#### ❌ W291 Trailing Whitespace
-**Problem**: Whitespace at end of lines
-**Solution**: `autopep8 --in-place --select=W291,W292,W293 --recursive --exclude=venv .`
-
-### ✅ Development Best Practices (MANDATORY)
-1. **TDD First**: Write tests before implementation (Red-Green-Refactor)
-2. **Test Everything**: `npm test` (frontend), `pytest tests/` (backend) before commits
-3. **Code Quality**: Run full verification workflow before commits
-4. **Build Verification**: `npm run build` must succeed
-5. **Security First**: Sanitize all user content, no console in production
-   - Console statements MUST be wrapped: `if (process.env.NODE_ENV !== 'production') console.log(...)`
-   - Use logger utilities instead of direct console calls in components
-   - Production build validation ensures no unwrapped console statements
-6. **Documentation Maintenance**: ALWAYS update docs during development (see Documentation Workflow below)
-
-### 📝 Documentation Maintenance Workflow (MANDATORY)
-
-As part of the development process, documentation MUST be updated to reflect all changes:
-
-#### When to Update Documentation
-- **During Feature Planning**: Update design documents and architectural guides
-- **After Component Creation**: Add new components to `docs/frontend_architecture.md`
-- **After API Changes**: Update `docs/api_reference.md` and service documentation
-- **After Testing**: Update test coverage metrics in `docs/development_workflow.md`
-- **After Performance Changes**: Document optimizations in relevant guides
-- **Before Commit**: Ensure all documentation reflects current implementation
-
-#### Required Documentation Updates
-1. **Component Changes**:
-   - Add new components to `docs/frontend_architecture.md`
-   - Update test counts and coverage metrics
-   - Document new patterns and usage examples
-
-2. **API Changes**:
-   - Update `docs/api_reference.md` with new endpoints
-   - Document request/response formats
-   - Add authentication and filtering changes
-
-3. **Testing Changes**:
-   - Update test counts in `docs/development_workflow.md`
-   - Add new test files to testing strategy guides
-   - Document new testing patterns or mocking strategies
-
-4. **Configuration Changes**:
-   - Update `docs/configuration_system.md`
-   - Document new YAML schema fields
-   - Add validation and sync procedures
-
-#### Documentation Files to Maintain
-- `docs/frontend_architecture.md` - Component architecture and patterns
-- `docs/development_workflow.md` - Development processes and test metrics
-- `docs/api_reference.md` - API endpoints and usage
-- `docs/configuration_system.md` - YAML config management
-- `docs/test_optimization_guide.md` - Testing strategies and patterns
-- Feature-specific guides (CTA optimization, scraper design, etc.)
-
-#### Verification Steps
-1. **Before Committing**: Review all documentation for accuracy
-2. **Test Documentation**: Verify all code examples work
-3. **Update Cross-References**: Ensure links between docs remain valid
-4. **Update Metrics**: Reflect current test counts, coverage, and performance stats
-
-**CRITICAL**: Documentation updates are NOT optional - they are part of the development workflow and must be completed before marking tasks as complete.
-
-## 🚀 Pre-Commit Quality Gates (MANDATORY)
-
-### Backend Quality Workflow (ENFORCED Standards)
-```bash
-source venv/bin/activate
-
-# 🚨 MANDATORY Step 1: Install linting tools (run once)
-pip install autopep8 unimport
-
-# 📋 MANDATORY Step 2: Automated formatting (REQUIRED before manual review)
-black .                                                # Format code with Black (required)
-isort .                                                # Sort imports (required)
-autopep8 --in-place --exclude=venv --recursive .      # Fix PEP8 violations (recommended)
-
-# 🔍 MANDATORY Step 3: Code quality validation (ENFORCED)
-flake8 --exclude=venv .                               # Linting (must pass for critical files)
-
-# ⚡ MANDATORY Step 4: SPEED-OPTIMIZED TESTING (Recommended for development)
-python -m pytest tests/ -m "unit" -v                 # Fast unit tests (60+ tests in ~1s - ALL modules)
-python -m pytest tests/ -m "not slow" -v             # All non-slow tests (230 tests in ~45s - COMPLETE SUITE)
-
-# 🔍 COMPREHENSIVE TESTING (For pre-commit validation)
-python -m pytest tests/ -v                           # All tests including slow integration tests (479 total)
-
-# 🚨 CRITICAL: Python Linting Standards (ENFORCED)
-# Acceptable error counts (do not exceed these thresholds):
-# - E501 (line too long): ≤750 violations (mostly SQL/URLs - acceptable)
-# - F401 (unused imports): 0 violations (MUST be 0 - use 'unimport --remove')
-# - W291/W293 (whitespace): ≤5 violations (use 'autopep8' to fix)
-# - E402 (import not at top): 0 violations (MUST be 0 - fix manually)
-# - F541 (f-string missing placeholders): ≤5 violations (fix manually)
-```
-
-### Frontend Quality Workflow  
-```bash
-cd frontend
-npm test                    # 95+ tests across 17 suites
-npm run build              # Production build verification  
-npm run lint               # ESLint validation
-```
-
-### 🎯 COMPLETE VERIFICATION (MANDATORY for commits)
-```bash
-# 🚨 MANDATORY: Enhanced Pre-Commit Validation (PREVENTS build failures)
-# Use this command before every commit to prevent TypeScript/linting issues
-
-# ⚡ RECOMMENDED: Fast Pre-Commit Validation (Complete quality suite - ~2 minutes)
-source venv/bin/activate && \
-black . && isort . && \
-autopep8 --in-place --exclude=venv --recursive . && \
-python -m pytest tests/ -m "not slow" -v && \
-cd frontend && npm test && npm run build && npm run lint && \
-echo "✅ PRE-COMMIT VALIDATION PASSED - Safe to commit!"
-
-# 🔍 COMPREHENSIVE: Full Pre-Commit Validation (For major changes/releases - ~15 minutes)
-source venv/bin/activate && \
-black . && isort . && \
-autopep8 --in-place --exclude=venv --recursive . && \
-flake8 --exclude=venv . && \
-python -m pytest tests/ -v && \
-cd frontend && npm test && npm run build && npm run lint && \
-echo "✅ COMPREHENSIVE VALIDATION PASSED - Production ready!"
-
-# 🚀 ULTRA-FAST: Development Cycle (Core logic validation - ~30 seconds)
-source venv/bin/activate && \
-black . && \
-python -m pytest tests/ -m "unit" -v && \
-echo "✅ CORE LOGIC VALIDATED - Continue development"
-
-# 🛠️ CLEANUP: Reset to clean state after failed validation
-# Use this if pre-commit validation fails and you need to start over
-source venv/bin/activate && \
-black . && isort . && \
-autopep8 --in-place --exclude=venv --recursive . && \
-unimport --remove --exclude venv . && \
-echo "✅ CODEBASE CLEANED - Retry validation"
-
-# 🔍 DOCUMENTATION VERIFICATION (Validate accuracy)
-./scripts/verify_documentation.sh                     # Verify all documented commands work
-```
-
-## 🏆 Production Readiness Features (Enterprise-Grade)
-
-### 🤖 Backend Production Features
-- **Weekly Scraping Architecture**: Designed for production schedules with intelligent stale data management
-- **Unified DOM Extraction**: Advanced scraping for modern websites maintaining spatial relationships
-- **Error Recovery & Resilience**: Partial failure detection prevents false positives  
-- **Quality Scoring**: Automatic 0-1 data quality assessment with field completeness analysis
-- **Smart API Defaults**: Only reliable, recently-seen animals shown by default
-- **Comprehensive Monitoring**: Detailed JSONB metrics for troubleshooting and optimization
-- **Availability Management**: Automatic confidence transitions (high→medium→low→unavailable)
-
-### 🎨 Frontend Production Features  
-- **Security**: XSS prevention, content sanitization, URL validation, production-safe logging
-- **Performance**: Lazy loading, progressive image loading, skeleton states, scroll animations
-- **Polish & UX**: Comprehensive loading skeletons, blur-to-sharp image transitions, smooth animations
-- **Lazy Loading**: IntersectionObserver-based loading for Related Dogs and scroll animations
-- **Error Handling**: Enhanced error boundaries with retry functionality (max 3 attempts)
-- **Accessibility**: ARIA compliance, keyboard navigation, prefers-reduced-motion support
-- **SEO Optimization**: Server/Client separation with dynamic metadata generation
-- **Test Coverage**: 401 tests across 38 suites covering security, performance, accessibility, polish features
-
-### 📊 Monitoring & Observability
-- **Quality Metrics**: Data completeness scoring and trend analysis
-- **Performance Tracking**: Scrape duration, success rates, failure detection
-- **User Experience**: Smart filtering ensures reliable animal listings
-- **Debugging**: Comprehensive logging with structured JSONB metrics for troubleshooting
-
-## 📚 Documentation & Resources
-
-### 📖 Complete Documentation Directory (`docs/`)
-All comprehensive guides and references are located in the `docs/` directory:
-
-#### 🏢 Project & Architecture
-- **`docs/project_overview.md`** - High-level system overview and goals
-- **`docs/frontend_architecture.md`** - Complete Next.js 15 + App Router implementation patterns
-- **`docs/production_deployment.md`** - Production deployment and infrastructure setup
-
-#### 🛠️ Development & Testing
-- **`docs/development_workflow.md`** - TDD methodology, quality standards, and development best practices
-- **`docs/test_optimization_guide.md`** - Speed-optimized testing strategy (217 fast tests in 45s vs 249 slow tests)
-- **`docs/troubleshooting_guide.md`** - Common issues, solutions, and debugging strategies
-- **`frontend/docs/testing-lazy-components.md`** - Complete guide for testing IntersectionObserver and lazy-loaded components
-
-#### 🤖 Data Collection & Processing
-- **`docs/scraper_design.md`** - Scraper architecture, unified DOM extraction, and implementation patterns
-- **`docs/data_standardization.md`** - AI-powered normalization, breed mapping, and quality assessment
-- **`docs/weekly_scraping_guide.md`** - Production operations, monitoring, and availability management
-
-#### ⚙️ Configuration & API
-- **`docs/configuration_system.md`** - YAML-driven configuration management and validation
-- **`docs/api_reference.md`** - Complete API documentation with smart filtering and availability parameters
-
-#### 🎯 User Experience & Optimization
-- **`docs/cta_optimization_guide.md`** - CTA optimization system, favorites management, and mobile UX patterns
-- **`docs/related_dogs_feature.md`** - Related Dogs cross-discovery feature implementation and testing
-
-### 📋 Quick Reference for Common Tasks
-
-#### 🔍 Finding Specific Information
-- **Architecture questions** → `docs/frontend_architecture.md` or `docs/project_overview.md`
-- **Setup and deployment** → `docs/production_deployment.md`
-- **Development workflow** → `docs/development_workflow.md`
-- **Testing strategies** → `docs/test_optimization_guide.md`
-- **Scraper implementation** → `docs/scraper_design.md`
-- **Configuration management** → `docs/configuration_system.md`
-- **API usage** → `docs/api_reference.md`
-- **User experience features** → `docs/cta_optimization_guide.md` or `docs/related_dogs_feature.md`
-- **Production operations** → `docs/weekly_scraping_guide.md`
-- **Issue resolution** → `docs/troubleshooting_guide.md`
-- **Data processing** → `docs/data_standardization.md`
-
-#### 🚀 Essential Reading Order
-1. **Start Here**: `docs/project_overview.md` - Understanding the system
-2. **Development**: `docs/development_workflow.md` - Development practices
-3. **Architecture**: `docs/frontend_architecture.md` - Technical implementation
-4. **Testing**: `docs/test_optimization_guide.md` - Quality assurance
-5. **Production**: `docs/production_deployment.md` - Deployment and operations
-
-### 💡 Documentation Usage Tips
-- **All documentation is comprehensive** - Each guide contains both conceptual explanations and practical examples
-- **Cross-references provided** - Guides reference each other for related topics
-- **Production-ready focus** - All documentation reflects current production implementation
-- **Regularly updated** - Documentation stays current with codebase changes
+**For detailed information on any topic, refer to the documentation links above.**
