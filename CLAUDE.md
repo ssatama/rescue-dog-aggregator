@@ -84,7 +84,7 @@ cd frontend
 
 # 🚀 QUICK START
 npm install                                  # Install dependencies
-npm run dev                                  # Development server (port 3001)
+npm run dev                                  # Development server (port 3000)
 
 # 🧪 TESTING (95+ tests across 17 suites - TDD required)
 npm test                                     # Run all tests
@@ -319,6 +319,8 @@ self.update_stale_data_detection()   # Update confidence for unseen animals
 - CTA optimization functionality (favorites, toast notifications, mobile sticky bar)
 - localStorage cross-environment compatibility
 - Toast notification system with proper cleanup
+- Lazy-loaded components with IntersectionObserver mocking
+- Scroll animation testing with accessibility support
 
 **Speed Optimization Results** (Complete Test Suite):
 - **Development**: 217 non-slow tests in 45s across ALL modules (vs 120+ seconds with slow tests)
@@ -359,15 +361,39 @@ self.update_stale_data_detection()   # Update confidence for unseen animals
 ### 🎨 Frontend Architecture (Next.js 15 + Modern Patterns)
 
 #### 🔄 Server/Client Component Separation (SEO + Interactivity)
+**CRITICAL ARCHITECTURE PATTERN** - Required for Next.js 15:
+
 **Server Components** (Metadata + SEO):
 - `src/app/dogs/[id]/page.jsx` - generateMetadata() for dog details
-- `src/app/organizations/[id]/page.jsx` - Organization metadata + structured data
+- `src/app/organizations/page.jsx` - Organization metadata + structured data  
+- `src/app/about/page.jsx` - About page with metadata
 
 **Client Components** (User Interaction):
 - `src/app/dogs/[id]/DogDetailClient.jsx` - Interactive UI, state management
-- `src/app/organizations/[id]/OrganizationDetailClient.jsx` - Organization interface
+- `src/app/organizations/OrganizationsClient.jsx` - API calls, state management
+- No About client component needed (static content)
 
-**Critical**: NEVER mix `'use client'` with `generateMetadata()` - causes build errors
+**🚨 MANDATORY RULES**:
+- **NEVER mix `'use client'` with `export const metadata`** - causes build errors
+- **ALL pages with metadata MUST be server components**
+- **Interactive logic MUST be in separate client components**
+- **Import client components into server components, never the reverse**
+
+**✅ CORRECT Pattern**:
+```javascript
+// src/app/organizations/page.jsx (Server Component)
+import OrganizationsClient from './OrganizationsClient';
+
+export const metadata = { ... };  // ✅ Server component only
+
+export default function OrganizationsPage() {
+  return <OrganizationsClient />;  // ✅ Import client component
+}
+
+// src/app/organizations/OrganizationsClient.jsx (Client Component)  
+"use client";
+// All useState, useEffect, API calls here
+```
 
 #### 🎯 CTA Optimization System (Production-Ready User Engagement)
 **Complete User Experience Enhancement** with modern interaction patterns:
@@ -415,11 +441,15 @@ const favorites = FavoritesManager.getFavorites(); // Safe across SSR/client
 - **URL Validation**: `isValidUrl()` utility for safe external links
 - **Production Safety**: Development-only logger prevents console leaks
 
-#### ⚡ Performance Optimizations
+#### ⚡ Performance Optimizations (Polish & Speed)
 - **Lazy Loading**: `src/components/ui/LazyImage.jsx` with IntersectionObserver
+- **Progressive Image Loading**: `HeroImageWithBlurredBackground.jsx` - blur-to-sharp transitions
+- **Skeleton Loading States**: `DogDetailSkeleton.jsx` - comprehensive loading skeletons with shimmer animations
+- **Scroll-Based Animations**: `useScrollAnimation.js` - fade-in animations with accessibility support
+- **Related Dogs Lazy Loading**: Section only loads when visible using intersection observer
 - **Image Optimization**: Cloudinary transformations + fallback handling
-- **Component Memoization**: `React.memo` for expensive renders
-- **Error Boundaries**: Resilient error handling with retry functionality
+- **Component Memoization**: `React.memo` and `useCallback` for expensive renders
+- **Error Boundaries**: Enhanced with retry functionality (max 3 attempts)
 
 #### ♿ Accessibility Features (WCAG Compliant)
 - **ARIA Labels**: Comprehensive screen reader support
@@ -454,6 +484,11 @@ const favorites = FavoritesManager.getFavorites(); // Safe across SSR/client
 - **Node.js 18+** for frontend (Next.js 15 requires modern Node)
 - **Cloudinary account** for image CDN and optimization
 - **Chrome/Chromium** for web scraping (Selenium WebDriver for unified extraction)
+
+### 🔧 Development Ports (CRITICAL)
+- **Frontend**: `http://localhost:3000` (Next.js dev server)
+- **Backend API**: `http://localhost:8000` (FastAPI with uvicorn)
+- **NEVER run multiple Next.js servers simultaneously** - causes routing conflicts
 
 ## 🗄️ Database Schema (Production-Ready Tables)
 
@@ -503,6 +538,74 @@ psql -d rescue_dogs -c "SELECT availability_confidence, last_seen_at FROM animal
 
 ### 🎨 Frontend Issues (Next.js 15 + App Router)
 
+#### 🚨 CRITICAL: "missing required error components, refreshing..." Error
+**Symptoms**: 
+- Blank pages showing only "missing required error components, refreshing..." text
+- Header navigation to Organizations/About pages failing
+- Works for some pages but not others
+
+**Root Causes & Solutions**:
+
+**1. Multiple Next.js Development Servers Conflict**:
+```bash
+# Problem: Multiple dev servers running on different ports
+# Check for conflicting processes:
+lsof -i :3000
+lsof -i :3001
+
+# Solution: Kill all Next.js processes and restart clean
+pkill -f "next-server"
+pkill -f "next dev"
+cd frontend && rm -rf .next && npm run dev
+```
+
+**2. Next.js 15 Server/Client Component Architecture Violations**:
+```bash
+# Problem: Mixing 'use client' with export const metadata
+# WRONG - causes build failures:
+"use client";
+export const metadata = { ... };  // ❌ FORBIDDEN
+
+# CORRECT - separate server and client components:
+# Server component (page.jsx):
+import ClientComponent from './ClientComponent';
+export const metadata = { ... };  // ✅ Server component only
+export default function Page() { return <ClientComponent />; }
+
+# Client component (ClientComponent.jsx):
+"use client";
+// All interactive logic here
+```
+
+**3. Build Cache Corruption**:
+```bash
+# Problem: Corrupted .next directory after process kills
+# Solution: Clean restart
+cd frontend
+rm -rf .next
+rm -rf node_modules/.cache
+npm run dev
+```
+
+**Immediate Fix Workflow**:
+```bash
+# 1. Kill all Next.js processes
+pkill -f "next"
+
+# 2. Clean build artifacts  
+cd frontend && rm -rf .next
+
+# 3. Check for architecture violations
+grep -r "\"use client\"" src/app/*/page.jsx  # Should return nothing
+
+# 4. Restart development server
+npm run dev  # Should start on port 3000
+
+# 5. Test problematic pages
+curl http://localhost:3000/organizations
+curl http://localhost:3000/about
+```
+
 #### ❌ Server/Client Component Conflicts
 **Error**: `You are attempting to export 'generateMetadata' from a component marked with 'use client'`
 **Solution**: NEVER mix `'use client'` with `generateMetadata()` - separate into Server (metadata) + Client (UI) components
@@ -514,6 +617,25 @@ psql -d rescue_dogs -c "SELECT availability_confidence, last_seen_at FROM animal
 #### ❌ Test Infrastructure Issues
 **Error**: `IntersectionObserver is not defined`
 **Solution**: Mock configured in `jest.setup.js` - check configuration
+
+#### 🧪 Testing Lazy-Loaded Components (IntersectionObserver)
+**Challenge**: Components using IntersectionObserver for lazy loading need special test handling
+**Solution Pattern**:
+```javascript
+// Mock useScrollAnimation hook in tests
+jest.mock('../../../hooks/useScrollAnimation', () => ({
+  useScrollAnimation: (options = {}) => {
+    const ref = React.useRef();
+    return [ref, true]; // Always visible in tests
+  },
+  ScrollAnimationWrapper: ({ children, ...props }) => <div {...props}>{children}</div>
+}));
+```
+**Key Points**:
+- Mock hooks to return visible state immediately
+- Wrap renders in `act()` for async state updates
+- Use `waitFor()` for API calls triggered by visibility
+- Test loading, success, and error states separately
 
 #### ❌ Performance Problems
 **Slow image loading**: Use `LazyImage` component with Cloudinary optimization
@@ -669,7 +791,59 @@ autopep8 --in-place --aggressive --exclude=venv --recursive .
 3. **Code Quality**: Run full verification workflow before commits
 4. **Build Verification**: `npm run build` must succeed
 5. **Security First**: Sanitize all user content, no console in production
-6. **Documentation**: Update docs for any architectural changes
+   - Console statements MUST be wrapped: `if (process.env.NODE_ENV !== 'production') console.log(...)`
+   - Use logger utilities instead of direct console calls in components
+   - Production build validation ensures no unwrapped console statements
+6. **Documentation Maintenance**: ALWAYS update docs during development (see Documentation Workflow below)
+
+### 📝 Documentation Maintenance Workflow (MANDATORY)
+
+As part of the development process, documentation MUST be updated to reflect all changes:
+
+#### When to Update Documentation
+- **During Feature Planning**: Update design documents and architectural guides
+- **After Component Creation**: Add new components to `docs/frontend_architecture.md`
+- **After API Changes**: Update `docs/api_reference.md` and service documentation
+- **After Testing**: Update test coverage metrics in `docs/development_workflow.md`
+- **After Performance Changes**: Document optimizations in relevant guides
+- **Before Commit**: Ensure all documentation reflects current implementation
+
+#### Required Documentation Updates
+1. **Component Changes**:
+   - Add new components to `docs/frontend_architecture.md`
+   - Update test counts and coverage metrics
+   - Document new patterns and usage examples
+
+2. **API Changes**:
+   - Update `docs/api_reference.md` with new endpoints
+   - Document request/response formats
+   - Add authentication and filtering changes
+
+3. **Testing Changes**:
+   - Update test counts in `docs/development_workflow.md`
+   - Add new test files to testing strategy guides
+   - Document new testing patterns or mocking strategies
+
+4. **Configuration Changes**:
+   - Update `docs/configuration_system.md`
+   - Document new YAML schema fields
+   - Add validation and sync procedures
+
+#### Documentation Files to Maintain
+- `docs/frontend_architecture.md` - Component architecture and patterns
+- `docs/development_workflow.md` - Development processes and test metrics
+- `docs/api_reference.md` - API endpoints and usage
+- `docs/configuration_system.md` - YAML config management
+- `docs/test_optimization_guide.md` - Testing strategies and patterns
+- Feature-specific guides (CTA optimization, scraper design, etc.)
+
+#### Verification Steps
+1. **Before Committing**: Review all documentation for accuracy
+2. **Test Documentation**: Verify all code examples work
+3. **Update Cross-References**: Ensure links between docs remain valid
+4. **Update Metrics**: Reflect current test counts, coverage, and performance stats
+
+**CRITICAL**: Documentation updates are NOT optional - they are part of the development workflow and must be completed before marking tasks as complete.
 
 ## 🚀 Pre-Commit Quality Gates (MANDATORY)
 
@@ -765,11 +939,13 @@ echo "✅ CODEBASE CLEANED - Retry validation"
 
 ### 🎨 Frontend Production Features  
 - **Security**: XSS prevention, content sanitization, URL validation, production-safe logging
-- **Performance**: Lazy loading, image optimization, component memoization, bundle optimization
-- **Accessibility**: ARIA compliance, keyboard navigation, screen reader support
-- **Error Handling**: Error boundaries with retry functionality and graceful degradation
+- **Performance**: Lazy loading, progressive image loading, skeleton states, scroll animations
+- **Polish & UX**: Comprehensive loading skeletons, blur-to-sharp image transitions, smooth animations
+- **Lazy Loading**: IntersectionObserver-based loading for Related Dogs and scroll animations
+- **Error Handling**: Enhanced error boundaries with retry functionality (max 3 attempts)
+- **Accessibility**: ARIA compliance, keyboard navigation, prefers-reduced-motion support
 - **SEO Optimization**: Server/Client separation with dynamic metadata generation
-- **Test Coverage**: 95+ tests across 17 suites covering security, performance, accessibility
+- **Test Coverage**: 401 tests across 38 suites covering security, performance, accessibility, polish features
 
 ### 📊 Monitoring & Observability
 - **Quality Metrics**: Data completeness scoring and trend analysis
@@ -791,6 +967,7 @@ All comprehensive guides and references are located in the `docs/` directory:
 - **`docs/development_workflow.md`** - TDD methodology, quality standards, and development best practices
 - **`docs/test_optimization_guide.md`** - Speed-optimized testing strategy (217 fast tests in 45s vs 249 slow tests)
 - **`docs/troubleshooting_guide.md`** - Common issues, solutions, and debugging strategies
+- **`frontend/docs/testing-lazy-components.md`** - Complete guide for testing IntersectionObserver and lazy-loaded components
 
 #### 🤖 Data Collection & Processing
 - **`docs/scraper_design.md`** - Scraper architecture, unified DOM extraction, and implementation patterns
@@ -803,6 +980,7 @@ All comprehensive guides and references are located in the `docs/` directory:
 
 #### 🎯 User Experience & Optimization
 - **`docs/cta_optimization_guide.md`** - CTA optimization system, favorites management, and mobile UX patterns
+- **`docs/related_dogs_feature.md`** - Related Dogs cross-discovery feature implementation and testing
 
 ### 📋 Quick Reference for Common Tasks
 
@@ -814,7 +992,7 @@ All comprehensive guides and references are located in the `docs/` directory:
 - **Scraper implementation** → `docs/scraper_design.md`
 - **Configuration management** → `docs/configuration_system.md`
 - **API usage** → `docs/api_reference.md`
-- **User experience features** → `docs/cta_optimization_guide.md`
+- **User experience features** → `docs/cta_optimization_guide.md` or `docs/related_dogs_feature.md`
 - **Production operations** → `docs/weekly_scraping_guide.md`
 - **Issue resolution** → `docs/troubleshooting_guide.md`
 - **Data processing** → `docs/data_standardization.md`

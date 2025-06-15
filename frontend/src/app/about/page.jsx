@@ -1,6 +1,6 @@
 import Layout from '../../components/layout/Layout';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button'; // If needed for CTAs
+import { Button } from '@/components/ui/button';
 
 export const metadata = {
   title: 'About Us - Rescue Dog Aggregator',

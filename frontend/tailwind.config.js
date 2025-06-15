@@ -8,6 +8,25 @@ module.exports = {
   ],
   theme: {
   	extend: {
+  		animation: {
+  			'shimmer': 'shimmer 2s infinite linear',
+  			'fade-in': 'fadeIn 0.3s ease-in-out',
+  			'slide-up': 'slideUp 0.3s ease-out',
+  		},
+  		keyframes: {
+  			shimmer: {
+  				'0%': { transform: 'translateX(-100%)' },
+  				'100%': { transform: 'translateX(100%)' },
+  			},
+  			fadeIn: {
+  				'0%': { opacity: '0' },
+  				'100%': { opacity: '1' },
+  			},
+  			slideUp: {
+  				'0%': { transform: 'translateY(20px)', opacity: '0' },
+  				'100%': { transform: 'translateY(0)', opacity: '1' },
+  			},
+  		},
   		fontFamily: {
   			'inter': ['var(--font-inter)', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
   			'sans': ['var(--font-inter)', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],

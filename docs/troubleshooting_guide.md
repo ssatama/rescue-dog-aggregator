@@ -6,6 +6,52 @@ This guide provides comprehensive troubleshooting information for the Rescue Dog
 
 ## 🚨 CRITICAL: Recent Issue Resolution (December 2024)
 
+### "missing required error components, refreshing..." Error (SOLVED)
+
+**Error**: Pages showing blank screen with only "missing required error components, refreshing..." text
+**Impact**: Complete frontend navigation failure, Organizations and About pages inaccessible
+**Root Cause**: Multiple Next.js 15 architecture violations and development server conflicts
+
+**IMMEDIATE SOLUTION** (Proven Fix):
+```bash
+# 1. Kill all conflicting Next.js processes
+pkill -f "next-server"
+pkill -f "next dev"
+
+# 2. Clean corrupted build artifacts
+cd frontend
+rm -rf .next
+rm -rf node_modules/.cache
+
+# 3. Fix architecture violations (if any exist)
+# Check for forbidden pattern:
+grep -r "\"use client\"" src/app/*/page.jsx  # Should return nothing
+
+# 4. Clean restart development server
+npm run dev  # Should start on port 3000
+
+# 5. Verify fix
+curl http://localhost:3000/organizations  # Should return HTML
+curl http://localhost:3000/about          # Should return HTML
+```
+
+**Root Causes Identified**:
+1. **Multiple Development Servers**: Two Next.js servers running simultaneously on ports 3000 and 3001
+2. **Architecture Violations**: About page mixed `"use client"` with `export const metadata` 
+3. **Build Cache Corruption**: .next directory corrupted from process kills during server conflicts
+
+**Permanent Fixes Applied**:
+- **Organizations Page**: Split into server component (`page.jsx`) + client component (`OrganizationsClient.jsx`)
+- **About Page**: Removed conflicting imports, kept as pure server component with metadata
+- **Documentation**: Updated CLAUDE.md with correct port (3000) and troubleshooting procedures
+
+**Prevention**:
+- **Never run multiple Next.js dev servers** - check with `lsof -i :3000` and `lsof -i :3001`
+- **Follow strict server/client separation** - pages with metadata must be server components
+- **Clean restart after any build issues** - `rm -rf .next && npm run dev`
+
+## 🚨 CRITICAL: Previous Issue Resolution
+
 ### Backend Test Infrastructure Failures
 
 **Error**: Multiple pytest failures in configuration and filesystem validation tests

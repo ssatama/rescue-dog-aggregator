@@ -1,7 +1,7 @@
 // src/app/dogs/page.jsx
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Layout from '../../components/layout/Layout';
@@ -45,7 +45,10 @@ const mapUiSizeToStandardized = (uiSize) => {
 };
 
 
-export default function DogsPage() {
+function DogsPageContent() {
+  // Get URL search parameters
+  const searchParams = useSearchParams();
+  
   // ... (Keep all state variables: filters, API state, options state, etc.) ...
   const [standardizedBreedFilter, setStandardizedBreedFilter] = useState("Any breed");
   const [sexFilter, setSexFilter] = useState("Any");
@@ -140,6 +143,25 @@ export default function DogsPage() {
       )
       .catch(err => reportError("Failed to fetch organizations", { error: err.message }));
   }, []);
+
+  // --- Initialize Filters from URL Parameters ---
+  useEffect(() => {
+    const organizationIdParam = searchParams.get('organization_id');
+    
+    if (organizationIdParam) {
+      // Validate that the organization exists before setting the filter
+      const organizationExists = organizations.some(org => 
+        org.id && org.id.toString() === organizationIdParam
+      );
+      
+      if (organizationExists) {
+        setOrganizationFilter(organizationIdParam);
+      } else {
+        // If organization doesn't exist, fallback to "any"
+        setOrganizationFilter("any");
+      }
+    }
+  }, [searchParams, organizations]); // Depend on both searchParams and organizations
 
   // --- Main Data Fetching Logic ---
   const fetchDogs = useCallback(async (currentPage = 1, loadMore = false) => {
@@ -474,5 +496,13 @@ export default function DogsPage() {
         </div> {/* --- END Grid for Sidebar + Main Content --- */}
       </div> {/* --- END Outer Container --- */}
     </Layout>
+  );
+}
+
+export default function DogsPage() {
+  return (
+    <Suspense fallback={<Layout><Loading /></Layout>}>
+      <DogsPageContent />
+    </Suspense>
   );
 }

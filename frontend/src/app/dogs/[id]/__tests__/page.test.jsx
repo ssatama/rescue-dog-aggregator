@@ -81,8 +81,8 @@ describe('DogDetailPage', () => {
     
     render(<DogDetailPage />);
     
-    // Should show loading state
-    expect(screen.getByTestId('loading')).toBeInTheDocument();
+    // Should show skeleton loading state
+    expect(screen.getByTestId('dog-detail-skeleton')).toBeInTheDocument();
   });
 });
 

@@ -10,7 +10,7 @@ The Rescue Dog Aggregator frontend is built with **Next.js 15** using the **App 
 - **Language**: TypeScript/JavaScript
 - **Styling**: Tailwind CSS + shadcn/ui components
 - **State Management**: React hooks with component-level state
-- **Testing**: Jest + React Testing Library (120+ tests across 20+ suites)
+- **Testing**: Jest + React Testing Library (341+ tests across 34+ suites)
 - **Image Optimization**: Cloudinary integration with lazy loading
 - **Build Tools**: Next.js built-in bundling and optimization
 
@@ -59,6 +59,8 @@ export default function DogPage({ params }) {
 - `src/app/dogs/[id]/DogDetailClient.jsx` - Dog detail UI and state
 - `src/app/organizations/[id]/OrganizationDetailClient.jsx` - Organization UI
 - `src/components/dogs/FilterControls.jsx` - Search and filtering
+- `src/components/dogs/RelatedDogsSection.jsx` - Related dogs display
+- `src/components/dogs/RelatedDogsCard.jsx` - Individual dog cards
 
 **Implementation Pattern**:
 ```javascript
@@ -217,6 +219,180 @@ const DogCard = memo(function DogCard({ dog, onClick }) {
 
 export default DogCard;
 ```
+
+## Related Dogs Feature
+
+### Overview
+
+The **Related Dogs section** increases adoption opportunities by showing more dogs from the same organization on individual dog detail pages. This cross-discovery feature encourages users to explore additional adoption options.
+
+### Architecture
+
+**Key Components**:
+- `src/components/dogs/RelatedDogsSection.jsx` - Main container with state management
+- `src/components/dogs/RelatedDogsCard.jsx` - Individual dog card component
+- `src/services/relatedDogsService.js` - API service for fetching related dogs
+
+### RelatedDogsSection Component
+
+**Purpose**: Displays up to 3 related dogs from the same organization with loading, error, and empty states.
+
+**Key Features**:
+- Automatic organization filtering
+- Current dog exclusion from results
+- Responsive 3-column grid (stacks on mobile)
+- Loading skeleton animations
+- Error boundary integration
+- Empty state with consistent messaging
+
+**Implementation Pattern**:
+```javascript
+'use client';
+
+import { useState, useEffect } from 'react';
+import { getRelatedDogs } from '../../services/relatedDogsService';
+import RelatedDogsCard from './RelatedDogsCard';
+
+export default function RelatedDogsSection({ organizationId, currentDogId, organization }) {
+  const [relatedDogs, setRelatedDogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    const fetchRelatedDogs = async () => {
+      try {
+        const dogs = await getRelatedDogs(organizationId, currentDogId);
+        setRelatedDogs(dogs.slice(0, 3)); // Limit to 3 dogs
+      } catch (err) {
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (organizationId && currentDogId) {
+      fetchRelatedDogs();
+    }
+  }, [organizationId, currentDogId]);
+
+  // Component renders loading, error, success, or empty states
+}
+```
+
+### RelatedDogsCard Component
+
+**Purpose**: Reusable dog card with 4:3 aspect ratio images, hover effects, and accessibility features.
+
+**Key Features**:
+- **4:3 aspect ratio** images with Cloudinary optimization
+- **Hover effects** on card and dog name
+- **Keyboard navigation** with Enter/Space key support
+- **ARIA compliance** with proper labels and roles
+- **LazyImage integration** with fallback placeholders
+- **Click navigation** to individual dog detail pages
+
+**Implementation Pattern**:
+```javascript
+'use client';
+
+import { useRouter } from 'next/navigation';
+import LazyImage from '../ui/LazyImage';
+import { sanitizeText } from '../../utils/security';
+
+export default function RelatedDogsCard({ dog }) {
+  const router = useRouter();
+
+  const handleCardClick = () => {
+    router.push(`/dogs/${dog.id}`);
+  };
+
+  return (
+    <div
+      className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer"
+      onClick={handleCardClick}
+      tabIndex={0}
+      role="button"
+      aria-label={`View details for ${dog.name}`}
+    >
+      {/* 4:3 Aspect Ratio Image Container */}
+      <div className="aspect-[4/3] w-full overflow-hidden rounded-t-lg">
+        <LazyImage
+          src={dog.primary_image_url}
+          alt={dog.name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+        />
+      </div>
+
+      {/* Card Content */}
+      <div className="p-4">
+        <h3 className="text-lg font-semibold hover:text-blue-600 transition-colors">
+          {sanitizeText(dog.name)}
+        </h3>
+        <p className="text-sm text-gray-600">{sanitizeText(dog.breed)}</p>
+        <p className="text-sm text-gray-500">{sanitizeText(dog.age_text)}</p>
+      </div>
+    </div>
+  );
+}
+```
+
+### API Service Integration
+
+**Service Layer**: `src/services/relatedDogsService.js`
+
+**Key Features**:
+- Uses existing `/api/animals` endpoint with organization filtering
+- Excludes current dog from results automatically
+- Leverages smart default filtering (available status, high/medium confidence)
+- Error handling with detailed logging
+
+**Implementation**:
+```javascript
+import { getAnimals } from './animalsService';
+
+export async function getRelatedDogs(organizationId, currentDogId) {
+  // Fetch dogs from same organization
+  const dogs = await getAnimals({
+    organization_id: organizationId,
+    limit: 3,
+    status: 'available'
+  });
+
+  // Filter out current dog
+  return dogs.filter(dog => dog.id !== currentDogId);
+}
+```
+
+### TDD Implementation
+
+**Test Coverage**: 34 comprehensive tests across 3 test suites
+
+**Test Files**:
+- `src/services/__tests__/relatedDogsService.test.js` - API integration (6 tests)
+- `src/components/dogs/__tests__/RelatedDogsCard.test.jsx` - Component behavior (13 tests)
+- `src/components/dogs/__tests__/RelatedDogsSection.test.jsx` - State management (15 tests)
+
+**Test Categories**:
+- **API Integration**: Organization filtering, current dog exclusion, error handling
+- **Component Rendering**: Card layout, responsive design, accessibility
+- **User Interactions**: Click navigation, keyboard support, hover effects
+- **State Management**: Loading states, error boundaries, empty state handling
+
+### Performance Optimizations
+
+**Image Loading**:
+- LazyImage component with IntersectionObserver
+- Cloudinary transformations for optimal sizing
+- Fallback placeholders for loading states
+
+**Component Memoization**:
+- Strategic use of React.memo for expensive renders
+- Dependency optimization in useEffect hooks
+
+**API Efficiency**:
+- Single API call with organization filtering
+- Client-side current dog exclusion
+- Limit to 3 dogs for optimal performance
 
 ### Image Optimization
 
