@@ -14,8 +14,7 @@ const customJestConfig = {
 
     // Handle static assets
     '\\.(jpg|jpeg|png|gif|svg)$': '<rootDir>/src/__mocks__/fileMock.js'
-  },
-  moduleDirectories: ['node_modules', '<rootDir>/'],
+  }
 }
 
 module.exports = createJestConfig(customJestConfig)

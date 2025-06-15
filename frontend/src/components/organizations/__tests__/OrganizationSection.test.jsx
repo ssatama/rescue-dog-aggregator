@@ -215,8 +215,11 @@ describe('OrganizationSection', () => {
       expect(viewAllDogsLink).toHaveClass(
         'text-blue-600', 
         'hover:text-blue-800', 
-        'transition-colors', 
-        'duration-200'
+        'transition-all', 
+        'duration-300',
+        'bg-blue-50',
+        'hover:bg-blue-100',
+        'rounded-lg'
       );
     });
   });

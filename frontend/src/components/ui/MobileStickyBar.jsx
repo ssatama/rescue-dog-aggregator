@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
+import { Button } from "./button";
 import { Heart, Phone } from 'lucide-react';
 import { FavoritesManager } from '../../utils/favorites';
 import { useToast } from './Toast';
@@ -111,10 +111,10 @@ export default function MobileStickyBar({
           onClick={handleContactClick}
           className="flex-1 ml-2 bg-blue-600 hover:bg-blue-700 text-white"
           data-testid="mobile-contact-button"
-          aria-label="Contact about adoption"
+          aria-label="Start adoption process"
         >
           <Phone className="h-5 w-5 mr-2" />
-          Contact
+          Start Adoption Process
         </Button>
       </div>
       

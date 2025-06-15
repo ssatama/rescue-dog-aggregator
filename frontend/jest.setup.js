@@ -1,5 +1,9 @@
 require('@testing-library/jest-dom');
 
+// Load environment variables for tests from actual .env.local
+// Do NOT hardcode any secrets or cloud names here
+require('dotenv').config({ path: '.env.local' });
+
 // Polyfill for PointerEvent methods not implemented in JSDOM
 if (typeof window !== 'undefined') {
   if (!window.Element.prototype.hasPointerCapture) {

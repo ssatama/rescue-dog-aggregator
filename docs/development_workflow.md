@@ -541,8 +541,15 @@ npm test                                             # All 120+ tests including 
 npm run build                                        # TypeScript build (CRITICAL)
 npm run lint                                         # ESLint (REQUIRED)
 
-# Step 3: Final Validation
-echo "✅ PRE-COMMIT VALIDATION PASSED - Safe to commit!"
+# Step 3: Documentation Update (REQUIRED for component/feature changes)
+ Update relevant documentation files when making component changes:
+ - Update CLAUDE.md if adding new features or changing workflows
+ - Update component README files for new components
+ - Update API documentation for backend changes
+ - Update troubleshooting guides for new error patterns
+
+# Step 4: Final Validation
+echo "✅ PRE-COMMIT VALIDATION PASSED (including documentation) - Safe to commit!"
 ```
 
 **Linting Standards Enforcement** (do not exceed these thresholds):

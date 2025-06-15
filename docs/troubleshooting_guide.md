@@ -4,7 +4,9 @@
 
 This guide provides comprehensive troubleshooting information for the Rescue Dog Aggregator platform, covering common issues across backend scrapers, frontend application, database operations, and production deployments.
 
-## 🚨 CRITICAL: Recent Issue Resolution (December 2024)
+## 🚨 CRITICAL: Recent Issue Resolutions
+
+### Image Loading Failure (SOLVED - June 2025)
 
 ### "missing required error components, refreshing..." Error (SOLVED)
 
@@ -109,6 +111,127 @@ npm run lint
 ```
 
 **Prevention**: ALWAYS use environment-aware pattern for dynamic routes (see CLAUDE.md)
+
+## 🖼️ Image Loading Issues
+
+### Images Not Displaying (Broken Icons)
+
+**Symptoms**: 
+- Dog cards show gray placeholder icons
+- Hero images don't load, showing shimmer indefinitely
+- Browser console shows 404 errors for image URLs
+
+**Diagnostic Steps**:
+```bash
+# 1. Check environment configuration
+cd frontend
+cat .env.local | grep CLOUDINARY_CLOUD_NAME
+# Should show: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=dy8y3boog
+
+# 2. Test backend API returns images
+curl http://localhost:8000/api/animals?limit=1 | jq '.[0].primary_image_url'
+# Should return Cloudinary URL with dy8y3boog
+
+# 3. Test Cloudinary connectivity
+curl -I "https://res.cloudinary.com/dy8y3boog/image/upload/sample.jpg"
+# Should return HTTP 200
+
+# 4. Enable debug logging
+# In browser console: 
+# import { debugImageLoading } from '/src/utils/imageDebug.js'
+# debugImageLoading('https://res.cloudinary.com/dy8y3boog/...')
+```
+
+**Common Fixes**:
+
+1. **Cloud Name Mismatch** (Most Common):
+   ```bash
+   # Fix typo in .env.local
+   echo "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=dy8y3boog" > frontend/.env.local
+   cd frontend && npm run dev
+   ```
+
+2. **Environment Variables Not Loaded**:
+   ```bash
+   # Restart dev server to pick up .env.local changes
+   cd frontend
+   pkill -f "next dev"
+   npm run dev
+   ```
+
+3. **Cloudinary Service Issues**:
+   ```bash
+   # Test service connectivity
+   curl -I "https://res.cloudinary.com/dy8y3boog/image/upload/sample.jpg"
+   
+   # If fails, temporarily disable Cloudinary
+   # Edit frontend/src/utils/imageUtils.js:
+   # const USE_CLOUDINARY = false;
+   ```
+
+4. **CORS Issues** (Production):
+   ```bash
+   # Check browser network tab for CORS errors
+   # Verify Cloudinary CORS settings allow your domain
+   ```
+
+### Image Loading Performance Issues
+
+**Symptoms**: Images load slowly or inconsistently
+
+**Solutions**:
+```bash
+# 1. Test image optimization
+cd frontend
+node -e "
+const { getCatalogCardImage } = require('./src/utils/imageUtils.js');
+console.log(getCatalogCardImage('test-url'));
+"
+
+# 2. Check image sizes
+# Enable debug panel in development to monitor load times
+# See frontend/src/utils/imageDebug.js
+
+# 3. Verify responsive breakpoints
+# Test different viewport sizes for appropriate image sizing
+```
+
+### Test Coverage for Image Loading
+
+**Problem**: Tests pass but images don't work in browser
+
+**Solution**: Run new integration tests
+```bash
+cd frontend
+
+# Test real image URL handling (no mocks)
+npm test -- --testPathPattern="real-image-loading"
+
+# Test environment configuration
+npm test -- --testPathPattern="environment-validation"
+
+# Test all image components with real URLs
+npm test -- --testPathPattern="integration"
+```
+
+**Key Files**:
+- `frontend/src/__tests__/integration/real-image-loading.test.js`
+- `frontend/src/__tests__/integration/environment-validation.test.js`
+- `frontend/src/utils/imageDebug.js` (development debugging)
+
+### Monitoring Image Loading in Production
+
+**Error Tracking**: Check `getImageErrorStats()` from imageUtils
+```javascript
+// In browser console or monitoring dashboard
+import { getImageErrorStats } from './utils/imageUtils';
+console.log(getImageErrorStats());
+```
+
+**Health Checks**:
+- Monitor Cloudinary service uptime
+- Track image load success rates
+- Alert on high 404 rates from image URLs
 
 ### Mass Python Linting Violations
 

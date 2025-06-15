@@ -154,7 +154,7 @@ describe('CTA Optimization Features', () => {
       expect(favoriteButton).toBeInTheDocument();
       expect(contactButton).toBeInTheDocument();
       expect(favoriteButton).toHaveTextContent('Favorite');
-      expect(contactButton).toHaveTextContent('Contact');
+      expect(contactButton).toHaveTextContent('Start Adoption Process');
 
       // Test contact button functionality
       act(() => {
@@ -365,7 +365,7 @@ describe('CTA Optimization Features', () => {
       const contactButton = screen.getByTestId('mobile-contact-button');
       
       expect(favoriteButton).toHaveAttribute('aria-label', 'Add to favorites');
-      expect(contactButton).toHaveAttribute('aria-label', 'Contact about adoption');
+      expect(contactButton).toHaveAttribute('aria-label', 'Start adoption process');
     });
   });
 });

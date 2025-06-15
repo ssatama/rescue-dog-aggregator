@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Loading Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; border: 1px solid #ccc; padding: 15px; }
+        .image-test { margin: 10px 0; }
+        img { max-width: 200px; height: auto; border: 1px solid #ddd; margin: 5px; }
+        .log { background: #f0f0f0; padding: 10px; font-family: monospace; white-space: pre-wrap; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Image Loading Debug</h1>
+    
+    <div class="test-section">
+        <h2>Environment Variables (from DOM)</h2>
+        <div id="env-vars"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Direct Image Tests</h2>
+        <div class="image-test">
+            <h3>1. Local Placeholder SVG</h3>
+            <img src="/placeholder_dog.svg" alt="Local placeholder" onload="logSuccess('Local placeholder loaded')" onerror="logError('Local placeholder failed')">
+        </div>
+        
+        <div class="image-test">
+            <h3>2. External Image (Unsplash)</h3>
+            <img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=200&h=200&fit=crop" alt="External image" onload="logSuccess('External image loaded')" onerror="logError('External image failed')">
+        </div>
+        
+        <div class="image-test">
+            <h3>3. Cloudinary Optimized URL</h3>
+            <img src="https://res.cloudinary.com/dy8y3booq/image/fetch/w_200,h_200,c_fill,q_auto,f_auto/https%3A//images.unsplash.com/photo-1543466835-00a7907e9de1" alt="Cloudinary optimized" onload="logSuccess('Cloudinary optimized loaded')" onerror="logError('Cloudinary optimized failed')">
+        </div>
+        
+        <div class="image-test">
+            <h3>4. Invalid URL</h3>
+            <img src="https://example.com/nonexistent.jpg" alt="Invalid URL" onload="logSuccess('Invalid URL loaded (unexpected!)')" onerror="logError('Invalid URL failed (expected)')">
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>JavaScript Fetch Test</h2>
+        <button onclick="testFetch()">Test Fetch API</button>
+        <div id="fetch-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Log Output</h2>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        const log = document.getElementById('log');
+        const envVars = document.getElementById('env-vars');
+        
+        // Log environment
+        envVars.innerHTML = `
+            <p>User Agent: ${navigator.userAgent}</p>
+            <p>Location: ${window.location.href}</p>
+            <p>Protocol: ${window.location.protocol}</p>
+        `;
+        
+        function logMessage(message, type = 'info') {
+            const timestamp = new Date().toISOString();
+            const className = type === 'error' ? 'error' : (type === 'success' ? 'success' : '');
+            log.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function logSuccess(message) {
+            logMessage(message, 'success');
+        }
+        
+        function logError(message) {
+            logMessage(message, 'error');
+        }
+        
+        async function testFetch() {
+            const fetchResult = document.getElementById('fetch-result');
+            fetchResult.innerHTML = 'Testing...';
+            
+            try {
+                logMessage('Starting fetch test...');
+                const response = await fetch('https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=100&h=100&fit=crop');
+                logMessage(`Fetch response: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    logMessage(`Fetch successful. Blob size: ${blob.size} bytes, type: ${blob.type}`);
+                    fetchResult.innerHTML = `<span class="success">✓ Fetch successful (${blob.size} bytes)</span>`;
+                } else {
+                    logError(`Fetch failed with status: ${response.status}`);
+                    fetchResult.innerHTML = `<span class="error">✗ Fetch failed (${response.status})</span>`;
+                }
+            } catch (error) {
+                logError(`Fetch error: ${error.message}`);
+                fetchResult.innerHTML = `<span class="error">✗ Fetch error: ${error.message}</span>`;
+            }
+        }
+        
+        // Test Cloudinary configuration
+        logMessage('Starting image loading tests...');
+        
+        // Check if we're in a secure context
+        if (window.isSecureContext) {
+            logMessage('Running in secure context (HTTPS or localhost)');
+        } else {
+            logMessage('Running in insecure context', 'error');
+        }
+        
+        // Listen for all image load/error events
+        document.addEventListener('DOMContentLoaded', () => {
+            const images = document.querySelectorAll('img');
+            images.forEach((img, index) => {
+                img.addEventListener('load', () => {
+                    logSuccess(`Image ${index + 1} loaded: ${img.src.substring(0, 50)}...`);
+                });
+                img.addEventListener('error', () => {
+                    logError(`Image ${index + 1} failed: ${img.src.substring(0, 50)}...`);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -13,6 +13,11 @@ jest.mock('../../../utils/imageUtils', () => ({
   handleImageError: jest.fn()
 }));
 
+// Mock the useReducedMotion hook
+jest.mock('../../../hooks/useScrollAnimation', () => ({
+  useReducedMotion: jest.fn(() => false)
+}));
+
 describe('HeroImageWithBlurredBackground', () => {
   const mockProps = {
     src: 'https://example.com/dog.jpg',
@@ -40,54 +45,53 @@ describe('HeroImageWithBlurredBackground', () => {
       expect(container).toBeInTheDocument();
     });
 
-    it('should render blurred background', () => {
+    it('should render clean background without blur', () => {
       const { container } = render(<HeroImageWithBlurredBackground {...mockProps} />);
       
-      // Check for background layer with blur - look for the absolute div
-      const backgroundDiv = container.querySelector('.absolute.inset-0.bg-cover.bg-center');
-      expect(backgroundDiv).toBeInTheDocument();
-      expect(backgroundDiv).toHaveStyle('filter: blur(20px)');
+      // Should have clean white background
+      const mainContainer = container.querySelector('[data-testid="hero-image-clean"]');
+      expect(mainContainer).toBeInTheDocument();
+      expect(mainContainer).toHaveClass('bg-white');
     });
 
-    it('should render overlay for contrast', () => {
+    it('should not render dark overlay', () => {
       const { container } = render(<HeroImageWithBlurredBackground {...mockProps} />);
       
       const overlay = container.querySelector('.bg-black.bg-opacity-20');
-      expect(overlay).toBeInTheDocument();
+      expect(overlay).not.toBeInTheDocument();
     });
   });
 
   describe('Image optimization', () => {
-    it('should generate blurred background for Cloudinary URLs', () => {
+    it('should use optimized image source from imageUtils', () => {
       const cloudinaryUrl = 'https://res.cloudinary.com/test/image/upload/v123/dog.jpg';
-      const { container } = render(<HeroImageWithBlurredBackground src={cloudinaryUrl} alt="Test" />);
+      render(<HeroImageWithBlurredBackground src={cloudinaryUrl} alt="Test" />);
       
-      const backgroundDiv = container.querySelector('.absolute.inset-0.bg-cover.bg-center');
-      expect(backgroundDiv).toBeInTheDocument();
-      
-      // Should contain blur transformation in style attribute
-      const style = backgroundDiv.getAttribute('style');
-      expect(style).toContain('e_blur:800');
+      const img = screen.getByRole('img');
+      const imgSrc = img.getAttribute('src');
+      // Should contain the optimized URL (cache-busting parameters may be added)
+      expect(imgSrc).toContain('optimized-' + cloudinaryUrl);
+      expect(imgSrc).toMatch(/[?&]t=\d+/); // Should have cache-busting timestamp
     });
 
-    it('should use original URL for non-Cloudinary images', () => {
+    it('should handle external images properly', () => {
       const externalUrl = 'https://example.com/dog.jpg';
-      const { container } = render(<HeroImageWithBlurredBackground src={externalUrl} alt="Test" />);
+      render(<HeroImageWithBlurredBackground src={externalUrl} alt="Test" />);
       
-      const backgroundDiv = container.querySelector('.absolute.inset-0.bg-cover.bg-center');
-      expect(backgroundDiv).toBeInTheDocument();
-      
-      const style = backgroundDiv.getAttribute('style');
-      expect(style).toContain(externalUrl);
+      const img = screen.getByRole('img');
+      const imgSrc = img.getAttribute('src');
+      // Should contain the optimized URL (cache-busting parameters may be added)
+      expect(imgSrc).toContain('optimized-' + externalUrl);
+      expect(imgSrc).toMatch(/[?&]t=\d+/); // Should have cache-busting timestamp
     });
   });
 
   describe('Loading states', () => {
-    it('should show loading state initially', () => {
+    it('should show shimmer loading state initially', () => {
       const { container } = render(<HeroImageWithBlurredBackground {...mockProps} />);
       
-      const loadingIcon = container.querySelector('.animate-pulse svg');
-      expect(loadingIcon).toBeInTheDocument();
+      const shimmerLoader = container.querySelector('[data-testid="shimmer-loader"]');
+      expect(shimmerLoader).toBeInTheDocument();
     });
 
     it('should hide loading state when image loads', async () => {
@@ -134,10 +138,12 @@ describe('HeroImageWithBlurredBackground', () => {
       render(<HeroImageWithBlurredBackground {...mockProps} />);
       
       const img = screen.getByRole('img');
+      
+      // First error should trigger retry
       fireEvent.error(img);
       
       await waitFor(() => {
-        expect(screen.getByText('No image available')).toBeInTheDocument();
+        expect(screen.getByText('Retrying... (1/2)')).toBeInTheDocument();
       });
     });
   });
@@ -203,6 +209,150 @@ describe('HeroImageWithBlurredBackground', () => {
       // Should not have blurred background when gradient fallback is enabled
       const blurredBackground = container.querySelector('.absolute.inset-0.bg-cover.bg-center[style*="blur"]');
       expect(blurredBackground).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Clean Image Display (TDD)', () => {
+    it('should use clean white background instead of gray gradient', () => {
+      const { container } = render(<HeroImageWithBlurredBackground {...mockProps} />);
+      
+      // Should have clean white background
+      const mainContainer = container.querySelector('[data-testid="hero-image-clean"]');
+      expect(mainContainer).toBeInTheDocument();
+      expect(mainContainer).toHaveClass('bg-white');
+      
+      // Should NOT have gray gradient background
+      const gradientBackground = container.querySelector('.bg-gradient-to-br.from-gray-100.to-gray-200');
+      expect(gradientBackground).not.toBeInTheDocument();
+    });
+
+    it('should not have dark overlay for better image clarity', () => {
+      const { container } = render(<HeroImageWithBlurredBackground {...mockProps} />);
+      
+      // Should NOT have dark overlay
+      const darkOverlay = container.querySelector('.bg-black.bg-opacity-20');
+      expect(darkOverlay).not.toBeInTheDocument();
+    });
+
+    it('should not have blurred background by default', () => {
+      const { container } = render(<HeroImageWithBlurredBackground {...mockProps} />);
+      
+      // Should NOT have blurred background processing
+      const blurredBackground = container.querySelector('[style*="blur"]');
+      expect(blurredBackground).not.toBeInTheDocument();
+    });
+
+    it('should remove padding from image container', () => {
+      const { container } = render(<HeroImageWithBlurredBackground {...mockProps} />);
+      
+      // Image container should not have padding
+      const imageContainer = container.querySelector('[data-testid="image-container"]');
+      expect(imageContainer).toBeInTheDocument();
+      expect(imageContainer).not.toHaveClass('p-4');
+      expect(imageContainer).toHaveClass('w-full', 'h-full');
+    });
+  });
+
+  describe('Enhanced Loading State (TDD)', () => {
+    it('should show shimmer effect during loading', () => {
+      const { container } = render(<HeroImageWithBlurredBackground {...mockProps} />);
+      
+      // Should have shimmer loading effect
+      const shimmerLoader = container.querySelector('[data-testid="shimmer-loader"]');
+      expect(shimmerLoader).toBeInTheDocument();
+      
+      const shimmerAnimation = container.querySelector('[data-testid="shimmer-animation"]');
+      expect(shimmerAnimation).toBeInTheDocument();
+      expect(shimmerAnimation).toHaveClass('animate-shimmer');
+    });
+
+    it('should have loading state matching container aspect ratio', () => {
+      const { container } = render(<HeroImageWithBlurredBackground {...mockProps} />);
+      
+      const shimmerLoader = container.querySelector('[data-testid="shimmer-loader"]');
+      expect(shimmerLoader).toBeInTheDocument();
+      expect(shimmerLoader).toHaveClass('aspect-[16/9]');
+    });
+
+    it('should hide shimmer when image loads', async () => {
+      const { container } = render(<HeroImageWithBlurredBackground {...mockProps} />);
+      
+      const img = screen.getByRole('img');
+      const shimmerLoader = container.querySelector('[data-testid="shimmer-loader"]');
+      
+      // Initially should show shimmer
+      expect(shimmerLoader).toBeInTheDocument();
+      expect(shimmerLoader).toHaveClass('opacity-100');
+      
+      // Trigger load event
+      fireEvent.load(img);
+      
+      await waitFor(() => {
+        // Shimmer loader should be completely removed from DOM when image loads
+        expect(screen.queryByTestId('shimmer-loader')).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Image Orientation Handling (TDD)', () => {
+    it('should center portrait images with light background', () => {
+      const { container } = render(<HeroImageWithBlurredBackground {...mockProps} />);
+      
+      const imageContainer = container.querySelector('[data-testid="image-container"]');
+      expect(imageContainer).toBeInTheDocument();
+      expect(imageContainer).toHaveClass('flex', 'items-center', 'justify-center');
+      
+      const img = screen.getByRole('img');
+      expect(img).toHaveClass('object-contain');
+    });
+
+    it('should handle landscape images properly', () => {
+      render(<HeroImageWithBlurredBackground {...mockProps} />);
+      
+      const img = screen.getByRole('img');
+      expect(img).toHaveClass('w-full', 'h-full', 'object-contain');
+      
+      // Should never distort the image
+      expect(img).not.toHaveClass('object-cover');
+      expect(img).not.toHaveClass('object-fill');
+    });
+
+    it('should maintain image aspect ratio without distortion', () => {
+      render(<HeroImageWithBlurredBackground {...mockProps} />);
+      
+      const img = screen.getByRole('img');
+      expect(img).toHaveClass('object-contain');
+      
+      // Should be within a container that maintains aspect ratio
+      const container = img.closest('.aspect-\\[16\\/9\\]');
+      expect(container).toBeInTheDocument();
+    });
+  });
+
+  describe('Performance & Clean Structure (TDD)', () => {
+    it('should have simplified container structure', () => {
+      const { container } = render(<HeroImageWithBlurredBackground {...mockProps} />);
+      
+      // Should have clean, simple structure
+      const mainContainer = container.querySelector('[data-testid="hero-image-clean"]');
+      expect(mainContainer).toBeInTheDocument();
+      expect(mainContainer).toHaveClass('relative', 'w-full', 'aspect-[16/9]', 'rounded-lg', 'overflow-hidden');
+    });
+
+    it('should not have complex layering system', () => {
+      const { container } = render(<HeroImageWithBlurredBackground {...mockProps} />);
+      
+      // Should not have multiple absolute positioned layers
+      const absoluteLayers = container.querySelectorAll('.absolute.inset-0');
+      expect(absoluteLayers.length).toBeLessThanOrEqual(1); // Only loading state if any
+    });
+
+    it('should remove unused background image processing', () => {
+      const { container } = render(<HeroImageWithBlurredBackground {...mockProps} />);
+      
+      // Should not have hidden preload images
+      const hiddenImages = container.querySelectorAll('img.hidden');
+      expect(hiddenImages.length).toBe(0);
     });
   });
 });

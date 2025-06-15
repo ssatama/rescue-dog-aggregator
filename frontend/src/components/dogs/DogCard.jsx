@@ -27,6 +27,8 @@ const DogCard = React.memo(function DogCard({ dog, priority = false }) {
   const breedGroup = sanitizeText(dog?.breed_group);
   const originalImageUrl = dog?.primary_image_url;
   const { src: optimizedImageUrl, position: objectPosition } = getCatalogCardImageWithPosition(originalImageUrl);
+  
+  // Debug logging removed for production builds
   const location = dog?.organization?.city ?
     (dog.organization.country ? sanitizeText(`${dog.organization.city}, ${dog.organization.country}`) : sanitizeText(dog.organization.city)) :
     "Unknown Location";

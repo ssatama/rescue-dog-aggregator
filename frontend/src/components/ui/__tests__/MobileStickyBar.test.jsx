@@ -62,7 +62,7 @@ describe('MobileStickyBar', () => {
       expect(favoriteButton).toBeInTheDocument();
       expect(contactButton).toBeInTheDocument();
       expect(favoriteButton).toHaveTextContent('Favorite');
-      expect(contactButton).toHaveTextContent('Contact');
+      expect(contactButton).toHaveTextContent('Start Adoption Process');
     });
 
     test('does not render when isVisible is false', () => {
@@ -225,7 +225,7 @@ describe('MobileStickyBar', () => {
       const contactButton = screen.getByTestId('mobile-contact-button');
 
       expect(favoriteButton).toHaveAttribute('aria-label', 'Add to favorites');
-      expect(contactButton).toHaveAttribute('aria-label', 'Contact about adoption');
+      expect(contactButton).toHaveAttribute('aria-label', 'Start adoption process');
     });
 
     test('updates ARIA label for favorited state', () => {
