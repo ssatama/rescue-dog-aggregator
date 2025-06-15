@@ -1,9 +1,10 @@
 /**
  * Hero image component with clean background for dog detail pages
  * Implements clean, professional image display with shimmer loading effect,
- * timeout handling, retry logic, and adaptive loading for better performance
+ * timeout handling, retry logic, adaptive loading, and hydration recovery
  * 
  * FIXED: Navigation state reset issue that required hard refresh
+ * FIXED: Hydration race condition with recovery mechanism
  */
 import React, { useState, useCallback, useMemo, memo, useEffect, useRef } from 'react';
 import { getDetailHeroImageWithPosition, trackImageLoad } from '../../utils/imageUtils';
@@ -14,24 +15,6 @@ import { getLoadingStrategy, onNetworkChange } from '../../utils/networkUtils';
 // Base configuration constants (will be adapted based on network conditions)
 const BASE_RETRY_DELAY = 1000; // 1 second base delay between retries
 
-// Test-safe setTimeout wrapper that batches state updates properly
-const safeSetTimeout = (callback, delay) => {
-  return setTimeout(() => {
-    if (process.env.NODE_ENV === 'test') {
-      // In test environment, use React's unstable_batchedUpdates if available
-      try {
-        const { unstable_batchedUpdates } = require('react-dom');
-        unstable_batchedUpdates(callback);
-      } catch {
-        // Fallback to direct callback if batching not available
-        callback();
-      }
-    } else {
-      callback();
-    }
-  }, delay);
-};
-
 // Memoized HeroImage component for better performance and reliability
 const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackground({ 
   src, 
@@ -40,12 +23,30 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
   onError = () => {},
   useGradientFallback = false
 }) {
+  // Track hydration state for proper SSR handling
+  const [hydrated, setHydrated] = useState(false);
+  const isSSR = typeof window === 'undefined';
+  
+  // Production performance monitoring (lightweight)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      // Only log in development mode
+      console.log('[HeroImage] Component mount:', {
+        hasSource: !!src,
+        documentReady: document.readyState === 'complete',
+        timestamp: Date.now()
+      });
+    }
+  }, []); // Only run once at mount
+
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isRetrying, setIsRetrying] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [currentSrc, setCurrentSrc] = useState('');
+  const [recoveryAttempted, setRecoveryAttempted] = useState(false);
+  const [isReady, setIsReady] = useState(false); // READINESS CHECK: Document + hydration ready
   const [networkStrategy, setNetworkStrategy] = useState(() => getLoadingStrategy('hero'));
   const mountedRef = useRef(true);
   const timeoutRef = useRef(null);
@@ -63,6 +64,7 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
   useEffect(() => {
     // Only process if src actually changed (not just re-renders)
     if (src !== previousSrcRef.current) {
+      
       // Clear all timeouts to prevent race conditions
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -97,10 +99,11 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
       setIsRetrying(false);
       setRetryCount(0);
       setCurrentSrc(''); // Critical: Clear currentSrc immediately
+      setRecoveryAttempted(false); // Reset recovery flag for new navigation
       
       // Use micro-task to ensure DOM updates before setting new src
-      safeSetTimeout(() => {
-        if (mountedRef.current && src) {
+      setTimeout(() => {
+        if (mountedRef.current && src && hydrated && isReady) {
           // Add cache-busting with unique timestamp
           const cacheBustedSrc = (() => {
             try {
@@ -117,12 +120,130 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
           
           setCurrentSrc(cacheBustedSrc);
           loadStartTimeRef.current = Date.now();
+          console.log('[HeroImage] Event: currentSrc-set', { 
+            src, 
+            cacheBustedSrc
+          });
         }
       }, 0);
       
       previousSrcRef.current = src;
     }
   }, [src, optimizedSrc]);
+
+  // CRITICAL: Track hydration state - MUST be first useEffect for proper timing
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  // READINESS CHECK: Document readiness + hydration combined check
+  useEffect(() => {
+    const checkReady = () => {
+      const documentReady = document.readyState === 'complete';
+      const ready = documentReady && hydrated;
+      setIsReady(ready);
+      
+      // Development logging only
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[HeroImage] Readiness check:', {
+          documentReady,
+          hydrated,
+          ready
+        });
+      }
+    };
+    
+    // Check immediately
+    checkReady();
+    
+    // Listen for document ready state changes
+    const handleReadyStateChange = () => {
+      checkReady();
+    };
+    
+    document.addEventListener('readystatechange', handleReadyStateChange);
+    
+    return () => {
+      document.removeEventListener('readystatechange', handleReadyStateChange);
+    };
+  }, [hydrated, src, currentSrc]);
+
+  // HYDRATION RECOVERY: Retry image loading after hydration completes
+  useEffect(() => {
+    // Only attempt recovery if:
+    // 1. Just became hydrated
+    // 2. Have a src to load  
+    // 3. No current src set
+    // 4. Not in error state
+    // 5. Not already loading (or image loaded but it's just placeholder)
+    // 6. Haven't already attempted recovery
+    // 7. Document and component are ready
+    const needsRecovery = !currentSrc || currentSrc === '' || currentSrc.includes('placeholder_dog.svg');
+    
+    if (hydrated && src && needsRecovery && !hasError && !recoveryAttempted && isReady) {
+      // Development logging only
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[HeroImage] Hydration recovery triggered');
+      }
+      
+      setRecoveryAttempted(true);
+      
+      // Reset states and trigger loading
+      setIsLoading(true);
+      setImageLoaded(false);
+      setHasError(false);
+      
+      // Use same cache-busting logic as original src setting
+      setTimeout(() => {
+        if (mountedRef.current && src && hydrated) {
+          const cacheBustedSrc = (() => {
+            try {
+              const url = new URL(optimizedSrc);
+              url.searchParams.set('t', Date.now().toString());
+              url.searchParams.set('nav', Math.random().toString(36).substr(2, 9));
+              url.searchParams.set('recovery', '1'); // Mark as recovery attempt
+              return url.toString();
+            } catch {
+              const separator = optimizedSrc.includes('?') ? '&' : '?';
+              return `${optimizedSrc}${separator}t=${Date.now()}&nav=${Math.random().toString(36).substr(2, 9)}&recovery=1`;
+            }
+          })();
+          
+          setCurrentSrc(cacheBustedSrc);
+          loadStartTimeRef.current = Date.now();
+          
+          // Development logging only
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[HeroImage] Recovery: currentSrc set');
+          }
+        }
+      }, 0);
+    }
+  }, [hydrated, src, currentSrc, hasError, isLoading, recoveryAttempted, isReady]);
+
+  // FALLBACK SAFETY: Force recovery if hydration detection fails
+  useEffect(() => {
+    const needsRecovery = !currentSrc || currentSrc === '' || currentSrc.includes('placeholder_dog.svg');
+    
+    if (src && needsRecovery && !hasError && !recoveryAttempted) {
+      const fallbackTimer = setTimeout(() => {
+        const stillNeedsRecovery = !currentSrc || currentSrc === '' || currentSrc.includes('placeholder_dog.svg');
+        
+        if (stillNeedsRecovery && !hasError && !recoveryAttempted) {
+          // Development logging only
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[HeroImage] Fallback recovery triggered');
+          }
+          
+          // Force hydrated state and trigger recovery
+          setHydrated(true);
+          setIsReady(true); // Also force ready state
+        }
+      }, 50); // Reduced to 50ms for faster recovery
+      
+      return () => clearTimeout(fallbackTimer);
+    }
+  }, [src, currentSrc, hasError, recoveryAttempted, hydrated]);
 
   // Network monitoring and cleanup
   useEffect(() => {
@@ -159,7 +280,7 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
     if (isLoading && !imageLoaded && !hasError && currentSrc) {
       const timeoutDuration = networkStrategy.timeout || 15000;
       
-      timeoutRef.current = safeSetTimeout(() => {
+      timeoutRef.current = setTimeout(() => {
         if (mountedRef.current && !imageLoaded && isLoading) {
           // Only retry if we haven't exceeded max retries
           if (retryCount < (networkStrategy.retry?.maxRetries || 2)) {
@@ -171,7 +292,7 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
             const multiplier = networkStrategy.retry?.backoffMultiplier || 2;
             const retryDelay = baseDelay * Math.pow(multiplier, retryCount);
             
-            retryTimeoutRef.current = safeSetTimeout(() => {
+            retryTimeoutRef.current = setTimeout(() => {
               if (mountedRef.current) {
                 setRetryCount(prev => prev + 1);
                 setIsRetrying(false);
@@ -201,9 +322,27 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
   }, [isLoading, imageLoaded, hasError, currentSrc, retryCount, networkStrategy, onError]);
 
   // Handle successful image load
-  const handleImageLoad = useCallback(() => {
+  const handleImageLoad = useCallback((e) => {
     if (mountedRef.current) {
       const loadTime = loadStartTimeRef.current ? Date.now() - loadStartTimeRef.current : 0;
+      const imgSrc = e?.target?.src || '';
+      const isPlaceholder = imgSrc.includes('placeholder_dog.svg') || !currentSrc || currentSrc === '';
+      
+      // Development logging only
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[HeroImage] Image load event:', { 
+          isPlaceholder,
+          loadTime: loadTime > 0 ? `${loadTime}ms` : 'instant'
+        });
+      }
+      
+      // Don't mark as loaded if it's just the placeholder
+      if (isPlaceholder) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[HeroImage] Ignoring placeholder load');
+        }
+        return;
+      }
       
       setImageLoaded(true);
       setIsLoading(false);
@@ -285,6 +424,9 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
         key={`hero-${currentSrc}`} // Force React to recreate element on src change
         src={currentSrc || '/placeholder_dog.svg'}
         alt={alt}
+        ref={(imgEl) => {
+          // Ref for potential future debugging if needed
+        }}
         className={`
           absolute inset-0 w-full h-full object-cover transition-all duration-700
           ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}

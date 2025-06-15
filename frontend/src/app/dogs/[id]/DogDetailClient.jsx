@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Layout from '../../../components/layout/Layout';
 import Loading from '../../../components/ui/Loading';
@@ -26,32 +26,125 @@ import { ScrollAnimationWrapper } from '../../../hooks/useScrollAnimation';
 
 export default function DogDetailClient({ params = {} }) {
   const urlParams = useParams();
+  const pathname = usePathname();
   const dogId = params?.id || urlParams?.id;
   const [dog, setDog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const mountedRef = useRef(true); // Track component mount status for cleanup
   
-  // Enhanced fetchDogData with memory leak prevention
-  const fetchDogData = useCallback(async () => {
+  // Development monitoring only
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[DogDetail] Component mounted:', {
+        dogId,
+        pathname,
+        documentReady: document.readyState === 'complete'
+      });
+    }
+  }, []);
+  
+  // Enhanced fetchDogData with comprehensive error handling and retry logic
+  const fetchDogData = useCallback(async (retryCount = 0) => {
     if (!mountedRef.current) return; // Prevent state updates if unmounted
+    
+    const fetchStartTime = Date.now();
+    const maxRetries = 3;
+    
+    // Development logging only
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[DogDetail] API call:', { 
+        dogId, 
+        retryCount
+      });
+    }
     
     try {
       setLoading(true);
       setError(false);
-      const data = await getAnimalById(dogId);
+      
+      // Minimal production logging for API calls
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[DogDetail] Making API request...');
+      }
+      
+      // Create timeout promise for hanging requests detection
+      const timeoutMs = 10000; // 10 second timeout
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error(`API request timeout after ${timeoutMs}ms`));
+        }, timeoutMs);
+      });
+      
+      // Race between API call and timeout
+      const data = await Promise.race([
+        getAnimalById(dogId),
+        timeoutPromise
+      ]);
+      
+      // Production: Only log API success for monitoring
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[DogDetail] API request successful:', {
+          dogName: data?.name,
+          responseTime: `${Date.now() - fetchStartTime}ms`
+        });
+      }
       
       // Only update state if component is still mounted
       if (mountedRef.current) {
         setDog(data);
+        
+        // Development logging for state updates
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[DogDetail] Dog state set:', { 
+            dogName: data?.name,
+            hasImageUrl: !!data?.primary_image_url
+          });
+        }
       }
     } catch (err) {
-      reportError("Error fetching dog data", { error: err.message, dogId });
+      const errorInfo = {
+        message: err.message,
+        name: err.name,
+        dogId,
+        retryCount,
+        fetchDuration: Date.now() - fetchStartTime,
+        isAbortError: err.name === 'AbortError',
+        isNetworkError: err.message.includes('fetch'),
+        timestamp: Date.now()
+      };
+      
+      // Always report errors for monitoring
+      reportError("Error fetching dog data", errorInfo);
+      
+      // Development logging for errors
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[DogDetail] API ERROR:', errorInfo);
+      }
+      
+      // Retry logic for certain types of errors
+      if (retryCount < maxRetries && (err.name === 'AbortError' || err.message.includes('fetch'))) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[DogDetail] Retrying API call...', {
+            retryCount: retryCount + 1
+          });
+        }
+        
+        // Exponential backoff delay
+        setTimeout(() => {
+          if (mountedRef.current) {
+            fetchDogData(retryCount + 1);
+          }
+        }, 1000 * (retryCount + 1));
+        return; // Don't set error state yet, we're retrying
+      }
+      
       if (mountedRef.current) {
         setError(true);
       }
     } finally {
-      if (mountedRef.current) {
+      if (mountedRef.current && retryCount === 0) {
+        // Only set loading to false on the original call, not retries
         setLoading(false);
       }
     }
@@ -63,16 +156,44 @@ export default function DogDetailClient({ params = {} }) {
     setError(false);
     setDog(null);
     
-    fetchDogData();
+    // Check if document is ready before making API call
+    const makeApiCall = () => {
+      if (document.readyState === 'complete') {
+        fetchDogData();
+      } else {
+        const handleLoad = () => {
+          fetchDogData();
+          window.removeEventListener('load', handleLoad);
+        };
+        
+        window.addEventListener('load', handleLoad);
+        
+        // Fallback timeout in case load event doesn't fire
+        const fallbackTimeout = setTimeout(() => {
+          fetchDogData();
+          window.removeEventListener('load', handleLoad);
+        }, 2000);
+        
+        return () => {
+          window.removeEventListener('load', handleLoad);
+          clearTimeout(fallbackTimeout);
+        };
+      }
+    };
+    
+    makeApiCall();
     
     // Cleanup function to prevent memory leaks
     return () => {
       mountedRef.current = false;
     };
-  }, [fetchDogData]);
+  }, [dogId]); // Changed from fetchDogData to dogId to prevent unnecessary re-runs
   
   // Cleanup on unmount
   useEffect(() => {
+    // Set mounted to true on mount
+    mountedRef.current = true;
+    
     return () => {
       mountedRef.current = false;
     };
@@ -211,26 +332,42 @@ export default function DogDetailClient({ params = {} }) {
                   {/* Hero Image Section - Full Width */}
                   <ScrollAnimationWrapper delay={300}>
                     <div className="w-full" data-testid="hero-image-container">
-                      {!dog || !dog.primary_image_url ? (
-                        <div className="w-full aspect-[16/9] bg-gray-100 rounded-lg flex items-center justify-center">
-                          <div className="text-center">
-                            <p className="text-gray-500">Loading image...</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <HeroImageWithBlurredBackground
-                          key={`hero-${dogId}-${dog.id}`}
-                          src={dog.primary_image_url}
-                          alt={`${sanitizeText(dog.name)} - Hero Image`}
-                          className="mb-6 shadow-xl"
-                          onError={() => {
-                            reportError("Hero image failed to load", { 
-                              dogId: dog.id, 
-                              imageUrl: dog.primary_image_url 
-                            });
-                          }}
-                        />
-                      )}
+                      {(() => {
+                        // DIAGNOSTIC: Log hero image section rendering
+                        console.log('[DogDetail] Navigation: rendering hero section', { 
+                          pathname, 
+                          dogId, 
+                          hasDog: !!dog, 
+                          hasImageUrl: !!dog?.primary_image_url,
+                          imageUrl: dog?.primary_image_url,
+                          timestamp: Date.now() 
+                        });
+                        
+                        if (!dog || !dog.primary_image_url) {
+                          return (
+                            <div className="w-full aspect-[16/9] bg-gray-100 rounded-lg flex items-center justify-center">
+                              <div className="text-center">
+                                <p className="text-gray-500">Loading image...</p>
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        return (
+                          <HeroImageWithBlurredBackground
+                            key={`hero-${dogId}-${dog.id}`}
+                            src={dog.primary_image_url}
+                            alt={`${sanitizeText(dog.name)} - Hero Image`}
+                            className="mb-6 shadow-xl"
+                            onError={() => {
+                              reportError("Hero image failed to load", { 
+                                dogId: dog.id, 
+                                imageUrl: dog.primary_image_url 
+                              });
+                            }}
+                          />
+                        );
+                      })()}
                     </div>
                   </ScrollAnimationWrapper>
               
