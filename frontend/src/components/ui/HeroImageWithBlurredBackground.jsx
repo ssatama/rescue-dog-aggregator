@@ -2,6 +2,8 @@
  * Hero image component with clean background for dog detail pages
  * Implements clean, professional image display with shimmer loading effect,
  * timeout handling, retry logic, and adaptive loading for better performance
+ * 
+ * FIXED: Navigation state reset issue that required hard refresh
  */
 import React, { useState, useCallback, useMemo, memo, useEffect, useRef } from 'react';
 import { getDetailHeroImageWithPosition, trackImageLoad } from '../../utils/imageUtils';
@@ -50,230 +52,224 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
   const retryTimeoutRef = useRef(null);
   const loadStartTimeRef = useRef(null);
   const prefersReducedMotion = useReducedMotion();
+  const previousSrcRef = useRef(null); // Track previous src for proper navigation handling
 
   // Get optimized image source and position
   const { src: optimizedSrc, position } = useMemo(() => 
     getDetailHeroImageWithPosition(src, true), [src] // Always bust cache for navigation
   );
 
-  // Reset states when src changes - fix race condition
+  // FIXED: Complete state reset when src changes - prevents stale image on navigation
   useEffect(() => {
-    // Always reset when src changes, regardless of currentSrc state
-    // This ensures proper state reset during navigation
-    // FIXED: Only check for src, optimizedSrc will be available due to useMemo
-    if (src) {
-      
+    // Only process if src actually changed (not just re-renders)
+    if (src !== previousSrcRef.current) {
+      // Clear all timeouts to prevent race conditions
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+
       // Check for obviously invalid URLs first
       const isInvalidUrl = typeof src === 'string' && (
         src === 'not-a-valid-url' || 
         (!src.startsWith('http://') && !src.startsWith('https://') && !src.startsWith('/'))
       );
       
-      if (isInvalidUrl) {
+      if (isInvalidUrl || !src) {
         setImageLoaded(false);
         setHasError(true);
         setIsLoading(false);
         setIsRetrying(false);
         setRetryCount(0);
         setCurrentSrc('');
+        previousSrcRef.current = src;
         return;
       }
       
+      // Complete state reset for valid URLs
       setImageLoaded(false);
       setHasError(false);
       setIsLoading(true);
       setIsRetrying(false);
       setRetryCount(0);
+      setCurrentSrc(''); // Critical: Clear currentSrc immediately
       
-      // Add cache-busting for fresh navigation to prevent browser cache issues
-      const cacheBustedSrc = (() => {
-        try {
-          const url = new URL(optimizedSrc);
-          // Only add cache-busting if this is a new navigation (not a retry)
-          if (!url.searchParams.has('t')) {
-            url.searchParams.set('t', Date.now().toString());
-          }
-          return url.toString();
-        } catch {
-          // If URL parsing fails, use simpler approach
-          const separator = optimizedSrc.includes('?') ? '&' : '?';
-          return `${optimizedSrc}${separator}t=${Date.now()}`;
+      // Use micro-task to ensure DOM updates before setting new src
+      safeSetTimeout(() => {
+        if (mountedRef.current && src) {
+          // Add cache-busting with unique timestamp
+          const cacheBustedSrc = (() => {
+            try {
+              const url = new URL(optimizedSrc);
+              url.searchParams.set('t', Date.now().toString());
+              url.searchParams.set('nav', Math.random().toString(36).substr(2, 9)); // Extra uniqueness
+              return url.toString();
+            } catch {
+              // Fallback for relative URLs
+              const separator = optimizedSrc.includes('?') ? '&' : '?';
+              return `${optimizedSrc}${separator}t=${Date.now()}&nav=${Math.random().toString(36).substr(2, 9)}`;
+            }
+          })();
+          
+          setCurrentSrc(cacheBustedSrc);
+          loadStartTimeRef.current = Date.now();
         }
-      })();
+      }, 0);
       
-      setCurrentSrc(cacheBustedSrc);
-      loadStartTimeRef.current = Date.now(); // Start timing the load
+      previousSrcRef.current = src;
     }
-  }, [src, optimizedSrc]); // Keep optimizedSrc for consistency but don't require it in condition
+  }, [src, optimizedSrc]);
 
-  // Handle initial src availability - ensures loading starts when src becomes available
-  useEffect(() => {
-    // If we have a src but are not loading/loaded/errored, start loading
-    if (src && !isLoading && !imageLoaded && !hasError && !isRetrying) {
-      setIsLoading(true);
-      setImageLoaded(false);
-      setHasError(false);
-    }
-  }, [src, isLoading, imageLoaded, hasError, isRetrying]);
-
-  // Network monitoring and cleanup - handle React strict mode remounting
+  // Network monitoring and cleanup
   useEffect(() => {
     mountedRef.current = true;
-    
-    // Force reset on mount to handle React strict mode double mounting
-    if (src && optimizedSrc && !imageLoaded && !hasError) {
-      setIsLoading(true);
-      setImageLoaded(false);
-      setHasError(false);
-      setIsRetrying(false);
-    }
     
     // Monitor network changes and update strategy
     const cleanupNetworkMonitor = onNetworkChange((networkInfo) => {
       if (mountedRef.current) {
         setNetworkStrategy(getLoadingStrategy('hero'));
-        if (process.env.NODE_ENV !== 'production') console.log('Network changed, updated loading strategy:', networkInfo);
       }
     });
     
+    // Cleanup function
     return () => {
       mountedRef.current = false;
-      cleanupNetworkMonitor();
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
+      
+      // Clear all timeouts
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+      }
+      
+      // Cleanup network monitor
+      if (cleanupNetworkMonitor) {
+        cleanupNetworkMonitor();
+      }
     };
-  }, []); // Empty dependencies - only run on mount/unmount
+  }, []);
 
-  // Adaptive timeout handling - force error state after network-adaptive timeout
+  // Timeout handling with adaptive timing
   useEffect(() => {
-    if (isLoading && !imageLoaded && !hasError && !isRetrying) {
-      const adaptiveTimeout = networkStrategy.timeout;
+    if (isLoading && !imageLoaded && !hasError && currentSrc) {
+      const timeoutDuration = networkStrategy.timeout || 15000;
       
       timeoutRef.current = safeSetTimeout(() => {
-        if (mountedRef.current && !imageLoaded && !hasError) {
-          if (process.env.NODE_ENV !== 'production') console.warn('Hero image load timeout after', adaptiveTimeout, 'ms (network adaptive)');
-          handleRetryOrError();
+        if (mountedRef.current && !imageLoaded && isLoading) {
+          // Only retry if we haven't exceeded max retries
+          if (retryCount < (networkStrategy.retry?.maxRetries || 2)) {
+            setIsRetrying(true);
+            setIsLoading(false);
+            
+            // Calculate retry delay with exponential backoff
+            const baseDelay = networkStrategy.retry?.baseDelay || BASE_RETRY_DELAY;
+            const multiplier = networkStrategy.retry?.backoffMultiplier || 2;
+            const retryDelay = baseDelay * Math.pow(multiplier, retryCount);
+            
+            retryTimeoutRef.current = safeSetTimeout(() => {
+              if (mountedRef.current) {
+                setRetryCount(prev => prev + 1);
+                setIsRetrying(false);
+                setIsLoading(true);
+                
+                // Force new cache-busting parameters for retry
+                const retriedSrc = currentSrc.replace(/t=\d+/, `t=${Date.now()}`);
+                setCurrentSrc(retriedSrc);
+              }
+            }, retryDelay);
+          } else {
+            // Max retries exceeded
+            setHasError(true);
+            setIsLoading(false);
+            handleImageError(new Error('Image loading timeout'), currentSrc);
+            onError();
+          }
         }
-      }, adaptiveTimeout);
-
-      return () => {
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      };
+      }, timeoutDuration);
     }
-  }, [isLoading, imageLoaded, hasError, isRetrying, networkStrategy.timeout]);
-
-  // Adaptive retry logic with network-aware backoff and cache-busting
-  const handleRetryOrError = useCallback(() => {
-    const { maxRetries, baseDelay, backoffMultiplier } = networkStrategy.retry;
     
-    if (retryCount < maxRetries) {
-      // Update retry count immediately for test synchronization
-      const nextRetryCount = retryCount + 1;
-      
-      // Set retry state immediately
-      setIsLoading(false);
-      setIsRetrying(true);
-      setRetryCount(nextRetryCount);
-      
-      const delay = baseDelay * Math.pow(backoffMultiplier, retryCount); // Adaptive exponential backoff
-      if (process.env.NODE_ENV !== 'production') console.warn(`Retrying hero image load (attempt ${nextRetryCount}/${maxRetries}) in ${delay}ms (network adaptive)`);
-      
-      retryTimeoutRef.current = safeSetTimeout(() => {
-        if (mountedRef.current) {
-          setIsLoading(true);
-          setIsRetrying(false);
-          setHasError(false);
-          
-          // Cache-busting for retry attempts - use timestamp and retry count
-          const timestamp = Date.now();
-          
-          setCurrentSrc(prev => {
-            try {
-              const url = new URL(prev);
-              // Remove old cache-busting params and add new ones
-              url.searchParams.delete('retry');
-              url.searchParams.delete('t');
-              url.searchParams.set('retry', nextRetryCount.toString());
-              url.searchParams.set('t', timestamp.toString());
-              return url.toString();
-            } catch {
-              // If URL parsing fails, use simpler approach
-              const separator = prev.includes('?') ? '&' : '?';
-              return `${prev}${separator}retry=${nextRetryCount}&t=${timestamp}`;
-            }
-          });
-        }
-      }, delay);
-    } else {
-      if (process.env.NODE_ENV !== 'production') console.error(`Hero image failed after ${maxRetries} retries`);
-      setHasError(true);
-      setIsLoading(false);
-      setIsRetrying(false);
-    }
-  }, [retryCount, networkStrategy.retry]);
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [isLoading, imageLoaded, hasError, currentSrc, retryCount, networkStrategy, onError]);
 
-  const handleLoad = useCallback(() => {
+  // Handle successful image load
+  const handleImageLoad = useCallback(() => {
     if (mountedRef.current) {
+      const loadTime = loadStartTimeRef.current ? Date.now() - loadStartTimeRef.current : 0;
+      
       setImageLoaded(true);
       setIsLoading(false);
-      setIsRetrying(false);
       setHasError(false);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
+      setIsRetrying(false);
       
-      // Track performance metrics
-      if (loadStartTimeRef.current) {
-        const loadTime = Date.now() - loadStartTimeRef.current;
-        try {
-          trackImageLoad(currentSrc || optimizedSrc, loadTime, 'hero', retryCount);
-        } catch (error) {
-          // Ignore tracking errors in test and production environments
-          if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') console.warn('Failed to track image load:', error);
-        }
+      // Clear any pending timeouts
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+      
+      // Track successful load
+      trackImageLoad(currentSrc, loadTime, 'hero');
+    }
+  }, [currentSrc]);
+
+  // Handle image error
+  const handleError = useCallback((e) => {
+    if (mountedRef.current) {
+      setHasError(true);
+      setIsLoading(false);
+      setImageLoaded(false);
+      handleImageError(e, currentSrc);
+      onError();
+      
+      // Clear timeouts
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
     }
-  }, [currentSrc, optimizedSrc, retryCount]);
+  }, [currentSrc, onError]);
 
-  const handleImageErrorInternal = useCallback((e) => {
-    if (mountedRef.current) {
-      if (process.env.NODE_ENV !== 'production') console.warn('Hero image load error:', e.target?.src);
-      handleImageError(e, src);
-      onError(e);
-      
-      // Clear timeouts before handling retry
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
-      
-      handleRetryOrError();
+  // Determine loading message based on state
+  const loadingMessage = useMemo(() => {
+    if (isRetrying) {
+      return `Retrying... (Attempt ${retryCount + 1})`;
     }
-  }, [src, onError, handleRetryOrError]);
+    if (isLoading && loadStartTimeRef.current) {
+      const elapsed = Date.now() - loadStartTimeRef.current;
+      if (elapsed > 5000) {
+        return 'Still loading... This is taking longer than usual';
+      }
+    }
+    return 'Loading image...';
+  }, [isLoading, isRetrying, retryCount]);
 
-  // Animation classes based on user preference and loading state (memoized for performance)
-  const animationClasses = useMemo(() => ({
-    transitionDuration: prefersReducedMotion ? 'duration-0' : 'duration-500',
-    imageOpacity: imageLoaded ? 'opacity-100' : 'opacity-0',
-    shimmerOpacity: 'opacity-100', // Always visible when rendered
-    shimmerAnimation: prefersReducedMotion ? '' : 'animate-shimmer'
-  }), [prefersReducedMotion, imageLoaded]);
-
-  // Error state with network-adaptive retry information
-  if (hasError || !src) {
-    const { maxRetries } = networkStrategy.retry;
-    const errorMessage = retryCount > 0 
-      ? `Unable to load image after ${retryCount} ${retryCount === 1 ? 'retry' : 'retries'}`
-      : 'No image available';
-      
+  // No image available state
+  if (!src && !currentSrc) {
     return (
-      <div className={`w-full aspect-[16/9] bg-gray-100 rounded-lg flex items-center justify-center ${className}`}>
-        <div className="text-center">
-          <p className="text-gray-500 mb-1">{errorMessage}</p>
-          {retryCount > 0 && (
-            <p className="text-xs text-gray-400">
-              {networkStrategy.skipOptimizations 
-                ? 'Data saver mode - reduced retry attempts' 
-                : 'Connection issues detected - network adaptive retries used'}
-            </p>
-          )}
+      <div 
+        className={`relative w-full aspect-[16/9] rounded-lg overflow-hidden bg-white shadow-md ${className}`}
+        data-testid="hero-image-clean"
+      >
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+          <div className="text-center">
+            <svg className="w-24 h-24 text-gray-300 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M21 15.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0zM12 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm8.5 8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM5 11l.898 2.954a2 2 0 0 0 1.908 1.396h8.388a2 2 0 0 0 1.908-1.396L19 11"/>
+            </svg>
+            <p className="text-gray-500">No image available</p>
+          </div>
         </div>
       </div>
     );
@@ -281,78 +277,76 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
 
   return (
     <div 
-      className={`relative w-full aspect-[16/9] rounded-lg overflow-hidden bg-white ${className}`} 
+      className={`relative w-full aspect-[16/9] rounded-lg overflow-hidden bg-white shadow-md ${className}`}
       data-testid="hero-image-clean"
     >
-      {/* Fallback gradient background for legacy support */}
-      {useGradientFallback && (
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200" />
-      )}
+      {/* Main Image with force recreation on navigation */}
+      <img
+        key={`hero-${currentSrc}`} // Force React to recreate element on src change
+        src={currentSrc || '/placeholder_dog.svg'}
+        alt={alt}
+        className={`
+          absolute inset-0 w-full h-full object-cover transition-all duration-700
+          ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}
+          ${hasError ? 'hidden' : ''}
+        `}
+        style={{ 
+          objectPosition: position,
+          transform: imageLoaded && !prefersReducedMotion ? 'scale(1)' : 'scale(1.05)'
+        }}
+        onLoad={handleImageLoad}
+        onError={handleError}
+        loading={networkStrategy.loading || "eager"}
+        decoding="async"
+        data-testid="hero-image"
+      />
       
-      {/* Main image container */}
-      <div 
-        className="w-full h-full flex items-center justify-center" 
-        data-testid="image-container"
-      >
-        <img
-          src={currentSrc || optimizedSrc}
-          alt={alt}
-          className={`w-full h-full object-contain transition-opacity ${animationClasses.transitionDuration} ${animationClasses.imageOpacity}`}
-          style={{ objectPosition: position }}
-          onLoad={handleLoad}
-          onError={handleImageErrorInternal}
-          loading={networkStrategy.loading}
-          decoding="async"
-          key={`${src}-${currentSrc}-${retryCount}`} // Force re-render on src change or retry
-        />
-      </div>
-      
-      {/* Enhanced shimmer loading state - only render when actually needed */}
-      {((isLoading || isRetrying || !imageLoaded) && !hasError) && (
+      {/* Loading Shimmer Effect */}
+      {(isLoading || isRetrying) && !imageLoaded && (
         <div 
-          className={`absolute inset-0 w-full aspect-[16/9] transition-opacity ${animationClasses.transitionDuration} ${animationClasses.shimmerOpacity}`}
+          className={`absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 ${!prefersReducedMotion ? 'animate-shimmer' : ''} transition-opacity duration-300 ${isLoading ? 'opacity-100' : 'opacity-0'}`}
+          style={{
+            backgroundSize: '200% 100%',
+          }}
           data-testid="shimmer-loader"
         >
-          <div className={`w-full h-full bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 ${animationClasses.shimmerAnimation}`} data-testid="shimmer-animation">
-            <div className="flex items-center justify-center h-full">
-              <div className="flex flex-col items-center space-y-3">
-                <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <span className="text-sm text-gray-500">
-                  {isRetrying
-                    ? `Retrying... (${retryCount}/${networkStrategy.retry.maxRetries})` 
-                    : networkStrategy.skipOptimizations 
-                      ? 'Loading (data saver)...'
-                      : 'Loading image...'}
-                </span>
-                {isRetrying && (
-                  <span className="text-xs text-gray-400">
-                    {networkStrategy.skipOptimizations 
-                      ? 'Slow connection detected' 
-                      : 'Connection issues detected'}
-                  </span>
-                )}
-              </div>
-            </div>
+          <div className="absolute bottom-4 left-4 bg-white/80 px-3 py-1 rounded text-sm text-gray-600">
+            {loadingMessage}
+          </div>
+        </div>
+      )}
+      
+      {/* Error State */}
+      {hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100" data-testid="error-state">
+          <div className="text-center p-8">
+            <svg className="w-24 h-24 text-gray-300 mx-auto mb-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M21 15.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0zM12 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm8.5 8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM5 11l.898 2.954a2 2 0 0 0 1.908 1.396h8.388a2 2 0 0 0 1.908-1.396L19 11"/>
+            </svg>
+            <p className="text-gray-500 mb-2">Unable to load image</p>
+            {retryCount < (networkStrategy.retry?.maxRetries || 2) && (
+              <button 
+                onClick={() => {
+                  setHasError(false);
+                  setIsLoading(true);
+                  setRetryCount(prev => prev + 1);
+                  
+                  // Force new attempt with fresh cache-busting
+                  const retriedSrc = currentSrc.replace(/t=\d+/, `t=${Date.now()}`);
+                  setCurrentSrc(retriedSrc);
+                }}
+                className="text-blue-600 hover:text-blue-700 underline text-sm"
+              >
+                Try again
+              </button>
+            )}
           </div>
         </div>
       )}
     </div>
   );
-}, (prevProps, nextProps) => {
-  // Only re-render if essential props change
-  return (
-    prevProps.src === nextProps.src &&
-    prevProps.alt === nextProps.alt &&
-    prevProps.className === nextProps.className &&
-    prevProps.useGradientFallback === nextProps.useGradientFallback
-  );
 });
 
 HeroImageWithBlurredBackground.displayName = 'HeroImageWithBlurredBackground';
 
-export { HeroImageWithBlurredBackground };
 export default HeroImageWithBlurredBackground;

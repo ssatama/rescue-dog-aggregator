@@ -211,11 +211,26 @@ export default function DogDetailClient({ params = {} }) {
                   {/* Hero Image Section - Full Width */}
                   <ScrollAnimationWrapper delay={300}>
                     <div className="w-full" data-testid="hero-image-container">
-                      <HeroImageWithBlurredBackground
-                        src={dog.primary_image_url}
-                        alt={dog.name}
-                        onError={(e) => handleImageError(e, dog.primary_image_url)}
-                      />
+                      {!dog || !dog.primary_image_url ? (
+                        <div className="w-full aspect-[16/9] bg-gray-100 rounded-lg flex items-center justify-center">
+                          <div className="text-center">
+                            <p className="text-gray-500">Loading image...</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <HeroImageWithBlurredBackground
+                          key={`hero-${dogId}-${dog.id}`}
+                          src={dog.primary_image_url}
+                          alt={`${sanitizeText(dog.name)} - Hero Image`}
+                          className="mb-6 shadow-xl"
+                          onError={() => {
+                            reportError("Hero image failed to load", { 
+                              dogId: dog.id, 
+                              imageUrl: dog.primary_image_url 
+                            });
+                          }}
+                        />
+                      )}
                     </div>
                   </ScrollAnimationWrapper>
               
