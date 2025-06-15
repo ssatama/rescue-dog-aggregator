@@ -60,7 +60,8 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
   useEffect(() => {
     // Always reset when src changes, regardless of currentSrc state
     // This ensures proper state reset during navigation
-    if (src && optimizedSrc) {
+    // FIXED: Only check for src, optimizedSrc will be available due to useMemo
+    if (src) {
       
       // Check for obviously invalid URLs first
       const isInvalidUrl = typeof src === 'string' && (
@@ -103,7 +104,17 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
       setCurrentSrc(cacheBustedSrc);
       loadStartTimeRef.current = Date.now(); // Start timing the load
     }
-  }, [src, optimizedSrc]); // Remove currentSrc from dependencies to prevent race condition
+  }, [src, optimizedSrc]); // Keep optimizedSrc for consistency but don't require it in condition
+
+  // Handle initial src availability - ensures loading starts when src becomes available
+  useEffect(() => {
+    // If we have a src but are not loading/loaded/errored, start loading
+    if (src && !isLoading && !imageLoaded && !hasError && !isRetrying) {
+      setIsLoading(true);
+      setImageLoaded(false);
+      setHasError(false);
+    }
+  }, [src, isLoading, imageLoaded, hasError, isRetrying]);
 
   // Network monitoring and cleanup - handle React strict mode remounting
   useEffect(() => {
@@ -292,7 +303,7 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
           onError={handleImageErrorInternal}
           loading={networkStrategy.loading}
           decoding="async"
-          key={`${currentSrc}-${retryCount}`} // Force re-render on retry
+          key={`${src}-${currentSrc}-${retryCount}`} // Force re-render on src change or retry
         />
       </div>
       
