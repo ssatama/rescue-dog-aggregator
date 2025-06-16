@@ -67,9 +67,7 @@ describe('Cross-Browser Compatibility Tests', () => {
   describe('Modern Browser Features', () => {
     test('intersection observer works or has fallback', async () => {
       // Test with IntersectionObserver support
-      await act(async () => {
-        render(<DogDetailClient />);
-      });
+      const { unmount } = render(<DogDetailClient />);
 
       await waitFor(() => {
         expect(screen.getByTestId('hero-image-container')).toBeInTheDocument();
@@ -77,12 +75,13 @@ describe('Cross-Browser Compatibility Tests', () => {
 
       expect(global.IntersectionObserver).toHaveBeenCalled();
 
+      // Clean up before second render
+      unmount();
+
       // Test without IntersectionObserver (older browsers)
       global.IntersectionObserver = undefined;
 
-      await act(async () => {
-        render(<DogDetailClient />);
-      });
+      render(<DogDetailClient />);
 
       // Should still render without crashing
       await waitFor(() => {

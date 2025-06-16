@@ -25,13 +25,17 @@ if (typeof window !== 'undefined') {
   }
 
   // Mock IntersectionObserver for lazy loading tests
-  if (!window.IntersectionObserver) {
-    window.IntersectionObserver = jest.fn(() => ({
-      observe: jest.fn(),
-      unobserve: jest.fn(),
-      disconnect: jest.fn(),
-    }));
-  }
+  const mockIntersectionObserver = jest.fn().mockImplementation((callback, options) => ({
+    observe: jest.fn(),
+    unobserve: jest.fn(),
+    disconnect: jest.fn(),
+    root: null,
+    rootMargin: '0px',
+    thresholds: [0],
+  }));
+  
+  window.IntersectionObserver = mockIntersectionObserver;
+  global.IntersectionObserver = mockIntersectionObserver;
 
   // Mock matchMedia for responsive design tests
   if (!window.matchMedia) {
@@ -82,5 +86,5 @@ jest.mock('next/image', () => ({
 
 jest.mock('next/link', () => ({
   __esModule: true,
-  default: ({ children, href }) => <a href={href}>{children}</a>
+  default: ({ children, href, ...props }) => <a href={href} {...props}>{children}</a>
 }));

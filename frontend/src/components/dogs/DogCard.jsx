@@ -36,8 +36,27 @@ const DogCard = React.memo(function DogCard({ dog, priority = false }) {
   const status = sanitizeText(dog?.status || 'unknown');
   const orgSocialMedia = dog?.organization?.social_media;
 
+  // NEW: Check if dog is recent (added within last 7 days)
+  const isRecent = () => {
+    if (!dog?.created_at) return false;
+    try {
+      const createdDate = new Date(dog.created_at);
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      return createdDate > sevenDaysAgo;
+    } catch {
+      return false; // Invalid date
+    }
+  };
+
+  const showNewBadge = isRecent();
+  const organizationName = dog?.organization?.name;
+
   return (
-    <Card className="overflow-hidden flex flex-col h-full group transition-shadow duration-300 hover:shadow-lg">
+    <Card 
+      data-testid="dog-card"
+      className="overflow-hidden flex flex-col h-full transition-all duration-300 ease-in-out hover:scale-[1.02] hover:-translate-y-1 hover:shadow-xl"
+    >
       <CardHeader className="p-0 relative">
         <Link 
           href={`/dogs/${id}`} 
@@ -54,11 +73,35 @@ const DogCard = React.memo(function DogCard({ dog, priority = false }) {
             priority={priority}
             onError={(e) => handleImageError(e, originalImageUrl)}
           />
+          
+          {/* NEW Badge for recent dogs */}
+          {showNewBadge && (
+            <Badge
+              data-testid="new-badge"
+              aria-label="Recently added dog"
+              className="absolute top-2 left-2 z-10 bg-green-500 text-white border-0 text-xs font-bold px-2 py-1"
+            >
+              NEW
+            </Badge>
+          )}
+
+          {/* Organization Badge */}
+          {organizationName && (
+            <Badge
+              data-testid="organization-badge"
+              aria-label={`Organization: ${organizationName}`}
+              variant="outline"
+              className="absolute bottom-2 right-2 z-10 bg-white text-gray-800 border-gray-200 text-xs truncate max-w-[120px]"
+            >
+              {sanitizeText(organizationName)}
+            </Badge>
+          )}
+
           {/* Status Badge (optional) */}
           {status !== 'available' && (
              <Badge
                variant={status === 'adopted' ? "secondary" : "default"}
-               className="absolute top-2 right-2"
+               className="absolute top-2 right-2 z-10"
              >
                {status.charAt(0).toUpperCase() + status.slice(1)}
              </Badge>
@@ -69,11 +112,11 @@ const DogCard = React.memo(function DogCard({ dog, priority = false }) {
       <CardContent className="p-4 flex flex-col flex-grow">
         <CardTitle className="mb-1 truncate group-hover:text-blue-600">
           <Link href={`/dogs/${id}`} className="hover:underline">
-            <h3>{name}</h3>
+            <h3 data-testid="dog-name" className="truncate">{name}</h3>
           </Link>
         </CardTitle>
         {breed && (
-          <p className="text-small text-gray-600 mb-1 truncate">{breed}</p>
+          <p data-testid="dog-breed" className="text-small text-gray-600 mb-1 truncate">{breed}</p>
         )}
         {breedGroup && breedGroup !== 'Unknown' && (
           <Badge variant="outline" className="text-tiny mb-2 w-fit">

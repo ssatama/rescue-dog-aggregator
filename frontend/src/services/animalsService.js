@@ -145,3 +145,38 @@ export async function getStatistics() {
   logger.log("Fetching statistics");
   return get('/api/animals/statistics');
 }
+
+/**
+ * Fetches animals using a specific curation type.
+ * @param {string} curationType - The curation type ('recent', 'diverse', or 'random')
+ * @param {number} limit - The number of animals to fetch (default: 4)
+ * @returns {Promise<Array>} - Promise resolving to an array of animal objects.
+ */
+export async function getAnimalsByCuration(curationType, limit = 4) {
+  // Input validation
+  if (!curationType) {
+    throw new Error('Curation type is required');
+  }
+
+  const validCurationTypes = ['recent', 'diverse', 'random'];
+  if (!validCurationTypes.includes(curationType)) {
+    throw new Error('Invalid curation type. Must be one of: recent, diverse, random');
+  }
+
+  if (typeof limit !== 'number' || limit <= 0) {
+    throw new Error('Limit must be a positive number');
+  }
+
+  logger.log(`Fetching animals with curation type: ${curationType}, limit: ${limit}`);
+  
+  const params = {
+    curation_type: curationType,
+    limit,
+    animal_type: 'dog',
+    status: 'available'
+  };
+
+  logger.log('API call parameters:', params);
+  
+  return get('/api/animals', params);
+}
