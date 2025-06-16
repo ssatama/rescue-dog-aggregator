@@ -35,13 +35,11 @@ export default function DogDetailClient({ params = {} }) {
   
   // Development monitoring only
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[DogDetail] Component mounted:', {
-        dogId,
-        pathname,
-        documentReady: document.readyState === 'complete'
-      });
-    }
+    process.env.NODE_ENV === 'development' && console.log('[DogDetail] Component mounted:', {
+      dogId,
+      pathname,
+      documentReady: document.readyState === 'complete'
+    });
   }, []);
   
   // Enhanced fetchDogData with comprehensive error handling and retry logic
@@ -52,21 +50,17 @@ export default function DogDetailClient({ params = {} }) {
     const maxRetries = 3;
     
     // Development logging only
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[DogDetail] API call:', { 
-        dogId, 
-        retryCount
-      });
-    }
+    process.env.NODE_ENV === 'development' && console.log('[DogDetail] API call:', { 
+      dogId, 
+      retryCount
+    });
     
     try {
       setLoading(true);
       setError(false);
       
       // Minimal production logging for API calls
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[DogDetail] Making API request...');
-      }
+      process.env.NODE_ENV === 'development' && console.log('[DogDetail] Making API request...');
       
       // Create timeout promise for hanging requests detection
       const timeoutMs = 10000; // 10 second timeout
@@ -83,24 +77,20 @@ export default function DogDetailClient({ params = {} }) {
       ]);
       
       // Production: Only log API success for monitoring
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[DogDetail] API request successful:', {
-          dogName: data?.name,
-          responseTime: `${Date.now() - fetchStartTime}ms`
-        });
-      }
+      process.env.NODE_ENV === 'development' && console.log('[DogDetail] API request successful:', {
+        dogName: data?.name,
+        responseTime: `${Date.now() - fetchStartTime}ms`
+      });
       
       // Only update state if component is still mounted
       if (mountedRef.current) {
         setDog(data);
         
         // Development logging for state updates
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[DogDetail] Dog state set:', { 
-            dogName: data?.name,
-            hasImageUrl: !!data?.primary_image_url
-          });
-        }
+        process.env.NODE_ENV === 'development' && console.log('[DogDetail] Dog state set:', { 
+          dogName: data?.name,
+          hasImageUrl: !!data?.primary_image_url
+        });
       }
     } catch (err) {
       const errorInfo = {
@@ -118,17 +108,13 @@ export default function DogDetailClient({ params = {} }) {
       reportError("Error fetching dog data", errorInfo);
       
       // Development logging for errors
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[DogDetail] API ERROR:', errorInfo);
-      }
+      process.env.NODE_ENV === 'development' && console.log('[DogDetail] API ERROR:', errorInfo);
       
       // Retry logic for certain types of errors
       if (retryCount < maxRetries && (err.name === 'AbortError' || err.message.includes('fetch'))) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[DogDetail] Retrying API call...', {
-            retryCount: retryCount + 1
-          });
-        }
+        process.env.NODE_ENV === 'development' && console.log('[DogDetail] Retrying API call...', {
+          retryCount: retryCount + 1
+        });
         
         // Exponential backoff delay
         setTimeout(() => {
@@ -333,8 +319,8 @@ export default function DogDetailClient({ params = {} }) {
                   <ScrollAnimationWrapper delay={300}>
                     <div className="w-full" data-testid="hero-image-container">
                       {(() => {
-                        // DIAGNOSTIC: Log hero image section rendering
-                        console.log('[DogDetail] Navigation: rendering hero section', { 
+                        // Development logging only
+                        process.env.NODE_ENV === 'development' && console.log('[DogDetail] Navigation: rendering hero section', { 
                           pathname, 
                           dogId, 
                           hasDog: !!dog, 

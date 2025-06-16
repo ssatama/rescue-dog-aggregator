@@ -15,11 +15,14 @@ import { getAnimalById } from '../../services/animalsService';
 
 // Mock the services
 jest.mock('../../services/animalsService');
-jest.mock('../../services/relatedDogsService');
+jest.mock('../../services/relatedDogsService', () => ({
+  getRelatedDogs: jest.fn().mockResolvedValue([])
+}));
 
 // Mock Next.js navigation
 jest.mock('next/navigation', () => ({
   useParams: () => ({ id: 'test-dog-123' }),
+  usePathname: () => '/dogs/test-dog-123',
   useRouter: () => ({
     push: jest.fn(),
     replace: jest.fn(),
@@ -79,32 +82,54 @@ const mockDog = {
   organization_id: 'org-1'
 };
 
+// Import the mocked service
+const { getRelatedDogs } = require('../../services/relatedDogsService');
+
 describe('Hero Image Loading Fixes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Use real timers for async operations
+    jest.useRealTimers();
     getAnimalById.mockResolvedValue(mockDog);
+    getRelatedDogs.mockResolvedValue([]);
+    
+    // Mock document.readyState to be 'complete' so API call starts immediately
+    Object.defineProperty(document, 'readyState', {
+      writable: true,
+      value: 'complete'
+    });
+  });
+
+  afterEach(() => {
+    // Cleanup any pending operations
+    jest.clearAllTimers();
   });
 
   test('Fix 1: Hero image component should have force key prop', async () => {
-    render(<DogDetailClient params={{ id: 'test-dog-123' }} />);
-
-    // Wait for dog data to load
-    await waitFor(() => {
-      expect(screen.queryByTestId('layout')).toBeInTheDocument();
+    await act(async () => {
+      render(<DogDetailClient params={{ id: 'test-dog-123' }} />);
     });
 
+    // Wait for the API call to complete and data to load
+    await waitFor(async () => {
+      // Wait for skeleton to disappear
+      expect(screen.queryByTestId('dog-detail-skeleton')).not.toBeInTheDocument();
+    }, { timeout: 5000 });
+
+    // Wait for dog name to appear (indicates data loaded)
     await waitFor(() => {
-      expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Buddy' })).toBeInTheDocument();
     });
 
     // Check that hero image container exists
     const heroContainer = screen.getByTestId('hero-image-container');
     expect(heroContainer).toBeInTheDocument();
 
-    // Verify that HeroImageWithBlurredBackground is rendered with proper src
-    // The key prop is internal to React, but we can verify the component renders correctly
+    // Find the image element - it might be inside the hero container
     const img = screen.getByRole('img');
     expect(img).toBeInTheDocument();
+    
+    // The image src should be the optimized URL from our mock
     expect(img.src).toContain('optimized-https://example.com/buddy.jpg');
   });
 
@@ -127,11 +152,18 @@ describe('Hero Image Loading Fixes', () => {
   });
 
   test('Fix 3: Hero image should use eager loading', async () => {
-    render(<DogDetailClient params={{ id: 'test-dog-123' }} />);
+    await act(async () => {
+      render(<DogDetailClient params={{ id: 'test-dog-123' }} />);
+    });
 
-    // Wait for component to load
+    // Wait for skeleton to disappear and data to load
     await waitFor(() => {
-      expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('dog-detail-skeleton')).not.toBeInTheDocument();
+    }, { timeout: 5000 });
+
+    // Wait for dog name to appear in main heading
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Buddy' })).toBeInTheDocument();
     });
 
     // Find the hero image
@@ -144,30 +176,41 @@ describe('Hero Image Loading Fixes', () => {
   });
 
   test('All fixes work together: Component renders correctly with key prop', async () => {
-    render(<DogDetailClient params={{ id: 'test-dog-123' }} />);
+    await act(async () => {
+      render(<DogDetailClient params={{ id: 'test-dog-123' }} />);
+    });
 
-    // Wait for initial load
+    // Wait for loading to complete
     await waitFor(() => {
-      expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('dog-detail-skeleton')).not.toBeInTheDocument();
+    }, { timeout: 5000 });
+
+    // Wait for dog name to appear in main heading
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Buddy' })).toBeInTheDocument();
     });
 
     const initialImg = screen.getByRole('img');
-    expect(initialImg.src).toContain('buddy.jpg');
-    expect(initialImg).toHaveAttribute('loading', 'eager');
-    
-    // Verify the key prop forces remount behavior by checking src is correct
     expect(initialImg.src).toContain('optimized-https://example.com/buddy.jpg');
+    expect(initialImg).toHaveAttribute('loading', 'eager');
   });
 
   test('Loading state handling during navigation', async () => {
-    render(<DogDetailClient params={{ id: 'test-dog-123' }} />);
+    await act(async () => {
+      render(<DogDetailClient params={{ id: 'test-dog-123' }} />);
+    });
 
     // Initially should show loading skeleton
     expect(screen.getByTestId('layout')).toBeInTheDocument();
 
-    // Wait for data to load
+    // Wait for loading to complete
     await waitFor(() => {
-      expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('dog-detail-skeleton')).not.toBeInTheDocument();
+    }, { timeout: 5000 });
+
+    // Wait for content to appear
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Buddy' })).toBeInTheDocument();
     });
 
     // Hero image container should exist and not show the loading fallback
@@ -177,7 +220,7 @@ describe('Hero Image Loading Fixes', () => {
     // Should have the actual hero image component, not the loading fallback
     const img = screen.getByRole('img');
     expect(img).toBeInTheDocument();
-    expect(img.src).toContain('buddy.jpg');
+    expect(img.src).toContain('optimized-https://example.com/buddy.jpg');
   });
 
   test('Error boundary and retry logic work with fixes', async () => {
@@ -188,11 +231,14 @@ describe('Hero Image Loading Fixes', () => {
     };
     getAnimalById.mockResolvedValue(dogWithBadImage);
 
-    render(<DogDetailClient params={{ id: 'test-dog-123' }} />);
-
-    await waitFor(() => {
-      expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+    await act(async () => {
+      render(<DogDetailClient params={{ id: 'test-dog-123' }} />);
     });
+
+    // Wait for loading to complete
+    await waitFor(() => {
+      expect(screen.queryByTestId('dog-detail-skeleton')).not.toBeInTheDocument();
+    }, { timeout: 5000 });
 
     // Should handle invalid URL gracefully
     const heroContainer = screen.getByTestId('hero-image-container');
