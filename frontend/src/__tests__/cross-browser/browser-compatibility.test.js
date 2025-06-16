@@ -79,7 +79,9 @@ describe('Cross-Browser Compatibility Tests', () => {
       unmount();
 
       // Test without IntersectionObserver (older browsers)
+      const originalIntersectionObserver = global.IntersectionObserver;
       global.IntersectionObserver = undefined;
+      window.IntersectionObserver = undefined;
 
       render(<DogDetailClient />);
 
@@ -87,6 +89,10 @@ describe('Cross-Browser Compatibility Tests', () => {
       await waitFor(() => {
         expect(screen.getByTestId('hero-image-container')).toBeInTheDocument();
       });
+      
+      // Restore IntersectionObserver for other tests
+      global.IntersectionObserver = originalIntersectionObserver;
+      window.IntersectionObserver = originalIntersectionObserver;
     });
 
     test('CSS custom properties fallbacks work', async () => {

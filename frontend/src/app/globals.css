@@ -4,11 +4,12 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    /* Updated warm color scheme */
+    --background: 31 100% 98%; /* #FDFBF7 warm off-white */
     --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
+    --card: 31 100% 99%; /* Slightly warmer card background */
     --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
+    --popover: 31 100% 99%;
     --popover-foreground: 222.2 84% 4.9%;
     --primary: 221 83% 53%;
     --primary-foreground: 210 40% 98%;
@@ -29,6 +30,31 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+    
+    /* Blue-tinted shadows for premium feel */
+    --shadow-blue-xs: 0 1px 2px rgba(59, 130, 246, 0.05);
+    --shadow-blue-sm: 0 1px 3px rgba(59, 130, 246, 0.1), 0 1px 2px rgba(59, 130, 246, 0.06);
+    --shadow-blue-md: 0 4px 6px rgba(59, 130, 246, 0.07), 0 2px 4px rgba(59, 130, 246, 0.06);
+    --shadow-blue-lg: 0 10px 15px rgba(59, 130, 246, 0.1), 0 4px 6px rgba(59, 130, 246, 0.05);
+    --shadow-blue-xl: 0 20px 25px rgba(59, 130, 246, 0.1), 0 10px 10px rgba(59, 130, 246, 0.04);
+    --shadow-blue-2xl: 0 25px 50px rgba(59, 130, 246, 0.15);
+    
+    /* Animation duration and timing custom properties */
+    --animation-duration-fast: 150ms;
+    --animation-duration-normal: 300ms;
+    --animation-duration-slow: 500ms;
+    --animation-duration-slower: 700ms;
+    --animation-easing: cubic-bezier(0.4, 0, 0.2, 1);
+    --animation-easing-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --animation-easing-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    
+    /* Stagger animation delays */
+    --stagger-delay-1: 50ms;
+    --stagger-delay-2: 100ms;
+    --stagger-delay-3: 150ms;
+    --stagger-delay-4: 200ms;
+    --stagger-delay-5: 250ms;
+    --stagger-delay-6: 300ms;
     
     /* Typography Scale - Responsive with clamp() */
     --font-size-hero: clamp(2.25rem, 4vw + 1rem, 3.75rem); /* 36px-60px */
@@ -84,7 +110,15 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
     
-    /* Typography variables remain the same in dark mode */
+    /* Dark mode shadows with purple tint */
+    --shadow-blue-xs: 0 1px 2px rgba(147, 51, 234, 0.1);
+    --shadow-blue-sm: 0 1px 3px rgba(147, 51, 234, 0.15), 0 1px 2px rgba(147, 51, 234, 0.1);
+    --shadow-blue-md: 0 4px 6px rgba(147, 51, 234, 0.12), 0 2px 4px rgba(147, 51, 234, 0.1);
+    --shadow-blue-lg: 0 10px 15px rgba(147, 51, 234, 0.15), 0 4px 6px rgba(147, 51, 234, 0.1);
+    --shadow-blue-xl: 0 20px 25px rgba(147, 51, 234, 0.15), 0 10px 10px rgba(147, 51, 234, 0.08);
+    --shadow-blue-2xl: 0 25px 50px rgba(147, 51, 234, 0.2);
+    
+    /* Typography and animation variables remain the same in dark mode */
   }
 }
 
@@ -98,7 +132,7 @@
 }
 
 @layer utilities {
-  /* Shimmer animation for loading states */
+  /* Enhanced shimmer animation with blue tint */
   @keyframes shimmer {
     0% {
       background-position: -200% 0;
@@ -109,8 +143,26 @@
   }
   
   .animate-shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--background)) 0%,
+      rgba(59, 130, 246, 0.08) 50%,
+      hsl(var(--background)) 100%
+    );
     background-size: 200% 100%;
-    animation: shimmer 2s infinite;
+    animation: shimmer 2s infinite ease-in-out;
+  }
+  
+  /* Enhanced shimmer for warm theme */
+  .animate-shimmer-warm {
+    background: linear-gradient(
+      90deg,
+      #fdfbf7 0%,
+      rgba(251, 146, 60, 0.1) 50%,
+      #fdfbf7 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite ease-in-out;
   }
 
   /* Hero gradient background - peach/cream tones */
@@ -172,19 +224,21 @@
     -webkit-backdrop-filter: blur(8px);
   }
 
-  /* Typography improvements for hero section */
+  /* Enhanced typography with improved contrast and scaling */
   .text-hero {
     font-size: var(--font-size-hero);
     line-height: var(--line-height-tight);
     letter-spacing: var(--letter-spacing-tight);
-    font-weight: var(--font-weight-bold);
+    font-weight: var(--font-weight-extrabold); /* Increased weight */
+    color: hsl(222.2 84% 4.9%); /* High contrast */
   }
 
   .text-section {
     font-size: var(--font-size-section);
     line-height: var(--line-height-snug);
     letter-spacing: var(--letter-spacing-normal);
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--font-weight-bold); /* Increased weight */
+    color: hsl(222.2 84% 4.9%); /* High contrast */
   }
 
   .text-body {
@@ -192,7 +246,48 @@
     line-height: var(--line-height-relaxed);
     letter-spacing: var(--letter-spacing-normal);
     font-weight: var(--font-weight-normal);
+    color: hsl(215.4 16.3% 46.9%); /* Maintain good contrast */
   }
+  
+  /* New utility classes for animations */
+  .animate-fade-in {
+    animation: fadeIn var(--animation-duration-slow) var(--animation-easing) forwards;
+    opacity: 0;
+  }
+  
+  .animate-fade-in-up {
+    animation: fadeInUp var(--animation-duration-slow) var(--animation-easing) forwards;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  
+  .animate-stagger-1 { animation-delay: var(--stagger-delay-1); }
+  .animate-stagger-2 { animation-delay: var(--stagger-delay-2); }
+  .animate-stagger-3 { animation-delay: var(--stagger-delay-3); }
+  .animate-stagger-4 { animation-delay: var(--stagger-delay-4); }
+  .animate-stagger-5 { animation-delay: var(--stagger-delay-5); }
+  .animate-stagger-6 { animation-delay: var(--stagger-delay-6); }
+  
+  /* Keyframes for new animations */
+  @keyframes fadeIn {
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes fadeInUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Blue-tinted shadow utilities */
+  .shadow-blue-sm { box-shadow: var(--shadow-blue-sm); }
+  .shadow-blue-md { box-shadow: var(--shadow-blue-md); }
+  .shadow-blue-lg { box-shadow: var(--shadow-blue-lg); }
+  .shadow-blue-xl { box-shadow: var(--shadow-blue-xl); }
+  .shadow-blue-2xl { box-shadow: var(--shadow-blue-2xl); }
 
   /* Mobile-specific improvements */
   @media (max-width: 768px) {
@@ -216,7 +311,7 @@
     }
   }
 
-  /* Reduced motion support */
+  /* Enhanced reduced motion support */
   @media (prefers-reduced-motion: reduce) {
     .hero-gradient {
       animation: none;
@@ -228,12 +323,28 @@
       opacity: 0.6;
     }
     
-    .animate-shimmer {
+    .animate-shimmer,
+    .animate-shimmer-warm {
       animation: none;
+      background: hsl(var(--background));
     }
     
-    .animate-count-up {
+    .animate-count-up,
+    .animate-fade-in,
+    .animate-fade-in-up {
       animation: none;
+      opacity: 1;
+      transform: none;
+    }
+    
+    /* Disable all stagger delays */
+    .animate-stagger-1,
+    .animate-stagger-2,
+    .animate-stagger-3,
+    .animate-stagger-4,
+    .animate-stagger-5,
+    .animate-stagger-6 {
+      animation-delay: 0s;
     }
   }
 }

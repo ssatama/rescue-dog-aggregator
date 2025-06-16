@@ -97,9 +97,9 @@ describe('DogCard Component', () => {
       const card = screen.getByTestId('dog-card');
       expect(card).toHaveClass('transition-all');
       expect(card).toHaveClass('duration-300');
-      expect(card).toHaveClass('hover:scale-[1.02]');
-      expect(card).toHaveClass('hover:-translate-y-1');
-      expect(card).toHaveClass('hover:shadow-xl');
+      expect(card).toHaveClass('shadow-blue-sm');
+      expect(card).toHaveClass('hover:shadow-blue-lg');
+      // The new hover animation is handled by the useHoverAnimation hook via inline styles
     });
 
     test('applies smooth transition effects', () => {
@@ -393,8 +393,8 @@ describe('DogCard Component', () => {
       adoptLink.focus();
       expect(adoptLink).toHaveFocus();
       
-      // Card should still have hover classes
-      expect(card).toHaveClass('hover:scale-[1.02]');
+      // Card should still have shadow classes (hover animation is handled by hook)
+      expect(card).toHaveClass('shadow-blue-sm');
     });
   });
 });

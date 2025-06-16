@@ -13,9 +13,21 @@ import SocialMediaLinks from '../ui/SocialMediaLinks';
 import LazyImage from '../ui/LazyImage';
 import { getCatalogCardImageWithPosition, handleImageError } from '../../utils/imageUtils';
 import { sanitizeText } from '../../utils/security';
+import { useFadeInAnimation, useHoverAnimation } from '../../utils/animations';
 
 
-const DogCard = React.memo(function DogCard({ dog, priority = false }) {
+const DogCard = React.memo(function DogCard({ dog, priority = false, animationDelay = 0 }) {
+  // Animation hooks
+  const { ref: cardRef, isVisible } = useFadeInAnimation({ 
+    delay: animationDelay,
+    threshold: 0.2 
+  });
+  const { hoverProps } = useHoverAnimation({
+    scale: 1.02,
+    translateY: -4,
+    duration: 300
+  });
+
   // Basic validation or default values with sanitization
   const name = sanitizeText(dog?.name || "Unknown Dog");
   
@@ -54,8 +66,12 @@ const DogCard = React.memo(function DogCard({ dog, priority = false }) {
 
   return (
     <Card 
+      ref={cardRef}
       data-testid="dog-card"
-      className="overflow-hidden flex flex-col h-full transition-all duration-300 ease-in-out hover:scale-[1.02] hover:-translate-y-1 hover:shadow-xl"
+      className={`overflow-hidden flex flex-col h-full shadow-blue-sm hover:shadow-blue-lg transition-all duration-300 ease-in-out ${
+        isVisible ? 'animate-fade-in-up' : 'opacity-0 translate-y-5'
+      }`}
+      {...hoverProps}
     >
       <CardHeader className="p-0 relative">
         <Link 

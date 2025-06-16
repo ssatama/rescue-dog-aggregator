@@ -1,11 +1,13 @@
 "use client";
 import Link from 'next/link';
 import { useState } from 'react';
-import { usePathname } from 'next/navigation'; // Import usePathname
+import { usePathname } from 'next/navigation';
+import { useFadeInAnimation } from '../../utils/animations';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const pathname = usePathname(); // Get the current path
+  const pathname = usePathname();
+  const { ref: headerRef, isVisible } = useFadeInAnimation({ delay: 100 });
 
   // Helper function to determine link classes
   const getLinkClasses = (href) => {
@@ -32,12 +34,20 @@ export default function Header() {
         Skip to main content
       </a>
       
-      <header className="bg-white shadow sticky top-0 z-50"> {/* Make header sticky */}
+      <header 
+        ref={headerRef}
+        className={`bg-white shadow-blue-md sticky top-0 z-50 transition-all duration-300 ${
+          isVisible ? 'animate-fade-in' : 'opacity-0'
+        }`}
+      >
         <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4" aria-label="Main navigation">
         <div className="flex justify-between items-center">
           {/* Logo/Home link */}
           <div>
-            <Link href="/" className="text-section font-extrabold text-red-600 hover:text-red-700">
+            <Link 
+              href="/" 
+              className="text-section font-extrabold text-red-600 hover:text-red-700 transition-colors duration-200 hover:scale-105 transform"
+            >
               Rescue Dog Aggregator
             </Link>
           </div>
