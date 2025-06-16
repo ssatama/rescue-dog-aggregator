@@ -43,7 +43,7 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
   return (
     <div
       data-testid="related-dog-card"
-      className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer group"
+      className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}
       tabIndex={0}
@@ -59,7 +59,7 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
           <LazyImage
             src={getThumbnailImage(dog.primary_image_url)}
             alt={dog.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             onError={(e) => handleImageError(e, dog.primary_image_url)}
           />
         ) : (
@@ -74,7 +74,7 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
         {/* Dog Name */}
         <h3 
           data-testid="related-dog-name"
-          className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors duration-200 mb-1"
+          className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors duration-300 mb-1"
         >
           {sanitizeText(dog.name)}
         </h3>

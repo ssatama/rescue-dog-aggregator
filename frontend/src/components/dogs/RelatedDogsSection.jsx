@@ -154,7 +154,7 @@ const RelatedDogsSection = memo(function RelatedDogsSection({ organizationId, cu
           <div className="text-center">
             <Link 
               href={`/dogs?organization_id=${organizationId}`}
-              className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
+              className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-300"
             >
               View all available dogs →
             </Link>
@@ -173,7 +173,7 @@ const RelatedDogsSection = memo(function RelatedDogsSection({ organizationId, cu
           </p>
           <Link 
             href={`/dogs?organization_id=${organizationId}`}
-            className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
+            className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-300"
           >
             View all available dogs →
           </Link>

@@ -89,7 +89,7 @@ describe('Button Component', () => {
       const button = screen.getByRole('button', { name: 'Focus Test' });
       
       expect(button).toHaveClass('focus-visible:outline-none');
-      expect(button).toHaveClass('focus-visible:ring-1');
+      expect(button).toHaveClass('focus-visible:ring-2');
     });
 
     it('should handle disabled state properly', () => {

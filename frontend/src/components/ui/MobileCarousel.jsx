@@ -146,7 +146,7 @@ const MobileCarousel = ({ children, onSlideChange, testId = "dog-carousel" }) =>
               key={index}
               data-testid={isActive ? 'scroll-indicator-active' : 'scroll-indicator'}
               data-index={index}
-              className={`w-12 h-12 rounded-full border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${
+              className={`w-12 h-12 rounded-full border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${
                 isActive 
                   ? 'bg-orange-600 border-orange-600' 
                   : 'bg-white border-gray-300 hover:border-orange-400'

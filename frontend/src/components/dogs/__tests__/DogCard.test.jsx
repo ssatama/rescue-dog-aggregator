@@ -115,7 +115,7 @@ describe('DogCard Component', () => {
       const card = screen.getByTestId('dog-card');
       expect(card).toHaveClass('transition-all');
       expect(card).toHaveClass('duration-300');
-      expect(card).toHaveClass('ease-in-out');
+      expect(card).toHaveClass('ease-out');
     });
   });
 

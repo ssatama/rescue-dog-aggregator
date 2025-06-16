@@ -46,7 +46,7 @@ export default function Header() {
           <div>
             <Link 
               href="/" 
-              className="text-section font-extrabold text-red-600 hover:text-red-700 transition-colors duration-200 hover:scale-105 transform"
+              className="text-section font-extrabold text-red-600 hover:text-red-700 transition-colors duration-300 hover:scale-105 transform"
             >
               Rescue Dog Aggregator
             </Link>

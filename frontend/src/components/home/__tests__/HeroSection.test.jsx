@@ -232,7 +232,8 @@ describe('HeroSection', () => {
       expect(dots.length).toBeGreaterThan(0);
       
       dots.forEach(dot => {
-        expect(dot).toHaveClass('animate-pulse-dot');
+        // Check for staggered animation classes (animate-pulse-dot-1, animate-pulse-dot-2, etc.)
+        expect(dot.className).toMatch(/animate-pulse-dot-\d+/);
       });
     });
 

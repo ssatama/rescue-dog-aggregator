@@ -68,7 +68,7 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
     <Card 
       ref={cardRef}
       data-testid="dog-card"
-      className={`overflow-hidden flex flex-col h-full shadow-blue-sm hover:shadow-blue-lg transition-all duration-300 ease-in-out ${
+      className={`overflow-hidden flex flex-col h-full shadow-blue-sm hover:shadow-blue-lg transition-all duration-300 ease-out hover:scale-105 hover:-translate-y-1 group ${
         isVisible ? 'animate-fade-in-up' : 'opacity-0 translate-y-5'
       }`}
       {...hoverProps}
@@ -76,14 +76,14 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
       <CardHeader className="p-0 relative">
         <Link 
           href={`/dogs/${id}`} 
-          className="block relative" 
+          className="block relative overflow-hidden" 
           aria-label={`View details for ${name.replace(/&[^;]+;/g, '')}`}
         >
           {/* Optimized Lazy Image with 4:3 aspect ratio and progressive loading */}
           <LazyImage
             src={optimizedImageUrl}
             alt={name.replace(/&[^;]+;/g, '')}
-            className="w-full aspect-[4/3] object-cover"
+            className="w-full aspect-[4/3] object-cover transition-transform duration-300 ease-out group-hover:scale-110"
             style={{ objectPosition }}
             enableProgressiveLoading={true}
             priority={priority}
@@ -126,8 +126,8 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
       </CardHeader>
 
       <CardContent className="p-4 flex flex-col flex-grow">
-        <CardTitle className="mb-1 truncate group-hover:text-blue-600">
-          <Link href={`/dogs/${id}`} className="hover:underline">
+        <CardTitle className="mb-1 truncate group-hover:text-blue-600 transition-colors duration-300">
+          <Link href={`/dogs/${id}`} className="hover:underline transition-all duration-300">
             <h3 data-testid="dog-name" className="truncate">{name}</h3>
           </Link>
         </CardTitle>
@@ -157,7 +157,7 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
            <Button
              size="sm"
              variant="outline"
-             className="w-full"
+             className="w-full transition-all duration-300 group-hover:bg-blue-50 group-hover:border-blue-500"
              style={{ minWidth: '48px', minHeight: '48px' }}
            >
              Adopt {name}

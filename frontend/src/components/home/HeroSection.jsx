@@ -43,32 +43,29 @@ export default function HeroSection() {
       {/* Map Dots Background */}
       <div data-testid="map-dots" className="absolute inset-0 pointer-events-none">
         <div className="relative w-full h-full">
-          {/* Animated dots positioned across the background */}
-          <div 
-            data-testid="map-dot"
-            className="absolute top-1/4 left-1/4 w-2 h-2 bg-orange-400 rounded-full animate-pulse-dot opacity-60"
-            style={{ animationDelay: '0s' }}
-          />
-          <div 
-            data-testid="map-dot"
-            className="absolute top-1/3 right-1/3 w-3 h-3 bg-orange-500 rounded-full animate-pulse-dot opacity-70"
-            style={{ animationDelay: '1s' }}
-          />
-          <div 
-            data-testid="map-dot"
-            className="absolute bottom-1/3 left-1/2 w-2 h-2 bg-orange-300 rounded-full animate-pulse-dot opacity-50"
-            style={{ animationDelay: '2s' }}
-          />
-          <div 
-            data-testid="map-dot"
-            className="absolute top-1/2 right-1/4 w-2.5 h-2.5 bg-orange-600 rounded-full animate-pulse-dot opacity-80"
-            style={{ animationDelay: '0.5s' }}
-          />
-          <div 
-            data-testid="map-dot"
-            className="absolute bottom-1/4 left-1/3 w-2 h-2 bg-orange-400 rounded-full animate-pulse-dot opacity-60"
-            style={{ animationDelay: '1.5s' }}
-          />
+          {/* Dynamically generated animated dots with staggered timing */}
+          {[
+            { top: '20%', left: '15%', size: 'w-2 h-2', color: 'bg-orange-400', opacity: 'opacity-60', animation: 'animate-pulse-dot-1' },
+            { top: '35%', right: '25%', size: 'w-3 h-3', color: 'bg-orange-500', opacity: 'opacity-70', animation: 'animate-pulse-dot-2' },
+            { bottom: '30%', left: '45%', size: 'w-2 h-2', color: 'bg-orange-300', opacity: 'opacity-50', animation: 'animate-pulse-dot-3' },
+            { top: '50%', right: '20%', size: 'w-2.5 h-2.5', color: 'bg-orange-600', opacity: 'opacity-80', animation: 'animate-pulse-dot-4' },
+            { bottom: '25%', left: '30%', size: 'w-2 h-2', color: 'bg-orange-400', opacity: 'opacity-60', animation: 'animate-pulse-dot-5' },
+            { top: '15%', right: '45%', size: 'w-1.5 h-1.5', color: 'bg-orange-500', opacity: 'opacity-40', animation: 'animate-pulse-dot-1' },
+            { bottom: '45%', left: '65%', size: 'w-2 h-2', color: 'bg-orange-300', opacity: 'opacity-55', animation: 'animate-pulse-dot-2' },
+            { top: '65%', right: '35%', size: 'w-2.5 h-2.5', color: 'bg-orange-500', opacity: 'opacity-65', animation: 'animate-pulse-dot-3' }
+          ].map((dot, index) => (
+            <div 
+              key={index}
+              data-testid="map-dot"
+              className={`absolute ${dot.size} ${dot.color} rounded-full ${dot.animation} ${dot.opacity} transition-transform duration-300 hover:scale-110`}
+              style={{
+                ...(dot.top && { top: dot.top }),
+                ...(dot.bottom && { bottom: dot.bottom }),
+                ...(dot.left && { left: dot.left }),
+                ...(dot.right && { right: dot.right })
+              }}
+            />
+          ))}
         </div>
       </div>
 
