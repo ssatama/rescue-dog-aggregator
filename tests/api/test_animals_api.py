@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -214,3 +214,122 @@ class TestAnimalsAPI:
         assert "id" in org
         assert "name" in org
         assert "social_media" in org and isinstance(org["social_media"], dict)
+
+    def test_get_animals_with_curation_type_recent(self, client: TestClient):
+        """Test GET /api/animals with curation_type=recent."""
+        response = client.get("/api/animals?curation_type=recent&limit=10")
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        
+        # If we have data, check that it's ordered by created_at DESC
+        if len(data) >= 2:
+            for i in range(len(data) - 1):
+                # Parse ISO datetime strings for comparison
+                created_at_current = datetime.fromisoformat(data[i]["created_at"].replace("Z", "+00:00"))
+                created_at_next = datetime.fromisoformat(data[i + 1]["created_at"].replace("Z", "+00:00"))
+                assert created_at_current >= created_at_next, "Recent dogs should be ordered by created_at DESC"
+        
+        # Check that all dogs are from last 7 days (if any returned)
+        if len(data) > 0:
+            from datetime import timedelta
+            seven_days_ago = datetime.now() - timedelta(days=7)
+            for dog in data:
+                created_at = datetime.fromisoformat(dog["created_at"].replace("Z", "+00:00"))
+                # Allow some timezone flexibility
+                assert created_at.replace(tzinfo=None) >= seven_days_ago.replace(tzinfo=None) - timedelta(hours=24), \
+                    f"Dog {dog['name']} created at {created_at} should be within last 7 days"
+
+    def test_get_animals_with_curation_type_diverse(self, client: TestClient):
+        """Test GET /api/animals with curation_type=diverse."""
+        response = client.get("/api/animals?curation_type=diverse&limit=10")
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        
+        # Check that we have at most one dog per organization
+        org_ids = []
+        for dog in data:
+            if dog.get("organization_id"):
+                assert dog["organization_id"] not in org_ids, \
+                    f"Organization {dog['organization_id']} appears more than once in diverse results"
+                org_ids.append(dog["organization_id"])
+
+    def test_get_animals_with_curation_type_random(self, client: TestClient):
+        """Test GET /api/animals with curation_type=random (default behavior)."""
+        # Test explicit random
+        response = client.get("/api/animals?curation_type=random&limit=5")
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        
+        # Test that default behavior (no curation_type) still works
+        response_default = client.get("/api/animals?limit=5")
+        assert response_default.status_code == 200
+        data_default = response_default.json()
+        assert isinstance(data_default, list)
+
+    def test_get_animals_curation_with_filters(self, client: TestClient):
+        """Test that curation types work with other filters."""
+        # Test recent + size filter
+        response = client.get("/api/animals?curation_type=recent&size=Medium&limit=5")
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        # All returned dogs should be Medium size
+        for dog in data:
+            if dog.get("size"):
+                assert dog["size"] == "Medium"
+        
+        # Test diverse + breed filter
+        response = client.get("/api/animals?curation_type=diverse&standardized_breed=Labrador%20Retriever&limit=5")
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+
+    def test_get_animals_invalid_curation_type(self, client: TestClient):
+        """Test that invalid curation_type is handled gracefully."""
+        response = client.get("/api/animals?curation_type=invalid&limit=5")
+        # Should either return 400 or fall back to default behavior
+        assert response.status_code in [200, 400]
+        if response.status_code == 200:
+            # Falls back to default behavior
+            data = response.json()
+            assert isinstance(data, list)
+
+    def test_statistics_endpoint(self, client: TestClient):
+        """Test GET /api/statistics endpoint."""
+        response = client.get("/api/animals/statistics")
+        assert response.status_code == 200
+        data = response.json()
+        
+        # Check structure
+        assert "total_dogs" in data
+        assert "total_organizations" in data
+        assert "countries" in data
+        assert "organizations" in data
+        
+        # Check data types
+        assert isinstance(data["total_dogs"], int)
+        assert isinstance(data["total_organizations"], int)
+        assert isinstance(data["countries"], list)
+        assert isinstance(data["organizations"], list)
+        
+        # Check countries structure
+        if len(data["countries"]) > 0:
+            country = data["countries"][0]
+            assert "country" in country
+            assert "count" in country
+            assert isinstance(country["count"], int)
+        
+        # Check organizations structure
+        if len(data["organizations"]) > 0:
+            org = data["organizations"][0]
+            assert "id" in org
+            assert "name" in org
+            assert "dog_count" in org
+            assert isinstance(org["dog_count"], int)
+        
+        # Verify counts are non-negative
+        assert data["total_dogs"] >= 0
+        assert data["total_organizations"] >= 0

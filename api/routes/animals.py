@@ -68,6 +68,10 @@ async def get_animals(
         "high,medium",
         description="Filter by availability confidence: 'high', 'medium', 'low', or 'all'",
     ),
+    curation_type: Optional[str] = Query(
+        "random",
+        description="Curation type: 'recent' (last 7 days), 'diverse' (one per org), or 'random' (default)",
+    ),
     cursor: RealDictCursor = Depends(get_db_cursor),
 ):
     """Get all animals with filtering, pagination, and location support."""
@@ -197,9 +201,41 @@ async def get_animals(
             params.append(available_to_region)
         # --- END NEW ---
 
-        # Construct the final query
+        # Construct the where clause
         where_clause = " AND ".join(conditions)
-        query = f"{query_base}{joins} WHERE {where_clause} ORDER BY a.last_scraped_at DESC, a.id DESC LIMIT %s OFFSET %s"
+        
+        # Handle different curation types
+        if curation_type == "recent":
+            # Get dogs created in the last 7 days, ordered by created_at DESC
+            conditions.append("a.created_at >= NOW() - INTERVAL '7 days'")
+            where_clause = " AND ".join(conditions)
+            query = f"{query_base}{joins} WHERE {where_clause} ORDER BY a.created_at DESC, a.id DESC LIMIT %s OFFSET %s"
+        elif curation_type == "diverse":
+            # Get one dog per organization using DISTINCT ON
+            # Note: DISTINCT ON requires the ORDER BY to start with the distinct columns
+            query = f"""
+                SELECT DISTINCT ON (a.organization_id) 
+                       a.id, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
+                       a.age_text, a.age_min_months, a.age_max_months, a.sex, a.size, a.standardized_size,
+                       a.status, a.primary_image_url, a.adoption_url, a.organization_id, a.external_id,
+                       a.language, a.properties, a.created_at, a.updated_at, a.last_scraped_at,
+                       a.availability_confidence, a.last_seen_at, a.consecutive_scrapes_missing,
+                       o.name as org_name,
+                       o.city as org_city,
+                       o.country as org_country,
+                       o.website_url as org_website_url,
+                       o.social_media as org_social_media
+                FROM animals a
+                LEFT JOIN organizations o ON a.organization_id = o.id
+                {joins}
+                WHERE {where_clause}
+                ORDER BY a.organization_id, RANDOM()
+                LIMIT %s OFFSET %s
+            """
+        else:
+            # Default "random" behavior - order by last_scraped_at DESC
+            query = f"{query_base}{joins} WHERE {where_clause} ORDER BY a.last_scraped_at DESC, a.id DESC LIMIT %s OFFSET %s"
+        
         params.extend([limit, offset])
 
         logger.debug(f"Executing query: {query} with params: {params}")
@@ -469,6 +505,90 @@ async def get_distinct_available_regions(
 
 
 # --- END NEW ---
+
+
+# --- Statistics Endpoint ---
+@router.get("/statistics", summary="Get aggregated statistics")
+async def get_statistics(
+    cursor: RealDictCursor = Depends(get_db_cursor),
+):
+    """Get aggregated statistics about available dogs and organizations."""
+    try:
+        stats = {}
+        
+        # Get total available dogs count
+        cursor.execute(
+            """
+            SELECT COUNT(*) as total
+            FROM animals
+            WHERE status = 'available'
+              AND availability_confidence IN ('high', 'medium')
+            """
+        )
+        stats["total_dogs"] = cursor.fetchone()["total"]
+        
+        # Get total active organizations count
+        cursor.execute(
+            """
+            SELECT COUNT(*) as total
+            FROM organizations
+            WHERE active = TRUE
+            """
+        )
+        stats["total_organizations"] = cursor.fetchone()["total"]
+        
+        # Get countries with dog counts
+        cursor.execute(
+            """
+            SELECT o.country, COUNT(a.id) as count
+            FROM animals a
+            JOIN organizations o ON a.organization_id = o.id
+            WHERE a.status = 'available' 
+              AND a.availability_confidence IN ('high', 'medium')
+              AND o.active = TRUE
+              AND o.country IS NOT NULL
+            GROUP BY o.country
+            ORDER BY count DESC, o.country ASC
+            """
+        )
+        stats["countries"] = [
+            {"country": row["country"], "count": row["count"]}
+            for row in cursor.fetchall()
+        ]
+        
+        # Get organizations with dog counts
+        cursor.execute(
+            """
+            SELECT o.id, o.name, COUNT(a.id) as dog_count
+            FROM organizations o
+            LEFT JOIN animals a ON o.id = a.organization_id 
+                AND a.status = 'available' 
+                AND a.availability_confidence IN ('high', 'medium')
+            WHERE o.active = TRUE
+            GROUP BY o.id, o.name
+            HAVING COUNT(a.id) > 0
+            ORDER BY dog_count DESC, o.name ASC
+            """
+        )
+        stats["organizations"] = [
+            {
+                "id": row["id"],
+                "name": row["name"],
+                "dog_count": row["dog_count"]
+            }
+            for row in cursor.fetchall()
+        ]
+        
+        return stats
+        
+    except psycopg2.Error as db_err:
+        logger.error(f"Database error in get_statistics: {db_err}")
+        raise HTTPException(
+            status_code=500, detail=f"Database query error: {str(db_err)}")
+    except Exception as e:
+        logger.exception(f"Unexpected error in get_statistics: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 # --- Random Animal Endpoint ---
