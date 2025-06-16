@@ -4,14 +4,17 @@ Quick reference for Claude Code when working with the Rescue Dog Aggregator plat
 
 ## 🎯 Project Overview
 
-**What**: Production-ready platform aggregating rescue dogs from multiple organizations, standardizing data, and presenting it through a modern web interface.
+**What**: Production-ready platform aggregating rescue dogs from multiple organizations, standardizing data, and presenting it through a modern web interface with animated statistics and enhanced user engagement.
 
 **Tech Stack**: 
 - Backend: Python/FastAPI, PostgreSQL, Cloudinary
 - Frontend: Next.js 15, React, Tailwind CSS
 - Scraping: YAML-driven configuration system
 
-**Key Achievement**: Resolved critical navigation-based hero image loading issue with hydration recovery mechanism.
+**Key Achievements**: 
+- ✅ Resolved critical navigation-based hero image loading issue with hydration recovery mechanism
+- ✅ Implemented animated Hero Section with real-time statistics and engaging visual design
+- ✅ Added backend API auto-curation with diverse, recent, and random selection algorithms
 
 ## 🚀 Essential Commands
 
@@ -114,6 +117,52 @@ python database/check_db_status.py                            # Health check
 - Limited fields: name, breed, age, sex, size (sometimes), description, organization
 - Single image per dog (no galleries)
 - No location tracking or geolocation features
+
+### 🎨 Hero Section & Animated Statistics
+
+**✅ NEW**: Engaging home page with animated counters and real-time statistics
+
+**Key Components**:
+- `frontend/src/components/home/HeroSection.jsx` - Main hero section with statistics display
+- `frontend/src/components/ui/AnimatedCounter.jsx` - Reusable counter with scroll-triggered animation
+- `/api/animals/statistics` - Backend endpoint providing real-time aggregated data
+
+**Features**:
+- **Animated counters** that trigger when scrolled into view using Intersection Observer
+- **Real-time statistics** fetching total dogs, organizations, and countries 
+- **Responsive design** with mobile-optimized typography and layout
+- **Accessibility compliance** with ARIA labels and reduced motion support
+- **Performance optimized** with requestAnimationFrame for 60fps animations
+- **Visual effects** including peach/cream gradient background and animated map dots
+
+**Test with**:
+```bash
+cd frontend && npm test -- --testPathPattern="HeroSection"
+cd frontend && npm test -- --testPathPattern="AnimatedCounter"
+```
+
+### 🔄 API Auto-Curation System
+
+**✅ NEW**: Enhanced `/api/animals` endpoint with intelligent curation algorithms
+
+**Curation Types**:
+- `curation_type=random` (default) - Randomized selection for variety
+- `curation_type=recent` - Animals added in last 7 days, newest first
+- `curation_type=diverse` - One animal per organization, randomly selected
+
+**Usage Examples**:
+```bash
+# Get diverse selection (one per organization)
+curl "http://localhost:8000/api/animals?curation_type=diverse&limit=20"
+
+# Get recent additions (last 7 days)
+curl "http://localhost:8000/api/animals?curation_type=recent&limit=10"
+
+# Get aggregated statistics
+curl "http://localhost:8000/api/animals/statistics"
+```
+
+**Backend Implementation**: Uses PostgreSQL `DISTINCT ON` for efficient diverse selection and date filtering for recent curation.
 
 ### Environment Variables
 ```bash

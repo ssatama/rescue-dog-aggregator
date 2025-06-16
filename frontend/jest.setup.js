@@ -32,6 +32,33 @@ if (typeof window !== 'undefined') {
       disconnect: jest.fn(),
     }));
   }
+
+  // Mock matchMedia for responsive design tests
+  if (!window.matchMedia) {
+    window.matchMedia = jest.fn().mockImplementation(query => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    }));
+  }
+
+  // Mock requestAnimationFrame and cancelAnimationFrame for animation tests
+  if (!global.requestAnimationFrame) {
+    global.requestAnimationFrame = jest.fn((cb) => {
+      return setTimeout(cb, 16); // 60fps = 16ms
+    });
+  }
+  
+  if (!global.cancelAnimationFrame) {
+    global.cancelAnimationFrame = jest.fn((id) => {
+      clearTimeout(id);
+    });
+  }
 }
 
 // Mock Next.js router

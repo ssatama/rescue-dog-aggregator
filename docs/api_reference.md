@@ -29,6 +29,7 @@ Retrieve a paginated list of animals with comprehensive filtering options.
 |-----------|------|---------|-------------|
 | `limit` | integer | 20 | Number of results (1-100) |
 | `offset` | integer | 0 | Pagination offset |
+| `curation_type` | string | "random" | Curation algorithm: `random`, `recent`, or `diverse` |
 | `status` | string | "available" | Animal status: `available`, `unavailable`, or `all` |
 | `availability_confidence` | string | "high,medium" | Confidence levels: `high`, `medium`, `low`, `all`, or comma-separated combinations |
 | `search` | string | - | Search in name, breed, or standardized breed |
@@ -44,11 +45,25 @@ Retrieve a paginated list of animals with comprehensive filtering options.
 | `available_to_country` | string | - | Filter by adoption availability country |
 | `available_to_region` | string | - | Filter by adoption availability region |
 
+**Curation Types**:
+
+The `curation_type` parameter controls how results are selected and ordered:
+
+- **`random`** (default): Randomized selection for variety
+- **`recent`**: Animals added in the last 7 days, ordered by newest first
+- **`diverse`**: One animal per organization, randomly selected
+
 **Example Requests**:
 
 ```bash
-# Default - only available animals with good confidence
+# Default - random curation with good confidence
 curl "https://api.example.com/api/animals"
+
+# Recent animals (last 7 days)
+curl "https://api.example.com/api/animals?curation_type=recent&limit=10"
+
+# Diverse selection (one per organization)
+curl "https://api.example.com/api/animals?curation_type=diverse&limit=20"
 
 # Show all animals regardless of status or confidence  
 curl "https://api.example.com/api/animals?status=all&availability_confidence=all"
@@ -137,6 +152,51 @@ Get random animals for featured sections.
 **Example**:
 ```bash
 curl "https://api.example.com/api/animals/random?limit=5"
+```
+
+#### `GET /api/animals/statistics`
+
+Get aggregated statistics about available animals and organizations.
+
+**Response Format**:
+```json
+{
+  "total_dogs": 1234,
+  "total_organizations": 45,
+  "countries": [
+    {
+      "country": "Turkey",
+      "count": 800
+    },
+    {
+      "country": "Spain", 
+      "count": 434
+    }
+  ],
+  "organizations": [
+    {
+      "id": 1,
+      "name": "Example Rescue Organization",
+      "dog_count": 123
+    },
+    {
+      "id": 2,
+      "name": "Another Pet Rescue",
+      "dog_count": 89
+    }
+  ]
+}
+```
+
+**Fields Description**:
+- `total_dogs`: Count of available animals with high/medium confidence
+- `total_organizations`: Count of organizations with available animals
+- `countries`: Array of countries with animal counts
+- `organizations`: Array of organizations with their available animal counts
+
+**Example**:
+```bash
+curl "https://api.example.com/api/animals/statistics"
 ```
 
 ### Animals Metadata

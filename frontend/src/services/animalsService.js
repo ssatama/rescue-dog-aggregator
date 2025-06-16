@@ -136,3 +136,12 @@ export async function getAvailableRegions(country) {
 }
 
 // --- END NEW ---
+
+/**
+ * Fetches aggregated statistics about available dogs and organizations.
+ * @returns {Promise<object>} - Promise resolving to statistics object with total_dogs, total_organizations, countries, and organizations.
+ */
+export async function getStatistics() {
+  logger.log("Fetching statistics");
+  return get('/api/animals/statistics');
+}

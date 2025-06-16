@@ -12,6 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getOrganizations } from '../services/organizationsService';
 import { reportError } from '../utils/logger';
 import { preloadImages } from '../utils/imageUtils';
+import HeroSection from '../components/home/HeroSection';
 
 export default function HomeClient() {
   const [featuredDogs, setFeaturedDogs] = useState([]);
@@ -57,20 +58,10 @@ export default function HomeClient() {
 
   return (
     <Layout>
+      {/* Hero Section with Statistics */}
+      <HeroSection />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center my-12 md:my-20">
-          <h1 className="text-hero text-gray-900 mb-6">
-            Find Your Perfect Rescue Companion
-          </h1>
-          <p className="text-body text-gray-600 mb-8 max-w-3xl mx-auto">
-            Browse available dogs from multiple rescue organizations, all in one place. Give a loving home to a dog in need.
-          </p>
-          <Link href="/dogs" passHref>
-            <Button size="lg">
-              Browse All Dogs
-            </Button>
-          </Link>
-        </div>
 
         <div className="my-12 md:my-20">
           <h2 className="text-section text-center text-gray-900 mb-10">
