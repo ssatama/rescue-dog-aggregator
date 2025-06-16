@@ -2,6 +2,7 @@
  * LazyImage component with progressive loading and optimization
  */
 import React, { useState, useRef, useEffect } from 'react';
+import ImagePlaceholder from './ImagePlaceholder';
 
 export const LazyImage = ({ 
   src, 

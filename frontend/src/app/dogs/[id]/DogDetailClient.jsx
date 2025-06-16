@@ -299,7 +299,7 @@ export default function DogDetailClient({ params = {} }) {
             </ScrollAnimationWrapper>
 
             <ScrollAnimationWrapper delay={100}>
-              <Link href="/dogs" passHref>
+              <Link href="/dogs">
                 <Button variant="link" className="inline-flex items-center text-blue-500 hover:text-blue-700 mb-6 p-2 h-auto transition-all duration-300 hover:bg-blue-50 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                   ← Back to all dogs
                 </Button>

@@ -213,6 +213,32 @@
     animation: count-up 0.5s ease-out;
   }
 
+  /* Mobile carousel styles */
+  .mobile-carousel-container {
+    width: 100%;
+  }
+
+  .dog-carousel {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  .dog-carousel::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+
+  .mobile-swipe {
+    scroll-snap-type: x mandatory;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    will-change: transform;
+    touch-action: pan-x;
+  }
+
+  .mobile-swipe > div > div {
+    scroll-snap-align: start;
+  }
+
   /* Backdrop blur utilities for better browser support */
   .backdrop-blur-sm {
     backdrop-filter: blur(4px);

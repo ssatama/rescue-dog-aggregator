@@ -253,7 +253,7 @@ describe('HeroSection', () => {
 
       render(<HeroSection />);
 
-      const primaryCta = screen.getByTestId('primary-cta');
+      const primaryCta = screen.getByTestId('hero-primary-cta');
       expect(primaryCta).toBeInTheDocument();
       expect(primaryCta).toHaveTextContent('Find Your New Best Friend');
       
@@ -261,7 +261,7 @@ describe('HeroSection', () => {
       const linkElement = primaryCta.closest('a');
       expect(linkElement).toHaveAttribute('href', '/dogs');
 
-      const secondaryCta = screen.getByTestId('secondary-cta');
+      const secondaryCta = screen.getByTestId('hero-secondary-cta');
       expect(secondaryCta).toBeInTheDocument();
       expect(secondaryCta).toHaveTextContent('About Our Mission');
     });
@@ -394,7 +394,7 @@ describe('HeroSection', () => {
       await waitFor(() => {
         expect(screen.getByTestId('statistics-content')).toBeInTheDocument();
         expect(screen.getByTestId('map-dots')).toBeInTheDocument();
-        expect(screen.getByTestId('primary-cta')).toBeInTheDocument();
+        expect(screen.getByTestId('hero-primary-cta')).toBeInTheDocument();
       });
     });
 

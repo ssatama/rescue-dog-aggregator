@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import DogCard from '../dogs/DogCard';
 import DogCardErrorBoundary from '../error/DogCardErrorBoundary';
@@ -10,6 +10,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getAnimalsByCuration } from '../../services/animalsService';
 import { reportError } from '../../utils/logger';
 import { preloadImages } from '../../utils/imageUtils';
+import { isSlowConnection, getNetworkInfo } from '../../utils/networkUtils';
+
+// Dynamically import MobileCarousel for code splitting
+const MobileCarousel = React.lazy(() => import('../ui/MobileCarousel'));
 
 const DogSection = React.memo(function DogSection({ 
   title, 
@@ -20,13 +24,37 @@ const DogSection = React.memo(function DogSection({
   const [dogs, setDogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isSlowNet, setIsSlowNet] = useState(false);
+  const [loadStartTime, setLoadStartTime] = useState(null);
 
   const fetchDogs = async () => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Performance monitoring
+      const startTime = performance.now();
+      setLoadStartTime(startTime);
+      if (typeof performance !== 'undefined' && performance.mark) {
+        performance.mark('dog-section-start');
+      }
+      
       const data = await getAnimalsByCuration(curationType, 4);
       setDogs(data);
+      
+      // Performance monitoring
+      const endTime = performance.now();
+      const loadTime = endTime - startTime;
+      
+      if (typeof performance !== 'undefined' && performance.mark && performance.measure) {
+        performance.mark('dog-section-end');
+        performance.measure('dog-section-load-time', 'dog-section-start', 'dog-section-end');
+      }
+      
+      // Report slow loading times
+      if (loadTime > 3000 && process.env.NODE_ENV === 'development') console.warn(`Slow loading detected: Dog section took ${loadTime.toFixed(0)}ms to load`);
       
       if (data && data.length > 0) {
         const imageUrls = data.map(dog => dog.primary_image_url).filter(Boolean);
@@ -40,9 +68,52 @@ const DogSection = React.memo(function DogSection({
     }
   };
 
+  // Mobile and network detection
+  useEffect(() => {
+    const checkMobile = () => {
+      const isMobileDevice = window.matchMedia('(max-width: 768px)').matches;
+      setIsMobile(isMobileDevice);
+    };
+
+    const checkNetwork = () => {
+      const slowConnection = isSlowConnection();
+      setIsSlowNet(slowConnection);
+    };
+
+    checkMobile();
+    checkNetwork();
+    
+    window.addEventListener('resize', checkMobile);
+    
+    // Listen for network changes if available
+    if (typeof navigator !== 'undefined' && navigator.connection && navigator.connection.addEventListener) {
+      try {
+        navigator.connection.addEventListener('change', checkNetwork);
+      } catch (error) {
+        // Silently handle environments where addEventListener is not available
+      }
+    }
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      if (typeof navigator !== 'undefined' && navigator.connection && navigator.connection.removeEventListener) {
+        try {
+          navigator.connection.removeEventListener('change', checkNetwork);
+        } catch (error) {
+          // Silently handle cleanup errors
+        }
+      }
+    };
+  }, []);
+
   useEffect(() => {
     fetchDogs();
   }, [curationType]);
+
+  // Handle slide change
+  const handleSlideChange = (slideIndex) => {
+    setCurrentSlide(slideIndex);
+  };
 
   const sectionId = `${curationType}-section`;
   const titleId = `${curationType}-title`;
@@ -77,7 +148,16 @@ const DogSection = React.memo(function DogSection({
         </div>
 
         {/* Loading State */}
-        {loading && <Loading data-testid="loading" />}
+        {loading && (
+          <div>
+            <Loading data-testid="loading" />
+            {isSlowNet && (
+              <p className="text-center text-sm text-gray-500 mt-2">
+                Loading on slow network, please wait...
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Error State */}
         {error && !loading && (
@@ -97,17 +177,47 @@ const DogSection = React.memo(function DogSection({
           </Alert>
         )}
 
-        {/* Dogs Grid */}
+
+        {/* Dogs Display - Carousel on Mobile, Grid on Desktop */}
         {!loading && !error && dogs.length > 0 && (
-          <div 
-            data-testid="dog-grid"
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-          >
-            {dogs.map((dog, index) => (
-              <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
-                <DogCard dog={dog} priority={index === 0} />
-              </DogCardErrorBoundary>
-            ))}
+          <div data-testid="dog-section">
+            {isMobile ? (
+              <Suspense fallback={
+                <div data-testid="loading-skeleton" className="animate-pulse">
+                  <div className="flex space-x-4 p-1">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="flex-shrink-0 w-72 md:w-80">
+                        <div className="bg-gray-200 rounded-lg h-64 mb-4"></div>
+                        <div className="bg-gray-200 rounded h-4 mb-2"></div>
+                        <div className="bg-gray-200 rounded h-3 w-3/4"></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              }>
+                <MobileCarousel 
+                  onSlideChange={handleSlideChange}
+                  testId="dog-carousel"
+                >
+                  {dogs.map((dog, index) => (
+                    <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
+                      <DogCard dog={dog} priority={index === 0} />
+                    </DogCardErrorBoundary>
+                  ))}
+                </MobileCarousel>
+              </Suspense>
+            ) : (
+              <div 
+                data-testid="dog-grid"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+              >
+                {dogs.map((dog, index) => (
+                  <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
+                    <DogCard dog={dog} priority={index === 0} />
+                  </DogCardErrorBoundary>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

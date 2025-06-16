@@ -100,18 +100,20 @@ export default function HeroSection() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Link href="/dogs">
                 <Button 
-                  data-testid="primary-cta"
+                  data-testid="hero-primary-cta"
                   size="lg" 
                   className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white px-8 py-3"
+                  style={{ minWidth: '48px', minHeight: '48px' }}
                 >
                   Find Your New Best Friend
                 </Button>
               </Link>
               <Button 
-                data-testid="secondary-cta"
+                data-testid="hero-secondary-cta"
                 variant="outline" 
                 size="lg"
                 className="w-full sm:w-auto border-orange-600 text-orange-600 hover:bg-orange-50 px-8 py-3"
+                style={{ minWidth: '48px', minHeight: '48px' }}
               >
                 About Our Mission
               </Button>

@@ -153,11 +153,12 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
       </CardContent>
 
       <CardFooter className="p-4 pt-0">
-         <Link href={`/dogs/${id}`} passHref className="w-full">
+         <Link href={`/dogs/${id}`} className="w-full">
            <Button
              size="sm"
              variant="outline"
              className="w-full"
+             style={{ minWidth: '48px', minHeight: '48px' }}
            >
              Adopt {name}
            </Button>

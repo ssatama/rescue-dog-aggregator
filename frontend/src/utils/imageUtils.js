@@ -46,6 +46,30 @@ export function isCloudinaryUrl(url) {
 }
 
 /**
+ * Get mobile-optimized image URL with network-aware quality
+ * @param {string} url - Original image URL
+ * @returns {string} Mobile-optimized image URL
+ */
+export function getMobileOptimizedImage(url) {
+  if (!url || !isCloudinaryUrl(url)) {
+    return url || PLACEHOLDER_IMAGE;
+  }
+
+  if (!USE_CLOUDINARY || !validateCloudinaryConfig()) {
+    return url;
+  }
+
+  try {
+    const quality = isSlowConnection() ? 'q_50' : 'q_70';
+    const transformation = `w_320,h_240,c_fill,${quality},f_auto`;
+    return url.replace('/upload/', `/upload/${transformation}/`);
+  } catch (error) {
+    logger.warn('Failed to create mobile optimized image URL', { url, error: error.message });
+    return url;
+  }
+}
+
+/**
  * Get optimized image URL for home page featured dog cards (4:3 aspect ratio)
  */
 export function getHomeCardImage(originalUrl) {
@@ -583,7 +607,11 @@ export function getDetailHeroImageWithPosition(originalUrl, bustCache = false) {
 export function preloadImages(imageUrls, context = 'card') {
   if (!Array.isArray(imageUrls)) return;
   
-  imageUrls.forEach(url => {
+  // Limit concurrent preloads on mobile for memory optimization
+  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
+  const maxPreload = isMobile ? Math.min(imageUrls.length, 5) : imageUrls.length;
+  
+  imageUrls.slice(0, maxPreload).forEach(url => {
     if (!url || typeof url !== 'string') return;
     
     try {
@@ -591,7 +619,7 @@ export function preloadImages(imageUrls, context = 'card') {
       link.rel = 'preload';
       link.as = 'image';
       
-      // Choose appropriate optimization based on context
+      // Choose appropriate optimization based on context and device
       switch (context) {
         case 'hero':
           link.href = getDetailHeroImage(url);
@@ -600,7 +628,7 @@ export function preloadImages(imageUrls, context = 'card') {
           link.href = getThumbnailImage(url);
           break;
         default:
-          link.href = getCatalogCardImage(url);
+          link.href = isMobile ? getMobileOptimizedImage(url) : getCatalogCardImage(url);
       }
       
       // Add responsive image attributes for better performance
