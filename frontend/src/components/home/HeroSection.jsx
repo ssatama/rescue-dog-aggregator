@@ -108,15 +108,17 @@ export default function HeroSection() {
                   Find Your New Best Friend
                 </Button>
               </Link>
-              <Button 
-                data-testid="hero-secondary-cta"
-                variant="outline" 
-                size="lg"
-                className="w-full sm:w-auto border-orange-600 text-orange-600 hover:bg-orange-50 px-8 py-3"
-                style={{ minWidth: '48px', minHeight: '48px' }}
-              >
-                About Our Mission
-              </Button>
+              <Link href="/about">
+                <Button 
+                  data-testid="hero-secondary-cta"
+                  variant="outline" 
+                  size="lg"
+                  className="w-full sm:w-auto border-orange-600 text-orange-600 hover:bg-orange-50 px-8 py-3"
+                  style={{ minWidth: '48px', minHeight: '48px' }}
+                >
+                  About Our Mission
+                </Button>
+              </Link>
             </div>
           </div>
 

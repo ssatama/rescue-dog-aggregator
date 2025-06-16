@@ -398,6 +398,24 @@ describe('HeroSection', () => {
       });
     });
 
+    test('should have correct CTA button links', async () => {
+      getStatistics.mockResolvedValue(mockStatistics);
+
+      render(<HeroSection />);
+
+      await waitFor(() => {
+        // Primary CTA should link to dogs page
+        const primaryCTA = screen.getByTestId('hero-primary-cta');
+        expect(primaryCTA.closest('a')).toHaveAttribute('href', '/dogs');
+        expect(primaryCTA).toHaveTextContent('Find Your New Best Friend');
+
+        // Secondary CTA should link to about page
+        const secondaryCTA = screen.getByTestId('hero-secondary-cta');
+        expect(secondaryCTA.closest('a')).toHaveAttribute('href', '/about');
+        expect(secondaryCTA).toHaveTextContent('About Our Mission');
+      });
+    });
+
     test('should pass correct props to AnimatedCounter components', async () => {
       getStatistics.mockResolvedValue(mockStatistics);
 
