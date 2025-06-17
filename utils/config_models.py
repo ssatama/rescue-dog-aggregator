@@ -55,38 +55,67 @@ class OrganizationMetadata(BaseModel):
     contact: ContactInfo = ContactInfo()
     social_media: SocialMedia = SocialMedia()
     location: Location = Location()
-    service_regions: Union[List[str],
-                           List[ServiceRegion]] = []  # Allow both formats
+    service_regions: List[str] = []  # Simplified to just country codes
+    ships_to: List[str] = []  # Countries where they ship animals
+    established_year: Optional[int] = None
+    logo_url: Optional[str] = None
 
     @field_validator("service_regions")
     @classmethod
     def validate_service_regions(cls, v):
-        """Validate and normalize service regions."""
+        """Validate service regions are valid country codes."""
         if not v:
             return []
 
-        # If it's already a list of strings, return as is
-        if isinstance(v[0], str):
-            return v
-
-        # If it's a list of ServiceRegion objects or dicts, flatten to strings
-        flattened = []
+        validated = []
         for region in v:
-            if isinstance(region, dict):
-                # Convert dict to ServiceRegion for validation
-                service_region = ServiceRegion(**region)
-                # Add all regions with country prefix
-                for reg in service_region.regions:
-                    flattened.append(f"{service_region.country}: {reg}")
-            elif hasattr(region, "country") and hasattr(region, "regions"):
-                # ServiceRegion object
-                for reg in region.regions:
-                    flattened.append(f"{region.country}: {reg}")
+            if isinstance(region, str):
+                # Ensure it's a valid 2-character country code
+                region = region.strip().upper()
+                if len(region) == 2 and region.isalpha():
+                    validated.append(region)
+                else:
+                    raise ValueError(f"Invalid country code in service_regions: {region}")
             else:
-                # Assume it's a string
-                flattened.append(str(region))
+                raise ValueError(f"service_regions must contain only country codes, got: {type(region)}")
 
-        return flattened
+        return validated
+
+    @field_validator("ships_to")
+    @classmethod
+    def validate_ships_to(cls, v):
+        """Validate ships_to are valid country codes."""
+        if not v:
+            return []
+
+        validated = []
+        for country in v:
+            if isinstance(country, str):
+                # Ensure it's a valid 2-character country code
+                country = country.strip().upper()
+                if len(country) == 2 and country.isalpha():
+                    validated.append(country)
+                else:
+                    raise ValueError(f"Invalid country code in ships_to: {country}")
+            else:
+                raise ValueError(f"ships_to must contain only country codes, got: {type(country)}")
+
+        return validated
+
+    @field_validator("established_year")
+    @classmethod
+    def validate_established_year(cls, v):
+        """Validate established year is reasonable."""
+        if v is None:
+            return v
+        
+        if not isinstance(v, int):
+            raise ValueError("established_year must be an integer")
+        
+        if v < 1900 or v > 2030:
+            raise ValueError("established_year must be between 1900 and 2030")
+        
+        return v
 
 
 class ScraperConfig(BaseModel):

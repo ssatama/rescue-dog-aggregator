@@ -9,6 +9,7 @@ from psycopg2.extras import RealDictCursor
 from config import DB_CONFIG
 from utils.config_loader import ConfigLoader
 from utils.config_models import OrganizationConfig
+from utils.cloudinary_utils import OrganizationLogoUploader
 
 
 class OrganizationSyncError(Exception):
@@ -70,7 +71,8 @@ class OrganizationSyncManager:
             cursor.execute(
                 """
                 SELECT id, name, website_url, description, social_media,
-                       config_id, last_config_sync, created_at, updated_at
+                       config_id, last_config_sync, created_at, updated_at,
+                       ships_to, established_year
                 FROM organizations
                 WHERE config_id IS NOT NULL
             """
@@ -114,6 +116,16 @@ class OrganizationSyncManager:
         if db_org.get("description") != config_description:
             return True
 
+        # Check established_year
+        if db_org.get("established_year") != config.metadata.established_year:
+            return True
+
+        # Check ships_to
+        db_ships_to = db_org.get("ships_to") or []
+        config_ships_to = config.metadata.ships_to or []
+        if set(db_ships_to) != set(config_ships_to):
+            return True
+
         # Check social media (compare JSONB)
         db_social_media = db_org.get("social_media") or {}
         config_social_media = {}
@@ -134,6 +146,12 @@ class OrganizationSyncManager:
                 config_social_media["website"] = str(social.website)
 
         if db_social_media != config_social_media:
+            return True
+
+        # Check logo_url changes
+        db_logo_url = db_org.get("logo_url")
+        config_logo_url = config.metadata.logo_url
+        if db_logo_url != config_logo_url:
             return True
 
         return False
@@ -162,8 +180,55 @@ class OrganizationSyncManager:
 
         return social_data  # Return dict, not JSON string
 
+    def _sync_organization_logo(self, org_id: int, config: OrganizationConfig) -> Optional[str]:
+        """Upload organization logo to Cloudinary and return the URL.
+
+        Args:
+            org_id: Database ID of organization
+            config: Organization configuration
+
+        Returns:
+            Cloudinary URL of uploaded logo, or None if upload failed
+        """
+        if not config.metadata.logo_url:
+            self.logger.debug(f"No logo URL provided for organization {org_id}")
+            return None
+
+        try:
+            # Upload logo to Cloudinary
+            logo_urls = OrganizationLogoUploader.upload_organization_logo(
+                config.id, 
+                config.metadata.logo_url,
+                force_upload=False
+            )
+            
+            if logo_urls and 'original' in logo_urls:
+                cloudinary_url = logo_urls['original']
+                self.logger.info(f"Successfully uploaded logo for organization {org_id}: {cloudinary_url}")
+                
+                # Update the logo_url in database
+                cursor = get_db_cursor()
+                try:
+                    cursor.execute(
+                        "UPDATE organizations SET logo_url = %s WHERE id = %s",
+                        (cloudinary_url, org_id)
+                    )
+                    cursor.connection.commit()
+                finally:
+                    cursor.close()
+                    cursor.connection.close()
+                
+                return cloudinary_url
+            else:
+                self.logger.warning(f"Failed to upload logo for organization {org_id}")
+                return None
+                
+        except Exception as e:
+            self.logger.warning(f"Logo upload failed for organization {org_id}: {str(e)}")
+            return None
+
     def _sync_service_regions(self, org_id: int, config: OrganizationConfig) -> None:
-        """Sync service regions for an organization.
+        """Sync service regions for an organization (simplified to countries only).
 
         Args:
             org_id: Database ID of organization
@@ -177,7 +242,7 @@ class OrganizationSyncManager:
                     org_id,)
             )
 
-            # Parse and insert service regions from config
+            # Parse and insert service regions from config (now just country codes)
             service_regions = config.metadata.service_regions
             if not service_regions:
                 self.logger.debug(
@@ -188,73 +253,26 @@ class OrganizationSyncManager:
 
             regions_added = 0
 
-            for region_data in service_regions:
-                if isinstance(region_data, str):
-                    # Handle flattened format: "Country: Region"
-                    if ": " in region_data:
-                        country, region = region_data.split(": ", 1)
-                        cursor.execute(
-                            """
-                            INSERT INTO service_regions (organization_id, country, region, created_at, updated_at)
-                            VALUES (%s, %s, %s, %s, %s)
-                            """,
-                            (
-                                org_id,
-                                country.strip(),
-                                region.strip(),
-                                datetime.now(),
-                                datetime.now(),
-                            ),
-                        )
-                        regions_added += 1
-                    else:
-                        # Assume it's just a country
-                        cursor.execute(
-                            """
-                            INSERT INTO service_regions (organization_id, country, region, created_at, updated_at)
-                            VALUES (%s, %s, %s, %s, %s)
-                            """,
-                            (
-                                org_id,
-                                region_data.strip(),
-                                None,
-                                datetime.now(),
-                                datetime.now(),
-                            ),
-                        )
-                        regions_added += 1
-                elif isinstance(region_data, dict):
-                    # Handle structured format from config
-                    country = region_data.get("country", "")
-                    regions = region_data.get("regions", [])
-
-                    if not regions:
-                        # Just country, no specific regions
-                        cursor.execute(
-                            """
-                            INSERT INTO service_regions (organization_id, country, region, created_at, updated_at)
-                            VALUES (%s, %s, %s, %s, %s)
-                            """,
-                            (org_id, country, None, datetime.now(), datetime.now()),
-                        )
-                        regions_added += 1
-                    else:
-                        # Country with specific regions
-                        for region in regions:
-                            cursor.execute(
-                                """
-                                INSERT INTO service_regions (organization_id, country, region, created_at, updated_at)
-                                VALUES (%s, %s, %s, %s, %s)
-                                """,
-                                (
-                                    org_id,
-                                    country,
-                                    region,
-                                    datetime.now(),
-                                    datetime.now(),
-                                ),
-                            )
-                            regions_added += 1
+            for country_code in service_regions:
+                if isinstance(country_code, str):
+                    # Insert country code only (simplified format)
+                    cursor.execute(
+                        """
+                        INSERT INTO service_regions (organization_id, country, created_at, updated_at)
+                        VALUES (%s, %s, %s, %s)
+                        """,
+                        (
+                            org_id,
+                            country_code.strip().upper(),
+                            datetime.now(),
+                            datetime.now(),
+                        ),
+                    )
+                    regions_added += 1
+                else:
+                    self.logger.warning(
+                        f"Invalid service region format for organization {org_id}: {country_code}"
+                    )
 
             cursor.connection.commit()
             self.logger.info(
@@ -289,9 +307,10 @@ class OrganizationSyncManager:
                 """
                 INSERT INTO organizations (
                     name, website_url, description, social_media,
-                    config_id, last_config_sync, created_at, updated_at
+                    config_id, last_config_sync, created_at, updated_at,
+                    ships_to, established_year
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 ) RETURNING id
             """,
                 (
@@ -305,6 +324,8 @@ class OrganizationSyncManager:
                     datetime.now(),  # last_config_sync
                     datetime.now(),  # created_at
                     datetime.now(),  # updated_at
+                    psycopg2.extras.Json(config.metadata.ships_to),  # ships_to
+                    config.metadata.established_year,  # established_year
                 ),
             )
 
@@ -330,6 +351,15 @@ class OrganizationSyncManager:
             )
             # Don't fail the whole operation if service regions fail
 
+        # Upload logo to Cloudinary (separate transaction)
+        try:
+            self._sync_organization_logo(org_id, config)
+        except Exception as e:
+            self.logger.error(
+                f"Failed to sync logo for new organization {org_id}: {e}"
+            )
+            # Don't fail the whole operation if logo upload fails
+
         return org_id
 
     def update_organization(self, org_id: int, config: OrganizationConfig) -> None:
@@ -352,7 +382,9 @@ class OrganizationSyncManager:
                     description = %s,
                     social_media = %s,
                     last_config_sync = %s,
-                    updated_at = %s
+                    updated_at = %s,
+                    ships_to = %s,
+                    established_year = %s
                 WHERE id = %s
             """,
                 (
@@ -364,6 +396,8 @@ class OrganizationSyncManager:
                     ),  # This will properly encode the dict
                     datetime.now(),  # last_config_sync
                     datetime.now(),  # updated_at
+                    psycopg2.extras.Json(config.metadata.ships_to),  # ships_to
+                    config.metadata.established_year,  # established_year
                     org_id,
                 ),
             )
@@ -384,6 +418,15 @@ class OrganizationSyncManager:
                 f"Failed to sync service regions for organization {org_id}: {e}"
             )
             # Don't fail the whole operation if service regions fail
+
+        # Upload logo to Cloudinary (separate transaction)
+        try:
+            self._sync_organization_logo(org_id, config)
+        except Exception as e:
+            self.logger.error(
+                f"Failed to sync logo for organization {org_id}: {e}"
+            )
+            # Don't fail the whole operation if logo upload fails
 
     def sync_organization(self, config: OrganizationConfig) -> Tuple[int, bool]:
         """Sync a single organization from config to database.

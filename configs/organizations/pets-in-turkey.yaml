@@ -2,31 +2,24 @@ schema_version: "1.0"
 id: "pets-in-turkey"
 name: "Pets in Turkey"
 enabled: true
-
 scraper:
   class_name: "PetsInTurkeyScraper"
-  module: "scrapers.pets_in_turkey.dogs_scraper" 
+  module: "scrapers.pets_in_turkey.dogs_scraper"
   config:
     rate_limit_delay: 2.0
     max_retries: 3
     timeout: 30
-
 metadata:
-  website_url: "https://www.petsinturkey.org"
-  description: "Pets in Turkey is a rescue organization helping dogs in Turkey find homes worldwide"
+  website_url: "https://www.petsinturkey.org/"
+  description: "We are a group of animal and nature loving people living in Switzerland with close ties to Turkey. Our mission is to help all breeds of cats and dogs in Turkey that are regularly being abandoned in large numbers."
   location:
-    country: "TR"
-    city: "Istanbul"
-  contact:
-    email: "info@petsinturkey.org"
+    country: "TR"  # Organization's base country
+    city: "Izmir"  # Organization's base city
+  service_regions: ["TR"] 
+  ships_to: ["DE", "NL", "BE", "FR", "UK", "AT", "CH", "SE","FI", "DK", "NO"]  # Countries they ship to
   social_media:
-    website: "https://www.petsinturkey.org"
-  service_regions:
-    - country: "TR"
-      regions: ["all"]
-    - country: "US"
-      regions: ["all"]  
-    - country: "GB"
-      regions: ["all"]
-    - country: "DE"
-      regions: ["all"]
+    website: "https://www.petsinturkey.org/"
+    facebook: "https://www.facebook.com/petsinturkey/"
+    instagram: "petsinturkey"
+  established_year: 2018
+  logo_url: "/Users/samposatama/Documents/rescue-dog-aggregator/org_logos/pit.jpg" 

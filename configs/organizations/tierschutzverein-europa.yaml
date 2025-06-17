@@ -1,29 +1,25 @@
 schema_version: "1.0"
 id: "tierschutzverein-europa"
 name: "Tierschutzverein Europa e.V."
-enabled: true  # Enabled for testing implementation
-
+enabled: true
 scraper:
   class_name: "TierschutzvereinEuropaScraper"
   module: "scrapers.tierschutzverein_europa.dogs_scraper"
   config:
-    rate_limit_delay: 3.0
+    rate_limit_delay: 2.5
     max_retries: 3
     timeout: 30
-    headless: true
-
 metadata:
   website_url: "https://tierschutzverein-europa.de"
-  description: "German rescue organization helping dogs from Spain and Romania find homes in Germany"
+  description: "Since 2006, the members of Tierschutzverein Europa e.V. have been committed to helping suffering animals and spreading the idea of animal welfare. The entire team works exclusively on a voluntary basis to ensure that all donations go to the animals. To help abandoned, abused and neglected dogs and cats, we work closely with our animal welfare partners in Germany and other European countries. We see our most important task in supporting our partner animal shelters in their work where we can. We do this in different ways: we offer financial help, send donations in kind and food, and most importantly, we offer foster homes and find a good home for each of the many rescued animals."
   location:
-    country: "DE"
-    city: "Freiburg"
-  service_regions:
-    - country: "DE"
-      regions: ["all"]
-    - country: "ES"
-      regions: ["all"]
-    - country: "RO"
-      regions: ["all"]
-  contact:
-    email: "gessinger@tsv-europa.de"
+    country: "DE"  # Organization's base country
+    city: "Berlin"  # Organization's base city
+  service_regions: ["DE", "ES", "RO"] 
+  ships_to: ["DE"]  # Countries they ship to
+  social_media:
+    website: "https://tierschutzverein-europa.de"
+    facebook: "https://www.facebook.com/TierschutzvereinEuropa/"
+    instagram: "tierschutzverein_europa"
+  established_year: 2006
+  logo_url: "/Users/samposatama/Documents/rescue-dog-aggregator/org_logos/tierverschutz.jpg"

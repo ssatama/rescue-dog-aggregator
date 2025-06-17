@@ -1,7 +1,7 @@
 # api/models/organization.py
 
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -19,8 +19,10 @@ class Organization(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    # our new social_media field
+    # Enhanced fields for organization profiles
     social_media: Dict[str, str] = Field(default_factory=dict)
+    ships_to: List[str] = Field(default_factory=list)
+    established_year: Optional[int] = None
 
     class Config:
         # ignore any extra keys (so if we ever back‐fill more later, tests
