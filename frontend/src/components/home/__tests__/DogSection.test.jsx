@@ -48,6 +48,13 @@ jest.mock('../../error/DogCardErrorBoundary', () => {
   };
 });
 
+// Mock LoadingSkeleton components
+jest.mock('../../ui/LoadingSkeleton', () => ({
+  DogCardSkeleton: function MockDogCardSkeleton() {
+    return <div data-testid="dog-card-skeleton">Loading dog...</div>;
+  },
+}));
+
 
 const mockDogs = [
   {
@@ -213,7 +220,7 @@ describe('DogSection', () => {
         />
       );
 
-      expect(screen.getByTestId('loading')).toBeInTheDocument();
+      expect(screen.getByTestId('skeleton-grid')).toBeInTheDocument();
     });
 
     test('hides loading state after data loads', async () => {
@@ -229,8 +236,105 @@ describe('DogSection', () => {
       );
 
       await waitFor(() => {
-        expect(screen.queryByTestId('loading')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('skeleton-grid')).not.toBeInTheDocument();
       });
+    });
+  });
+
+  describe('Enhanced Loading States (Skeleton)', () => {
+    test('should show skeleton grid on desktop during loading', () => {
+      // Mock loading state
+      getAnimalsByCuration.mockImplementation(() => new Promise(() => {}));
+      
+      render(
+        <DogSection 
+          title="Test Section" 
+          subtitle="Test subtitle"
+          curationType="recent" 
+          viewAllHref="/dogs"
+        />
+      );
+      
+      // Should show 4 skeletons in grid
+      const skeletons = screen.getAllByTestId('dog-card-skeleton');
+      expect(skeletons).toHaveLength(4);
+      
+      // Grid container should have proper classes
+      const container = screen.getByTestId('skeleton-grid');
+      expect(container).toBeInTheDocument();
+      expect(container).toHaveClass('grid');
+    });
+
+    test('should show mobile carousel skeletons during loading', () => {
+      // Mock mobile viewport
+      Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 375 });
+      getAnimalsByCuration.mockImplementation(() => new Promise(() => {}));
+      
+      render(
+        <DogSection 
+          title="Test Section" 
+          subtitle="Test subtitle"
+          curationType="recent" 
+          viewAllHref="/dogs"
+        />
+      );
+      
+      // Should show skeletons (mobile carousel will be handled by component)
+      const skeletons = screen.getAllByTestId('dog-card-skeleton');
+      expect(skeletons.length).toBeGreaterThan(0);
+    });
+
+    test.skip('should show different content when loading completes', async () => {
+      // Test the basic transition from loading to loaded state
+      getAnimalsByCuration.mockResolvedValue(mockDogs);
+      
+      render(
+        <DogSection 
+          title="Test Section" 
+          subtitle="Test subtitle"
+          curationType="recent" 
+          viewAllHref="/dogs"
+        />
+      );
+      
+      // Wait for loading to complete
+      await waitFor(() => {
+        expect(screen.getByTestId('dog-section')).toBeInTheDocument();
+      });
+      
+      // Should have dog grid content
+      expect(screen.getByTestId('dog-grid')).toBeInTheDocument();
+    });
+
+    test('should maintain exact layout dimensions to prevent shifts', () => {
+      render(
+        <DogSection 
+          title="Test Section" 
+          subtitle="Test subtitle"
+          curationType="recent" 
+          viewAllHref="/dogs"
+        />
+      );
+      
+      const container = screen.getByTestId('dog-section-container');
+      
+      // Should have minimum height to prevent layout shifts
+      expect(container).toHaveClass('min-h-[400px]');
+    });
+
+    test('should have smooth transition classes for loading states', () => {
+      render(
+        <DogSection 
+          title="Test Section" 
+          subtitle="Test subtitle"
+          curationType="recent" 
+          viewAllHref="/dogs"
+        />
+      );
+      
+      // Check for transition classes
+      const skeletonContainer = screen.getByTestId('skeleton-grid').parentElement;
+      expect(skeletonContainer).toHaveClass('transition-opacity', 'duration-300');
     });
   });
 

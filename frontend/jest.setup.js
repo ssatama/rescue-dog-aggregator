@@ -88,3 +88,8 @@ jest.mock('next/link', () => ({
   __esModule: true,
   default: ({ children, href, ...props }) => <a href={href} {...props}>{children}</a>
 }));
+
+// Mock heroicons
+jest.mock('@heroicons/react/24/outline', () => ({
+  HeartIcon: ({ className, ...props }) => <svg className={className} {...props} data-testid="building-icon" />
+}));

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import DogCard from '../dogs/DogCard';
 import DogCardErrorBoundary from '../error/DogCardErrorBoundary';
 import Loading from '../ui/Loading';
+import { DogCardSkeleton } from '../ui/LoadingSkeleton';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getAnimalsByCuration } from '../../services/animalsService';
@@ -118,11 +119,36 @@ const DogSection = React.memo(function DogSection({
   const sectionId = `${curationType}-section`;
   const titleId = `${curationType}-title`;
 
+  // Skeleton loading components
+  const SkeletonGrid = () => (
+    <div 
+      data-testid="skeleton-grid"
+      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+    >
+      {[1, 2, 3, 4].map(i => (
+        <DogCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+
+  const SkeletonCarousel = () => (
+    <div data-testid="mobile-carousel-container" className="mobile-carousel-container">
+      <div className="flex space-x-4 overflow-x-auto">
+        {[1, 2].map(i => (
+          <div key={i} className="flex-shrink-0 w-80">
+            <DogCardSkeleton />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <section 
+      data-testid="dog-section-container"
       role="region" 
       aria-labelledby={titleId}
-      className="my-12 md:my-20"
+      className="my-12 md:my-20 min-h-[400px]"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
@@ -147,17 +173,15 @@ const DogSection = React.memo(function DogSection({
           </Link>
         </div>
 
-        {/* Loading State */}
-        {loading && (
-          <div>
-            <Loading data-testid="loading" />
-            {isSlowNet && (
-              <p className="text-center text-sm text-gray-500 mt-2">
-                Loading on slow network, please wait...
-              </p>
-            )}
-          </div>
-        )}
+        {/* Loading States with Fade Transition */}
+        <div className={`transition-opacity duration-300 ${loading ? 'opacity-100' : 'opacity-0 pointer-events-none absolute'}`}>
+          {loading && (isMobile ? <SkeletonCarousel /> : <SkeletonGrid />)}
+          {loading && isSlowNet && (
+            <p className="text-center text-sm text-gray-500 mt-4">
+              Loading on slow network, please wait...
+            </p>
+          )}
+        </div>
 
         {/* Error State */}
         {error && !loading && (
@@ -178,48 +202,38 @@ const DogSection = React.memo(function DogSection({
         )}
 
 
-        {/* Dogs Display - Carousel on Mobile, Grid on Desktop */}
-        {!loading && !error && dogs.length > 0 && (
-          <div data-testid="dog-section">
-            {isMobile ? (
-              <Suspense fallback={
-                <div data-testid="loading-skeleton" className="animate-pulse">
-                  <div className="flex space-x-4 p-1">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="flex-shrink-0 w-72 md:w-80">
-                        <div className="bg-gray-200 rounded-lg h-64 mb-4"></div>
-                        <div className="bg-gray-200 rounded h-4 mb-2"></div>
-                        <div className="bg-gray-200 rounded h-3 w-3/4"></div>
-                      </div>
+        {/* Real Content with Fade In */}
+        <div className={`transition-opacity duration-300 ${!loading ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+          {!loading && !error && dogs.length > 0 && (
+            <div data-testid="dog-section">
+              {isMobile ? (
+                <Suspense fallback={<SkeletonCarousel />}>
+                  <MobileCarousel 
+                    onSlideChange={handleSlideChange}
+                    testId="dog-carousel"
+                  >
+                    {dogs.map((dog, index) => (
+                      <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
+                        <DogCard dog={dog} priority={index === 0} />
+                      </DogCardErrorBoundary>
                     ))}
-                  </div>
-                </div>
-              }>
-                <MobileCarousel 
-                  onSlideChange={handleSlideChange}
-                  testId="dog-carousel"
+                  </MobileCarousel>
+                </Suspense>
+              ) : (
+                <div 
+                  data-testid="dog-grid"
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
                 >
                   {dogs.map((dog, index) => (
                     <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
                       <DogCard dog={dog} priority={index === 0} />
                     </DogCardErrorBoundary>
                   ))}
-                </MobileCarousel>
-              </Suspense>
-            ) : (
-              <div 
-                data-testid="dog-grid"
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-              >
-                {dogs.map((dog, index) => (
-                  <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
-                    <DogCard dog={dog} priority={index === 0} />
-                  </DogCardErrorBoundary>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Empty State */}
         {!loading && !error && dogs.length === 0 && (

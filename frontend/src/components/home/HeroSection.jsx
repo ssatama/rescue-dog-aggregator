@@ -40,34 +40,6 @@ export default function HeroSection() {
       data-testid="hero-section" 
       className="hero-gradient relative overflow-hidden py-12 md:py-20 lg:py-24"
     >
-      {/* Map Dots Background */}
-      <div data-testid="map-dots" className="absolute inset-0 pointer-events-none">
-        <div className="relative w-full h-full">
-          {/* Dynamically generated animated dots with staggered timing */}
-          {[
-            { top: '20%', left: '15%', size: 'w-2 h-2', color: 'bg-orange-400', opacity: 'opacity-60', animation: 'animate-pulse-dot-1' },
-            { top: '35%', right: '25%', size: 'w-3 h-3', color: 'bg-orange-500', opacity: 'opacity-70', animation: 'animate-pulse-dot-2' },
-            { bottom: '30%', left: '45%', size: 'w-2 h-2', color: 'bg-orange-300', opacity: 'opacity-50', animation: 'animate-pulse-dot-3' },
-            { top: '50%', right: '20%', size: 'w-2.5 h-2.5', color: 'bg-orange-600', opacity: 'opacity-80', animation: 'animate-pulse-dot-4' },
-            { bottom: '25%', left: '30%', size: 'w-2 h-2', color: 'bg-orange-400', opacity: 'opacity-60', animation: 'animate-pulse-dot-5' },
-            { top: '15%', right: '45%', size: 'w-1.5 h-1.5', color: 'bg-orange-500', opacity: 'opacity-40', animation: 'animate-pulse-dot-1' },
-            { bottom: '45%', left: '65%', size: 'w-2 h-2', color: 'bg-orange-300', opacity: 'opacity-55', animation: 'animate-pulse-dot-2' },
-            { top: '65%', right: '35%', size: 'w-2.5 h-2.5', color: 'bg-orange-500', opacity: 'opacity-65', animation: 'animate-pulse-dot-3' }
-          ].map((dot, index) => (
-            <div 
-              key={index}
-              data-testid="map-dot"
-              className={`absolute ${dot.size} ${dot.color} rounded-full ${dot.animation} ${dot.opacity} transition-transform duration-300 hover:scale-110`}
-              style={{
-                ...(dot.top && { top: dot.top }),
-                ...(dot.bottom && { bottom: dot.bottom }),
-                ...(dot.left && { left: dot.left }),
-                ...(dot.right && { right: dot.right })
-              }}
-            />
-          ))}
-        </div>
-      </div>
 
       <div 
         data-testid="hero-container"

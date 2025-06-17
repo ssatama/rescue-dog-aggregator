@@ -3,10 +3,8 @@ import DogSection from '../../components/home/DogSection';
 import HeroSection from '../../components/home/HeroSection';
 
 // Mock services with performance monitoring
-jest.mock('../../services/animalsService', () => ({
-  getAnimalsByCuration: jest.fn(),
-  getStatistics: jest.fn()
-}));
+jest.mock('../../services/animalsService');
+const { getAnimalsByCuration, getStatistics } = require('../../services/animalsService');
 
 jest.mock('../../utils/imageUtils', () => ({
   preloadImages: jest.fn(),
@@ -44,10 +42,10 @@ describe('Mobile Performance on 3G Networks', () => {
 
   beforeEach(() => {
     // Mock API responses with realistic delays for 3G
-    require('../../services/animalsService').getAnimalsByCuration.mockImplementation((curationType, limit = 4) => 
+    getAnimalsByCuration.mockImplementation((curationType, limit = 4) => 
       new Promise(resolve => setTimeout(() => resolve(mockDogs.slice(0, limit)), 500))
     );
-    require('../../services/animalsService').getStatistics.mockImplementation(() =>
+    getStatistics.mockImplementation(() =>
       new Promise(resolve => setTimeout(() => resolve(mockStats), 300))
     );
 
@@ -131,13 +129,14 @@ describe('Mobile Performance on 3G Networks', () => {
       expect(loadTime).toBeLessThan(1000); // Should load within 1 second
     });
 
-    test('Dog section should show loading state immediately', async () => {
-      await act(async () => {
-        render(<DogSection title="Test Dogs" curationType="recent" />);
-      });
+    test('Dog section should show loading state immediately', () => {
+      // Mock loading state
+      getAnimalsByCuration.mockImplementation(() => new Promise(() => {})); // Never resolves
+      
+      render(<DogSection title="Test Dogs" curationType="recent" viewAllHref="/dogs" />);
 
-      // Loading state should be visible immediately (can be either 'loading' or 'loading-skeleton')
-      const loadingElement = screen.queryByTestId('loading-skeleton') || screen.queryByTestId('loading');
+      // Loading state should be visible immediately (mobile carousel on mobile)
+      const loadingElement = screen.getByTestId('mobile-carousel-container');
       expect(loadingElement).toBeInTheDocument();
     });
 
@@ -315,12 +314,13 @@ describe('Mobile Performance on 3G Networks', () => {
         }
       });
 
-      await act(async () => {
-        render(<DogSection title="Test Dogs" curationType="recent" />);
-      });
+      // Mock loading state
+      getAnimalsByCuration.mockImplementation(() => new Promise(() => {})); // Never resolves
+      
+      render(<DogSection title="Test Dogs" curationType="recent" viewAllHref="/dogs" />);
 
-      // Check that loading state shows (network-aware features are working)
-      const loadingElement = screen.queryByTestId('loading') || screen.queryByTestId('loading-skeleton');
+      // Check that loading state shows (mobile carousel on mobile)
+      const loadingElement = screen.getByTestId('mobile-carousel-container');
       expect(loadingElement).toBeInTheDocument();
     });
   });

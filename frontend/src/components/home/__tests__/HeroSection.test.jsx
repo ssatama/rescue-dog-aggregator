@@ -220,22 +220,6 @@ describe('HeroSection', () => {
       expect(heroSection).toHaveClass('hero-gradient');
     });
 
-    test('should display map dots animation', () => {
-      getStatistics.mockResolvedValue(mockStatistics);
-
-      render(<HeroSection />);
-
-      const mapDots = screen.getByTestId('map-dots');
-      expect(mapDots).toBeInTheDocument();
-      
-      const dots = screen.getAllByTestId('map-dot');
-      expect(dots.length).toBeGreaterThan(0);
-      
-      dots.forEach(dot => {
-        // Check for staggered animation classes (animate-pulse-dot-1, animate-pulse-dot-2, etc.)
-        expect(dot.className).toMatch(/animate-pulse-dot-\d+/);
-      });
-    });
 
     test('should have responsive typography', () => {
       getStatistics.mockResolvedValue(mockStatistics);
@@ -394,7 +378,6 @@ describe('HeroSection', () => {
       
       await waitFor(() => {
         expect(screen.getByTestId('statistics-content')).toBeInTheDocument();
-        expect(screen.getByTestId('map-dots')).toBeInTheDocument();
         expect(screen.getByTestId('hero-primary-cta')).toBeInTheDocument();
       });
     });

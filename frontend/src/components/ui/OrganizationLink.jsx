@@ -5,7 +5,7 @@ import Link from 'next/link';
  * @param {string} name - Organization name
  * @returns {string} URL-safe slug
  */
-function createOrganizationSlug(name) {
+export function createOrganizationSlug(name) {
   return name
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '') // Remove special characters

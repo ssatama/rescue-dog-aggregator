@@ -165,6 +165,31 @@
     animation: shimmer 2s infinite ease-in-out;
   }
 
+  /* Enhanced shimmer animation for premium loading skeleton feel */
+  @keyframes skeleton-shimmer {
+    0% { 
+      transform: translateX(-100%); 
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% { 
+      transform: translateX(100%); 
+      opacity: 0;
+    }
+  }
+
+  .skeleton-shimmer {
+    animation: skeleton-shimmer 2s infinite ease-in-out;
+  }
+
+  /* Dot pattern background for Trust Section */
+  .bg-dot-pattern {
+    background-image: radial-gradient(circle at 1px 1px, rgb(229 231 235 / 0.5) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
   /* Hero gradient background - peach/cream tones */
   .hero-gradient {
     background: linear-gradient(135deg, #fef7ed 0%, #fed7aa 30%, #fdba74 60%, #f97316 100%);

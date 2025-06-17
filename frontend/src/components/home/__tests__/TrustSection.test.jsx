@@ -10,8 +10,10 @@ describe('TrustSection', () => {
   const mockStatistics = {
     total_dogs: 237,
     total_organizations: 12,
-    total_countries: 2,
-    countries: ['Turkey', 'United States'],
+    countries: [
+      { country: 'Turkey', count: 150 },
+      { country: 'United States', count: 87 }
+    ],
     organizations: [
       { id: 1, name: 'Pets in Turkey', dog_count: 45 },
       { id: 2, name: 'Berlin Rescue', dog_count: 23 },
@@ -76,10 +78,14 @@ describe('TrustSection', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByText('Pets in Turkey (45)')).toBeInTheDocument();
-        expect(screen.getByText('Berlin Rescue (23)')).toBeInTheDocument();
-        expect(screen.getByText('Tierschutz EU (32)')).toBeInTheDocument();
-        expect(screen.getByText('Happy Tails (18)')).toBeInTheDocument();
+        expect(screen.getByText('Pets in Turkey')).toBeInTheDocument();
+        expect(screen.getByText('45 dogs')).toBeInTheDocument();
+        expect(screen.getByText('Berlin Rescue')).toBeInTheDocument();
+        expect(screen.getByText('23 dogs')).toBeInTheDocument();
+        expect(screen.getByText('Tierschutz EU')).toBeInTheDocument();
+        expect(screen.getByText('32 dogs')).toBeInTheDocument();
+        expect(screen.getByText('Happy Tails')).toBeInTheDocument();
+        expect(screen.getByText('18 dogs')).toBeInTheDocument();
       });
     });
 
@@ -89,7 +95,7 @@ describe('TrustSection', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByText('+ 8 more organizations')).toBeInTheDocument();
+        expect(screen.getByText('+ 4 more organizations')).toBeInTheDocument();
       });
     });
 
@@ -99,8 +105,8 @@ describe('TrustSection', () => {
       });
 
       await waitFor(() => {
-        const petsInTurkeyLink = screen.getByText('Pets in Turkey (45)').closest('a');
-        expect(petsInTurkeyLink).toHaveAttribute('href', '/dogs?organization=pets-in-turkey');
+        const petsInTurkeyCard = screen.getByText('Pets in Turkey').closest('a');
+        expect(petsInTurkeyCard).toHaveAttribute('href', '/organizations/1');
       });
     });
   });
@@ -116,7 +122,7 @@ describe('TrustSection', () => {
         render(<TrustSection />);
       });
 
-      expect(screen.getByTestId('trust-loading')).toBeInTheDocument();
+      expect(screen.getByTestId('trust-stats-skeleton')).toBeInTheDocument();
     });
 
     test('should handle API errors gracefully', async () => {
@@ -162,6 +168,121 @@ describe('TrustSection', () => {
         // Check container inside section has responsive classes
         const container = trustSection.querySelector('.max-w-7xl');
         expect(container).toHaveClass('max-w-7xl', 'mx-auto', 'px-4');
+      });
+    });
+  });
+
+  describe('Visual Enhancement', () => {
+    test('should have dot pattern background', async () => {
+      await act(async () => {
+        render(<TrustSection />);
+      });
+      
+      const section = screen.getByTestId('trust-section');
+      expect(section).toHaveClass('bg-dot-pattern');
+    });
+
+    test('should display organization cards with icons', async () => {
+      await act(async () => {
+        render(<TrustSection />);
+      });
+
+      await waitFor(() => {
+        const orgCards = screen.getAllByTestId('organization-card');
+        expect(orgCards.length).toBeGreaterThan(0);
+        
+        // Each card should have building icon
+        orgCards.forEach(card => {
+          expect(card.querySelector('[data-testid="building-icon"]')).toBeInTheDocument();
+        });
+      });
+    });
+
+    test('should have proper hover states for organization cards', async () => {
+      await act(async () => {
+        render(<TrustSection />);
+      });
+
+      await waitFor(() => {
+        const firstCard = screen.getAllByTestId('organization-card')[0];
+        expect(firstCard).toHaveClass('hover:border-blue-500', 'hover:shadow-md');
+        expect(firstCard).toHaveClass('transition-all', 'duration-300');
+      });
+    });
+
+    test('should show organization cards in responsive grid', async () => {
+      await act(async () => {
+        render(<TrustSection />);
+      });
+
+      await waitFor(() => {
+        const grid = screen.getByTestId('organizations-grid');
+        expect(grid).toHaveClass('grid', 'grid-cols-2', 'md:grid-cols-4');
+      });
+    });
+
+    test('should have proper touch targets for accessibility', async () => {
+      await act(async () => {
+        render(<TrustSection />);
+      });
+
+      await waitFor(() => {
+        const orgCards = screen.getAllByTestId('organization-card');
+        orgCards.forEach(card => {
+          expect(card).toHaveClass('min-h-[48px]');
+        });
+      });
+    });
+
+    test('should link to filtered dog pages', async () => {
+      await act(async () => {
+        render(<TrustSection />);
+      });
+
+      await waitFor(() => {
+        const firstCard = screen.getAllByTestId('organization-card')[0];
+        const link = firstCard.closest('a');
+        expect(link).toHaveAttribute('href');
+        expect(link.getAttribute('href')).toMatch(/\/organizations\/\d+/);
+      });
+    });
+
+    test('should have top border gradient', async () => {
+      await act(async () => {
+        render(<TrustSection />);
+      });
+
+      const section = screen.getByTestId('trust-section');
+      expect(section).toHaveClass('relative');
+      
+      // Check for the gradient border element
+      const gradientBorder = section.querySelector('.absolute.top-0');
+      expect(gradientBorder).toBeInTheDocument();
+    });
+
+    test('should limit to top 8 organizations in grid', async () => {
+      // Mock more organizations
+      const manyOrgsStats = {
+        ...mockStatistics,
+        organizations: Array.from({ length: 15 }, (_, i) => ({
+          id: i + 1,
+          name: `Organization ${i + 1}`,
+          dog_count: 50 - i
+        }))
+      };
+
+      require('../../../services/animalsService').getStatistics.mockResolvedValue(manyOrgsStats);
+
+      await act(async () => {
+        render(<TrustSection />);
+      });
+
+      await waitFor(() => {
+        const orgCards = screen.getAllByTestId('organization-card');
+        expect(orgCards).toHaveLength(8); // Should limit to 8
+        
+        // Should show remaining count
+        expect(screen.getByText('+ 7 more organizations')).toBeInTheDocument();
       });
     });
   });
