@@ -23,6 +23,11 @@ class Organization(BaseModel):
     social_media: Dict[str, str] = Field(default_factory=dict)
     ships_to: List[str] = Field(default_factory=list)
     established_year: Optional[int] = None
+    
+    # Enhanced card fields
+    service_regions: List[str] = Field(default_factory=list)
+    total_dogs: Optional[int] = None
+    new_this_week: Optional[int] = None
 
     class Config:
         # ignore any extra keys (so if we ever back‐fill more later, tests

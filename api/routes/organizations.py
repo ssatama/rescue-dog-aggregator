@@ -23,18 +23,34 @@ def get_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
     try:
         cursor.execute(
             """
-            SELECT id, name, website_url, description, country, city,
-                   logo_url, social_media, active, created_at, updated_at
-            FROM organizations
-            WHERE active = true
-            ORDER BY name
+            SELECT 
+                o.id, o.name, o.website_url, o.description, o.country, o.city,
+                o.logo_url, o.social_media, o.active, o.created_at, o.updated_at,
+                o.ships_to, o.established_year,
+                -- Service regions as array
+                COALESCE(
+                    ARRAY_AGG(DISTINCT sr.country) FILTER (WHERE sr.country IS NOT NULL), 
+                    ARRAY[]::text[]
+                ) as service_regions,
+                -- Dog statistics
+                COUNT(a.id) as total_dogs,
+                COUNT(a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '7 days') as new_this_week
+            FROM organizations o
+            LEFT JOIN service_regions sr ON o.id = sr.organization_id  
+            LEFT JOIN animals a ON o.id = a.organization_id AND a.status = 'available'
+            WHERE o.active = true
+            GROUP BY o.id, o.name, o.website_url, o.description, o.country, o.city,
+                     o.logo_url, o.social_media, o.active, o.created_at, o.updated_at,
+                     o.ships_to, o.established_year
+            ORDER BY o.name
         """
         )
 
         organizations = cursor.fetchall()
 
-        # Parse social_media JSON strings if needed
+        # Parse JSON fields and prepare data
         for org in organizations:
+            # Parse social_media JSON strings if needed
             if org.get("social_media") and isinstance(org["social_media"], str):
                 try:
                     org["social_media"] = json.loads(org["social_media"])
@@ -42,6 +58,19 @@ def get_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
                     org["social_media"] = {}
             elif org.get("social_media") is None:
                 org["social_media"] = {}
+            
+            # Parse ships_to JSON if needed
+            if org.get("ships_to") and isinstance(org["ships_to"], str):
+                try:
+                    org["ships_to"] = json.loads(org["ships_to"])
+                except json.JSONDecodeError:
+                    org["ships_to"] = []
+            elif org.get("ships_to") is None:
+                org["ships_to"] = []
+            
+            # Ensure service_regions is a list
+            if org.get("service_regions") is None:
+                org["service_regions"] = []
 
         return organizations
     except Exception as e:
@@ -91,6 +120,93 @@ def get_organization(
     except HTTPException:
         # Re-raise HTTP exceptions (like 404)
         raise
+    except psycopg2.Error as e:
+        raise HTTPException(
+            status_code=500, detail=f"Database error: {str(e)}")
+
+
+@router.get("/{organization_id}/recent-dogs")
+def get_organization_recent_dogs(
+    organization_id: int, 
+    limit: int = 3,
+    cursor: RealDictCursor = Depends(get_db_cursor)
+):
+    """
+    Get the most recent dogs from a specific organization for preview thumbnails.
+    
+    Returns up to {limit} most recent dogs with thumbnail URLs.
+    """
+    try:
+        cursor.execute(
+            """
+            SELECT id, name, primary_image_url
+            FROM animals
+            WHERE organization_id = %s AND status = 'available' AND primary_image_url IS NOT NULL
+            ORDER BY created_at DESC
+            LIMIT %s
+            """,
+            (organization_id, limit),
+        )
+
+        recent_dogs = cursor.fetchall()
+        
+        # Format the response with thumbnail URLs
+        dogs_with_thumbnails = []
+        for dog in recent_dogs:
+            dog_data = dict(dog)
+            # Use Cloudinary transformations for thumbnails if available
+            if dog_data.get('primary_image_url') and 'cloudinary.com' in dog_data['primary_image_url']:
+                # Generate thumbnail URL (96x96 for card previews)
+                thumbnail_url = dog_data['primary_image_url'].replace(
+                    '/upload/', '/upload/w_96,h_96,c_fill,g_auto/'
+                )
+                dog_data['thumbnail_url'] = thumbnail_url
+            else:
+                dog_data['thumbnail_url'] = dog_data['primary_image_url']
+            
+            dogs_with_thumbnails.append(dog_data)
+
+        return dogs_with_thumbnails
+        
+    except psycopg2.Error as e:
+        raise HTTPException(
+            status_code=500, detail=f"Database error: {str(e)}")
+
+
+@router.get("/{organization_id}/statistics")
+def get_organization_statistics(
+    organization_id: int,
+    cursor: RealDictCursor = Depends(get_db_cursor)
+):
+    """
+    Get statistics for a specific organization.
+    
+    Returns dog count and recent additions.
+    """
+    try:
+        cursor.execute(
+            """
+            SELECT 
+                COUNT(a.id) as total_dogs,
+                COUNT(a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '7 days') as new_this_week,
+                COUNT(a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '30 days') as new_this_month
+            FROM animals a
+            WHERE a.organization_id = %s AND a.status = 'available'
+            """,
+            (organization_id,),
+        )
+
+        stats = cursor.fetchone()
+        
+        if not stats:
+            return {
+                "total_dogs": 0,
+                "new_this_week": 0,
+                "new_this_month": 0
+            }
+        
+        return dict(stats)
+        
     except psycopg2.Error as e:
         raise HTTPException(
             status_code=500, detail=f"Database error: {str(e)}")

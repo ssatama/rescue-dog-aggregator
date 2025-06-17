@@ -4,22 +4,35 @@ import { useState, useEffect } from 'react';
 import Layout from '../../components/layout/Layout';
 import OrganizationCard from '../../components/organizations/OrganizationCard';
 import Loading from '../../components/ui/Loading';
-import { getOrganizations } from '../../services/organizationsService';
+import { getEnhancedOrganizations } from '../../services/organizationsService';
 import { reportError } from '../../utils/logger';
 
 export default function OrganizationsClient() {
   const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [enhancementLoading, setEnhancementLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const fetchOrganizations = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getOrganizations();
+      
+      // Fetch enhanced organizations data with statistics and recent dogs
+      const data = await getEnhancedOrganizations();
       setOrganizations(data);
+      
+      reportError('Organizations loaded successfully', { 
+        count: data.length, 
+        withStats: data.filter(org => org.total_dogs !== undefined).length,
+        withRecentDogs: data.filter(org => org.recent_dogs && org.recent_dogs.length > 0).length
+      });
+      
     } catch (err) {
-      reportError('Error fetching organizations', { error: err.message });
+      reportError('Error fetching enhanced organizations', { 
+        error: err.message,
+        stack: err.stack 
+      });
       setError(err);
     } finally {
       setLoading(false);
@@ -56,7 +69,7 @@ export default function OrganizationsClient() {
         {loading ? (
           <Loading />
         ) : organizations.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {organizations.map((org) => (
               <OrganizationCard key={org.id} organization={org} />
             ))}
