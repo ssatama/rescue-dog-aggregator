@@ -21,6 +21,10 @@ sys.path.append(
 class TestCloudinaryIntegration:
     """Test the complete image upload flow from scraper to frontend."""
 
+    def setup_method(self):
+        """Reset CloudinaryService configuration cache before each test."""
+        CloudinaryService._reset_config_cache()
+
     @patch.dict(
         "os.environ",
         {
@@ -28,6 +32,7 @@ class TestCloudinaryIntegration:
             "CLOUDINARY_API_KEY": "test-key",
             "CLOUDINARY_API_SECRET": "test-secret",
         },
+        clear=False,
     )
     @patch("utils.cloudinary_service.cloudinary.uploader.upload")
     @patch("utils.cloudinary_service.requests.get")
@@ -46,6 +51,7 @@ class TestCloudinaryIntegration:
         mock_response.status_code = 200
         mock_response.headers = {"content-type": "image/jpeg"}
         mock_response.content = b"fake_image_data"
+        mock_response.raise_for_status = Mock()  # Mock this method to avoid exceptions
         mock_requests.return_value = mock_response
 
         # Mock successful Cloudinary upload
@@ -83,6 +89,7 @@ class TestCloudinaryIntegration:
             "CLOUDINARY_API_KEY": "",
             "CLOUDINARY_API_SECRET": "",
         },
+        clear=False,
     )
     def test_missing_credentials_handling(self):
         """Test that missing Cloudinary credentials are handled gracefully."""
@@ -102,6 +109,7 @@ class TestCloudinaryIntegration:
             "CLOUDINARY_API_KEY": "test-key",
             "CLOUDINARY_API_SECRET": "test-secret",
         },
+        clear=False,
     )
     @patch("utils.cloudinary_service.requests.get")
     def test_network_failure_handling(self, mock_requests):
@@ -125,6 +133,7 @@ class TestCloudinaryIntegration:
             "CLOUDINARY_API_KEY": "test-key",
             "CLOUDINARY_API_SECRET": "test-secret",
         },
+        clear=False,
     )
     @patch("utils.cloudinary_service.cloudinary.api.resource")
     def test_existing_image_detection(self, mock_resource):

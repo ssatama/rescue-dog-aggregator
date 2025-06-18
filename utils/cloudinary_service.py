@@ -23,6 +23,12 @@ class CloudinaryService:
     _config_valid = False
 
     @classmethod
+    def _reset_config_cache(cls):
+        """Reset configuration cache for testing purposes."""
+        cls._config_checked = False
+        cls._config_valid = False
+
+    @classmethod
     def _check_configuration(cls):
         """Check Cloudinary configuration once and cache result."""
         if cls._config_checked:

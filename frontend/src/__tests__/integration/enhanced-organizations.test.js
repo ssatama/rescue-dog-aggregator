@@ -27,6 +27,7 @@ jest.mock('../../components/layout/Layout', () => {
 jest.mock('../../components/ui/LazyImage', () => {
   return function MockedLazyImage({ src, alt, className, onError, placeholder }) {
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img 
         src={src} 
         alt={alt} 

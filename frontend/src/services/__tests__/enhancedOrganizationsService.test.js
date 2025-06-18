@@ -219,6 +219,9 @@ describe('Enhanced Organizations Service', () => {
     });
 
     test('includes proper error handling and logging', async () => {
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'development';
+      
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
       const errorSpy = jest.spyOn(console, 'error').mockImplementation();
 
@@ -247,6 +250,7 @@ describe('Enhanced Organizations Service', () => {
 
       consoleSpy.mockRestore();
       errorSpy.mockRestore();
+      process.env.NODE_ENV = originalNodeEnv;
     });
 
     test('maintains organization order from API', async () => {

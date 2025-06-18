@@ -77,7 +77,7 @@ export async function getEnhancedOrganizations() {
           };
         } catch (error) {
           // If fetching recent dogs fails, return organization without previews
-          console.warn(`Failed to fetch recent dogs for organization ${org.id}:`, error);
+          if (process.env.NODE_ENV === 'development') console.warn(`Failed to fetch recent dogs for organization ${org.id}:`, error);
           return {
             ...org,
             recent_dogs: []
@@ -92,7 +92,7 @@ export async function getEnhancedOrganizations() {
         return result.value;
       } else {
         // If enhancement failed, return original organization data
-        console.warn(`Enhancement failed for organization ${organizations[index].id}:`, result.reason);
+        if (process.env.NODE_ENV === 'development') console.warn(`Enhancement failed for organization ${organizations[index].id}:`, result.reason);
         return {
           ...organizations[index],
           recent_dogs: []
@@ -102,7 +102,7 @@ export async function getEnhancedOrganizations() {
     
   } catch (error) {
     // If the main organizations call fails, re-throw the error
-    console.error('Failed to fetch enhanced organizations:', error);
+    if (process.env.NODE_ENV === 'development') console.error('Failed to fetch enhanced organizations:', error);
     throw error;
   }
 }

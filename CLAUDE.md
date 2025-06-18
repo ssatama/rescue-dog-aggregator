@@ -245,6 +245,45 @@ cd frontend && npm test -- --testPathPattern="cross-browser"
 - **Firefox Mobile** - Complete feature compatibility
 - **Edge Mobile** - Touch navigation and accessibility compliance
 
+### 🏢 Enhanced Organizations System (June 2025)
+
+**✅ COMPLETED**: Comprehensive organizational data enhancements with database schema updates
+
+**New Database Fields & API Enhancements**:
+- **✅ `ships_to`** - JSONB array of countries the organization ships to (e.g., `["DE", "NL", "BE", "FR", "UK"]`)
+- **✅ `established_year`** - Integer year the organization was founded (e.g., `2018`)
+- **✅ `service_regions`** - Dynamic array of countries/regions served (e.g., `["TR", "DE"]`)
+- **✅ `total_dogs`** - Real-time count of available dogs from this organization
+- **✅ `new_this_week`** - Count of dogs added in the last 7 days
+
+**Database Schema Updates**:
+- **✅ Added missing `region` column** to `service_regions` table
+- **✅ Updated organizations API** to use proper SQL joins and aggregations
+- **✅ Fixed PostgreSQL queries** to handle enhanced organizational data
+
+**API Endpoints Enhanced**:
+```bash
+# Enhanced organizations list with statistics
+GET /api/organizations/
+# Returns: ships_to, established_year, service_regions, total_dogs, new_this_week
+
+# New organization-specific endpoints
+GET /api/organizations/{id}/recent-dogs        # Recent dogs with thumbnails
+GET /api/organizations/{id}/statistics         # Detailed organization statistics
+```
+
+**Frontend Integration**:
+- **Enhanced OrganizationCard.jsx** - Displays shipping regions, establishment year, and dog counts
+- **Real-time statistics** - Dynamic updates of dog counts and recent additions
+- **Service region display** - Visual representation of countries served
+- **Enhanced organization profiles** - Rich data presentation for user decision-making
+
+**Database Fixes Applied**:
+- **✅ Fixed missing column error** - Added `region` column to `service_regions` table
+- **✅ Resolved SQL query issues** - Updated joins to use correct column names (`a.status` not `a.available`)
+- **✅ Restored API functionality** - All 16 previously failing backend tests now pass
+- **✅ Enhanced data integrity** - Proper JSON parsing and validation for new fields
+
 ### 🔄 API Auto-Curation System
 
 **✅ NEW**: Enhanced `/api/animals` endpoint with intelligent curation algorithms

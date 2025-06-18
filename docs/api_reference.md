@@ -256,11 +256,43 @@ curl "https://api.example.com/api/animals/meta/available_regions?country=US"
 
 #### `GET /api/organizations`
 
-Get list of rescue organizations.
+Get list of rescue organizations with enhanced data including statistics.
+
+**Returns**: Array of organizations with shipping information, establishment year, service regions, and real-time dog counts.
+
+**Response Fields**:
+- `ships_to`: Array of country codes where organization ships (e.g., `["DE", "NL", "BE"]`)
+- `established_year`: Year the organization was founded (e.g., `2018`)
+- `service_regions`: Array of countries/regions served (e.g., `["TR", "DE"]`)
+- `total_dogs`: Current count of available dogs from this organization
+- `new_this_week`: Count of dogs added in the last 7 days
 
 **Example**:
 ```bash
 curl "https://api.example.com/api/organizations"
+```
+
+**Sample Response**:
+```json
+[
+  {
+    "id": 2,
+    "name": "Pets in Turkey",
+    "website_url": "https://www.petsinturkey.org/",
+    "description": "We help rescue dogs in Turkey...",
+    "country": "Turkey",
+    "ships_to": ["DE", "NL", "BE", "FR", "UK", "AT", "CH"],
+    "established_year": 2018,
+    "service_regions": ["TR"],
+    "total_dogs": 33,
+    "new_this_week": 0,
+    "social_media": {
+      "website": "https://www.petsinturkey.org/",
+      "facebook": "https://www.facebook.com/petsinturkey/",
+      "instagram": "petsinturkey"
+    }
+  }
+]
 ```
 
 #### `GET /api/organizations/{org_id}`
@@ -270,6 +302,52 @@ Get specific organization details.
 **Example**:
 ```bash
 curl "https://api.example.com/api/organizations/1"
+```
+
+#### `GET /api/organizations/{org_id}/recent-dogs`
+
+Get the most recent dogs from a specific organization with thumbnail URLs.
+
+**Parameters**:
+- `limit` (optional): Number of recent dogs to return (default: 3)
+
+**Returns**: Array of recent dogs with optimized thumbnail URLs for preview cards.
+
+**Example**:
+```bash
+curl "https://api.example.com/api/organizations/1/recent-dogs?limit=5"
+```
+
+**Sample Response**:
+```json
+[
+  {
+    "id": 123,
+    "name": "Buddy",
+    "primary_image_url": "https://res.cloudinary.com/...",
+    "thumbnail_url": "https://res.cloudinary.com/.../w_96,h_96,c_fill,g_auto/..."
+  }
+]
+```
+
+#### `GET /api/organizations/{org_id}/statistics`
+
+Get detailed statistics for a specific organization.
+
+**Returns**: Dog counts and recent activity metrics.
+
+**Example**:
+```bash
+curl "https://api.example.com/api/organizations/1/statistics"
+```
+
+**Sample Response**:
+```json
+{
+  "total_dogs": 25,
+  "new_this_week": 3,
+  "new_this_month": 8
+}
 ```
 
 #### `GET /api/organizations/{org_id}/animals`
@@ -340,9 +418,11 @@ The API includes both original and standardized data:
 
 When available, nested organization information includes:
 
-- Basic info: `name`, `city`, `country`, `website_url`
-- Social media links (if configured)
-- Service regions (for location filtering)
+- **Basic info**: `name`, `city`, `country`, `website_url`, `description`
+- **Enhanced metadata**: `ships_to` (shipping countries), `established_year`, `service_regions`
+- **Real-time statistics**: `total_dogs`, `new_this_week` (automatically calculated)
+- **Social media**: Structured JSONB object with website, facebook, instagram links
+- **Service regions**: Dynamic array for location-based filtering
 
 ## Error Handling
 
