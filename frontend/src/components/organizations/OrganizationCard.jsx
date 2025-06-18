@@ -12,9 +12,9 @@ import { handleImageError } from '../../utils/imageUtils';
 import { 
   formatBasedIn, 
   formatServiceRegions, 
-  formatShipsTo,
+  formatShipsToList,
   getCountryFlag 
-} from '../../utils/countryUtils';
+} from '../../utils/countries';
 
 export default function OrganizationCard({ organization }) {
   // Extract organization data with enhanced fields
@@ -128,10 +128,10 @@ export default function OrganizationCard({ organization }) {
               <div className="text-gray-700">
                 <span className="font-medium">Ships to:</span>{' '}
                 <span className="hidden sm:inline">
-                  {formatShipsTo(shipsTo, 3)}
+                  {formatShipsToList(shipsTo, 3)}
                 </span>
                 <span className="sm:hidden">
-                  {formatShipsTo(shipsTo, 2)}
+                  {formatShipsToList(shipsTo, 2)}
                 </span>
               </div>
             )}

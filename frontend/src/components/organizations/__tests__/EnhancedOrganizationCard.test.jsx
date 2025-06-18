@@ -42,13 +42,13 @@ jest.mock('../../ui/SocialMediaLinks', () => {
   };
 });
 
-// Mock country utils
-jest.mock('../../../utils/countryUtils', () => ({
+// Mock countries utility
+jest.mock('../../../utils/countries', () => ({
   formatBasedIn: jest.fn((country, city, abbreviate) => 
     abbreviate ? `🇹🇷 ${country}` : `🇹🇷 Turkey`),
   formatServiceRegions: jest.fn((regions, showNames, abbreviate) => 
     abbreviate ? '🇹🇷 TR, 🇷🇴 RO' : '🇹🇷 Turkey, 🇷🇴 Romania'),
-  formatShipsTo: jest.fn((countries, maxShow) => 
+  formatShipsToList: jest.fn((countries, maxShow) => 
     countries.length <= maxShow ? '🇩🇪 🇳🇱 🇧🇪' : '🇩🇪 🇳🇱 🇧🇪 +2 more'),
   getCountryFlag: jest.fn((code) => code === 'TR' ? '🇹🇷' : '🇩🇪')
 }));
