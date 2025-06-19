@@ -423,5 +423,98 @@
     .animate-stagger-6 {
       animation-delay: 0s;
     }
+    
+    /* Disable Session 8 animations in reduced motion */
+    .animate-button-hover:hover,
+    .animate-card-hover:hover,
+    .animate-org-card:hover {
+      transform: none;
+    }
+  }
+
+  /* ==================================================
+     SESSION 8 ENHANCED ANIMATIONS
+     ================================================== */
+
+  /* Animation Variables */
+  :root {
+    --animation-fast: 150ms;
+    --animation-normal: 200ms;
+    --animation-slow: 300ms;
+    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+    --scale-hover: 1.02;
+    --scale-press: 0.98;
+  }
+
+  /* Button Animations */
+  .animate-button-hover {
+    transition: all var(--animation-normal) var(--ease-smooth);
+    will-change: transform, box-shadow;
+  }
+  
+  .animate-button-hover:hover {
+    transform: scale(var(--scale-hover));
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15);
+  }
+  
+  .animate-button-hover:active {
+    transform: scale(var(--scale-press));
+    transition-duration: var(--animation-fast);
+  }
+
+  /* Card Animations */
+  .animate-card-hover {
+    transition: all var(--animation-normal) var(--ease-smooth);
+    will-change: transform, box-shadow;
+  }
+  
+  .animate-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+  }
+
+  /* Organization Card Animations */
+  .animate-org-card {
+    transition: all var(--animation-normal) var(--ease-smooth);
+    will-change: transform, box-shadow, border-color;
+  }
+  
+  .animate-org-card:hover {
+    transform: translateY(-1px) scale(1.01);
+    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.15);
+    border-color: #fed7aa;
+  }
+
+  /* Page Enter Animation */
+  @keyframes page-enter {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-page-enter {
+    animation: page-enter var(--animation-slow) var(--ease-smooth);
+  }
+
+  /* Focus Ring */
+  .focus-ring:focus-visible {
+    outline: 2px solid #f97316;
+    outline-offset: 2px;
+  }
+
+  /* Performance Utilities */
+  .will-change-transform {
+    will-change: transform;
+  }
+  
+  .gpu-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
   }
 }

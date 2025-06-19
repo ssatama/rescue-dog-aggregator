@@ -43,7 +43,12 @@ const DogSection = React.memo(function DogSection({
       }
       
       const data = await getAnimalsByCuration(curationType, 4);
-      setDogs(data);
+      
+      // Batch state updates to avoid act() warnings
+      React.startTransition(() => {
+        setDogs(data);
+        setLoading(false);
+      });
       
       // Performance monitoring
       const endTime = performance.now();
@@ -63,9 +68,11 @@ const DogSection = React.memo(function DogSection({
       }
     } catch (err) {
       reportError(`Error fetching ${curationType} dogs`, { error: err.message });
-      setError(`Could not load dogs. Please try again later.`);
-    } finally {
-      setLoading(false);
+      // Use startTransition for error state updates too
+      React.startTransition(() => {
+        setError(`Could not load dogs. Please try again later.`);
+        setLoading(false);
+      });
     }
   };
 

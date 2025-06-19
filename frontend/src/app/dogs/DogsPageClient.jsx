@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Layout from '../../components/layout/Layout';
@@ -17,16 +17,9 @@ import {
 } from '../../services/animalsService';
 import { getOrganizations } from '../../services/organizationsService';
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetClose
-} from "@/components/ui/sheet";
 import { Filter, X } from 'lucide-react';
 import FilterControls from '../../components/dogs/FilterControls';
+import MobileFilterBottomSheet from '../../components/filters/MobileFilterBottomSheet';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { reportError } from '../../utils/logger';
 import { Badge } from "@/components/ui/badge";
@@ -83,10 +76,14 @@ export default function DogsPageClient() {
       try {
         const raw = await getStandardizedBreeds();
         const filtered = raw.filter(b => b !== "Any breed");
-        setStandardizedBreeds(["Any breed", ...filtered]);
+        React.startTransition(() => {
+          setStandardizedBreeds(["Any breed", ...filtered]);
+        });
       } catch (err) {
         reportError("Failed to fetch standardized breeds", { error: err.message });
-        setStandardizedBreeds(["Any breed"]);
+        React.startTransition(() => {
+          setStandardizedBreeds(["Any breed"]);
+        });
       }
     };
     fetchBreeds();
@@ -131,9 +128,11 @@ export default function DogsPageClient() {
   // Fetch Organizations
   useEffect(() => {
     getOrganizations()
-      .then(orgs =>
-        setOrganizations([{ id: null, name: "Any organization" }, ...orgs])
-      )
+      .then(orgs => {
+        React.startTransition(() => {
+          setOrganizations([{ id: null, name: "Any organization" }, ...orgs]);
+        });
+      })
       .catch(err => reportError("Failed to fetch organizations", { error: err.message }));
   }, []);
 
@@ -185,16 +184,21 @@ export default function DogsPageClient() {
 
     try {
       const newDogs = await getAnimals(cleanParams);
-      setDogs(prevDogs => loadMore ? [...prevDogs, ...newDogs] : newDogs);
-      setHasMore(newDogs.length === limit);
-      setPage(currentPage);
+      React.startTransition(() => {
+        setDogs(prevDogs => loadMore ? [...prevDogs, ...newDogs] : newDogs);
+        setHasMore(newDogs.length === limit);
+        setPage(currentPage);
+        setLoading(false);
+        setLoadingMore(false);
+      });
     } catch (err) {
       reportError("Error fetching dogs", { error: err.message, params: cleanParams });
-      setError("Failed to load dogs. Please try again.");
-      setHasMore(false);
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      React.startTransition(() => {
+        setError("Failed to load dogs. Please try again.");
+        setHasMore(false);
+        setLoading(false);
+        setLoadingMore(false);
+      });
     }
   }, [
       searchQuery, standardizedBreedFilter, organizationFilter, sexFilter, sizeFilter, ageCategoryFilter,
@@ -279,6 +283,21 @@ export default function DogsPageClient() {
     setHasMore(true);
     setResetTrigger(prev => prev + 1);
   };
+
+  // Handle Mobile Filter Changes
+  const handleMobileFiltersChange = useCallback((newFilters) => {
+    // Update all filter states based on mobile filter changes
+    setAgeCategoryFilter(newFilters.age === "All" ? "Any age" : newFilters.age);
+    setStandardizedBreedFilter(newFilters.breed === "" ? "Any breed" : newFilters.breed);
+    setSexFilter(newFilters.sex || "Any");
+    setSizeFilter(newFilters.size || "Any size");
+    setOrganizationFilter(newFilters.organization || "any");
+    
+    // Reset pagination
+    setPage(1);
+    setHasMore(true);
+    setResetTrigger(prev => prev + 1);
+  }, []);
 
   // Render Active Filter Badges
   const renderActiveFilters = () => {
@@ -365,56 +384,39 @@ export default function DogsPageClient() {
           </aside>
 
           <main className="md:col-span-3">
+            {/* Mobile Filter Button */}
             <div className="md:hidden mb-4">
-              <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="outline" className="w-full justify-center">
-                    <Filter className="mr-2 h-4 w-4" />
-                    Filters {activeFilterCount > 0 ? `(${activeFilterCount})` : ''}
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[300px] sm:w-[400px] overflow-y-auto">
-                  <SheetHeader>
-                    <SheetTitle>Filters</SheetTitle>
-                  </SheetHeader>
-                  <div className="py-4">
-                    <FilterControls
-                      searchQuery={searchQuery}
-                      handleSearchChange={handleSearchChange}
-                      clearSearch={clearSearch}
-                      organizationFilter={organizationFilter}
-                      setOrganizationFilter={setOrganizationFilter}
-                      organizations={organizations}
-                      standardizedBreedFilter={standardizedBreedFilter}
-                      setStandardizedBreedFilter={setStandardizedBreedFilter}
-                      standardizedBreeds={standardizedBreeds}
-                      sexFilter={sexFilter}
-                      setSexFilter={setSexFilter}
-                      sexOptions={sexOptions}
-                      sizeFilter={sizeFilter}
-                      setSizeFilter={setSizeFilter}
-                      sizeOptions={sizeOptions}
-                      ageCategoryFilter={ageCategoryFilter}
-                      setAgeCategoryFilter={setAgeCategoryFilter}
-                      ageOptions={ageOptions}
-                      locationCountryFilter={locationCountryFilter}
-                      setLocationCountryFilter={setLocationCountryFilter}
-                      locationCountries={locationCountries}
-                      availableCountryFilter={availableCountryFilter}
-                      setAvailableCountryFilter={setAvailableCountryFilter}
-                      availableCountries={availableCountries}
-                      availableRegionFilter={availableRegionFilter}
-                      setAvailableRegionFilter={setAvailableRegionFilter}
-                      availableRegions={availableRegions}
-                    />
-                    <SheetClose asChild>
-                      <Button className="w-full mt-4">Apply Filters</Button>
-                    </SheetClose>
-                    <Button variant="outline" className="w-full mt-2" onClick={resetFilters}>Clear All Filters</Button>
-                  </div>
-                </SheetContent>
-              </Sheet>
+              <Button 
+                variant="outline" 
+                className="w-full justify-center min-h-[48px] border-2 border-orange-200 hover:border-orange-300 animate-button-hover focus-ring"
+                onClick={() => setIsSheetOpen(true)}
+              >
+                <Filter className="mr-2 h-5 w-5 text-orange-600" />
+                <span className="font-medium">
+                  Filter & Sort {activeFilterCount > 0 ? `(${activeFilterCount})` : ''}
+                </span>
+              </Button>
             </div>
+            
+            {/* Mobile Filter Bottom Sheet */}
+            <MobileFilterBottomSheet
+              isOpen={isSheetOpen}
+              onClose={() => setIsSheetOpen(false)}
+              filters={{
+                age: ageCategoryFilter === "Any age" ? "All" : ageCategoryFilter,
+                breed: standardizedBreedFilter === "Any breed" ? "" : standardizedBreedFilter,
+                sex: sexFilter,
+                size: sizeFilter,
+                organization: organizationFilter,
+                sort: 'newest' // Add sort functionality
+              }}
+              onFiltersChange={handleMobileFiltersChange}
+              availableBreeds={standardizedBreeds}
+              organizations={organizations}
+              totalCount={dogs.length}
+              hasActiveFilters={activeFilterCount > 0}
+              onClearAll={resetFilters}
+            />
 
             {renderActiveFilters()}
 

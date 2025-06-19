@@ -95,11 +95,11 @@ describe('DogCard Component', () => {
       render(<DogCard dog={mockDog} />);
       
       const card = screen.getByTestId('dog-card');
-      expect(card).toHaveClass('transition-all');
-      expect(card).toHaveClass('duration-300');
-      expect(card).toHaveClass('shadow-md');
-      expect(card).toHaveClass('hover:shadow-lg');
-      // The new hover animation is handled by the useHoverAnimation hook via inline styles
+      // Check for new animation system classes
+      expect(card).toHaveClass('animate-card-hover');
+      expect(card).toHaveClass('will-change-transform');
+      expect(card).toHaveClass('group');
+      expect(card).toHaveClass('rounded-lg');
     });
 
     test('applies smooth transition effects', () => {
@@ -113,9 +113,10 @@ describe('DogCard Component', () => {
       render(<DogCard dog={mockDog} />);
       
       const card = screen.getByTestId('dog-card');
-      expect(card).toHaveClass('transition-all');
-      expect(card).toHaveClass('duration-300');
-      expect(card).toHaveClass('ease-out');
+      // Test that the new animation classes are present
+      expect(card).toHaveClass('animate-card-hover');
+      expect(card).toHaveClass('will-change-transform');
+      // The CSS transitions are defined in globals.css via .animate-card-hover
     });
   });
 
@@ -393,8 +394,8 @@ describe('DogCard Component', () => {
       ctaLink.focus();
       expect(ctaLink).toHaveFocus();
       
-      // Card should still have shadow classes (hover animation is handled by hook)
-      expect(card).toHaveClass('shadow-md');
+      // Card should have animation classes (shadow effects are in CSS)
+      expect(card).toHaveClass('animate-card-hover');
     });
   });
 
@@ -565,15 +566,14 @@ describe('DogCard Component', () => {
       
       const card = screen.getByTestId('dog-card');
       
-      // Card should have hover translate and shadow effects
-      expect(card).toHaveClass('hover:-translate-y-1');
-      expect(card).toHaveClass('hover:shadow-lg');
+      // Card should have new animation system classes
+      expect(card).toHaveClass('animate-card-hover');
+      expect(card).toHaveClass('will-change-transform');
       
       // Image should have hover scale effect (check placeholder if image not loaded)
       const imageElement = screen.queryByAltText('Buddy') || screen.getByTestId('image-placeholder');
       expect(imageElement.className).toContain('group-hover:scale-105');
       expect(imageElement.className).toContain('transition-transform');
-      expect(imageElement.className).toContain('duration-200');
     });
   });
 });

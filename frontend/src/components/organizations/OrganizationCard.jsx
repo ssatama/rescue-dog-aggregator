@@ -43,7 +43,7 @@ export default function OrganizationCard({ organization }) {
 
   return (
     <Card 
-      className="overflow-hidden h-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border border-gray-200 bg-white cursor-pointer"
+      className="overflow-hidden h-full animate-org-card border border-gray-200 bg-white cursor-pointer rounded-lg focus-ring will-change-transform"
       onClick={() => window.location.href = `/organizations/${id}`}
       role="button"
       tabIndex={0}
@@ -200,7 +200,7 @@ export default function OrganizationCard({ organization }) {
               asChild 
               variant="outline" 
               size="sm" 
-              className="flex-1 text-gray-700 border-gray-300 hover:bg-gray-50"
+              className="flex-1 text-gray-700 border-gray-300 hover:bg-gray-50 animate-button-hover min-h-[44px]"
             >
               <a 
                 href={websiteUrl} 
@@ -215,7 +215,7 @@ export default function OrganizationCard({ organization }) {
             
             <Button 
               size="sm" 
-              className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+              className="flex-1 bg-orange-500 hover:bg-orange-600 text-white animate-button-hover min-h-[44px]"
             >
               View {totalDogs} Dog{totalDogs !== 1 ? 's' : ''} →
             </Button>
