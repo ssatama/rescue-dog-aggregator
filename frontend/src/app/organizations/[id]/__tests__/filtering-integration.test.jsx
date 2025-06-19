@@ -296,4 +296,253 @@ describe('Session 6 Filtering Integration', () => {
       });
     });
   });
+
+  describe('Mobile Filter Sheet Integration', () => {
+    // Mock window.matchMedia for mobile tests
+    beforeEach(() => {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: jest.fn().mockImplementation(query => ({
+          matches: query.includes('max-width'), // Simulate mobile for max-width queries
+          media: query,
+          onchange: null,
+          addListener: jest.fn(),
+          removeListener: jest.fn(),
+          addEventListener: jest.fn(),
+          removeEventListener: jest.fn(),
+          dispatchEvent: jest.fn(),
+        })),
+      });
+
+      // Mock document.body.style for scroll lock tests
+      Object.defineProperty(document.body, 'style', {
+        writable: true,
+        value: {
+          overflow: ''
+        }
+      });
+    });
+
+    test('renders mobile filter button when data is loaded', async () => {
+      render(<OrganizationDetailClient params={{ id: '1' }} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mobile-filter-button')).toBeInTheDocument();
+      });
+
+      // Button should show Filter & Sort text
+      expect(screen.getByText('Filter & Sort')).toBeInTheDocument();
+    });
+
+    test('mobile filter button shows active filter count', async () => {
+      const user = userEvent.setup();
+      render(<OrganizationDetailClient params={{ id: '1' }} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('age-filter')).toBeInTheDocument();
+      });
+
+      // Apply a filter first (use desktop controls)
+      const ageSelect = screen.getByTestId('age-filter');
+      await user.click(ageSelect);
+      await user.click(screen.getByRole('option', { name: 'Puppy' }));
+
+      // Mobile button should show active filter badge
+      await waitFor(() => {
+        expect(screen.getByTestId('mobile-active-filters-badge')).toBeInTheDocument();
+        expect(screen.getByTestId('mobile-active-filters-badge')).toHaveTextContent('1');
+      });
+    });
+
+    test('mobile filter button opens bottom sheet', async () => {
+      const user = userEvent.setup();
+      render(<OrganizationDetailClient params={{ id: '1' }} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mobile-filter-button')).toBeInTheDocument();
+      });
+
+      // Click mobile filter button
+      await user.click(screen.getByTestId('mobile-filter-button'));
+
+      // Bottom sheet should open
+      await waitFor(() => {
+        expect(screen.getByTestId('mobile-filter-sheet')).toBeInTheDocument();
+      });
+
+      // Check for organization-specific filter sections (age, breed, sort only)
+      expect(screen.getByTestId('age-filter-All')).toBeInTheDocument();
+      expect(screen.getByTestId('breed-search-input')).toBeInTheDocument();
+      expect(screen.getByTestId('sort-filter-newest')).toBeInTheDocument();
+
+      // Sex, size, and organization filters should NOT be present
+      expect(screen.queryByTestId('sex-filter-Any')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('size-filter-Any size')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('organization-filter-any')).not.toBeInTheDocument();
+    });
+
+    test('mobile filter sheet applies filters correctly', async () => {
+      const user = userEvent.setup();
+      render(<OrganizationDetailClient params={{ id: '1' }} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mobile-filter-button')).toBeInTheDocument();
+        expect(screen.getByText('3 dogs available')).toBeInTheDocument();
+      });
+
+      // Open mobile filter sheet
+      await user.click(screen.getByTestId('mobile-filter-button'));
+
+      // Select Puppy age filter
+      await user.click(screen.getByTestId('age-filter-Puppy'));
+
+      // Apply filters (close sheet)
+      await user.click(screen.getByText('Apply Filters (1 dogs)'));
+
+      // Should show filtered results
+      await waitFor(() => {
+        expect(screen.getByText('1 dogs match filters')).toBeInTheDocument();
+      });
+    });
+
+    test('mobile filter sheet breed search works', async () => {
+      const user = userEvent.setup();
+      render(<OrganizationDetailClient params={{ id: '1' }} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mobile-filter-button')).toBeInTheDocument();
+      });
+
+      // Open mobile filter sheet
+      await user.click(screen.getByTestId('mobile-filter-button'));
+
+      // Type in breed search
+      const breedInput = screen.getByTestId('breed-search-input');
+      await user.type(breedInput, 'golden');
+
+      // Wait for debounce and apply
+      await user.click(screen.getByText(/Apply Filters/));
+
+      // Should show filtered results
+      await waitFor(() => {
+        expect(screen.getByText('1 dogs match filters')).toBeInTheDocument();
+      }, { timeout: 1000 });
+    });
+
+    test('mobile filter sheet clear all works', async () => {
+      const user = userEvent.setup();
+      render(<OrganizationDetailClient params={{ id: '1' }} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mobile-filter-button')).toBeInTheDocument();
+      });
+
+      // Apply a filter first (using desktop controls)
+      const ageSelect = screen.getByTestId('age-filter');
+      await user.click(ageSelect);
+      await user.click(screen.getByRole('option', { name: 'Puppy' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('1 dogs match filters')).toBeInTheDocument();
+      });
+
+      // Open mobile filter sheet
+      await user.click(screen.getByTestId('mobile-filter-button'));
+
+      // Click clear all button
+      await user.click(screen.getByTestId('clear-all-button'));
+
+      // Close sheet
+      await user.click(screen.getByText(/Apply Filters/));
+
+      // Should show all dogs again
+      await waitFor(() => {
+        expect(screen.getByText('3 dogs available')).toBeInTheDocument();
+      });
+    });
+
+    test('mobile filter sheet closes with backdrop click', async () => {
+      const user = userEvent.setup();
+      render(<OrganizationDetailClient params={{ id: '1' }} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mobile-filter-button')).toBeInTheDocument();
+      });
+
+      // Open mobile filter sheet
+      await user.click(screen.getByTestId('mobile-filter-button'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mobile-filter-sheet')).toBeInTheDocument();
+      });
+
+      // Click backdrop
+      await user.click(screen.getByTestId('filter-backdrop'));
+
+      // Sheet should close
+      await waitFor(() => {
+        expect(screen.queryByTestId('mobile-filter-sheet')).not.toBeInTheDocument();
+      });
+    });
+
+    test('mobile filter sheet accessibility compliance', async () => {
+      const user = userEvent.setup();
+      render(<OrganizationDetailClient params={{ id: '1' }} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mobile-filter-button')).toBeInTheDocument();
+      });
+
+      // Check mobile button accessibility
+      const mobileButton = screen.getByTestId('mobile-filter-button');
+      expect(mobileButton).toHaveAttribute('aria-label', 'Open filter and sort options');
+
+      // Open filter sheet
+      await user.click(mobileButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mobile-filter-sheet')).toBeInTheDocument();
+      });
+
+      // Check sheet accessibility
+      const filterSheet = screen.getByTestId('mobile-filter-sheet');
+      expect(filterSheet).toHaveAttribute('role', 'dialog');
+      expect(filterSheet).toHaveAttribute('aria-label', 'Filter and sort options');
+      expect(filterSheet).toHaveAttribute('aria-modal', 'true');
+
+      // Check filter buttons are properly sized (48px minimum for touch targets)
+      const ageButtons = screen.getAllByTestId(/^age-filter-/);
+      ageButtons.forEach(button => {
+        expect(button).toHaveClass('min-h-[48px]');
+      });
+
+      // Check breed search input accessibility
+      const breedInput = screen.getByTestId('breed-search-input');
+      expect(breedInput).toHaveAttribute('aria-label', 'Search for specific breed');
+      expect(breedInput).toHaveClass('min-h-[48px]');
+    });
+
+    test('hides count text on mobile to avoid crowding', async () => {
+      render(<OrganizationDetailClient params={{ id: '1' }} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mobile-filter-button')).toBeInTheDocument();
+      });
+
+      // Check that count texts are hidden on mobile (using hidden md:block/inline classes)
+      // The page title section count should be hidden on mobile
+      const titleSection = screen.getByText('Available Dogs').parentElement;
+      const countInTitle = titleSection?.querySelector('.hidden.md\\:block');
+      expect(countInTitle).toBeInTheDocument();
+
+      // The filter bar count should also be hidden on mobile  
+      const filtersContainer = screen.getByTestId('dog-filters');
+      const countInFilters = filtersContainer.querySelector('.hidden.md\\:inline');
+      expect(countInFilters).toBeInTheDocument();
+
+      // Mobile filter button should be visible
+      expect(screen.getByTestId('mobile-filter-button')).toBeInTheDocument();
+      expect(screen.getByText('Filter & Sort')).toBeInTheDocument();
+    });
+  });
 });

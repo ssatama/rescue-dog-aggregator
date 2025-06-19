@@ -32,6 +32,7 @@ import { getCountryName } from '@/utils/countryHelpers';
  * @param {number} props.totalCount - Total number of filtered results
  * @param {boolean} props.hasActiveFilters - Whether any filters are active
  * @param {boolean} props.showShipsToFilter - Whether to show ships-to filter (default: true)
+ * @param {Function} props.onMobileFilterClick - Callback for mobile filter button click
  */
 export default function DogFilters({
   filters,
@@ -40,7 +41,8 @@ export default function DogFilters({
   availableShipsTo = [],
   totalCount = 0,
   hasActiveFilters = false,
-  showShipsToFilter = true
+  showShipsToFilter = true,
+  onMobileFilterClick
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -112,9 +114,10 @@ export default function DogFilters({
       className="bg-white shadow-sm border-b md:sticky top-0 z-20"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        {/* Filter Header */}
+        {/* Filter Header - Desktop and Mobile */}
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
+          {/* Desktop Filter Header */}
+          <div className="hidden md:flex items-center gap-3">
             <div className="flex items-center gap-2">
               <Filter className="h-5 w-5 text-gray-600" />
               <span className="text-sm font-medium text-gray-700">Filter by:</span>
@@ -129,9 +132,34 @@ export default function DogFilters({
               </Badge>
             )}
           </div>
+
+          {/* Mobile Filter Button */}
+          <div className="md:hidden flex-1">
+            <Button
+              variant="outline"
+              onClick={onMobileFilterClick}
+              data-testid="mobile-filter-button"
+              aria-label="Open filter and sort options"
+              className="w-full h-12 justify-center gap-3 border-gray-300 hover:border-orange-500 hover:bg-orange-50 text-gray-700 hover:text-orange-600"
+            >
+              <Filter className="h-5 w-5" />
+              <span className="font-medium">Filter & Sort</span>
+              {hasActiveFilters && (
+                <Badge 
+                  variant="secondary" 
+                  data-testid="mobile-active-filters-badge"
+                  className="bg-orange-500 text-white text-xs"
+                >
+                  {activeFilterCount}
+                </Badge>
+              )}
+            </Button>
+          </div>
           
+          {/* Results Count and Clear All */}
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">
+            {/* Hide count on mobile to avoid crowding with mobile filter button */}
+            <span className="hidden md:inline text-sm text-gray-600">
               {totalCount} dogs
             </span>
             {hasActiveFilters && (
@@ -141,7 +169,7 @@ export default function DogFilters({
                 onClick={handleClearAll}
                 data-testid="clear-filters-button"
                 aria-label="Clear all filters"
-                className="text-sm text-gray-600 hover:text-gray-900"
+                className="hidden md:flex text-sm text-gray-600 hover:text-gray-900"
               >
                 <X className="h-4 w-4 mr-1" />
                 Clear all
@@ -150,10 +178,10 @@ export default function DogFilters({
           </div>
         </div>
 
-        {/* Filter Controls */}
+        {/* Filter Controls - Desktop Only */}
         <div 
           data-testid="filters-container"
-          className="flex gap-4 overflow-x-auto md:overflow-x-visible pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+          className="hidden md:flex gap-4 overflow-x-auto md:overflow-x-visible pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
         >
           {/* Age Filter */}
           <div className="flex-shrink-0 min-w-[160px]">

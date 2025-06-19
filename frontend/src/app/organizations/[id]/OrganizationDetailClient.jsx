@@ -7,6 +7,7 @@ import Layout from '../../../components/layout/Layout';
 import DogsGrid from '../../../components/dogs/DogsGrid';
 import DogFilters from '../../../components/filters/DogFilters';
 import OrganizationHero from '../../../components/organizations/OrganizationHero';
+import MobileFilterBottomSheet from '../../../components/filters/MobileFilterBottomSheet';
 import useFilteredDogs from '../../../hooks/useFilteredDogs';
 import { getDefaultFilters } from '../../../utils/dogFilters';
 import { getOrganizationById, getOrganizationDogs } from '../../../services/organizationsService';
@@ -21,6 +22,7 @@ export default function OrganizationDetailClient({ params = {} }) {
   const [dogs, setDogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   
   // Filter state management (only age, breed, sort for organization pages)
   const [filters, setFilters] = useState(() => {
@@ -42,6 +44,24 @@ export default function OrganizationDetailClient({ params = {} }) {
   } = useFilteredDogs(dogs, filters, false);
   
   // Ships To filter not needed for organization pages - all dogs have same shipping options
+  
+  // Mobile filter handlers
+  const handleMobileFilterOpen = () => {
+    setIsMobileFilterOpen(true);
+  };
+
+  const handleMobileFilterClose = () => {
+    setIsMobileFilterOpen(false);
+  };
+
+  const handleClearAllFilters = () => {
+    const defaultFilters = getDefaultFilters();
+    setFilters({
+      age: defaultFilters.age,
+      breed: defaultFilters.breed,
+      sort: defaultFilters.sort
+    });
+  };
   
   useEffect(() => {
     const fetchData = async () => {
@@ -160,7 +180,8 @@ export default function OrganizationDetailClient({ params = {} }) {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">Available Dogs</h2>
-            <div className="text-sm text-gray-600">
+            {/* Hide count on mobile to avoid crowding with mobile filter button */}
+            <div className="hidden md:block text-sm text-gray-600">
               {loading ? 'Loading...' : `${totalCount} dogs ${hasActiveFilters ? 'match filters' : 'available'}`}
             </div>
           </div>
@@ -174,6 +195,7 @@ export default function OrganizationDetailClient({ params = {} }) {
               totalCount={totalCount}
               hasActiveFilters={hasActiveFilters}
               showShipsToFilter={false}
+              onMobileFilterClick={handleMobileFilterOpen}
             />
           )}
           
@@ -206,6 +228,20 @@ export default function OrganizationDetailClient({ params = {} }) {
           </a>
         </div>
       </div>
+
+      {/* Mobile Filter Bottom Sheet */}
+      <MobileFilterBottomSheet
+        isOpen={isMobileFilterOpen}
+        onClose={handleMobileFilterClose}
+        filters={filters}
+        onFiltersChange={setFilters}
+        availableBreeds={availableBreeds}
+        organizations={[]} // No organization filter needed for organization pages
+        totalCount={totalCount}
+        hasActiveFilters={hasActiveFilters}
+        onClearAll={handleClearAllFilters}
+        isOrganizationPage={true}
+      />
     </Layout>
   );
 }

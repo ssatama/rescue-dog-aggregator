@@ -29,6 +29,7 @@ import { Badge } from '@/components/ui/badge';
  * @param {number} props.totalCount - Total number of filtered results
  * @param {boolean} props.hasActiveFilters - Whether any filters are active
  * @param {Function} props.onClearAll - Callback to clear all filters
+ * @param {boolean} props.isOrganizationPage - Whether this is an organization page (limits filters)
  */
 export default function MobileFilterBottomSheet({
   isOpen = false,
@@ -39,7 +40,8 @@ export default function MobileFilterBottomSheet({
   organizations = [],
   totalCount = 0,
   hasActiveFilters = false,
-  onClearAll
+  onClearAll,
+  isOrganizationPage = false
 }) {
   const [localBreedInput, setLocalBreedInput] = useState(filters?.breed || '');
   const [isVisible, setIsVisible] = useState(false);
@@ -279,50 +281,54 @@ export default function MobileFilterBottomSheet({
                   )}
                 </div>
 
-                {/* Sex Filter */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-gray-500" />
-                    <h3 className="text-sm font-medium text-gray-700">Sex</h3>
+                {/* Sex Filter - Only show on main dogs page */}
+                {!isOrganizationPage && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Tag className="h-4 w-4 text-gray-500" />
+                      <h3 className="text-sm font-medium text-gray-700">Sex</h3>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {sexOptions.map((sex) => (
+                        <FilterButton
+                          key={sex}
+                          value={sex}
+                          currentValue={filters?.sex}
+                          onSelect={(value) => handleFilterChange('sex', value)}
+                          testId={`sex-filter-${sex}`}
+                        >
+                          {sex}
+                        </FilterButton>
+                      ))}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {sexOptions.map((sex) => (
-                      <FilterButton
-                        key={sex}
-                        value={sex}
-                        currentValue={filters?.sex}
-                        onSelect={(value) => handleFilterChange('sex', value)}
-                        testId={`sex-filter-${sex}`}
-                      >
-                        {sex}
-                      </FilterButton>
-                    ))}
-                  </div>
-                </div>
+                )}
 
-                {/* Size Filter */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Ruler className="h-4 w-4 text-gray-500" />
-                    <h3 className="text-sm font-medium text-gray-700">Size</h3>
+                {/* Size Filter - Only show on main dogs page */}
+                {!isOrganizationPage && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Ruler className="h-4 w-4 text-gray-500" />
+                      <h3 className="text-sm font-medium text-gray-700">Size</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {sizeOptions.map((size) => (
+                        <FilterButton
+                          key={size}
+                          value={size}
+                          currentValue={filters?.size}
+                          onSelect={(value) => handleFilterChange('size', value)}
+                          testId={`size-filter-${size}`}
+                        >
+                          {size}
+                        </FilterButton>
+                      ))}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {sizeOptions.map((size) => (
-                      <FilterButton
-                        key={size}
-                        value={size}
-                        currentValue={filters?.size}
-                        onSelect={(value) => handleFilterChange('size', value)}
-                        testId={`size-filter-${size}`}
-                      >
-                        {size}
-                      </FilterButton>
-                    ))}
-                  </div>
-                </div>
+                )}
 
-                {/* Organization Filter */}
-                {organizations.length > 1 && (
+                {/* Organization Filter - Only show on main dogs page */}
+                {!isOrganizationPage && organizations.length > 1 && (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Home className="h-4 w-4 text-gray-500" />

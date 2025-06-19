@@ -360,9 +360,13 @@ describe('DogFilters Component', () => {
       const user = userEvent.setup();
       render(<DogFilters {...defaultProps} />);
 
-      const ageSelect = screen.getByTestId('age-filter');
+      // First tab focuses mobile filter button (on mobile view)
       await user.tab();
-      expect(ageSelect).toHaveFocus();
+      expect(screen.getByTestId('mobile-filter-button')).toHaveFocus();
+
+      // Second tab focuses age filter (desktop view - hidden md:flex)
+      await user.tab();
+      expect(screen.getByTestId('age-filter')).toHaveFocus();
 
       await user.tab();
       expect(screen.getByTestId('breed-filter')).toHaveFocus();
@@ -375,9 +379,13 @@ describe('DogFilters Component', () => {
       const user = userEvent.setup();
       render(<DogFilters {...orgPageProps} />);
 
-      const ageSelect = screen.getByTestId('age-filter');
+      // First tab focuses mobile filter button (on mobile view)
       await user.tab();
-      expect(ageSelect).toHaveFocus();
+      expect(screen.getByTestId('mobile-filter-button')).toHaveFocus();
+
+      // Second tab focuses age filter (desktop view - hidden md:flex)
+      await user.tab();
+      expect(screen.getByTestId('age-filter')).toHaveFocus();
 
       await user.tab();
       expect(screen.getByTestId('breed-filter')).toHaveFocus();
