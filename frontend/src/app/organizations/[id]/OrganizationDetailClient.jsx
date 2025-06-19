@@ -7,8 +7,8 @@ import Layout from '../../../components/layout/Layout';
 import DogCard from '../../../components/dogs/DogCard';
 import DogCardErrorBoundary from '../../../components/error/DogCardErrorBoundary';
 import Loading from '../../../components/ui/Loading';
+import OrganizationHero from '../../../components/organizations/OrganizationHero';
 import { getOrganizationById, getOrganizationDogs } from '../../../services/organizationsService';
-import SocialMediaLinks from '../../../components/ui/SocialMediaLinks';
 import { reportError } from '../../../utils/logger';
 
 export default function OrganizationDetailClient({ params = {} }) {
@@ -78,105 +78,41 @@ export default function OrganizationDetailClient({ params = {} }) {
     );
   }
   
-  // Prepare location text
-  const locationText = [organization.city, organization.country].filter(Boolean).join(', ');
-  
   return (
     <Layout>
+      {/* New OrganizationHero Component */}
+      <OrganizationHero organization={organization} />
+      
       <div className="max-w-7xl mx-auto p-4">
-        <Link href="/organizations" className="flex items-center text-blue-500 mb-6 hover:underline">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to All Organizations
-        </Link>
-        
-        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-          {/* Organization details section */}
-          <div className="flex flex-col md:flex-row items-center gap-6 mb-6">
-            {/* Logo with fallback */}
-            <div className="w-32 h-32 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
-              {organization.logo_url ? (
-                <img 
-                  src={organization.logo_url} 
-                  alt={`${organization.name} logo`} 
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-5xl font-bold text-blue-500">
-                  {organization.name.charAt(0)}
-                </span>
-              )}
-            </div>
-            
-            {/* Organization title and location */}
-            <div>
-              <h1 className="text-3xl font-bold mb-2">{organization.name}</h1>
-              {locationText && (
-                <p className="text-gray-600 mb-2">{locationText}</p>
-              )}
-              
-              {/* Website link */}
-              {organization.website_url && (
-                <a 
-                  href={organization.website_url} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="inline-flex items-center text-blue-500 hover:underline"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+        {/* Contact Information (if available in properties) */}
+        {organization.properties && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 className="text-xl font-semibold mb-3">Contact Information</h2>
+            <div className="space-y-2">
+              {organization.properties.email && (
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
-                  Visit Website
-                </a>
+                  <a href={`mailto:${organization.properties.email}`} className="text-blue-500 hover:underline">
+                    {organization.properties.email}
+                  </a>
+                </div>
               )}
               
-              {/* Social Media Links */}
-              {organization.social_media && Object.keys(organization.social_media).length > 0 && (
-                <div className="mt-3">
-                  <p className="text-sm text-gray-600 mb-2">Follow us on social media:</p>
-                  <SocialMediaLinks socialMedia={organization.social_media} className="justify-start" />
+              {organization.properties.phone && (
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  <a href={`tel:${organization.properties.phone}`} className="text-blue-500 hover:underline">
+                    {organization.properties.phone}
+                  </a>
                 </div>
               )}
             </div>
           </div>
-          
-          {/* Description */}
-          <div className="border-t pt-4 mb-4">
-            <h2 className="text-xl font-semibold mb-2">About</h2>
-            <p className="text-gray-700">{organization.description || "No detailed description available for this organization."}</p>
-          </div>
-          
-          {/* Contact Information (if available in properties) */}
-          {organization.properties && (
-            <div className="border-t pt-4">
-              <h2 className="text-xl font-semibold mb-3">Contact Information</h2>
-              <div className="space-y-2">
-                {organization.properties.email && (
-                  <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    <a href={`mailto:${organization.properties.email}`} className="text-blue-500 hover:underline">
-                      {organization.properties.email}
-                    </a>
-                  </div>
-                )}
-                
-                {organization.properties.phone && (
-                  <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                    <a href={`tel:${organization.properties.phone}`} className="text-blue-500 hover:underline">
-                      {organization.properties.phone}
-                    </a>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+        )}
         
         {/* Dogs section */}
         <div className="mb-8">

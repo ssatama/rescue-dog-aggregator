@@ -1,6 +1,48 @@
 import React from 'react';
 import CountryFlag from '../components/ui/CountryFlag';
 
+// Country code normalization for common non-standard codes
+export const COUNTRY_CODE_ALIASES = {
+  'UK': 'GB',  // United Kingdom - commonly used but not ISO standard
+  'EN': 'GB',  // England - sometimes used instead of GB
+};
+
+// Reverse lookup: Country names to ISO codes (for handling full country names)
+export const COUNTRY_NAME_TO_CODE = {
+  'Turkey': 'TR',
+  'Germany': 'DE',
+  'United States': 'US',
+  'United Kingdom': 'GB',
+  'France': 'FR',
+  'Italy': 'IT',
+  'Spain': 'ES',
+  'Netherlands': 'NL',
+  'Belgium': 'BE',
+  'Romania': 'RO',
+  'Greece': 'GR',
+  'Austria': 'AT',
+  'Switzerland': 'CH',
+  'Poland': 'PL',
+  'Czech Republic': 'CZ',
+  'Hungary': 'HU',
+  'Portugal': 'PT',
+  'Ireland': 'IE',
+  'Denmark': 'DK',
+  'Sweden': 'SE',
+  'Norway': 'NO',
+  'Finland': 'FI',
+  'Luxembourg': 'LU',
+  'Slovakia': 'SK',
+  'Slovenia': 'SI',
+  'Croatia': 'HR',
+  'Bulgaria': 'BG',
+  'Estonia': 'EE',
+  'Latvia': 'LV',
+  'Lithuania': 'LT',
+  'Malta': 'MT',
+  'Cyprus': 'CY'
+};
+
 // Country code to name mapping for common countries used in the app
 export const COUNTRY_NAMES = {
   'TR': 'Turkey',
@@ -38,6 +80,45 @@ export const COUNTRY_NAMES = {
 };
 
 /**
+ * Normalize country input to ISO standard (handles codes, aliases, and full names)
+ * @param {string} input - Country code, alias, or full country name
+ * @returns {string} Normalized ISO country code
+ */
+export function normalizeCountryCode(input) {
+  if (!input || typeof input !== 'string') return '';
+  
+  const trimmedInput = input.trim();
+  
+  // First check if it's a 2-letter code or alias
+  const upperCode = trimmedInput.toUpperCase();
+  if (COUNTRY_CODE_ALIASES[upperCode]) {
+    return COUNTRY_CODE_ALIASES[upperCode];
+  }
+  
+  // If it's already a 2-letter ISO code, return it
+  if (upperCode.length === 2 && COUNTRY_NAMES[upperCode]) {
+    return upperCode;
+  }
+  
+  // Check if it's a full country name (case-insensitive)
+  const properCaseName = trimmedInput.charAt(0).toUpperCase() + trimmedInput.slice(1).toLowerCase();
+  if (COUNTRY_NAME_TO_CODE[properCaseName]) {
+    return COUNTRY_NAME_TO_CODE[properCaseName];
+  }
+  
+  // Check exact case-insensitive match
+  const foundName = Object.keys(COUNTRY_NAME_TO_CODE).find(
+    name => name.toLowerCase() === trimmedInput.toLowerCase()
+  );
+  if (foundName) {
+    return COUNTRY_NAME_TO_CODE[foundName];
+  }
+  
+  // If no match found, return the uppercased input (fallback)
+  return upperCode;
+}
+
+/**
  * Get country name from country code with fallback
  * @param {string} code - ISO 2-letter country code
  * @returns {string} Country name or code if unknown
@@ -45,7 +126,7 @@ export const COUNTRY_NAMES = {
 export function getCountryName(code) {
   if (!code || typeof code !== 'string') return 'Unknown';
   
-  const normalizedCode = code.toUpperCase().trim();
+  const normalizedCode = normalizeCountryCode(code);
   return COUNTRY_NAMES[normalizedCode] || normalizedCode;
 }
 
@@ -68,7 +149,7 @@ export function formatShipsToList(countries, limit = 3) {
       {visibleCountries.map((countryCode, index) => (
         <span key={countryCode} className="inline-flex items-center gap-1">
           <CountryFlag 
-            countryCode={countryCode} 
+            countryCode={normalizeCountryCode(countryCode)} 
             countryName={getCountryName(countryCode)}
             size="small"
           />
@@ -114,7 +195,7 @@ export function formatServiceRegions(serviceRegions, showFlags = true, mobile = 
       {visibleRegions.map((countryCode, index) => (
         <span key={countryCode} className="inline-flex items-center gap-1">
           <CountryFlag 
-            countryCode={countryCode} 
+            countryCode={normalizeCountryCode(countryCode)} 
             countryName={getCountryName(countryCode)}
             size="small"
           />
@@ -146,7 +227,7 @@ export function formatBasedIn(country, city = null, mobile = false) {
   return (
     <span className="inline-flex items-center gap-1">
       <CountryFlag 
-        countryCode={country} 
+        countryCode={normalizeCountryCode(country)} 
         countryName={getCountryName(country)}
         size="small"
       />
@@ -165,7 +246,7 @@ export function formatBasedIn(country, city = null, mobile = false) {
 export function getCountryFlag(countryCode) {
   return (
     <CountryFlag 
-      countryCode={countryCode} 
+      countryCode={normalizeCountryCode(countryCode)} 
       countryName={getCountryName(countryCode)}
       size="small"
     />

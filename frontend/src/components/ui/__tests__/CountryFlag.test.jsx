@@ -48,6 +48,15 @@ describe('CountryFlag', () => {
     expect(placeholder).toBeInTheDocument();
   });
 
+  test('renders flag for UK country code (normalized to GB)', () => {
+    render(<CountryFlag countryCode="UK" countryName="United Kingdom" />);
+    
+    const flagImage = screen.getByRole('img');
+    expect(flagImage).toHaveAttribute('src', expect.stringContaining('flagcdn.com'));
+    expect(flagImage).toHaveAttribute('src', expect.stringContaining('gb.png'));
+    expect(flagImage).toHaveAttribute('alt', 'United Kingdom flag');
+  });
+
   test('falls back to placeholder on image error', async () => {
     const { rerender } = render(<CountryFlag countryCode="TR" countryName="Turkey" />);
     

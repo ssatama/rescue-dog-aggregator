@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import FlagErrorBoundary from './FlagErrorBoundary';
+import { normalizeCountryCode } from '../../utils/countries';
 
 // Size configurations for different flag dimensions
 const FLAG_SIZES = {
@@ -51,8 +52,8 @@ export default function CountryFlag({
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Validate country code
-  const normalizedCode = countryCode?.toUpperCase()?.trim();
+  // Validate country code - use normalizeCountryCode to handle aliases like UK->GB
+  const normalizedCode = normalizeCountryCode(countryCode);
   const isValidCode = normalizedCode && KNOWN_COUNTRY_CODES.has(normalizedCode);
   
   // Get size configuration
@@ -60,7 +61,7 @@ export default function CountryFlag({
   
   // Show placeholder if no valid country code or if image failed to load
   if (!isValidCode || hasError) {
-    const placeholderText = normalizedCode || '??';
+    const placeholderText = countryCode?.toUpperCase()?.trim() || '??';
     
     return (
       <div 
