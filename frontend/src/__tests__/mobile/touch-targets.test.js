@@ -205,13 +205,13 @@ describe('Mobile Touch Targets Validation', () => {
       expect(validateTouchTarget(dogCard)).toBe(true);
     });
 
-    test('adopt button should be ≥48px in all dimensions', () => {
+    test('Learn More button should be ≥48px in all dimensions', () => {
       render(<DogCard dog={mockDog} />);
       
-      const adoptButton = screen.getByText(`Adopt ${mockDog.name}`);
-      expect(validateTouchTarget(adoptButton)).toBe(true);
+      const ctaButton = screen.getByText('Learn More →');
+      expect(validateTouchTarget(ctaButton)).toBe(true);
       
-      const rect = adoptButton.getBoundingClientRect();
+      const rect = ctaButton.getBoundingClientRect();
       expect(rect.width).toBeGreaterThanOrEqual(48);
       expect(rect.height).toBeGreaterThanOrEqual(48);
     });
@@ -323,8 +323,8 @@ describe('Mobile Touch Targets Validation', () => {
 
       render(<DogCard dog={mockDog} />);
       
-      const adoptButton = screen.getByText(`Adopt ${mockDog.name}`);
-      const styles = window.getComputedStyle(adoptButton);
+      const ctaButton = screen.getByText('Learn More →');
+      const styles = window.getComputedStyle(ctaButton);
       
       // Ensure button has sufficient contrast in dark mode
       expect(styles.backgroundColor).not.toBe('transparent');

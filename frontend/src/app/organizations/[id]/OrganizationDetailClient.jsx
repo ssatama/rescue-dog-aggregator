@@ -1,24 +1,48 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Layout from '../../../components/layout/Layout';
-import DogCard from '../../../components/dogs/DogCard';
-import DogCardErrorBoundary from '../../../components/error/DogCardErrorBoundary';
+import DogsGrid from '../../../components/dogs/DogsGrid';
+import DogFilters from '../../../components/filters/DogFilters';
 import Loading from '../../../components/ui/Loading';
 import OrganizationHero from '../../../components/organizations/OrganizationHero';
+import useFilteredDogs from '../../../hooks/useFilteredDogs';
+import { getDefaultFilters } from '../../../utils/dogFilters';
 import { getOrganizationById, getOrganizationDogs } from '../../../services/organizationsService';
 import { reportError } from '../../../utils/logger';
 
 export default function OrganizationDetailClient({ params = {} }) {
   const urlParams = useParams();
+  const searchParams = useSearchParams();
   const organizationId = params?.id || urlParams?.id;
   
   const [organization, setOrganization] = useState(null);
   const [dogs, setDogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Filter state management (only age, breed, sort for organization pages)
+  const [filters, setFilters] = useState(() => {
+    // Initialize filters from URL parameters or defaults (no shipsTo for org pages)
+    const defaultFilters = getDefaultFilters();
+    return {
+      age: searchParams?.get('age') || defaultFilters.age,
+      breed: searchParams?.get('breed') || defaultFilters.breed,
+      sort: searchParams?.get('sort') || defaultFilters.sort
+    };
+  });
+  
+  // Apply filtering and get filtered results (no shipsTo filtering for organization pages)
+  const {
+    filteredDogs,
+    totalCount,
+    hasActiveFilters,
+    availableBreeds
+  } = useFilteredDogs(dogs, filters, false);
+  
+  // Ships To filter not needed for organization pages - all dogs have same shipping options
   
   useEffect(() => {
     const fetchData = async () => {
@@ -114,29 +138,31 @@ export default function OrganizationDetailClient({ params = {} }) {
           </div>
         )}
         
-        {/* Dogs section */}
+        {/* Dogs section with filters */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">Available Dogs</h2>
+            <div className="text-sm text-gray-600">
+              {loading ? 'Loading...' : `${totalCount} dogs ${hasActiveFilters ? 'match filters' : 'available'}`}
+            </div>
           </div>
           
-          {dogs.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {dogs.map((dog) => (
-                <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
-                  <DogCard dog={dog} />
-                </DogCardErrorBoundary>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-gray-50 rounded-lg p-8 text-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-              </svg>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No dogs currently available</h3>
-              <p className="text-gray-600">This organization doesn't have any dogs listed for adoption at the moment.</p>
-            </div>
+          {/* Filter System - only age, breed, sort for organization pages */}
+          {!loading && dogs.length > 0 && (
+            <DogFilters
+              filters={filters}
+              onFiltersChange={setFilters}
+              availableBreeds={availableBreeds}
+              totalCount={totalCount}
+              hasActiveFilters={hasActiveFilters}
+              showShipsToFilter={false}
+            />
           )}
+          
+          {/* Dogs Grid with filtered results */}
+          <div className="mt-6">
+            <DogsGrid dogs={filteredDogs} loading={loading} />
+          </div>
         </div>
         
         {/* Call to action */}

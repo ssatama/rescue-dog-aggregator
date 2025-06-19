@@ -36,11 +36,11 @@ describe('DogCard Component', () => {
     // Check that size is displayed (Assuming size is also rendered, if not, remove this)
     // expect(screen.getByText('Large')).toBeInTheDocument(); // Uncomment if size is displayed
     
-    // Check that "Adopt {name}" button/link is present
-    const adoptButton = screen.getByText(`Adopt ${mockDog.name}`);
-    expect(adoptButton).toBeInTheDocument();
+    // Check that "Learn More →" button/link is present
+    const ctaButton = screen.getByText('Learn More →');
+    expect(ctaButton).toBeInTheDocument();
     // Check if it's inside a link pointing to the correct dog page
-    expect(adoptButton.closest('a')).toHaveAttribute('href', `/dogs/${mockDog.id}`);
+    expect(ctaButton.closest('a')).toHaveAttribute('href', `/dogs/${mockDog.id}`);
   });
   
   test('handles missing data gracefully', () => {
@@ -59,7 +59,7 @@ describe('DogCard Component', () => {
     expect(screen.queryByText('Unknown Breed')).not.toBeInTheDocument();
     expect(screen.queryByText('Unknown')).not.toBeInTheDocument();
     // Check button text
-    expect(screen.getByText('Adopt Max')).toBeInTheDocument();
+    expect(screen.getByText('Learn More →')).toBeInTheDocument();
 
   });
 
@@ -78,8 +78,8 @@ describe('DogCard Component', () => {
     expect(screen.getByText('Luna')).toBeInTheDocument();
     // Should not show breed line when it's Unknown
     expect(screen.queryByText('Unknown')).not.toBeInTheDocument();
-    // Should still have the adopt button
-    expect(screen.getByText('Adopt Luna')).toBeInTheDocument();
+    // Should still have the learn more button
+    expect(screen.getByText('Learn More →')).toBeInTheDocument();
   });
 
   // NEW TESTS FOR ENHANCED FEATURES
@@ -97,8 +97,8 @@ describe('DogCard Component', () => {
       const card = screen.getByTestId('dog-card');
       expect(card).toHaveClass('transition-all');
       expect(card).toHaveClass('duration-300');
-      expect(card).toHaveClass('shadow-blue-sm');
-      expect(card).toHaveClass('hover:shadow-blue-lg');
+      expect(card).toHaveClass('shadow-md');
+      expect(card).toHaveClass('hover:shadow-lg');
       // The new hover animation is handled by the useHoverAnimation hook via inline styles
     });
 
@@ -387,14 +387,193 @@ describe('DogCard Component', () => {
       render(<DogCard dog={mockDog} />);
       
       const card = screen.getByTestId('dog-card');
-      const adoptLink = screen.getByText('Adopt Buddy').closest('a');
+      const ctaLink = screen.getByText('Learn More →').closest('a');
       
       // Focus should work normally
-      adoptLink.focus();
-      expect(adoptLink).toHaveFocus();
+      ctaLink.focus();
+      expect(ctaLink).toHaveFocus();
       
       // Card should still have shadow classes (hover animation is handled by hook)
-      expect(card).toHaveClass('shadow-blue-sm');
+      expect(card).toHaveClass('shadow-md');
+    });
+  });
+
+  // NEW TESTS FOR ENHANCED FEATURES (Session 5)
+  describe('Enhanced Card Features', () => {
+    test('displays larger image with correct dimensions', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        primary_image_url: 'https://example.com/image.jpg',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      // Image might be in placeholder state, check for either real image or placeholder
+      const imageContainer = screen.getByTestId('image-placeholder') || screen.getByAltText('Buddy');
+      expect(imageContainer).toBeInTheDocument();
+      
+      // Check for height classes on the actual image or placeholder
+      const hasCorrectClasses = imageContainer.className.includes('h-50') && 
+                               imageContainer.className.includes('sm:h-50') && 
+                               imageContainer.className.includes('md:h-60');
+      expect(hasCorrectClasses).toBeTruthy();
+    });
+
+    test('displays dog name prominently', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const nameElement = screen.getByTestId('dog-name');
+      expect(nameElement).toHaveClass('text-xl');
+      expect(nameElement).toHaveClass('font-semibold');
+    });
+
+    test('displays age category with formatted age', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        age_min_months: 18, // Should be categorized as 'Young'
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      expect(screen.getByTestId('age-category')).toHaveTextContent('Young');
+      expect(screen.getByTestId('formatted-age')).toHaveTextContent('1 year, 6 months');
+    });
+
+    test('displays gender with icon', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        sex: 'Male',
+        age_min_months: 24, // Need age for the age/gender row to display
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const genderElement = screen.getByTestId('gender-display');
+      expect(genderElement).toHaveTextContent('♂️Male');
+    });
+
+    test('displays organization name as location proxy', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        organization: { name: 'Pets in Turkey', city: 'Istanbul', country: 'Turkey' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const locationElement = screen.getByTestId('location-display');
+      expect(locationElement).toHaveTextContent('Pets in Turkey');
+    });
+
+    test('displays ships-to countries with flags', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        organization: { 
+          name: 'Test Org',
+          ships_to: ['DE', 'NL', 'BE', 'FR'] 
+        }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const shipsToElement = screen.getByTestId('ships-to-display');
+      expect(shipsToElement).toBeInTheDocument();
+      // Flags should be rendered as part of the ships-to component
+    });
+
+    test('displays Learn More CTA button', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const ctaButton = screen.getByText('Learn More →');
+      expect(ctaButton).toBeInTheDocument();
+      expect(ctaButton.closest('a')).toHaveAttribute('href', '/dogs/1');
+    });
+  });
+
+  describe('Enhanced Card Responsive Design', () => {
+    test('applies mobile-specific classes for smaller screens', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        primary_image_url: 'https://example.com/image.jpg',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      // Image might be in placeholder state
+      const imageElement = screen.queryByAltText('Buddy') || screen.getByTestId('image-placeholder');
+      expect(imageElement).toBeInTheDocument();
+      expect(imageElement.className).toContain('object-cover');
+    });
+
+    test('maintains aspect ratio for images', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        primary_image_url: 'https://example.com/image.jpg',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      // Image might be in placeholder state
+      const imageElement = screen.queryByAltText('Buddy') || screen.getByTestId('image-placeholder');
+      expect(imageElement.className).toContain('object-cover');
+    });
+  });
+
+  describe('Enhanced Hover Effects', () => {
+    test('applies enhanced hover effects to image and card', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        primary_image_url: 'https://example.com/image.jpg',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const card = screen.getByTestId('dog-card');
+      
+      // Card should have hover translate and shadow effects
+      expect(card).toHaveClass('hover:-translate-y-1');
+      expect(card).toHaveClass('hover:shadow-lg');
+      
+      // Image should have hover scale effect (check placeholder if image not loaded)
+      const imageElement = screen.queryByAltText('Buddy') || screen.getByTestId('image-placeholder');
+      expect(imageElement.className).toContain('group-hover:scale-105');
+      expect(imageElement.className).toContain('transition-transform');
+      expect(imageElement.className).toContain('duration-200');
     });
   });
 });

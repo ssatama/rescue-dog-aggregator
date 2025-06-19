@@ -85,9 +85,9 @@ describe('Accessibility Tests', () => {
       });
       expect(hasAccessibleLink).toBe(true);
       
-      // Adopt button should be clear
-      const adoptButton = screen.getByRole('button', { name: /adopt buddy/i });
-      expect(adoptButton).toBeInTheDocument();
+      // CTA button should be clear
+      const ctaButton = screen.getByRole('button', { name: /learn more/i });
+      expect(ctaButton).toBeInTheDocument();
     });
 
     test('Navigation should have proper landmarks', () => {
