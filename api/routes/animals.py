@@ -88,7 +88,8 @@ async def get_animals(
                    o.city as org_city,
                    o.country as org_country,
                    o.website_url as org_website_url,
-                   o.social_media as org_social_media
+                   o.social_media as org_social_media,
+                   o.ships_to as org_ships_to
             FROM animals a
             LEFT JOIN organizations o ON a.organization_id = o.id
         """
@@ -224,7 +225,8 @@ async def get_animals(
                        o.city as org_city,
                        o.country as org_country,
                        o.website_url as org_website_url,
-                       o.social_media as org_social_media
+                       o.social_media as org_social_media,
+                       o.ships_to as org_ships_to
                 FROM animals a
                 LEFT JOIN organizations o ON a.organization_id = o.id
                 {joins}
@@ -271,6 +273,20 @@ async def get_animals(
                 org_social_media = {}
             # If it's already a dict, keep it as is
 
+            # Parse ships_to JSONB - handle both string and array cases
+            org_ships_to = row_dict.get("org_ships_to")
+            if isinstance(org_ships_to, str):
+                try:
+                    org_ships_to = json.loads(org_ships_to)
+                except json.JSONDecodeError:
+                    logger.warning(
+                        f"Could not parse ships_to JSON: {org_ships_to}"
+                    )
+                    org_ships_to = []
+            elif org_ships_to is None:
+                org_ships_to = []
+            # If it's already a list, keep it as is
+
             # Build nested organization
             organization = None
             if row_dict.get("org_name"):
@@ -281,6 +297,7 @@ async def get_animals(
                     "country": row_dict["org_country"],
                     "website_url": row_dict["org_website_url"],
                     "social_media": org_social_media,  # Now properly parsed
+                    "ships_to": org_ships_to,  # Now properly parsed
                 }
 
             # Strip out raw org_* keys and add organization
@@ -643,7 +660,8 @@ async def get_animal_by_id(
                    o.city as org_city,
                    o.country as org_country,
                    o.website_url as org_website_url,
-                   o.social_media as org_social_media
+                   o.social_media as org_social_media,
+                   o.ships_to as org_ships_to
             FROM animals a
             LEFT JOIN organizations o ON a.organization_id = o.id
             WHERE a.id = %s
@@ -686,6 +704,19 @@ async def get_animal_by_id(
         elif org_social_media is None:
             org_social_media = {}
 
+        # Parse ships_to JSONB - handle both string and array cases
+        org_ships_to = clean_dict.get("org_ships_to")
+        if isinstance(org_ships_to, str):
+            try:
+                org_ships_to = json.loads(org_ships_to)
+            except json.JSONDecodeError:
+                logger.warning(
+                    f"Could not parse ships_to JSON for animal {animal_id}"
+                )
+                org_ships_to = []
+        elif org_ships_to is None:
+            org_ships_to = []
+
         # Build organization data
         organization_data = None
         if clean_dict.get("org_name"):
@@ -696,6 +727,7 @@ async def get_animal_by_id(
                 "country": clean_dict["org_country"],
                 "website_url": clean_dict["org_website_url"],
                 "social_media": org_social_media,  # Now properly parsed
+                "ships_to": org_ships_to,  # Now properly parsed
             }
 
         # Remove org_ prefixed fields and add nested organization
