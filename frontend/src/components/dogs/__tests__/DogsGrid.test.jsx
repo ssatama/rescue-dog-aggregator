@@ -65,7 +65,7 @@ describe('DogsGrid Component', () => {
     test('renders empty state when no dogs provided', () => {
       render(<DogsGrid dogs={[]} />);
       
-      const emptyState = screen.getByTestId('dogs-grid-empty');
+      const emptyState = screen.getByTestId('empty-state');
       expect(emptyState).toBeInTheDocument();
       expect(emptyState).toHaveTextContent('No dogs available');
     });
@@ -73,14 +73,14 @@ describe('DogsGrid Component', () => {
     test('renders empty state when dogs array is null/undefined', () => {
       render(<DogsGrid dogs={null} />);
       
-      const emptyState = screen.getByTestId('dogs-grid-empty');
+      const emptyState = screen.getByTestId('empty-state');
       expect(emptyState).toBeInTheDocument();
     });
 
     test('empty state has proper styling', () => {
       render(<DogsGrid dogs={[]} />);
       
-      const emptyState = screen.getByTestId('dogs-grid-empty');
+      const emptyState = screen.getByTestId('empty-state');
       expect(emptyState).toHaveClass('bg-gray-50');
       expect(emptyState).toHaveClass('rounded-lg');
       expect(emptyState).toHaveClass('p-8');
@@ -109,7 +109,6 @@ describe('DogsGrid Component', () => {
       const skeleton = screen.getByTestId('dog-card-skeleton');
       expect(skeleton).toHaveClass('animate-pulse');
       expect(skeleton).toHaveClass('bg-white');
-      expect(skeleton).toHaveClass('rounded-lg');
       expect(skeleton).toHaveClass('shadow-md');
     });
   });

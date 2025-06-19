@@ -6,7 +6,6 @@ import Link from 'next/link';
 import Layout from '../../../components/layout/Layout';
 import DogsGrid from '../../../components/dogs/DogsGrid';
 import DogFilters from '../../../components/filters/DogFilters';
-import Loading from '../../../components/ui/Loading';
 import OrganizationHero from '../../../components/organizations/OrganizationHero';
 import useFilteredDogs from '../../../hooks/useFilteredDogs';
 import { getDefaultFilters } from '../../../utils/dogFilters';
@@ -74,7 +73,26 @@ export default function OrganizationDetailClient({ params = {} }) {
     return (
       <Layout>
         <div className="max-w-7xl mx-auto p-4">
-          <Loading />
+          {/* Hero skeleton */}
+          <div className="bg-gradient-to-r from-amber-100 to-orange-200 rounded-lg p-8 mb-8">
+            <div className="animate-pulse">
+              <div className="flex items-center space-x-6 mb-6">
+                <div className="w-24 h-24 bg-gray-200 rounded-full"></div>
+                <div className="space-y-3 flex-1">
+                  <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="h-20 bg-gray-200 rounded"></div>
+                <div className="h-20 bg-gray-200 rounded"></div>
+                <div className="h-20 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Dogs grid skeleton */}
+          <DogsGrid loading={true} skeletonCount={8} />
         </div>
       </Layout>
     );
@@ -161,7 +179,14 @@ export default function OrganizationDetailClient({ params = {} }) {
           
           {/* Dogs Grid with filtered results */}
           <div className="mt-6">
-            <DogsGrid dogs={filteredDogs} loading={loading} />
+            <DogsGrid 
+              dogs={filteredDogs} 
+              loading={loading}
+              loadingType="initial"
+              emptyStateVariant={hasActiveFilters ? "noDogsFiltered" : "noDogsOrganization"}
+              onClearFilters={() => setFilters(getDefaultFilters())}
+              onBrowseOrganizations={() => window.location.href = '/organizations'}
+            />
           </div>
         </div>
         

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Layout from '../../components/layout/Layout';
 import OrganizationCard from '../../components/organizations/OrganizationCard';
-import Loading from '../../components/ui/Loading';
+import OrganizationCardSkeleton from '../../components/ui/OrganizationCardSkeleton';
+import EmptyState from '../../components/ui/EmptyState';
 import { getEnhancedOrganizations } from '../../services/organizationsService';
 import { reportError } from '../../utils/logger';
 
@@ -67,21 +68,22 @@ export default function OrganizationsClient() {
         
         {/* Loading state */}
         {loading ? (
-          <Loading />
+          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in duration-300">
+            {Array.from({ length: 6 }, (_, index) => (
+              <OrganizationCardSkeleton key={`skeleton-${index}`} />
+            ))}
+          </div>
         ) : organizations.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in duration-500">
             {organizations.map((org) => (
               <OrganizationCard key={org.id} organization={org} />
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-            <h3 className="text-card-title text-gray-900 mb-2">No Organizations Found</h3>
-            <p className="text-body text-gray-600">We couldn't find any rescue organizations in our database.</p>
-          </div>
+          <EmptyState
+            variant="noOrganizations"
+            onRefresh={fetchOrganizations}
+          />
         )}
       </div>
     </Layout>

@@ -6,7 +6,8 @@ import { useSearchParams } from 'next/navigation';
 import Layout from '../../components/layout/Layout';
 import DogCard from '../../components/dogs/DogCard';
 import DogCardErrorBoundary from '../../components/error/DogCardErrorBoundary';
-import Loading from '../../components/ui/Loading';
+import DogCardSkeleton from '../../components/ui/DogCardSkeleton';
+import EmptyState from '../../components/ui/EmptyState';
 import {
   getAnimals,
   getStandardizedBreeds,
@@ -429,10 +430,16 @@ export default function DogsPageClient() {
               </Alert>
             )}
 
-            {loading && <Loading />}
+            {loading && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 animate-in fade-in duration-300">
+                {Array.from({ length: 9 }, (_, index) => (
+                  <DogCardSkeleton key={`skeleton-${index}`} />
+                ))}
+              </div>
+            )}
 
             {!loading && dogs.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 animate-in fade-in duration-500">
                 {dogs.map((dog) => (
                   <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
                     <DogCard dog={dog} />
@@ -442,14 +449,10 @@ export default function DogsPageClient() {
             )}
 
             {!loading && !error && dogs.length === 0 && (
-              <div className="text-center py-10 bg-white rounded-lg border border-gray-200">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h3 className="text-xl font-medium text-gray-900 mb-2">No Dogs Found</h3>
-                <p className="text-gray-600 mb-4">Try adjusting your filters or search terms.</p>
-                <Button variant="outline" onClick={resetFilters}>Clear All Filters</Button>
-              </div>
+              <EmptyState
+                variant="noDogsFiltered"
+                onClearFilters={resetFilters}
+              />
             )}
 
             {hasMore && !loading && !loadingMore && (
@@ -459,7 +462,13 @@ export default function DogsPageClient() {
                 </Button>
               </div>
             )}
-            {loadingMore && <Loading />}
+            {loadingMore && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8 animate-in fade-in duration-300">
+                {Array.from({ length: 6 }, (_, index) => (
+                  <DogCardSkeleton key={`loading-more-skeleton-${index}`} />
+                ))}
+              </div>
+            )}
           </main>
         </div>
       </div>

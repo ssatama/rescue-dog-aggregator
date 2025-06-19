@@ -69,7 +69,9 @@ describe('DogsPage Component', () => {
     render(<DogsPage />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('loading')).toBeInTheDocument();
+      // Should show skeleton screens instead of simple loading
+      const loadingSkeletons = screen.getAllByTestId('dog-card-skeleton');
+      expect(loadingSkeletons.length).toBeGreaterThan(0);
     });
   });
 
@@ -93,19 +95,19 @@ describe('DogsPage Component', () => {
     getAnimals.mockResolvedValue([]);
     render(<DogsPage />);
 
-    // wait for loading to disappear
+    // wait for loading to complete (skeletons disappear)
     await waitFor(() =>
-      expect(screen.queryByTestId('loading')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('dog-card-skeleton')).not.toBeInTheDocument()
     );
 
-    // find the no‐results container by its heading
+    // find the no‐results container by its heading (updated for EmptyState)
     const noResultsContainer = screen
-      .getByRole('heading', { name: /No Dogs Found/i })
+      .getByRole('heading', { name: /No dogs match your filters/i })
       .closest('div');
     expect(noResultsContainer).toBeInTheDocument();
 
     // assert text inside it
-    expect(within(noResultsContainer).getByText(/Try adjusting your filters/i))
+    expect(within(noResultsContainer).getByText(/Try adjusting your search criteria/i))
       .toBeInTheDocument();
 
     // now scoped to that container, find the exact button

@@ -131,12 +131,13 @@ describe('Enhanced Organizations Integration', () => {
 
       render(<OrganizationsClient />);
 
-      // Should show loading initially
-      expect(screen.getByTestId('loading')).toBeInTheDocument();
+      // Should show skeleton screens initially
+      const loadingSkeletons = screen.getAllByTestId('organization-card-skeleton');
+      expect(loadingSkeletons.length).toBeGreaterThan(0);
 
       // Wait for data to load
       await waitFor(() => {
-        expect(screen.queryByTestId('loading')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('organization-card-skeleton')).not.toBeInTheDocument();
       });
 
       // Check that all organizations are displayed
@@ -242,12 +243,15 @@ describe('Enhanced Organizations Integration', () => {
       const retryButton = screen.getByText('Retry');
       fireEvent.click(retryButton);
 
-      // Should show loading again
-      expect(screen.getByTestId('loading')).toBeInTheDocument();
+      // Should show skeleton screens again
+      await waitFor(() => {
+        const retryLoadingSkeletons = screen.getAllByTestId('organization-card-skeleton');
+        expect(retryLoadingSkeletons.length).toBeGreaterThan(0);
+      });
 
       // Wait for successful load
       await waitFor(() => {
-        expect(screen.queryByTestId('loading')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('organization-card-skeleton')).not.toBeInTheDocument();
         expect(screen.getByText('Pets in Turkey')).toBeInTheDocument();
       });
 
@@ -263,11 +267,11 @@ describe('Enhanced Organizations Integration', () => {
       render(<OrganizationsClient />);
 
       await waitFor(() => {
-        expect(screen.queryByTestId('loading')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('organization-card-skeleton')).not.toBeInTheDocument();
       });
 
-      expect(screen.getByText('No Organizations Found')).toBeInTheDocument();
-      expect(screen.getByText('We couldn\'t find any rescue organizations in our database.')).toBeInTheDocument();
+      expect(screen.getByText('No organizations found')).toBeInTheDocument();
+      expect(screen.getByText('We couldn\'t find any rescue organizations at the moment. This might be a temporary issue - please try refreshing the page.')).toBeInTheDocument();
     });
   });
 
@@ -338,8 +342,9 @@ describe('Enhanced Organizations Integration', () => {
 
       render(<OrganizationsClient />);
 
-      // Should show loading state
-      expect(screen.getByTestId('loading')).toBeInTheDocument();
+      // Should show skeleton screens
+      const controlledLoadingSkeletons = screen.getAllByTestId('organization-card-skeleton');
+      expect(controlledLoadingSkeletons.length).toBeGreaterThan(0);
       expect(screen.queryByText('Pets in Turkey')).not.toBeInTheDocument();
 
       // Resolve the promise
@@ -362,12 +367,13 @@ describe('Enhanced Organizations Integration', () => {
 
       render(<OrganizationsClient />);
 
-      // Should show loading for the duration
-      expect(screen.getByTestId('loading')).toBeInTheDocument();
+      // Should show skeleton screens for the duration
+      const loadingSkeletons = screen.getAllByTestId('organization-card-skeleton');
+      expect(loadingSkeletons.length).toBeGreaterThan(0);
 
       // Wait for slow response
       await waitFor(() => {
-        expect(screen.queryByTestId('loading')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('organization-card-skeleton')).not.toBeInTheDocument();
         expect(screen.getByText('Pets in Turkey')).toBeInTheDocument();
       }, { timeout: 200 });
     });

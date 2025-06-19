@@ -1,6 +1,8 @@
 import React from 'react';
 import DogCard from './DogCard';
 import DogCardErrorBoundary from '../error/DogCardErrorBoundary';
+import DogCardSkeleton from '../ui/DogCardSkeleton';
+import EmptyState from '../ui/EmptyState';
 
 /**
  * Responsive grid component for displaying dog cards
@@ -11,19 +13,27 @@ const DogsGrid = React.memo(function DogsGrid({
   loading = false, 
   skeletonCount = 8,
   className = '',
+  emptyStateVariant = 'noDogsOrganization',
+  onClearFilters,
+  onBrowseOrganizations,
+  loadingType = 'initial', // 'initial' | 'filter' | 'pagination'
   ...props 
 }) {
   // Handle loading state with skeleton cards
   if (loading) {
+    // Different loading animations based on type
+    const animationClass = loadingType === 'filter' ? 'animate-in fade-in duration-200' : 'animate-in fade-in duration-300';
+    const adjustedSkeletonCount = loadingType === 'filter' ? Math.min(skeletonCount, 6) : skeletonCount;
+    
     return (
       <div
         data-testid="dogs-grid"
-        className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 ${className}`}
+        className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 ${className} ${animationClass}`}
         aria-label="Dogs available for adoption"
         {...props}
       >
-        {Array.from({ length: skeletonCount }, (_, index) => (
-          <SkeletonCard key={`skeleton-${index}`} />
+        {Array.from({ length: adjustedSkeletonCount }, (_, index) => (
+          <DogCardSkeleton key={`skeleton-${index}`} />
         ))}
       </div>
     );
@@ -32,28 +42,12 @@ const DogsGrid = React.memo(function DogsGrid({
   // Handle empty state
   if (!dogs || dogs.length === 0) {
     return (
-      <div
+      <EmptyState
         data-testid="dogs-grid-empty"
-        className="bg-gray-50 rounded-lg p-8 text-center border border-gray-200"
-      >
-        <svg 
-          className="h-12 w-12 mx-auto text-gray-400 mb-4" 
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24"
-        >
-          <path 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            strokeWidth={1.5} 
-            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" 
-          />
-        </svg>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No dogs available</h3>
-        <p className="text-gray-600">
-          This organization doesn't have any dogs listed for adoption at the moment.
-        </p>
-      </div>
+        variant={emptyStateVariant}
+        onClearFilters={onClearFilters}
+        onBrowseOrganizations={onBrowseOrganizations}
+      />
     );
   }
 
@@ -61,7 +55,7 @@ const DogsGrid = React.memo(function DogsGrid({
   return (
     <div
       data-testid="dogs-grid"
-      className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 ${className}`}
+      className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 ${className} animate-in fade-in duration-500`}
       aria-label="Dogs available for adoption"
       {...props}
     >
@@ -85,55 +79,5 @@ const DogsGrid = React.memo(function DogsGrid({
   );
 });
 
-/**
- * Skeleton loading card component
- */
-const SkeletonCard = React.memo(function SkeletonCard() {
-  return (
-    <div
-      data-testid="dog-card-skeleton"
-      className="animate-pulse bg-white rounded-lg shadow-md overflow-hidden"
-    >
-      {/* Image skeleton */}
-      <div className="h-50 sm:h-50 md:h-60 bg-gray-200" />
-      
-      {/* Content skeleton */}
-      <div className="p-4 space-y-3">
-        {/* Name skeleton */}
-        <div className="h-6 bg-gray-200 rounded w-3/4" />
-        
-        {/* Age/Gender row skeleton */}
-        <div className="flex items-center gap-3">
-          <div className="h-4 bg-gray-200 rounded w-16" />
-          <div className="h-4 bg-gray-200 rounded w-12" />
-        </div>
-        
-        {/* Breed skeleton */}
-        <div className="h-4 bg-gray-200 rounded w-1/2" />
-        
-        {/* Location skeleton */}
-        <div className="flex items-center gap-1">
-          <div className="w-4 h-4 bg-gray-200 rounded" />
-          <div className="h-4 bg-gray-200 rounded w-2/3" />
-        </div>
-        
-        {/* Ships to skeleton */}
-        <div className="flex items-center gap-2">
-          <div className="h-3 bg-gray-200 rounded w-12" />
-          <div className="flex gap-1">
-            <div className="w-4 h-3 bg-gray-200 rounded" />
-            <div className="w-4 h-3 bg-gray-200 rounded" />
-            <div className="w-4 h-3 bg-gray-200 rounded" />
-          </div>
-        </div>
-      </div>
-      
-      {/* Button skeleton */}
-      <div className="p-4 pt-0">
-        <div className="h-10 bg-gray-200 rounded w-full" />
-      </div>
-    </div>
-  );
-});
 
 export default DogsGrid;

@@ -217,7 +217,9 @@ describe('Session 6 Filtering Integration', () => {
 
       render(<OrganizationDetailClient params={{ id: '1' }} />);
 
-      expect(screen.getByTestId('loading')).toBeInTheDocument();
+      // Should show skeleton screens instead of simple loading
+      const loadingSkeletons = screen.getAllByTestId('dog-card-skeleton');
+      expect(loadingSkeletons.length).toBeGreaterThan(0);
       expect(screen.queryByTestId('dog-filters')).not.toBeInTheDocument();
     });
   });
