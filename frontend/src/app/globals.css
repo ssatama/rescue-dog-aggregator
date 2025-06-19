@@ -430,6 +430,11 @@
     .animate-org-card:hover {
       transform: none;
     }
+    
+    /* Disable image scale animations in reduced motion */
+    .group:hover .group-hover\:scale-102 {
+      transform: none;
+    }
   }
 
   /* ==================================================
@@ -516,5 +521,14 @@
     transform: translateZ(0);
     backface-visibility: hidden;
     perspective: 1000px;
+  }
+
+  /* Custom scale utilities for subtle animations */
+  .scale-102 {
+    transform: scale(1.02);
+  }
+  
+  .group:hover .group-hover\:scale-102 {
+    transform: scale(1.02);
   }
 }

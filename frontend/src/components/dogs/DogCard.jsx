@@ -59,7 +59,7 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
     <Card 
       ref={cardRef}
       data-testid="dog-card"
-      className={`overflow-hidden flex flex-col h-full animate-card-hover group rounded-lg will-change-transform ${
+      className={`overflow-hidden flex flex-col h-full animate-card-hover group rounded-lg will-change-transform transition-all duration-200 ease-in-out ${
         isVisible ? 'animate-page-enter' : 'opacity-0 translate-y-5'
       }`}
       {...hoverProps}
@@ -74,7 +74,7 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
           <LazyImage
             src={optimizedImageUrl}
             alt={name.replace(/&[^;]+;/g, '')}
-            className="w-full h-50 sm:h-50 md:h-60 object-cover transition-transform duration-200 ease-out group-hover:scale-105"
+            className="w-full h-50 sm:h-50 md:h-60 object-cover transition-transform duration-200 ease-out group-hover:scale-102"
             style={{ objectPosition }}
             enableProgressiveLoading={true}
             priority={priority}

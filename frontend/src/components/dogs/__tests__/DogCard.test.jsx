@@ -572,7 +572,7 @@ describe('DogCard Component', () => {
       
       // Image should have hover scale effect (check placeholder if image not loaded)
       const imageElement = screen.queryByAltText('Buddy') || screen.getByTestId('image-placeholder');
-      expect(imageElement.className).toContain('group-hover:scale-105');
+      expect(imageElement.className).toContain('group-hover:scale-102');
       expect(imageElement.className).toContain('transition-transform');
     });
   });

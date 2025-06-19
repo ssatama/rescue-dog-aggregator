@@ -212,21 +212,6 @@ export default function OrganizationDetailClient({ params = {} }) {
           </div>
         </div>
         
-        {/* Call to action */}
-        <div className="bg-blue-50 rounded-lg p-6 border border-blue-100">
-          <h3 className="text-xl font-bold text-blue-800 mb-3">Want to help?</h3>
-          <p className="text-blue-700 mb-4">
-            {organization.name} is always looking for volunteers, foster homes, and donations to support their rescue efforts.
-          </p>
-          <a 
-            href={organization.website_url || "#"} 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors"
-          >
-            Learn How to Support
-          </a>
-        </div>
       </div>
 
       {/* Mobile Filter Bottom Sheet */}

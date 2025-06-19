@@ -54,7 +54,7 @@ export default function OrganizationCard({ organization }) {
         }
       }}
     >
-      <CardHeader className="p-6 pb-4">
+      <CardHeader className="p-4 sm:p-6 pb-3 sm:pb-4">
           {/* Logo and Organization Header */}
           <div className="flex items-center space-x-4">
             {/* 1. Organization Logo (64px with fallback to initials) */}
@@ -94,7 +94,7 @@ export default function OrganizationCard({ organization }) {
           </div>
         </CardHeader>
         
-        <CardContent className="p-6 pt-0 space-y-3">
+        <CardContent className="p-4 sm:p-6 pt-0 space-y-2 sm:space-y-3">
           {/* 2. Three Location Info Lines */}
           <div className="space-y-2 text-sm">
             {/* Based in: [flag] [country] */}
@@ -194,7 +194,7 @@ export default function OrganizationCard({ organization }) {
         </CardContent>
 
         {/* 6. Two CTAs: "Visit Website" and "View X Dogs →" */}
-        <CardFooter className="p-6 pt-0">
+        <CardFooter className="p-4 sm:p-6 pt-0">
           <div className="flex space-x-3 w-full">
             <Button 
               asChild 
