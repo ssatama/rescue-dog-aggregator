@@ -28,7 +28,7 @@ const DogsGrid = React.memo(function DogsGrid({
     return (
       <div
         data-testid="dogs-grid"
-        className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 ${className} ${animationClass}`}
+        className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 ${className} ${animationClass}`}
         aria-label="Dogs available for adoption"
         {...props}
       >
@@ -55,7 +55,7 @@ const DogsGrid = React.memo(function DogsGrid({
   return (
     <div
       data-testid="dogs-grid"
-      className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 ${className} animate-in fade-in duration-500`}
+      className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 ${className} animate-in fade-in duration-500`}
       aria-label="Dogs available for adoption"
       {...props}
     >

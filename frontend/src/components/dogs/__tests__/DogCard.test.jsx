@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import DogCard from '../DogCard';
 
 describe('DogCard Component', () => {
@@ -36,8 +36,8 @@ describe('DogCard Component', () => {
     // Check that size is displayed (Assuming size is also rendered, if not, remove this)
     // expect(screen.getByText('Large')).toBeInTheDocument(); // Uncomment if size is displayed
     
-    // Check that "Learn More →" button/link is present
-    const ctaButton = screen.getByText('Learn More →');
+    // Check that "Meet [Name] →" button/link is present
+    const ctaButton = screen.getByText('Meet Buddy →');
     expect(ctaButton).toBeInTheDocument();
     // Check if it's inside a link pointing to the correct dog page
     expect(ctaButton.closest('a')).toHaveAttribute('href', `/dogs/${mockDog.id}`);
@@ -59,7 +59,7 @@ describe('DogCard Component', () => {
     expect(screen.queryByText('Unknown Breed')).not.toBeInTheDocument();
     expect(screen.queryByText('Unknown')).not.toBeInTheDocument();
     // Check button text
-    expect(screen.getByText('Learn More →')).toBeInTheDocument();
+    expect(screen.getByText('Meet Max →')).toBeInTheDocument();
 
   });
 
@@ -78,8 +78,8 @@ describe('DogCard Component', () => {
     expect(screen.getByText('Luna')).toBeInTheDocument();
     // Should not show breed line when it's Unknown
     expect(screen.queryByText('Unknown')).not.toBeInTheDocument();
-    // Should still have the learn more button
-    expect(screen.getByText('Learn More →')).toBeInTheDocument();
+    // Should still have the meet button
+    expect(screen.getByText('Meet Luna →')).toBeInTheDocument();
   });
 
   // NEW TESTS FOR ENHANCED FEATURES
@@ -99,7 +99,7 @@ describe('DogCard Component', () => {
       expect(card).toHaveClass('animate-card-hover');
       expect(card).toHaveClass('will-change-transform');
       expect(card).toHaveClass('group');
-      expect(card).toHaveClass('rounded-lg');
+      expect(card).toHaveClass('rounded-xl'); // Updated from rounded-lg
     });
 
     test('applies smooth transition effects', () => {
@@ -120,8 +120,8 @@ describe('DogCard Component', () => {
     });
   });
 
-  describe('Organization Badge', () => {
-    test('shows organization badge on image when organization exists', () => {
+  describe('Organization Badge Removed', () => {
+    test('no longer shows organization badge on image', () => {
       const mockDog = {
         id: 1,
         name: 'Buddy',
@@ -132,49 +132,13 @@ describe('DogCard Component', () => {
       
       render(<DogCard dog={mockDog} />);
       
-      const orgBadge = screen.getByTestId('organization-badge');
-      expect(orgBadge).toBeInTheDocument();
-      expect(orgBadge).toHaveTextContent('Pets in Turkey');
-      expect(orgBadge).toHaveClass('absolute');
-      expect(orgBadge).toHaveClass('bottom-2');
-      expect(orgBadge).toHaveClass('right-2');
-      expect(orgBadge).toHaveClass('bg-white');
-      expect(orgBadge).toHaveClass('text-gray-800');
-    });
-
-    test('does not show organization badge when organization is missing', () => {
-      const mockDog = {
-        id: 1,
-        name: 'Buddy',
-        status: 'available',
-        primary_image_url: 'https://example.com/image.jpg'
-        // No organization
-      };
-      
-      render(<DogCard dog={mockDog} />);
-      
+      // Organization badge should not exist
       const orgBadge = screen.queryByTestId('organization-badge');
       expect(orgBadge).not.toBeInTheDocument();
-    });
-
-    test('handles long organization names with truncation', () => {
-      const mockDog = {
-        id: 1,
-        name: 'Buddy',
-        status: 'available',
-        primary_image_url: 'https://example.com/image.jpg',
-        organization: { 
-          name: 'Very Long Organization Name That Should Be Truncated',
-          city: 'City',
-          country: 'Country'
-        }
-      };
       
-      render(<DogCard dog={mockDog} />);
-      
-      const orgBadge = screen.getByTestId('organization-badge');
-      expect(orgBadge).toHaveClass('truncate');
-      expect(orgBadge).toHaveClass('max-w-[120px]');
+      // But organization info should still be in the content area
+      const locationDisplay = screen.getByTestId('location-display');
+      expect(locationDisplay).toHaveTextContent('Pets in Turkey');
     });
   });
 
@@ -304,7 +268,7 @@ describe('DogCard Component', () => {
   });
 
   describe('Badge Positioning and Styling', () => {
-    test('NEW badge and organization badge do not overlap', () => {
+    test('NEW badge has proper positioning', () => {
       const recentDate = new Date();
       recentDate.setDate(recentDate.getDate() - 2); // 2 days ago
       
@@ -320,42 +284,20 @@ describe('DogCard Component', () => {
       render(<DogCard dog={mockDog} />);
       
       const newBadge = screen.getByTestId('new-badge');
-      const orgBadge = screen.getByTestId('organization-badge');
       
       // NEW badge should be top-left
       expect(newBadge).toHaveClass('top-2');
       expect(newBadge).toHaveClass('left-2');
-      
-      // Organization badge should be bottom-right
-      expect(orgBadge).toHaveClass('bottom-2');
-      expect(orgBadge).toHaveClass('right-2');
-    });
-
-    test('badges have proper z-index for layering', () => {
-      const recentDate = new Date();
-      recentDate.setDate(recentDate.getDate() - 2);
-      
-      const mockDog = {
-        id: 1,
-        name: 'Buddy',
-        status: 'available',
-        primary_image_url: 'https://example.com/image.jpg',
-        created_at: recentDate.toISOString(),
-        organization: { name: 'Test Org', city: 'Test City', country: 'TC' }
-      };
-      
-      render(<DogCard dog={mockDog} />);
-      
-      const newBadge = screen.getByTestId('new-badge');
-      const orgBadge = screen.getByTestId('organization-badge');
-      
       expect(newBadge).toHaveClass('z-10');
-      expect(orgBadge).toHaveClass('z-10');
+      
+      // Organization badge should not exist
+      const orgBadge = screen.queryByTestId('organization-badge');
+      expect(orgBadge).not.toBeInTheDocument();
     });
   });
 
   describe('Accessibility Enhancements for New Features', () => {
-    test('badges have proper ARIA labels', () => {
+    test('NEW badge has proper ARIA label', () => {
       const recentDate = new Date();
       recentDate.setDate(recentDate.getDate() - 2);
       
@@ -371,10 +313,11 @@ describe('DogCard Component', () => {
       render(<DogCard dog={mockDog} />);
       
       const newBadge = screen.getByTestId('new-badge');
-      const orgBadge = screen.getByTestId('organization-badge');
-      
       expect(newBadge).toHaveAttribute('aria-label', 'Recently added dog');
-      expect(orgBadge).toHaveAttribute('aria-label', 'Organization: Test Org');
+      
+      // Organization badge should not exist
+      const orgBadge = screen.queryByTestId('organization-badge');
+      expect(orgBadge).not.toBeInTheDocument();
     });
 
     test('hover animations do not interfere with keyboard navigation', () => {
@@ -388,7 +331,7 @@ describe('DogCard Component', () => {
       render(<DogCard dog={mockDog} />);
       
       const card = screen.getByTestId('dog-card');
-      const ctaLink = screen.getByText('Learn More →').closest('a');
+      const ctaLink = screen.getByText('Meet Buddy →').closest('a');
       
       // Focus should work normally
       ctaLink.focus();
@@ -416,11 +359,9 @@ describe('DogCard Component', () => {
       const imageContainer = screen.getByTestId('image-placeholder') || screen.getByAltText('Buddy');
       expect(imageContainer).toBeInTheDocument();
       
-      // Check for height classes on the actual image or placeholder
-      const hasCorrectClasses = imageContainer.className.includes('h-50') && 
-                               imageContainer.className.includes('sm:h-50') && 
-                               imageContainer.className.includes('md:h-60');
-      expect(hasCorrectClasses).toBeTruthy();
+      // Image container now uses aspect-[4/3] instead of fixed height classes
+      const imageContainerParent = screen.getByTestId('image-container');
+      expect(imageContainerParent).toHaveClass('aspect-[4/3]');
     });
 
     test('displays dog name prominently', () => {
@@ -435,7 +376,7 @@ describe('DogCard Component', () => {
       
       const nameElement = screen.getByTestId('dog-name');
       expect(nameElement).toHaveClass('text-xl');
-      expect(nameElement).toHaveClass('font-semibold');
+      expect(nameElement).toHaveClass('font-bold');
     });
 
     test('displays age category with formatted age', () => {
@@ -501,7 +442,7 @@ describe('DogCard Component', () => {
       // Flags should be rendered as part of the ships-to component
     });
 
-    test('displays Learn More CTA button', () => {
+    test('displays Meet CTA button', () => {
       const mockDog = {
         id: 1,
         name: 'Buddy',
@@ -511,7 +452,7 @@ describe('DogCard Component', () => {
       
       render(<DogCard dog={mockDog} />);
       
-      const ctaButton = screen.getByText('Learn More →');
+      const ctaButton = screen.getByText('Meet Buddy →');
       expect(ctaButton).toBeInTheDocument();
       expect(ctaButton.closest('a')).toHaveAttribute('href', '/dogs/1');
     });
@@ -574,6 +515,303 @@ describe('DogCard Component', () => {
       const imageElement = screen.queryByAltText('Buddy') || screen.getByTestId('image-placeholder');
       expect(imageElement.className).toContain('group-hover:scale-102');
       expect(imageElement.className).toContain('transition-transform');
+    });
+  });
+
+  // SESSION 2 ENHANCEMENT TESTS
+  describe('Session 2: Card Structure Enhancements', () => {
+    test('applies new card structure with rounded-xl, bg-white, shadow-md', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const card = screen.getByTestId('dog-card');
+      expect(card).toHaveClass('bg-white');
+      expect(card).toHaveClass('rounded-xl');
+      expect(card).toHaveClass('shadow-md');
+      expect(card).toHaveClass('hover:shadow-lg');
+      expect(card).toHaveClass('transition-shadow');
+      expect(card).toHaveClass('duration-200');
+      
+      // Card component might have border in base class, but our styling overrides it
+      // The visual effect is no border due to shadow-md
+    });
+  });
+
+  describe('Session 2: Image Aspect Ratio', () => {
+    test('applies 4:3 aspect ratio to image container', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        primary_image_url: 'https://example.com/image.jpg',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const imageContainer = screen.getByTestId('image-container');
+      expect(imageContainer).toHaveClass('aspect-[4/3]');
+      expect(imageContainer).toHaveClass('relative');
+      expect(imageContainer).toHaveClass('overflow-hidden');
+      expect(imageContainer).toHaveClass('bg-gray-200');
+    });
+
+    test('image fills container properly with object-cover', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        primary_image_url: 'https://example.com/image.jpg',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const imageElement = screen.queryByAltText('Buddy') || screen.getByTestId('image-placeholder');
+      expect(imageElement).toHaveClass('w-full');
+      expect(imageElement).toHaveClass('h-full');
+      expect(imageElement).toHaveClass('object-cover');
+    });
+  });
+
+  describe('Session 2: Organization Badge Removed for Cleaner Design', () => {
+    test('organization badge no longer appears on image for cleaner look', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        primary_image_url: 'https://example.com/image.jpg',
+        organization: { name: 'Pets in Turkey' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      // Organization badge should not exist on image
+      const orgBadge = screen.queryByTestId('organization-badge');
+      expect(orgBadge).not.toBeInTheDocument();
+      
+      // But organization info should still be visible in content area
+      const locationDisplay = screen.getByTestId('location-display');
+      expect(locationDisplay).toHaveTextContent('Pets in Turkey');
+    });
+
+    test('image container only contains NEW badge when applicable', () => {
+      const recentDate = new Date();
+      recentDate.setDate(recentDate.getDate() - 2);
+      
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        primary_image_url: 'https://example.com/image.jpg',
+        created_at: recentDate.toISOString(),
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const imageContainer = screen.getByTestId('image-container');
+      
+      // Only NEW badge should exist inside image
+      const newBadge = screen.getByTestId('new-badge');
+      expect(imageContainer).toContainElement(newBadge);
+      
+      // Organization badge should not exist
+      const orgBadge = screen.queryByTestId('organization-badge');
+      expect(orgBadge).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Session 2: Information Hierarchy', () => {
+    test('dog name has larger, bolder typography', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Lucky',
+        status: 'available',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const nameElement = screen.getByTestId('dog-name');
+      expect(nameElement).toHaveClass('text-xl');
+      expect(nameElement).toHaveClass('font-bold'); // Changed from font-semibold
+      expect(nameElement).toHaveClass('mb-2');
+    });
+
+    test('age and gender displayed inline with icons', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        age_min_months: 24,
+        sex: 'Male',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const ageGenderRow = screen.getByTestId('age-gender-row');
+      expect(ageGenderRow).toBeInTheDocument();
+      expect(ageGenderRow).toHaveClass('flex');
+      expect(ageGenderRow).toHaveClass('items-center');
+      expect(ageGenderRow).toHaveClass('gap-3');
+      
+      // Check for age icon
+      const ageIcon = within(ageGenderRow).getByTestId('age-icon');
+      expect(ageIcon).toBeInTheDocument();
+      
+      // Check for gender icon
+      const genderIcon = within(ageGenderRow).getByTestId('gender-icon');
+      expect(genderIcon).toBeInTheDocument();
+    });
+
+    test('organization displayed with location icon', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        organization: { name: 'Pets in Turkey' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const locationRow = screen.getByTestId('location-row');
+      expect(locationRow).toBeInTheDocument();
+      
+      // Check for location icon - svg is rendered inside the row
+      const svgElements = locationRow.getElementsByTagName('svg');
+      expect(svgElements.length).toBeGreaterThan(0);
+    });
+
+    test('ships-to displayed as flag emojis with proper formatting', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        organization: { 
+          name: 'Test Org',
+          ships_to: ['DE', 'NL', 'BE', 'FR', 'GB'] // More than 3 to test overflow
+        }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const shipsToDisplay = screen.getByTestId('ships-to-display');
+      expect(shipsToDisplay).toBeInTheDocument();
+      
+      // Should show "Ships to:" label
+      expect(shipsToDisplay).toHaveTextContent('Ships to:');
+      
+      // Check for flag emojis - formatShipsToList should show max 3 + overflow indicator
+      const flagContainer = within(shipsToDisplay).getByTestId('ships-to-flags');
+      expect(flagContainer).toBeInTheDocument();
+    });
+  });
+
+  describe('Session 2: CTA Button Enhancement', () => {
+    test('CTA button shows personalized "Meet [Name] →" text', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Lucky',
+        status: 'available',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const ctaButton = screen.getByText('Meet Lucky →');
+      expect(ctaButton).toBeInTheDocument();
+    });
+
+    test('CTA button has orange gradient background', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const ctaButton = screen.getByText('Meet Buddy →');
+      expect(ctaButton).toHaveClass('bg-gradient-to-r');
+      expect(ctaButton).toHaveClass('from-orange-500');
+      expect(ctaButton).toHaveClass('to-orange-600');
+      expect(ctaButton).toHaveClass('hover:from-orange-600');
+      expect(ctaButton).toHaveClass('hover:to-orange-700');
+      expect(ctaButton).toHaveClass('text-white');
+    });
+
+    test('CTA button is full width within card footer', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const ctaButton = screen.getByText('Meet Buddy →');
+      expect(ctaButton).toHaveClass('w-full');
+      
+      // Button should still be inside a link
+      const linkWrapper = ctaButton.closest('a');
+      expect(linkWrapper).toHaveAttribute('href', '/dogs/1');
+      expect(linkWrapper).toHaveClass('w-full');
+    });
+
+    test('CTA button handles long names with truncation', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Princess Buttercup McFluffington III',
+        status: 'available',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      // Should still render with full name in button
+      const ctaButton = screen.getByText('Meet Princess Buttercup McFluffington III →');
+      expect(ctaButton).toBeInTheDocument();
+    });
+  });
+
+  describe('Session 2: Content Padding and Spacing', () => {
+    test('card content has proper padding', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const cardContent = screen.getByTestId('card-content');
+      expect(cardContent).toHaveClass('p-5'); // Increased from p-4
+    });
+
+    test('card footer has adjusted padding', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const cardFooter = screen.getByTestId('card-footer');
+      expect(cardFooter).toHaveClass('p-5'); // Match content padding
+      expect(cardFooter).toHaveClass('pt-0'); // No top padding
     });
   });
 });

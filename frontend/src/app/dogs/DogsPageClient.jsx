@@ -342,9 +342,10 @@ export default function DogsPageClient() {
   };
 
   return (
-    <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-title text-gray-900 mb-6">Find Your New Best Friend</h1>
+    <div data-testid="dogs-page-gradient-wrapper" className="min-h-screen bg-gradient-to-br from-[#FFF5E6] to-[#FFE4CC]">
+      <Layout>
+        <div data-testid="dogs-page-container" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h1 className="text-title text-gray-900 mb-6">Find Your New Best Friend</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <aside className="hidden md:block md:col-span-1">
@@ -433,7 +434,7 @@ export default function DogsPageClient() {
             )}
 
             {loading && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 animate-in fade-in duration-300">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8 animate-in fade-in duration-300">
                 {Array.from({ length: 9 }, (_, index) => (
                   <DogCardSkeleton key={`skeleton-${index}`} />
                 ))}
@@ -441,7 +442,7 @@ export default function DogsPageClient() {
             )}
 
             {!loading && dogs.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 animate-in fade-in duration-500">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8 animate-in fade-in duration-500">
                 {dogs.map((dog) => (
                   <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
                     <DogCard dog={dog} />
@@ -465,7 +466,7 @@ export default function DogsPageClient() {
               </div>
             )}
             {loadingMore && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8 animate-in fade-in duration-300">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mt-8 animate-in fade-in duration-300">
                 {Array.from({ length: 6 }, (_, index) => (
                   <DogCardSkeleton key={`loading-more-skeleton-${index}`} />
                 ))}
@@ -473,7 +474,8 @@ export default function DogsPageClient() {
             )}
           </main>
         </div>
-      </div>
-    </Layout>
+        </div>
+      </Layout>
+    </div>
   );
 }

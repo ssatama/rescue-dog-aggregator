@@ -205,10 +205,10 @@ describe('Mobile Touch Targets Validation', () => {
       expect(validateTouchTarget(dogCard)).toBe(true);
     });
 
-    test('Learn More button should be ≥48px in all dimensions', () => {
+    test('Meet [Name] button should be ≥48px in all dimensions', () => {
       render(<DogCard dog={mockDog} />);
       
-      const ctaButton = screen.getByText('Learn More →');
+      const ctaButton = screen.getByText('Meet Buddy →');
       expect(validateTouchTarget(ctaButton)).toBe(true);
       
       const rect = ctaButton.getBoundingClientRect();
@@ -323,7 +323,7 @@ describe('Mobile Touch Targets Validation', () => {
 
       render(<DogCard dog={mockDog} />);
       
-      const ctaButton = screen.getByText('Learn More →');
+      const ctaButton = screen.getByText('Meet Buddy →');
       const styles = window.getComputedStyle(ctaButton);
       
       // Ensure button has sufficient contrast in dark mode

@@ -41,23 +41,24 @@ describe('DogsGrid Component', () => {
       expect(screen.getByTestId('dog-card-3')).toBeInTheDocument();
     });
 
-    test('applies correct grid classes', () => {
+    test('applies correct grid classes with updated responsive breakpoints', () => {
       render(<DogsGrid dogs={mockDogs} />);
       
       const gridContainer = screen.getByTestId('dogs-grid');
       expect(gridContainer).toHaveClass('grid');
       expect(gridContainer).toHaveClass('grid-cols-1');
       expect(gridContainer).toHaveClass('sm:grid-cols-2');
-      expect(gridContainer).toHaveClass('md:grid-cols-3');
-      expect(gridContainer).toHaveClass('lg:grid-cols-4');
+      expect(gridContainer).toHaveClass('lg:grid-cols-3');
+      // Should NOT have lg:grid-cols-4 anymore
+      expect(gridContainer).not.toHaveClass('lg:grid-cols-4');
     });
 
-    test('applies correct gap spacing', () => {
+    test('applies correct gap spacing with updated desktop spacing', () => {
       render(<DogsGrid dogs={mockDogs} />);
       
       const gridContainer = screen.getByTestId('dogs-grid');
-      expect(gridContainer).toHaveClass('gap-4'); // Mobile gap
-      expect(gridContainer).toHaveClass('md:gap-6'); // Desktop gap
+      expect(gridContainer).toHaveClass('gap-4'); // Mobile gap (unchanged)
+      expect(gridContainer).toHaveClass('md:gap-6'); // Desktop gap (increased from gap-4)
     });
   });
 

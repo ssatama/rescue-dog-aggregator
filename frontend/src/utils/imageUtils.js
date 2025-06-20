@@ -109,7 +109,7 @@ export function getCatalogCardImage(originalUrl) {
   
   // If it's already a Cloudinary URL, add enhanced catalog card transformations
   if (isCloudinaryUrl(originalUrl)) {
-    // Use fixed dimensions instead of responsive parameters
+    // Use fixed dimensions for 4:3 aspect ratio
     // The w_auto syntax doesn't work with this Cloudinary setup
     const transformed = originalUrl.replace('/upload/', '/upload/w_400,h_300,c_fill,g_auto,f_auto,q_auto/');
     // Debug logging removed for production builds
@@ -121,7 +121,7 @@ export function getCatalogCardImage(originalUrl) {
     return originalUrl;
   }
   
-  // Fallback: use Cloudinary fetch with fixed dimensions
+  // Fallback: use Cloudinary fetch with fixed dimensions for 4:3 aspect ratio
   try {
     const encodedUrl = encodeURIComponent(originalUrl);
     return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/w_400,h_300,c_fill,g_auto,f_auto,q_auto/${encodedUrl}`;

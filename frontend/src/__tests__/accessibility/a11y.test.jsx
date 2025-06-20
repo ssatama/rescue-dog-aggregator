@@ -86,7 +86,7 @@ describe('Accessibility Tests', () => {
       expect(hasAccessibleLink).toBe(true);
       
       // CTA button should be clear
-      const ctaButton = screen.getByRole('button', { name: /learn more/i });
+      const ctaButton = screen.getByRole('button', { name: /meet buddy/i });
       expect(ctaButton).toBeInTheDocument();
     });
 

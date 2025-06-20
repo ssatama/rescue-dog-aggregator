@@ -297,4 +297,33 @@ describe('DogsPage Component', () => {
       );
     });
   });
+
+  describe('Background and Layout', () => {
+    test('applies gradient background to page wrapper', async () => {
+      getAnimals.mockResolvedValue([]);
+      render(<DogsPage />);
+
+      // Find the gradient background wrapper
+      const gradientWrapper = screen.getByTestId('dogs-page-gradient-wrapper');
+      expect(gradientWrapper).toBeInTheDocument();
+      expect(gradientWrapper).toHaveClass('bg-gradient-to-br', 'from-[#FFF5E6]', 'to-[#FFE4CC]');
+    });
+
+    test('gradient background covers full viewport height', async () => {
+      getAnimals.mockResolvedValue([]);
+      render(<DogsPage />);
+
+      const gradientWrapper = screen.getByTestId('dogs-page-gradient-wrapper');
+      expect(gradientWrapper).toHaveClass('min-h-screen');
+    });
+
+    test('maintains proper container constraints within gradient background', async () => {
+      getAnimals.mockResolvedValue([]);
+      render(<DogsPage />);
+
+      const container = screen.getByTestId('dogs-page-container');
+      expect(container).toBeInTheDocument();
+      expect(container).toHaveClass('max-w-7xl', 'mx-auto', 'px-4', 'sm:px-6', 'lg:px-8');
+    });
+  });
 });
