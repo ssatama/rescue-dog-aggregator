@@ -573,4 +573,47 @@
   .group:hover .group-hover\:scale-105 {
     transform: scale(1.05);
   }
+  
+  /* Session 7: Cross-browser compatibility enhancements */
+  
+  /* Backdrop filter support with fallbacks */
+  @supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
+    .backdrop-blur {
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+    }
+  }
+  
+  /* Fallback for browsers without backdrop-filter support */
+  @supports not (backdrop-filter: blur(12px)) {
+    .backdrop-blur {
+      background-color: rgba(255, 255, 255, 0.98) !important;
+    }
+  }
+  
+  /* Ensure animations respect reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    
+    .animate-shimmer-premium,
+    .animate-pulse,
+    .animate-fade-in,
+    .animate-button-hover,
+    .animate-card-hover {
+      animation: none !important;
+    }
+  }
+  
+  /* Form input focus styles with orange theme */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    @apply border-orange-300 ring-2 ring-orange-100 outline-none;
+  }
 }

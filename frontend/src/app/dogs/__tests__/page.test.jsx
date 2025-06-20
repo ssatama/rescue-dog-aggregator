@@ -609,4 +609,49 @@ describe('DogsPage Component', () => {
       );
     });
   });
+
+  describe('Session 7: Final Polish & Visual Consistency', () => {
+    test('Load More button matches dog card CTA styling', async () => {
+      const initialDogs = Array.from({ length: 20 }, (_, i) => createMockDog(i + 1, `Dog ${i + 1}`));
+      getAnimals.mockResolvedValueOnce(initialDogs);
+
+      render(<DogsPage />);
+      
+      const loadMoreButton = await screen.findByRole('button', { name: /Load More Dogs/i });
+      
+      // Check button has orange gradient styling
+      expect(loadMoreButton).toHaveClass('bg-gradient-to-r', 'from-orange-500', 'to-orange-600');
+      expect(loadMoreButton).toHaveClass('hover:from-orange-600', 'hover:to-orange-700');
+      expect(loadMoreButton).toHaveClass('text-white', 'font-medium');
+      
+      // Check proper spacing and shadows
+      expect(loadMoreButton).toHaveClass('px-8', 'py-3', 'rounded-lg');
+      expect(loadMoreButton).toHaveClass('shadow-md', 'hover:shadow-lg');
+      
+      // Check accessibility styling
+      expect(loadMoreButton).toHaveClass('focus-visible:ring-2', 'focus-visible:ring-orange-500');
+      expect(loadMoreButton).toHaveStyle({ minHeight: '48px' });
+      
+      // Check button text includes arrow
+      expect(loadMoreButton).toHaveTextContent('Load More Dogs →');
+    });
+
+    test('Load More button styling is consistent with dog card CTAs', async () => {
+      const initialDogs = Array.from({ length: 20 }, (_, i) => createMockDog(i + 1, `Dog ${i + 1}`));
+      getAnimals.mockResolvedValueOnce(initialDogs);
+
+      render(<DogsPage />);
+      
+      const loadMoreButton = await screen.findByRole('button', { name: /Load More Dogs/i });
+      
+      // Verify the button maintains consistent orange theme
+      expect(loadMoreButton).toHaveClass('bg-gradient-to-r', 'from-orange-500', 'to-orange-600');
+      
+      // Verify it has proper disabled state classes (even if not currently disabled)
+      expect(loadMoreButton).toHaveClass('disabled:opacity-50', 'disabled:cursor-not-allowed');
+      
+      // Verify minimum height for touch targets
+      expect(loadMoreButton).toHaveStyle({ minHeight: '48px' });
+    });
+  });
 });

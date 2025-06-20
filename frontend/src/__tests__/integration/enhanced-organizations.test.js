@@ -52,6 +52,13 @@ jest.mock('../../components/ui/SocialMediaLinks', () => {
 
 // Mock logger
 jest.mock('../../utils/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    log: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  },
   reportError: jest.fn()
 }));
 

@@ -336,7 +336,7 @@ export default function DogsPageClient() {
             </button>
           </Badge>
         ))}
-        <Button variant="link" size="sm" onClick={resetFilters} className="text-blue-600 hover:text-blue-800 p-0 h-auto">
+        <Button variant="link" size="sm" onClick={resetFilters} className="text-orange-600 hover:text-orange-700 p-0 h-auto font-medium">
           Clear All
         </Button>
       </div>
@@ -461,8 +461,13 @@ export default function DogsPageClient() {
 
             {hasMore && !loading && !loadingMore && (
               <div className="text-center mt-8 mb-12">
-                <Button onClick={handleLoadMore} disabled={loadingMore}>
-                  Load More Dogs
+                <Button 
+                  onClick={handleLoadMore} 
+                  disabled={loadingMore}
+                  className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium px-8 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ minHeight: '48px' }}
+                >
+                  Load More Dogs →
                 </Button>
               </div>
             )}

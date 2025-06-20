@@ -6,7 +6,7 @@ import OrganizationCard from '../../components/organizations/OrganizationCard';
 import OrganizationCardSkeleton from '../../components/ui/OrganizationCardSkeleton';
 import EmptyState from '../../components/ui/EmptyState';
 import { getEnhancedOrganizations } from '../../services/organizationsService';
-import { reportError } from '../../utils/logger';
+import { reportError, logger } from '../../utils/logger';
 
 export default function OrganizationsClient() {
   const [organizations, setOrganizations] = useState([]);
@@ -23,7 +23,7 @@ export default function OrganizationsClient() {
       const data = await getEnhancedOrganizations();
       setOrganizations(data);
       
-      reportError('Organizations loaded successfully', { 
+      logger.info('Organizations loaded successfully', { 
         count: data.length, 
         withStats: data.filter(org => org.total_dogs !== undefined).length,
         withRecentDogs: data.filter(org => org.recent_dogs && org.recent_dogs.length > 0).length
