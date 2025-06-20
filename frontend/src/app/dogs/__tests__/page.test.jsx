@@ -176,7 +176,7 @@ describe('DogsPage Component', () => {
     render(<DogsPage />);
     await waitFor(() => screen.getByText('Initial Dog 1'));
 
-    const orgSelect = screen.getByRole('combobox', { name: /Rescue Organization/i });
+    const orgSelect = screen.getByTestId('organization-select');
     await user.click(orgSelect);
     const opt = await screen.findByRole('option', { name: 'Org A' });
     await user.click(opt);
@@ -206,7 +206,7 @@ describe('DogsPage Component', () => {
     render(<DogsPage />);
 
     // pick “Org A”
-    const orgSelect = screen.getByRole('combobox', { name: /Rescue Organization/i });
+    const orgSelect = screen.getByTestId('organization-select');
     await user.click(orgSelect);
     const orgOption = await screen.findByRole('option', { name: 'Org A' });
     await user.click(orgOption);
@@ -250,7 +250,7 @@ describe('DogsPage Component', () => {
     render(<DogsPage />);
 
     // apply the organization filter
-    const orgSelect = screen.getByRole('combobox', { name: /Rescue Organization/i });
+    const orgSelect = screen.getByTestId('organization-select');
     await user.click(orgSelect);
     const orgOption = await screen.findByRole('option', { name: 'Org A' });
     await user.click(orgOption);
@@ -289,7 +289,7 @@ describe('DogsPage Component', () => {
     getAnimals.mockResolvedValue([]);
 
     render(<DogsPage />);
-    const input = screen.getByPlaceholderText(/Name or breed/i);
+    const input = screen.getByPlaceholderText(/Search dogs/i);
     fireEvent.change(input, { target: { value: 'buddy' } });
     await waitFor(() => {
       expect(getAnimals).toHaveBeenCalledWith(

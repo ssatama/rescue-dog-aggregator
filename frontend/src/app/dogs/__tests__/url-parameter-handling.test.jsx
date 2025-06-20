@@ -33,8 +33,8 @@ jest.mock('../../../components/layout/Layout', () => {
   };
 });
 
-jest.mock('../../../components/dogs/FilterControls', () => {
-  return function MockFilterControls({ organizationFilter }) {
+jest.mock('../../../components/filters/DesktopFilters', () => {
+  return function MockDesktopFilters({ organizationFilter }) {
     return (
       <div data-testid="filter-controls">
         Organization Filter: {organizationFilter}

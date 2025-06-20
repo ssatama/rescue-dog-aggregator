@@ -424,15 +424,17 @@
       animation-delay: 0s;
     }
     
-    /* Disable Session 8 animations in reduced motion */
+    /* Disable Session 8 and Session 3 animations in reduced motion */
     .animate-button-hover:hover,
     .animate-card-hover:hover,
     .animate-org-card:hover {
       transform: none;
+      box-shadow: none;
     }
     
     /* Disable image scale animations in reduced motion */
-    .group:hover .group-hover\:scale-102 {
+    .group:hover .group-hover\:scale-102,
+    .group:hover .group-hover\:scale-105 {
       transform: none;
     }
   }
@@ -467,15 +469,15 @@
     transition-duration: var(--animation-fast);
   }
 
-  /* Card Animations */
+  /* Card Animations - Session 3 Enhanced */
   .animate-card-hover {
-    transition: all var(--animation-normal) var(--ease-smooth);
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform, box-shadow;
   }
   
   .animate-card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 24px -10px rgba(251, 146, 60, 0.3);
   }
 
   /* Organization Card Animations */
@@ -523,12 +525,20 @@
     perspective: 1000px;
   }
 
-  /* Custom scale utilities for subtle animations */
+  /* Custom scale utilities for subtle animations - Session 3 Enhanced */
   .scale-102 {
     transform: scale(1.02);
   }
   
+  .scale-105 {
+    transform: scale(1.05);
+  }
+  
   .group:hover .group-hover\:scale-102 {
     transform: scale(1.02);
+  }
+  
+  .group:hover .group-hover\:scale-105 {
+    transform: scale(1.05);
   }
 }

@@ -19,6 +19,7 @@ import { getOrganizations } from '../../services/organizationsService';
 import { Button } from "@/components/ui/button";
 import { Filter, X } from 'lucide-react';
 import FilterControls from '../../components/dogs/FilterControls';
+import DesktopFilters from '../../components/filters/DesktopFilters';
 import MobileFilterBottomSheet from '../../components/filters/MobileFilterBottomSheet';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { reportError } from '../../utils/logger';
@@ -347,44 +348,40 @@ export default function DogsPageClient() {
         <div data-testid="dogs-page-container" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-title text-gray-900 mb-6">Find Your New Best Friend</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <aside className="hidden md:block md:col-span-1">
-            <div className="sticky top-8 bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-              <h2 className="text-card-title text-gray-800 mb-4">Filters</h2>
-              <FilterControls
-                searchQuery={searchQuery}
-                handleSearchChange={handleSearchChange}
-                clearSearch={clearSearch}
-                organizationFilter={organizationFilter}
-                setOrganizationFilter={setOrganizationFilter}
-                organizations={organizations}
-                standardizedBreedFilter={standardizedBreedFilter}
-                setStandardizedBreedFilter={setStandardizedBreedFilter}
-                standardizedBreeds={standardizedBreeds}
-                sexFilter={sexFilter}
-                setSexFilter={setSexFilter}
-                sexOptions={sexOptions}
-                sizeFilter={sizeFilter}
-                setSizeFilter={setSizeFilter}
-                sizeOptions={sizeOptions}
-                ageCategoryFilter={ageCategoryFilter}
-                setAgeCategoryFilter={setAgeCategoryFilter}
-                ageOptions={ageOptions}
-                locationCountryFilter={locationCountryFilter}
-                setLocationCountryFilter={setLocationCountryFilter}
-                locationCountries={locationCountries}
-                availableCountryFilter={availableCountryFilter}
-                setAvailableCountryFilter={setAvailableCountryFilter}
-                availableCountries={availableCountries}
-                availableRegionFilter={availableRegionFilter}
-                setAvailableRegionFilter={setAvailableRegionFilter}
-                availableRegions={availableRegions}
-              />
-              <Button variant="outline" className="w-full mt-6" onClick={resetFilters}>Clear All Filters</Button>
-            </div>
-          </aside>
+        <div className="flex gap-8">
+          {/* Desktop Floating Filter Panel */}
+          <DesktopFilters
+            searchQuery={searchQuery}
+            handleSearchChange={handleSearchChange}
+            clearSearch={clearSearch}
+            organizationFilter={organizationFilter}
+            setOrganizationFilter={setOrganizationFilter}
+            organizations={organizations}
+            standardizedBreedFilter={standardizedBreedFilter}
+            setStandardizedBreedFilter={setStandardizedBreedFilter}
+            standardizedBreeds={standardizedBreeds}
+            sexFilter={sexFilter}
+            setSexFilter={setSexFilter}
+            sexOptions={sexOptions}
+            sizeFilter={sizeFilter}
+            setSizeFilter={setSizeFilter}
+            sizeOptions={sizeOptions}
+            ageCategoryFilter={ageCategoryFilter}
+            setAgeCategoryFilter={setAgeCategoryFilter}
+            ageOptions={ageOptions}
+            locationCountryFilter={locationCountryFilter}
+            setLocationCountryFilter={setLocationCountryFilter}
+            locationCountries={locationCountries}
+            availableCountryFilter={availableCountryFilter}
+            setAvailableCountryFilter={setAvailableCountryFilter}
+            availableCountries={availableCountries}
+            availableRegionFilter={availableRegionFilter}
+            setAvailableRegionFilter={setAvailableRegionFilter}
+            availableRegions={availableRegions}
+            resetFilters={resetFilters}
+          />
 
-          <main className="md:col-span-3">
+          <main className="flex-1 min-w-0">
             {/* Mobile Filter Button */}
             <div className="md:hidden mb-4">
               <Button 

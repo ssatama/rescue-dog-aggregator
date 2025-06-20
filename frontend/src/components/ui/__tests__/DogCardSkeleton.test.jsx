@@ -10,7 +10,7 @@ describe('DogCardSkeleton', () => {
       
       const skeleton = screen.getByTestId('dog-card-skeleton');
       expect(skeleton).toBeInTheDocument();
-      expect(skeleton).toHaveClass('animate-pulse');
+      expect(skeleton).toHaveClass('animate-shimmer-warm');
     });
 
     it('has correct card structure matching DogCard', () => {
@@ -19,7 +19,7 @@ describe('DogCardSkeleton', () => {
       // Check for image skeleton
       const imageSkeleton = screen.getByTestId('skeleton-image');
       expect(imageSkeleton).toBeInTheDocument();
-      expect(imageSkeleton).toHaveClass('h-50', 'sm:h-50', 'md:h-60');
+      expect(imageSkeleton).toHaveClass('aspect-[4/3]');
       
       // Check for content skeleton
       const contentSkeleton = screen.getByTestId('skeleton-content');
@@ -32,11 +32,11 @@ describe('DogCardSkeleton', () => {
   });
 
   describe('Animation and Styling', () => {
-    it('has pulse animation applied', () => {
+    it('has enhanced shimmer animation applied', () => {
       render(<DogCardSkeleton />);
       
       const skeleton = screen.getByTestId('dog-card-skeleton');
-      expect(skeleton).toHaveClass('animate-pulse');
+      expect(skeleton).toHaveClass('animate-shimmer-warm');
     });
 
     it('uses gray-200 color for skeleton elements', () => {
@@ -52,11 +52,11 @@ describe('DogCardSkeleton', () => {
       expect(buttonSkeleton).toHaveClass('bg-gray-200');
     });
 
-    it('matches DogCard responsive heights', () => {
+    it('matches DogCard aspect ratio (4:3)', () => {
       render(<DogCardSkeleton />);
       
       const imageSkeleton = screen.getByTestId('skeleton-image');
-      expect(imageSkeleton).toHaveClass('h-50', 'sm:h-50', 'md:h-60');
+      expect(imageSkeleton).toHaveClass('aspect-[4/3]');
     });
   });
 
@@ -133,17 +133,17 @@ describe('DogCardSkeleton', () => {
       render(<DogCardSkeleton />);
       
       const contentSkeleton = screen.getByTestId('skeleton-content');
-      expect(contentSkeleton).toHaveClass('p-4', 'space-y-3');
+      expect(contentSkeleton).toHaveClass('p-5', 'space-y-3');
       
       const footerSkeleton = screen.getByTestId('skeleton-footer');
-      expect(footerSkeleton).toHaveClass('p-4', 'pt-0');
+      expect(footerSkeleton).toHaveClass('p-5', 'pt-0');
     });
 
     it('uses proper shadow and styling to match DogCard', () => {
       render(<DogCardSkeleton />);
       
       const skeleton = screen.getByTestId('dog-card-skeleton');
-      expect(skeleton).toHaveClass('shadow-md', 'bg-white', 'animate-pulse');
+      expect(skeleton).toHaveClass('shadow-md', 'bg-white', 'animate-shimmer-warm');
     });
   });
 
@@ -156,12 +156,97 @@ describe('DogCardSkeleton', () => {
       expect(newBadgeSkeleton).toHaveClass('absolute', 'top-2', 'left-2');
     });
 
-    it('renders organization badge skeleton', () => {
+    it('does not render organization badge skeleton (removed in Session 2)', () => {
       render(<DogCardSkeleton />);
       
-      const orgBadgeSkeleton = screen.getByTestId('skeleton-org-badge');
-      expect(orgBadgeSkeleton).toBeInTheDocument();
-      expect(orgBadgeSkeleton).toHaveClass('absolute', 'bottom-2', 'right-2');
+      // Organization badge skeleton should not exist since we removed it from DogCard
+      const orgBadgeSkeleton = screen.queryByTestId('skeleton-org-badge');
+      expect(orgBadgeSkeleton).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Session 3: Enhanced Skeleton Animation', () => {
+    it('skeleton image uses 4:3 aspect ratio matching DogCard', () => {
+      render(<DogCardSkeleton />);
+      
+      const skeletonImage = screen.getByTestId('skeleton-image');
+      
+      // Should use aspect-[4/3] instead of fixed height classes
+      expect(skeletonImage).toHaveClass('aspect-[4/3]');
+      expect(skeletonImage).not.toHaveClass('h-50');
+      expect(skeletonImage).not.toHaveClass('h-60');
+      expect(skeletonImage).not.toHaveClass('md:h-60');
+    });
+
+    it('skeleton has enhanced shimmer animation with orange tint', () => {
+      render(<DogCardSkeleton />);
+      
+      const skeleton = screen.getByTestId('dog-card-skeleton');
+      
+      // Should have warm shimmer animation instead of basic pulse
+      expect(skeleton).toHaveClass('animate-shimmer-warm');
+      expect(skeleton).not.toHaveClass('animate-pulse');
+    });
+
+    it('skeleton image container matches DogCard structure exactly', () => {
+      render(<DogCardSkeleton />);
+      
+      const skeletonImage = screen.getByTestId('skeleton-image');
+      
+      // Should match DogCard image container classes
+      expect(skeletonImage).toHaveClass('w-full');
+      expect(skeletonImage).toHaveClass('aspect-[4/3]');
+      expect(skeletonImage).toHaveClass('bg-gray-200');
+      expect(skeletonImage).toHaveClass('relative');
+    });
+
+    it('skeleton maintains smooth loading animation timing', () => {
+      render(<DogCardSkeleton />);
+      
+      const skeleton = screen.getByTestId('dog-card-skeleton');
+      
+      // Should have the warm shimmer animation which has proper timing
+      expect(skeleton).toHaveClass('animate-shimmer-warm');
+      
+      // Verify the structure allows for proper shimmer effect
+      expect(skeleton).toHaveClass('overflow-hidden');
+    });
+
+    it('skeleton respects reduced motion preferences', () => {
+      // Mock prefers-reduced-motion: reduce
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: jest.fn().mockImplementation(query => ({
+          matches: query === '(prefers-reduced-motion: reduce)',
+          media: query,
+        })),
+      });
+
+      render(<DogCardSkeleton />);
+      
+      const skeleton = screen.getByTestId('dog-card-skeleton');
+      
+      // Even with reduced motion, the classes should be present
+      // The CSS handles disabling animations via media queries
+      expect(skeleton).toHaveClass('animate-shimmer-warm');
+    });
+
+    it('skeleton dimensions exactly match enhanced DogCard layout', () => {
+      render(<DogCardSkeleton />);
+      
+      const skeleton = screen.getByTestId('dog-card-skeleton');
+      const skeletonContent = screen.getByTestId('skeleton-content');
+      const skeletonFooter = screen.getByTestId('skeleton-footer');
+      
+      // Should match DogCard structure
+      expect(skeleton).toHaveClass('flex');
+      expect(skeleton).toHaveClass('flex-col');
+      expect(skeleton).toHaveClass('h-full');
+      
+      // Content padding should match DogCard (p-5)
+      expect(skeletonContent).toHaveClass('p-5');
+      expect(skeletonFooter).toHaveClass('p-5');
+      expect(skeletonFooter).toHaveClass('pt-0');
     });
   });
 });

@@ -75,7 +75,7 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
             <LazyImage
               src={optimizedImageUrl}
               alt={name.replace(/&[^;]+;/g, '')}
-              className="w-full h-full object-cover transition-transform duration-200 ease-out group-hover:scale-102"
+              className="w-full h-full object-cover transition-transform duration-200 ease-out group-hover:scale-105"
               style={{ objectPosition }}
               enableProgressiveLoading={true}
               priority={priority}
@@ -166,8 +166,9 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
       <CardFooter data-testid="card-footer" className="p-5 pt-0">
          <Link href={`/dogs/${id}`} className="w-full">
            <Button
+             type="button"
              size="sm"
-             className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white transition-all duration-300"
+             className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
              style={{ minWidth: '48px', minHeight: '48px' }}
            >
              Meet {name} →

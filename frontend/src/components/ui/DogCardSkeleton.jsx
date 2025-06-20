@@ -14,15 +14,15 @@ const DogCardSkeleton = React.memo(function DogCardSkeleton() {
   return (
     <Card 
       data-testid="dog-card-skeleton"
-      className="overflow-hidden flex flex-col h-full shadow-md bg-white animate-pulse"
+      className="overflow-hidden flex flex-col h-full shadow-md bg-white animate-shimmer-warm"
       role="status"
       aria-label="Loading dog information"
     >
       <CardHeader className="p-0 relative">
-        {/* Image skeleton matching DogCard responsive heights */}
+        {/* Image skeleton matching DogCard 4:3 aspect ratio */}
         <div 
           data-testid="skeleton-image"
-          className="w-full h-50 sm:h-50 md:h-60 bg-gray-200"
+          className="w-full aspect-[4/3] bg-gray-200 relative"
         />
         
         {/* NEW Badge skeleton */}
@@ -31,14 +31,9 @@ const DogCardSkeleton = React.memo(function DogCardSkeleton() {
           className="absolute top-2 left-2 z-10 bg-gray-200 rounded text-xs font-bold px-2 py-1 w-10 h-5"
         />
 
-        {/* Organization Badge skeleton */}
-        <div 
-          data-testid="skeleton-org-badge"
-          className="absolute bottom-2 right-2 z-10 bg-gray-200 rounded text-xs w-20 h-5"
-        />
       </CardHeader>
 
-      <CardContent data-testid="skeleton-content" className="p-4 flex flex-col flex-grow space-y-3">
+      <CardContent data-testid="skeleton-content" className="p-5 flex flex-col flex-grow space-y-3">
         {/* Name skeleton */}
         <div 
           data-testid="skeleton-name"
@@ -86,7 +81,7 @@ const DogCardSkeleton = React.memo(function DogCardSkeleton() {
         </div>
       </CardContent>
 
-      <CardFooter data-testid="skeleton-footer" className="p-4 pt-0">
+      <CardFooter data-testid="skeleton-footer" className="p-5 pt-0">
         {/* Button skeleton */}
         <div 
           data-testid="skeleton-button"

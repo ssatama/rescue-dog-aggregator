@@ -108,7 +108,7 @@ describe('DogsGrid Component', () => {
       render(<DogsGrid dogs={[]} loading={true} skeletonCount={1} />);
       
       const skeleton = screen.getByTestId('dog-card-skeleton');
-      expect(skeleton).toHaveClass('animate-pulse');
+      expect(skeleton).toHaveClass('animate-shimmer-warm');
       expect(skeleton).toHaveClass('bg-white');
       expect(skeleton).toHaveClass('shadow-md');
     });

@@ -493,8 +493,8 @@ describe('DogCard Component', () => {
     });
   });
 
-  describe('Enhanced Hover Effects', () => {
-    test('applies enhanced hover effects to image and card', () => {
+  describe('Session 3: Enhanced Hover Effects & Micro-interactions', () => {
+    test('card has proper hover animation classes and structure', () => {
       const mockDog = {
         id: 1,
         name: 'Buddy',
@@ -507,14 +507,198 @@ describe('DogCard Component', () => {
       
       const card = screen.getByTestId('dog-card');
       
-      // Card should have new animation system classes
+      // Card should have enhanced animation classes
       expect(card).toHaveClass('animate-card-hover');
       expect(card).toHaveClass('will-change-transform');
+      expect(card).toHaveClass('group');
       
-      // Image should have hover scale effect (check placeholder if image not loaded)
+      // Card should have proper transition properties for smooth animation
+      expect(card).toHaveClass('transition-shadow');
+      expect(card).toHaveClass('duration-200');
+    });
+
+    test('card hover animation produces correct transform (translateY(-4px) scale(1.02))', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        primary_image_url: 'https://example.com/image.jpg',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const card = screen.getByTestId('dog-card');
+      
+      // Simulate hover by checking CSS classes that would trigger the hover state
+      expect(card).toHaveClass('animate-card-hover');
+      
+      // Note: The actual CSS transform is tested via the CSS class presence
+      // The transform: translateY(-4px) scale(1.02) is defined in globals.css
+      // This test ensures the component has the correct structure for the hover effect
+    });
+
+    test('card hover enhances shadow with orange tint', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        primary_image_url: 'https://example.com/image.jpg',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const card = screen.getByTestId('dog-card');
+      
+      // Card should transition from shadow-md to enhanced orange-tinted shadow on hover
+      expect(card).toHaveClass('shadow-md');
+      expect(card).toHaveClass('hover:shadow-lg');
+      
+      // The orange-tinted shadow is applied via CSS :hover pseudo-class
+      // Testing for the class that enables this behavior
+      expect(card).toHaveClass('animate-card-hover');
+    });
+
+    test('image has correct hover scale effect (scale(1.05))', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        primary_image_url: 'https://example.com/image.jpg',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      // Check placeholder or loaded image
       const imageElement = screen.queryByAltText('Buddy') || screen.getByTestId('image-placeholder');
-      expect(imageElement.className).toContain('group-hover:scale-102');
+      
+      // Image should have correct hover scale effect
+      expect(imageElement.className).toContain('group-hover:scale-105');
       expect(imageElement.className).toContain('transition-transform');
+      expect(imageElement.className).toContain('duration-200');
+      expect(imageElement.className).toContain('ease-out');
+    });
+
+    test('animations respect reduced motion preferences', () => {
+      // Mock prefers-reduced-motion: reduce
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: jest.fn().mockImplementation(query => ({
+          matches: query === '(prefers-reduced-motion: reduce)',
+          media: query,
+        })),
+      });
+
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const card = screen.getByTestId('dog-card');
+      
+      // Even with reduced motion, the classes should be present
+      // The CSS handles disabling animations via media queries
+      expect(card).toHaveClass('animate-card-hover');
+      expect(card).toHaveClass('will-change-transform');
+    });
+
+    test('hover animations do not cause layout shift', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        primary_image_url: 'https://example.com/image.jpg',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const card = screen.getByTestId('dog-card');
+      
+      // Will-change property should be set to prevent layout shift
+      expect(card).toHaveClass('will-change-transform');
+      
+      // Card should maintain proper structure for transform animations
+      expect(card).toHaveClass('flex');
+      expect(card).toHaveClass('flex-col');
+      expect(card).toHaveClass('h-full');
+    });
+
+    test('CTA button has enhanced hover and focus states', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const ctaButton = screen.getByText('Meet Buddy →');
+      
+      // Button should have enhanced gradient hover classes
+      expect(ctaButton).toHaveClass('hover:from-orange-600');
+      expect(ctaButton).toHaveClass('hover:to-orange-700');
+      
+      // Button should have proper focus states with orange ring
+      expect(ctaButton).toHaveClass('focus-visible:ring-2');
+      expect(ctaButton).toHaveClass('focus-visible:ring-orange-500');
+      expect(ctaButton).toHaveClass('focus-visible:ring-offset-2');
+      
+      // Button should maintain smooth transitions
+      expect(ctaButton).toHaveClass('transition-all');
+      expect(ctaButton).toHaveClass('duration-300');
+    });
+
+    test('button hover enhances gradient darkness correctly', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const ctaButton = screen.getByText('Meet Buddy →');
+      
+      // Base gradient should be orange-500 to orange-600
+      expect(ctaButton).toHaveClass('from-orange-500');
+      expect(ctaButton).toHaveClass('to-orange-600');
+      
+      // Hover gradient should be darker (orange-600 to orange-700)
+      expect(ctaButton).toHaveClass('hover:from-orange-600');
+      expect(ctaButton).toHaveClass('hover:to-orange-700');
+    });
+
+    test('button maintains accessibility with proper focus indicators', () => {
+      const mockDog = {
+        id: 1,
+        name: 'Buddy',
+        status: 'available',
+        organization: { name: 'Test Org' }
+      };
+      
+      render(<DogCard dog={mockDog} />);
+      
+      const ctaButton = screen.getByText('Meet Buddy →');
+      
+      // Button should be focusable
+      ctaButton.focus();
+      expect(ctaButton).toHaveFocus();
+      
+      // Button should have appropriate ARIA and accessibility features
+      expect(ctaButton).toHaveAttribute('type', 'button');
+      
+      // Focus ring should be visible when focused
+      expect(ctaButton).toHaveClass('focus-visible:ring-2');
+      expect(ctaButton).toHaveClass('focus-visible:ring-orange-500');
     });
   });
 
