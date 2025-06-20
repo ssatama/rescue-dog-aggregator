@@ -1,10 +1,10 @@
-# Development Workflow Guide
+# ⚙️ Development Workflow Guide
 
-## Overview
+## 🎯 Overview
 
 This guide establishes the development workflow for the Rescue Dog Aggregator project, emphasizing **Test-Driven Development (TDD)**, code quality, security, and production readiness. The workflow ensures consistent, reliable development practices across backend (Python) and frontend (Next.js) components.
 
-## Development Philosophy
+## 💡 Development Philosophy
 
 ### Test-Driven Development (TDD)
 
@@ -17,21 +17,21 @@ The project follows strict TDD methodology:
 **Benefits**:
 - Higher code quality and reliability
 - Better design through test-first thinking
-- Comprehensive test coverage (93%+ backend, 95+ frontend tests)
+- Comprehensive test coverage (259 backend tests, 1,249 frontend tests across 88 suites)
 - Reduced debugging time
 - Documentation through tests
 
 ### Quality Standards
 
 **ENHANCED Code Quality Gates (MANDATORY)**:
-- 93%+ test coverage (backend) - ENFORCED
-- 341+ frontend tests passing (34+ suites) including CTA optimization and Related Dogs coverage - REQUIRED
+- 259 backend tests with optimized markers (unit, fast, slow) - ENFORCED
+- 1,249 frontend tests passing (88 suites) including mobile optimization and accessibility - REQUIRED
 - Python linting: ≤750 E501, 0 F401, ≤5 W291, 0 E402 - ENFORCED  
 - Next.js 15 TypeScript build successful - CRITICAL
 - Security vulnerability scans passing - REQUIRED
 - Environment-aware component patterns for dynamic routes - MANDATORY
-- CTA optimization components (favorites, toast, mobile UX) fully tested - ENFORCED
-- Related Dogs feature components (cross-discovery, organization filtering) fully tested - ENFORCED
+- Mobile optimization features (touch targets, bottom sheet filters, performance) fully tested - ENFORCED
+- Accessibility compliance (WCAG 2.1 AA, ARIA labels, keyboard navigation) fully tested - ENFORCED
 
 ## Development Environment Setup
 
@@ -368,6 +368,8 @@ export async function generateMetadata({ params }) {
 
 ### Frontend Testing with Next.js 15
 
+**For complete testing strategy and detailed examples**, see: **[TESTING.md - Comprehensive Testing Guide](../TESTING.md)**
+
 **Test Configuration** (ensure compatibility):
 ```javascript
 // jest.setup.js - ensure proper mocking
@@ -533,11 +535,11 @@ export default function FavoriteButton({ dog, variant = 'header' }) {
 source venv/bin/activate
 black . && isort .                                    # Format code (REQUIRED)
 autopep8 --in-place --exclude=venv --recursive .     # Fix PEP8 violations (RECOMMENDED)
-python -m pytest tests/ -m "not slow" -v            # Fast tests (REQUIRED - 230 tests)
+python -m pytest tests/ -m "not slow" -v            # Fast tests (REQUIRED - 259 tests)
 
 # Step 2: Frontend Quality (Next.js 15) - CRITICAL for TypeScript
 cd frontend
-npm test                                             # All 120+ tests including CTA optimization (REQUIRED)
+npm test                                             # All 1,249 tests across 88 suites (REQUIRED)
 npm run build                                        # TypeScript build (CRITICAL)
 npm run lint                                         # ESLint (REQUIRED)
 
@@ -552,12 +554,14 @@ npm run lint                                         # ESLint (REQUIRED)
 echo "✅ PRE-COMMIT VALIDATION PASSED (including documentation) - Safe to commit!"
 ```
 
-**Linting Standards Enforcement** (do not exceed these thresholds):
-- **E501** (line too long): ≤750 violations (mostly SQL/URLs - acceptable)
-- **F401** (unused imports): 0 violations (MUST be 0)
-- **W291/W293** (whitespace): ≤5 violations
-- **E402** (import not at top): 0 violations (MUST be 0)
-- **F541** (f-string missing placeholders): ≤5 violations
+**Linting Standards Enforcement** (current baseline and targets):
+- **Current baseline**: ~1000 flake8 violations (mostly E501 line length)
+- **E501** (line too long): Majority of violations - acceptable for SQL/URLs
+- **F401** (unused imports): Target 0 violations
+- **W291/W293** (whitespace): Target ≤5 violations
+- **E402** (import not at top): Target 0 violations
+- **Black formatting**: Some files need reformatting (run `black .` to fix)
+- **Import sorting**: Some imports need sorting (run `isort .` to fix)
 
 **Backend Quality Gate** (Legacy - Enhanced version above recommended):
 ```bash

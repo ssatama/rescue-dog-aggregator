@@ -1,10 +1,20 @@
 # Testing Guide for Rescue Dog Aggregator
 
-This project follows a **Test-Driven Development (TDD)** approach with comprehensive coverage across both backend (Python/Pytest) and frontend (React/Jest) components. The testing strategy ensures production readiness through security, performance, accessibility, and reliability validation. Recent improvements include advanced speed optimization with 217 fast tests completing in 45 seconds.
+This project follows a **Test-Driven Development (TDD)** approach with comprehensive coverage across both backend (Python/Pytest) and frontend (React/Jest) components. The testing strategy ensures production readiness through security, performance, accessibility, and reliability validation. Recent improvements include advanced speed optimization with 259 backend tests and 1,249 frontend tests across 88 suites.
+
+## Table of Contents
+
+- [Testing Philosophy](#testing-philosophy)
+- [Backend Tests](#backend-tests)
+- [Frontend Tests (Next.js 15 + React Testing Library)](#frontend-tests-nextjs-15--react-testing-library)
+- [Continuous Integration & Quality Gates](#continuous-integration--quality-gates)
+- [Adding New Tests](#adding-new-tests)
+- [Configuration System Tests](#configuration-system-tests)
+- [Production-Ready Testing Features](#production-ready-testing-features)
 
 ## Testing Philosophy
 
-The project maintains **95+ tests across 17 test suites** with focus on:
+The project maintains **1,249 frontend tests across 88 suites + 259 backend tests** with focus on:
 - **Security**: XSS prevention, input validation, SQL injection protection
 - **Performance**: Lazy loading, component optimization, bundle analysis
 - **Accessibility**: ARIA compliance, keyboard navigation, screen reader support
@@ -21,13 +31,13 @@ Run from the project root:
 # Speed-optimized development workflow
 source venv/bin/activate
 
-# FAST: Core business logic across ALL modules (60+ tests in ~1s)
+# FAST: Core business logic across ALL modules (82 unit tests)
 python -m pytest tests/ -m "unit" -v
 
-# COMPLETE: All fast tests across entire codebase (217 tests in ~45s)
+# COMPLETE: All fast tests across entire codebase (259 tests optimized for development)
 python -m pytest tests/ -m "not slow" -v
 
-# COMPREHENSIVE: Full integration testing (512 total tests)
+# COMPREHENSIVE: Full integration testing including slow operations
 python -m pytest tests/ -v
 
 # Specific test categories
@@ -40,21 +50,21 @@ python -m pytest tests/scrapers/test_base_scraper.py -v
 The testing system now includes advanced speed optimization:
 
 **Test Markers & Performance**:
-- `@pytest.mark.unit` - Pure logic tests (60+ tests, <1 second)
-- `@pytest.mark.fast` - Tests with minimal I/O (complete suite in ~45s)
+- `@pytest.mark.unit` - Pure logic tests (82 tests, fast execution)
+- `@pytest.mark.fast` - Tests with minimal I/O (12 tests)
 - `@pytest.mark.slow` - Integration tests requiring expensive operations
 - `@pytest.mark.database` - Tests requiring database operations
 - `@pytest.mark.selenium` - WebDriver automation tests
 - `@pytest.mark.network` - Network simulation tests
 
-**Fast Test Files** (NEW - for rapid development):
+**Current Test Categories**:
 ```bash
 # Core business logic tests across ALL modules
-python -m pytest tests/api/test_api_logic_fast.py -v                    # API logic (15 tests)
-python -m pytest tests/config/test_config_logic_fast.py -v              # Config logic (14 tests)
-python -m pytest tests/scrapers/test_rean_scraper_fast.py -v            # Core REAN logic (16 tests)
-python -m pytest tests/scrapers/test_rean_unified_extraction_fast.py -v # Unified extraction (12 tests)
-python -m pytest tests/scrapers/test_rean_error_handling_fast.py -v     # Error handling (16 tests)
+python -m pytest tests/ -m "unit" -v                    # Unit tests (82 tests)
+python -m pytest tests/ -m "api" -v                     # API tests (110 tests)
+python -m pytest tests/ -m "config" -v                  # Config tests
+python -m pytest tests/ -m "database" -v                # Database tests
+python -m pytest tests/ -m "management" -v              # Management command tests
 ```
 
 - Tests live under `tests/`:
@@ -85,7 +95,7 @@ python -m pytest tests/scrapers/test_rean_error_handling_fast.py -v     # Error 
 Run from the `frontend/` directory:
 
 ```bash
-# Full test suite (95+ tests across 17 suites)
+# Full test suite (1,249 tests across 88 suites)
 npm test
 
 # Watch mode for development
@@ -96,15 +106,17 @@ npm test -- --coverage
 
 # Specific test categories
 npm test -- src/__tests__/security/          # Security tests
-npm test -- src/__tests__/performance/       # Performance tests  
+npm test -- src/__tests__/performance/       # Performance tests (58 tests)
 npm test -- src/__tests__/accessibility/     # Accessibility tests
+npm test -- src/__tests__/mobile/            # Mobile tests (84 tests) 
+npm test -- src/__tests__/cross-browser/     # Cross-browser tests
 npm test -- src/components/                  # Component tests
 npm test -- src/app/                         # Page tests
 ```
 
 ### Test Suite Architecture
 
-**Comprehensive Test Coverage (95+ tests across 17 suites)**:
+**Comprehensive Test Coverage (1,249 tests across 88 suites)**:
 
 #### Security Tests (`src/__tests__/security/`)
 - **XSS Prevention**: Content sanitization validation
@@ -422,6 +434,8 @@ python -m pytest tests/api/test_availability_filtering.py -v
 - **Partial Failure Detection**: Prevents false positives from scraper issues
 
 ### Test-Driven Development (TDD) Approach
+
+**For TDD workflow patterns and Next.js 15 examples**, see: **[Development Workflow - TDD Methodology](docs/development_workflow.md)**
 
 Recent production features were implemented using strict TDD methodology:
 

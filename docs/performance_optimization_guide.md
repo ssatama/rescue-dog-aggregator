@@ -136,7 +136,7 @@ The `MobileStickyBar` component is optimized for smooth scrolling:
 ### Performance Tests
 
 ```bash
-# Run performance test suite
+# Run performance test suite (58 tests)
 npm test -- --testPathPattern="performance"
 
 # Load time tests
@@ -145,8 +145,9 @@ npm test -- src/__tests__/performance/dog-detail-performance.test.js
 # Image optimization tests  
 npm test -- src/__tests__/performance/image-optimization.test.js
 
-# Mobile performance tests
+# Mobile performance tests (including 3G optimization)
 npm test -- src/__tests__/performance/mobile-performance.test.js
+npm test -- src/__tests__/mobile/mobile-performance-3g.test.js
 ```
 
 ### Performance Budgets
@@ -166,6 +167,9 @@ npm test -- --testPathPattern="accessibility"
 
 # WCAG compliance tests
 npm test -- src/__tests__/accessibility/wcag-compliance.test.js
+
+# Touch target validation (44px minimum)
+npm test -- src/__tests__/mobile/touch-targets.test.js
 ```
 
 ### Key Accessibility Features

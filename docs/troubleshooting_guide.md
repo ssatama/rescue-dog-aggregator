@@ -267,19 +267,21 @@ python -m pytest tests/ -m "not slow" -v
 ### System Health Check
 
 ```bash
-# Backend health check
+# Backend health check (activate virtual environment first)
 source venv/bin/activate
-python database/check_db_status.py
 
-# Frontend health check
-cd frontend
-npm test && npm run build
-
-# Database connectivity
+# Test database connectivity
 psql -h localhost -d rescue_dogs -c "SELECT COUNT(*) FROM animals WHERE status='available';"
 
 # Configuration validation
 python management/config_commands.py validate
+
+# Test backend functionality
+python -m pytest tests/ -m "not slow" --tb=no -q
+
+# Frontend health check
+cd frontend
+npm test && npm run build
 ```
 
 ## Scraper Issues
@@ -712,15 +714,20 @@ python -m management.config_commands list
 
 2. **Use direct execution method (recommended)**:
    ```bash
+   # ALWAYS activate virtual environment first
+   source venv/bin/activate
+   
    # This method is more reliable
    python management/config_commands.py list
    python management/config_commands.py sync --dry-run
    python management/config_commands.py validate
+   
+   # Available organizations: pets-in-turkey, tierschutzverein-europa, rean
    ```
 
 3. **Verify virtual environment**:
    ```bash
-   # Ensure venv is activated
+   # Ensure venv is activated (REQUIRED)
    source venv/bin/activate
    which python  # Should point to venv/bin/python
    ```
@@ -739,8 +746,14 @@ python -m management.config_commands list
 
 **Diagnosis**:
 ```bash
-# Validate specific config
-python management/config_commands.py validate organization-name
+# Activate virtual environment first (REQUIRED)
+source venv/bin/activate
+
+# Validate specific config (use actual org names: pets-in-turkey, tierschutzverein-europa, rean)
+python management/config_commands.py validate pets-in-turkey
+
+# Validate all configs
+python management/config_commands.py validate
 
 # Check schema format
 cat configs/schemas/organization.schema.json
@@ -770,9 +783,14 @@ cat configs/schemas/organization.schema.json
 
 **Diagnosis**:
 ```bash
-# Check module structure
-ls scrapers/organization_name/
-python -c "from scrapers.organization_name import ScraperClass"
+# Activate virtual environment (REQUIRED)
+source venv/bin/activate
+
+# Check existing module structure (current scrapers)
+ls scrapers/pets_in_turkey/ scrapers/rean/ scrapers/tierschutzverein_europa/
+
+# Test import of existing scrapers
+python -c "from scrapers.pets_in_turkey.dogs_scraper import PetsInTurkeyScraper; print('Import successful')"
 ```
 
 **Solutions**:
@@ -937,18 +955,27 @@ python management/config_commands.py list > config_status.txt
 ### Common Commands Summary
 
 ```bash
-# Quick fixes
-source venv/bin/activate && python database/check_db_status.py
-cd frontend && npm test && npm run build
-python management/config_commands.py validate
-systemctl restart postgresql  # or brew services restart postgresql
+# Quick fixes (ALWAYS activate virtual environment first)
+source venv/bin/activate
 
-# Emergency reset
+# Database and backend check
+psql -h localhost -d rescue_dogs -c "SELECT COUNT(*) FROM animals;"
+python management/config_commands.py validate
+python -m pytest tests/ -m "not slow" --tb=no -q
+
+# Frontend check
+cd frontend && npm test && npm run build
+
+# Database service restart (if needed)
+systemctl restart postgresql  # Linux
+# brew services restart postgresql  # macOS
+
+# Emergency reset (if needed)
 python management/emergency_operations.py --reset-stale-data
 python management/emergency_operations.py --fix-duplicates
 
-# Health check everything
-source venv/bin/activate && python -m pytest tests/ && cd frontend && npm test && npm run build
+# Complete health check
+source venv/bin/activate && python -m pytest tests/ -m "not slow" && cd frontend && npm test && npm run build
 ```
 
 This troubleshooting guide covers the most common issues encountered in production. For specific problems not covered here, check the logs first, then run the relevant diagnostic commands to identify the root cause.

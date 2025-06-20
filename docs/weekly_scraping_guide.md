@@ -16,11 +16,12 @@ crontab -e
 
 # Add weekly scraping jobs
 # Run all scrapers every Monday at 2 AM
-0 2 * * 1 cd /path/to/rescue-dog-aggregator && /path/to/venv/bin/python management/config_commands.py run-all >> /var/log/rescue-scraper.log 2>&1
+0 2 * * 1 cd /path/to/rescue-dog-aggregator && source venv/bin/activate && python management/config_commands.py run-all >> /var/log/rescue-scraper.log 2>&1
 
-# Or stagger individual organizations to distribute load
-0 2 * * 1 cd /path/to/rescue-dog-aggregator && /path/to/venv/bin/python management/config_commands.py run pets-in-turkey >> /var/log/rescue-scraper.log 2>&1
-0 3 * * 1 cd /path/to/rescue-dog-aggregator && /path/to/venv/bin/python management/config_commands.py run other-org >> /var/log/rescue-scraper.log 2>&1
+# Or stagger individual organizations to distribute load (current organizations: 3 total)
+0 2 * * 1 cd /path/to/rescue-dog-aggregator && source venv/bin/activate && python management/config_commands.py run pets-in-turkey >> /var/log/rescue-scraper.log 2>&1
+0 3 * * 1 cd /path/to/rescue-dog-aggregator && source venv/bin/activate && python management/config_commands.py run tierschutzverein-europa >> /var/log/rescue-scraper.log 2>&1
+0 4 * * 1 cd /path/to/rescue-dog-aggregator && source venv/bin/activate && python management/config_commands.py run rean >> /var/log/rescue-scraper.log 2>&1
 ```
 
 ### Environment Considerations
@@ -67,7 +68,7 @@ DATE=$(date +"%Y-%m-%d %H:%M:%S")
 echo "[$DATE] Starting daily health check" >> $LOG_FILE
 
 # Check recent scrape status
-RECENT_FAILURES=$(psql -t $DB_NAME -c "
+RECENT_FAILURES=$(psql -t -h localhost $DB_NAME -c "
 SELECT COUNT(*) FROM scrape_logs 
 WHERE status = 'error' AND started_at > NOW() - INTERVAL '24 hours';
 ")
@@ -77,20 +78,20 @@ if [ "$RECENT_FAILURES" -gt "0" ]; then
     echo "Failed scrapes detected: $RECENT_FAILURES" | mail -s "Scraper Health Alert" admin@yoursite.com
 fi
 
-# Check availability distribution
-LOW_CONFIDENCE=$(psql -t $DB_NAME -c "
+# Check availability distribution (Current normal range: 10-20 low confidence animals)
+LOW_CONFIDENCE=$(psql -t -h localhost $DB_NAME -c "
 SELECT COUNT(*) FROM animals 
 WHERE availability_confidence = 'low' AND status = 'available';
 ")
 
-if [ "$LOW_CONFIDENCE" -gt "50" ]; then
-    echo "[$DATE] WARNING: $LOW_CONFIDENCE animals with low confidence" >> $LOG_FILE
+if [ "$LOW_CONFIDENCE" -gt "25" ]; then
+    echo "[$DATE] WARNING: $LOW_CONFIDENCE animals with low confidence (normal: 10-20)" >> $LOG_FILE
 fi
 
-# Check for stale organizations
-STALE_ORGS=$(psql -t $DB_NAME -c "
+# Check for stale organizations (Current active orgs: 3)
+STALE_ORGS=$(psql -t -h localhost $DB_NAME -c "
 SELECT COUNT(*) FROM organizations o
-WHERE NOT EXISTS (
+WHERE o.active = true AND NOT EXISTS (
     SELECT 1 FROM scrape_logs sl 
     WHERE sl.organization_id = o.id 
     AND sl.started_at > NOW() - INTERVAL '14 days'
@@ -192,6 +193,9 @@ ORDER BY sl.started_at DESC;
 
 #### Manual Recovery
 ```bash
+# Activate virtual environment (REQUIRED)
+source venv/bin/activate
+
 # Re-run failed scraper
 python management/config_commands.py run pets-in-turkey
 
@@ -200,6 +204,8 @@ python management/config_commands.py show pets-in-turkey
 
 # Validate configuration
 python management/config_commands.py validate
+
+# Available organizations: pets-in-turkey, tierschutzverein-europa, rean
 ```
 
 ### Partial Failures

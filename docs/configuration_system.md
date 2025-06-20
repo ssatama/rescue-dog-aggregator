@@ -343,3 +343,12 @@ If you have existing organizations without service regions:
    ```
 
 The system will automatically populate the `service_regions` table and enable location-based filtering for all organizations.
+
+## Next Steps
+
+After setting up your configuration:
+
+1. **Test Your Scraper**: Follow [Development Workflow - Adding New Tests](development_workflow.md) to add tests for your scraper
+2. **Troubleshooting**: If issues arise, see [Troubleshooting Guide](troubleshooting_guide.md)  
+3. **API Integration**: Use [API Reference - Organizations Endpoints](api_reference.md#organizations-api) for frontend integration
+4. **Production Deployment**: See [Weekly Scraping Guide](weekly_scraping_guide.md) for scheduling

@@ -149,7 +149,8 @@ The system uses a configuration-driven approach. To add a new rescue organizatio
 
 ### 1. Create Configuration File
 ```bash
-# Create configs/organizations/new-org.yaml
+# Create configs/organizations/new-org.yaml (follow existing pattern)
+# Current organizations: pets-in-turkey, tierschutzverein-europa, rean
 touch configs/organizations/new-org.yaml
 ```
 
@@ -220,18 +221,30 @@ class NewOrgScraper(BaseScraper):
 
 ### 4. Sync Configuration
 ```bash
+# Activate virtual environment (REQUIRED)
+source venv/bin/activate
+
 # Validate and sync to database
 python management/config_commands.py validate
 python management/config_commands.py sync
+
+# Verify sync was successful
+python management/config_commands.py list
 ```
 
 ### 5. Test Scraper
 ```bash
+# Activate virtual environment (REQUIRED)
+source venv/bin/activate
+
 # Test the new scraper
 python management/config_commands.py run new-org
 
-# Check results
+# Check results and organization details
 python management/config_commands.py show new-org
+
+# Monitor database for new animals
+psql -h localhost -d rescue_dogs -c "SELECT COUNT(*) FROM animals WHERE organization_id = (SELECT id FROM organizations WHERE config_id = 'new-org');"
 ```
 
 The BaseScraper automatically handles:

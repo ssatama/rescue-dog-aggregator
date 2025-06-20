@@ -229,7 +229,7 @@ export async function getRelatedDogs(organizationId, currentDogId) {
 
 ## 🧪 Testing Strategy
 
-### Test Coverage: 40 Tests Across 4 Suites
+### Test Coverage: 34 Tests Across 3 Suites
 
 #### Service Layer Tests (6 tests)
 **File**: `src/services/__tests__/relatedDogsService.test.js`

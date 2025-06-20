@@ -8,7 +8,7 @@ An open-source web platform that aggregates rescue dogs from multiple organizati
 - **🔄 Automatic Data Standardization**: Breed, age, and size normalization across sources
 - **☁️ Cloudinary Image Processing**: Automated image optimization and CDN delivery
 - **🔒 Production-Ready Security**: SQL injection prevention, input validation, comprehensive error handling
-- **🧪 Comprehensive Testing**: 93%+ backend coverage + 120+ frontend tests with advanced speed optimization (217 fast tests in 45s)
+- **🧪 Comprehensive Testing**: 259 backend tests + 1,249 frontend tests (88 suites) with advanced speed optimization
 - **🗓️ Weekly Scraping Support**: Production-ready with stale data detection and availability management
 - **📊 Enhanced Metrics & Monitoring**: JSONB-based detailed tracking with quality scoring
 - **🎯 Smart Availability Filtering**: Users see only reliable, recently-seen animals by default
@@ -63,234 +63,111 @@ metadata:
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.9+
-- PostgreSQL
-- Node.js 16+
+- Python 3.9+ (3.9.6 recommended)
+- PostgreSQL 13+
+- Node.js 18+ (required for Next.js 15)
 - Cloudinary account (for image processing)
 
-### Backend Setup
+### Quick Start
 
-1. **Environment Configuration**
-   ```bash
-   cp .env.sample .env
-   # Edit .env with your database and Cloudinary credentials
-   ```
+**For complete setup instructions**, see: **[Installation Guide](docs/installation_guide.md)**
 
-2. **Database Initialization**
-   ```bash
-   python main.py --setup
-   
-   # Apply production-ready migrations
-   psql -d rescue_dogs -f database/migrations/001_add_duplicate_stale_detection.sql
-   psql -d rescue_dogs -f database/migrations/002_add_detailed_metrics.sql
-   ```
+**If you encounter setup issues**, refer to: [Troubleshooting Guide](docs/troubleshooting_guide.md)
 
-3. **Add Organizations**
-   ```bash
-   # Add organization configs to configs/organizations/
-   python manage.py sync-organizations
-   ```
-
-4. **Run Scrapers**
-   ```bash
-   python manage.py run-scraper pets-in-turkey
-   # or run all enabled scrapers:
-   python manage.py run-all-scrapers
-   ```
-
-5. **Start API Server**
-   ```bash
-   uvicorn api.main:app --reload --port 8000
-   ```
-
-6. **Important CORS Configuration:**
-
-  - ALLOWED_ORIGINS: Comma-separated list of allowed frontend URLs
-  - ENVIRONMENT: Set to 'development' or 'production'
-  - Example: ALLOWED_ORIGINS=http://localhost:3000,https://yourdomain.com
-
-### Frontend Setup
-
+**Basic setup:**
 ```bash
-cd frontend
-npm install
-npm run dev
-# Open http://localhost:3000
+# 1. Setup backend
+source venv/bin/activate
+pip install -r requirements.txt
+python main.py --setup
+uvicorn api.main:app --reload
+
+# 2. Setup frontend  
+cd frontend && npm install && npm run dev
 ```
+
+**Important**: Configure environment variables (`.env` file) with your database and Cloudinary credentials before running. See installation guide for details.
 
 ## 🧪 Testing & Quality Assurance
 
-### Speed-Optimized Testing Architecture
+**Comprehensive testing with 259 backend + 1,249 frontend tests** covering all functionality, performance, accessibility, and cross-browser compatibility.
 
-The project includes comprehensive testing with advanced speed optimization:
-
-**Backend Testing (Python/Pytest)**:
+**Quick test commands:**
 ```bash
-# Speed-optimized development workflow
-source venv/bin/activate
+# Backend tests (fast development workflow)
+source venv/bin/activate && python -m pytest tests/ -m "not slow" -v
 
-# FAST: Core business logic across ALL modules (60+ tests in ~1s)
-python -m pytest tests/ -m "unit" -v
-
-# COMPLETE: All fast tests across entire codebase (217 tests in ~45s)
-python -m pytest tests/ -m "not slow" -v
-
-# COMPREHENSIVE: Full integration testing (512 total tests)
-python -m pytest tests/ -v
+# Frontend tests (all 88 suites)
+cd frontend && npm test
 ```
 
-**Frontend Testing (Jest/React Testing Library)**:
-```bash
-cd frontend
-
-# Run all frontend tests (120+ tests across 20+ suites in ~3s)
-npm test
-
-# Watch mode for development
-npm run test:watch
-
-# Test specific categories
-npm test -- src/__tests__/security/          # XSS prevention, sanitization
-npm test -- src/__tests__/performance/       # Lazy loading, optimization
-npm test -- src/__tests__/accessibility/     # ARIA compliance, keyboard nav
-npm test -- src/components/ui/__tests__/     # CTA components (FavoriteButton, Toast, MobileStickyBar)
-npm test -- src/utils/__tests__/             # Utilities including favorites management
-```
-
-**Test Categories & Performance**:
-- **Unit Tests**: Pure logic validation (60+ tests, <1 second)
-- **Fast Tests**: Complete suite excluding slow operations (217 tests, ~45 seconds)
-- **Integration Tests**: Database, Selenium, network operations (full suite)
-- **Security Tests**: XSS prevention, input validation, content sanitization
-- **Performance Tests**: Lazy loading, memoization, bundle optimization
-- **CTA Component Tests**: Favorites management, toast notifications, mobile UX (65+ tests)
-- **Accessibility Tests**: ARIA compliance, keyboard navigation, screen reader support
-
-**Quality Gates**:
-```bash
-# MANDATORY: Pre-commit validation workflow
-source venv/bin/activate && \
-black . && isort . && \
-python -m pytest tests/ -m "not slow" -v && \
-cd frontend && npm test && npm run build && npm run lint
-```
+**For complete testing strategy**, see: **[Development Workflow - Testing Guide](docs/development_workflow.md#testing-strategy)**
 
 ## 🔧 Configuration Management
 
-### Adding New Organizations
+**YAML-driven configuration system** for adding new rescue organizations without code changes.
 
-1. **Create Config File**
-   ```bash
-   # Create configs/organizations/new-org.yaml with service regions
-   python management/config_commands.py validate  # Verify syntax
-   ```
-
-2. **Sync to Database** 
-   ```bash
-   # This automatically syncs organizations AND service regions
-   python management/config_commands.py sync
-   ```
-
-3. **Implement Scraper** (if needed)
-   ```python
-   # scrapers/new_org/scraper.py
-   from scrapers.base_scraper import BaseScraper
-   
-   class NewOrgScraper(BaseScraper):
-       def collect_data(self):
-           # Implementation here
-           pass
-   ```
-
-### Management Commands
-
+**Quick commands:**
 ```bash
-# List all organizations
-python management/config_commands.py list
-
-# Show specific organization details (includes service regions)
-python management/config_commands.py show pets-in-turkey
-
-# Validate all config files
-python management/config_commands.py validate
-
-# Sync configs to database (includes service regions)
-python management/config_commands.py sync --dry-run  # Preview changes
-python management/config_commands.py sync           # Apply changes
-
-# Run scrapers
-python management/config_commands.py run pets-in-turkey
-python management/config_commands.py run-all
+# Add new organization
+python management/config_commands.py sync      # Sync configs to database
+python management/config_commands.py run-all  # Run all scrapers
 ```
 
-### Location-Based Filtering
-
-After syncing organizations, location-based filtering becomes available:
-
-```bash
-# API endpoints for location data
-curl "http://localhost:8000/api/animals/meta/available_countries"
-curl "http://localhost:8000/api/animals/meta/available_regions?country=US"
-
-# Filter animals by location
-curl "http://localhost:8000/api/animals?country=US&region=CA"
-
-# Test availability filtering (production feature)
-curl "http://localhost:8000/api/animals"                                    # Default: available + high/medium confidence
-curl "http://localhost:8000/api/animals?status=all"                        # Show all statuses
-curl "http://localhost:8000/api/animals?availability_confidence=all"       # Show all confidence levels
-curl "http://localhost:8000/api/animals?status=available&availability_confidence=high"  # High confidence only
-```
+**For complete configuration guide**, see: **[Configuration System Documentation](docs/configuration_system.md)**
 
 ## 🗓️ Weekly Scraping & Production Operations
 
-### Setting Up Weekly Scraping
+**Production-ready scraping system** with automatic stale data management and monitoring.
 
-The system is designed for production schedules with automatic stale data management:
-
+**Quick setup:**
 ```bash
-# Recommended: Set up weekly cron job
+# Set up weekly cron job
 0 2 * * 1 cd /path/to/rescue-dog-aggregator && python management/config_commands.py run-all
-
-# Or schedule specific organizations
-0 2 * * 1 cd /path/to/rescue-dog-aggregator && python management/config_commands.py run pets-in-turkey
 ```
 
-### Monitoring & Health Checks
+**For complete production operations guide**, see: **[Weekly Scraping Guide](docs/weekly_scraping_guide.md)**
 
-```bash
-# Check database status and recent scrapes
-python database/check_db_status.py
+## 📚 Documentation Index
 
-# View scrape logs with detailed metrics
-psql -d rescue_dogs -c "
-SELECT organization_id, status, started_at, dogs_found, 
-       data_quality_score, duration_seconds,
-       detailed_metrics->'potential_failure_detected' as potential_failure
-FROM scrape_logs 
-ORDER BY started_at DESC LIMIT 10;"
+### 🚀 Getting Started
+- **[Installation Guide](docs/installation_guide.md)** - Complete setup for development and production
+- **[API Reference](docs/api_reference.md)** - Comprehensive API documentation with examples
+- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to the project
 
-# Check animal availability distribution
-psql -d rescue_dogs -c "
-SELECT status, availability_confidence, COUNT(*)
-FROM animals 
-GROUP BY status, availability_confidence 
-ORDER BY status, availability_confidence;"
-```
+### 🏗️ Architecture & Development
+- **[Project Overview](docs/project_overview.md)** - High-level architecture and design decisions
+- **[Frontend Architecture](docs/frontend_architecture.md)** - Next.js 15 components and patterns
+- **[Scraper Design](docs/scraper_design.md)** - Configuration-driven scraper architecture
+- **[Development Workflow](docs/development_workflow.md)** - TDD methodology and best practices
 
-### Troubleshooting Failed Scrapes
+### 🔧 Configuration & Operations
+- **[Configuration System](docs/configuration_system.md)** - YAML-based organization setup
+- **[Weekly Scraping Guide](docs/weekly_scraping_guide.md)** - Production operations and monitoring
+- **[Database Migration History](database/migration_history.md)** - All schema changes and migrations
 
-When scrapes fail, the system automatically:
-- Logs detailed error information
-- Preserves existing animal availability (no false unavailable status)
-- Provides partial failure detection
+### 🧪 Testing & Quality
+- **[Testing Guide](TESTING.md)** - Comprehensive testing strategy (259 backend + 1,249 frontend tests)
+- **[Test Optimization Guide](docs/test_optimization_guide.md)** - Performance and speed optimization
+- **[Performance Optimization](docs/performance_optimization_guide.md)** - Mobile, accessibility, and Core Web Vitals
 
-```bash
-# Review failed scrapes
-psql -d rescue_dogs -c "
-SELECT organization_id, started_at, error_message, 
-       detailed_metrics->'animals_found' as animals_found
-FROM scrape_logs 
-WHERE status IN ('error', 'warning') 
-ORDER BY started_at DESC LIMIT 5;"
-```
+### 🚨 Troubleshooting & Monitoring
+- **[Troubleshooting Guide](docs/troubleshooting_guide.md)** - Common issues and solutions
+- **[Navigation Troubleshooting](docs/navigation_troubleshooting_guide.md)** - Hero image loading fixes
+- **[Production Deployment](docs/production_deployment.md)** - Deployment and monitoring setup
+
+### 📱 Features & Implementation
+- **[CTA Optimization](docs/cta_optimization_guide.md)** - Favorites, toast notifications, mobile UX
+- **[Related Dogs Feature](docs/related_dogs_feature.md)** - Cross-discovery implementation
+- **[Data Standardization](docs/data_standardization.md)** - Breed, age, and size normalization
+
+### 📝 Project Management
+- **[Development Log](DEVELOPMENT_LOG.md)** - Feature timeline and change tracking
+- **[Frontend Documentation](frontend/README.md)** - Frontend-specific setup and patterns
+
+### 🔍 Quick Reference
+- **Current Status**: 3 active organizations, 414 animals, 259 backend + 1,249 frontend tests
+- **API Version**: 0.1.0
+- **Frontend**: Next.js 15 with App Router
+- **Backend**: FastAPI with PostgreSQL
+- **Testing**: TDD approach with comprehensive coverage

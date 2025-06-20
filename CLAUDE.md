@@ -20,12 +20,12 @@ Quick reference for Claude Code when working with the Rescue Dog Aggregator plat
 ## 🚀 Essential Commands
 
 ### Setup & Run
-```bash
-# Backend
-python main.py --setup                    # Initial database setup
-uvicorn api.main:app --reload            # Run API (port 8000)
+For complete setup instructions, see: [Installation Guide](docs/installation_guide.md)
 
-# Frontend  
+```bash
+# Quick Commands (after setup)
+source venv/bin/activate                 # Activate virtual environment
+uvicorn api.main:app --reload           # Run API (port 8000)
 cd frontend && npm run dev               # Run frontend (port 3000)
 
 # Scraping
@@ -36,18 +36,22 @@ python management/config_commands.py run-all   # Run all scrapers
 
 ### Testing
 ```bash
+# Activate virtual environment first
+source venv/bin/activate
+
 # Fast tests only (recommended during development)
-pytest tests/ -m "not slow" -v          # ~45 seconds
+python -m pytest tests/ -m "not slow" -v          # 259 tests optimized for development
 
 # Run specific test categories
-pytest tests/ -m "unit" -v              # Ultra-fast unit tests
-pytest tests/ -m "api" -v               # API tests only
+python -m pytest tests/ -m "unit" -v              # Ultra-fast unit tests
+python -m pytest tests/ -m "api" -v               # API tests only
 
-# Frontend tests (now includes performance & accessibility)
-cd frontend && npm test                   # All 505+ tests including performance
+# Frontend tests (comprehensive coverage)
+cd frontend && npm test                   # All 1,249 tests across 88 suites
 cd frontend && npm test -- --testPathPattern="performance" # Performance tests only
 cd frontend && npm test -- --testPathPattern="accessibility" # Accessibility tests only
 cd frontend && npm test -- --testPathPattern="cross-browser" # Cross-browser tests only
+cd frontend && npm test -- --testPathPattern="mobile" # Mobile-specific tests
 ```
 
 ## 🏗️ Architecture Overview
@@ -346,39 +350,12 @@ cd frontend && npm test -- --testPathPattern="OrganizationHero"
 
 ### 🔄 API Auto-Curation System
 
-**✅ NEW**: Enhanced `/api/animals` endpoint with intelligent curation algorithms
+**✅ NEW**: Enhanced `/api/animals` endpoint with intelligent curation algorithms (random, recent, diverse)
 
-**Curation Types**:
-- `curation_type=random` (default) - Randomized selection for variety
-- `curation_type=recent` - Animals added in last 7 days, newest first
-- `curation_type=diverse` - One animal per organization, randomly selected
-
-**Usage Examples**:
-```bash
-# Get diverse selection (one per organization)
-curl "http://localhost:8000/api/animals?curation_type=diverse&limit=20"
-
-# Get recent additions (last 7 days)
-curl "http://localhost:8000/api/animals?curation_type=recent&limit=10"
-
-# Get aggregated statistics
-curl "http://localhost:8000/api/animals/statistics"
-```
-
-**Backend Implementation**: Uses PostgreSQL `DISTINCT ON` for efficient diverse selection and date filtering for recent curation.
+For complete API documentation including all curation types and endpoints, see: [API Reference](docs/api_reference.md)
 
 ### Environment Variables
-```bash
-# Required for production
-DATABASE_URL=postgresql://...
-CLOUDINARY_CLOUD_NAME=...
-CLOUDINARY_API_KEY=...
-CLOUDINARY_API_SECRET=...
-
-# Frontend  
-NEXT_PUBLIC_API_URL=http://localhost:8000
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your_cloud_name_here
-```
+For complete environment configuration, see: [Installation Guide - Environment Variables](docs/installation_guide.md#environment-configuration)
 
 ### 🔒 Security Best Practices
 
@@ -590,7 +567,7 @@ cd frontend && npm run build && npm test
 
 - [API Docs](http://localhost:8000/docs) (when running)
 - [Database Schema](database/schema.sql)
-- [Component Library](frontend/src/components/README.md)
+- [Frontend Documentation](frontend/README.md)
 - [Scraper Configs](configs/organizations/)
 
 ---

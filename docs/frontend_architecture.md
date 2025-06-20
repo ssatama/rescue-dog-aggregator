@@ -1,5 +1,22 @@
 # Frontend Architecture Guide
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Technology Stack](#technology-stack)
+- [Architecture Patterns](#architecture-patterns)
+- [Security Implementation](#security-implementation)
+- [Performance Optimization](#performance-optimization)
+- [Related Dogs Feature](#related-dogs-feature)
+- [Accessibility Features](#accessibility-features)
+- [Hero Section with Animated Statistics](#hero-section-with-animated-statistics)
+- [CTA Optimization Components](#cta-optimization-components)
+- [Error Handling & User Experience](#error-handling--user-experience)
+- [Test-Driven Development](#test-driven-development)
+- [Development Workflow](#development-workflow)
+- [Performance Monitoring](#performance-monitoring)
+- [Future Considerations](#future-considerations)
+
 ## Overview
 
 The Rescue Dog Aggregator frontend is built with **Next.js 15** using the **App Router** architecture, implementing modern React patterns with a focus on **performance**, **security**, **accessibility**, and **maintainability**. The architecture follows a **test-driven development (TDD)** approach with comprehensive coverage across security, performance, accessibility, and functionality.
@@ -10,7 +27,7 @@ The Rescue Dog Aggregator frontend is built with **Next.js 15** using the **App 
 - **Language**: TypeScript/JavaScript
 - **Styling**: Tailwind CSS + shadcn/ui components
 - **State Management**: React hooks with component-level state
-- **Testing**: Jest + React Testing Library (341+ tests across 34+ suites)
+- **Testing**: Jest + React Testing Library (1,249 tests across 88 suites)
 - **Image Optimization**: Cloudinary integration with lazy loading
 - **Build Tools**: Next.js built-in bundling and optimization
 

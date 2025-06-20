@@ -1,6 +1,8 @@
 # Database Migration History
 
 ## 2024-06-07: Production-Ready Availability Management
+
+### Core Availability System
 - **Migration 001**: `001_add_duplicate_stale_detection.sql`
   - Added availability tracking columns to `animals` table:
     - `availability_confidence` VARCHAR(20) DEFAULT 'high'
@@ -8,6 +10,8 @@
     - `consecutive_scrapes_missing` INTEGER DEFAULT 0
   - Created indexes for efficient querying
   - Updated existing records with default values
+
+### Enhanced Metrics & Monitoring
 - **Migration 002**: `002_add_detailed_metrics.sql`
   - Enhanced `scrape_logs` table with production metrics:
     - `detailed_metrics` JSONB for comprehensive statistics
@@ -15,6 +19,30 @@
     - `data_quality_score` NUMERIC(3,2) for quality assessment
   - Added GIN indexes for JSONB queries
   - Constraints for quality score validation (0-1 range)
+
+### Session Tracking System
+- **Migration**: `scrape_sessions.sql`
+  - Created `scrape_sessions` table for advanced session tracking
+  - Added `last_session_id` to `animals` table for session references
+  - Enables precise scrape session management
+
+### Social Media & Organization Enhancement
+- **Migration 001**: `001_add_social_media.sql`
+  - Added `social_media` JSONB column to `organizations` table
+  - Enables storage of social media links and metadata
+
+### Configuration-Driven Architecture
+- **Migration 003**: `003_add_config_support.sql`
+  - Added `config_id` VARCHAR(50) to `organizations` table
+  - Links organizations to YAML configuration files
+  - Enables configuration-driven scraper management
+
+### Organization Data Enhancement
+- **Migration 003**: `003_add_missing_fields.sql`
+  - Added enhanced organization fields:
+    - `ships_to` JSONB for countries organizations ship to
+    - `established_year` INTEGER for organization founding year
+  - Updated for enhanced organizations API functionality
 
 **Features Enabled**:
 - Weekly scraping with stale data detection

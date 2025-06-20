@@ -1,489 +1,602 @@
-# API Reference Guide
+# 📡 API Reference
 
-## Overview
+## 🎯 Overview
 
-The Rescue Dog Aggregator API provides RESTful endpoints for accessing standardized animal data with production-ready availability filtering. The API defaults to showing only reliable, recently-seen animals to ensure the best user experience.
+The Rescue Dog Aggregator API provides RESTful access to aggregated rescue dog data from multiple organizations. The API supports filtering, pagination, and comprehensive search capabilities with production-ready availability management.
 
-## Base URL
+**Base URL**: `http://localhost:8000` (development) | `https://api.rescuedogaggregator.com` (production)
 
-- **Development**: `http://localhost:8000`
-- **Production**: `https://your-api-domain.com`
+**API Version**: 0.1.0
 
-## Authentication
+## 🔐 Authentication
 
-Currently, the API is publicly accessible. Authentication may be added in future versions for administrative features.
+Currently, the API does not require authentication for public endpoints. All endpoints are publicly accessible.
 
-## Core Endpoints
+## 📄 Response Format
 
-### Animals
+All API responses follow a consistent JSON format:
 
-#### `GET /api/animals`
+### Success Response
+```json
+{
+  "data": [...],
+  "meta": {
+    "total": 100,
+    "limit": 20,
+    "offset": 0
+  }
+}
+```
 
-Retrieve a paginated list of animals with comprehensive filtering options.
+### Error Response
+```json
+{
+  "detail": "Error message",
+  "status_code": 400
+}
+```
 
-**Default Behavior**: Only returns `available` animals with `high` or `medium` availability confidence.
+## Endpoints
 
-**Parameters**:
+### Animals API
+
+#### GET /api/animals/
+
+Get all animals with filtering, pagination, and location support.
+
+**Query Parameters:**
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `limit` | integer | 20 | Number of results (1-100) |
-| `offset` | integer | 0 | Pagination offset |
-| `curation_type` | string | "random" | Curation algorithm: `random`, `recent`, or `diverse` |
-| `status` | string | "available" | Animal status: `available`, `unavailable`, or `all` |
-| `availability_confidence` | string | "high,medium" | Confidence levels: `high`, `medium`, `low`, `all`, or comma-separated combinations |
-| `search` | string | - | Search in name, breed, or standardized breed |
-| `breed` | string | - | Filter by exact breed |
-| `standardized_breed` | string | - | Filter by standardized breed |
-| `breed_group` | string | - | Filter by breed group (Sporting, Hound, etc.) |
-| `sex` | string | - | Filter by sex (Male/Female) |
-| `size` | string | - | Filter by size |
-| `standardized_size` | string | - | Filter by standardized size |
-| `age_category` | string | - | Filter by age category (Puppy/Young/Adult/Senior) |
-| `organization_id` | integer | - | Filter by organization |
-| `location_country` | string | - | Filter by organization's country |
-| `available_to_country` | string | - | Filter by adoption availability country |
-| `available_to_region` | string | - | Filter by adoption availability region |
+| `limit` | integer | 20 | Number of results to return (1-100) |
+| `offset` | integer | 0 | Number of results to skip |
+| `search` | string | null | Search in animal names and descriptions |
+| `breed` | string | null | Filter by exact breed name |
+| `standardized_breed` | string | null | Filter by standardized breed |
+| `breed_group` | string | null | Filter by breed group |
+| `sex` | string | null | Filter by sex (male, female) |
+| `size` | string | null | Filter by size |
+| `standardized_size` | string | null | Filter by standardized size (small, medium, large) |
+| `age_category` | string | null | Filter by age category |
+| `animal_type` | string | "dog" | Filter by animal type |
+| `status` | string | "available" | Filter by availability status |
+| `location_country` | string | null | Filter by country where animal is located |
+| `available_to_country` | string | null | Filter by adoption destination country |
+| `available_to_region` | string | null | Filter by adoption destination region |
+| `organization_id` | integer | null | Filter by specific organization |
+| `availability_confidence` | string | "high,medium" | Filter by confidence level |
+| `curation_type` | string | "random" | Curation algorithm: "recent", "diverse", "random" |
 
-**Curation Types**:
-
-The `curation_type` parameter controls how results are selected and ordered:
-
-- **`random`** (default): Randomized selection for variety
-- **`recent`**: Animals added in the last 7 days, ordered by newest first
-- **`diverse`**: One animal per organization, randomly selected
-
-**Example Requests**:
-
+**Example Request:**
 ```bash
-# Default - random curation with good confidence
-curl "https://api.example.com/api/animals"
-
-# Recent animals (last 7 days)
-curl "https://api.example.com/api/animals?curation_type=recent&limit=10"
-
-# Diverse selection (one per organization)
-curl "https://api.example.com/api/animals?curation_type=diverse&limit=20"
-
-# Show all animals regardless of status or confidence  
-curl "https://api.example.com/api/animals?status=all&availability_confidence=all"
-
-# High confidence animals only
-curl "https://api.example.com/api/animals?availability_confidence=high"
-
-# Search with location filtering
-curl "https://api.example.com/api/animals?search=labrador&available_to_country=US&available_to_region=CA"
-
-# Specific organization with pagination
-curl "https://api.example.com/api/animals?organization_id=1&limit=50&offset=0"
+curl "http://localhost:8000/api/animals/?limit=10&breed=Golden%20Retriever&size=large"
 ```
 
-**Response Format**:
-
+**Example Response:**
 ```json
 [
   {
-    "id": 123,
+    "id": 1,
     "name": "Buddy",
     "animal_type": "dog",
-    "breed": "Labrador Mix",
-    "standardized_breed": "Labrador Retriever Mix",
+    "breed": "Golden Retriever",
+    "standardized_breed": "Golden Retriever",
     "breed_group": "Sporting",
-    "age_text": "2 years old",
+    "age_text": "2 years",
     "age_min_months": 24,
     "age_max_months": 24,
-    "sex": "Male",
-    "size": "Large",
-    "standardized_size": "Large",
+    "sex": "male",
+    "size": "large",
+    "standardized_size": "large",
     "status": "available",
-    "availability_confidence": "high",
-    "last_seen_at": "2024-06-07T18:30:00Z",
-    "consecutive_scrapes_missing": 0,
-    "primary_image_url": "https://res.cloudinary.com/...",
+    "primary_image_url": "https://res.cloudinary.com/dy8y3boog/image/upload/...",
     "adoption_url": "https://organization.com/adopt/buddy",
     "organization_id": 1,
-    "external_id": "ORG-123",
+    "external_id": "org_123",
     "language": "en",
     "properties": {},
-    "created_at": "2024-06-01T10:00:00Z",
-    "updated_at": "2024-06-07T18:30:00Z",
-    "last_scraped_at": "2024-06-07T18:30:00Z",
-    "images": [
-      {
-        "id": 456,
-        "image_url": "https://res.cloudinary.com/...",
-        "is_primary": true
-      }
-    ],
+    "created_at": "2024-06-01T12:00:00Z",
+    "updated_at": "2024-06-18T15:30:00Z",
+    "last_scraped_at": "2024-06-18T15:30:00Z",
+    "availability_confidence": "high",
+    "last_seen_at": "2024-06-18T15:30:00Z",
+    "consecutive_scrapes_missing": 0,
     "organization": {
       "id": 1,
-      "name": "Example Rescue",
-      "city": "San Francisco",
-      "country": "US",
-      "website_url": "https://example-rescue.org",
+      "name": "Pets in Turkey",
+      "website_url": "https://petsinturkey.org",
+      "city": "Izmir",
+      "country": "TR",
       "social_media": {
-        "facebook": "https://facebook.com/example-rescue",
-        "instagram": "https://instagram.com/example-rescue"
+        "facebook": "https://facebook.com/petsinturkey",
+        "instagram": "petsinturkey"
+      },
+      "ships_to": ["DE", "NL", "BE", "FR", "UK"]
+    },
+    "images": [
+      {
+        "id": 1,
+        "image_url": "https://res.cloudinary.com/dy8y3boog/image/upload/...",
+        "is_primary": true
       }
-    }
+    ]
   }
 ]
 ```
 
-#### `GET /api/animals/{animal_id}`
+#### GET /api/animals/{id}
 
-Retrieve a specific animal by ID.
+Get a specific animal by ID.
 
-**Response**: Single animal object with same format as above.
+**Path Parameters:**
+- `id` (integer): Animal ID
 
-**Example**:
+**Example Request:**
 ```bash
-curl "https://api.example.com/api/animals/123"
+curl "http://localhost:8000/api/animals/1"
 ```
 
-#### `GET /api/animals/random`
+#### GET /api/animals/statistics
 
-Get random animals for featured sections.
+Get aggregated statistics about animals in the system.
 
-**Parameters**:
-- `limit`: Number of random animals (1-10, default: 3)
-- `status`: Animal status (default: "available")
-
-**Example**:
-```bash
-curl "https://api.example.com/api/animals/random?limit=5"
-```
-
-#### `GET /api/animals/statistics`
-
-Get aggregated statistics about available animals and organizations.
-
-**Response Format**:
+**Example Response:**
 ```json
 {
-  "total_dogs": 1234,
-  "total_organizations": 45,
-  "countries": [
+  "total_animals": 414,
+  "total_organizations": 3,
+  "total_countries": 2,
+  "by_status": {
+    "available": 413,
+    "unavailable": 1
+  },
+  "by_confidence": {
+    "high": 393,
+    "medium": 6,
+    "low": 14
+  },
+  "by_organization": [
     {
-      "country": "Turkey",
-      "count": 800
-    },
-    {
-      "country": "Spain", 
-      "count": 434
-    }
-  ],
-  "organizations": [
-    {
-      "id": 1,
-      "name": "Example Rescue Organization",
-      "dog_count": 123
-    },
-    {
-      "id": 2,
-      "name": "Another Pet Rescue",
-      "dog_count": 89
+      "organization_id": 1,
+      "name": "Pets in Turkey",
+      "count": 33
     }
   ]
 }
 ```
 
-**Fields Description**:
-- `total_dogs`: Count of available animals with high/medium confidence
-- `total_organizations`: Count of organizations with available animals
-- `countries`: Array of countries with animal counts
-- `organizations`: Array of organizations with their available animal counts
+### Organizations API
 
-**Example**:
-```bash
-curl "https://api.example.com/api/animals/statistics"
-```
+#### GET /api/organizations/
 
-### Animals Metadata
+Get all active rescue organizations.
 
-#### `GET /api/animals/meta/breeds`
-
-Get list of available standardized breeds.
-
-**Parameters**:
-- `breed_group`: Filter breeds by group
-
-**Example**:
-```bash
-curl "https://api.example.com/api/animals/meta/breeds?breed_group=Sporting"
-```
-
-#### `GET /api/animals/meta/breed_groups`
-
-Get list of available breed groups.
-
-**Example**:
-```bash
-curl "https://api.example.com/api/animals/meta/breed_groups"
-```
-
-#### `GET /api/animals/meta/location_countries`
-
-Get list of countries where organizations are located.
-
-**Example**:
-```bash
-curl "https://api.example.com/api/animals/meta/location_countries"
-```
-
-#### `GET /api/animals/meta/available_countries`
-
-Get list of countries where animals can be adopted to.
-
-**Example**:
-```bash
-curl "https://api.example.com/api/animals/meta/available_countries"
-```
-
-#### `GET /api/animals/meta/available_regions`
-
-Get list of regions within a country where animals can be adopted to.
-
-**Parameters**:
-- `country`: Required - Country to get regions for
-
-**Example**:
-```bash
-curl "https://api.example.com/api/animals/meta/available_regions?country=US"
-```
-
-### Organizations
-
-#### `GET /api/organizations`
-
-Get list of rescue organizations with enhanced data including statistics.
-
-**Returns**: Array of organizations with shipping information, establishment year, service regions, and real-time dog counts.
-
-**Response Fields**:
-- `ships_to`: Array of country codes where organization ships (e.g., `["DE", "NL", "BE"]`)
-- `established_year`: Year the organization was founded (e.g., `2018`)
-- `service_regions`: Array of countries/regions served (e.g., `["TR", "DE"]`)
-- `total_dogs`: Current count of available dogs from this organization
-- `new_this_week`: Count of dogs added in the last 7 days
-
-**Example**:
-```bash
-curl "https://api.example.com/api/organizations"
-```
-
-**Sample Response**:
+**Example Response:**
 ```json
 [
   {
-    "id": 2,
+    "id": 1,
     "name": "Pets in Turkey",
     "website_url": "https://www.petsinturkey.org/",
-    "description": "We help rescue dogs in Turkey...",
-    "country": "Turkey",
-    "ships_to": ["DE", "NL", "BE", "FR", "UK", "AT", "CH"],
-    "established_year": 2018,
-    "service_regions": ["TR"],
-    "total_dogs": 33,
-    "new_this_week": 0,
+    "description": "We are a group of animal and nature loving people...",
+    "country": "TR",
+    "city": "Izmir",
+    "logo_url": "/path/to/logo.jpg",
     "social_media": {
       "website": "https://www.petsinturkey.org/",
       "facebook": "https://www.facebook.com/petsinturkey/",
       "instagram": "petsinturkey"
+    },
+    "active": true,
+    "created_at": "2024-06-01T12:00:00Z",
+    "updated_at": "2024-06-18T15:30:00Z",
+    "ships_to": ["DE", "NL", "BE", "FR", "UK", "AT", "CH", "SE", "FI", "DK", "NO"],
+    "established_year": 2018,
+    "service_regions": ["TR"],
+    "total_dogs": 33,
+    "new_this_week": 2
+  }
+]
+```
+
+#### GET /api/organizations/{id}
+
+Get a specific organization by ID.
+
+**Path Parameters:**
+- `id` (integer): Organization ID
+
+### Monitoring & Health API
+
+#### GET /health
+
+Basic health check endpoint.
+
+**Example Response:**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2024-06-18T15:30:00Z",
+  "version": "0.1.0",
+  "database": {
+    "status": "connected",
+    "animals_count": 414,
+    "organizations_count": 3
+  }
+}
+```
+
+#### GET /health/detailed
+
+Detailed health check with component status.
+
+**Example Response:**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2024-06-18T15:30:00Z",
+  "version": "0.1.0",
+  "database": {
+    "status": "connected",
+    "response_time_ms": 12,
+    "animals_count": 414,
+    "organizations_count": 3
+  },
+  "components": {
+    "scrapers": {
+      "last_successful_scrape": "2024-06-18T21:30:52Z",
+      "failed_scrapes_24h": 0,
+      "total_scrapes_24h": 3
+    },
+    "availability_system": {
+      "high_confidence": 393,
+      "medium_confidence": 6,
+      "low_confidence": 14
+    }
+  }
+}
+```
+
+#### GET /monitoring/scrapers
+
+Get scraper status and performance metrics.
+
+**Example Response:**
+```json
+[
+  {
+    "organization_id": 1,
+    "organization_name": "Pets in Turkey",
+    "last_scrape": "2024-06-18T21:27:19Z",
+    "status": "success",
+    "animals_found": 33,
+    "failure_detection": {
+      "potential_failure_detected": false,
+      "threshold_percentage": 0.5
+    },
+    "performance_metrics": {
+      "duration_seconds": 45.2,
+      "data_quality_score": 0.87
     }
   }
 ]
 ```
 
-#### `GET /api/organizations/{org_id}`
+#### GET /monitoring/failures
 
-Get specific organization details.
+Get failure detection summary.
 
-**Example**:
-```bash
-curl "https://api.example.com/api/organizations/1"
-```
-
-#### `GET /api/organizations/{org_id}/recent-dogs`
-
-Get the most recent dogs from a specific organization with thumbnail URLs.
-
-**Parameters**:
-- `limit` (optional): Number of recent dogs to return (default: 3)
-
-**Returns**: Array of recent dogs with optimized thumbnail URLs for preview cards.
-
-**Example**:
-```bash
-curl "https://api.example.com/api/organizations/1/recent-dogs?limit=5"
-```
-
-**Sample Response**:
+**Example Response:**
 ```json
-[
-  {
-    "id": 123,
-    "name": "Buddy",
-    "primary_image_url": "https://res.cloudinary.com/...",
-    "thumbnail_url": "https://res.cloudinary.com/.../w_96,h_96,c_fill,g_auto/..."
+{
+  "catastrophic_failures_24h": 0,
+  "partial_failures_24h": 0,
+  "database_errors_24h": 0,
+  "total_scrapes_24h": 3,
+  "failure_rate_percentage": 0.0,
+  "recent_errors": []
+}
+```
+
+## Data Models
+
+### Animal Model
+
+```typescript
+interface Animal {
+  id: number;
+  name: string;
+  animal_type: string;
+  breed?: string;
+  standardized_breed?: string;
+  breed_group?: string;
+  age_text?: string;
+  age_min_months?: number;
+  age_max_months?: number;
+  sex?: string;
+  size?: string;
+  standardized_size?: string;
+  status: string;
+  primary_image_url?: string;
+  adoption_url: string;
+  organization_id: number;
+  external_id?: string;
+  language: string;
+  properties: object;
+  created_at: string;
+  updated_at: string;
+  last_scraped_at?: string;
+  availability_confidence: 'high' | 'medium' | 'low';
+  last_seen_at?: string;
+  consecutive_scrapes_missing: number;
+  organization: Organization;
+  images: AnimalImage[];
+}
+```
+
+### Organization Model
+
+```typescript
+interface Organization {
+  id: number;
+  name: string;
+  website_url: string;
+  description?: string;
+  country?: string;
+  city?: string;
+  logo_url?: string;
+  social_media: object;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+  ships_to: string[];
+  established_year?: number;
+  service_regions: string[];
+  total_dogs: number;
+  new_this_week: number;
+}
+```
+
+### AnimalImage Model
+
+```typescript
+interface AnimalImage {
+  id: number;
+  image_url: string;
+  is_primary: boolean;
+}
+```
+
+## Query Examples
+
+### Common Use Cases
+
+#### Get Recent Dogs (Last 7 Days)
+```bash
+curl "http://localhost:8000/api/animals/?curation_type=recent&limit=20"
+```
+
+#### Get One Dog Per Organization (Diverse Selection)
+```bash
+curl "http://localhost:8000/api/animals/?curation_type=diverse&limit=10"
+```
+
+#### Search for Large Dogs Available to Germany
+```bash
+curl "http://localhost:8000/api/animals/?size=large&available_to_country=DE"
+```
+
+#### Get Dogs from Specific Organization
+```bash
+curl "http://localhost:8000/api/animals/?organization_id=1"
+```
+
+#### Get High Confidence Available Dogs Only
+```bash
+curl "http://localhost:8000/api/animals/?availability_confidence=high"
+```
+
+#### Search by Breed Group
+```bash
+curl "http://localhost:8000/api/animals/?breed_group=Sporting&limit=15"
+```
+
+### Advanced Use Cases
+
+#### Build a Dog Adoption App
+```javascript
+// Frontend integration example
+async function fetchDogsForAdoptionApp() {
+  try {
+    // Get diverse selection for homepage
+    const homepageDogs = await fetch(
+      'http://localhost:8000/api/animals/?curation_type=diverse&limit=12'
+    ).then(res => res.json());
+
+    // Get organization statistics
+    const orgs = await fetch(
+      'http://localhost:8000/api/organizations/'
+    ).then(res => res.json());
+
+    // Get recent additions for "New Arrivals" section
+    const recentDogs = await fetch(
+      'http://localhost:8000/api/animals/?curation_type=recent&limit=6'
+    ).then(res => res.json());
+
+    return { homepageDogs, orgs, recentDogs };
+  } catch (error) {
+    console.error('Error fetching dog data:', error);
   }
-]
-```
-
-#### `GET /api/organizations/{org_id}/statistics`
-
-Get detailed statistics for a specific organization.
-
-**Returns**: Dog counts and recent activity metrics.
-
-**Example**:
-```bash
-curl "https://api.example.com/api/organizations/1/statistics"
-```
-
-**Sample Response**:
-```json
-{
-  "total_dogs": 25,
-  "new_this_week": 3,
-  "new_this_month": 8
 }
 ```
 
-#### `GET /api/organizations/{org_id}/animals`
+#### Create a Dog Search Filter
+```javascript
+// Advanced filtering example
+function buildSearchQuery(filters) {
+  const params = new URLSearchParams();
+  
+  // Basic filters
+  if (filters.breed) params.append('breed', filters.breed);
+  if (filters.size) params.append('size', filters.size);
+  if (filters.sex) params.append('sex', filters.sex);
+  
+  // Location-based filters
+  if (filters.country) params.append('available_to_country', filters.country);
+  if (filters.locationCountry) params.append('location_country', filters.locationCountry);
+  
+  // Availability preferences
+  if (filters.confidence) params.append('availability_confidence', filters.confidence);
+  
+  // Pagination
+  params.append('limit', filters.limit || 20);
+  params.append('offset', filters.offset || 0);
 
-Get animals from specific organization.
+  return `http://localhost:8000/api/animals/?${params}`;
+}
 
-**Parameters**: Same as `/api/animals` endpoint
-
-**Example**:
-```bash
-curl "https://api.example.com/api/organizations/1/animals"
+// Usage
+const searchUrl = buildSearchQuery({
+  breed: 'Golden Retriever',
+  size: 'large',
+  country: 'DE',
+  confidence: 'high,medium',
+  limit: 15
+});
 ```
 
-## Availability System
+#### Monitor Organization Performance
+```javascript
+// Organization monitoring example
+async function getOrganizationInsights(orgId) {
+  try {
+    // Get organization details with statistics
+    const org = await fetch(
+      `http://localhost:8000/api/organizations/${orgId}`
+    ).then(res => res.json());
 
-### Confidence Levels
+    // Get their current dogs
+    const dogs = await fetch(
+      `http://localhost:8000/api/animals/?organization_id=${orgId}&limit=100`
+    ).then(res => res.json());
 
-The API uses a confidence system to ensure users see reliable data:
+    // Get system health for this org (if monitoring endpoint exists)
+    const health = await fetch(
+      'http://localhost:8000/monitoring/scrapers'
+    ).then(res => res.json())
+    .then(scrapers => scrapers.find(s => s.organization_id === orgId));
 
-- **`high`**: Recently seen in scrape (0 missed scrapes)
-- **`medium`**: 1 missed scrape  
-- **`low`**: 2-3 missed scrapes
-- **`unavailable`**: 4+ missed scrapes (status changes to "unavailable")
-
-### Default Filtering
-
-By default, all animal endpoints filter to:
-- `status = "available"`
-- `availability_confidence = "high,medium"`
-
-This ensures users see only animals that are likely still available for adoption.
-
-### Override Options
-
-Administrators and developers can override defaults:
-
-```bash
-# Show all animals regardless of availability
-curl "https://api.example.com/api/animals?status=all&availability_confidence=all"
-
-# Show only low confidence animals (for review)
-curl "https://api.example.com/api/animals?availability_confidence=low"
-
-# Show unavailable animals
-curl "https://api.example.com/api/animals?status=unavailable"
-```
-
-## Response Fields
-
-### Availability Fields
-
-All animal responses include these availability-related fields:
-
-- `status`: "available" or "unavailable"
-- `availability_confidence`: "high", "medium", or "low"
-- `last_seen_at`: Timestamp when animal was last seen in a scrape
-- `consecutive_scrapes_missing`: Number of consecutive scrapes where animal was not found
-
-### Standardized Fields
-
-The API includes both original and standardized data:
-
-- `breed` / `standardized_breed`
-- `age_text` / `age_min_months` / `age_max_months`
-- `size` / `standardized_size`
-
-### Organization Data
-
-When available, nested organization information includes:
-
-- **Basic info**: `name`, `city`, `country`, `website_url`, `description`
-- **Enhanced metadata**: `ships_to` (shipping countries), `established_year`, `service_regions`
-- **Real-time statistics**: `total_dogs`, `new_this_week` (automatically calculated)
-- **Social media**: Structured JSONB object with website, facebook, instagram links
-- **Service regions**: Dynamic array for location-based filtering
-
-## Error Handling
-
-### HTTP Status Codes
-
-- `200`: Success
-- `404`: Resource not found
-- `422`: Validation error
-- `500`: Internal server error
-
-### Error Response Format
-
-```json
-{
-  "detail": "Error description"
+    return {
+      organization: org,
+      totalDogs: dogs.length,
+      newThisWeek: org.new_this_week,
+      lastScrape: health?.last_scrape,
+      dataQuality: health?.performance_metrics?.data_quality_score
+    };
+  } catch (error) {
+    console.error('Error fetching organization insights:', error);
+  }
 }
 ```
 
-### Common Errors
-
-- **Invalid availability_confidence**: Must be valid confidence level or "all"
-- **Invalid status**: Must be "available", "unavailable", or "all"
-- **Invalid pagination**: limit must be 1-100, offset must be >= 0
-- **Missing country for regions**: available_regions endpoint requires country parameter
-
-## Performance Considerations
-
-### Caching
-
-- Metadata endpoints are cached for performance
-- Animal data includes ETags for conditional requests
-- Cloudinary CDN provides optimized image delivery
-
-### Pagination
-
-Use pagination for large datasets:
-
+#### Build a Location-Based Rescue Finder
 ```bash
-# First page
-curl "https://api.example.com/api/animals?limit=50&offset=0"
+# Find dogs available to specific countries
+curl "http://localhost:8000/api/animals/?available_to_country=DE&limit=50"
 
-# Second page  
-curl "https://api.example.com/api/animals?limit=50&offset=50"
+# Find dogs located in specific countries
+curl "http://localhost:8000/api/animals/?location_country=TR&available_to_country=DE"
+
+# Get organizations that ship to specific countries
+curl "http://localhost:8000/api/organizations/" | jq '.[] | select(.ships_to | contains(["DE"]))'
 ```
 
-### Filtering Best Practices
-
-- Use specific filters to reduce response size
-- Combine location and breed filters for targeted results
-- Use standardized fields for consistent filtering
-- Consider availability confidence for user-facing applications
-
-## Development and Testing
-
-### Health Check
-
+#### Performance Monitoring Dashboard
 ```bash
-curl "https://api.example.com/health"
-# Returns: {"status": "healthy"}
+# System health overview
+curl "http://localhost:8000/health/detailed"
+
+# Scraper performance metrics
+curl "http://localhost:8000/monitoring/scrapers"
+
+# Failure detection and alerts
+curl "http://localhost:8000/monitoring/failures"
+
+# Database statistics
+curl "http://localhost:8000/api/animals/statistics"
 ```
 
-### Test Environment
+#### Data Analysis Examples
+```python
+# Python example for data analysis
+import requests
+import pandas as pd
 
-Development API typically runs on `http://localhost:8000` with the same endpoints and parameters.
+def analyze_rescue_data():
+    # Fetch all organizations
+    orgs_response = requests.get('http://localhost:8000/api/organizations/')
+    organizations = orgs_response.json()
+    
+    # Fetch animal statistics
+    stats_response = requests.get('http://localhost:8000/api/animals/statistics')
+    stats = stats_response.json()
+    
+    # Create DataFrame for analysis
+    org_df = pd.DataFrame(organizations)
+    
+    # Analysis examples
+    print("Organizations by Country:")
+    print(org_df['country'].value_counts())
+    
+    print("\nTotal Dogs by Organization:")
+    print(org_df[['name', 'total_dogs']].sort_values('total_dogs', ascending=False))
+    
+    print("\nAverage Dogs per Organization:")
+    print(f"{org_df['total_dogs'].mean():.1f}")
+    
+    return org_df, stats
+
+# Usage
+df, statistics = analyze_rescue_data()
+```
+
+## Rate Limiting
+
+Currently, there are no rate limits enforced on the API. However, please be respectful with your requests to ensure service availability for all users.
+
+## Error Codes
+
+| Status Code | Meaning |
+|-------------|---------|
+| 200 | Success |
+| 400 | Bad Request - Invalid parameters |
+| 404 | Not Found - Resource does not exist |
+| 422 | Unprocessable Entity - Validation error |
+| 500 | Internal Server Error |
+
+## CORS Support
+
+The API supports Cross-Origin Resource Sharing (CORS) for the following origins:
+- `http://localhost:3000` (development frontend)
+- `http://127.0.0.1:3000` (alternative development)
+
+## API Versioning
+
+The current API version is 0.1.0. Future versions will be backwards compatible and new versions will be announced with migration guides.
+
+## Support
+
+For API support or questions, please:
+1. Check this documentation first
+2. Review the [troubleshooting guide](troubleshooting_guide.md)
+3. Submit an issue on the project repository
+
+## Changelog
+
+### v0.1.0 (Current)
+- Initial API release
+- Animals and Organizations endpoints
+- Filtering and pagination support
+- Availability confidence system
+- Monitoring and health endpoints
+- Curation algorithms (recent, diverse, random)
