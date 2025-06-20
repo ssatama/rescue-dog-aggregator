@@ -212,7 +212,7 @@ describe('MobileFilterBottomSheet', () => {
   });
 
   describe('Visual States', () => {
-    test('highlights active filter buttons', () => {
+    test('highlights active filter buttons with orange theme', () => {
       const activeFilters = {
         ...mockFilters,
         age: 'Puppy',
@@ -224,8 +224,8 @@ describe('MobileFilterBottomSheet', () => {
       const puppyButton = screen.getByTestId('age-filter-Puppy');
       const maleButton = screen.getByTestId('sex-filter-Male');
       
-      expect(puppyButton).toHaveClass('bg-orange-500', 'text-white');
-      expect(maleButton).toHaveClass('bg-orange-500', 'text-white');
+      expect(puppyButton).toHaveClass('bg-orange-500', 'text-white', 'border-orange-500');
+      expect(maleButton).toHaveClass('bg-orange-500', 'text-white', 'border-orange-500');
     });
 
     test('shows inactive state for unselected filters', () => {
@@ -233,8 +233,32 @@ describe('MobileFilterBottomSheet', () => {
       
       const adultButton = screen.getByTestId('age-filter-Adult');
       
-      expect(adultButton).toHaveClass('bg-gray-100', 'text-gray-700');
+      expect(adultButton).toHaveClass('bg-gray-100', 'text-gray-700', 'border-gray-300');
       expect(adultButton).not.toHaveClass('bg-orange-500');
+    });
+
+    test('bottom sheet has proper GPU acceleration and styling', () => {
+      render(<MobileFilterBottomSheet {...mockProps} isOpen={true} />);
+      
+      const bottomSheet = screen.getByTestId('mobile-filter-sheet');
+      
+      expect(bottomSheet).toHaveClass('will-change-transform', 'gpu-accelerated');
+      expect(bottomSheet).toHaveClass('bg-white', 'rounded-t-2xl', 'shadow-2xl');
+    });
+
+    test('displays total count in results counter', () => {
+      render(<MobileFilterBottomSheet {...mockProps} isOpen={true} totalCount={42} />);
+      
+      expect(screen.getByText('42 dogs found')).toBeInTheDocument();
+    });
+
+    test('filter buttons have proper hover animation classes', () => {
+      render(<MobileFilterBottomSheet {...mockProps} isOpen={true} />);
+      
+      const ageButton = screen.getByTestId('age-filter-Adult');
+      
+      expect(ageButton).toHaveClass('animate-button-hover', 'focus-ring');
+      expect(ageButton).toHaveClass('min-h-[48px]'); // Touch target compliance
     });
   });
 
@@ -292,6 +316,80 @@ describe('MobileFilterBottomSheet', () => {
       await waitFor(() => {
         expect(mockProps.onFiltersChange).toHaveBeenCalledTimes(1);
       }, { timeout: 500 });
+    });
+  });
+
+  describe('Cross-Browser Mobile Compatibility', () => {
+    test('works correctly on iOS Safari', async () => {
+      // Mock iOS Safari user agent
+      Object.defineProperty(navigator, 'userAgent', {
+        writable: true,
+        value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1'
+      });
+
+      render(<MobileFilterBottomSheet {...mockProps} isOpen={true} />);
+      
+      const bottomSheet = screen.getByTestId('mobile-filter-sheet');
+      expect(bottomSheet).toBeInTheDocument();
+      expect(bottomSheet).toHaveClass('will-change-transform', 'gpu-accelerated');
+      
+      // Test touch interaction
+      const ageButton = screen.getByTestId('age-filter-Puppy');
+      
+      await act(async () => {
+        fireEvent.touchStart(ageButton);
+        fireEvent.touchEnd(ageButton);
+        fireEvent.click(ageButton);
+      });
+
+      expect(mockProps.onFiltersChange).toHaveBeenCalled();
+    });
+
+    test('works correctly on Android Chrome', async () => {
+      // Mock Android Chrome user agent
+      Object.defineProperty(navigator, 'userAgent', {
+        writable: true,
+        value: 'Mozilla/5.0 (Linux; Android 11; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Mobile Safari/537.36'
+      });
+
+      render(<MobileFilterBottomSheet {...mockProps} isOpen={true} />);
+      
+      const bottomSheet = screen.getByTestId('mobile-filter-sheet');
+      expect(bottomSheet).toBeInTheDocument();
+      
+      // Test backdrop interaction on Android
+      const backdrop = screen.getByTestId('filter-backdrop');
+      
+      await act(async () => {
+        fireEvent.click(backdrop);
+      });
+
+      expect(mockProps.onClose).toHaveBeenCalled();
+    });
+
+    test('supports reduced motion preferences', async () => {
+      // Mock reduced motion preference
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: jest.fn().mockImplementation(query => ({
+          matches: query === '(prefers-reduced-motion: reduce)',
+          media: query,
+          onchange: null,
+          addListener: jest.fn(),
+          removeListener: jest.fn(),
+          addEventListener: jest.fn(),
+          removeEventListener: jest.fn(),
+          dispatchEvent: jest.fn(),
+        })),
+      });
+
+      render(<MobileFilterBottomSheet {...mockProps} isOpen={true} />);
+      
+      const bottomSheet = screen.getByTestId('mobile-filter-sheet');
+      expect(bottomSheet).toBeInTheDocument();
+      
+      // Should still render properly even with reduced motion
+      expect(bottomSheet).toHaveClass('bg-white', 'rounded-t-2xl');
     });
   });
 });

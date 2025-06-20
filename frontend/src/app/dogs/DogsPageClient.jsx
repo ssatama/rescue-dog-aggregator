@@ -386,13 +386,16 @@ export default function DogsPageClient() {
             <div className="md:hidden mb-4">
               <Button 
                 variant="outline" 
-                className="w-full justify-center min-h-[48px] border-2 border-orange-200 hover:border-orange-300 animate-button-hover focus-ring"
+                className="w-full justify-center min-h-[48px] bg-white/90 backdrop-blur border-2 border-orange-200 hover:border-orange-300 animate-button-hover focus-ring"
                 onClick={() => setIsSheetOpen(true)}
               >
                 <Filter className="mr-2 h-5 w-5 text-orange-600" />
-                <span className="font-medium">
-                  Filter & Sort {activeFilterCount > 0 ? `(${activeFilterCount})` : ''}
-                </span>
+                <span className="font-medium">Filter & Sort</span>
+                {activeFilterCount > 0 && (
+                  <span className="ml-2 bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full text-sm">
+                    {activeFilterCount}
+                  </span>
+                )}
               </Button>
             </div>
             

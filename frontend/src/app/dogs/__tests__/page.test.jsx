@@ -298,6 +298,107 @@ describe('DogsPage Component', () => {
     });
   });
 
+  describe('Mobile Filter Button Enhancements', () => {
+    test('mobile filter button displays with orange border and hover states', async () => {
+      getAnimals.mockResolvedValue([]);
+      render(<DogsPage />);
+
+      const mobileFilterButton = screen.getByRole('button', { name: /Filter & Sort/i });
+      expect(mobileFilterButton).toBeInTheDocument();
+      expect(mobileFilterButton).toHaveClass('border-2', 'border-orange-200', 'hover:border-orange-300');
+    });
+
+    test('mobile filter button shows active filter count badge when filters are applied', async () => {
+      const user = userEvent.setup();
+      const mockDogs = [createMockDog(1, 'Test Dog')];
+      
+      getAnimals.mockResolvedValue(mockDogs);
+      render(<DogsPage />);
+
+      // Apply a filter first
+      const orgSelect = screen.getByTestId('organization-select');
+      await user.click(orgSelect);
+      const orgOption = await screen.findByRole('option', { name: 'Org A' });
+      await user.click(orgOption);
+
+      await waitFor(() => {
+        const mobileFilterButton = screen.getByRole('button', { name: /Filter & Sort.*1/i });
+        expect(mobileFilterButton).toBeInTheDocument();
+        
+        // Check for the orange badge styling
+        const badge = mobileFilterButton.querySelector('span.bg-orange-100');
+        expect(badge).toBeInTheDocument();
+        expect(badge).toHaveClass('text-orange-700', 'px-2', 'py-0.5', 'rounded-full');
+        expect(badge).toHaveTextContent('1');
+      });
+    });
+
+    test('mobile filter button count updates in real-time as filters change', async () => {
+      const user = userEvent.setup();
+      const mockDogs = [createMockDog(1, 'Test Dog')];
+      
+      getAnimals.mockResolvedValue(mockDogs);
+      render(<DogsPage />);
+
+      // Initially no count shown
+      expect(screen.getByRole('button', { name: /^Filter & Sort$/ })).toBeInTheDocument();
+
+      // Apply first filter - should show (1)
+      const orgSelect = screen.getByTestId('organization-select');
+      await user.click(orgSelect);
+      const orgOption = await screen.findByRole('option', { name: 'Org A' });
+      await user.click(orgOption);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Filter & Sort.*1/i })).toBeInTheDocument();
+      });
+
+      // Apply second filter - should show (2)
+      const sizeButton = screen.getByTestId('size-button-Small');
+      await user.click(sizeButton);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Filter & Sort.*2/i })).toBeInTheDocument();
+      });
+
+      // Clear one filter - should show (1)
+      const removeOrgBtn = screen.getByRole('button', { name: /Remove Org A filter/i });
+      await user.click(removeOrgBtn);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Filter & Sort.*1/i })).toBeInTheDocument();
+      });
+    });
+
+    test('mobile filter button hides count badge when no filters are active', async () => {
+      const user = userEvent.setup();
+      const mockDogs = [createMockDog(1, 'Test Dog')];
+      
+      getAnimals.mockResolvedValue(mockDogs);
+      render(<DogsPage />);
+
+      // Apply filter
+      const orgSelect = screen.getByTestId('organization-select');
+      await user.click(orgSelect);
+      const orgOption = await screen.findByRole('option', { name: 'Org A' });
+      await user.click(orgOption);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Filter & Sort.*1/i })).toBeInTheDocument();
+      });
+
+      // Clear all filters
+      const activeFiltersContainer = screen.getByText(/Active Filters:/i).closest('div');
+      const clearAllButton = within(activeFiltersContainer).getByRole('button', { name: /Clear All/i });
+      await user.click(clearAllButton);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /^Filter & Sort$/ })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /Filter & Sort.*\d/i })).not.toBeInTheDocument();
+      });
+    });
+  });
+
   describe('Background and Layout', () => {
     test('applies gradient background to page wrapper', async () => {
       getAnimals.mockResolvedValue([]);
