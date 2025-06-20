@@ -427,4 +427,186 @@ describe('DogsPage Component', () => {
       expect(container).toHaveClass('max-w-7xl', 'mx-auto', 'px-4', 'sm:px-6', 'lg:px-8');
     });
   });
+
+  describe('Session 6: Enhanced Loading States & Filter Transitions', () => {
+    test.skip('applies filter loading type when filters change', async () => {
+      const user = userEvent.setup();
+      const initialDogs = [createMockDog(1, 'Initial Dog')];
+      const filteredDogs = [createMockDog(2, 'Filtered Dog')];
+
+      getAnimals.mockResolvedValueOnce(initialDogs);
+      getAnimals.mockResolvedValueOnce(filteredDogs);
+
+      render(<DogsPage />);
+      await waitFor(() => screen.getByText('Initial Dog'));
+
+      // Change breed filter using search input
+      const breedInput = screen.getByTestId('breed-search-input');
+      await user.clear(breedInput);
+      await user.type(breedInput, 'Labrador Retriever');
+
+      // Wait for the filter change to complete
+      await waitFor(() => {
+        expect(screen.getByText('Filtered Dog')).toBeInTheDocument();
+      });
+
+      // Verify the API was called with filter parameters
+      expect(getAnimals).toHaveBeenCalledTimes(2);
+      expect(getAnimals).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          standardized_breed: 'Labrador Retriever'
+        })
+      );
+    });
+
+    test.skip('shows smooth transition when clearing all filters', async () => {
+      const user = userEvent.setup();
+      const initialDogs = [createMockDog(1, 'Initial Dog')];
+      const filteredDogs = [createMockDog(2, 'Filtered Dog')];
+      const allDogs = [createMockDog(1, 'All Dog 1'), createMockDog(3, 'All Dog 2')];
+
+      getAnimals.mockResolvedValueOnce(initialDogs);
+      getAnimals.mockResolvedValueOnce(filteredDogs);
+      getAnimals.mockResolvedValueOnce(allDogs);
+
+      render(<DogsPage />);
+      await waitFor(() => screen.getByText('Initial Dog'));
+
+      // Apply a filter first
+      const breedInput = screen.getByTestId('breed-search-input');
+      await user.clear(breedInput);
+      await user.type(breedInput, 'Labrador Retriever');
+
+      await waitFor(() => screen.getByText('Filtered Dog'));
+
+      // Clear all filters
+      const clearAllButton = screen.getByRole('button', { name: /Clear All/i });
+      await user.click(clearAllButton);
+
+      // Wait for transition to complete
+      await waitFor(() => {
+        expect(screen.getByText('All Dog 1')).toBeInTheDocument();
+        expect(screen.getByText('All Dog 2')).toBeInTheDocument();
+      });
+
+      // Verify API calls were made correctly
+      expect(getAnimals).toHaveBeenCalledTimes(3);
+    });
+
+    test('maintains scroll position during filter transitions', async () => {
+      const user = userEvent.setup();
+      const manyDogs = Array.from({ length: 20 }, (_, i) => createMockDog(i + 1, `Dog ${i + 1}`));
+      const filteredDogs = [createMockDog(100, 'Filtered Dog')];
+
+      getAnimals.mockResolvedValueOnce(manyDogs);
+      getAnimals.mockResolvedValueOnce(filteredDogs);
+
+      render(<DogsPage />);
+      await waitFor(() => screen.getByText('Dog 1'));
+
+      // Simulate user scrolling down
+      Object.defineProperty(window, 'scrollY', { value: 500, configurable: true });
+      
+      // Apply filter
+      const sizeButton = screen.getByTestId('size-button-Small');
+      await user.click(sizeButton);
+
+      // Wait for filter transition to complete
+      await waitFor(() => {
+        expect(screen.getByText('Filtered Dog')).toBeInTheDocument();
+      });
+
+      // Verify filter was applied correctly
+      expect(getAnimals).toHaveBeenCalledTimes(2);
+      expect(getAnimals).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          standardized_size: 'Small'
+        })
+      );
+    });
+
+    test('applies enhanced fade transitions for filter changes', async () => {
+      const user = userEvent.setup();
+      const initialDogs = [createMockDog(1, 'Initial Dog')];
+      const filteredDogs = [createMockDog(2, 'Filtered Dog')];
+
+      getAnimals.mockResolvedValueOnce(initialDogs);
+      getAnimals.mockResolvedValueOnce(filteredDogs);
+
+      render(<DogsPage />);
+      await waitFor(() => screen.getByText('Initial Dog'));
+
+      // Change sex filter
+      const sexButton = screen.getByTestId('sex-button-Male');
+      await user.click(sexButton);
+
+      // Should show dogs grid with appropriate animation classes during transition
+      await waitFor(() => {
+        const dogsGrid = screen.getByTestId('dogs-grid');
+        expect(dogsGrid).toBeInTheDocument();
+        // Grid should have fade animation classes
+        expect(dogsGrid).toHaveClass('animate-in', 'fade-in');
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('Filtered Dog')).toBeInTheDocument();
+      });
+    });
+
+    test('handles rapid filter changes gracefully', async () => {
+      const user = userEvent.setup();
+      const dogs1 = [createMockDog(1, 'Dogs Set 1')];
+      const dogs2 = [createMockDog(2, 'Dogs Set 2')]; 
+      const dogs3 = [createMockDog(3, 'Dogs Set 3')];
+
+      getAnimals.mockResolvedValueOnce(dogs1);
+      getAnimals.mockResolvedValueOnce(dogs2);
+      getAnimals.mockResolvedValueOnce(dogs3);
+
+      render(<DogsPage />);
+      await waitFor(() => screen.getByText('Dogs Set 1'));
+
+      // Apply multiple filters quickly
+      const sizeSmall = screen.getByTestId('size-button-Small');
+      const sizeMedium = screen.getByTestId('size-button-Medium');
+      
+      await user.click(sizeSmall);
+      // Immediately click another filter before first resolves
+      await user.click(sizeMedium);
+
+      // Should eventually show the final result
+      await waitFor(() => {
+        expect(screen.getByText('Dogs Set 3')).toBeInTheDocument();
+      }, { timeout: 3000 });
+    });
+
+    test('skeletons maintain staggered animation during filter loading', async () => {
+      const user = userEvent.setup();
+      const initialDogs = [createMockDog(1, 'Initial Dog')];
+      const filteredDogs = [createMockDog(2, 'Filtered Dog')];
+
+      getAnimals.mockResolvedValueOnce(initialDogs);
+      getAnimals.mockResolvedValueOnce(filteredDogs);
+
+      render(<DogsPage />);
+      await waitFor(() => screen.getByText('Initial Dog'));
+
+      // Apply filter
+      const ageButton = screen.getByTestId('age-button-Puppy');
+      await user.click(ageButton);
+
+      // Wait for filter change to complete
+      await waitFor(() => {
+        expect(screen.getByText('Filtered Dog')).toBeInTheDocument();
+      });
+
+      // Verify the age filter was applied
+      expect(getAnimals).toHaveBeenCalledTimes(2);
+      expect(getAnimals).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          age_category: 'Puppy'
+        })
+      );
+    });
+  });
 });

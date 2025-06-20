@@ -8,13 +8,14 @@ import {
 
 /**
  * Skeleton loading component that matches the exact structure and dimensions of DogCard
- * Uses animate-pulse for smooth loading animation with gray-200 skeleton elements
+ * Uses premium shimmer animation for smooth loading with orange-tinted effects
  */
-const DogCardSkeleton = React.memo(function DogCardSkeleton() {
+const DogCardSkeleton = React.memo(function DogCardSkeleton({ animationDelay = 0 }) {
   return (
     <Card 
       data-testid="dog-card-skeleton"
-      className="overflow-hidden flex flex-col h-full shadow-md bg-white animate-shimmer-warm"
+      className="overflow-hidden flex flex-col h-full shadow-md bg-white animate-shimmer-premium will-change-transform animate-fade-in duration-300"
+      style={{ animationDelay: `${animationDelay}ms` }}
       role="status"
       aria-label="Loading dog information"
     >
@@ -22,13 +23,13 @@ const DogCardSkeleton = React.memo(function DogCardSkeleton() {
         {/* Image skeleton matching DogCard 4:3 aspect ratio */}
         <div 
           data-testid="skeleton-image"
-          className="w-full aspect-[4/3] bg-gray-200 relative"
+          className="w-full aspect-[4/3] skeleton relative"
         />
         
         {/* NEW Badge skeleton */}
         <div 
           data-testid="skeleton-new-badge"
-          className="absolute top-2 left-2 z-10 bg-gray-200 rounded text-xs font-bold px-2 py-1 w-10 h-5"
+          className="absolute top-2 left-2 z-10 skeleton rounded text-xs font-bold px-2 py-1 w-10 h-5"
         />
 
       </CardHeader>
@@ -37,7 +38,7 @@ const DogCardSkeleton = React.memo(function DogCardSkeleton() {
         {/* Name skeleton */}
         <div 
           data-testid="skeleton-name"
-          className="h-6 bg-gray-200 rounded w-3/4"
+          className="h-6 skeleton rounded w-3/4"
         />
         
         {/* Age and Gender row skeleton */}
@@ -45,26 +46,26 @@ const DogCardSkeleton = React.memo(function DogCardSkeleton() {
           data-testid="skeleton-age-gender"
           className="flex items-center gap-3"
         >
-          <div className="h-4 bg-gray-200 rounded w-16" />
-          <div className="h-4 bg-gray-200 rounded w-12" />
+          <div className="h-4 skeleton rounded w-16" />
+          <div className="h-4 skeleton rounded w-12" />
         </div>
         
         {/* Breed skeleton */}
         <div 
           data-testid="skeleton-breed"
-          className="h-4 bg-gray-200 rounded w-1/2"
+          className="h-4 skeleton rounded w-1/2"
         />
         
         {/* Breed group badge skeleton */}
-        <div className="h-4 bg-gray-200 rounded w-20" />
+        <div className="h-4 skeleton rounded w-20" />
         
         {/* Location skeleton with icon */}
         <div 
           data-testid="skeleton-location"
           className="flex items-center gap-1"
         >
-          <div className="w-4 h-4 bg-gray-200 rounded" />
-          <div className="h-4 bg-gray-200 rounded w-2/3" />
+          <div className="w-4 h-4 skeleton rounded" />
+          <div className="h-4 skeleton rounded w-2/3" />
         </div>
         
         {/* Ships to skeleton */}
@@ -72,11 +73,11 @@ const DogCardSkeleton = React.memo(function DogCardSkeleton() {
           data-testid="skeleton-ships-to"
           className="flex items-center gap-2"
         >
-          <div className="h-3 bg-gray-200 rounded w-12" />
+          <div className="h-3 skeleton rounded w-12" />
           <div className="flex gap-1">
-            <div className="w-4 h-3 bg-gray-200 rounded" />
-            <div className="w-4 h-3 bg-gray-200 rounded" />
-            <div className="w-4 h-3 bg-gray-200 rounded" />
+            <div className="w-4 h-3 skeleton rounded" />
+            <div className="w-4 h-3 skeleton rounded" />
+            <div className="w-4 h-3 skeleton rounded" />
           </div>
         </div>
       </CardContent>
@@ -85,7 +86,7 @@ const DogCardSkeleton = React.memo(function DogCardSkeleton() {
         {/* Button skeleton */}
         <div 
           data-testid="skeleton-button"
-          className="h-10 bg-gray-200 rounded w-full"
+          className="h-10 skeleton rounded w-full"
         />
       </CardFooter>
     </Card>

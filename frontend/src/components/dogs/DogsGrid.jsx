@@ -33,7 +33,10 @@ const DogsGrid = React.memo(function DogsGrid({
         {...props}
       >
         {Array.from({ length: adjustedSkeletonCount }, (_, index) => (
-          <DogCardSkeleton key={`skeleton-${index}`} />
+          <DogCardSkeleton 
+            key={`skeleton-${index}`} 
+            animationDelay={index * 50}
+          />
         ))}
       </div>
     );
@@ -65,12 +68,15 @@ const DogsGrid = React.memo(function DogsGrid({
           return null;
         }
 
+        // Calculate staggered animation delay with 300ms maximum
+        const animationDelay = Math.min(index * 50, 300);
+
         return (
           <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
             <DogCard 
               dog={dog} 
               priority={index < 4} // Prioritize loading for first 4 images
-              animationDelay={index * 50} // Stagger animations
+              animationDelay={animationDelay} // Stagger animations with max limit
             />
           </DogCardErrorBoundary>
         );

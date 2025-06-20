@@ -7,6 +7,7 @@ import Layout from '../../components/layout/Layout';
 import DogCard from '../../components/dogs/DogCard';
 import DogCardErrorBoundary from '../../components/error/DogCardErrorBoundary';
 import DogCardSkeleton from '../../components/ui/DogCardSkeleton';
+import DogsGrid from '../../components/dogs/DogsGrid';
 import EmptyState from '../../components/ui/EmptyState';
 import {
   getAnimals,
@@ -155,7 +156,7 @@ export default function DogsPageClient() {
   }, [searchParams, organizations]);
 
   // Main Data Fetching Logic
-  const fetchDogs = useCallback(async (currentPage = 1, loadMore = false) => {
+  const fetchDogs = useCallback(async (currentPage = 1, loadMore = false, isFilterChange = false) => {
     if (!loadMore) {
       setLoading(true);
       setDogs([]);
@@ -209,7 +210,7 @@ export default function DogsPageClient() {
 
   // Trigger Fetch on Filter/Search/Reset Change
   useEffect(() => {
-    fetchDogs(1);
+    fetchDogs(1, false, true); // isFilterChange = true for filter/search changes
   }, [fetchDogs]);
 
   // Handle Load More
@@ -414,7 +415,7 @@ export default function DogsPageClient() {
               onFiltersChange={handleMobileFiltersChange}
               availableBreeds={standardizedBreeds}
               organizations={organizations}
-              totalCount={dogs.length}
+              totalCount={dogs?.length || 0}
               hasActiveFilters={activeFilterCount > 0}
               onClearAll={resetFilters}
             />
@@ -434,24 +435,24 @@ export default function DogsPageClient() {
             )}
 
             {loading && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8 animate-in fade-in duration-300">
-                {Array.from({ length: 9 }, (_, index) => (
-                  <DogCardSkeleton key={`skeleton-${index}`} />
-                ))}
-              </div>
+              <DogsGrid 
+                dogs={[]}
+                loading={true}
+                loadingType="filter"
+                skeletonCount={9}
+                className="mb-8"
+              />
             )}
 
-            {!loading && dogs.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8 animate-in fade-in duration-500">
-                {dogs.map((dog) => (
-                  <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
-                    <DogCard dog={dog} />
-                  </DogCardErrorBoundary>
-                ))}
-              </div>
+            {!loading && dogs && dogs.length > 0 && (
+              <DogsGrid 
+                dogs={dogs}
+                loading={false}
+                className="mb-8"
+              />
             )}
 
-            {!loading && !error && dogs.length === 0 && (
+            {!loading && !error && dogs && dogs.length === 0 && (
               <EmptyState
                 variant="noDogsFiltered"
                 onClearFilters={resetFilters}
@@ -466,11 +467,13 @@ export default function DogsPageClient() {
               </div>
             )}
             {loadingMore && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mt-8 animate-in fade-in duration-300">
-                {Array.from({ length: 6 }, (_, index) => (
-                  <DogCardSkeleton key={`loading-more-skeleton-${index}`} />
-                ))}
-              </div>
+              <DogsGrid 
+                dogs={[]}
+                loading={true}
+                loadingType="pagination"
+                skeletonCount={6}
+                className="mt-8"
+              />
             )}
           </main>
         </div>

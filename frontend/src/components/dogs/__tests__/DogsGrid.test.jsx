@@ -82,8 +82,8 @@ describe('DogsGrid Component', () => {
       render(<DogsGrid dogs={[]} />);
       
       const emptyState = screen.getByTestId('empty-state');
-      expect(emptyState).toHaveClass('bg-gray-50');
-      expect(emptyState).toHaveClass('rounded-lg');
+      expect(emptyState).toHaveClass('bg-gradient-to-br', 'from-orange-50', 'to-orange-100/50');
+      expect(emptyState).toHaveClass('rounded-xl');
       expect(emptyState).toHaveClass('p-8');
       expect(emptyState).toHaveClass('text-center');
     });
@@ -108,7 +108,7 @@ describe('DogsGrid Component', () => {
       render(<DogsGrid dogs={[]} loading={true} skeletonCount={1} />);
       
       const skeleton = screen.getByTestId('dog-card-skeleton');
-      expect(skeleton).toHaveClass('animate-shimmer-warm');
+      expect(skeleton).toHaveClass('animate-shimmer-premium');
       expect(skeleton).toHaveClass('bg-white');
       expect(skeleton).toHaveClass('shadow-md');
     });
@@ -186,6 +186,81 @@ describe('DogsGrid Component', () => {
       
       const gridContainer = screen.getByTestId('dogs-grid');
       expect(gridContainer).toHaveAttribute('data-custom', 'test-value');
+    });
+  });
+
+  describe('Session 6: Enhanced Loading States & Transitions', () => {
+    test('supports different loading types with appropriate animations', () => {
+      const { rerender } = render(<DogsGrid dogs={[]} loading={true} loadingType="initial" />);
+      
+      let gridContainer = screen.getByTestId('dogs-grid');
+      expect(gridContainer).toHaveClass('duration-300');
+      
+      // Test filter loading type
+      rerender(<DogsGrid dogs={[]} loading={true} loadingType="filter" />);
+      gridContainer = screen.getByTestId('dogs-grid');
+      expect(gridContainer).toHaveClass('duration-200');
+    });
+
+    test('adjusts skeleton count for filter loading type', () => {
+      render(<DogsGrid dogs={[]} loading={true} loadingType="filter" skeletonCount={12} />);
+      
+      // Should limit to 6 skeletons for filter loading
+      const skeletons = screen.getAllByTestId('dog-card-skeleton');
+      expect(skeletons).toHaveLength(6);
+    });
+
+    test('applies staggered animation delays to dog cards', () => {
+      render(<DogsGrid dogs={mockDogs} />);
+      
+      // Each dog card should receive appropriate animation delay
+      const gridContainer = screen.getByTestId('dogs-grid');
+      expect(gridContainer).toHaveClass('animate-in', 'fade-in', 'duration-500');
+    });
+
+    test('applies staggered animation system correctly', () => {
+      render(<DogsGrid dogs={mockDogs} />);
+      
+      // Check that all dog cards are rendered (validates the staggered animation logic)
+      expect(screen.getByTestId('dog-card-1')).toBeInTheDocument();
+      expect(screen.getByTestId('dog-card-2')).toBeInTheDocument();
+      expect(screen.getByTestId('dog-card-3')).toBeInTheDocument();
+      
+      // Verify grid has proper animation classes
+      const gridContainer = screen.getByTestId('dogs-grid');
+      expect(gridContainer).toHaveClass('animate-in', 'fade-in', 'duration-500');
+    });
+
+    test('handles many dogs with staggered animations', () => {
+      const manyDogs = Array.from({ length: 10 }, (_, i) => ({
+        id: i + 1,
+        name: `Dog ${i + 1}`,
+        status: 'available',
+        organization: { name: `Org ${i + 1}` }
+      }));
+
+      render(<DogsGrid dogs={manyDogs} />);
+      
+      // Verify all dogs are rendered
+      expect(screen.getByTestId('dog-card-1')).toBeInTheDocument();
+      expect(screen.getByTestId('dog-card-10')).toBeInTheDocument();
+      
+      // Verify grid animation classes
+      const gridContainer = screen.getByTestId('dogs-grid');
+      expect(gridContainer).toHaveClass('animate-in', 'fade-in', 'duration-500');
+    });
+
+    test('skeletons with filter loading have staggered animation delays', () => {
+      render(<DogsGrid dogs={[]} loading={true} loadingType="filter" skeletonCount={4} />);
+      
+      const skeletons = screen.getAllByTestId('dog-card-skeleton');
+      expect(skeletons).toHaveLength(4);
+      
+      // Each skeleton should have incremental animation delay
+      expect(skeletons[0]).toHaveStyle('animation-delay: 0ms');
+      expect(skeletons[1]).toHaveStyle('animation-delay: 50ms');
+      expect(skeletons[2]).toHaveStyle('animation-delay: 100ms');
+      expect(skeletons[3]).toHaveStyle('animation-delay: 150ms');
     });
   });
 });

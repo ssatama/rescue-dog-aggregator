@@ -10,7 +10,7 @@ describe('DogCardSkeleton', () => {
       
       const skeleton = screen.getByTestId('dog-card-skeleton');
       expect(skeleton).toBeInTheDocument();
-      expect(skeleton).toHaveClass('animate-shimmer-warm');
+      expect(skeleton).toHaveClass('animate-shimmer-premium');
     });
 
     it('has correct card structure matching DogCard', () => {
@@ -36,20 +36,20 @@ describe('DogCardSkeleton', () => {
       render(<DogCardSkeleton />);
       
       const skeleton = screen.getByTestId('dog-card-skeleton');
-      expect(skeleton).toHaveClass('animate-shimmer-warm');
+      expect(skeleton).toHaveClass('animate-shimmer-premium');
     });
 
-    it('uses gray-200 color for skeleton elements', () => {
+    it('uses enhanced skeleton classes for shimmer elements', () => {
       render(<DogCardSkeleton />);
       
-      // Check specific skeleton elements that should have bg-gray-200
+      // Check specific skeleton elements that should have skeleton class
       const imageSkeleton = screen.getByTestId('skeleton-image');
       const nameSkeleton = screen.getByTestId('skeleton-name');
       const buttonSkeleton = screen.getByTestId('skeleton-button');
       
-      expect(imageSkeleton).toHaveClass('bg-gray-200');
-      expect(nameSkeleton).toHaveClass('bg-gray-200');
-      expect(buttonSkeleton).toHaveClass('bg-gray-200');
+      expect(imageSkeleton).toHaveClass('skeleton');
+      expect(nameSkeleton).toHaveClass('skeleton');
+      expect(buttonSkeleton).toHaveClass('skeleton');
     });
 
     it('matches DogCard aspect ratio (4:3)', () => {
@@ -143,7 +143,7 @@ describe('DogCardSkeleton', () => {
       render(<DogCardSkeleton />);
       
       const skeleton = screen.getByTestId('dog-card-skeleton');
-      expect(skeleton).toHaveClass('shadow-md', 'bg-white', 'animate-shimmer-warm');
+      expect(skeleton).toHaveClass('shadow-md', 'bg-white', 'animate-shimmer-premium');
     });
   });
 
@@ -183,8 +183,8 @@ describe('DogCardSkeleton', () => {
       
       const skeleton = screen.getByTestId('dog-card-skeleton');
       
-      // Should have warm shimmer animation instead of basic pulse
-      expect(skeleton).toHaveClass('animate-shimmer-warm');
+      // Should have premium shimmer animation instead of basic pulse
+      expect(skeleton).toHaveClass('animate-shimmer-premium');
       expect(skeleton).not.toHaveClass('animate-pulse');
     });
 
@@ -196,7 +196,7 @@ describe('DogCardSkeleton', () => {
       // Should match DogCard image container classes
       expect(skeletonImage).toHaveClass('w-full');
       expect(skeletonImage).toHaveClass('aspect-[4/3]');
-      expect(skeletonImage).toHaveClass('bg-gray-200');
+      expect(skeletonImage).toHaveClass('skeleton');
       expect(skeletonImage).toHaveClass('relative');
     });
 
@@ -205,8 +205,8 @@ describe('DogCardSkeleton', () => {
       
       const skeleton = screen.getByTestId('dog-card-skeleton');
       
-      // Should have the warm shimmer animation which has proper timing
-      expect(skeleton).toHaveClass('animate-shimmer-warm');
+      // Should have the premium shimmer animation which has proper timing
+      expect(skeleton).toHaveClass('animate-shimmer-premium');
       
       // Verify the structure allows for proper shimmer effect
       expect(skeleton).toHaveClass('overflow-hidden');
@@ -228,7 +228,7 @@ describe('DogCardSkeleton', () => {
       
       // Even with reduced motion, the classes should be present
       // The CSS handles disabling animations via media queries
-      expect(skeleton).toHaveClass('animate-shimmer-warm');
+      expect(skeleton).toHaveClass('animate-shimmer-premium');
     });
 
     it('skeleton dimensions exactly match enhanced DogCard layout', () => {
@@ -247,6 +247,73 @@ describe('DogCardSkeleton', () => {
       expect(skeletonContent).toHaveClass('p-5');
       expect(skeletonFooter).toHaveClass('p-5');
       expect(skeletonFooter).toHaveClass('pt-0');
+    });
+  });
+
+  describe('Session 6: Enhanced Loading States & Transitions', () => {
+    it('has premium shimmer animation with enhanced orange-tinted effect', () => {
+      render(<DogCardSkeleton />);
+      
+      const skeleton = screen.getByTestId('dog-card-skeleton');
+      
+      // Should have enhanced shimmer with premium effect
+      expect(skeleton).toHaveClass('animate-shimmer-premium');
+      expect(skeleton).not.toHaveClass('animate-shimmer-warm');
+    });
+
+    it('skeleton elements have enhanced shimmer classes', () => {
+      render(<DogCardSkeleton />);
+      
+      // All gray skeleton elements should have shimmer class for coordinated animation
+      const imageSkeleton = screen.getByTestId('skeleton-image');
+      const nameSkeleton = screen.getByTestId('skeleton-name');
+      const buttonSkeleton = screen.getByTestId('skeleton-button');
+      
+      expect(imageSkeleton).toHaveClass('skeleton');
+      expect(nameSkeleton).toHaveClass('skeleton');
+      expect(buttonSkeleton).toHaveClass('skeleton');
+    });
+
+    it('supports staggered animation delay prop', () => {
+      const { rerender } = render(<DogCardSkeleton animationDelay={100} />);
+      
+      const skeleton = screen.getByTestId('dog-card-skeleton');
+      expect(skeleton).toHaveStyle('animation-delay: 100ms');
+      
+      // Test different delay
+      rerender(<DogCardSkeleton animationDelay={250} />);
+      expect(skeleton).toHaveStyle('animation-delay: 250ms');
+    });
+
+    it('includes all elements from current DogCard structure', () => {
+      render(<DogCardSkeleton />);
+      
+      // Should have all skeleton elements that match DogCard
+      expect(screen.getByTestId('skeleton-image')).toBeInTheDocument();
+      expect(screen.getByTestId('skeleton-new-badge')).toBeInTheDocument();
+      expect(screen.getByTestId('skeleton-name')).toBeInTheDocument();
+      expect(screen.getByTestId('skeleton-age-gender')).toBeInTheDocument();
+      expect(screen.getByTestId('skeleton-breed')).toBeInTheDocument();
+      expect(screen.getByTestId('skeleton-location')).toBeInTheDocument();
+      expect(screen.getByTestId('skeleton-ships-to')).toBeInTheDocument();
+      expect(screen.getByTestId('skeleton-button')).toBeInTheDocument();
+    });
+
+    it('maintains high performance with will-change optimization', () => {
+      render(<DogCardSkeleton />);
+      
+      const skeleton = screen.getByTestId('dog-card-skeleton');
+      expect(skeleton).toHaveClass('will-change-transform');
+    });
+
+    it('has proper loading transition timing', () => {
+      render(<DogCardSkeleton />);
+      
+      const skeleton = screen.getByTestId('dog-card-skeleton');
+      
+      // Should have fade-in timing for smooth loading transitions
+      expect(skeleton).toHaveClass('animate-fade-in');
+      expect(skeleton).toHaveClass('duration-300');
     });
   });
 });

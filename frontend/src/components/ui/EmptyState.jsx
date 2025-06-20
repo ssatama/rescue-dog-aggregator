@@ -20,20 +20,20 @@ const EmptyState = React.memo(function EmptyState({
   const variants = {
     noDogsFiltered: {
       title: 'No dogs match your filters',
-      description: 'Try adjusting your search criteria or browse all available dogs. Sometimes the perfect match requires a bit more flexibility!',
+      description: 'Don\'t worry! Try adjusting your search criteria - maybe expand the age range, try a different size, or clear some filters. Every dog deserves a loving home! 🐕',
       icon: FilterIcon,
       actionButton: onClearFilters ? {
-        text: 'Clear All Filters',
+        text: 'Clear All Filters & Start Fresh',
         onClick: onClearFilters,
-        variant: 'outline'
+        variant: 'default'
       } : null
     },
     noDogsOrganization: {
-      title: 'No dogs available',
-      description: 'This organization doesn\'t have any dogs listed for adoption at the moment. Check back soon or explore other rescue organizations.',
+      title: 'No dogs available right now',
+      description: 'This organization doesn\'t have any dogs listed for adoption at the moment. But don\'t lose hope! Check back soon or explore other amazing rescue organizations doing wonderful work. 💝',
       icon: HeartIcon,
       actionButton: onBrowseOrganizations ? {
-        text: 'Browse Other Organizations',
+        text: 'Explore Other Rescues',
         onClick: onBrowseOrganizations,
         variant: 'default'
       } : null
@@ -66,38 +66,42 @@ const EmptyState = React.memo(function EmptyState({
   return (
     <div
       data-testid="empty-state"
-      className={`bg-gray-50 rounded-lg p-8 text-center border border-gray-200 ${className}`}
+      className={`bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-xl p-8 text-center border border-orange-200/50 shadow-sm animate-fade-in ${className}`}
       role="status"
       aria-label={`Empty state: ${finalTitle}`}
     >
       {/* Icon */}
       {IconComponent && (
-        <IconComponent 
-          data-testid="empty-state-icon"
-          className="h-12 w-12 mx-auto text-gray-400 mb-4" 
-        />
+        <div className="mb-6">
+          <IconComponent 
+            data-testid="empty-state-icon"
+            className="h-16 w-16 mx-auto text-orange-400 mb-2 animate-pulse-dot" 
+          />
+        </div>
       )}
       
       {/* Title */}
-      <h3 className="text-lg font-medium text-gray-900 mb-2">
+      <h3 className="text-xl font-semibold text-gray-900 mb-3 animate-fade-in-up">
         {finalTitle}
       </h3>
       
       {/* Description */}
-      <p className="text-gray-600 mb-4">
+      <p className="text-gray-700 mb-6 max-w-md mx-auto leading-relaxed animate-fade-in-up animate-stagger-1">
         {finalDescription}
       </p>
       
       {/* Action Button */}
       {finalActionButton && (
-        <Button
-          type="button"
-          variant={finalActionButton.variant || 'default'}
-          onClick={finalActionButton.onClick}
-          className="focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 px-4 py-2 rounded-md"
-        >
-          {finalActionButton.text}
-        </Button>
+        <div className="animate-fade-in-up animate-stagger-2">
+          <Button
+            type="button"
+            variant={finalActionButton.variant || 'default'}
+            onClick={finalActionButton.onClick}
+            className="animate-button-hover focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 px-6 py-3 rounded-lg text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-md hover:shadow-lg transition-all duration-200"
+          >
+            {finalActionButton.text}
+          </Button>
+        </div>
       )}
     </div>
   );

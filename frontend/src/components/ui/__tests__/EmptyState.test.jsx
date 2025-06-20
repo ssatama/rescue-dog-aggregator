@@ -31,7 +31,7 @@ describe('EmptyState', () => {
       expect(screen.getByText('No dogs match your filters')).toBeInTheDocument();
       expect(screen.getByText(/Try adjusting your search criteria/)).toBeInTheDocument();
       
-      const clearFiltersButton = screen.getByText('Clear All Filters');
+      const clearFiltersButton = screen.getByText('Clear All Filters & Start Fresh');
       expect(clearFiltersButton).toBeInTheDocument();
     });
 
@@ -45,7 +45,7 @@ describe('EmptyState', () => {
         />
       );
       
-      const clearFiltersButton = screen.getByText('Clear All Filters');
+      const clearFiltersButton = screen.getByText('Clear All Filters & Start Fresh');
       fireEvent.click(clearFiltersButton);
       
       expect(mockClearFilters).toHaveBeenCalledTimes(1);
@@ -65,10 +65,10 @@ describe('EmptyState', () => {
       const mockBrowseOrganizations = jest.fn();
       render(<EmptyState variant="noDogsOrganization" onBrowseOrganizations={mockBrowseOrganizations} />);
       
-      expect(screen.getByText('No dogs available')).toBeInTheDocument();
+      expect(screen.getByText('No dogs available right now')).toBeInTheDocument();
       expect(screen.getByText(/This organization doesn't have any dogs/)).toBeInTheDocument();
       
-      const browseButton = screen.getByText('Browse Other Organizations');
+      const browseButton = screen.getByText('Explore Other Rescues');
       expect(browseButton).toBeInTheDocument();
     });
 
@@ -82,7 +82,7 @@ describe('EmptyState', () => {
         />
       );
       
-      const browseButton = screen.getByText('Browse Other Organizations');
+      const browseButton = screen.getByText('Explore Other Rescues');
       fireEvent.click(browseButton);
       
       expect(mockBrowseOrganizations).toHaveBeenCalledTimes(1);
@@ -169,12 +169,14 @@ describe('EmptyState', () => {
       
       const emptyState = screen.getByTestId('empty-state');
       expect(emptyState).toHaveClass(
-        'bg-gray-50',
-        'rounded-lg',
+        'bg-gradient-to-br',
+        'from-orange-50',
+        'to-orange-100/50',
+        'rounded-xl',
         'p-8',
         'text-center',
         'border',
-        'border-gray-200'
+        'border-orange-200/50'
       );
     });
 
@@ -182,21 +184,21 @@ describe('EmptyState', () => {
       render(<EmptyState variant="noDogsFiltered" />);
       
       const icon = screen.getByTestId('empty-state-icon');
-      expect(icon).toHaveClass('h-12', 'w-12', 'mx-auto', 'text-gray-400', 'mb-4');
+      expect(icon).toHaveClass('h-16', 'w-16', 'mx-auto', 'text-orange-400', 'mb-2');
     });
 
     it('renders title with correct styling', () => {
       render(<EmptyState title="Test Title" />);
       
       const title = screen.getByText('Test Title');
-      expect(title).toHaveClass('text-lg', 'font-medium', 'text-gray-900', 'mb-2');
+      expect(title).toHaveClass('text-xl', 'font-semibold', 'text-gray-900', 'mb-3');
     });
 
     it('renders description with correct styling', () => {
       render(<EmptyState description="Test description" />);
       
       const description = screen.getByText('Test description');
-      expect(description).toHaveClass('text-gray-600', 'mb-4');
+      expect(description).toHaveClass('text-gray-700', 'mb-6');
     });
   });
 
@@ -213,9 +215,9 @@ describe('EmptyState', () => {
       const mockClearFilters = jest.fn();
       render(<EmptyState variant="noDogsFiltered" onClearFilters={mockClearFilters} />);
       
-      const button = screen.getByText('Clear All Filters');
+      const button = screen.getByText('Clear All Filters & Start Fresh');
       expect(button).toHaveAttribute('type', 'button');
-      expect(button).toHaveClass('focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500');
+      expect(button).toHaveClass('focus:outline-none', 'focus:ring-2', 'focus:ring-orange-500');
     });
 
     it('maintains semantic HTML structure', () => {
@@ -241,8 +243,8 @@ describe('EmptyState', () => {
       const mockClearFilters = jest.fn();
       render(<EmptyState variant="noDogsFiltered" onClearFilters={mockClearFilters} />);
       
-      const button = screen.getByText('Clear All Filters');
-      expect(button).toHaveClass('px-4', 'py-2', 'rounded-md');
+      const button = screen.getByText('Clear All Filters & Start Fresh');
+      expect(button).toHaveClass('px-6', 'py-3', 'rounded-lg');
     });
   });
 
@@ -258,13 +260,13 @@ describe('EmptyState', () => {
       render(<EmptyState variant="noDogsFiltered" />);
       
       // Should not render button when no callback provided
-      expect(screen.queryByText('Clear All Filters')).not.toBeInTheDocument();
+      expect(screen.queryByText('Clear All Filters & Start Fresh')).not.toBeInTheDocument();
     });
 
     it('renders without action button when no callback provided', () => {
       render(<EmptyState variant="noDogsFiltered" onClearFilters={undefined} />);
       
-      expect(screen.queryByText('Clear All Filters')).not.toBeInTheDocument();
+      expect(screen.queryByText('Clear All Filters & Start Fresh')).not.toBeInTheDocument();
     });
   });
 });

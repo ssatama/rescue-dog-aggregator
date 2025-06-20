@@ -165,6 +165,32 @@
     animation: shimmer 2s infinite ease-in-out;
   }
 
+  /* Session 6: Premium shimmer animation with enhanced orange-tinted effect */
+  .animate-shimmer-premium {
+    background: linear-gradient(
+      90deg,  
+      #fdfbf7 0%,
+      rgba(251, 146, 60, 0.15) 30%,
+      rgba(251, 146, 60, 0.25) 50%, 
+      rgba(251, 146, 60, 0.15) 70%,
+      #fdfbf7 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.8s infinite ease-in-out;
+  }
+
+  /* Skeleton element shimmer class for coordinated animation */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      rgba(229, 231, 235, 1) 0%,
+      rgba(251, 146, 60, 0.1) 50%,
+      rgba(229, 231, 235, 1) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.8s infinite ease-in-out;
+  }
+
   /* Enhanced shimmer animation for premium loading skeleton feel */
   @keyframes skeleton-shimmer {
     0% { 
@@ -401,9 +427,15 @@
     }
     
     .animate-shimmer,
-    .animate-shimmer-warm {
+    .animate-shimmer-warm,
+    .animate-shimmer-premium {
       animation: none;
       background: hsl(var(--background));
+    }
+    
+    .skeleton {
+      animation: none;
+      background: rgba(229, 231, 235, 1);
     }
     
     .animate-count-up,
