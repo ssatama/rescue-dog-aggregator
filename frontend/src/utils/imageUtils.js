@@ -538,14 +538,32 @@ export function getSmartObjectPosition(imageUrl, context = 'card') {
 }
 
 /**
- * Enhanced card image with smart positioning for standing dogs
+ * Enhanced card image with smart positioning for standing dogs - Updated for 4:3 ratio
  */
 export function getCatalogCardImageWithPosition(originalUrl) {
   if (!originalUrl) {
     return { src: PLACEHOLDER_IMAGE, position: 'center center' };
   }
   
-  const src = getCatalogCardImage(originalUrl);
+  // Enhanced transformation for catalog cards with proper 4:3 aspect ratio
+  let src = '';
+  
+  // If it's already a Cloudinary URL, add enhanced catalog card transformations
+  if (isCloudinaryUrl(originalUrl)) {
+    // Use ar_4:3 aspect ratio with c_fill and g_auto for better catalog display
+    src = originalUrl.replace('/upload/', '/upload/ar_4:3,c_fill,g_auto,f_auto,q_auto/');
+  } else if (USE_CLOUDINARY && CLOUDINARY_CLOUD_NAME) {
+    // Fallback: use Cloudinary fetch with ar_4:3 aspect ratio
+    try {
+      const encodedUrl = encodeURIComponent(originalUrl);
+      src = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/ar_4:3,c_fill,g_auto,f_auto,q_auto/${encodedUrl}`;
+    } catch (error) {
+      src = originalUrl;
+    }
+  } else {
+    src = originalUrl;
+  }
+  
   const position = getSmartObjectPosition(originalUrl, 'card');
   
   return { src, position };

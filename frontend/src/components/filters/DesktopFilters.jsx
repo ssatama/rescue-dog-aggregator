@@ -15,7 +15,7 @@ import { ChevronDown, Search, X } from 'lucide-react';
 /**
  * Reusable FilterSection component using native details/summary elements
  */
-function FilterSection({ id, title, defaultOpen = false, children }) {
+function FilterSection({ id, title, defaultOpen = false, children, count = 0 }) {
   return (
     <details 
       data-testid={`filter-section-${id}`}
@@ -29,7 +29,14 @@ function FilterSection({ id, title, defaultOpen = false, children }) {
         role="button"
         aria-expanded={defaultOpen}
       >
-        <span className="font-medium text-gray-700">{title}</span>
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-gray-700">{title}</span>
+          {count > 0 && (
+            <span className="inline-flex bg-orange-100 text-orange-700 px-2 rounded-full text-xs">
+              ({count})
+            </span>
+          )}
+        </div>
         <ChevronDown 
           data-testid={`chevron-icon-${id}`}
           className="w-4 h-4 text-gray-500 transition-transform group-open:rotate-180" 
@@ -171,6 +178,47 @@ export default function DesktopFilters({
     availableRegionFilter
   ]);
 
+  // Calculate section-specific filter counts
+  const sectionCounts = useMemo(() => {
+    const counts = {
+      search: 0,
+      breed: 0,
+      shipsToCountry: 0,
+      age: 0,
+      size: 0,
+      sex: 0
+    };
+
+    // Search & Basic section
+    if (searchQuery && searchQuery.trim() !== '') counts.search++;
+    if (organizationFilter && organizationFilter !== 'any') counts.search++;
+
+    // Breed section
+    if (standardizedBreedFilter && standardizedBreedFilter !== 'Any breed') counts.breed++;
+
+    // Ships to Country section
+    if (availableCountryFilter && availableCountryFilter !== 'Any country') counts.shipsToCountry++;
+
+    // Age section
+    if (ageCategoryFilter && ageCategoryFilter !== 'Any age') counts.age++;
+
+    // Size section
+    if (sizeFilter && sizeFilter !== 'Any size') counts.size++;
+
+    // Sex section  
+    if (sexFilter && sexFilter !== 'Any') counts.sex++;
+
+    return counts;
+  }, [
+    searchQuery,
+    organizationFilter,
+    standardizedBreedFilter,
+    availableCountryFilter,
+    ageCategoryFilter,
+    sizeFilter,
+    sexFilter
+  ]);
+
   return (
     <aside 
       data-testid="desktop-filters-container"
@@ -215,6 +263,7 @@ export default function DesktopFilters({
             id="search" 
             title="Search & Basic" 
             defaultOpen={true}
+            count={sectionCounts.search}
           >
             {/* Search Input */}
             <div className="space-y-3">
@@ -276,6 +325,7 @@ export default function DesktopFilters({
             id="breed" 
             title="Breed" 
             defaultOpen={false}
+            count={sectionCounts.breed}
           >
             <div className="space-y-3">
               {/* Breed Search Input */}
@@ -338,6 +388,7 @@ export default function DesktopFilters({
             id="ships-to-country" 
             title="Ships to Country" 
             defaultOpen={false}
+            count={sectionCounts.shipsToCountry}
           >
             <div className="space-y-3">
               {/* Country Search Input */}
@@ -376,7 +427,14 @@ export default function DesktopFilters({
           
           {/* Age Filter - Non-collapsible */}
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-gray-800 mb-3">Age</h4>
+            <div className="flex items-center gap-2 mb-3">
+              <h4 className="text-sm font-semibold text-gray-800">Age</h4>
+              {sectionCounts.age > 0 && (
+                <span className="inline-flex bg-orange-100 text-orange-700 px-2 rounded-full text-xs">
+                  ({sectionCounts.age})
+                </span>
+              )}
+            </div>
             <div 
               data-testid="age-button-grid"
               className="grid grid-cols-2 gap-2"
@@ -405,7 +463,14 @@ export default function DesktopFilters({
           
           {/* Size Filter - Non-collapsible */}
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-gray-800 mb-3">Size</h4>
+            <div className="flex items-center gap-2 mb-3">
+              <h4 className="text-sm font-semibold text-gray-800">Size</h4>
+              {sectionCounts.size > 0 && (
+                <span className="inline-flex bg-orange-100 text-orange-700 px-2 rounded-full text-xs">
+                  ({sectionCounts.size})
+                </span>
+              )}
+            </div>
             <div 
               data-testid="size-button-grid"
               className="grid grid-cols-2 gap-2"
@@ -434,7 +499,14 @@ export default function DesktopFilters({
           
           {/* Sex Filter - Non-collapsible Button Grid (New Lollipop Style) */}
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-gray-800 mb-3">Sex</h4>
+            <div className="flex items-center gap-2 mb-3">
+              <h4 className="text-sm font-semibold text-gray-800">Sex</h4>
+              {sectionCounts.sex > 0 && (
+                <span className="inline-flex bg-orange-100 text-orange-700 px-2 rounded-full text-xs">
+                  ({sectionCounts.sex})
+                </span>
+              )}
+            </div>
             <div 
               data-testid="sex-button-grid"
               className="grid grid-cols-3 gap-2"

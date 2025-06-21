@@ -628,4 +628,197 @@ describe('DesktopFilters Component', () => {
       expect(container).not.toHaveClass('grid');
     });
   });
+
+  describe('Filter Section Count Badges', () => {
+    describe('Search & Basic Section Count Badge', () => {
+      test('shows count badge when search query is active', () => {
+        const propsWithSearch = { ...mockProps, searchQuery: 'labrador' };
+        render(<DesktopFilters {...propsWithSearch} />);
+        
+        const searchSection = screen.getByTestId('filter-section-search');
+        const summary = within(searchSection).getByTestId('filter-summary-search');
+        
+        // Should show count badge for active search
+        expect(within(summary).queryByText('(1)')).toBeInTheDocument();
+      });
+
+      test('shows count badge when organization filter is active', () => {
+        const propsWithOrg = { ...mockProps, organizationFilter: '1' };
+        render(<DesktopFilters {...propsWithOrg} />);
+        
+        const searchSection = screen.getByTestId('filter-section-search');
+        const summary = within(searchSection).getByTestId('filter-summary-search');
+        
+        // Should show count badge for active organization filter
+        expect(within(summary).queryByText('(1)')).toBeInTheDocument();
+      });
+
+      test('shows combined count when multiple filters are active in section', () => {
+        const propsWithMultiple = { 
+          ...mockProps, 
+          searchQuery: 'test',
+          organizationFilter: '1'
+        };
+        render(<DesktopFilters {...propsWithMultiple} />);
+        
+        const searchSection = screen.getByTestId('filter-section-search');
+        const summary = within(searchSection).getByTestId('filter-summary-search');
+        
+        // Should show combined count
+        expect(within(summary).queryByText('(2)')).toBeInTheDocument();
+      });
+
+      test('does not show count badge when no filters are active in section', () => {
+        render(<DesktopFilters {...mockProps} />);
+        
+        const searchSection = screen.getByTestId('filter-section-search');
+        const summary = within(searchSection).getByTestId('filter-summary-search');
+        
+        // Should not show count badge
+        expect(within(summary).queryByText(/\(\d+\)/)).not.toBeInTheDocument();
+      });
+    });
+
+    describe('Breed Section Count Badge', () => {
+      test('shows count badge when breed filter is active', () => {
+        const propsWithBreed = { ...mockProps, standardizedBreedFilter: 'Labrador' };
+        render(<DesktopFilters {...propsWithBreed} />);
+        
+        const breedSection = screen.getByTestId('filter-section-breed');
+        const summary = within(breedSection).getByTestId('filter-summary-breed');
+        
+        // Should show count badge for active breed filter
+        expect(within(summary).queryByText('(1)')).toBeInTheDocument();
+      });
+
+      test('does not show count badge when breed is "Any breed"', () => {
+        render(<DesktopFilters {...mockProps} />);
+        
+        const breedSection = screen.getByTestId('filter-section-breed');
+        const summary = within(breedSection).getByTestId('filter-summary-breed');
+        
+        // Should not show count badge
+        expect(within(summary).queryByText(/\(\d+\)/)).not.toBeInTheDocument();
+      });
+    });
+
+    describe('Ships to Country Section Count Badge', () => {
+      test('shows count badge when ships to country filter is active', () => {
+        const propsWithCountry = { ...mockProps, availableCountryFilter: 'Germany' };
+        render(<DesktopFilters {...propsWithCountry} />);
+        
+        const countrySection = screen.getByTestId('filter-section-ships-to-country');
+        const summary = within(countrySection).getByTestId('filter-summary-ships-to-country');
+        
+        // Should show count badge for active country filter
+        expect(within(summary).queryByText('(1)')).toBeInTheDocument();
+      });
+
+      test('does not show count badge when no country filter is active', () => {
+        render(<DesktopFilters {...mockProps} />);
+        
+        const countrySection = screen.getByTestId('filter-section-ships-to-country');
+        const summary = within(countrySection).getByTestId('filter-summary-ships-to-country');
+        
+        // Should not show count badge
+        expect(within(summary).queryByText(/\(\d+\)/)).not.toBeInTheDocument();
+      });
+    });
+
+    describe('Button Grid Section Count Badges', () => {
+      test('Age section shows count badge when age filter is active', () => {
+        const propsWithAge = { ...mockProps, ageCategoryFilter: 'Puppy' };
+        render(<DesktopFilters {...propsWithAge} />);
+        
+        // Look for Age section header with count badge
+        const ageHeader = screen.getByText(/^Age/).parentElement;
+        expect(within(ageHeader).queryByText('(1)')).toBeInTheDocument();
+      });
+
+      test('Size section shows count badge when size filter is active', () => {
+        const propsWithSize = { ...mockProps, sizeFilter: 'Large' };
+        render(<DesktopFilters {...propsWithSize} />);
+        
+        // Look for Size section header with count badge
+        const sizeHeader = screen.getByText(/^Size/).parentElement;
+        expect(within(sizeHeader).queryByText('(1)')).toBeInTheDocument();
+      });
+
+      test('Sex section shows count badge when sex filter is active', () => {
+        const propsWithSex = { ...mockProps, sexFilter: 'Male' };
+        render(<DesktopFilters {...propsWithSex} />);
+        
+        // Look for Sex section header with count badge
+        const sexHeader = screen.getByText(/^Sex/).parentElement;
+        expect(within(sexHeader).queryByText('(1)')).toBeInTheDocument();
+      });
+
+      test('Button grid sections do not show count badge when filters are default values', () => {
+        render(<DesktopFilters {...mockProps} />);
+        
+        // Check Age section
+        const ageHeader = screen.getByText(/^Age/).parentElement;
+        expect(within(ageHeader).queryByText(/\(\d+\)/)).not.toBeInTheDocument();
+        
+        // Check Size section
+        const sizeHeader = screen.getByText(/^Size/).parentElement;
+        expect(within(sizeHeader).queryByText(/\(\d+\)/)).not.toBeInTheDocument();
+        
+        // Check Sex section
+        const sexHeader = screen.getByText(/^Sex/).parentElement;
+        expect(within(sexHeader).queryByText(/\(\d+\)/)).not.toBeInTheDocument();
+      });
+    });
+
+    describe('Count Badge Styling', () => {
+      test('count badges have correct styling classes', () => {
+        const propsWithFilters = { 
+          ...mockProps, 
+          searchQuery: 'test search',
+          standardizedBreedFilter: 'Labrador'
+        };
+        render(<DesktopFilters {...propsWithFilters} />);
+        
+        // Find count badges by section
+        const searchSection = screen.getByTestId('filter-section-search');
+        const breedSection = screen.getByTestId('filter-section-breed');
+        
+        const searchBadge = within(searchSection).getByText('(1)');
+        const breedBadge = within(breedSection).getByText('(1)');
+        
+        expect(searchBadge).toHaveClass('inline-flex');
+        expect(searchBadge).toHaveClass('bg-orange-100'); 
+        expect(searchBadge).toHaveClass('text-orange-700');
+        expect(searchBadge).toHaveClass('px-2');
+        expect(searchBadge).toHaveClass('rounded-full');
+        expect(searchBadge).toHaveClass('text-xs');
+        
+        expect(breedBadge).toHaveClass('inline-flex');
+        expect(breedBadge).toHaveClass('bg-orange-100');
+        expect(breedBadge).toHaveClass('text-orange-700');
+      });
+    });
+
+    describe('Real-time Count Updates', () => {
+      test('count badges update when filters change', () => {
+        const { rerender } = render(<DesktopFilters {...mockProps} />);
+        
+        // Initially no badges
+        expect(screen.queryByText(/\(\d+\)/)).not.toBeInTheDocument();
+        
+        // Add a filter
+        const propsWithSearch = { ...mockProps, searchQuery: 'labrador' };
+        rerender(<DesktopFilters {...propsWithSearch} />);
+        
+        // Should now show badge
+        expect(screen.getByText('(1)')).toBeInTheDocument();
+        
+        // Remove filter
+        rerender(<DesktopFilters {...mockProps} />);
+        
+        // Badge should be gone
+        expect(screen.queryByText(/\(\d+\)/)).not.toBeInTheDocument();
+      });
+    });
+  });
 });

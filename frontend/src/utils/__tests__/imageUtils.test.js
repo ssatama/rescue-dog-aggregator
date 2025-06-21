@@ -65,6 +65,59 @@ describe('Image Utils - New Context-Specific Functions', () => {
     });
   });
 
+  describe('getCatalogCardImageWithPosition - Enhanced 4:3 Ratio', () => {
+    it('should use ar_4:3,c_fill,g_auto transformations for proper aspect ratio', () => {
+      const result = getCatalogCardImageWithPosition(cloudinaryUrl);
+      expect(result.src).toContain('ar_4:3,c_fill,g_auto');
+      expect(result.src).toContain('f_auto,q_auto');
+    });
+
+    it('should maintain backward compatibility for existing URLs', () => {
+      const result = getCatalogCardImageWithPosition(cloudinaryUrl);
+      expect(result.src).toContain('res.cloudinary.com');
+      expect(result.position).toBe('center 40%');
+    });
+
+    it('should handle external URLs with ar_4:3 ratio', () => {
+      const result = getCatalogCardImageWithPosition(externalUrl);
+      
+      if (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
+        expect(result.src).toContain('ar_4:3,c_fill,g_auto');
+        expect(result.src).toContain(encodeURIComponent(externalUrl));
+      }
+      expect(result.position).toBe('center 40%');
+    });
+
+    it('should return placeholder with center position for null URL', () => {
+      const result = getCatalogCardImageWithPosition(null);
+      expect(result.src).toBe('/placeholder_dog.svg');
+      expect(result.position).toBe('center center');
+    });
+
+    it('should ensure 4:3 aspect ratio is maintained across all transformations', () => {
+      // Test with different URL formats
+      const urls = [
+        cloudinaryUrl,
+        `https://res.cloudinary.com/${realCloudName}/image/upload/v1234/folder/image.jpg`,
+        externalUrl
+      ];
+
+      urls.forEach(url => {
+        const result = getCatalogCardImageWithPosition(url);
+        if (result.src !== '/placeholder_dog.svg') {
+          expect(result.src).toContain('ar_4:3');
+        }
+      });
+    });
+
+    it('should optimize for catalog display with proper crop and gravity', () => {
+      const result = getCatalogCardImageWithPosition(cloudinaryUrl);
+      expect(result.src).toContain('c_fill');
+      expect(result.src).toContain('g_auto');
+      expect(result.src).toContain('ar_4:3');
+    });
+  });
+
   describe('getDetailHeroImage', () => {
     it('should apply 16:9 hero transformations with background fill', () => {
       const result = getDetailHeroImage(cloudinaryUrl);
@@ -110,7 +163,7 @@ describe('Smart Object Positioning', () => {
       const result = getCatalogCardImageWithPosition(cloudinaryUrl);
       expect(result).toHaveProperty('src');
       expect(result).toHaveProperty('position');
-      expect(result.src).toContain('w_400,h_300');
+      expect(result.src).toContain('ar_4:3,c_fill');
       expect(result.position).toBe('center 40%');
     });
 
