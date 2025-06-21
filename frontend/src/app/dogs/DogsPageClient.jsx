@@ -336,7 +336,7 @@ export default function DogsPageClient() {
             </button>
           </Badge>
         ))}
-        <Button variant="link" size="sm" onClick={resetFilters} className="text-orange-600 hover:text-orange-700 p-0 h-auto font-medium">
+        <Button variant="link" size="sm" onClick={resetFilters} className="text-orange-600 hover:text-orange-700 p-0 h-auto font-medium enhanced-focus-link">
           Clear All
         </Button>
       </div>
@@ -387,7 +387,7 @@ export default function DogsPageClient() {
             <div className="md:hidden mb-4">
               <Button 
                 variant="outline" 
-                className="w-full justify-center min-h-[48px] bg-white/90 backdrop-blur border-2 border-orange-200 hover:border-orange-300 animate-button-hover focus-ring"
+                className="w-full justify-center mobile-touch-target bg-white/90 backdrop-blur border-2 border-orange-200 hover:border-orange-300 animate-button-hover enhanced-focus-button"
                 onClick={() => setIsSheetOpen(true)}
               >
                 <Filter className="mr-2 h-5 w-5 text-orange-600" />
@@ -464,8 +464,7 @@ export default function DogsPageClient() {
                 <Button 
                   onClick={handleLoadMore} 
                   disabled={loadingMore}
-                  className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium px-8 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ minHeight: '48px' }}
+                  className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium px-8 py-3 rounded-lg shadow-md hover:shadow-lg cross-browser-transition enhanced-focus-button mobile-touch-target disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Load More Dogs →
                 </Button>

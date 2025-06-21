@@ -629,8 +629,8 @@ describe('DogsPage Component', () => {
       expect(loadMoreButton).toHaveClass('shadow-md', 'hover:shadow-lg');
       
       // Check accessibility styling
-      expect(loadMoreButton).toHaveClass('focus-visible:ring-2', 'focus-visible:ring-orange-500');
-      expect(loadMoreButton).toHaveStyle({ minHeight: '48px' });
+      expect(loadMoreButton).toHaveClass('enhanced-focus-button');
+      expect(loadMoreButton).toHaveClass('mobile-touch-target');
       
       // Check button text includes arrow
       expect(loadMoreButton).toHaveTextContent('Load More Dogs →');
@@ -651,7 +651,7 @@ describe('DogsPage Component', () => {
       expect(loadMoreButton).toHaveClass('disabled:opacity-50', 'disabled:cursor-not-allowed');
       
       // Verify minimum height for touch targets
-      expect(loadMoreButton).toHaveStyle({ minHeight: '48px' });
+      expect(loadMoreButton).toHaveClass('mobile-touch-target');
     });
   });
 });

@@ -148,7 +148,7 @@ describe('Session 7: End-to-End User Journey Tests', () => {
       // 6. CTA INTERACTION - User clicks to meet the dog
       const meetBuddyButton = screen.getByText('Meet Buddy →');
       expect(meetBuddyButton).toHaveClass('from-orange-500', 'to-orange-600');
-      expect(meetBuddyButton.style.minHeight).toBe('48px');
+      expect(meetBuddyButton).toHaveClass('mobile-touch-target');
       
       // Button should be accessible
       expect(meetBuddyButton).toHaveAttribute('type', 'button');
@@ -177,7 +177,7 @@ describe('Session 7: End-to-End User Journey Tests', () => {
       // 1. MOBILE FILTER ACCESS - User opens mobile filter panel
       const mobileFilterButton = screen.getByRole('button', { name: /Filter & Sort/i });
       expect(mobileFilterButton).toBeInTheDocument();
-      expect(mobileFilterButton).toHaveClass('min-h-[48px]'); // Touch target
+      expect(mobileFilterButton).toHaveClass('mobile-touch-target'); // Touch target
       
       await user.click(mobileFilterButton);
 
@@ -194,7 +194,7 @@ describe('Session 7: End-to-End User Journey Tests', () => {
       // 4. MOBILE CTA BUTTONS - Should meet touch target requirements
       const meetButtons = screen.getAllByText(/Meet .* →/);
       meetButtons.forEach(button => {
-        expect(button.style.minHeight).toBe('48px');
+        expect(button).toHaveClass('mobile-touch-target');
       });
     });
 
@@ -232,7 +232,7 @@ describe('Session 7: End-to-End User Journey Tests', () => {
       
       await screen.findByText('Buddy');
       const meetButton = screen.getAllByText(/Meet .* →/)[0];
-      expect(meetButton).toHaveClass('focus-visible:ring-orange-500');
+      expect(meetButton).toHaveClass('enhanced-focus-button');
     });
   });
 
@@ -332,7 +332,7 @@ describe('Session 7: End-to-End User Journey Tests', () => {
 
       // 4. FOCUS INDICATORS - Check that orange focus rings exist
       const meetButton = meetButtons[0];
-      expect(meetButton).toHaveClass('focus-visible:ring-orange-500');
+      expect(meetButton).toHaveClass('enhanced-focus-button');
     });
   });
 
@@ -409,7 +409,7 @@ describe('Session 7: End-to-End User Journey Tests', () => {
 
       // 3. Responsive design - Touch targets
       const mobileFilterButton = screen.getByRole('button', { name: /Filter & Sort/i });
-      expect(mobileFilterButton).toHaveClass('min-h-[48px]');
+      expect(mobileFilterButton).toHaveClass('mobile-touch-target');
 
       // 4. Performance - GPU acceleration
       const dogCards = screen.getAllByTestId('dog-card');

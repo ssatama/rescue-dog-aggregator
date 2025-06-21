@@ -610,10 +610,844 @@
     }
   }
   
-  /* Form input focus styles with orange theme */
+  /* Enhanced form input focus styles with orange theme */
   input:focus,
   textarea:focus,
   select:focus {
-    @apply border-orange-300 ring-2 ring-orange-100 outline-none;
+    @apply border-orange-300 ring-2 ring-orange-200 outline-none;
+    transition: border-color 200ms ease-out, box-shadow 200ms ease-out;
+  }
+
+  /* Enhanced placeholder styling */
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-gray-400;
+    transition: opacity 200ms ease-out;
+  }
+
+  input:focus::placeholder,
+  textarea:focus::placeholder {
+    @apply text-gray-300;
+  }
+
+  /* Enhanced button focus styles */
+  .btn-focus-ring:focus-visible {
+    @apply ring-2 ring-orange-300 ring-offset-2 outline-none;
+    transition: box-shadow 200ms ease-out;
+  }
+
+  /* Enhanced select focus styles */
+  .select-focus:focus {
+    @apply border-orange-300 ring-2 ring-orange-200 outline-none;
+    transition: all 200ms ease-out;
+  }
+
+  /* Enhanced hover feedback for interactive elements */
+  .enhanced-hover:hover {
+    @apply bg-orange-50 border-orange-300;
+    transition: all 200ms ease-out;
+    transform: translateY(-1px);
+  }
+
+  /* Enhanced input container styling */
+  .input-container:focus-within {
+    @apply ring-2 ring-orange-200 ring-offset-1;
+    transition: box-shadow 200ms ease-out;
+  }
+
+  /* Enhanced visual feedback for form elements */
+  .form-enhanced {
+    transition: all 200ms ease-out;
+  }
+
+  .form-enhanced:focus-within {
+    @apply shadow-sm ring-1 ring-orange-200;
+  }
+
+  /* Enhanced interaction states */
+  .interactive-enhanced {
+    transition: all 200ms ease-out;
+  }
+
+  .interactive-enhanced:hover {
+    @apply bg-orange-50/50;
+    transform: translateY(-0.5px);
+  }
+
+  .interactive-enhanced:active {
+    transform: translateY(0);
+  }
+
+  /* ==================================================
+     FLOATING FILTER PANEL ENHANCED ANIMATIONS
+     ================================================== */
+
+  /* Filter section smooth collapse animations */
+  .filter-section {
+    overflow: hidden;
+    transition: height 200ms ease-out;
+    will-change: transform;
+  }
+
+  .filter-section-content {
+    transition: opacity 200ms ease-out, transform 200ms ease-out;
+    will-change: transform;
+  }
+
+  .filter-section.collapsed .filter-section-content {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  /* Enhanced chevron icon rotation */
+  .chevron-icon {
+    transition: transform 200ms ease-out;
+  }
+
+  .chevron-icon.chevron-open {
+    transform: rotate(180deg);
+  }
+
+  /* Section active state indicators */
+  .filter-section-active {
+    position: relative;
+  }
+
+  .filter-section-active::before {
+    content: '';
+    position: absolute;
+    left: -1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 20px;
+    background: linear-gradient(to bottom, #f97316, #ea580c);
+    border-radius: 2px;
+    opacity: 0.8;
+  }
+
+  .filter-section-active {
+    box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.1), 
+                0 0 20px rgba(249, 115, 22, 0.05);
+    border-radius: 8px;
+  }
+
+  /* Enhanced backdrop blur support with better fallbacks */
+  @supports (backdrop-filter: blur(16px)) or (-webkit-backdrop-filter: blur(16px)) {
+    .backdrop-blur-md {
+      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(16px);
+    }
+  }
+
+  /* Fallback for browsers without backdrop-filter support */
+  @supports not (backdrop-filter: blur(16px)) {
+    .backdrop-blur-md {
+      background-color: rgba(255, 255, 255, 0.98) !important;
+    }
+  }
+
+  /* ==================================================
+     CROSS-BROWSER COMPATIBILITY ENHANCEMENTS
+     ================================================== */
+
+  /* CSS Grid fallbacks for older browsers */
+  @supports not (display: grid) {
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    
+    .grid-cols-1 > * { flex: 0 0 100%; }
+    .grid-cols-2 > * { flex: 0 0 50%; }
+    .grid-cols-3 > * { flex: 0 0 33.333%; }
+  }
+  
+  /* Transform optimizations with vendor prefixes */
+  .cross-browser-transform {
+    -webkit-transform: translateZ(0);
+    -moz-transform: translateZ(0);
+    -ms-transform: translateZ(0);
+    -o-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-perspective: 1000px;
+    perspective: 1000px;
+  }
+  
+  /* Gradient fallbacks with vendor prefixes */
+  .cross-browser-gradient {
+    background: #f97316; /* Fallback for very old browsers */
+    background: -webkit-linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    background: -moz-linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    background: -ms-linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    background: -o-linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  }
+  
+  /* CSS Variables fallbacks for IE11 and older Safari */
+  .cross-browser-variables {
+    background-color: #ea580c; /* Fallback */
+    background-color: var(--custom-color, #ea580c);
+  }
+  
+  /* Flexbox vendor prefixes for IE10+ */
+  .cross-browser-flex {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -moz-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-box-pack: justify;
+    -webkit-justify-content: space-between;
+    -moz-box-pack: justify;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+  }
+  
+  /* Animation vendor prefixes */
+  @-webkit-keyframes cross-browser-fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @-moz-keyframes cross-browser-fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @-ms-keyframes cross-browser-fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes cross-browser-fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  .cross-browser-animation {
+    -webkit-animation: cross-browser-fadeIn 0.3s ease-out;
+    -moz-animation: cross-browser-fadeIn 0.3s ease-out;
+    -ms-animation: cross-browser-fadeIn 0.3s ease-out;
+    animation: cross-browser-fadeIn 0.3s ease-out;
+  }
+
+  /* Enhanced transition support for all browsers */
+  .cross-browser-transition {
+    -webkit-transition: all 0.2s ease-out;
+    -moz-transition: all 0.2s ease-out;
+    -ms-transition: all 0.2s ease-out;
+    -o-transition: all 0.2s ease-out;
+    transition: all 0.2s ease-out;
+  }
+
+  /* Will-change optimization for performance */
+  .cross-browser-will-change {
+    -webkit-transform: translateZ(0); /* Hardware acceleration */
+    transform: translateZ(0);
+    will-change: transform, opacity;
+  }
+
+  /* Box-shadow with vendor prefixes */
+  .cross-browser-shadow {
+    -webkit-box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    -moz-box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  /* ==================================================
+     ENHANCED FOCUS STATES SYSTEM
+     ================================================== */
+
+  /* Enhanced focus ring system */
+  .enhanced-focus-button:focus-visible {
+    @apply ring-4 ring-orange-300 ring-offset-2 outline-none;
+    transition: box-shadow 200ms ease-out;
+  }
+
+  .enhanced-focus-input:focus {
+    @apply border-orange-400 ring-4 ring-orange-200 outline-none;
+    transition: border-color 200ms ease-out, box-shadow 200ms ease-out;
+  }
+
+  .enhanced-focus-textarea:focus {
+    @apply border-orange-400 ring-4 ring-orange-200 outline-none;
+    transition: border-color 200ms ease-out, box-shadow 200ms ease-out;
+  }
+
+  .enhanced-focus-select:focus {
+    @apply border-orange-400 ring-4 ring-orange-200 outline-none;
+    transition: border-color 200ms ease-out, box-shadow 200ms ease-out;
+  }
+
+  .enhanced-focus-link:focus-visible {
+    @apply ring-2 ring-orange-400 ring-offset-1 outline-none rounded-sm;
+    transition: box-shadow 200ms ease-out;
+  }
+
+  .enhanced-focus-card:focus-visible {
+    @apply ring-2 ring-orange-300 ring-offset-2 outline-none border-orange-300;
+    transition: border-color 200ms ease-out, box-shadow 200ms ease-out;
+  }
+
+  /* Skip link enhanced styling */
+  .skip-link:focus {
+    @apply ring-4 ring-white ring-offset-2 ring-offset-orange-600 outline-none;
+    transition: all 200ms ease-out;
+  }
+
+  /* Interactive enhanced elements */
+  .interactive-enhanced:focus-visible {
+    @apply ring-2 ring-orange-300 ring-offset-1 outline-none;
+    transition: box-shadow 200ms ease-out;
+  }
+
+  /* High contrast mode focus states */
+  @media (prefers-contrast: high) {
+    .enhanced-focus-button:focus-visible,
+    .enhanced-focus-input:focus,
+    .enhanced-focus-textarea:focus,
+    .enhanced-focus-select:focus,
+    .enhanced-focus-link:focus-visible,
+    .enhanced-focus-card:focus-visible,
+    .interactive-enhanced:focus-visible {
+      outline: 3px solid currentColor;
+      outline-offset: 2px;
+    }
+  }
+
+  /* Reduced motion support for focus states */
+  @media (prefers-reduced-motion: reduce) {
+    .enhanced-focus-button:focus-visible,
+    .enhanced-focus-input:focus,
+    .enhanced-focus-textarea:focus,
+    .enhanced-focus-select:focus,
+    .enhanced-focus-link:focus-visible,
+    .enhanced-focus-card:focus-visible,
+    .interactive-enhanced:focus-visible,
+    .skip-link:focus {
+      transition: none;
+    }
+  }
+
+  /* Focus management utilities */
+  .focus-trap {
+    /* Ensure focus stays within container */
+    isolation: isolate;
+  }
+
+  .focus-trap button:first-child {
+    /* First focusable element in trap */
+    position: relative;
+  }
+
+  .focus-trap button:last-child {
+    /* Last focusable element in trap */
+    position: relative;
+  }
+
+  /* Enhanced keyboard navigation indicators */
+  .keyboard-navigation-active *:focus-visible {
+    outline: 2px solid #ea580c;
+    outline-offset: 2px;
+  }
+
+  /* Touch device focus adaptations */
+  @media (pointer: coarse) {
+    .enhanced-focus-button:focus-visible,
+    .enhanced-focus-card:focus-visible,
+    .interactive-enhanced:focus-visible {
+      /* Larger focus targets for touch devices */
+      ring-width: 3px;
+      ring-offset-width: 3px;
+    }
+  }
+
+  /* ==================================================
+     MOBILE POLISH & ACCESSIBILITY ENHANCEMENTS
+     ================================================== */
+
+  /* Mobile touch targets */
+  .mobile-touch-target {
+    min-height: 48px;
+    min-width: 48px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(234, 88, 12, 0.2);
+  }
+
+  /* Enhanced tap areas for better mobile interaction */
+  .mobile-enhanced-tap {
+    padding: 1rem; /* Equivalent to p-4 */
+    min-height: 48px;
+    touch-action: manipulation;
+    transition: background-color 200ms ease-out;
+  }
+
+  /* Mobile responsive text sizing */
+  .mobile-responsive-text {
+    line-height: 1.5;
+    letter-spacing: 0.025em;
+  }
+
+  /* Mobile form enhancements */
+  .mobile-form-input {
+    min-height: 48px;
+    font-size: 16px; /* Prevents zoom on iOS */
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    touch-action: manipulation;
+  }
+
+  .mobile-form-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  .mobile-form-help {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+  }
+
+  /* Mobile navigation enhancements */
+  .mobile-navigation {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  .mobile-nav-link {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    touch-action: manipulation;
+    transition: background-color 200ms ease-out;
+  }
+
+  .mobile-nav-link:hover,
+  .mobile-nav-link:focus {
+    background-color: rgba(251, 146, 60, 0.1);
+    outline: 2px solid #ea580c;
+    outline-offset: 2px;
+  }
+
+  /* Mobile card optimizations */
+  .mobile-card-spacing {
+    margin-bottom: 1rem;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+  }
+
+  .mobile-card-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+  }
+
+  .mobile-card-content {
+    color: #6b7280;
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+
+  .mobile-card-button {
+    width: 100%;
+    min-height: 48px;
+    font-weight: 500;
+    border-radius: 0.375rem;
+    touch-action: manipulation;
+    transition: all 200ms ease-out;
+  }
+
+  /* High contrast mode support */
+  .high-contrast-support {
+    border: 1px solid #d1d5db;
+    padding: 1rem;
+    border-radius: 0.5rem;
+  }
+
+  @media (prefers-contrast: high) {
+    .high-contrast-support {
+      border: 2px solid currentColor;
+      background-color: transparent;
+    }
+
+    .mobile-touch-target,
+    .mobile-enhanced-tap,
+    .mobile-card-button {
+      border: 2px solid currentColor;
+    }
+  }
+
+  /* Reduced motion friendly animations */
+  .reduced-motion-friendly {
+    transition: transform 300ms ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reduced-motion-friendly {
+      transition: none;
+    }
+
+    .reduced-motion-friendly:hover {
+      transform: none;
+    }
+  }
+
+  /* Mobile viewport optimizations */
+  @media (max-width: 768px) {
+    /* Larger touch targets on mobile */
+    .mobile-touch-target,
+    .mobile-enhanced-tap,
+    .mobile-nav-link,
+    .mobile-card-button {
+      min-height: 48px;
+      padding: 0.75rem 1rem;
+    }
+
+    /* Better text readability on mobile */
+    .mobile-responsive-text {
+      font-size: 1.125rem;
+      line-height: 1.6;
+    }
+
+    /* Improved form spacing on mobile */
+    .mobile-form-input {
+      padding: 1rem;
+      font-size: 16px;
+    }
+
+    /* Mobile card spacing adjustments */
+    .mobile-card-spacing {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+    }
+  }
+
+  /* iOS specific fixes */
+  @supports (-webkit-touch-callout: none) {
+    .mobile-touch-target,
+    .mobile-enhanced-tap,
+    .mobile-form-input,
+    .mobile-nav-link {
+      -webkit-appearance: none;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+    }
+  }
+
+  /* Android specific optimizations */
+  @media screen and (max-width: 768px) and (pointer: coarse) {
+    .mobile-touch-target:active,
+    .mobile-enhanced-tap:active,
+    .mobile-card-button:active {
+      background-color: rgba(234, 88, 12, 0.1);
+      transform: scale(0.98);
+    }
+  }
+
+  /* Landscape mobile optimizations */
+  @media (max-width: 768px) and (orientation: landscape) {
+    .mobile-card-spacing {
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .mobile-responsive-text {
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+  }
+
+  /* ==================================================
+     VISUAL CONSISTENCY & THEME SYSTEM
+     ================================================== */
+
+  /* Consistent button system */
+  .theme-consistent-button {
+    font-weight: 500;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    transition: all 200ms ease-out;
+    min-height: 48px;
+    touch-action: manipulation;
+  }
+
+  .theme-consistent-button:focus-visible {
+    @apply ring-2 ring-orange-300 ring-offset-2 outline-none;
+  }
+
+  /* Consistent link system */
+  .theme-consistent-link {
+    color: #ea580c;
+    transition: color 200ms ease-out;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .theme-consistent-link:hover {
+    color: #c2410c;
+  }
+
+  .theme-consistent-link:focus-visible {
+    @apply ring-2 ring-orange-300 ring-offset-1 outline-none rounded-sm;
+  }
+
+  /* Consistent form inputs */
+  .theme-consistent-input,
+  .theme-consistent-select {
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    transition: border-color 200ms ease-out, box-shadow 200ms ease-out;
+    min-height: 48px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .theme-consistent-input:focus,
+  .theme-consistent-select:focus {
+    border-color: #fb923c;
+    box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.1);
+    outline: none;
+  }
+
+  /* Consistent badge system */
+  .theme-consistent-badge {
+    background-color: #fed7aa;
+    color: #c2410c;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  /* Consistent card system */
+  .theme-consistent-card {
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+    padding: 1.5rem;
+    transition: box-shadow 200ms ease-out, transform 200ms ease-out;
+  }
+
+  .theme-consistent-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    transform: translateY(-1px);
+  }
+
+  /* Consistent typography */
+  .theme-consistent-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #111827;
+    line-height: 1.5;
+  }
+
+  .theme-consistent-text {
+    color: #6b7280;
+    line-height: 1.6;
+  }
+
+  /* Consistent navigation */
+  .theme-consistent-nav {
+    /* Base navigation styling */
+  }
+
+  .theme-consistent-nav-link {
+    color: #ea580c;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    transition: all 200ms ease-out;
+    display: inline-block;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+  }
+
+  .theme-consistent-nav-link:hover {
+    color: #c2410c;
+    background-color: #fed7aa;
+  }
+
+  .theme-consistent-nav-link:focus-visible {
+    @apply ring-2 ring-orange-300 ring-offset-2 outline-none;
+  }
+
+  /* Consistent gradient system */
+  .theme-consistent-gradient {
+    background-image: linear-gradient(to right, #f97316, #ea580c);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    transition: all 200ms ease-out;
+  }
+
+  .theme-consistent-gradient:hover {
+    background-image: linear-gradient(to right, #ea580c, #dc2626);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Consistent icon system */
+  .theme-consistent-icon {
+    color: #f97316;
+    transition: color 200ms ease-out;
+  }
+
+  .theme-consistent-icon:hover {
+    color: #ea580c;
+  }
+
+  /* Consistent progress system */
+  .theme-consistent-progress {
+    background-color: #e5e7eb;
+    border-radius: 9999px;
+    height: 0.5rem;
+    overflow: hidden;
+  }
+
+  .theme-consistent-progress .progress-bar {
+    background-color: #f97316;
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 300ms ease-out;
+  }
+
+  /* Consistent alert system */
+  .theme-consistent-alert {
+    background-color: #fed7aa;
+    border: 1px solid #fdba74;
+    color: #9a3412;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    position: relative;
+  }
+
+  .theme-consistent-error {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 1rem;
+    border-radius: 0.5rem;
+  }
+
+  .theme-consistent-success {
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    padding: 1rem;
+    border-radius: 0.5rem;
+  }
+
+  /* Consistent loading states */
+  .theme-consistent-loading {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    background-color: #e5e7eb;
+    border-radius: 0.5rem;
+  }
+
+  .theme-consistent-loading .loading-accent {
+    background-color: #fed7aa;
+    border-radius: 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Dark mode support for theme consistency */
+  @media (prefers-color-scheme: dark) {
+    .theme-consistent-card {
+      background-color: #374151;
+      border-color: #4b5563;
+      color: white;
+    }
+
+    .theme-consistent-title {
+      color: #f9fafb;
+    }
+
+    .theme-consistent-text {
+      color: #d1d5db;
+    }
+
+    .theme-consistent-input,
+    .theme-consistent-select {
+      background-color: #374151;
+      border-color: #4b5563;
+      color: white;
+    }
+
+    .theme-consistent-input::placeholder,
+    .theme-consistent-select::placeholder {
+      color: #9ca3af;
+    }
+  }
+
+  /* High contrast mode theme adjustments */
+  @media (prefers-contrast: high) {
+    .theme-consistent-button,
+    .theme-consistent-link,
+    .theme-consistent-nav-link {
+      border: 2px solid currentColor;
+    }
+
+    .theme-consistent-badge {
+      border: 1px solid currentColor;
+    }
+
+    .theme-consistent-card {
+      border: 2px solid #4b5563;
+    }
+  }
+
+  /* Reduced motion theme considerations */
+  @media (prefers-reduced-motion: reduce) {
+    .theme-consistent-button,
+    .theme-consistent-link,
+    .theme-consistent-card,
+    .theme-consistent-gradient,
+    .theme-consistent-nav-link,
+    .theme-consistent-icon {
+      transition: none;
+    }
+
+    .theme-consistent-card:hover {
+      transform: none;
+    }
+
+    .theme-consistent-gradient:hover {
+      transform: none;
+    }
+  }
+
+  /* Print styles for theme consistency */
+  @media print {
+    .theme-consistent-button,
+    .theme-consistent-badge,
+    .theme-consistent-alert {
+      background: white !important;
+      color: black !important;
+      border: 1px solid black !important;
+    }
+
+    .theme-consistent-link {
+      color: black !important;
+      text-decoration: underline !important;
+    }
+
+    .theme-consistent-card {
+      border: 1px solid black !important;
+      box-shadow: none !important;
+    }
   }
 }

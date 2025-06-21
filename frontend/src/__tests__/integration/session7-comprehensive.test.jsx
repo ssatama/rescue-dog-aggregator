@@ -87,7 +87,7 @@ describe('Session 7: Comprehensive Integration Tests', () => {
       
       // Check that buttons have orange focus styling
       const dogCardCTA = screen.getAllByText(/Meet Dog/i)[0];
-      expect(dogCardCTA).toHaveClass('focus-visible:ring-orange-500');
+      expect(dogCardCTA).toHaveClass('enhanced-focus-button');
     });
   });
 
@@ -119,7 +119,7 @@ describe('Session 7: Comprehensive Integration Tests', () => {
       expect(mobileFilterButton).toBeInTheDocument();
       
       // Button should have mobile styling classes
-      expect(mobileFilterButton).toHaveClass('min-h-[48px]');
+      expect(mobileFilterButton).toHaveClass('mobile-touch-target');
     });
 
     test('grid layout adapts to screen size', async () => {
@@ -143,11 +143,11 @@ describe('Session 7: Comprehensive Integration Tests', () => {
       
       // Check dog card CTA buttons have minimum height
       const dogCardCTA = screen.getAllByText(/Meet Dog/i)[0];
-      expect(dogCardCTA.style.minHeight).toBe('48px');
+      expect(dogCardCTA).toHaveClass('mobile-touch-target');
       
       // Mobile filter button should also meet requirements
       const mobileFilterButton = screen.getByRole('button', { name: /Filter & Sort/i });
-      expect(mobileFilterButton).toHaveClass('min-h-[48px]');
+      expect(mobileFilterButton).toHaveClass('mobile-touch-target');
     });
   });
 
@@ -306,11 +306,11 @@ describe('Session 7: Comprehensive Integration Tests', () => {
       
       // Dog card CTA buttons
       const dogCardCTA = screen.getAllByText(/Meet Dog/i)[0];
-      expect(dogCardCTA.style.minHeight).toBe('48px');
+      expect(dogCardCTA).toHaveClass('mobile-touch-target');
       
       // Mobile filter button
       const mobileFilterButton = screen.getByRole('button', { name: /Filter & Sort/i });
-      expect(mobileFilterButton).toHaveClass('min-h-[48px]');
+      expect(mobileFilterButton).toHaveClass('mobile-touch-target');
     });
 
     test('visual hierarchy uses proper heading structure', async () => {

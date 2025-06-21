@@ -648,7 +648,7 @@ describe('DogCard Component', () => {
       
       // Button should have proper focus states with orange ring
       expect(ctaButton).toHaveClass('focus-visible:ring-2');
-      expect(ctaButton).toHaveClass('focus-visible:ring-orange-500');
+      expect(ctaButton).toHaveClass('enhanced-focus-button');
       expect(ctaButton).toHaveClass('focus-visible:ring-offset-2');
       
       // Button should maintain smooth transitions
@@ -698,7 +698,7 @@ describe('DogCard Component', () => {
       
       // Focus ring should be visible when focused
       expect(ctaButton).toHaveClass('focus-visible:ring-2');
-      expect(ctaButton).toHaveClass('focus-visible:ring-orange-500');
+      expect(ctaButton).toHaveClass('enhanced-focus-button');
     });
   });
 

@@ -13,21 +13,43 @@ import {
 import { ChevronDown, Search, X } from 'lucide-react';
 
 /**
- * Reusable FilterSection component using native details/summary elements
+ * Enhanced FilterSection component with custom collapse animations
  */
 function FilterSection({ id, title, defaultOpen = false, children, count = 0 }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  const handleToggle = useCallback((e) => {
+    e.preventDefault(); // Prevent default details toggle
+    setIsOpen(prev => !prev);
+  }, []);
+
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleToggle(e);
+    }
+  }, [handleToggle]);
+
+  const hasActiveFilters = count > 0;
+
   return (
     <details 
       data-testid={`filter-section-${id}`}
-      className="group"
-      open={defaultOpen}
+      data-open={isOpen}
+      className={`filter-section overflow-hidden will-change-transform group ${
+        hasActiveFilters ? 'filter-section-active' : ''
+      } ${!isOpen ? 'collapsed' : ''}`}
       aria-label={`${title} filters section`}
+      open={isOpen}
     >
       <summary 
         data-testid={`filter-summary-${id}`}
-        className="flex items-center justify-between cursor-pointer py-2 hover:bg-gray-50 rounded-md px-2"
+        className="flex items-center justify-between cursor-pointer py-3 px-4 hover:bg-gray-50/50 rounded-lg transition-all duration-200 ease-out interactive-enhanced btn-focus-ring"
+        onClick={handleToggle}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
+        aria-expanded={isOpen}
         role="button"
-        aria-expanded={defaultOpen}
       >
         <div className="flex items-center gap-2">
           <span className="font-medium text-gray-700">{title}</span>
@@ -39,12 +61,14 @@ function FilterSection({ id, title, defaultOpen = false, children, count = 0 }) 
         </div>
         <ChevronDown 
           data-testid={`chevron-icon-${id}`}
-          className="w-4 h-4 text-gray-500 transition-transform group-open:rotate-180" 
+          className={`w-4 h-4 text-gray-500 chevron-icon transition-transform duration-200 ease-out ${
+            isOpen ? 'chevron-open' : ''
+          } group-open:rotate-180`}
         />
       </summary>
       <div 
         data-testid={`filter-content-${id}`}
-        className="mt-3 space-y-3"
+        className="filter-section-content transition-opacity transition-transform duration-200 ease-out will-change-transform mt-3 space-y-3 px-4 pb-2"
       >
         {children}
       </div>
@@ -222,11 +246,11 @@ export default function DesktopFilters({
   return (
     <aside 
       data-testid="desktop-filters-container"
-      className="hidden md:block w-72 shrink-0"
+      className="hidden lg:block w-72 shrink-0"
     >
       <div 
         data-testid="desktop-filters-panel"
-        className="bg-white/95 backdrop-blur rounded-xl shadow-lg p-6 border border-white/50 sticky top-24 z-10 transition-all duration-300 hover:shadow-xl hover:bg-white/98"
+        className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-white/50 sticky top-24 z-10 cross-browser-transition cross-browser-will-change hover:shadow-xl hover:bg-white/98"
         role="complementary"
         aria-label="Filter options"
       >
@@ -237,14 +261,14 @@ export default function DesktopFilters({
         >
           <h3 
             data-testid="filters-title" 
-            className="font-semibold text-lg"
+            className="text-lg font-semibold text-gray-900"
           >
             Filters
           </h3>
           {activeFilterCount > 0 && (
             <span 
               data-testid="active-filters-badge"
-              className="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-sm"
+              className="bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full text-sm font-medium"
             >
               {activeFilterCount} active
             </span>
@@ -267,7 +291,7 @@ export default function DesktopFilters({
           >
             {/* Search Input */}
             <div className="space-y-3">
-              <div className="relative">
+              <div className="relative input-container form-enhanced">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   data-testid="search-input"
@@ -275,7 +299,7 @@ export default function DesktopFilters({
                   placeholder="Search dogs..."
                   value={searchQuery}
                   onChange={handleSearchChange}
-                  className="pl-10 w-full"
+                  className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input"
                 />
                 {searchQuery && (
                   <Button
@@ -283,7 +307,7 @@ export default function DesktopFilters({
                     variant="ghost"
                     size="icon"
                     onClick={clearSearch}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 text-gray-400 hover:text-gray-600 interactive-enhanced btn-focus-ring"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -297,7 +321,10 @@ export default function DesktopFilters({
                   value={organizationFilter || 'any'} 
                   onValueChange={setOrganizationFilter}
                 >
-                  <SelectTrigger data-testid="organization-select">
+                  <SelectTrigger 
+                    data-testid="organization-select"
+                    className="select-focus enhanced-hover enhanced-focus-select"
+                  >
                     <SelectValue>
                       {organizationFilter === 'any' || !organizationFilter 
                         ? 'Any Organization' 
@@ -329,7 +356,7 @@ export default function DesktopFilters({
           >
             <div className="space-y-3">
               {/* Breed Search Input */}
-              <div className="relative">
+              <div className="relative input-container form-enhanced">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   data-testid="breed-search-input"
@@ -337,7 +364,7 @@ export default function DesktopFilters({
                   placeholder="Search breeds..."
                   value={breedInputValue}
                   onChange={handleBreedInputChange}
-                  className="pl-10 w-full"
+                  className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input"
                 />
                 {breedInputValue && (
                   <Button
@@ -345,7 +372,7 @@ export default function DesktopFilters({
                     variant="ghost"
                     size="icon"
                     onClick={handleBreedClear}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 text-gray-400 hover:text-gray-600 interactive-enhanced btn-focus-ring"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -392,13 +419,13 @@ export default function DesktopFilters({
           >
             <div className="space-y-3">
               {/* Country Search Input */}
-              <div className="relative">
+              <div className="relative input-container form-enhanced">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   data-testid="country-search-input"
                   type="text"
                   placeholder="Search countries..."
-                  className="pl-10 w-full"
+                  className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input"
                 />
               </div>
               
@@ -408,7 +435,10 @@ export default function DesktopFilters({
                   value={availableCountryFilter} 
                   onValueChange={setAvailableCountryFilter}
                 >
-                  <SelectTrigger data-testid="ships-to-country-select">
+                  <SelectTrigger 
+                    data-testid="ships-to-country-select"
+                    className="select-focus enhanced-hover enhanced-focus-select"
+                  >
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
                   <SelectContent className="max-h-48">
@@ -426,7 +456,7 @@ export default function DesktopFilters({
           {/* === BUTTON/LOLLIPOP FILTERS SECTION === */}
           
           {/* Age Filter - Non-collapsible */}
-          <div className="space-y-3">
+          <div className={`space-y-3 ${sectionCounts.age > 0 ? 'filter-section-active' : ''}`}>
             <div className="flex items-center gap-2 mb-3">
               <h4 className="text-sm font-semibold text-gray-800">Age</h4>
               {sectionCounts.age > 0 && (
@@ -447,9 +477,9 @@ export default function DesktopFilters({
                     data-testid={`age-button-${age}`}
                     variant="outline"
                     onClick={() => setAgeCategoryFilter(age)}
-                    className={`justify-start transition-all duration-200 hover:scale-[1.02] focus:scale-[1.02] ${
+                    className={`justify-start cross-browser-transition hover:scale-[1.02] focus:scale-[1.02] interactive-enhanced enhanced-focus-button mobile-touch-target ${
                       isActive 
-                        ? 'bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200 shadow-sm' 
+                        ? 'bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200 cross-browser-shadow' 
                         : 'bg-white hover:bg-gray-50 hover:shadow-sm'
                     }`}
                     style={{ minHeight: '48px' }}
@@ -462,7 +492,7 @@ export default function DesktopFilters({
           </div>
           
           {/* Size Filter - Non-collapsible */}
-          <div className="space-y-3">
+          <div className={`space-y-3 ${sectionCounts.size > 0 ? 'filter-section-active' : ''}`}>
             <div className="flex items-center gap-2 mb-3">
               <h4 className="text-sm font-semibold text-gray-800">Size</h4>
               {sectionCounts.size > 0 && (
@@ -483,9 +513,9 @@ export default function DesktopFilters({
                     data-testid={`size-button-${size}`}
                     variant="outline"
                     onClick={() => setSizeFilter(size)}
-                    className={`justify-start transition-all duration-200 hover:scale-[1.02] focus:scale-[1.02] ${
+                    className={`justify-start cross-browser-transition hover:scale-[1.02] focus:scale-[1.02] interactive-enhanced enhanced-focus-button mobile-touch-target ${
                       isActive 
-                        ? 'bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200 shadow-sm' 
+                        ? 'bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200 cross-browser-shadow' 
                         : 'bg-white hover:bg-gray-50 hover:shadow-sm'
                     }`}
                     style={{ minHeight: '48px' }}
@@ -498,7 +528,7 @@ export default function DesktopFilters({
           </div>
           
           {/* Sex Filter - Non-collapsible Button Grid (New Lollipop Style) */}
-          <div className="space-y-3">
+          <div className={`space-y-3 ${sectionCounts.sex > 0 ? 'filter-section-active' : ''}`}>
             <div className="flex items-center gap-2 mb-3">
               <h4 className="text-sm font-semibold text-gray-800">Sex</h4>
               {sectionCounts.sex > 0 && (
@@ -519,9 +549,9 @@ export default function DesktopFilters({
                     data-testid={`sex-button-${sex}`}
                     variant="outline"
                     onClick={() => setSexFilter(sex)}
-                    className={`justify-center transition-all duration-200 hover:scale-[1.02] focus:scale-[1.02] ${
+                    className={`justify-center cross-browser-transition hover:scale-[1.02] focus:scale-[1.02] interactive-enhanced enhanced-focus-button mobile-touch-target ${
                       isActive 
-                        ? 'bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200 shadow-sm' 
+                        ? 'bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200 cross-browser-shadow' 
                         : 'bg-white hover:bg-gray-50 hover:shadow-sm'
                     }`}
                     style={{ minHeight: '48px' }}
@@ -536,14 +566,13 @@ export default function DesktopFilters({
         
         {/* Clear all filters button */}
         {activeFilterCount > 0 && (
-          <Button
+          <button
             data-testid="clear-all-filters"
-            variant="outline"
-            className="w-full mt-6"
+            className="w-full mt-6 text-orange-600 hover:text-orange-700 hover:bg-orange-50 font-medium py-2 px-4 rounded-lg cross-browser-transition interactive-enhanced enhanced-focus-button"
             onClick={resetFilters}
           >
             Clear All Filters
-          </Button>
+          </button>
         )}
       </div>
     </aside>
