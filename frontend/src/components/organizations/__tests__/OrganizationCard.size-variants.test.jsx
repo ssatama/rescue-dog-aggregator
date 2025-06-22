@@ -375,9 +375,9 @@ describe('OrganizationCard Size Variants', () => {
     test('maintains animation classes across sizes', () => {
       ['small', 'medium', 'large'].forEach(size => {
         const { container } = render(<OrganizationCard organization={mockOrganization} size={size} />);
-        const card = container.querySelector('.animate-org-card');
+        const card = container.querySelector('[role="button"]');
         expect(card).toBeInTheDocument();
-        expect(card).toHaveClass('will-change-transform', 'focus-ring');
+        expect(card).toHaveClass('will-change-transform', 'shadow-sm');
       });
     });
   });
@@ -389,7 +389,7 @@ describe('OrganizationCard Size Variants', () => {
       // Check main card button
       const buttons = screen.getAllByRole('button');
       const mainCard = buttons.find(button => button.getAttribute('tabindex') === '0');
-      expect(mainCard).toHaveClass('focus-ring');
+      expect(mainCard).toHaveClass('shadow-sm');
       
       // Check footer buttons/links maintain touch targets
       const visitLink = screen.getByText('Visit Website').closest('a');

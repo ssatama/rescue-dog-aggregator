@@ -43,7 +43,7 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
   return (
     <div
       data-testid="related-dog-card"
-      className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
+      className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer group will-change-transform"
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}
       tabIndex={0}

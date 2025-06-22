@@ -59,7 +59,7 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
     <Card 
       ref={cardRef}
       data-testid="dog-card"
-      className={`bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200 flex flex-col h-full animate-card-hover group will-change-transform ${
+      className={`overflow-hidden h-full flex flex-col group ${
         isVisible ? 'animate-page-enter' : 'opacity-0 translate-y-5'
       }`}
       {...hoverProps}

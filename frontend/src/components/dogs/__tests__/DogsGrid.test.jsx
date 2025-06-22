@@ -110,7 +110,7 @@ describe('DogsGrid Component', () => {
       const skeleton = screen.getByTestId('dog-card-skeleton');
       expect(skeleton).toHaveClass('animate-shimmer-premium');
       expect(skeleton).toHaveClass('bg-white');
-      expect(skeleton).toHaveClass('shadow-md');
+      expect(skeleton).toHaveClass('shadow-sm');
     });
   });
 

@@ -2,6 +2,54 @@
 
 This log tracks major changes, features, and improvements to the Rescue Dog Aggregator platform. Each entry follows a consistent format to maintain clear development history.
 
+## 2025-06-22 - Session 5: Shadow & Border Consistency ✅ COMPLETED
+### Added
+- **Unified Shadow Hierarchy** - Implemented consistent shadow system across all card components (shadow-sm → shadow-md on hover)
+- **Base Card Component Enhancement** - Updated card.tsx with standardized shadow-sm hover:shadow-md transition-shadow duration-200 will-change-transform
+- **Hover-Lift Utility Class** - Added .hover-lift CSS utility for subtle card interactions with transform and shadow effects
+- **TrustSection Statistics Cards** - Added proper card styling with shadows to homepage statistics for visual consistency
+- **Performance Optimizations** - Added will-change-transform hints to all card hover states for smooth GPU-accelerated animations
+
+### Changed
+- **DogCard.jsx** - Removed individual shadow classes, now inherits from base Card component for consistency
+- **OrganizationCard.jsx** - Eliminated border border-gray-200 classes in favor of unified shadow system across all elements
+- **RelatedDogsCard.jsx** - Updated from shadow-md hover:shadow-lg to shadow-sm hover:shadow-md with optimized transition-shadow duration-200
+- **RelatedDogsSection.jsx** - Removed border border-gray-200 from skeleton loading cards for consistency
+- **DogCardSkeleton.jsx** - Updated skeleton component to use shadow-sm instead of shadow-md to match actual cards
+
+### Fixed
+- **Mixed Shadow/Border Patterns** - Eliminated inconsistent use of borders and shadows across different card components
+- **Performance Issues** - Standardized transition durations from mixed 200ms/300ms to consistent 200ms throughout
+- **Visual Hierarchy Confusion** - Established clear shadow hierarchy: sm (base) → md (hover) → lg (active) → xl (floating)
+- **Component Inconsistencies** - All cards now use identical base styling from Card component eliminating visual discord
+- **GPU Optimization** - Added will-change-transform to all hover effects for smooth hardware acceleration
+
+### Enhanced
+- **Card Interaction Feedback** - Subtle shadow transitions provide clear visual feedback without overwhelming the design
+- **Visual Cohesion** - Eliminated jarring differences between card types creating seamless user experience
+- **Accessibility** - Maintained proper focus states while improving visual hierarchy for users with visual impairments
+- **Performance** - Optimized animations use transition-shadow instead of transition-all where appropriate
+- **Mobile Experience** - Consistent touch feedback across all card interactions with optimized animation performance
+
+### Technical Notes
+- **Files Modified**: 7 component files + base card.tsx + globals.css + 6 test files updated for new shadow expectations
+- **Shadow Hierarchy Established**:
+  - Base cards: shadow-sm (subtle presence)
+  - Hover state: shadow-md (clear interaction feedback)
+  - Active/Selected: shadow-lg (for future use)
+  - Floating elements: shadow-xl (modals, dropdowns)
+- **Performance Improvements**: 
+  - will-change-transform added to all card hover states
+  - transition-shadow replaces transition-all where only shadows change
+  - Consistent 200ms duration eliminates animation timing conflicts
+- **Border Elimination**: Removed all border border-gray-200 classes from card components
+- **Test Coverage**: Updated 6 test files to expect new shadow classes instead of old animation classes
+- **TDD Methodology**: Complete RED-GREEN-REFACTOR cycle with test updates preceding implementation changes
+- **CSS Utility Added**: .hover-lift class for consistent lift effects (hover:shadow-md hover:-translate-y-0.5)
+- **Statistics Cards Enhanced**: TrustSection homepage statistics now use card styling with proper shadows
+- **Integration Success**: Zero breaking changes to functionality, all interactive behaviors maintained
+- **Visual Polish**: Cards now have subtle but consistent interactive feedback throughout the application
+
 ## 2025-06-22 - Session 4: Typography & Spacing Normalization ✅ COMPLETED
 ### Added
 - **Missing Typography Classes** - Added .text-title and .text-card-title classes to globals.css with complete CSS custom property integration

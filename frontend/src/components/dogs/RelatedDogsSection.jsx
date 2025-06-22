@@ -91,7 +91,7 @@ const RelatedDogsSection = memo(function RelatedDogsSection({ organizationId, cu
         <div data-testid="related-dogs-loading" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+              <div key={i} className="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div className="aspect-[4/3] bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse"></div>
                 <div className="p-4 space-y-3">
                   <div className="space-y-2">

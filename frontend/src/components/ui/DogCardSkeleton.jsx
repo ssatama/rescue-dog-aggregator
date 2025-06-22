@@ -14,7 +14,7 @@ const DogCardSkeleton = React.memo(function DogCardSkeleton({ animationDelay = 0
   return (
     <Card 
       data-testid="dog-card-skeleton"
-      className="overflow-hidden flex flex-col h-full shadow-md bg-white animate-shimmer-premium will-change-transform animate-fade-in duration-300"
+      className="overflow-hidden flex flex-col h-full animate-shimmer-premium animate-fade-in duration-300"
       style={{ animationDelay: `${animationDelay}ms` }}
       role="status"
       aria-label="Loading dog information"

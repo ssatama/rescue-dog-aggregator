@@ -96,10 +96,10 @@ describe('DogCard Component', () => {
       
       const card = screen.getByTestId('dog-card');
       // Check for new animation system classes
-      expect(card).toHaveClass('animate-card-hover');
+      expect(card).toHaveClass('shadow-sm');
       expect(card).toHaveClass('will-change-transform');
       expect(card).toHaveClass('group');
-      expect(card).toHaveClass('rounded-xl'); // Updated from rounded-lg
+      expect(card).toHaveClass('rounded-lg'); // Consistent with shadow system
     });
 
     test('applies smooth transition effects', () => {
@@ -114,7 +114,7 @@ describe('DogCard Component', () => {
       
       const card = screen.getByTestId('dog-card');
       // Test that the new animation classes are present
-      expect(card).toHaveClass('animate-card-hover');
+      expect(card).toHaveClass('shadow-sm');
       expect(card).toHaveClass('will-change-transform');
       // The CSS transitions are defined in globals.css via .animate-card-hover
     });
@@ -338,7 +338,7 @@ describe('DogCard Component', () => {
       expect(ctaLink).toHaveFocus();
       
       // Card should have animation classes (shadow effects are in CSS)
-      expect(card).toHaveClass('animate-card-hover');
+      expect(card).toHaveClass('shadow-sm');
     });
   });
 
@@ -507,7 +507,7 @@ describe('DogCard Component', () => {
       const card = screen.getByTestId('dog-card');
       
       // Card should have enhanced animation classes
-      expect(card).toHaveClass('animate-card-hover');
+      expect(card).toHaveClass('shadow-sm');
       expect(card).toHaveClass('will-change-transform');
       expect(card).toHaveClass('group');
       
@@ -530,7 +530,7 @@ describe('DogCard Component', () => {
       const card = screen.getByTestId('dog-card');
       
       // Simulate hover by checking CSS classes that would trigger the hover state
-      expect(card).toHaveClass('animate-card-hover');
+      expect(card).toHaveClass('shadow-sm');
       
       // Note: The actual CSS transform is tested via the CSS class presence
       // The transform: translateY(-4px) scale(1.02) is defined in globals.css
@@ -550,13 +550,13 @@ describe('DogCard Component', () => {
       
       const card = screen.getByTestId('dog-card');
       
-      // Card should transition from shadow-md to enhanced orange-tinted shadow on hover
-      expect(card).toHaveClass('shadow-md');
-      expect(card).toHaveClass('hover:shadow-lg');
+      // Card should use the unified shadow hierarchy (shadow-sm to shadow-md)
+      expect(card).toHaveClass('shadow-sm');
+      expect(card).toHaveClass('hover:shadow-md');
       
       // The orange-tinted shadow is applied via CSS :hover pseudo-class
       // Testing for the class that enables this behavior
-      expect(card).toHaveClass('animate-card-hover');
+      expect(card).toHaveClass('shadow-sm');
     });
 
     test('image has correct hover scale effect (scale(1.05))', () => {
@@ -603,7 +603,7 @@ describe('DogCard Component', () => {
       
       // Even with reduced motion, the classes should be present
       // The CSS handles disabling animations via media queries
-      expect(card).toHaveClass('animate-card-hover');
+      expect(card).toHaveClass('shadow-sm');
       expect(card).toHaveClass('will-change-transform');
     });
 
@@ -714,10 +714,8 @@ describe('DogCard Component', () => {
       render(<DogCard dog={mockDog} />);
       
       const card = screen.getByTestId('dog-card');
-      expect(card).toHaveClass('bg-white');
-      expect(card).toHaveClass('rounded-xl');
-      expect(card).toHaveClass('shadow-md');
-      expect(card).toHaveClass('hover:shadow-lg');
+      expect(card).toHaveClass('shadow-sm');
+      expect(card).toHaveClass('hover:shadow-md');
       expect(card).toHaveClass('transition-shadow');
       expect(card).toHaveClass('duration-200');
       

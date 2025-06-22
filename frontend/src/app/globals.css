@@ -1447,6 +1447,11 @@
   }
 
   /* Print styles for theme consistency */
+  /* Hover lift utility for subtle card interactions */
+  .hover-lift {
+    @apply hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 will-change-transform;
+  }
+
   @media print {
     .theme-consistent-button,
     .theme-consistent-badge,

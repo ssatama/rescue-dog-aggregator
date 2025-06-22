@@ -135,8 +135,8 @@ describe('Session 7: End-to-End User Journey Tests', () => {
       const buddyCard = screen.getByText('Buddy').closest('[data-testid="dog-card"]');
       expect(buddyCard).toBeInTheDocument();
       
-      // Card should have proper styling and animations
-      expect(buddyCard).toHaveClass('animate-card-hover', 'will-change-transform');
+      // Card should have proper styling and animations (unified shadow system)
+      expect(buddyCard).toHaveClass('shadow-sm', 'hover:shadow-md', 'will-change-transform');
       
       // Should see dog information displayed
       expect(screen.getByText('Buddy')).toBeInTheDocument();
@@ -188,7 +188,7 @@ describe('Session 7: End-to-End User Journey Tests', () => {
       // 3. MOBILE CARD INTERACTION - Cards should be touch-friendly
       const dogCards = screen.getAllByTestId('dog-card');
       dogCards.forEach(card => {
-        expect(card).toHaveClass('animate-card-hover');
+        expect(card).toHaveClass('shadow-sm', 'hover:shadow-md');
       });
 
       // 4. MOBILE CTA BUTTONS - Should meet touch target requirements
@@ -284,11 +284,11 @@ describe('Session 7: End-to-End User Journey Tests', () => {
 
       await screen.findByText('Buddy');
 
-      // 1. CARD ANIMATIONS - Should use GPU acceleration
+      // 1. CARD ANIMATIONS - Should use GPU acceleration and unified shadow system
       const dogCards = screen.getAllByTestId('dog-card');
       dogCards.forEach(card => {
         expect(card).toHaveClass('will-change-transform');
-        expect(card).toHaveClass('animate-card-hover');
+        expect(card).toHaveClass('shadow-sm', 'hover:shadow-md');
       });
 
       // 2. IMAGE LOADING - Should use lazy loading

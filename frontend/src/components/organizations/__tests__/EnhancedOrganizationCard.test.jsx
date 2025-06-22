@@ -318,9 +318,9 @@ describe('EnhancedOrganizationCard', () => {
       const cardButtons = screen.getAllByRole('button');
       const mainCard = cardButtons.find(button => button.getAttribute('tabindex') === '0');
       expect(mainCard).toHaveClass(
-        'animate-org-card',
-        'will-change-transform',
-        'focus-ring'
+        'shadow-sm',
+        'hover:shadow-md',
+        'will-change-transform'
       );
     });
 

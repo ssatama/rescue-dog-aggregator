@@ -112,8 +112,8 @@ describe('RelatedDogsCard', () => {
       const card = screen.getByTestId('related-dog-card');
 
       // Assert
-      expect(card).toHaveClass('hover:shadow-lg');
-      expect(card).toHaveClass('transition-all');
+      expect(card).toHaveClass('hover:shadow-md');
+      expect(card).toHaveClass('transition-shadow');
     });
 
     it('should apply hover effects on dog name', () => {

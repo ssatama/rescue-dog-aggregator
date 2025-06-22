@@ -143,7 +143,7 @@ describe('DogCardSkeleton', () => {
       render(<DogCardSkeleton />);
       
       const skeleton = screen.getByTestId('dog-card-skeleton');
-      expect(skeleton).toHaveClass('shadow-md', 'bg-white', 'animate-shimmer-premium');
+      expect(skeleton).toHaveClass('shadow-sm', 'bg-white', 'animate-shimmer-premium');
     });
   });
 

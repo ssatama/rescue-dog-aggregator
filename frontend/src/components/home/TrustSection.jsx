@@ -112,7 +112,7 @@ export default function TrustSection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           
           {/* Organizations Stat */}
-          <div className="text-center">
+          <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 p-6 text-center">
             <div 
               data-testid="organizations-icon"
               className="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center"
@@ -130,7 +130,7 @@ export default function TrustSection() {
           </div>
 
           {/* Dogs Stat */}
-          <div className="text-center">
+          <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 p-6 text-center">
             <div 
               data-testid="dogs-icon"
               className="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center"
@@ -148,7 +148,7 @@ export default function TrustSection() {
           </div>
 
           {/* Countries Stat */}
-          <div className="text-center">
+          <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 p-6 text-center">
             <div 
               data-testid="countries-icon"
               className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center"

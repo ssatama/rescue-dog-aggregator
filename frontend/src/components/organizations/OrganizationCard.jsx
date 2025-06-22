@@ -95,7 +95,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
 
   return (
     <Card 
-      className="overflow-hidden h-full animate-org-card border border-gray-200 bg-white cursor-pointer rounded-lg focus-ring will-change-transform"
+      className="overflow-hidden h-full cursor-pointer"
       onClick={() => window.location.href = `/organizations/${id}`}
       role="button"
       tabIndex={0}
@@ -115,7 +115,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
                 <LazyImage 
                   src={logoUrl} 
                   alt={`${name} logo`} 
-                  className={`${styles.logo} rounded-lg object-cover border border-gray-200`}
+                  className={`${styles.logo} rounded-lg object-cover`}
                   onError={(e) => handleImageError(e, logoUrl)}
                   placeholder={
                     <div className={`${styles.logo} rounded-lg bg-orange-100 flex items-center justify-center animate-pulse`}>
@@ -126,7 +126,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
                   }
                 />
               ) : (
-                <div className={`${styles.logo} rounded-lg bg-orange-100 flex items-center justify-center border border-gray-200`}>
+                <div className={`${styles.logo} rounded-lg bg-orange-100 flex items-center justify-center`}>
                   <span className={`${styles.initialsText} font-bold text-orange-600`}>
                     {getInitials(name)}
                   </span>
@@ -215,7 +215,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
                     <LazyImage 
                       src={dog.thumbnail_url || dog.primary_image_url} 
                       alt={dog.name || 'Dog preview'} 
-                      className={`${styles.dogThumbnail} rounded-lg object-cover border border-gray-200`}
+                      className={`${styles.dogThumbnail} rounded-lg object-cover`}
                       onError={(e) => handleImageError(e, dog.thumbnail_url)}
                       placeholder={
                         <div className={`${styles.dogThumbnail} rounded-lg bg-gray-200 animate-pulse`} />
