@@ -51,8 +51,7 @@ def migrate_database():
         # Step 1: Create backup of existing tables (as views first for safety)
         print("Creating backup views of existing tables...")
         # --- FIX: Use correct table names ---
-        cursor.execute(
-            "CREATE OR REPLACE VIEW animals_backup AS SELECT * FROM animals")
+        cursor.execute("CREATE OR REPLACE VIEW animals_backup AS SELECT * FROM animals")
         cursor.execute(
             "CREATE OR REPLACE VIEW animal_images_backup AS SELECT * FROM animal_images"
         )
@@ -303,8 +302,7 @@ def migrate_database():
             )
             raise  # Stop migration on copy error
         except Exception as copy_img_error:
-            print(
-                f"Error copying data from animal_images_backup: {copy_img_error}")
+            print(f"Error copying data from animal_images_backup: {copy_img_error}")
             raise  # Stop migration on copy error
 
         # Step 9: Add indexes (moved after table creation and potential data
@@ -384,8 +382,7 @@ def rollback_migration():
 
         # Drop new tables/indexes if they exist
         print("Dropping new tables and indexes...")
-        cursor.execute(
-            "DROP INDEX IF EXISTS idx_service_regions_org_country_region;")
+        cursor.execute("DROP INDEX IF EXISTS idx_service_regions_org_country_region;")
         cursor.execute("DROP TABLE IF EXISTS service_regions CASCADE;")
         cursor.execute("DROP TABLE IF EXISTS breed_standards CASCADE;")
         cursor.execute("DROP TABLE IF EXISTS size_standards CASCADE;")
@@ -400,8 +397,7 @@ def rollback_migration():
         print("Restoring tables from backup views...")
         # --- FIX: Restore animals and animal_images ---
         try:
-            cursor.execute(
-                "CREATE TABLE animals AS SELECT * FROM animals_backup;")
+            cursor.execute("CREATE TABLE animals AS SELECT * FROM animals_backup;")
             print("Restored 'animals' table from 'animals_backup'.")
         except psycopg2.errors.UndefinedTable:
             print("Info: 'animals_backup' view not found. Cannot restore 'animals'.")
@@ -487,8 +483,7 @@ def finalize_migration():
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Database migration for Phase 2")
+    parser = argparse.ArgumentParser(description="Database migration for Phase 2")
     parser.add_argument(
         "--action",
         choices=["migrate", "rollback", "finalize"],

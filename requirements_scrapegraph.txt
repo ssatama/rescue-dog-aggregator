@@ -1,0 +1,17 @@
+# ScrapegraphAI Integration Dependencies
+# Add these to your main requirements.txt or install separately
+
+# === ScrapegraphAI Core ===
+scrapegraphai==1.20.1
+
+# === LangChain Integration for Anthropic ===
+langchain-anthropic>=0.3.15
+
+# === Additional ScrapegraphAI Dependencies ===
+# These may be automatically installed with scrapegraphai but listed for clarity
+langchain-core>=0.3.63
+playwright>=1.52.0
+
+# === Development Notes ===
+# Install command: pip install -r requirements_scrapegraph.txt
+# Playwright browsers: playwright install

@@ -17,8 +17,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Ensure logger is configured (config.py might do this, but being explicit
 # is safe)
-logging.basicConfig(level=logging.INFO,
-                    format="%(levelname)s:%(name)s:%(message)s")
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -127,8 +126,7 @@ def get_database_connection() -> Generator[psycopg2.extensions.connection, None,
         logger.debug(f"Monitoring Connection opened: {id(conn)}")
         yield conn
 
-        logger.debug(
-            f"Committing transaction for monitoring connection {id(conn)}")
+        logger.debug(f"Committing transaction for monitoring connection {id(conn)}")
         conn.commit()
 
     except HTTPException as http_exc:

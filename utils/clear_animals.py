@@ -54,8 +54,7 @@ def clear_animals():
         print(f"Current number of animals in database: {count_before}")
 
         # Ask for confirmation
-        confirm = input(
-            "Are you sure you want to delete all animals? (yes/no): ")
+        confirm = input("Are you sure you want to delete all animals? (yes/no): ")
         if confirm.lower() != "yes":
             print("Operation cancelled.")
             return

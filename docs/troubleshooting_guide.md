@@ -790,7 +790,7 @@ source venv/bin/activate
 ls scrapers/pets_in_turkey/ scrapers/rean/ scrapers/tierschutzverein_europa/
 
 # Test import of existing scrapers
-python -c "from scrapers.pets_in_turkey.dogs_scraper import PetsInTurkeyScraper; print('Import successful')"
+python -c "from scrapers.pets_in_turkey.scrapegraph_scraper import PetsInTurkeyScrapegraphScraper; print('Import successful')"
 ```
 
 **Solutions**:

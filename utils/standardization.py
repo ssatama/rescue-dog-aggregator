@@ -165,8 +165,7 @@ def standardize_breed(breed_text: str) -> Tuple[str, str, Optional[str]]:
         if original in clean_text:
             # If we find a mix indicator, adjust the standardized breed name
             if (
-                any(mix_word in clean_text for mix_word in [
-                    "mix", "cross", "mixed"])
+                any(mix_word in clean_text for mix_word in ["mix", "cross", "mixed"])
                 and " Mix" not in standardized[0]
             ):
                 return f"{standardized[0]} Mix", "Mixed", standardized[2]
@@ -186,8 +185,7 @@ def standardize_breed(breed_text: str) -> Tuple[str, str, Optional[str]]:
         return "Mixed Breed", "Mixed", None
 
     # If no match found, use the original with Unknown group
-    capitalized_breed = " ".join(word.capitalize()
-                                 for word in clean_text.split())
+    capitalized_breed = " ".join(word.capitalize() for word in clean_text.split())
     return capitalized_breed, "Unknown", None
 
 
@@ -348,8 +346,7 @@ def apply_standardization(animal_data: Dict) -> Dict:
 
     # Standardize breed
     if "breed" in result and result["breed"]:
-        std_breed, breed_group, size_estimate = standardize_breed(
-            result["breed"])
+        std_breed, breed_group, size_estimate = standardize_breed(result["breed"])
         result["standardized_breed"] = std_breed
         result["breed_group"] = breed_group
 

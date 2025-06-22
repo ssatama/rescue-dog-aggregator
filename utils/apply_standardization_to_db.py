@@ -54,15 +54,13 @@ def apply_standardization_to_database():
 
             # Parse properties json
             try:
-                properties = json.loads(
-                    properties_json) if properties_json else {}
+                properties = json.loads(properties_json) if properties_json else {}
             except BaseException:
                 properties = {}
 
             # Standardize breed
             if breed:
-                std_breed, breed_group, size_estimate = standardize_breed(
-                    breed)
+                std_breed, breed_group, size_estimate = standardize_breed(breed)
                 updates.append("standardized_breed = %s")
                 params.append(std_breed)
 
@@ -74,8 +72,7 @@ def apply_standardization_to_database():
                 # Only set standardized_size if we have an estimate and current
                 # value is NULL
                 cursor.execute(
-                    "SELECT standardized_size FROM animals WHERE id = %s", (
-                        dog_id,)
+                    "SELECT standardized_size FROM animals WHERE id = %s", (dog_id,)
                 )
                 current_size = cursor.fetchone()[0]
 
@@ -101,8 +98,7 @@ def apply_standardization_to_database():
                 params.append(dog_id)
 
                 # Build update query
-                query = "UPDATE animals SET " + \
-                    ", ".join(updates) + " WHERE id = %s"
+                query = "UPDATE animals SET " + ", ".join(updates) + " WHERE id = %s"
 
                 # Execute update
                 cursor.execute(query, params)

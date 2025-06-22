@@ -78,16 +78,14 @@ def update_chromedriver():
         # --- ADD Reset Log Level ---
         # Reset log level if needed after error
         os.environ.pop("WDM_LOG_LEVEL", None)
-        logging.getLogger("WDM").setLevel(
-            logging.INFO)  # Or your default level
+        logging.getLogger("WDM").setLevel(logging.INFO)  # Or your default level
         # --- END Reset Log Level ---
         return False
     finally:
         # --- ADD Reset Log Level ---
         # Ensure log level is reset even on success
         os.environ.pop("WDM_LOG_LEVEL", None)
-        logging.getLogger("WDM").setLevel(
-            logging.INFO)  # Or your default level
+        logging.getLogger("WDM").setLevel(logging.INFO)  # Or your default level
         # --- END Reset Log Level ---
 
 
@@ -97,11 +95,9 @@ def parse_arguments():
         description="Rescue Dog Aggregator - Data Collection"
     )
 
-    parser.add_argument("--setup", action="store_true",
-                        help="Set up the database")
+    parser.add_argument("--setup", action="store_true", help="Set up the database")
     parser.add_argument("--all", action="store_true", help="Run all scrapers")
-    parser.add_argument("--pit", action="store_true",
-                        help="Run Pets in Turkey scraper")
+    parser.add_argument("--pit", action="store_true", help="Run Pets in Turkey scraper")
     parser.add_argument(
         "--update-driver", action="store_true", help="Update chromedriver"
     )

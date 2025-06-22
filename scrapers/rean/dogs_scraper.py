@@ -85,8 +85,7 @@ class REANScraper(BaseScraper):
                 # Look for dog name patterns in the full text
                 # This is a fallback approach
                 name_age_pattern = r"([A-Za-z]+)\s+is\s+(?:around\s+)?(\d+(?:\.\d+)?)\s+(months?|years?)\s+old"
-                matches = re.finditer(
-                    name_age_pattern, full_text, re.IGNORECASE)
+                matches = re.finditer(name_age_pattern, full_text, re.IGNORECASE)
 
                 for match in matches:
                     # Extract surrounding context for each dog
@@ -155,8 +154,7 @@ class REANScraper(BaseScraper):
                 if url not in unique_images:
                     unique_images.append(url)
 
-            self.logger.info(
-                f"Extracted {len(unique_images)} image URLs from HTML")
+            self.logger.info(f"Extracted {len(unique_images)} image URLs from HTML")
             return unique_images
 
         except Exception as e:
@@ -230,23 +228,20 @@ class REANScraper(BaseScraper):
             )
 
             # Initialize WebDriver
-            self.logger.info(
-                f"Starting browser automation for image extraction: {url}")
+            self.logger.info(f"Starting browser automation for image extraction: {url}")
             driver = webdriver.Chrome(options=chrome_options)
 
             try:
                 # Load the page
                 driver.get(url)
-                self.logger.info(
-                    "Page loaded, waiting for JavaScript execution...")
+                self.logger.info("Page loaded, waiting for JavaScript execution...")
 
                 # Wait for initial page load and JavaScript execution
                 time.sleep(5)
 
                 # Scroll to the bottom to trigger lazy loading of all images
                 self.logger.info("Scrolling to trigger lazy loading...")
-                driver.execute_script(
-                    "window.scrollTo(0, document.body.scrollHeight);")
+                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                 time.sleep(3)  # Wait for lazy loading to complete
 
                 # Scroll back to top and then slowly down to ensure all images
@@ -263,18 +258,15 @@ class REANScraper(BaseScraper):
                 scroll_increment = 500
 
                 while current_position < total_height:
-                    driver.execute_script(
-                        f"window.scrollTo(0, {current_position});")
+                    driver.execute_script(f"window.scrollTo(0, {current_position});")
                     time.sleep(1)  # Allow images to load
                     current_position += scroll_increment
 
-                self.logger.info(
-                    "Scrolling complete, extracting image URLs...")
+                self.logger.info("Scrolling complete, extracting image URLs...")
 
                 # Extract all image elements
                 img_elements = driver.find_elements(By.TAG_NAME, "img")
-                self.logger.info(
-                    f"Found {len(img_elements)} img elements on page")
+                self.logger.info(f"Found {len(img_elements)} img elements on page")
 
                 # Filter for actual REAN CDN images (wsimg.com)
                 actual_images = []
@@ -298,8 +290,7 @@ class REANScraper(BaseScraper):
                 driver.quit()
 
         except Exception as e:
-            self.logger.error(
-                f"Error during browser-based image extraction: {e}")
+            self.logger.error(f"Error during browser-based image extraction: {e}")
             return []
 
     def _is_valid_rean_image(self, src: str) -> bool:
@@ -381,8 +372,7 @@ class REANScraper(BaseScraper):
             return clean_url
 
         except Exception as e:
-            self.logger.warning(
-                f"Error cleaning wsimg URL {wsimg_url[:50]}...: {e}")
+            self.logger.warning(f"Error cleaning wsimg URL {wsimg_url[:50]}...: {e}")
             return wsimg_url
 
     def associate_images_with_dogs(
@@ -448,8 +438,7 @@ class REANScraper(BaseScraper):
             enriched_dogs.append(enriched_dog)
 
         # Log summary
-        dogs_with_images = sum(
-            1 for dog in enriched_dogs if "primary_image_url" in dog)
+        dogs_with_images = sum(1 for dog in enriched_dogs if "primary_image_url" in dog)
         self.logger.info(
             f"Successfully associated images with {dogs_with_images}/{len(dog_data_list)} dogs (offset: {offset})"
         )
@@ -510,8 +499,7 @@ class REANScraper(BaseScraper):
                 size_indicator in url_lower
                 for size_indicator in ["_16x16", "_32x32", "_64x64", "_thumb"]
             ):
-                self.logger.debug(
-                    f"Filtered out small/thumbnail image: {url[:50]}...")
+                self.logger.debug(f"Filtered out small/thumbnail image: {url[:50]}...")
                 continue
 
             # This image passed all filters
@@ -540,8 +528,7 @@ class REANScraper(BaseScraper):
         # Pattern 1: If we have exactly one more image than dogs,
         # it's likely there's one header/navigation image at the start
         if len(filtered_images) == num_dogs + 1:
-            self.logger.debug(
-                "Detected potential header image - applying offset of 1")
+            self.logger.debug("Detected potential header image - applying offset of 1")
             return 1
 
         # Pattern 2: If we have significantly more images than dogs,
@@ -554,13 +541,11 @@ class REANScraper(BaseScraper):
                 )
                 return 2
             else:
-                self.logger.debug(
-                    "Detected single header image - applying offset of 1")
+                self.logger.debug("Detected single header image - applying offset of 1")
                 return 1
 
         # Pattern 3: Perfect match or fewer images than dogs - no offset needed
-        self.logger.debug(
-            "No systematic offset detected - using direct association")
+        self.logger.debug("No systematic offset detected - using direct association")
         return 0
 
     def extract_dogs_with_images_unified(
@@ -637,15 +622,13 @@ class REANScraper(BaseScraper):
         """
         try:
             # Get total page height
-            total_height = driver.execute_script(
-                "return document.body.scrollHeight")
+            total_height = driver.execute_script("return document.body.scrollHeight")
 
             # Progressive scroll to ensure all images load
             self.logger.debug("Triggering comprehensive lazy loading...")
 
             # Scroll to bottom first
-            driver.execute_script(
-                "window.scrollTo(0, document.body.scrollHeight);")
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             time.sleep(2)
 
             # Scroll back to top
@@ -657,14 +640,12 @@ class REANScraper(BaseScraper):
             scroll_increment = 300
 
             while current_position < total_height:
-                driver.execute_script(
-                    f"window.scrollTo(0, {current_position});")
+                driver.execute_script(f"window.scrollTo(0, {current_position});")
                 time.sleep(0.5)  # Allow images to load
                 current_position += scroll_increment
 
             # Final scroll to bottom and back to top
-            driver.execute_script(
-                "window.scrollTo(0, document.body.scrollHeight);")
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             time.sleep(2)
             driver.execute_script("window.scrollTo(0, 0);")
             time.sleep(1)
@@ -690,8 +671,7 @@ class REANScraper(BaseScraper):
         try:
             # Find all dog containers using the discovered DOM structure
             dog_containers = self._find_dog_containers(driver)
-            self.logger.info(
-                f"Found {len(dog_containers)} dog containers in DOM")
+            self.logger.info(f"Found {len(dog_containers)} dog containers in DOM")
 
             for i, container in enumerate(dog_containers):
                 try:
@@ -711,8 +691,7 @@ class REANScraper(BaseScraper):
                         )
 
                 except Exception as e:
-                    self.logger.error(
-                        f"Error extracting from container {i+1}: {e}")
+                    self.logger.error(f"Error extracting from container {i+1}: {e}")
                     continue
 
             return dogs_data
@@ -747,8 +726,7 @@ class REANScraper(BaseScraper):
                         f"Found {len(containers)} containers with selector: {selector}"
                     )
                     # Validate containers have expected dog content
-                    valid_containers = self._validate_dog_containers(
-                        containers)
+                    valid_containers = self._validate_dog_containers(containers)
                     if valid_containers:
                         self.logger.info(
                             f"Using selector '{selector}' - found {len(valid_containers)} valid dog containers"
@@ -760,8 +738,7 @@ class REANScraper(BaseScraper):
                 continue
 
         # Fallback: try to find containers with h3 headers (dog names)
-        self.logger.warning(
-            "Primary selectors failed, trying fallback approach...")
+        self.logger.warning("Primary selectors failed, trying fallback approach...")
         try:
             # Find all h3 elements and get their parent containers
             h3_elements = driver.find_elements(By.TAG_NAME, "h3")
@@ -996,8 +973,7 @@ class REANScraper(BaseScraper):
                         )
 
                         # Save animal and get the database ID
-                        animal_id, operation = self.save_animal(
-                            standardized_data)
+                        animal_id, operation = self.save_animal(standardized_data)
                         if animal_id:
                             # Mark the animal as seen using the database ID
                             self.mark_animal_as_seen(animal_id)
@@ -1015,8 +991,7 @@ class REANScraper(BaseScraper):
                 if page_type != list(self.pages.keys())[-1]:
                     time.sleep(self.rate_limit_delay)
 
-            self.logger.info(
-                f"Successfully scraped {len(all_animals)} dogs total")
+            self.logger.info(f"Successfully scraped {len(all_animals)} dogs total")
             return all_animals
 
         except Exception as e:
@@ -1038,8 +1013,7 @@ class REANScraper(BaseScraper):
         """
         for attempt in range(self.max_retries + 1):
             try:
-                self.logger.info(
-                    f"Attempting to scrape {url} (attempt {attempt + 1})")
+                self.logger.info(f"Attempting to scrape {url} (attempt {attempt + 1})")
 
                 response = requests.get(
                     url,
@@ -1053,8 +1027,7 @@ class REANScraper(BaseScraper):
                 return response.text
 
             except Exception as e:
-                self.logger.warning(
-                    f"Attempt {attempt + 1} failed for {url}: {e}")
+                self.logger.warning(f"Attempt {attempt + 1} failed for {url}: {e}")
                 if attempt < self.max_retries:
                     time.sleep(2**attempt)  # Exponential backoff
                 else:
@@ -1128,8 +1101,7 @@ class REANScraper(BaseScraper):
         if match:
             name = match.group(1).strip()
             # Filter out descriptive words to get the actual name
-            descriptive_words = ["little", "friendly",
-                                 "sweet", "puppy", "big", "soft"]
+            descriptive_words = ["little", "friendly", "sweet", "puppy", "big", "soft"]
             name_words = name.split()
             actual_name = []
             for word in name_words:
@@ -1395,8 +1367,7 @@ class REANScraper(BaseScraper):
         text = text.strip()
 
         # Remove update timestamps that might be at the end
-        text = re.sub(
-            r"\(Updated \d{1,2}/\d{1,2}/\d{2,4}\)$", "", text).strip()
+        text = re.sub(r"\(Updated \d{1,2}/\d{1,2}/\d{2,4}\)$", "", text).strip()
 
         # Try to extract the story part (usually after name and age info)
         # Look for narrative content that comes after basic info
@@ -1487,12 +1458,10 @@ class REANScraper(BaseScraper):
             if weight_kg:
                 size_prediction = self.predict_size_from_weight(weight_kg)
             else:
-                size_prediction = self.predict_size_from_description(
-                    entry_text)
+                size_prediction = self.predict_size_from_description(entry_text)
 
             # Extract description for About section
-            about_description = self.extract_description_for_about_section(
-                entry_text)
+            about_description = self.extract_description_for_about_section(entry_text)
 
             dog_data = {
                 "name": name,
@@ -1575,8 +1544,7 @@ class REANScraper(BaseScraper):
         # Standardize age if available
         if dog_data.get("age_text"):
             try:
-                age_months = self.standardize_age_to_months(
-                    dog_data["age_text"])
+                age_months = self.standardize_age_to_months(dog_data["age_text"])
                 if age_months:
                     standardized_data["age_min_months"] = age_months
                     standardized_data["age_max_months"] = age_months
@@ -1608,8 +1576,7 @@ class REANScraper(BaseScraper):
 
         try:
             # Extract number and unit
-            match = re.search(
-                r"(\d+(?:\.\d+)?)\s+(months?|years?)", age_text.lower())
+            match = re.search(r"(\d+(?:\.\d+)?)\s+(months?|years?)", age_text.lower())
             if not match:
                 return None
 

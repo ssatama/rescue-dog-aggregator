@@ -103,8 +103,7 @@ class CloudinaryService:
 
             # Fallback: return original URL with success=False (indicates
             # fallback)
-            logger.debug(
-                f"Cloudinary not configured, using original URL: {image_url}")
+            logger.debug(f"Cloudinary not configured, using original URL: {image_url}")
             return image_url, False
 
         try:
@@ -121,8 +120,7 @@ class CloudinaryService:
             try:
                 existing = cloudinary.api.resource(public_id)
                 if existing:
-                    logger.debug(
-                        f"Image already exists in Cloudinary: {public_id}")
+                    logger.debug(f"Image already exists in Cloudinary: {public_id}")
                     return existing["secure_url"], True
             except cloudinary.exceptions.NotFound:
                 # Image doesn't exist, proceed with upload
@@ -164,8 +162,7 @@ class CloudinaryService:
                 quality="auto",  # Auto-optimize quality
             )
 
-            logger.info(
-                f"Successfully uploaded image to Cloudinary: {public_id}")
+            logger.info(f"Successfully uploaded image to Cloudinary: {public_id}")
             return result["secure_url"], True
 
         except requests.exceptions.RequestException as e:
@@ -173,13 +170,11 @@ class CloudinaryService:
             return image_url, False  # Return original URL as fallback
 
         except cloudinary.exceptions.Error as e:
-            logger.warning(
-                f"Cloudinary error uploading image {image_url}: {e}")
+            logger.warning(f"Cloudinary error uploading image {image_url}: {e}")
             return image_url, False  # Return original URL as fallback
 
         except Exception as e:
-            logger.warning(
-                f"Unexpected error uploading image {image_url}: {e}")
+            logger.warning(f"Unexpected error uploading image {image_url}: {e}")
             return image_url, False  # Return original URL as fallback
 
     @staticmethod
@@ -206,7 +201,7 @@ class CloudinaryService:
             parts = cloudinary_url.split("/")
             if "upload" in parts:
                 upload_index = parts.index("upload")
-                public_id = "/".join(parts[upload_index + 1:])
+                public_id = "/".join(parts[upload_index + 1 :])
                 # Remove file extension
                 if "." in public_id:
                     public_id = public_id.rsplit(".", 1)[0]
@@ -220,8 +215,7 @@ class CloudinaryService:
                     return cloudinary_url
 
         except Exception as e:
-            logger.error(
-                f"Error generating optimized URL for {cloudinary_url}: {e}")
+            logger.error(f"Error generating optimized URL for {cloudinary_url}: {e}")
 
         return cloudinary_url
 

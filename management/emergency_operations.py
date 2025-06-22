@@ -114,8 +114,7 @@ class EmergencyOperations:
             critical_errors = []
             for row in cursor.fetchall():
                 critical_errors.append(
-                    {"organization": row[0],
-                        "error": row[1], "timestamp": row[2]}
+                    {"organization": row[0], "error": row[1], "timestamp": row[2]}
                 )
 
             status["critical_errors"] = critical_errors
@@ -171,8 +170,7 @@ class EmergencyOperations:
                 f"EMERGENCY DISABLE: Organization {organization_id} - {reason}"
             )
 
-            success = self._disable_organization_scrapers(
-                organization_id, reason)
+            success = self._disable_organization_scrapers(organization_id, reason)
 
             return {
                 "success": success,
@@ -182,8 +180,7 @@ class EmergencyOperations:
             }
 
         except Exception as e:
-            self.logger.error(
-                f"Error disabling organization {organization_id}: {e}")
+            self.logger.error(f"Error disabling organization {organization_id}: {e}")
             return {
                 "success": False,
                 "organization_id": organization_id,
@@ -267,8 +264,7 @@ class EmergencyOperations:
                 "completed_at": datetime.now(),
             }
 
-            self.logger.warning(
-                f"EMERGENCY RECOVERY COMPLETED: {recovery_summary}")
+            self.logger.warning(f"EMERGENCY RECOVERY COMPLETED: {recovery_summary}")
 
             return {
                 "success": True,
@@ -349,8 +345,7 @@ class EmergencyOperations:
                 WHERE organization_id = %s
                 AND status = 'running'
             """,
-                (datetime.now(),
-                 f"Emergency disable: {reason}", organization_id),
+                (datetime.now(), f"Emergency disable: {reason}", organization_id),
             )
 
             conn.commit()
@@ -360,8 +355,7 @@ class EmergencyOperations:
             return True
 
         except Exception as e:
-            self.logger.error(
-                f"Error disabling organization {organization_id}: {e}")
+            self.logger.error(f"Error disabling organization {organization_id}: {e}")
             return False
 
     def _check_recovery_operations(self) -> Dict[str, Any]:
@@ -405,8 +399,7 @@ class EmergencyOperations:
 
             active_scrapers = cursor.fetchone()[0] or 0
             if active_scrapers > 0:
-                reasons.append(
-                    f"Active scraper running ({active_scrapers} found)")
+                reasons.append(f"Active scraper running ({active_scrapers} found)")
 
             # Check for recent backup
             cursor.execute(
@@ -527,8 +520,7 @@ class RollbackManager:
                     "backup_id": backup_result.get("backup_id"),
                 }
 
-            rollback_result = self._rollback_scrape_session(
-                organization_id, session_id)
+            rollback_result = self._rollback_scrape_session(organization_id, session_id)
             rollback_result["backup_id"] = backup_result.get("backup_id")
 
             return rollback_result
@@ -823,8 +815,7 @@ class RollbackManager:
                 (organization_id, started_at, status, dogs_found, error_message)
                 VALUES (%s, %s, 'backup', %s, %s)
             """,
-                (organization_id, datetime.now(),
-                 animals_count, f"Backup: {reason}"),
+                (organization_id, datetime.now(), animals_count, f"Backup: {reason}"),
             )
 
             conn.commit()
@@ -847,8 +838,7 @@ class RollbackManager:
             }
 
         except Exception as e:
-            self.logger.error(
-                f"Error creating backup for org {organization_id}: {e}")
+            self.logger.error(f"Error creating backup for org {organization_id}: {e}")
             return {"backup_id": None, "error": str(e)}
 
     def _get_db_connection(self):
@@ -1022,8 +1012,7 @@ class DataRecoveryManager:
 
             # Calculate integrity score (1.0 = perfect)
             total_issues = missing_fields + duplicate_ids + corrupted_records
-            integrity_score = max(
-                0.0, 1.0 - (total_issues / max(total_animals, 1)))
+            integrity_score = max(0.0, 1.0 - (total_issues / max(total_animals, 1)))
 
             return {
                 "corrupted_records": corrupted_records,
@@ -1316,8 +1305,7 @@ def main():
 
         elif args.command == "rollback":
             result = cli.rollback_organization(args.organization_id)
-            print(
-                f"🔄 Rollback Results for Organization {args.organization_id}:")
+            print(f"🔄 Rollback Results for Organization {args.organization_id}:")
             print(json.dumps(result, indent=2, default=str))
 
         elif args.command == "backup":
@@ -1326,8 +1314,7 @@ def main():
             print(json.dumps(result, indent=2, default=str))
 
         elif args.command == "recover":
-            result = cli.emergency_ops.execute_emergency_recovery(
-                args.organization_id)
+            result = cli.emergency_ops.execute_emergency_recovery(args.organization_id)
             print(
                 f"🚨 Emergency Recovery Results for Organization {args.organization_id}:"
             )

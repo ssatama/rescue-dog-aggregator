@@ -17,8 +17,7 @@ from scrapers.base_scraper import BaseScraper
 
 # Add the project root directory to Python path
 sys.path.append(
-    os.path.dirname(os.path.dirname(
-        os.path.dirname(os.path.abspath(__file__))))
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 
 # Import the base scraper
@@ -51,8 +50,7 @@ class PetsInTurkeyScraper(BaseScraper):
             # Legacy mode
             super().__init__(organization_id=organization_id)
         else:
-            raise ValueError(
-                "Either organization_id or config_id must be provided")
+            raise ValueError("Either organization_id or config_id must be provided")
 
         self.base_url = "https://www.petsinturkey.org/dogs"
         self.driver = None
@@ -67,10 +65,8 @@ class PetsInTurkeyScraper(BaseScraper):
             chrome_options.add_argument("--disable-dev-shm-usage")
             # Disable GPU for stability
             chrome_options.add_argument("--disable-gpu")
-            chrome_options.add_argument(
-                "--disable-extensions")  # Disable extensions
-            chrome_options.add_argument(
-                "--window-size=1920,1080")  # Set window size
+            chrome_options.add_argument("--disable-extensions")  # Disable extensions
+            chrome_options.add_argument("--window-size=1920,1080")  # Set window size
 
             # Set up the WebDriver
             service = Service(ChromeDriverManager().install())
@@ -143,8 +139,7 @@ class PetsInTurkeyScraper(BaseScraper):
                     for _ in range(5):
                         try:
                             if container.find_element(By.XPATH, ".."):
-                                container = container.find_element(
-                                    By.XPATH, "..")
+                                container = container.find_element(By.XPATH, "..")
                             else:
                                 break
                         except BaseException:
@@ -186,8 +181,7 @@ class PetsInTurkeyScraper(BaseScraper):
                             )
 
                 except Exception as e:
-                    self.logger.error(
-                        f"Error processing breed element {idx}: {e}")
+                    self.logger.error(f"Error processing breed element {idx}: {e}")
 
             self.logger.info(f"Collected data for {len(dogs_data)} dogs")
 
@@ -296,8 +290,7 @@ class PetsInTurkeyScraper(BaseScraper):
             # Find where values start (after all "Adopt Me" lines)
             values_start_idx = adopt_idx
             while (
-                values_start_idx < len(
-                    lines) and lines[values_start_idx] == "Adopt Me"
+                values_start_idx < len(lines) and lines[values_start_idx] == "Adopt Me"
             ):
                 values_start_idx += 1
 
@@ -382,8 +375,7 @@ class PetsInTurkeyScraper(BaseScraper):
                         r"height:?\s*(\d+\s*cm)", weight_val, re.IGNORECASE
                     )
                     if height_in_weight:
-                        dog_data["properties"]["height"] = height_in_weight.group(
-                            0)
+                        dog_data["properties"]["height"] = height_in_weight.group(0)
                         dog_data["properties"]["weight"] = re.sub(
                             r"height:?\s*\d+\s*cm", "", weight_val, flags=re.IGNORECASE
                         ).strip()

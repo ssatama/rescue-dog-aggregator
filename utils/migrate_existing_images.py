@@ -50,8 +50,7 @@ def migrate_existing_images():
 
         for animal_id, name, image_url, org_id in animals:
             # Get organization name
-            cursor.execute(
-                "SELECT name FROM organizations WHERE id = %s", (org_id,))
+            cursor.execute("SELECT name FROM organizations WHERE id = %s", (org_id,))
             org_result = cursor.fetchone()
             org_name = org_result[0] if org_result else "unknown"
 
@@ -86,8 +85,7 @@ def migrate_existing_images():
                     (image_url, animal_id),
                 )
 
-                logger.warning(
-                    f"❌ Failed to migrate {name}, kept original URL")
+                logger.warning(f"❌ Failed to migrate {name}, kept original URL")
 
             # Commit every 10 records
             if animal_id % 10 == 0:

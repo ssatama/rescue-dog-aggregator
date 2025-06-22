@@ -78,8 +78,7 @@ class ConfigLoader:
                 f"Schema validation failed for {config_file}: {e.message}"
             )
         except Exception as e:
-            self.logger.warning(
-                f"Schema validation error for {config_file}: {e}")
+            self.logger.warning(f"Schema validation error for {config_file}: {e}")
 
     def _load_yaml_file(self, file_path: Path) -> dict:
         """Load and parse a YAML configuration file."""
@@ -154,8 +153,7 @@ class ConfigLoader:
         # Create and validate Pydantic model
         try:
             config = OrganizationConfig(**config_data)
-            self.logger.info(
-                f"Successfully loaded config for organization '{org_id}'")
+            self.logger.info(f"Successfully loaded config for organization '{org_id}'")
             return config
         except Exception as e:
             raise ConfigValidationError(
@@ -177,8 +175,7 @@ class ConfigLoader:
         configs = {}
 
         if not self.config_dir.exists():
-            self.logger.warning(
-                f"Config directory does not exist: {self.config_dir}")
+            self.logger.warning(f"Config directory does not exist: {self.config_dir}")
             return configs
 
         for config_file in self.config_dir.glob("*.yaml"):

@@ -10,8 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configure basic logging if not already set up elsewhere
-logging.basicConfig(level=logging.INFO,
-                    format="%(levelname)s:%(name)s:%(message)s")
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
 logger = logging.getLogger(__name__)
 
 # --- ADD: Safety Check ---
@@ -39,8 +38,7 @@ logger.info(
 
 # Determine default database name based on TESTING flag
 default_db_name = "test_rescue_dogs" if IS_TESTING else "rescue_dogs"
-logger.info(
-    f"[config.py] Default DB name based on TESTING flag: {default_db_name}")
+logger.info(f"[config.py] Default DB name based on TESTING flag: {default_db_name}")
 
 # Database configuration
 DB_CONFIG = {
@@ -52,8 +50,7 @@ DB_CONFIG = {
 
 # --- ADD: Final Safety Check ---
 final_db_name = DB_CONFIG["database"]
-logger.info(
-    f"[config.py] Final DB_CONFIG constructed with database: {final_db_name}")
+logger.info(f"[config.py] Final DB_CONFIG constructed with database: {final_db_name}")
 
 if IS_TESTING and final_db_name != "test_rescue_dogs":
     logger.error(
@@ -75,8 +72,7 @@ logger.info("[config.py] Final DB_CONFIG details:")
 logger.info(f"[config.py]   host: {DB_CONFIG['host']}")
 logger.info(f"[config.py]   database: {DB_CONFIG['database']}")
 logger.info(f"[config.py]   user: {DB_CONFIG['user']}")
-logger.info(
-    f"[config.py]   password: {'******' if DB_CONFIG['password'] else 'None'}")
+logger.info(f"[config.py]   password: {'******' if DB_CONFIG['password'] else 'None'}")
 
 # === CORS Security Configuration ===
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
@@ -106,8 +102,7 @@ def parse_cors_origins() -> List[str]:
             )
 
     # Parse comma-separated origins
-    origins = [origin.strip()
-               for origin in origins_env.split(",") if origin.strip()]
+    origins = [origin.strip() for origin in origins_env.split(",") if origin.strip()]
 
     # Validate each origin
     validated_origins = []
@@ -132,8 +127,7 @@ def parse_cors_origins() -> List[str]:
 
 # Parse CORS configuration
 ALLOWED_ORIGINS = parse_cors_origins()
-CORS_ALLOW_CREDENTIALS = os.getenv(
-    "CORS_ALLOW_CREDENTIALS", "false").lower() == "true"
+CORS_ALLOW_CREDENTIALS = os.getenv("CORS_ALLOW_CREDENTIALS", "false").lower() == "true"
 
 # CORS settings for different environments
 if ENVIRONMENT == "production":

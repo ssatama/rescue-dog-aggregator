@@ -66,8 +66,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 )
                 return all_dogs
         except Exception as e:
-            self.logger.error(
-                f"All extraction methods failed. Last error: {e}")
+            self.logger.error(f"All extraction methods failed. Last error: {e}")
             return []
 
     def _extract_with_requests(self) -> List[Dict[str, Any]]:
@@ -89,8 +88,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 )
                 response.raise_for_status()
 
-                page_dogs = self._extract_dogs_from_html(
-                    response.text, page_url)
+                page_dogs = self._extract_dogs_from_html(response.text, page_url)
                 all_dogs.extend(page_dogs)
 
                 # Rate limiting
@@ -143,8 +141,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
                     # Wait for content to load
                     WebDriverWait(driver, 10).until(
-                        EC.presence_of_element_located(
-                            (By.CLASS_NAME, "x-col"))
+                        EC.presence_of_element_located((By.CLASS_NAME, "x-col"))
                     )
 
                     # Get page source and extract dogs
@@ -201,8 +198,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
             # Build full adoption URL
             adoption_url = (
-                urljoin(self.base_url, href) if not href.startswith(
-                    "http") else href
+                urljoin(self.base_url, href) if not href.startswith("http") else href
             )
 
             # Basic validation
@@ -267,8 +263,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
     def _is_valid_dog_link(self, name: str, text: str, href: str) -> bool:
         """Validate that this link represents a real dog listing."""
         # Skip obvious non-dog pages
-        invalid_patterns = ["mitgliedschaft",
-                            "spende", "kontakt", "home", "about"]
+        invalid_patterns = ["mitgliedschaft", "spende", "kontakt", "home", "about"]
         href_lower = href.lower()
 
         if any(pattern in href_lower for pattern in invalid_patterns):
@@ -302,13 +297,11 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 # Check if this looks like a dog page URL
                 if "/tiervermittlung/" in href and href.count("/") >= 3:
                     try:
-                        dog_data = self._extract_single_dog_from_link(
-                            link, href)
+                        dog_data = self._extract_single_dog_from_link(link, href)
                         if dog_data:
                             dogs.append(dog_data)
                     except Exception as e:
-                        self.logger.warning(
-                            f"Failed to extract dog from link: {e}")
+                        self.logger.warning(f"Failed to extract dog from link: {e}")
                         continue
 
         except Exception as e:
@@ -368,8 +361,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
     def _extract_name_from_container(self, container) -> Optional[str]:
         """Extract dog name from container."""
         # Look for text elements that might contain names
-        text_elements = container.find_all(
-            ["span", "div", "p", "h1", "h2", "h3"])
+        text_elements = container.find_all(["span", "div", "p", "h1", "h2", "h3"])
 
         # Skip containers that clearly aren't dog listings
         container_text = container.get_text(strip=True).lower()
@@ -627,8 +619,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         if breed_match:
             result["breed"] = breed_match.group(1).strip()
 
-        gender_match = re.search(
-            r"Geschlecht:\s*(männlich|weiblich)", article_text)
+        gender_match = re.search(r"Geschlecht:\s*(männlich|weiblich)", article_text)
         if gender_match:
             gender = gender_match.group(1)
             result["sex"] = "Rüde" if gender == "männlich" else "Hündin"
@@ -737,8 +728,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                                         f"Extracted dog: {dog_data.get('name')} from article {i+1}"
                                     )
                         except Exception as e:
-                            self.logger.warning(
-                                f"Error processing article {i+1}: {e}")
+                            self.logger.warning(f"Error processing article {i+1}: {e}")
                             continue
 
                     # Rate limiting
@@ -781,8 +771,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
             if not external_id:
                 # Generate fallback external_id
-                external_id = self.generate_external_id(
-                    dog_data["name"], text_content)
+                external_id = self.generate_external_id(dog_data["name"], text_content)
                 adoption_url = self.build_adoption_url(external_id)
 
             # Extract images from this article
@@ -795,8 +784,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                     image_data.append((src, alt))
 
             # Get profile image
-            primary_image_url = self.extract_profile_image_from_images(
-                image_data)
+            primary_image_url = self.extract_profile_image_from_images(image_data)
 
             # Build final dog data with properties
             result = {
@@ -820,6 +808,5 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             return result
 
         except Exception as e:
-            self.logger.error(
-                f"Error extracting dog from article {article_num}: {e}")
+            self.logger.error(f"Error extracting dog from article {article_num}: {e}")
             return None

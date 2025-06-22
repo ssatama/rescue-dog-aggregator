@@ -65,8 +65,7 @@ async def health_check(db_conn=Depends(get_database_connection)):
         cursor.execute("SELECT 1")
         cursor.fetchone()
         cursor.close()
-        db_response_time = (time.time() - db_start) * \
-            1000  # Convert to milliseconds
+        db_response_time = (time.time() - db_start) * 1000  # Convert to milliseconds
 
         db_status = {
             "status": "connected",
@@ -80,8 +79,7 @@ async def health_check(db_conn=Depends(get_database_connection)):
 
     except Exception as e:
         logger.error(f"Health check database error: {e}")
-        db_status = {"status": "error", "error": str(
-            e), "response_time_ms": None}
+        db_status = {"status": "error", "error": str(e), "response_time_ms": None}
         overall_status = "unhealthy"
 
     return HealthStatus(
@@ -204,8 +202,7 @@ async def get_scraper_status(db_conn=Depends(get_database_connection)):
                     failure_detection["last_failure_type"] = recent_failures[0][
                         1
                     ]  # error_message
-                    failure_detection["consecutive_failures"] = len(
-                        recent_failures)
+                    failure_detection["consecutive_failures"] = len(recent_failures)
 
             # Build performance metrics
             performance_metrics = {
@@ -278,8 +275,7 @@ async def get_individual_scraper_details(
 
         org_info = cursor.fetchone()
         if not org_info:
-            raise HTTPException(
-                status_code=404, detail="Organization not found")
+            raise HTTPException(status_code=404, detail="Organization not found")
 
         org_name, org_created = org_info
 
@@ -381,8 +377,7 @@ async def get_individual_scraper_details(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(
-            f"Error getting scraper details for org {organization_id}: {e}")
+        logger.error(f"Error getting scraper details for org {organization_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -437,8 +432,7 @@ async def get_failure_detection_metrics(db_conn=Depends(get_database_connection)
             database_errors = database_errors or 0
             total_failures = total_failures or 0
         else:
-            logger.warning(
-                f"Unexpected failure_counts result: {failure_counts}")
+            logger.warning(f"Unexpected failure_counts result: {failure_counts}")
             catastrophic, partial, database_errors, total_failures = 0, 0, 0, 0
 
         # Get total scrapes for failure rate calculation
@@ -452,8 +446,7 @@ async def get_failure_detection_metrics(db_conn=Depends(get_database_connection)
         )
 
         total_scrapes_result = cursor.fetchone()
-        total_scrapes = (
-            total_scrapes_result[0] if total_scrapes_result else 0) or 0
+        total_scrapes = (total_scrapes_result[0] if total_scrapes_result else 0) or 0
 
         failure_summary = {
             "catastrophic_failures_24h": catastrophic or 0,
@@ -511,8 +504,7 @@ async def get_failure_detection_metrics(db_conn=Depends(get_database_connection)
                     }
                 )
             except IndexError as e:
-                logger.warning(
-                    f"Incomplete failure record: {failure}, error: {e}")
+                logger.warning(f"Incomplete failure record: {failure}, error: {e}")
                 continue
 
         # Current thresholds configuration

@@ -7,9 +7,9 @@ from psycopg2.extras import RealDictCursor
 
 # Use the same database connection pattern as your existing code
 from config import DB_CONFIG
+from utils.cloudinary_utils import OrganizationLogoUploader
 from utils.config_loader import ConfigLoader
 from utils.config_models import OrganizationConfig
-from utils.cloudinary_utils import OrganizationLogoUploader
 
 
 class OrganizationSyncError(Exception):
@@ -86,8 +86,7 @@ class OrganizationSyncManager:
             cursor.close()
             cursor.connection.close()
 
-        self.logger.debug(
-            f"Found {len(orgs)} organizations with config_id in database")
+        self.logger.debug(f"Found {len(orgs)} organizations with config_id in database")
         return orgs
 
     def _should_update_org(self, db_org: dict, config: OrganizationConfig) -> bool:
@@ -180,7 +179,9 @@ class OrganizationSyncManager:
 
         return social_data  # Return dict, not JSON string
 
-    def _sync_organization_logo(self, org_id: int, config: OrganizationConfig) -> Optional[str]:
+    def _sync_organization_logo(
+        self, org_id: int, config: OrganizationConfig
+    ) -> Optional[str]:
         """Upload organization logo to Cloudinary and return the URL.
 
         Args:
@@ -197,34 +198,36 @@ class OrganizationSyncManager:
         try:
             # Upload logo to Cloudinary
             logo_urls = OrganizationLogoUploader.upload_organization_logo(
-                config.id, 
-                config.metadata.logo_url,
-                force_upload=False
+                config.id, config.metadata.logo_url, force_upload=False
             )
-            
-            if logo_urls and 'original' in logo_urls:
-                cloudinary_url = logo_urls['original']
-                self.logger.info(f"Successfully uploaded logo for organization {org_id}: {cloudinary_url}")
-                
+
+            if logo_urls and "original" in logo_urls:
+                cloudinary_url = logo_urls["original"]
+                self.logger.info(
+                    f"Successfully uploaded logo for organization {org_id}: {cloudinary_url}"
+                )
+
                 # Update the logo_url in database
                 cursor = get_db_cursor()
                 try:
                     cursor.execute(
                         "UPDATE organizations SET logo_url = %s WHERE id = %s",
-                        (cloudinary_url, org_id)
+                        (cloudinary_url, org_id),
                     )
                     cursor.connection.commit()
                 finally:
                     cursor.close()
                     cursor.connection.close()
-                
+
                 return cloudinary_url
             else:
                 self.logger.warning(f"Failed to upload logo for organization {org_id}")
                 return None
-                
+
         except Exception as e:
-            self.logger.warning(f"Logo upload failed for organization {org_id}: {str(e)}")
+            self.logger.warning(
+                f"Logo upload failed for organization {org_id}: {str(e)}"
+            )
             return None
 
     def _sync_service_regions(self, org_id: int, config: OrganizationConfig) -> None:
@@ -238,8 +241,7 @@ class OrganizationSyncManager:
         try:
             # First, delete existing service regions for this organization
             cursor.execute(
-                "DELETE FROM service_regions WHERE organization_id = %s", (
-                    org_id,)
+                "DELETE FROM service_regions WHERE organization_id = %s", (org_id,)
             )
 
             # Parse and insert service regions from config (now just country codes)
@@ -298,8 +300,7 @@ class OrganizationSyncManager:
         Returns:
             Database ID of created organization
         """
-        social_media = self._build_social_media_json(
-            config)  # Now returns dict
+        social_media = self._build_social_media_json(config)  # Now returns dict
 
         cursor = get_db_cursor()
         try:
@@ -329,7 +330,9 @@ class OrganizationSyncManager:
                     config.metadata.logo_url,  # logo_url
                     config.metadata.location.country,  # country
                     config.metadata.location.city,  # city
-                    psycopg2.extras.Json(config.metadata.service_regions),  # service_regions
+                    psycopg2.extras.Json(
+                        config.metadata.service_regions
+                    ),  # service_regions
                 ),
             )
 
@@ -359,9 +362,7 @@ class OrganizationSyncManager:
         try:
             self._sync_organization_logo(org_id, config)
         except Exception as e:
-            self.logger.error(
-                f"Failed to sync logo for new organization {org_id}: {e}"
-            )
+            self.logger.error(f"Failed to sync logo for new organization {org_id}: {e}")
             # Don't fail the whole operation if logo upload fails
 
         return org_id
@@ -373,8 +374,7 @@ class OrganizationSyncManager:
             org_id: Database ID of organization to update
             config: Organization configuration
         """
-        social_media = self._build_social_media_json(
-            config)  # Now returns dict
+        social_media = self._build_social_media_json(config)  # Now returns dict
 
         cursor = get_db_cursor()
         try:
@@ -409,7 +409,9 @@ class OrganizationSyncManager:
                     config.metadata.logo_url,  # logo_url
                     config.metadata.location.country,  # country
                     config.metadata.location.city,  # city
-                    psycopg2.extras.Json(config.metadata.service_regions),  # service_regions
+                    psycopg2.extras.Json(
+                        config.metadata.service_regions
+                    ),  # service_regions
                     org_id,
                 ),
             )
@@ -435,9 +437,7 @@ class OrganizationSyncManager:
         try:
             self._sync_organization_logo(org_id, config)
         except Exception as e:
-            self.logger.error(
-                f"Failed to sync logo for organization {org_id}: {e}"
-            )
+            self.logger.error(f"Failed to sync logo for organization {org_id}: {e}")
             # Don't fail the whole operation if logo upload fails
 
     def sync_organization(self, config: OrganizationConfig) -> Tuple[int, bool]:
@@ -600,7 +600,6 @@ class OrganizationSyncManager:
             self.logger.error(f"Failed to get sync status: {e}")
             return {"error": str(e)}
 
-
     def _get_service_regions_status(self) -> Dict[str, any]:
         """Get service regions sync status."""
         cursor = get_db_cursor()
@@ -619,8 +618,7 @@ class OrganizationSyncManager:
             orgs_with_regions = cursor.fetchone()["count"]
 
             # Count total organizations
-            cursor.execute(
-                "SELECT COUNT(*) FROM organizations WHERE active = TRUE")
+            cursor.execute("SELECT COUNT(*) FROM organizations WHERE active = TRUE")
             total_orgs = cursor.fetchone()["count"]
 
             return {
@@ -628,8 +626,7 @@ class OrganizationSyncManager:
                 "organizations_with_regions": orgs_with_regions,
                 "total_organizations": total_orgs,
                 "coverage_percentage": round(
-                    (orgs_with_regions / total_orgs *
-                     100) if total_orgs > 0 else 0, 1
+                    (orgs_with_regions / total_orgs * 100) if total_orgs > 0 else 0, 1
                 ),
             }
 
@@ -649,7 +646,7 @@ if __name__ == "__main__":
     print(f"  Created: {result.get('created', 0)}")
     print(f"  Updated: {result.get('updated', 0)}")
     print(f"  Errors: {len(result.get('errors', []))}")
-    if result.get('errors'):
+    if result.get("errors"):
         print("  Error details:")
-        for error in result['errors']:
+        for error in result["errors"]:
             print(f"    {error}")

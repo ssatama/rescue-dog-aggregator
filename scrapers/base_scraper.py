@@ -44,8 +44,7 @@ class BaseScraper(ABC):
 
             # Ensure organization exists in database
             sync_manager = OrganizationSyncManager(self.config_loader)
-            self.organization_id, _ = sync_manager.sync_organization(
-                self.org_config)
+            self.organization_id, _ = sync_manager.sync_organization(self.org_config)
 
             # Use config for scraper settings
             scraper_config = self.org_config.get_scraper_config_dict()
@@ -70,8 +69,7 @@ class BaseScraper(ABC):
             self.organization_name = f"Organization ID {organization_id}"
 
         else:
-            raise ValueError(
-                "Either organization_id or config_id must be provided")
+            raise ValueError("Either organization_id or config_id must be provided")
 
         self.animal_type = "dog"  # Default animal type, can be overridden
         self.logger = self._setup_logger()
@@ -139,8 +137,7 @@ class BaseScraper(ABC):
             self.scrape_log_id = cursor.fetchone()[0]
             self.conn.commit()
             cursor.close()
-            self.logger.info(
-                f"Created scrape log with ID: {self.scrape_log_id}")
+            self.logger.info(f"Created scrape log with ID: {self.scrape_log_id}")
             return True
         except Exception as e:
             self.logger.error(f"Error creating scrape log: {e}")
@@ -241,8 +238,7 @@ class BaseScraper(ABC):
 
             # Check if animal already exists by external_id and organization
             existing_animal = self.get_existing_animal(
-                animal_data.get("external_id"), animal_data.get(
-                    "organization_id")
+                animal_data.get("external_id"), animal_data.get("organization_id")
             )
 
             if existing_animal:
@@ -281,8 +277,7 @@ class BaseScraper(ABC):
             )
 
             # Get animal name for Cloudinary folder organization
-            cursor.execute(
-                "SELECT name FROM animals WHERE id = %s", (animal_id,))
+            cursor.execute("SELECT name FROM animals WHERE id = %s", (animal_id,))
             result = cursor.fetchone()
             animal_name = result[0] if result else "unknown"
 
@@ -533,8 +528,7 @@ class BaseScraper(ABC):
             age_months_max = age_info.get("age_max_months")
 
             # Use size estimate if no size provided
-            final_size = animal_data.get(
-                "size") or animal_data.get("standardized_size")
+            final_size = animal_data.get("size") or animal_data.get("standardized_size")
             final_standardized_size = (
                 animal_data.get("standardized_size") or size_estimate
             )
@@ -679,8 +673,7 @@ class BaseScraper(ABC):
             age_months_max = age_info.get("age_max_months")
 
             # Use size estimate if no size provided
-            final_size = animal_data.get(
-                "size") or animal_data.get("standardized_size")
+            final_size = animal_data.get("size") or animal_data.get("standardized_size")
             final_standardized_size = (
                 animal_data.get("standardized_size") or size_estimate
             )
@@ -754,8 +747,7 @@ class BaseScraper(ABC):
         """
         try:
             self.current_scrape_session = datetime.now()
-            self.logger.info(
-                f"Started scrape session at {self.current_scrape_session}")
+            self.logger.info(f"Started scrape session at {self.current_scrape_session}")
             return True
         except Exception as e:
             self.logger.error(f"Error starting scrape session: {e}")
@@ -805,8 +797,7 @@ class BaseScraper(ABC):
         """
         try:
             if not self.current_scrape_session:
-                self.logger.warning(
-                    "No active scrape session for stale data detection")
+                self.logger.warning("No active scrape session for stale data detection")
                 return False
 
             cursor = self.conn.cursor()
@@ -920,8 +911,7 @@ class BaseScraper(ABC):
             self.conn.commit()
             cursor.close()
 
-            self.logger.info(
-                f"Restored animal ID {animal_id} to available status")
+            self.logger.info(f"Restored animal ID {animal_id} to available status")
             return True
 
         except Exception as e:
@@ -1157,8 +1147,7 @@ class BaseScraper(ABC):
         """
         try:
             if not self.scrape_log_id:
-                self.logger.warning(
-                    "No scrape log ID available for detailed metrics")
+                self.logger.warning("No scrape log ID available for detailed metrics")
                 return False
 
             cursor = self.conn.cursor()

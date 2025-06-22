@@ -61,8 +61,7 @@ class ConfigScraperRunner:
             module = importlib.import_module(module_path)
             scraper_class = getattr(module, class_name)
 
-            self.logger.info(
-                f"Successfully imported {class_name} from {module_path}")
+            self.logger.info(f"Successfully imported {class_name} from {module_path}")
             return scraper_class
 
         except ImportError as e:
@@ -120,8 +119,7 @@ class ConfigScraperRunner:
                     from utils.org_sync import OrganizationSyncManager
 
                     sync_manager = OrganizationSyncManager(self.config_loader)
-                    organization_id, created = sync_manager.sync_organization(
-                        config)
+                    organization_id, created = sync_manager.sync_organization(config)
             except Exception as e:
                 return {
                     "success": False,

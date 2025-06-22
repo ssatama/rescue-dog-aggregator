@@ -171,20 +171,16 @@ def analyze_properties(properties_data):
 
     # Export property values
     if weight_values:
-        export_to_csv(weight_values, "weight_values.csv",
-                      ["animal_id", "weight"])
+        export_to_csv(weight_values, "weight_values.csv", ["animal_id", "weight"])
     if height_values:
-        export_to_csv(height_values, "height_values.csv",
-                      ["animal_id", "height"])
+        export_to_csv(height_values, "height_values.csv", ["animal_id", "height"])
     if neutered_values:
         export_to_csv(
-            neutered_values, "neutered_values.csv", [
-                "animal_id", "neutered_spayed"]
+            neutered_values, "neutered_values.csv", ["animal_id", "neutered_spayed"]
         )
     if other_relevant:
         export_to_csv(
-            other_relevant, "other_properties.csv", [
-                "animal_id", "property", "value"]
+            other_relevant, "other_properties.csv", ["animal_id", "property", "value"]
         )
 
 
@@ -262,8 +258,7 @@ def create_standardization_templates(breed_data, size_data, age_data):
                 months_max = months_min + 12  # Approximate range
 
             # Look for patterns like "6 months"
-            months_match = re.search(
-                r"(\d+)\s*(?:months?|mo)", str(age).lower())
+            months_match = re.search(r"(\d+)\s*(?:months?|mo)", str(age).lower())
             if months_match:
                 months_min = int(months_match.group(1))
                 months_max = months_min + 1
@@ -299,8 +294,7 @@ def create_standardization_templates(breed_data, size_data, age_data):
                 months_min = 96
                 months_max = 240  # 20 years as upper bound
 
-            writer.writerow(
-                [age, count, age_value, months_min, months_max, ""])
+            writer.writerow([age, count, age_value, months_min, months_max, ""])
 
     print("\nCreated standardization templates:")
     print("- data/audit/breed_standardization.csv")

@@ -30,8 +30,7 @@ def fetch_animal_images(cursor: RealDictCursor, animal_id: int) -> List[AnimalIm
         )
         images = cursor.fetchall()
     except psycopg2.Error as db_err:
-        logger.error(
-            f"DB error fetching images for animal {animal_id}: {db_err}")
+        logger.error(f"DB error fetching images for animal {animal_id}: {db_err}")
     except Exception as e:
         logger.exception(
             f"Unexpected error fetching images for animal {animal_id}: {e}"
@@ -124,8 +123,7 @@ async def get_animals(
             else:
                 # Multiple confidence levels
                 placeholders = ",".join(["%s"] * len(confidence_levels))
-                conditions.append(
-                    f"a.availability_confidence IN ({placeholders})")
+                conditions.append(f"a.availability_confidence IN ({placeholders})")
                 params.extend(confidence_levels)
 
         # Add search filter (name or breed)
@@ -204,7 +202,7 @@ async def get_animals(
 
         # Construct the where clause
         where_clause = " AND ".join(conditions)
-        
+
         # Handle different curation types
         if curation_type == "recent":
             # Get dogs created in the last 7 days, ordered by created_at DESC
@@ -237,7 +235,7 @@ async def get_animals(
         else:
             # Default "random" behavior - order by last_scraped_at DESC
             query = f"{query_base}{joins} WHERE {where_clause} ORDER BY a.last_scraped_at DESC, a.id DESC LIMIT %s OFFSET %s"
-        
+
         params.extend([limit, offset])
 
         logger.debug(f"Executing query: {query} with params: {params}")
@@ -279,9 +277,7 @@ async def get_animals(
                 try:
                     org_ships_to = json.loads(org_ships_to)
                 except json.JSONDecodeError:
-                    logger.warning(
-                        f"Could not parse ships_to JSON: {org_ships_to}"
-                    )
+                    logger.warning(f"Could not parse ships_to JSON: {org_ships_to}")
                     org_ships_to = []
             elif org_ships_to is None:
                 org_ships_to = []
@@ -301,14 +297,12 @@ async def get_animals(
                 }
 
             # Strip out raw org_* keys and add organization
-            clean = {k: v for k, v in row_dict.items()
-                     if not k.startswith("org_")}
+            clean = {k: v for k, v in row_dict.items() if not k.startswith("org_")}
             clean["organization"] = organization
 
             # Fetch images
             images = fetch_animal_images(cursor, clean["id"])
-            animals_with_images.append(
-                AnimalWithImages(**clean, images=images))
+            animals_with_images.append(AnimalWithImages(**clean, images=images))
 
         return animals_with_images
 
@@ -317,12 +311,10 @@ async def get_animals(
         raise HTTPException(status_code=422, detail=f"Validation error: {ve}")
     except psycopg2.Error as db_err:
         logger.error(f"Database error in get_animals: {db_err}")
-        raise HTTPException(
-            status_code=500, detail=f"Database query error: {db_err}")
+        raise HTTPException(status_code=500, detail=f"Database query error: {db_err}")
     except Exception as e:
         logger.exception(f"Unexpected error in get_animals: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Internal server error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 # --- Meta Endpoints ---
@@ -355,8 +347,7 @@ async def get_distinct_breeds(
         return breeds
     except Exception as e:
         logger.error(f"Error fetching distinct breeds: {e}")
-        raise HTTPException(
-            status_code=500, detail="Failed to fetch breed list")
+        raise HTTPException(status_code=500, detail="Failed to fetch breed list")
 
 
 @router.get("/meta/breed_groups", response_model=List[str])
@@ -394,8 +385,7 @@ async def get_distinct_breed_groups(cursor: RealDictCursor = Depends(get_db_curs
         return groups
     except Exception as e:
         logger.error(f"Error fetching distinct breed groups: {e}")
-        raise HTTPException(
-            status_code=500, detail="Failed to fetch breed group list")
+        raise HTTPException(status_code=500, detail="Failed to fetch breed group list")
 
 
 # --- NEW: Location Countries Meta Endpoint ---
@@ -424,15 +414,11 @@ async def get_distinct_location_countries(
         countries = [row["country"] for row in results]
         return countries
     except psycopg2.Error as db_err:
-        logger.error(
-            f"Database error fetching distinct location countries: {db_err}")
-        raise HTTPException(
-            status_code=500, detail=f"Database error: {str(db_err)}")
+        logger.error(f"Database error fetching distinct location countries: {db_err}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(db_err)}")
     except Exception as e:
-        logger.exception(
-            f"Unexpected error fetching distinct location countries: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Internal server error: {str(e)}")
+        logger.exception(f"Unexpected error fetching distinct location countries: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 # --- END NEW ---
@@ -464,15 +450,11 @@ async def get_distinct_available_countries(
         countries = [row["country"] for row in results]
         return countries
     except psycopg2.Error as db_err:
-        logger.error(
-            f"Database error fetching distinct available countries: {db_err}")
-        raise HTTPException(
-            status_code=500, detail=f"Database error: {str(db_err)}")
+        logger.error(f"Database error fetching distinct available countries: {db_err}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(db_err)}")
     except Exception as e:
-        logger.exception(
-            f"Unexpected error fetching distinct available countries: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Internal server error: {str(e)}")
+        logger.exception(f"Unexpected error fetching distinct available countries: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 # --- END NEW ---
@@ -511,14 +493,12 @@ async def get_distinct_available_regions(
         logger.error(
             f"Database error fetching distinct available regions for {country}: {db_err}"
         )
-        raise HTTPException(
-            status_code=500, detail=f"Database error: {str(db_err)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(db_err)}")
     except Exception as e:
         logger.exception(
             f"Unexpected error fetching distinct available regions for {country}: {e}"
         )
-        raise HTTPException(
-            status_code=500, detail=f"Internal server error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 # --- END NEW ---
@@ -532,7 +512,7 @@ async def get_statistics(
     """Get aggregated statistics about available dogs and organizations."""
     try:
         stats = {}
-        
+
         # Get total available dogs count
         cursor.execute(
             """
@@ -543,7 +523,7 @@ async def get_statistics(
             """
         )
         stats["total_dogs"] = cursor.fetchone()["total"]
-        
+
         # Get total active organizations count
         cursor.execute(
             """
@@ -553,7 +533,7 @@ async def get_statistics(
             """
         )
         stats["total_organizations"] = cursor.fetchone()["total"]
-        
+
         # Get countries with dog counts
         cursor.execute(
             """
@@ -572,7 +552,7 @@ async def get_statistics(
             {"country": row["country"], "count": row["count"]}
             for row in cursor.fetchall()
         ]
-        
+
         # Get organizations with dog counts and all required fields
         cursor.execute(
             """
@@ -604,21 +584,21 @@ async def get_statistics(
                 "service_regions": row["service_regions"],
                 "social_media": row["social_media"],
                 "website_url": row["website_url"],
-                "description": row["description"]
+                "description": row["description"],
             }
             for row in cursor.fetchall()
         ]
-        
+
         return stats
-        
+
     except psycopg2.Error as db_err:
         logger.error(f"Database error in get_statistics: {db_err}")
         raise HTTPException(
-            status_code=500, detail=f"Database query error: {str(db_err)}")
+            status_code=500, detail=f"Database query error: {str(db_err)}"
+        )
     except Exception as e:
         logger.exception(f"Unexpected error in get_statistics: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Internal server error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 # --- Random Animal Endpoint ---
@@ -647,12 +627,10 @@ async def get_random_animals(
         return animals
     except psycopg2.Error as db_err:
         logger.error(f"Database error fetching random animals: {db_err}")
-        raise HTTPException(
-            status_code=500, detail=f"Database error: {str(db_err)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(db_err)}")
     except Exception as e:
         logger.exception(f"Unexpected error fetching random animals: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Internal server error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 # --- Single Animal Detail ---
@@ -738,9 +716,7 @@ async def get_animal_by_id(
             try:
                 org_ships_to = json.loads(org_ships_to)
             except json.JSONDecodeError:
-                logger.warning(
-                    f"Could not parse ships_to JSON for animal {animal_id}"
-                )
+                logger.warning(f"Could not parse ships_to JSON for animal {animal_id}")
                 org_ships_to = []
         elif org_ships_to is None:
             org_ships_to = []
@@ -774,12 +750,11 @@ async def get_animal_by_id(
                 "description": clean_dict["org_description"],
                 "total_dogs": clean_dict["org_total_dogs"],
                 "new_this_week": clean_dict["org_new_this_week"],
-                "recent_dogs": []  # Will be populated by separate query if needed
+                "recent_dogs": [],  # Will be populated by separate query if needed
             }
 
         # Remove org_ prefixed fields and add nested organization
-        final_dict = {k: v for k, v in clean_dict.items()
-                      if not k.startswith("org_")}
+        final_dict = {k: v for k, v in clean_dict.items() if not k.startswith("org_")}
         final_dict["organization"] = organization_data
 
         # Create and return the model
@@ -792,12 +767,8 @@ async def get_animal_by_id(
         logger.error(f"Validation error for animal ID {animal_id}: {ve}")
         raise HTTPException(status_code=422, detail=f"Validation error: {ve}")
     except psycopg2.Error as db_err:
-        logger.error(
-            f"Database error fetching animal ID {animal_id}: {db_err}")
-        raise HTTPException(
-            status_code=500, detail=f"Database query error: {db_err}")
+        logger.error(f"Database error fetching animal ID {animal_id}: {db_err}")
+        raise HTTPException(status_code=500, detail=f"Database query error: {db_err}")
     except Exception as e:
-        logger.exception(
-            f"Unexpected error fetching animal ID {animal_id}: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Internal server error: {e}")
+        logger.exception(f"Unexpected error fetching animal ID {animal_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {e}")

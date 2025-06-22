@@ -75,9 +75,13 @@ class OrganizationMetadata(BaseModel):
                 if len(region) == 2 and region.isalpha():
                     validated.append(region)
                 else:
-                    raise ValueError(f"Invalid country code in service_regions: {region}")
+                    raise ValueError(
+                        f"Invalid country code in service_regions: {region}"
+                    )
             else:
-                raise ValueError(f"service_regions must contain only country codes, got: {type(region)}")
+                raise ValueError(
+                    f"service_regions must contain only country codes, got: {type(region)}"
+                )
 
         return validated
 
@@ -98,7 +102,9 @@ class OrganizationMetadata(BaseModel):
                 else:
                     raise ValueError(f"Invalid country code in ships_to: {country}")
             else:
-                raise ValueError(f"ships_to must contain only country codes, got: {type(country)}")
+                raise ValueError(
+                    f"ships_to must contain only country codes, got: {type(country)}"
+                )
 
         return validated
 
@@ -108,13 +114,13 @@ class OrganizationMetadata(BaseModel):
         """Validate established year is reasonable."""
         if v is None:
             return v
-        
+
         if not isinstance(v, int):
             raise ValueError("established_year must be an integer")
-        
+
         if v < 1900 or v > 2030:
             raise ValueError("established_year must be between 1900 and 2030")
-        
+
         return v
 
 
