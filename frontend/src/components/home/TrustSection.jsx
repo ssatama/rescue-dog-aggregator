@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { HeartIcon } from '@heroicons/react/24/outline';
 import { getStatistics } from '../../services/animalsService';
 import OrganizationLink from '../ui/OrganizationLink';
+import OrganizationCard from '../organizations/OrganizationCard';
 import { TrustStatsSkeleton } from '../ui/LoadingSkeleton';
 import { reportError } from '../../utils/logger';
 import { Button } from '@/components/ui/button';
@@ -78,8 +79,21 @@ export default function TrustSection() {
   // Calculate countries count from the countries array (consistent with HeroSection)
   const total_countries = countries.length;
   
-  // Show top 8 organizations for grid display
-  const topOrganizations = organizations.slice(0, 8);
+  // Show top 8 organizations for grid display with field mapping
+  const topOrganizations = organizations.slice(0, 8).map(org => ({
+    ...org,
+    // Map statistics API fields to OrganizationCard expected fields
+    total_dogs: org.dog_count || org.total_dogs || 0,
+    // Ensure other required fields exist with defaults
+    ships_to: org.ships_to || [],
+    service_regions: org.service_regions || [],
+    recent_dogs: org.recent_dogs || [],
+    new_this_week: org.new_this_week || 0,
+    social_media: org.social_media || {},
+    logo_url: org.logo_url || null,
+    country: org.country || null,
+    city: org.city || null
+  }));
   const remainingCount = organizations.length - 8;
 
   return (
@@ -161,36 +175,15 @@ export default function TrustSection() {
           {/* Organization Cards Grid */}
           <div 
             data-testid="organizations-grid"
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 max-w-4xl mx-auto"
+            className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6 max-w-4xl mx-auto"
           >
-            {topOrganizations.map((org) => {
-              const href = `/organizations/${org.id}`;
-              
-              return (
-                <Link 
-                  key={org.id}
-                  href={href}
-                  className="group"
-                  aria-label={`View organization ${org.name} with ${org.dog_count} dogs`}
-                >
-                  <div 
-                    data-testid="organization-card"
-                    className="bg-white border border-gray-200 rounded-lg p-4 text-center transition-all duration-300 hover:border-blue-500 hover:shadow-md min-h-[48px] flex flex-col items-center justify-center"
-                  >
-                    <HeartIcon 
-                      data-testid="building-icon"
-                      className="w-6 h-6 text-gray-400 group-hover:text-orange-500 mb-2 transition-colors duration-300"
-                    />
-                    <h3 className="font-medium text-gray-900 text-sm mb-1 group-hover:text-blue-600 transition-colors duration-300">
-                      {org.name}
-                    </h3>
-                    <p className="text-xs text-gray-500">
-                      {org.dog_count} dogs
-                    </p>
-                  </div>
-                </Link>
-              );
-            })}
+            {topOrganizations.map((org) => (
+              <OrganizationCard 
+                key={org.id} 
+                organization={org} 
+                size="small"
+              />
+            ))}
           </div>
 
           {/* Show More Button */}

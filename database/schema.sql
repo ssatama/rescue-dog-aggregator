@@ -9,7 +9,18 @@ CREATE TABLE IF NOT EXISTS organizations (
     logo_url TEXT,
     active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Enhanced organization fields
+    social_media JSONB DEFAULT '{}',
+    config_id VARCHAR(50) UNIQUE,
+    last_config_sync TIMESTAMP,
+    ships_to JSONB DEFAULT '[]',
+    service_regions JSONB DEFAULT '[]',
+    total_dogs INTEGER DEFAULT 0,
+    new_this_week INTEGER DEFAULT 0,
+    recent_dogs JSONB DEFAULT '[]',
+    established_year INTEGER
 );
 
 -- Animals (Dogs only for now)

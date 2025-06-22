@@ -308,9 +308,9 @@ class OrganizationSyncManager:
                 INSERT INTO organizations (
                     name, website_url, description, social_media,
                     config_id, last_config_sync, created_at, updated_at,
-                    ships_to, established_year
+                    ships_to, established_year, logo_url, country, city, service_regions
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 ) RETURNING id
             """,
                 (
@@ -326,6 +326,10 @@ class OrganizationSyncManager:
                     datetime.now(),  # updated_at
                     psycopg2.extras.Json(config.metadata.ships_to),  # ships_to
                     config.metadata.established_year,  # established_year
+                    config.metadata.logo_url,  # logo_url
+                    config.metadata.location.country,  # country
+                    config.metadata.location.city,  # city
+                    psycopg2.extras.Json(config.metadata.service_regions),  # service_regions
                 ),
             )
 
@@ -384,7 +388,11 @@ class OrganizationSyncManager:
                     last_config_sync = %s,
                     updated_at = %s,
                     ships_to = %s,
-                    established_year = %s
+                    established_year = %s,
+                    logo_url = %s,
+                    country = %s,
+                    city = %s,
+                    service_regions = %s
                 WHERE id = %s
             """,
                 (
@@ -398,6 +406,10 @@ class OrganizationSyncManager:
                     datetime.now(),  # updated_at
                     psycopg2.extras.Json(config.metadata.ships_to),  # ships_to
                     config.metadata.established_year,  # established_year
+                    config.metadata.logo_url,  # logo_url
+                    config.metadata.location.country,  # country
+                    config.metadata.location.city,  # city
+                    psycopg2.extras.Json(config.metadata.service_regions),  # service_regions
                     org_id,
                 ),
             )
@@ -588,6 +600,7 @@ class OrganizationSyncManager:
             self.logger.error(f"Failed to get sync status: {e}")
             return {"error": str(e)}
 
+
     def _get_service_regions_status(self) -> Dict[str, any]:
         """Get service regions sync status."""
         cursor = get_db_cursor()
@@ -626,3 +639,17 @@ class OrganizationSyncManager:
         finally:
             cursor.close()
             cursor.connection.close()
+
+
+if __name__ == "__main__":
+    # Simple script to run organization sync
+    sync = OrganizationSync()
+    result = sync.sync_all_organizations()
+    print("Organization sync completed:")
+    print(f"  Created: {result.get('created', 0)}")
+    print(f"  Updated: {result.get('updated', 0)}")
+    print(f"  Errors: {len(result.get('errors', []))}")
+    if result.get('errors'):
+        print("  Error details:")
+        for error in result['errors']:
+            print(f"    {error}")

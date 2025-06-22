@@ -1,3 +1,4 @@
+import React, { memo } from 'react';
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +17,7 @@ import {
   getCountryFlag 
 } from '../../utils/countries';
 
-export default function OrganizationCard({ organization }) {
+const OrganizationCard = memo(function OrganizationCard({ organization, size = 'large' }) {
   // Extract organization data with enhanced fields
   const name = organization?.name || "Sample Organization";
   const websiteUrl = organization?.website_url || "#";
@@ -41,6 +42,57 @@ export default function OrganizationCard({ organization }) {
     return words.slice(0, 2).map(word => word.charAt(0).toUpperCase()).join('');
   };
 
+  // Size-based styling configurations
+  const sizeStyles = {
+    small: {
+      logo: 'w-12 h-12', // 48px
+      initialsText: 'text-base',
+      name: 'text-base',
+      location: 'text-xs',
+      dogCount: 'text-xl',
+      locationInfo: 'text-xs',
+      spacing: 'space-y-2',
+      padding: 'p-3 sm:p-3',
+      contentPadding: 'p-3 sm:p-3 pt-0',
+      footerPadding: 'p-3 sm:p-3 pt-0',
+      dogThumbnail: 'w-10 h-10',
+      buttonHeight: 'min-h-[40px]',
+      socialSize: 'xs'
+    },
+    medium: {
+      logo: 'w-14 h-14', // 56px
+      initialsText: 'text-lg',
+      name: 'text-lg',
+      location: 'text-sm',
+      dogCount: 'text-2xl',
+      locationInfo: 'text-sm',
+      spacing: 'space-y-2',
+      padding: 'p-4 sm:p-4',
+      contentPadding: 'p-4 sm:p-4 pt-0',
+      footerPadding: 'p-4 sm:p-4 pt-0',
+      dogThumbnail: 'w-11 h-11',
+      buttonHeight: 'min-h-[44px]',
+      socialSize: 'sm'
+    },
+    large: {
+      logo: 'w-16 h-16', // 64px
+      initialsText: 'text-lg',
+      name: 'text-lg',
+      location: 'text-sm',
+      dogCount: 'text-2xl',
+      locationInfo: 'text-sm',
+      spacing: 'space-y-2 sm:space-y-3',
+      padding: 'p-4 sm:p-6 pb-3 sm:pb-4',
+      contentPadding: 'p-4 sm:p-6 pt-0',
+      footerPadding: 'p-4 sm:p-6 pt-0',
+      dogThumbnail: 'w-12 h-12',
+      buttonHeight: 'min-h-[44px]',
+      socialSize: 'sm'
+    }
+  };
+
+  const styles = sizeStyles[size] || sizeStyles.large;
+
   return (
     <Card 
       className="overflow-hidden h-full animate-org-card border border-gray-200 bg-white cursor-pointer rounded-lg focus-ring will-change-transform"
@@ -54,7 +106,7 @@ export default function OrganizationCard({ organization }) {
         }
       }}
     >
-      <CardHeader className="p-4 sm:p-6 pb-3 sm:pb-4">
+      <CardHeader className={styles.padding}>
           {/* Logo and Organization Header */}
           <div className="flex items-center space-x-4">
             {/* 1. Organization Logo (64px with fallback to initials) */}
@@ -63,19 +115,19 @@ export default function OrganizationCard({ organization }) {
                 <LazyImage 
                   src={logoUrl} 
                   alt={`${name} logo`} 
-                  className="w-16 h-16 rounded-lg object-cover border border-gray-200"
+                  className={`${styles.logo} rounded-lg object-cover border border-gray-200`}
                   onError={(e) => handleImageError(e, logoUrl)}
                   placeholder={
-                    <div className="w-16 h-16 rounded-lg bg-blue-100 flex items-center justify-center animate-pulse">
-                      <span className="text-lg font-bold text-blue-600">
+                    <div className={`${styles.logo} rounded-lg bg-blue-100 flex items-center justify-center animate-pulse`}>
+                      <span className={`${styles.initialsText} font-bold text-blue-600`}>
                         {getInitials(name)}
                       </span>
                     </div>
                   }
                 />
               ) : (
-                <div className="w-16 h-16 rounded-lg bg-blue-100 flex items-center justify-center border border-gray-200">
-                  <span className="text-lg font-bold text-blue-600">
+                <div className={`${styles.logo} rounded-lg bg-blue-100 flex items-center justify-center border border-gray-200`}>
+                  <span className={`${styles.initialsText} font-bold text-blue-600`}>
                     {getInitials(name)}
                   </span>
                 </div>
@@ -84,9 +136,9 @@ export default function OrganizationCard({ organization }) {
             
             {/* Organization Name and Base Location */}
             <div className="flex-grow min-w-0">
-              <h3 className="text-lg font-semibold text-gray-900 mb-1 truncate">{name}</h3>
+              <h3 className={`${styles.name} font-semibold text-gray-900 mb-1 truncate`}>{name}</h3>
               {city && country && (
-                <p className="text-sm text-gray-600">
+                <p className={`${styles.location} text-gray-600`}>
                   {city}, {country}
                 </p>
               )}
@@ -94,9 +146,9 @@ export default function OrganizationCard({ organization }) {
           </div>
         </CardHeader>
         
-        <CardContent className="p-4 sm:p-6 pt-0 space-y-2 sm:space-y-3">
+        <CardContent className={`${styles.contentPadding} ${styles.spacing}`}>
           {/* 2. Three Location Info Lines */}
-          <div className="space-y-2 text-sm">
+          <div className={`space-y-2 ${styles.locationInfo}`}>
             {/* Based in: [flag] [country] */}
             {country && (
               <div className="text-gray-700">
@@ -140,7 +192,7 @@ export default function OrganizationCard({ organization }) {
           {/* 3. Dog Count with "NEW this week" Badge */}
           <div className="flex items-center justify-between pt-2">
             <div className="flex items-center space-x-2">
-              <span className="text-2xl font-bold text-gray-900">
+              <span className={`${styles.dogCount} font-bold text-gray-900`}>
                 {totalDogs}
               </span>
               <span className="text-sm text-gray-600">
@@ -163,10 +215,10 @@ export default function OrganizationCard({ organization }) {
                     <LazyImage 
                       src={dog.thumbnail_url || dog.primary_image_url} 
                       alt={dog.name || 'Dog preview'} 
-                      className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                      className={`${styles.dogThumbnail} rounded-lg object-cover border border-gray-200`}
                       onError={(e) => handleImageError(e, dog.thumbnail_url)}
                       placeholder={
-                        <div className="w-12 h-12 rounded-lg bg-gray-200 animate-pulse" />
+                        <div className={`${styles.dogThumbnail} rounded-lg bg-gray-200 animate-pulse`} />
                       }
                     />
                   </div>
@@ -187,20 +239,20 @@ export default function OrganizationCard({ organization }) {
               <SocialMediaLinks 
                 socialMedia={socialMedia} 
                 className="flex space-x-2 justify-start" 
-                size="sm"
+                size={styles.socialSize}
               />
             </div>
           )}
         </CardContent>
 
         {/* 6. Two CTAs: "Visit Website" and "View X Dogs →" */}
-        <CardFooter className="p-4 sm:p-6 pt-0">
+        <CardFooter className={styles.footerPadding}>
           <div className="flex space-x-3 w-full">
             <Button 
               asChild 
               variant="outline" 
               size="sm" 
-              className="flex-1 text-gray-700 border-gray-300 hover:bg-gray-50 animate-button-hover min-h-[44px]"
+              className={`flex-1 text-gray-700 border-gray-300 hover:bg-gray-50 animate-button-hover ${styles.buttonHeight}`}
             >
               <a 
                 href={websiteUrl} 
@@ -215,7 +267,7 @@ export default function OrganizationCard({ organization }) {
             
             <Button 
               size="sm" 
-              className="flex-1 bg-orange-500 hover:bg-orange-600 text-white animate-button-hover min-h-[44px]"
+              className={`flex-1 bg-orange-500 hover:bg-orange-600 text-white animate-button-hover ${styles.buttonHeight}`}
             >
               View {totalDogs} Dog{totalDogs !== 1 ? 's' : ''} →
             </Button>
@@ -223,4 +275,17 @@ export default function OrganizationCard({ organization }) {
         </CardFooter>
       </Card>
   );
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison for React.memo - only re-render if these props change
+  return (
+    prevProps.size === nextProps.size &&
+    prevProps.organization?.id === nextProps.organization?.id &&
+    prevProps.organization?.name === nextProps.organization?.name &&
+    prevProps.organization?.total_dogs === nextProps.organization?.total_dogs &&
+    prevProps.organization?.new_this_week === nextProps.organization?.new_this_week
+  );
+});
+
+OrganizationCard.displayName = 'OrganizationCard';
+
+export default OrganizationCard;

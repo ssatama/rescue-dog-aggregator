@@ -33,6 +33,16 @@ jest.mock('next/link', () => {
   };
 });
 
+jest.mock('../components/organizations/OrganizationCard', () => {
+  return function MockOrganizationCard({ organization, size }) {
+    return (
+      <div data-testid="organization-card">
+        {organization.name} - {size}
+      </div>
+    );
+  };
+});
+
 describe('Countries Statistics Consistency', () => {
   const mockStatistics = {
     total_dogs: 237,
@@ -107,7 +117,10 @@ describe('Countries Statistics Consistency', () => {
       expect(screen.getByTestId('trust-section')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('0')).toBeInTheDocument(); // Countries count should be 0
+    // Find the countries stat specifically in TrustSection
+    const trustSection = screen.getByTestId('trust-section');
+    const countriesSection = trustSection.querySelector('[data-testid="countries-icon"]').parentElement;
+    expect(countriesSection.querySelector('.text-5xl')).toHaveTextContent('0');
   });
 
   test('both sections handle single country correctly', async () => {
@@ -140,6 +153,9 @@ describe('Countries Statistics Consistency', () => {
       expect(screen.getByTestId('trust-section')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('1')).toBeInTheDocument(); // Countries count should be 1
+    // Find the countries stat specifically in TrustSection
+    const trustSection = screen.getByTestId('trust-section');
+    const countriesSection = trustSection.querySelector('[data-testid="countries-icon"]').parentElement;
+    expect(countriesSection.querySelector('.text-5xl')).toHaveTextContent('1');
   });
 });

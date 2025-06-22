@@ -573,16 +573,20 @@ async def get_statistics(
             for row in cursor.fetchall()
         ]
         
-        # Get organizations with dog counts
+        # Get organizations with dog counts and all required fields
         cursor.execute(
             """
-            SELECT o.id, o.name, COUNT(a.id) as dog_count
+            SELECT o.id, o.name, o.logo_url, o.country, o.city, o.ships_to, o.service_regions,
+                   o.social_media, o.website_url, o.description,
+                   COUNT(a.id) as dog_count,
+                   COUNT(CASE WHEN a.created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as new_this_week
             FROM organizations o
             LEFT JOIN animals a ON o.id = a.organization_id 
                 AND a.status = 'available' 
                 AND a.availability_confidence IN ('high', 'medium')
             WHERE o.active = TRUE
-            GROUP BY o.id, o.name
+            GROUP BY o.id, o.name, o.logo_url, o.country, o.city, o.ships_to, o.service_regions,
+                     o.social_media, o.website_url, o.description
             HAVING COUNT(a.id) > 0
             ORDER BY dog_count DESC, o.name ASC
             """
@@ -591,7 +595,16 @@ async def get_statistics(
             {
                 "id": row["id"],
                 "name": row["name"],
-                "dog_count": row["dog_count"]
+                "dog_count": row["dog_count"],
+                "new_this_week": row["new_this_week"],
+                "logo_url": row["logo_url"],
+                "country": row["country"],
+                "city": row["city"],
+                "ships_to": row["ships_to"],
+                "service_regions": row["service_regions"],
+                "social_media": row["social_media"],
+                "website_url": row["website_url"],
+                "description": row["description"]
             }
             for row in cursor.fetchall()
         ]
@@ -661,10 +674,25 @@ async def get_animal_by_id(
                    o.country as org_country,
                    o.website_url as org_website_url,
                    o.social_media as org_social_media,
-                   o.ships_to as org_ships_to
+                   o.ships_to as org_ships_to,
+                   o.logo_url as org_logo_url,
+                   o.service_regions as org_service_regions,
+                   o.description as org_description,
+                   COUNT(a2.id) as org_total_dogs,
+                   COUNT(CASE WHEN a2.created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as org_new_this_week
             FROM animals a
             LEFT JOIN organizations o ON a.organization_id = o.id
+            LEFT JOIN animals a2 ON o.id = a2.organization_id 
+                AND a2.status = 'available' 
+                AND a2.availability_confidence IN ('high', 'medium')
             WHERE a.id = %s
+            GROUP BY a.id, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
+                     a.age_text, a.age_min_months, a.age_max_months,
+                     a.sex, a.size, a.standardized_size, a.status, a.properties,
+                     a.primary_image_url, a.adoption_url, a.created_at, a.updated_at,
+                     a.organization_id, a.external_id, a.language, a.last_scraped_at,
+                     o.id, o.name, o.city, o.country, o.website_url, o.social_media, 
+                     o.ships_to, o.logo_url, o.service_regions, o.description
             """,
             (animal_id,),
         )
@@ -717,6 +745,19 @@ async def get_animal_by_id(
         elif org_ships_to is None:
             org_ships_to = []
 
+        # Parse service_regions JSONB - handle both string and array cases
+        org_service_regions = clean_dict.get("org_service_regions")
+        if isinstance(org_service_regions, str):
+            try:
+                org_service_regions = json.loads(org_service_regions)
+            except json.JSONDecodeError:
+                logger.warning(
+                    f"Could not parse service_regions JSON for animal {animal_id}"
+                )
+                org_service_regions = []
+        elif org_service_regions is None:
+            org_service_regions = []
+
         # Build organization data
         organization_data = None
         if clean_dict.get("org_name"):
@@ -728,6 +769,12 @@ async def get_animal_by_id(
                 "website_url": clean_dict["org_website_url"],
                 "social_media": org_social_media,  # Now properly parsed
                 "ships_to": org_ships_to,  # Now properly parsed
+                "logo_url": clean_dict["org_logo_url"],
+                "service_regions": org_service_regions,  # Now properly parsed
+                "description": clean_dict["org_description"],
+                "total_dogs": clean_dict["org_total_dogs"],
+                "new_this_week": clean_dict["org_new_this_week"],
+                "recent_dogs": []  # Will be populated by separate query if needed
             }
 
         # Remove org_ prefixed fields and add nested organization

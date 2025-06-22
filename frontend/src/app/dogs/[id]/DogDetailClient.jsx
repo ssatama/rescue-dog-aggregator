@@ -12,7 +12,7 @@ import ShareButton from '../../../components/ui/ShareButton';
 import SocialMediaLinks from '../../../components/ui/SocialMediaLinks';
 import { getDetailHeroImageWithPosition, getThumbnailImage, handleImageError } from '../../../utils/imageUtils';
 import HeroImageWithBlurredBackground from '../../../components/ui/HeroImageWithBlurredBackground';
-import OrganizationSection from '../../../components/organizations/OrganizationSection';
+import OrganizationCard from '../../../components/organizations/OrganizationCard';
 import MobileStickyBar from '../../../components/ui/MobileStickyBar';
 import FavoriteButton from '../../../components/ui/FavoriteButton';
 import { ToastProvider } from '../../../components/ui/Toast';
@@ -519,9 +519,9 @@ export default function DogDetailClient({ params = {} }) {
                     <ScrollAnimationWrapper delay={850}>
                       <div className="mb-8" data-testid="organization-container">
                         {dog.organization ? (
-                          <OrganizationSection 
+                          <OrganizationCard 
                             organization={dog.organization} 
-                            organizationId={dog.organization_id}
+                            size="medium"
                           />
                         ) : (
                           <div className="border rounded-lg p-6 bg-gray-50 animate-pulse">

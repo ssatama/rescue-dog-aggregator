@@ -33,8 +33,8 @@ jest.mock('../../components/layout/Layout', () => {
 });
 
 // Mock other heavy components
-jest.mock('../../components/organizations/OrganizationSection', () => {
-  return function MockOrganizationSection() {
+jest.mock('../../components/organizations/OrganizationCard', () => {
+  return function MockOrganizationCard() {
     return <div data-testid="organization-section">Organization</div>;
   };
 });

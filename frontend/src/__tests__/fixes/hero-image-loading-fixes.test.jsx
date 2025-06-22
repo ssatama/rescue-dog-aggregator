@@ -50,9 +50,9 @@ jest.mock('../../utils/imageUtils', () => ({
 }));
 
 // Mock other components to isolate hero image testing
-jest.mock('../../components/organizations/OrganizationSection', () => {
-  return function MockOrganizationSection() {
-    return <div data-testid="organization-section">Organization</div>;
+jest.mock('../../components/organizations/OrganizationCard', () => {
+  return function MockOrganizationCard() {
+    return <div data-testid="organization-card">Organization</div>;
   };
 });
 
