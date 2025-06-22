@@ -65,12 +65,12 @@ describe('DesktopFilters Component', () => {
       const panel = screen.getByTestId('desktop-filters-panel');
       
       // Should have floating panel styling
-      expect(panel).toHaveClass('bg-white/95');
+      expect(panel).toHaveClass('bg-orange-50/50');
       expect(panel).toHaveClass('backdrop-blur-md');
-      expect(panel).toHaveClass('rounded-2xl');
+      expect(panel).toHaveClass('rounded-xl');
       expect(panel).toHaveClass('shadow-xl');
       expect(panel).toHaveClass('border');
-      expect(panel).toHaveClass('border-white/50');
+      expect(panel).toHaveClass('border-orange-100/30');
     });
 
     test('has correct width and positioning classes', () => {
@@ -168,7 +168,7 @@ describe('DesktopFilters Component', () => {
       expect(panel).toHaveClass('p-6');
       
       // Filters container should have proper spacing
-      expect(filtersContainer).toHaveClass('space-y-4');
+      expect(filtersContainer).toHaveClass('space-y-6');
     });
 
     test('is hidden on mobile and visible on desktop', () => {
@@ -360,7 +360,7 @@ describe('DesktopFilters Component', () => {
       render(<DesktopFilters {...mockProps} />);
       
       const filtersContainer = screen.getByTestId('filters-container');
-      expect(filtersContainer).toHaveClass('space-y-4');
+      expect(filtersContainer).toHaveClass('space-y-6');
     });
   });
 
@@ -637,12 +637,12 @@ describe('DesktopFilters Component', () => {
         const panel = screen.getByTestId('desktop-filters-panel');
         
         // Enhanced floating panel styling
-        expect(panel).toHaveClass('bg-white/95');
+        expect(panel).toHaveClass('bg-orange-50/50');
         expect(panel).toHaveClass('backdrop-blur-md');
         expect(panel).toHaveClass('shadow-xl');
-        expect(panel).toHaveClass('rounded-2xl');
+        expect(panel).toHaveClass('rounded-xl');
         expect(panel).toHaveClass('border');
-        expect(panel).toHaveClass('border-white/50');
+        expect(panel).toHaveClass('border-orange-100/30');
       });
 
       test('applies proper panel positioning and dimensions', () => {
@@ -666,7 +666,7 @@ describe('DesktopFilters Component', () => {
         const panel = screen.getByTestId('desktop-filters-panel');
         
         // Enhanced transitions and performance with cross-browser support
-        expect(panel).toHaveClass('cross-browser-transition');
+        expect(panel).toHaveClass('transition-colors');
         expect(panel).toHaveClass('cross-browser-will-change');
       });
 
@@ -739,7 +739,7 @@ describe('DesktopFilters Component', () => {
         expect(clearButton).toHaveClass('py-2');
         expect(clearButton).toHaveClass('px-4');
         expect(clearButton).toHaveClass('rounded-lg');
-        expect(clearButton).toHaveClass('cross-browser-transition');
+        expect(clearButton).toHaveClass('transition-colors');
         expect(clearButton).toHaveClass('enhanced-focus-button');
       });
 
@@ -784,7 +784,7 @@ describe('DesktopFilters Component', () => {
         
         // Performance optimizations with cross-browser support
         expect(panel).toHaveClass('cross-browser-will-change');
-        expect(panel).toHaveClass('cross-browser-transition');
+        expect(panel).toHaveClass('transition-colors');
       });
 
       test('panel has proper z-index for floating appearance', () => {
@@ -1043,7 +1043,7 @@ describe('DesktopFilters Component', () => {
         
         expect(ageHeader).toHaveClass('text-sm');
         expect(ageHeader).toHaveClass('font-semibold');
-        expect(ageHeader).toHaveClass('text-gray-800');
+        expect(ageHeader).toHaveClass('text-gray-900');
       });
 
       test('button grid sections show active indicators when filters applied', () => {
@@ -1162,7 +1162,7 @@ describe('DesktopFilters Component', () => {
         const ageButton = screen.getByTestId('age-button-Puppy');
         
         // Button should have cross-browser transition classes
-        expect(ageButton).toHaveClass('cross-browser-transition');
+        expect(ageButton).toHaveClass('interactive-enhanced');
       });
 
       test('chevron icons have consistent rotation timing', () => {

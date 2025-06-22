@@ -12,11 +12,29 @@ export default function Header() {
   // Helper function to determine link classes
   const getLinkClasses = (href) => {
     const isActive = pathname === href;
-    return `px-3 py-2 rounded-md text-small font-medium ${
+    return `px-3 py-2 rounded-md text-small font-medium transition-colors duration-200 ${
       isActive
-        ? 'bg-red-100 text-red-700' // Active styles
-        : 'text-gray-700 hover:bg-gray-100 hover:text-red-500' // Default styles
+        ? 'text-orange-600 font-semibold' // Active styles
+        : 'text-gray-700 hover:text-orange-600' // Default styles
     }`;
+  };
+
+  // Helper function to create navigation link with underline indicator
+  const renderNavLink = (href, label, testId) => {
+    const isActive = pathname === href;
+    return (
+      <div className="relative">
+        <Link href={href} className={getLinkClasses(href)}>
+          {label}
+        </Link>
+        {isActive && (
+          <div 
+            data-testid={`nav-underline-${testId}`}
+            className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600" 
+          />
+        )}
+      </div>
+    );
   };
 
   // Helper function for mobile links (closes menu on click)
@@ -54,22 +72,16 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-1"> {/* Reduced space for better fit with background */}
-            <Link href="/dogs" className={getLinkClasses('/dogs')}>
-              Find Dogs
-            </Link>
-            <Link href="/organizations" className={getLinkClasses('/organizations')}>
-              Organizations
-            </Link>
-            <Link href="/about" className={getLinkClasses('/about')}>
-              About
-            </Link>
+            {renderNavLink('/dogs', 'Find Dogs', 'dogs')}
+            {renderNavLink('/organizations', 'Organizations', 'organizations')}
+            {renderNavLink('/about', 'About', 'about')}
           </div>
 
           {/* Mobile menu button */}
           <div className="md:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-500"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange-500"
               aria-expanded={mobileMenuOpen}
             >
               <span className="sr-only">Open main menu</span>
@@ -89,27 +101,51 @@ export default function Header() {
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <div className="md:hidden mt-2 py-2 space-y-1">
-            <Link
-              href="/dogs"
-              className={`block ${getLinkClasses('/dogs')}`} // Use helper for mobile too
-              onClick={handleMobileLinkClick}
-            >
-              Find Dogs
-            </Link>
-            <Link
-              href="/organizations"
-              className={`block ${getLinkClasses('/organizations')}`}
-              onClick={handleMobileLinkClick}
-            >
-              Organizations
-            </Link>
-            <Link
-              href="/about"
-              className={`block ${getLinkClasses('/about')}`}
-              onClick={handleMobileLinkClick}
-            >
-              About
-            </Link>
+            <div className="relative">
+              <Link
+                href="/dogs"
+                className={`block ${getLinkClasses('/dogs')}`}
+                onClick={handleMobileLinkClick}
+              >
+                Find Dogs
+              </Link>
+              {pathname === '/dogs' && (
+                <div 
+                  data-testid="nav-underline-dogs"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600" 
+                />
+              )}
+            </div>
+            <div className="relative">
+              <Link
+                href="/organizations"
+                className={`block ${getLinkClasses('/organizations')}`}
+                onClick={handleMobileLinkClick}
+              >
+                Organizations
+              </Link>
+              {pathname === '/organizations' && (
+                <div 
+                  data-testid="nav-underline-organizations"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600" 
+                />
+              )}
+            </div>
+            <div className="relative">
+              <Link
+                href="/about"
+                className={`block ${getLinkClasses('/about')}`}
+                onClick={handleMobileLinkClick}
+              >
+                About
+              </Link>
+              {pathname === '/about' && (
+                <div 
+                  data-testid="nav-underline-about"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600" 
+                />
+              )}
+            </div>
           </div>
         )}
         </nav>

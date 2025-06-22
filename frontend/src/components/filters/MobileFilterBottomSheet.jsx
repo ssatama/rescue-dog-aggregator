@@ -140,10 +140,10 @@ export default function MobileFilterBottomSheet({
         onClick={() => onSelect(value)}
         data-testid={testId}
         className={`
-          min-h-[48px] px-4 py-3 animate-button-hover focus-ring
+          min-h-[48px] px-4 py-3 animate-button-hover focus-ring transition-colors duration-200
           ${isActive 
-            ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500' 
-            : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300'
+            ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2' 
+            : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2'
           }
         `}
         aria-pressed={isActive}
@@ -271,7 +271,7 @@ export default function MobileFilterBottomSheet({
                       onChange={(e) => setLocalBreedInput(e.target.value)}
                       data-testid="breed-search-input"
                       aria-label="Search for specific breed"
-                      className="pl-10 min-h-[48px] border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                      className="pl-10 min-h-[48px] border-gray-300 focus:border-orange-500 focus:ring-orange-500 focus:ring-2 transition-colors duration-200"
                     />
                   </div>
                   {localBreedInput && (

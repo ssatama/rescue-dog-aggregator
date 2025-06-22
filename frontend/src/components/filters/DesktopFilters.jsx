@@ -250,7 +250,7 @@ export default function DesktopFilters({
     >
       <div 
         data-testid="desktop-filters-panel"
-        className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-white/50 sticky top-24 z-10 cross-browser-transition cross-browser-will-change hover:shadow-xl hover:bg-white/98"
+        className="bg-orange-50/50 backdrop-blur-md rounded-xl shadow-xl p-6 border border-orange-100/30 sticky top-24 z-10 cross-browser-transition cross-browser-will-change hover:shadow-xl hover:bg-orange-50/60 transition-colors duration-200"
         role="complementary"
         aria-label="Filter options"
       >
@@ -278,7 +278,7 @@ export default function DesktopFilters({
         {/* Filters container with collapsible sections */}
         <div 
           data-testid="filters-container" 
-          className="space-y-4"
+          className="space-y-6"
         >
           {/* === DROPDOWN FILTERS SECTION === */}
           
@@ -299,7 +299,7 @@ export default function DesktopFilters({
                   placeholder="Search dogs..."
                   value={searchQuery}
                   onChange={handleSearchChange}
-                  className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input"
+                  className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
                 />
                 {searchQuery && (
                   <Button
@@ -323,7 +323,7 @@ export default function DesktopFilters({
                 >
                   <SelectTrigger 
                     data-testid="organization-select"
-                    className="select-focus enhanced-hover enhanced-focus-select"
+                    className="select-focus enhanced-hover enhanced-focus-select focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
                   >
                     <SelectValue>
                       {organizationFilter === 'any' || !organizationFilter 
@@ -364,7 +364,7 @@ export default function DesktopFilters({
                   placeholder="Search breeds..."
                   value={breedInputValue}
                   onChange={handleBreedInputChange}
-                  className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input"
+                  className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
                 />
                 {breedInputValue && (
                   <Button
@@ -425,7 +425,7 @@ export default function DesktopFilters({
                   data-testid="country-search-input"
                   type="text"
                   placeholder="Search countries..."
-                  className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input"
+                  className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
                 />
               </div>
               
@@ -437,7 +437,7 @@ export default function DesktopFilters({
                 >
                   <SelectTrigger 
                     data-testid="ships-to-country-select"
-                    className="select-focus enhanced-hover enhanced-focus-select"
+                    className="select-focus enhanced-hover enhanced-focus-select focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
                   >
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
@@ -458,7 +458,7 @@ export default function DesktopFilters({
           {/* Age Filter - Non-collapsible */}
           <div className={`space-y-3 ${sectionCounts.age > 0 ? 'filter-section-active' : ''}`}>
             <div className="flex items-center gap-2 mb-3">
-              <h4 className="text-sm font-semibold text-gray-800">Age</h4>
+              <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Age</h4>
               {sectionCounts.age > 0 && (
                 <span className="inline-flex bg-orange-100 text-orange-700 px-2 rounded-full text-xs">
                   ({sectionCounts.age})
@@ -494,7 +494,7 @@ export default function DesktopFilters({
           {/* Size Filter - Non-collapsible */}
           <div className={`space-y-3 ${sectionCounts.size > 0 ? 'filter-section-active' : ''}`}>
             <div className="flex items-center gap-2 mb-3">
-              <h4 className="text-sm font-semibold text-gray-800">Size</h4>
+              <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Size</h4>
               {sectionCounts.size > 0 && (
                 <span className="inline-flex bg-orange-100 text-orange-700 px-2 rounded-full text-xs">
                   ({sectionCounts.size})
@@ -530,7 +530,7 @@ export default function DesktopFilters({
           {/* Sex Filter - Non-collapsible Button Grid (New Lollipop Style) */}
           <div className={`space-y-3 ${sectionCounts.sex > 0 ? 'filter-section-active' : ''}`}>
             <div className="flex items-center gap-2 mb-3">
-              <h4 className="text-sm font-semibold text-gray-800">Sex</h4>
+              <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Sex</h4>
               {sectionCounts.sex > 0 && (
                 <span className="inline-flex bg-orange-100 text-orange-700 px-2 rounded-full text-xs">
                   ({sectionCounts.sex})
@@ -568,7 +568,7 @@ export default function DesktopFilters({
         {activeFilterCount > 0 && (
           <button
             data-testid="clear-all-filters"
-            className="w-full mt-6 text-orange-600 hover:text-orange-700 hover:bg-orange-50 font-medium py-2 px-4 rounded-lg cross-browser-transition interactive-enhanced enhanced-focus-button"
+            className="w-full mt-6 text-orange-600 hover:text-orange-700 hover:bg-orange-50 font-medium py-2 px-4 rounded-lg transition-colors duration-200 interactive-enhanced enhanced-focus-button focus:ring-2 focus:ring-orange-500"
             onClick={resetFilters}
           >
             Clear All Filters
