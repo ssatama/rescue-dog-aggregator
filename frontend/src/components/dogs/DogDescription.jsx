@@ -184,7 +184,7 @@ export default function DogDescription({
               <div className="mt-3">
                 <button
                   onClick={handleToggle}
-                  className="text-blue-600 hover:text-blue-800 font-medium text-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded px-1 hover:bg-blue-50 active:bg-blue-100"
+                  className="text-orange-600 hover:text-orange-800 font-medium text-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50 rounded px-1 hover:bg-orange-50 active:bg-orange-100"
                   data-testid="read-more-button"
                   tabIndex={0}
                   aria-expanded={isExpanded}

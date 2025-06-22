@@ -41,7 +41,7 @@ describe('OrganizationLink', () => {
       render(<OrganizationLink organization={mockOrganization} />);
 
       const link = screen.getByRole('link');
-      expect(link).toHaveClass('text-blue-600', 'hover:text-blue-800');
+      expect(link).toHaveClass('text-orange-600', 'hover:text-orange-800');
     });
 
     test('should have hover effect', () => {
@@ -51,7 +51,7 @@ describe('OrganizationLink', () => {
       fireEvent.mouseEnter(link);
       
       // Test that hover class is applied (via CSS)
-      expect(link).toHaveClass('hover:text-blue-800');
+      expect(link).toHaveClass('hover:text-orange-800');
     });
   });
 

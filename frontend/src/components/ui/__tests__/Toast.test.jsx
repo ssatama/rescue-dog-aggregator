@@ -74,7 +74,7 @@ describe('Toast', () => {
       );
 
       const toast = screen.getByRole('alert');
-      expect(toast).toHaveClass('bg-blue-500');
+      expect(toast).toHaveClass('bg-orange-500');
     });
 
     test('does not render when isVisible is false', () => {

@@ -28,7 +28,7 @@ export default function OrganizationLink({ organization }) {
   return (
     <Link 
       href={href}
-      className="text-blue-600 hover:text-blue-800 transition-colors duration-300 font-medium"
+      className="text-orange-600 hover:text-orange-800 transition-colors duration-300 font-medium"
       aria-label={`View ${dog_count} dogs from ${name}`}
     >
       {name} ({dog_count})

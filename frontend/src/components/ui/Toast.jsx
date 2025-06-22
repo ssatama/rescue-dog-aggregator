@@ -13,7 +13,7 @@ export function Toast({ message, type = 'info', isVisible, onClose }) {
   const typeStyles = {
     success: 'bg-green-500 text-white',
     error: 'bg-red-500 text-white',
-    info: 'bg-blue-500 text-white'
+    info: 'bg-orange-500 text-white'
   };
 
   return (

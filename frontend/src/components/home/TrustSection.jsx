@@ -109,19 +109,19 @@ export default function TrustSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Main Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           
           {/* Organizations Stat */}
           <div className="text-center">
             <div 
               data-testid="organizations-icon"
-              className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center"
+              className="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center"
             >
-              <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-8 h-8 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-6a1 1 0 00-1-1H9a1 1 0 00-1 1v6a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 8a1 1 0 011-1h4a1 1 0 011 1v4H7v-4z" clipRule="evenodd" />
               </svg>
             </div>
-            <div className="text-5xl font-bold text-gray-900 mb-2">
+            <div className="text-4xl font-bold text-gray-900 mb-2">
               {total_organizations}
             </div>
             <div className="text-lg text-gray-600">
@@ -139,7 +139,7 @@ export default function TrustSection() {
                 <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM4 8a1 1 0 000 2h1a1 1 0 100-2H4zm0 4a1 1 0 100 2h1a1 1 0 100-2H4zm4-4a1 1 0 000 2h1a1 1 0 100-2H8zm0 4a1 1 0 100 2h1a1 1 0 100-2H8zm4-4a1 1 0 000 2h1a1 1 0 100-2h-1zm0 4a1 1 0 100 2h1a1 1 0 100-2h-1z"/>
               </svg>
             </div>
-            <div className="text-5xl font-bold text-gray-900 mb-2">
+            <div className="text-4xl font-bold text-gray-900 mb-2">
               {total_dogs}
             </div>
             <div className="text-lg text-gray-600">
@@ -157,7 +157,7 @@ export default function TrustSection() {
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
               </svg>
             </div>
-            <div className="text-5xl font-bold text-gray-900 mb-2">
+            <div className="text-4xl font-bold text-gray-900 mb-2">
               {total_countries}
             </div>
             <div className="text-lg text-gray-600">
@@ -168,7 +168,7 @@ export default function TrustSection() {
 
         {/* Organizations Grid */}
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+          <h2 className="text-section text-gray-900 mb-6">
             Dogs available from these organizations:
           </h2>
           
@@ -191,7 +191,7 @@ export default function TrustSection() {
             <Button
               variant="ghost"
               onClick={() => setShowAllOrganizations(!showAllOrganizations)}
-              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+              className="text-orange-600 hover:text-orange-800 hover:bg-orange-50"
             >
               {showAllOrganizations 
                 ? 'Show less' 

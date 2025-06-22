@@ -66,7 +66,7 @@ jest.mock('../../components/ui/DogDetailSkeleton', () => {
 
 jest.mock('../../components/ui/FavoriteButton', () => {
   return function MockFavoriteButton() {
-    return <button data-testid="favorite-button" className="rounded-full transition-all duration-200 hover:scale-110 hover:shadow-md focus:ring-2 focus:ring-blue-500">♥</button>;
+    return <button data-testid="favorite-button" className="rounded-full transition-all duration-200 hover:scale-110 hover:shadow-md focus:ring-2 focus:ring-orange-500">♥</button>;
   };
 });
 
@@ -161,7 +161,7 @@ describe('Final Checklist Validation', () => {
       expect(ctaButton).toHaveTextContent('Start Adoption Process');
       
       // Button should be visually prominent
-      expect(ctaButton).toHaveClass('bg-blue-600');
+      expect(ctaButton).toHaveClass('bg-orange-600');
       expect(ctaButton).toHaveClass('text-white');
       expect(ctaButton).toHaveClass('text-lg');
     });

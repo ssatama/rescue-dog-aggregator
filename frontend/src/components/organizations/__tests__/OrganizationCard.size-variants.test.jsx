@@ -133,15 +133,15 @@ describe('OrganizationCard Size Variants', () => {
   });
 
   describe('Text Size Scaling', () => {
-    test('organization name scales with size', () => {
+    test('organization name uses consistent typography', () => {
       const { rerender } = render(<OrganizationCard organization={mockOrganization} size="small" />);
-      expect(screen.getByText('Test Organization')).toHaveClass('text-base'); // Small
+      expect(screen.getByText('Test Organization')).toHaveClass('text-card-title'); // Consistent across sizes
       
       rerender(<OrganizationCard organization={mockOrganization} size="medium" />);
-      expect(screen.getByText('Test Organization')).toHaveClass('text-lg'); // Medium
+      expect(screen.getByText('Test Organization')).toHaveClass('text-card-title'); // Consistent
       
       rerender(<OrganizationCard organization={mockOrganization} size="large" />);
-      expect(screen.getByText('Test Organization')).toHaveClass('text-lg'); // Large
+      expect(screen.getByText('Test Organization')).toHaveClass('text-card-title'); // Consistent
     });
 
     test('location text scales with size', () => {

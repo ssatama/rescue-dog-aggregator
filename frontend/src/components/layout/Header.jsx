@@ -29,14 +29,14 @@ export default function Header() {
       {/* Skip to main content link for accessibility */}
       <a 
         href="#main-content" 
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-blue-600 text-white px-4 py-2 rounded z-50"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-orange-600 text-white px-4 py-2 rounded z-50"
       >
         Skip to main content
       </a>
       
       <header 
         ref={headerRef}
-        className={`bg-white shadow-blue-md sticky top-0 z-50 transition-all duration-300 ${
+        className={`bg-white shadow-orange-md sticky top-0 z-50 transition-all duration-300 ${
           isVisible ? 'animate-fade-in' : 'opacity-0'
         }`}
       >

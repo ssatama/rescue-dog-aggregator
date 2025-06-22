@@ -82,7 +82,7 @@ const RelatedDogsSection = memo(function RelatedDogsSection({ organizationId, cu
   return (
     <div ref={sectionRef} className="mb-8">
       {/* Section Title */}
-      <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+      <h2 className="text-section text-gray-800 mb-6">
         More Dogs from {sanitizeText(organizationName)}
       </h2>
 
@@ -128,7 +128,7 @@ const RelatedDogsSection = memo(function RelatedDogsSection({ organizationId, cu
           </div>
           <Link 
             href={`/dogs?organization_id=${organizationId}`}
-            className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="inline-flex items-center text-orange-600 hover:text-orange-700 font-medium bg-orange-50 hover:bg-orange-100 px-4 py-2 rounded-lg transition-all duration-300 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
           >
             View all available dogs
             <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -154,7 +154,7 @@ const RelatedDogsSection = memo(function RelatedDogsSection({ organizationId, cu
           <div className="text-center">
             <Link 
               href={`/dogs?organization_id=${organizationId}`}
-              className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-300"
+              className="text-orange-600 hover:text-orange-700 font-medium transition-colors duration-300"
             >
               View all available dogs →
             </Link>
@@ -173,7 +173,7 @@ const RelatedDogsSection = memo(function RelatedDogsSection({ organizationId, cu
           </p>
           <Link 
             href={`/dogs?organization_id=${organizationId}`}
-            className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-300"
+            className="text-orange-600 hover:text-orange-700 font-medium transition-colors duration-300"
           >
             View all available dogs →
           </Link>

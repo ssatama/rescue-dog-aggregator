@@ -180,7 +180,7 @@ describe('Session 7: Color Contrast & Visual Accessibility', () => {
       
       // Name should be largest
       const dogName = getByTestId('dog-name');
-      expect(dogName).toHaveClass('text-xl');
+      expect(dogName).toHaveClass('text-card-title');
       
       // Other text should be smaller
       const breed = getByTestId('dog-breed');

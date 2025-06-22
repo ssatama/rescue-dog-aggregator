@@ -118,16 +118,16 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
                   className={`${styles.logo} rounded-lg object-cover border border-gray-200`}
                   onError={(e) => handleImageError(e, logoUrl)}
                   placeholder={
-                    <div className={`${styles.logo} rounded-lg bg-blue-100 flex items-center justify-center animate-pulse`}>
-                      <span className={`${styles.initialsText} font-bold text-blue-600`}>
+                    <div className={`${styles.logo} rounded-lg bg-orange-100 flex items-center justify-center animate-pulse`}>
+                      <span className={`${styles.initialsText} font-bold text-orange-600`}>
                         {getInitials(name)}
                       </span>
                     </div>
                   }
                 />
               ) : (
-                <div className={`${styles.logo} rounded-lg bg-blue-100 flex items-center justify-center border border-gray-200`}>
-                  <span className={`${styles.initialsText} font-bold text-blue-600`}>
+                <div className={`${styles.logo} rounded-lg bg-orange-100 flex items-center justify-center border border-gray-200`}>
+                  <span className={`${styles.initialsText} font-bold text-orange-600`}>
                     {getInitials(name)}
                   </span>
                 </div>
@@ -136,7 +136,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
             
             {/* Organization Name and Base Location */}
             <div className="flex-grow min-w-0">
-              <h3 className={`${styles.name} font-semibold text-gray-900 mb-1 truncate`}>{name}</h3>
+              <h3 className={`text-card-title text-gray-900 mb-1 truncate`}>{name}</h3>
               {city && country && (
                 <p className={`${styles.location} text-gray-600`}>
                   {city}, {country}

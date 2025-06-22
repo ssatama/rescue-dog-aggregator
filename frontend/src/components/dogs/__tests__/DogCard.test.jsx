@@ -375,8 +375,7 @@ describe('DogCard Component', () => {
       render(<DogCard dog={mockDog} />);
       
       const nameElement = screen.getByTestId('dog-name');
-      expect(nameElement).toHaveClass('text-xl');
-      expect(nameElement).toHaveClass('font-bold');
+      expect(nameElement).toHaveClass('text-card-title');
     });
 
     test('displays age category with formatted age', () => {
@@ -824,8 +823,7 @@ describe('DogCard Component', () => {
       render(<DogCard dog={mockDog} />);
       
       const nameElement = screen.getByTestId('dog-name');
-      expect(nameElement).toHaveClass('text-xl');
-      expect(nameElement).toHaveClass('font-bold'); // Changed from font-semibold
+      expect(nameElement).toHaveClass('text-card-title'); // Changed from font-semibold
       expect(nameElement).toHaveClass('mb-2');
     });
 
@@ -980,7 +978,7 @@ describe('DogCard Component', () => {
       render(<DogCard dog={mockDog} />);
       
       const cardContent = screen.getByTestId('card-content');
-      expect(cardContent).toHaveClass('p-5'); // Increased from p-4
+      expect(cardContent).toHaveClass('p-4', 'sm:p-6'); // Responsive padding
     });
 
     test('card footer has adjusted padding', () => {
@@ -994,7 +992,7 @@ describe('DogCard Component', () => {
       render(<DogCard dog={mockDog} />);
       
       const cardFooter = screen.getByTestId('card-footer');
-      expect(cardFooter).toHaveClass('p-5'); // Match content padding
+      expect(cardFooter).toHaveClass('p-4', 'sm:p-6'); // Match content padding
       expect(cardFooter).toHaveClass('pt-0'); // No top padding
     });
   });

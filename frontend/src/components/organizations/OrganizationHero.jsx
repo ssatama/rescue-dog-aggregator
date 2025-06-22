@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import StyledLink from '../ui/StyledLink';
 import CountryFlag from '../ui/CountryFlag';
 import SocialMediaLinks from '../ui/SocialMediaLinks';
 import { 
@@ -21,9 +22,9 @@ export default function OrganizationHero({ organization }) {
       <div className="min-h-[400px] bg-gradient-to-br from-amber-100 to-orange-200 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Organization not found</h1>
-          <Link href="/organizations" className="text-blue-600 hover:text-blue-800">
+          <StyledLink href="/organizations" variant="text">
             ← Back to Organizations
-          </Link>
+          </StyledLink>
         </div>
       </div>
     );

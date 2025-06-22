@@ -344,6 +344,22 @@
     color: hsl(222.2 84% 4.9%); /* High contrast */
   }
 
+  .text-title {
+    font-size: var(--font-size-title);
+    line-height: var(--line-height-snug);
+    letter-spacing: var(--letter-spacing-tight);
+    font-weight: var(--font-weight-bold);
+    color: hsl(222.2 84% 4.9%);
+  }
+
+  .text-card-title {
+    font-size: var(--font-size-card);
+    line-height: var(--line-height-compact);
+    letter-spacing: var(--letter-spacing-normal);
+    font-weight: var(--font-weight-semibold);
+    color: hsl(222.2 84% 4.9%);
+  }
+
   .text-body {
     font-size: var(--font-size-body);
     line-height: var(--line-height-relaxed);

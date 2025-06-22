@@ -173,7 +173,7 @@ describe('TrustSection Homepage Integration', () => {
       
       await waitFor(() => {
         const heading = screen.getByText('Dogs available from these organizations:');
-        expect(heading).toHaveClass('text-2xl', 'font-bold', 'mb-6');
+        expect(heading).toHaveClass('text-section', 'mb-6');
       });
     });
 

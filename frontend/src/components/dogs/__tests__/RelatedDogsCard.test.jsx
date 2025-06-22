@@ -122,7 +122,7 @@ describe('RelatedDogsCard', () => {
       const dogName = screen.getByTestId('related-dog-name');
 
       // Assert
-      expect(dogName).toHaveClass('hover:text-blue-600');
+      expect(dogName).toHaveClass('hover:text-orange-600');
     });
 
     it('should be keyboard accessible', () => {

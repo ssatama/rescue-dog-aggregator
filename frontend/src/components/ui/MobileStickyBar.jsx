@@ -109,7 +109,7 @@ export default function MobileStickyBar({
         <Button
           size="lg"
           onClick={handleContactClick}
-          className="flex-1 ml-2 bg-blue-600 hover:bg-blue-700 text-white"
+          className="flex-1 ml-2 bg-orange-600 hover:bg-orange-700 text-white"
           data-testid="mobile-contact-button"
           aria-label="Start adoption process"
         >

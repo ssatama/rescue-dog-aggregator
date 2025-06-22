@@ -107,11 +107,11 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
         </Link>
       </CardHeader>
 
-      <CardContent data-testid="card-content" className="p-5 flex flex-col flex-grow space-y-3">
+      <CardContent data-testid="card-content" className="p-4 sm:p-6 flex flex-col flex-grow space-y-3">
         {/* Enhanced prominent name display */}
         <CardTitle className="mb-0">
           <Link href={`/dogs/${id}`} className="hover:underline transition-all duration-300">
-            <h3 data-testid="dog-name" className="text-xl font-bold truncate group-hover:text-blue-600 mb-2">{name}</h3>
+            <h3 data-testid="dog-name" className="text-card-title truncate group-hover:text-orange-600 mb-2">{name}</h3>
           </Link>
         </CardTitle>
 
@@ -120,7 +120,7 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
           {ageCategory !== 'Unknown' && (
             <div className="flex items-center gap-1">
               <span data-testid="age-icon" className="text-lg">🎂</span>
-              <span data-testid="age-category" className="font-medium text-blue-600">{ageCategory}</span>
+              <span data-testid="age-category" className="font-medium text-orange-600">{ageCategory}</span>
               <span className="text-gray-400">•</span>
               <span data-testid="formatted-age" className="text-gray-600">{formattedAge}</span>
             </div>
@@ -163,7 +163,7 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
         )}
       </CardContent>
 
-      <CardFooter data-testid="card-footer" className="p-5 pt-0">
+      <CardFooter data-testid="card-footer" className="p-4 sm:p-6 pt-0">
          <Link href={`/dogs/${id}`} className="w-full enhanced-focus-link">
            <Button
              type="button"

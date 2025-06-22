@@ -495,7 +495,7 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
                   const retriedSrc = currentSrc.replace(/t=\d+/, `t=${Date.now()}`);
                   safeSetState(setCurrentSrc, retriedSrc);
                 }}
-                className="text-blue-600 hover:text-blue-700 underline text-sm"
+                className="text-orange-600 hover:text-orange-700 underline text-sm"
               >
                 Try again
               </button>

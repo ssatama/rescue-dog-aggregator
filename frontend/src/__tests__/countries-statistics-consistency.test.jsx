@@ -120,7 +120,7 @@ describe('Countries Statistics Consistency', () => {
     // Find the countries stat specifically in TrustSection
     const trustSection = screen.getByTestId('trust-section');
     const countriesSection = trustSection.querySelector('[data-testid="countries-icon"]').parentElement;
-    expect(countriesSection.querySelector('.text-5xl')).toHaveTextContent('0');
+    expect(countriesSection.querySelector('.text-4xl')).toHaveTextContent('0');
   });
 
   test('both sections handle single country correctly', async () => {
@@ -156,6 +156,6 @@ describe('Countries Statistics Consistency', () => {
     // Find the countries stat specifically in TrustSection
     const trustSection = screen.getByTestId('trust-section');
     const countriesSection = trustSection.querySelector('[data-testid="countries-icon"]').parentElement;
-    expect(countriesSection.querySelector('.text-5xl')).toHaveTextContent('1');
+    expect(countriesSection.querySelector('.text-4xl')).toHaveTextContent('1');
   });
 });

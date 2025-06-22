@@ -234,14 +234,14 @@ export default function DogDetailClient({ params = {} }) {
                   onClick={handleRetry}
                   variant="outline"
                   size="sm"
-                  className="flex items-center px-4 py-2 transition-all duration-300 hover:shadow-md focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className="flex items-center px-4 py-2 transition-all duration-300 hover:shadow-md focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                 >
                   <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
                   </svg>
                   Try Again
                 </Button>
-                <Button asChild variant="outline" size="sm" className="transition-all duration-300 hover:shadow-md focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                <Button asChild variant="outline" size="sm" className="transition-all duration-300 hover:shadow-md focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
                   <Link href="/dogs" className="px-4 py-2">Return to dogs listing</Link>
                 </Button>
               </div>
@@ -265,7 +265,7 @@ export default function DogDetailClient({ params = {} }) {
                     <li>
                       <Link 
                         href="/" 
-                        className="text-gray-600 hover:text-blue-600 transition-colors duration-200 font-medium px-2 py-1 rounded hover:bg-white/50"
+                        className="text-gray-600 hover:text-orange-600 transition-colors duration-200 font-medium px-2 py-1 rounded hover:bg-white/50"
                       >
                         Home
                       </Link>
@@ -278,7 +278,7 @@ export default function DogDetailClient({ params = {} }) {
                     <li>
                       <Link 
                         href="/dogs" 
-                        className="text-gray-600 hover:text-blue-600 transition-colors duration-200 font-medium px-2 py-1 rounded hover:bg-white/50"
+                        className="text-gray-600 hover:text-orange-600 transition-colors duration-200 font-medium px-2 py-1 rounded hover:bg-white/50"
                       >
                         Find Dogs
                       </Link>
@@ -300,7 +300,7 @@ export default function DogDetailClient({ params = {} }) {
 
             <ScrollAnimationWrapper delay={100}>
               <Link href="/dogs">
-                <Button variant="link" className="inline-flex items-center text-blue-500 hover:text-blue-700 mb-6 p-2 h-auto transition-all duration-300 hover:bg-blue-50 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                <Button variant="link" className="inline-flex items-center text-orange-500 hover:text-orange-700 mb-6 p-2 h-auto transition-all duration-300 hover:bg-orange-50 rounded-lg focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
                   ← Back to all dogs
                 </Button>
               </Link>
@@ -375,7 +375,7 @@ export default function DogDetailClient({ params = {} }) {
                               <FavoriteButton 
                                 dog={dog} 
                                 variant="header" 
-                                className="rounded-full transition-all duration-200 hover:scale-110 hover:shadow-md focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" 
+                                className="rounded-full transition-all duration-200 hover:scale-110 hover:shadow-md focus:ring-2 focus:ring-orange-500 focus:ring-offset-2" 
                               />
                             </div>
                             
@@ -387,7 +387,7 @@ export default function DogDetailClient({ params = {} }) {
                                 text={`${dog.name} is a ${dog.standardized_breed || dog.breed || 'lovely dog'} looking for a forever home.`}
                                 variant="ghost"
                                 size="sm"
-                                className="p-3 rounded-full hover:bg-gray-100 transition-all duration-200 hover:scale-110 hover:shadow-md focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                className="p-3 rounded-full hover:bg-gray-100 transition-all duration-200 hover:scale-110 hover:shadow-md focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                               />
                             </div>
                           </div>
@@ -440,12 +440,12 @@ export default function DogDetailClient({ params = {} }) {
                         </div>
 
                         {/* Sex Card - Always show, display sex or "Unknown" */}
-                        <div className="bg-blue-50 rounded-lg p-4 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-md border border-blue-100">
+                        <div className="bg-orange-50 rounded-lg p-4 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-md border border-orange-100">
                           <div className="text-3xl mb-2">
                             {dog.sex && dog.sex.toLowerCase() === 'male' ? '♂️' : 
                              dog.sex && dog.sex.toLowerCase() === 'female' ? '♀️' : '❓'}
                           </div>
-                          <p className="text-xs text-blue-600 font-medium mb-1">Gender</p>
+                          <p className="text-xs text-orange-600 font-medium mb-1">Gender</p>
                           <p className="text-sm font-semibold text-gray-800">
                             {dog.sex && dog.sex.toLowerCase() !== 'unknown' ? dog.sex : 'Unknown'}
                           </p>
@@ -496,7 +496,7 @@ export default function DogDetailClient({ params = {} }) {
                       <ScrollAnimationWrapper delay={750}>
                         <div className="mb-8" data-testid="cta-section">
                           <div className="flex justify-center">
-                            <Button asChild className="w-full sm:w-auto sm:min-w-[280px] sm:max-w-[400px] bg-blue-600 hover:bg-blue-700 text-white text-lg py-4 px-8 shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg transform hover:scale-105 focus:ring-4 focus:ring-blue-500 focus:ring-offset-2">
+                            <Button asChild className="w-full sm:w-auto sm:min-w-[280px] sm:max-w-[400px] bg-orange-600 hover:bg-orange-700 text-white text-lg py-4 px-8 shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg transform hover:scale-105 focus:ring-4 focus:ring-orange-500 focus:ring-offset-2">
                               <a href={dog.adoption_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
                                 <svg 
                                   className="w-5 h-5 mr-3 transition-transform duration-200" 

@@ -239,7 +239,7 @@ describe('Session 7: Comprehensive Integration Tests', () => {
       
       // Text should have good contrast
       const dogName = screen.getByText('Dog 1');
-      expect(dogName).toHaveClass('text-xl'); // Should be high contrast black text
+      expect(dogName).toHaveClass('text-card-title'); // Should be high contrast black text
     });
   });
 
