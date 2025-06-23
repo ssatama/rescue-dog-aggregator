@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from "./button";
-import { Heart, Phone } from 'lucide-react';
+import { Icon } from './Icon';
 import { FavoritesManager } from '../../utils/favorites';
 import { useToast } from './Toast';
 import { reportError } from '../../utils/logger';
@@ -97,9 +97,12 @@ export default function MobileStickyBar({
           data-testid="mobile-favorite-button"
           aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
         >
-          <Heart 
-            className={`h-5 w-5 mr-2 ${
-              isFavorite ? 'fill-current text-red-500' : ''
+          <Icon 
+            name="heart"
+            size="default"
+            filled={isFavorite}
+            className={`mr-2 ${
+              isFavorite ? 'text-red-500' : ''
             }`} 
           />
           {isLoading ? 'Saving...' : (isFavorite ? 'Favorited' : 'Favorite')}
@@ -109,11 +112,11 @@ export default function MobileStickyBar({
         <Button
           size="lg"
           onClick={handleContactClick}
-          className="flex-1 ml-2 bg-orange-600 hover:bg-orange-700 text-white"
+          className="flex-1 ml-2 bg-orange-600 hover:bg-orange-700 text-white mobile-touch-target"
           data-testid="mobile-contact-button"
           aria-label="Start adoption process"
         >
-          <Phone className="h-5 w-5 mr-2" />
+          <Icon name="phone" size="default" className="mr-2" />
           Start Adoption Process
         </Button>
       </div>

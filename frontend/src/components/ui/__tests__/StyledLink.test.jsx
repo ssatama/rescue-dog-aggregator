@@ -175,7 +175,7 @@ describe('StyledLink Component', () => {
       const link = screen.getByRole('link');
       expect(link).toHaveClass('focus-visible:outline-none');
       expect(link).toHaveClass('focus-visible:ring-2');
-      expect(link).toHaveClass('focus-visible:ring-orange-500');
+      expect(link).toHaveClass('focus-visible:ring-orange-600');
       expect(link).toHaveClass('focus-visible:ring-offset-2');
     });
 
@@ -189,7 +189,7 @@ describe('StyledLink Component', () => {
       const link = screen.getByRole('link');
       expect(link).toHaveClass('focus-visible:outline-none');
       expect(link).toHaveClass('focus-visible:ring-2');
-      expect(link).toHaveClass('focus-visible:ring-orange-500');
+      expect(link).toHaveClass('focus-visible:ring-orange-600');
       expect(link).toHaveClass('focus-visible:ring-offset-2');
     });
 
@@ -203,7 +203,7 @@ describe('StyledLink Component', () => {
       const link = screen.getByRole('link');
       expect(link).toHaveClass('focus-visible:outline-none');
       expect(link).toHaveClass('focus-visible:ring-2');
-      expect(link).toHaveClass('focus-visible:ring-orange-500');
+      expect(link).toHaveClass('focus-visible:ring-orange-600');
       expect(link).toHaveClass('focus-visible:ring-offset-2');
     });
 

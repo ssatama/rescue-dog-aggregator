@@ -56,7 +56,7 @@ describe('Session 7: Comprehensive Integration Tests', () => {
       
       // Verify dog card CTAs use orange styling
       const dogCardCTA = screen.getAllByText(/Meet Dog/i)[0];
-      expect(dogCardCTA).toHaveClass('from-orange-500', 'to-orange-600');
+      expect(dogCardCTA).toHaveClass('from-orange-600', 'to-orange-700');
       
       // The Load More button, when it appears, uses the same orange styling
       // This is verified by the code change made to DogsPageClient.jsx

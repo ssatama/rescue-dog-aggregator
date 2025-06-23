@@ -441,9 +441,6 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
         key={`hero-${currentSrc}`} // Force React to recreate element on src change
         src={currentSrc || '/placeholder_dog.svg'}
         alt={alt}
-        ref={(imgEl) => {
-          // Ref for potential future debugging if needed
-        }}
         className={`
           w-full h-full object-contain transition-all duration-700
           ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}
@@ -453,6 +450,7 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
           objectPosition: position,
           transform: imageLoaded && !prefersReducedMotion ? 'scale(1)' : 'scale(1.05)'
         }}
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 60vw"
         onLoad={handleImageLoad}
         onError={handleError}
         loading={networkStrategy.loading || "eager"}

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Share2, Copy, CheckCircle } from 'lucide-react';
+import { Icon } from './Icon';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -88,7 +88,7 @@ export default function ShareButton({
         onClick={handleNativeShare}
         className={className}
       >
-        <Share2 className="h-4 w-4 mr-2" />
+        <Icon name="share" size="small" className="mr-2" />
         Share
       </Button>
     );
@@ -99,7 +99,7 @@ export default function ShareButton({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant={variant} size={size} className={className}>
-          <Share2 className="h-4 w-4 mr-2" />
+          <Icon name="share" size="small" className="mr-2" />
           Share
         </Button>
       </DropdownMenuTrigger>
@@ -116,12 +116,12 @@ export default function ShareButton({
         <DropdownMenuItem onClick={handleCopyLink}>
           {copied ? (
             <>
-              <CheckCircle className="h-4 w-4 mr-2" />
+              <Icon name="check-circle" size="small" className="mr-2" />
               Copied!
             </>
           ) : (
             <>
-              <Copy className="h-4 w-4 mr-2" />
+              <Icon name="copy" size="small" className="mr-2" />
               Copy Link
             </>
           )}

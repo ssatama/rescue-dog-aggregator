@@ -1,8 +1,14 @@
 export default function Loading() {
   return (
-    // Added data-testid here if needed for tests
-    <div className="flex justify-center items-center min-h-[200px]" data-testid="loading">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+    <div 
+      className="flex justify-center items-center min-h-[200px]" 
+      data-testid="loading"
+      role="status"
+      aria-live="polite"
+      aria-label="Loading content"
+    >
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-600"></div>
+      <span className="sr-only">Loading content, please wait...</span>
     </div>
   );
 }

@@ -2,17 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  X, 
-  Filter, 
-  Calendar, 
-  PawPrint, 
-  Tag, 
-  Ruler, 
-  Home, 
-  SortDesc,
-  Search
-} from 'lucide-react';
+import { Icon } from '../ui/Icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -142,8 +132,8 @@ export default function MobileFilterBottomSheet({
         className={`
           min-h-[48px] px-4 py-3 animate-button-hover focus-ring transition-colors duration-200
           ${isActive 
-            ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2' 
-            : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2'
+            ? 'bg-orange-600 hover:bg-orange-700 text-white border-orange-600 focus:ring-2 focus:ring-orange-600 focus:ring-offset-2' 
+            : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300 focus:ring-2 focus:ring-orange-600 focus:ring-offset-2'
           }
         `}
         aria-pressed={isActive}
@@ -196,7 +186,7 @@ export default function MobileFilterBottomSheet({
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <div className="flex items-center gap-3">
-                <Filter className="h-5 w-5 text-orange-500" />
+                <Icon name="filter" size="default" color="active" />
                 <h2 className="text-lg font-semibold text-gray-900">Filter & Sort</h2>
               </div>
               <Button
@@ -206,7 +196,7 @@ export default function MobileFilterBottomSheet({
                 className="h-10 w-10"
                 aria-label="Close filters"
               >
-                <X className="h-5 w-5" />
+                <Icon name="x" size="default" />
               </Button>
             </div>
 
@@ -224,7 +214,7 @@ export default function MobileFilterBottomSheet({
                     data-testid="clear-all-button"
                     className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
                   >
-                    <X className="h-4 w-4 mr-1" />
+                    <Icon name="x" size="small" className="mr-1" />
                     Clear all
                   </Button>
                 )}
@@ -238,7 +228,7 @@ export default function MobileFilterBottomSheet({
                 {/* Age Filter */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <Icon name="calendar" size="small" color="default" />
                     <h3 className="text-sm font-medium text-gray-700">Age</h3>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
@@ -259,11 +249,11 @@ export default function MobileFilterBottomSheet({
                 {/* Breed Search */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <PawPrint className="h-4 w-4 text-gray-500" />
+                    <Icon name="paw-print" size="small" color="default" />
                     <h3 className="text-sm font-medium text-gray-700">Breed</h3>
                   </div>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Icon name="search" size="small" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                     <Input
                       type="text"
                       placeholder="Search for specific breed..."
@@ -271,7 +261,7 @@ export default function MobileFilterBottomSheet({
                       onChange={(e) => setLocalBreedInput(e.target.value)}
                       data-testid="breed-search-input"
                       aria-label="Search for specific breed"
-                      className="pl-10 min-h-[48px] border-gray-300 focus:border-orange-500 focus:ring-orange-500 focus:ring-2 transition-colors duration-200"
+                      className="pl-10 min-h-[48px] border-gray-300 focus:border-orange-600 focus:ring-orange-600 focus:ring-2 transition-colors duration-200"
                     />
                   </div>
                   {localBreedInput && (
@@ -285,7 +275,7 @@ export default function MobileFilterBottomSheet({
                 {!isOrganizationPage && (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <Tag className="h-4 w-4 text-gray-500" />
+                      <Icon name="tag" size="small" color="default" />
                       <h3 className="text-sm font-medium text-gray-700">Sex</h3>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
@@ -308,7 +298,7 @@ export default function MobileFilterBottomSheet({
                 {!isOrganizationPage && (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <Ruler className="h-4 w-4 text-gray-500" />
+                      <Icon name="ruler" size="small" color="default" />
                       <h3 className="text-sm font-medium text-gray-700">Size</h3>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -331,7 +321,7 @@ export default function MobileFilterBottomSheet({
                 {!isOrganizationPage && organizations.length > 1 && (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <Home className="h-4 w-4 text-gray-500" />
+                      <Icon name="home" size="small" color="default" />
                       <h3 className="text-sm font-medium text-gray-700">Organization</h3>
                     </div>
                     <div className="grid grid-cols-1 gap-2">
@@ -353,7 +343,7 @@ export default function MobileFilterBottomSheet({
                 {/* Sort Filter */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <SortDesc className="h-4 w-4 text-gray-500" />
+                    <Icon name="sort-desc" size="small" color="default" />
                     <h3 className="text-sm font-medium text-gray-700">Sort By</h3>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -378,7 +368,7 @@ export default function MobileFilterBottomSheet({
             <div className="p-4 border-t border-gray-200 bg-white">
               <Button
                 onClick={onClose}
-                className="w-full min-h-[48px] bg-orange-500 hover:bg-orange-600 text-white font-medium"
+                className="w-full min-h-[48px] bg-orange-600 hover:bg-orange-700 text-white font-medium"
                 size="lg"
               >
                 Apply Filters ({totalCount} dogs)

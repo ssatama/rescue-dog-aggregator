@@ -63,7 +63,7 @@ const CrossBrowserTestComponent = () => (
     {/* Gradients with fallbacks */}
     <div 
       data-testid="gradient-element"
-      className="bg-orange-500 cross-browser-gradient"
+      className="bg-orange-600 cross-browser-gradient"
     >
       Gradient test
     </div>
@@ -200,7 +200,7 @@ describe('Cross-Browser Compatibility Tests', () => {
       const element = screen.getByTestId('gradient-element');
       
       expect(element).toBeInTheDocument();
-      expect(element).toHaveClass('bg-orange-500'); // Fallback color
+      expect(element).toHaveClass('bg-orange-600'); // Fallback color
       expect(element).toHaveClass('cross-browser-gradient'); // Cross-browser gradient class
     });
   });

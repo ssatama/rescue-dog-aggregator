@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronDown, Search, X } from 'lucide-react';
+import { Icon } from '../ui/Icon';
 
 /**
  * Enhanced FilterSection component with custom collapse animations
@@ -59,9 +59,11 @@ function FilterSection({ id, title, defaultOpen = false, children, count = 0 }) 
             </span>
           )}
         </div>
-        <ChevronDown 
+        <Icon 
+          name="chevron-down"
+          size="small"
           data-testid={`chevron-icon-${id}`}
-          className={`w-4 h-4 text-gray-500 chevron-icon transition-transform duration-200 ease-out ${
+          className={`text-gray-500 chevron-icon transition-transform duration-200 ease-out ${
             isOpen ? 'chevron-open' : ''
           } group-open:rotate-180`}
         />
@@ -292,14 +294,14 @@ export default function DesktopFilters({
             {/* Search Input */}
             <div className="space-y-3">
               <div className="relative input-container form-enhanced">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Icon name="search" size="small" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <Input
                   data-testid="search-input"
                   type="text"
                   placeholder="Search dogs..."
                   value={searchQuery}
                   onChange={handleSearchChange}
-                  className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
+                  className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
                 />
                 {searchQuery && (
                   <Button
@@ -309,7 +311,7 @@ export default function DesktopFilters({
                     onClick={clearSearch}
                     className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 text-gray-400 hover:text-gray-600 interactive-enhanced btn-focus-ring"
                   >
-                    <X className="h-4 w-4" />
+                    <Icon name="x" size="small" />
                   </Button>
                 )}
               </div>
@@ -323,7 +325,7 @@ export default function DesktopFilters({
                 >
                   <SelectTrigger 
                     data-testid="organization-select"
-                    className="select-focus enhanced-hover enhanced-focus-select focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
+                    className="select-focus enhanced-hover enhanced-focus-select focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
                   >
                     <SelectValue>
                       {organizationFilter === 'any' || !organizationFilter 
@@ -357,14 +359,14 @@ export default function DesktopFilters({
             <div className="space-y-3">
               {/* Breed Search Input */}
               <div className="relative input-container form-enhanced">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Icon name="search" size="small" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <Input
                   data-testid="breed-search-input"
                   type="text"
                   placeholder="Search breeds..."
                   value={breedInputValue}
                   onChange={handleBreedInputChange}
-                  className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
+                  className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
                 />
                 {breedInputValue && (
                   <Button
@@ -374,7 +376,7 @@ export default function DesktopFilters({
                     onClick={handleBreedClear}
                     className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 text-gray-400 hover:text-gray-600 interactive-enhanced btn-focus-ring"
                   >
-                    <X className="h-4 w-4" />
+                    <Icon name="x" size="small" />
                   </Button>
                 )}
               </div>
@@ -420,12 +422,12 @@ export default function DesktopFilters({
             <div className="space-y-3">
               {/* Country Search Input */}
               <div className="relative input-container form-enhanced">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Icon name="search" size="small" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <Input
                   data-testid="country-search-input"
                   type="text"
                   placeholder="Search countries..."
-                  className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
+                  className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
                 />
               </div>
               
@@ -437,7 +439,7 @@ export default function DesktopFilters({
                 >
                   <SelectTrigger 
                     data-testid="ships-to-country-select"
-                    className="select-focus enhanced-hover enhanced-focus-select focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
+                    className="select-focus enhanced-hover enhanced-focus-select focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
                   >
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
@@ -568,7 +570,7 @@ export default function DesktopFilters({
         {activeFilterCount > 0 && (
           <button
             data-testid="clear-all-filters"
-            className="w-full mt-6 text-orange-600 hover:text-orange-700 hover:bg-orange-50 font-medium py-2 px-4 rounded-lg transition-colors duration-200 interactive-enhanced enhanced-focus-button focus:ring-2 focus:ring-orange-500"
+            className="w-full mt-6 text-orange-600 hover:text-orange-700 hover:bg-orange-50 font-medium py-2 px-4 rounded-lg transition-colors duration-200 interactive-enhanced enhanced-focus-button focus:ring-2 focus:ring-orange-600"
             onClick={resetFilters}
           >
             Clear All Filters

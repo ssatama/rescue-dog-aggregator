@@ -89,7 +89,7 @@ describe('CTA Button Harmonization - Orange Theme Conversion', () => {
     test('custom orange buttons should use proper orange colors', () => {
       render(
         <Button 
-          className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500" 
+          className="bg-orange-600 hover:bg-orange-700 focus:ring-orange-600" 
           data-testid="custom-orange-button"
         >
           Custom Orange CTA
@@ -100,7 +100,7 @@ describe('CTA Button Harmonization - Orange Theme Conversion', () => {
       // Should contain orange classes
       expect(button.className).toMatch(/bg-orange-600/);
       expect(button.className).toMatch(/hover:bg-orange-700/);
-      expect(button.className).toMatch(/focus:ring-orange-500/);
+      expect(button.className).toMatch(/focus:ring-orange-600/);
       
       // Should NOT contain any blue classes
       expect(button.className).not.toMatch(/bg-blue-/);
@@ -111,7 +111,7 @@ describe('CTA Button Harmonization - Orange Theme Conversion', () => {
     test('orange gradient buttons should use proper gradient classes', () => {
       render(
         <Button 
-          className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700" 
+          className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-600 hover:to-orange-700" 
           data-testid="gradient-orange-button"
         >
           Gradient Orange CTA
@@ -120,8 +120,8 @@ describe('CTA Button Harmonization - Orange Theme Conversion', () => {
       const button = screen.getByTestId('gradient-orange-button');
       
       // Should contain gradient orange classes
-      expect(button.className).toMatch(/from-orange-500/);
-      expect(button.className).toMatch(/to-orange-600/);
+      expect(button.className).toMatch(/from-orange-600/);
+      expect(button.className).toMatch(/to-orange-700/);
       expect(button.className).toMatch(/hover:from-orange-600/);
       expect(button.className).toMatch(/hover:to-orange-700/);
     });

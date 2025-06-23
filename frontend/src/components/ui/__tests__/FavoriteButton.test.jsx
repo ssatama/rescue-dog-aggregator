@@ -70,7 +70,8 @@ describe('FavoriteButton', () => {
       const favoriteButton = screen.getByTestId('header-favorite-button');
       const heartIcon = favoriteButton.querySelector('svg');
       
-      expect(heartIcon).toHaveClass('text-red-500', 'fill-current');
+      expect(heartIcon).toHaveClass('text-red-500');
+      expect(heartIcon).toHaveAttribute('fill', 'currentColor');
       expect(favoriteButton).toHaveAttribute('aria-label', 'Remove from favorites');
     });
 
@@ -171,7 +172,8 @@ describe('FavoriteButton', () => {
 
       // After successful operation, should show favorited state
       heartIcon = favoriteButton.querySelector('svg');
-      expect(heartIcon).toHaveClass('text-red-500', 'fill-current');
+      expect(heartIcon).toHaveClass('text-red-500');
+      expect(heartIcon).toHaveAttribute('fill', 'currentColor');
     });
 
     test('does not render for invalid dog', () => {

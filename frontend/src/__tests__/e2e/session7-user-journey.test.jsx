@@ -147,7 +147,7 @@ describe('Session 7: End-to-End User Journey Tests', () => {
 
       // 6. CTA INTERACTION - User clicks to meet the dog
       const meetBuddyButton = screen.getByText('Meet Buddy →');
-      expect(meetBuddyButton).toHaveClass('from-orange-500', 'to-orange-600');
+      expect(meetBuddyButton).toHaveClass('from-orange-600', 'to-orange-700');
       expect(meetBuddyButton).toHaveClass('mobile-touch-target');
       
       // Button should be accessible
@@ -302,7 +302,7 @@ describe('Session 7: End-to-End User Journey Tests', () => {
       
       // Click should work smoothly
       await user.click(meetButton);
-      expect(meetButton).toHaveClass('from-orange-500', 'to-orange-600');
+      expect(meetButton).toHaveClass('from-orange-600', 'to-orange-700');
     });
 
     test('user sees consistent orange theme throughout journey', async () => {
@@ -314,7 +314,7 @@ describe('Session 7: End-to-End User Journey Tests', () => {
       // 1. DOG CARD CTAS - Should all use orange theme
       const meetButtons = screen.getAllByText(/Meet .* →/);
       meetButtons.forEach(button => {
-        expect(button).toHaveClass('from-orange-500', 'to-orange-600');
+        expect(button).toHaveClass('from-orange-600', 'to-orange-700');
         expect(button).toHaveClass('text-white');
       });
 
@@ -386,7 +386,7 @@ describe('Session 7: End-to-End User Journey Tests', () => {
       expect(meetButton).toBeInTheDocument();
       
       // Elements should still be accessible
-      expect(meetButton).toHaveClass('from-orange-500', 'to-orange-600');
+      expect(meetButton).toHaveClass('from-orange-600', 'to-orange-700');
     });
   });
 
@@ -400,7 +400,7 @@ describe('Session 7: End-to-End User Journey Tests', () => {
       // 1. Visual consistency - Orange theme throughout
       const meetButtons = screen.getAllByText(/Meet .* →/);
       meetButtons.forEach(button => {
-        expect(button).toHaveClass('from-orange-500', 'to-orange-600');
+        expect(button).toHaveClass('from-orange-600', 'to-orange-700');
       });
 
       // 2. Cross-browser compatibility - Elements render properly

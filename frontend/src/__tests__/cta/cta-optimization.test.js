@@ -109,7 +109,8 @@ describe('CTA Optimization Features', () => {
       
       favoriteButton = screen.getAllByTestId('header-favorite-button')[1]; // Get the second rendered button
       heartIcon = favoriteButton.querySelector('svg');
-      expect(heartIcon).toHaveClass('text-red-500', 'fill-current');
+      expect(heartIcon).toHaveClass('text-red-500');
+      expect(heartIcon).toHaveAttribute('fill', 'currentColor');
       expect(favoriteButton).toHaveAttribute('aria-label', 'Remove from favorites');
     });
 

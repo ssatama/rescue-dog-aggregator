@@ -95,7 +95,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
 
   return (
     <Card 
-      className="overflow-hidden h-full cursor-pointer"
+      className="overflow-hidden h-full cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2"
       onClick={() => window.location.href = `/organizations/${id}`}
       role="button"
       tabIndex={0}
@@ -116,6 +116,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
                   src={logoUrl} 
                   alt={`${name} logo`} 
                   className={`${styles.logo} rounded-lg object-cover`}
+                  sizes="(max-width: 640px) 64px, (max-width: 1024px) 56px, 64px"
                   onError={(e) => handleImageError(e, logoUrl)}
                   placeholder={
                     <div className={`${styles.logo} rounded-lg bg-orange-100 flex items-center justify-center animate-pulse`}>
@@ -216,6 +217,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
                       src={dog.thumbnail_url || dog.primary_image_url} 
                       alt={dog.name || 'Dog preview'} 
                       className={`${styles.dogThumbnail} rounded-lg object-cover`}
+                      sizes="(max-width: 640px) 40px, (max-width: 1024px) 44px, 48px"
                       onError={(e) => handleImageError(e, dog.thumbnail_url)}
                       placeholder={
                         <div className={`${styles.dogThumbnail} rounded-lg bg-gray-200 animate-pulse`} />
@@ -258,7 +260,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
                 href={websiteUrl} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center"
+                className="inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 rounded"
                 onClick={(e) => e.stopPropagation()} // Prevent navigation when clicking button
               >
                 Visit Website
@@ -267,7 +269,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
             
             <Button 
               size="sm" 
-              className={`flex-1 bg-orange-500 hover:bg-orange-600 text-white animate-button-hover ${styles.buttonHeight}`}
+              className={`flex-1 bg-orange-600 hover:bg-orange-700 text-white animate-button-hover ${styles.buttonHeight}`}
             >
               View {totalDogs} Dog{totalDogs !== 1 ? 's' : ''} →
             </Button>

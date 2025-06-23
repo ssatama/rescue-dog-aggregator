@@ -240,7 +240,7 @@ describe('Session 7: Filter UI Refinement', () => {
       
       const organizationSelect = screen.getByTestId('organization-select');
       expect(organizationSelect).toHaveClass('enhanced-focus-select');
-      // focus:border-orange-500 will be added in implementation
+      // focus:border-orange-600 will be added in implementation
     });
   });
 
@@ -277,8 +277,8 @@ describe('Session 7: Filter UI Refinement', () => {
       render(<MobileFilterBottomSheet {...mockMobileProps} />);
       
       const applyButton = screen.getByText(/apply filters/i);
-      expect(applyButton).toHaveClass('bg-orange-500');
-      expect(applyButton).toHaveClass('hover:bg-orange-600');
+      expect(applyButton).toHaveClass('bg-orange-600');
+      expect(applyButton).toHaveClass('hover:bg-orange-700');
       expect(applyButton).toHaveClass('text-white');
     });
 
@@ -291,7 +291,7 @@ describe('Session 7: Filter UI Refinement', () => {
       render(<MobileFilterBottomSheet {...propsWithActiveFilter} />);
       
       const puppyButton = screen.getByTestId('age-filter-Puppy');
-      expect(puppyButton).toHaveClass('bg-orange-500');
+      expect(puppyButton).toHaveClass('bg-orange-600');
     });
 
     it('should have enhanced backdrop interaction', () => {
@@ -370,7 +370,7 @@ describe('Session 7: Filter UI Refinement', () => {
       
       const searchInput = screen.getByTestId('search-input');
       expect(searchInput).toHaveAttribute('type', 'text');
-      expect(searchInput).toHaveClass('focus:ring-2', 'focus:ring-orange-500');
+      expect(searchInput).toHaveClass('focus:ring-2', 'focus:ring-orange-600');
       
       // Input is focusable and has proper focus styling
     });

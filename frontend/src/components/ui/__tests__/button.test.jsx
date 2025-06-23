@@ -75,11 +75,11 @@ describe('Button Component', () => {
     });
 
     it('should render Adopt buttons with proper green styling', () => {
-      render(<Button className="bg-green-600 hover:bg-green-700">Adopt Dog</Button>);
+      render(<Button className="bg-green-700 hover:bg-green-800">Adopt Dog</Button>);
       const button = screen.getByRole('button', { name: 'Adopt Dog' });
       
       expect(button).toBeVisible();
-      expect(button).toHaveClass('bg-green-600');
+      expect(button).toHaveClass('bg-green-700');
     });
   });
 

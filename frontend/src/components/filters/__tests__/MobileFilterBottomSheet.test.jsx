@@ -224,8 +224,8 @@ describe('MobileFilterBottomSheet', () => {
       const puppyButton = screen.getByTestId('age-filter-Puppy');
       const maleButton = screen.getByTestId('sex-filter-Male');
       
-      expect(puppyButton).toHaveClass('bg-orange-500', 'text-white', 'border-orange-500');
-      expect(maleButton).toHaveClass('bg-orange-500', 'text-white', 'border-orange-500');
+      expect(puppyButton).toHaveClass('bg-orange-600', 'text-white', 'border-orange-600');
+      expect(maleButton).toHaveClass('bg-orange-600', 'text-white', 'border-orange-600');
     });
 
     test('shows inactive state for unselected filters', () => {
@@ -234,7 +234,7 @@ describe('MobileFilterBottomSheet', () => {
       const adultButton = screen.getByTestId('age-filter-Adult');
       
       expect(adultButton).toHaveClass('bg-gray-100', 'text-gray-700', 'border-gray-300');
-      expect(adultButton).not.toHaveClass('bg-orange-500');
+      expect(adultButton).not.toHaveClass('bg-orange-600');
     });
 
     test('bottom sheet has proper GPU acceleration and styling', () => {

@@ -36,16 +36,16 @@ describe('Session 7: Cross-Browser Compatibility Tests', () => {
 
   describe('Gradient Support', () => {
     test('gradients are properly defined', () => {
-      const orangeGradient = 'bg-gradient-to-r from-orange-500 to-orange-600';
+      const orangeGradient = 'bg-gradient-to-r from-orange-600 to-orange-700';
       expect(orangeGradient).toContain('bg-gradient-to-r');
-      expect(orangeGradient).toContain('from-orange-500');
-      expect(orangeGradient).toContain('to-orange-600');
+      expect(orangeGradient).toContain('from-orange-600');
+      expect(orangeGradient).toContain('to-orange-700');
     });
   });
 
   describe('Focus Visible Support', () => {
     test('focus-visible has fallback focus styles', () => {
-      const focusClasses = 'focus-visible:ring-2 focus-visible:ring-orange-500';
+      const focusClasses = 'focus-visible:ring-2 focus-visible:ring-orange-600';
       // Modern browsers support focus-visible
       expect(focusClasses).toContain('focus-visible:ring');
     });

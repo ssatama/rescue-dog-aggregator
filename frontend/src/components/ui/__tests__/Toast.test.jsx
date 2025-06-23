@@ -46,7 +46,7 @@ describe('Toast', () => {
       const toast = screen.getByRole('alert');
       expect(toast).toBeInTheDocument();
       expect(toast).toHaveTextContent('Success message');
-      expect(toast).toHaveClass('bg-green-500');
+      expect(toast).toHaveClass('bg-green-700');
     });
 
     test('renders toast with error styling', () => {
@@ -60,7 +60,7 @@ describe('Toast', () => {
       );
 
       const toast = screen.getByRole('alert');
-      expect(toast).toHaveClass('bg-red-500');
+      expect(toast).toHaveClass('bg-red-600');
     });
 
     test('renders toast with info styling', () => {
@@ -74,7 +74,7 @@ describe('Toast', () => {
       );
 
       const toast = screen.getByRole('alert');
-      expect(toast).toHaveClass('bg-orange-500');
+      expect(toast).toHaveClass('bg-orange-600');
     });
 
     test('does not render when isVisible is false', () => {

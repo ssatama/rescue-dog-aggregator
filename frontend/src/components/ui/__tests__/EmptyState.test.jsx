@@ -217,7 +217,7 @@ describe('EmptyState', () => {
       
       const button = screen.getByText('Clear All Filters & Start Fresh');
       expect(button).toHaveAttribute('type', 'button');
-      expect(button).toHaveClass('focus:outline-none', 'focus:ring-2', 'focus:ring-orange-500');
+      expect(button).toHaveClass('focus:outline-none', 'focus:ring-2', 'focus:ring-orange-600');
     });
 
     it('maintains semantic HTML structure', () => {

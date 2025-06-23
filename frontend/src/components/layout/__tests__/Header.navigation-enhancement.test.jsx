@@ -81,7 +81,7 @@ describe('Header Navigation Enhancement - Orange Theme', () => {
       render(<Header />);
       
       const mobileMenuButton = screen.getByRole('button', { name: /open main menu/i });
-      expect(mobileMenuButton).toHaveClass('focus:ring-orange-500');
+      expect(mobileMenuButton).toHaveClass('focus:ring-orange-600');
       expect(mobileMenuButton).not.toHaveClass('focus:ring-red-500');
     });
   });

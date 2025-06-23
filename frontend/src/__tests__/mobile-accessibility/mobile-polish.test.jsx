@@ -9,7 +9,7 @@ const MobilePolishTestComponent = () => (
     {/* Touch target compliance */}
     <button 
       data-testid="touch-target-button"
-      className="mobile-touch-target bg-orange-500 text-white px-4 py-3 rounded-lg"
+      className="mobile-touch-target bg-orange-600 text-white px-4 py-3 rounded-lg"
       style={{ minHeight: '48px', minWidth: '48px' }}
     >
       Touch Target
@@ -89,7 +89,7 @@ const MobilePolishTestComponent = () => (
       </p>
       <button 
         data-testid="mobile-card-action"
-        className="mobile-card-button w-full bg-orange-500 text-white py-3 px-4 rounded-md font-medium"
+        className="mobile-card-button w-full bg-orange-600 text-white py-3 px-4 rounded-md font-medium"
         style={{ minHeight: '48px' }}
       >
         Mobile Action
@@ -389,7 +389,7 @@ describe('Mobile Polish & Accessibility Tests', () => {
       
       // Orange buttons should have sufficient contrast
       const orangeButton = screen.getByTestId('touch-target-button');
-      expect(orangeButton).toHaveClass('bg-orange-500', 'text-white');
+      expect(orangeButton).toHaveClass('bg-orange-600', 'text-white');
       
       // Text should have good contrast
       const cardContent = screen.getByText('Content optimized for mobile reading');

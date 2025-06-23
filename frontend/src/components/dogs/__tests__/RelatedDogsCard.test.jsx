@@ -113,7 +113,7 @@ describe('RelatedDogsCard', () => {
 
       // Assert
       expect(card).toHaveClass('hover:shadow-md');
-      expect(card).toHaveClass('transition-shadow');
+      expect(card).toHaveClass('transition-all');
     });
 
     it('should apply hover effects on dog name', () => {

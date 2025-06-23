@@ -8,7 +8,7 @@ const ThemeConsistencyTestComponent = () => (
     {/* Orange theme buttons */}
     <button 
       data-testid="primary-orange-button"
-      className="theme-consistent-button bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+      className="theme-consistent-button bg-orange-600 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
     >
       Primary Orange Button
     </button>
@@ -62,7 +62,7 @@ const ThemeConsistencyTestComponent = () => (
       <p className="theme-consistent-text text-gray-600 mb-4">
         Card content with consistent theming
       </p>
-      <button className="theme-consistent-button bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg">
+      <button className="theme-consistent-button bg-orange-600 hover:bg-orange-600 text-white px-4 py-2 rounded-lg">
         Card CTA
       </button>
     </div>
@@ -72,7 +72,7 @@ const ThemeConsistencyTestComponent = () => (
       data-testid="orange-progress"
       className="theme-consistent-progress bg-gray-200 rounded-full h-2 overflow-hidden"
     >
-      <div className="bg-orange-500 h-full w-3/4 rounded-full"></div>
+      <div className="bg-orange-600 h-full w-3/4 rounded-full"></div>
     </div>
     
     {/* Alert/notification components */}
@@ -110,7 +110,7 @@ const ThemeConsistencyTestComponent = () => (
     {/* Gradients consistency */}
     <div 
       data-testid="orange-gradient"
-      className="theme-consistent-gradient bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-4 rounded-lg"
+      className="theme-consistent-gradient bg-gradient-to-r from-orange-600 to-orange-700 text-white px-6 py-4 rounded-lg"
     >
       Orange gradient element
     </div>
@@ -119,7 +119,7 @@ const ThemeConsistencyTestComponent = () => (
     <div className="flex space-x-4">
       <svg 
         data-testid="orange-icon-1"
-        className="theme-consistent-icon text-orange-500 w-6 h-6"
+        className="theme-consistent-icon text-orange-600 w-6 h-6"
         fill="currentColor"
         viewBox="0 0 24 24"
       >
@@ -169,7 +169,7 @@ describe('Visual Consistency & Theme Tests', () => {
       render(<ThemeConsistencyTestComponent />);
       
       const primaryButton = screen.getByTestId('primary-orange-button');
-      expect(primaryButton).toHaveClass('bg-orange-500');
+      expect(primaryButton).toHaveClass('bg-orange-600');
       expect(primaryButton).toHaveClass('hover:bg-orange-600');
       expect(primaryButton).toHaveClass('text-white');
       expect(primaryButton).toHaveClass('theme-consistent-button');
@@ -223,7 +223,7 @@ describe('Visual Consistency & Theme Tests', () => {
       const progress = screen.getByTestId('orange-progress');
       expect(progress).toHaveClass('theme-consistent-progress');
       
-      const progressBar = progress.querySelector('.bg-orange-500');
+      const progressBar = progress.querySelector('.bg-orange-600');
       expect(progressBar).toBeInTheDocument();
     });
   });
@@ -251,7 +251,7 @@ describe('Visual Consistency & Theme Tests', () => {
       render(<ThemeConsistencyTestComponent />);
       
       const cardCTA = screen.getByText('Card CTA');
-      expect(cardCTA).toHaveClass('bg-orange-500');
+      expect(cardCTA).toHaveClass('bg-orange-600');
       expect(cardCTA).toHaveClass('hover:bg-orange-600');
       expect(cardCTA).toHaveClass('text-white');
     });
@@ -280,8 +280,8 @@ describe('Visual Consistency & Theme Tests', () => {
       const gradient = screen.getByTestId('orange-gradient');
       expect(gradient).toHaveClass('theme-consistent-gradient');
       expect(gradient).toHaveClass('bg-gradient-to-r');
-      expect(gradient).toHaveClass('from-orange-500');
-      expect(gradient).toHaveClass('to-orange-600');
+      expect(gradient).toHaveClass('from-orange-600');
+      expect(gradient).toHaveClass('to-orange-700');
     });
 
     test('icons use consistent orange colors', () => {
@@ -291,7 +291,7 @@ describe('Visual Consistency & Theme Tests', () => {
       const icon2 = screen.getByTestId('orange-icon-2');
       
       expect(icon1).toHaveClass('theme-consistent-icon');
-      expect(icon1).toHaveClass('text-orange-500');
+      expect(icon1).toHaveClass('text-orange-600');
       
       expect(icon2).toHaveClass('theme-consistent-icon');
       expect(icon2).toHaveClass('text-orange-600');
@@ -385,7 +385,7 @@ describe('Visual Consistency & Theme Tests', () => {
       
       // Test primary button contrast
       const primaryButton = screen.getByTestId('primary-orange-button');
-      expect(primaryButton).toHaveClass('bg-orange-500', 'text-white');
+      expect(primaryButton).toHaveClass('bg-orange-600', 'text-white');
       
       // Test secondary button contrast
       const secondaryButton = screen.getByTestId('secondary-orange-button');

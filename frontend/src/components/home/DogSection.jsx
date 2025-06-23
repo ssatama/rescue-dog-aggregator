@@ -9,7 +9,7 @@ import { DogCardSkeleton } from '../ui/LoadingSkeleton';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getAnimalsByCuration } from '../../services/animalsService';
-import { reportError } from '../../utils/logger';
+import { reportError, logger } from '../../utils/logger';
 import { preloadImages } from '../../utils/imageUtils';
 import { isSlowConnection, getNetworkInfo } from '../../utils/networkUtils';
 
@@ -59,8 +59,11 @@ const DogSection = React.memo(function DogSection({
         performance.measure('dog-section-load-time', 'dog-section-start', 'dog-section-end');
       }
       
-      // Report slow loading times
-      if (loadTime > 3000 && process.env.NODE_ENV === 'development') console.warn(`Slow loading detected: Dog section took ${loadTime.toFixed(0)}ms to load`);
+      // Report slow loading times using logger utility
+      const SLOW_LOAD_THRESHOLD = 3000;
+      if (loadTime > SLOW_LOAD_THRESHOLD) {
+        logger.warn(`Slow loading detected: Dog section took ${loadTime.toFixed(0)}ms to load`);
+      }
       
       if (data && data.length > 0) {
         const imageUrls = data.map(dog => dog.primary_image_url).filter(Boolean);
@@ -98,7 +101,8 @@ const DogSection = React.memo(function DogSection({
       try {
         navigator.connection.addEventListener('change', checkNetwork);
       } catch (error) {
-        // Silently handle environments where addEventListener is not available
+        // Handle environments where addEventListener is not available (e.g., some mobile browsers)
+        logger.debug('Network connection addEventListener not supported:', error.message);
       }
     }
     
@@ -108,7 +112,8 @@ const DogSection = React.memo(function DogSection({
         try {
           navigator.connection.removeEventListener('change', checkNetwork);
         } catch (error) {
-          // Silently handle cleanup errors
+          // Handle cleanup errors in environments with limited API support
+          logger.debug('Network connection removeEventListener cleanup failed:', error.message);
         }
       }
     };

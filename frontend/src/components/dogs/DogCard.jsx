@@ -67,7 +67,7 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
       <CardHeader className="p-0">
         <Link 
           href={`/dogs/${id}`} 
-          className="block" 
+          className="block focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 rounded-md" 
           aria-label={`View details for ${name.replace(/&[^;]+;/g, '')}`}
         >
           {/* 4:3 aspect ratio image container */}
@@ -75,10 +75,11 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
             <LazyImage
               src={optimizedImageUrl}
               alt={name.replace(/&[^;]+;/g, '')}
-              className="w-full h-full object-cover transition-transform duration-200 ease-out group-hover:scale-105"
+              className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
               style={{ objectPosition }}
               enableProgressiveLoading={true}
               priority={priority}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               onError={(e) => handleImageError(e, originalImageUrl)}
             />
             
@@ -107,10 +108,10 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
         </Link>
       </CardHeader>
 
-      <CardContent data-testid="card-content" className="p-4 sm:p-6 flex flex-col flex-grow space-y-3">
+      <CardContent data-testid="card-content" className="p-4 sm:p-6 flex flex-col flex-grow space-y-4">
         {/* Enhanced prominent name display */}
         <CardTitle className="mb-0">
-          <Link href={`/dogs/${id}`} className="hover:underline transition-all duration-300">
+          <Link href={`/dogs/${id}`} className="hover:underline transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 rounded">
             <h3 data-testid="dog-name" className="text-card-title truncate group-hover:text-orange-600 mb-2">{name}</h3>
           </Link>
         </CardTitle>
@@ -168,7 +169,7 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
            <Button
              type="button"
              size="sm"
-             className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white cross-browser-transition enhanced-focus-button mobile-touch-target"
+             className="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white cross-browser-transition enhanced-focus-button mobile-touch-target"
            >
              Meet {name} →
            </Button>

@@ -9,10 +9,9 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"; // <<< Import Input component
-// --- NEW: Import location icons ---
-import { PawPrint, Home, Tag, Ruler, Calendar, MapPin, Globe, LocateFixed, Search } from 'lucide-react'; // Added Search icon
+// --- NEW: Import unified Icon component ---
+import { Icon } from '../ui/Icon';
 // --- END NEW ---
-import { X } from 'lucide-react'; // Import X icon for clear button
 
 // Define props expected by this component
 // We pass state values and setters down from the parent page
@@ -60,7 +59,7 @@ export default function FilterControls({
       <div className="relative"> {/* Removed col-span */}
         <label htmlFor="search-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
           {/* Use Search icon */}
-          <Search className="h-4 w-4 mr-2 text-gray-500" />
+          <Icon name="search" size="small" className="mr-2" color="default" />
           Search
         </label>
         <Input
@@ -79,7 +78,7 @@ export default function FilterControls({
             className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0 text-gray-500 hover:text-gray-700 mt-3" // Added mt-3 to align with input box
             aria-label="Clear search"
           >
-            <X size={16} />
+            <Icon name="x" size="small" />
           </Button>
         )}
       </div>
@@ -87,7 +86,7 @@ export default function FilterControls({
       {/* New Rescue Organization Filter */}
       <div>
         <label htmlFor="organization-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
-          <Home className="h-4 w-4 mr-2 text-gray-500" />
+          <Icon name="home" size="small" className="mr-2" color="default" />
           Rescue Organization
         </label>
         <Select value={organizationFilter} onValueChange={setOrganizationFilter}>
@@ -110,7 +109,7 @@ export default function FilterControls({
       {/* Standardized Breed Filter */}
       <div>
         <label htmlFor="breed-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
-          <PawPrint className="h-4 w-4 mr-2 text-gray-500" />
+          <Icon name="paw-print" size="small" className="mr-2" color="default" />
           Breed
         </label>
         <Select value={standardizedBreedFilter} onValueChange={setStandardizedBreedFilter}>
@@ -130,7 +129,7 @@ export default function FilterControls({
       {/* Sex Filter */}
       <div>
         <label htmlFor="sex-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
-          <Tag className="h-4 w-4 mr-2 text-gray-500" /> {/* Using Tag as placeholder */}
+          <Icon name="tag" size="small" className="mr-2" color="default" /> {/* Using Tag as placeholder */}
           Sex
         </label>
         <Select value={sexFilter} onValueChange={setSexFilter}>
@@ -150,7 +149,7 @@ export default function FilterControls({
       {/* Size Filter */}
       <div>
         <label htmlFor="size-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
-          <Ruler className="h-4 w-4 mr-2 text-gray-500" />
+          <Icon name="ruler" size="small" className="mr-2" color="default" />
           Size
         </label>
         <Select value={sizeFilter} onValueChange={setSizeFilter}>
@@ -170,7 +169,7 @@ export default function FilterControls({
       {/* Age Category Filter */}
       <div>
         <label htmlFor="age-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
-          <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+          <Icon name="calendar" size="small" className="mr-2" color="default" />
           Age
         </label>
         <Select value={ageCategoryFilter} onValueChange={setAgeCategoryFilter}>
@@ -191,7 +190,7 @@ export default function FilterControls({
       {/* Location Country Filter */}
       <div>
         <label htmlFor="location-country-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
-          <MapPin className="h-4 w-4 mr-2 text-gray-500" />
+          <Icon name="map-pin" size="small" className="mr-2" color="default" />
           Located In
         </label>
         <Select value={locationCountryFilter} onValueChange={setLocationCountryFilter}>
@@ -211,7 +210,7 @@ export default function FilterControls({
       {/* Available To Country Filter */}
       <div>
         <label htmlFor="available-country-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
-          <Globe className="h-4 w-4 mr-2 text-gray-500" />
+          <Icon name="globe" size="small" className="mr-2" color="default" />
           Ships To Country
         </label>
         <Select value={availableCountryFilter} onValueChange={setAvailableCountryFilter}>
@@ -231,7 +230,7 @@ export default function FilterControls({
       {/* Available To Region Filter */}
       <div>
         <label htmlFor="available-region-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
-          <LocateFixed className="h-4 w-4 mr-2 text-gray-500" />
+          <Icon name="locate-fixed" size="small" className="mr-2" color="default" />
           Ships To Region
         </label>
         <Select

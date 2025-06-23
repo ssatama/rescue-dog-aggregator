@@ -619,7 +619,7 @@ describe('DogsPage Component', () => {
       
       const loadMoreButton = await screen.findByRole('button', { name: /Load More Dogs/i });
       
-      // Check button has orange gradient styling
+      // Check button has orange gradient styling (actual implementation)
       expect(loadMoreButton).toHaveClass('bg-gradient-to-r', 'from-orange-500', 'to-orange-600');
       expect(loadMoreButton).toHaveClass('hover:from-orange-600', 'hover:to-orange-700');
       expect(loadMoreButton).toHaveClass('text-white', 'font-medium');
@@ -644,7 +644,7 @@ describe('DogsPage Component', () => {
       
       const loadMoreButton = await screen.findByRole('button', { name: /Load More Dogs/i });
       
-      // Verify the button maintains consistent orange theme
+      // Verify the button maintains consistent orange theme (actual implementation)
       expect(loadMoreButton).toHaveClass('bg-gradient-to-r', 'from-orange-500', 'to-orange-600');
       
       // Verify it has proper disabled state classes (even if not currently disabled)

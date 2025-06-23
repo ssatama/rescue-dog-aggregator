@@ -9,7 +9,7 @@ const EnhancedFocusTestComponent = () => (
     {/* Enhanced button with focus ring */}
     <button 
       data-testid="enhanced-button"
-      className="btn-focus-ring enhanced-focus-button bg-orange-500 text-white px-4 py-2 rounded-lg"
+      className="btn-focus-ring enhanced-focus-button bg-orange-600 text-white px-4 py-2 rounded-lg"
     >
       Enhanced Button
     </button>

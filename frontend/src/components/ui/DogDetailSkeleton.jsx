@@ -3,15 +3,14 @@
  * Provides smooth, polished loading states with proper animations
  */
 import React from 'react';
-
-const SkeletonBox = ({ className = '', children }) => (
-  <div className={`animate-pulse bg-gray-200 rounded ${className}`}>
-    {children}
-  </div>
-);
+import SkeletonPulse from './SkeletonPulse';
 
 const SkeletonLine = ({ width = "100%", height = "h-4", className = "" }) => (
-  <SkeletonBox className={`${height} ${className}`} style={{ width }} />
+  <SkeletonPulse 
+    standalone={false}
+    className={`${height} ${className}`} 
+    style={{ width }} 
+  />
 );
 
 const SkeletonCard = ({ children, className = "" }) => (
@@ -22,7 +21,13 @@ const SkeletonCard = ({ children, className = "" }) => (
 
 export const DogDetailSkeleton = () => {
   return (
-    <div className="max-w-4xl mx-auto p-4" data-testid="dog-detail-skeleton">
+    <div 
+      className="max-w-4xl mx-auto p-4 animate-in fade-in duration-300" 
+      data-testid="dog-detail-skeleton"
+      role="status"
+      aria-label="Loading dog details"
+    >
+      <span className="sr-only">Loading dog details, please wait...</span>
       {/* Breadcrumb Skeleton */}
       <div className="mb-8">
         <div className="flex items-center space-x-2">
@@ -58,8 +63,8 @@ export const DogDetailSkeleton = () => {
                   <SkeletonLine width="40%" height="h-6" />
                 </div>
                 <div className="flex items-center space-x-1 ml-4">
-                  <SkeletonBox className="w-10 h-10 rounded-full" />
-                  <SkeletonBox className="w-10 h-10 rounded-full" />
+                  <SkeletonPulse standalone={false} className="w-10 h-10 rounded-full" />
+                  <SkeletonPulse standalone={false} className="w-10 h-10 rounded-full" />
                 </div>
               </div>
               
@@ -118,7 +123,7 @@ export const InfoCardsSkeleton = () => (
   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" data-testid="info-cards-skeleton">
     {[1, 2, 3, 4].map((index) => (
       <SkeletonCard key={index} className="text-center">
-        <SkeletonBox className="w-8 h-8 mx-auto mb-2 rounded" />
+        <SkeletonPulse standalone={false} className="w-8 h-8 mx-auto mb-2 rounded" />
         <SkeletonLine width="60%" height="h-3" className="mb-1 mx-auto" />
         <SkeletonLine width="80%" height="h-4" className="mx-auto" />
       </SkeletonCard>
@@ -144,13 +149,13 @@ export const OrganizationSkeleton = () => (
   <div className="mb-8" data-testid="organization-skeleton">
     <SkeletonCard className="p-6">
       <div className="flex items-start space-x-4">
-        <SkeletonBox className="w-6 h-6 rounded" />
+        <SkeletonPulse standalone={false} className="w-6 h-6 rounded" />
         <div className="flex-1">
           <SkeletonLine width="200px" height="h-6" className="mb-2" />
           <SkeletonLine width="150px" height="h-4" className="mb-4" />
           <div className="flex space-x-2">
-            <SkeletonBox className="w-24 h-8 rounded" />
-            <SkeletonBox className="w-32 h-8 rounded" />
+            <SkeletonPulse standalone={false} className="w-24 h-8 rounded" />
+            <SkeletonPulse standalone={false} className="w-32 h-8 rounded" />
           </div>
         </div>
       </div>
@@ -165,7 +170,7 @@ export const RelatedDogsSkeleton = () => (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
       {[1, 2, 3].map((index) => (
         <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
-          <SkeletonBox className="aspect-[4/3] w-full" />
+          <SkeletonPulse standalone={false} className="aspect-[4/3] w-full" />
           <div className="p-4 space-y-2">
             <SkeletonLine width="80%" height="h-5" />
             <SkeletonLine width="60%" height="h-4" />
@@ -184,7 +189,7 @@ export const RelatedDogsSkeleton = () => (
 export const CTASkeleton = () => (
   <div className="mb-8" data-testid="cta-skeleton">
     <div className="flex justify-center">
-      <SkeletonBox className="w-full sm:w-auto sm:min-w-[280px] sm:max-w-[400px] h-14 rounded-lg" />
+      <SkeletonPulse standalone={false} className="w-full sm:w-auto sm:min-w-[280px] sm:max-w-[400px] h-14 rounded-lg" />
     </div>
     <div className="text-center mt-3">
       <SkeletonLine width="300px" height="h-4" className="mx-auto" />

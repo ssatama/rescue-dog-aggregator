@@ -97,7 +97,7 @@ const EmptyState = React.memo(function EmptyState({
             type="button"
             variant={finalActionButton.variant || 'default'}
             onClick={finalActionButton.onClick}
-            className="animate-button-hover focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 px-6 py-3 rounded-lg text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-md hover:shadow-lg transition-all duration-200"
+            className="animate-button-hover focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 px-6 py-3 rounded-lg text-white bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 shadow-md hover:shadow-lg transition-all duration-200"
           >
             {finalActionButton.text}
           </Button>

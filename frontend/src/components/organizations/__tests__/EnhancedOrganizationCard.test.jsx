@@ -318,9 +318,9 @@ describe('EnhancedOrganizationCard', () => {
       const cardButtons = screen.getAllByRole('button');
       const mainCard = cardButtons.find(button => button.getAttribute('tabindex') === '0');
       expect(mainCard).toHaveClass(
-        'shadow-sm',
-        'hover:shadow-md',
-        'will-change-transform'
+        'hover:shadow-lg',
+        'hover:-translate-y-1',
+        'transition-all'
       );
     });
 

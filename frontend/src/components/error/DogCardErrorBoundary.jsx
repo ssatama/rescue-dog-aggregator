@@ -9,7 +9,7 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { Icon } from '../ui/Icon';
 import { reportError } from '../../utils/logger';
 
 class DogCardErrorBoundary extends React.Component {
@@ -46,7 +46,7 @@ class DogCardErrorBoundary extends React.Component {
           data-testid="error-dog-card"
         >
           <CardHeader className="p-4 text-center">
-            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-2" />
+            <Icon name="alert-triangle" size="large" className="text-red-500 mx-auto mb-2" />
           </CardHeader>
           
           <CardContent className="p-4 flex flex-col flex-grow text-center">
@@ -65,7 +65,7 @@ class DogCardErrorBoundary extends React.Component {
               className="w-full border-red-300 text-red-700 hover:bg-red-100"
               onClick={this.handleRetry}
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
+              <Icon name="refresh" size="small" className="mr-2" />
               Try Again
             </Button>
           </CardFooter>

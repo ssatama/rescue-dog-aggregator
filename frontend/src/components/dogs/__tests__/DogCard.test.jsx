@@ -576,7 +576,7 @@ describe('DogCard Component', () => {
       // Image should have correct hover scale effect
       expect(imageElement.className).toContain('group-hover:scale-105');
       expect(imageElement.className).toContain('transition-transform');
-      expect(imageElement.className).toContain('duration-200');
+      expect(imageElement.className).toContain('duration-300');
       expect(imageElement.className).toContain('ease-out');
     });
 
@@ -642,8 +642,8 @@ describe('DogCard Component', () => {
       const ctaButton = screen.getByText('Meet Buddy →');
       
       // Button should have enhanced gradient hover classes
-      expect(ctaButton).toHaveClass('hover:from-orange-600');
-      expect(ctaButton).toHaveClass('hover:to-orange-700');
+      expect(ctaButton).toHaveClass('hover:from-orange-700');
+      expect(ctaButton).toHaveClass('hover:to-orange-800');
       
       // Button should have proper focus states with orange ring
       expect(ctaButton).toHaveClass('focus-visible:ring-2');
@@ -667,13 +667,13 @@ describe('DogCard Component', () => {
       
       const ctaButton = screen.getByText('Meet Buddy →');
       
-      // Base gradient should be orange-500 to orange-600
-      expect(ctaButton).toHaveClass('from-orange-500');
-      expect(ctaButton).toHaveClass('to-orange-600');
+      // Base gradient should be orange-600 to orange-700 for better contrast
+      expect(ctaButton).toHaveClass('from-orange-600');
+      expect(ctaButton).toHaveClass('to-orange-700');
       
-      // Hover gradient should be darker (orange-600 to orange-700)
-      expect(ctaButton).toHaveClass('hover:from-orange-600');
-      expect(ctaButton).toHaveClass('hover:to-orange-700');
+      // Hover gradient should be darker (orange-700 to orange-800)
+      expect(ctaButton).toHaveClass('hover:from-orange-700');
+      expect(ctaButton).toHaveClass('hover:to-orange-800');
     });
 
     test('button maintains accessibility with proper focus indicators', () => {
@@ -922,10 +922,10 @@ describe('DogCard Component', () => {
       
       const ctaButton = screen.getByText('Meet Buddy →');
       expect(ctaButton).toHaveClass('bg-gradient-to-r');
-      expect(ctaButton).toHaveClass('from-orange-500');
-      expect(ctaButton).toHaveClass('to-orange-600');
-      expect(ctaButton).toHaveClass('hover:from-orange-600');
-      expect(ctaButton).toHaveClass('hover:to-orange-700');
+      expect(ctaButton).toHaveClass('from-orange-600');
+      expect(ctaButton).toHaveClass('to-orange-700');
+      expect(ctaButton).toHaveClass('hover:from-orange-700');
+      expect(ctaButton).toHaveClass('hover:to-orange-800');
       expect(ctaButton).toHaveClass('text-white');
     });
 

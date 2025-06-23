@@ -12,13 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Calendar, 
-  Globe, 
-  SortDesc, 
-  X, 
-  Filter 
-} from 'lucide-react';
+import { Icon } from '../ui/Icon';
 import { getAgeFilterOptions, getSortFilterOptions, getDefaultFilters } from '@/utils/dogFilters';
 import { getCountryName } from '@/utils/countryHelpers';
 
@@ -119,7 +113,7 @@ export default function DogFilters({
           {/* Desktop Filter Header */}
           <div className="hidden md:flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-gray-600" />
+              <Icon name="filter" size="default" className="text-gray-600" />
               <span className="text-sm font-medium text-gray-700">Filter by:</span>
             </div>
             {hasActiveFilters && (
@@ -140,15 +134,15 @@ export default function DogFilters({
               onClick={onMobileFilterClick}
               data-testid="mobile-filter-button"
               aria-label="Open filter and sort options"
-              className="w-full h-12 justify-center gap-3 border-gray-300 hover:border-orange-500 hover:bg-orange-50 text-gray-700 hover:text-orange-600"
+              className="w-full h-12 justify-center gap-3 border-gray-300 hover:border-orange-600 hover:bg-orange-50 text-gray-700 hover:text-orange-600"
             >
-              <Filter className="h-5 w-5" />
+              <Icon name="filter" size="default" />
               <span className="font-medium">Filter & Sort</span>
               {hasActiveFilters && (
                 <Badge 
                   variant="secondary" 
                   data-testid="mobile-active-filters-badge"
-                  className="bg-orange-500 text-white text-xs"
+                  className="bg-orange-600 text-white text-xs"
                 >
                   {activeFilterCount}
                 </Badge>
@@ -171,7 +165,7 @@ export default function DogFilters({
                 aria-label="Clear all filters"
                 className="hidden md:flex text-sm text-gray-600 hover:text-gray-900"
               >
-                <X className="h-4 w-4 mr-1" />
+                <Icon name="x" size="small" className="mr-1" />
                 Clear all
               </Button>
             )}
@@ -196,7 +190,7 @@ export default function DogFilters({
                 className="w-full"
                 aria-label="Filter by age"
               >
-                <Calendar className="h-4 w-4 text-gray-500" />
+                <Icon name="calendar" size="small" className="text-gray-500" />
                 <SelectValue placeholder="Age" />
               </SelectTrigger>
               <SelectContent>
@@ -239,7 +233,7 @@ export default function DogFilters({
                   className="w-full"
                   aria-label="Filter by ships to"
                 >
-                  <Globe className="h-4 w-4 text-gray-500" />
+                  <Icon name="globe" size="small" className="text-gray-500" />
                   <SelectValue placeholder="Ships to" />
                 </SelectTrigger>
                 <SelectContent>
@@ -267,7 +261,7 @@ export default function DogFilters({
                 className="w-full"
                 aria-label="Sort dogs"
               >
-                <SortDesc className="h-4 w-4 text-gray-500" />
+                <Icon name="sort-desc" size="small" className="text-gray-500" />
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>

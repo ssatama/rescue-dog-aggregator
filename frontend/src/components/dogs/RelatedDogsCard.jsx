@@ -43,7 +43,7 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
   return (
     <div
       data-testid="related-dog-card"
-      className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer group will-change-transform"
+      className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 hover:transform hover:-translate-y-1 cursor-pointer group will-change-transform focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2"
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}
       tabIndex={0}
@@ -59,7 +59,8 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
           <LazyImage
             src={getThumbnailImage(dog.primary_image_url)}
             alt={dog.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             onError={(e) => handleImageError(e, dog.primary_image_url)}
           />
         ) : (

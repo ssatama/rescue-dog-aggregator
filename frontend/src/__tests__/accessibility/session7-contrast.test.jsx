@@ -38,7 +38,7 @@ describe('Session 7: Color Contrast & Visual Accessibility', () => {
   describe('WCAG 2.1 AA Contrast Requirements', () => {
     test('orange CTA buttons meet contrast requirements', () => {
       const { container } = render(
-        <Button className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+        <Button className="bg-gradient-to-r from-orange-600 to-orange-700 text-white">
           Test Button
         </Button>
       );
@@ -75,7 +75,7 @@ describe('Session 7: Color Contrast & Visual Accessibility', () => {
 
     test('focus indicators have sufficient contrast', () => {
       const { container } = render(
-        <Button className="focus-visible:ring-2 focus-visible:ring-orange-500">
+        <Button className="focus-visible:ring-2 focus-visible:ring-orange-600">
           Test Button
         </Button>
       );
@@ -197,7 +197,7 @@ describe('Session 7: Color Contrast & Visual Accessibility', () => {
 
     test('button components have no violations', async () => {
       const { container } = render(
-        <Button className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+        <Button className="bg-gradient-to-r from-orange-600 to-orange-700 text-white">
           Test Button
         </Button>
       );
@@ -226,7 +226,7 @@ describe('Session 7: Color Contrast & Visual Accessibility', () => {
   describe('Focus Visibility', () => {
     test('all interactive elements have visible focus states', () => {
       const { container } = render(
-        <Button className="focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2">
+        <Button className="focus-visible:ring-2 focus-visible:ring-orange-600 focus-visible:ring-offset-2">
           Test Button
         </Button>
       );
