@@ -91,12 +91,12 @@ def manage_test_data():
 
         # Insert specific animal data
         male_dog_sql = """
-        INSERT INTO animals (id, name, animal_type, sex, status, organization_id, adoption_url, properties, primary_image_url, created_at, updated_at)
-        VALUES (9001, 'Test Male Dog', 'dog', 'Male', 'available', 901, 'http://example.com/9001', '{}', 'http://example.com/male.jpg', NOW(), NOW())
+        INSERT INTO animals (id, name, animal_type, sex, status, organization_id, adoption_url, properties, primary_image_url, created_at, updated_at, availability_confidence)
+        VALUES (9001, 'Test Male Dog', 'dog', 'Male', 'available', 901, 'http://example.com/9001', '{}', 'http://example.com/male.jpg', NOW(), NOW(), 'high')
         ON CONFLICT (id) DO UPDATE SET
             name = EXCLUDED.name, animal_type = EXCLUDED.animal_type, sex = EXCLUDED.sex, status = EXCLUDED.status,
             organization_id = EXCLUDED.organization_id, adoption_url = EXCLUDED.adoption_url, properties = EXCLUDED.properties,
-            primary_image_url = EXCLUDED.primary_image_url, updated_at = NOW();
+            primary_image_url = EXCLUDED.primary_image_url, updated_at = NOW(), availability_confidence = EXCLUDED.availability_confidence;
         """
         cursor.execute(male_dog_sql)
         print("[conftest.manage_test_data] Specific test animals inserted.")

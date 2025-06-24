@@ -2,6 +2,35 @@
 
 This log tracks major changes, features, and improvements to the Rescue Dog Aggregator platform. Each entry follows a consistent format to maintain clear development history.
 
+## 2025-06-24 - Age Tag Display Fix & Standardization Improvements ✅ COMPLETED
+### Added
+- **Frontend Age Fallback Logic** - Enhanced `getAgeCategory` function in `frontend/src/utils/dogHelpers.js` to handle standardized `age_text` values when `age_min_months` is missing, ensuring age tags display correctly for all dogs
+- **Comprehensive Age Category Support** - Added complete handling for direct age categories ("Young", "Adult", "Puppy", "Senior") in `parse_age_text` function
+- **Input Validation & Error Handling** - Added robust validation for age parsing including negative age detection, reasonable bounds checking (0-25 years, 0-300 months), and type safety
+- **Failing Test for Age Display Issue** - Added `test_direct_age_categories` test case to demonstrate and verify fix for standardized age category parsing
+- **Edge Case Testing** - Comprehensive testing for negative ages, invalid inputs, and boundary conditions
+
+### Changed
+- **Age Parsing Logic Optimization** - Reordered `parse_age_text` function logic to check exact age categories first (fastest) before descriptive term matching for better performance
+- **Regex Pattern Enhancement** - Updated age parsing regex patterns to explicitly exclude negative numbers using negative lookbehind assertions (`(?<!-)`)
+- **Size Estimation Logic** - Fixed `apply_standardization` function to properly set `standardized_size` when estimate is available and not already set
+- **Code Structure Cleanup** - Removed redundant logic and optimized age category matching in standardization utilities
+
+### Fixed
+- **Critical Age Tag Display Bug** - Resolved issue where dogs with `age_text="Young"` (like Cody from Pets in Turkey) were not showing age tags in frontend catalog due to missing `age_min_months` values
+- **Parse Age Text Coverage Gap** - Fixed `parse_age_text` function that handled "Adult", "Puppy", "Senior" but not "Young" as direct category input, causing standardization failures
+- **Database Consistency Issue** - Manually updated 16 PIT dogs with `age_text="Young"` to have proper `age_min_months=12, age_max_months=36` values
+- **Negative Age Parsing Bug** - Fixed regex patterns that incorrectly parsed negative ages (e.g., "-5 months" was processed instead of rejected)
+- **Test Case Correction** - Fixed incorrect test expectation for "1-2 years" age range (was expecting min=24, corrected to min=12)
+
+### Technical Notes
+- **Root Cause**: PIT scraper was setting `age_text="Young"` but `parse_age_text("Young")` returned `(None, None, None)`, leaving `age_min_months=null` in database
+- **Multi-Layer Solution**: Fixed both frontend (age_text fallback) and backend (parse_age_text bug) to handle current and future data correctly
+- **Database Impact**: Updated 16 existing dogs with missing age_min_months values, ensuring immediate fix for affected animals
+- **Test Coverage**: All 31 frontend dogHelpers tests and 18 backend standardization tests passing
+- **Performance**: Optimized standardization logic order for faster processing with exact matches checked first
+- **Future-Proof**: Solution handles both scenarios - dogs with complete age data and dogs with only standardized age_text
+
 ## 2025-06-24 - ScrapegraphAI Integration Removal ✅ COMPLETED
 ### Removed
 - **ScrapegraphAI Scraper Implementation** - Deleted `scrapers/pets_in_turkey/scrapegraph_scraper.py` and `scrapers/pets_in_turkey/scrapegraph_prototype.py` due to reliability issues

@@ -401,9 +401,10 @@ class TestBaseCRUDMethods:
         mock_cursor = Mock()
         concrete_scraper.conn.cursor.return_value = mock_cursor
 
-        # Mock existing animal data
+        # Mock existing animal data (name, breed, age_text, sex, primary_image_url, status, standardized_breed, age_min_months, age_max_months, standardized_size)
         mock_cursor.fetchone.return_value = (
-            "Old Name", "Old Breed", "2 years", "Female", "old-url.jpg", "available"
+            "Old Name", "Old Breed", "2 years", "Female", "old-url.jpg", "available",
+            "Old Breed", 24, 36, "Medium"  # standardized fields
         )
 
         # Test data with changes
@@ -441,9 +442,10 @@ class TestBaseCRUDMethods:
         mock_cursor = Mock()
         concrete_scraper.conn.cursor.return_value = mock_cursor
 
-        # Mock existing animal data (identical to update data)
+        # Mock existing animal data (identical to update data) (name, breed, age_text, sex, primary_image_url, status, standardized_breed, age_min_months, age_max_months, standardized_size)
         mock_cursor.fetchone.return_value = (
-            "Same Name", "Same Breed", "2 years", "Female", "same-url.jpg", "available"
+            "Same Name", "Same Breed", "2 years", "Female", "same-url.jpg", "available",
+            "Same Breed", 24, 36, None  # Match what standardize_breed("Same Breed") actually returns
         )
 
         # Test data (no changes)

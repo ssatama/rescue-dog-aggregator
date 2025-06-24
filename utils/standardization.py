@@ -149,11 +149,14 @@ def standardize_breed(breed_text: str) -> Tuple[str, str, Optional[str]]:
     Returns:
         Tuple of (standardized_breed, breed_group, size_estimate)
     """
-    if not breed_text:
+    if not breed_text or not isinstance(breed_text, (str, type(None))):
         return "Unknown", "Unknown", None
 
     # Clean the breed text
-    clean_text = breed_text.strip().lower()
+    clean_text = str(breed_text).strip().lower()
+    
+    if not clean_text:
+        return "Unknown", "Unknown", None
 
     # First try an exact match
     for original, standardized in BREED_MAPPING.items():
@@ -204,49 +207,63 @@ def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optiona
 
     age_text = str(age_text).lower().strip()
 
-    # Define age categories (defined but not currently used)
-    # categories = {
-    #     "Puppy": (0, 12),  # 0-12 months
-    #     "Young": (12, 36),  # 1-3 years
-    #     "Adult": (36, 96),  # 3-8 years
-    #     "Senior": (96, 240),  # 8+ years
-    # }
-
-    # Check for years pattern (e.g., "2 years", "2.5 y/o")
+    # Check for years pattern (e.g., "2 years", "2.5 y/o") - no negative numbers
     years_match = re.search(
-        r"(\d+(?:[.,]\d+)?)\s*(?:years?|y(?:rs?)?(?:\/o)?|yo|jahr)", age_text
+        r"(?<!-)\b(\d+(?:[.,]\d+)?)\s*(?:years?|y(?:rs?)?(?:\/o)?|yo|jahr)", age_text
     )
     if years_match:
-        years = float(years_match.group(1).replace(",", "."))
-        months = int(years * 12)
+        try:
+            years = float(years_match.group(1).replace(",", "."))
+            if years < 0 or years > 25:  # Reasonable bounds for dog age
+                return None, None, None
+            months = int(years * 12)
 
-        # Determine category
-        if months < 12:
-            return "Puppy", months, min(months + 2, 12)
-        elif months < 36:
-            return "Young", months, min(months + 12, 36)
-        elif months < 96:
-            return "Adult", months, min(months + 12, 96)
-        else:
-            return "Senior", months, months + 24
+            # Determine category
+            if months < 12:
+                return "Puppy", months, min(months + 2, 12)
+            elif months < 36:
+                return "Young", months, min(months + 12, 36)
+            elif months < 96:
+                return "Adult", months, min(months + 12, 96)
+            else:
+                return "Senior", months, months + 24
+        except (ValueError, TypeError):
+            # If parsing fails, continue to other patterns
+            pass
 
-    # Check for months pattern (e.g., "6 months", "6mo")
-    months_match = re.search(r"(\d+)\s*(?:months?|mo|mon)", age_text)
+    # Check for months pattern (e.g., "6 months", "6mo") - no negative numbers
+    months_match = re.search(r"(?<!-)\b(\d+)\s*(?:months?|mo|mon)", age_text)
     if months_match:
-        months = int(months_match.group(1))
-        if months < 12:
-            return "Puppy", months, min(months + 2, 12)
-        else:
-            return "Young", months, min(months + 6, 36)
+        try:
+            months = int(months_match.group(1))
+            if months < 0 or months > 300:  # Reasonable bounds for dog age in months
+                return None, None, None
+            if months < 12:
+                return "Puppy", months, min(months + 2, 12)
+            else:
+                return "Young", months, min(months + 6, 36)
+        except (ValueError, TypeError):
+            # If parsing fails, continue to other patterns
+            pass
 
-    # Check for weeks pattern (e.g., "10 weeks", "8 wks")
-    weeks_match = re.search(r"(\d+)\s*(?:weeks?|wks?)", age_text)
+    # Check for weeks pattern (e.g., "10 weeks", "8 wks") - no negative numbers
+    weeks_match = re.search(r"(?<!-)\b(\d+)\s*(?:weeks?|wks?)", age_text)
     if weeks_match:
         weeks = int(weeks_match.group(1))
         months = int(weeks / 4.3)  # Approximate conversion
         return "Puppy", months, min(months + 2, 12)
 
-    # Check for descriptive terms
+    # Check for exact standardized category names first (fastest check)
+    if age_text == "puppy":
+        return "Puppy", 2, 10
+    elif age_text == "young":
+        return "Young", 12, 36
+    elif age_text == "adult":
+        return "Adult", 36, 96
+    elif age_text == "senior":
+        return "Senior", 96, 240
+    
+    # Check for descriptive terms (includes exact matches from above)
     if any(term in age_text for term in ["puppy", "pup", "baby", "young puppy"]):
         return "Puppy", 2, 10
     elif any(
@@ -350,9 +367,8 @@ def apply_standardization(animal_data: Dict) -> Dict:
         result["standardized_breed"] = std_breed
         result["breed_group"] = breed_group
 
-        # Set size estimate if we don't already have a size and we got an
-        # estimate
-        if "size" not in result or not result["size"]:
+        # Set size estimate if we don't already have a standardized size and we got an estimate
+        if size_estimate and ("standardized_size" not in result or not result["standardized_size"]):
             result["standardized_size"] = size_estimate
 
     # Standardize age

@@ -69,6 +69,20 @@ describe('dogHelpers', () => {
       expect(getAgeCategory(null)).toBe('Unknown');
       expect(getAgeCategory(undefined)).toBe('Unknown');
     });
+
+    it('should handle dogs with standardized age_text but no age_min_months', () => {
+      // This is the FAILING test case - Cody has age_text="Young" but age_min_months=null
+      // Currently returns 'Unknown' but should return 'Young'
+      expect(getAgeCategory({ age_text: 'Young' })).toBe('Young');
+      expect(getAgeCategory({ age_text: 'Adult' })).toBe('Adult');
+      expect(getAgeCategory({ age_text: 'Senior' })).toBe('Senior');
+      expect(getAgeCategory({ age_text: 'Puppy' })).toBe('Puppy');
+    });
+
+    it('prefers age_min_months over age_text when both available', () => {
+      const dog = { age_min_months: 6, age_text: 'Adult' };
+      expect(getAgeCategory(dog)).toBe('Puppy'); // Should use age_min_months
+    });
   });
 
   describe('formatBreed', () => {

@@ -20,6 +20,9 @@ sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 
+# Import standardization utilities
+from utils.standardization import parse_age_text
+
 # Import the base scraper
 
 
@@ -173,6 +176,11 @@ class PetsInTurkeyScraper(BaseScraper):
                             dog_data["external_id"] = (
                                 f"pit-{dog_data['name'].lower().replace(' ', '-')}"
                             )
+
+                            # Apply data quality improvements
+                            dog_data = self._add_size_from_weight(dog_data)
+                            dog_data = self._standardize_age_text(dog_data)
+                            dog_data = self._prepare_for_standardization(dog_data)
 
                             # Add to our collection
                             dogs_data.append(dog_data)
@@ -449,6 +457,107 @@ class PetsInTurkeyScraper(BaseScraper):
                     "description": "",
                 },
             }
+
+    def _add_size_from_weight(self, dog_data):
+        """Convert weight values to standardized size categories.
+        
+        Args:
+            dog_data: Dictionary containing dog information with weight in properties
+            
+        Returns:
+            Updated dog_data with size field added based on weight
+        """
+        if not dog_data.get("properties") or not dog_data["properties"].get("weight"):
+            return dog_data
+            
+        weight_text = dog_data["properties"]["weight"].lower()
+        
+        # Extract numeric weight value using regex
+        weight_match = re.search(r'(\d+(?:\.\d+)?)', weight_text)
+        if not weight_match:
+            return dog_data
+            
+        try:
+            weight_kg = float(weight_match.group(1))
+            
+            # Convert weight to size categories
+            if weight_kg < 5:
+                size = "Tiny"
+            elif weight_kg < 12:
+                size = "Small"
+            elif weight_kg < 25:
+                size = "Medium"
+            elif weight_kg < 40:
+                size = "Large"
+            else:
+                size = "XLarge"
+                
+            # Add size to dog_data
+            result = dog_data.copy()
+            result["size"] = size
+            return result
+            
+        except ValueError:
+            # If weight can't be parsed as float, return original data
+            return dog_data
+
+    def _standardize_age_text(self, dog_data):
+        """Standardize age text format using utils.standardization.
+        
+        Args:
+            dog_data: Dictionary containing dog information with age_text
+            
+        Returns:
+            Updated dog_data with standardized age_text
+        """
+        if not dog_data.get("age_text"):
+            return dog_data
+            
+        age_text = dog_data["age_text"]
+        
+        # Convert "yo" format to "years"
+        if "yo" in age_text:
+            age_text = age_text.replace(" yo", " years").replace("yo", " years")
+        
+        # Use parse_age_text to validate and potentially improve the format
+        try:
+            parsed_age, _, _ = parse_age_text(age_text)
+            if parsed_age:
+                result = dog_data.copy()
+                result["age_text"] = parsed_age
+                return result
+        except Exception:
+            # If parsing fails, keep original
+            pass
+            
+        return dog_data
+
+    def _prepare_for_standardization(self, dog_data):
+        """Prepare dog data for standardization by base_scraper.
+        
+        Args:
+            dog_data: Dictionary containing dog information
+            
+        Returns:
+            Updated dog_data with cleaned fields ready for standardization
+        """
+        result = dog_data.copy()
+        
+        # Clean up breed field
+        if result.get("breed"):
+            breed = str(result["breed"]).strip()
+            # Remove any extra whitespace or special characters
+            breed = re.sub(r'\s+', ' ', breed)
+            result["breed"] = breed
+            
+        # Ensure all required string fields exist and are strings
+        for field in ["name", "breed", "age_text", "sex"]:
+            if field not in result or result[field] is None:
+                result[field] = "Unknown"
+            else:
+                result[field] = str(result[field]).strip()
+                
+        return result
 
     def _find_image_for_container(self, container):
         """Find an image URL for a dog container.

@@ -612,10 +612,11 @@ class BaseScraper(ABC):
         try:
             cursor = self.conn.cursor()
 
-            # Get current animal data to check for changes
+            # Get current animal data to check for changes (including standardized fields)
             cursor.execute(
                 """
-                SELECT name, breed, age_text, sex, primary_image_url, status
+                SELECT name, breed, age_text, sex, primary_image_url, status,
+                       standardized_breed, age_min_months, age_max_months, standardized_size
                 FROM animals WHERE id = %s
                 """,
                 (animal_id,),
@@ -634,8 +635,26 @@ class BaseScraper(ABC):
                 current_sex,
                 current_image,
                 current_status,
+                current_standardized_breed,
+                current_age_min_months,
+                current_age_max_months,
+                current_standardized_size,
             ) = current_data
 
+            # Apply standardization to new data to compare with current standardized values
+            new_standardized_breed, new_breed_group, new_size_estimate = standardize_breed(
+                animal_data.get("breed", "")
+            )
+            new_age_info = standardize_age(animal_data.get("age_text", ""))
+            new_age_min_months = new_age_info.get("age_min_months")
+            new_age_max_months = new_age_info.get("age_max_months")
+            
+            # Use size estimate if no size provided
+            new_final_standardized_size = (
+                animal_data.get("standardized_size") or new_size_estimate
+            )
+
+            # Check for changes in both raw AND standardized fields
             changes_detected = (
                 animal_data.get("name") != current_name
                 or animal_data.get("breed") != current_breed
@@ -643,6 +662,11 @@ class BaseScraper(ABC):
                 or animal_data.get("sex") != current_sex
                 or animal_data.get("primary_image_url") != current_image
                 or animal_data.get("status") != current_status
+                # Check standardized fields for changes due to improved standardization logic
+                or new_standardized_breed != current_standardized_breed
+                or new_age_min_months != current_age_min_months
+                or new_age_max_months != current_age_max_months
+                or new_final_standardized_size != current_standardized_size
             )
 
             if not changes_detected:
@@ -664,19 +688,15 @@ class BaseScraper(ABC):
                 cursor.close()
                 return animal_id, "no_change"
 
-            # Apply standardization to new data
-            standardized_breed, breed_group, size_estimate = standardize_breed(
-                animal_data.get("breed", "")
-            )
-            age_info = standardize_age(animal_data.get("age_text", ""))
-            age_months_min = age_info.get("age_min_months")
-            age_months_max = age_info.get("age_max_months")
-
+            # Use the standardization values already computed above for change detection
+            standardized_breed = new_standardized_breed
+            breed_group = new_breed_group
+            age_months_min = new_age_min_months
+            age_months_max = new_age_max_months
+            
             # Use size estimate if no size provided
             final_size = animal_data.get("size") or animal_data.get("standardized_size")
-            final_standardized_size = (
-                animal_data.get("standardized_size") or size_estimate
-            )
+            final_standardized_size = new_final_standardized_size
 
             # Detect language
             description_text = f"{animal_data.get('name', '')} {animal_data.get('breed', '')} {animal_data.get('age_text', '')}"

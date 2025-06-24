@@ -27,10 +27,14 @@ class TestAnimalDetail:
         assert isinstance(data.get("name"), str) and data["name"]
         assert data["animal_type"] == "dog"
         assert data["status"] == "available"
-        # images key should be present and a list
+        # images key should be present and a list of AnimalImage objects
         assert isinstance(data.get("images"), list)
         for img in data["images"]:
-            assert isinstance(img, str) and img.startswith("http")
+            assert isinstance(img, dict)
+            assert "id" in img and isinstance(img["id"], int)
+            assert "image_url" in img and isinstance(img["image_url"], str)
+            assert img["image_url"].startswith("http")
+            assert "is_primary" in img and isinstance(img["is_primary"], bool)
 
     def test_get_animal_by_invalid_id(self):
         resp = client.get("/api/animals/999999")

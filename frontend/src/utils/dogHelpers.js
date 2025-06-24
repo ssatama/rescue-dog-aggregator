@@ -30,21 +30,33 @@ export const formatAge = (dog) => {
  * @returns {string} Age category: 'Puppy', 'Young', 'Adult', 'Senior', or 'Unknown'
  */
 export const getAgeCategory = (dog) => {
-  if (!dog?.age_min_months) {
-    return 'Unknown';
+  // Prefer age_min_months when available (most accurate)
+  if (dog?.age_min_months) {
+    const months = dog.age_min_months;
+    
+    if (months < 12) {
+      return 'Puppy';
+    } else if (months < 36) { // Less than 3 years
+      return 'Young';
+    } else if (months < 84) { // Less than 7 years
+      return 'Adult';
+    } else {
+      return 'Senior';
+    }
   }
   
-  const months = dog.age_min_months;
-  
-  if (months < 12) {
-    return 'Puppy';
-  } else if (months < 36) { // Less than 3 years
-    return 'Young';
-  } else if (months < 84) { // Less than 7 years
-    return 'Adult';
-  } else {
-    return 'Senior';
+  // Fall back to standardized age_text when age_min_months not available
+  if (dog?.age_text) {
+    const ageText = dog.age_text.toLowerCase();
+    
+    // Handle standardized age categories
+    if (ageText === 'puppy') return 'Puppy';
+    if (ageText === 'young') return 'Young';
+    if (ageText === 'adult') return 'Adult';
+    if (ageText === 'senior') return 'Senior';
   }
+  
+  return 'Unknown';
 };
 
 /**
