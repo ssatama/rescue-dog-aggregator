@@ -209,37 +209,64 @@ class BaseScraper(ABC):
     def save_animal(self, animal_data):
         """Save or update animal data in the database with Cloudinary image upload."""
         try:
-            # Upload primary image to Cloudinary BEFORE saving to DB
-            if animal_data.get("primary_image_url"):
-                original_url = animal_data["primary_image_url"]
-                self.logger.info(
-                    f"Uploading primary image to Cloudinary for {animal_data.get('name', 'unknown')}"
-                )
-
-                cloudinary_url, success = self.cloudinary_service.upload_image_from_url(
-                    original_url,
-                    animal_data.get("name", "unknown"),
-                    self.organization_name,
-                )
-
-                if success and cloudinary_url:
-                    # Store both URLs for fallback
-                    animal_data["primary_image_url"] = cloudinary_url
-                    animal_data["original_image_url"] = original_url
-                    self.logger.info(
-                        f"✅ Successfully uploaded primary image to Cloudinary for {animal_data.get('name')}"
-                    )
-                else:
-                    # Keep original URL if upload fails
-                    self.logger.warning(
-                        f"❌ Failed to upload primary image for {animal_data.get('name')}, keeping original URL"
-                    )
-                    animal_data["original_image_url"] = original_url
-
-            # Check if animal already exists by external_id and organization
+            # Check if animal already exists by external_id and organization FIRST
             existing_animal = self.get_existing_animal(
                 animal_data.get("external_id"), animal_data.get("organization_id")
             )
+
+            # Only upload primary image if it's new or has changed
+            if animal_data.get("primary_image_url"):
+                original_url = animal_data["primary_image_url"]
+                should_upload_image = True
+                
+                if existing_animal:
+                    # For existing animals, check if image URL has changed
+                    cursor = self.conn.cursor()
+                    cursor.execute(
+                        "SELECT primary_image_url, original_image_url FROM animals WHERE id = %s",
+                        (existing_animal[0],)
+                    )
+                    current_image_data = cursor.fetchone()
+                    cursor.close()
+                    
+                    if current_image_data:
+                        current_primary_url = current_image_data[0]
+                        current_original_url = current_image_data[1]
+                        
+                        # Don't upload if the original URL hasn't changed
+                        if current_original_url == original_url:
+                            should_upload_image = False
+                            # Use existing Cloudinary URL
+                            animal_data["primary_image_url"] = current_primary_url
+                            animal_data["original_image_url"] = current_original_url
+                            self.logger.info(
+                                f"🔄 Image unchanged for {animal_data.get('name')}, using existing Cloudinary URL"
+                            )
+
+                if should_upload_image:
+                    self.logger.info(
+                        f"📤 Uploading primary image to Cloudinary for {animal_data.get('name', 'unknown')}"
+                    )
+
+                    cloudinary_url, success = self.cloudinary_service.upload_image_from_url(
+                        original_url,
+                        animal_data.get("name", "unknown"),
+                        self.organization_name,
+                    )
+
+                    if success and cloudinary_url:
+                        # Store both URLs for fallback
+                        animal_data["primary_image_url"] = cloudinary_url
+                        animal_data["original_image_url"] = original_url
+                        self.logger.info(
+                            f"✅ Successfully uploaded primary image to Cloudinary for {animal_data.get('name')}"
+                        )
+                    else:
+                        # Keep original URL if upload fails
+                        self.logger.warning(
+                            f"❌ Failed to upload primary image for {animal_data.get('name')}, keeping original URL"
+                        )
+                        animal_data["original_image_url"] = original_url
 
             if existing_animal:
                 return self.update_animal(existing_animal[0], animal_data)
@@ -264,52 +291,99 @@ class BaseScraper(ABC):
             return None, "error"
 
     def save_animal_images(self, animal_id, image_urls):
-        """Save animal images with Cloudinary upload."""
+        """Save animal images with Cloudinary upload, only uploading changed images."""
         if not image_urls:
             return True
 
         try:
             cursor = self.conn.cursor()
 
-            # Delete existing images
+            # Get existing images for this animal
             cursor.execute(
-                "DELETE FROM animal_images WHERE animal_id = %s", (animal_id,)
+                """
+                SELECT id, image_url, original_image_url, is_primary 
+                FROM animal_images 
+                WHERE animal_id = %s 
+                ORDER BY is_primary DESC, id ASC
+                """,
+                (animal_id,)
             )
+            existing_images = cursor.fetchall()
+
+            # Create a map of existing original URLs to their data
+            existing_urls_map = {}
+            for img in existing_images:
+                img_id, cloudinary_url, original_url, is_primary = img
+                existing_urls_map[original_url] = {
+                    'id': img_id,
+                    'cloudinary_url': cloudinary_url,
+                    'is_primary': is_primary
+                }
 
             # Get animal name for Cloudinary folder organization
             cursor.execute("SELECT name FROM animals WHERE id = %s", (animal_id,))
             result = cursor.fetchone()
             animal_name = result[0] if result else "unknown"
 
-            # Upload and save each image
+            # Track which existing images should be kept
+            images_to_keep = set()
+            
+            # Process each new image URL
             for i, image_url in enumerate(image_urls):
-                self.logger.info(
-                    f"Uploading additional image {i+1} for animal {animal_id}"
-                )
-
-                cloudinary_url, success = self.cloudinary_service.upload_image_from_url(
-                    image_url, animal_name, self.organization_name
-                )
-
-                # Use Cloudinary URL if successful, otherwise fallback to
-                # original
-                final_url = cloudinary_url if success else image_url
-
-                cursor.execute(
-                    """
-                    INSERT INTO animal_images (animal_id, image_url, original_image_url, is_primary)
-                    VALUES (%s, %s, %s, %s)
-                    """,
-                    (animal_id, final_url, image_url, i == 0),
-                )
-
-                if success:
+                if image_url in existing_urls_map:
+                    # Image already exists, keep it
+                    existing_img = existing_urls_map[image_url]
+                    images_to_keep.add(existing_img['id'])
+                    
+                    # Update is_primary flag if needed
+                    expected_is_primary = (i == 0)
+                    if existing_img['is_primary'] != expected_is_primary:
+                        cursor.execute(
+                            "UPDATE animal_images SET is_primary = %s WHERE id = %s",
+                            (expected_is_primary, existing_img['id'])
+                        )
+                    
                     self.logger.info(
-                        f"✅ Uploaded additional image {i+1} for animal {animal_id}"
+                        f"🔄 Keeping existing image {i+1} for animal {animal_id} (unchanged)"
                     )
                 else:
-                    self.logger.warning(
-                        f"❌ Failed to upload additional image {i+1} for animal {animal_id}, using original"
+                    # New image, upload to Cloudinary
+                    self.logger.info(
+                        f"📤 Uploading new additional image {i+1} for animal {animal_id}"
+                    )
+
+                    cloudinary_url, success = self.cloudinary_service.upload_image_from_url(
+                        image_url, animal_name, self.organization_name
+                    )
+
+                    # Use Cloudinary URL if successful, otherwise fallback to original
+                    final_url = cloudinary_url if success else image_url
+
+                    cursor.execute(
+                        """
+                        INSERT INTO animal_images (animal_id, image_url, original_image_url, is_primary)
+                        VALUES (%s, %s, %s, %s)
+                        """,
+                        (animal_id, final_url, image_url, i == 0),
+                    )
+
+                    if success:
+                        self.logger.info(
+                            f"✅ Uploaded new additional image {i+1} for animal {animal_id}"
+                        )
+                    else:
+                        self.logger.warning(
+                            f"❌ Failed to upload additional image {i+1} for animal {animal_id}, using original"
+                        )
+
+            # Delete images that are no longer needed
+            for img in existing_images:
+                if img[0] not in images_to_keep:  # img[0] is the id
+                    cursor.execute(
+                        "DELETE FROM animal_images WHERE id = %s", (img[0],)
+                    )
+                    self.logger.info(
+                        f"🗑️ Removed obsolete image for animal {animal_id}"
                     )
 
             self.conn.commit()

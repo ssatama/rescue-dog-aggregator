@@ -173,9 +173,17 @@ class PetsInTurkeyScraper(BaseScraper):
                                 + dog_data["name"].lower().replace(" ", "-")
                             )
                             dog_data["status"] = "available"
-                            dog_data["external_id"] = (
-                                f"pit-{dog_data['name'].lower().replace(' ', '-')}"
-                            )
+                            # Create more stable external ID using name + breed + age for uniqueness
+                            import hashlib
+                            name_slug = dog_data['name'].lower().replace(' ', '-')
+                            breed_slug = dog_data.get('breed', 'unknown').lower().replace(' ', '-')
+                            age_slug = dog_data.get('age_text', 'unknown').lower().replace(' ', '-')
+                            
+                            # Create a hash of combined data for uniqueness
+                            combined_data = f"{dog_data['name']}-{dog_data.get('breed', '')}-{dog_data.get('age_text', '')}-{dog_data.get('sex', '')}"
+                            hash_suffix = hashlib.md5(combined_data.encode()).hexdigest()[:6]
+                            
+                            dog_data["external_id"] = f"pit-{name_slug}-{hash_suffix}"
 
                             # Apply data quality improvements
                             dog_data = self._add_size_from_weight(dog_data)

@@ -1511,8 +1511,18 @@ class REANScraper(BaseScraper):
         if name is None:
             name = "Unknown"
 
-        # Create external ID from name and page type
-        external_id = f"rean-{page_type}-{name.lower().replace(' ', '-')}"
+        # Create more stable external ID using name + breed + age + page type for uniqueness
+        import hashlib
+        name_slug = name.lower().replace(' ', '-')
+        breed = dog_data.get('breed', 'unknown')
+        age = dog_data.get('age_text', 'unknown')
+        sex = dog_data.get('sex', 'unknown')
+        
+        # Create a hash of combined data for uniqueness
+        combined_data = f"{name}-{breed}-{age}-{sex}-{page_type}"
+        hash_suffix = hashlib.md5(combined_data.encode()).hexdigest()[:6]
+        
+        external_id = f"rean-{page_type}-{name_slug}-{hash_suffix}"
 
         # Build adoption URL (link to organization contact)
         if self.org_config:
