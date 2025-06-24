@@ -218,21 +218,21 @@ class BaseScraper(ABC):
             if animal_data.get("primary_image_url"):
                 original_url = animal_data["primary_image_url"]
                 should_upload_image = True
-                
+
                 if existing_animal:
                     # For existing animals, check if image URL has changed
                     cursor = self.conn.cursor()
                     cursor.execute(
                         "SELECT primary_image_url, original_image_url FROM animals WHERE id = %s",
-                        (existing_animal[0],)
+                        (existing_animal[0],),
                     )
                     current_image_data = cursor.fetchone()
                     cursor.close()
-                    
+
                     if current_image_data:
                         current_primary_url = current_image_data[0]
                         current_original_url = current_image_data[1]
-                        
+
                         # Don't upload if the original URL hasn't changed
                         if current_original_url == original_url:
                             should_upload_image = False
@@ -248,10 +248,12 @@ class BaseScraper(ABC):
                         f"📤 Uploading primary image to Cloudinary for {animal_data.get('name', 'unknown')}"
                     )
 
-                    cloudinary_url, success = self.cloudinary_service.upload_image_from_url(
-                        original_url,
-                        animal_data.get("name", "unknown"),
-                        self.organization_name,
+                    cloudinary_url, success = (
+                        self.cloudinary_service.upload_image_from_url(
+                            original_url,
+                            animal_data.get("name", "unknown"),
+                            self.organization_name,
+                        )
                     )
 
                     if success and cloudinary_url:
@@ -306,7 +308,7 @@ class BaseScraper(ABC):
                 WHERE animal_id = %s 
                 ORDER BY is_primary DESC, id ASC
                 """,
-                (animal_id,)
+                (animal_id,),
             )
             existing_images = cursor.fetchall()
 
@@ -315,9 +317,9 @@ class BaseScraper(ABC):
             for img in existing_images:
                 img_id, cloudinary_url, original_url, is_primary = img
                 existing_urls_map[original_url] = {
-                    'id': img_id,
-                    'cloudinary_url': cloudinary_url,
-                    'is_primary': is_primary
+                    "id": img_id,
+                    "cloudinary_url": cloudinary_url,
+                    "is_primary": is_primary,
                 }
 
             # Get animal name for Cloudinary folder organization
@@ -327,22 +329,22 @@ class BaseScraper(ABC):
 
             # Track which existing images should be kept
             images_to_keep = set()
-            
+
             # Process each new image URL
             for i, image_url in enumerate(image_urls):
                 if image_url in existing_urls_map:
                     # Image already exists, keep it
                     existing_img = existing_urls_map[image_url]
-                    images_to_keep.add(existing_img['id'])
-                    
+                    images_to_keep.add(existing_img["id"])
+
                     # Update is_primary flag if needed
-                    expected_is_primary = (i == 0)
-                    if existing_img['is_primary'] != expected_is_primary:
+                    expected_is_primary = i == 0
+                    if existing_img["is_primary"] != expected_is_primary:
                         cursor.execute(
                             "UPDATE animal_images SET is_primary = %s WHERE id = %s",
-                            (expected_is_primary, existing_img['id'])
+                            (expected_is_primary, existing_img["id"]),
                         )
-                    
+
                     self.logger.info(
                         f"🔄 Keeping existing image {i+1} for animal {animal_id} (unchanged)"
                     )
@@ -352,8 +354,10 @@ class BaseScraper(ABC):
                         f"📤 Uploading new additional image {i+1} for animal {animal_id}"
                     )
 
-                    cloudinary_url, success = self.cloudinary_service.upload_image_from_url(
-                        image_url, animal_name, self.organization_name
+                    cloudinary_url, success = (
+                        self.cloudinary_service.upload_image_from_url(
+                            image_url, animal_name, self.organization_name
+                        )
                     )
 
                     # Use Cloudinary URL if successful, otherwise fallback to original
@@ -379,12 +383,8 @@ class BaseScraper(ABC):
             # Delete images that are no longer needed
             for img in existing_images:
                 if img[0] not in images_to_keep:  # img[0] is the id
-                    cursor.execute(
-                        "DELETE FROM animal_images WHERE id = %s", (img[0],)
-                    )
-                    self.logger.info(
-                        f"🗑️ Removed obsolete image for animal {animal_id}"
-                    )
+                    cursor.execute("DELETE FROM animal_images WHERE id = %s", (img[0],))
+                    self.logger.info(f"🗑️ Removed obsolete image for animal {animal_id}")
 
             self.conn.commit()
             return True
@@ -716,13 +716,13 @@ class BaseScraper(ABC):
             ) = current_data
 
             # Apply standardization to new data to compare with current standardized values
-            new_standardized_breed, new_breed_group, new_size_estimate = standardize_breed(
-                animal_data.get("breed", "")
+            new_standardized_breed, new_breed_group, new_size_estimate = (
+                standardize_breed(animal_data.get("breed", ""))
             )
             new_age_info = standardize_age(animal_data.get("age_text", ""))
             new_age_min_months = new_age_info.get("age_min_months")
             new_age_max_months = new_age_info.get("age_max_months")
-            
+
             # Use size estimate if no size provided
             new_final_standardized_size = (
                 animal_data.get("standardized_size") or new_size_estimate
@@ -767,7 +767,7 @@ class BaseScraper(ABC):
             breed_group = new_breed_group
             age_months_min = new_age_min_months
             age_months_max = new_age_max_months
-            
+
             # Use size estimate if no size provided
             final_size = animal_data.get("size") or animal_data.get("standardized_size")
             final_standardized_size = new_final_standardized_size

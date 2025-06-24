@@ -175,14 +175,25 @@ class PetsInTurkeyScraper(BaseScraper):
                             dog_data["status"] = "available"
                             # Create more stable external ID using name + breed + age for uniqueness
                             import hashlib
-                            name_slug = dog_data['name'].lower().replace(' ', '-')
-                            breed_slug = dog_data.get('breed', 'unknown').lower().replace(' ', '-')
-                            age_slug = dog_data.get('age_text', 'unknown').lower().replace(' ', '-')
-                            
+
+                            name_slug = dog_data["name"].lower().replace(" ", "-")
+                            breed_slug = (
+                                dog_data.get("breed", "unknown")
+                                .lower()
+                                .replace(" ", "-")
+                            )
+                            age_slug = (
+                                dog_data.get("age_text", "unknown")
+                                .lower()
+                                .replace(" ", "-")
+                            )
+
                             # Create a hash of combined data for uniqueness
                             combined_data = f"{dog_data['name']}-{dog_data.get('breed', '')}-{dog_data.get('age_text', '')}-{dog_data.get('sex', '')}"
-                            hash_suffix = hashlib.md5(combined_data.encode()).hexdigest()[:6]
-                            
+                            hash_suffix = hashlib.md5(
+                                combined_data.encode()
+                            ).hexdigest()[:6]
+
                             dog_data["external_id"] = f"pit-{name_slug}-{hash_suffix}"
 
                             # Apply data quality improvements
@@ -468,26 +479,26 @@ class PetsInTurkeyScraper(BaseScraper):
 
     def _add_size_from_weight(self, dog_data):
         """Convert weight values to standardized size categories.
-        
+
         Args:
             dog_data: Dictionary containing dog information with weight in properties
-            
+
         Returns:
             Updated dog_data with size field added based on weight
         """
         if not dog_data.get("properties") or not dog_data["properties"].get("weight"):
             return dog_data
-            
+
         weight_text = dog_data["properties"]["weight"].lower()
-        
+
         # Extract numeric weight value using regex
-        weight_match = re.search(r'(\d+(?:\.\d+)?)', weight_text)
+        weight_match = re.search(r"(\d+(?:\.\d+)?)", weight_text)
         if not weight_match:
             return dog_data
-            
+
         try:
             weight_kg = float(weight_match.group(1))
-            
+
             # Convert weight to size categories
             if weight_kg < 5:
                 size = "Tiny"
@@ -499,34 +510,34 @@ class PetsInTurkeyScraper(BaseScraper):
                 size = "Large"
             else:
                 size = "XLarge"
-                
+
             # Add size to dog_data
             result = dog_data.copy()
             result["size"] = size
             return result
-            
+
         except ValueError:
             # If weight can't be parsed as float, return original data
             return dog_data
 
     def _standardize_age_text(self, dog_data):
         """Standardize age text format using utils.standardization.
-        
+
         Args:
             dog_data: Dictionary containing dog information with age_text
-            
+
         Returns:
             Updated dog_data with standardized age_text
         """
         if not dog_data.get("age_text"):
             return dog_data
-            
+
         age_text = dog_data["age_text"]
-        
+
         # Convert "yo" format to "years"
         if "yo" in age_text:
             age_text = age_text.replace(" yo", " years").replace("yo", " years")
-        
+
         # Use parse_age_text to validate and potentially improve the format
         try:
             parsed_age, _, _ = parse_age_text(age_text)
@@ -537,34 +548,34 @@ class PetsInTurkeyScraper(BaseScraper):
         except Exception:
             # If parsing fails, keep original
             pass
-            
+
         return dog_data
 
     def _prepare_for_standardization(self, dog_data):
         """Prepare dog data for standardization by base_scraper.
-        
+
         Args:
             dog_data: Dictionary containing dog information
-            
+
         Returns:
             Updated dog_data with cleaned fields ready for standardization
         """
         result = dog_data.copy()
-        
+
         # Clean up breed field
         if result.get("breed"):
             breed = str(result["breed"]).strip()
             # Remove any extra whitespace or special characters
-            breed = re.sub(r'\s+', ' ', breed)
+            breed = re.sub(r"\s+", " ", breed)
             result["breed"] = breed
-            
+
         # Ensure all required string fields exist and are strings
         for field in ["name", "breed", "age_text", "sex"]:
             if field not in result or result[field] is None:
                 result[field] = "Unknown"
             else:
                 result[field] = str(result[field]).strip()
-                
+
         return result
 
     def _find_image_for_container(self, container):

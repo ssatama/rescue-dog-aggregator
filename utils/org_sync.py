@@ -232,8 +232,8 @@ class OrganizationSyncManager:
 
     def _sync_service_regions(self, org_id: int, config: OrganizationConfig) -> None:
         """Sync service regions for an organization.
-        
-        Includes both service_regions (where dogs are located) and ships_to 
+
+        Includes both service_regions (where dogs are located) and ships_to
         (countries where dogs can be adopted to) for comprehensive filtering.
 
         Args:
@@ -249,19 +249,19 @@ class OrganizationSyncManager:
 
             # Collect all countries: service_regions + ships_to
             all_countries = set()
-            
+
             # Add service regions (where dogs are located)
             service_regions = config.metadata.service_regions or []
             for country_code in service_regions:
                 if isinstance(country_code, str):
                     all_countries.add(country_code.strip().upper())
-            
+
             # Add ships_to countries (where dogs can be adopted to)
             ships_to = config.metadata.ships_to or []
             for country_code in ships_to:
                 if isinstance(country_code, str):
                     all_countries.add(country_code.strip().upper())
-            
+
             if not all_countries:
                 self.logger.debug(
                     f"No service regions or ships_to countries defined for organization {org_id}"

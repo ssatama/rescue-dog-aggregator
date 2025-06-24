@@ -154,7 +154,7 @@ def standardize_breed(breed_text: str) -> Tuple[str, str, Optional[str]]:
 
     # Clean the breed text
     clean_text = str(breed_text).strip().lower()
-    
+
     if not clean_text:
         return "Unknown", "Unknown", None
 
@@ -262,7 +262,7 @@ def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optiona
         return "Adult", 36, 96
     elif age_text == "senior":
         return "Senior", 96, 240
-    
+
     # Check for descriptive terms (includes exact matches from above)
     if any(term in age_text for term in ["puppy", "pup", "baby", "young puppy"]):
         return "Puppy", 2, 10
@@ -368,7 +368,9 @@ def apply_standardization(animal_data: Dict) -> Dict:
         result["breed_group"] = breed_group
 
         # Set size estimate if we don't already have a standardized size and we got an estimate
-        if size_estimate and ("standardized_size" not in result or not result["standardized_size"]):
+        if size_estimate and (
+            "standardized_size" not in result or not result["standardized_size"]
+        ):
             result["standardized_size"] = size_estimate
 
     # Standardize age

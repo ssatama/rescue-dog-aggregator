@@ -2,6 +2,7 @@
 
 import os
 import sys
+
 import psycopg2
 from dotenv import load_dotenv
 
@@ -27,10 +28,10 @@ def clear_animals():
     """Clear all animals from the database with enhanced safety checks."""
     # Load environment variables
     load_dotenv()
-    
+
     print("🗑️  Animal Database Cleaner")
     print("=" * 50)
-    
+
     # Safety check - prevent accidental production database clearing
     db_name = DB_CONFIG.get("database", "")
     if "prod" in db_name.lower() or "production" in db_name.lower():
@@ -38,11 +39,11 @@ def clear_animals():
         print(f"   Database name: {db_name}")
         print("   This script should not be used on production databases.")
         return
-    
+
     print(f"🏠 Target database: {db_name}")
     if "test" not in db_name.lower() and "dev" not in db_name.lower():
         print("⚠️  WARNING: This doesn't appear to be a test or development database")
-        
+
     conn = connect_to_database()
     if not conn:
         return
@@ -53,18 +54,18 @@ def clear_animals():
         # Get detailed count of what will be deleted
         cursor.execute("SELECT COUNT(*) FROM animals")
         animals_count = cursor.fetchone()[0]
-        
+
         cursor.execute("SELECT COUNT(*) FROM animal_images")
         images_count = cursor.fetchone()[0]
-        
+
         cursor.execute("SELECT COUNT(*) FROM scrape_logs")
         logs_count = cursor.fetchone()[0]
-        
+
         print(f"📊 Current database contents:")
         print(f"  • Animals: {animals_count}")
         print(f"  • Animal images: {images_count}")
         print(f"  • Scrape logs: {logs_count}")
-        
+
         if animals_count == 0:
             print("✅ Database is already empty!")
             return
@@ -76,19 +77,21 @@ def clear_animals():
         print(f"  • {logs_count} scrape logs")
         print(f"\n🗄️ Database: {db_name}")
         print("This action CANNOT be undone!")
-        
-        confirm1 = input("\nType 'DELETE ALL' to confirm (or anything else to cancel): ")
+
+        confirm1 = input(
+            "\nType 'DELETE ALL' to confirm (or anything else to cancel): "
+        )
         if confirm1 != "DELETE ALL":
             print("❌ Operation cancelled - confirmation text did not match")
             return
-            
+
         confirm2 = input("Are you absolutely sure? Type 'yes' to proceed: ")
         if confirm2.lower() != "yes":
             print("❌ Operation cancelled")
             return
 
         print("\n🗑️  Deleting data...")
-        
+
         # Delete in correct order due to foreign key constraints
         cursor.execute("DELETE FROM animal_images")
         images_deleted = cursor.rowcount
@@ -109,14 +112,16 @@ def clear_animals():
         # Verify the deletion
         cursor.execute("SELECT COUNT(*) FROM animals")
         remaining_animals = cursor.fetchone()[0]
-        
+
         cursor.execute("SELECT COUNT(*) FROM animal_images")
         remaining_images = cursor.fetchone()[0]
-        
+
         if remaining_animals == 0 and remaining_images == 0:
             print("🔍 Verification: Database is now empty")
         else:
-            print(f"⚠️  Verification warning: {remaining_animals} animals and {remaining_images} images remain")
+            print(
+                f"⚠️  Verification warning: {remaining_animals} animals and {remaining_images} images remain"
+            )
 
         cursor.close()
     except Exception as e:
