@@ -102,16 +102,17 @@ class TestBaseScraper:
         mock_cursor = Mock()
         mock_scraper.conn.cursor.return_value = mock_cursor
 
-        # Configure cursor mock to find existing animal
-        mock_cursor.fetchone.return_value = [5]  # Existing ID 5
+        # Configure cursor mock to return existing animal with primary image data
+        # The primary image query will return the existing URLs
+        mock_cursor.fetchone.return_value = ("http://existing.com/image.jpg", "http://original.com/image.jpg")
 
-        # Test data
+        # Test data - use same URL as existing to avoid upload
         animal_data = {
-            "name": "Test Dog",
+            "name": "Test Dog", 
             "breed": "Labrador Retriever",
             "age_text": "2 years",
             "sex": "Male",
-            "primary_image_url": "http://example.com/image.jpg",
+            "primary_image_url": "http://original.com/image.jpg",  # Same URL to avoid upload
             "adoption_url": "http://example.com/adopt",
             "status": "available",
             "external_id": "test123",
@@ -121,7 +122,7 @@ class TestBaseScraper:
         # Mock JSON dumps
         mock_json.dumps.return_value = "{}"
 
-        # Mock get_existing_animal to return existing animal
+        # Mock get_existing_animal to return existing animal (tuple format)
         with patch.object(
             mock_scraper, "get_existing_animal", return_value=[5]
         ), patch.object(
@@ -245,7 +246,8 @@ class TestBaseScraper:
         mock_cursor = Mock()
         mock_scraper.conn.cursor.return_value = mock_cursor
 
-        # Mock the fetchone result for getting animal name
+        # Mock the fetchall result for getting existing images (first call) and fetchone for animal name (second call)
+        mock_cursor.fetchall.return_value = []  # No existing images
         mock_cursor.fetchone.return_value = ["Test Dog"]  # Return animal name
 
         # Test data
@@ -256,13 +258,17 @@ class TestBaseScraper:
             "http://example.com/image3.jpg",
         ]
 
+        # Mock cloudinary service
+        mock_scraper.cloudinary_service = Mock()
+        mock_scraper.cloudinary_service.upload_image_from_url.return_value = ("cloudinary_url", True)
+        mock_scraper.organization_name = "Test Org"
+
         # Execute method
         result = mock_scraper.save_animal_images(animal_id, image_urls)
 
         # Verify cursor was called correctly
-        # Should be: 1 DELETE + 1 SELECT (animal name) + 3 INSERTs = 5 total
-        # But since we have the organization_name fix, this should work
-        assert mock_cursor.execute.call_count >= 4  # At least delete + select + inserts
+        # Should be: 1 SELECT (existing images) + 1 SELECT (animal name) + 3 INSERTs = 5 total
+        assert mock_cursor.execute.call_count >= 4  # At least selects + inserts
 
         # Verify commit was called
         mock_scraper.conn.commit.assert_called_once()
