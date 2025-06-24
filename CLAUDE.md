@@ -1,52 +1,870 @@
-# CLAUDE.md - Guide for Claude AI Agents
+# CLAUDE.md - Guide for Claude AI Assistants
 
 ## 🎯 Mission
-Help maintain and improve the Rescue Dog Aggregator platform by following strict Test-Driven Development (TDD) practices to ensure code quality and reliability.
+Help build and maintain the Rescue Dog Aggregator platform - an open-source web application that aggregates rescue dogs from multiple organizations, standardizes the data, and presents it in a user-friendly interface. The platform aims to increase visibility for rescue dogs and help them find homes faster.
+
+## Core Philosophy
+
+**TEST-DRIVEN DEVELOPMENT IS NON-NEGOTIABLE.** Every single line of production code must be written in response to a failing test. No exceptions. This is not a suggestion or a preference - it is the fundamental practice that enables all other principles in this document.
+
+All work follows Test-Driven Development (TDD) with a strong emphasis on behavior-driven testing. Every change should be done in small, incremental steps that maintain a working state throughout development.
+
+## Quick Reference
+
+**Key Principles:**
+- Write tests first (TDD)
+- Test behavior, not implementation  
+- No mutation - immutable data only
+- Small, pure functions
+- Clear, self-documenting code
+- Use real data structures in tests, never redefine them
+
+**Tech Stack:**
+- **Backend**: Python with FastAPI, pytest for testing
+- **Frontend**: JavaScript/React with Jest + React Testing Library
+- **Database**: PostgreSQL
+- **Scraping**: Python with Selenium/BeautifulSoup
 
 ## ⚡ Quick Start Commands
 
 ```bash
-# Backend Development
-source venv/bin/activate
+# Backend Development (Python/FastAPI)
+source venv/bin/activate                # ALWAYS activate virtual environment first
 python -m pytest tests/ -m "not slow" -v  # Run fast tests (259 tests)
-python -m pytest tests/ -v                # Run all tests
+python -m pytest tests/ -v                # Run all tests including integration
 
-# Frontend Development  
+# Frontend Development (Next.js 15)
 cd frontend
 npm test                                  # Run all tests (1,249 tests across 88 suites)
 npm run build                            # Verify production build
 npm run dev                              # Start development server
 
+# Configuration Management
+python management/config_commands.py list        # List all organizations
+python management/config_commands.py validate    # Validate configs
+python management/config_commands.py sync        # Sync configs to database
+python management/config_commands.py run rean    # Run specific scraper
+
 # Quality Checks (REQUIRED before ANY commit)
-black . && isort .                       # Format Python code
+# Backend
+black . && isort . && flake8            # Format and lint Python code
 python -m pytest tests/ -m "not slow"    # Backend tests MUST pass
-cd frontend && npm test                  # Frontend tests MUST pass
+
+# Frontend
+cd frontend
+npm run lint && npm run format          # Format and lint JavaScript/React
+npm test                                # Frontend tests MUST pass
 ```
 
-## 🚨 CRITICAL RULES FOR CLAUDE AGENTS
+## 📁 Project Structure
+```
+rescue-dog-aggregator/
+├── api/                    # FastAPI backend
+│   ├── main.py            # Application entry point
+│   ├── routes/            # API endpoints
+│   └── dependencies.py    # Database connections
+├── scrapers/              # Web scrapers for rescue sites
+│   ├── base_scraper.py    # Base scraper class
+│   ├── pets_turkey/       # Harley's rescue org scraper
+│   ├── rean/              # REAN scraper
+│   └── tierschutzverein_europa/  # European rescue
+├── tests/                 # Backend tests (259 tests)
+│   ├── api/              # API endpoint tests
+│   ├── scrapers/         # Scraper tests
+│   ├── config/           # Configuration tests
+│   └── conftest.py       # Test fixtures
+├── frontend/              # Next.js 15 app
+│   ├── src/
+│   │   ├── app/          # App Router pages
+│   │   ├── components/   # React components
+│   │   └── utils/        # Utilities
+│   └── __tests__/        # Frontend tests (1,249 tests)
+├── configs/              # Organization YAML configs
+├── database/             # PostgreSQL schema and migrations
+├── management/           # Management commands
+│   └── config_commands.py # CLI interface
+└── docs/                 # Comprehensive documentation
+```
 
-### 1. Test-Driven Development (TDD) is MANDATORY
-ALWAYS follow this sequence:
-- **RED**: Write failing tests FIRST
-- **GREEN**: Write minimal code to pass tests  
-- **REFACTOR**: Improve code while keeping tests green
+## 🧪 Testing Principles
 
-Example TDD workflow:
+### Test-Driven Development (TDD) Process
+
+Follow Red-Green-Refactor strictly:
+
+1. **Red**: Write a failing test for the desired behavior. NO PRODUCTION CODE until you have a failing test.
+2. **Green**: Write the MINIMUM code to make the test pass. Resist the urge to write more than needed.
+3. **Refactor**: Clean up the code while keeping tests green. If the code is already clean, move on.
+
+**Common TDD Violations to Avoid:**
+- Writing production code without a failing test first
+- Writing multiple tests before making the first one pass
+- Writing more production code than needed to pass the current test
+- Skipping the refactor step when code could be improved
+- Adding functionality "while you're there" without a test driving it
+
+**Remember**: If you're typing production code and there isn't a failing test demanding that code, you're not doing TDD.
+
+### Behavior-Driven Testing
+
+- **No "unit tests"** - this term is not helpful. Tests should verify expected behavior, treating implementation as a black box
+- Test through the public API exclusively - internals should be invisible to tests
+- No 1:1 mapping between test files and implementation files
+- Tests that examine internal implementation details are wasteful and should be avoided
+- **Coverage targets**: 100% coverage should be expected at all times, but these tests must ALWAYS be based on business behaviour, not implementation details
+- Tests must document expected business behaviour
+
+### Backend Testing (Python/FastAPI)
+
 ```bash
-# 1. Write test first
-# Create test_new_feature.py with failing test
+# Always activate virtual environment first
+source venv/bin/activate
 
-# 2. Run test to see it fail
-python -m pytest tests/test_new_feature.py -v
+# Test categories with markers
+pytest -m "unit"      # Fast unit tests (82 tests)
+pytest -m "api"       # API endpoint tests (110 tests)
+pytest -m "config"    # Configuration system tests
+pytest -m "database"  # Database operation tests
+pytest -m "not slow"  # All fast tests for development (259 tests)
+pytest -m "slow"      # Integration tests with WebDriver
 
-# 3. Implement feature
-# Write minimal code to pass
+# Run specific test files
+pytest tests/scrapers/test_base_scraper.py -v
+pytest tests/api/test_availability_filtering.py -v
+```
 
-# 4. Run test to see it pass
-python -m pytest tests/test_new_feature.py -v
+### Frontend Testing (JavaScript/React)
 
-# 5. Run ALL tests to ensure nothing broke
-python -m pytest tests/ -m "not slow" -v
+```bash
+cd frontend
+
+# Run all tests (1,249 tests across 88 suites)
+npm test
+
+# Run specific test suites
+npm test -- --testPathPattern="DogCard"        # Component tests
+npm test -- --testPathPattern="security"       # Security tests
+npm test -- --testPathPattern="performance"    # Performance tests
+npm test -- --testPathPattern="accessibility"  # A11y tests
+npm test -- --testPathPattern="mobile"         # Mobile tests
+
+# Watch mode for development
+npm run test:watch
+
+# Debug failing tests
+npm test -- --verbose --no-coverage
+```
+
+### Test Organization
+
+```
+# Backend (Python)
+tests/
+  api/
+    test_dogs_endpoint.py      # Tests API behavior, not individual functions
+    test_organizations_api.py
+  scrapers/
+    test_scraper_behavior.py   # Tests scraping behavior across all scrapers
+
+# Frontend (JavaScript)  
+src/
+  components/
+    dogs/
+      DogCard.jsx
+      DogCard.test.jsx        # Tests component behavior
+    organizations/
+      OrganizationList.jsx
+      OrganizationList.test.jsx
+```
+
+### Test Data Patterns
+
+#### Python (Backend)
+Use factory functions with optional overrides for test data:
+
+```python
+def get_mock_dog(overrides=None):
+    """Create a mock dog with sensible defaults."""
+    dog = {
+        "name": "Buddy",
+        "breed": "Golden Retriever",
+        "age_months": 24,
+        "sex": "male", 
+        "size": "large",
+        "organization_id": 1,
+        "external_id": "buddy-123",
+        "status": "available"
+    }
+    if overrides:
+        dog.update(overrides)
+    return dog
+
+def get_mock_organization(overrides=None):
+    """Create a mock organization."""
+    org = {
+        "id": 1,
+        "name": "Test Rescue",
+        "website_url": "https://test-rescue.org",
+        "location_country": "DE",
+        "location_city": "Berlin"
+    }
+    if overrides:
+        org.update(overrides)
+    return org
+
+# Usage in tests
+def test_dog_filtering():
+    young_dog = get_mock_dog({"age_months": 6})
+    senior_dog = get_mock_dog({"age_months": 120, "name": "Rex"})
+```
+
+#### JavaScript (Frontend)
+Use factory functions with spread operator for overrides:
+
+```javascript
+const getMockDog = (overrides = {}) => {
+  return {
+    id: 1,
+    name: "Buddy",
+    breed: "Golden Retriever", 
+    ageMonths: 24,
+    sex: "male",
+    size: "large",
+    organizationId: 1,
+    primaryImageUrl: "https://example.com/buddy.jpg",
+    status: "available",
+    ...overrides
+  };
+};
+
+const getMockOrganization = (overrides = {}) => {
+  return {
+    id: 1,
+    name: "Test Rescue",
+    websiteUrl: "https://test-rescue.org",
+    locationCountry: "DE",
+    locationCity: "Berlin",
+    ...overrides
+  };
+};
+
+// Usage in tests
+test('displays senior dog badge', () => {
+  const seniorDog = getMockDog({ ageMonths: 120, name: "Rex" });
+  render(<DogCard dog={seniorDog} />);
+  expect(screen.getByText('Senior')).toBeInTheDocument();
+});
+```
+
+Key principles:
+- Always return complete objects with sensible defaults
+- Accept optional overrides to customize specific fields
+- Build incrementally - extract nested object factories as needed
+- Compose factories for complex objects
+
+## 📊 Code Style Guidelines
+
+### Python (Backend)
+
+#### Functional Programming Approach
+
+Follow a "functional light" approach:
+- **No mutation** - work with immutable data structures
+- **Pure functions** wherever possible
+- **No side effects** in business logic
+- Use comprehensions and functional tools (`map`, `filter`, `reduce`)
+
+```python
+# AVOID - Mutation
+def add_dog_to_list(dogs, new_dog):
+    dogs.append(new_dog)  # Mutates the list!
+    return dogs
+
+# GOOD - Immutable
+def add_dog_to_list(dogs, new_dog):
+    return dogs + [new_dog]  # Returns new list
+
+# AVOID - Side effects in business logic
+class DogProcessor:
+    def process(self, dog):
+        self.last_processed = dog  # Side effect!
+        dog['processed'] = True    # Mutation!
+        return dog
+
+# GOOD - Pure function
+def process_dog(dog):
+    return {**dog, 'processed': True}  # Returns new dict
+
+# GOOD - Functional approach with error handling
+def validate_dog(dog):
+    """Pure validation function."""
+    errors = []
+    
+    if not dog.get('name'):
+        errors.append("Name is required")
+    
+    if dog.get('age_months', 0) < 0:
+        errors.append("Age cannot be negative")
+        
+    return {'valid': len(errors) == 0, 'errors': errors}
+
+# GOOD - Composition
+def process_dogs(dogs):
+    return [
+        process_dog(dog) 
+        for dog in dogs 
+        if validate_dog(dog)['valid']
+    ]
+```
+
+#### Code Structure
+
+- **No nested if/else statements** - use early returns or guard clauses
+- **Small functions** - each should do one thing well
+- **Clear naming** - functions should be verbs, variables should be descriptive
+
+```python
+# AVOID - Nested conditionals
+def calculate_adoption_fee(dog):
+    if dog['age_months'] < 12:
+        if dog['size'] == 'small':
+            return 150
+        else:
+            return 200
+    else:
+        if dog['medical_needs']:
+            return 50
+        else:
+            return 100
+
+# GOOD - Early returns, clear logic
+def calculate_adoption_fee(dog):
+    if is_puppy(dog) and dog['size'] == 'small':
+        return 150
+    
+    if is_puppy(dog):
+        return 200
+        
+    if dog.get('medical_needs'):
+        return 50
+        
+    return 100
+
+def is_puppy(dog):
+    return dog['age_months'] < 12
+```
+
+#### No Comments in Code
+
+Code should be self-documenting through clear naming and structure:
+
+```python
+# AVOID - Comments explaining what code does
+def process_scraper_data(html):
+    # Parse the HTML
+    soup = BeautifulSoup(html, 'html.parser')
+    
+    # Find all dog cards
+    cards = soup.find_all('div', class_='dog-card')
+    
+    # Extract data from each card
+    dogs = []
+    for card in cards:
+        # Get the dog name
+        name = card.find('h3').text
+        dogs.append({'name': name})
+    
+    return dogs
+
+# GOOD - Self-documenting code
+def extract_dogs_from_html(html):
+    parsed_content = BeautifulSoup(html, 'html.parser')
+    dog_cards = parsed_content.find_all('div', class_='dog-card')
+    
+    return [extract_dog_from_card(card) for card in dog_cards]
+
+def extract_dog_from_card(card):
+    return {
+        'name': extract_text(card, 'h3'),
+        'breed': extract_text(card, '.breed'),
+        'age': extract_text(card, '.age')
+    }
+
+def extract_text(element, selector):
+    found = element.select_one(selector)
+    return found.text.strip() if found else None
+```
+
+### JavaScript/React (Frontend)
+
+#### Functional Components Only
+
+Use functional components with hooks:
+
+```javascript
+// AVOID - Class components
+class DogCard extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { favorited: false };
+  }
+  
+  render() {
+    return <div>{this.props.dog.name}</div>;
+  }
+}
+
+// GOOD - Functional component with hooks
+function DogCard({ dog }) {
+  const [favorited, setFavorited] = useState(false);
+  
+  const handleFavorite = () => {
+    setFavorited(!favorited);
+    // Save to localStorage or API
+  };
+  
+  return (
+    <div className="dog-card">
+      <h3>{dog.name}</h3>
+      <button onClick={handleFavorite}>
+        {favorited ? '❤️' : '🤍'}
+      </button>
+    </div>
+  );
+}
+```
+
+#### Immutable State Updates
+
+Never mutate state directly:
+
+```javascript
+// AVOID - Mutating state
+function DogList() {
+  const [dogs, setDogs] = useState([]);
+  
+  const addDog = (newDog) => {
+    dogs.push(newDog);  // NO! Mutates array
+    setDogs(dogs);      // React won't re-render
+  };
+  
+  const updateDog = (id, updates) => {
+    const dog = dogs.find(d => d.id === id);
+    dog.name = updates.name;  // NO! Mutates object
+    setDogs(dogs);
+  };
+}
+
+// GOOD - Immutable updates
+function DogList() {
+  const [dogs, setDogs] = useState([]);
+  
+  const addDog = (newDog) => {
+    setDogs([...dogs, newDog]);  // New array
+  };
+  
+  const updateDog = (id, updates) => {
+    setDogs(dogs.map(dog => 
+      dog.id === id 
+        ? { ...dog, ...updates }  // New object
+        : dog
+    ));
+  };
+  
+  const removeDog = (id) => {
+    setDogs(dogs.filter(dog => dog.id !== id));
+  };
+}
+```
+
+#### Component Structure
+
+```javascript
+// GOOD - Well-structured component
+function DogFilters({ filters, onFilterChange }) {
+  // Hooks at the top
+  const [isExpanded, setIsExpanded] = useState(false);
+  const { user } = useAuth();
+  
+  // Derived values
+  const availableBreeds = useMemo(() => 
+    getUniqueBreeds(filters.dogs),
+    [filters.dogs]
+  );
+  
+  // Event handlers
+  const handleBreedChange = (breed) => {
+    onFilterChange({ ...filters, breed });
+  };
+  
+  const handleSizeChange = (size) => {
+    onFilterChange({ ...filters, size });
+  };
+  
+  // Early returns for edge cases
+  if (!filters) return null;
+  
+  // Main render
+  return (
+    <div className="dog-filters">
+      <BreedFilter 
+        breeds={availableBreeds}
+        selected={filters.breed}
+        onChange={handleBreedChange}
+      />
+      <SizeFilter
+        selected={filters.size}
+        onChange={handleSizeChange}
+      />
+    </div>
+  );
+}
+```
+
+### Naming Conventions
+
+#### Python
+- **Functions**: `snake_case`, verb-based (e.g., `calculate_total`, `validate_payment`)
+- **Classes**: `PascalCase` (e.g., `DogScraper`, `PaymentProcessor`)
+- **Constants**: `UPPER_SNAKE_CASE` (e.g., `MAX_RETRIES`, `DEFAULT_TIMEOUT`)
+- **Files**: `snake_case.py`
+- **Test files**: `test_*.py`
+
+#### JavaScript/React
+- **Functions**: `camelCase`, verb-based (e.g., `calculateTotal`, `handleClick`)
+- **Components**: `PascalCase` (e.g., `DogCard`, `FilterPanel`)
+- **Constants**: `UPPER_SNAKE_CASE` for true constants
+- **Files**: Component files `PascalCase.jsx`, others `camelCase.js`
+- **Test files**: `*.test.jsx` or `*.spec.js`
+
+## Development Workflow
+
+### TDD Process - THE FUNDAMENTAL PRACTICE
+
+**CRITICAL**: TDD is not optional. Every feature, every bug fix, every change MUST follow this process:
+
+#### TDD Example - Backend (Python)
+
+```python
+# Step 1: Red - Write failing test first
+def test_calculate_dog_adoption_fee():
+    """Test adoption fee calculation based on dog attributes."""
+    # Young small dog
+    young_small = get_mock_dog({"age_months": 6, "size": "small"})
+    assert calculate_adoption_fee(young_small) == 150
+    
+    # Young large dog  
+    young_large = get_mock_dog({"age_months": 8, "size": "large"})
+    assert calculate_adoption_fee(young_large) == 200
+    
+    # Senior with medical needs
+    senior_medical = get_mock_dog({
+        "age_months": 120, 
+        "medical_needs": True
+    })
+    assert calculate_adoption_fee(senior_medical) == 50
+
+# Step 2: Run test - confirm it fails
+# pytest tests/test_adoption.py::test_calculate_dog_adoption_fee -v
+# FAILED - function doesn't exist
+
+# Step 3: Green - Minimal implementation
+def calculate_adoption_fee(dog):
+    if dog['age_months'] < 12 and dog['size'] == 'small':
+        return 150
+    if dog['age_months'] < 12:
+        return 200
+    if dog.get('medical_needs'):
+        return 50
+    return 100
+
+# Step 4: Run test - confirm it passes
+# pytest tests/test_adoption.py::test_calculate_dog_adoption_fee -v
+# PASSED
+
+# Step 5: Refactor - Clean up the code
+PUPPY_AGE_MONTHS = 12
+PUPPY_SMALL_FEE = 150
+PUPPY_LARGE_FEE = 200
+SENIOR_MEDICAL_FEE = 50
+STANDARD_FEE = 100
+
+def calculate_adoption_fee(dog):
+    """Calculate adoption fee based on age, size, and medical needs."""
+    if is_puppy(dog):
+        return PUPPY_SMALL_FEE if is_small(dog) else PUPPY_LARGE_FEE
+    
+    if has_medical_needs(dog):
+        return SENIOR_MEDICAL_FEE
+        
+    return STANDARD_FEE
+
+def is_puppy(dog):
+    return dog['age_months'] < PUPPY_AGE_MONTHS
+
+def is_small(dog):
+    return dog['size'] == 'small'
+
+def has_medical_needs(dog):
+    return dog.get('medical_needs', False)
+```
+
+#### TDD Example - Frontend (JavaScript)
+
+```javascript
+// Step 1: Red - Write failing test first
+test('displays adoption fee based on dog attributes', () => {
+  // Young small dog
+  const youngSmall = getMockDog({ ageMonths: 6, size: 'small' });
+  render(<AdoptionFee dog={youngSmall} />);
+  expect(screen.getByText('Adoption Fee: €150')).toBeInTheDocument();
+  
+  // Senior with medical needs
+  const seniorMedical = getMockDog({ 
+    ageMonths: 120, 
+    medicalNeeds: true 
+  });
+  render(<AdoptionFee dog={seniorMedical} />);
+  expect(screen.getByText('Adoption Fee: €50')).toBeInTheDocument();
+});
+
+// Step 2: Run test - confirm it fails
+// npm test AdoptionFee
+// FAIL - Component doesn't exist
+
+// Step 3: Green - Minimal implementation
+function AdoptionFee({ dog }) {
+  const fee = calculateAdoptionFee(dog);
+  return <div>Adoption Fee: €{fee}</div>;
+}
+
+function calculateAdoptionFee(dog) {
+  if (dog.ageMonths < 12 && dog.size === 'small') return 150;
+  if (dog.ageMonths < 12) return 200;
+  if (dog.medicalNeeds) return 50;
+  return 100;
+}
+
+// Step 4: Run test - confirm it passes
+// npm test AdoptionFee
+// PASS
+
+// Step 5: Refactor - Extract constants, improve structure
+const FEES = {
+  PUPPY_SMALL: 150,
+  PUPPY_LARGE: 200,
+  MEDICAL_NEEDS: 50,
+  STANDARD: 100
+};
+
+const isPuppy = (dog) => dog.ageMonths < 12;
+const isSmall = (dog) => dog.size === 'small';
+
+function calculateAdoptionFee(dog) {
+  if (isPuppy(dog)) {
+    return isSmall(dog) ? FEES.PUPPY_SMALL : FEES.PUPPY_LARGE;
+  }
+  
+  if (dog.medicalNeeds) {
+    return FEES.MEDICAL_NEEDS;
+  }
+  
+  return FEES.STANDARD;
+}
+
+function AdoptionFee({ dog }) {
+  const fee = calculateAdoptionFee(dog);
+  
+  return (
+    <div className="adoption-fee">
+      <span className="label">Adoption Fee:</span>
+      <span className="amount">€{fee}</span>
+    </div>
+  );
+}
+```
+
+### Refactoring Guidelines
+
+#### When to Refactor
+
+- **Always assess after green**: Once tests pass, evaluate if refactoring would add value
+- **When you see duplication**: But only knowledge duplication, not structural similarity
+- **When names could be clearer**: Variable names, function names that don't express intent
+- **When patterns emerge**: After implementing several similar features
+
+#### Understanding DRY - It's About Knowledge, Not Code
+
+DRY (Don't Repeat Yourself) is about not duplicating **knowledge** in the system, not about eliminating all code that looks similar.
+
+```python
+# NOT a DRY violation - different knowledge despite similar code
+def validate_dog_age(age_months):
+    return 0 <= age_months <= 240  # Dogs rarely live past 20 years
+
+def validate_adoption_fee(fee):
+    return 0 <= fee <= 500  # Max adoption fee policy
+
+def validate_organization_years(years):
+    return 0 <= years <= 100  # Reasonable org age
+
+# These look similar but represent different business rules that will
+# evolve independently. Don't abstract them!
+
+# This IS a DRY violation - same knowledge in multiple places
+# Bad - knowledge duplicated
+class DogCard:
+    def get_age_category(self, dog):
+        if dog['age_months'] < 12:
+            return 'puppy'
+        elif dog['age_months'] < 36:
+            return 'young'
+        elif dog['age_months'] < 96:
+            return 'adult'
+        else:
+            return 'senior'
+
+class DogFilter:
+    def filter_by_age(self, dogs, category):
+        if category == 'puppy':
+            return [d for d in dogs if d['age_months'] < 12]
+        elif category == 'young':
+            return [d for d in dogs if 12 <= d['age_months'] < 36]
+        # ... same knowledge repeated
+
+# Good - knowledge in one place
+AGE_CATEGORIES = {
+    'puppy': (0, 12),
+    'young': (12, 36),
+    'adult': (36, 96),
+    'senior': (96, float('inf'))
+}
+
+def get_age_category(age_months):
+    for category, (min_age, max_age) in AGE_CATEGORIES.items():
+        if min_age <= age_months < max_age:
+            return category
+    return 'unknown'
+```
+## 🔧 Common Tasks
+
+### Adding a New Scraper
+
+1. **Create configuration file first** (TDD for configs!)
+   ```yaml
+   # configs/organizations/new-org.yaml
+   schema_version: "1.0"
+   id: "new-org"
+   name: "New Organization"
+   enabled: true
+   scraper:
+     class_name: "NewOrgScraper"
+     module: "scrapers.new_org"
+   ```
+
+2. **Write failing tests**
+   ```python
+   # tests/scrapers/test_new_org_scraper.py
+   def test_extract_dog_data():
+       scraper = NewOrgScraper()
+       html = load_fixture('new_org_sample.html')
+       
+       dogs = scraper.extract_dogs(html)
+       
+       assert len(dogs) == 10
+       assert dogs[0]['name'] == "Expected Name"
+       # This will FAIL - scraper doesn't exist yet
+   ```
+
+3. **Run test to confirm failure**
+   ```bash
+   pytest tests/scrapers/test_new_org_scraper.py -v
+   ```
+
+4. **Implement scraper**
+   ```python
+   # scrapers/new_org/scraper.py
+   from scrapers.base_scraper import BaseScraper
+   
+   class NewOrgScraper(BaseScraper):
+       def collect_data(self):
+           # Minimal implementation to make test pass
+           pass
+   ```
+
+5. **Verify all tests pass**
+   ```bash
+   pytest tests/ -m "not slow" -v
+   ```
+
+6. **Sync to database**
+   ```bash
+   python management/config_commands.py sync
+   ```
+
+### Adding a New API Endpoint
+
+1. **Write failing test first**
+   ```python
+   # tests/api/test_new_endpoint.py
+   def test_new_endpoint(client):
+       response = client.get("/api/v1/breeds")
+       assert response.status_code == 200
+       assert response.json()["breeds"] == []
+   ```
+
+2. **Implement endpoint**
+   ```python
+   # api/routes/breeds.py
+   @router.get("/breeds")
+   def get_breeds():
+       return {"breeds": []}
+   ```
+
+### Adding a Frontend Component
+
+1. **Write failing test first**
+   ```javascript
+   // frontend/src/components/__tests__/BreedFilter.test.jsx
+   test('renders breed filter with options', () => {
+     const breeds = ['Golden Retriever', 'Labrador'];
+     render(<BreedFilter breeds={breeds} />);
+     
+     expect(screen.getByText('Golden Retriever')).toBeInTheDocument();
+     expect(screen.getByText('Labrador')).toBeInTheDocument();
+   });
+   ```
+
+2. **Create component**
+   ```jsx
+   // frontend/src/components/BreedFilter.jsx
+   export default function BreedFilter({ breeds }) {
+     return (
+       <div className="breed-filter">
+         {breeds.map(breed => (
+           <label key={breed}>
+             <input type="checkbox" value={breed} />
+             {breed}
+           </label>
+         ))}
+       </div>
+     );
+   }
+   ```
+
+## ⚠️ Critical Rules
+
+### 1. ALWAYS Write Tests First
+```bash
+# WRONG - Never do this:
+# 1. Write new feature code
+# 2. Add tests later
+
+# CORRECT - Always do this:
+# 1. Write failing test
+# 2. See it fail
+# 3. Write minimal code to pass
+# 4. Refactor if needed
 ```
 
 ### 2. NEVER Delete or Skip Tests
@@ -75,144 +893,58 @@ After EVERY coding session, update DEVELOPMENT_LOG.md:
 - Test count changes, performance impact
 ```
 
-## 📁 Project Structure
-```
-rescue-dog-aggregator/
-├── api/                    # FastAPI backend
-├── scrapers/              # Web scrapers
-├── tests/                 # Backend tests (259 tests)
-├── frontend/              # Next.js 15 app
-│   ├── src/              # React components
-│   └── __tests__/        # Frontend tests (1,249 tests)
-├── configs/              # Organization configs
-├── database/             # Schema and migrations
-└── docs/                 # Documentation
-```
+## Working with Claude
 
-## 🧪 Testing Guidelines
+### Expectations
 
-### Backend Testing
-```bash
-# Always run in virtual environment
-source venv/bin/activate
+When working with this codebase:
 
-# Test categories
-pytest -m "unit"      # Fast unit tests (~1s)
-pytest -m "api"       # API endpoint tests
-pytest -m "database"  # Database tests
-pytest -m "not slow"  # All fast tests (default)
-```
+1. **ALWAYS FOLLOW TDD** - No production code without a failing test. This is not negotiable.
+2. **Think deeply** before making any edits
+3. **Understand the full context** of the code and requirements
+4. **Ask clarifying questions** when requirements are ambiguous
+5. **Think from first principles** - don't make assumptions
+6. **Assess refactoring after every green** - Look for opportunities to improve code structure
+7. **Keep project docs current** - update them whenever you introduce meaningful changes
 
-### Frontend Testing
-```bash
-cd frontend
+### Code Changes
 
-# Run specific test suites
-npm test -- --testPathPattern="DogCard"        # Component tests
-npm test -- --testPathPattern="performance"    # Performance tests
-npm test -- --testPathPattern="accessibility"  # A11y tests
+When suggesting or making changes:
+- **Start with a failing test** - always. No exceptions.
+- After making tests pass, always assess refactoring opportunities
+- After refactoring, verify all tests pass, then commit
+- Respect the existing patterns and conventions
+- Maintain test coverage for all behavior changes
+- Keep changes small and incremental
+- Provide rationale for significant design decisions
 
-# Debug failing tests
-npm test -- --verbose --no-coverage
-```
+**If you find yourself writing production code without a failing test, STOP immediately and write the test first.**
 
-## 🔧 Common Tasks
+## 🆘 When You're Stuck
 
-### Adding a New Feature
-
-1. **Create test file first**
-   ```python
-   # tests/test_new_feature.py
-   def test_feature_behavior():
-       assert False  # Start with failing test
-   ```
-
-2. **Run test to confirm failure**
-   ```bash
-   pytest tests/test_new_feature.py -v
-   ```
-
-3. **Implement feature**
-   - Write minimal code
-   - Follow existing patterns
-   - Update documentation
-
-4. **Verify all tests pass**
-   ```bash
-   pytest tests/ -m "not slow" -v
-   ```
-
-5. **Update development log**
-
-### Modifying Existing Code
-
-1. Run tests first to establish baseline
-2. Add/modify tests for new behavior
-3. Make code changes
-4. Ensure ALL tests still pass
-5. Update relevant documentation
-6. Log changes in DEVELOPMENT_LOG.md
-
-## ⚠️ Common Pitfalls to Avoid
-
-### ❌ DON'T DO THIS:
-```python
-# Deleting a failing test
-# @pytest.mark.skip("Temporarily disabled")  # NO!
-# def test_important_functionality():
-#     pass
-
-# Modifying test to match broken code
-def test_data_validation():
-    # assert result.is_valid == True  # Original
-    assert result.is_valid == False  # Changed to pass - NO!
-```
-
-### ✅ DO THIS INSTEAD:
-```python
-# Fix the code to make test pass
-def validate_data(data):
-    # Add proper validation logic
-    return DataValidator(data).is_valid  # Returns True as expected
-```
-
-## 📊 Test Coverage Requirements
-
-- **Backend**: Minimum 93% coverage
-- **Frontend**: All components must have tests
-- **New features**: 100% test coverage required
-- **Bug fixes**: Must include regression tests
-
-## 🚀 Performance Considerations
-
-- Run `not slow` tests during development
-- Full test suite before commits
-- Use test markers to organize test runs
-- Profile slow tests and optimize
-
-## 📝 Documentation Updates
-
-When modifying code, update:
-- Inline code comments
-- Function/class docstrings
-- Relevant `docs/` files
-- API documentation if endpoints change
-- README.md if adding major features
-
-## 🆘 Getting Help
-
-- Check existing docs in `docs/` directory
-- Review test examples for patterns
-- Search error messages in troubleshooting guide
-- Ask for clarification rather than skip tests
+1. **Check existing tests** for patterns
+2. **Review documentation** in `docs/`
+3. **Look at similar implementations**
+4. **Ask for clarification** - don't assume
+5. **Break down the problem** smaller
 
 ## 🎯 Remember
 
-Your primary goals as a Claude agent:
-1. **Write tests first** (TDD)
-2. **Keep all tests passing** (no exceptions)
-3. **Never delete tests** (fix the code instead)
-4. **Document changes** (in DEVELOPMENT_LOG.md)
-5. **Maintain quality** (code coverage, linting, type safety)
+Your primary responsibilities:
+1. **Write tests first** (TDD) - No exceptions
+2. **Keep all tests passing** - Both backend (259) and frontend (1,249)
+3. **Never delete tests** - Fix the code instead
+4. **Document changes** - Update DEVELOPMENT_LOG.md
+5. **Maintain quality** - Code coverage, linting, formatting
 
-This approach ensures the codebase remains stable, reliable, and maintainable for all future contributors and rescue dogs! 🐕
+This approach ensures the codebase remains stable, reliable, and maintainable. Every feature is tested, every change is tracked, and every commit moves the project forward.
+
+## 📚 Key Documentation
+
+When working on specific areas:
+- **API Development**: See `docs/api_reference.md`
+- **Scraper Development**: See `docs/scraper_design.md`
+- **Frontend Components**: See `docs/frontend_architecture.md`
+- **Configuration**: See `docs/configuration_system.md`
+- **Testing Strategy**: See `TESTING.md`
+- **Troubleshooting**: See `docs/troubleshooting_guide.md`

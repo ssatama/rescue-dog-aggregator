@@ -2,6 +2,26 @@
 
 This log tracks major changes, features, and improvements to the Rescue Dog Aggregator platform. Each entry follows a consistent format to maintain clear development history.
 
+## 2025-06-24 - ScrapegraphAI Integration Removal ✅ COMPLETED
+### Removed
+- **ScrapegraphAI Scraper Implementation** - Deleted `scrapers/pets_in_turkey/scrapegraph_scraper.py` and `scrapers/pets_in_turkey/scrapegraph_prototype.py` due to reliability issues
+- **ScrapegraphAI Test Files** - Removed all test files: `test_pets_in_turkey_scrapegraph_scraper.py`, `test_pets_in_turkey_scrapegraph_session2.py`, `test_pets_in_turkey_scrapegraph_session3.py`
+- **ScrapegraphAI Test Results** - Deleted `test_results/scrapegraph_comparison/` directory with comparison data
+- **ScrapegraphAI Dependencies** - Removed `requirements_scrapegraph.txt` and related dependencies
+- **ScrapegraphAI Documentation** - Deleted `docs/scrapegraph_api_implementation.md` complete implementation guide
+
+### Changed  
+- **Pets in Turkey Configuration** - Reverted `configs/organizations/pets-in-turkey.yaml` to use original `PetsInTurkeyScraper` from `scrapers.pets_in_turkey.dogs_scraper`
+- **Documentation Updates** - Cleaned all ScrapegraphAI references from `docs/weekly_scraping_guide.md` and `docs/troubleshooting_guide.md`
+- **Import References** - Updated troubleshooting examples to use `PetsInTurkeyScraper` instead of `PetsInTurkeyScrapegraphScraper`
+
+### Technical Notes
+- **Reversion Reason**: ScrapegraphAI integration didn't work reliably for all dog sites, reverted to proven Selenium-based scraper
+- **Original Scraper Preserved**: `scrapers/pets_in_turkey/dogs_scraper.py` remains untouched as primary PIT scraper
+- **Clean State**: All references to scrapegraph, Scrapegraph, and SCRAPEGRAPH removed from codebase
+- **Configuration Verified**: PIT scraper now uses original `PetsInTurkeyScraper` class with standard browser automation
+- **Documentation Consistency**: All guides now reference correct scraper implementation paths
+
 ## 2025-06-23 - Session 10: Final Accessibility & Polish Pass ✅ COMPLETED
 ### Added
 - **Comprehensive Accessibility Audit** - Complete WCAG 2.1 AA compliance review with 19 comprehensive tests covering focus states, keyboard navigation, ARIA labels, and screen reader compatibility

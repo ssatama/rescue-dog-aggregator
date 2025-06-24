@@ -233,25 +233,17 @@ curl -I "https://organization-website.com/adoptable-dogs"
 
 # 2. Run scraper in debug mode
 python -c "
-from scrapers.pets_in_turkey.scrapegraph_scraper import PetsInTurkeyScrapegraphScraper
-scraper = PetsInTurkeyScrapegraphScraper(config_id='pets-in-turkey')
+from scrapers.pets_in_turkey.dogs_scraper import PetsInTurkeyScraper
+scraper = PetsInTurkeyScraper(config_id='pets-in-turkey')
 try:
     animals = scraper.collect_data()
     print(f'Found {len(animals)} animals')
     if animals:
         print('Sample animal:', animals[0])
-        # Check ScrapegraphAI API specific details
         print(f'Primary image URL: {animals[0].get(\"primary_image_url\", \"None\")}')
         print(f'Image URLs count: {len(animals[0].get(\"image_urls\", []))}')
 except Exception as e:
     print(f'Error: {e}')
-    # Check if it's an API key issue
-    import os
-    api_key = os.getenv('SCRAPEGRAPH_API_KEY')
-    if not api_key:
-        print('Missing SCRAPEGRAPH_API_KEY environment variable')
-    elif not api_key.startswith('sgai-'):
-        print('Invalid SCRAPEGRAPH_API_KEY format (should start with sgai-)')
 "
 
 # 3. Check recent website changes
@@ -325,14 +317,14 @@ WHERE availability_confidence = 'low'
   AND consecutive_scrapes_missing < 2;
 ```
 
-## ScrapegraphAI API Monitoring (Pets in Turkey)
+## Pets in Turkey Monitoring
 
-### API-Based Scraping Diagnostics
+### Selenium-Based Scraping Diagnostics
 
-The Pets in Turkey scraper now uses ScrapegraphAI's SmartScraper API for reliable data extraction. Monitor API-specific metrics:
+The Pets in Turkey scraper uses browser automation for reliable data extraction. Monitor scraping metrics:
 
 ```sql
--- Check ScrapegraphAI API success rates
+-- Check Pets in Turkey scraping success rates
 SELECT 
     sl.started_at,
     sl.status,
@@ -346,220 +338,6 @@ JOIN organizations o ON sl.organization_id = o.id
 WHERE o.name = 'Pets in Turkey'
   AND sl.started_at > NOW() - INTERVAL '7 days'
 ORDER BY sl.started_at DESC;
-```
-
-### API Key Management
-
-**Environment Setup**:
-```bash
-# Set ScrapegraphAI API key (required for PIT scraper)
-export SCRAPEGRAPH_API_KEY="sgai-your-api-key-here"
-
-# Verify API key format
-python -c "
-import os
-key = os.getenv('SCRAPEGRAPH_API_KEY')
-if key and key.startswith('sgai-') and len(key) > 40:
-    print('✅ API key format is valid')
-else:
-    print('❌ Invalid API key format or missing')
-"
-```
-
-**API Quota Monitoring**:
-```bash
-# Monitor API usage patterns
-python -c "
-from scrapers.pets_in_turkey.scrapegraph_scraper import PetsInTurkeyScrapegraphScraper
-import logging
-logging.basicConfig(level=logging.INFO)
-
-scraper = PetsInTurkeyScrapegraphScraper(config_id='pets-in-turkey')
-print(f'Using API key: {scraper.scrapegraph_api_key[:10]}...')
-print(f'Base URL: {scraper.base_url}')
-print(f'Configured timeout: {120}s')
-"
-```
-
-### Troubleshooting API Issues
-
-**Common API Errors**:
-
-1. **403 Invalid API Key**:
-   ```bash
-   # Check API key format and validity
-   echo "Current API key: ${SCRAPEGRAPH_API_KEY:0:10}..."
-   
-   # Test API connection
-   python -c "
-   from scrapegraph_py import SyncClient
-   import os
-   
-   try:
-       client = SyncClient(api_key=os.getenv('SCRAPEGRAPH_API_KEY'), timeout=30)
-       print('✅ API client initialized successfully')
-   except Exception as e:
-       print(f'❌ API client error: {e}')
-   "
-   ```
-
-2. **Rate Limiting Issues**:
-   ```bash
-   # Check current rate limit settings
-   python -c "
-   from utils.config_loader import ConfigLoader
-   config = ConfigLoader().load_config('pets-in-turkey')
-   scraper_config = config.get_scraper_config_dict()
-   print(f'Rate limit delay: {scraper_config.get(\"rate_limit_delay\", \"default\")}s')
-   print(f'Timeout: {scraper_config.get(\"timeout\", \"default\")}s')
-   "
-   ```
-
-3. **Schema Validation Errors**:
-   ```bash
-   # Test schema validation
-   python -c "
-   from scrapers.pets_in_turkey.scrapegraph_scraper import MainSchema, DogSchema, ImageSchema
-   print(f'Schema classes loaded: {MainSchema.__name__}, {DogSchema.__name__}, {ImageSchema.__name__}')
-   
-   # Test sample data structure
-   sample = {
-       'dogs': [{
-           'name': 'Test Dog',
-           'breed': 'Mixed',
-           'age': '2 yo',
-           'sex': 'Female',
-           'weight': '15kg',
-           'height': '50cm',
-           'neuteredSpayed': 'Yes',
-           'description': 'Friendly dog',
-           'primaryImageUrl': 'https://example.com/image.jpg',
-           'imageUrls': [{'url': 'https://example.com/image.jpg'}]
-       }]
-   }
-   
-   try:
-       validated = MainSchema(**sample)
-       print('✅ Schema validation successful')
-   except Exception as e:
-       print(f'❌ Schema validation error: {e}')
-   "
-   ```
-
-### Performance Optimization for API-Based Scraping
-
-**API Response Time Monitoring**:
-```sql
--- Monitor API response times
-SELECT 
-    DATE_TRUNC('day', sl.started_at) as scrape_date,
-    AVG(sl.duration_seconds) as avg_duration,
-    MIN(sl.duration_seconds) as min_duration,
-    MAX(sl.duration_seconds) as max_duration,
-    COUNT(*) as scrape_count
-FROM scrape_logs sl
-JOIN organizations o ON sl.organization_id = o.id
-WHERE o.name = 'Pets in Turkey'
-  AND sl.started_at > NOW() - INTERVAL '30 days'
-  AND sl.duration_seconds IS NOT NULL
-GROUP BY DATE_TRUNC('day', sl.started_at)
-ORDER BY scrape_date DESC;
-```
-
-**Image Extraction Quality**:
-```sql
--- Monitor image extraction success rates
-SELECT 
-    sl.started_at,
-    sl.dogs_found,
-    COALESCE((sl.detailed_metrics->>'dogs_with_primary_images')::int, 0) as primary_images,
-    COALESCE((sl.detailed_metrics->>'dogs_with_image_urls')::int, 0) as image_urls,
-    ROUND(
-        COALESCE((sl.detailed_metrics->>'dogs_with_primary_images')::int, 0) * 100.0 / 
-        NULLIF(sl.dogs_found, 0), 0
-    ) as image_success_rate
-FROM scrape_logs sl
-JOIN organizations o ON sl.organization_id = o.id
-WHERE o.name = 'Pets in Turkey'
-  AND sl.started_at > NOW() - INTERVAL '14 days'
-  AND sl.status = 'success'
-ORDER BY sl.started_at DESC;
-```
-
-**API Health Check Script**:
-```bash
-#!/bin/bash
-# /opt/monitoring/scrapegraph_api_health.sh
-
-export SCRAPEGRAPH_API_KEY="${SCRAPEGRAPH_API_KEY}"
-
-echo "ScrapegraphAI API Health Check - $(date)"
-
-# Test API connectivity
-python -c "
-from scrapegraph_py import SyncClient
-import os
-import sys
-
-try:
-    client = SyncClient(api_key=os.getenv('SCRAPEGRAPH_API_KEY'), timeout=30)
-    print('✅ API client connection successful')
-    
-    # Test simple extraction (optional - remove if quota is a concern)
-    # response = client.smartscraper(
-    #     website_url='https://example.com',
-    #     user_prompt='Extract any text',
-    #     output_schema={'text': str}
-    # )
-    # print('✅ API extraction test successful')
-    
-    sys.exit(0)
-except Exception as e:
-    print(f'❌ API health check failed: {e}')
-    sys.exit(1)
-"
-
-if [ $? -eq 0 ]; then
-    echo "ScrapegraphAI API is healthy"
-else
-    echo "ScrapegraphAI API health check failed" | mail -s "ScrapegraphAI API Alert" admin@yoursite.com
-fi
-```
-
-### Migration Notes
-
-**Key Changes from Legacy Implementation**:
-- **No browser automation**: Eliminated Selenium dependency
-- **Structured extraction**: Uses Pydantic schemas for reliable data parsing
-- **100% image extraction**: Consistently extracts all available images
-- **API-based reliability**: No browser timing or loading issues
-- **Better error handling**: Clear API error messages and status codes
-
-**Environment Requirements**:
-```bash
-# Required environment variables
-SCRAPEGRAPH_API_KEY=sgai-your-api-key-here
-
-# Optional (for Cloudinary image processing)
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-secret
-```
-
-**Monitoring Migration Success**:
-```sql
--- Compare extraction quality before/after migration
-SELECT 
-    DATE_TRUNC('week', sl.started_at) as week,
-    AVG(sl.data_quality_score) as avg_quality,
-    AVG(sl.dogs_found) as avg_dogs_found,
-    COUNT(*) as scrape_count
-FROM scrape_logs sl
-JOIN organizations o ON sl.organization_id = o.id
-WHERE o.name = 'Pets in Turkey'
-  AND sl.started_at > NOW() - INTERVAL '8 weeks'
-GROUP BY DATE_TRUNC('week', sl.started_at)
-ORDER BY week DESC;
 ```
 
 ## Performance Optimization
@@ -763,28 +541,26 @@ ORDER BY image_success_rate DESC;
 ### Troubleshooting Unified Extraction
 
 ```bash
-# Debug unified extraction issues
+# Debug extraction issues
 python -c "
 from scrapers.rean.dogs_scraper import REANScraper
 scraper = REANScraper(config_id='rean')
 try:
-    # Test unified extraction specifically
-    url = 'https://rean.org.uk/dogs-%26-puppies-in-romania'
-    dogs = scraper.extract_dogs_with_images_unified(url, 'romania')
-    print(f'Unified extraction found {len(dogs)} dogs')
+    # Test extraction
+    animals = scraper.collect_data()
+    print(f'Found {len(animals)} animals')
     
     # Check image associations
-    with_images = [d for d in dogs if d.get('primary_image_url')]
-    print(f'{len(with_images)} dogs have associated images')
+    with_images = [d for d in animals if d.get('primary_image_url')]
+    print(f'{len(with_images)} animals have associated images')
     
     # Sample output
-    if dogs:
-        sample = dogs[0]
-        print(f'Sample dog: {sample.get(\"name\")} - Image: {sample.get(\"primary_image_url\", \"None\")[:50]}...')
+    if animals:
+        sample = animals[0]
+        print(f'Sample animal: {sample.get(\"name\")} - Image: {sample.get(\"primary_image_url\", \"None\")[:50]}...')
         
 except Exception as e:
-    print(f'Unified extraction error: {e}')
-    print('Checking fallback to legacy method...')
+    print(f'Extraction error: {e}')
 "
 ```
 
