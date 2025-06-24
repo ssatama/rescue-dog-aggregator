@@ -231,7 +231,10 @@ class OrganizationSyncManager:
             return None
 
     def _sync_service_regions(self, org_id: int, config: OrganizationConfig) -> None:
-        """Sync service regions for an organization (simplified to countries only).
+        """Sync service regions for an organization.
+        
+        Includes both service_regions (where dogs are located) and ships_to 
+        (countries where dogs can be adopted to) for comprehensive filtering.
 
         Args:
             org_id: Database ID of organization
@@ -244,37 +247,45 @@ class OrganizationSyncManager:
                 "DELETE FROM service_regions WHERE organization_id = %s", (org_id,)
             )
 
-            # Parse and insert service regions from config (now just country codes)
-            service_regions = config.metadata.service_regions
-            if not service_regions:
+            # Collect all countries: service_regions + ships_to
+            all_countries = set()
+            
+            # Add service regions (where dogs are located)
+            service_regions = config.metadata.service_regions or []
+            for country_code in service_regions:
+                if isinstance(country_code, str):
+                    all_countries.add(country_code.strip().upper())
+            
+            # Add ships_to countries (where dogs can be adopted to)
+            ships_to = config.metadata.ships_to or []
+            for country_code in ships_to:
+                if isinstance(country_code, str):
+                    all_countries.add(country_code.strip().upper())
+            
+            if not all_countries:
                 self.logger.debug(
-                    f"No service regions defined for organization {org_id}"
+                    f"No service regions or ships_to countries defined for organization {org_id}"
                 )
                 cursor.connection.commit()
                 return
 
             regions_added = 0
 
-            for country_code in service_regions:
-                if isinstance(country_code, str):
-                    # Insert country code only (simplified format)
-                    cursor.execute(
-                        """
-                        INSERT INTO service_regions (organization_id, country, created_at, updated_at)
-                        VALUES (%s, %s, %s, %s)
-                        """,
-                        (
-                            org_id,
-                            country_code.strip().upper(),
-                            datetime.now(),
-                            datetime.now(),
-                        ),
-                    )
-                    regions_added += 1
-                else:
-                    self.logger.warning(
-                        f"Invalid service region format for organization {org_id}: {country_code}"
-                    )
+            for country_code in all_countries:
+                # Insert each unique country
+                cursor.execute(
+                    """
+                    INSERT INTO service_regions (organization_id, country, created_at, updated_at)
+                    VALUES (%s, %s, %s, %s)
+                    """,
+                    (
+                        org_id,
+                        country_code,
+                        datetime.now(),
+                        datetime.now(),
+                    ),
+                )
+                regions_added += 1
 
             cursor.connection.commit()
             self.logger.info(
