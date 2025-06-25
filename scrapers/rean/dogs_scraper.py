@@ -65,12 +65,16 @@ class REANScraper(BaseScraper):
                 ):
                     current_block.append(text)
                 elif "updated" in text.lower() and re.search(r"\d+/\d+/\d+", text):
-                    # This is an update timestamp - marks the end of a dog
-                    # block
+                    # This is an update timestamp - include it in the current block
+                    # then finalize the dog block
+                    current_block.append(text)
                     if current_block:
                         dog_blocks.append(" ".join(current_block))
                         current_block = []
                 elif current_block:  # We're in a dog block, collect all text
+                    current_block.append(text)
+                elif len(text) > 20:  # Standalone text that might be part of a dog block
+                    # Start a new block if this looks like it could be dog content
                     current_block.append(text)
 
             # Add the last block if it exists
@@ -950,8 +954,6 @@ class REANScraper(BaseScraper):
         all_animals = []
 
         try:
-            self.start_scrape_session()
-
             for page_type, page_path in self.pages.items():
                 self.logger.info(f"Scraping {page_type} page: {page_path}")
 
@@ -971,17 +973,7 @@ class REANScraper(BaseScraper):
                         standardized_data = self.standardize_animal_data(
                             dog_data, page_type
                         )
-
-                        # Save animal and get the database ID
-                        animal_id, operation = self.save_animal(standardized_data)
-                        if animal_id:
-                            # Mark the animal as seen using the database ID
-                            self.mark_animal_as_seen(animal_id)
-                            all_animals.append(standardized_data)
-                        else:
-                            self.logger.error(
-                                f"Failed to save animal: {standardized_data.get('name')}"
-                            )
+                        all_animals.append(standardized_data)
                     except Exception as e:
                         self.logger.error(f"Error processing dog entry: {e}")
                         continue
@@ -1048,9 +1040,25 @@ class REANScraper(BaseScraper):
         if not page_text or not page_text.strip():
             return []
 
-        # Split by update timestamps: (Updated DD/MM/YY)
-        # This will split the text and remove the timestamps
-        parts = re.split(r"\(Updated \d{1,2}/\d{1,2}/\d{2,4}\)", page_text)
+        # Split by update timestamps but preserve them in the preceding entry
+        # Use a capturing group to keep the timestamps
+        timestamp_pattern = r"(\(Updated \d{1,2}/\d{1,2}/\d{2,4}\))"
+        parts = re.split(timestamp_pattern, page_text)
+        
+        # Reconstruct entries with their timestamps
+        entries_with_timestamps = []
+        for i in range(0, len(parts) - 1, 2):
+            entry = parts[i]
+            if i + 1 < len(parts) and parts[i + 1].startswith("(Updated"):
+                # Append the timestamp to this entry
+                entry = entry + " " + parts[i + 1]
+            entries_with_timestamps.append(entry)
+        
+        # If there's a final part without timestamp, add it
+        if len(parts) % 2 == 1 and parts[-1].strip():
+            entries_with_timestamps.append(parts[-1])
+        
+        parts = entries_with_timestamps
 
         # Clean and filter entries
         cleaned_entries = []
@@ -1095,8 +1103,8 @@ class REANScraper(BaseScraper):
         if not text:
             return None
 
-        # Pattern 1: "Name is X years/months old"
-        name_pattern = r"^([A-Za-z]+(?:\s+[A-Za-z]+)*?)\s+is\s+(?:around\s+)?\d"
+        # Pattern 1: "Our Name is..." or "Name is X years/months old"
+        name_pattern = r"^(?:Our\s+)?([A-Za-z]+(?:\s+[A-Za-z]+)*?)\s+is\s+(?:looking|around\s+)?\d"
         match = re.search(name_pattern, text.strip())
         if match:
             name = match.group(1).strip()
@@ -1111,11 +1119,33 @@ class REANScraper(BaseScraper):
                 # Take the last non-descriptive word as the name
                 return actual_name[-1]
 
-        # Pattern 2: Look for capitalized words at the beginning
-        words = text.strip().split()[:5]  # Check first 5 words
-        for word in words:
+        # Pattern 2: "Our Name is looking for..."
+        our_pattern = r"^Our\s+([A-Za-z]+)\s+is\s+looking"
+        match = re.search(our_pattern, text.strip())
+        if match:
+            return match.group(1).strip()
+
+        # Pattern 3: Handle location prefixes in name extraction
+        # "- Location Name is..." or "- in Location Name is..."
+        location_pattern = r"^-\s*(?:in\s+)?[A-Za-z]+\s+([A-Za-z]+)\s+(?:-\s+\d+\s+(?:months?|years?)\s+old\s+)?(?:is|was)"
+        match = re.search(location_pattern, text.strip())
+        if match:
+            return match.group(1).strip()
+
+        # Pattern 4: Look for capitalized words at the beginning, excluding locations
+        words = text.strip().split()[:7]  # Check first 7 words for more context
+        skip_words = ["little", "sweet", "puppy", "this", "the", "our", "in", "wrexham", "romania", "manchester", "london", "birmingham"]
+        found_dash = False
+        
+        for i, word in enumerate(words):
+            # Skip the dash and location words that come after it
+            if word == "-":
+                found_dash = True
+                continue
+            if found_dash and i < 3:  # Skip first few words after dash (likely location)
+                continue
             if word[0].isupper() and word.isalpha() and len(word) > 2:
-                if word.lower() not in ["little", "sweet", "puppy", "this", "the"]:
+                if word.lower() not in skip_words:
                     return word
 
         return None
@@ -1366,67 +1396,95 @@ class REANScraper(BaseScraper):
         # Clean up the text
         text = text.strip()
 
-        # Remove update timestamps that might be at the end
-        text = re.sub(r"\(Updated \d{1,2}/\d{1,2}/\d{2,4}\)$", "", text).strip()
+        # First, extract only content up to and including the update timestamp
+        # This removes contact info, URLs, and application instructions that come after
+        update_pattern = r"(\(Updated \d{1,2}/\d{1,2}/\d{2,4}\))"
+        update_match = re.search(update_pattern, text)
+        if update_match:
+            # Keep everything up to and including the timestamp
+            end_pos = update_match.end()
+            text = text[:end_pos].strip()
+        
+        # Clean up whitespace
+        text = re.sub(r"\s+", " ", text).strip()
 
-        # Try to extract the story part (usually after name and age info)
-        # Look for narrative content that comes after basic info
+        # Remove redundant name/age prefix patterns FIRST
+        # Pattern 1: "Name - X months/years old" at the start
+        text = re.sub(r"^[A-Za-z]+\s*-\s*\d+(?:\.\d+)?\s*(?:months?|years?)\s+old\s*", "", text, flags=re.IGNORECASE)
+        
+        # Now remove location prefixes like "- Wrexham" or "- in Romania" at the start
+        # This handles cases like "- Wrexham Nala is..." or "- in Romania Tiny is..."
+        # First handle "- in Location" pattern (more permissive)
+        text = re.sub(r"^-\s*in\s+[A-Za-z]+\s+", "", text).strip()
+        # Then handle "- Location" pattern (more permissive - matches any word after dash)
+        text = re.sub(r"^-\s*[A-Za-z]+\s+", "", text).strip()
+        
+        # Pattern 2: Remove the first sentence if it's just basic info we already show
+        # Look for patterns like "Lucky is 7 months old." or "Our Lucky is 7 months old."
+        first_sentence_pattern = r"^(?:Our\s+)?[A-Za-z]+\s+is\s+(?:around\s+)?\d+(?:\.\d+)?\s*(?:months?|years?)\s+old\.?\s*"
+        if re.match(first_sentence_pattern, text):
+            # Remove this redundant first sentence
+            text = re.sub(first_sentence_pattern, "", text).strip()
+
+        # Split into sentences for processing
         sentences = text.split(".")
 
-        # Find where the actual story begins (skip name/age info)
+        # Collect meaningful sentences
         story_sentences = []
-        found_story_start = False
-
         for sentence in sentences:
             sentence = sentence.strip()
             if not sentence:
                 continue
 
-            # Skip sentences that are just basic info
-            if (
-                any(
-                    pattern in sentence.lower()
-                    for pattern in [
-                        "months old",
-                        "years old",
-                        "vaccinated",
-                        "chipped",
-                        "spayed",
-                        "neutered",
-                    ]
-                )
-                and not found_story_start
-            ):
+            # Skip very short fragments
+            if len(sentence) < 10:
                 continue
-
-            # This looks like story content
-            if len(sentence) > 20:
-                found_story_start = True
-                story_sentences.append(sentence)
+                
+            # Skip sentences that are contact instructions
+            # Check if sentence contains contact/application keywords
+            contact_keywords = [
+                "please message us", "e-mail", "facebook", "apply to adopt",
+                "following information", "current pets", "ages of children",
+                "garden fencing", "working hours", "experience with dogs"
+            ]
+            
+            # Count how many contact keywords are in this sentence
+            contact_count = sum(1 for keyword in contact_keywords if keyword in sentence.lower())
+            
+            # If sentence has 2+ contact keywords, it's likely just instructions
+            if contact_count >= 2:
+                continue
+                
+            # Or if it starts with "Please message" or similar
+            if sentence.lower().startswith(("please message", "please contact", "email", "e-mail")):
+                continue
+            
+            story_sentences.append(sentence)
 
         if story_sentences:
-            # Join the story sentences and limit length for About section
-            # Take first 3 story sentences
-            description = ". ".join(story_sentences[:3])
+            # Join sentences
+            description = ". ".join(story_sentences)
+            
+            # Ensure proper ending
             if not description.endswith("."):
                 description += "."
+            
+            # Add back the update timestamp if it was present and not already included
+            if update_match and "(Updated" not in description:
+                description = description.rstrip(".") + " " + update_match.group(1)
 
-            # Limit length to reasonable size for About section
-            if len(description) > 300:
-                description = description[:297] + "..."
+            # Only limit length if description is excessively long (over 2000 chars)
+            if len(description) > 2000:
+                # Find a good breaking point near 1800 chars
+                break_point = description.rfind(". ", 0, 1800)
+                if break_point > 1000:  # Ensure we don't break too early
+                    description = description[:break_point + 1]
+                else:
+                    description = description[:1797] + "..."
 
             return description
 
-        # Fallback: use first part of text if no story structure found
-        if len(text) > 50:
-            # Take first sentence or reasonable chunk
-            first_part = text[:200]
-            if "." in first_part:
-                first_part = first_part[: first_part.rfind(".") + 1]
-            else:
-                first_part += "..."
-            return first_part
-
+        # Fallback: if no good sentences found, return cleaned original text
         return text
 
     def extract_dog_data(
@@ -1486,11 +1544,57 @@ class REANScraper(BaseScraper):
             if size_prediction:
                 dog_data["properties"]["size_prediction"] = size_prediction
 
+            # Validate that we have the essential fields
+            validation_errors = self._validate_dog_data(dog_data, entry_text)
+            if validation_errors:
+                self.logger.warning(f"Validation issues for dog '{name}': {', '.join(validation_errors)}")
+                # Log the raw text for debugging
+                self.logger.debug(f"Raw text for validation issues: {entry_text[:200]}...")
+
             return dog_data
 
         except Exception as e:
             self.logger.error(f"Error extracting dog data from entry: {e}")
             return None
+
+    def _validate_dog_data(self, dog_data: Dict[str, Any], entry_text: str) -> List[str]:
+        """
+        Validate that extracted dog data contains expected fields.
+
+        Args:
+            dog_data: Extracted dog data
+            entry_text: Original entry text for reference
+
+        Returns:
+            List of validation error messages (empty if all good)
+        """
+        errors = []
+        
+        # Check essential fields
+        if not dog_data.get("name"):
+            errors.append("missing name")
+        
+        if not dog_data.get("age_text"):
+            errors.append("missing age information")
+            
+        properties = dog_data.get("properties", {})
+        description = properties.get("description", "")
+        
+        if not description or len(description.strip()) < 20:
+            errors.append("missing or very short description")
+            
+        # Check if description seems complete (should include more than just basic info)
+        if description and not any(word in description.lower() for word in [
+            "friendly", "loving", "sweet", "playful", "gentle", "looking", "home", 
+            "foster", "rescue", "transport", "adopt", "family"
+        ]):
+            errors.append("description may be incomplete - lacks personality/story content")
+            
+        # Check if update timestamp is preserved
+        if "updated" in entry_text.lower() and "updated" not in description.lower():
+            errors.append("update timestamp not preserved in description")
+            
+        return errors
 
     def standardize_animal_data(
         self, dog_data: Dict[str, Any], page_type: str
@@ -1551,6 +1655,9 @@ class REANScraper(BaseScraper):
         # Add image URL if available
         if dog_data.get("primary_image_url"):
             standardized_data["primary_image_url"] = dog_data["primary_image_url"]
+            # Set original_image_url to the same value for proper comparison in base_scraper
+            # This prevents unnecessary re-uploads to Cloudinary when images haven't changed
+            standardized_data["original_image_url"] = dog_data["primary_image_url"]
 
         # Standardize age if available
         if dog_data.get("age_text"):

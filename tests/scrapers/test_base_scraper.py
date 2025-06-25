@@ -407,10 +407,10 @@ class TestBaseCRUDMethods:
         mock_cursor = Mock()
         concrete_scraper.conn.cursor.return_value = mock_cursor
 
-        # Mock existing animal data (name, breed, age_text, sex, primary_image_url, status, standardized_breed, age_min_months, age_max_months, standardized_size)
+        # Mock existing animal data (name, breed, age_text, sex, primary_image_url, status, standardized_breed, age_min_months, age_max_months, standardized_size, properties)
         mock_cursor.fetchone.return_value = (
             "Old Name", "Old Breed", "2 years", "Female", "old-url.jpg", "available",
-            "Old Breed", 24, 36, "Medium"  # standardized fields
+            "Old Breed", 24, 36, "Medium", "{}"  # standardized fields + properties
         )
 
         # Test data with changes
@@ -448,10 +448,10 @@ class TestBaseCRUDMethods:
         mock_cursor = Mock()
         concrete_scraper.conn.cursor.return_value = mock_cursor
 
-        # Mock existing animal data (identical to update data) (name, breed, age_text, sex, primary_image_url, status, standardized_breed, age_min_months, age_max_months, standardized_size)
+        # Mock existing animal data (identical to update data) (name, breed, age_text, sex, primary_image_url, status, standardized_breed, age_min_months, age_max_months, standardized_size, properties)
         mock_cursor.fetchone.return_value = (
             "Same Name", "Same Breed", "2 years", "Female", "same-url.jpg", "available",
-            "Same Breed", 24, 36, None  # Match what standardize_breed("Same Breed") actually returns
+            "Same Breed", 24, 36, None, "{}"  # Match what standardize_breed("Same Breed") actually returns + properties
         )
 
         # Test data (no changes)

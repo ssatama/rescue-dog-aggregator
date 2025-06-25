@@ -234,6 +234,7 @@ class BaseScraper(ABC):
                         current_original_url = current_image_data[1]
 
                         # Don't upload if the original URL hasn't changed
+                        # But if current_original_url is a Cloudinary URL, we should update it to the source URL
                         if current_original_url == original_url:
                             should_upload_image = False
                             # Use existing Cloudinary URL
@@ -241,6 +242,15 @@ class BaseScraper(ABC):
                             animal_data["original_image_url"] = current_original_url
                             self.logger.info(
                                 f"🔄 Image unchanged for {animal_data.get('name')}, using existing Cloudinary URL"
+                            )
+                        elif current_original_url and "cloudinary.com" in current_original_url:
+                            # Legacy case: original_image_url is a Cloudinary URL, update it to source URL
+                            # but keep the existing Cloudinary URL as primary
+                            should_upload_image = False
+                            animal_data["primary_image_url"] = current_primary_url
+                            animal_data["original_image_url"] = original_url  # Update to source URL
+                            self.logger.info(
+                                f"🔄 Updated original_image_url to source URL for {animal_data.get('name')}, keeping existing Cloudinary URL"
                             )
 
                 if should_upload_image:
@@ -686,11 +696,11 @@ class BaseScraper(ABC):
         try:
             cursor = self.conn.cursor()
 
-            # Get current animal data to check for changes (including standardized fields)
+            # Get current animal data to check for changes (including standardized fields and properties)
             cursor.execute(
                 """
                 SELECT name, breed, age_text, sex, primary_image_url, status,
-                       standardized_breed, age_min_months, age_max_months, standardized_size
+                       standardized_breed, age_min_months, age_max_months, standardized_size, properties
                 FROM animals WHERE id = %s
                 """,
                 (animal_id,),
@@ -713,6 +723,7 @@ class BaseScraper(ABC):
                 current_age_min_months,
                 current_age_max_months,
                 current_standardized_size,
+                current_properties,
             ) = current_data
 
             # Apply standardization to new data to compare with current standardized values
@@ -729,6 +740,10 @@ class BaseScraper(ABC):
             )
 
             # Check for changes in both raw AND standardized fields
+            # Compare properties (description) as JSON to detect content changes
+            current_properties_json = current_properties if current_properties else "{}"
+            new_properties_json = json.dumps(animal_data.get("properties")) if animal_data.get("properties") else "{}"
+            
             changes_detected = (
                 animal_data.get("name") != current_name
                 or animal_data.get("breed") != current_breed
@@ -736,6 +751,8 @@ class BaseScraper(ABC):
                 or animal_data.get("sex") != current_sex
                 or animal_data.get("primary_image_url") != current_image
                 or animal_data.get("status") != current_status
+                # Check properties field for description changes
+                or new_properties_json != current_properties_json
                 # Check standardized fields for changes due to improved standardization logic
                 or new_standardized_breed != current_standardized_breed
                 or new_age_min_months != current_age_min_months
