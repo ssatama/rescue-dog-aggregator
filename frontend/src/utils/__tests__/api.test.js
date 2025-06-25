@@ -1,12 +1,6 @@
 import { get } from '../api';
 
-// Silence console.error calls in this suite
-beforeAll(() => {
-  jest.spyOn(console, 'error').mockImplementation(() => {});
-});
-afterAll(() => {
-  console.error.mockRestore();
-});
+// Console error suppression is handled globally in jest.setup.js
 
 // Mock global fetch
 global.fetch = jest.fn();

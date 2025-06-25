@@ -21,9 +21,7 @@ jest.mock('next/navigation', () => ({
 // mock Loading
 jest.mock('../../../../components/ui/Loading', () => () => <div data-testid="loading"/>)
 
-// suppress console.error noise
-beforeAll(() => jest.spyOn(console, 'error').mockImplementation(() => {}))
-afterAll(() => console.error.mockRestore())
+// Console error suppression is handled globally in jest.setup.js
 
 describe('OrgDetailPage – share buttons', () => {
   it('renders SocialMediaLinks with the org social_media URLs', async () => {

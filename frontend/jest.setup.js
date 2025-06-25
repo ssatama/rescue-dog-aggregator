@@ -93,3 +93,24 @@ jest.mock('next/link', () => ({
 jest.mock('@heroicons/react/24/outline', () => ({
   HeartIcon: ({ className, ...props }) => <svg className={className} {...props} data-testid="building-icon" />
 }));
+
+// Suppress React act() warnings for startTransition in tests
+// These warnings occur because startTransition is async but test environment
+// doesn't always wait for all transitions to complete
+const originalError = console.error;
+beforeEach(() => {
+  console.error = (...args) => {
+    if (
+      typeof args[0] === 'string' &&
+      args[0].includes('Warning: An update to') &&
+      args[0].includes('was not wrapped in act')
+    ) {
+      return;
+    }
+    originalError.call(console, ...args);
+  };
+});
+
+afterEach(() => {
+  console.error = originalError;
+});

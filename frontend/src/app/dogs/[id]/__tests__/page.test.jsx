@@ -24,13 +24,7 @@ jest.mock('../../../../components/ui/Loading', () => () => <div data-testid="loa
 // mock DogDetailSkeleton  
 jest.mock('../../../../components/ui/DogDetailSkeleton', () => () => <div data-testid="loading"/>);
 
-// suppress React/console error noise during tests
-beforeAll(() => {
-  jest.spyOn(console, 'error').mockImplementation(() => {});
-});
-afterAll(() => {
-  console.error.mockRestore();
-});
+// Console error suppression is handled globally in jest.setup.js
 
 describe('DogDetailPage', () => {
   beforeEach(() => {
