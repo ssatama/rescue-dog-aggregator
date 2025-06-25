@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS animals (
     
     -- Core searchable fields
     breed VARCHAR(255),
+    breed_group VARCHAR(100),
     standardized_breed VARCHAR(100),
     age_text VARCHAR(100),
     age_min_months INTEGER,
@@ -98,6 +99,7 @@ CREATE TABLE IF NOT EXISTS service_regions (
 CREATE INDEX IF NOT EXISTS idx_animals_organization ON animals(organization_id);
 CREATE INDEX IF NOT EXISTS idx_animals_status ON animals(status);
 CREATE INDEX IF NOT EXISTS idx_animals_breed ON animals(breed);
+CREATE INDEX IF NOT EXISTS idx_animals_breed_group ON animals(breed_group);
 CREATE INDEX IF NOT EXISTS idx_animals_sex ON animals(sex);
 CREATE INDEX IF NOT EXISTS idx_animals_size ON animals(size);
 CREATE INDEX IF NOT EXISTS idx_animals_animal_type ON animals(animal_type);
