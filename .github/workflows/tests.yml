@@ -81,16 +81,10 @@ jobs:
         DB_USER: postgres
         DB_PASSWORD: postgres
       run: |
-        # Create schema
+        # Create schema directly from SQL file
         python -c "
         import psycopg2
         import os
-        import sys
-        
-        # Add project root to path
-        sys.path.insert(0, os.getcwd())
-        
-        from database.schema import create_schema
         
         conn = psycopg2.connect(
             host='localhost',
@@ -101,7 +95,16 @@ jobs:
         )
         
         try:
-            create_schema(conn)
+            cursor = conn.cursor()
+            
+            # Read and execute schema.sql
+            schema_path = os.path.join('database', 'schema.sql')
+            with open(schema_path, 'r') as f:
+                schema_sql = f.read()
+            
+            cursor.execute(schema_sql)
+            conn.commit()
+            cursor.close()
             print('✅ Schema created successfully')
         except Exception as e:
             print(f'❌ Schema creation failed: {e}')
@@ -266,7 +269,7 @@ jobs:
         # Initialize database
         python -c "
         import psycopg2
-        from database.schema import create_schema
+        import os
         
         conn = psycopg2.connect(
             host='localhost',
@@ -275,8 +278,24 @@ jobs:
             user='postgres',
             password='postgres'
         )
-        create_schema(conn)
-        conn.close()
+        
+        try:
+            cursor = conn.cursor()
+            
+            # Read and execute schema.sql
+            schema_path = os.path.join('database', 'schema.sql')
+            with open(schema_path, 'r') as f:
+                schema_sql = f.read()
+            
+            cursor.execute(schema_sql)
+            conn.commit()
+            cursor.close()
+            print('✅ Schema created successfully')
+        except Exception as e:
+            print(f'❌ Schema creation failed: {e}')
+            raise
+        finally:
+            conn.close()
         "
         
         # Start backend server
