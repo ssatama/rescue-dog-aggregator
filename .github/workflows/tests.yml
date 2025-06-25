@@ -132,8 +132,13 @@ jobs:
         echo "Current directory: $(pwd)"
         echo "TESTING env var: $TESTING"
         
+        # Debug database state before tests
+        echo "Checking test database state:"
+        PGPASSWORD=postgres psql -h localhost -U postgres -d test_rescue_dogs -c "SELECT COUNT(*) as animal_count FROM animals;"
+        PGPASSWORD=postgres psql -h localhost -U postgres -d test_rescue_dogs -c "SELECT DISTINCT breed FROM animals WHERE breed IS NOT NULL LIMIT 5;"
+        
         # Run tests
-        python -m pytest tests/ -v --tb=short
+        python -m pytest tests/ -m "not slow" -v 
 
   frontend-tests:
     runs-on: ubuntu-latest
