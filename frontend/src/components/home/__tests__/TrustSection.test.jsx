@@ -195,13 +195,13 @@ describe('TrustSection', () => {
   });
 
   describe('Visual Enhancement', () => {
-    test('should have dot pattern background', async () => {
+    test('should have semantic background styling', async () => {
       await act(async () => {
         render(<TrustSection />);
       });
       
       const section = screen.getByTestId('trust-section');
-      expect(section).toHaveClass('bg-dot-pattern');
+      expect(section).toHaveClass('bg-muted');
     });
 
     test('should display organization cards with icons', async () => {
