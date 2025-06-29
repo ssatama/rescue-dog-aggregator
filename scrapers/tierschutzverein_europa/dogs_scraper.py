@@ -28,8 +28,8 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             # New mode - use config_id
             super().__init__(config_id=config_id)
 
-        self.base_url = "https://tierschutzverein-europa.de"
-        self.listing_url = "https://tierschutzverein-europa.de/tiervermittlung/"
+        self.base_url: str = "https://tierschutzverein-europa.de"
+        self.listing_url: str = "https://tierschutzverein-europa.de/tiervermittlung/"
 
     def collect_data(self) -> List[Dict[str, Any]]:
         """Main entry point - implements abstract method from BaseScraper."""
@@ -69,6 +69,9 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             self.logger.error(f"All extraction methods failed. Last error: {e}")
             return []
 
+        # Fallback return in case no extraction method is attempted
+        return all_dogs
+
     def _extract_with_requests(self) -> List[Dict[str, Any]]:
         """Extract using requests + BeautifulSoup."""
         all_dogs = []
@@ -82,9 +85,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 response = requests.get(
                     page_url,
                     timeout=getattr(self, "timeout", 30),
-                    headers={
-                        "User-Agent": "Mozilla/5.0 (compatible; rescue-dog-aggregator)"
-                    },
+                    headers={"User-Agent": "Mozilla/5.0 (compatible; rescue-dog-aggregator)"},
                 )
                 response.raise_for_status()
 
@@ -110,9 +111,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             # Setup Chrome options
             chrome_options = Options()
             headless = (
-                getattr(self.org_config, "scraper", {})
-                .get("config", {})
-                .get("headless", True)
+                getattr(self.org_config, "scraper", {}).get("config", {}).get("headless", True)
                 if hasattr(self, "org_config") and self.org_config
                 else True
             )
@@ -123,9 +122,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             chrome_options.add_argument("--disable-gpu")
 
             driver = webdriver.Chrome(
-                service=webdriver.chrome.service.Service(
-                    ChromeDriverManager().install()
-                ),
+                service=webdriver.chrome.service.Service(ChromeDriverManager().install()),
                 options=chrome_options,
             )
 
@@ -133,9 +130,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             for page in range(1, 13):
                 try:
                     page_url = self.get_page_url(page)
-                    self.logger.info(
-                        f"Processing page {page} with Selenium: {page_url}"
-                    )
+                    self.logger.info(f"Processing page {page} with Selenium: {page_url}")
 
                     driver.get(page_url)
 
@@ -145,9 +140,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                     )
 
                     # Get page source and extract dogs
-                    page_dogs = self._extract_dogs_from_html(
-                        driver.page_source, page_url
-                    )
+                    page_dogs = self._extract_dogs_from_html(driver.page_source, page_url)
                     all_dogs.extend(page_dogs)
 
                     # Rate limiting
@@ -155,9 +148,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                     time.sleep(rate_limit)
 
                 except Exception as e:
-                    self.logger.error(
-                        f"Failed to process page {page} with Selenium: {e}"
-                    )
+                    self.logger.error(f"Failed to process page {page} with Selenium: {e}")
                     continue
 
         finally:
@@ -166,9 +157,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
         return all_dogs
 
-    def _extract_single_dog_from_link(
-        self, link_element, href: str
-    ) -> Optional[Dict[str, Any]]:
+    def _extract_single_dog_from_link(self, link_element, href: str) -> Optional[Dict[str, Any]]:
         """Extract dog data from a link element."""
         try:
             # Extract the external ID from the URL path
@@ -179,9 +168,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             external_id = path_parts[1]  # This is the dog's URL slug
 
             # Extract name from the URL slug or link text
-            name = self._extract_name_from_url(external_id) or link_element.get_text(
-                strip=True
-            )
+            name = self._extract_name_from_url(external_id) or link_element.get_text(strip=True)
             if not name or len(name) < 2:
                 return None
 
@@ -197,9 +184,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             breed = self.extract_breed_from_text(link_text) or "Mischling"
 
             # Build full adoption URL
-            adoption_url = (
-                urljoin(self.base_url, href) if not href.startswith("http") else href
-            )
+            adoption_url = urljoin(self.base_url, href) if not href.startswith("http") else href
 
             # Basic validation
             if not self._is_valid_dog_link(name, link_text, href):
@@ -252,11 +237,11 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
         for img in img_tags:
             src = img.get("src") or img.get("data-src")
-            if src and self.is_valid_url(src):
+            if src and self.is_valid_url(str(src)):
                 # Convert relative URLs to absolute
-                if src.startswith("/"):
-                    src = urljoin(self.base_url, src)
-                return src
+                if str(src).startswith("/"):
+                    src = urljoin(self.base_url, str(src))
+                return str(src)
 
         return None
 
@@ -279,9 +264,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
         return True
 
-    def _extract_dogs_from_html(
-        self, html_content: str, page_url: str
-    ) -> List[Dict[str, Any]]:
+    def _extract_dogs_from_html(self, html_content: str, page_url: str) -> List[Dict[str, Any]]:
         """Extract dog data from HTML content."""
         dogs = []
 
@@ -293,6 +276,9 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             dog_links = soup.find_all("a", href=True)
 
             for link in dog_links:
+                # Check if link is a Tag element before calling get
+                if not hasattr(link, "get"):
+                    continue
                 href = link.get("href", "")
                 # Check if this looks like a dog page URL
                 if "/tiervermittlung/" in href and href.count("/") >= 3:
@@ -377,9 +363,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
         for element in text_elements:
             text = element.get_text(strip=True)
-            if (
-                text and 3 <= len(text) <= 50
-            ):  # Names are typically short but not too short
+            if text and 3 <= len(text) <= 50:  # Names are typically short but not too short
                 # Check if this looks like a dog name (starts with capital, no
                 # numbers)
                 if re.match(r"^[A-ZÄÖÜ][a-zäöüA-ZÄÖÜ\s\-]+$", text):
@@ -402,11 +386,11 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
         for img in img_elements:
             src = img.get("src") or img.get("data-src")
-            if src and self.is_valid_url(src):
+            if src and self.is_valid_url(str(src)):
                 # Convert relative URLs to absolute
-                if src.startswith("/"):
-                    src = urljoin(self.base_url, src)
-                return src
+                if str(src).startswith("/"):
+                    src = urljoin(self.base_url, str(src))
+                return str(src)
 
         return None
 
@@ -508,9 +492,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         # Extract age for uniqueness
         age = self.extract_age_from_text(details)
         if age:
-            age_normalized = (
-                age.lower().replace("ä", "ae").replace("ö", "oe").replace("ü", "ue")
-            )
+            age_normalized = age.lower().replace("ä", "ae").replace("ö", "oe").replace("ü", "ue")
             age_normalized = re.sub(r"[^\w]", "-", age_normalized)
             base_id = f"{normalized_name}-{age_normalized}"
         else:
@@ -548,9 +530,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
         return text
 
-    def _is_valid_dog_data(
-        self, name: str, content: str, image_url: Optional[str]
-    ) -> bool:
+    def _is_valid_dog_data(self, name: str, content: str, image_url: Optional[str]) -> bool:
         """Validate that extracted data represents a real dog listing."""
         # Skip if name looks like website navigation or general text
         invalid_names = [
@@ -586,11 +566,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
         # If we have a reasonable image (not PayPal/donation), it might be
         # valid
-        if (
-            image_url
-            and "paypal" not in image_url.lower()
-            and "donation" not in image_url.lower()
-        ):
+        if image_url and "paypal" not in image_url.lower() and "donation" not in image_url.lower():
             return True
 
         # Otherwise, be conservative and skip
@@ -601,17 +577,11 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         result = {}
 
         # Extract name (first line, usually the dog's name in capitals)
-        lines = [
-            line.strip() for line in article_text.strip().split("\n") if line.strip()
-        ]
+        lines = [line.strip() for line in article_text.strip().split("\n") if line.strip()]
         if lines:
             # First line is typically the dog's name
             name = lines[0]
-            if (
-                name
-                and len(name) < 20
-                and re.match(r"^[A-ZÄÖÜ][A-ZÄÖÜa-zäöüß\s-]*$", name)
-            ):
+            if name and len(name) < 20 and re.match(r"^[A-ZÄÖÜ][A-ZÄÖÜa-zäöüß\s-]*$", name):
                 result["name"] = name
 
         # Extract structured data using regex patterns found in investigation
@@ -663,13 +633,13 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 and "Profilbild" in (alt_text or "")
                 and "300x300" in img_url
             ):
-                return img_url
+                return str(img_url)
 
         # Fallback: third image if available and looks like a profile
         if len(images) >= 3:
             third_img_url, third_alt = images[2]
             if "tierschutzverein-europa.de" in third_img_url:
-                return third_img_url
+                return str(third_img_url)
 
         return None
 
@@ -696,9 +666,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             for page in range(1, 13):
                 try:
                     page_url = self.get_page_url(page)
-                    self.logger.info(
-                        f"Processing page {page} with unified Selenium: {page_url}"
-                    )
+                    self.logger.info(f"Processing page {page} with unified Selenium: {page_url}")
 
                     driver.get(page_url)
                     time.sleep(5)  # Wait for page load
@@ -706,22 +674,15 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                     # Find article elements (dog containers) based on
                     # investigation
                     articles = driver.find_elements(By.TAG_NAME, "article")
-                    self.logger.info(
-                        f"Found {len(articles)} article elements on page {page}"
-                    )
+                    self.logger.info(f"Found {len(articles)} article elements on page {page}")
 
                     for i, article in enumerate(articles):
                         try:
                             # Check if this is a dog article
                             classes = article.get_attribute("class") or ""
-                            if (
-                                "tiervermittlung" in classes
-                                and "type-tiervermittlung" in classes
-                            ):
+                            if "tiervermittlung" in classes and "type-tiervermittlung" in classes:
                                 # Extract all data from this container
-                                dog_data = self._extract_dog_from_article_element(
-                                    article, i + 1
-                                )
+                                dog_data = self._extract_dog_from_article_element(article, i + 1)
                                 if dog_data and dog_data.get("name"):
                                     all_dogs.append(dog_data)
                                     self.logger.debug(

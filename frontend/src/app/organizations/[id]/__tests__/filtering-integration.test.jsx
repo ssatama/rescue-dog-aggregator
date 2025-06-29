@@ -118,6 +118,121 @@ describe('Session 6 Filtering Integration', () => {
       });
     });
 
+    test('shows Load More button when organization has more than 20 dogs', async () => {
+      // Mock an organization with many dogs
+      const { getOrganizationById, getOrganizationDogs } = require('../../../../services/organizationsService');
+      
+      const largeMockOrganization = {
+        ...mockOrganization,
+        total_dogs: 28
+      };
+      
+      // Mock first page of 20 dogs
+      const firstPageDogs = Array.from({ length: 20 }, (_, i) => ({
+        id: i + 1,
+        name: `Dog ${i + 1}`,
+        age_min_months: 12 + i,
+        standardized_breed: 'Mixed Breed',
+        created_at: '2024-01-01T10:00:00Z',
+        organization: mockOrganization
+      }));
+      
+      getOrganizationById.mockResolvedValue(largeMockOrganization);
+      getOrganizationDogs.mockResolvedValue(firstPageDogs);
+
+      render(<OrganizationDetailClient params={{ id: '1' }} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('20 of 28 dogs')).toBeInTheDocument();
+        expect(screen.getByTestId('load-more-button')).toBeInTheDocument();
+      });
+    });
+
+    test('Load More button loads additional dogs when clicked', async () => {
+      const user = userEvent.setup();
+      const { getOrganizationById, getOrganizationDogs } = require('../../../../services/organizationsService');
+      
+      const largeMockOrganization = {
+        ...mockOrganization,
+        total_dogs: 28
+      };
+      
+      // Mock first page
+      const firstPageDogs = Array.from({ length: 20 }, (_, i) => ({
+        id: i + 1,
+        name: `Dog ${i + 1}`,
+        age_min_months: 12 + i,
+        standardized_breed: 'Mixed Breed',
+        created_at: '2024-01-01T10:00:00Z',
+        organization: mockOrganization
+      }));
+      
+      // Mock second page (remaining 8 dogs)
+      const secondPageDogs = Array.from({ length: 8 }, (_, i) => ({
+        id: i + 21,
+        name: `Dog ${i + 21}`,
+        age_min_months: 12 + i + 20,
+        standardized_breed: 'Mixed Breed',
+        created_at: '2024-01-01T10:00:00Z',
+        organization: mockOrganization
+      }));
+      
+      getOrganizationById.mockResolvedValue(largeMockOrganization);
+      getOrganizationDogs
+        .mockResolvedValueOnce(firstPageDogs) // First call
+        .mockResolvedValueOnce(secondPageDogs); // Second call after Load More
+
+      render(<OrganizationDetailClient params={{ id: '1' }} />);
+
+      // Wait for initial load
+      await waitFor(() => {
+        expect(screen.getByText('20 of 28 dogs')).toBeInTheDocument();
+        expect(screen.getByTestId('load-more-button')).toBeInTheDocument();
+      });
+
+      // Click Load More
+      await user.click(screen.getByTestId('load-more-button'));
+
+      // Should show all dogs and hide Load More button
+      await waitFor(() => {
+        expect(screen.getByText('28 dogs available')).toBeInTheDocument();
+        expect(screen.queryByTestId('load-more-button')).not.toBeInTheDocument();
+      });
+    });
+
+    test('displays correct total count in organization stats when dogs are paginated', async () => {
+      const { getOrganizationById, getOrganizationDogs } = require('../../../../services/organizationsService');
+      
+      const largeMockOrganization = {
+        ...mockOrganization,
+        total_dogs: 28
+      };
+      
+      const firstPageDogs = Array.from({ length: 20 }, (_, i) => ({
+        id: i + 1,
+        name: `Dog ${i + 1}`,
+        age_min_months: 12 + i,
+        standardized_breed: 'Mixed Breed',
+        created_at: '2024-01-01T10:00:00Z',
+        organization: mockOrganization
+      }));
+      
+      getOrganizationById.mockResolvedValue(largeMockOrganization);
+      getOrganizationDogs.mockResolvedValue(firstPageDogs);
+
+      render(<OrganizationDetailClient params={{ id: '1' }} />);
+
+      // The organization hero should show the total count from organization data
+      await waitFor(() => {
+        expect(screen.getByTestId('organization-hero')).toBeInTheDocument();
+      });
+      
+      // The available dogs section should show loaded vs total
+      await waitFor(() => {
+        expect(screen.getByText('20 of 28 dogs')).toBeInTheDocument();
+      });
+    });
+
     test('breed filter is populated from dog data', async () => {
       render(<OrganizationDetailClient params={{ id: '1' }} />);
 

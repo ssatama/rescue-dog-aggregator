@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Layout from '../../../components/layout/Layout';
@@ -10,6 +10,7 @@ import OrganizationHero from '../../../components/organizations/OrganizationHero
 import MobileFilterBottomSheet from '../../../components/filters/MobileFilterBottomSheet';
 import useFilteredDogs from '../../../hooks/useFilteredDogs';
 import { getDefaultFilters } from '../../../utils/dogFilters';
+import { Button } from '../../../components/ui/button';
 import { getOrganizationById, getOrganizationDogs } from '../../../services/organizationsService';
 import { reportError } from '../../../utils/logger';
 
@@ -23,6 +24,12 @@ export default function OrganizationDetailClient({ params = {} }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalDogs, setTotalDogs] = useState(0);
   
   // Filter state management (only age, breed, sort for organization pages)
   const [filters, setFilters] = useState(() => {
@@ -63,6 +70,46 @@ export default function OrganizationDetailClient({ params = {} }) {
     });
   };
   
+  // Fetch organization dogs with pagination
+  const fetchOrganizationDogs = useCallback(async (currentPage = 1, loadMore = false) => {
+    if (!loadMore) {
+      setLoading(true);
+      setDogs([]);
+    } else {
+      setLoadingMore(true);
+    }
+    setError(null);
+
+    const limit = 20;
+    const offset = (currentPage - 1) * limit;
+
+    try {
+      const dogsData = await getOrganizationDogs(organizationId, {
+        limit,
+        offset
+      });
+      
+      setDogs(prevDogs => loadMore ? [...prevDogs, ...dogsData] : dogsData);
+      setHasMore(dogsData.length === limit);
+      setPage(currentPage);
+      setLoading(false);
+      setLoadingMore(false);
+    } catch (err) {
+      reportError('Error fetching organization dogs', { error: err.message, organizationId });
+      setError(err);
+      setHasMore(false);
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }, [organizationId]);
+
+  // Handle Load More
+  const handleLoadMore = () => {
+    if (hasMore && !loading && !loadingMore) {
+      fetchOrganizationDogs(page + 1, true);
+    }
+  };
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -72,21 +119,20 @@ export default function OrganizationDetailClient({ params = {} }) {
         // Fetch organization details
         const orgData = await getOrganizationById(organizationId);
         setOrganization(orgData);
+        setTotalDogs(orgData.total_dogs || 0);
         
-        // Fetch dogs from this organization
-        const dogsData = await getOrganizationDogs(organizationId);
-        setDogs(dogsData);
+        // Fetch first page of dogs
+        await fetchOrganizationDogs(1, false);
         
       } catch (err) {
         reportError('Error fetching organization data', { error: err.message, organizationId });
         setError(err);
-      } finally {
         setLoading(false);
       }
     };
     
     fetchData();
-  }, [organizationId]);
+  }, [organizationId, fetchOrganizationDogs]);
   
   // Loading state
   if (loading) {
@@ -182,7 +228,11 @@ export default function OrganizationDetailClient({ params = {} }) {
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Available Dogs</h2>
             {/* Hide count on mobile to avoid crowding with mobile filter button */}
             <div className="hidden md:block text-sm text-gray-600 dark:text-gray-400">
-              {loading ? 'Loading...' : `${totalCount} dogs ${hasActiveFilters ? 'match filters' : 'available'}`}
+              {loading ? 'Loading...' : (
+                hasMore && !hasActiveFilters
+                  ? `${dogs.length} of ${totalDogs} dogs`
+                  : `${totalCount} dogs ${hasActiveFilters ? 'match filters' : 'available'}`
+              )}
             </div>
           </div>
           
@@ -209,6 +259,31 @@ export default function OrganizationDetailClient({ params = {} }) {
               onClearFilters={() => setFilters(getDefaultFilters())}
               onBrowseOrganizations={() => window.location.href = '/organizations'}
             />
+            
+            {/* Load More Button */}
+            {hasMore && !loading && !loadingMore && !hasActiveFilters && (
+              <div className="text-center mt-8 mb-12">
+                <button
+                  data-testid="load-more-button"
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                  className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium px-8 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Load More Dogs →
+                </button>
+              </div>
+            )}
+            
+            {/* Loading More State */}
+            {loadingMore && (
+              <DogsGrid 
+                dogs={[]}
+                loading={true}
+                loadingType="pagination"
+                skeletonCount={6}
+                className="mt-8"
+              />
+            )}
           </div>
         </div>
         

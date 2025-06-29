@@ -101,6 +101,14 @@ describe('DogFilters Component', () => {
       expect(filterBar).toHaveClass('top-0');
       expect(filterBar).toHaveClass('z-20');
     });
+
+    test('applies dark mode compatible styling classes', () => {
+      render(<DogFilters {...defaultProps} />);
+      
+      const filterBar = screen.getByTestId('dog-filters');
+      expect(filterBar).toHaveClass('bg-white');
+      expect(filterBar).toHaveClass('dark:bg-gray-900');
+    });
   });
 
   describe('Age Filter', () => {
