@@ -169,15 +169,15 @@ describe('OrganizationCard Size Variants', () => {
     test('location info lines scale with size', () => {
       const { rerender } = render(<OrganizationCard organization={mockOrganization} size="small" />);
       let basedInLabel = screen.getByText('Based in:');
-      expect(basedInLabel.closest('div')).toHaveClass('text-gray-700'); // Small
+      expect(basedInLabel.closest('div')).toHaveClass('text-foreground'); // Small
       
       rerender(<OrganizationCard organization={mockOrganization} size="medium" />);
       basedInLabel = screen.getByText('Based in:');
-      expect(basedInLabel.closest('div')).toHaveClass('text-gray-700'); // Medium
+      expect(basedInLabel.closest('div')).toHaveClass('text-foreground'); // Medium
       
       rerender(<OrganizationCard organization={mockOrganization} size="large" />);
       basedInLabel = screen.getByText('Based in:');
-      expect(basedInLabel.closest('div')).toHaveClass('text-gray-700'); // Large
+      expect(basedInLabel.closest('div')).toHaveClass('text-foreground'); // Large
     });
   });
 

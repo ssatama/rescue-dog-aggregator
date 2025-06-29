@@ -411,15 +411,15 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
   if (!src && !currentSrc) {
     return (
       <div 
-        className={`relative w-full aspect-[16/9] rounded-lg overflow-hidden bg-white shadow-md ${className}`}
+        className={`relative w-full aspect-[16/9] rounded-lg overflow-hidden bg-white dark:bg-gray-900 shadow-md ${className}`}
         data-testid="hero-image-clean"
       >
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
           <div className="text-center">
-            <svg className="w-24 h-24 text-gray-300 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-24 h-24 text-gray-300 dark:text-gray-600 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
               <path d="M21 15.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0zM12 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm8.5 8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM5 11l.898 2.954a2 2 0 0 0 1.908 1.396h8.388a2 2 0 0 0 1.908-1.396L19 11"/>
             </svg>
-            <p className="text-gray-500">No image available</p>
+            <p className="text-gray-500 dark:text-gray-400">No image available</p>
           </div>
         </div>
       </div>
@@ -428,7 +428,7 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
 
   return (
     <div 
-      className={`relative w-full aspect-[16/9] rounded-lg overflow-hidden bg-white shadow-md ${className}`}
+      className={`relative w-full aspect-[16/9] rounded-lg overflow-hidden bg-white dark:bg-gray-900 shadow-md ${className}`}
       data-testid="hero-image-clean"
     >
       {/* Image container for centering and TDD compliance */}
@@ -462,13 +462,13 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
       {/* Loading Shimmer Effect */}
       {(isLoading || isRetrying) && !imageLoaded && (
         <div 
-          className={`absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 ${!prefersReducedMotion ? 'animate-shimmer' : ''} transition-opacity duration-300 ${isLoading ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute inset-0 bg-gradient-to-r from-gray-200 dark:from-gray-700 via-gray-100 dark:via-gray-600 to-gray-200 dark:to-gray-700 ${!prefersReducedMotion ? 'animate-shimmer' : ''} transition-opacity duration-300 ${isLoading ? 'opacity-100' : 'opacity-0'}`}
           style={{
             backgroundSize: '200% 100%',
           }}
           data-testid="shimmer-loader"
         >
-          <div className="absolute bottom-4 left-4 bg-white/80 px-3 py-1 rounded text-sm text-gray-600">
+          <div className="absolute bottom-4 left-4 bg-white/80 dark:bg-gray-800/80 px-3 py-1 rounded text-sm text-gray-600 dark:text-gray-300">
             {loadingMessage}
           </div>
         </div>
@@ -476,12 +476,12 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
       
       {/* Error State */}
       {hasError && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100" data-testid="error-state">
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800" data-testid="error-state">
           <div className="text-center p-8">
-            <svg className="w-24 h-24 text-gray-300 mx-auto mb-4" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-24 h-24 text-gray-300 dark:text-gray-600 mx-auto mb-4" fill="currentColor" viewBox="0 0 24 24">
               <path d="M21 15.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0zM12 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm8.5 8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM5 11l.898 2.954a2 2 0 0 0 1.908 1.396h8.388a2 2 0 0 0 1.908-1.396L19 11"/>
             </svg>
-            <p className="text-gray-500 mb-2">Unable to load image</p>
+            <p className="text-gray-500 dark:text-gray-400 mb-2">Unable to load image</p>
             {retryCount < (networkStrategy.retry?.maxRetries || 2) && (
               <button 
                 onClick={() => {
@@ -493,7 +493,7 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
                   const retriedSrc = currentSrc.replace(/t=\d+/, `t=${Date.now()}`);
                   safeSetState(setCurrentSrc, retriedSrc);
                 }}
-                className="text-orange-600 hover:text-orange-700 underline text-sm"
+                className="text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 underline text-sm"
               >
                 Try again
               </button>

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Icon } from './Icon';
 
-function SocialIcon({ platform, className = "h-5 w-5" }) {
+function SocialIcon({ platform, className = "h-5 w-5 text-gray-600 dark:text-gray-400" }) {
   const platformLower = platform.toLowerCase();
   
   if (platformLower === 'facebook') {
@@ -16,7 +16,7 @@ function SocialIcon({ platform, className = "h-5 w-5" }) {
   if (platformLower === 'x' || platformLower === 'twitter') {
     // Keep custom X/Twitter SVG since it's unique and not in Lucide React
     return (
-      <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <svg className="h-5 w-5 text-gray-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
       </svg>
     );
@@ -38,7 +38,7 @@ function SocialMediaLinks({ socialMedia, className = "" }) {
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-gray-600 hover:text-orange-600 transition-colors"
+          className="text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
           aria-label={`Visit our ${platform} page`}
         >
           <SocialIcon platform={platform} />

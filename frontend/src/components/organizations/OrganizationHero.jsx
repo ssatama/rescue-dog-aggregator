@@ -19,9 +19,9 @@ export default function OrganizationHero({ organization }) {
   // Handle missing organization data
   if (!organization) {
     return (
-      <div className="min-h-[400px] bg-gradient-to-br from-amber-100 to-orange-200 flex items-center justify-center">
+      <div className="min-h-[400px] bg-gradient-to-br from-amber-100 dark:from-amber-900/30 to-orange-200 dark:to-orange-900/40 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Organization not found</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Organization not found</h1>
           <StyledLink href="/organizations" variant="text">
             ← Back to Organizations
           </StyledLink>
@@ -45,7 +45,7 @@ export default function OrganizationHero({ organization }) {
 
   return (
     <div 
-      className="bg-gradient-to-br from-amber-100 to-orange-200 py-8 px-4 sm:px-6 lg:px-8"
+      className="bg-gradient-to-br from-amber-100 dark:from-amber-900/30 to-orange-200 dark:to-orange-900/40 py-8 px-4 sm:px-6 lg:px-8"
       data-testid="organization-hero"
     >
       <div className="max-w-7xl mx-auto">
@@ -54,12 +54,12 @@ export default function OrganizationHero({ organization }) {
           <div className="flex items-center space-x-2 text-sm">
             <Link 
               href="/organizations" 
-              className="text-gray-600 hover:text-gray-900 transition-colors"
+              className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
             >
               ← Organizations
             </Link>
-            <span className="text-gray-500">/</span>
-            <span className="text-gray-900 font-medium">{organization.name}</span>
+            <span className="text-gray-500 dark:text-gray-400">/</span>
+            <span className="text-gray-900 dark:text-gray-100 font-medium">{organization.name}</span>
           </div>
         </nav>
 
@@ -70,7 +70,7 @@ export default function OrganizationHero({ organization }) {
             <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-6 sm:space-y-0 sm:space-x-6">
               {/* Organization Logo */}
               <div className="flex-shrink-0">
-                <div className="w-20 h-20 md:w-32 md:h-32 bg-white rounded-full shadow-lg flex items-center justify-center">
+                <div className="w-20 h-20 md:w-32 md:h-32 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center">
                   {organization.logo_url ? (
                     <Image
                       src={organization.logo_url}
@@ -81,7 +81,7 @@ export default function OrganizationHero({ organization }) {
                       priority
                     />
                   ) : (
-                    <span className="text-lg md:text-2xl font-bold text-orange-600">
+                    <span className="text-lg md:text-2xl font-bold text-orange-600 dark:text-orange-400">
                       {getInitials(organization.name)}
                     </span>
                   )}
@@ -91,7 +91,7 @@ export default function OrganizationHero({ organization }) {
               {/* Organization Header Info */}
               <div className="flex-grow text-center sm:text-left">
                 {/* Organization Name */}
-                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
                   {organization.name}
                 </h1>
 
@@ -100,7 +100,7 @@ export default function OrganizationHero({ organization }) {
                   {/* Based in */}
                   {organization.country && (
                     <div className="flex items-center justify-center sm:justify-start space-x-2">
-                      <span className="font-medium text-gray-700">Based in:</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">Based in:</span>
                       <div className="hidden sm:flex items-center space-x-1">
                         {formatBasedIn(organization.country, organization.city, false)}
                       </div>
@@ -113,7 +113,7 @@ export default function OrganizationHero({ organization }) {
                   {/* Dogs located in */}
                   {organization.service_regions && organization.service_regions.length > 0 && (
                     <div className="flex items-center justify-center sm:justify-start space-x-2">
-                      <span className="font-medium text-gray-700">Dogs located in:</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">Dogs located in:</span>
                       <div className="hidden sm:flex items-center space-x-1">
                         {formatServiceRegions(organization.service_regions, true, false)}
                       </div>
@@ -126,7 +126,7 @@ export default function OrganizationHero({ organization }) {
                   {/* Ships to */}
                   {organization.ships_to && organization.ships_to.length > 0 && (
                     <div className="flex items-center justify-center sm:justify-start space-x-2">
-                      <span className="font-medium text-gray-700">Ships to:</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">Ships to:</span>
                       <div className="hidden sm:flex items-center space-x-1">
                         {formatShipsToList(organization.ships_to, 3)}
                       </div>
@@ -139,7 +139,7 @@ export default function OrganizationHero({ organization }) {
 
                 {/* Organization Description */}
                 {organization.description && (
-                  <p className="mt-4 text-gray-700 leading-relaxed max-w-2xl">
+                  <p className="mt-4 text-gray-700 dark:text-gray-300 leading-relaxed max-w-2xl">
                     {organization.description}
                   </p>
                 )}
@@ -154,28 +154,28 @@ export default function OrganizationHero({ organization }) {
               data-testid="statistics-cards"
             >
               {/* Total Dogs Available */}
-              <div className="bg-white rounded-lg shadow-md p-4 text-center">
-                <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 text-center">
+                <div className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">
                   {totalDogs}
                 </div>
-                <div className="text-sm text-gray-600">Dogs Available</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Dogs Available</div>
               </div>
 
               {/* Countries Served */}
-              <div className="bg-white rounded-lg shadow-md p-4 text-center">
-                <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 text-center">
+                <div className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">
                   {countriesServed}
                 </div>
-                <div className="text-sm text-gray-600">Countries</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Countries</div>
               </div>
 
               {/* New This Week (only show if > 0) */}
               {newThisWeek > 0 && (
-                <div className="bg-white rounded-lg shadow-md p-4 text-center col-span-2 md:col-span-1">
-                  <div className="text-2xl md:text-3xl font-bold text-green-600 mb-1">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 text-center col-span-2 md:col-span-1">
+                  <div className="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-400 mb-1">
                     {newThisWeek}
                   </div>
-                  <div className="text-sm text-gray-600">New This Week</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">New This Week</div>
                 </div>
               )}
             </div>
@@ -201,7 +201,7 @@ export default function OrganizationHero({ organization }) {
               href={organization.website_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-orange-500 hover:bg-orange-600 text-white font-medium px-6 py-3 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
+              className="bg-orange-500 dark:bg-orange-600 hover:bg-orange-600 dark:hover:bg-orange-700 text-white font-medium px-6 py-3 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
             >
               Visit Original Website
             </a>

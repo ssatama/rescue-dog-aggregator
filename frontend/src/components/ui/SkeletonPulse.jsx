@@ -27,7 +27,7 @@ const SkeletonPulse = React.memo(function SkeletonPulse({
     <div
       {...ariaProps}
       className={cn(
-        "bg-gray-200 animate-pulse rounded",
+        "bg-muted animate-pulse rounded",
         className
       )}
       {...props}

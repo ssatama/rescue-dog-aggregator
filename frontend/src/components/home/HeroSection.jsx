@@ -53,13 +53,13 @@ export default function HeroSection() {
           <div className="flex-1 text-center lg:text-left">
             <h1 
               data-testid="hero-title"
-              className="text-hero font-bold text-gray-900 mb-6 leading-tight"
+              className="text-hero font-bold text-foreground mb-6 leading-tight"
             >
               Helping rescue dogs find loving homes
             </h1>
             <p 
               data-testid="hero-subtitle"
-              className="text-body text-gray-700 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed"
+              className="text-body text-muted-foreground mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed"
             >
               Browse available dogs from trusted rescue organizations across multiple countries. 
               Every dog deserves a second chance at happiness.
@@ -82,7 +82,7 @@ export default function HeroSection() {
                   data-testid="hero-secondary-cta"
                   variant="outline" 
                   size="lg"
-                  className="w-full sm:w-auto border-orange-600 text-orange-600 hover:bg-orange-50 px-8 py-3"
+                  className="w-full sm:w-auto border-orange-600 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/30 px-8 py-3"
                   style={{ minWidth: '48px', minHeight: '48px' }}
                 >
                   About Our Mission
@@ -97,24 +97,24 @@ export default function HeroSection() {
               <div data-testid="statistics-loading" className="space-y-6">
                 <div 
                   data-testid="stat-loading"
-                  className="bg-white/50 backdrop-blur-sm rounded-lg p-6 animate-shimmer"
+                  className="bg-card/50 backdrop-blur-sm rounded-lg p-6 animate-shimmer"
                 >
-                  <div className="h-12 bg-gradient-to-r from-gray-200 to-gray-300 rounded mb-2"></div>
-                  <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 rounded w-3/4"></div>
+                  <div className="h-12 bg-gradient-to-r from-muted to-muted/80 rounded mb-2"></div>
+                  <div className="h-4 bg-gradient-to-r from-muted to-muted/80 rounded w-3/4"></div>
                 </div>
                 <div 
                   data-testid="stat-loading"
-                  className="bg-white/50 backdrop-blur-sm rounded-lg p-6 animate-shimmer"
+                  className="bg-card/50 backdrop-blur-sm rounded-lg p-6 animate-shimmer"
                 >
-                  <div className="h-12 bg-gradient-to-r from-gray-200 to-gray-300 rounded mb-2"></div>
-                  <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 rounded w-3/4"></div>
+                  <div className="h-12 bg-gradient-to-r from-muted to-muted/80 rounded mb-2"></div>
+                  <div className="h-4 bg-gradient-to-r from-muted to-muted/80 rounded w-3/4"></div>
                 </div>
                 <div 
                   data-testid="stat-loading"
-                  className="bg-white/50 backdrop-blur-sm rounded-lg p-6 animate-shimmer"
+                  className="bg-card/50 backdrop-blur-sm rounded-lg p-6 animate-shimmer"
                 >
-                  <div className="h-12 bg-gradient-to-r from-gray-200 to-gray-300 rounded mb-2"></div>
-                  <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 rounded w-3/4"></div>
+                  <div className="h-12 bg-gradient-to-r from-muted to-muted/80 rounded mb-2"></div>
+                  <div className="h-4 bg-gradient-to-r from-muted to-muted/80 rounded w-3/4"></div>
                 </div>
               </div>
             )}
@@ -122,9 +122,9 @@ export default function HeroSection() {
             {error && (
               <div 
                 data-testid="statistics-error"
-                className="bg-white/80 backdrop-blur-sm rounded-lg p-6 text-center"
+                className="bg-card/80 backdrop-blur-sm rounded-lg p-6 text-center"
               >
-                <div className="text-gray-600 mb-4">{error}</div>
+                <div className="text-muted-foreground mb-4">{error}</div>
                 <Button 
                   data-testid="retry-button"
                   onClick={fetchStatistics}
@@ -143,7 +143,7 @@ export default function HeroSection() {
                   className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
                 >
                   {/* Dogs Count */}
-                  <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm">
+                  <div className="bg-card/80 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm dark:shadow-purple-500/10">
                     <div className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">
                       <AnimatedCounter 
                         value={statistics.total_dogs} 
@@ -151,11 +151,11 @@ export default function HeroSection() {
                         className="block"
                       />
                     </div>
-                    <div className="text-sm text-gray-600 font-medium">Dogs need homes</div>
+                    <div className="text-sm text-muted-foreground font-medium">Dogs need homes</div>
                   </div>
 
                   {/* Organizations Count */}
-                  <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm">
+                  <div className="bg-card/80 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm dark:shadow-purple-500/10">
                     <div className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">
                       <AnimatedCounter 
                         value={statistics.total_organizations} 
@@ -163,11 +163,11 @@ export default function HeroSection() {
                         className="block"
                       />
                     </div>
-                    <div className="text-sm text-gray-600 font-medium">Rescue organizations</div>
+                    <div className="text-sm text-muted-foreground font-medium">Rescue organizations</div>
                   </div>
 
                   {/* Countries Count */}
-                  <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm">
+                  <div className="bg-card/80 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm dark:shadow-purple-500/10">
                     <div className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">
                       <AnimatedCounter 
                         value={statistics.countries.length} 
@@ -175,14 +175,14 @@ export default function HeroSection() {
                         className="block"
                       />
                     </div>
-                    <div className="text-sm text-gray-600 font-medium">Countries</div>
+                    <div className="text-sm text-muted-foreground font-medium">Countries</div>
                   </div>
                 </div>
 
                 {/* Organizations Breakdown */}
-                <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 shadow-sm">
+                <div className="bg-card/80 backdrop-blur-sm rounded-lg p-6 shadow-sm dark:shadow-purple-500/10">
                   <div className="text-center mb-4">
-                    <div className="text-sm text-gray-600 font-medium">
+                    <div className="text-sm text-muted-foreground font-medium">
                       Dogs available from these organizations:
                     </div>
                   </div>
@@ -191,18 +191,18 @@ export default function HeroSection() {
                     <div className="space-y-2">
                       {statistics.organizations.slice(0, 4).map((org) => (
                         <div key={org.id} className="flex justify-between items-center text-sm">
-                          <span className="text-gray-700 truncate flex-1 mr-2">{org.name}</span>
+                          <span className="text-foreground truncate flex-1 mr-2">{org.name}</span>
                           <span className="text-orange-600 font-medium">({org.dog_count})</span>
                         </div>
                       ))}
                       {statistics.organizations.length > 4 && (
-                        <div className="text-xs text-gray-500 text-center pt-2">
+                        <div className="text-xs text-muted-foreground text-center pt-2">
                           + {statistics.organizations.length - 4} more organizations
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div className="text-sm text-gray-500 text-center">
+                    <div className="text-sm text-muted-foreground text-center">
                       No organizations currently available
                     </div>
                   )}

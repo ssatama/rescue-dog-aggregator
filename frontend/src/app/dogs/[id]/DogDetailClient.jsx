@@ -260,12 +260,12 @@ export default function DogDetailClient({ params = {} }) {
             {/* Enhanced Breadcrumb Navigation */}
             <ScrollAnimationWrapper>
               <nav aria-label="Breadcrumb" className="mb-6">
-                <div className="bg-gray-50/80 backdrop-blur-sm rounded-lg px-4 py-3 border border-gray-200/50">
+                <div className="bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-4 py-3 border border-gray-200/50 dark:border-gray-700/50">
                   <ol className="flex items-center space-x-1 text-sm">
                     <li>
                       <Link 
                         href="/" 
-                        className="text-gray-600 hover:text-orange-600 transition-colors duration-200 font-medium px-2 py-1 rounded hover:bg-white/50"
+                        className="text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors duration-200 font-medium px-2 py-1 rounded hover:bg-white/50 dark:hover:bg-gray-700/50"
                       >
                         Home
                       </Link>
@@ -278,7 +278,7 @@ export default function DogDetailClient({ params = {} }) {
                     <li>
                       <Link 
                         href="/dogs" 
-                        className="text-gray-600 hover:text-orange-600 transition-colors duration-200 font-medium px-2 py-1 rounded hover:bg-white/50"
+                        className="text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors duration-200 font-medium px-2 py-1 rounded hover:bg-white/50 dark:hover:bg-gray-700/50"
                       >
                         Find Dogs
                       </Link>
@@ -289,7 +289,7 @@ export default function DogDetailClient({ params = {} }) {
                       </svg>
                     </li>
                     <li>
-                      <span className="text-gray-900 font-bold px-2 py-1 bg-white/60 rounded shadow-sm">
+                      <span className="text-gray-900 dark:text-gray-100 font-bold px-2 py-1 bg-white/60 dark:bg-gray-800/60 rounded shadow-sm">
                         {sanitizeText(dog?.name || 'Loading...')}
                       </span>
                     </li>
@@ -300,13 +300,13 @@ export default function DogDetailClient({ params = {} }) {
 
             <ScrollAnimationWrapper delay={100}>
               <Link href="/dogs">
-                <Button variant="link" className="inline-flex items-center text-orange-500 hover:text-orange-700 mb-6 p-2 h-auto transition-all duration-300 hover:bg-orange-50 rounded-lg focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+                <Button variant="link" className="inline-flex items-center text-orange-500 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 mb-6 p-2 h-auto transition-all duration-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
                   ← Back to all dogs
                 </Button>
               </Link>
             </ScrollAnimationWrapper>
         
-            <ScrollAnimationWrapper delay={200} className="bg-white rounded-lg shadow-md overflow-hidden">
+            <ScrollAnimationWrapper delay={200} className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden">
               {dog.status && dog.status !== 'available' && (
                 <div className={`w-full py-2 text-center text-white font-semibold transition-all duration-300 ${dog.status === 'adopted' ? 'bg-gray-600' : 'bg-yellow-500'}`}>
                   {dog.status.charAt(0).toUpperCase() + dog.status.slice(1)}
@@ -365,7 +365,7 @@ export default function DogDetailClient({ params = {} }) {
                         {/* Title and action buttons in one visual group */}
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-4">
                           <div className="flex-1">
-                            <h1 className="text-3xl sm:text-4xl font-bold mb-2 transition-colors duration-300">{sanitizeText(dog.name)}</h1>
+                            <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-gray-900 dark:text-gray-100 transition-colors duration-300">{sanitizeText(dog.name)}</h1>
                           </div>
                           
                           {/* Action bar with enhanced styling */}
@@ -412,7 +412,7 @@ export default function DogDetailClient({ params = {} }) {
                       return (
                         <ScrollAnimationWrapper delay={500}>
                           <div className="mb-6">
-                            <h2 className="text-2xl font-semibold text-gray-800 mb-3">Breed</h2>
+                            <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-3">Breed</h2>
                             <div className="flex flex-wrap gap-1 items-center">
                               <span className="text-base leading-relaxed text-gray-800">{sanitizeText(breed)}</span>
                               {dog.standardized_breed && dog.breed && dog.standardized_breed !== dog.breed && (
@@ -431,21 +431,21 @@ export default function DogDetailClient({ params = {} }) {
                     <ScrollAnimationWrapper delay={600}>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8" data-testid="metadata-cards">
                         {/* Age Card - Always show, display "Age Unknown" if no age data */}
-                        <div className="bg-purple-50 rounded-lg p-4 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-md border border-purple-100">
+                        <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-md border border-purple-100 dark:border-purple-800/30">
                           <div className="text-3xl mb-2">🎂</div>
-                          <p className="text-xs text-purple-600 font-medium mb-1">Age</p>
+                          <p className="text-xs text-purple-600 dark:text-purple-400 font-medium mb-1">Age</p>
                           <p className="text-sm font-semibold text-gray-800">
                             {formatAge(dog) || 'Age Unknown'}
                           </p>
                         </div>
 
                         {/* Sex Card - Always show, display sex or "Unknown" */}
-                        <div className="bg-orange-50 rounded-lg p-4 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-md border border-orange-100">
+                        <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-md border border-orange-100 dark:border-orange-800/30">
                           <div className="text-3xl mb-2">
                             {dog.sex && dog.sex.toLowerCase() === 'male' ? '♂️' : 
                              dog.sex && dog.sex.toLowerCase() === 'female' ? '♀️' : '❓'}
                           </div>
-                          <p className="text-xs text-orange-600 font-medium mb-1">Gender</p>
+                          <p className="text-xs text-orange-600 dark:text-orange-400 font-medium mb-1">Gender</p>
                           <p className="text-sm font-semibold text-gray-800">
                             {dog.sex && dog.sex.toLowerCase() !== 'unknown' ? dog.sex : 'Unknown'}
                           </p>
@@ -455,9 +455,9 @@ export default function DogDetailClient({ params = {} }) {
                         {(dog.standardized_breed || dog.breed) && 
                          !(dog.standardized_breed === 'Unknown' || dog.breed === 'Unknown' || 
                            dog.standardized_breed?.toLowerCase() === 'unknown' || dog.breed?.toLowerCase() === 'unknown') && (
-                          <div className="bg-green-50 rounded-lg p-4 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-md border border-green-100">
+                          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-md border border-green-100 dark:border-green-800/30">
                             <div className="text-3xl mb-2">🐕</div>
-                            <p className="text-xs text-green-600 font-medium mb-1">Breed</p>
+                            <p className="text-xs text-green-600 dark:text-green-400 font-medium mb-1">Breed</p>
                             <p className="text-sm font-semibold text-gray-800">
                               {dog.standardized_breed || dog.breed}
                             </p>
@@ -466,9 +466,9 @@ export default function DogDetailClient({ params = {} }) {
 
                         {/* Size Card - Only show if size data exists */}
                         {(dog.standardized_size || dog.size) && (
-                          <div className="bg-orange-50 rounded-lg p-4 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-md border border-orange-100">
+                          <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-md border border-orange-100 dark:border-orange-800/30">
                             <div className="text-3xl mb-2">📏</div>
-                            <p className="text-xs text-orange-600 font-medium mb-1">Size</p>
+                            <p className="text-xs text-orange-600 dark:text-orange-400 font-medium mb-1">Size</p>
                             <p className="text-sm font-semibold text-gray-800">
                               {dog.standardized_size || dog.size}
                             </p>
@@ -480,7 +480,7 @@ export default function DogDetailClient({ params = {} }) {
                     {/* Enhanced About Section with New Description Component */}
                     <ScrollAnimationWrapper delay={700}>
                       <div className="mb-8" data-testid="about-section">
-                        <h2 className="text-2xl font-semibold text-gray-800 mb-4">About {sanitizeText(dog.name)}</h2>
+                        <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">About {sanitizeText(dog.name)}</h2>
                         
                         <DogDescription
                           description={dog?.properties?.description || ''}
@@ -496,7 +496,7 @@ export default function DogDetailClient({ params = {} }) {
                       <ScrollAnimationWrapper delay={750}>
                         <div className="mb-8" data-testid="cta-section">
                           <div className="flex justify-center">
-                            <Button asChild className="w-full sm:w-auto sm:min-w-[280px] sm:max-w-[400px] bg-orange-600 hover:bg-orange-700 text-white text-lg py-4 px-8 shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg transform hover:scale-105 focus:ring-4 focus:ring-orange-500 focus:ring-offset-2">
+                            <Button asChild className="w-full sm:w-auto sm:min-w-[280px] sm:max-w-[400px] bg-orange-600 dark:bg-orange-600 hover:bg-orange-700 dark:hover:bg-orange-700 text-white text-lg py-4 px-8 shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg transform hover:scale-105 focus:ring-4 focus:ring-orange-500 focus:ring-offset-2">
                               <a href={dog.adoption_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
                                 <svg 
                                   className="w-5 h-5 mr-3 transition-transform duration-200" 
@@ -510,7 +510,7 @@ export default function DogDetailClient({ params = {} }) {
                               </a>
                             </Button>
                           </div>
-                          <p className="text-sm text-gray-500 text-center mt-3 transition-colors duration-200">You'll be redirected to the rescue organization's website</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-3 transition-colors duration-200">You'll be redirected to the rescue organization's website</p>
                         </div>
                       </ScrollAnimationWrapper>
                     )}

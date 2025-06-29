@@ -166,10 +166,10 @@ const DogSection = React.memo(function DogSection({
         {/* Section Header */}
         <div className="flex justify-between items-end mb-8">
           <div>
-            <h2 id={titleId} className="text-section text-gray-900 mb-2">
+            <h2 id={titleId} className="text-section text-foreground mb-2">
               {title}
             </h2>
-            <p className="text-body text-gray-600">
+            <p className="text-body text-muted-foreground">
               {subtitle}
             </p>
           </div>
@@ -189,7 +189,7 @@ const DogSection = React.memo(function DogSection({
         <div className={`transition-opacity duration-300 ${loading ? 'opacity-100' : 'opacity-0 pointer-events-none absolute'}`}>
           {loading && (isMobile ? <SkeletonCarousel /> : <SkeletonGrid />)}
           {loading && isSlowNet && (
-            <p className="text-center text-sm text-gray-500 mt-4">
+            <p className="text-center text-sm text-muted-foreground mt-4">
               Loading on slow network, please wait...
             </p>
           )}
@@ -205,7 +205,7 @@ const DogSection = React.memo(function DogSection({
                 variant="link" 
                 size="sm" 
                 onClick={fetchDogs} 
-                className="mt-2 text-red-700 hover:text-red-800 p-0 h-auto block"
+                className="mt-2 text-destructive hover:text-destructive/80 p-0 h-auto block"
               >
                 Retry
               </Button>
@@ -249,7 +249,7 @@ const DogSection = React.memo(function DogSection({
 
         {/* Empty State */}
         {!loading && !error && dogs.length === 0 && (
-          <p className="text-center text-body text-gray-500">
+          <p className="text-center text-body text-muted-foreground">
             No dogs available at the moment.
           </p>
         )}

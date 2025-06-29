@@ -132,8 +132,8 @@ export default function MobileFilterBottomSheet({
         className={`
           min-h-[48px] px-4 py-3 animate-button-hover focus-ring transition-colors duration-200
           ${isActive 
-            ? 'bg-orange-600 hover:bg-orange-700 text-white border-orange-600 focus:ring-2 focus:ring-orange-600 focus:ring-offset-2' 
-            : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300 focus:ring-2 focus:ring-orange-600 focus:ring-offset-2'
+            ? 'bg-orange-600 dark:bg-orange-600 hover:bg-orange-700 dark:hover:bg-orange-700 text-white border-orange-600 dark:border-orange-600 focus:ring-2 focus:ring-orange-600 dark:focus:ring-orange-400 focus:ring-offset-2' 
+            : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-orange-600 dark:focus:ring-orange-400 focus:ring-offset-2'
           }
         `}
         aria-pressed={isActive}
@@ -157,7 +157,7 @@ export default function MobileFilterBottomSheet({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/50 z-50 md:hidden"
+            className="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 md:hidden"
             data-testid="filter-backdrop"
             onClick={handleBackdropClick}
           />
@@ -172,28 +172,28 @@ export default function MobileFilterBottomSheet({
               damping: 25, 
               stiffness: 300 
             }}
-            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl z-50 max-h-[85vh] overflow-hidden md:hidden will-change-transform gpu-accelerated"
+            className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl z-50 max-h-[85vh] overflow-hidden md:hidden will-change-transform gpu-accelerated"
             data-testid="mobile-filter-sheet"
             role="dialog"
             aria-label="Filter and sort options"
             aria-modal="true"
           >
             {/* Handle Bar */}
-            <div className="flex justify-center py-3 border-b border-gray-200">
-              <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
+            <div className="flex justify-center py-3 border-b border-gray-200 dark:border-gray-700">
+              <div className="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
             </div>
 
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-3">
                 <Icon name="filter" size="default" color="active" />
-                <h2 className="text-lg font-semibold text-gray-900">Filter & Sort</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Filter & Sort</h2>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={onClose}
-                className="h-10 w-10"
+                className="h-10 w-10 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-600 dark:focus:ring-orange-400"
                 aria-label="Close filters"
               >
                 <Icon name="x" size="default" />
@@ -201,9 +201,9 @@ export default function MobileFilterBottomSheet({
             </div>
 
             {/* Results Counter */}
-            <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+            <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   {totalCount} dogs found
                 </span>
                 {hasActiveFilters && (
@@ -212,7 +212,7 @@ export default function MobileFilterBottomSheet({
                     size="sm"
                     onClick={onClearAll}
                     data-testid="clear-all-button"
-                    className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                    className="text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20"
                   >
                     <Icon name="x" size="small" className="mr-1" />
                     Clear all
@@ -229,7 +229,7 @@ export default function MobileFilterBottomSheet({
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Icon name="calendar" size="small" color="default" />
-                    <h3 className="text-sm font-medium text-gray-700">Age</h3>
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Age</h3>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     {ageOptions.map((age) => (
@@ -250,10 +250,10 @@ export default function MobileFilterBottomSheet({
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Icon name="paw-print" size="small" color="default" />
-                    <h3 className="text-sm font-medium text-gray-700">Breed</h3>
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Breed</h3>
                   </div>
                   <div className="relative">
-                    <Icon name="search" size="small" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Icon name="search" size="small" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <Input
                       type="text"
                       placeholder="Search for specific breed..."
@@ -261,11 +261,11 @@ export default function MobileFilterBottomSheet({
                       onChange={(e) => setLocalBreedInput(e.target.value)}
                       data-testid="breed-search-input"
                       aria-label="Search for specific breed"
-                      className="pl-10 min-h-[48px] border-gray-300 focus:border-orange-600 focus:ring-orange-600 focus:ring-2 transition-colors duration-200"
+                      className="pl-10 min-h-[48px] border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-orange-600 dark:focus:border-orange-400 focus:ring-orange-600 focus:ring-2 transition-colors duration-200"
                     />
                   </div>
                   {localBreedInput && (
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
                       Search results will appear as you type
                     </div>
                   )}
@@ -276,7 +276,7 @@ export default function MobileFilterBottomSheet({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Icon name="tag" size="small" color="default" />
-                      <h3 className="text-sm font-medium text-gray-700">Sex</h3>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Sex</h3>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       {sexOptions.map((sex) => (
@@ -299,7 +299,7 @@ export default function MobileFilterBottomSheet({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Icon name="ruler" size="small" color="default" />
-                      <h3 className="text-sm font-medium text-gray-700">Size</h3>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Size</h3>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       {sizeOptions.map((size) => (
@@ -322,7 +322,7 @@ export default function MobileFilterBottomSheet({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Icon name="home" size="small" color="default" />
-                      <h3 className="text-sm font-medium text-gray-700">Organization</h3>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Organization</h3>
                     </div>
                     <div className="grid grid-cols-1 gap-2">
                       {organizations.map((org) => (
@@ -344,7 +344,7 @@ export default function MobileFilterBottomSheet({
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Icon name="sort-desc" size="small" color="default" />
-                    <h3 className="text-sm font-medium text-gray-700">Sort By</h3>
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Sort By</h3>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     {sortOptions.map((sort) => (
@@ -365,10 +365,10 @@ export default function MobileFilterBottomSheet({
             </div>
 
             {/* Footer with Apply Button */}
-            <div className="p-4 border-t border-gray-200 bg-white">
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
               <Button
                 onClick={onClose}
-                className="w-full min-h-[48px] bg-orange-600 hover:bg-orange-700 text-white font-medium"
+                className="w-full min-h-[48px] bg-orange-600 dark:bg-orange-600 hover:bg-orange-700 dark:hover:bg-orange-700 text-white font-medium"
                 size="lg"
               >
                 Apply Filters ({totalCount} dogs)

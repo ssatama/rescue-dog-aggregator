@@ -37,6 +37,10 @@ import {
   AlertTriangle,
   RefreshCw,
   Check,
+  
+  // Theme icons
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 // Icon mapping - central registry of all icons used in the application
@@ -77,6 +81,10 @@ const iconMap = {
   'alert-triangle': AlertTriangle,
   'refresh': RefreshCw,
   'check': Check,
+  
+  // Theme
+  'sun': Sun,
+  'moon': Moon,
 };
 
 // Size configuration

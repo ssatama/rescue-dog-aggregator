@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useFadeInAnimation } from '../../utils/animations';
 import { Icon } from '../ui/Icon';
+import { ThemeToggle } from '../ui/ThemeToggle';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -15,8 +16,8 @@ export default function Header() {
     const isActive = pathname === href;
     return `px-3 py-2 rounded-md text-small font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 ${
       isActive
-        ? 'text-orange-600 font-semibold' // Active styles
-        : 'text-gray-700 hover:text-orange-600' // Default styles
+        ? 'text-orange-600 dark:text-orange-400 font-semibold' // Active styles
+        : 'text-foreground hover:text-orange-600 dark:hover:text-orange-400' // Default styles
     }`;
   };
 
@@ -48,14 +49,14 @@ export default function Header() {
       {/* Skip to main content link for accessibility */}
       <a 
         href="#main-content" 
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-orange-600 text-white px-4 py-2 rounded z-50"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-orange-600 dark:bg-orange-500 text-white px-4 py-2 rounded z-50"
       >
         Skip to main content
       </a>
       
       <header 
         ref={headerRef}
-        className={`bg-white shadow-orange-md sticky top-0 z-50 transition-all duration-300 ${
+        className={`bg-background border-b border-border shadow-orange-md dark:shadow-purple-md sticky top-0 z-50 transition-all duration-300 ${
           isVisible ? 'animate-fade-in' : 'opacity-0'
         }`}
       >
@@ -65,24 +66,26 @@ export default function Header() {
           <div>
             <Link 
               href="/" 
-              className="text-section font-extrabold text-red-600 hover:text-red-700 transition-colors duration-300 hover:scale-105 transform focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 rounded"
+              className="text-section font-extrabold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors duration-300 hover:scale-105 transform focus:outline-none focus:ring-2 focus:ring-orange-600 dark:focus:ring-orange-400 focus:ring-offset-2 rounded"
             >
               Rescue Dog Aggregator
             </Link>
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex gap-2"> {/* Consistent spacing for better visual rhythm */}
+          <div className="hidden md:flex gap-2 items-center"> {/* Consistent spacing for better visual rhythm */}
             {renderNavLink('/dogs', 'Find Dogs', 'dogs')}
             {renderNavLink('/organizations', 'Organizations', 'organizations')}
             {renderNavLink('/about', 'About', 'about')}
+            <ThemeToggle className="ml-2" />
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden">
+          {/* Mobile menu button and theme toggle */}
+          <div className="md:hidden flex items-center gap-2">
+            <ThemeToggle />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange-600"
+              className="inline-flex items-center justify-center p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange-600 dark:focus:ring-orange-400"
               aria-expanded={mobileMenuOpen}
             >
               <span className="sr-only">Open main menu</span>

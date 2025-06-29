@@ -191,14 +191,14 @@ describe('EmptyState', () => {
       render(<EmptyState title="Test Title" />);
       
       const title = screen.getByText('Test Title');
-      expect(title).toHaveClass('text-xl', 'font-semibold', 'text-gray-900', 'mb-3');
+      expect(title).toHaveClass('text-xl', 'font-semibold', 'text-foreground', 'mb-3');
     });
 
     it('renders description with correct styling', () => {
       render(<EmptyState description="Test description" />);
       
       const description = screen.getByText('Test description');
-      expect(description).toHaveClass('text-gray-700', 'mb-6');
+      expect(description).toHaveClass('text-muted-foreground', 'mb-6');
     });
   });
 

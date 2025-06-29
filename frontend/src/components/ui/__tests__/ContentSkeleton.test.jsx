@@ -83,13 +83,13 @@ describe('ContentSkeleton', () => {
       render(<ContentSkeleton lines={3} />);
       
       const container = screen.getByRole('status');
-      const skeletonLines = container.querySelectorAll('[class*="bg-gray-200"]');
+      const skeletonLines = container.querySelectorAll('[class*="bg-muted"]');
       
       // Each line should have skeleton styling
       expect(skeletonLines.length).toBeGreaterThan(0);
       
       skeletonLines.forEach(line => {
-        expect(line).toHaveClass('bg-gray-200');
+        expect(line).toHaveClass('bg-muted');
         expect(line).toHaveClass('animate-pulse');
         expect(line).toHaveClass('rounded');
         // Child skeletons should not have role attribute

@@ -66,7 +66,7 @@ const EmptyState = React.memo(function EmptyState({
   return (
     <div
       data-testid="empty-state"
-      className={`bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-xl p-8 text-center border border-orange-200/50 shadow-sm animate-fade-in ${className}`}
+      className={`bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/20 dark:to-orange-900/10 rounded-xl p-8 text-center border border-orange-200/50 dark:border-orange-800/30 shadow-sm animate-fade-in ${className}`}
       role="status"
       aria-label={`Empty state: ${finalTitle}`}
     >
@@ -75,18 +75,18 @@ const EmptyState = React.memo(function EmptyState({
         <div className="mb-6">
           <IconComponent 
             data-testid="empty-state-icon"
-            className="h-16 w-16 mx-auto text-orange-400 mb-2 animate-pulse-dot" 
+            className="h-16 w-16 mx-auto text-orange-400 dark:text-orange-300 mb-2 animate-pulse-dot" 
           />
         </div>
       )}
       
       {/* Title */}
-      <h3 className="text-xl font-semibold text-gray-900 mb-3 animate-fade-in-up">
+      <h3 className="text-xl font-semibold text-foreground mb-3 animate-fade-in-up">
         {finalTitle}
       </h3>
       
       {/* Description */}
-      <p className="text-gray-700 mb-6 max-w-md mx-auto leading-relaxed animate-fade-in-up animate-stagger-1">
+      <p className="text-muted-foreground mb-6 max-w-md mx-auto leading-relaxed animate-fade-in-up animate-stagger-1">
         {finalDescription}
       </p>
       

@@ -119,7 +119,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
                   sizes="(max-width: 640px) 64px, (max-width: 1024px) 56px, 64px"
                   onError={(e) => handleImageError(e, logoUrl)}
                   placeholder={
-                    <div className={`${styles.logo} rounded-lg bg-orange-100 flex items-center justify-center animate-pulse`}>
+                    <div className={`${styles.logo} rounded-lg bg-orange-100 dark:bg-orange-950/30 flex items-center justify-center animate-pulse`}>
                       <span className={`${styles.initialsText} font-bold text-orange-600`}>
                         {getInitials(name)}
                       </span>
@@ -127,7 +127,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
                   }
                 />
               ) : (
-                <div className={`${styles.logo} rounded-lg bg-orange-100 flex items-center justify-center`}>
+                <div className={`${styles.logo} rounded-lg bg-orange-100 dark:bg-orange-950/30 flex items-center justify-center`}>
                   <span className={`${styles.initialsText} font-bold text-orange-600`}>
                     {getInitials(name)}
                   </span>
@@ -137,9 +137,9 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
             
             {/* Organization Name and Base Location */}
             <div className="flex-grow min-w-0">
-              <h3 className={`text-card-title text-gray-900 mb-1 truncate`}>{name}</h3>
+              <h3 className={`text-card-title text-foreground mb-1 truncate`}>{name}</h3>
               {city && country && (
-                <p className={`${styles.location} text-gray-600`}>
+                <p className={`${styles.location} text-muted-foreground`}>
                   {city}, {country}
                 </p>
               )}
@@ -152,7 +152,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
           <div className={`space-y-2 ${styles.locationInfo}`}>
             {/* Based in: [flag] [country] */}
             {country && (
-              <div className="text-gray-700">
+              <div className="text-foreground">
                 <span className="font-medium">Based in:</span>{' '}
                 <span className="hidden sm:inline">
                   {formatBasedIn(country, null, false)}
@@ -165,7 +165,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
             
             {/* Dogs in: [flags] [countries from service_regions array] */}
             {serviceRegions.length > 0 && (
-              <div className="text-gray-700">
+              <div className="text-foreground">
                 <span className="font-medium">Dogs in:</span>{' '}
                 <span className="hidden sm:inline">
                   {formatServiceRegions(serviceRegions, true, false)}
@@ -178,7 +178,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
             
             {/* Ships to: [first 3 flags] +X more */}
             {shipsTo.length > 0 && (
-              <div className="text-gray-700">
+              <div className="text-foreground">
                 <span className="font-medium">Ships to:</span>{' '}
                 <span className="hidden sm:inline">
                   {formatShipsToList(shipsTo, 3)}
@@ -193,10 +193,10 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
           {/* 3. Dog Count with "NEW this week" Badge */}
           <div className="flex items-center justify-between pt-2">
             <div className="flex items-center space-x-2">
-              <span className={`${styles.dogCount} font-bold text-gray-900`}>
+              <span className={`${styles.dogCount} font-bold text-foreground`}>
                 {totalDogs}
               </span>
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-muted-foreground">
                 {totalDogs === 1 ? 'Dog' : 'Dogs'}
               </span>
               {newThisWeek > 0 && (
@@ -220,7 +220,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
                       sizes="(max-width: 640px) 40px, (max-width: 1024px) 44px, 48px"
                       onError={(e) => handleImageError(e, dog.thumbnail_url)}
                       placeholder={
-                        <div className={`${styles.dogThumbnail} rounded-lg bg-gray-200 animate-pulse`} />
+                        <div className={`${styles.dogThumbnail} rounded-lg bg-muted animate-pulse`} />
                       }
                     />
                   </div>
@@ -228,7 +228,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
               </div>
               
               {/* Preview text showing dog names */}
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-muted-foreground">
                 {recentDogs.slice(0, 3).map(dog => dog.name).filter(Boolean).join(', ')}
                 {totalDogs > 3 && ` and ${totalDogs - 3} more looking for homes`}
               </p>
@@ -237,7 +237,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
 
           {/* 5. Social Media Links in Row */}
           {socialMedia && Object.keys(socialMedia).length > 0 && (
-            <div className="pt-3 border-t border-gray-100">
+            <div className="pt-3 border-t border-border">
               <SocialMediaLinks 
                 socialMedia={socialMedia} 
                 className="flex space-x-2 justify-start" 
@@ -254,7 +254,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
               asChild 
               variant="outline" 
               size="sm" 
-              className={`flex-1 text-gray-700 border-gray-300 hover:bg-gray-50 animate-button-hover ${styles.buttonHeight}`}
+              className={`flex-1 text-foreground border-border hover:bg-muted animate-button-hover ${styles.buttonHeight}`}
             >
               <a 
                 href={websiteUrl} 

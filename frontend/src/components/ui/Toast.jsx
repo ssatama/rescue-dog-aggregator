@@ -11,9 +11,9 @@ export function Toast({ message, type = 'info', isVisible, onClose }) {
   if (!isVisible) return null;
 
   const typeStyles = {
-    success: 'bg-green-700 text-white',
-    error: 'bg-red-600 text-white',
-    info: 'bg-orange-600 text-white'
+    success: 'bg-green-700 dark:bg-green-600 text-white',
+    error: 'bg-red-600 dark:bg-red-500 text-white',
+    info: 'bg-orange-600 dark:bg-orange-500 text-white'
   };
 
   return (
@@ -27,7 +27,7 @@ export function Toast({ message, type = 'info', isVisible, onClose }) {
       <span className="text-sm font-medium">{message}</span>
       <button
         onClick={onClose}
-        className="ml-3 p-1 rounded-full hover:bg-black hover:bg-opacity-20 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2"
+        className="ml-3 p-1 rounded-full hover:bg-black dark:hover:bg-white hover:bg-opacity-20 dark:hover:bg-opacity-20 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-600 dark:focus:ring-orange-400 focus:ring-offset-2"
         aria-label="Close notification"
       >
         <Icon name="x" size="small" color="on-dark" />

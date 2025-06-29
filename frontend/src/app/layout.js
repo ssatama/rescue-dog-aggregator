@@ -1,6 +1,7 @@
 // src/app/layout.js
 import './globals.css';
 import { Inter } from 'next/font/google';
+import { ThemeProvider } from '@/components/providers/ThemeProvider';
 
 // Use Inter variable font with all required weights
 const inter = Inter({ 
@@ -40,8 +41,12 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} font-inter`}>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} font-inter`}>
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

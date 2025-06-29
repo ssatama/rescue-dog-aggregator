@@ -130,7 +130,7 @@ export default function DogDescription({
 
   // Memoized content rendering for better performance
   const contentRenderer = useMemo(() => {
-    const baseClasses = "text-base leading-relaxed text-gray-700 transition-all duration-300 ease-in-out";
+    const baseClasses = "text-base leading-relaxed text-gray-700 dark:text-gray-300 transition-all duration-300 ease-in-out";
     
     return {
       baseClasses,
@@ -142,12 +142,12 @@ export default function DogDescription({
 
   return (
     <div 
-      className={`text-lg leading-relaxed text-gray-700 max-w-prose ${className}`}
+      className={`text-lg leading-relaxed text-gray-700 dark:text-gray-300 max-w-prose ${className}`}
       data-testid="description-container"
       role="region"
       aria-label="Dog description"
     >
-      <div className="prose max-w-none" data-testid="prose-container">
+      <div className="prose dark:prose-invert max-w-none" data-testid="prose-container">
         {/* Main description content */}
         {descriptionMeta.isEmpty ? (
           <p 
@@ -170,7 +170,7 @@ export default function DogDescription({
             {/* Enhanced content for short descriptions with subtle animation */}
             {contentRenderer.shouldShowEnhancement && (
               <div 
-                className="mt-4 text-base leading-relaxed text-gray-600 italic transform transition-all duration-500 ease-in-out"
+                className="mt-4 text-base leading-relaxed text-gray-600 dark:text-gray-400 italic transform transition-all duration-500 ease-in-out"
                 data-testid="enhanced-description"
                 aria-label={`Additional information about ${sanitizeText(dogName || 'this dog')}`}
                 role="complementary"
@@ -184,7 +184,7 @@ export default function DogDescription({
               <div className="mt-3">
                 <button
                   onClick={handleToggle}
-                  className="text-orange-600 hover:text-orange-800 font-medium text-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50 rounded px-1 hover:bg-orange-50 active:bg-orange-100"
+                  className="text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 font-medium text-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 focus:ring-opacity-50 rounded px-1 hover:bg-orange-50 dark:hover:bg-orange-900/20 active:bg-orange-100 dark:active:bg-orange-900/30"
                   data-testid="read-more-button"
                   tabIndex={0}
                   aria-expanded={isExpanded}

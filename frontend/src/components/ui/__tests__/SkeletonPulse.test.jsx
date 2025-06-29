@@ -9,7 +9,7 @@ describe('SkeletonPulse', () => {
       
       const skeleton = screen.getByTestId('skeleton');
       expect(skeleton).toBeInTheDocument();
-      expect(skeleton).toHaveClass('bg-gray-200');
+      expect(skeleton).toHaveClass('bg-muted');
       expect(skeleton).toHaveClass('animate-pulse');
       expect(skeleton).toHaveClass('rounded');
     });
@@ -20,7 +20,7 @@ describe('SkeletonPulse', () => {
       const skeleton = screen.getByTestId('skeleton');
       expect(skeleton).toHaveClass('h-4');
       expect(skeleton).toHaveClass('w-3/4');
-      expect(skeleton).toHaveClass('bg-gray-200');
+      expect(skeleton).toHaveClass('bg-muted');
       expect(skeleton).toHaveClass('animate-pulse');
     });
 
@@ -108,7 +108,7 @@ describe('SkeletonPulse', () => {
       const skeleton = screen.getByTestId('skeleton');
       // Should use the .skeleton class for orange-tinted shimmer
       expect(skeleton).toHaveClass('animate-pulse');
-      expect(skeleton).toHaveClass('bg-gray-200');
+      expect(skeleton).toHaveClass('bg-muted');
     });
   });
 });

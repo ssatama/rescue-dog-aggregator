@@ -35,7 +35,7 @@ describe('DogDetailSkeleton', () => {
     
     const skeletonElements = screen.getAllByRole('generic');
     const animatedElements = skeletonElements.filter(el => 
-      el.className.includes('animate-pulse') || el.className.includes('bg-gray-200')
+      el.className.includes('animate-pulse') || el.className.includes('bg-muted')
     );
     
     expect(animatedElements.length).toBeGreaterThan(0);
@@ -101,7 +101,7 @@ describe('AboutSectionSkeleton', () => {
     expect(aboutSection).toBeInTheDocument();
     
     // Should have multiple skeleton lines for content
-    const skeletonLines = aboutSection.querySelectorAll('.bg-gray-200');
+    const skeletonLines = aboutSection.querySelectorAll('.bg-muted');
     expect(skeletonLines.length).toBeGreaterThan(3);
   });
 
@@ -109,7 +109,7 @@ describe('AboutSectionSkeleton', () => {
     render(<AboutSectionSkeleton />);
     
     const aboutSection = screen.getByTestId('about-section-skeleton');
-    const lines = aboutSection.querySelectorAll('.bg-gray-200');
+    const lines = aboutSection.querySelectorAll('.bg-muted');
     
     // Check that skeleton lines exist - AboutSectionSkeleton has 5 lines (title + 4 content)
     expect(lines.length).toBeGreaterThan(3);
@@ -133,7 +133,7 @@ describe('OrganizationSkeleton', () => {
     const orgSkeleton = screen.getByTestId('organization-skeleton');
     
     // Should have skeleton elements for different parts
-    const skeletonBoxes = orgSkeleton.querySelectorAll('.bg-gray-200, .bg-gray-50');
+    const skeletonBoxes = orgSkeleton.querySelectorAll('.bg-muted');
     expect(skeletonBoxes.length).toBeGreaterThan(2);
   });
 });
@@ -161,7 +161,7 @@ describe('RelatedDogsSkeleton', () => {
     const relatedDogs = screen.getByTestId('related-dogs-skeleton');
     const linkContainer = relatedDogs.querySelector('.text-center');
     expect(linkContainer).toBeInTheDocument();
-    const linkSkeleton = linkContainer.querySelector('.bg-gray-200');
+    const linkSkeleton = linkContainer.querySelector('.bg-muted');
     expect(linkSkeleton).toBeInTheDocument();
   });
 });
@@ -183,7 +183,7 @@ describe('CTASkeleton', () => {
     const ctaSkeleton = screen.getByTestId('cta-skeleton');
     const textContainer = ctaSkeleton.querySelector('.text-center');
     expect(textContainer).toBeInTheDocument();
-    const textSkeleton = textContainer.querySelector('.bg-gray-200');
+    const textSkeleton = textContainer.querySelector('.bg-muted');
     expect(textSkeleton).toBeInTheDocument();
   });
 });

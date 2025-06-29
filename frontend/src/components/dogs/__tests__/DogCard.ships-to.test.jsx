@@ -86,7 +86,9 @@ describe('DogCard Ships-To Feature', () => {
     const shipsToElement = screen.getByTestId('ships-to-display');
     expect(shipsToElement).toHaveClass('flex', 'items-start', 'gap-2', 'text-xs');
     
-    const label = shipsToElement.querySelector('.text-gray-500');
+    const label = Array.from(shipsToElement.querySelectorAll('*')).find(
+      el => el.textContent === 'Ships to:'
+    );
     expect(label).toHaveTextContent('Ships to:');
     expect(label).toHaveClass('mt-1', 'whitespace-nowrap');
   });

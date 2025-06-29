@@ -740,7 +740,7 @@ describe('DogCard Component', () => {
       expect(imageContainer).toHaveClass('aspect-[4/3]');
       expect(imageContainer).toHaveClass('relative');
       expect(imageContainer).toHaveClass('overflow-hidden');
-      expect(imageContainer).toHaveClass('bg-gray-200');
+      expect(imageContainer).toHaveClass('bg-muted');
     });
 
     test('image fills container properly with object-cover', () => {

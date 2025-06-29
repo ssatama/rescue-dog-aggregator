@@ -165,6 +165,16 @@
     animation: shimmer 2s infinite ease-in-out;
   }
 
+  /* Dark mode variant for shimmer-warm */
+  .dark .animate-shimmer-warm {
+    background: linear-gradient(
+      90deg,
+      rgb(31 41 55) 0%,
+      rgba(147, 51, 234, 0.1) 50%,
+      rgb(31 41 55) 100%
+    );
+  }
+
   /* Session 6: Premium shimmer animation with enhanced orange-tinted effect */
   .animate-shimmer-premium {
     background: linear-gradient(
@@ -179,6 +189,18 @@
     animation: shimmer 1.8s infinite ease-in-out;
   }
 
+  /* Dark mode variant for premium shimmer */
+  .dark .animate-shimmer-premium {
+    background: linear-gradient(
+      90deg,  
+      rgb(31 41 55) 0%,
+      rgba(147, 51, 234, 0.15) 30%,
+      rgba(147, 51, 234, 0.25) 50%, 
+      rgba(147, 51, 234, 0.15) 70%,
+      rgb(31 41 55) 100%
+    );
+  }
+
   /* Skeleton element shimmer class for coordinated animation */
   .skeleton {
     background: linear-gradient(
@@ -189,6 +211,16 @@
     );
     background-size: 200% 100%;
     animation: shimmer 1.8s infinite ease-in-out;
+  }
+
+  /* Dark mode variant for skeleton */
+  .dark .skeleton {
+    background: linear-gradient(
+      90deg,
+      rgba(55, 65, 81, 1) 0%,
+      rgba(147, 51, 234, 0.1) 50%,
+      rgba(55, 65, 81, 1) 100%
+    );
   }
 
   /* Enhanced shimmer animation for premium loading skeleton feel */
@@ -1449,7 +1481,7 @@
   /* Print styles for theme consistency */
   /* Hover lift utility for subtle card interactions */
   .hover-lift {
-    @apply hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 will-change-transform;
+    @apply hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-purple-500/10 hover:-translate-y-0.5 transition-all duration-200 will-change-transform;
   }
 
   @media print {
