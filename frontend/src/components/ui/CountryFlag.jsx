@@ -65,7 +65,7 @@ export default function CountryFlag({
     
     return (
       <div 
-        className={`inline-flex items-center justify-center bg-gray-200 text-gray-600 text-xs font-medium rounded-sm ${className}`}
+        className={`inline-flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-medium rounded-sm ${className}`}
         style={{ 
           width: sizeConfig.width, 
           height: sizeConfig.height,
@@ -90,7 +90,7 @@ export default function CountryFlag({
         {/* Loading skeleton */}
         {isLoading && (
           <div 
-            className="absolute bg-gray-200 animate-pulse rounded-sm"
+            className="absolute bg-gray-200 dark:bg-gray-700 animate-pulse rounded-sm"
             style={{
               width: sizeConfig.width,
               height: sizeConfig.height

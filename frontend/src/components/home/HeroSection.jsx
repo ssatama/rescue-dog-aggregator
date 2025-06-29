@@ -97,21 +97,21 @@ export default function HeroSection() {
               <div data-testid="statistics-loading" className="space-y-6">
                 <div 
                   data-testid="stat-loading"
-                  className="bg-card/50 backdrop-blur-sm rounded-lg p-6 animate-shimmer"
+                  className="bg-card/50 dark:bg-gray-800/70 backdrop-blur-sm rounded-lg p-6 animate-shimmer"
                 >
                   <div className="h-12 bg-gradient-to-r from-muted to-muted/80 rounded mb-2"></div>
                   <div className="h-4 bg-gradient-to-r from-muted to-muted/80 rounded w-3/4"></div>
                 </div>
                 <div 
                   data-testid="stat-loading"
-                  className="bg-card/50 backdrop-blur-sm rounded-lg p-6 animate-shimmer"
+                  className="bg-card/50 dark:bg-gray-800/70 backdrop-blur-sm rounded-lg p-6 animate-shimmer"
                 >
                   <div className="h-12 bg-gradient-to-r from-muted to-muted/80 rounded mb-2"></div>
                   <div className="h-4 bg-gradient-to-r from-muted to-muted/80 rounded w-3/4"></div>
                 </div>
                 <div 
                   data-testid="stat-loading"
-                  className="bg-card/50 backdrop-blur-sm rounded-lg p-6 animate-shimmer"
+                  className="bg-card/50 dark:bg-gray-800/70 backdrop-blur-sm rounded-lg p-6 animate-shimmer"
                 >
                   <div className="h-12 bg-gradient-to-r from-muted to-muted/80 rounded mb-2"></div>
                   <div className="h-4 bg-gradient-to-r from-muted to-muted/80 rounded w-3/4"></div>
@@ -122,7 +122,7 @@ export default function HeroSection() {
             {error && (
               <div 
                 data-testid="statistics-error"
-                className="bg-card/80 backdrop-blur-sm rounded-lg p-6 text-center"
+                className="bg-card/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-6 text-center"
               >
                 <div className="text-muted-foreground mb-4">{error}</div>
                 <Button 
@@ -143,7 +143,7 @@ export default function HeroSection() {
                   className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
                 >
                   {/* Dogs Count */}
-                  <div className="bg-card/80 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm dark:shadow-purple-500/10">
+                  <div className="bg-card/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm dark:shadow-purple-500/10">
                     <div className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">
                       <AnimatedCounter 
                         value={statistics.total_dogs} 
@@ -155,7 +155,7 @@ export default function HeroSection() {
                   </div>
 
                   {/* Organizations Count */}
-                  <div className="bg-card/80 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm dark:shadow-purple-500/10">
+                  <div className="bg-card/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm dark:shadow-purple-500/10">
                     <div className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">
                       <AnimatedCounter 
                         value={statistics.total_organizations} 
@@ -167,7 +167,7 @@ export default function HeroSection() {
                   </div>
 
                   {/* Countries Count */}
-                  <div className="bg-card/80 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm dark:shadow-purple-500/10">
+                  <div className="bg-card/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm dark:shadow-purple-500/10">
                     <div className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">
                       <AnimatedCounter 
                         value={statistics.countries.length} 
@@ -180,7 +180,7 @@ export default function HeroSection() {
                 </div>
 
                 {/* Organizations Breakdown */}
-                <div className="bg-card/80 backdrop-blur-sm rounded-lg p-6 shadow-sm dark:shadow-purple-500/10">
+                <div className="bg-card/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-6 shadow-sm dark:shadow-purple-500/10">
                   <div className="text-center mb-4">
                     <div className="text-sm text-muted-foreground font-medium">
                       Dogs available from these organizations:

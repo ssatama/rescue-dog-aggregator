@@ -19,7 +19,7 @@ export default function OrganizationHero({ organization }) {
   // Handle missing organization data
   if (!organization) {
     return (
-      <div className="min-h-[400px] bg-gradient-to-br from-amber-100 dark:from-amber-900/30 to-orange-200 dark:to-orange-900/40 flex items-center justify-center">
+      <div className="min-h-[400px] bg-gradient-to-br from-amber-100 dark:from-gray-800 to-orange-200 dark:to-gray-700 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Organization not found</h1>
           <StyledLink href="/organizations" variant="text">
@@ -45,7 +45,7 @@ export default function OrganizationHero({ organization }) {
 
   return (
     <div 
-      className="bg-gradient-to-br from-amber-100 dark:from-amber-900/30 to-orange-200 dark:to-orange-900/40 py-8 px-4 sm:px-6 lg:px-8"
+      className="bg-gradient-to-br from-amber-100 dark:from-gray-800 to-orange-200 dark:to-gray-700 py-8 px-4 sm:px-6 lg:px-8"
       data-testid="organization-hero"
     >
       <div className="max-w-7xl mx-auto">

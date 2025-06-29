@@ -255,6 +255,14 @@
     animation: gradient-shift 20s ease infinite;
   }
 
+  /* Dark mode hero gradient - subtle dark tones matching organization pages */
+  .dark .hero-gradient {
+    background: linear-gradient(135deg, #1f2937 0%, #374151 50%, #4b5563 100%);
+    background-size: 400% 400%;
+    animation: gradient-shift 20s ease infinite;
+  }
+
+
   @keyframes gradient-shift {
     0%, 100% {
       background-position: 0% 50%;
@@ -359,21 +367,21 @@
     -webkit-backdrop-filter: blur(8px);
   }
 
-  /* Enhanced typography with improved contrast and scaling */
+  /* Enhanced typography with improved contrast and scaling - DARK MODE COMPATIBLE */
   .text-hero {
     font-size: var(--font-size-hero);
     line-height: var(--line-height-tight);
     letter-spacing: var(--letter-spacing-tight);
-    font-weight: var(--font-weight-extrabold); /* Increased weight */
-    color: hsl(222.2 84% 4.9%); /* High contrast */
+    font-weight: var(--font-weight-extrabold);
+    color: hsl(var(--foreground)); /* Use CSS variable for dark mode compatibility */
   }
 
   .text-section {
     font-size: var(--font-size-section);
     line-height: var(--line-height-snug);
     letter-spacing: var(--letter-spacing-normal);
-    font-weight: var(--font-weight-bold); /* Increased weight */
-    color: hsl(222.2 84% 4.9%); /* High contrast */
+    font-weight: var(--font-weight-bold);
+    color: hsl(var(--foreground)); /* Use CSS variable for dark mode compatibility */
   }
 
   .text-title {
@@ -381,7 +389,7 @@
     line-height: var(--line-height-snug);
     letter-spacing: var(--letter-spacing-tight);
     font-weight: var(--font-weight-bold);
-    color: hsl(222.2 84% 4.9%);
+    color: hsl(var(--foreground)); /* Use CSS variable for dark mode compatibility */
   }
 
   .text-card-title {
@@ -389,7 +397,7 @@
     line-height: var(--line-height-compact);
     letter-spacing: var(--letter-spacing-normal);
     font-weight: var(--font-weight-semibold);
-    color: hsl(222.2 84% 4.9%);
+    color: hsl(var(--foreground)); /* Use CSS variable for dark mode compatibility */
   }
 
   .text-body {
@@ -397,7 +405,7 @@
     line-height: var(--line-height-relaxed);
     letter-spacing: var(--letter-spacing-normal);
     font-weight: var(--font-weight-normal);
-    color: hsl(215.4 16.3% 46.9%); /* Maintain good contrast */
+    color: hsl(var(--muted-foreground)); /* Use CSS variable for dark mode compatibility */
   }
   
   /* New utility classes for animations */
@@ -1482,6 +1490,149 @@
   /* Hover lift utility for subtle card interactions */
   .hover-lift {
     @apply hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-purple-500/10 hover:-translate-y-0.5 transition-all duration-200 will-change-transform;
+  }
+
+  /* Dark Mode Utility Classes for Consistent Theming */
+  
+  /* Background utilities with automatic dark mode */
+  .bg-surface {
+    @apply bg-background dark:bg-background;
+  }
+  
+  .bg-surface-elevated {
+    @apply bg-card dark:bg-card;
+  }
+  
+  .bg-surface-overlay {
+    @apply bg-popover dark:bg-popover;
+  }
+  
+  /* Text color utilities with dark mode variants */
+  .text-primary {
+    @apply text-foreground dark:text-foreground;
+  }
+  
+  .text-secondary {
+    @apply text-muted-foreground dark:text-muted-foreground;
+  }
+  
+  .text-accent-orange {
+    @apply text-orange-600 dark:text-orange-400;
+  }
+  
+  .text-accent-green {
+    @apply text-green-600 dark:text-green-400;
+  }
+  
+  /* Border utilities with dark mode */
+  .border-surface {
+    @apply border-border dark:border-border;
+  }
+  
+  .border-accent {
+    @apply border-orange-200 dark:border-orange-800;
+  }
+  
+  /* Interactive element utilities */
+  .focus-ring-orange {
+    @apply focus:ring-2 focus:ring-orange-600 dark:focus:ring-orange-400 focus:ring-offset-2 focus:outline-none;
+  }
+  
+  .hover-bg-surface {
+    @apply hover:bg-muted dark:hover:bg-muted;
+  }
+  
+  .hover-text-orange {
+    @apply hover:text-orange-600 dark:hover:text-orange-400;
+  }
+  
+  /* Icon background utilities */
+  .icon-bg-orange {
+    @apply bg-orange-100 dark:bg-orange-950/30;
+  }
+  
+  .icon-bg-green {
+    @apply bg-green-100 dark:bg-green-950/30;
+  }
+  
+  .icon-bg-blue {
+    @apply bg-blue-100 dark:bg-blue-950/30;
+  }
+  
+  /* Card shadow utilities for dark mode */
+  .card-shadow {
+    @apply shadow-sm hover:shadow-md dark:shadow-lg dark:shadow-purple-500/5 dark:hover:shadow-purple-500/10;
+  }
+  
+  /* Loading state utilities */
+  .skeleton-bg {
+    @apply bg-gray-200 dark:bg-gray-700 animate-pulse;
+  }
+  
+  .placeholder-bg {
+    @apply bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400;
+  }
+  
+  /* Form input styling with dark mode */
+  .input-field {
+    @apply bg-background dark:bg-background border-input dark:border-input text-foreground dark:text-foreground;
+    @apply focus:border-orange-600 dark:focus:border-orange-400 focus:ring-orange-600 dark:focus:ring-orange-400;
+  }
+  
+  /* Button variants with consistent dark mode */
+  .btn-primary {
+    @apply bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600;
+    @apply text-white border-transparent;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary hover:bg-secondary/80 dark:bg-secondary dark:hover:bg-secondary/80;
+    @apply text-secondary-foreground dark:text-secondary-foreground border-border dark:border-border;
+  }
+  
+  .btn-outline {
+    @apply bg-background hover:bg-muted dark:bg-background dark:hover:bg-muted;
+    @apply text-foreground dark:text-foreground border-border dark:border-border;
+  }
+  
+  /* Alert/notification styling */
+  .alert-info {
+    @apply bg-blue-50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-100 border-blue-200 dark:border-blue-800;
+  }
+  
+  .alert-success {
+    @apply bg-green-50 dark:bg-green-950/30 text-green-900 dark:text-green-100 border-green-200 dark:border-green-800;
+  }
+  
+  .alert-warning {
+    @apply bg-yellow-50 dark:bg-yellow-950/30 text-yellow-900 dark:text-yellow-100 border-yellow-200 dark:border-yellow-800;
+  }
+  
+  .alert-error {
+    @apply bg-red-50 dark:bg-red-950/30 text-red-900 dark:text-red-100 border-red-200 dark:border-red-800;
+  }
+  
+  /* Badge styling with dark mode */
+  .badge-default {
+    @apply bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground;
+  }
+  
+  .badge-orange {
+    @apply bg-orange-100 text-orange-800 dark:bg-orange-950/30 dark:text-orange-400;
+  }
+  
+  .badge-green {
+    @apply bg-green-100 text-green-800 dark:bg-green-950/30 dark:text-green-400;
+  }
+  
+  /* Navigation styling */
+  .nav-link {
+    @apply text-foreground hover:text-orange-600 dark:text-foreground dark:hover:text-orange-400;
+    @apply transition-colors duration-200;
+  }
+  
+  .nav-link-active {
+    @apply text-orange-600 dark:text-orange-400 font-medium;
   }
 
   @media print {

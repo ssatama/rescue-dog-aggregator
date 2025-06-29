@@ -64,9 +64,9 @@ describe('OrganizationHero Dark Mode', () => {
       const heroSection = screen.getByTestId('organization-hero');
       expect(heroSection).toHaveClass('bg-gradient-to-br');
       expect(heroSection).toHaveClass('from-amber-100');
-      expect(heroSection).toHaveClass('dark:from-amber-900/30');
+      expect(heroSection).toHaveClass('dark:from-gray-800');
       expect(heroSection).toHaveClass('to-orange-200');
-      expect(heroSection).toHaveClass('dark:to-orange-900/40');
+      expect(heroSection).toHaveClass('dark:to-gray-700');
     });
 
     test('no organization state has dark mode styling', () => {
@@ -74,9 +74,9 @@ describe('OrganizationHero Dark Mode', () => {
       
       const fallbackSection = screen.getByText('Organization not found').closest('.bg-gradient-to-br');
       expect(fallbackSection).toHaveClass('from-amber-100');
-      expect(fallbackSection).toHaveClass('dark:from-amber-900/30');
+      expect(fallbackSection).toHaveClass('dark:from-gray-800');
       expect(fallbackSection).toHaveClass('to-orange-200');
-      expect(fallbackSection).toHaveClass('dark:to-orange-900/40');
+      expect(fallbackSection).toHaveClass('dark:to-gray-700');
       
       const fallbackHeading = screen.getByText('Organization not found');
       expect(fallbackHeading).toHaveClass('text-gray-900');

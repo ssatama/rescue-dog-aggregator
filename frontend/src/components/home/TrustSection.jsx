@@ -43,7 +43,7 @@ export default function TrustSection() {
         data-testid="trust-section"
         role="region" 
         aria-label="Platform statistics and organizations"
-        className="py-16 bg-muted bg-dot-pattern"
+        className="py-16 bg-muted"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <TrustStatsSkeleton />
@@ -58,7 +58,7 @@ export default function TrustSection() {
         data-testid="trust-section"
         role="region" 
         aria-label="Platform statistics and organizations"
-        className="py-16 bg-muted bg-dot-pattern"
+        className="py-16 bg-muted"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
@@ -100,7 +100,7 @@ export default function TrustSection() {
       data-testid="trust-section"
       role="region" 
       aria-label="Platform statistics and organizations"
-      className="py-16 bg-muted bg-dot-pattern relative"
+      className="py-16 bg-muted relative"
     >
       {/* Top gradient border */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-400 via-amber-300 to-orange-400" />

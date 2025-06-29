@@ -200,7 +200,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
                 {totalDogs === 1 ? 'Dog' : 'Dogs'}
               </span>
               {newThisWeek > 0 && (
-                <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
+                <span className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 px-2 py-1 rounded text-xs font-medium">
                   {newThisWeek} NEW
                 </span>
               )}

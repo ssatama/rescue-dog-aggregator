@@ -44,7 +44,7 @@ function FilterSection({ id, title, defaultOpen = false, children, count = 0 }) 
     >
       <summary 
         data-testid={`filter-summary-${id}`}
-        className="flex items-center justify-between cursor-pointer py-3 px-4 hover:bg-gray-50/50 rounded-lg transition-all duration-200 ease-out interactive-enhanced btn-focus-ring"
+        className="flex items-center justify-between cursor-pointer py-3 px-4 hover:bg-gray-50/50 dark:hover:bg-gray-700/50 rounded-lg transition-all duration-200 ease-out interactive-enhanced btn-focus-ring"
         onClick={handleToggle}
         onKeyDown={handleKeyDown}
         tabIndex={0}
@@ -52,9 +52,9 @@ function FilterSection({ id, title, defaultOpen = false, children, count = 0 }) 
         role="button"
       >
         <div className="flex items-center gap-2">
-          <span className="font-medium text-gray-700">{title}</span>
+          <span className="font-medium text-gray-700 dark:text-gray-300">{title}</span>
           {count > 0 && (
-            <span className="inline-flex bg-orange-100 text-orange-700 px-2 rounded-full text-xs">
+            <span className="inline-flex bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2 rounded-full text-xs">
               ({count})
             </span>
           )}
@@ -252,7 +252,7 @@ export default function DesktopFilters({
     >
       <div 
         data-testid="desktop-filters-panel"
-        className="bg-orange-50/50 backdrop-blur-md rounded-xl shadow-xl p-6 border border-orange-100/30 sticky top-24 z-10 cross-browser-transition cross-browser-will-change hover:shadow-xl hover:bg-orange-50/60 transition-colors duration-200"
+        className="bg-orange-50/50 dark:bg-gray-800/90 backdrop-blur-md rounded-xl shadow-xl p-6 border border-orange-100/30 dark:border-gray-700/30 sticky top-24 z-10 cross-browser-transition cross-browser-will-change hover:shadow-xl hover:bg-orange-50/60 dark:hover:bg-gray-800/95 transition-colors duration-200"
         role="complementary"
         aria-label="Filter options"
       >
@@ -263,14 +263,14 @@ export default function DesktopFilters({
         >
           <h3 
             data-testid="filters-title" 
-            className="text-lg font-semibold text-gray-900"
+            className="text-lg font-semibold text-gray-900 dark:text-gray-100"
           >
             Filters
           </h3>
           {activeFilterCount > 0 && (
             <span 
               data-testid="active-filters-badge"
-              className="bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full text-sm font-medium"
+              className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2.5 py-1 rounded-full text-sm font-medium"
             >
               {activeFilterCount} active
             </span>
@@ -318,7 +318,7 @@ export default function DesktopFilters({
               
               {/* Organization Select */}
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Organization</label>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">Organization</label>
                 <Select 
                   value={organizationFilter || 'any'} 
                   onValueChange={setOrganizationFilter}
@@ -385,13 +385,13 @@ export default function DesktopFilters({
               {filteredBreeds.length > 0 && (
                 <div 
                   data-testid="breed-suggestions"
-                  className="max-h-32 overflow-y-auto border rounded-md bg-white shadow-sm animate-in slide-in-from-top-2 duration-200"
+                  className="max-h-32 overflow-y-auto border dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 shadow-sm animate-in slide-in-from-top-2 duration-200"
                 >
                   {/* Show filtered breed suggestions */}
                   {filteredBreeds.map(breed => (
                     <button
                       key={breed}
-                      className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm transition-colors duration-150 focus:bg-gray-100 focus:outline-none"
+                      className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm text-gray-900 dark:text-gray-100 transition-colors duration-150 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none"
                       onClick={() => handleBreedSuggestionClick(breed)}
                     >
                       {breed}
@@ -402,9 +402,9 @@ export default function DesktopFilters({
               {breedInputValue && breedInputValue.trim().length > 0 && filteredBreeds.length === 0 && (
                 <div 
                   data-testid="breed-suggestions"
-                  className="border rounded-md bg-white shadow-sm animate-in slide-in-from-top-2 duration-200"
+                  className="border dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 shadow-sm animate-in slide-in-from-top-2 duration-200"
                 >
-                  <div className="p-2 text-sm text-gray-500">
+                  <div className="p-2 text-sm text-gray-500 dark:text-gray-400">
                     No breeds found for "{breedInputValue}"
                   </div>
                 </div>
@@ -460,9 +460,9 @@ export default function DesktopFilters({
           {/* Age Filter - Non-collapsible */}
           <div className={`space-y-3 ${sectionCounts.age > 0 ? 'filter-section-active' : ''}`}>
             <div className="flex items-center gap-2 mb-3">
-              <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Age</h4>
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">Age</h4>
               {sectionCounts.age > 0 && (
-                <span className="inline-flex bg-orange-100 text-orange-700 px-2 rounded-full text-xs">
+                <span className="inline-flex bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2 rounded-full text-xs">
                   ({sectionCounts.age})
                 </span>
               )}
@@ -481,8 +481,8 @@ export default function DesktopFilters({
                     onClick={() => setAgeCategoryFilter(age)}
                     className={`justify-start cross-browser-transition hover:scale-[1.02] focus:scale-[1.02] interactive-enhanced enhanced-focus-button mobile-touch-target ${
                       isActive 
-                        ? 'bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200 cross-browser-shadow' 
-                        : 'bg-white hover:bg-gray-50 hover:shadow-sm'
+                        ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50 cross-browser-shadow' 
+                        : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-sm'
                     }`}
                     style={{ minHeight: '48px' }}
                   >
@@ -496,9 +496,9 @@ export default function DesktopFilters({
           {/* Size Filter - Non-collapsible */}
           <div className={`space-y-3 ${sectionCounts.size > 0 ? 'filter-section-active' : ''}`}>
             <div className="flex items-center gap-2 mb-3">
-              <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Size</h4>
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">Size</h4>
               {sectionCounts.size > 0 && (
-                <span className="inline-flex bg-orange-100 text-orange-700 px-2 rounded-full text-xs">
+                <span className="inline-flex bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2 rounded-full text-xs">
                   ({sectionCounts.size})
                 </span>
               )}
@@ -517,8 +517,8 @@ export default function DesktopFilters({
                     onClick={() => setSizeFilter(size)}
                     className={`justify-start cross-browser-transition hover:scale-[1.02] focus:scale-[1.02] interactive-enhanced enhanced-focus-button mobile-touch-target ${
                       isActive 
-                        ? 'bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200 cross-browser-shadow' 
-                        : 'bg-white hover:bg-gray-50 hover:shadow-sm'
+                        ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50 cross-browser-shadow' 
+                        : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-sm'
                     }`}
                     style={{ minHeight: '48px' }}
                   >
@@ -532,9 +532,9 @@ export default function DesktopFilters({
           {/* Sex Filter - Non-collapsible Button Grid (New Lollipop Style) */}
           <div className={`space-y-3 ${sectionCounts.sex > 0 ? 'filter-section-active' : ''}`}>
             <div className="flex items-center gap-2 mb-3">
-              <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Sex</h4>
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">Sex</h4>
               {sectionCounts.sex > 0 && (
-                <span className="inline-flex bg-orange-100 text-orange-700 px-2 rounded-full text-xs">
+                <span className="inline-flex bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2 rounded-full text-xs">
                   ({sectionCounts.sex})
                 </span>
               )}
@@ -553,8 +553,8 @@ export default function DesktopFilters({
                     onClick={() => setSexFilter(sex)}
                     className={`justify-center cross-browser-transition hover:scale-[1.02] focus:scale-[1.02] interactive-enhanced enhanced-focus-button mobile-touch-target ${
                       isActive 
-                        ? 'bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200 cross-browser-shadow' 
-                        : 'bg-white hover:bg-gray-50 hover:shadow-sm'
+                        ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50 cross-browser-shadow' 
+                        : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-sm'
                     }`}
                     style={{ minHeight: '48px' }}
                   >
@@ -570,7 +570,7 @@ export default function DesktopFilters({
         {activeFilterCount > 0 && (
           <button
             data-testid="clear-all-filters"
-            className="w-full mt-6 text-orange-600 hover:text-orange-700 hover:bg-orange-50 font-medium py-2 px-4 rounded-lg transition-colors duration-200 interactive-enhanced enhanced-focus-button focus:ring-2 focus:ring-orange-600"
+            className="w-full mt-6 text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950/30 font-medium py-2 px-4 rounded-lg transition-colors duration-200 interactive-enhanced enhanced-focus-button focus:ring-2 focus:ring-orange-600"
             onClick={resetFilters}
           >
             Clear All Filters

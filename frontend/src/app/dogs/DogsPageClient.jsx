@@ -344,10 +344,10 @@ export default function DogsPageClient() {
   };
 
   return (
-    <div data-testid="dogs-page-gradient-wrapper" className="min-h-screen bg-gradient-to-br from-[#FFF5E6] to-[#FFE4CC]">
+    <div data-testid="dogs-page-gradient-wrapper" className="min-h-screen bg-gradient-to-br from-[#FFF5E6] to-[#FFE4CC] dark:bg-gradient-to-br dark:from-gray-900 dark:to-gray-800">
       <Layout>
         <div data-testid="dogs-page-container" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-title text-gray-900 mb-6">Find Your New Best Friend</h1>
+          <h1 className="text-title text-gray-900 dark:text-gray-100 mb-6">Find Your New Best Friend</h1>
 
         <div className="flex gap-8">
           {/* Desktop Floating Filter Panel */}
