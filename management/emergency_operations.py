@@ -152,9 +152,7 @@ class EmergencyOperations:
             self.logger.error(f"Error during emergency stop: {e}")
             return {"success": False, "error": str(e), "timestamp": datetime.now()}
 
-    def emergency_disable_organization(
-        self, organization_id: int, reason: str
-    ) -> Dict[str, Any]:
+    def emergency_disable_organization(self, organization_id: int, reason: str) -> Dict[str, Any]:
         """
         Emergency disable scraping for a specific organization.
 
@@ -166,9 +164,7 @@ class EmergencyOperations:
             Dictionary containing disable operation results
         """
         try:
-            self.logger.warning(
-                f"EMERGENCY DISABLE: Organization {organization_id} - {reason}"
-            )
+            self.logger.warning(f"EMERGENCY DISABLE: Organization {organization_id} - {reason}")
 
             success = self._disable_organization_scrapers(organization_id, reason)
 
@@ -202,9 +198,7 @@ class EmergencyOperations:
         backup_id = None
 
         try:
-            self.logger.warning(
-                f"EMERGENCY RECOVERY: Starting for organization {organization_id}"
-            )
+            self.logger.warning(f"EMERGENCY RECOVERY: Starting for organization {organization_id}")
 
             # Step 0: Validate operation safety
             safety_check = self._validate_operation_safety(organization_id)
@@ -238,9 +232,7 @@ class EmergencyOperations:
             recovery_log.append(f"Created backup: {backup_id}")
 
             # Step 3: Rollback last scrape
-            rollback_result = self.rollback_manager.rollback_last_scrape(
-                organization_id
-            )
+            rollback_result = self.rollback_manager.rollback_last_scrape(organization_id)
             recovery_log.append(f"Rollback result: {rollback_result}")
 
             if not rollback_result["success"]:
@@ -252,9 +244,7 @@ class EmergencyOperations:
                 }
 
             # Step 4: Validate data consistency
-            validation_result = self.recovery_manager.validate_data_consistency(
-                organization_id
-            )
+            validation_result = self.recovery_manager.validate_data_consistency(organization_id)
             recovery_log.append(f"Validation result: {validation_result}")
 
             recovery_summary = {
@@ -275,9 +265,7 @@ class EmergencyOperations:
             }
 
         except Exception as e:
-            self.logger.error(
-                f"Emergency recovery failed for org {organization_id}: {e}"
-            )
+            self.logger.error(f"Emergency recovery failed for org {organization_id}: {e}")
             return {
                 "success": False,
                 "organization_id": organization_id,
@@ -526,9 +514,7 @@ class RollbackManager:
             return rollback_result
 
         except Exception as e:
-            self.logger.error(
-                f"Error rolling back last scrape for org {organization_id}: {e}"
-            )
+            self.logger.error(f"Error rolling back last scrape for org {organization_id}: {e}")
             return {"success": False, "error": str(e)}
 
     def create_data_backup(self, organization_id: int, reason: str) -> Dict[str, Any]:
@@ -586,14 +572,10 @@ class RollbackManager:
             return snapshots
 
         except Exception as e:
-            self.logger.error(
-                f"Error querying snapshots for org {organization_id}: {e}"
-            )
+            self.logger.error(f"Error querying snapshots for org {organization_id}: {e}")
             return []
 
-    def _execute_rollback(
-        self, organization_id: int, snapshot_id: str
-    ) -> Dict[str, Any]:
+    def _execute_rollback(self, organization_id: int, snapshot_id: str) -> Dict[str, Any]:
         """Execute rollback to a specific snapshot."""
         try:
             # Extract timestamp from snapshot_id
@@ -662,9 +644,7 @@ class RollbackManager:
             }
 
         except Exception as e:
-            self.logger.error(
-                f"Error executing rollback for org {organization_id}: {e}"
-            )
+            self.logger.error(f"Error executing rollback for org {organization_id}: {e}")
             return {"success": False, "error": str(e)}
 
     def _get_last_scrape_session(self, organization_id: int) -> Optional[str]:
@@ -692,14 +672,10 @@ class RollbackManager:
             return session_id
 
         except Exception as e:
-            self.logger.error(
-                f"Error getting last scrape session for org {organization_id}: {e}"
-            )
+            self.logger.error(f"Error getting last scrape session for org {organization_id}: {e}")
             return None
 
-    def _rollback_scrape_session(
-        self, organization_id: int, session_id: str
-    ) -> Dict[str, Any]:
+    def _rollback_scrape_session(self, organization_id: int, session_id: str) -> Dict[str, Any]:
         """Rollback a specific scrape session."""
         try:
             conn = self._get_db_connection()
@@ -791,9 +767,7 @@ class RollbackManager:
     def _create_backup(self, organization_id: int, reason: str) -> Dict[str, Any]:
         """Create a data backup for an organization."""
         try:
-            backup_id = (
-                f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{organization_id}"
-            )
+            backup_id = f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{organization_id}"
 
             conn = self._get_db_connection()
             cursor = conn.cursor()
@@ -904,18 +878,14 @@ class DataRecoveryManager:
             }
 
         except Exception as e:
-            self.logger.error(
-                f"Error repairing corruption for org {organization_id}: {e}"
-            )
+            self.logger.error(f"Error repairing corruption for org {organization_id}: {e}")
             return {
                 "success": False,
                 "error": str(e),
                 "repairs_performed": repairs_performed,
             }
 
-    def recover_from_backup(
-        self, organization_id: int, backup_id: str
-    ) -> Dict[str, Any]:
+    def recover_from_backup(self, organization_id: int, backup_id: str) -> Dict[str, Any]:
         """
         Recover organization data from backup.
 
@@ -1024,9 +994,7 @@ class DataRecoveryManager:
             }
 
         except Exception as e:
-            self.logger.error(
-                f"Error analyzing data integrity for org {organization_id}: {e}"
-            )
+            self.logger.error(f"Error analyzing data integrity for org {organization_id}: {e}")
             return {"error": str(e), "integrity_score": 0.0}
 
     def _repair_missing_fields(self, organization_id: int) -> Dict[str, Any]:
@@ -1072,9 +1040,7 @@ class DataRecoveryManager:
             }
 
         except Exception as e:
-            self.logger.error(
-                f"Error repairing missing fields for org {organization_id}: {e}"
-            )
+            self.logger.error(f"Error repairing missing fields for org {organization_id}: {e}")
             return {"repaired": 0, "failed": 1, "error": str(e)}
 
     def _resolve_duplicates(self, organization_id: int) -> Dict[str, Any]:
@@ -1105,14 +1071,10 @@ class DataRecoveryManager:
             return {"resolved": resolved_count, "failed": 0}
 
         except Exception as e:
-            self.logger.error(
-                f"Error resolving duplicates for org {organization_id}: {e}"
-            )
+            self.logger.error(f"Error resolving duplicates for org {organization_id}: {e}")
             return {"resolved": 0, "failed": 1, "error": str(e)}
 
-    def _restore_from_backup(
-        self, organization_id: int, backup_id: str
-    ) -> Dict[str, Any]:
+    def _restore_from_backup(self, organization_id: int, backup_id: str) -> Dict[str, Any]:
         """Restore organization data from backup."""
         try:
             # This would implement actual backup restoration
@@ -1186,9 +1148,7 @@ class DataRecoveryManager:
             }
 
         except Exception as e:
-            self.logger.error(
-                f"Error validating consistency for org {organization_id}: {e}"
-            )
+            self.logger.error(f"Error validating consistency for org {organization_id}: {e}")
             return {
                 "consistent": False,
                 "error": str(e),
@@ -1217,33 +1177,41 @@ class EmergencyOperationsCommands:
 
     def emergency_stop(self) -> Dict[str, Any]:
         """Execute emergency stop command."""
-        return self.emergency_ops.emergency_stop_all_scrapers()
+        result = self.emergency_ops.emergency_stop_all_scrapers()
+        # Ensure we always return a Dict[str, Any]
+        if not isinstance(result, dict):
+            return {"success": False, "error": "Invalid emergency stop result type"}
+        return result
 
     def rollback_organization(self, organization_id: int) -> Dict[str, Any]:
         """Execute rollback command for organization."""
-        return self.emergency_ops.rollback_manager.rollback_last_scrape(organization_id)
+        result = self.emergency_ops.rollback_manager.rollback_last_scrape(organization_id)
+        # Ensure we always return a Dict[str, Any]
+        if not isinstance(result, dict):
+            return {"success": False, "error": "Invalid rollback result type"}
+        return result
 
-    def create_backup(
-        self, organization_id: int, reason: str = "Manual backup"
-    ) -> Dict[str, Any]:
+    def create_backup(self, organization_id: int, reason: str = "Manual backup") -> Dict[str, Any]:
         """Execute backup creation command."""
-        return self.emergency_ops.rollback_manager.create_data_backup(
-            organization_id, reason
-        )
+        result = self.emergency_ops.rollback_manager.create_data_backup(organization_id, reason)
+        # Ensure we always return a Dict[str, Any]
+        if not isinstance(result, dict):
+            return {"success": False, "error": "Invalid backup result type"}
+        return result
 
     def system_status(self) -> Dict[str, Any]:
         """Execute system status command."""
-        return self.emergency_ops.get_system_status()
+        result = self.emergency_ops.get_system_status()
+        # Ensure we always return a Dict[str, Any]
+        if not isinstance(result, dict):
+            return {"success": False, "error": "Invalid system status result type"}
+        return result
 
 
 def main():
     """Main CLI entry point for emergency operations."""
-    parser = argparse.ArgumentParser(
-        description="Emergency operations for rescue dog aggregator"
-    )
-    subparsers = parser.add_subparsers(
-        dest="command", help="Available emergency commands"
-    )
+    parser = argparse.ArgumentParser(description="Emergency operations for rescue dog aggregator")
+    subparsers = parser.add_subparsers(dest="command", help="Available emergency commands")
 
     # Emergency stop command
     stop_parser = subparsers.add_parser(
@@ -1254,29 +1222,17 @@ def main():
     status_parser = subparsers.add_parser("status", help="Get system status")
 
     # Rollback command
-    rollback_parser = subparsers.add_parser(
-        "rollback", help="Rollback organization data"
-    )
-    rollback_parser.add_argument(
-        "organization_id", type=int, help="Organization ID to rollback"
-    )
+    rollback_parser = subparsers.add_parser("rollback", help="Rollback organization data")
+    rollback_parser.add_argument("organization_id", type=int, help="Organization ID to rollback")
 
     # Backup command
     backup_parser = subparsers.add_parser("backup", help="Create data backup")
-    backup_parser.add_argument(
-        "organization_id", type=int, help="Organization ID to backup"
-    )
-    backup_parser.add_argument(
-        "--reason", default="Manual backup", help="Reason for backup"
-    )
+    backup_parser.add_argument("organization_id", type=int, help="Organization ID to backup")
+    backup_parser.add_argument("--reason", default="Manual backup", help="Reason for backup")
 
     # Recovery command
-    recovery_parser = subparsers.add_parser(
-        "recover", help="Execute emergency recovery"
-    )
-    recovery_parser.add_argument(
-        "organization_id", type=int, help="Organization ID to recover"
-    )
+    recovery_parser = subparsers.add_parser("recover", help="Execute emergency recovery")
+    recovery_parser.add_argument("organization_id", type=int, help="Organization ID to recover")
 
     args = parser.parse_args()
 
@@ -1315,9 +1271,7 @@ def main():
 
         elif args.command == "recover":
             result = cli.emergency_ops.execute_emergency_recovery(args.organization_id)
-            print(
-                f"🚨 Emergency Recovery Results for Organization {args.organization_id}:"
-            )
+            print(f"🚨 Emergency Recovery Results for Organization {args.organization_id}:")
             print(json.dumps(result, indent=2, default=str))
 
     except Exception as e:

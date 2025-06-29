@@ -117,7 +117,7 @@ class TestAgeStandardization:
 
     def test_direct_age_categories(self):
         """Test parsing of direct standardized age category names.
-        
+
         This test FAILS for 'Young' due to a bug in parse_age_text function.
         The function handles 'Adult', 'Puppy', 'Senior' but not 'Young'.
         """
@@ -125,13 +125,13 @@ class TestAgeStandardization:
         assert standardize_age("Adult")["age_category"] == "Adult"
         assert standardize_age("Puppy")["age_category"] == "Puppy"
         assert standardize_age("Senior")["age_category"] == "Senior"
-        
+
         # This FAILS - parse_age_text doesn't handle standalone "Young"
         result = standardize_age("Young")
         assert result["age_category"] == "Young", f"Expected 'Young', got {result['age_category']}"
         assert result["age_min_months"] == 12, f"Expected 12, got {result['age_min_months']}"
         assert result["age_max_months"] == 36, f"Expected 36, got {result['age_max_months']}"
-        
+
         # Test case insensitive versions
         assert standardize_age("young")["age_category"] == "Young"
 

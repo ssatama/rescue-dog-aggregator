@@ -16,9 +16,10 @@ import sys
 import psycopg2
 from dotenv import load_dotenv
 
+from config import DB_CONFIG
+
 # Add parent directory to path to import config
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import DB_CONFIG
 
 
 def connect_to_database():
@@ -69,8 +70,8 @@ def analyze_organization_duplicates(conn, org_pattern, org_type):
     # Count old pattern (without hash)
     cursor.execute(
         f"""
-        SELECT COUNT(*) FROM animals 
-        WHERE organization_id = %s 
+        SELECT COUNT(*) FROM animals
+        WHERE organization_id = %s
         AND {old_pattern_query}
     """,
         (org_id,),
@@ -81,8 +82,8 @@ def analyze_organization_duplicates(conn, org_pattern, org_type):
     # Count new pattern (with hash)
     cursor.execute(
         f"""
-        SELECT COUNT(*) FROM animals 
-        WHERE organization_id = %s 
+        SELECT COUNT(*) FROM animals
+        WHERE organization_id = %s
         AND {new_pattern_query}
     """,
         (org_id,),
@@ -95,12 +96,12 @@ def analyze_organization_duplicates(conn, org_pattern, org_type):
     cursor.execute(
         """
         SELECT name, external_id, created_at
-        FROM animals 
-        WHERE organization_id = %s 
+        FROM animals
+        WHERE organization_id = %s
         AND name IN (
-            SELECT name FROM animals 
-            WHERE organization_id = %s 
-            GROUP BY name 
+            SELECT name FROM animals
+            WHERE organization_id = %s
+            GROUP BY name
             HAVING COUNT(*) > 1
         )
         ORDER BY name, created_at
@@ -144,8 +145,8 @@ def fix_organization_duplicates(conn, org_id, org_type, dry_run=True):
     cursor.execute(
         f"""
         SELECT id, external_id, name, created_at
-        FROM animals 
-        WHERE organization_id = %s 
+        FROM animals
+        WHERE organization_id = %s
         AND {old_pattern_query}
         ORDER BY name, created_at
     """,
@@ -187,7 +188,7 @@ def fix_organization_duplicates(conn, org_id, org_type, dry_run=True):
             animal_ids = [str(row[0]) for row in animals_to_delete]
             cursor.execute(
                 f"""
-                DELETE FROM animal_images 
+                DELETE FROM animal_images
                 WHERE animal_id IN ({','.join(['%s'] * len(animal_ids))})
             """,
                 animal_ids,
@@ -198,7 +199,7 @@ def fix_organization_duplicates(conn, org_id, org_type, dry_run=True):
             # Delete the animals
             cursor.execute(
                 f"""
-                DELETE FROM animals 
+                DELETE FROM animals
                 WHERE id IN ({','.join(['%s'] * len(animal_ids))})
             """,
                 animal_ids,

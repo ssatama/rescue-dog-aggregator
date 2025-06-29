@@ -73,7 +73,9 @@ class REANScraper(BaseScraper):
                         current_block = []
                 elif current_block:  # We're in a dog block, collect all text
                     current_block.append(text)
-                elif len(text) > 20:  # Standalone text that might be part of a dog block
+                elif (
+                    len(text) > 20
+                ):  # Standalone text that might be part of a dog block
                     # Start a new block if this looks like it could be dog content
                     current_block.append(text)
 
@@ -1008,12 +1010,8 @@ class REANScraper(BaseScraper):
                 self.logger.info(f"Attempting to scrape {url} (attempt {attempt + 1})")
 
                 response = requests.get(
-                    url,
-                    timeout=self.timeout,
-                    headers={
-                        "User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"
-                    },
-                )
+                    url, timeout=self.timeout, headers={
+                        "User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"}, )
                 response.raise_for_status()
 
                 return response.text
@@ -1044,7 +1042,7 @@ class REANScraper(BaseScraper):
         # Use a capturing group to keep the timestamps
         timestamp_pattern = r"(\(Updated \d{1,2}/\d{1,2}/\d{2,4}\))"
         parts = re.split(timestamp_pattern, page_text)
-        
+
         # Reconstruct entries with their timestamps
         entries_with_timestamps = []
         for i in range(0, len(parts) - 1, 2):
@@ -1053,11 +1051,11 @@ class REANScraper(BaseScraper):
                 # Append the timestamp to this entry
                 entry = entry + " " + parts[i + 1]
             entries_with_timestamps.append(entry)
-        
+
         # If there's a final part without timestamp, add it
         if len(parts) % 2 == 1 and parts[-1].strip():
             entries_with_timestamps.append(parts[-1])
-        
+
         parts = entries_with_timestamps
 
         # Clean and filter entries
@@ -1104,7 +1102,9 @@ class REANScraper(BaseScraper):
             return None
 
         # Pattern 1: "Our Name is..." or "Name is X years/months old"
-        name_pattern = r"^(?:Our\s+)?([A-Za-z]+(?:\s+[A-Za-z]+)*?)\s+is\s+(?:looking|around\s+)?\d"
+        name_pattern = (
+            r"^(?:Our\s+)?([A-Za-z]+(?:\s+[A-Za-z]+)*?)\s+is\s+(?:looking|around\s+)?\d"
+        )
         match = re.search(name_pattern, text.strip())
         if match:
             name = match.group(1).strip()
@@ -1134,15 +1134,29 @@ class REANScraper(BaseScraper):
 
         # Pattern 4: Look for capitalized words at the beginning, excluding locations
         words = text.strip().split()[:7]  # Check first 7 words for more context
-        skip_words = ["little", "sweet", "puppy", "this", "the", "our", "in", "wrexham", "romania", "manchester", "london", "birmingham"]
+        skip_words = [
+            "little",
+            "sweet",
+            "puppy",
+            "this",
+            "the",
+            "our",
+            "in",
+            "wrexham",
+            "romania",
+            "manchester",
+            "london",
+            "birmingham",
+        ]
         found_dash = False
-        
+
         for i, word in enumerate(words):
             # Skip the dash and location words that come after it
             if word == "-":
                 found_dash = True
                 continue
-            if found_dash and i < 3:  # Skip first few words after dash (likely location)
+            # Skip first few words after dash (likely location)
+            if found_dash and i < 3:
                 continue
             if word[0].isupper() and word.isalpha() and len(word) > 2:
                 if word.lower() not in skip_words:
@@ -1404,23 +1418,30 @@ class REANScraper(BaseScraper):
             # Keep everything up to and including the timestamp
             end_pos = update_match.end()
             text = text[:end_pos].strip()
-        
+
         # Clean up whitespace
         text = re.sub(r"\s+", " ", text).strip()
 
         # Remove redundant name/age prefix patterns FIRST
         # Pattern 1: "Name - X months/years old" at the start
-        text = re.sub(r"^[A-Za-z]+\s*-\s*\d+(?:\.\d+)?\s*(?:months?|years?)\s+old\s*", "", text, flags=re.IGNORECASE)
-        
+        text = re.sub(
+            r"^[A-Za-z]+\s*-\s*\d+(?:\.\d+)?\s*(?:months?|years?)\s+old\s*",
+            "",
+            text,
+            flags=re.IGNORECASE,
+        )
+
         # Now remove location prefixes like "- Wrexham" or "- in Romania" at the start
         # This handles cases like "- Wrexham Nala is..." or "- in Romania Tiny is..."
         # First handle "- in Location" pattern (more permissive)
         text = re.sub(r"^-\s*in\s+[A-Za-z]+\s+", "", text).strip()
-        # Then handle "- Location" pattern (more permissive - matches any word after dash)
+        # Then handle "- Location" pattern (more permissive - matches any word
+        # after dash)
         text = re.sub(r"^-\s*[A-Za-z]+\s+", "", text).strip()
-        
+
         # Pattern 2: Remove the first sentence if it's just basic info we already show
-        # Look for patterns like "Lucky is 7 months old." or "Our Lucky is 7 months old."
+        # Look for patterns like "Lucky is 7 months old." or "Our Lucky is 7
+        # months old."
         first_sentence_pattern = r"^(?:Our\s+)?[A-Za-z]+\s+is\s+(?:around\s+)?\d+(?:\.\d+)?\s*(?:months?|years?)\s+old\.?\s*"
         if re.match(first_sentence_pattern, text):
             # Remove this redundant first sentence
@@ -1439,36 +1460,47 @@ class REANScraper(BaseScraper):
             # Skip very short fragments
             if len(sentence) < 10:
                 continue
-                
+
             # Skip sentences that are contact instructions
             # Check if sentence contains contact/application keywords
             contact_keywords = [
-                "please message us", "e-mail", "facebook", "apply to adopt",
-                "following information", "current pets", "ages of children",
-                "garden fencing", "working hours", "experience with dogs"
+                "please message us",
+                "e-mail",
+                "facebook",
+                "apply to adopt",
+                "following information",
+                "current pets",
+                "ages of children",
+                "garden fencing",
+                "working hours",
+                "experience with dogs",
             ]
-            
+
             # Count how many contact keywords are in this sentence
-            contact_count = sum(1 for keyword in contact_keywords if keyword in sentence.lower())
-            
+            contact_count = sum(
+                1 for keyword in contact_keywords if keyword in sentence.lower()
+            )
+
             # If sentence has 2+ contact keywords, it's likely just instructions
             if contact_count >= 2:
                 continue
-                
+
             # Or if it starts with "Please message" or similar
-            if sentence.lower().startswith(("please message", "please contact", "email", "e-mail")):
+            if sentence.lower().startswith(
+                ("please message", "please contact", "email", "e-mail")
+            ):
                 continue
-            
+
             story_sentences.append(sentence)
 
         if story_sentences:
             # Join sentences
             description = ". ".join(story_sentences)
-            
+
             # Ensure proper ending
             if not description.endswith("."):
                 description += "."
-            
+
             # Add back the update timestamp if it was present and not already included
             if update_match and "(Updated" not in description:
                 description = description.rstrip(".") + " " + update_match.group(1)
@@ -1478,7 +1510,7 @@ class REANScraper(BaseScraper):
                 # Find a good breaking point near 1800 chars
                 break_point = description.rfind(". ", 0, 1800)
                 if break_point > 1000:  # Ensure we don't break too early
-                    description = description[:break_point + 1]
+                    description = description[: break_point + 1]
                 else:
                     description = description[:1797] + "..."
 
@@ -1547,9 +1579,13 @@ class REANScraper(BaseScraper):
             # Validate that we have the essential fields
             validation_errors = self._validate_dog_data(dog_data, entry_text)
             if validation_errors:
-                self.logger.warning(f"Validation issues for dog '{name}': {', '.join(validation_errors)}")
+                self.logger.warning(
+                    f"Validation issues for dog '{name}': {', '.join(validation_errors)}"
+                )
                 # Log the raw text for debugging
-                self.logger.debug(f"Raw text for validation issues: {entry_text[:200]}...")
+                self.logger.debug(
+                    f"Raw text for validation issues: {entry_text[:200]}..."
+                )
 
             return dog_data
 
@@ -1557,7 +1593,9 @@ class REANScraper(BaseScraper):
             self.logger.error(f"Error extracting dog data from entry: {e}")
             return None
 
-    def _validate_dog_data(self, dog_data: Dict[str, Any], entry_text: str) -> List[str]:
+    def _validate_dog_data(
+        self, dog_data: Dict[str, Any], entry_text: str
+    ) -> List[str]:
         """
         Validate that extracted dog data contains expected fields.
 
@@ -1569,31 +1607,46 @@ class REANScraper(BaseScraper):
             List of validation error messages (empty if all good)
         """
         errors = []
-        
+
         # Check essential fields
         if not dog_data.get("name"):
             errors.append("missing name")
-        
+
         if not dog_data.get("age_text"):
             errors.append("missing age information")
-            
+
         properties = dog_data.get("properties", {})
         description = properties.get("description", "")
-        
+
         if not description or len(description.strip()) < 20:
             errors.append("missing or very short description")
-            
+
         # Check if description seems complete (should include more than just basic info)
-        if description and not any(word in description.lower() for word in [
-            "friendly", "loving", "sweet", "playful", "gentle", "looking", "home", 
-            "foster", "rescue", "transport", "adopt", "family"
-        ]):
-            errors.append("description may be incomplete - lacks personality/story content")
-            
+        if description and not any(
+            word in description.lower()
+            for word in [
+                "friendly",
+                "loving",
+                "sweet",
+                "playful",
+                "gentle",
+                "looking",
+                "home",
+                "foster",
+                "rescue",
+                "transport",
+                "adopt",
+                "family",
+            ]
+        ):
+            errors.append(
+                "description may be incomplete - lacks personality/story content"
+            )
+
         # Check if update timestamp is preserved
         if "updated" in entry_text.lower() and "updated" not in description.lower():
             errors.append("update timestamp not preserved in description")
-            
+
         return errors
 
     def standardize_animal_data(
@@ -1615,7 +1668,8 @@ class REANScraper(BaseScraper):
         if name is None:
             name = "Unknown"
 
-        # Create more stable external ID using name + breed + age + page type for uniqueness
+        # Create more stable external ID using name + breed + age + page type for
+        # uniqueness
         import hashlib
 
         name_slug = name.lower().replace(" ", "-")
@@ -1656,7 +1710,8 @@ class REANScraper(BaseScraper):
         if dog_data.get("primary_image_url"):
             standardized_data["primary_image_url"] = dog_data["primary_image_url"]
             # Set original_image_url to the same value for proper comparison in base_scraper
-            # This prevents unnecessary re-uploads to Cloudinary when images haven't changed
+            # This prevents unnecessary re-uploads to Cloudinary when images haven't
+            # changed
             standardized_data["original_image_url"] = dog_data["primary_image_url"]
 
         # Standardize age if available

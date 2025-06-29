@@ -32,9 +32,7 @@ def fetch_animal_images(cursor: RealDictCursor, animal_id: int) -> List[AnimalIm
     except psycopg2.Error as db_err:
         logger.error(f"DB error fetching images for animal {animal_id}: {db_err}")
     except Exception as e:
-        logger.exception(
-            f"Unexpected error fetching images for animal {animal_id}: {e}"
-        )
+        logger.exception(f"Unexpected error fetching images for animal {animal_id}: {e}")
     return images
 
 
@@ -102,9 +100,7 @@ async def get_animals(
 
         # --- NEW: Add JOIN for service_regions if filtering by available_to ---
         if available_to_country or available_to_region:
-            joins += (
-                " JOIN service_regions sr ON a.organization_id = sr.organization_id"
-            )
+            joins += " JOIN service_regions sr ON a.organization_id = sr.organization_id"
         # --- END NEW ---
 
         # Add status filter if provided
@@ -114,9 +110,7 @@ async def get_animals(
 
         # Add availability confidence filter
         if availability_confidence and availability_confidence != "all":
-            confidence_levels = [
-                level.strip() for level in availability_confidence.split(",")
-            ]
+            confidence_levels = [level.strip() for level in availability_confidence.split(",")]
             if len(confidence_levels) == 1:
                 conditions.append("a.availability_confidence = %s")
                 params.append(confidence_levels[0])
@@ -164,13 +158,9 @@ async def get_animals(
             if age_category == "Puppy":  # < 12 months
                 age_conditions.append("(a.age_max_months < 12)")
             elif age_category == "Young":  # 12 to 36 months
-                age_conditions.append(
-                    "(a.age_min_months >= 12 AND a.age_max_months <= 36)"
-                )
+                age_conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
             elif age_category == "Adult":  # 36 to 96 months (3 to 8 years)
-                age_conditions.append(
-                    "(a.age_min_months >= 36 AND a.age_max_months <= 96)"
-                )
+                age_conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
             elif age_category == "Senior":  # > 96 months (8+ years)
                 age_conditions.append("(a.age_min_months >= 96)")
             if age_conditions:
@@ -179,7 +169,7 @@ async def get_animals(
         # Add organization ID filter
         if organization_id:
             conditions.append("a.organization_id = %s")
-            params.append(organization_id)
+            params.append(str(organization_id))
 
         # --- NEW: Location Filters ---
         if location_country:
@@ -192,9 +182,7 @@ async def get_animals(
             conditions.append("sr.country = %s")
             params.append(available_to_country)
 
-        if (
-            available_to_region and available_to_country
-        ):  # Region only makes sense with country
+        if available_to_region and available_to_country:  # Region only makes sense with country
             # Filter based on service_regions region
             conditions.append("sr.region = %s")
             params.append(available_to_region)
@@ -213,7 +201,7 @@ async def get_animals(
             # Get one dog per organization using DISTINCT ON
             # Note: DISTINCT ON requires the ORDER BY to start with the distinct columns
             query = f"""
-                SELECT DISTINCT ON (a.organization_id) 
+                SELECT DISTINCT ON (a.organization_id)
                        a.id, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
                        a.age_text, a.age_min_months, a.age_max_months, a.sex, a.size, a.standardized_size,
                        a.status, a.primary_image_url, a.adoption_url, a.organization_id, a.external_id,
@@ -236,7 +224,7 @@ async def get_animals(
             # Default "random" behavior - order by last_scraped_at DESC
             query = f"{query_base}{joins} WHERE {where_clause} ORDER BY a.last_scraped_at DESC, a.id DESC LIMIT %s OFFSET %s"
 
-        params.extend([limit, offset])
+        params.extend([str(limit), str(offset)])
 
         logger.debug(f"Executing query: {query} with params: {params}")
         cursor.execute(query, tuple(params))
@@ -263,9 +251,7 @@ async def get_animals(
                 try:
                     org_social_media = json.loads(org_social_media)
                 except json.JSONDecodeError:
-                    logger.warning(
-                        f"Could not parse social_media JSON: {org_social_media}"
-                    )
+                    logger.warning(f"Could not parse social_media JSON: {org_social_media}")
                     org_social_media = {}
             elif org_social_media is None:
                 org_social_media = {}
@@ -467,9 +453,7 @@ async def get_distinct_available_countries(
     summary="Get Distinct Available-To Regions for a Country",
 )
 async def get_distinct_available_regions(
-    country: str = Query(
-        ..., description="Country to get regions for"
-    ),  # Make country required
+    country: str = Query(..., description="Country to get regions for"),  # Make country required
     cursor: RealDictCursor = Depends(get_db_cursor),
 ):
     """Get a distinct list of regions within a specific country organizations can adopt to."""
@@ -490,14 +474,10 @@ async def get_distinct_available_regions(
         regions = [row["region"] for row in results]
         return regions
     except psycopg2.Error as db_err:
-        logger.error(
-            f"Database error fetching distinct available regions for {country}: {db_err}"
-        )
+        logger.error(f"Database error fetching distinct available regions for {country}: {db_err}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(db_err)}")
     except Exception as e:
-        logger.exception(
-            f"Unexpected error fetching distinct available regions for {country}: {e}"
-        )
+        logger.exception(f"Unexpected error fetching distinct available regions for {country}: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
@@ -540,7 +520,7 @@ async def get_statistics(
             SELECT o.country, COUNT(a.id) as count
             FROM animals a
             JOIN organizations o ON a.organization_id = o.id
-            WHERE a.status = 'available' 
+            WHERE a.status = 'available'
               AND a.availability_confidence IN ('high', 'medium')
               AND o.active = TRUE
               AND o.country IS NOT NULL
@@ -549,8 +529,7 @@ async def get_statistics(
             """
         )
         stats["countries"] = [
-            {"country": row["country"], "count": row["count"]}
-            for row in cursor.fetchall()
+            {"country": row["country"], "count": row["count"]} for row in cursor.fetchall()
         ]
 
         # Get organizations with dog counts and all required fields
@@ -561,8 +540,8 @@ async def get_statistics(
                    COUNT(a.id) as dog_count,
                    COUNT(CASE WHEN a.created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as new_this_week
             FROM organizations o
-            LEFT JOIN animals a ON o.id = a.organization_id 
-                AND a.status = 'available' 
+            LEFT JOIN animals a ON o.id = a.organization_id
+                AND a.status = 'available'
                 AND a.availability_confidence IN ('high', 'medium')
             WHERE o.active = TRUE
             GROUP BY o.id, o.name, o.logo_url, o.country, o.city, o.ships_to, o.service_regions,
@@ -593,9 +572,7 @@ async def get_statistics(
 
     except psycopg2.Error as db_err:
         logger.error(f"Database error in get_statistics: {db_err}")
-        raise HTTPException(
-            status_code=500, detail=f"Database query error: {str(db_err)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Database query error: {str(db_err)}")
     except Exception as e:
         logger.exception(f"Unexpected error in get_statistics: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
@@ -604,9 +581,7 @@ async def get_statistics(
 # --- Random Animal Endpoint ---
 @router.get("/random", response_model=List[Animal], summary="Get Random Animals")
 async def get_random_animals(
-    limit: int = Query(
-        3, ge=1, le=10, description="Number of random animals to return"
-    ),
+    limit: int = Query(3, ge=1, le=10, description="Number of random animals to return"),
     # Removed animal_type query parameter as we always want dogs
     status: Optional[str] = Query("available", description="Animal status"),
     cursor: RealDictCursor = Depends(get_db_cursor),
@@ -635,9 +610,7 @@ async def get_random_animals(
 
 # --- Single Animal Detail ---
 @router.get("/{animal_id}", response_model=AnimalWithImages)
-async def get_animal_by_id(
-    animal_id: int, cursor: RealDictCursor = Depends(get_db_cursor)
-):
+async def get_animal_by_id(animal_id: int, cursor: RealDictCursor = Depends(get_db_cursor)):
     """Get a specific animal by ID, including its images."""
     try:
         cursor.execute(
@@ -660,8 +633,8 @@ async def get_animal_by_id(
                    COUNT(CASE WHEN a2.created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as org_new_this_week
             FROM animals a
             LEFT JOIN organizations o ON a.organization_id = o.id
-            LEFT JOIN animals a2 ON o.id = a2.organization_id 
-                AND a2.status = 'available' 
+            LEFT JOIN animals a2 ON o.id = a2.organization_id
+                AND a2.status = 'available'
                 AND a2.availability_confidence IN ('high', 'medium')
             WHERE a.id = %s
             GROUP BY a.id, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
@@ -669,7 +642,7 @@ async def get_animal_by_id(
                      a.sex, a.size, a.standardized_size, a.status, a.properties,
                      a.primary_image_url, a.adoption_url, a.created_at, a.updated_at,
                      a.organization_id, a.external_id, a.language, a.last_scraped_at,
-                     o.id, o.name, o.city, o.country, o.website_url, o.social_media, 
+                     o.id, o.name, o.city, o.country, o.website_url, o.social_media,
                      o.ships_to, o.logo_url, o.service_regions, o.description
             """,
             (animal_id,),
@@ -690,9 +663,7 @@ async def get_animal_by_id(
             try:
                 clean_dict["properties"] = json.loads(clean_dict["properties"])
             except json.JSONDecodeError:
-                logger.warning(
-                    f"Could not parse properties JSON for animal {animal_id}"
-                )
+                logger.warning(f"Could not parse properties JSON for animal {animal_id}")
                 clean_dict["properties"] = {}
         elif clean_dict.get("properties") is None:
             clean_dict["properties"] = {}
@@ -703,9 +674,7 @@ async def get_animal_by_id(
             try:
                 org_social_media = json.loads(org_social_media)
             except json.JSONDecodeError:
-                logger.warning(
-                    f"Could not parse social_media JSON for animal {animal_id}"
-                )
+                logger.warning(f"Could not parse social_media JSON for animal {animal_id}")
                 org_social_media = {}
         elif org_social_media is None:
             org_social_media = {}
@@ -727,9 +696,7 @@ async def get_animal_by_id(
             try:
                 org_service_regions = json.loads(org_service_regions)
             except json.JSONDecodeError:
-                logger.warning(
-                    f"Could not parse service_regions JSON for animal {animal_id}"
-                )
+                logger.warning(f"Could not parse service_regions JSON for animal {animal_id}")
                 org_service_regions = []
         elif org_service_regions is None:
             org_service_regions = []

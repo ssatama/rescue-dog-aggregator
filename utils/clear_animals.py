@@ -6,11 +6,12 @@ import sys
 import psycopg2
 from dotenv import load_dotenv
 
+from config import DB_CONFIG
+
 # Add parent directory to path to import config
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import configuration - this MUST be after path modification
-from config import DB_CONFIG
 
 
 def connect_to_database():

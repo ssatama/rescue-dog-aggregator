@@ -148,8 +148,12 @@ async def get_scraper_status(db_conn=Depends(get_database_connection)):
             )
 
             metrics_24h = cursor.fetchone()
-            scrapes_24h, failed_24h, avg_animals, avg_duration, avg_quality = (
-                metrics_24h or (0, 0, 0, 0, 0)
+            scrapes_24h, failed_24h, avg_animals, avg_duration, avg_quality = metrics_24h or (
+                0,
+                0,
+                0,
+                0,
+                0,
             )
 
             total_scrapes_24h += scrapes_24h or 0
@@ -199,16 +203,13 @@ async def get_scraper_status(db_conn=Depends(get_database_connection)):
 
                 recent_failures = cursor.fetchall()
                 if recent_failures:
-                    failure_detection["last_failure_type"] = recent_failures[0][
-                        1
-                    ]  # error_message
+                    failure_detection["last_failure_type"] = recent_failures[0][1]  # error_message
                     failure_detection["consecutive_failures"] = len(recent_failures)
 
             # Build performance metrics
             performance_metrics = {
                 "scrapes_24h": scrapes_24h or 0,
-                "success_rate": (1 - (failed_24h or 0) / max(scrapes_24h or 1, 1))
-                * 100,
+                "success_rate": (1 - (failed_24h or 0) / max(scrapes_24h or 1, 1)) * 100,
                 "avg_animals_found": round(avg_animals or 0, 1),
                 "avg_duration_seconds": round(avg_duration or 0, 1),
                 "avg_data_quality": round(avg_quality or 0, 3),
@@ -233,9 +234,7 @@ async def get_scraper_status(db_conn=Depends(get_database_connection)):
             "failure_rate": (total_failures_24h / max(total_scrapes_24h, 1)) * 100,
             "active_scrapers": len([s for s in scrapers if s["status"] != "never_run"]),
             "healthy_scrapers": len([s for s in scrapers if s["status"] == "success"]),
-            "unhealthy_scrapers": len(
-                [s for s in scrapers if s["status"] in ["error", "warning"]]
-            ),
+            "unhealthy_scrapers": len([s for s in scrapers if s["status"] in ["error", "warning"]]),
         }
 
         cursor.close()
@@ -420,9 +419,7 @@ async def get_failure_detection_metrics(db_conn=Depends(get_database_connection)
             raise
 
         failure_counts = cursor.fetchone()
-        logger.debug(
-            f"Failure counts query result: {failure_counts}, type: {type(failure_counts)}"
-        )
+        logger.debug(f"Failure counts query result: {failure_counts}, type: {type(failure_counts)}")
 
         if failure_counts and len(failure_counts) >= 4:
             catastrophic, partial, database_errors, total_failures = failure_counts
@@ -490,9 +487,7 @@ async def get_failure_detection_metrics(db_conn=Depends(get_database_connection)
                 recent_failures.append(
                     {
                         "timestamp": failure[0] if len(failure) > 0 else None,
-                        "organization_name": (
-                            failure[1] if len(failure) > 1 else "Unknown"
-                        ),
+                        "organization_name": (failure[1] if len(failure) > 1 else "Unknown"),
                         "status": failure[2] if len(failure) > 2 else "unknown",
                         "animals_found": failure[3] if len(failure) > 3 else None,
                         "failure_type": failure_type,
@@ -731,9 +726,7 @@ async def get_active_alerts(db_conn=Depends(get_database_connection)):
                         "hours_since_last_scrape": (
                             48
                             if not last_scrape
-                            else int(
-                                (datetime.now() - last_scrape).total_seconds() / 3600
-                            )
+                            else int((datetime.now() - last_scrape).total_seconds() / 3600)
                         )
                     },
                 }

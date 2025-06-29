@@ -162,9 +162,7 @@ class ConfigManager:
                 if "service_regions" in status:
                     sr_status = status["service_regions"]
                     print("🗺️  Service Regions Status:")
-                    print(
-                        f"  Total service regions: {sr_status.get('total_service_regions', 0)}"
-                    )
+                    print(f"  Total service regions: {sr_status.get('total_service_regions', 0)}")
                     print(
                         f"  Organizations with regions: {sr_status.get('organizations_with_regions', 0)}"
                     )
@@ -216,9 +214,7 @@ class ConfigManager:
                 print("🔄 Syncing organizations to database before scraping...")
                 sync_res = self.sync_manager.sync_all_organizations()
                 if not sync_res.get("success"):
-                    print(
-                        "⚠️ Warning: organization sync reported errors, continuing to scraper"
-                    )
+                    print("⚠️ Warning: organization sync reported errors, continuing to scraper")
 
             print(f"🚀 Running scraper for: {config_id}")
             result = self.scraper_runner.run_scraper(config_id)
@@ -241,9 +237,7 @@ class ConfigManager:
                 print("🔄 Syncing organizations to database before running scrapers...")
                 sync_res = self.sync_manager.sync_all_organizations()
                 if not sync_res.get("success"):
-                    print(
-                        "⚠️ Warning: organization sync reported errors, continuing to scrapers"
-                    )
+                    print("⚠️ Warning: organization sync reported errors, continuing to scrapers")
 
             print("🚀 Running all enabled scrapers...")
             print("=" * 50)
@@ -259,9 +253,7 @@ class ConfigManager:
                     total_animals_found += animals_found
                     print(f"✅ {org_name}: {animals_found} animals found")
                 else:
-                    print(
-                        f"❌ Error in {result.get('organization')}: {result.get('error')}"
-                    )
+                    print(f"❌ Error in {result.get('organization')}: {result.get('error')}")
 
             print("=" * 50)
             print(f"🐾 Total animals found: {total_animals_found}")
@@ -346,9 +338,7 @@ def main():
     )
 
     # Validate command
-    validate_parser = subparsers.add_parser(
-        "validate", help="Validate configuration files"
-    )
+    subparsers.add_parser("validate", help="Validate configuration files")
 
     args = parser.parse_args()
 

@@ -201,7 +201,7 @@ class CloudinaryService:
             parts = cloudinary_url.split("/")
             if "upload" in parts:
                 upload_index = parts.index("upload")
-                public_id = "/".join(parts[upload_index + 1 :])
+                public_id = "/".join(parts[upload_index + 1:])
                 # Remove file extension
                 if "." in public_id:
                     public_id = public_id.rsplit(".", 1)[0]

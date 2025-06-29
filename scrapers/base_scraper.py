@@ -234,7 +234,8 @@ class BaseScraper(ABC):
                         current_original_url = current_image_data[1]
 
                         # Don't upload if the original URL hasn't changed
-                        # But if current_original_url is a Cloudinary URL, we should update it to the source URL
+                        # But if current_original_url is a Cloudinary URL, we should
+                        # update it to the source URL
                         if current_original_url == original_url:
                             should_upload_image = False
                             # Use existing Cloudinary URL
@@ -243,12 +244,16 @@ class BaseScraper(ABC):
                             self.logger.info(
                                 f"🔄 Image unchanged for {animal_data.get('name')}, using existing Cloudinary URL"
                             )
-                        elif current_original_url and "cloudinary.com" in current_original_url:
+                        elif (
+                            current_original_url
+                            and "cloudinary.com" in current_original_url
+                        ):
                             # Legacy case: original_image_url is a Cloudinary URL, update it to source URL
                             # but keep the existing Cloudinary URL as primary
                             should_upload_image = False
                             animal_data["primary_image_url"] = current_primary_url
-                            animal_data["original_image_url"] = original_url  # Update to source URL
+                            # Update to source URL
+                            animal_data["original_image_url"] = original_url
                             self.logger.info(
                                 f"🔄 Updated original_image_url to source URL for {animal_data.get('name')}, keeping existing Cloudinary URL"
                             )
@@ -313,9 +318,9 @@ class BaseScraper(ABC):
             # Get existing images for this animal
             cursor.execute(
                 """
-                SELECT id, image_url, original_image_url, is_primary 
-                FROM animal_images 
-                WHERE animal_id = %s 
+                SELECT id, image_url, original_image_url, is_primary
+                FROM animal_images
+                WHERE animal_id = %s
                 ORDER BY is_primary DESC, id ASC
                 """,
                 (animal_id,),
@@ -394,7 +399,8 @@ class BaseScraper(ABC):
             for img in existing_images:
                 if img[0] not in images_to_keep:  # img[0] is the id
                     cursor.execute("DELETE FROM animal_images WHERE id = %s", (img[0],))
-                    self.logger.info(f"🗑️ Removed obsolete image for animal {animal_id}")
+                    self.logger.info(
+                        f"🗑️ Removed obsolete image for animal {animal_id}")
 
             self.conn.commit()
             return True
@@ -519,8 +525,7 @@ class BaseScraper(ABC):
 
             self.logger.info(
                 f"Scrape completed successfully. Added: {animals_added}, Updated: {animals_updated}, "
-                f"Quality: {quality_score:.2f}, Duration: {duration:.1f}s"
-            )
+                f"Quality: {quality_score:.2f}, Duration: {duration:.1f}s")
             return True
         except Exception as e:
             self.logger.error(f"Error during scrape: {e}")
@@ -696,7 +701,8 @@ class BaseScraper(ABC):
         try:
             cursor = self.conn.cursor()
 
-            # Get current animal data to check for changes (including standardized fields and properties)
+            # Get current animal data to check for changes (including standardized
+            # fields and properties)
             cursor.execute(
                 """
                 SELECT name, breed, age_text, sex, primary_image_url, status,
@@ -726,7 +732,8 @@ class BaseScraper(ABC):
                 current_properties,
             ) = current_data
 
-            # Apply standardization to new data to compare with current standardized values
+            # Apply standardization to new data to compare with current standardized
+            # values
             new_standardized_breed, new_breed_group, new_size_estimate = (
                 standardize_breed(animal_data.get("breed", ""))
             )
@@ -742,8 +749,12 @@ class BaseScraper(ABC):
             # Check for changes in both raw AND standardized fields
             # Compare properties (description) as JSON to detect content changes
             current_properties_json = current_properties if current_properties else "{}"
-            new_properties_json = json.dumps(animal_data.get("properties")) if animal_data.get("properties") else "{}"
-            
+            new_properties_json = (
+                json.dumps(animal_data.get("properties"))
+                if animal_data.get("properties")
+                else "{}"
+            )
+
             changes_detected = (
                 animal_data.get("name") != current_name
                 or animal_data.get("breed") != current_breed
@@ -753,7 +764,8 @@ class BaseScraper(ABC):
                 or animal_data.get("status") != current_status
                 # Check properties field for description changes
                 or new_properties_json != current_properties_json
-                # Check standardized fields for changes due to improved standardization logic
+                # Check standardized fields for changes due to improved standardization
+                # logic
                 or new_standardized_breed != current_standardized_breed
                 or new_age_min_months != current_age_min_months
                 or new_age_max_months != current_age_max_months
@@ -1089,16 +1101,14 @@ class BaseScraper(ABC):
         if animals_found == 0:
             self.logger.error(
                 f"Catastrophic failure detected: Zero animals found for organization_id {self.organization_id}. "
-                f"This indicates complete scraper failure or website unavailability."
-            )
+                f"This indicates complete scraper failure or website unavailability.")
             return True
 
         # Check against absolute minimum threshold
         if animals_found < absolute_minimum:
             self.logger.error(
                 f"Catastrophic failure detected: Only {animals_found} animals found for organization_id {self.organization_id} "
-                f"(below absolute minimum of {absolute_minimum}). This likely indicates scraper malfunction."
-            )
+                f"(below absolute minimum of {absolute_minimum}). This likely indicates scraper malfunction.")
             return True
 
         return False
@@ -1162,14 +1172,12 @@ class BaseScraper(ABC):
                 scrape_count = result[1] if (result and len(result) > 1) else 0
                 self.logger.info(
                     f"Insufficient historical data for organization_id {self.organization_id} "
-                    f"({scrape_count} scrapes). Using absolute minimum threshold."
-                )
+                    f"({scrape_count} scrapes). Using absolute minimum threshold.")
 
                 if animals_found < absolute_minimum:
                     self.logger.warning(
                         f"Potential failure detected: {animals_found} animals found "
-                        f"(below absolute minimum of {absolute_minimum}) for new organization"
-                    )
+                        f"(below absolute minimum of {absolute_minimum}) for new organization")
                     return True
                 return False
 
@@ -1185,8 +1193,7 @@ class BaseScraper(ABC):
                 self.logger.warning(
                     f"Potential partial failure detected: found {animals_found} animals "
                     f"(historical avg: {historical_average:.1f}, percentage threshold: {percentage_threshold:.1f}, "
-                    f"absolute minimum: {absolute_minimum}, effective threshold: {effective_threshold:.1f})"
-                )
+                    f"absolute minimum: {absolute_minimum}, effective threshold: {effective_threshold:.1f})")
 
             return is_partial_failure
 

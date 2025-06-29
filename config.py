@@ -98,8 +98,7 @@ def parse_cors_origins() -> List[str]:
             # Production requires explicit configuration
             raise ValueError(
                 "ALLOWED_ORIGINS must be set in production environment. "
-                "Example: ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com"
-            )
+                "Example: ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com")
 
     # Parse comma-separated origins
     origins = [origin.strip() for origin in origins_env.split(",") if origin.strip()]

@@ -266,7 +266,8 @@ class OrganizationLogoUploader:
             return True
 
         try:
-            # For now, just log that we would clean up - the service doesn't have a delete method
+            # For now, just log that we would clean up - the service doesn't have a
+            # delete method
             logger.info(
                 f"Logo cleanup requested for organization {org_id} (cleanup not implemented)"
             )

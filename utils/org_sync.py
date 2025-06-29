@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -179,9 +179,7 @@ class OrganizationSyncManager:
 
         return social_data  # Return dict, not JSON string
 
-    def _sync_organization_logo(
-        self, org_id: int, config: OrganizationConfig
-    ) -> Optional[str]:
+    def _sync_organization_logo(self, org_id: int, config: OrganizationConfig) -> Optional[str]:
         """Upload organization logo to Cloudinary and return the URL.
 
         Args:
@@ -225,9 +223,7 @@ class OrganizationSyncManager:
                 return None
 
         except Exception as e:
-            self.logger.warning(
-                f"Logo upload failed for organization {org_id}: {str(e)}"
-            )
+            self.logger.warning(f"Logo upload failed for organization {org_id}: {str(e)}")
             return None
 
     def _sync_service_regions(self, org_id: int, config: OrganizationConfig) -> None:
@@ -243,9 +239,7 @@ class OrganizationSyncManager:
         cursor = get_db_cursor()
         try:
             # First, delete existing service regions for this organization
-            cursor.execute(
-                "DELETE FROM service_regions WHERE organization_id = %s", (org_id,)
-            )
+            cursor.execute("DELETE FROM service_regions WHERE organization_id = %s", (org_id,))
 
             # Collect all countries: service_regions + ships_to
             all_countries = set()
@@ -288,15 +282,11 @@ class OrganizationSyncManager:
                 regions_added += 1
 
             cursor.connection.commit()
-            self.logger.info(
-                f"Synced {regions_added} service regions for organization {org_id}"
-            )
+            self.logger.info(f"Synced {regions_added} service regions for organization {org_id}")
 
         except Exception as e:
             cursor.connection.rollback()
-            self.logger.error(
-                f"Failed to sync service regions for organization {org_id}: {e}"
-            )
+            self.logger.error(f"Failed to sync service regions for organization {org_id}: {e}")
             raise
         finally:
             cursor.close()
@@ -329,9 +319,7 @@ class OrganizationSyncManager:
                     config.name,
                     str(config.metadata.website_url),
                     config.metadata.description,
-                    psycopg2.extras.Json(
-                        social_media
-                    ),  # This will properly encode the dict
+                    psycopg2.extras.Json(social_media),  # This will properly encode the dict
                     config.id,  # config_id
                     datetime.now(),  # last_config_sync
                     datetime.now(),  # created_at
@@ -341,9 +329,7 @@ class OrganizationSyncManager:
                     config.metadata.logo_url,  # logo_url
                     config.metadata.location.country,  # country
                     config.metadata.location.city,  # city
-                    psycopg2.extras.Json(
-                        config.metadata.service_regions
-                    ),  # service_regions
+                    psycopg2.extras.Json(config.metadata.service_regions),  # service_regions
                 ),
             )
 
@@ -351,7 +337,7 @@ class OrganizationSyncManager:
             if result is None:
                 raise OrganizationSyncError("INSERT did not return an ID")
             # Use dict key since we're using RealDictCursor
-            org_id = result["id"]
+            org_id = int(result["id"])
             cursor.connection.commit()
             self.logger.info(
                 f"Created organization '{config.name}' with ID {org_id} from config '{config.id}'"
@@ -364,9 +350,7 @@ class OrganizationSyncManager:
         try:
             self._sync_service_regions(org_id, config)
         except Exception as e:
-            self.logger.error(
-                f"Failed to sync service regions for new organization {org_id}: {e}"
-            )
+            self.logger.error(f"Failed to sync service regions for new organization {org_id}: {e}")
             # Don't fail the whole operation if service regions fail
 
         # Upload logo to Cloudinary (separate transaction)
@@ -410,9 +394,7 @@ class OrganizationSyncManager:
                     config.name,
                     str(config.metadata.website_url),
                     config.metadata.description,
-                    psycopg2.extras.Json(
-                        social_media
-                    ),  # This will properly encode the dict
+                    psycopg2.extras.Json(social_media),  # This will properly encode the dict
                     datetime.now(),  # last_config_sync
                     datetime.now(),  # updated_at
                     psycopg2.extras.Json(config.metadata.ships_to),  # ships_to
@@ -420,9 +402,7 @@ class OrganizationSyncManager:
                     config.metadata.logo_url,  # logo_url
                     config.metadata.location.country,  # country
                     config.metadata.location.city,  # city
-                    psycopg2.extras.Json(
-                        config.metadata.service_regions
-                    ),  # service_regions
+                    psycopg2.extras.Json(config.metadata.service_regions),  # service_regions
                     org_id,
                 ),
             )
@@ -439,9 +419,7 @@ class OrganizationSyncManager:
         try:
             self._sync_service_regions(org_id, config)
         except Exception as e:
-            self.logger.error(
-                f"Failed to sync service regions for organization {org_id}: {e}"
-            )
+            self.logger.error(f"Failed to sync service regions for organization {org_id}: {e}")
             # Don't fail the whole operation if service regions fail
 
         # Upload logo to Cloudinary (separate transaction)
@@ -471,16 +449,14 @@ class OrganizationSyncManager:
                 self.update_organization(org_id, config)
                 return org_id, False
             else:
-                self.logger.debug(
-                    f"Organization '{config.name}' ({config.id}) is up to date"
-                )
+                self.logger.debug(f"Organization '{config.name}' ({config.id}) is up to date")
                 return org_id, False
         else:
             # Organization doesn't exist, create it
             org_id = self.create_organization(config)
             return org_id, True
 
-    def sync_all_organizations(self) -> Dict[str, any]:
+    def sync_all_organizations(self) -> Dict[str, Any]:
         """Sync all organizations from configs to database.
 
         Returns:
@@ -570,7 +546,7 @@ class OrganizationSyncManager:
 
         return mapping
 
-    def get_sync_status(self) -> Dict[str, any]:
+    def get_sync_status(self) -> Dict[str, Any]:
         """Get current sync status between configs and database.
 
         Returns:
@@ -611,7 +587,7 @@ class OrganizationSyncManager:
             self.logger.error(f"Failed to get sync status: {e}")
             return {"error": str(e)}
 
-    def _get_service_regions_status(self) -> Dict[str, any]:
+    def _get_service_regions_status(self) -> Dict[str, Any]:
         """Get service regions sync status."""
         cursor = get_db_cursor()
         try:
@@ -651,7 +627,7 @@ class OrganizationSyncManager:
 
 if __name__ == "__main__":
     # Simple script to run organization sync
-    sync = OrganizationSync()
+    sync = OrganizationSyncManager()
     result = sync.sync_all_organizations()
     print("Organization sync completed:")
     print(f"  Created: {result.get('created', 0)}")

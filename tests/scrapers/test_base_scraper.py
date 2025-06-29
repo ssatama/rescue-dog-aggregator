@@ -104,11 +104,13 @@ class TestBaseScraper:
 
         # Configure cursor mock to return existing animal with primary image data
         # The primary image query will return the existing URLs
-        mock_cursor.fetchone.return_value = ("http://existing.com/image.jpg", "http://original.com/image.jpg")
+        mock_cursor.fetchone.return_value = (
+            "http://existing.com/image.jpg",
+            "http://original.com/image.jpg")
 
         # Test data - use same URL as existing to avoid upload
         animal_data = {
-            "name": "Test Dog", 
+            "name": "Test Dog",
             "breed": "Labrador Retriever",
             "age_text": "2 years",
             "sex": "Male",
@@ -192,8 +194,13 @@ class TestBaseScraper:
     @patch.object(BaseScraper, "complete_scrape_log")
     @patch.object(BaseScraper, "detect_partial_failure")
     def test_run_success(
-        self, mock_failure_detection, mock_complete_log, mock_save, mock_start_log, mock_connect, mock_scraper
-    ):
+            self,
+            mock_failure_detection,
+            mock_complete_log,
+            mock_save,
+            mock_start_log,
+            mock_connect,
+            mock_scraper):
         """Test successful run of the scraper."""
         # Configure mocks
         mock_connect.return_value = True
@@ -246,7 +253,8 @@ class TestBaseScraper:
         mock_cursor = Mock()
         mock_scraper.conn.cursor.return_value = mock_cursor
 
-        # Mock the fetchall result for getting existing images (first call) and fetchone for animal name (second call)
+        # Mock the fetchall result for getting existing images (first call) and
+        # fetchone for animal name (second call)
         mock_cursor.fetchall.return_value = []  # No existing images
         mock_cursor.fetchone.return_value = ["Test Dog"]  # Return animal name
 
@@ -260,14 +268,16 @@ class TestBaseScraper:
 
         # Mock cloudinary service
         mock_scraper.cloudinary_service = Mock()
-        mock_scraper.cloudinary_service.upload_image_from_url.return_value = ("cloudinary_url", True)
+        mock_scraper.cloudinary_service.upload_image_from_url.return_value = (
+            "cloudinary_url", True)
         mock_scraper.organization_name = "Test Org"
 
         # Execute method
         result = mock_scraper.save_animal_images(animal_id, image_urls)
 
         # Verify cursor was called correctly
-        # Should be: 1 SELECT (existing images) + 1 SELECT (animal name) + 3 INSERTs = 5 total
+        # Should be: 1 SELECT (existing images) + 1 SELECT (animal name) + 3
+        # INSERTs = 5 total
         assert mock_cursor.execute.call_count >= 4  # At least selects + inserts
 
         # Verify commit was called
@@ -407,7 +417,9 @@ class TestBaseCRUDMethods:
         mock_cursor = Mock()
         concrete_scraper.conn.cursor.return_value = mock_cursor
 
-        # Mock existing animal data (name, breed, age_text, sex, primary_image_url, status, standardized_breed, age_min_months, age_max_months, standardized_size, properties)
+        # Mock existing animal data (name, breed, age_text, sex,
+        # primary_image_url, status, standardized_breed, age_min_months,
+        # age_max_months, standardized_size, properties)
         mock_cursor.fetchone.return_value = (
             "Old Name", "Old Breed", "2 years", "Female", "old-url.jpg", "available",
             "Old Breed", 24, 36, "Medium", "{}"  # standardized fields + properties
@@ -448,10 +460,13 @@ class TestBaseCRUDMethods:
         mock_cursor = Mock()
         concrete_scraper.conn.cursor.return_value = mock_cursor
 
-        # Mock existing animal data (identical to update data) (name, breed, age_text, sex, primary_image_url, status, standardized_breed, age_min_months, age_max_months, standardized_size, properties)
+        # Mock existing animal data (identical to update data) (name, breed,
+        # age_text, sex, primary_image_url, status, standardized_breed,
+        # age_min_months, age_max_months, standardized_size, properties)
         mock_cursor.fetchone.return_value = (
             "Same Name", "Same Breed", "2 years", "Female", "same-url.jpg", "available",
-            "Same Breed", 24, 36, None, "{}"  # Match what standardize_breed("Same Breed") actually returns + properties
+            # Match what standardize_breed("Same Breed") actually returns + properties
+            "Same Breed", 24, 36, None, "{}"
         )
 
         # Test data (no changes)

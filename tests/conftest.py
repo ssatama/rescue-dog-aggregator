@@ -92,7 +92,7 @@ def manage_test_data():
         # Insert comprehensive test animals for all tests
         animals_sql = """
         INSERT INTO animals (id, name, animal_type, sex, status, organization_id, adoption_url, properties, primary_image_url, created_at, updated_at, availability_confidence, breed, breed_group, size, age_text, age_min_months, age_max_months)
-        VALUES 
+        VALUES
             (9001, 'Test Male Dog', 'dog', 'Male', 'available', 901, 'http://example.com/9001', '{}', 'http://example.com/male.jpg', NOW(), NOW(), 'high', 'Golden Retriever', 'Sporting', 'large', '2 years', 24, 24),
             (9002, 'Mixed Breed Dog', 'dog', 'Female', 'available', 901, 'http://example.com/9002', '{}', 'http://example.com/female.jpg', NOW(), NOW(), 'high', 'Mixed Breed', 'Mixed', 'medium', '1 year', 12, 12),
             (9003, 'German Shepherd', 'dog', 'Male', 'available', 901, 'http://example.com/9003', '{}', 'http://example.com/shepherd.jpg', NOW(), NOW(), 'high', 'German Shepherd', 'Herding', 'large', '3 years', 36, 36),
@@ -113,7 +113,9 @@ def manage_test_data():
             age_min_months = EXCLUDED.age_min_months, age_max_months = EXCLUDED.age_max_months;
         """
         cursor.execute(animals_sql)
-        print("[conftest.manage_test_data] Comprehensive test animals inserted (12 dogs with various breeds).")
+        print(
+            "[conftest.manage_test_data] Comprehensive test animals inserted (12 dogs with various breeds)."
+        )
 
         # --- IMPORTANT: Commit the setup data using the connection from the override ---
         conn.commit()

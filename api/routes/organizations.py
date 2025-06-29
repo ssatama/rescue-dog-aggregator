@@ -23,20 +23,20 @@ def get_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
     try:
         cursor.execute(
             """
-            SELECT 
+            SELECT
                 o.id, o.name, o.website_url, o.description, o.country, o.city,
                 o.logo_url, o.social_media, o.active, o.created_at, o.updated_at,
                 o.ships_to, o.established_year,
                 -- Service regions as array
                 COALESCE(
-                    ARRAY_AGG(DISTINCT sr.country) FILTER (WHERE sr.country IS NOT NULL), 
+                    ARRAY_AGG(DISTINCT sr.country) FILTER (WHERE sr.country IS NOT NULL),
                     ARRAY[]::text[]
                 ) as service_regions,
                 -- Dog statistics
                 COUNT(DISTINCT a.id) as total_dogs,
                 COUNT(DISTINCT a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '7 days') as new_this_week
             FROM organizations o
-            LEFT JOIN service_regions sr ON o.id = sr.organization_id  
+            LEFT JOIN service_regions sr ON o.id = sr.organization_id
             LEFT JOIN animals a ON o.id = a.organization_id AND a.status = 'available'
             WHERE o.active = true
             GROUP BY o.id, o.name, o.website_url, o.description, o.country, o.city,
@@ -78,9 +78,7 @@ def get_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
 
 
 @router.get("/{organization_id}", response_model=Organization)
-def get_organization(
-    organization_id: int, cursor: RealDictCursor = Depends(get_db_cursor)
-):
+def get_organization(organization_id: int, cursor: RealDictCursor = Depends(get_db_cursor)):
     """
     Get a specific organization by ID.
 
@@ -89,20 +87,20 @@ def get_organization(
     try:
         cursor.execute(
             """
-            SELECT 
+            SELECT
                 o.id, o.name, o.website_url, o.description, o.country, o.city,
                 o.logo_url, o.social_media, o.active, o.created_at, o.updated_at,
                 o.ships_to, o.established_year,
                 -- Service regions as array
                 COALESCE(
-                    ARRAY_AGG(DISTINCT sr.country) FILTER (WHERE sr.country IS NOT NULL), 
+                    ARRAY_AGG(DISTINCT sr.country) FILTER (WHERE sr.country IS NOT NULL),
                     ARRAY[]::text[]
                 ) as service_regions,
                 -- Dog statistics
                 COUNT(DISTINCT a.id) as total_dogs,
                 COUNT(DISTINCT a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '7 days') as new_this_week
             FROM organizations o
-            LEFT JOIN service_regions sr ON o.id = sr.organization_id  
+            LEFT JOIN service_regions sr ON o.id = sr.organization_id
             LEFT JOIN animals a ON o.id = a.organization_id AND a.status = 'available'
             WHERE o.id = %s AND o.active = true
             GROUP BY o.id, o.name, o.website_url, o.description, o.country, o.city,
@@ -119,9 +117,7 @@ def get_organization(
 
         # Parse JSON fields and prepare data (same as list endpoint)
         # Parse social_media JSON strings if needed
-        if organization.get("social_media") and isinstance(
-            organization["social_media"], str
-        ):
+        if organization.get("social_media") and isinstance(organization["social_media"], str):
             try:
                 organization["social_media"] = json.loads(organization["social_media"])
             except json.JSONDecodeError:
@@ -212,7 +208,7 @@ def get_organization_statistics(
     try:
         cursor.execute(
             """
-            SELECT 
+            SELECT
                 COUNT(a.id) as total_dogs,
                 COUNT(a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '7 days') as new_this_week,
                 COUNT(a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '30 days') as new_this_month

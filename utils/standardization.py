@@ -367,7 +367,8 @@ def apply_standardization(animal_data: Dict) -> Dict:
         result["standardized_breed"] = std_breed
         result["breed_group"] = breed_group
 
-        # Set size estimate if we don't already have a standardized size and we got an estimate
+        # Set size estimate if we don't already have a standardized size and we
+        # got an estimate
         if size_estimate and (
             "standardized_size" not in result or not result["standardized_size"]
         ):

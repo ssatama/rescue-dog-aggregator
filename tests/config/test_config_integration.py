@@ -199,8 +199,7 @@ class TestConfigIntegration:
                         mock_cursor = Mock()
                         mock_cursor.fetchone.return_value = [1]  # Mock org ID
                         mock_conn.return_value.__enter__.return_value.cursor.return_value.__enter__.return_value = (
-                            mock_cursor
-                        )
+                            mock_cursor)
 
                         try:
                             # This tests the actual instantiation path

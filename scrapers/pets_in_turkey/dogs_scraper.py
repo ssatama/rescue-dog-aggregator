@@ -14,14 +14,12 @@ from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
 from scrapers.base_scraper import BaseScraper
+from utils.standardization import parse_age_text
 
 # Add the project root directory to Python path
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # Import standardization utilities
-from utils.standardization import parse_age_text
 
 # Import the base scraper
 
@@ -35,9 +33,7 @@ class PetsInTurkeyScraper(BaseScraper):
     the attribute-value mapping.
     """
 
-    def __init__(
-        self, organization_id=None, organization_name="Pets in Turkey", config_id=None
-    ):
+    def __init__(self, organization_id=None, organization_name="Pets in Turkey", config_id=None):
         """Initialize the Pets in Turkey scraper.
 
         Args:
@@ -168,31 +164,20 @@ class PetsInTurkeyScraper(BaseScraper):
                             # Add image and other metadata
                             dog_data["primary_image_url"] = image_url
                             dog_data["adoption_url"] = (
-                                self.base_url
-                                + "#"
-                                + dog_data["name"].lower().replace(" ", "-")
+                                self.base_url + "#" + dog_data["name"].lower().replace(" ", "-")
                             )
                             dog_data["status"] = "available"
-                            # Create more stable external ID using name + breed + age for uniqueness
+                            # Create more stable external ID using name + breed + age
+                            # for uniqueness
                             import hashlib
 
                             name_slug = dog_data["name"].lower().replace(" ", "-")
-                            breed_slug = (
-                                dog_data.get("breed", "unknown")
-                                .lower()
-                                .replace(" ", "-")
-                            )
-                            age_slug = (
-                                dog_data.get("age_text", "unknown")
-                                .lower()
-                                .replace(" ", "-")
-                            )
+                            breed_slug = dog_data.get("breed", "unknown").lower().replace(" ", "-")
+                            age_slug = dog_data.get("age_text", "unknown").lower().replace(" ", "-")
 
                             # Create a hash of combined data for uniqueness
                             combined_data = f"{dog_data['name']}-{dog_data.get('breed', '')}-{dog_data.get('age_text', '')}-{dog_data.get('sex', '')}"
-                            hash_suffix = hashlib.md5(
-                                combined_data.encode()
-                            ).hexdigest()[:6]
+                            hash_suffix = hashlib.md5(combined_data.encode()).hexdigest()[:6]
 
                             dog_data["external_id"] = f"pit-{name_slug}-{hash_suffix}"
 
@@ -203,9 +188,7 @@ class PetsInTurkeyScraper(BaseScraper):
 
                             # Add to our collection
                             dogs_data.append(dog_data)
-                            self.logger.info(
-                                f"Extracted data for dog: {dog_data['name']}"
-                            )
+                            self.logger.info(f"Extracted data for dog: {dog_data['name']}")
 
                 except Exception as e:
                     self.logger.error(f"Error processing breed element {idx}: {e}")
@@ -225,9 +208,7 @@ class PetsInTurkeyScraper(BaseScraper):
                     self.driver.quit()
                     self.logger.info("Selenium WebDriver closed successfully")
                 except Exception as cleanup_error:
-                    self.logger.warning(
-                        f"Error during WebDriver cleanup: {cleanup_error}"
-                    )
+                    self.logger.warning(f"Error during WebDriver cleanup: {cleanup_error}")
                 finally:
                     self.driver = None  # Ensure driver reference is cleared
 
@@ -316,9 +297,7 @@ class PetsInTurkeyScraper(BaseScraper):
 
             # Find where values start (after all "Adopt Me" lines)
             values_start_idx = adopt_idx
-            while (
-                values_start_idx < len(lines) and lines[values_start_idx] == "Adopt Me"
-            ):
+            while values_start_idx < len(lines) and lines[values_start_idx] == "Adopt Me":
                 values_start_idx += 1
 
             # ==== STEP 4: Create maps of attributes and their positions ====
@@ -389,9 +368,9 @@ class PetsInTurkeyScraper(BaseScraper):
                     dog_data["sex"] = values[height_idx + 2]
 
                 # Neutered/Spayed is after sex
-                if (
-                    "Neutered" in attr_map or "Spayed" in attr_map
-                ) and height_idx + 3 < len(values):
+                if ("Neutered" in attr_map or "Spayed" in attr_map) and height_idx + 3 < len(
+                    values
+                ):
                     dog_data["properties"]["neutered_spayed"] = values[height_idx + 3]
             else:
                 # No separate height line, use normal mapping
@@ -416,20 +395,14 @@ class PetsInTurkeyScraper(BaseScraper):
                     dog_data["sex"] = values[attr_map["Sex"]]
 
                 if "Neutered" in attr_map and attr_map["Neutered"] < len(values):
-                    dog_data["properties"]["neutered_spayed"] = values[
-                        attr_map["Neutered"]
-                    ]
+                    dog_data["properties"]["neutered_spayed"] = values[attr_map["Neutered"]]
                 elif "Spayed" in attr_map and attr_map["Spayed"] < len(values):
-                    dog_data["properties"]["neutered_spayed"] = values[
-                        attr_map["Spayed"]
-                    ]
+                    dog_data["properties"]["neutered_spayed"] = values[attr_map["Spayed"]]
 
             # ==== STEP 6: Detect and correct common patterns of misalignment ====
             # If sex value looks like a measurement and age value looks like a
             # sex, swap them
-            if dog_data["sex"] and re.search(
-                r"\d+\s*kg|\d+\s*cm", dog_data["sex"], re.IGNORECASE
-            ):
+            if dog_data["sex"] and re.search(r"\d+\s*kg|\d+\s*cm", dog_data["sex"], re.IGNORECASE):
                 if dog_data["age_text"] and re.search(
                     r"male|female", dog_data["age_text"], re.IGNORECASE
                 ):
@@ -439,9 +412,7 @@ class PetsInTurkeyScraper(BaseScraper):
                     dog_data["age_text"] = temp
 
             # If sex is not a sex-related value, try to correct
-            if dog_data["sex"] and not re.search(
-                r"male|female", dog_data["sex"], re.IGNORECASE
-            ):
+            if dog_data["sex"] and not re.search(r"male|female", dog_data["sex"], re.IGNORECASE):
                 # Look for Male/Female in other values including
                 # neutered_spayed
                 if "neutered_spayed" in dog_data["properties"] and re.search(
@@ -452,9 +423,7 @@ class PetsInTurkeyScraper(BaseScraper):
                     dog_data["sex"] = dog_data["properties"]["neutered_spayed"]
                     # Use a later value for neutered_spayed if available
                     if len(values) > attr_map["Sex"] + 2:
-                        dog_data["properties"]["neutered_spayed"] = values[
-                            attr_map["Sex"] + 2
-                        ]
+                        dog_data["properties"]["neutered_spayed"] = values[attr_map["Sex"] + 2]
                     else:
                         # Default
                         dog_data["properties"]["neutered_spayed"] = "Yes"

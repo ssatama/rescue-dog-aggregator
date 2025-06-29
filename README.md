@@ -82,7 +82,7 @@ pip install -r requirements.txt
 python main.py --setup
 uvicorn api.main:app --reload
 
-# 2. Setup frontend  
+# 2. Setup frontend
 cd frontend && npm install && npm run dev
 ```
 
@@ -110,7 +110,7 @@ cd frontend && npm test
 **Quick commands:**
 ```bash
 # Add new organization
-python management/config_commands.py sync      # Sync configs to database
+x      # Sync configs to database
 python management/config_commands.py run-all  # Run all scrapers
 ```
 
