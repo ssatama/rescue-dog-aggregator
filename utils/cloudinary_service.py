@@ -110,9 +110,7 @@ class CloudinaryService:
             # Create a unique public_id using URL hash to avoid duplicates
             url_hash = hashlib.md5(image_url.encode()).hexdigest()[:8]
             safe_animal_name = animal_name.lower().replace(" ", "_").replace("-", "_")
-            safe_org_name = (
-                organization_name.lower().replace(" ", "_").replace("-", "_")
-            )
+            safe_org_name = organization_name.lower().replace(" ", "_").replace("-", "_")
 
             public_id = f"rescue_dogs/{safe_org_name}/{safe_animal_name}_{url_hash}"
 
@@ -129,17 +127,13 @@ class CloudinaryService:
                 logger.warning(f"Could not check existing image: {e}")
 
             # Download the image first with timeout and headers
-            headers = {
-                "User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"
-            }
+            headers = {"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"}
 
             response = requests.get(image_url, timeout=30, headers=headers)
             response.raise_for_status()
 
             if response.status_code != 200:
-                logger.warning(
-                    f"Failed to download image {image_url}: HTTP {response.status_code}"
-                )
+                logger.warning(f"Failed to download image {image_url}: HTTP {response.status_code}")
                 return image_url, False  # Return original URL as fallback
 
             # Check content type
@@ -148,9 +142,7 @@ class CloudinaryService:
                 img_type in content_type
                 for img_type in ["image/jpeg", "image/jpg", "image/png", "image/webp"]
             ):
-                logger.warning(
-                    f"Invalid content type for image {image_url}: {content_type}"
-                )
+                logger.warning(f"Invalid content type for image {image_url}: {content_type}")
                 return image_url, False  # Return original URL as fallback
 
             # Upload to Cloudinary with minimal parameters
@@ -201,16 +193,14 @@ class CloudinaryService:
             parts = cloudinary_url.split("/")
             if "upload" in parts:
                 upload_index = parts.index("upload")
-                public_id = "/".join(parts[upload_index + 1:])
+                public_id = "/".join(parts[upload_index + 1 :])
                 # Remove file extension
                 if "." in public_id:
                     public_id = public_id.rsplit(".", 1)[0]
 
                 # Apply transformations
                 if transformation_options:
-                    return cloudinary.CloudinaryImage(public_id).build_url(
-                        **transformation_options
-                    )
+                    return cloudinary.CloudinaryImage(public_id).build_url(**transformation_options)
                 else:
                     return cloudinary_url
 

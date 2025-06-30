@@ -91,7 +91,7 @@
             },
             "instagram": {
               "type": "string",
-              "format": "uri", 
+              "format": "uri",
               "description": "Instagram profile URL"
             },
             "twitter": {
@@ -131,7 +131,7 @@
               "description": "State, province, or region"
             },
             "city": {
-              "type": "string", 
+              "type": "string",
               "maxLength": 100,
               "description": "City name"
             }
@@ -193,6 +193,13 @@
       "additionalProperties": false
     }
   },
-  "required": ["schema_version", "id", "name", "enabled", "scraper", "metadata"],
+  "required": [
+    "schema_version",
+    "id",
+    "name",
+    "enabled",
+    "scraper",
+    "metadata"
+  ],
   "additionalProperties": false
 }

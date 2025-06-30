@@ -38,9 +38,7 @@ def analyze_organization_duplicates(conn, org_pattern, org_type):
     cursor = conn.cursor()
 
     # Get organization ID
-    cursor.execute(
-        "SELECT id, name FROM organizations WHERE name ILIKE %s", (f"%{org_pattern}%",)
-    )
+    cursor.execute("SELECT id, name FROM organizations WHERE name ILIKE %s", (f"%{org_pattern}%",))
     org_result = cursor.fetchone()
     if not org_result:
         print(f"❌ Could not find {org_type} organization")
@@ -116,9 +114,7 @@ def analyze_organization_duplicates(conn, org_pattern, org_type):
         if org_type == "PIT":
             is_old = len(external_id.split("-")) == 2  # pit-name vs pit-name-hash
         else:  # REAN
-            is_old = (
-                len(external_id.split("-")) == 3
-            )  # rean-type-name vs rean-type-name-hash
+            is_old = len(external_id.split("-")) == 3  # rean-type-name vs rean-type-name-hash
         pattern = "OLD" if is_old else "NEW"
         print(f"  {name}: {external_id} ({pattern}) - {created_at}")
 
@@ -130,9 +126,7 @@ def fix_organization_duplicates(conn, org_id, org_type, dry_run=True):
     """Fix duplicates by removing old pattern entries."""
     cursor = conn.cursor()
 
-    print(
-        f"\n{'🔍 DRY RUN' if dry_run else '🔧 EXECUTING'} {org_type} duplicate fix..."
-    )
+    print(f"\n{'🔍 DRY RUN' if dry_run else '🔧 EXECUTING'} {org_type} duplicate fix...")
 
     if org_type == "PIT":
         # PIT old pattern: pit-name (no hash)
@@ -163,9 +157,7 @@ def fix_organization_duplicates(conn, org_id, org_type, dry_run=True):
 
     # Show first few examples
     print(f"\n🔍 Examples of {org_type} animals to be removed:")
-    for i, (animal_id, external_id, name, created_at) in enumerate(
-        animals_to_delete[:5]
-    ):
+    for i, (animal_id, external_id, name, created_at) in enumerate(animals_to_delete[:5]):
         print(
             f"  {i+1}. ID: {animal_id}, External ID: {external_id}, Name: {name}, Created: {created_at}"
         )
@@ -174,9 +166,7 @@ def fix_organization_duplicates(conn, org_id, org_type, dry_run=True):
         print(f"  ... and {len(animals_to_delete) - 5} more")
 
     if not dry_run:
-        print(
-            f"\n⚠️  About to delete these {org_type} animals and their associated data..."
-        )
+        print(f"\n⚠️  About to delete these {org_type} animals and their associated data...")
         confirm = input("Are you sure you want to proceed? (yes/no): ")
         if confirm.lower() != "yes":
             print("❌ Operation cancelled")
@@ -248,9 +238,7 @@ def main():
             print("\n✅ No duplicates found - database is clean!")
             return
 
-        print(
-            f"\n📊 Summary: {total_fixes_needed} total duplicates found across organizations"
-        )
+        print(f"\n📊 Summary: {total_fixes_needed} total duplicates found across organizations")
 
         # First run in dry-run mode for all organizations
         for org_id, org_type, old_count in org_results:
@@ -260,9 +248,7 @@ def main():
 
         # Ask user if they want to proceed
         print("\n" + "=" * 50)
-        proceed = input(
-            "Do you want to execute the fix for ALL organizations? (yes/no): "
-        )
+        proceed = input("Do you want to execute the fix for ALL organizations? (yes/no): ")
 
         if proceed.lower() == "yes":
             # Execute fixes for all organizations

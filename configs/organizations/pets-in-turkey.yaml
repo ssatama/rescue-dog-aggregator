@@ -6,20 +6,20 @@ scraper:
   class_name: "PetsInTurkeyScraper"
   module: "scrapers.pets_in_turkey.dogs_scraper"
   config:
-    rate_limit_delay: 3.0  # Increased for API calls
+    rate_limit_delay: 3.0 # Increased for API calls
     max_retries: 3
-    timeout: 60  # Increased for AI processing
+    timeout: 60 # Increased for AI processing
 metadata:
   website_url: "https://www.petsinturkey.org/"
   description: "We are a group of animal and nature loving people living in Switzerland with close ties to Turkey. Our mission is to help all breeds of cats and dogs in Turkey that are regularly being abandoned in large numbers."
   location:
-    country: "TR"  # Organization's base country
-    city: "Izmir"  # Organization's base city
-  service_regions: ["TR"] 
-  ships_to: ["DE", "NL", "BE", "FR", "UK", "AT", "CH", "SE","FI", "DK", "NO"]  # Countries they ship to
+    country: "TR" # Organization's base country
+    city: "Izmir" # Organization's base city
+  service_regions: ["TR"]
+  ships_to: ["DE", "NL", "BE", "FR", "UK", "AT", "CH", "SE", "FI", "DK", "NO"] # Countries they ship to
   social_media:
     website: "https://www.petsinturkey.org/"
     facebook: "https://www.facebook.com/petsinturkey/"
     instagram: "petsinturkey"
   established_year: 2018
-  logo_url: "https://res.cloudinary.com/dy8y3boog/image/upload/v1750180713/organizations/logos/organizations/logos/pets-in-turkey.jpg" 
+  logo_url: "https://res.cloudinary.com/dy8y3boog/image/upload/v1750180713/organizations/logos/organizations/logos/pets-in-turkey.jpg"

@@ -79,9 +79,7 @@ def clear_animals():
         print(f"\n🗄️ Database: {db_name}")
         print("This action CANNOT be undone!")
 
-        confirm1 = input(
-            "\nType 'DELETE ALL' to confirm (or anything else to cancel): "
-        )
+        confirm1 = input("\nType 'DELETE ALL' to confirm (or anything else to cancel): ")
         if confirm1 != "DELETE ALL":
             print("❌ Operation cancelled - confirmation text did not match")
             return

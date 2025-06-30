@@ -49,9 +49,7 @@ logger.info(f"  Allowed methods: {CORS_ALLOW_METHODS}")
 # Include routers
 app.include_router(animals.router, prefix="/api/animals", tags=["animals"])
 
-app.include_router(
-    organizations.router, prefix="/api/organizations", tags=["organizations"]
-)
+app.include_router(organizations.router, prefix="/api/organizations", tags=["organizations"])
 
 # Include monitoring routes (no prefix for health check compatibility)
 app.include_router(monitoring.router, tags=["monitoring"])

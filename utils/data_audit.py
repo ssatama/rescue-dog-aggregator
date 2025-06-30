@@ -175,13 +175,9 @@ def analyze_properties(properties_data):
     if height_values:
         export_to_csv(height_values, "height_values.csv", ["animal_id", "height"])
     if neutered_values:
-        export_to_csv(
-            neutered_values, "neutered_values.csv", ["animal_id", "neutered_spayed"]
-        )
+        export_to_csv(neutered_values, "neutered_values.csv", ["animal_id", "neutered_spayed"])
     if other_relevant:
-        export_to_csv(
-            other_relevant, "other_properties.csv", ["animal_id", "property", "value"]
-        )
+        export_to_csv(other_relevant, "other_properties.csv", ["animal_id", "property", "value"])
 
 
 def create_standardization_templates(breed_data, size_data, age_data):
@@ -194,9 +190,7 @@ def create_standardization_templates(breed_data, size_data, age_data):
         encoding="utf-8",
     ) as f:
         writer = csv.writer(f)
-        writer.writerow(
-            ["original_breed", "count", "standardized_breed", "breed_group", "notes"]
-        )
+        writer.writerow(["original_breed", "count", "standardized_breed", "breed_group", "notes"])
 
         for breed, count in breed_data:
             writer.writerow([breed, count, "", "", ""])
@@ -249,9 +243,7 @@ def create_standardization_templates(breed_data, size_data, age_data):
             months_max = ""
 
             # Look for patterns like "3 years" or "2.5 y/o"
-            years_match = re.search(
-                r"(\d+(?:[.,]\d+)?)\s*(?:years?|y\/o|yr)", str(age).lower()
-            )
+            years_match = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:years?|y\/o|yr)", str(age).lower())
             if years_match:
                 years = float(years_match.group(1).replace(",", "."))
                 months_min = int(years * 12)
@@ -277,9 +269,7 @@ def create_standardization_templates(breed_data, size_data, age_data):
                 age_value = "Puppy"
                 months_min = 0
                 months_max = 12
-            elif any(
-                term in str(age).lower() for term in ["young", "adolescent", "junior"]
-            ):
+            elif any(term in str(age).lower() for term in ["young", "adolescent", "junior"]):
                 age_value = "Young"
                 months_min = 12
                 months_max = 36
@@ -287,9 +277,7 @@ def create_standardization_templates(breed_data, size_data, age_data):
                 age_value = "Adult"
                 months_min = 36
                 months_max = 96
-            elif any(
-                term in str(age).lower() for term in ["senior", "older", "elderly"]
-            ):
+            elif any(term in str(age).lower() for term in ["senior", "older", "elderly"]):
                 age_value = "Senior"
                 months_min = 96
                 months_max = 240  # 20 years as upper bound
@@ -300,9 +288,7 @@ def create_standardization_templates(breed_data, size_data, age_data):
     print("- data/audit/breed_standardization.csv")
     print("- data/audit/size_standardization.csv")
     print("- data/audit/age_standardization.csv")
-    print(
-        "\nPlease fill in these templates with standardized values for the next phase."
-    )
+    print("\nPlease fill in these templates with standardized values for the next phase.")
 
 
 if __name__ == "__main__":

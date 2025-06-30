@@ -27,9 +27,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 class BaseScraper(ABC):
     """Base scraper class that all organization-specific scrapers will inherit from."""
 
-    def __init__(
-        self, organization_id: Optional[int] = None, config_id: Optional[str] = None
-    ):
+    def __init__(self, organization_id: Optional[int] = None, config_id: Optional[str] = None):
         """Initialize the scraper.
 
         Args:
@@ -81,18 +79,14 @@ class BaseScraper(ABC):
 
     def _setup_logger(self):
         """Set up a logger for the scraper."""
-        logger = logging.getLogger(
-            f"scraper.{self.get_organization_name()}.{self.animal_type}"
-        )
+        logger = logging.getLogger(f"scraper.{self.get_organization_name()}.{self.animal_type}")
         logger.setLevel(logging.INFO)
 
         # Create handlers
         c_handler = logging.StreamHandler()
 
         # Create formatters
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         c_handler.setFormatter(formatter)
 
         # Add handlers to logger
@@ -176,9 +170,7 @@ class BaseScraper(ABC):
             )
             self.conn.commit()
             cursor.close()
-            self.logger.info(
-                f"Updated scrape log {self.scrape_log_id} with status: {status}"
-            )
+            self.logger.info(f"Updated scrape log {self.scrape_log_id} with status: {status}")
             return True
         except Exception as e:
             self.logger.error(f"Error updating scrape log: {e}")
@@ -201,9 +193,7 @@ class BaseScraper(ABC):
 
             return detect(text)
         except Exception as e:
-            self.logger.warning(
-                f"Language detection error: {e}. Defaulting to English."
-            )
+            self.logger.warning(f"Language detection error: {e}. Defaulting to English.")
             return "en"
 
     def save_animal(self, animal_data):
@@ -244,10 +234,7 @@ class BaseScraper(ABC):
                             self.logger.info(
                                 f"🔄 Image unchanged for {animal_data.get('name')}, using existing Cloudinary URL"
                             )
-                        elif (
-                            current_original_url
-                            and "cloudinary.com" in current_original_url
-                        ):
+                        elif current_original_url and "cloudinary.com" in current_original_url:
                             # Legacy case: original_image_url is a Cloudinary URL, update it to source URL
                             # but keep the existing Cloudinary URL as primary
                             should_upload_image = False
@@ -263,12 +250,10 @@ class BaseScraper(ABC):
                         f"📤 Uploading primary image to Cloudinary for {animal_data.get('name', 'unknown')}"
                     )
 
-                    cloudinary_url, success = (
-                        self.cloudinary_service.upload_image_from_url(
-                            original_url,
-                            animal_data.get("name", "unknown"),
-                            self.organization_name,
-                        )
+                    cloudinary_url, success = self.cloudinary_service.upload_image_from_url(
+                        original_url,
+                        animal_data.get("name", "unknown"),
+                        self.organization_name,
                     )
 
                     if success and cloudinary_url:
@@ -297,9 +282,7 @@ class BaseScraper(ABC):
                 )
                 return 1, "test"
             elif "create_animal" in str(e):
-                self.logger.warning(
-                    f"create_animal method not implemented in test environment"
-                )
+                self.logger.warning(f"create_animal method not implemented in test environment")
                 return 1, "test"
             else:
                 raise e
@@ -369,10 +352,8 @@ class BaseScraper(ABC):
                         f"📤 Uploading new additional image {i+1} for animal {animal_id}"
                     )
 
-                    cloudinary_url, success = (
-                        self.cloudinary_service.upload_image_from_url(
-                            image_url, animal_name, self.organization_name
-                        )
+                    cloudinary_url, success = self.cloudinary_service.upload_image_from_url(
+                        image_url, animal_name, self.organization_name
                     )
 
                     # Use Cloudinary URL if successful, otherwise fallback to original
@@ -399,8 +380,7 @@ class BaseScraper(ABC):
             for img in existing_images:
                 if img[0] not in images_to_keep:  # img[0] is the id
                     cursor.execute("DELETE FROM animal_images WHERE id = %s", (img[0],))
-                    self.logger.info(
-                        f"🗑️ Removed obsolete image for animal {animal_id}")
+                    self.logger.info(f"🗑️ Removed obsolete image for animal {animal_id}")
 
             self.conn.commit()
             return True
@@ -432,9 +412,7 @@ class BaseScraper(ABC):
                 f"Starting scrape for {self.get_organization_name()} {self.animal_type}s"
             )
             animals_data = self.collect_data()
-            self.logger.info(
-                f"Collected data for {len(animals_data)} {self.animal_type}s"
-            )
+            self.logger.info(f"Collected data for {len(animals_data)} {self.animal_type}s")
 
             # Save each animal
             animals_added = 0
@@ -503,9 +481,7 @@ class BaseScraper(ABC):
 
             # Calculate metrics for detailed logging
             scrape_end_time = datetime.now()
-            duration = self.calculate_scrape_duration(
-                self.scrape_start_time, scrape_end_time
-            )
+            duration = self.calculate_scrape_duration(self.scrape_start_time, scrape_end_time)
             quality_score = self.assess_data_quality(animals_data)
 
             # Log detailed metrics
@@ -525,7 +501,8 @@ class BaseScraper(ABC):
 
             self.logger.info(
                 f"Scrape completed successfully. Added: {animals_added}, Updated: {animals_updated}, "
-                f"Quality: {quality_score:.2f}, Duration: {duration:.1f}s")
+                f"Quality: {quality_score:.2f}, Duration: {duration:.1f}s"
+            )
             return True
         except Exception as e:
             self.logger.error(f"Error during scrape: {e}")
@@ -559,7 +536,7 @@ class BaseScraper(ABC):
 
     def get_rate_limit_delay(self) -> float:
         """Get rate limit delay from config or default."""
-        return self.rate_limit_delay
+        return float(self.rate_limit_delay)
 
     # Add method to respect rate limiting
     def respect_rate_limit(self):
@@ -618,9 +595,7 @@ class BaseScraper(ABC):
 
             # Use size estimate if no size provided
             final_size = animal_data.get("size") or animal_data.get("standardized_size")
-            final_standardized_size = (
-                animal_data.get("standardized_size") or size_estimate
-            )
+            final_standardized_size = animal_data.get("standardized_size") or size_estimate
 
             # Prepare values for insertion
             current_time = datetime.now()
@@ -677,9 +652,7 @@ class BaseScraper(ABC):
             self.conn.commit()
             cursor.close()
 
-            self.logger.info(
-                f"Created new animal with ID {animal_id}: {animal_data.get('name')}"
-            )
+            self.logger.info(f"Created new animal with ID {animal_id}: {animal_data.get('name')}")
             return animal_id, "added"
 
         except Exception as e:
@@ -734,25 +707,21 @@ class BaseScraper(ABC):
 
             # Apply standardization to new data to compare with current standardized
             # values
-            new_standardized_breed, new_breed_group, new_size_estimate = (
-                standardize_breed(animal_data.get("breed", ""))
+            new_standardized_breed, new_breed_group, new_size_estimate = standardize_breed(
+                animal_data.get("breed", "")
             )
             new_age_info = standardize_age(animal_data.get("age_text", ""))
             new_age_min_months = new_age_info.get("age_min_months")
             new_age_max_months = new_age_info.get("age_max_months")
 
             # Use size estimate if no size provided
-            new_final_standardized_size = (
-                animal_data.get("standardized_size") or new_size_estimate
-            )
+            new_final_standardized_size = animal_data.get("standardized_size") or new_size_estimate
 
             # Check for changes in both raw AND standardized fields
             # Compare properties (description) as JSON to detect content changes
             current_properties_json = current_properties if current_properties else "{}"
             new_properties_json = (
-                json.dumps(animal_data.get("properties"))
-                if animal_data.get("properties")
-                else "{}"
+                json.dumps(animal_data.get("properties")) if animal_data.get("properties") else "{}"
             )
 
             changes_detected = (
@@ -851,9 +820,7 @@ class BaseScraper(ABC):
             self.conn.commit()
             cursor.close()
 
-            self.logger.info(
-                f"Updated animal ID {animal_id}: {animal_data.get('name')}"
-            )
+            self.logger.info(f"Updated animal ID {animal_id}: {animal_data.get('name')}")
             return animal_id, "updated"
 
         except Exception as e:
@@ -887,9 +854,7 @@ class BaseScraper(ABC):
         """
         try:
             if not self.current_scrape_session:
-                self.logger.warning(
-                    "No active scrape session when marking animal as seen"
-                )
+                self.logger.warning("No active scrape session when marking animal as seen")
                 return False
 
             cursor = self.conn.cursor()
@@ -949,9 +914,7 @@ class BaseScraper(ABC):
             self.conn.commit()
             cursor.close()
 
-            self.logger.info(
-                f"Updated stale data detection for {rows_affected} animals"
-            )
+            self.logger.info(f"Updated stale data detection for {rows_affected} animals")
             return True
 
         except Exception as e:
@@ -1101,14 +1064,16 @@ class BaseScraper(ABC):
         if animals_found == 0:
             self.logger.error(
                 f"Catastrophic failure detected: Zero animals found for organization_id {self.organization_id}. "
-                f"This indicates complete scraper failure or website unavailability.")
+                f"This indicates complete scraper failure or website unavailability."
+            )
             return True
 
         # Check against absolute minimum threshold
         if animals_found < absolute_minimum:
             self.logger.error(
                 f"Catastrophic failure detected: Only {animals_found} animals found for organization_id {self.organization_id} "
-                f"(below absolute minimum of {absolute_minimum}). This likely indicates scraper malfunction.")
+                f"(below absolute minimum of {absolute_minimum}). This likely indicates scraper malfunction."
+            )
             return True
 
         return False
@@ -1172,12 +1137,14 @@ class BaseScraper(ABC):
                 scrape_count = result[1] if (result and len(result) > 1) else 0
                 self.logger.info(
                     f"Insufficient historical data for organization_id {self.organization_id} "
-                    f"({scrape_count} scrapes). Using absolute minimum threshold.")
+                    f"({scrape_count} scrapes). Using absolute minimum threshold."
+                )
 
                 if animals_found < absolute_minimum:
                     self.logger.warning(
                         f"Potential failure detected: {animals_found} animals found "
-                        f"(below absolute minimum of {absolute_minimum}) for new organization")
+                        f"(below absolute minimum of {absolute_minimum}) for new organization"
+                    )
                     return True
                 return False
 
@@ -1193,7 +1160,8 @@ class BaseScraper(ABC):
                 self.logger.warning(
                     f"Potential partial failure detected: found {animals_found} animals "
                     f"(historical avg: {historical_average:.1f}, percentage threshold: {percentage_threshold:.1f}, "
-                    f"absolute minimum: {absolute_minimum}, effective threshold: {effective_threshold:.1f})")
+                    f"absolute minimum: {absolute_minimum}, effective threshold: {effective_threshold:.1f})"
+                )
 
             return is_partial_failure
 
@@ -1203,9 +1171,7 @@ class BaseScraper(ABC):
             # loss
             return True
 
-    def detect_scraper_failure(
-        self, animals_found, threshold_percentage=0.5, absolute_minimum=3
-    ):
+    def detect_scraper_failure(self, animals_found, threshold_percentage=0.5, absolute_minimum=3):
         """Combined failure detection method that checks both catastrophic and partial failures.
 
         Args:
@@ -1216,9 +1182,7 @@ class BaseScraper(ABC):
         Returns:
             True if any type of failure detected, False otherwise
         """
-        return self.detect_partial_failure(
-            animals_found, threshold_percentage, absolute_minimum
-        )
+        return self.detect_partial_failure(animals_found, threshold_percentage, absolute_minimum)
 
     def handle_scraper_failure(self, error_message):
         """Handle scraper failure without affecting animal availability.
@@ -1337,9 +1301,7 @@ class BaseScraper(ABC):
         final_score = total_score / len(animals_data)
         return round(final_score, 3)
 
-    def calculate_scrape_duration(
-        self, start_time: datetime, end_time: datetime
-    ) -> float:
+    def calculate_scrape_duration(self, start_time: datetime, end_time: datetime) -> float:
         """Calculate scrape duration in seconds.
 
         Args:

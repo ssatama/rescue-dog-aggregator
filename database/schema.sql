@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS organizations (
     active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+
     -- Enhanced organization fields
     social_media JSONB DEFAULT '{}',
     config_id VARCHAR(50) UNIQUE,
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS animals (
     primary_image_url TEXT,
     adoption_url TEXT NOT NULL,
     status VARCHAR(50) DEFAULT 'available',
-    
+
     -- Core searchable fields
     breed VARCHAR(255),
     breed_group VARCHAR(100),
@@ -45,16 +45,16 @@ CREATE TABLE IF NOT EXISTS animals (
     size VARCHAR(50),
     standardized_size VARCHAR(50),
     language VARCHAR(10) DEFAULT 'en',
-    
+
     -- Extended properties as JSON
     properties JSONB,
-    
+
     -- Metadata
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_scraped_at TIMESTAMP,
     source_last_updated TIMESTAMP,
-    
+
     -- Add column to store original image URLs for fallback
     original_image_url TEXT
 );
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS animal_images (
     image_url TEXT NOT NULL,
     is_primary BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+
     -- Add column to store original image URLs for fallback
     original_image_url TEXT
 );

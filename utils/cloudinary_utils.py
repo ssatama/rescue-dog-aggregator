@@ -60,9 +60,7 @@ class OrganizationLogoUploader:
                     f"Cloudinary not configured but force_upload=True for {org_id}"
                 )
             else:
-                logger.info(
-                    f"Cloudinary not configured, skipping logo upload for {org_id}"
-                )
+                logger.info(f"Cloudinary not configured, skipping logo upload for {org_id}")
                 return {"original": logo_url}
 
         try:
@@ -71,16 +69,12 @@ class OrganizationLogoUploader:
                 logger.info(f"Detected local file path for {org_id}: {logo_url}")
                 upload_result = cls._upload_local_file(org_id, logo_url)
                 if not upload_result:
-                    raise OrganizationLogoUploadError(
-                        f"Failed to upload local file for {org_id}"
-                    )
+                    raise OrganizationLogoUploadError(f"Failed to upload local file for {org_id}")
             else:
                 # Handle remote URL
                 parsed_url = urlparse(logo_url)
                 if not parsed_url.scheme or not parsed_url.netloc:
-                    raise OrganizationLogoUploadError(
-                        f"Invalid logo URL for {org_id}: {logo_url}"
-                    )
+                    raise OrganizationLogoUploadError(f"Invalid logo URL for {org_id}: {logo_url}")
 
                 # Test if URL is accessible
                 response = requests.head(logo_url, timeout=10, allow_redirects=True)
@@ -98,9 +92,7 @@ class OrganizationLogoUploader:
                 )
 
                 if not success or not upload_result:
-                    raise OrganizationLogoUploadError(
-                        f"Failed to upload logo for {org_id}"
-                    )
+                    raise OrganizationLogoUploadError(f"Failed to upload logo for {org_id}")
 
             # Generate URLs for different sizes
             urls = {}
@@ -110,33 +102,30 @@ class OrganizationLogoUploader:
                 else:
                     # Generate transformation URL
                     transform_params = []
-                    for key, value in transformations.items():
-                        if key == "width":
-                            transform_params.append(f"w_{value}")
-                        elif key == "height":
-                            transform_params.append(f"h_{value}")
-                        elif key == "crop":
-                            transform_params.append(f"c_{value}")
-                        elif key == "gravity":
-                            transform_params.append(f"g_{value}")
-
+                    if isinstance(transformations, dict):
+                        for key, value in transformations.items():
+                            if key == "width":
+                                transform_params.append(f"w_{value}")
+                            elif key == "height":
+                                transform_params.append(f"h_{value}")
+                            elif key == "crop":
+                                transform_params.append(f"c_{value}")
+                            elif key == "gravity":
+                                transform_params.append(f"g_{value}")
                     # Build transformation URL
                     base_url = upload_result.replace(
                         "/upload/", f'/upload/{",".join(transform_params)}/'
                     )
+                    urls[preset_name] = base_url
                     urls[preset_name] = base_url
 
             logger.info(f"Successfully uploaded logo for organization {org_id}")
             return urls
 
         except requests.RequestException as e:
-            raise OrganizationLogoUploadError(
-                f"Failed to access logo URL for {org_id}: {str(e)}"
-            )
+            raise OrganizationLogoUploadError(f"Failed to access logo URL for {org_id}: {str(e)}")
         except Exception as e:
-            raise OrganizationLogoUploadError(
-                f"Failed to upload logo for {org_id}: {str(e)}"
-            )
+            raise OrganizationLogoUploadError(f"Failed to upload logo for {org_id}: {str(e)}")
 
     @classmethod
     def _is_local_file_path(cls, path: str) -> bool:
@@ -176,9 +165,7 @@ class OrganizationLogoUploader:
 
             # Check Cloudinary configuration
             if not CloudinaryService._check_configuration():
-                logger.error(
-                    f"Cloudinary not configured for local file upload: {org_id}"
-                )
+                logger.error(f"Cloudinary not configured for local file upload: {org_id}")
                 return None
 
             # Upload directly to Cloudinary
@@ -196,10 +183,8 @@ class OrganizationLogoUploader:
             )
 
             if result and "secure_url" in result:
-                logger.info(
-                    f"Successfully uploaded local file for {org_id}: {file_path}"
-                )
-                return result["secure_url"]
+                logger.info(f"Successfully uploaded local file for {org_id}: {file_path}")
+                return str(result["secure_url"])
             else:
                 logger.error(f"Cloudinary upload failed for {org_id}: no URL returned")
                 return None
@@ -232,20 +217,18 @@ class OrganizationLogoUploader:
 
             # Generate transformation URL
             transform_params = []
-            for key, value in transformations.items():
-                if key == "width":
-                    transform_params.append(f"w_{value}")
-                elif key == "height":
-                    transform_params.append(f"h_{value}")
-                elif key == "crop":
-                    transform_params.append(f"c_{value}")
-                elif key == "gravity":
-                    transform_params.append(f"g_{value}")
-
+            if isinstance(transformations, dict):
+                for key, value in transformations.items():
+                    if key == "width":
+                        transform_params.append(f"w_{value}")
+                    elif key == "height":
+                        transform_params.append(f"h_{value}")
+                    elif key == "crop":
+                        transform_params.append(f"c_{value}")
+                    elif key == "gravity":
+                        transform_params.append(f"g_{value}")
             # Build transformation URL
-            transform_url = base_url.replace(
-                "/upload/", f'/upload/{",".join(transform_params)}/'
-            )
+            transform_url = base_url.replace("/upload/", f'/upload/{",".join(transform_params)}/')
             urls[preset_name] = transform_url
 
         return urls

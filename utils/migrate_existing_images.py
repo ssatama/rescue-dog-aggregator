@@ -90,9 +90,7 @@ def migrate_existing_images():
             # Commit every 10 records
             if animal_id % 10 == 0:
                 conn.commit()
-                logger.info(
-                    f"Committed progress: {success_count}/{len(animals)} successful"
-                )
+                logger.info(f"Committed progress: {success_count}/{len(animals)} successful")
 
         conn.commit()
         logger.info(

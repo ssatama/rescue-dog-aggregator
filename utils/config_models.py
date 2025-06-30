@@ -75,9 +75,7 @@ class OrganizationMetadata(BaseModel):
                 if len(region) == 2 and region.isalpha():
                     validated.append(region)
                 else:
-                    raise ValueError(
-                        f"Invalid country code in service_regions: {region}"
-                    )
+                    raise ValueError(f"Invalid country code in service_regions: {region}")
             else:
                 raise ValueError(
                     f"service_regions must contain only country codes, got: {type(region)}"
@@ -102,9 +100,7 @@ class OrganizationMetadata(BaseModel):
                 else:
                     raise ValueError(f"Invalid country code in ships_to: {country}")
             else:
-                raise ValueError(
-                    f"ships_to must contain only country codes, got: {type(country)}"
-                )
+                raise ValueError(f"ships_to must contain only country codes, got: {type(country)}")
 
         return validated
 

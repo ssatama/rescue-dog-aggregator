@@ -49,7 +49,7 @@ markers = [
 source = ["."]
 omit = [
     "*/venv/*",
-    "*/env/*", 
+    "*/env/*",
     "tests/*",
     "*/migrations/*",
     "manage.py",

@@ -59,9 +59,7 @@ def get_db_cursor() -> Generator[RealDictCursor, None, None]:
         )  # Changed level to debug
         yield cursor
 
-        logger.debug(
-            f"Committing transaction for connection {id(conn)}"
-        )  # Changed level to debug
+        logger.debug(f"Committing transaction for connection {id(conn)}")  # Changed level to debug
         conn.commit()
 
     except HTTPException as http_exc:  # Keep the specific HTTPException handling
@@ -72,18 +70,12 @@ def get_db_cursor() -> Generator[RealDictCursor, None, None]:
             conn.rollback()
         raise http_exc
     except psycopg2.Error as db_err:
-        logger.error(
-            f"[dependencies.py get_db_cursor] Database error, rolling back: {db_err}"
-        )
+        logger.error(f"[dependencies.py get_db_cursor] Database error, rolling back: {db_err}")
         if conn:
             conn.rollback()
-        raise HTTPException(
-            status_code=500, detail=f"Database dependency error: {db_err}"
-        )
+        raise HTTPException(status_code=500, detail=f"Database dependency error: {db_err}")
     except Exception as e:
-        logger.exception(
-            f"[dependencies.py get_db_cursor] Unexpected error, rolling back: {e}"
-        )
+        logger.exception(f"[dependencies.py get_db_cursor] Unexpected error, rolling back: {e}")
         if conn:
             conn.rollback()
         raise HTTPException(
@@ -96,9 +88,7 @@ def get_db_cursor() -> Generator[RealDictCursor, None, None]:
             logger.debug(f"Cursor closing: {id(cursor)}")
             cursor.close()
         if conn:
-            logger.debug(
-                f"Cursor Connection closing: {id(conn)}"
-            )  # Changed level to debug
+            logger.debug(f"Cursor Connection closing: {id(conn)}")  # Changed level to debug
             conn.close()
 
 
@@ -142,9 +132,7 @@ def get_database_connection() -> Generator[psycopg2.extensions.connection, None,
         )
         if conn:
             conn.rollback()
-        raise HTTPException(
-            status_code=500, detail=f"Database dependency error: {db_err}"
-        )
+        raise HTTPException(status_code=500, detail=f"Database dependency error: {db_err}")
     except Exception as e:
         logger.exception(
             f"[dependencies.py get_database_connection] Unexpected error, rolling back: {e}"

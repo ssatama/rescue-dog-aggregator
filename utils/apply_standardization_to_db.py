@@ -71,9 +71,7 @@ def apply_standardization_to_database():
 
                 # Only set standardized_size if we have an estimate and current
                 # value is NULL
-                cursor.execute(
-                    "SELECT standardized_size FROM animals WHERE id = %s", (dog_id,)
-                )
+                cursor.execute("SELECT standardized_size FROM animals WHERE id = %s", (dog_id,))
                 current_size = cursor.fetchone()[0]
 
                 if size_estimate and not current_size:

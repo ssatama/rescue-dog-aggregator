@@ -35,9 +35,7 @@ def connect_to_database():
         # Handle case where database doesn't exist (optional, depends on
         # workflow)
         if f'database "{DB_CONFIG["database"]}" does not exist' in str(e):
-            print(
-                f"Database '{DB_CONFIG['database']}' does not exist. Please create it first."
-            )
+            print(f"Database '{DB_CONFIG['database']}' does not exist. Please create it first.")
             # Optionally, try connecting to default 'postgres' db to create it
         else:
             print(f"Database connection error: {e}")
@@ -116,9 +114,7 @@ def add_organization(
         existing = cursor.fetchone()
 
         if existing:
-            print(
-                f"Organization '{name}' already exists with ID {existing[0]}. Skipping."
-            )
+            print(f"Organization '{name}' already exists with ID {existing[0]}. Skipping.")
             cursor.close()
             return True
 

@@ -41,8 +41,8 @@ class ConfigLoader:
         self.config_dir = (config_dir or CONFIG_DIR) / "organizations"
         self.schema_dir = (config_dir or CONFIG_DIR) / "schemas"
         self.logger = logging.getLogger(__name__)
-        self._config_cache = {}
-        self._schema_cache = None  # Initialize schema cache
+        self._config_cache: ConfigDict = {}
+        self._schema_cache: Optional[dict] = None  # Initialize schema cache
 
     def _load_schema(self) -> dict:
         """Load and cache the JSON schema."""
@@ -74,9 +74,7 @@ class ConfigLoader:
             validate(instance=config_data, schema=schema)
             self.logger.debug(f"Schema validation passed for {config_file}")
         except jsonschema.ValidationError as e:
-            raise ConfigValidationError(
-                f"Schema validation failed for {config_file}: {e.message}"
-            )
+            raise ConfigValidationError(f"Schema validation failed for {config_file}: {e.message}")
         except Exception as e:
             self.logger.warning(f"Schema validation error for {config_file}: {e}")
 
@@ -97,9 +95,7 @@ class ConfigLoader:
         except yaml.YAMLError as e:
             raise ConfigLoadError(f"YAML parsing error in {file_path}: {e}")
 
-    def _validate_config_id(
-        self, config_data: dict, expected_id: str, config_file: Path
-    ) -> None:
+    def _validate_config_id(self, config_data: dict, expected_id: str, config_file: Path) -> None:
         """Validate that config ID matches filename."""
         actual_id = config_data.get("id")
         if actual_id != expected_id:
@@ -156,9 +152,7 @@ class ConfigLoader:
             self.logger.info(f"Successfully loaded config for organization '{org_id}'")
             return config
         except Exception as e:
-            raise ConfigValidationError(
-                f"Pydantic validation failed for {config_file}: {e}"
-            )
+            raise ConfigValidationError(f"Pydantic validation failed for {config_file}: {e}")
 
     def load_all_configs(self, force_reload: bool = False) -> ConfigDict:
         """Load all organization configurations.
@@ -172,7 +166,7 @@ class ConfigLoader:
         if not force_reload and self._config_cache:
             return self._config_cache
 
-        configs = {}
+        configs: ConfigDict = {}
 
         if not self.config_dir.exists():
             self.logger.warning(f"Config directory does not exist: {self.config_dir}")

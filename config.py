@@ -32,9 +32,7 @@ logger.info("[config.py] Reading environment variables:")
 logger.info(f"[config.py]   DB_HOST from env: {db_host_env}")
 logger.info(f"[config.py]   DB_NAME from env: {db_name_env}")
 logger.info(f"[config.py]   DB_USER from env: {db_user_env}")
-logger.info(
-    f"[config.py]   DB_PASSWORD from env: {'******' if db_password_env else None}"
-)
+logger.info(f"[config.py]   DB_PASSWORD from env: {'******' if db_password_env else None}")
 
 # Determine default database name based on TESTING flag
 default_db_name = "test_rescue_dogs" if IS_TESTING else "rescue_dogs"
@@ -56,9 +54,7 @@ if IS_TESTING and final_db_name != "test_rescue_dogs":
     logger.error(
         f"CRITICAL SAFETY ERROR: TESTING is true but DB_CONFIG is set to '{final_db_name}' instead of 'test_rescue_dogs'. Aborting."
     )
-    sys.exit(
-        "CRITICAL SAFETY ERROR: Test environment configured to use non-test database."
-    )
+    sys.exit("CRITICAL SAFETY ERROR: Test environment configured to use non-test database.")
 
 if not IS_TESTING and final_db_name == "test_rescue_dogs":
     logger.warning(
@@ -98,7 +94,8 @@ def parse_cors_origins() -> List[str]:
             # Production requires explicit configuration
             raise ValueError(
                 "ALLOWED_ORIGINS must be set in production environment. "
-                "Example: ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com")
+                "Example: ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com"
+            )
 
     # Parse comma-separated origins
     origins = [origin.strip() for origin in origins_env.split(",") if origin.strip()]
@@ -107,9 +104,7 @@ def parse_cors_origins() -> List[str]:
     validated_origins = []
     for origin in origins:
         if not (origin.startswith("http://") or origin.startswith("https://")):
-            logger.error(
-                f"Invalid origin format: {origin}. Must start with http:// or https://"
-            )
+            logger.error(f"Invalid origin format: {origin}. Must start with http:// or https://")
             continue
 
         # Warn about http:// in production

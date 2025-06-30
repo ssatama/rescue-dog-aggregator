@@ -258,7 +258,7 @@ class ConfigManager:
             print("=" * 50)
             print(f"🐾 Total animals found: {total_animals_found}")
             print(
-                f"📊 Overall: {res.get('successful',0)} succeeded, {res.get('failed',0)} failed out of {res.get('total_orgs',0)} orgs"
+                f"📊 Overall: {res.get('successful', 0)} succeeded, {res.get('failed', 0)} failed out of {res.get('total_orgs', 0)} orgs"
             )
 
         except Exception as e:

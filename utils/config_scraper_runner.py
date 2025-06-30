@@ -68,9 +68,7 @@ class ConfigScraperRunner:
             self.logger.error(f"Failed to import module '{module_path}': {e}")
             raise
         except AttributeError as e:
-            self.logger.error(
-                f"Class '{class_name}' not found in module '{module_path}': {e}"
-            )
+            self.logger.error(f"Class '{class_name}' not found in module '{module_path}': {e}")
             raise
 
     def _create_scraper_instance(self, scraper_class, config_id: str):
