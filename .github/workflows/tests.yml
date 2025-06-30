@@ -2,14 +2,14 @@ name: Run Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   backend-tests:
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:14
@@ -26,119 +26,119 @@ jobs:
           --health-retries 5
 
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-        cache: 'pip'
-        
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        # Use requirements-dev.txt for all test dependencies
-        if [ -f requirements-dev.txt ]; then
-          pip install -r requirements-dev.txt
-        else
-          pip install -r requirements.txt
-          pip install pytest pytest-cov pytest-mock pytest-asyncio black isort flake8
-        fi
+      - uses: actions/checkout@v4
 
-    - name: Wait for PostgreSQL
-      run: |
-        for i in {1..10}; do
-          if pg_isready -h localhost -p 5432; then
-            echo "PostgreSQL is ready"
-            break
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Use requirements-dev.txt for all test dependencies
+          if [ -f requirements-dev.txt ]; then
+            pip install -r requirements-dev.txt
+          else
+            pip install -r requirements.txt
+            pip install pytest pytest-cov pytest-mock pytest-asyncio black isort flake8
           fi
-          echo "Waiting for PostgreSQL... attempt $i/10"
-          sleep 2
-        done
 
-    - name: Setup test database
-      env:
-        PGPASSWORD: postgres
-      run: |
-        # Create database if it doesn't exist
-        psql -h localhost -U postgres -c "CREATE DATABASE test_rescue_dogs;" || true
-        
-        # Grant all privileges
-        psql -h localhost -U postgres -d test_rescue_dogs -c "
-          GRANT ALL PRIVILEGES ON DATABASE test_rescue_dogs TO postgres;
-          GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO postgres;
-          GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO postgres;
-          ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO postgres;
-          ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO postgres;
-        "
+      - name: Wait for PostgreSQL
+        run: |
+          for i in {1..10}; do
+            if pg_isready -h localhost -p 5432; then
+              echo "PostgreSQL is ready"
+              break
+            fi
+            echo "Waiting for PostgreSQL... attempt $i/10"
+            sleep 2
+          done
 
-    - name: Initialize database schema
-      env:
-        TESTING: true
-        DB_HOST: localhost
-        DB_PORT: 5432
-        DB_NAME: test_rescue_dogs
-        DB_USER: postgres
-        DB_PASSWORD: postgres
-      run: |
-        # Create schema directly from SQL file
-        python -c "
-        import psycopg2
-        import os
-        
-        conn = psycopg2.connect(
-            host='localhost',
-            port=5432,
-            database='test_rescue_dogs',
-            user='postgres',
-            password='postgres'
-        )
-        
-        try:
-            cursor = conn.cursor()
-            
-            # Read and execute schema.sql
-            schema_path = os.path.join('database', 'schema.sql')
-            with open(schema_path, 'r') as f:
-                schema_sql = f.read()
-            
-            cursor.execute(schema_sql)
-            conn.commit()
-            cursor.close()
-            print('✅ Schema created successfully')
-        except Exception as e:
-            print(f'❌ Schema creation failed: {e}')
-            raise
-        finally:
-            conn.close()
-        "
-        
-        # Apply migrations
-        PGPASSWORD=postgres psql -h localhost -U postgres -d test_rescue_dogs -f database/migrations/001_add_duplicate_stale_detection.sql || echo "Migration 1 already applied"
-        PGPASSWORD=postgres psql -h localhost -U postgres -d test_rescue_dogs -f database/migrations/002_add_detailed_metrics.sql || echo "Migration 2 already applied"
+      - name: Setup test database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          # Create database if it doesn't exist
+          psql -h localhost -U postgres -c "CREATE DATABASE test_rescue_dogs;" || true
 
-    - name: Run backend tests
-      env:
-        TESTING: true
-        DB_HOST: localhost
-        DB_PORT: 5432
-        DB_NAME: test_rescue_dogs
-        DB_USER: postgres
-        DB_PASSWORD: postgres
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        # Debug information
-        echo "Python version: $(python --version)"
-        echo "Current directory: $(pwd)"
-        echo "TESTING env var: $TESTING"
-        
-        # Debug database state before tests
-        echo "Checking test database state:"
-        PGPASSWORD=postgres psql -h localhost -U postgres -d test_rescue_dogs -c "SELECT COUNT(*) as animal_count FROM animals;"
-        PGPASSWORD=postgres psql -h localhost -U postgres -d test_rescue_dogs -c "SELECT DISTINCT breed FROM animals WHERE breed IS NOT NULL LIMIT 5;"
-        
-        # Run tests
-        python -m pytest tests/ -m "not slow" -v 
+          # Grant all privileges
+          psql -h localhost -U postgres -d test_rescue_dogs -c "
+            GRANT ALL PRIVILEGES ON DATABASE test_rescue_dogs TO postgres;
+            GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO postgres;
+            GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO postgres;
+            ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO postgres;
+            ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO postgres;
+          "
+
+      - name: Initialize database schema
+        env:
+          TESTING: true
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: test_rescue_dogs
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+        run: |
+          # Create schema directly from SQL file
+          python -c "
+          import psycopg2
+          import os
+
+          conn = psycopg2.connect(
+              host='localhost',
+              port=5432,
+              database='test_rescue_dogs',
+              user='postgres',
+              password='postgres'
+          )
+
+          try:
+              cursor = conn.cursor()
+
+              # Read and execute schema.sql
+              schema_path = os.path.join('database', 'schema.sql')
+              with open(schema_path, 'r') as f:
+                  schema_sql = f.read()
+
+              cursor.execute(schema_sql)
+              conn.commit()
+              cursor.close()
+              print('✅ Schema created successfully')
+          except Exception as e:
+              print(f'❌ Schema creation failed: {e}')
+              raise
+          finally:
+              conn.close()
+          "
+
+          # Apply migrations
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test_rescue_dogs -f database/migrations/001_add_duplicate_stale_detection.sql || echo "Migration 1 already applied"
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test_rescue_dogs -f database/migrations/002_add_detailed_metrics.sql || echo "Migration 2 already applied"
+
+      - name: Run backend tests
+        env:
+          TESTING: true
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: test_rescue_dogs
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          # Debug information
+          echo "Python version: $(python --version)"
+          echo "Current directory: $(pwd)"
+          echo "TESTING env var: $TESTING"
+
+          # Debug database state before tests
+          echo "Checking test database state:"
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test_rescue_dogs -c "SELECT COUNT(*) as animal_count FROM animals;"
+          PGPASSWORD=postgres psql -h localhost -U postgres -d test_rescue_dogs -c "SELECT DISTINCT breed FROM animals WHERE breed IS NOT NULL LIMIT 5;"
+
+          # Run tests
+          python -m pytest tests/ -m "not slow" -v
 
   frontend-tests:
     runs-on: ubuntu-latest
@@ -147,84 +147,84 @@ jobs:
         working-directory: frontend
 
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: 'frontend/package-lock.json'
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Run tests
-      run: npm test -- --watchAll=false --passWithNoTests
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test -- --watchAll=false --passWithNoTests
 
   lint-and-format:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-        cache: 'pip'
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        # Install formatting and linting tools
-        pip install black isort flake8 mypy
-        # Install project dependencies for import checking
-        if [ -f requirements-dev.txt ]; then
-          pip install -r requirements-dev.txt
-        else
-          pip install -r requirements.txt
-        fi
-    
-    - name: Check Python code formatting with Black
-      run: |
-        black --check --diff . || (echo "::warning::Code formatting issues found. Run 'black .' locally to fix." && exit 1)
-    
-    - name: Check Python imports with isort  
-      run: |
-        isort --check-only --diff . || (echo "::warning::Import sorting issues found. Run 'isort .' locally to fix." && exit 1)
-    
-    - name: Lint Python code with flake8
-      run: |
-        # Only check for critical errors, ignore style issues
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # Run full flake8 but don't fail the build
-        flake8 . --exit-zero --statistics
-    
-    - name: Type check with mypy (optional)
-      run: |
-        mypy --install-types --non-interactive --ignore-missing-imports . || true
-    
-    - name: Set up Node.js for frontend linting
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
-    
-    - name: Install frontend dependencies
-      working-directory: ./frontend
-      run: npm ci
-    
-    - name: Lint frontend code
-      working-directory: ./frontend
-      run: npm run lint || (echo "::warning::Frontend linting issues found. Run 'npm run lint' locally to check." && exit 0)
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Install formatting and linting tools
+          pip install black isort flake8 mypy
+          # Install project dependencies for import checking
+          if [ -f requirements-dev.txt ]; then
+            pip install -r requirements-dev.txt
+          else
+            pip install -r requirements.txt
+          fi
+
+      - name: Check Python code formatting with Black
+        run: |
+          black --check --diff . || (echo "::warning::Code formatting issues found. Run 'black .' locally to fix." && exit 1)
+
+      - name: Check Python imports with isort
+        run: |
+          isort --check-only --diff . || (echo "::warning::Import sorting issues found. Run 'isort .' locally to fix." && exit 1)
+
+      - name: Lint Python code with flake8
+        run: |
+          # Only check for critical errors, ignore style issues
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Run full flake8 but don't fail the build
+          flake8 . --exit-zero --statistics
+
+      - name: Type check with mypy (optional)
+        run: |
+          mypy --install-types --non-interactive --ignore-missing-imports . || true
+
+      - name: Set up Node.js for frontend linting
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Lint frontend code
+        working-directory: ./frontend
+        run: npm run lint || (echo "::warning::Frontend linting issues found. Run 'npm run lint' locally to check." && exit 0)
 
   end-to-end-tests:
     runs-on: ubuntu-latest
     needs: [backend-tests, frontend-tests]
     if: github.event_name == 'pull_request'
-    
+
     services:
       postgres:
         image: postgres:14
@@ -241,75 +241,75 @@ jobs:
           - 5432:5432
 
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-    
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        cd frontend && npm ci
-    
-    - name: Setup and test full workflow
-      env:
-        TESTING: true
-        DB_HOST: localhost
-        DB_PORT: 5432
-        DB_NAME: test_rescue_dogs
-        DB_USER: postgres
-        DB_PASSWORD: postgres
-        CLOUDINARY_CLOUD_NAME: "test"
-        CLOUDINARY_API_KEY: "test"
-        CLOUDINARY_API_SECRET: "test"
-      run: |
-        # Initialize database
-        python -c "
-        import psycopg2
-        import os
-        
-        conn = psycopg2.connect(
-            host='localhost',
-            port=5432,
-            database='test_rescue_dogs',
-            user='postgres',
-            password='postgres'
-        )
-        
-        try:
-            cursor = conn.cursor()
-            
-            # Read and execute schema.sql
-            schema_path = os.path.join('database', 'schema.sql')
-            with open(schema_path, 'r') as f:
-                schema_sql = f.read()
-            
-            cursor.execute(schema_sql)
-            conn.commit()
-            cursor.close()
-            print('✅ Schema created successfully')
-        except Exception as e:
-            print(f'❌ Schema creation failed: {e}')
-            raise
-        finally:
-            conn.close()
-        "
-        
-        # Start backend server
-        uvicorn api.main:app --host 0.0.0.0 --port 8000 &
-        sleep 5  # Wait for server to start
-        
-        # Test API endpoints
-        curl -f http://localhost:8000/api/animals || exit 1
-        curl -f http://localhost:8000/api/organizations || exit 1
-        
-        # Test config system
-        python management/config_commands.py validate || echo "Config validation completed"
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          cd frontend && npm ci
+
+      - name: Setup and test full workflow
+        env:
+          TESTING: true
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: test_rescue_dogs
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          CLOUDINARY_CLOUD_NAME: "test"
+          CLOUDINARY_API_KEY: "test"
+          CLOUDINARY_API_SECRET: "test"
+        run: |
+          # Initialize database
+          python -c "
+          import psycopg2
+          import os
+
+          conn = psycopg2.connect(
+              host='localhost',
+              port=5432,
+              database='test_rescue_dogs',
+              user='postgres',
+              password='postgres'
+          )
+
+          try:
+              cursor = conn.cursor()
+
+              # Read and execute schema.sql
+              schema_path = os.path.join('database', 'schema.sql')
+              with open(schema_path, 'r') as f:
+                  schema_sql = f.read()
+
+              cursor.execute(schema_sql)
+              conn.commit()
+              cursor.close()
+              print('✅ Schema created successfully')
+          except Exception as e:
+              print(f'❌ Schema creation failed: {e}')
+              raise
+          finally:
+              conn.close()
+          "
+
+          # Start backend server
+          uvicorn api.main:app --host 0.0.0.0 --port 8000 &
+          sleep 5  # Wait for server to start
+
+          # Test API endpoints
+          curl -f http://localhost:8000/api/animals || exit 1
+          curl -f http://localhost:8000/api/organizations || exit 1
+
+          # Test config system
+          python management/config_commands.py validate || echo "Config validation completed"
