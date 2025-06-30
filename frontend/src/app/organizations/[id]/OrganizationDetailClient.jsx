@@ -42,13 +42,17 @@ export default function OrganizationDetailClient({ params = {} }) {
     };
   });
   
-  // Apply filtering and get filtered results (no shipsTo filtering for organization pages)
+  // Since we're now filtering on the backend, use dogs directly
+  // But keep useFilteredDogs for availableBreeds extraction
   const {
-    filteredDogs,
-    totalCount,
-    hasActiveFilters,
     availableBreeds
-  } = useFilteredDogs(dogs, filters, false);
+  } = useFilteredDogs(dogs, { age: 'All', breed: '', sort: 'newest' }, false);
+  
+  // Use dogs directly since they're already filtered by the backend
+  const filteredDogs = dogs;
+  const hasActiveFilters = (filters.age && filters.age !== 'All') || 
+                          (filters.breed && filters.breed.trim() !== '');
+  
   
   // Ships To filter not needed for organization pages - all dogs have same shipping options
   
@@ -70,7 +74,7 @@ export default function OrganizationDetailClient({ params = {} }) {
     });
   };
   
-  // Fetch organization dogs with pagination
+  // Fetch organization dogs with pagination and filtering
   const fetchOrganizationDogs = useCallback(async (currentPage = 1, loadMore = false) => {
     if (!loadMore) {
       setLoading(true);
@@ -83,17 +87,31 @@ export default function OrganizationDetailClient({ params = {} }) {
     const limit = 20;
     const offset = (currentPage - 1) * limit;
 
+    // Build API filter parameters from current filters
+    const apiParams = {
+      limit,
+      offset
+    };
+
+    // Add age filter if selected
+    if (filters.age && filters.age !== 'All') {
+      apiParams.age_category = filters.age;
+    }
+
+    // Add breed filter if selected
+    if (filters.breed && filters.breed.trim() !== '') {
+      apiParams.standardized_breed = filters.breed;
+    }
+
     try {
-      const dogsData = await getOrganizationDogs(organizationId, {
-        limit,
-        offset
-      });
+      const dogsData = await getOrganizationDogs(organizationId, apiParams);
       
       setDogs(prevDogs => loadMore ? [...prevDogs, ...dogsData] : dogsData);
       setHasMore(dogsData.length === limit);
       setPage(currentPage);
       setLoading(false);
       setLoadingMore(false);
+
     } catch (err) {
       reportError('Error fetching organization dogs', { error: err.message, organizationId });
       setError(err);
@@ -101,7 +119,8 @@ export default function OrganizationDetailClient({ params = {} }) {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [organizationId]);
+  }, [organizationId, filters]);
+
 
   // Handle Load More
   const handleLoadMore = () => {
@@ -133,6 +152,12 @@ export default function OrganizationDetailClient({ params = {} }) {
     
     fetchData();
   }, [organizationId, fetchOrganizationDogs]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setPage(1);
+    setHasMore(true);
+  }, [filters]);
   
   // Loading state
   if (loading) {
@@ -226,14 +251,6 @@ export default function OrganizationDetailClient({ params = {} }) {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Available Dogs</h2>
-            {/* Hide count on mobile to avoid crowding with mobile filter button */}
-            <div className="hidden md:block text-sm text-gray-600 dark:text-gray-400">
-              {loading ? 'Loading...' : (
-                hasMore && !hasActiveFilters
-                  ? `${dogs.length} of ${totalDogs} dogs`
-                  : `${totalCount} dogs ${hasActiveFilters ? 'match filters' : 'available'}`
-              )}
-            </div>
           </div>
           
           {/* Filter System - only age, breed, sort for organization pages */}
@@ -242,7 +259,6 @@ export default function OrganizationDetailClient({ params = {} }) {
               filters={filters}
               onFiltersChange={setFilters}
               availableBreeds={availableBreeds}
-              totalCount={totalCount}
               hasActiveFilters={hasActiveFilters}
               showShipsToFilter={false}
               onMobileFilterClick={handleMobileFilterOpen}
@@ -261,7 +277,7 @@ export default function OrganizationDetailClient({ params = {} }) {
             />
             
             {/* Load More Button */}
-            {hasMore && !loading && !loadingMore && !hasActiveFilters && (
+            {hasMore && !loading && !loadingMore && (
               <div className="text-center mt-8 mb-12">
                 <button
                   data-testid="load-more-button"
@@ -297,7 +313,6 @@ export default function OrganizationDetailClient({ params = {} }) {
         onFiltersChange={setFilters}
         availableBreeds={availableBreeds}
         organizations={[]} // No organization filter needed for organization pages
-        totalCount={totalCount}
         hasActiveFilters={hasActiveFilters}
         onClearAll={handleClearAllFilters}
         isOrganizationPage={true}

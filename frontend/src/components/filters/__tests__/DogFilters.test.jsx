@@ -123,8 +123,8 @@ describe('DogFilters Component', () => {
       expect(screen.getAllByText('All Ages')).toHaveLength(2); // One in trigger, one in options
       expect(screen.getByRole('option', { name: 'Puppy' })).toBeInTheDocument();
       expect(screen.getByRole('option', { name: 'Young (1-3 years)' })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: 'Adult (3-7 years)' })).toBeInTheDocument();
-      expect(screen.getByRole('option', { name: 'Senior (7+ years)' })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: 'Adult (3-8 years)' })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: 'Senior (8+ years)' })).toBeInTheDocument();
     });
 
     test('calls onFiltersChange when age filter changes', async () => {

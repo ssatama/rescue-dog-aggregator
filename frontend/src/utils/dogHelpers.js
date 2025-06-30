@@ -38,7 +38,7 @@ export const getAgeCategory = (dog) => {
       return 'Puppy';
     } else if (months < 36) { // Less than 3 years
       return 'Young';
-    } else if (months < 84) { // Less than 7 years
+    } else if (months < 96) { // Less than 8 years (matches backend standardization)
       return 'Adult';
     } else {
       return 'Senior';

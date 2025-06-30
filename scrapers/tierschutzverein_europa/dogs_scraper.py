@@ -14,6 +14,12 @@ from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
 from scrapers.base_scraper import BaseScraper
+from scrapers.tierschutzverein_europa.translations import (
+    normalize_name,
+    translate_age,
+    translate_breed,
+    translate_gender,
+)
 
 
 class TierschutzvereinEuropaScraper(BaseScraper):
@@ -43,6 +49,9 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 self.logger.info(
                     f"Successfully extracted {len(all_dogs)} dogs using unified Selenium approach"
                 )
+                # Apply translation before returning to BaseScraper
+                if all_dogs:
+                    all_dogs = self._translate_and_normalize_dogs(all_dogs)
                 return all_dogs
         except Exception as e:
             self.logger.warning(f"Unified Selenium extraction failed: {e}")
@@ -53,6 +62,9 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             self.logger.info(
                 f"Successfully extracted {len(all_dogs)} dogs using legacy Selenium approach"
             )
+            # Apply translation before returning to BaseScraper
+            if all_dogs:
+                all_dogs = self._translate_and_normalize_dogs(all_dogs)
             return all_dogs
         except Exception as e:
             self.logger.warning(f"Legacy Selenium extraction failed: {e}")
@@ -64,13 +76,78 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 self.logger.info(
                     f"Successfully extracted {len(all_dogs)} dogs using requests approach"
                 )
-                return all_dogs
+                # Apply translation before returning to BaseScraper
+                all_dogs = self._translate_and_normalize_dogs(all_dogs)
+            return all_dogs
         except Exception as e:
             self.logger.error(f"All extraction methods failed. Last error: {e}")
             return []
 
         # Fallback return in case no extraction method is attempted
+        if all_dogs:
+            all_dogs = self._translate_and_normalize_dogs(all_dogs)
         return all_dogs
+
+    def _translate_and_normalize_dogs(self, dogs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Translate German data to English for BaseScraper processing.
+
+        This is the critical point where raw German data is translated to English
+        before being passed to BaseScraper's standardization methods.
+
+        Args:
+            dogs: List of dog dictionaries with German data
+
+        Returns:
+            List of dog dictionaries with English data ready for base_scraper standardization
+        """
+        translated_dogs = []
+
+        for dog in dogs:
+            try:
+                # Create copy to avoid modifying original
+                translated_dog = dog.copy()
+
+                # Fix name capitalization
+                if translated_dog.get("name"):
+                    translated_dog["name"] = normalize_name(translated_dog["name"])
+
+                # Translate core fields
+                if translated_dog.get("sex"):
+                    translated_sex = translate_gender(translated_dog["sex"])
+                    if translated_sex:
+                        translated_dog["sex"] = translated_sex
+
+                if translated_dog.get("age_text"):
+                    translated_age = translate_age(translated_dog["age_text"])
+                    if translated_age:
+                        translated_dog["age_text"] = translated_age
+                    elif translated_dog["age_text"].lower() == "unbekannt":
+                        translated_dog["age_text"] = None
+
+                if translated_dog.get("breed"):
+                    translated_breed = translate_breed(translated_dog["breed"])
+                    if translated_breed:
+                        translated_dog["breed"] = translated_breed
+
+                # Update language in properties
+                if "properties" not in translated_dog:
+                    translated_dog["properties"] = {}
+                translated_dog["properties"]["language"] = "en"
+                translated_dog["properties"]["original_language"] = "de"
+
+                translated_dogs.append(translated_dog)
+
+            except Exception as e:
+                self.logger.error(f"Translation failed for {dog.get('name', 'unknown')}: {e}")
+                # Return original with error flag rather than lose the dog
+                dog_with_error = dog.copy()
+                if "properties" not in dog_with_error:
+                    dog_with_error["properties"] = {}
+                dog_with_error["properties"]["translation_error"] = str(e)
+                translated_dogs.append(dog_with_error)
+
+        self.logger.info(f"Translated {len(translated_dogs)} dogs from German to English")
+        return translated_dogs
 
     def _extract_with_requests(self) -> List[Dict[str, Any]]:
         """Extract using requests + BeautifulSoup."""
@@ -375,7 +452,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                         "details",
                         "kontakt",
                     ]:
-                        return self.extract_name_from_text(text)
+                        return normalize_name(self.extract_name_from_text(text))
 
         return None
 
@@ -408,7 +485,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         if " - " in text:
             name = text.split(" - ")[0].strip()
             if name:
-                return name
+                return normalize_name(name)
 
         # Handle other patterns
         name_patterns = [
@@ -420,14 +497,15 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         for pattern in name_patterns:
             match = re.search(pattern, text)
             if match:
-                return match.group(1).strip()
+                return normalize_name(match.group(1).strip())
 
         # Fallback: return first word if it looks like a name
         words = text.split()
         if words and re.match(r"^[A-ZÄÖÜ][a-zäöüA-ZÄÖÜ\-]+$", words[0]):
-            return words[0]
+            return normalize_name(words[0])
 
-        return text[:20]  # Fallback to first 20 characters
+        # Final fallback to first 20 characters, normalized
+        return normalize_name(text[:20]) if text else ""
 
     def extract_age_from_text(self, text: str) -> Optional[str]:
         """Extract age from German text patterns."""
@@ -582,7 +660,8 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             # First line is typically the dog's name
             name = lines[0]
             if name and len(name) < 20 and re.match(r"^[A-ZÄÖÜ][A-ZÄÖÜa-zäöüß\s-]*$", name):
-                result["name"] = name
+                # Normalize ALL CAPS names to proper capitalization
+                result["name"] = normalize_name(name)
 
         # Extract structured data using regex patterns found in investigation
         breed_match = re.search(r"Rasse:\s*([^\n]+)", article_text)

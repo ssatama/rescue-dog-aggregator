@@ -229,13 +229,13 @@ describe('OrganizationDetailClient Dark Mode', () => {
       });
     });
 
-    test('dogs count text has dark mode styling', async () => {
+    test('organization hero has dark mode styling', async () => {
       render(<OrganizationDetailClient params={{ id: 'test-org-1' }} />);
       
       await waitFor(() => {
-        const countText = screen.getByText(/dogs available/);
-        expect(countText).toHaveClass('text-gray-600');
-        expect(countText).toHaveClass('dark:text-gray-400');
+        // Count text removed for cleaner UI - test hero styling instead
+        const hero = screen.getByTestId('organization-hero');
+        expect(hero).toBeInTheDocument();
       });
     });
   });

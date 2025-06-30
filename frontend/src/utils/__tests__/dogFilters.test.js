@@ -18,6 +18,7 @@ describe('dogFilters', () => {
       id: 1,
       name: 'Buddy',
       age_min_months: 6, // Puppy
+      age_max_months: 10,
       standardized_breed: 'Golden Retriever',
       breed: 'Golden Retriever Mix',
       created_at: '2024-01-15T10:00:00Z',
@@ -31,6 +32,7 @@ describe('dogFilters', () => {
       id: 2,
       name: 'Max',
       age_min_months: 18, // Young
+      age_max_months: 24,
       standardized_breed: 'Labrador Retriever',
       breed: 'Lab Mix',
       created_at: '2024-02-10T10:00:00Z',
@@ -44,6 +46,7 @@ describe('dogFilters', () => {
       id: 3,
       name: 'Luna',
       age_min_months: 48, // Adult
+      age_max_months: 60,
       standardized_breed: 'Mixed Breed',
       breed: 'Unknown',
       created_at: '2024-03-01T10:00:00Z',
@@ -57,6 +60,7 @@ describe('dogFilters', () => {
       id: 4,
       name: 'Charlie',
       age_min_months: 96, // Senior
+      age_max_months: 120,
       standardized_breed: 'German Shepherd',
       breed: 'German Shepherd',
       created_at: '2023-12-01T10:00:00Z',
@@ -70,6 +74,7 @@ describe('dogFilters', () => {
       id: 5,
       name: 'Bella',
       age_min_months: null, // Unknown age
+      age_max_months: null,
       age_text: 'Young adult',
       standardized_breed: 'Golden Retriever',
       breed: 'Golden Retriever',

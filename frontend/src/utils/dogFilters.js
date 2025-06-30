@@ -5,7 +5,7 @@
 import { getAgeCategory } from './dogHelpers';
 
 /**
- * Filter dogs by age category
+ * Filter dogs by age category using backend-compatible logic
  * @param {Array} dogs - Array of dog objects
  * @param {string} ageFilter - Age filter ('All', 'Puppy', 'Young', 'Adult', 'Senior', 'Unknown')
  * @returns {Array} Filtered dogs
@@ -14,11 +14,39 @@ export const filterByAge = (dogs, ageFilter) => {
   if (!dogs || !Array.isArray(dogs)) return [];
   if (!ageFilter || ageFilter === 'All') return dogs;
 
-  return dogs.filter(dog => {
+  const filtered = dogs.filter(dog => {
     if (!dog) return false;
-    const dogAgeCategory = getAgeCategory(dog);
-    return dogAgeCategory === ageFilter;
+    
+    // Check multiple possible field names for age data
+    const ageMin = dog.age_min_months || dog.ageMinMonths;
+    const ageMax = dog.age_max_months || dog.ageMaxMonths;
+    
+    // Handle Unknown age case
+    if (ageFilter === 'Unknown') {
+      return !ageMin && !ageMax;
+    }
+    
+    // If no minimum age data, exclude from age-specific filters
+    if (!ageMin && ageMin !== 0) return false;
+    
+    // Use backend-compatible age range logic to match API filtering exactly
+    switch (ageFilter) {
+      case 'Puppy':  // < 12 months
+        return ageMax && ageMax < 12;
+      case 'Young':  // 12 to 36 months
+        // Match backend SQL: (age_min_months >= 12 AND age_max_months <= 36)
+        return ageMin >= 12 && ageMax !== null && ageMax !== undefined && ageMax <= 36;
+      case 'Adult':  // 36 to 96 months  
+        return ageMin >= 36 && ageMax !== null && ageMax !== undefined && ageMax <= 96;
+      case 'Senior': // > 96 months
+        return ageMin >= 96;
+      default:
+        return false;
+    }
   });
+
+
+  return filtered;
 };
 
 /**
@@ -247,8 +275,8 @@ export const getAgeFilterOptions = () => [
   { value: 'All', label: 'All Ages' },
   { value: 'Puppy', label: 'Puppy' },
   { value: 'Young', label: 'Young (1-3 years)' },
-  { value: 'Adult', label: 'Adult (3-7 years)' },
-  { value: 'Senior', label: 'Senior (7+ years)' },
+  { value: 'Adult', label: 'Adult (3-8 years)' },
+  { value: 'Senior', label: 'Senior (8+ years)' },
   { value: 'Unknown', label: 'Age Unknown' }
 ];
 

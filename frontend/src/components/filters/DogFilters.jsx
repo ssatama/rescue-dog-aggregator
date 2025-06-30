@@ -153,9 +153,11 @@ export default function DogFilters({
           {/* Results Count and Clear All */}
           <div className="flex items-center gap-4">
             {/* Hide count on mobile to avoid crowding with mobile filter button */}
-            <span className="hidden md:inline text-sm text-gray-600">
-              {totalCount} dogs
-            </span>
+            {totalCount > 0 && (
+              <span className="hidden md:inline text-sm text-gray-600">
+                {totalCount} dogs
+              </span>
+            )}
             {hasActiveFilters && (
               <Button
                 variant="ghost"

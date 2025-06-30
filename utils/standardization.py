@@ -36,6 +36,12 @@ BREED_MAPPING = {
     "whippet": ("Whippet", "Hound", "Medium"),
     "afghan hound": ("Afghan Hound", "Hound", "Large"),
     "basenji": ("Basenji", "Hound", "Small"),
+    # Spanish Hounds
+    "podenco": ("Podenco", "Hound", "Medium"),
+    "podenca": ("Podenca", "Hound", "Medium"),
+    "galgo": ("Galgo", "Hound", "Large"),
+    "galga": ("Galga", "Hound", "Large"),
+    "galgo español": ("Galgo Español", "Hound", "Large"),
     # Working Group
     "boxer": ("Boxer", "Working", "Large"),
     "rottweiler": ("Rottweiler", "Working", "Large"),
@@ -117,8 +123,8 @@ BREED_MAPPING = {
     "poodle mix": ("Poodle Mix", "Mixed", "Medium"),
     "hound mix": ("Hound Mix", "Mixed", "Medium"),
     # Generic categories
-    "mixed breed": ("Mixed Breed", "Mixed", None),
-    "mixed": ("Mixed Breed", "Mixed", None),
+    "mixed breed": ("Mixed Breed", "Mixed", "Medium"),
+    "mixed": ("Mixed Breed", "Mixed", "Medium"),
     "unknown": ("Unknown", "Unknown", None),
 }
 

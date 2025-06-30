@@ -53,14 +53,15 @@ describe('dogHelpers', () => {
       expect(getAgeCategory({ age_min_months: 35 })).toBe('Young');
     });
 
-    it('categorizes adult dogs (3-7 years)', () => {
+    it('categorizes adult dogs (3-8 years)', () => {
       expect(getAgeCategory({ age_min_months: 36 })).toBe('Adult');
       expect(getAgeCategory({ age_min_months: 60 })).toBe('Adult');
-      expect(getAgeCategory({ age_min_months: 83 })).toBe('Adult');
+      expect(getAgeCategory({ age_min_months: 84 })).toBe('Adult'); // 7 years is still Adult
+      expect(getAgeCategory({ age_min_months: 95 })).toBe('Adult'); // Just under 8 years
     });
 
-    it('categorizes senior dogs (7+ years)', () => {
-      expect(getAgeCategory({ age_min_months: 84 })).toBe('Senior');
+    it('categorizes senior dogs (8+ years)', () => {
+      expect(getAgeCategory({ age_min_months: 96 })).toBe('Senior'); // 8 years = Senior
       expect(getAgeCategory({ age_min_months: 120 })).toBe('Senior');
     });
 
