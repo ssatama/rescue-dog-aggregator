@@ -85,6 +85,91 @@ jobs:
               exit(1)
           " || echo "Database initialization completed or already initialized"
 
+      - name: Diagnose test discovery
+        env:
+          TESTING: "true"
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: test_rescue_dogs
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          echo "=== CI DIAGNOSTIC INFORMATION ==="
+          echo "Python version: $(python --version)"
+          echo "Current directory: $(pwd)"
+          echo "TESTING env var: $TESTING"
+          echo "PYTHONPATH: $PYTHONPATH"
+          echo ""
+          echo "=== TEST COLLECTION COMPARISON ==="
+          echo "All tests count:"
+          python -m pytest tests/ --collect-only -q | grep -c "test session starts\|<Module\|FAILED\|ERROR" || python -m pytest tests/ --collect-only -q | wc -l
+          
+          echo ""
+          echo "Filtered tests count (not browser and not complex_setup):"
+          python -m pytest tests/ -m "not browser and not complex_setup" --collect-only -q | grep -c "test session starts\|<Module\|FAILED\|ERROR" || python -m pytest tests/ -m "not browser and not complex_setup" --collect-only -q | wc -l
+          
+          echo ""
+          echo "What tests are being excluded by our markers?"
+          echo "Tests marked as 'browser':"
+          python -m pytest tests/ -m "browser" --collect-only -q | wc -l || echo "No browser tests found"
+          
+          echo "Tests marked as 'complex_setup':"
+          python -m pytest tests/ -m "complex_setup" --collect-only -q | wc -l || echo "No complex_setup tests found"
+          
+          echo ""
+          echo "=== DETAILED TEST COLLECTION ==="
+          echo "First 20 collected tests (all):"
+          python -m pytest tests/ --collect-only -q | head -20
+          
+          echo ""
+          echo "First 20 collected tests (filtered):"
+          python -m pytest tests/ -m "not browser and not complex_setup" --collect-only -q | head -20
+          
+          echo ""
+          echo "=== PYTEST MARKERS CHECK ==="
+          echo "Available markers in pytest.ini:"
+          cat pytest.ini | grep -A 20 "markers ="
+          
+          echo ""
+          echo "=== TEST FILES WITH MARKERS ==="
+          echo "Files containing 'browser' marker:"
+          grep -r "@pytest.mark.browser" tests/ || echo "No files with browser marker found"
+          
+          echo "Files containing 'complex_setup' marker:"
+          grep -r "@pytest.mark.complex_setup" tests/ || echo "No files with complex_setup marker found"
+          
+          echo ""
+          echo "=== EXACT TEST COUNTS ==="
+          echo "Total tests without filter:"
+          python -m pytest tests/ --collect-only -q | wc -l
+          
+          echo "Tests with browser marker:"
+          python -m pytest tests/ -m "browser" --collect-only -q | wc -l
+          
+          echo "Tests with complex_setup marker:"
+          python -m pytest tests/ -m "complex_setup" --collect-only -q | wc -l
+          
+          echo "Tests with browser OR complex_setup:"
+          python -m pytest tests/ -m "browser or complex_setup" --collect-only -q | wc -l
+          
+          echo "Tests after excluding browser and complex_setup:"
+          python -m pytest tests/ -m "not browser and not complex_setup" --collect-only -q | wc -l
+          
+          echo ""
+          echo "=== SAMPLING ACTUAL COLLECTED TESTS ==="
+          echo "Sample of tests being collected (first 10):"
+          python -m pytest tests/ -m "not browser and not complex_setup" --collect-only -q | head -10
+          
+          echo ""
+          echo "Sample of tests being excluded (first 10):"
+          python -m pytest tests/ -m "browser or complex_setup" --collect-only -q | head -10
+          
+          echo ""
+          echo "=== PYTEST WARNINGS AND ERRORS ==="
+          echo "Running collection with warnings enabled:"
+          python -m pytest tests/ -m "not browser and not complex_setup" --collect-only -v --tb=short 2>&1 | grep -E "(WARNING|ERROR|FAILED|::)" | head -20
+
       - name: Run backend tests
         env:
           TESTING: "true"
@@ -95,9 +180,6 @@ jobs:
           DB_PASSWORD: postgres
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          echo "Python version: $(python --version)"
-          echo "Current directory: $(pwd)"
-          echo "TESTING env var: $TESTING"
           python -m pytest tests/ -m "not browser and not complex_setup" -v
 
   frontend-tests:
