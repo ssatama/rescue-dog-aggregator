@@ -14,12 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
 from scrapers.base_scraper import BaseScraper
-from scrapers.tierschutzverein_europa.translations import (
-    normalize_name,
-    translate_age,
-    translate_breed,
-    translate_gender,
-)
+from scrapers.tierschutzverein_europa.translations import normalize_name, translate_age, translate_breed, translate_gender
 
 
 class TierschutzvereinEuropaScraper(BaseScraper):

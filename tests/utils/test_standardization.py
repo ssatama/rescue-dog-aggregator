@@ -1,11 +1,6 @@
 import pytest
 
-from utils.standardization import (
-    apply_standardization,
-    get_size_from_breed,
-    standardize_age,
-    standardize_breed,
-)
+from utils.standardization import apply_standardization, get_size_from_breed, standardize_age, standardize_breed
 
 
 @pytest.mark.slow

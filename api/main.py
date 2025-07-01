@@ -9,14 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.routes import animals, monitoring, organizations
 
 # Import CORS configuration
-from config import (
-    ALLOWED_ORIGINS,
-    CORS_ALLOW_CREDENTIALS,
-    CORS_ALLOW_HEADERS,
-    CORS_ALLOW_METHODS,
-    CORS_MAX_AGE,
-    ENVIRONMENT,
-)
+from config import ALLOWED_ORIGINS, CORS_ALLOW_CREDENTIALS, CORS_ALLOW_HEADERS, CORS_ALLOW_METHODS, CORS_MAX_AGE, ENVIRONMENT
 
 # Create FastAPI app
 app = FastAPI(
