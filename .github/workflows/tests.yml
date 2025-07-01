@@ -169,6 +169,87 @@ jobs:
           echo "=== PYTEST WARNINGS AND ERRORS ==="
           echo "Running collection with warnings enabled:"
           python -m pytest tests/ -m "not browser and not complex_setup" --collect-only -v --tb=short 2>&1 | grep -E "(WARNING|ERROR|FAILED|::)" | head -20
+          
+          echo ""
+          echo "=== DETAILED FILE DISCOVERY ANALYSIS ==="
+          echo "All Python test files in filesystem:"
+          find tests -name "test_*.py" | sort
+          
+          echo ""
+          echo "Count of test files found in filesystem:"
+          find tests -name "test_*.py" | wc -l
+          
+          echo ""
+          echo "Test files pytest can actually collect from:"
+          python -c "
+          import pytest
+          import sys
+          import os
+          
+          # Add current directory to path
+          sys.path.insert(0, '.')
+          
+          # Try to collect all test files
+          collected_files = set()
+          failed_files = []
+          
+          # Get all test files from filesystem
+          import subprocess
+          result = subprocess.run(['find', 'tests', '-name', 'test_*.py'], capture_output=True, text=True)
+          all_test_files = result.stdout.strip().split('\n') if result.stdout.strip() else []
+          
+          print(f'Total test files in filesystem: {len(all_test_files)}')
+          
+          # Try to import each test file module
+          for file_path in all_test_files:
+              if not file_path:
+                  continue
+              try:
+                  # Convert file path to module name
+                  module_name = file_path.replace('/', '.').replace('.py', '')
+                  __import__(module_name)
+                  collected_files.add(file_path)
+              except Exception as e:
+                  failed_files.append((file_path, str(e)))
+          
+          print(f'Test files that can be imported: {len(collected_files)}')
+          print(f'Test files that FAILED to import: {len(failed_files)}')
+          
+          if failed_files:
+              print('\n=== IMPORT FAILURES ===')
+              for file_path, error in failed_files[:10]:  # Show first 10 failures
+                  print(f'{file_path}: {error}')
+                  
+          print('\n=== MISSING FILE CATEGORIES ===')
+          missing_scrapers = [f for f in all_test_files if 'scrapers' in f and f not in collected_files]
+          missing_integration = [f for f in all_test_files if 'integration' in f and f not in collected_files]
+          missing_resilience = [f for f in all_test_files if 'resilience' in f and f not in collected_files]
+          
+          print(f'Missing scraper tests: {len(missing_scrapers)}')
+          print(f'Missing integration tests: {len(missing_integration)}')
+          print(f'Missing resilience tests: {len(missing_resilience)}')
+          
+          if missing_scrapers:
+              print('Sample missing scraper tests:')
+              for f in missing_scrapers[:3]:
+                  print(f'  {f}')
+          "
+          
+          echo ""
+          echo "=== PYTEST COLLECTION DIAGNOSTICS ==="
+          echo "Running pytest with detailed collection info:"
+          python -m pytest tests/ --collect-only --tb=long -v 2>&1 | grep -E "(FAILED|ERROR|ImportError|ModuleNotFoundError)" | head -10
+          
+          echo ""
+          echo "=== DIRECTORY STRUCTURE VERIFICATION ==="
+          echo "Checking key test directories exist:"
+          ls -la tests/
+          echo ""
+          echo "Scraper test files:"
+          find tests -path "*/scrapers/*" -name "test_*.py" | head -5
+          echo ""
+          echo "Integration test files:"
+          find tests -path "*/integration/*" -name "test_*.py" | head -5
 
       - name: Run backend tests
         env:
