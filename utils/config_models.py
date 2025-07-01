@@ -77,9 +77,7 @@ class OrganizationMetadata(BaseModel):
                 else:
                     raise ValueError(f"Invalid country code in service_regions: {region}")
             else:
-                raise ValueError(
-                    f"service_regions must contain only country codes, got: {type(region)}"
-                )
+                raise ValueError(f"service_regions must contain only country codes, got: {type(region)}")
 
         return validated
 

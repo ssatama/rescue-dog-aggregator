@@ -195,15 +195,11 @@ class OrganizationSyncManager:
 
         try:
             # Upload logo to Cloudinary
-            logo_urls = OrganizationLogoUploader.upload_organization_logo(
-                config.id, config.metadata.logo_url, force_upload=False
-            )
+            logo_urls = OrganizationLogoUploader.upload_organization_logo(config.id, config.metadata.logo_url, force_upload=False)
 
             if logo_urls and "original" in logo_urls:
                 cloudinary_url = logo_urls["original"]
-                self.logger.info(
-                    f"Successfully uploaded logo for organization {org_id}: {cloudinary_url}"
-                )
+                self.logger.info(f"Successfully uploaded logo for organization {org_id}: {cloudinary_url}")
 
                 # Update the logo_url in database
                 cursor = get_db_cursor()
@@ -257,9 +253,7 @@ class OrganizationSyncManager:
                     all_countries.add(country_code.strip().upper())
 
             if not all_countries:
-                self.logger.debug(
-                    f"No service regions or ships_to countries defined for organization {org_id}"
-                )
+                self.logger.debug(f"No service regions or ships_to countries defined for organization {org_id}")
                 cursor.connection.commit()
                 return
 
@@ -339,9 +333,7 @@ class OrganizationSyncManager:
             # Use dict key since we're using RealDictCursor
             org_id = int(result["id"])
             cursor.connection.commit()
-            self.logger.info(
-                f"Created organization '{config.name}' with ID {org_id} from config '{config.id}'"
-            )
+            self.logger.info(f"Created organization '{config.name}' with ID {org_id} from config '{config.id}'")
         finally:
             cursor.close()
             cursor.connection.close()
@@ -408,9 +400,7 @@ class OrganizationSyncManager:
             )
 
             cursor.connection.commit()
-            self.logger.info(
-                f"Updated organization ID {org_id} '{config.name}' from config '{config.id}'"
-            )
+            self.logger.info(f"Updated organization ID {org_id} '{config.name}' from config '{config.id}'")
         finally:
             cursor.close()
             cursor.connection.close()
@@ -500,10 +490,7 @@ class OrganizationSyncManager:
 
             # Summary
             total_processed = created_count + updated_count
-            self.logger.info(
-                f"Organization sync completed: {total_processed}/{len(configs)} processed "
-                f"({created_count} created, {updated_count} updated, {len(errors)} errors)"
-            )
+            self.logger.info(f"Organization sync completed: {total_processed}/{len(configs)} processed " f"({created_count} created, {updated_count} updated, {len(errors)} errors)")
 
             return {
                 "success": len(errors) == 0,
@@ -612,9 +599,7 @@ class OrganizationSyncManager:
                 "total_service_regions": total_regions,
                 "organizations_with_regions": orgs_with_regions,
                 "total_organizations": total_orgs,
-                "coverage_percentage": round(
-                    (orgs_with_regions / total_orgs * 100) if total_orgs > 0 else 0, 1
-                ),
+                "coverage_percentage": round((orgs_with_regions / total_orgs * 100) if total_orgs > 0 else 0, 1),
             }
 
         except Exception as e:

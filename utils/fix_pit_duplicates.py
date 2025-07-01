@@ -158,9 +158,7 @@ def fix_organization_duplicates(conn, org_id, org_type, dry_run=True):
     # Show first few examples
     print(f"\n🔍 Examples of {org_type} animals to be removed:")
     for i, (animal_id, external_id, name, created_at) in enumerate(animals_to_delete[:5]):
-        print(
-            f"  {i+1}. ID: {animal_id}, External ID: {external_id}, Name: {name}, Created: {created_at}"
-        )
+        print(f"  {i+1}. ID: {animal_id}, External ID: {external_id}, Name: {name}, Created: {created_at}")
 
     if len(animals_to_delete) > 5:
         print(f"  ... and {len(animals_to_delete) - 5} more")

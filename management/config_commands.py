@@ -163,9 +163,7 @@ class ConfigManager:
                     sr_status = status["service_regions"]
                     print("🗺️  Service Regions Status:")
                     print(f"  Total service regions: {sr_status.get('total_service_regions', 0)}")
-                    print(
-                        f"  Organizations with regions: {sr_status.get('organizations_with_regions', 0)}"
-                    )
+                    print(f"  Organizations with regions: {sr_status.get('organizations_with_regions', 0)}")
                     print(f"  Coverage: {sr_status.get('coverage_percentage', 0)}%")
                     print()
 
@@ -257,9 +255,7 @@ class ConfigManager:
 
             print("=" * 50)
             print(f"🐾 Total animals found: {total_animals_found}")
-            print(
-                f"📊 Overall: {res.get('successful', 0)} succeeded, {res.get('failed', 0)} failed out of {res.get('total_orgs', 0)} orgs"
-            )
+            print(f"📊 Overall: {res.get('successful', 0)} succeeded, {res.get('failed', 0)} failed out of {res.get('total_orgs', 0)} orgs")
 
         except Exception as e:
             print(f"❌ Error running all scrapers: {e}")
@@ -304,9 +300,7 @@ def main():
 
     # List command
     list_parser = subparsers.add_parser("list", help="List organizations")
-    list_parser.add_argument(
-        "--enabled-only", action="store_true", help="Show only enabled organizations"
-    )
+    list_parser.add_argument("--enabled-only", action="store_true", help="Show only enabled organizations")
 
     # Show command
     show_parser = subparsers.add_parser("show", help="Show organization details")

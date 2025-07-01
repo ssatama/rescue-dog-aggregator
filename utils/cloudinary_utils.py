@@ -32,9 +32,7 @@ class OrganizationLogoUploader:
     }
 
     @classmethod
-    def upload_organization_logo(
-        cls, org_id: str, logo_url: str, force_upload: bool = False
-    ) -> Dict[str, str]:
+    def upload_organization_logo(cls, org_id: str, logo_url: str, force_upload: bool = False) -> Dict[str, str]:
         """
         Upload organization logo to Cloudinary with multiple size presets.
 
@@ -56,9 +54,7 @@ class OrganizationLogoUploader:
         # Check Cloudinary configuration
         if not CloudinaryService._check_configuration():
             if force_upload:
-                raise OrganizationLogoUploadError(
-                    f"Cloudinary not configured but force_upload=True for {org_id}"
-                )
+                raise OrganizationLogoUploadError(f"Cloudinary not configured but force_upload=True for {org_id}")
             else:
                 logger.info(f"Cloudinary not configured, skipping logo upload for {org_id}")
                 return {"original": logo_url}
@@ -79,9 +75,7 @@ class OrganizationLogoUploader:
                 # Test if URL is accessible
                 response = requests.head(logo_url, timeout=10, allow_redirects=True)
                 if response.status_code >= 400:
-                    raise OrganizationLogoUploadError(
-                        f"Logo URL not accessible for {org_id}: {response.status_code}"
-                    )
+                    raise OrganizationLogoUploadError(f"Logo URL not accessible for {org_id}: {response.status_code}")
 
                 # Upload to Cloudinary using the existing service method
                 upload_result, success = CloudinaryService.upload_image_from_url(
@@ -113,9 +107,7 @@ class OrganizationLogoUploader:
                             elif key == "gravity":
                                 transform_params.append(f"g_{value}")
                     # Build transformation URL
-                    base_url = upload_result.replace(
-                        "/upload/", f'/upload/{",".join(transform_params)}/'
-                    )
+                    base_url = upload_result.replace("/upload/", f'/upload/{",".join(transform_params)}/')
                     urls[preset_name] = base_url
                     urls[preset_name] = base_url
 
@@ -251,9 +243,7 @@ class OrganizationLogoUploader:
         try:
             # For now, just log that we would clean up - the service doesn't have a
             # delete method
-            logger.info(
-                f"Logo cleanup requested for organization {org_id} (cleanup not implemented)"
-            )
+            logger.info(f"Logo cleanup requested for organization {org_id} (cleanup not implemented)")
             return True
 
         except Exception as e:

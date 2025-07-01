@@ -90,16 +90,12 @@ def view_sample_dogs(limit=10):
 
         print(f"\nMost recent {limit} dogs in the database:")
         print("-" * 80)
-        print(
-            f"{'ID':<5}{'Name':<20}{'Organization':<20}{'Breed':<15}{'Sex':<10}{'Age':<10}{'Status':<15}"
-        )
+        print(f"{'ID':<5}{'Name':<20}{'Organization':<20}{'Breed':<15}{'Sex':<10}{'Age':<10}{'Status':<15}")
         print("-" * 80)
 
         for dog in dogs:
             dog_id, name, org, breed, sex, age, status, url, img = dog
-            print(
-                f"{dog_id:<5}{name:<20}{org:<20}{breed or 'Unknown':<15}{sex or 'Unknown':<10}{age or 'Unknown':<10}{status:<15}"
-            )
+            print(f"{dog_id:<5}{name:<20}{org:<20}{breed or 'Unknown':<15}{sex or 'Unknown':<10}{age or 'Unknown':<10}{status:<15}")
             print(f"  URL: {url}")
             print(f"  Image: {img}")
             print("-" * 80)

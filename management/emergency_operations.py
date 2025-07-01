@@ -113,9 +113,7 @@ class EmergencyOperations:
 
             critical_errors = []
             for row in cursor.fetchall():
-                critical_errors.append(
-                    {"organization": row[0], "error": row[1], "timestamp": row[2]}
-                )
+                critical_errors.append({"organization": row[0], "error": row[1], "timestamp": row[2]})
 
             status["critical_errors"] = critical_errors
 
@@ -225,9 +223,7 @@ class EmergencyOperations:
                 }
 
             # Step 2: Create safety backup
-            backup_result = self.rollback_manager.create_data_backup(
-                organization_id, "Emergency recovery safety backup"
-            )
+            backup_result = self.rollback_manager.create_data_backup(organization_id, "Emergency recovery safety backup")
             backup_id = backup_result.get("backup_id")
             recovery_log.append(f"Created backup: {backup_id}")
 
@@ -454,9 +450,7 @@ class RollbackManager:
         """
         return self._query_snapshots(organization_id)
 
-    def rollback_to_snapshot(
-        self, organization_id: int, snapshot_id: str, require_confirmation: bool = True
-    ) -> Dict[str, Any]:
+    def rollback_to_snapshot(self, organization_id: int, snapshot_id: str, require_confirmation: bool = True) -> Dict[str, Any]:
         """
         Rollback organization data to a specific snapshot.
 
@@ -470,9 +464,7 @@ class RollbackManager:
         """
         if require_confirmation:
             try:
-                confirmation = input(
-                    f"Are you sure you want to rollback organization {organization_id} to snapshot {snapshot_id}? (yes/no): "
-                )
+                confirmation = input(f"Are you sure you want to rollback organization {organization_id} to snapshot {snapshot_id}? (yes/no): ")
                 if confirmation.lower() != "yes":
                     return {"success": False, "reason": "Operation cancelled by user"}
             except EOFError:
@@ -496,9 +488,7 @@ class RollbackManager:
         """
         try:
             # Create safety backup first
-            backup_result = self.create_data_backup(
-                organization_id, "Before rollback of last scrape"
-            )
+            backup_result = self.create_data_backup(organization_id, "Before rollback of last scrape")
 
             session_id = self._get_last_scrape_session(organization_id)
             if not session_id:
@@ -586,9 +576,7 @@ class RollbackManager:
             cursor = conn.cursor()
 
             # Create backup before rollback
-            backup_result = self._create_backup(
-                organization_id, f"Before rollback to {snapshot_id}"
-            )
+            backup_result = self._create_backup(organization_id, f"Before rollback to {snapshot_id}")
 
             # Count animals before rollback
             cursor.execute(
@@ -631,9 +619,7 @@ class RollbackManager:
             cursor.close()
             conn.close()
 
-            self.logger.warning(
-                f"Rollback completed for org {organization_id}: removed {animals_removed}, restored {animals_restored}"
-            )
+            self.logger.warning(f"Rollback completed for org {organization_id}: removed {animals_removed}, restored {animals_restored}")
 
             return {
                 "success": True,
@@ -748,9 +734,7 @@ class RollbackManager:
             cursor.close()
             conn.close()
 
-            self.logger.warning(
-                f"Rolled back session {session_id}: removed {animals_removed}, reset {animals_reset}"
-            )
+            self.logger.warning(f"Rolled back session {session_id}: removed {animals_removed}, reset {animals_reset}")
 
             return {
                 "success": True,
@@ -799,9 +783,7 @@ class RollbackManager:
             # Calculate approximate size (rough estimate)
             size_mb = round(animals_count * 0.05, 2)  # ~50KB per animal
 
-            self.logger.info(
-                f"Created backup {backup_id} for org {organization_id}: {animals_count} animals"
-            )
+            self.logger.info(f"Created backup {backup_id} for org {organization_id}: {animals_count} animals")
 
             return {
                 "backup_id": backup_id,
@@ -847,9 +829,7 @@ class DataRecoveryManager:
         """
         return self._analyze_data_integrity(organization_id)
 
-    def repair_data_corruption(
-        self, organization_id: int, corruption_report: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def repair_data_corruption(self, organization_id: int, corruption_report: Dict[str, Any]) -> Dict[str, Any]:
         """
         Repair detected data corruption.
 
@@ -1133,11 +1113,7 @@ class DataRecoveryManager:
             conn.close()
 
             # Determine if data is consistent
-            consistent = (
-                total_animals > 0
-                and uniqueness_ratio >= 0.98  # 98% unique external_ids
-                and animals_with_images > 0
-            )
+            consistent = total_animals > 0 and uniqueness_ratio >= 0.98 and animals_with_images > 0  # 98% unique external_ids
 
             return {
                 "consistent": consistent,
@@ -1214,9 +1190,7 @@ def main():
     subparsers = parser.add_subparsers(dest="command", help="Available emergency commands")
 
     # Emergency stop command
-    stop_parser = subparsers.add_parser(
-        "emergency-stop", help="Stop all running scrapers immediately"
-    )
+    stop_parser = subparsers.add_parser("emergency-stop", help="Stop all running scrapers immediately")
 
     # System status command
     status_parser = subparsers.add_parser("status", help="Get system status")

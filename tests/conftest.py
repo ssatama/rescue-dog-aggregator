@@ -113,9 +113,7 @@ def manage_test_data():
             age_min_months = EXCLUDED.age_min_months, age_max_months = EXCLUDED.age_max_months;
         """
         cursor.execute(animals_sql)
-        print(
-            "[conftest.manage_test_data] Comprehensive test animals inserted (12 dogs with various breeds)."
-        )
+        print("[conftest.manage_test_data] Comprehensive test animals inserted (12 dogs with various breeds).")
 
         # --- IMPORTANT: Commit the setup data using the connection from the override ---
         conn.commit()
@@ -125,9 +123,7 @@ def manage_test_data():
 
         # Teardown is implicitly handled by the next test's setup clearing
         # tables
-        print(
-            "[conftest.manage_test_data] Teardown for test function (data cleared by next setup)."
-        )
+        print("[conftest.manage_test_data] Teardown for test function (data cleared by next setup).")
 
     except Exception as e:
         if conn:

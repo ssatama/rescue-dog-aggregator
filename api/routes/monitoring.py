@@ -251,9 +251,7 @@ async def get_scraper_status(db_conn=Depends(get_database_connection)):
 
 
 @router.get("/monitoring/scrapers/{organization_id}")
-async def get_individual_scraper_details(
-    organization_id: int, db_conn=Depends(get_database_connection)
-):
+async def get_individual_scraper_details(organization_id: int, db_conn=Depends(get_database_connection)):
     """
     Get detailed information about a specific scraper.
 
@@ -562,9 +560,7 @@ async def get_performance_metrics(db_conn=Depends(get_database_connection)):
             "success_rate": (successful / max(total, 1)) * 100,
             "total_animals_7d": scraper_data[4] or 0,
             "avg_animals_per_scrape": round(scraper_data[5] or 0, 1),
-            "animals_per_hour": round(
-                (scraper_data[4] or 0) / (7 * 24), 1
-            ),  # Animals per hour over 7 days
+            "animals_per_hour": round((scraper_data[4] or 0) / (7 * 24), 1),  # Animals per hour over 7 days
         }
 
         # Get database connection pool info (basic version)
@@ -722,13 +718,7 @@ async def get_active_alerts(db_conn=Depends(get_database_connection)):
                     "organization_name": org_name,
                     "message": f"{org_name} has not been scraped recently",
                     "last_occurrence": last_scrape,
-                    "metadata": {
-                        "hours_since_last_scrape": (
-                            48
-                            if not last_scrape
-                            else int((datetime.now() - last_scrape).total_seconds() / 3600)
-                        )
-                    },
+                    "metadata": {"hours_since_last_scrape": (48 if not last_scrape else int((datetime.now() - last_scrape).total_seconds() / 3600))},
                 }
             )
 

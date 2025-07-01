@@ -200,9 +200,7 @@ class BaseScraper(ABC):
         """Save or update animal data in the database with Cloudinary image upload."""
         try:
             # Check if animal already exists by external_id and organization FIRST
-            existing_animal = self.get_existing_animal(
-                animal_data.get("external_id"), animal_data.get("organization_id")
-            )
+            existing_animal = self.get_existing_animal(animal_data.get("external_id"), animal_data.get("organization_id"))
 
             # Only upload primary image if it's new or has changed
             if animal_data.get("primary_image_url"):
@@ -231,9 +229,7 @@ class BaseScraper(ABC):
                             # Use existing Cloudinary URL
                             animal_data["primary_image_url"] = current_primary_url
                             animal_data["original_image_url"] = current_original_url
-                            self.logger.info(
-                                f"🔄 Image unchanged for {animal_data.get('name')}, using existing Cloudinary URL"
-                            )
+                            self.logger.info(f"🔄 Image unchanged for {animal_data.get('name')}, using existing Cloudinary URL")
                         elif current_original_url and "cloudinary.com" in current_original_url:
                             # Legacy case: original_image_url is a Cloudinary URL, update it to source URL
                             # but keep the existing Cloudinary URL as primary
@@ -241,14 +237,10 @@ class BaseScraper(ABC):
                             animal_data["primary_image_url"] = current_primary_url
                             # Update to source URL
                             animal_data["original_image_url"] = original_url
-                            self.logger.info(
-                                f"🔄 Updated original_image_url to source URL for {animal_data.get('name')}, keeping existing Cloudinary URL"
-                            )
+                            self.logger.info(f"🔄 Updated original_image_url to source URL for {animal_data.get('name')}, keeping existing Cloudinary URL")
 
                 if should_upload_image:
-                    self.logger.info(
-                        f"📤 Uploading primary image to Cloudinary for {animal_data.get('name', 'unknown')}"
-                    )
+                    self.logger.info(f"📤 Uploading primary image to Cloudinary for {animal_data.get('name', 'unknown')}")
 
                     cloudinary_url, success = self.cloudinary_service.upload_image_from_url(
                         original_url,
@@ -260,14 +252,10 @@ class BaseScraper(ABC):
                         # Store both URLs for fallback
                         animal_data["primary_image_url"] = cloudinary_url
                         animal_data["original_image_url"] = original_url
-                        self.logger.info(
-                            f"✅ Successfully uploaded primary image to Cloudinary for {animal_data.get('name')}"
-                        )
+                        self.logger.info(f"✅ Successfully uploaded primary image to Cloudinary for {animal_data.get('name')}")
                     else:
                         # Keep original URL if upload fails
-                        self.logger.warning(
-                            f"❌ Failed to upload primary image for {animal_data.get('name')}, keeping original URL"
-                        )
+                        self.logger.warning(f"❌ Failed to upload primary image for {animal_data.get('name')}, keeping original URL")
                         animal_data["original_image_url"] = original_url
 
             if existing_animal:
@@ -277,9 +265,7 @@ class BaseScraper(ABC):
         except AttributeError as e:
             # Handle missing methods in test environment
             if "get_existing_animal" in str(e):
-                self.logger.warning(
-                    f"get_existing_animal method not implemented in test environment"
-                )
+                self.logger.warning(f"get_existing_animal method not implemented in test environment")
                 return 1, "test"
             elif "create_animal" in str(e):
                 self.logger.warning(f"create_animal method not implemented in test environment")
@@ -343,18 +329,12 @@ class BaseScraper(ABC):
                             (expected_is_primary, existing_img["id"]),
                         )
 
-                    self.logger.info(
-                        f"🔄 Keeping existing image {i+1} for animal {animal_id} (unchanged)"
-                    )
+                    self.logger.info(f"🔄 Keeping existing image {i+1} for animal {animal_id} (unchanged)")
                 else:
                     # New image, upload to Cloudinary
-                    self.logger.info(
-                        f"📤 Uploading new additional image {i+1} for animal {animal_id}"
-                    )
+                    self.logger.info(f"📤 Uploading new additional image {i+1} for animal {animal_id}")
 
-                    cloudinary_url, success = self.cloudinary_service.upload_image_from_url(
-                        image_url, animal_name, self.organization_name
-                    )
+                    cloudinary_url, success = self.cloudinary_service.upload_image_from_url(image_url, animal_name, self.organization_name)
 
                     # Use Cloudinary URL if successful, otherwise fallback to original
                     final_url = cloudinary_url if success else image_url
@@ -368,13 +348,9 @@ class BaseScraper(ABC):
                     )
 
                     if success:
-                        self.logger.info(
-                            f"✅ Uploaded new additional image {i+1} for animal {animal_id}"
-                        )
+                        self.logger.info(f"✅ Uploaded new additional image {i+1} for animal {animal_id}")
                     else:
-                        self.logger.warning(
-                            f"❌ Failed to upload additional image {i+1} for animal {animal_id}, using original"
-                        )
+                        self.logger.warning(f"❌ Failed to upload additional image {i+1} for animal {animal_id}, using original")
 
             # Delete images that are no longer needed
             for img in existing_images:
@@ -408,9 +384,7 @@ class BaseScraper(ABC):
 
         try:
             # Collect data using the organization-specific implementation
-            self.logger.info(
-                f"Starting scrape for {self.get_organization_name()} {self.animal_type}s"
-            )
+            self.logger.info(f"Starting scrape for {self.get_organization_name()} {self.animal_type}s")
             animals_data = self.collect_data()
             self.logger.info(f"Collected data for {len(animals_data)} {self.animal_type}s")
 
@@ -455,9 +429,7 @@ class BaseScraper(ABC):
             potential_failure = self.detect_partial_failure(len(animals_data))
 
             if potential_failure:
-                self.logger.warning(
-                    "Potential partial failure detected - skipping stale data update"
-                )
+                self.logger.warning("Potential partial failure detected - skipping stale data update")
                 # Complete scrape log with warning status
                 self.complete_scrape_log(
                     status="warning",
@@ -499,10 +471,7 @@ class BaseScraper(ABC):
 
             self.log_detailed_metrics(detailed_metrics)
 
-            self.logger.info(
-                f"Scrape completed successfully. Added: {animals_added}, Updated: {animals_updated}, "
-                f"Quality: {quality_score:.2f}, Duration: {duration:.1f}s"
-            )
+            self.logger.info(f"Scrape completed successfully. Added: {animals_added}, Updated: {animals_updated}, " f"Quality: {quality_score:.2f}, Duration: {duration:.1f}s")
             return True
         except Exception as e:
             self.logger.error(f"Error during scrape: {e}")
@@ -586,9 +555,7 @@ class BaseScraper(ABC):
             language = self.detect_language(description_text)
 
             # Apply standardization
-            standardized_breed, breed_group, size_estimate = standardize_breed(
-                animal_data.get("breed", "")
-            )
+            standardized_breed, breed_group, size_estimate = standardize_breed(animal_data.get("breed", ""))
             age_info = standardize_age(animal_data.get("age_text", ""))
             age_months_min = age_info.get("age_min_months")
             age_months_max = age_info.get("age_max_months")
@@ -634,11 +601,7 @@ class BaseScraper(ABC):
                     final_size,
                     final_standardized_size,
                     language,
-                    (
-                        json.dumps(animal_data.get("properties"))
-                        if animal_data.get("properties")
-                        else None
-                    ),  # properties (JSONB)
+                    (json.dumps(animal_data.get("properties")) if animal_data.get("properties") else None),  # properties (JSONB)
                     current_time,  # created_at
                     current_time,  # updated_at
                     current_time,  # last_scraped_at
@@ -707,9 +670,7 @@ class BaseScraper(ABC):
 
             # Apply standardization to new data to compare with current standardized
             # values
-            new_standardized_breed, new_breed_group, new_size_estimate = standardize_breed(
-                animal_data.get("breed", "")
-            )
+            new_standardized_breed, new_breed_group, new_size_estimate = standardize_breed(animal_data.get("breed", ""))
             new_age_info = standardize_age(animal_data.get("age_text", ""))
             new_age_min_months = new_age_info.get("age_min_months")
             new_age_max_months = new_age_info.get("age_max_months")
@@ -720,9 +681,7 @@ class BaseScraper(ABC):
             # Check for changes in both raw AND standardized fields
             # Compare properties (description) as JSON to detect content changes
             current_properties_json = current_properties if current_properties else "{}"
-            new_properties_json = (
-                json.dumps(animal_data.get("properties")) if animal_data.get("properties") else "{}"
-            )
+            new_properties_json = json.dumps(animal_data.get("properties")) if animal_data.get("properties") else "{}"
 
             changes_detected = (
                 animal_data.get("name") != current_name
@@ -805,11 +764,7 @@ class BaseScraper(ABC):
                     animal_data.get("original_image_url"),
                     animal_data.get("adoption_url"),
                     animal_data.get("status", "available"),
-                    (
-                        json.dumps(animal_data.get("properties"))
-                        if animal_data.get("properties")
-                        else None
-                    ),  # properties
+                    (json.dumps(animal_data.get("properties")) if animal_data.get("properties") else None),  # properties
                     current_time,  # updated_at
                     current_time,  # last_scraped_at
                     self.current_scrape_session or current_time,  # last_seen_at
@@ -952,9 +907,7 @@ class BaseScraper(ABC):
             cursor.close()
 
             if rows_affected > 0:
-                self.logger.info(
-                    f"Marked {rows_affected} animals as unavailable after {threshold}+ missed scrapes"
-                )
+                self.logger.info(f"Marked {rows_affected} animals as unavailable after {threshold}+ missed scrapes")
 
             return rows_affected
 
@@ -1055,17 +1008,12 @@ class BaseScraper(ABC):
         """
         # Handle invalid inputs
         if animals_found < 0:
-            self.logger.error(
-                f"Invalid negative animal count: {animals_found} for organization_id {self.organization_id}"
-            )
+            self.logger.error(f"Invalid negative animal count: {animals_found} for organization_id {self.organization_id}")
             return True
 
         # Zero animals is always catastrophic
         if animals_found == 0:
-            self.logger.error(
-                f"Catastrophic failure detected: Zero animals found for organization_id {self.organization_id}. "
-                f"This indicates complete scraper failure or website unavailability."
-            )
+            self.logger.error(f"Catastrophic failure detected: Zero animals found for organization_id {self.organization_id}. " f"This indicates complete scraper failure or website unavailability.")
             return True
 
         # Check against absolute minimum threshold
@@ -1127,24 +1075,14 @@ class BaseScraper(ABC):
             result = cursor.fetchone()
             cursor.close()
 
-            if (
-                not result
-                or not result[0]
-                or (len(result) > 1 and result[1] < minimum_historical_scrapes)
-            ):
+            if not result or not result[0] or (len(result) > 1 and result[1] < minimum_historical_scrapes):
                 # No historical data or insufficient data - use absolute
                 # minimum
                 scrape_count = result[1] if (result and len(result) > 1) else 0
-                self.logger.info(
-                    f"Insufficient historical data for organization_id {self.organization_id} "
-                    f"({scrape_count} scrapes). Using absolute minimum threshold."
-                )
+                self.logger.info(f"Insufficient historical data for organization_id {self.organization_id} " f"({scrape_count} scrapes). Using absolute minimum threshold.")
 
                 if animals_found < absolute_minimum:
-                    self.logger.warning(
-                        f"Potential failure detected: {animals_found} animals found "
-                        f"(below absolute minimum of {absolute_minimum}) for new organization"
-                    )
+                    self.logger.warning(f"Potential failure detected: {animals_found} animals found " f"(below absolute minimum of {absolute_minimum}) for new organization")
                     return True
                 return False
 

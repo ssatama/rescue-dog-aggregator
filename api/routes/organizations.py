@@ -26,22 +26,16 @@ def get_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
             SELECT
                 o.id, o.name, o.website_url, o.description, o.country, o.city,
                 o.logo_url, o.social_media, o.active, o.created_at, o.updated_at,
-                o.ships_to, o.established_year,
-                -- Service regions as array
-                COALESCE(
-                    ARRAY_AGG(DISTINCT sr.country) FILTER (WHERE sr.country IS NOT NULL),
-                    ARRAY[]::text[]
-                ) as service_regions,
+                o.ships_to, o.established_year, o.service_regions,
                 -- Dog statistics
                 COUNT(DISTINCT a.id) as total_dogs,
                 COUNT(DISTINCT a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '7 days') as new_this_week
             FROM organizations o
-            LEFT JOIN service_regions sr ON o.id = sr.organization_id
             LEFT JOIN animals a ON o.id = a.organization_id AND a.status = 'available'
             WHERE o.active = true
             GROUP BY o.id, o.name, o.website_url, o.description, o.country, o.city,
                      o.logo_url, o.social_media, o.active, o.created_at, o.updated_at,
-                     o.ships_to, o.established_year
+                     o.ships_to, o.established_year, o.service_regions
             ORDER BY o.name
         """
         )
@@ -68,8 +62,13 @@ def get_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
             elif org.get("ships_to") is None:
                 org["ships_to"] = []
 
-            # Ensure service_regions is a list
-            if org.get("service_regions") is None:
+            # Parse service_regions JSON if needed
+            if org.get("service_regions") and isinstance(org["service_regions"], str):
+                try:
+                    org["service_regions"] = json.loads(org["service_regions"])
+                except json.JSONDecodeError:
+                    org["service_regions"] = []
+            elif org.get("service_regions") is None:
                 org["service_regions"] = []
 
         return organizations
@@ -90,22 +89,16 @@ def get_organization(organization_id: int, cursor: RealDictCursor = Depends(get_
             SELECT
                 o.id, o.name, o.website_url, o.description, o.country, o.city,
                 o.logo_url, o.social_media, o.active, o.created_at, o.updated_at,
-                o.ships_to, o.established_year,
-                -- Service regions as array
-                COALESCE(
-                    ARRAY_AGG(DISTINCT sr.country) FILTER (WHERE sr.country IS NOT NULL),
-                    ARRAY[]::text[]
-                ) as service_regions,
+                o.ships_to, o.established_year, o.service_regions,
                 -- Dog statistics
                 COUNT(DISTINCT a.id) as total_dogs,
                 COUNT(DISTINCT a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '7 days') as new_this_week
             FROM organizations o
-            LEFT JOIN service_regions sr ON o.id = sr.organization_id
             LEFT JOIN animals a ON o.id = a.organization_id AND a.status = 'available'
             WHERE o.id = %s AND o.active = true
             GROUP BY o.id, o.name, o.website_url, o.description, o.country, o.city,
                      o.logo_url, o.social_media, o.active, o.created_at, o.updated_at,
-                     o.ships_to, o.established_year
+                     o.ships_to, o.established_year, o.service_regions
         """,
             (organization_id,),
         )
@@ -134,8 +127,13 @@ def get_organization(organization_id: int, cursor: RealDictCursor = Depends(get_
         elif organization.get("ships_to") is None:
             organization["ships_to"] = []
 
-        # Ensure service_regions is a list
-        if organization.get("service_regions") is None:
+        # Parse service_regions JSON if needed
+        if organization.get("service_regions") and isinstance(organization["service_regions"], str):
+            try:
+                organization["service_regions"] = json.loads(organization["service_regions"])
+            except json.JSONDecodeError:
+                organization["service_regions"] = []
+        elif organization.get("service_regions") is None:
             organization["service_regions"] = []
 
         return organization
@@ -176,14 +174,9 @@ def get_organization_recent_dogs(
         for dog in recent_dogs:
             dog_data = dict(dog)
             # Use Cloudinary transformations for thumbnails if available
-            if (
-                dog_data.get("primary_image_url")
-                and "cloudinary.com" in dog_data["primary_image_url"]
-            ):
+            if dog_data.get("primary_image_url") and "cloudinary.com" in dog_data["primary_image_url"]:
                 # Generate thumbnail URL (96x96 for card previews)
-                thumbnail_url = dog_data["primary_image_url"].replace(
-                    "/upload/", "/upload/w_96,h_96,c_fill,g_auto/"
-                )
+                thumbnail_url = dog_data["primary_image_url"].replace("/upload/", "/upload/w_96,h_96,c_fill,g_auto/")
                 dog_data["thumbnail_url"] = thumbnail_url
             else:
                 dog_data["thumbnail_url"] = dog_data["primary_image_url"]
@@ -197,9 +190,7 @@ def get_organization_recent_dogs(
 
 
 @router.get("/{organization_id}/statistics")
-def get_organization_statistics(
-    organization_id: int, cursor: RealDictCursor = Depends(get_db_cursor)
-):
+def get_organization_statistics(organization_id: int, cursor: RealDictCursor = Depends(get_db_cursor)):
     """
     Get statistics for a specific organization.
 

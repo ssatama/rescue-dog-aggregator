@@ -57,9 +57,7 @@ def migrate_existing_images():
             logger.info(f"Migrating image for {name} (ID: {animal_id})")
 
             # Upload to Cloudinary
-            cloudinary_url, success = cloudinary_service.upload_image_from_url(
-                image_url, name, org_name
-            )
+            cloudinary_url, success = cloudinary_service.upload_image_from_url(image_url, name, org_name)
 
             if success and cloudinary_url:
                 # Update database with Cloudinary URL and store original
@@ -93,9 +91,7 @@ def migrate_existing_images():
                 logger.info(f"Committed progress: {success_count}/{len(animals)} successful")
 
         conn.commit()
-        logger.info(
-            f"Migration complete: {success_count}/{len(animals)} images successfully migrated"
-        )
+        logger.info(f"Migration complete: {success_count}/{len(animals)} images successfully migrated")
 
     except Exception as e:
         logger.error(f"Migration failed: {e}")

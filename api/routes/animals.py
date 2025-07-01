@@ -50,12 +50,8 @@ async def get_animals(
     age_category: Optional[str] = Query(None),
     animal_type: Optional[str] = Query("dog"),
     status: Optional[str] = Query("available"),
-    location_country: Optional[str] = Query(
-        None, description="Filter by the country the animal is located in"
-    ),
-    available_to_country: Optional[str] = Query(
-        None, description="Filter by country the animal can be adopted to"
-    ),
+    location_country: Optional[str] = Query(None, description="Filter by the country the animal is located in"),
+    available_to_country: Optional[str] = Query(None, description="Filter by country the animal can be adopted to"),
     available_to_region: Optional[str] = Query(
         None,
         description="Filter by region within a country the animal can be adopted to",
@@ -122,9 +118,7 @@ async def get_animals(
 
         # Add search filter (name or breed)
         if search:
-            conditions.append(
-                "(a.name ILIKE %s OR a.breed ILIKE %s OR a.standardized_breed ILIKE %s)"
-            )
+            conditions.append("(a.name ILIKE %s OR a.breed ILIKE %s OR a.standardized_breed ILIKE %s)")
             search_term = f"%{search}%"
             params.extend([search_term, search_term, search_term])
 
@@ -528,9 +522,7 @@ async def get_statistics(
             ORDER BY count DESC, o.country ASC
             """
         )
-        stats["countries"] = [
-            {"country": row["country"], "count": row["count"]} for row in cursor.fetchall()
-        ]
+        stats["countries"] = [{"country": row["country"], "count": row["count"]} for row in cursor.fetchall()]
 
         # Get organizations with dog counts and all required fields
         cursor.execute(

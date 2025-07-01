@@ -104,9 +104,7 @@ class PetsInTurkeyScraper(BaseScraper):
 
             # Wait for the page to load
             self.logger.info("Waiting for page to load...")
-            WebDriverWait(self.driver, 30).until(
-                EC.presence_of_element_located((By.TAG_NAME, "body"))
-            )
+            WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
 
             # Wait longer for dynamic content to load
             time.sleep(10)
@@ -122,9 +120,7 @@ class PetsInTurkeyScraper(BaseScraper):
             time.sleep(2)
 
             # Find all "Breed" elements as entry points
-            breed_elements = self.driver.find_elements(
-                By.XPATH, "//span[text()='Breed' or text()='BREED']"
-            )
+            breed_elements = self.driver.find_elements(By.XPATH, "//span[text()='Breed' or text()='BREED']")
             self.logger.info(f"Found {len(breed_elements)} 'Breed' elements")
 
             # Process each breed element to find dog containers
@@ -148,11 +144,7 @@ class PetsInTurkeyScraper(BaseScraper):
                     container_text = container.text
 
                     # Check if this is a valid dog container
-                    if (
-                        "I'm " in container_text
-                        and "Breed" in container_text
-                        and ("Age" in container_text or "Sex" in container_text)
-                    ):
+                    if "I'm " in container_text and "Breed" in container_text and ("Age" in container_text or "Sex" in container_text):
                         # Use the special case parsing approach
                         dog_data = self._parse_special_case(container_text)
 
@@ -163,9 +155,7 @@ class PetsInTurkeyScraper(BaseScraper):
                         if dog_data and "name" in dog_data and dog_data["name"]:
                             # Add image and other metadata
                             dog_data["primary_image_url"] = image_url
-                            dog_data["adoption_url"] = (
-                                self.base_url + "#" + dog_data["name"].lower().replace(" ", "-")
-                            )
+                            dog_data["adoption_url"] = self.base_url + "#" + dog_data["name"].lower().replace(" ", "-")
                             dog_data["status"] = "available"
                             # Create more stable external ID using name + breed + age
                             # for uniqueness
@@ -339,9 +329,7 @@ class PetsInTurkeyScraper(BaseScraper):
                 dog_data["properties"]["height"] = values[2]  # height:49cm
                 dog_data["age_text"] = values[3]  # 2,5 yo
                 dog_data["sex"] = values[4]  # Male
-                dog_data["properties"]["neutered_spayed"] = (
-                    values[5] if len(values) > 5 else "Unknown"
-                )  # Yes
+                dog_data["properties"]["neutered_spayed"] = values[5] if len(values) > 5 else "Unknown"  # Yes
                 return dog_data
 
             # For other dogs, analyze the values more carefully
@@ -368,23 +356,17 @@ class PetsInTurkeyScraper(BaseScraper):
                     dog_data["sex"] = values[height_idx + 2]
 
                 # Neutered/Spayed is after sex
-                if ("Neutered" in attr_map or "Spayed" in attr_map) and height_idx + 3 < len(
-                    values
-                ):
+                if ("Neutered" in attr_map or "Spayed" in attr_map) and height_idx + 3 < len(values):
                     dog_data["properties"]["neutered_spayed"] = values[height_idx + 3]
             else:
                 # No separate height line, use normal mapping
                 if "Weight" in attr_map and attr_map["Weight"] < len(values):
                     weight_val = values[attr_map["Weight"]]
                     # Check if height is embedded in weight
-                    height_in_weight = re.search(
-                        r"height:?\s*(\d+\s*cm)", weight_val, re.IGNORECASE
-                    )
+                    height_in_weight = re.search(r"height:?\s*(\d+\s*cm)", weight_val, re.IGNORECASE)
                     if height_in_weight:
                         dog_data["properties"]["height"] = height_in_weight.group(0)
-                        dog_data["properties"]["weight"] = re.sub(
-                            r"height:?\s*\d+\s*cm", "", weight_val, flags=re.IGNORECASE
-                        ).strip()
+                        dog_data["properties"]["weight"] = re.sub(r"height:?\s*\d+\s*cm", "", weight_val, flags=re.IGNORECASE).strip()
                     else:
                         dog_data["properties"]["weight"] = weight_val
 
@@ -403,9 +385,7 @@ class PetsInTurkeyScraper(BaseScraper):
             # If sex value looks like a measurement and age value looks like a
             # sex, swap them
             if dog_data["sex"] and re.search(r"\d+\s*kg|\d+\s*cm", dog_data["sex"], re.IGNORECASE):
-                if dog_data["age_text"] and re.search(
-                    r"male|female", dog_data["age_text"], re.IGNORECASE
-                ):
+                if dog_data["age_text"] and re.search(r"male|female", dog_data["age_text"], re.IGNORECASE):
                     # Swap
                     temp = dog_data["sex"]
                     dog_data["sex"] = dog_data["age_text"]
@@ -563,13 +543,7 @@ class PetsInTurkeyScraper(BaseScraper):
             # Filter for valid dog images
             for img in images:
                 src = img.get_attribute("src")
-                if (
-                    src
-                    and src.startswith("http")
-                    and not src.endswith(".svg")
-                    and "icon" not in src.lower()
-                    and "logo" not in src.lower()
-                ):
+                if src and src.startswith("http") and not src.endswith(".svg") and "icon" not in src.lower() and "logo" not in src.lower():
                     # Clean up the URL to get the original, non-cropped image
                     pattern = r"(https://static\.wixstatic\.com/media/[^/]+\.[^/]+)"
                     match = re.search(pattern, src)

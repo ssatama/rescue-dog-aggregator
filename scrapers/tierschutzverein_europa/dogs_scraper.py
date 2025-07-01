@@ -46,9 +46,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         try:
             all_dogs = self._extract_with_selenium_unified()
             if len(all_dogs) > 0:
-                self.logger.info(
-                    f"Successfully extracted {len(all_dogs)} dogs using unified Selenium approach"
-                )
+                self.logger.info(f"Successfully extracted {len(all_dogs)} dogs using unified Selenium approach")
                 # Apply translation before returning to BaseScraper
                 if all_dogs:
                     all_dogs = self._translate_and_normalize_dogs(all_dogs)
@@ -59,9 +57,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         # Fallback to legacy Selenium if unified fails
         try:
             all_dogs = self._extract_with_selenium()
-            self.logger.info(
-                f"Successfully extracted {len(all_dogs)} dogs using legacy Selenium approach"
-            )
+            self.logger.info(f"Successfully extracted {len(all_dogs)} dogs using legacy Selenium approach")
             # Apply translation before returning to BaseScraper
             if all_dogs:
                 all_dogs = self._translate_and_normalize_dogs(all_dogs)
@@ -73,9 +69,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         try:
             all_dogs = self._extract_with_requests()
             if len(all_dogs) > 0:
-                self.logger.info(
-                    f"Successfully extracted {len(all_dogs)} dogs using requests approach"
-                )
+                self.logger.info(f"Successfully extracted {len(all_dogs)} dogs using requests approach")
                 # Apply translation before returning to BaseScraper
                 all_dogs = self._translate_and_normalize_dogs(all_dogs)
             return all_dogs
@@ -187,11 +181,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         try:
             # Setup Chrome options
             chrome_options = Options()
-            headless = (
-                getattr(self.org_config, "scraper", {}).get("config", {}).get("headless", True)
-                if hasattr(self, "org_config") and self.org_config
-                else True
-            )
+            headless = getattr(self.org_config, "scraper", {}).get("config", {}).get("headless", True) if hasattr(self, "org_config") and self.org_config else True
             if headless:
                 chrome_options.add_argument("--headless")
             chrome_options.add_argument("--no-sandbox")
@@ -212,9 +202,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                     driver.get(page_url)
 
                     # Wait for content to load
-                    WebDriverWait(driver, 10).until(
-                        EC.presence_of_element_located((By.CLASS_NAME, "x-col"))
-                    )
+                    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "x-col")))
 
                     # Get page source and extract dogs
                     page_dogs = self._extract_dogs_from_html(driver.page_source, page_url)
@@ -558,12 +546,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         # Normalize name for ID - handle German characters
         normalized_name = name.lower()
         # Replace German umlauts for URL-safe IDs
-        normalized_name = (
-            normalized_name.replace("ä", "ae")
-            .replace("ö", "oe")
-            .replace("ü", "ue")
-            .replace("ß", "ss")
-        )
+        normalized_name = normalized_name.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
         normalized_name = re.sub(r"[^\w\s-]", "", normalized_name)
         normalized_name = re.sub(r"\s+", "-", normalized_name.strip())
 
@@ -674,9 +657,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             result["sex"] = "Rüde" if gender == "männlich" else "Hündin"
 
         # Extract age from birthday
-        birthday_match = re.search(
-            r"Geburtstag:\s*(\d{2})\.(\d{4})\s*\((\d+)\s+Jahre?\s+alt\)", article_text
-        )
+        birthday_match = re.search(r"Geburtstag:\s*(\d{2})\.(\d{4})\s*\((\d+)\s+Jahre?\s+alt\)", article_text)
         if birthday_match:
             years = birthday_match.group(3)
             result["age_text"] = f"{years} Jahre"
@@ -707,11 +688,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         """
         for i, (img_url, alt_text) in enumerate(images):
             # Look for the profile image pattern found in investigation
-            if (
-                "tierschutzverein-europa.de" in img_url
-                and "Profilbild" in (alt_text or "")
-                and "300x300" in img_url
-            ):
+            if "tierschutzverein-europa.de" in img_url and "Profilbild" in (alt_text or "") and "300x300" in img_url:
                 return str(img_url)
 
         # Fallback: third image if available and looks like a profile
@@ -735,9 +712,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             chrome_options.add_argument("--disable-dev-shm-usage")
             chrome_options.add_argument("--disable-gpu")
             chrome_options.add_argument("--window-size=1920,1080")
-            chrome_options.add_argument(
-                "--user-agent=Mozilla/5.0 (compatible; rescue-dog-aggregator)"
-            )
+            chrome_options.add_argument("--user-agent=Mozilla/5.0 (compatible; rescue-dog-aggregator)")
 
             driver = webdriver.Chrome(options=chrome_options)
 
@@ -764,9 +739,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                                 dog_data = self._extract_dog_from_article_element(article, i + 1)
                                 if dog_data and dog_data.get("name"):
                                     all_dogs.append(dog_data)
-                                    self.logger.debug(
-                                        f"Extracted dog: {dog_data.get('name')} from article {i+1}"
-                                    )
+                                    self.logger.debug(f"Extracted dog: {dog_data.get('name')} from article {i+1}")
                         except Exception as e:
                             self.logger.warning(f"Error processing article {i+1}: {e}")
                             continue
@@ -784,9 +757,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
 
         return all_dogs
 
-    def _extract_dog_from_article_element(
-        self, article, article_num: int
-    ) -> Optional[Dict[str, Any]]:
+    def _extract_dog_from_article_element(self, article, article_num: int) -> Optional[Dict[str, Any]]:
         """Extract complete dog data from an article element using investigation findings."""
         try:
             # Get text content

@@ -99,9 +99,7 @@ def initialize_database():
         return None
 
 
-def add_organization(
-    conn, name, website_url, description=None, country=None, city=None, logo_url=None
-):
+def add_organization(conn, name, website_url, description=None, country=None, city=None, logo_url=None):
     """Add a new organization to the database."""
     if not conn:
         print("Error: Cannot add organization, no valid database connection.")

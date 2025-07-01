@@ -44,10 +44,7 @@ class CloudinaryService:
         missing_vars = [var for var in required_vars if not os.getenv(var)]
 
         if missing_vars:
-            logger.info(
-                f"Cloudinary not configured (missing: {', '.join(missing_vars)}). "
-                "Using original image URLs."
-            )
+            logger.info(f"Cloudinary not configured (missing: {', '.join(missing_vars)}). " "Using original image URLs.")
             cls._config_valid = False
             return False
 
@@ -97,9 +94,7 @@ class CloudinaryService:
         # Check configuration
         if not CloudinaryService._check_configuration():
             if raise_on_missing_config:
-                raise CloudinaryConfigurationError(
-                    "Cloudinary not properly configured. Missing environment variables."
-                )
+                raise CloudinaryConfigurationError("Cloudinary not properly configured. Missing environment variables.")
 
             # Fallback: return original URL with success=False (indicates
             # fallback)
@@ -138,10 +133,7 @@ class CloudinaryService:
 
             # Check content type
             content_type = response.headers.get("content-type", "").lower()
-            if not any(
-                img_type in content_type
-                for img_type in ["image/jpeg", "image/jpg", "image/png", "image/webp"]
-            ):
+            if not any(img_type in content_type for img_type in ["image/jpeg", "image/jpg", "image/png", "image/webp"]):
                 logger.warning(f"Invalid content type for image {image_url}: {content_type}")
                 return image_url, False  # Return original URL as fallback
 

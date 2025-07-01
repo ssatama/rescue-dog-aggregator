@@ -30,9 +30,7 @@ def get_db_cursor() -> Generator[RealDictCursor, None, None]:
     cursor = None
     try:
         # --- ADDED DEBUG LOGGING ---
-        logger.info(
-            f"[dependencies.py get_db_cursor] Using DB_CONFIG: database={DB_CONFIG.get('database')}, user={DB_CONFIG.get('user')}, host={DB_CONFIG.get('host')}"
-        )
+        logger.info(f"[dependencies.py get_db_cursor] Using DB_CONFIG: database={DB_CONFIG.get('database')}, user={DB_CONFIG.get('user')}, host={DB_CONFIG.get('host')}")
         # --- END DEBUG LOGGING ---
 
         # Build connection parameters (using the imported DB_CONFIG)
@@ -54,18 +52,14 @@ def get_db_cursor() -> Generator[RealDictCursor, None, None]:
         # Changed level to debug
         logger.debug(f"Cursor Connection opened: {id(conn)}")
         cursor = conn.cursor(cursor_factory=RealDictCursor)
-        logger.debug(
-            f"Cursor created: {id(cursor)} for connection {id(conn)}"
-        )  # Changed level to debug
+        logger.debug(f"Cursor created: {id(cursor)} for connection {id(conn)}")  # Changed level to debug
         yield cursor
 
         logger.debug(f"Committing transaction for connection {id(conn)}")  # Changed level to debug
         conn.commit()
 
     except HTTPException as http_exc:  # Keep the specific HTTPException handling
-        logger.warning(
-            f"[dependencies.py get_db_cursor] HTTPException caught, rolling back: {http_exc.detail}"
-        )
+        logger.warning(f"[dependencies.py get_db_cursor] HTTPException caught, rolling back: {http_exc.detail}")
         if conn:
             conn.rollback()
         raise http_exc
@@ -99,9 +93,7 @@ def get_database_connection() -> Generator[psycopg2.extensions.connection, None,
     """
     conn = None
     try:
-        logger.info(
-            f"[dependencies.py get_database_connection] Using DB_CONFIG: database={DB_CONFIG.get('database')}, user={DB_CONFIG.get('user')}, host={DB_CONFIG.get('host')}"
-        )
+        logger.info(f"[dependencies.py get_database_connection] Using DB_CONFIG: database={DB_CONFIG.get('database')}, user={DB_CONFIG.get('user')}, host={DB_CONFIG.get('host')}")
 
         # Build connection parameters
         conn_params = {
@@ -120,23 +112,17 @@ def get_database_connection() -> Generator[psycopg2.extensions.connection, None,
         conn.commit()
 
     except HTTPException as http_exc:
-        logger.warning(
-            f"[dependencies.py get_database_connection] HTTPException caught, rolling back: {http_exc.detail}"
-        )
+        logger.warning(f"[dependencies.py get_database_connection] HTTPException caught, rolling back: {http_exc.detail}")
         if conn:
             conn.rollback()
         raise http_exc
     except psycopg2.Error as db_err:
-        logger.error(
-            f"[dependencies.py get_database_connection] Database error, rolling back: {db_err}"
-        )
+        logger.error(f"[dependencies.py get_database_connection] Database error, rolling back: {db_err}")
         if conn:
             conn.rollback()
         raise HTTPException(status_code=500, detail=f"Database dependency error: {db_err}")
     except Exception as e:
-        logger.exception(
-            f"[dependencies.py get_database_connection] Unexpected error, rolling back: {e}"
-        )
+        logger.exception(f"[dependencies.py get_database_connection] Unexpected error, rolling back: {e}")
         if conn:
             conn.rollback()
         raise HTTPException(

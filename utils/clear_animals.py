@@ -118,9 +118,7 @@ def clear_animals():
         if remaining_animals == 0 and remaining_images == 0:
             print("🔍 Verification: Database is now empty")
         else:
-            print(
-                f"⚠️  Verification warning: {remaining_animals} animals and {remaining_images} images remain"
-            )
+            print(f"⚠️  Verification warning: {remaining_animals} animals and {remaining_images} images remain")
 
         cursor.close()
     except Exception as e:

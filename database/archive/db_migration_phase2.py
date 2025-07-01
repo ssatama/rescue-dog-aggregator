@@ -52,9 +52,7 @@ def migrate_database():
         print("Creating backup views of existing tables...")
         # --- FIX: Use correct table names ---
         cursor.execute("CREATE OR REPLACE VIEW animals_backup AS SELECT * FROM animals")
-        cursor.execute(
-            "CREATE OR REPLACE VIEW animal_images_backup AS SELECT * FROM animal_images"
-        )
+        cursor.execute("CREATE OR REPLACE VIEW animal_images_backup AS SELECT * FROM animal_images")
         # --- END FIX ---
         print("Backup views created successfully.")
 
@@ -118,9 +116,7 @@ def migrate_database():
         except psycopg2.errors.DuplicateTable:
             print("Info: service_regions table already exists. Skipping creation.")
             conn.rollback()  # Rollback the failed CREATE TABLE attempt
-            conn.autocommit = (
-                False  # Re-disable autocommit if needed for subsequent steps
-            )
+            conn.autocommit = False  # Re-disable autocommit if needed for subsequent steps
         except Exception as table_error:
             print(f"Error creating service_regions table: {table_error}")
             raise  # Re-raise the error to stop migration
@@ -233,13 +229,9 @@ def migrate_database():
                      FROM animals_backup
                  """
                 )
-                print(
-                    f"Copied {cursor.rowcount} records from animals_backup to animals."
-                )
+                print(f"Copied {cursor.rowcount} records from animals_backup to animals.")
             else:
-                print(
-                    "Info: animals table is not empty. Skipping data copy from backup."
-                )
+                print("Info: animals table is not empty. Skipping data copy from backup.")
         except psycopg2.errors.UndefinedTable:
             print("Info: animals_backup view does not exist. Skipping data copy.")
             # No rollback needed here as it's an expected state if run multiple
@@ -286,20 +278,14 @@ def migrate_database():
                  """
                 )
                 # --- END FIX ---
-                print(
-                    f"Copied {cursor.rowcount} records from animal_images_backup to animal_images."
-                )
+                print(f"Copied {cursor.rowcount} records from animal_images_backup to animal_images.")
             else:
-                print(
-                    "Info: animal_images table is not empty. Skipping data copy from backup."
-                )
+                print("Info: animal_images table is not empty. Skipping data copy from backup.")
         except psycopg2.errors.UndefinedTable:
             print("Info: animal_images_backup view does not exist. Skipping data copy.")
             # No rollback needed here
         except psycopg2.errors.UndefinedColumn as col_err:
-            print(
-                f"Error copying image data (likely column mismatch 'dog_id' vs 'animal_id'): {col_err}"
-            )
+            print(f"Error copying image data (likely column mismatch 'dog_id' vs 'animal_id'): {col_err}")
             raise  # Stop migration on copy error
         except Exception as copy_img_error:
             print(f"Error copying data from animal_images_backup: {copy_img_error}")
@@ -309,42 +295,22 @@ def migrate_database():
         # copy)
         print("Adding indexes to new tables...")
         try:
-            cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_animals_organization ON animals(organization_id);"
-            )
-            cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_animals_status ON animals(status);"
-            )
-            cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_animals_standardized_breed ON animals(standardized_breed);"
-            )  # Index new field
-            cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_animals_sex ON animals(sex);"
-            )
-            cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_animals_standardized_size ON animals(standardized_size);"
-            )  # Index new field
-            cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_animals_animal_type ON animals(animal_type);"
-            )  # Index animal_type
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_animals_organization ON animals(organization_id);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_animals_status ON animals(status);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_animals_standardized_breed ON animals(standardized_breed);")  # Index new field
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_animals_sex ON animals(sex);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_animals_standardized_size ON animals(standardized_size);")  # Index new field
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_animals_animal_type ON animals(animal_type);")  # Index animal_type
 
             # For text search
-            cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_animals_name_gin ON animals USING gin(to_tsvector('english', name));"
-            )
-            cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_animals_breed_gin ON animals USING gin(to_tsvector('english', COALESCE(breed, '')));"
-            )  # Handle potential NULLs
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_animals_name_gin ON animals USING gin(to_tsvector('english', name));")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_animals_breed_gin ON animals USING gin(to_tsvector('english', COALESCE(breed, '')));")  # Handle potential NULLs
 
             # For JSON properties search
-            cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_animals_properties ON animals USING gin(properties);"
-            )
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_animals_properties ON animals USING gin(properties);")
 
             # Index for animal_images
-            cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_animal_images_animal_id ON animal_images(animal_id);"
-            )
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_animal_images_animal_id ON animal_images(animal_id);")
             print("Indexes added successfully or already exist.")
         except Exception as index_error:
             print(f"Error adding indexes: {index_error}")
@@ -386,12 +352,8 @@ def rollback_migration():
         cursor.execute("DROP TABLE IF EXISTS service_regions CASCADE;")
         cursor.execute("DROP TABLE IF EXISTS breed_standards CASCADE;")
         cursor.execute("DROP TABLE IF EXISTS size_standards CASCADE;")
-        cursor.execute(
-            "DROP TABLE IF EXISTS animal_images CASCADE;"
-        )  # Drop new images table
-        cursor.execute(
-            "DROP TABLE IF EXISTS animals CASCADE;"
-        )  # Drop new animals table
+        cursor.execute("DROP TABLE IF EXISTS animal_images CASCADE;")  # Drop new images table
+        cursor.execute("DROP TABLE IF EXISTS animals CASCADE;")  # Drop new animals table
 
         # Restore old tables from backup views
         print("Restoring tables from backup views...")
@@ -409,18 +371,14 @@ def rollback_migration():
             conn.autocommit = False
 
         try:
-            cursor.execute(
-                "CREATE TABLE animal_images AS SELECT * FROM animal_images_backup;"
-            )
+            cursor.execute("CREATE TABLE animal_images AS SELECT * FROM animal_images_backup;")
             # Need to rename dog_id back if the backup view still has it
             # This assumes the backup view HAS dog_id. If not, adjust.
             # cursor.execute("ALTER TABLE animal_images RENAME COLUMN animal_id
             # TO dog_id;") # Optional: Rename back if needed
             print("Restored 'animal_images' table from 'animal_images_backup'.")
         except psycopg2.errors.UndefinedTable:
-            print(
-                "Info: 'animal_images_backup' view not found. Cannot restore 'animal_images'."
-            )
+            print("Info: 'animal_images_backup' view not found. Cannot restore 'animal_images'.")
             conn.rollback()
             conn.autocommit = False
         except psycopg2.errors.DuplicateTable:
