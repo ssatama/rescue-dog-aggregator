@@ -74,7 +74,16 @@ jobs:
           DB_PASSWORD: postgres
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          python -c "from database.db_setup import init_database_if_needed; init_database_if_needed()" || echo "Database initialization completed or already initialized"
+          python -c "
+          from database.db_setup import initialize_database
+          conn = initialize_database()
+          if conn:
+              print('Database schema initialized successfully')
+              conn.close()
+          else:
+              print('Database initialization failed')
+              exit(1)
+          " || echo "Database initialization completed or already initialized"
 
       - name: Run backend tests
         env:
