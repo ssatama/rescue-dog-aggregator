@@ -54,9 +54,17 @@ CREATE TABLE IF NOT EXISTS animals (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_scraped_at TIMESTAMP,
     source_last_updated TIMESTAMP,
+    
+    -- Stale data tracking columns
+    last_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    consecutive_scrapes_missing INTEGER DEFAULT 0,
+    availability_confidence VARCHAR(10) DEFAULT 'high' CHECK (availability_confidence IN ('high', 'medium', 'low')),
 
     -- Add column to store original image URLs for fallback
-    original_image_url TEXT
+    original_image_url TEXT,
+    
+    -- Unique constraint to prevent duplicates
+    UNIQUE (external_id, organization_id)
 );
 
 -- Animal Images
@@ -116,6 +124,11 @@ CREATE INDEX IF NOT EXISTS idx_animals_properties ON animals USING gin(propertie
 -- Service regions indexes
 CREATE INDEX IF NOT EXISTS idx_service_regions_organization ON service_regions(organization_id);
 CREATE INDEX IF NOT EXISTS idx_service_regions_country ON service_regions(country);
+
+-- Stale data tracking indexes
+CREATE INDEX IF NOT EXISTS idx_animals_last_seen_at ON animals(last_seen_at);
+CREATE INDEX IF NOT EXISTS idx_animals_consecutive_missing ON animals(consecutive_scrapes_missing);
+CREATE INDEX IF NOT EXISTS idx_animals_availability_confidence ON animals(availability_confidence);
 
 -- Add index for performance
 CREATE INDEX IF NOT EXISTS idx_animals_original_image_url ON animals(original_image_url);
