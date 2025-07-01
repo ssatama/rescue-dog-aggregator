@@ -28,6 +28,64 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Diagnose Git checkout
+        run: |
+          echo "=== GIT CHECKOUT DIAGNOSTICS ==="
+          echo "Current working directory:"
+          pwd
+          echo ""
+          echo "Git status:"
+          git status
+          echo ""
+          echo "Git log (last 3 commits):"
+          git log --oneline -3
+          echo ""
+          echo "Git branch:"
+          git branch -a
+          echo ""
+          echo "Repository root contents:"
+          ls -la
+          echo ""
+          echo "Tests directory structure:"
+          find tests -type f -name "*.py" | head -20
+          echo ""
+          echo "Total Python files in repository:"
+          find . -name "*.py" | wc -l
+          echo ""
+          echo "Total test files in repository:"
+          find . -name "test_*.py" | wc -l
+          echo ""
+          echo "Git ls-files (first 50 files):"
+          git ls-files | head -50
+          echo ""
+          echo "Git ls-files test files:"
+          git ls-files | grep test_ | wc -l
+          echo ""
+          echo "Sample of Git ls-files test files:"
+          git ls-files | grep test_ | head -10
+          echo ""
+          echo "Check .gitignore for test exclusions:" 
+          if [ -f .gitignore ]; then
+            echo "Contents of .gitignore:"
+            cat .gitignore
+            echo ""
+            echo "Lines in .gitignore that might affect tests:"
+            grep -E "(test|Test)" .gitignore || echo "No test-related patterns in .gitignore"
+          else
+            echo ".gitignore file not found"
+          fi
+          echo ""
+          echo "Check for sparse-checkout:"
+          if [ -f .git/info/sparse-checkout ]; then
+            echo "Sparse-checkout is enabled:"
+            cat .git/info/sparse-checkout
+          else
+            echo "No sparse-checkout configuration found"
+          fi
+          echo ""
+          echo "Git configuration:"
+          git config --list | grep -E "(checkout|sparse|core)" | head -10
+
       - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:
