@@ -30,8 +30,9 @@ All work follows Test-Driven Development (TDD) with a strong emphasis on behavio
 ```bash
 # Backend Development (Python/FastAPI)
 source venv/bin/activate                # ALWAYS activate virtual environment first
-python -m pytest tests/ -m "not slow" -v  # Run fast tests (259 tests)
-python -m pytest tests/ -v                # Run all tests including integration
+python -m pytest tests/ -m "not browser" -v  # Run CI-safe tests (564 tests)
+python -m pytest tests/ -m "not slow" -v  # Run fast tests (307 tests)
+python -m pytest tests/ -v                # Run all tests including integration and browser tests
 
 # Frontend Development (Next.js 15)
 cd frontend
@@ -48,7 +49,7 @@ python management/config_commands.py run rean    # Run specific scraper
 # Quality Checks (REQUIRED before ANY commit)
 # Backend
 black . && isort . && flake8            # Format and lint Python code
-python -m pytest tests/ -m "not slow"    # Backend tests MUST pass
+python -m pytest tests/ -m "not browser"    # Backend tests MUST pass
 
 # Frontend
 cd frontend
@@ -125,7 +126,8 @@ pytest -m "unit"      # Fast unit tests (82 tests)
 pytest -m "api"       # API endpoint tests (110 tests)
 pytest -m "config"    # Configuration system tests
 pytest -m "database"  # Database operation tests
-pytest -m "not slow"  # All fast tests for development (259 tests)
+pytest -m "not browser"  # CI-safe tests for development (564 tests)
+pytest -m "not slow"  # Fast tests only (307 tests)
 pytest -m "slow"      # Integration tests with WebDriver
 
 # Run specific test files
@@ -794,7 +796,7 @@ def get_age_category(age_months):
 
 5. **Verify all tests pass**
    ```bash
-   pytest tests/ -m "not slow" -v
+   pytest tests/ -m "not browser" -v
    ```
 
 6. **Sync to database**
