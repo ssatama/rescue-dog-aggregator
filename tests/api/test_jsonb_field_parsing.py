@@ -18,9 +18,7 @@ class TestJSONBFieldParsing:
         # Test that each animal has proper structure
         for animal in data:
             assert "properties" in animal
-            assert isinstance(
-                animal["properties"],
-                dict)  # Should be parsed as dict
+            assert isinstance(animal["properties"], dict)  # Should be parsed as dict
             assert "organization" in animal
             assert "social_media" in animal["organization"]
             assert isinstance(animal["organization"]["social_media"], dict)
@@ -38,12 +36,7 @@ class TestJSONBFieldParsing:
 
         # Verify first animal has expected structure
         animal = data[0]
-        required_fields = [
-            "id",
-            "name",
-            "animal_type",
-            "properties",
-            "organization"]
+        required_fields = ["id", "name", "animal_type", "properties", "organization"]
         for field in required_fields:
             assert field in animal
 
@@ -108,9 +101,7 @@ class TestJSONBFieldParsing:
 
             # At least one expected key should be present
             has_expected_key = any(key in actual_keys for key in expected_keys)
-            assert (
-                has_expected_key
-            ), f"Expected at least one of {expected_keys}, got {actual_keys}"
+            assert has_expected_key, f"Expected at least one of {expected_keys}, got {actual_keys}"
 
     def test_json_fields_never_return_strings(self, client):
         """Test that JSON fields are never returned as unparsed strings."""
@@ -121,15 +112,11 @@ class TestJSONBFieldParsing:
 
         for animal in animals:
             # properties should be dict, not string
-            assert isinstance(
-                animal["properties"], dict
-            ), f"Animal {animal['id']} properties should be dict, got {type(animal['properties'])}"
+            assert isinstance(animal["properties"], dict), f"Animal {animal['id']} properties should be dict, got {type(animal['properties'])}"
 
             # organization social_media should be dict, not string
             org_social = animal["organization"]["social_media"]
-            assert isinstance(
-                org_social, dict
-            ), f"Animal {animal['id']} org social_media should be dict, got {type(org_social)}"
+            assert isinstance(org_social, dict), f"Animal {animal['id']} org social_media should be dict, got {type(org_social)}"
 
         # Test organizations
         response = client.get("/api/organizations")
@@ -138,9 +125,7 @@ class TestJSONBFieldParsing:
 
         for org in orgs:
             # social_media should be dict, not string
-            assert isinstance(
-                org["social_media"], dict
-            ), f"Org {org['id']} social_media should be dict, got {type(org['social_media'])}"
+            assert isinstance(org["social_media"], dict), f"Org {org['id']} social_media should be dict, got {type(org['social_media'])}"
 
     def test_malformed_json_fallback_behavior(self, client):
         """Test that the system handles any edge cases gracefully."""
@@ -155,14 +140,10 @@ class TestJSONBFieldParsing:
             # Even with potential malformed JSON in DB,
             # the API should always return dict, never string
             props = animal["properties"]
-            assert isinstance(
-                props, dict
-            ), f"Properties should be dict, got {type(props)}"
+            assert isinstance(props, dict), f"Properties should be dict, got {type(props)}"
 
             org_social = animal["organization"]["social_media"]
-            assert isinstance(
-                org_social, dict
-            ), f"Social media should be dict, got {type(org_social)}"
+            assert isinstance(org_social, dict), f"Social media should be dict, got {type(org_social)}"
 
         # Same test for organizations
         response = client.get("/api/organizations")
@@ -171,6 +152,4 @@ class TestJSONBFieldParsing:
 
         for org in orgs:
             social = org["social_media"]
-            assert isinstance(
-                social, dict
-            ), f"Org social_media should be dict, got {type(social)}"
+            assert isinstance(social, dict), f"Org social_media should be dict, got {type(social)}"

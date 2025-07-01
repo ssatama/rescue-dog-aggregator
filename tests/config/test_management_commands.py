@@ -55,9 +55,7 @@ class TestManagementCommands:
             mock_config.validate_business_rules.return_value = []
             mock_config.get_scraper_config_dict.return_value = {}
 
-            mock_loader.return_value.load_all_configs.return_value = {
-                "test-org": mock_config
-            }
+            mock_loader.return_value.load_all_configs.return_value = {"test-org": mock_config}
             mock_loader.return_value.load_config.return_value = mock_config
 
             yield {
@@ -260,9 +258,7 @@ class TestManagementCommands:
     def test_validate_configs(self, mock_config_manager_deps):
         """Test config validation command."""
         mock_deps = mock_config_manager_deps
-        mock_deps["config"].validate_business_rules.return_value = [
-            "Warning: Missing optional field"
-        ]
+        mock_deps["config"].validate_business_rules.return_value = ["Warning: Missing optional field"]
 
         manager = ConfigManager()
 

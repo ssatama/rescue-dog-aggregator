@@ -50,9 +50,7 @@ class TestAnimalsList:
         if not base:
             pytest.skip("no animals to test")
         # prefer top‐level organization_id, else nested.organization.id
-        org_id = base[0].get("organization_id") or base[0].get("organization", {}).get(
-            "id"
-        )
+        org_id = base[0].get("organization_id") or base[0].get("organization", {}).get("id")
         assert org_id is not None, "Response did not include an org ID"
 
         # now filter by that ID
@@ -60,7 +58,5 @@ class TestAnimalsList:
         assert resp.status_code == 200, resp.text
         for animal in resp.json():
             # again prefer top‐level
-            got = animal.get("organization_id") or animal.get("organization", {}).get(
-                "id"
-            )
+            got = animal.get("organization_id") or animal.get("organization", {}).get("id")
             assert got == org_id, f"Expected org_id={org_id}, got {got}"

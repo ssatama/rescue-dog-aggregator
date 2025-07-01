@@ -7,12 +7,7 @@ import pytest
 from utils.cloudinary_service import CloudinaryService
 
 # Add project root to path
-sys.path.append(
-    os.path.dirname(
-        os.path.dirname(
-            os.path.dirname(
-                os.path.abspath(__file__))))
-)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
 @pytest.mark.slow
@@ -37,9 +32,7 @@ class TestCloudinaryIntegration:
     @patch("utils.cloudinary_service.cloudinary.uploader.upload")
     @patch("utils.cloudinary_service.requests.get")
     @patch("utils.cloudinary_service.cloudinary.api.resource")
-    def test_end_to_end_image_upload_success(
-        self, mock_resource, mock_requests, mock_upload
-    ):
+    def test_end_to_end_image_upload_success(self, mock_resource, mock_requests, mock_upload):
         """Test complete successful image upload flow."""
         # Mock image doesn't exist yet
         from cloudinary.exceptions import NotFound
@@ -62,16 +55,11 @@ class TestCloudinaryIntegration:
 
         # Test the upload
         service = CloudinaryService()
-        cloudinary_url, success = service.upload_image_from_url(
-            "https://example.com/original.jpg", "Test Dog", "Test Org"
-        )
+        cloudinary_url, success = service.upload_image_from_url("https://example.com/original.jpg", "Test Dog", "Test Org")
 
         # Verify results
         assert success is True
-        assert (
-            cloudinary_url
-            == "https://res.cloudinary.com/test-cloud/image/upload/v1/rescue_dogs/test_org/test_dog_12345678.jpg"
-        )
+        assert cloudinary_url == "https://res.cloudinary.com/test-cloud/image/upload/v1/rescue_dogs/test_org/test_dog_12345678.jpg"
 
         # Verify mocks were called correctly
         mock_requests.assert_called_once()
@@ -94,9 +82,7 @@ class TestCloudinaryIntegration:
     def test_missing_credentials_handling(self):
         """Test that missing Cloudinary credentials are handled gracefully."""
         service = CloudinaryService()
-        cloudinary_url, success = service.upload_image_from_url(
-            "https://example.com/test.jpg", "Test Dog", "Test Org"
-        )
+        cloudinary_url, success = service.upload_image_from_url("https://example.com/test.jpg", "Test Dog", "Test Org")
 
         assert success is False
         # Updated: Should return original URL as fallback, not None
@@ -118,9 +104,7 @@ class TestCloudinaryIntegration:
         mock_requests.side_effect = Exception("Network timeout")
 
         service = CloudinaryService()
-        cloudinary_url, success = service.upload_image_from_url(
-            "https://example.com/unreachable.jpg", "Test Dog", "Test Org"
-        )
+        cloudinary_url, success = service.upload_image_from_url("https://example.com/unreachable.jpg", "Test Dog", "Test Org")
 
         assert success is False
         # Updated: Should return original URL as fallback, not None
@@ -139,14 +123,10 @@ class TestCloudinaryIntegration:
     def test_existing_image_detection(self, mock_resource):
         """Test that existing images are detected and not re-uploaded."""
         # Mock existing image
-        mock_resource.return_value = {
-            "secure_url": "https://res.cloudinary.com/test-cloud/existing.jpg"
-        }
+        mock_resource.return_value = {"secure_url": "https://res.cloudinary.com/test-cloud/existing.jpg"}
 
         service = CloudinaryService()
-        cloudinary_url, success = service.upload_image_from_url(
-            "https://example.com/existing.jpg", "Existing Dog", "Test Org"
-        )
+        cloudinary_url, success = service.upload_image_from_url("https://example.com/existing.jpg", "Existing Dog", "Test Org")
 
         assert success is True
         assert cloudinary_url == "https://res.cloudinary.com/test-cloud/existing.jpg"

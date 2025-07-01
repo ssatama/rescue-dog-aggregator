@@ -4,6 +4,7 @@ Tests for REAN scraper image-to-dog association logic.
 This test file addresses the issue where images are being associated with the wrong dogs
 (off by one or more positions).
 """
+
 from unittest.mock import Mock
 
 from scrapers.rean.dogs_scraper import REANScraper
@@ -18,17 +19,9 @@ class TestREANImageAssociation:
         scraper.logger = Mock()
 
         # Perfect scenario: 3 dogs, 3 images
-        dog_data_list = [
-            {"name": "Buddy", "age_text": "2 years"},
-            {"name": "Max", "age_text": "3 years"},
-            {"name": "Luna", "age_text": "1 year"}
-        ]
+        dog_data_list = [{"name": "Buddy", "age_text": "2 years"}, {"name": "Max", "age_text": "3 years"}, {"name": "Luna", "age_text": "1 year"}]
 
-        image_urls = [
-            "https://img1.wsimg.com/isteam/ip/abc/buddy.jpg",
-            "https://img1.wsimg.com/isteam/ip/abc/max.jpg",
-            "https://img1.wsimg.com/isteam/ip/abc/luna.jpg"
-        ]
+        image_urls = ["https://img1.wsimg.com/isteam/ip/abc/buddy.jpg", "https://img1.wsimg.com/isteam/ip/abc/max.jpg", "https://img1.wsimg.com/isteam/ip/abc/luna.jpg"]
 
         result = scraper.associate_images_with_dogs(dog_data_list, image_urls)
 
@@ -46,19 +39,16 @@ class TestREANImageAssociation:
         scraper.logger = Mock()
 
         # 2 dogs but 4 images (includes header/navigation images)
-        dog_data_list = [
-            {"name": "Buddy", "age_text": "2 years"},
-            {"name": "Max", "age_text": "3 years"}
-        ]
+        dog_data_list = [{"name": "Buddy", "age_text": "2 years"}, {"name": "Max", "age_text": "3 years"}]
 
         # Realistic scenario: header image should be filtered out or
         # offset-corrected
         image_urls = [
             # Header image (should be filtered)
             "https://img1.wsimg.com/isteam/ip/abc/header-logo.jpg",
-            "https://img1.wsimg.com/isteam/ip/abc/buddy.jpg",        # Buddy's image
-            "https://img1.wsimg.com/isteam/ip/abc/max.jpg",          # Max's image
-            "https://img1.wsimg.com/isteam/ip/abc/footer.jpg"        # Footer image
+            "https://img1.wsimg.com/isteam/ip/abc/buddy.jpg",  # Buddy's image
+            "https://img1.wsimg.com/isteam/ip/abc/max.jpg",  # Max's image
+            "https://img1.wsimg.com/isteam/ip/abc/footer.jpg",  # Footer image
         ]
 
         # With improved implementation:
@@ -79,16 +69,9 @@ class TestREANImageAssociation:
         scraper.logger = Mock()
 
         # 3 dogs but only 2 images
-        dog_data_list = [
-            {"name": "Buddy", "age_text": "2 years"},
-            {"name": "Max", "age_text": "3 years"},
-            {"name": "Luna", "age_text": "1 year"}
-        ]
+        dog_data_list = [{"name": "Buddy", "age_text": "2 years"}, {"name": "Max", "age_text": "3 years"}, {"name": "Luna", "age_text": "1 year"}]
 
-        image_urls = [
-            "https://img1.wsimg.com/isteam/ip/abc/buddy.jpg",
-            "https://img1.wsimg.com/isteam/ip/abc/max.jpg"
-        ]
+        image_urls = ["https://img1.wsimg.com/isteam/ip/abc/buddy.jpg", "https://img1.wsimg.com/isteam/ip/abc/max.jpg"]
 
         result = scraper.associate_images_with_dogs(dog_data_list, image_urls)
 
@@ -103,8 +86,7 @@ class TestREANImageAssociation:
         scraper.logger = Mock()
 
         # Test empty dog list
-        result = scraper.associate_images_with_dogs(
-            [], ["img1.jpg", "img2.jpg"])
+        result = scraper.associate_images_with_dogs([], ["img1.jpg", "img2.jpg"])
         assert result == []
 
         # Test empty image list
@@ -120,15 +102,12 @@ class TestREANImageAssociation:
 
         # Scenario: Dogs extracted in order, but images include header image
         # first
-        dog_data_list = [
-            {"name": "Buddy", "age_text": "2 years"},
-            {"name": "Max", "age_text": "3 years"}
-        ]
+        dog_data_list = [{"name": "Buddy", "age_text": "2 years"}, {"name": "Max", "age_text": "3 years"}]
 
         image_urls = [
             "https://img1.wsimg.com/isteam/ip/abc/header-logo.jpg",  # Should be filtered out
-            "https://img1.wsimg.com/isteam/ip/abc/dog1.jpg",        # Should go to Buddy
-            "https://img1.wsimg.com/isteam/ip/abc/dog2.jpg"         # Should go to Max
+            "https://img1.wsimg.com/isteam/ip/abc/dog1.jpg",  # Should go to Buddy
+            "https://img1.wsimg.com/isteam/ip/abc/dog2.jpg",  # Should go to Max
         ]
 
         # Test the improved implementation
@@ -154,19 +133,14 @@ class TestREANImageAssociation:
             "https://img1.wsimg.com/isteam/ip/abc/footer-background.jpg",
             "https://img1.wsimg.com/isteam/ip/abc/banner-image.jpg",
             "data:image/svg+xml;base64,abc123",  # Placeholder
-            "https://other-cdn.com/image.jpg"    # Wrong CDN
+            "https://other-cdn.com/image.jpg",  # Wrong CDN
         ]
 
         for url in should_be_filtered:
-            assert not scraper._is_valid_rean_image(
-                url), f"Should filter out: {url}"
+            assert not scraper._is_valid_rean_image(url), f"Should filter out: {url}"
 
         # Test URLs that should pass
-        should_pass = [
-            "https://img1.wsimg.com/isteam/ip/abc/dog-photo.jpg",
-            "https://img1.wsimg.com/isteam/ip/abc/puppy.jpg",
-            "https://img1.wsimg.com/isteam/ip/abc/rescue-dog.jpg"
-        ]
+        should_pass = ["https://img1.wsimg.com/isteam/ip/abc/dog-photo.jpg", "https://img1.wsimg.com/isteam/ip/abc/puppy.jpg", "https://img1.wsimg.com/isteam/ip/abc/rescue-dog.jpg"]
 
         for url in should_pass:
             assert scraper._is_valid_rean_image(url), f"Should pass: {url}"

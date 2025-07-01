@@ -4,6 +4,7 @@ Fast unit tests for REAN unified extraction core logic.
 These tests focus on the business logic of unified extraction without expensive
 WebDriver operations, providing quick feedback during development.
 """
+
 from unittest.mock import Mock, patch
 
 import pytest
@@ -58,21 +59,15 @@ class TestREANUnifiedExtractionFast:
 
         # Mock images: placeholder + valid image
         placeholder_img = Mock()
-        placeholder_img.get_attribute.side_effect = lambda attr: {
-            'src': 'data:image/gif;base64,placeholder',
-            'data-src': None
-        }.get(attr)
+        placeholder_img.get_attribute.side_effect = lambda attr: {"src": "data:image/gif;base64,placeholder", "data-src": None}.get(attr)
 
         valid_img = Mock()
-        valid_img.get_attribute.side_effect = lambda attr: {
-            'src': 'https://img1.wsimg.com/isteam/ip/abc/toby.jpg',
-            'data-src': None
-        }.get(attr)
+        valid_img.get_attribute.side_effect = lambda attr: {"src": "https://img1.wsimg.com/isteam/ip/abc/toby.jpg", "data-src": None}.get(attr)
 
         container.find_elements.return_value = [placeholder_img, valid_img]
 
         result = scraper._extract_image_from_container(container, "Toby", 1)
-        assert result == 'https://img1.wsimg.com/isteam/ip/abc/toby.jpg'
+        assert result == "https://img1.wsimg.com/isteam/ip/abc/toby.jpg"
 
     @pytest.mark.unit
     def test_image_extraction_lazy_loading_logic(self, scraper):
@@ -81,15 +76,12 @@ class TestREANUnifiedExtractionFast:
 
         # Mock lazy-loaded image (data-src preferred over src)
         lazy_img = Mock()
-        lazy_img.get_attribute.side_effect = lambda attr: {
-            'src': 'data:image/gif;base64,placeholder',
-            'data-src': 'https://img1.wsimg.com/isteam/ip/abc/toby-lazy.jpg'
-        }.get(attr)
+        lazy_img.get_attribute.side_effect = lambda attr: {"src": "data:image/gif;base64,placeholder", "data-src": "https://img1.wsimg.com/isteam/ip/abc/toby-lazy.jpg"}.get(attr)
 
         container.find_elements.return_value = [lazy_img]
 
         result = scraper._extract_image_from_container(container, "Toby", 1)
-        assert result == 'https://img1.wsimg.com/isteam/ip/abc/toby-lazy.jpg'
+        assert result == "https://img1.wsimg.com/isteam/ip/abc/toby-lazy.jpg"
 
     @pytest.mark.unit
     def test_single_dog_extraction_logic(self, scraper):
@@ -98,17 +90,15 @@ class TestREANUnifiedExtractionFast:
         container.text = "Toby - 4 months old - in Romania\nFriendly pup.\nVaccinated and chipped."
 
         # Mock successful image extraction
-        scraper._extract_image_from_container = Mock(
-            return_value="https://img1.wsimg.com/test.jpg")
+        scraper._extract_image_from_container = Mock(return_value="https://img1.wsimg.com/test.jpg")
 
-        result = scraper._extract_single_dog_from_container(
-            container, "romania", 1)
+        result = scraper._extract_single_dog_from_container(container, "romania", 1)
 
         assert result is not None
-        assert result['name'] == 'Toby'
-        assert result['age_text'] == '4 months'
-        assert result['primary_image_url'] == 'https://img1.wsimg.com/test.jpg'
-        assert result['properties']['source_page'] == 'romania'
+        assert result["name"] == "Toby"
+        assert result["age_text"] == "4 months"
+        assert result["primary_image_url"] == "https://img1.wsimg.com/test.jpg"
+        assert result["properties"]["source_page"] == "romania"
 
     @pytest.mark.unit
     def test_single_dog_extraction_no_image(self, scraper):
@@ -119,12 +109,11 @@ class TestREANUnifiedExtractionFast:
         # Mock no image found
         scraper._extract_image_from_container = Mock(return_value=None)
 
-        result = scraper._extract_single_dog_from_container(
-            container, "romania", 1)
+        result = scraper._extract_single_dog_from_container(container, "romania", 1)
 
         assert result is not None
-        assert result['name'] == 'Toby'
-        assert 'primary_image_url' not in result
+        assert result["name"] == "Toby"
+        assert "primary_image_url" not in result
 
     @pytest.mark.unit
     def test_single_dog_extraction_invalid_data(self, scraper):
@@ -132,16 +121,12 @@ class TestREANUnifiedExtractionFast:
         container = Mock()
         container.text = "Random text without dog information"
 
-        result = scraper._extract_single_dog_from_container(
-            container, "romania", 1)
+        result = scraper._extract_single_dog_from_container(container, "romania", 1)
 
         # Method may return data but it should be recognizably poor quality
         if result is not None:
             # Check that it found questionable name data
-            assert result.get('name') in [
-                'Random', None] or len(
-                result.get(
-                    'name', '')) < 5
+            assert result.get("name") in ["Random", None] or len(result.get("name", "")) < 5
 
     @pytest.mark.unit
     def test_image_validation_patterns(self, scraper):
@@ -188,8 +173,7 @@ class TestREANUnifiedExtractionFast:
             assert len(validated) == 1
 
             # Should extract dog data successfully
-            result = scraper._extract_single_dog_from_container(
-                container, "romania", 1)
+            result = scraper._extract_single_dog_from_container(container, "romania", 1)
             assert result is not None
             assert "name" in result
             assert result["name"] is not None
@@ -198,13 +182,7 @@ class TestREANUnifiedExtractionFast:
     def test_fallback_selector_logic(self, scraper):
         """Test fallback selector logic quickly."""
         # Mock different selector scenarios
-        selectors = [
-            "div.x-el-article",
-            "div.x.c1-5",
-            "div[class*='x-el-article']",
-            "div[class*='c1-5']",
-            "h3"  # Final fallback
-        ]
+        selectors = ["div.x-el-article", "div.x.c1-5", "div[class*='x-el-article']", "div[class*='c1-5']", "h3"]  # Final fallback
 
         # Test that each selector type would be attempted
         for selector in selectors:
@@ -226,10 +204,7 @@ class TestREANUnifiedExtractionFast:
 
         # Mock image in container
         img = Mock()
-        img.get_attribute.side_effect = lambda attr: {
-            'src': 'https://img1.wsimg.com/isteam/ip/abc/toby.jpg',
-            'data-src': None
-        }.get(attr)
+        img.get_attribute.side_effect = lambda attr: {"src": "https://img1.wsimg.com/isteam/ip/abc/toby.jpg", "data-src": None}.get(attr)
         container.find_elements.return_value = [img]
         mock_containers.append(container)
 
@@ -237,44 +212,33 @@ class TestREANUnifiedExtractionFast:
         scraper._find_dog_containers = Mock(return_value=mock_containers)
 
         # Test with mocked WebDriver
-        with patch('selenium.webdriver.Chrome') as mock_chrome:
+        with patch("selenium.webdriver.Chrome") as mock_chrome:
             mock_driver = Mock()
             mock_chrome.return_value = mock_driver
 
-            result = scraper.extract_dogs_with_images_unified(
-                "https://test.url", "romania")
+            result = scraper.extract_dogs_with_images_unified("https://test.url", "romania")
 
             assert len(result) == 1
-            assert result[0]['name'] == 'Toby'
-            assert result[0]['primary_image_url'] == 'https://img1.wsimg.com/isteam/ip/abc/toby.jpg'
+            assert result[0]["name"] == "Toby"
+            assert result[0]["primary_image_url"] == "https://img1.wsimg.com/isteam/ip/abc/toby.jpg"
 
     @pytest.mark.unit
     def test_unified_extraction_error_handling_logic(self, scraper):
         """Test unified extraction error handling logic quickly."""
         # Test fallback to legacy method logic
         scraper.scrape_page = Mock(return_value="<html>test content</html>")
-        scraper.extract_dog_content_from_html = Mock(
-            return_value=["Toby - 4 months old"])
-        scraper.extract_images_with_browser = Mock(
-            return_value=["https://img1.wsimg.com/test.jpg"])
-        scraper.extract_dog_data = Mock(
-            return_value={
-                "name": "Toby",
-                "age_text": "4 months"})
-        scraper.associate_images_with_dogs = Mock(return_value=[{
-            "name": "Toby",
-            "age_text": "4 months",
-            "primary_image_url": "https://img1.wsimg.com/test.jpg"
-        }])
+        scraper.extract_dog_content_from_html = Mock(return_value=["Toby - 4 months old"])
+        scraper.extract_images_with_browser = Mock(return_value=["https://img1.wsimg.com/test.jpg"])
+        scraper.extract_dog_data = Mock(return_value={"name": "Toby", "age_text": "4 months"})
+        scraper.associate_images_with_dogs = Mock(return_value=[{"name": "Toby", "age_text": "4 months", "primary_image_url": "https://img1.wsimg.com/test.jpg"}])
 
         # Simulate WebDriver failure
-        with patch('selenium.webdriver.Chrome', side_effect=Exception("WebDriver failed")):
-            result = scraper.extract_dogs_with_images_unified(
-                "https://test.url", "romania")
+        with patch("selenium.webdriver.Chrome", side_effect=Exception("WebDriver failed")):
+            result = scraper.extract_dogs_with_images_unified("https://test.url", "romania")
 
             # Should fallback successfully
             assert len(result) == 1
-            assert result[0]['name'] == 'Toby'
+            assert result[0]["name"] == "Toby"
             scraper.scrape_page.assert_called_once()
 
     @pytest.mark.slow  # Actually slow due to complex image association logic
@@ -284,12 +248,9 @@ class TestREANUnifiedExtractionFast:
         """Test accuracy of image-container association logic quickly."""
         # Test the core issue: ensuring dogs get correct images
         containers_data = [
-            {
-                "text": "Bobbie - 5 months old - in Romania\nBobbie was rescued from shelter.\nVaccinated.",
-                "image": "https://img1.wsimg.com/isteam/ip/rean/bobbie-correct.jpg"},
-            {
-                "text": "Toby - 4 months old - in Romania\nToby is looking for home.\nVaccinated.",
-                "image": "https://img1.wsimg.com/isteam/ip/rean/toby-correct.jpg"}]
+            {"text": "Bobbie - 5 months old - in Romania\nBobbie was rescued from shelter.\nVaccinated.", "image": "https://img1.wsimg.com/isteam/ip/rean/bobbie-correct.jpg"},
+            {"text": "Toby - 4 months old - in Romania\nToby is looking for home.\nVaccinated.", "image": "https://img1.wsimg.com/isteam/ip/rean/toby-correct.jpg"},
+        ]
 
         containers = []
         for data in containers_data:
@@ -297,34 +258,29 @@ class TestREANUnifiedExtractionFast:
             container.text = data["text"]
 
             img = Mock()
-            img.get_attribute.side_effect = lambda attr, url=data["image"]: {
-                'src': url,
-                'data-src': None
-            }.get(attr)
+            img.get_attribute.side_effect = lambda attr, url=data["image"]: {"src": url, "data-src": None}.get(attr)
             container.find_elements.return_value = [img]
             containers.append(container)
 
         # Mock container finding
         scraper._find_dog_containers = Mock(return_value=containers)
 
-        with patch('selenium.webdriver.Chrome') as mock_chrome:
+        with patch("selenium.webdriver.Chrome") as mock_chrome:
             mock_driver = Mock()
             mock_chrome.return_value = mock_driver
 
-            result = scraper.extract_dogs_with_images_unified(
-                "https://test.url", "romania")
+            result = scraper.extract_dogs_with_images_unified("https://test.url", "romania")
 
             # Verify correct associations
             assert len(result) == 2
 
-            bobbie_data = next(
-                dog for dog in result if dog['name'] == 'Bobbie')
-            toby_data = next(dog for dog in result if dog['name'] == 'Toby')
+            bobbie_data = next(dog for dog in result if dog["name"] == "Bobbie")
+            toby_data = next(dog for dog in result if dog["name"] == "Toby")
 
             # Critical: each dog should get their own image
-            assert bobbie_data['primary_image_url'] == 'https://img1.wsimg.com/isteam/ip/rean/bobbie-correct.jpg'
-            assert toby_data['primary_image_url'] == 'https://img1.wsimg.com/isteam/ip/rean/toby-correct.jpg'
+            assert bobbie_data["primary_image_url"] == "https://img1.wsimg.com/isteam/ip/rean/bobbie-correct.jpg"
+            assert toby_data["primary_image_url"] == "https://img1.wsimg.com/isteam/ip/rean/toby-correct.jpg"
 
             # Verify no cross-contamination
-            assert toby_data['primary_image_url'] != 'https://img1.wsimg.com/isteam/ip/rean/bobbie-correct.jpg'
-            assert bobbie_data['primary_image_url'] != 'https://img1.wsimg.com/isteam/ip/rean/toby-correct.jpg'
+            assert toby_data["primary_image_url"] != "https://img1.wsimg.com/isteam/ip/rean/bobbie-correct.jpg"
+            assert bobbie_data["primary_image_url"] != "https://img1.wsimg.com/isteam/ip/rean/toby-correct.jpg"

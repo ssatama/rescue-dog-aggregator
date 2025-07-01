@@ -4,6 +4,7 @@ Fast unit tests for REAN error handling logic.
 These tests focus on error handling business logic without expensive network
 operations or WebDriver instantiation, providing quick feedback during development.
 """
+
 from unittest.mock import Mock, patch
 
 import pytest
@@ -25,15 +26,7 @@ class TestREANErrorHandlingFast:
     @pytest.mark.unit
     def test_invalid_image_url_validation_logic(self, scraper):
         """Test invalid image URL validation logic quickly."""
-        invalid_urls = [
-            "not-a-url",
-            "://malformed",
-            "",
-            None,
-            "javascript:void(0)",
-            "data:invalid-base64",
-            "https://malicious.com/script.js"
-        ]
+        invalid_urls = ["not-a-url", "://malformed", "", None, "javascript:void(0)", "data:invalid-base64", "https://malicious.com/script.js"]
 
         for url in invalid_urls:
             assert not scraper._is_valid_rean_image(url)
@@ -55,9 +48,8 @@ class TestREANErrorHandlingFast:
             # or None
             if result is not None:
                 # For malformed cases, extracted name should be questionable
-                name = result.get('name')
-                assert name is None or len(name) < 5 or name in [
-                    'Random', '123456789']
+                name = result.get("name")
+                assert name is None or len(name) < 5 or name in ["Random", "123456789"]
 
     @pytest.mark.unit
     def test_regex_pattern_failure_handling_logic(self, scraper):
@@ -92,8 +84,7 @@ class TestREANErrorHandlingFast:
 
         for corrupted_data in corrupted_data_cases:
             try:
-                result = scraper.standardize_animal_data(
-                    corrupted_data, "test_page")
+                result = scraper.standardize_animal_data(corrupted_data, "test_page")
                 assert isinstance(result, dict) or result is None
             except Exception as e:
                 pytest.fail(f"Should handle corrupted data gracefully: {e}")
@@ -106,8 +97,7 @@ class TestREANErrorHandlingFast:
         assert result == []
 
         # Minimal content
-        result = scraper.extract_dog_content_from_html(
-            "<html><body></body></html>")
+        result = scraper.extract_dog_content_from_html("<html><body></body></html>")
         assert result == []
 
         # None content
@@ -186,15 +176,9 @@ class TestREANErrorHandlingFast:
     def test_cloudinary_failure_handling_logic(self, scraper):
         """Test Cloudinary failure handling logic quickly."""
         scraper.cloudinary_service = Mock()
-        scraper.cloudinary_service.upload_image_from_url.return_value = (
-            None, False)
+        scraper.cloudinary_service.upload_image_from_url.return_value = (None, False)
 
-        animal_data = {
-            "name": "Test Dog",
-            "primary_image_url": "https://example.com/test.jpg",
-            "organization_id": 1,
-            "external_id": "test-123"
-        }
+        animal_data = {"name": "Test Dog", "primary_image_url": "https://example.com/test.jpg", "organization_id": 1, "external_id": "test-123"}
 
         # Mock database operations
         scraper.get_existing_animal = Mock(return_value=None)
@@ -208,7 +192,7 @@ class TestREANErrorHandlingFast:
     @pytest.mark.slow  # Actually slow due to network simulation
     @pytest.mark.network
     @pytest.mark.network_dependent
-    @patch('requests.get')
+    @patch("requests.get")
     def test_network_error_simulation_logic(self, mock_get, scraper):
         """Test network error simulation logic quickly."""
         # Test different network error types
@@ -227,9 +211,8 @@ class TestREANErrorHandlingFast:
     def test_webdriver_error_simulation_logic(self, scraper):
         """Test WebDriver error simulation logic quickly."""
         # Test without actually instantiating WebDriver
-        with patch('selenium.webdriver.Chrome', side_effect=Exception("WebDriver failed")):
-            result = scraper.extract_images_with_browser(
-                "https://rean.org.uk/test")
+        with patch("selenium.webdriver.Chrome", side_effect=Exception("WebDriver failed")):
+            result = scraper.extract_images_with_browser("https://rean.org.uk/test")
             assert result == []
 
     @pytest.mark.unit
@@ -251,14 +234,11 @@ class TestREANErrorHandlingFast:
     def test_memory_constraint_simulation_logic(self, scraper):
         """Test memory constraint simulation logic quickly."""
         # Simulate processing large datasets
-        large_dog_list = [{"name": f"Dog{i}", "age_text": "2 years"}
-                          for i in range(100)]  # Smaller for fast test
-        large_image_list = [
-            f"https://img1.wsimg.com/isteam/ip/abc/dog{i}.jpg" for i in range(100)]
+        large_dog_list = [{"name": f"Dog{i}", "age_text": "2 years"} for i in range(100)]  # Smaller for fast test
+        large_image_list = [f"https://img1.wsimg.com/isteam/ip/abc/dog{i}.jpg" for i in range(100)]
 
         # Should handle large datasets without crashing
-        result = scraper.associate_images_with_dogs(
-            large_dog_list, large_image_list)
+        result = scraper.associate_images_with_dogs(large_dog_list, large_image_list)
         assert len(result) == 100
         assert all("name" in dog for dog in result)
 
@@ -269,7 +249,7 @@ class TestREANErrorHandlingFast:
         scraper.conn = Mock()
 
         # Test that cleanup logic exists and can be called
-        if hasattr(scraper.conn, 'close'):
+        if hasattr(scraper.conn, "close"):
             scraper.conn.close()
             scraper.conn.close.assert_called()
 

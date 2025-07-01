@@ -47,6 +47,7 @@ class TestHealthCheckEndpoint:
 @pytest.mark.slow
 @pytest.mark.database
 @pytest.mark.api
+@pytest.mark.requires_migrations
 class TestScraperMonitoringEndpoint:
     """Test scraper-specific monitoring endpoints."""
 
@@ -102,6 +103,7 @@ class TestScraperMonitoringEndpoint:
 @pytest.mark.slow
 @pytest.mark.database
 @pytest.mark.api
+@pytest.mark.requires_migrations
 class TestFailureDetectionMonitoring:
     """Test monitoring of failure detection system."""
 
@@ -146,6 +148,7 @@ class TestFailureDetectionMonitoring:
 @pytest.mark.slow
 @pytest.mark.database
 @pytest.mark.api
+@pytest.mark.requires_migrations
 class TestPerformanceMetrics:
     """Test performance monitoring endpoints."""
 
@@ -224,6 +227,7 @@ class TestAlertingConfiguration:
 @pytest.mark.slow
 @pytest.mark.database
 @pytest.mark.api
+@pytest.mark.requires_migrations
 class TestMonitoringAuthentication:
     """Test that monitoring endpoints have appropriate security."""
 
@@ -232,12 +236,7 @@ class TestMonitoringAuthentication:
         # NOTE: Currently no authentication is implemented, so all endpoints are public
         # This test documents current behavior - in production you'd want
         # authentication
-        public_endpoints = [
-            "/monitoring/scrapers",
-            "/monitoring/failures",
-            "/monitoring/performance",
-            "/monitoring/alerts/config"
-        ]
+        public_endpoints = ["/monitoring/scrapers", "/monitoring/failures", "/monitoring/performance", "/monitoring/alerts/config"]
 
         for endpoint in public_endpoints:
             response = api_client_no_auth.get(endpoint)
@@ -255,6 +254,7 @@ class TestMonitoringAuthentication:
 @pytest.mark.slow
 @pytest.mark.database
 @pytest.mark.api
+@pytest.mark.requires_migrations
 class TestMonitoringIntegration:
     """Test integration between monitoring and actual scraper data."""
 

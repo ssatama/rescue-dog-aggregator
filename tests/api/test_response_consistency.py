@@ -16,8 +16,7 @@ class TestAPIResponseConsistency:
 
         for endpoint in endpoints:
             response = client.get(endpoint)
-            assert "application/json" in response.headers.get(
-                "content-type", "")
+            assert "application/json" in response.headers.get("content-type", "")
 
     def test_error_responses_have_consistent_format(self, client):
         """Test that error responses follow consistent format."""

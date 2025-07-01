@@ -4,6 +4,7 @@ Tests for detect_partial_failure method in BaseScraper.
 This test file specifically addresses the PostgreSQL GROUP BY error:
 "column 'scrape_logs.started_at' must appear in the GROUP BY clause or be used in an aggregate function"
 """
+
 from unittest.mock import Mock
 
 # Import at module level
@@ -12,6 +13,7 @@ from scrapers.base_scraper import BaseScraper
 # Handle psycopg2 import - it might not be available in test environment
 try:
     import psycopg2  # noqa: F401
+
     PSYCOPG2_AVAILABLE = True
 except ImportError:
     PSYCOPG2_AVAILABLE = False
@@ -68,8 +70,8 @@ class TestDetectPartialFailure:
         assert "LIMIT" in sql_query  # Has LIMIT in subquery
 
         # Verify the outer query uses aggregate functions correctly
-        lines = sql_query.split('\n')
-        outer_select_line = [line for line in lines if 'SELECT AVG' in line][0]
+        lines = sql_query.split("\n")
+        outer_select_line = [line for line in lines if "SELECT AVG" in line][0]
         assert "AVG(dogs_found)" in outer_select_line
         assert "COUNT(*)" in outer_select_line
 
@@ -167,12 +169,10 @@ class TestDetectPartialFailure:
         assert result is False
 
         # Test case 2: Insufficient historical data
-        mock_cursor.fetchone.return_value = (
-            10.0, 1)  # avg=10, count=1 (less than min)
+        mock_cursor.fetchone.return_value = (10.0, 1)  # avg=10, count=1 (less than min)
         scraper.detect_catastrophic_failure = Mock(return_value=False)
 
-        result = BaseScraper.detect_partial_failure(
-            scraper, animals_found=5, minimum_historical_scrapes=3)
+        result = BaseScraper.detect_partial_failure(scraper, animals_found=5, minimum_historical_scrapes=3)
         # Should fall back to absolute minimum checking
         assert isinstance(result, bool)
 

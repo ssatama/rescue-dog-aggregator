@@ -1,4 +1,3 @@
-
 import pytest
 
 
@@ -21,9 +20,7 @@ class TestOrganizationsJSONParsing:
             assert "id" in org
             assert "name" in org
             assert "social_media" in org
-            assert isinstance(
-                org["social_media"],
-                dict)  # Should be parsed as dict
+            assert isinstance(org["social_media"], dict)  # Should be parsed as dict
 
     def test_organization_detail_json_structure(self, client):
         """Test organization detail endpoint JSON structure."""

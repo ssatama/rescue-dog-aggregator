@@ -25,14 +25,14 @@ class TestProjectStructureIntegrity:
     def test_project_has_required_top_level_structure(self):
         """Ensure project has all required top-level directories"""
         required_dirs = [
-            "api",           # Backend API
-            "frontend",      # Next.js frontend
-            "configs",       # Configuration files
-            "database",      # Database scripts and migrations
-            "scrapers",      # Web scrapers
-            "utils",         # Shared utilities
-            "tests",         # Backend tests
-            "docs"           # Documentation
+            "api",  # Backend API
+            "frontend",  # Next.js frontend
+            "configs",  # Configuration files
+            "database",  # Database scripts and migrations
+            "scrapers",  # Web scrapers
+            "utils",  # Shared utilities
+            "tests",  # Backend tests
+            "docs",  # Documentation
         ]
 
         missing_dirs = []
@@ -42,16 +42,11 @@ class TestProjectStructureIntegrity:
                 missing_dirs.append(dir_name)
 
         if missing_dirs:
-            pytest.fail(
-                f"Missing required top-level directories: {missing_dirs}")
+            pytest.fail(f"Missing required top-level directories: {missing_dirs}")
 
     def test_documentation_files_exist(self):
         """Ensure critical documentation files exist"""
-        required_docs = [
-            "README.md",
-            "CLAUDE.md",       # AI assistant instructions
-            "TESTING.md"       # Testing documentation
-        ]
+        required_docs = ["README.md", "CLAUDE.md", "TESTING.md"]  # AI assistant instructions  # Testing documentation
 
         missing_docs = []
         for doc in required_docs:
@@ -94,15 +89,9 @@ class TestBackendFileIntegrity:
         """Validate API directory structure"""
         api_dir = PROJECT_ROOT / "api"
 
-        required_files = [
-            "main.py",           # FastAPI main application
-            "dependencies.py"    # Dependency injection
-        ]
+        required_files = ["main.py", "dependencies.py"]  # FastAPI main application  # Dependency injection
 
-        required_dirs = [
-            "models",           # Pydantic models
-            "routes"            # API route handlers
-        ]
+        required_dirs = ["models", "routes"]  # Pydantic models  # API route handlers
 
         missing_files = []
         for file_name in required_files:
@@ -124,15 +113,9 @@ class TestBackendFileIntegrity:
         """Validate database directory structure"""
         db_dir = PROJECT_ROOT / "database"
 
-        required_files = [
-            "schema.sql",        # Database schema
-            "db_setup.py"        # Database setup script
-        ]
+        required_files = ["schema.sql", "db_setup.py"]  # Database schema  # Database setup script
 
-        optional_dirs = [
-            "migrations",        # Database migrations
-            "archive"           # Archived database scripts
-        ]
+        optional_dirs = ["migrations", "archive"]  # Database migrations  # Archived database scripts
 
         missing_files = []
         for file_name in required_files:
@@ -152,10 +135,8 @@ class TestBackendFileIntegrity:
         assert base_scraper.exists(), "base_scraper.py missing"
 
         # Should have at least one scraper subdirectory (exclude development artifacts)
-        excluded_dirs = {'__pycache__', '.pytest_cache',
-                         '.git', 'node_modules', '.DS_Store'}
-        scraper_dirs = [d for d in scrapers_dir.iterdir() if d.is_dir(
-        ) and not d.name.startswith('.') and d.name not in excluded_dirs]
+        excluded_dirs = {"__pycache__", ".pytest_cache", ".git", "node_modules", ".DS_Store"}
+        scraper_dirs = [d for d in scrapers_dir.iterdir() if d.is_dir() and not d.name.startswith(".") and d.name not in excluded_dirs]
 
         assert len(scraper_dirs) > 0, "No scraper implementations found"
 
@@ -172,10 +153,7 @@ class TestBackendFileIntegrity:
         """Validate utils directory structure"""
         utils_dir = PROJECT_ROOT / "utils"
 
-        critical_utils = [
-            "db.py",              # Database utilities
-            "config_loader.py"    # Configuration loading
-        ]
+        critical_utils = ["db.py", "config_loader.py"]  # Database utilities  # Configuration loading
 
         missing_utils = []
         for util_file in critical_utils:
@@ -191,13 +169,7 @@ class TestBackendFileIntegrity:
         tests_dir = PROJECT_ROOT / "tests"
 
         # Should mirror main application structure
-        expected_test_dirs = [
-            "api",
-            "config",
-            "database",
-            "scrapers",
-            "utils"
-        ]
+        expected_test_dirs = ["api", "config", "database", "scrapers", "utils"]
 
         missing_test_dirs = []
         for test_dir in expected_test_dirs:
@@ -219,10 +191,10 @@ class TestFrontendFileIntegrity:
     def test_nextjs_configuration_files(self):
         """Validate Next.js configuration files"""
         required_config_files = [
-            "package.json",      # Node.js dependencies
-            "next.config.js",    # Next.js configuration
+            "package.json",  # Node.js dependencies
+            "next.config.js",  # Next.js configuration
             "tailwind.config.js",  # Tailwind CSS configuration
-            "tsconfig.json"      # TypeScript configuration
+            "tsconfig.json",  # TypeScript configuration
         ]
 
         missing_configs = []
@@ -254,7 +226,7 @@ class TestFrontendFileIntegrity:
                     app_dir / f"{file_name.split('.')[0]}.js",
                     app_dir / f"{file_name.split('.')[0]}.jsx",
                     app_dir / f"{file_name.split('.')[0]}.ts",
-                    app_dir / f"{file_name.split('.')[0]}.tsx"
+                    app_dir / f"{file_name.split('.')[0]}.tsx",
                 ]
 
                 if not any(alt.exists() for alt in alternatives):
@@ -271,12 +243,7 @@ class TestFrontendFileIntegrity:
             pytest.fail("Components directory missing")
 
         # Should have organized subdirectories
-        expected_component_dirs = [
-            "ui",         # UI components
-            "layout",     # Layout components
-            "dogs",       # Dog-related components
-            "error"       # Error handling components
-        ]
+        expected_component_dirs = ["ui", "layout", "dogs", "error"]  # UI components  # Layout components  # Dog-related components  # Error handling components
 
         missing_component_dirs = []
         for comp_dir in expected_component_dirs:
@@ -285,17 +252,13 @@ class TestFrontendFileIntegrity:
                 missing_component_dirs.append(f"components/{comp_dir}")
 
         if missing_component_dirs:
-            pytest.fail(
-                f"Missing component directories: {missing_component_dirs}")
+            pytest.fail(f"Missing component directories: {missing_component_dirs}")
 
     def test_services_and_utils_structure(self):
         """Validate services and utilities structure"""
         src_dir = FRONTEND_ROOT / "src"
 
-        required_dirs = [
-            "services",   # API service layer
-            "utils"       # Utility functions
-        ]
+        required_dirs = ["services", "utils"]  # API service layer  # Utility functions
 
         missing_dirs = []
         for dir_name in required_dirs:
@@ -315,11 +278,11 @@ class TestFrontendFileIntegrity:
 
         # Should have organized test categories
         expected_test_dirs = [
-            "build",          # Build validation tests (NEW)
-            "integration",    # Integration tests
-            "security",       # Security tests
-            "performance",    # Performance tests
-            "accessibility"   # Accessibility tests
+            "build",  # Build validation tests (NEW)
+            "integration",  # Integration tests
+            "security",  # Security tests
+            "performance",  # Performance tests
+            "accessibility",  # Accessibility tests
         ]
 
         missing_test_dirs = []
@@ -329,8 +292,7 @@ class TestFrontendFileIntegrity:
                 missing_test_dirs.append(f"__tests__/{test_dir}")
 
         if missing_test_dirs:
-            pytest.fail(
-                f"Missing frontend test directories: {missing_test_dirs}")
+            pytest.fail(f"Missing frontend test directories: {missing_test_dirs}")
 
 
 class TestCriticalFileConflicts:
@@ -348,20 +310,13 @@ class TestCriticalFileConflicts:
         if conflicts:
             conflict_descriptions = []
             for route, files in conflicts.items():
-                conflict_descriptions.append(
-                    f"Route '{route}': {', '.join(files)}")
+                conflict_descriptions.append(f"Route '{route}': {', '.join(files)}")
 
-            pytest.fail(f"Duplicate page file conflicts found:\n" +
-                        "\n".join(conflict_descriptions))
+            pytest.fail(f"Duplicate page file conflicts found:\n" + "\n".join(conflict_descriptions))
 
     def test_no_conflicting_extensions(self):
         """Ensure no conflicting file extensions in critical directories"""
-        critical_dirs = [
-            FRONTEND_ROOT / "src" / "app",
-            FRONTEND_ROOT / "src" / "components",
-            PROJECT_ROOT / "api",
-            PROJECT_ROOT / "utils"
-        ]
+        critical_dirs = [FRONTEND_ROOT / "src" / "app", FRONTEND_ROOT / "src" / "components", PROJECT_ROOT / "api", PROJECT_ROOT / "utils"]
 
         conflicts = []
         for dir_path in critical_dirs:
@@ -370,18 +325,12 @@ class TestCriticalFileConflicts:
                 conflicts.extend(dir_conflicts)
 
         if conflicts:
-            conflict_descriptions = [f"{c['path']}: {', '.join(c['extensions'])}"
-                                     for c in conflicts]
-            pytest.fail(f"File extension conflicts found:\n" +
-                        "\n".join(conflict_descriptions))
+            conflict_descriptions = [f"{c['path']}: {', '.join(c['extensions'])}" for c in conflicts]
+            pytest.fail(f"File extension conflicts found:\n" + "\n".join(conflict_descriptions))
 
     def test_no_python_import_conflicts(self):
         """Ensure no Python import conflicts in backend"""
-        python_dirs = [
-            PROJECT_ROOT / "api",
-            PROJECT_ROOT / "utils",
-            PROJECT_ROOT / "scrapers"
-        ]
+        python_dirs = [PROJECT_ROOT / "api", PROJECT_ROOT / "utils", PROJECT_ROOT / "scrapers"]
 
         conflicts = []
         for dir_path in python_dirs:
@@ -406,7 +355,7 @@ class TestCriticalFileConflicts:
                 # Use Path methods for cross-platform compatibility
                 if entry.is_file() and entry.name.startswith("page."):
                     page_files.append(entry.name)
-                elif entry.is_dir() and not entry.name.startswith('.'):
+                elif entry.is_dir() and not entry.name.startswith("."):
                     child_route = f"{route_path}/{entry.name}" if route_path else entry.name
                     scan_directory(entry, child_route)
 
@@ -423,7 +372,7 @@ class TestCriticalFileConflicts:
         file_basenames = {}
 
         for file_path in directory.rglob("*"):
-            if file_path.is_file() and not file_path.name.startswith('.'):
+            if file_path.is_file() and not file_path.name.startswith("."):
                 basename = file_path.stem
                 extension = file_path.suffix
                 relative_dir = file_path.parent.relative_to(directory)
@@ -438,16 +387,13 @@ class TestCriticalFileConflicts:
             if len(extensions) > 1:
                 # Check for problematic conflicts
                 problematic = False
-                if '.js' in extensions and '.jsx' in extensions:
+                if ".js" in extensions and ".jsx" in extensions:
                     problematic = True
-                elif '.ts' in extensions and '.tsx' in extensions:
+                elif ".ts" in extensions and ".tsx" in extensions:
                     problematic = True
 
                 if problematic:
-                    conflicts.append({
-                        'path': str(rel_dir / basename),
-                        'extensions': extensions
-                    })
+                    conflicts.append({"path": str(rel_dir / basename), "extensions": extensions})
 
         return conflicts
 
@@ -458,8 +404,7 @@ class TestCriticalFileConflicts:
         namespace_modules = {}
 
         # Exclude development artifact directories
-        excluded_dirs = {'__pycache__', '.pytest_cache',
-                         '.git', 'node_modules', 'venv', 'htmlcov'}
+        excluded_dirs = {"__pycache__", ".pytest_cache", ".git", "node_modules", "venv", "htmlcov"}
 
         for py_file in directory.rglob("*.py"):
             # Skip development artifacts and __init__.py files
@@ -478,8 +423,7 @@ class TestCriticalFileConflicts:
                 namespace_modules[namespace] = set()
 
             if module_name in namespace_modules[namespace]:
-                conflicts.append(
-                    f"Duplicate module name '{module_name}' in {namespace}")
+                conflicts.append(f"Duplicate module name '{module_name}' in {namespace}")
             else:
                 namespace_modules[namespace].add(module_name)
 

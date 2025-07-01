@@ -11,17 +11,12 @@ class TestREANScraper:
     @pytest.fixture
     def scraper(self):
         """Create a REAN scraper instance for testing."""
-        with patch('scrapers.base_scraper.OrganizationSyncManager') as mock_sync, \
-                patch('scrapers.base_scraper.ConfigLoader') as mock_config_loader:
+        with patch("scrapers.base_scraper.OrganizationSyncManager") as mock_sync, patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader:
 
             # Mock the config loader and organization sync
             mock_config = MagicMock()
             mock_config.name = "REAN Test"
-            mock_config.get_scraper_config_dict.return_value = {
-                "rate_limit_delay": 2.5,
-                "max_retries": 3,
-                "timeout": 30
-            }
+            mock_config.get_scraper_config_dict.return_value = {"rate_limit_delay": 2.5, "max_retries": 3, "timeout": 30}
             mock_config.metadata.website_url = "https://rean.org.uk"
 
             mock_config_loader.return_value.load_config.return_value = mock_config
@@ -84,22 +79,19 @@ class TestREANScraper:
 
     def test_extract_name_simple(self, scraper):
         """Test extracting simple dog names."""
-        assert scraper.extract_name(
-            "Bobbie is around 5 months old") == "Bobbie"
+        assert scraper.extract_name("Bobbie is around 5 months old") == "Bobbie"
         assert scraper.extract_name("Jerry is 4 months old") == "Jerry"
         assert scraper.extract_name("Paloma is around 2 years old") == "Paloma"
 
     def test_extract_name_descriptive(self, scraper):
         """Test extracting names from descriptive text."""
-        assert scraper.extract_name(
-            "Little friendly Toby is 1.5 years") == "Toby"
+        assert scraper.extract_name("Little friendly Toby is 1.5 years") == "Toby"
         assert scraper.extract_name("Puppy Donald is 20kg") == "Donald"
         assert scraper.extract_name("Sweet boy Max is around 16 kg") == "Max"
 
     def test_extract_age_months(self, scraper):
         """Test extracting age in months."""
-        assert scraper.extract_age(
-            "Bobbie is around 5 months old") == "5 months"
+        assert scraper.extract_age("Bobbie is around 5 months old") == "5 months"
         assert scraper.extract_age("Jerry is 4 months old") == "4 months"
 
     def test_extract_age_years(self, scraper):
@@ -109,19 +101,14 @@ class TestREANScraper:
 
     def test_determine_location_romania(self, scraper):
         """Test location determination for Romania dogs."""
-        location = scraper.determine_location(
-            "rescued from kill shelter", "romania")
+        location = scraper.determine_location("rescued from kill shelter", "romania")
         assert location == "Romania"
 
     def test_determine_location_uk_cities(self, scraper):
         """Test location determination for UK cities."""
-        assert scraper.determine_location(
-            "foster in Norfolk", "uk_foster") == "Norfolk"
-        assert scraper.determine_location(
-            "fostered in Lincolnshire",
-            "uk_foster") == "Lincolnshire"
-        assert scraper.determine_location(
-            "foster care in Derby", "uk_foster") == "Derby"
+        assert scraper.determine_location("foster in Norfolk", "uk_foster") == "Norfolk"
+        assert scraper.determine_location("fostered in Lincolnshire", "uk_foster") == "Lincolnshire"
+        assert scraper.determine_location("foster care in Derby", "uk_foster") == "Derby"
 
     def test_extract_medical_status_romania(self, scraper):
         """Test medical status extraction for Romania dogs."""
@@ -134,10 +121,8 @@ class TestREANScraper:
         text1 = "He is neutered, vaccinated and chipped"
         text2 = "She is spayed, vaccinated and chipped"
 
-        assert scraper.extract_medical_status(
-            text1) == "neutered, vaccinated and chipped"
-        assert scraper.extract_medical_status(
-            text2) == "spayed, vaccinated and chipped"
+        assert scraper.extract_medical_status(text1) == "neutered, vaccinated and chipped"
+        assert scraper.extract_medical_status(text2) == "spayed, vaccinated and chipped"
 
     def test_assess_urgency_standard(self, scraper):
         """Test urgency assessment for standard cases."""
@@ -146,12 +131,7 @@ class TestREANScraper:
 
     def test_assess_urgency_urgent(self, scraper):
         """Test urgency assessment for urgent cases."""
-        urgent_texts = [
-            "desperately needs a home",
-            "urgent adoption needed",
-            "ready to travel",
-            "stuck in shelter"
-        ]
+        urgent_texts = ["desperately needs a home", "urgent adoption needed", "ready to travel", "stuck in shelter"]
 
         for text in urgent_texts:
             assert scraper.assess_urgency(text) == "urgent"
@@ -171,11 +151,9 @@ class TestREANScraper:
 
     def test_predict_size_from_description(self, scraper):
         """Test size prediction from descriptive text."""
-        assert scraper.predict_size_from_description(
-            "medium size boy") == "Medium"
+        assert scraper.predict_size_from_description("medium size boy") == "Medium"
         assert scraper.predict_size_from_description("big soft boy") == "Large"
-        assert scraper.predict_size_from_description(
-            "little friendly dog") == "Small"
+        assert scraper.predict_size_from_description("little friendly dog") == "Small"
 
     def test_extract_dog_data_romania(self, scraper):
         """Test complete data extraction for Romania dog."""
@@ -216,16 +194,15 @@ class TestREANScraper:
         stories = [
             ("rescued from the local kill shelter", "rescued from kill shelter"),
             ("found on the streets", "found on streets"),
-            ("rescued from terrible conditions",
-             "rescued from terrible conditions"),
-            ("currently in foster", "in foster care")
+            ("rescued from terrible conditions", "rescued from terrible conditions"),
+            ("currently in foster", "in foster care"),
         ]
 
         for input_text, expected in stories:
             result = scraper.extract_rescue_context(input_text)
             assert expected in result.lower()
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_scrape_page_success(self, mock_get, scraper):
         """Test successful page scraping."""
         mock_response = MagicMock()
@@ -239,7 +216,7 @@ class TestREANScraper:
     @pytest.mark.slow
     @pytest.mark.network
     @pytest.mark.network_dependent
-    @patch('requests.get')
+    @patch("requests.get")
     def test_scrape_page_failure(self, mock_get, scraper):
         """Test page scraping failure handling."""
         mock_get.side_effect = Exception("Network error")
@@ -337,13 +314,13 @@ class TestREANScraper:
     def test_browser_image_extraction_interface(self, scraper):
         """Test that browser image extraction method interface exists."""
         # RED: This should fail initially as method doesn't exist yet
-        assert hasattr(scraper, 'extract_images_with_browser')
-        assert callable(getattr(scraper, 'extract_images_with_browser'))
+        assert hasattr(scraper, "extract_images_with_browser")
+        assert callable(getattr(scraper, "extract_images_with_browser"))
 
     @pytest.mark.slow
     @pytest.mark.selenium
     @pytest.mark.browser
-    @patch('scrapers.rean.dogs_scraper.webdriver.Chrome')
+    @patch("scrapers.rean.dogs_scraper.webdriver.Chrome")
     def test_extract_images_with_browser_basic(self, mock_chrome, scraper):
         """Test basic browser-based image extraction functionality."""
         # Mock WebDriver setup
@@ -363,12 +340,10 @@ class TestREANScraper:
         mock_placeholder = MagicMock()
         mock_placeholder.get_attribute.return_value = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
 
-        mock_driver.find_elements.return_value = [
-            mock_img1, mock_img2, mock_placeholder]
+        mock_driver.find_elements.return_value = [mock_img1, mock_img2, mock_placeholder]
 
         # Test extraction
-        images = scraper.extract_images_with_browser(
-            "https://rean.org.uk/test")
+        images = scraper.extract_images_with_browser("https://rean.org.uk/test")
 
         # Verify WebDriver was used correctly
         mock_chrome.assert_called_once()
@@ -383,10 +358,9 @@ class TestREANScraper:
     @pytest.mark.slow
     @pytest.mark.selenium
     @pytest.mark.browser
-    @patch('scrapers.rean.dogs_scraper.webdriver.Chrome')
-    @patch('scrapers.rean.dogs_scraper.time.sleep')
-    def test_extract_images_with_browser_waits_for_loading(
-            self, mock_sleep, mock_chrome, scraper):
+    @patch("scrapers.rean.dogs_scraper.webdriver.Chrome")
+    @patch("scrapers.rean.dogs_scraper.time.sleep")
+    def test_extract_images_with_browser_waits_for_loading(self, mock_sleep, mock_chrome, scraper):
         """Test that browser extraction waits for JavaScript loading."""
         mock_driver = MagicMock()
         mock_chrome.return_value = mock_driver
@@ -400,16 +374,14 @@ class TestREANScraper:
 
         # Should scroll to trigger lazy loading
         mock_driver.execute_script.assert_called()
-        scroll_calls = [call for call in mock_driver.execute_script.call_args_list
-                        if 'scrollTo' in str(call)]
+        scroll_calls = [call for call in mock_driver.execute_script.call_args_list if "scrollTo" in str(call)]
         assert len(scroll_calls) > 0
 
     @pytest.mark.slow
     @pytest.mark.selenium
     @pytest.mark.browser
-    @patch('scrapers.rean.dogs_scraper.webdriver.Chrome')
-    def test_extract_images_with_browser_filters_wsimg_only(
-            self, mock_chrome, scraper):
+    @patch("scrapers.rean.dogs_scraper.webdriver.Chrome")
+    def test_extract_images_with_browser_filters_wsimg_only(self, mock_chrome, scraper):
         """Test that browser extraction only returns wsimg.com CDN images."""
         mock_driver = MagicMock()
         mock_chrome.return_value = mock_driver
@@ -440,22 +412,19 @@ class TestREANScraper:
 
         mock_driver.find_elements.return_value = mock_images
 
-        images = scraper.extract_images_with_browser(
-            "https://rean.org.uk/test")
+        images = scraper.extract_images_with_browser("https://rean.org.uk/test")
 
         # Should only return wsimg.com URLs
         assert len(images) == 1
         assert images[0] == "https://img1.wsimg.com/isteam/ip/abc123/dog.jpg"
 
-    @patch('scrapers.rean.dogs_scraper.webdriver.Chrome')
-    def test_extract_images_with_browser_handles_errors(
-            self, mock_chrome, scraper):
+    @patch("scrapers.rean.dogs_scraper.webdriver.Chrome")
+    def test_extract_images_with_browser_handles_errors(self, mock_chrome, scraper):
         """Test browser extraction handles WebDriver errors gracefully."""
         # Mock WebDriver that raises exception
         mock_chrome.side_effect = Exception("WebDriver failed to start")
 
-        images = scraper.extract_images_with_browser(
-            "https://rean.org.uk/test")
+        images = scraper.extract_images_with_browser("https://rean.org.uk/test")
 
         # Should return empty list on error, not crash
         assert images == []
@@ -463,9 +432,8 @@ class TestREANScraper:
     @pytest.mark.slow
     @pytest.mark.selenium
     @pytest.mark.browser
-    @patch('scrapers.rean.dogs_scraper.webdriver.Chrome')
-    def test_extract_images_with_browser_configuration(
-            self, mock_chrome, scraper):
+    @patch("scrapers.rean.dogs_scraper.webdriver.Chrome")
+    def test_extract_images_with_browser_configuration(self, mock_chrome, scraper):
         """Test browser is configured correctly for headless operation."""
         mock_driver = MagicMock()
         mock_chrome.return_value = mock_driver
@@ -483,22 +451,14 @@ class TestREANScraper:
     def test_associate_images_with_dogs_interface(self, scraper):
         """Test that image association method interface exists."""
         # RED: This should fail initially as method doesn't exist yet
-        assert hasattr(scraper, 'associate_images_with_dogs')
-        assert callable(getattr(scraper, 'associate_images_with_dogs'))
+        assert hasattr(scraper, "associate_images_with_dogs")
+        assert callable(getattr(scraper, "associate_images_with_dogs"))
 
     def test_associate_images_with_dogs_basic(self, scraper):
         """Test basic image-to-dog association."""
-        dog_data_list = [
-            {"name": "Toby", "age_text": "1.5 years"},
-            {"name": "Max", "age_text": "16 months"},
-            {"name": "Donald", "age_text": "2 years"}
-        ]
+        dog_data_list = [{"name": "Toby", "age_text": "1.5 years"}, {"name": "Max", "age_text": "16 months"}, {"name": "Donald", "age_text": "2 years"}]
 
-        image_urls = [
-            "https://img1.wsimg.com/isteam/ip/abc123/dog1.jpg",
-            "https://img1.wsimg.com/isteam/ip/def456/dog2.jpg",
-            "https://img1.wsimg.com/isteam/ip/ghi789/dog3.jpg"
-        ]
+        image_urls = ["https://img1.wsimg.com/isteam/ip/abc123/dog1.jpg", "https://img1.wsimg.com/isteam/ip/def456/dog2.jpg", "https://img1.wsimg.com/isteam/ip/ghi789/dog3.jpg"]
 
         # Test position-based association
         result = scraper.associate_images_with_dogs(dog_data_list, image_urls)
@@ -513,15 +473,9 @@ class TestREANScraper:
 
     def test_associate_images_with_dogs_fewer_images(self, scraper):
         """Test association when there are fewer images than dogs."""
-        dog_data_list = [
-            {"name": "Toby", "age_text": "1.5 years"},
-            {"name": "Max", "age_text": "16 months"},
-            {"name": "Donald", "age_text": "2 years"}
-        ]
+        dog_data_list = [{"name": "Toby", "age_text": "1.5 years"}, {"name": "Max", "age_text": "16 months"}, {"name": "Donald", "age_text": "2 years"}]
 
-        image_urls = [
-            "https://img1.wsimg.com/isteam/ip/abc123/dog1.jpg"
-        ]
+        image_urls = ["https://img1.wsimg.com/isteam/ip/abc123/dog1.jpg"]
 
         result = scraper.associate_images_with_dogs(dog_data_list, image_urls)
 
@@ -532,15 +486,9 @@ class TestREANScraper:
 
     def test_associate_images_with_dogs_more_images(self, scraper):
         """Test association when there are more images than dogs."""
-        dog_data_list = [
-            {"name": "Toby", "age_text": "1.5 years"}
-        ]
+        dog_data_list = [{"name": "Toby", "age_text": "1.5 years"}]
 
-        image_urls = [
-            "https://img1.wsimg.com/isteam/ip/abc123/dog1.jpg",
-            "https://img1.wsimg.com/isteam/ip/def456/dog2.jpg",
-            "https://img1.wsimg.com/isteam/ip/ghi789/dog3.jpg"
-        ]
+        image_urls = ["https://img1.wsimg.com/isteam/ip/abc123/dog1.jpg", "https://img1.wsimg.com/isteam/ip/def456/dog2.jpg", "https://img1.wsimg.com/isteam/ip/ghi789/dog3.jpg"]
 
         result = scraper.associate_images_with_dogs(dog_data_list, image_urls)
 
@@ -552,10 +500,7 @@ class TestREANScraper:
 
     def test_associate_images_with_dogs_no_images(self, scraper):
         """Test association when no images are available."""
-        dog_data_list = [
-            {"name": "Toby", "age_text": "1.5 years"},
-            {"name": "Max", "age_text": "16 months"}
-        ]
+        dog_data_list = [{"name": "Toby", "age_text": "1.5 years"}, {"name": "Max", "age_text": "16 months"}]
 
         image_urls = []
 

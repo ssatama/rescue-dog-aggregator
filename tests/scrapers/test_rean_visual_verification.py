@@ -4,6 +4,7 @@ Visual verification tests for REAN scraper image association.
 This test suite provides comprehensive validation of image-to-dog association
 accuracy using realistic scenarios and data patterns found on REAN's website.
 """
+
 from unittest.mock import Mock
 
 from scrapers.rean.dogs_scraper import REANScraper
@@ -18,19 +19,15 @@ class TestREANVisualVerification:
         scraper.logger = Mock()
 
         # Realistic scenario: 3 dogs, 4 images with header
-        dog_data_list = [
-            {"name": "Bella", "age_text": "2 years"},
-            {"name": "Charlie", "age_text": "6 months"},
-            {"name": "Daisy", "age_text": "4 years"}
-        ]
+        dog_data_list = [{"name": "Bella", "age_text": "2 years"}, {"name": "Charlie", "age_text": "6 months"}, {"name": "Daisy", "age_text": "4 years"}]
 
         # Real-world pattern: header image followed by dog images
         image_urls = [
             # Header (filtered)
             "https://img1.wsimg.com/isteam/ip/123/header-banner.jpg",
-            "https://img1.wsimg.com/isteam/ip/123/bella-photo.jpg",    # Bella
+            "https://img1.wsimg.com/isteam/ip/123/bella-photo.jpg",  # Bella
             "https://img1.wsimg.com/isteam/ip/123/charlie-puppy.jpg",  # Charlie
-            "https://img1.wsimg.com/isteam/ip/123/daisy-rescue.jpg"    # Daisy
+            "https://img1.wsimg.com/isteam/ip/123/daisy-rescue.jpg",  # Daisy
         ]
 
         result = scraper.associate_images_with_dogs(dog_data_list, image_urls)
@@ -53,10 +50,7 @@ class TestREANVisualVerification:
         scraper.logger = Mock()
 
         # 2 dogs with header + footer images
-        dog_data_list = [
-            {"name": "Max", "age_text": "3 years"},
-            {"name": "Luna", "age_text": "1 year"}
-        ]
+        dog_data_list = [{"name": "Max", "age_text": "3 years"}, {"name": "Luna", "age_text": "1 year"}]
 
         # Pattern: header, navigation, dog images, footer, social
         image_urls = [
@@ -69,7 +63,7 @@ class TestREANVisualVerification:
             # Footer (filtered)
             "https://img1.wsimg.com/isteam/ip/456/footer-contact.jpg",
             # Social (filtered)
-            "https://img1.wsimg.com/isteam/ip/456/social-media.jpg"
+            "https://img1.wsimg.com/isteam/ip/456/social-media.jpg",
         ]
 
         result = scraper.associate_images_with_dogs(dog_data_list, image_urls)
@@ -89,20 +83,15 @@ class TestREANVisualVerification:
         scraper.logger = Mock()
 
         # 4 dogs but only 2 real dog images after filtering
-        dog_data_list = [
-            {"name": "Rocky", "age_text": "5 years"},
-            {"name": "Buddy", "age_text": "2 years"},
-            {"name": "Molly", "age_text": "7 months"},
-            {"name": "Cooper", "age_text": "3 years"}
-        ]
+        dog_data_list = [{"name": "Rocky", "age_text": "5 years"}, {"name": "Buddy", "age_text": "2 years"}, {"name": "Molly", "age_text": "7 months"}, {"name": "Cooper", "age_text": "3 years"}]
 
         image_urls = [
             # Header (filtered)
             "https://img1.wsimg.com/isteam/ip/789/header-image.jpg",
-            "https://img1.wsimg.com/isteam/ip/789/rocky-photo.jpg",   # Rocky
+            "https://img1.wsimg.com/isteam/ip/789/rocky-photo.jpg",  # Rocky
             "https://img1.wsimg.com/isteam/ip/789/buddy-rescue.jpg",  # Buddy
             # Footer (filtered)
-            "https://img1.wsimg.com/isteam/ip/789/footer-logo.jpg"
+            "https://img1.wsimg.com/isteam/ip/789/footer-logo.jpg",
         ]
 
         result = scraper.associate_images_with_dogs(dog_data_list, image_urls)
@@ -126,16 +115,10 @@ class TestREANVisualVerification:
         scraper.logger = Mock()
 
         # Perfect 1:1 scenario
-        dog_data_list = [
-            {"name": "Oscar", "age_text": "4 years"},
-            {"name": "Ruby", "age_text": "2 years"}
-        ]
+        dog_data_list = [{"name": "Oscar", "age_text": "4 years"}, {"name": "Ruby", "age_text": "2 years"}]
 
         # Clean dog images with no header/footer interference
-        image_urls = [
-            "https://img1.wsimg.com/isteam/ip/999/oscar-labrador.jpg",  # Oscar
-            "https://img1.wsimg.com/isteam/ip/999/ruby-beagle.jpg"      # Ruby
-        ]
+        image_urls = ["https://img1.wsimg.com/isteam/ip/999/oscar-labrador.jpg", "https://img1.wsimg.com/isteam/ip/999/ruby-beagle.jpg"]  # Oscar  # Ruby
 
         result = scraper.associate_images_with_dogs(dog_data_list, image_urls)
 
@@ -168,18 +151,14 @@ class TestREANVisualVerification:
             # Footer (should filter)
             "https://img1.wsimg.com/isteam/ip/abc/footer-contact.jpg",
             # Dog (should keep)
-            "https://img1.wsimg.com/isteam/ip/abc/puppy-luna.jpg"
+            "https://img1.wsimg.com/isteam/ip/abc/puppy-luna.jpg",
         ]
 
         # Test the filtering method directly
         filtered_images = scraper._filter_non_dog_images(mixed_image_urls)
 
         # Should keep only the 3 dog images
-        expected_dog_images = [
-            "https://img1.wsimg.com/isteam/ip/abc/dog-charlie.jpg",
-            "https://img1.wsimg.com/isteam/ip/abc/rescue-max.jpg",
-            "https://img1.wsimg.com/isteam/ip/abc/puppy-luna.jpg"
-        ]
+        expected_dog_images = ["https://img1.wsimg.com/isteam/ip/abc/dog-charlie.jpg", "https://img1.wsimg.com/isteam/ip/abc/rescue-max.jpg", "https://img1.wsimg.com/isteam/ip/abc/puppy-luna.jpg"]
 
         assert len(filtered_images) == 3
         assert filtered_images == expected_dog_images
@@ -196,12 +175,7 @@ class TestREANVisualVerification:
         assert offset_1 == 1  # Should detect single header offset
 
         # Test case 2: Multiple extra images
-        filtered_images_2 = [
-            "img1.jpg",
-            "img2.jpg",
-            "img3.jpg",
-            "img4.jpg",
-            "img5.jpg"]  # 5 images
+        filtered_images_2 = ["img1.jpg", "img2.jpg", "img3.jpg", "img4.jpg", "img5.jpg"]  # 5 images
         num_dogs_2 = 2  # 2 dogs (ratio > 1.5)
         offset_2 = scraper._detect_image_offset(filtered_images_2, num_dogs_2)
         assert offset_2 == 2  # Should detect multiple header offset
@@ -225,40 +199,19 @@ class TestREANVisualVerification:
 
         # Realistic scenario from actual REAN scraping
         dog_data_list = [
-            {
-                "name": "Patches",
-                "age_text": "3 years",
-                "properties": {
-                    "source_page": "romania",
-                    "current_location": "Romania"
-                }
-            },
-            {
-                "name": "Storm",
-                "age_text": "8 months",
-                "properties": {
-                    "source_page": "uk_foster",
-                    "current_location": "UK"
-                }
-            },
-            {
-                "name": "Honey",
-                "age_text": "5 years",
-                "properties": {
-                    "source_page": "romania",
-                    "current_location": "Romania"
-                }
-            }
+            {"name": "Patches", "age_text": "3 years", "properties": {"source_page": "romania", "current_location": "Romania"}},
+            {"name": "Storm", "age_text": "8 months", "properties": {"source_page": "uk_foster", "current_location": "UK"}},
+            {"name": "Honey", "age_text": "5 years", "properties": {"source_page": "romania", "current_location": "Romania"}},
         ]
 
         # Realistic image URL pattern from REAN website
         image_urls = [
-            "https://img1.wsimg.com/isteam/ip/rean123/header-logo-main.jpg",     # Header
-            "https://img1.wsimg.com/isteam/ip/rean123/nav-donate-button.jpg",   # Navigation
+            "https://img1.wsimg.com/isteam/ip/rean123/header-logo-main.jpg",  # Header
+            "https://img1.wsimg.com/isteam/ip/rean123/nav-donate-button.jpg",  # Navigation
             "https://img1.wsimg.com/isteam/ip/rean123/patches-shepherd-mix.jpg",  # Patches
-            "https://img1.wsimg.com/isteam/ip/rean123/storm-rescue-puppy.jpg",   # Storm
-            "https://img1.wsimg.com/isteam/ip/rean123/honey-golden-mix.jpg",     # Honey
-            "https://img1.wsimg.com/isteam/ip/rean123/footer-social-media.jpg"   # Footer
+            "https://img1.wsimg.com/isteam/ip/rean123/storm-rescue-puppy.jpg",  # Storm
+            "https://img1.wsimg.com/isteam/ip/rean123/honey-golden-mix.jpg",  # Honey
+            "https://img1.wsimg.com/isteam/ip/rean123/footer-social-media.jpg",  # Footer
         ]
 
         result = scraper.associate_images_with_dogs(dog_data_list, image_urls)

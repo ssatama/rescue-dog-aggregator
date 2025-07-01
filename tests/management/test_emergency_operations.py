@@ -27,9 +27,9 @@ class TestEmergencyOperations:
     def test_emergency_ops_initialization(self, emergency_ops):
         """Test that emergency operations manager initializes properly."""
         assert emergency_ops is not None
-        assert hasattr(emergency_ops, 'rollback_manager')
-        assert hasattr(emergency_ops, 'recovery_manager')
-        assert hasattr(emergency_ops, 'logger')
+        assert hasattr(emergency_ops, "rollback_manager")
+        assert hasattr(emergency_ops, "recovery_manager")
+        assert hasattr(emergency_ops, "logger")
 
     def test_get_system_status(self, emergency_ops):
         """Test getting comprehensive system status."""
@@ -47,7 +47,7 @@ class TestEmergencyOperations:
 
     def test_emergency_stop_all_scrapers(self, emergency_ops):
         """Test emergency stop functionality."""
-        with patch.object(emergency_ops, '_stop_running_scrapers') as mock_stop:
+        with patch.object(emergency_ops, "_stop_running_scrapers") as mock_stop:
             mock_stop.return_value = {"stopped": 3, "failed": 0}
 
             result = emergency_ops.emergency_stop_all_scrapers()
@@ -61,11 +61,10 @@ class TestEmergencyOperations:
         org_id = 1
         reason = "Catastrophic failure detected"
 
-        with patch.object(emergency_ops, '_disable_organization_scrapers') as mock_disable:
+        with patch.object(emergency_ops, "_disable_organization_scrapers") as mock_disable:
             mock_disable.return_value = True
 
-            result = emergency_ops.emergency_disable_organization(
-                org_id, reason)
+            result = emergency_ops.emergency_disable_organization(org_id, reason)
 
             assert result["success"] is True
             assert result["organization_id"] == org_id
@@ -84,21 +83,15 @@ class TestRollbackManager:
     def test_rollback_manager_initialization(self, rollback_manager):
         """Test rollback manager initializes properly."""
         assert rollback_manager is not None
-        assert hasattr(rollback_manager, 'logger')
+        assert hasattr(rollback_manager, "logger")
 
     def test_get_available_snapshots(self, rollback_manager):
         """Test getting available data snapshots for rollback."""
         org_id = 1
 
-        with patch.object(rollback_manager, '_query_snapshots') as mock_query:
+        with patch.object(rollback_manager, "_query_snapshots") as mock_query:
             mock_snapshots = [
-                {
-                    "snapshot_id": "snap_20231201_120000",
-                    "created_at": datetime.now() - timedelta(hours=1),
-                    "organization_id": org_id,
-                    "animals_count": 45,
-                    "scrape_session": "session_123"
-                }
+                {"snapshot_id": "snap_20231201_120000", "created_at": datetime.now() - timedelta(hours=1), "organization_id": org_id, "animals_count": 45, "scrape_session": "session_123"}
             ]
             mock_query.return_value = mock_snapshots
 
@@ -113,16 +106,10 @@ class TestRollbackManager:
         org_id = 1
         snapshot_id = "snap_20231201_120000"
 
-        with patch.object(rollback_manager, '_execute_rollback') as mock_rollback:
-            mock_rollback.return_value = {
-                "success": True,
-                "animals_restored": 45,
-                "animals_removed": 3,
-                "backup_created": "backup_20231201_130000"
-            }
+        with patch.object(rollback_manager, "_execute_rollback") as mock_rollback:
+            mock_rollback.return_value = {"success": True, "animals_restored": 45, "animals_removed": 3, "backup_created": "backup_20231201_130000"}
 
-            result = rollback_manager.rollback_to_snapshot(
-                org_id, snapshot_id, require_confirmation=False)
+            result = rollback_manager.rollback_to_snapshot(org_id, snapshot_id, require_confirmation=False)
 
             assert result["success"] is True
             assert "animals_restored" in result
@@ -133,14 +120,10 @@ class TestRollbackManager:
         """Test rolling back the most recent scrape for an organization."""
         org_id = 1
 
-        with patch.object(rollback_manager, '_get_last_scrape_session') as mock_get_session:
-            with patch.object(rollback_manager, '_rollback_scrape_session') as mock_rollback:
+        with patch.object(rollback_manager, "_get_last_scrape_session") as mock_get_session:
+            with patch.object(rollback_manager, "_rollback_scrape_session") as mock_rollback:
                 mock_get_session.return_value = "session_456"
-                mock_rollback.return_value = {
-                    "success": True,
-                    "session_id": "session_456",
-                    "animals_affected": 12
-                }
+                mock_rollback.return_value = {"success": True, "session_id": "session_456", "animals_affected": 12}
 
                 result = rollback_manager.rollback_last_scrape(org_id)
 
@@ -154,13 +137,8 @@ class TestRollbackManager:
         org_id = 1
         backup_reason = "Before emergency rollback"
 
-        with patch.object(rollback_manager, '_create_backup') as mock_backup:
-            mock_backup.return_value = {
-                "backup_id": "backup_20231201_140000",
-                "created_at": datetime.now(),
-                "animals_count": 48,
-                "size_mb": 2.3
-            }
+        with patch.object(rollback_manager, "_create_backup") as mock_backup:
+            mock_backup.return_value = {"backup_id": "backup_20231201_140000", "created_at": datetime.now(), "animals_count": 48, "size_mb": 2.3}
 
             result = rollback_manager.create_data_backup(org_id, backup_reason)
 
@@ -180,20 +158,14 @@ class TestDataRecoveryManager:
     def test_recovery_manager_initialization(self, recovery_manager):
         """Test recovery manager initializes properly."""
         assert recovery_manager is not None
-        assert hasattr(recovery_manager, 'logger')
+        assert hasattr(recovery_manager, "logger")
 
     def test_detect_data_corruption(self, recovery_manager):
         """Test detecting data corruption or inconsistencies."""
         org_id = 1
 
-        with patch.object(recovery_manager, '_analyze_data_integrity') as mock_analyze:
-            mock_analyze.return_value = {
-                "corrupted_records": 2,
-                "missing_required_fields": 5,
-                "duplicate_external_ids": 1,
-                "orphaned_images": 3,
-                "integrity_score": 0.92
-            }
+        with patch.object(recovery_manager, "_analyze_data_integrity") as mock_analyze:
+            mock_analyze.return_value = {"corrupted_records": 2, "missing_required_fields": 5, "duplicate_external_ids": 1, "orphaned_images": 3, "integrity_score": 0.92}
 
             result = recovery_manager.detect_data_corruption(org_id)
 
@@ -205,18 +177,14 @@ class TestDataRecoveryManager:
     def test_repair_data_corruption(self, recovery_manager):
         """Test repairing detected data corruption."""
         org_id = 1
-        corruption_report = {
-            "missing_required_fields": 5,
-            "duplicate_external_ids": 1
-        }
+        corruption_report = {"missing_required_fields": 5, "duplicate_external_ids": 1}
 
-        with patch.object(recovery_manager, '_repair_missing_fields') as mock_repair_fields:
-            with patch.object(recovery_manager, '_resolve_duplicates') as mock_resolve_dupes:
+        with patch.object(recovery_manager, "_repair_missing_fields") as mock_repair_fields:
+            with patch.object(recovery_manager, "_resolve_duplicates") as mock_resolve_dupes:
                 mock_repair_fields.return_value = {"repaired": 3, "failed": 2}
                 mock_resolve_dupes.return_value = {"resolved": 1, "failed": 0}
 
-                result = recovery_manager.repair_data_corruption(
-                    org_id, corruption_report)
+                result = recovery_manager.repair_data_corruption(org_id, corruption_report)
 
                 assert result["success"] is True
                 assert "repairs_performed" in result
@@ -228,13 +196,8 @@ class TestDataRecoveryManager:
         org_id = 1
         backup_id = "backup_20231201_140000"
 
-        with patch.object(recovery_manager, '_restore_from_backup') as mock_restore:
-            mock_restore.return_value = {
-                "success": True,
-                "animals_restored": 48,
-                "images_restored": 120,
-                "restoration_time": "2023-12-01 15:30:00"
-            }
+        with patch.object(recovery_manager, "_restore_from_backup") as mock_restore:
+            mock_restore.return_value = {"success": True, "animals_restored": 48, "images_restored": 120, "restoration_time": "2023-12-01 15:30:00"}
 
             result = recovery_manager.recover_from_backup(org_id, backup_id)
 
@@ -246,14 +209,8 @@ class TestDataRecoveryManager:
         """Test validating data consistency after recovery."""
         org_id = 1
 
-        with patch.object(recovery_manager, '_validate_consistency') as mock_validate:
-            mock_validate.return_value = {
-                "consistent": True,
-                "total_animals": 48,
-                "animals_with_images": 45,
-                "external_id_uniqueness": 1.0,
-                "validation_timestamp": datetime.now()
-            }
+        with patch.object(recovery_manager, "_validate_consistency") as mock_validate:
+            mock_validate.return_value = {"consistent": True, "total_animals": 48, "animals_with_images": 45, "external_id_uniqueness": 1.0, "validation_timestamp": datetime.now()}
 
             result = recovery_manager.validate_data_consistency(org_id)
 
@@ -276,25 +233,20 @@ class TestEmergencyOperationsIntegration:
         org_id = 1
 
         # Mock all the workflow steps
-        with patch.object(emergency_ops, '_validate_operation_safety') as mock_safety:
-            with patch.object(emergency_ops, 'emergency_stop_all_scrapers') as mock_stop:
-                with patch.object(emergency_ops.rollback_manager, 'create_data_backup') as mock_backup:
-                    with patch.object(emergency_ops.rollback_manager, 'rollback_last_scrape') as mock_rollback:
-                        with patch.object(emergency_ops.recovery_manager, 'validate_data_consistency') as mock_validate:
+        with patch.object(emergency_ops, "_validate_operation_safety") as mock_safety:
+            with patch.object(emergency_ops, "emergency_stop_all_scrapers") as mock_stop:
+                with patch.object(emergency_ops.rollback_manager, "create_data_backup") as mock_backup:
+                    with patch.object(emergency_ops.rollback_manager, "rollback_last_scrape") as mock_rollback:
+                        with patch.object(emergency_ops.recovery_manager, "validate_data_consistency") as mock_validate:
 
                             # Setup mock returns
-                            mock_safety.return_value = {
-                                "safe": True, "reasons": []}
-                            mock_stop.return_value = {
-                                "success": True, "stopped": 1}
-                            mock_backup.return_value = {
-                                "backup_id": "backup_123"}
-                            mock_rollback.return_value = {
-                                "success": True, "animals_affected": 5}
+                            mock_safety.return_value = {"safe": True, "reasons": []}
+                            mock_stop.return_value = {"success": True, "stopped": 1}
+                            mock_backup.return_value = {"backup_id": "backup_123"}
+                            mock_rollback.return_value = {"success": True, "animals_affected": 5}
                             mock_validate.return_value = {"consistent": True}
 
-                            result = emergency_ops.execute_emergency_recovery(
-                                org_id)
+                            result = emergency_ops.execute_emergency_recovery(org_id)
 
                             assert result["success"] is True
                             assert "backup_id" in result
@@ -311,23 +263,19 @@ class TestEmergencyOperationsIntegration:
         """Test emergency recovery handles intermediate failures gracefully."""
         org_id = 1
 
-        with patch.object(emergency_ops, '_validate_operation_safety') as mock_safety:
-            with patch.object(emergency_ops, 'emergency_stop_all_scrapers') as mock_stop:
-                with patch.object(emergency_ops.rollback_manager, 'create_data_backup') as mock_backup:
-                    with patch.object(emergency_ops.rollback_manager, 'rollback_last_scrape') as mock_rollback:
+        with patch.object(emergency_ops, "_validate_operation_safety") as mock_safety:
+            with patch.object(emergency_ops, "emergency_stop_all_scrapers") as mock_stop:
+                with patch.object(emergency_ops.rollback_manager, "create_data_backup") as mock_backup:
+                    with patch.object(emergency_ops.rollback_manager, "rollback_last_scrape") as mock_rollback:
 
                         # Setup scenario where backup succeeds but rollback
                         # fails
-                        mock_safety.return_value = {
-                            "safe": True, "reasons": []}
-                        mock_stop.return_value = {
-                            "success": True, "stopped": 1}
+                        mock_safety.return_value = {"safe": True, "reasons": []}
+                        mock_stop.return_value = {"success": True, "stopped": 1}
                         mock_backup.return_value = {"backup_id": "backup_123"}
-                        mock_rollback.return_value = {
-                            "success": False, "error": "Database connection failed"}
+                        mock_rollback.return_value = {"success": False, "error": "Database connection failed"}
 
-                        result = emergency_ops.execute_emergency_recovery(
-                            org_id)
+                        result = emergency_ops.execute_emergency_recovery(org_id)
 
                         assert result["success"] is False
                         assert "backup_id" in result  # Backup should still be created
@@ -336,19 +284,12 @@ class TestEmergencyOperationsIntegration:
 
     def test_get_recovery_status(self, emergency_ops):
         """Test getting status of ongoing recovery operations."""
-        with patch.object(emergency_ops, '_check_recovery_operations') as mock_check:
+        with patch.object(emergency_ops, "_check_recovery_operations") as mock_check:
             mock_check.return_value = {
                 "active_recoveries": 1,
                 "completed_recoveries": 3,
                 "failed_recoveries": 0,
-                "operations": [
-                    {
-                        "operation_id": "recovery_789",
-                        "organization_id": 1,
-                        "status": "in_progress",
-                        "started_at": datetime.now() - timedelta(minutes=5)
-                    }
-                ]
+                "operations": [{"operation_id": "recovery_789", "organization_id": 1, "status": "in_progress", "started_at": datetime.now() - timedelta(minutes=5)}],
             }
 
             status = emergency_ops.get_recovery_status()
@@ -369,10 +310,10 @@ class TestEmergencyOperationsCommands:
         from management.emergency_operations import EmergencyOperationsCommands
 
         cli = EmergencyOperationsCommands()
-        assert hasattr(cli, 'emergency_stop')
-        assert hasattr(cli, 'rollback_organization')
-        assert hasattr(cli, 'create_backup')
-        assert hasattr(cli, 'system_status')
+        assert hasattr(cli, "emergency_stop")
+        assert hasattr(cli, "rollback_organization")
+        assert hasattr(cli, "create_backup")
+        assert hasattr(cli, "system_status")
 
     def test_emergency_stop_command(self):
         """Test emergency stop CLI command."""
@@ -380,7 +321,7 @@ class TestEmergencyOperationsCommands:
 
         cli = EmergencyOperationsCommands()
 
-        with patch.object(cli.emergency_ops, 'emergency_stop_all_scrapers') as mock_stop:
+        with patch.object(cli.emergency_ops, "emergency_stop_all_scrapers") as mock_stop:
             mock_stop.return_value = {"success": True, "stopped": 2}
 
             result = cli.emergency_stop()
@@ -395,9 +336,8 @@ class TestEmergencyOperationsCommands:
         cli = EmergencyOperationsCommands()
         org_id = 1
 
-        with patch.object(cli.emergency_ops.rollback_manager, 'rollback_last_scrape') as mock_rollback:
-            mock_rollback.return_value = {
-                "success": True, "animals_affected": 10}
+        with patch.object(cli.emergency_ops.rollback_manager, "rollback_last_scrape") as mock_rollback:
+            mock_rollback.return_value = {"success": True, "animals_affected": 10}
 
             result = cli.rollback_organization(org_id)
 
@@ -410,12 +350,8 @@ class TestEmergencyOperationsCommands:
 
         cli = EmergencyOperationsCommands()
 
-        with patch.object(cli.emergency_ops, 'get_system_status') as mock_status:
-            mock_status.return_value = {
-                "system_health": "healthy",
-                "active_scrapers": 0,
-                "recent_failures": 0
-            }
+        with patch.object(cli.emergency_ops, "get_system_status") as mock_status:
+            mock_status.return_value = {"system_health": "healthy", "active_scrapers": 0, "recent_failures": 0}
 
             result = cli.system_status()
 
@@ -431,16 +367,13 @@ class TestEmergencyOperationsSafety:
         """Create emergency operations manager for testing."""
         return EmergencyOperations()
 
-    def test_requires_confirmation_for_destructive_operations(
-            self, emergency_ops):
+    def test_requires_confirmation_for_destructive_operations(self, emergency_ops):
         """Test that destructive operations require confirmation."""
         org_id = 1
 
         # This should require confirmation before proceeding
-        with patch('builtins.input', return_value='no'):
-            result = emergency_ops.rollback_manager.rollback_to_snapshot(
-                org_id, "snap_123", require_confirmation=True
-            )
+        with patch("builtins.input", return_value="no"):
+            result = emergency_ops.rollback_manager.rollback_to_snapshot(org_id, "snap_123", require_confirmation=True)
 
             assert result["success"] is False
             assert "cancelled" in result["reason"].lower()
@@ -449,11 +382,10 @@ class TestEmergencyOperationsSafety:
         """Test that backups are created before destructive operations."""
         org_id = 1
 
-        with patch.object(emergency_ops.rollback_manager, '_create_backup') as mock_backup:
-            with patch.object(emergency_ops.rollback_manager, '_get_last_scrape_session') as mock_get_session:
-                with patch.object(emergency_ops.rollback_manager, '_rollback_scrape_session') as mock_rollback:
-                    mock_backup.return_value = {
-                        "backup_id": "safety_backup_123"}
+        with patch.object(emergency_ops.rollback_manager, "_create_backup") as mock_backup:
+            with patch.object(emergency_ops.rollback_manager, "_get_last_scrape_session") as mock_get_session:
+                with patch.object(emergency_ops.rollback_manager, "_rollback_scrape_session") as mock_rollback:
+                    mock_backup.return_value = {"backup_id": "safety_backup_123"}
                     mock_get_session.return_value = "session_123"
                     mock_rollback.return_value = {"success": True}
 
@@ -467,11 +399,8 @@ class TestEmergencyOperationsSafety:
         """Test that operations validate safety before execution."""
         org_id = 1
 
-        with patch.object(emergency_ops, '_validate_operation_safety') as mock_validate:
-            mock_validate.return_value = {
-                "safe": False,
-                "reasons": ["Active scraper running", "Recent backup not found"]
-            }
+        with patch.object(emergency_ops, "_validate_operation_safety") as mock_validate:
+            mock_validate.return_value = {"safe": False, "reasons": ["Active scraper running", "Recent backup not found"]}
 
             result = emergency_ops.execute_emergency_recovery(org_id)
 
@@ -483,9 +412,9 @@ class TestEmergencyOperationsSafety:
         """Test that all emergency operations are comprehensively logged."""
         org_id = 1
 
-        with patch.object(emergency_ops.logger, 'info') as mock_info:
-            with patch.object(emergency_ops.logger, 'warning') as mock_warning:
-                with patch.object(emergency_ops, '_stop_running_scrapers') as mock_stop_impl:
+        with patch.object(emergency_ops.logger, "info") as mock_info:
+            with patch.object(emergency_ops.logger, "warning") as mock_warning:
+                with patch.object(emergency_ops, "_stop_running_scrapers") as mock_stop_impl:
                     mock_stop_impl.return_value = {"stopped": 1, "failed": 0}
 
                     emergency_ops.emergency_stop_all_scrapers()

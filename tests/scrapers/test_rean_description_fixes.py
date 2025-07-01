@@ -6,6 +6,7 @@ This test file focuses on the specific fixes for:
 2. Update timestamp preservation
 3. Data validation
 """
+
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -19,16 +20,11 @@ class TestREANDescriptionFixes:
     @pytest.fixture
     def scraper(self):
         """Create a REAN scraper instance for testing."""
-        with patch('scrapers.base_scraper.OrganizationSyncManager') as mock_sync, \
-                patch('scrapers.base_scraper.ConfigLoader') as mock_config_loader:
+        with patch("scrapers.base_scraper.OrganizationSyncManager") as mock_sync, patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader:
 
             mock_config = MagicMock()
             mock_config.name = "REAN Test"
-            mock_config.get_scraper_config_dict.return_value = {
-                "rate_limit_delay": 0.1,
-                "max_retries": 1,
-                "timeout": 5
-            }
+            mock_config.get_scraper_config_dict.return_value = {"rate_limit_delay": 0.1, "max_retries": 1, "timeout": 5}
             mock_config.metadata.website_url = "https://rean.org.uk"
 
             mock_config_loader.return_value.load_config.return_value = mock_config
@@ -70,8 +66,7 @@ class TestREANDescriptionFixes:
         """Test that descriptions include all story sentences, not just first 3."""
         text_with_many_sentences = """Lucky is 7 months old. He's playful and energetic. He can be transported to the UK. He's in foster care. He needs a loving home. Lucky loves to play with other dogs. He's very social. He would make a great addition to any family. He's been vaccinated and chipped. He's ready for his forever home. (Updated 22/4/25)"""
 
-        description = scraper.extract_description_for_about_section(
-            text_with_many_sentences)
+        description = scraper.extract_description_for_about_section(text_with_many_sentences)
 
         # Should include sentences beyond the first 3
         assert "He's ready for his forever home" in description
@@ -110,7 +105,10 @@ class TestREANDescriptionFixes:
     def test_fallback_description_increased_limit(self, scraper):
         """Test that fallback description limit increased from 200 to 1000 chars."""
         # Text without clear sentence structure
-        unstructured_text = "Lucky description without clear sentences, just a long flowing text about this wonderful dog who needs a home and has been through so much and deserves love and care from a family who will appreciate his wonderful personality and playful nature. " * 5
+        unstructured_text = (
+            "Lucky description without clear sentences, just a long flowing text about this wonderful dog who needs a home and has been through so much and deserves love and care from a family who will appreciate his wonderful personality and playful nature. "
+            * 5
+        )
         unstructured_text += "(Updated 22/4/25)"
 
         description = scraper.extract_description_for_about_section(unstructured_text)
@@ -186,29 +184,19 @@ class TestREANDescriptionFixes:
     def test_validation_detects_missing_fields(self, scraper):
         """Test that validation detects missing essential fields."""
         # Test with missing name
-        dog_data_no_name = {
-            "age_text": "7 months",
-            "properties": {"description": "A lovely dog looking for a home"}
-        }
+        dog_data_no_name = {"age_text": "7 months", "properties": {"description": "A lovely dog looking for a home"}}
 
         errors = scraper._validate_dog_data(dog_data_no_name, "Test entry")
         assert "missing name" in errors
 
         # Test with missing age
-        dog_data_no_age = {
-            "name": "Lucky",
-            "properties": {"description": "A lovely dog looking for a home"}
-        }
+        dog_data_no_age = {"name": "Lucky", "properties": {"description": "A lovely dog looking for a home"}}
 
         errors = scraper._validate_dog_data(dog_data_no_age, "Test entry")
         assert "missing age information" in errors
 
         # Test with missing description
-        dog_data_no_desc = {
-            "name": "Lucky",
-            "age_text": "7 months",
-            "properties": {}
-        }
+        dog_data_no_desc = {"name": "Lucky", "age_text": "7 months", "properties": {}}
 
         errors = scraper._validate_dog_data(dog_data_no_desc, "Test entry")
         assert "missing or very short description" in errors
@@ -217,18 +205,13 @@ class TestREANDescriptionFixes:
     def test_validation_detects_incomplete_description(self, scraper):
         """Test that validation detects incomplete descriptions."""
         # Test with very basic description lacking personality/story
-        dog_data_basic = {
-            "name": "Lucky",
-            "age_text": "7 months",
-            "properties": {"description": "Dog is 7 months old, vaccinated and chipped"}
-        }
+        dog_data_basic = {"name": "Lucky", "age_text": "7 months", "properties": {"description": "Dog is 7 months old, vaccinated and chipped"}}
 
         errors = scraper._validate_dog_data(dog_data_basic, "Test entry")
         assert "description may be incomplete - lacks personality/story content" in errors
 
         # Test with good description
-        dog_data_good = {"name": "Lucky", "age_text": "7 months", "properties": {
-            "description": "Lucky is a friendly dog looking for a loving home"}}
+        dog_data_good = {"name": "Lucky", "age_text": "7 months", "properties": {"description": "Lucky is a friendly dog looking for a loving home"}}
 
         errors = scraper._validate_dog_data(dog_data_good, "Test entry")
         assert "description may be incomplete - lacks personality/story content" not in errors
@@ -239,22 +222,15 @@ class TestREANDescriptionFixes:
         entry_with_timestamp = "Lucky is 7 months old and friendly. (Updated 22/4/25)"
 
         # Test with missing timestamp in description
-        dog_data_missing_timestamp = {
-            "name": "Lucky",
-            "age_text": "7 months",
-            "properties": {"description": "Lucky is a friendly dog looking for a home"}
-        }
+        dog_data_missing_timestamp = {"name": "Lucky", "age_text": "7 months", "properties": {"description": "Lucky is a friendly dog looking for a home"}}
 
-        errors = scraper._validate_dog_data(
-            dog_data_missing_timestamp, entry_with_timestamp)
+        errors = scraper._validate_dog_data(dog_data_missing_timestamp, entry_with_timestamp)
         assert "update timestamp not preserved in description" in errors
 
         # Test with preserved timestamp
-        dog_data_with_timestamp = {"name": "Lucky", "age_text": "7 months", "properties": {
-            "description": "Lucky is a friendly dog looking for a home (Updated 22/4/25)"}}
+        dog_data_with_timestamp = {"name": "Lucky", "age_text": "7 months", "properties": {"description": "Lucky is a friendly dog looking for a home (Updated 22/4/25)"}}
 
-        errors = scraper._validate_dog_data(
-            dog_data_with_timestamp, entry_with_timestamp)
+        errors = scraper._validate_dog_data(dog_data_with_timestamp, entry_with_timestamp)
         assert "update timestamp not preserved in description" not in errors
 
     @pytest.mark.unit
@@ -263,7 +239,7 @@ class TestREANDescriptionFixes:
         # Test with the Lucky example that should pass validation
         lucky_text = """Our Lucky is looking for a foster or permanent home. He's currently 7 months old and a playful and energetic little pup. He can be transported to the UK with all the necessary paperwork. Please message us with the following information if you would like to apply to adopt: Current pets, ages of children, garden fencing, location, working hours, experience with dogs. (Updated 22/4/25)"""
 
-        with patch.object(scraper, 'logger') as mock_logger:
+        with patch.object(scraper, "logger") as mock_logger:
             dog_data = scraper.extract_dog_data(lucky_text, "romania")
 
             # Should extract successfully
@@ -294,8 +270,7 @@ class TestREANDescriptionFixes:
 
         # Test Pattern 2: "Our Name is X months old. " at start
         text_with_age_sentence = "Our Lucky is 7 months old. He's looking for a foster home and loves to play. (Updated 22/4/25)"
-        description = scraper.extract_description_for_about_section(
-            text_with_age_sentence)
+        description = scraper.extract_description_for_about_section(text_with_age_sentence)
 
         # Should skip the redundant first sentence
         assert not description.startswith("Our Lucky is 7 months old")
@@ -366,12 +341,10 @@ class TestREANDescriptionFixes:
         assert scraper.extract_name("- Wrexham Nala is currently in Wrexham") == "Nala"
 
         # Test case 2: "- in Location Name was..."
-        assert scraper.extract_name(
-            "- in Romania Tiny little Leo was abandoned") == "Tiny"
+        assert scraper.extract_name("- in Romania Tiny little Leo was abandoned") == "Tiny"
 
         # Test case 3: "- Location Name - X years old is..."
-        assert scraper.extract_name(
-            "- Wrexham Nala - 5 years old is currently") == "Nala"
+        assert scraper.extract_name("- Wrexham Nala - 5 years old is currently") == "Nala"
 
         # Test case 4: Normal cases should still work
         assert scraper.extract_name("Our Lucky is looking for a home") == "Lucky"
@@ -404,12 +377,7 @@ class TestREANDescriptionFixes:
     @pytest.mark.unit
     def test_standardized_data_sets_both_image_urls(self, scraper):
         """Test that REAN sets both primary_image_url and original_image_url to prevent re-uploads."""
-        dog_data = {
-            "name": "Test Dog",
-            "age_text": "2 years",
-            "primary_image_url": "https://img1.wsimg.com/test/clean-image.jpg",
-            "properties": {"description": "A lovely test dog"}
-        }
+        dog_data = {"name": "Test Dog", "age_text": "2 years", "primary_image_url": "https://img1.wsimg.com/test/clean-image.jpg", "properties": {"description": "A lovely test dog"}}
 
         standardized = scraper.standardize_animal_data(dog_data, "romania")
 

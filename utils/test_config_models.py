@@ -16,9 +16,7 @@ def test_config_models():
     """Test that our config models work with the YAML file we created."""
 
     # Load the YAML config (path relative to project root)
-    config_path = (
-        project_root / "configs" / "organizations" / "pets-in-turkey.yaml"
-    )
+    config_path = project_root / "configs" / "organizations" / "pets-in-turkey.yaml"
 
     with open(config_path, "r") as f:
         config_data = yaml.safe_load(f)
@@ -61,9 +59,7 @@ if __name__ == "__main__":
         import pydantic  # noqa: F401
     except ImportError:
         print("Installing required dependencies...")
-        subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", "pydantic", "PyYAML"]
-        )
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "pydantic", "PyYAML"])
         import pydantic  # noqa: F401
 
     test_config_models()

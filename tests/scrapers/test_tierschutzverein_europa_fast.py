@@ -4,6 +4,7 @@ Fast unit tests for Tierschutzverein Europa scraper core logic.
 These tests focus on the core business logic without expensive WebDriver operations,
 providing quick feedback during development. They complement the comprehensive slow tests.
 """
+
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -17,8 +18,7 @@ class TestTierschutzvereinEuropaScraperFast:
     @pytest.fixture
     def scraper(self):
         """Create a Tierschutzverein Europa scraper instance for testing."""
-        with patch('scrapers.base_scraper.OrganizationSyncManager') as mock_sync, \
-                patch('scrapers.base_scraper.ConfigLoader') as mock_config_loader:
+        with patch("scrapers.base_scraper.OrganizationSyncManager") as mock_sync, patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader:
 
             mock_config = MagicMock()
             mock_config.name = "Tierschutzverein Europa Test"
@@ -26,7 +26,7 @@ class TestTierschutzvereinEuropaScraperFast:
                 "rate_limit_delay": 0.1,  # Faster for tests
                 "max_retries": 1,  # Fewer retries for speed
                 "timeout": 5,  # Shorter timeout
-                "headless": True
+                "headless": True,
             }
             mock_config.metadata.website_url = "https://tierschutzverein-europa.de"
 
@@ -101,27 +101,22 @@ class TestTierschutzvereinEuropaScraperFast:
         """Test external ID generation from name and details."""
         test_cases = [
             ("Sasha", "2 Jahre, Hündin", "sasha-2-jahre"),
-            ("Max Müller",
-             "6 Monate, Rüde",
-             "max-mueller-6-monate"),
+            ("Max Müller", "6 Monate, Rüde", "max-mueller-6-monate"),
             # Note: ü -> ue
             ("Bella-Luna", "3 Jahre", "bella-luna-3-jahre"),
         ]
 
         for name, details, expected_start in test_cases:
             result = scraper.generate_external_id(name, details)
-            assert result.startswith(
-                expected_start), f"Expected to start with {expected_start}, got {result}"
-            assert len(result) > len(
-                expected_start), "Should have additional unique identifier"
+            assert result.startswith(expected_start), f"Expected to start with {expected_start}, got {result}"
+            assert len(result) > len(expected_start), "Should have additional unique identifier"
 
     @pytest.mark.unit
     def test_build_adoption_url(self, scraper):
         """Test adoption URL construction."""
         test_cases = [
             ("sasha-123", "https://tierschutzverein-europa.de/tiervermittlung/sasha-123/"),
-            ("max-muller-456",
-             "https://tierschutzverein-europa.de/tiervermittlung/max-muller-456/"),
+            ("max-muller-456", "https://tierschutzverein-europa.de/tiervermittlung/max-muller-456/"),
         ]
 
         for external_id, expected in test_cases:
@@ -147,23 +142,17 @@ class TestTierschutzvereinEuropaScraperFast:
     def test_data_structure_validation(self, scraper):
         """Test that data structure matches expected format."""
         sample_data = {
-            'name': 'Sasha',
-            'external_id': 'sasha-123',
-            'age_text': '2 Jahre',
-            'sex': 'Hündin',
-            'breed': 'Mischling',
-            'primary_image_url': 'https://example.com/image.jpg',
-            'adoption_url': 'https://tierschutzverein-europa.de/tiervermittlung/sasha-123/'}
+            "name": "Sasha",
+            "external_id": "sasha-123",
+            "age_text": "2 Jahre",
+            "sex": "Hündin",
+            "breed": "Mischling",
+            "primary_image_url": "https://example.com/image.jpg",
+            "adoption_url": "https://tierschutzverein-europa.de/tiervermittlung/sasha-123/",
+        }
 
         # Validate required fields are present
-        required_fields = [
-            'name',
-            'external_id',
-            'age_text',
-            'sex',
-            'breed',
-            'primary_image_url',
-            'adoption_url']
+        required_fields = ["name", "external_id", "age_text", "sex", "breed", "primary_image_url", "adoption_url"]
         for field in required_fields:
             assert field in sample_data, f"Required field {field} missing"
             assert sample_data[field], f"Required field {field} is empty"
@@ -171,18 +160,9 @@ class TestTierschutzvereinEuropaScraperFast:
     @pytest.mark.unit
     def test_url_validation(self, scraper):
         """Test URL validation logic."""
-        valid_urls = [
-            "https://tierschutzverein-europa.de/wp-content/uploads/image.jpg",
-            "https://tierschutzverein-europa.de/tiervermittlung/sasha/",
-            "https://example.com/image.png"
-        ]
+        valid_urls = ["https://tierschutzverein-europa.de/wp-content/uploads/image.jpg", "https://tierschutzverein-europa.de/tiervermittlung/sasha/", "https://example.com/image.png"]
 
-        invalid_urls = [
-            "",
-            "not-a-url",
-            "javascript:alert('xss')",
-            None
-        ]
+        invalid_urls = ["", "not-a-url", "javascript:alert('xss')", None]
 
         for url in valid_urls:
             assert scraper.is_valid_url(url), f"Should be valid: {url}"
@@ -230,12 +210,9 @@ MEHR INFOS"""
     def test_extract_external_id_from_url(self, scraper):
         """Test external ID extraction from URLs."""
         test_cases = [
-            ("https://tierschutzverein-europa.de/tiervermittlung/abel-in-spanien-huellas-con-esperanza/",
-             "abel-in-spanien-huellas-con-esperanza"),
-            ("https://tierschutzverein-europa.de/tiervermittlung/abril-in-spanien-tierheim-ada-canals/",
-             "abril-in-spanien-tierheim-ada-canals"),
-            ("/tiervermittlung/akeno-in-rumaenien-tierheim-odai/",
-             "akeno-in-rumaenien-tierheim-odai"),
+            ("https://tierschutzverein-europa.de/tiervermittlung/abel-in-spanien-huellas-con-esperanza/", "abel-in-spanien-huellas-con-esperanza"),
+            ("https://tierschutzverein-europa.de/tiervermittlung/abril-in-spanien-tierheim-ada-canals/", "abril-in-spanien-tierheim-ada-canals"),
+            ("/tiervermittlung/akeno-in-rumaenien-tierheim-odai/", "akeno-in-rumaenien-tierheim-odai"),
         ]
 
         for url, expected in test_cases:
@@ -249,8 +226,7 @@ MEHR INFOS"""
         mock_images = [
             ("https://example.com/flags/spain.png", "Ort"),  # Flag image
             ("https://example.com/flags/spain.png", "Ort"),  # Flag image duplicate
-            ("https://tierschutzverein-europa.de/wp-content/uploads/2024/05/Abel-Profilbild-300x300.jpeg",
-             "Titelbild von Abel"),  # Profile image
+            ("https://tierschutzverein-europa.de/wp-content/uploads/2024/05/Abel-Profilbild-300x300.jpeg", "Titelbild von Abel"),  # Profile image
         ]
 
         result = scraper.extract_profile_image_from_images(mock_images)

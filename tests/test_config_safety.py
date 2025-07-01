@@ -69,9 +69,7 @@ def test_config_allows_test_db_when_testing():
             assert config.DB_CONFIG["database"] == "test_rescue_dogs"
             assert config.DB_CONFIG["user"] == "test_user"
         except SystemExit:
-            pytest.fail(
-                "config.py exited unexpectedly when configured correctly for testing."
-            )
+            pytest.fail("config.py exited unexpectedly when configured correctly for testing.")
 
 
 def test_config_defaults_to_dev_db_when_not_testing():
@@ -104,9 +102,7 @@ def test_config_warns_but_allows_test_db_when_not_testing_if_explicit(caplog):
     with patch.dict(os.environ, explicit_test_env_no_testing, clear=True):
         try:
             # Set the logging level for the test capture
-            caplog.set_level(
-                logging.WARNING, logger="config"
-            )  # <<< Capture WARNING level from 'config' logger
+            caplog.set_level(logging.WARNING, logger="config")  # <<< Capture WARNING level from 'config' logger
 
             from importlib import reload
 
@@ -119,13 +115,9 @@ def test_config_warns_but_allows_test_db_when_not_testing_if_explicit(caplog):
             assert config.DB_CONFIG["user"] == "explicit_user"
 
             # <<< Check captured logs instead of mock >>>
-            assert any(
-                "SAFETY WARNING" in record.message for record in caplog.records)
-            assert any(
-                record.levelname == "WARNING" for record in caplog.records)
+            assert any("SAFETY WARNING" in record.message for record in caplog.records)
+            assert any(record.levelname == "WARNING" for record in caplog.records)
             # <<< End log check >>>
 
         except SystemExit:
-            pytest.fail(
-                "config.py exited unexpectedly when explicitly configured for test DB without TESTING flag."
-            )
+            pytest.fail("config.py exited unexpectedly when explicitly configured for test DB without TESTING flag.")

@@ -4,6 +4,7 @@ Comprehensive error handling tests for REAN scraper.
 This test suite validates robust error handling across all REAN scraper operations,
 including network failures, parsing errors, database issues, and recovery scenarios.
 """
+
 from unittest.mock import Mock, patch
 
 import pytest
@@ -18,16 +19,15 @@ class TestREANErrorHandling:
 
     @pytest.mark.slow
     @pytest.mark.network
-    @patch('time.sleep')  # Speed up retry delays
+    @patch("time.sleep")  # Speed up retry delays
     def test_network_request_timeout_handling(self, mock_sleep):
         """Test handling of network request timeouts."""
         scraper = REANScraper()
         scraper.logger = Mock()
 
         # Mock requests.get to raise timeout
-        with patch('requests.get') as mock_get:
-            mock_get.side_effect = requests.exceptions.Timeout(
-                "Request timed out")
+        with patch("requests.get") as mock_get:
+            mock_get.side_effect = requests.exceptions.Timeout("Request timed out")
 
             # Should handle timeout gracefully
             result = scraper.scrape_page("https://rean.org.uk/test-page")
@@ -38,16 +38,15 @@ class TestREANErrorHandling:
 
     @pytest.mark.slow
     @pytest.mark.network
-    @patch('time.sleep')  # Speed up retry delays
+    @patch("time.sleep")  # Speed up retry delays
     def test_network_connection_error_handling(self, mock_sleep):
         """Test handling of network connection errors."""
         scraper = REANScraper()
         scraper.logger = Mock()
 
         # Mock requests.get to raise connection error
-        with patch('requests.get') as mock_get:
-            mock_get.side_effect = requests.exceptions.ConnectionError(
-                "Connection failed")
+        with patch("requests.get") as mock_get:
+            mock_get.side_effect = requests.exceptions.ConnectionError("Connection failed")
 
             result = scraper.scrape_page("https://rean.org.uk/test-page")
 
@@ -56,17 +55,16 @@ class TestREANErrorHandling:
 
     @pytest.mark.slow
     @pytest.mark.network
-    @patch('time.sleep')  # Speed up retry delays
+    @patch("time.sleep")  # Speed up retry delays
     def test_http_error_handling(self, mock_sleep):
         """Test handling of HTTP errors (404, 500, etc.)."""
         scraper = REANScraper()
         scraper.logger = Mock()
 
         # Mock requests.get to raise HTTP error
-        with patch('requests.get') as mock_get:
+        with patch("requests.get") as mock_get:
             mock_response = Mock()
-            mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
-                "404 Not Found")
+            mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("404 Not Found")
             mock_get.return_value = mock_response
 
             result = scraper.scrape_page("https://rean.org.uk/missing-page")
@@ -79,12 +77,10 @@ class TestREANErrorHandling:
         scraper.logger = Mock()
 
         # Mock webdriver.Chrome to raise exception
-        with patch('selenium.webdriver.Chrome') as mock_chrome:
-            mock_chrome.side_effect = WebDriverException(
-                "ChromeDriver not found")
+        with patch("selenium.webdriver.Chrome") as mock_chrome:
+            mock_chrome.side_effect = WebDriverException("ChromeDriver not found")
 
-            result = scraper.extract_images_with_browser(
-                "https://rean.org.uk/test")
+            result = scraper.extract_images_with_browser("https://rean.org.uk/test")
 
             assert result == []
             scraper.logger.error.assert_called()
@@ -95,32 +91,30 @@ class TestREANErrorHandling:
         scraper.logger = Mock()
 
         # Mock webdriver with timeout on get()
-        with patch('selenium.webdriver.Chrome') as mock_chrome:
+        with patch("selenium.webdriver.Chrome") as mock_chrome:
             mock_driver = Mock()
             mock_driver.get.side_effect = TimeoutException("Page load timeout")
             mock_chrome.return_value = mock_driver
 
-            result = scraper.extract_images_with_browser(
-                "https://rean.org.uk/slow-page")
+            result = scraper.extract_images_with_browser("https://rean.org.uk/slow-page")
 
             assert result == []
             mock_driver.quit.assert_called()  # Should clean up driver
 
     @pytest.mark.slow
     @pytest.mark.selenium
-    @patch('time.sleep')  # Speed up WebDriver delays
+    @patch("time.sleep")  # Speed up WebDriver delays
     def test_webdriver_element_not_found_handling(self, mock_sleep):
         """Test handling when WebDriver can't find expected elements."""
         scraper = REANScraper()
         scraper.logger = Mock()
 
-        with patch('selenium.webdriver.Chrome') as mock_chrome:
+        with patch("selenium.webdriver.Chrome") as mock_chrome:
             mock_driver = Mock()
             mock_driver.find_elements.return_value = []  # No img elements found
             mock_chrome.return_value = mock_driver
 
-            result = scraper.extract_images_with_browser(
-                "https://rean.org.uk/no-images")
+            result = scraper.extract_images_with_browser("https://rean.org.uk/no-images")
 
             assert result == []  # Should handle gracefully
 
@@ -160,14 +154,7 @@ class TestREANErrorHandling:
         scraper.logger = Mock()
 
         # Test invalid URLs
-        invalid_urls = [
-            "not-a-url",
-            "://malformed",
-            "",
-            None,
-            "javascript:void(0)",
-            "data:invalid-base64"
-        ]
+        invalid_urls = ["not-a-url", "://malformed", "", None, "javascript:void(0)", "data:invalid-base64"]
 
         # Should filter out all invalid URLs
         for url in invalid_urls:
@@ -180,15 +167,9 @@ class TestREANErrorHandling:
         scraper.cloudinary_service = Mock()
 
         # Mock Cloudinary service to fail
-        scraper.cloudinary_service.upload_image_from_url.return_value = (
-            None, False)
+        scraper.cloudinary_service.upload_image_from_url.return_value = (None, False)
 
-        animal_data = {
-            "name": "Test Dog",
-            "primary_image_url": "https://example.com/test.jpg",
-            "organization_id": 1,
-            "external_id": "test-123"
-        }
+        animal_data = {"name": "Test Dog", "primary_image_url": "https://example.com/test.jpg", "organization_id": 1, "external_id": "test-123"}
 
         # Mock database operations
         scraper.get_existing_animal = Mock(return_value=None)
@@ -207,7 +188,7 @@ class TestREANErrorHandling:
         scraper.logger = Mock()
 
         # Mock database connection to fail
-        with patch.object(scraper, 'connect_to_database', return_value=False):
+        with patch.object(scraper, "connect_to_database", return_value=False):
             result = scraper.run()
 
             assert result is False
@@ -245,8 +226,7 @@ class TestREANErrorHandling:
         for corrupted_data in corrupted_data_cases:
             # Should handle gracefully without crashing
             try:
-                result = scraper.standardize_animal_data(
-                    corrupted_data, "test_page")
+                result = scraper.standardize_animal_data(corrupted_data, "test_page")
                 # Should either return valid data or handle the error
                 assert isinstance(result, dict) or result is None
             except Exception as e:
@@ -280,21 +260,19 @@ class TestREANErrorHandling:
 
     @pytest.mark.slow
     @pytest.mark.selenium
-    @patch('time.sleep')  # Speed up WebDriver delays
+    @patch("time.sleep")  # Speed up WebDriver delays
     def test_selenium_script_execution_failure(self, mock_sleep):
         """Test handling of JavaScript execution failures in browser automation."""
         scraper = REANScraper()
         scraper.logger = Mock()
 
-        with patch('selenium.webdriver.Chrome') as mock_chrome:
+        with patch("selenium.webdriver.Chrome") as mock_chrome:
             mock_driver = Mock()
             # Mock JavaScript execution to fail
-            mock_driver.execute_script.side_effect = WebDriverException(
-                "Script execution failed")
+            mock_driver.execute_script.side_effect = WebDriverException("Script execution failed")
             mock_chrome.return_value = mock_driver
 
-            result = scraper.extract_images_with_browser(
-                "https://rean.org.uk/test")
+            result = scraper.extract_images_with_browser("https://rean.org.uk/test")
 
             # Should handle script failure gracefully
             assert result == []
@@ -306,14 +284,11 @@ class TestREANErrorHandling:
         scraper.logger = Mock()
 
         # Simulate very large dataset
-        large_dog_list = [{"name": f"Dog{i}", "age_text": "2 years"}
-                          for i in range(1000)]
-        large_image_list = [
-            f"https://img1.wsimg.com/isteam/ip/abc/dog{i}.jpg" for i in range(1000)]
+        large_dog_list = [{"name": f"Dog{i}", "age_text": "2 years"} for i in range(1000)]
+        large_image_list = [f"https://img1.wsimg.com/isteam/ip/abc/dog{i}.jpg" for i in range(1000)]
 
         # Should handle large datasets without crashing
-        result = scraper.associate_images_with_dogs(
-            large_dog_list, large_image_list)
+        result = scraper.associate_images_with_dogs(large_dog_list, large_image_list)
 
         assert len(result) == 1000
         assert all("name" in dog for dog in result)
@@ -382,8 +357,7 @@ class TestREANErrorHandling:
 
         # Should handle processing gracefully even if there are internal issues
         try:
-            result = scraper.associate_images_with_dogs(
-                dog_data_list, image_urls)
+            result = scraper.associate_images_with_dogs(dog_data_list, image_urls)
             # Should return results for valid entries
             assert isinstance(result, list)
             assert len(result) == 2
@@ -397,14 +371,14 @@ class TestREANErrorHandling:
 
         # Mock the connect_to_database to return True and set up a mock
         # connection
-        with patch.object(scraper, 'connect_to_database', return_value=True):
+        with patch.object(scraper, "connect_to_database", return_value=True):
             scraper.conn = Mock()
             scraper.start_scrape_log = Mock(return_value=True)
             scraper.start_scrape_session = Mock(return_value=True)
             scraper.scrape_log_id = 123
 
             # Mock critical failure during collect_data
-            with patch.object(scraper, 'collect_data', side_effect=Exception("Critical error")):
+            with patch.object(scraper, "collect_data", side_effect=Exception("Critical error")):
                 result = scraper.run()
 
                 assert result is False

@@ -23,9 +23,7 @@ class TestConfigScraperRunner:
         mock_config.enabled = True
         # FIX: Set string values instead of Mock objects
         mock_config.scraper.class_name = "TestScraper"
-        mock_config.scraper.module = (
-            "test_module"  # This is what the code actually uses
-        )
+        mock_config.scraper.module = "test_module"  # This is what the code actually uses
         mock_config.get_display_name.return_value = "Test Organization (test-org)"
         mock_config.is_enabled_for_scraping.return_value = True
 
@@ -70,8 +68,7 @@ class TestConfigScraperRunner:
         assert scrapers[0]["enabled"] is True
         assert scrapers[0]["scraper_class"] == "TestScraper"
 
-    def test_import_scraper_class_success(
-            self, mock_config_loader, mock_scraper_class):
+    def test_import_scraper_class_success(self, mock_config_loader, mock_scraper_class):
         """Test successful scraper class import."""
         runner = ConfigScraperRunner(mock_config_loader)
         config = mock_config_loader.load_config.return_value
@@ -115,9 +112,7 @@ class TestConfigScraperRunner:
             with pytest.raises(AttributeError, match="TestScraper"):
                 runner._import_scraper_class(config)
 
-    @pytest.mark.skip(
-        reason="Complex mocking issues with JSON serialization - functionality verified through integration tests"
-    )
+    @pytest.mark.skip(reason="Complex mocking issues with JSON serialization - functionality verified through integration tests")
     def test_run_scraper_success(self, mock_config_loader, mock_scraper_class):
         """Test successful scraper run."""
         # Test skipped due to complex mocking challenges with BaseScraper JSON serialization
@@ -138,11 +133,8 @@ class TestConfigScraperRunner:
         assert result["success"] is False
         assert "disabled for scraping" in result["error"]
 
-    @pytest.mark.skip(
-        reason="Complex mocking issues with JSON serialization - functionality verified through integration tests"
-    )
-    def test_run_all_enabled_scrapers(
-            self, mock_config_loader, mock_scraper_class):
+    @pytest.mark.skip(reason="Complex mocking issues with JSON serialization - functionality verified through integration tests")
+    def test_run_all_enabled_scrapers(self, mock_config_loader, mock_scraper_class):
         """Test running all enabled scrapers."""
         # Test skipped due to complex mocking challenges with BaseScraper JSON serialization
         # The ConfigScraperRunner functionality is verified through:
@@ -151,8 +143,7 @@ class TestConfigScraperRunner:
         # 3. Other unit tests covering the individual components
         pass
 
-    def test_run_all_enabled_scrapers_no_organizations(
-            self, mock_config_loader):
+    def test_run_all_enabled_scrapers_no_organizations(self, mock_config_loader):
         """Test running scrapers when no organizations are enabled."""
         mock_config_loader.get_enabled_orgs.return_value = []
 

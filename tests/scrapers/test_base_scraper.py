@@ -71,12 +71,10 @@ class TestBaseScraper:
         mock_json.dumps.return_value = "{}"
 
         # Mock get_existing_animal to return None (new animal)
-        with patch.object(
-            mock_scraper, "get_existing_animal", return_value=None
-        ), patch.object(
-            mock_scraper, "create_animal", return_value=(1, "added")
-        ) as mock_create, patch.object(
-            BaseScraper, "detect_language", return_value="en"
+        with (
+            patch.object(mock_scraper, "get_existing_animal", return_value=None),
+            patch.object(mock_scraper, "create_animal", return_value=(1, "added")) as mock_create,
+            patch.object(BaseScraper, "detect_language", return_value="en"),
         ):
 
             animal_id, action = mock_scraper.save_animal(animal_data)
@@ -104,9 +102,7 @@ class TestBaseScraper:
 
         # Configure cursor mock to return existing animal with primary image data
         # The primary image query will return the existing URLs
-        mock_cursor.fetchone.return_value = (
-            "http://existing.com/image.jpg",
-            "http://original.com/image.jpg")
+        mock_cursor.fetchone.return_value = ("http://existing.com/image.jpg", "http://original.com/image.jpg")
 
         # Test data - use same URL as existing to avoid upload
         animal_data = {
@@ -125,12 +121,10 @@ class TestBaseScraper:
         mock_json.dumps.return_value = "{}"
 
         # Mock get_existing_animal to return existing animal (tuple format)
-        with patch.object(
-            mock_scraper, "get_existing_animal", return_value=[5]
-        ), patch.object(
-            mock_scraper, "update_animal", return_value=(5, "updated")
-        ) as mock_update, patch.object(
-            BaseScraper, "detect_language", return_value="en"
+        with (
+            patch.object(mock_scraper, "get_existing_animal", return_value=[5]),
+            patch.object(mock_scraper, "update_animal", return_value=(5, "updated")) as mock_update,
+            patch.object(BaseScraper, "detect_language", return_value="en"),
         ):
 
             animal_id, action = mock_scraper.save_animal(animal_data)
@@ -193,14 +187,7 @@ class TestBaseScraper:
     @patch.object(BaseScraper, "save_animal")
     @patch.object(BaseScraper, "complete_scrape_log")
     @patch.object(BaseScraper, "detect_partial_failure")
-    def test_run_success(
-            self,
-            mock_failure_detection,
-            mock_complete_log,
-            mock_save,
-            mock_start_log,
-            mock_connect,
-            mock_scraper):
+    def test_run_success(self, mock_failure_detection, mock_complete_log, mock_save, mock_start_log, mock_connect, mock_scraper):
         """Test successful run of the scraper."""
         # Configure mocks
         mock_connect.return_value = True
@@ -268,8 +255,7 @@ class TestBaseScraper:
 
         # Mock cloudinary service
         mock_scraper.cloudinary_service = Mock()
-        mock_scraper.cloudinary_service.upload_image_from_url.return_value = (
-            "cloudinary_url", True)
+        mock_scraper.cloudinary_service.upload_image_from_url.return_value = ("cloudinary_url", True)
         mock_scraper.organization_name = "Test Org"
 
         # Execute method
@@ -324,10 +310,7 @@ class TestBaseCRUDMethods:
         result = concrete_scraper.get_existing_animal("test-123", 1)
 
         # Verify query was executed
-        mock_cursor.execute.assert_called_once_with(
-            "SELECT id, name, updated_at FROM animals WHERE external_id = %s AND organization_id = %s",
-            ("test-123", 1)
-        )
+        mock_cursor.execute.assert_called_once_with("SELECT id, name, updated_at FROM animals WHERE external_id = %s AND organization_id = %s", ("test-123", 1))
 
         # Verify result
         assert result == (123, "Test Dog", "2024-01-01")
@@ -385,7 +368,7 @@ class TestBaseCRUDMethods:
             "sex": "Male",
             "adoption_url": "http://example.com/adopt/new-123",
             "primary_image_url": "http://example.com/image.jpg",
-            "status": "available"
+            "status": "available",
         }
 
         # Test
@@ -420,19 +403,16 @@ class TestBaseCRUDMethods:
         # Mock existing animal data (name, breed, age_text, sex,
         # primary_image_url, status, standardized_breed, age_min_months,
         # age_max_months, standardized_size, properties)
-        mock_cursor.fetchone.return_value = (
-            "Old Name", "Old Breed", "2 years", "Female", "old-url.jpg", "available",
-            "Old Breed", 24, 36, "Medium", "{}"  # standardized fields + properties
-        )
+        mock_cursor.fetchone.return_value = ("Old Name", "Old Breed", "2 years", "Female", "old-url.jpg", "available", "Old Breed", 24, 36, "Medium", "{}")  # standardized fields + properties
 
         # Test data with changes
         animal_data = {
             "name": "Updated Name",  # Changed
-            "breed": "Old Breed",    # Same
-            "age_text": "3 years",   # Changed
-            "sex": "Female",         # Same
+            "breed": "Old Breed",  # Same
+            "age_text": "3 years",  # Changed
+            "sex": "Female",  # Same
             "primary_image_url": "old-url.jpg",  # Same
-            "status": "available"    # Same
+            "status": "available",  # Same
         }
 
         # Test
@@ -464,20 +444,22 @@ class TestBaseCRUDMethods:
         # age_text, sex, primary_image_url, status, standardized_breed,
         # age_min_months, age_max_months, standardized_size, properties)
         mock_cursor.fetchone.return_value = (
-            "Same Name", "Same Breed", "2 years", "Female", "same-url.jpg", "available",
+            "Same Name",
+            "Same Breed",
+            "2 years",
+            "Female",
+            "same-url.jpg",
+            "available",
             # Match what standardize_breed("Same Breed") actually returns + properties
-            "Same Breed", 24, 36, None, "{}"
+            "Same Breed",
+            24,
+            36,
+            None,
+            "{}",
         )
 
         # Test data (no changes)
-        animal_data = {
-            "name": "Same Name",
-            "breed": "Same Breed",
-            "age_text": "2 years",
-            "sex": "Female",
-            "primary_image_url": "same-url.jpg",
-            "status": "available"
-        }
+        animal_data = {"name": "Same Name", "breed": "Same Breed", "age_text": "2 years", "sex": "Female", "primary_image_url": "same-url.jpg", "status": "available"}
 
         # Test
         animal_id, action = concrete_scraper.update_animal(123, animal_data)
@@ -498,10 +480,7 @@ class TestScrapeSessionTracking:
 
         class SessionScraper(BaseScraper):
             def collect_data(self):
-                return [
-                    {"name": "Dog 1", "external_id": "dog-1"},
-                    {"name": "Dog 2", "external_id": "dog-2"}
-                ]
+                return [{"name": "Dog 1", "external_id": "dog-1"}, {"name": "Dog 2", "external_id": "dog-2"}]
 
         return SessionScraper(organization_id=1)
 
@@ -524,7 +503,7 @@ class TestScrapeSessionTracking:
         test_time = datetime(2024, 1, 15, 10, 30, 0)
 
         # Test
-        with patch('scrapers.base_scraper.datetime') as mock_datetime:
+        with patch("scrapers.base_scraper.datetime") as mock_datetime:
             mock_datetime.now.return_value = test_time
             result = session_scraper.start_scrape_session()
 
@@ -548,8 +527,7 @@ class TestScrapeSessionTracking:
         session_scraper.conn.cursor.return_value = mock_cursor
 
         # Set current scrape session
-        session_scraper.current_scrape_session = datetime(
-            2024, 1, 15, 10, 30, 0)
+        session_scraper.current_scrape_session = datetime(2024, 1, 15, 10, 30, 0)
 
         # Test
         result = session_scraper.update_stale_data_detection()
@@ -622,8 +600,7 @@ class TestAvailabilityStatusManagement:
             "CLOUDINARY_API_SECRET": "",
         },
     )
-    def test_mark_animals_unavailable_after_threshold(
-            self, availability_scraper):
+    def test_mark_animals_unavailable_after_threshold(self, availability_scraper):
         """Test that animals are marked unavailable after consecutive missed scrapes."""
         # Mock database connection and cursor
         availability_scraper.conn = Mock()
@@ -631,8 +608,7 @@ class TestAvailabilityStatusManagement:
         availability_scraper.conn.cursor.return_value = mock_cursor
 
         # Set current scrape session
-        availability_scraper.current_scrape_session = datetime(
-            2024, 1, 15, 10, 30, 0)
+        availability_scraper.current_scrape_session = datetime(2024, 1, 15, 10, 30, 0)
 
         # Mock cursor to return number of affected rows
         mock_cursor.rowcount = 5
@@ -699,12 +675,7 @@ class TestAvailabilityStatusManagement:
         availability_scraper.conn.cursor.return_value = mock_cursor
 
         # Mock cursor to return stale animals summary
-        mock_cursor.fetchall.return_value = [
-            ('high', 'available', 10),
-            ('medium', 'available', 5),
-            ('low', 'available', 3),
-            ('low', 'unavailable', 2)
-        ]
+        mock_cursor.fetchall.return_value = [("high", "available", 10), ("medium", "available", 5), ("low", "available", 3), ("low", "unavailable", 2)]
 
         # Test
         result = availability_scraper.get_stale_animals_summary()
@@ -717,12 +688,7 @@ class TestAvailabilityStatusManagement:
         assert call_args[1] == (availability_scraper.organization_id,)
 
         # Verify result
-        expected = {
-            ('high', 'available'): 10,
-            ('medium', 'available'): 5,
-            ('low', 'available'): 3,
-            ('low', 'unavailable'): 2
-        }
+        expected = {("high", "available"): 10, ("medium", "available"): 5, ("low", "available"): 3, ("low", "unavailable"): 2}
         assert result == expected
 
 
@@ -769,11 +735,13 @@ class TestScraperErrorHandling:
         error_scraper.should_fail = True
 
         # Test run
-        with patch.object(error_scraper, 'connect_to_database', return_value=True), \
-                patch.object(error_scraper, 'start_scrape_log', return_value=True), \
-                patch.object(error_scraper, 'start_scrape_session', return_value=True), \
-                patch.object(error_scraper, 'update_stale_data_detection') as mock_stale_update, \
-                patch.object(error_scraper, 'complete_scrape_log', return_value=True):
+        with (
+            patch.object(error_scraper, "connect_to_database", return_value=True),
+            patch.object(error_scraper, "start_scrape_log", return_value=True),
+            patch.object(error_scraper, "start_scrape_session", return_value=True),
+            patch.object(error_scraper, "update_stale_data_detection") as mock_stale_update,
+            patch.object(error_scraper, "complete_scrape_log", return_value=True),
+        ):
 
             result = error_scraper.run()
 
@@ -873,14 +841,14 @@ class TestEnhancedLogging:
 
         # Test data
         metrics = {
-            'animals_found': 25,
-            'animals_added': 5,
-            'animals_updated': 15,
-            'animals_unchanged': 5,
-            'images_uploaded': 30,
-            'images_failed': 2,
-            'duration_seconds': 120.5,
-            'data_quality_score': 0.95
+            "animals_found": 25,
+            "animals_added": 5,
+            "animals_updated": 15,
+            "animals_unchanged": 5,
+            "images_uploaded": 30,
+            "images_failed": 2,
+            "duration_seconds": 120.5,
+            "data_quality_score": 0.95,
         }
 
         # Test
@@ -907,14 +875,9 @@ class TestEnhancedLogging:
         """Test data quality assessment during scraping."""
         # Test data with various quality issues
         animals_data = [
-            {"name": "Good Dog",
-             "breed": "Labrador",
-             "age_text": "3 years",
-             "external_id": "good-1"},
-            {"name": "", "breed": "Unknown", "age_text": "",
-                "external_id": "poor-1"},  # Poor quality
-            {"name": "OK Dog", "breed": "", "age_text": "young",
-                "external_id": "ok-1"},  # Medium quality
+            {"name": "Good Dog", "breed": "Labrador", "age_text": "3 years", "external_id": "good-1"},
+            {"name": "", "breed": "Unknown", "age_text": "", "external_id": "poor-1"},  # Poor quality
+            {"name": "OK Dog", "breed": "", "age_text": "young", "external_id": "ok-1"},  # Medium quality
         ]
 
         # Test
@@ -939,8 +902,7 @@ class TestEnhancedLogging:
         end_time = datetime(2024, 1, 15, 10, 2, 30)  # 2.5 minutes later
 
         # Calculate duration
-        duration = logging_scraper.calculate_scrape_duration(
-            start_time, end_time)
+        duration = logging_scraper.calculate_scrape_duration(start_time, end_time)
 
         # Should be 150 seconds (2.5 minutes)
         assert duration == 150.0

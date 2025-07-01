@@ -31,9 +31,7 @@ class TestBreedStandardization:
         )
         # Change the expectation for "golden mix" to match your current
         # implementation
-        assert (
-            standardize_breed("golden mix")[1] == "Mixed"
-        )  # Just check that it's recognized as Mixed type
+        assert standardize_breed("golden mix")[1] == "Mixed"  # Just check that it's recognized as Mixed type
 
     # Fix for test_unknown_breed
     def test_unknown_breed(self):
@@ -168,10 +166,7 @@ class TestSizeEstimation:
 class TestFullStandardization:
     def test_apply_standardization_complete_data(self):
         """Test full standardization with complete data."""
-        animal_data = {
-            "breed": "labrador retriever",
-            "age_text": "2 years",
-            "size": ""}
+        animal_data = {"breed": "labrador retriever", "age_text": "2 years", "size": ""}
         result = apply_standardization(animal_data)
 
         assert result["standardized_breed"] == "Labrador Retriever"

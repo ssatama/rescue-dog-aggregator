@@ -7,12 +7,7 @@ from fastapi.testclient import TestClient
 from api.main import app  # Fixed import path
 
 # Add project root to path
-sys.path.append(
-    os.path.dirname(
-        os.path.dirname(
-            os.path.dirname(
-                os.path.abspath(__file__))))
-)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
 client = TestClient(app)
@@ -44,8 +39,7 @@ class TestSecurity:
             ], f"Unexpected status for search input: {malicious_input}"
 
             # Test breed parameter
-            response = client.get(
-                f"/api/animals?standardized_breed={malicious_input}")
+            response = client.get(f"/api/animals?standardized_breed={malicious_input}")
             assert response.status_code in [
                 200,
                 422,
@@ -55,8 +49,7 @@ class TestSecurity:
             # crash
             if response.status_code == 200:
                 data = response.json()
-                assert isinstance(
-                    data, list), "Response should be a list of animals"
+                assert isinstance(data, list), "Response should be a list of animals"
 
     def test_parameter_limits(self):
         """Test that API parameters have reasonable limits."""
@@ -81,8 +74,7 @@ class TestSecurity:
         """Test CORS configuration is reasonable."""
         response = client.options("/api/animals")
         # Should handle OPTIONS request without crashing
-        assert response.status_code in [
-            200, 405], "Should handle OPTIONS request"
+        assert response.status_code in [200, 405], "Should handle OPTIONS request"
 
     def test_no_sensitive_data_exposure(self):
         """Test that sensitive data is not exposed in API responses."""
@@ -105,9 +97,7 @@ class TestSecurity:
                 ]
 
                 for field in sensitive_fields:
-                    assert (
-                        field not in animal
-                    ), f"Should not expose {field} in API response"
+                    assert field not in animal, f"Should not expose {field} in API response"
 
     def test_input_length_limits(self):
         """Test that extremely long inputs are handled properly."""

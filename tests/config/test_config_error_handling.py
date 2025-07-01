@@ -75,9 +75,7 @@ class TestConfigErrorHandling:
 
             # The sync manager returns error status instead of None
             status = sync_manager.get_sync_status()
-            assert (
-                status["error"] == "Database connection failed"
-            )  # Updated expectation
+            assert status["error"] == "Database connection failed"  # Updated expectation
 
     def test_scraper_import_failure_handling(self):
         """Test handling of scraper import failures."""
@@ -117,7 +115,5 @@ class TestConfigErrorHandling:
 
             loader = ConfigLoader(config_dir=config_dir)
 
-            with pytest.raises(
-                ValueError, match="Config ID 'different-id' does not match filename"
-            ):
+            with pytest.raises(ValueError, match="Config ID 'different-id' does not match filename"):
                 loader.load_config("test-org")

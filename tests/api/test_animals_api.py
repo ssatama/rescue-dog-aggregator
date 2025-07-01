@@ -84,8 +84,7 @@ class TestAnimalsAPI:
         # Potential improvement: Assert that results are actually 'Male'
 
         # Test multiple filters
-        response = client.get(
-            "/api/animals?size=Large&sex=Male&status=available")
+        response = client.get("/api/animals?size=Large&sex=Male&status=available")
         assert response.status_code == 200
 
         # Test standardized size if supported
@@ -101,15 +100,12 @@ class TestAnimalsAPI:
 
     def test_get_animal_by_id(self, client: TestClient):  # Add client fixture
         """Test GET /api/animals/{id} or /api/dogs/{id} endpoint."""
-        response = client.get(
-            "/api/animals?limit=1")  # Get just one animal to test
+        response = client.get("/api/animals?limit=1")  # Get just one animal to test
         assert response.status_code == 200
         animals = response.json()
 
         if not animals:
-            pytest.skip(
-                "No animals available in the database to test individual retrieval."
-            )
+            pytest.skip("No animals available in the database to test individual retrieval.")
 
         animal_id = animals[0]["id"]
 
@@ -119,9 +115,7 @@ class TestAnimalsAPI:
         # Fallback to legacy if needed (optional, depends if you want to keep
         # supporting it)
         if detail_response.status_code == 404:
-            print(
-                f"Note: /api/animals/{animal_id} not found, trying /api/dogs/{animal_id}"
-            )
+            print(f"Note: /api/animals/{animal_id} not found, trying /api/dogs/{animal_id}")
             detail_response = client.get(f"/api/dogs/{animal_id}")
 
         # Assert success after potential fallback
@@ -148,8 +142,7 @@ class TestAnimalsAPI:
 
     def test_get_random_animals(self, client: TestClient):
         """Test GET /api/animals/random endpoint."""
-        response = client.get(
-            "/api/animals/random?limit=2")  # Request 2 random animals
+        response = client.get("/api/animals/random?limit=2")  # Request 2 random animals
         assert response.status_code == 200  # Check route exists and is successful
         data = response.json()
         assert isinstance(data, list)
@@ -159,13 +152,10 @@ class TestAnimalsAPI:
             first_dog = data[0]
             assert "id" in first_dog
             assert "name" in first_dog
-            assert (
-                "images" not in first_dog
-            )  # /random uses Animal model, not AnimalWithImages
+            assert "images" not in first_dog  # /random uses Animal model, not AnimalWithImages
             assert "organization_id" in first_dog  # Check for organization ID
 
-    def test_get_animals_includes_organization_social_media(
-            self, client: TestClient):
+    def test_get_animals_includes_organization_social_media(self, client: TestClient):
         """Test that animals list response includes organization social_media field."""
         response = client.get("/api/animals?limit=5")
         assert response.status_code == 200
@@ -226,22 +216,19 @@ class TestAnimalsAPI:
         if len(data) >= 2:
             for i in range(len(data) - 1):
                 # Parse ISO datetime strings for comparison
-                created_at_current = datetime.fromisoformat(
-                    data[i]["created_at"].replace("Z", "+00:00"))
-                created_at_next = datetime.fromisoformat(
-                    data[i + 1]["created_at"].replace("Z", "+00:00"))
+                created_at_current = datetime.fromisoformat(data[i]["created_at"].replace("Z", "+00:00"))
+                created_at_next = datetime.fromisoformat(data[i + 1]["created_at"].replace("Z", "+00:00"))
                 assert created_at_current >= created_at_next, "Recent dogs should be ordered by created_at DESC"
 
         # Check that all dogs are from last 7 days (if any returned)
         if len(data) > 0:
             from datetime import timedelta
+
             seven_days_ago = datetime.now() - timedelta(days=7)
             for dog in data:
-                created_at = datetime.fromisoformat(
-                    dog["created_at"].replace("Z", "+00:00"))
+                created_at = datetime.fromisoformat(dog["created_at"].replace("Z", "+00:00"))
                 # Allow some timezone flexibility
-                assert created_at.replace(tzinfo=None) >= seven_days_ago.replace(tzinfo=None) - timedelta(
-                    hours=24), f"Dog {dog['name']} created at {created_at} should be within last 7 days"
+                assert created_at.replace(tzinfo=None) >= seven_days_ago.replace(tzinfo=None) - timedelta(hours=24), f"Dog {dog['name']} created at {created_at} should be within last 7 days"
 
     def test_get_animals_with_curation_type_diverse(self, client: TestClient):
         """Test GET /api/animals with curation_type=diverse."""
@@ -254,8 +241,7 @@ class TestAnimalsAPI:
         org_ids = []
         for dog in data:
             if dog.get("organization_id"):
-                assert dog["organization_id"] not in org_ids, \
-                    f"Organization {dog['organization_id']} appears more than once in diverse results"
+                assert dog["organization_id"] not in org_ids, f"Organization {dog['organization_id']} appears more than once in diverse results"
                 org_ids.append(dog["organization_id"])
 
     def test_get_animals_with_curation_type_random(self, client: TestClient):
@@ -285,8 +271,7 @@ class TestAnimalsAPI:
                 assert dog["size"] == "Medium"
 
         # Test diverse + breed filter
-        response = client.get(
-            "/api/animals?curation_type=diverse&standardized_breed=Labrador%20Retriever&limit=5")
+        response = client.get("/api/animals?curation_type=diverse&standardized_breed=Labrador%20Retriever&limit=5")
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)

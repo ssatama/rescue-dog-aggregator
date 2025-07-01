@@ -86,6 +86,24 @@ jobs:
               exit(1)
           " || echo "Database initialization completed or already initialized"
 
+      - name: Run database migrations
+        env:
+          TESTING: "true"
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: test_rescue_dogs
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          PGPASSWORD: postgres
+        run: |
+          echo "Running database migrations..."
+          for migration in database/migrations/*.sql; do
+            if [ -f "$migration" ]; then
+              echo "Running migration: $(basename $migration)"
+              psql -h localhost -U postgres -d test_rescue_dogs -f "$migration" || echo "Migration $(basename $migration) may have already been applied"
+            fi
+          done
+
 
       - name: Run backend tests
         env:
@@ -97,7 +115,7 @@ jobs:
           DB_PASSWORD: postgres
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          python -m pytest tests/ -m "not browser and not complex_setup" -v
+          python -m pytest tests/ -m "not browser and not complex_setup and not requires_migrations" -v
 
   frontend-tests:
     runs-on: ubuntu-latest

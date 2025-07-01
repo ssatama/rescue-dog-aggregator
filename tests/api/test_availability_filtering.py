@@ -83,14 +83,12 @@ class TestAvailabilityFiltering:
         animals = response.json()
 
         # Should return animals with any confidence level
-        confidence_levels = set(
-            animal["availability_confidence"] for animal in animals)
+        confidence_levels = set(animal["availability_confidence"] for animal in animals)
         assert len(confidence_levels) >= 1
 
     def test_combined_availability_and_confidence_filtering(self, client):
         """Test combining status and confidence filters."""
-        response = client.get(
-            "/api/animals?status=available&availability_confidence=high")
+        response = client.get("/api/animals?status=available&availability_confidence=high")
 
         assert response.status_code == 200
         animals = response.json()
@@ -118,8 +116,7 @@ class TestAvailabilityFiltering:
             assert "status" in animal
             assert "availability_confidence" in animal
             assert animal["status"] in ["available", "unavailable"]
-            assert animal["availability_confidence"] in [
-                "high", "medium", "low"]
+            assert animal["availability_confidence"] in ["high", "medium", "low"]
 
     def test_organization_filtering_via_main_endpoint(self, client):
         """Test that organization filtering works via main animals endpoint."""
@@ -171,10 +168,8 @@ class TestAvailabilityFiltering:
 
             # Check field values are valid
             assert animal["status"] in ["available", "unavailable"]
-            assert animal["availability_confidence"] in [
-                "high", "medium", "low"]
-            assert isinstance(
-                animal["consecutive_scrapes_missing"], (int, type(None)))
+            assert animal["availability_confidence"] in ["high", "medium", "low"]
+            assert isinstance(animal["consecutive_scrapes_missing"], (int, type(None)))
 
     @pytest.mark.skip(reason="Transaction isolation issues with test data setup - test modifies org data in separate transaction not visible to API")
     def test_ships_to_countries_appear_in_service_regions_filter(self, client):
@@ -186,33 +181,39 @@ class TestAvailabilityFiltering:
         """
         # Get a database cursor to modify the test organization
         from tests.conftest import override_get_db_cursor
+
         cursor_gen = override_get_db_cursor()
         cursor = next(cursor_gen)
 
         try:
             # Update the existing test organization (901) to ship to Germany
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE organizations
                 SET ships_to = '["DE", "NL", "BE", "FR"]', country = 'TR', city = 'Istanbul'
                 WHERE id = 901
-            """)
+            """
+            )
 
             # Insert service_regions entries for this org (both base country +
             # ships_to countries)
             cursor.execute("DELETE FROM service_regions WHERE organization_id = 901")
             service_regions_data = [
-                (901, 'TR'),  # Base country where dogs are located
-                (901, 'DE'),  # Ships to Germany
-                (901, 'NL'),  # Ships to Netherlands
-                (901, 'BE'),  # Ships to Belgium
-                (901, 'FR'),  # Ships to France
+                (901, "TR"),  # Base country where dogs are located
+                (901, "DE"),  # Ships to Germany
+                (901, "NL"),  # Ships to Netherlands
+                (901, "BE"),  # Ships to Belgium
+                (901, "FR"),  # Ships to France
             ]
 
             for org_id, country in service_regions_data:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT INTO service_regions (organization_id, country, created_at, updated_at)
                     VALUES (%s, %s, NOW(), NOW())
-                """, (org_id, country))
+                """,
+                    (org_id, country),
+                )
 
             cursor.connection.commit()
 
@@ -233,13 +234,11 @@ class TestAvailabilityFiltering:
             germany_dogs = germany_response.json()
 
             # Check if the existing test dog appears in Germany filter results
-            test_dogs_in_germany = [
-                dog for dog in germany_dogs if dog["name"] == "Test Male Dog"]
+            test_dogs_in_germany = [dog for dog in germany_dogs if dog["name"] == "Test Male Dog"]
 
             # This should PASS now that we've fixed the sync logic
             assert len(test_dogs_in_germany) > 0, (
-                "Dogs from organizations that ship to Germany should appear when filtering by Germany. "
-                "This indicates ships_to data is not properly synced to service_regions table."
+                "Dogs from organizations that ship to Germany should appear when filtering by Germany. " "This indicates ships_to data is not properly synced to service_regions table."
             )
 
             # Verify it's the right dog

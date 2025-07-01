@@ -20,19 +20,9 @@ class TestConfigLogicFast:
             "name": "Test Rescue",
             "description": "A test rescue organization",
             "website_url": "https://testrescue.org",
-            "metadata": {
-                "founded_year": 2020,
-                "location": "Test City",
-                "animals_rescued": 1000
-            },
-            "scraper": {
-                "class_name": "TestScraper",
-                "module_path": "scrapers.test.test_scraper"
-            },
-            "service_regions": [
-                {"name": "Region1", "description": "Test region 1"},
-                {"name": "Region2", "description": "Test region 2"}
-            ]
+            "metadata": {"founded_year": 2020, "location": "Test City", "animals_rescued": 1000},
+            "scraper": {"class_name": "TestScraper", "module_path": "scrapers.test.test_scraper"},
+            "service_regions": [{"name": "Region1", "description": "Test region 1"}, {"name": "Region2", "description": "Test region 2"}],
         }
 
         # Verify required fields are present
@@ -48,18 +38,9 @@ class TestConfigLogicFast:
     def test_config_field_validation_patterns(self):
         """Test config field validation patterns quickly."""
         # Test URL validation patterns
-        valid_urls = [
-            "https://rescue.org",
-            "http://localhost:8000",
-            "https://www.petrescue.com/dogs"
-        ]
+        valid_urls = ["https://rescue.org", "http://localhost:8000", "https://www.petrescue.com/dogs"]
 
-        invalid_urls = [
-            "not-a-url",
-            "ftp://invalid.com",
-            "",
-            None
-        ]
+        invalid_urls = ["not-a-url", "ftp://invalid.com", "", None]
 
         for url in valid_urls:
             assert url.startswith(("http://", "https://"))
@@ -73,16 +54,8 @@ class TestConfigLogicFast:
         """Test scraper config validation logic quickly."""
         # Test scraper configuration patterns
         valid_scraper_configs = [
-            {
-                "class_name": "REANScraper",
-                "module_path": "scrapers.rean.dogs_scraper",
-                "config": {"rate_limit_delay": 2.0}
-            },
-            {
-                "class_name": "PetsInTurkeyScraper",
-                "module_path": "scrapers.pets_in_turkey.dogs_scraper",
-                "config": {"timeout": 30}
-            }
+            {"class_name": "REANScraper", "module_path": "scrapers.rean.dogs_scraper", "config": {"rate_limit_delay": 2.0}},
+            {"class_name": "PetsInTurkeyScraper", "module_path": "scrapers.pets_in_turkey.dogs_scraper", "config": {"timeout": 30}},
         ]
 
         for config in valid_scraper_configs:
@@ -99,7 +72,7 @@ class TestConfigLogicFast:
         valid_regions = [
             {"name": "Romania", "description": "Dogs in Romania shelters"},
             {"name": "UK Foster", "description": "Dogs in UK foster care"},
-            {"name": "Turkey", "description": "Dogs in Turkey shelters"}
+            {"name": "Turkey", "description": "Dogs in Turkey shelters"},
         ]
 
         for region in valid_regions:
@@ -113,13 +86,7 @@ class TestConfigLogicFast:
     def test_config_metadata_validation_logic(self):
         """Test config metadata validation logic quickly."""
         # Test metadata structure patterns
-        valid_metadata = {
-            "founded_year": 2015,
-            "location": "United Kingdom",
-            "contact_email": "info@rescue.org",
-            "animals_rescued": 5000,
-            "website_description": "Rescue organization helping dogs"
-        }
+        valid_metadata = {"founded_year": 2015, "location": "United Kingdom", "contact_email": "info@rescue.org", "animals_rescued": 5000, "website_description": "Rescue organization helping dogs"}
 
         # Verify metadata types
         assert isinstance(valid_metadata["founded_year"], int)
@@ -132,18 +99,8 @@ class TestConfigLogicFast:
     def test_config_id_validation_logic(self):
         """Test config ID validation logic quickly."""
         # Test valid config IDs
-        valid_ids = [
-            "rean",
-            "pets-in-turkey",
-            "test-rescue",
-            "animal-shelter-1"]
-        invalid_ids = [
-            "",
-            "  ",
-            "CAPS",
-            "with spaces",
-            "with_underscores",
-            None]
+        valid_ids = ["rean", "pets-in-turkey", "test-rescue", "animal-shelter-1"]
+        invalid_ids = ["", "  ", "CAPS", "with spaces", "with_underscores", None]
 
         for config_id in valid_ids:
             # Valid IDs should be lowercase, hyphenated
@@ -154,24 +111,13 @@ class TestConfigLogicFast:
         for config_id in invalid_ids:
             if config_id is not None:
                 # Invalid IDs fail validation
-                assert (
-                    not config_id.strip() or
-                    not config_id.islower() or
-                    " " in config_id or
-                    "_" in config_id
-                )
+                assert not config_id.strip() or not config_id.islower() or " " in config_id or "_" in config_id
 
     @pytest.mark.unit
     def test_config_environment_variable_logic(self):
         """Test config environment variable logic quickly."""
         # Test environment variable patterns
-        env_var_patterns = [
-            "CLOUDINARY_CLOUD_NAME",
-            "CLOUDINARY_API_KEY",
-            "CLOUDINARY_API_SECRET",
-            "DATABASE_URL",
-            "DEBUG"
-        ]
+        env_var_patterns = ["CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET", "DATABASE_URL", "DEBUG"]
 
         for env_var in env_var_patterns:
             # Environment variables should be uppercase with underscores
@@ -215,7 +161,7 @@ class TestConfigLogicFast:
             "required_fields": ["name", "website_url", "scraper"],
             "optional_fields": ["description", "metadata", "service_regions"],
             "nested_objects": ["scraper", "metadata"],
-            "array_fields": ["service_regions"]
+            "array_fields": ["service_regions"],
         }
 
         # Verify schema structure
@@ -227,12 +173,7 @@ class TestConfigLogicFast:
     def test_config_loading_priority_logic(self):
         """Test config loading priority logic quickly."""
         # Test config source priority
-        config_sources = [
-            {"source": "environment", "priority": 1},
-            {"source": "command_line", "priority": 2},
-            {"source": "config_file", "priority": 3},
-            {"source": "defaults", "priority": 4}
-        ]
+        config_sources = [{"source": "environment", "priority": 1}, {"source": "command_line", "priority": 2}, {"source": "config_file", "priority": 3}, {"source": "defaults", "priority": 4}]
 
         # Higher priority (lower number) should override lower priority
         sorted_sources = sorted(config_sources, key=lambda x: x["priority"])
@@ -247,7 +188,7 @@ class TestConfigLogicFast:
             {"action": "file_modified", "should_invalidate": True},
             {"action": "memory_pressure", "should_invalidate": False},
             {"action": "explicit_reload", "should_invalidate": True},
-            {"action": "normal_access", "should_invalidate": False}
+            {"action": "normal_access", "should_invalidate": False},
         ]
 
         for scenario in cache_scenarios:
@@ -263,9 +204,7 @@ class TestConfigLogicFast:
         backup_strategies = [
             {"type": "automatic", "frequency": "daily", "retention": 30},
             {"type": "manual", "frequency": "on_demand", "retention": 90},
-            {"type": "pre_deployment",
-             "frequency": "before_changes",
-             "retention": 365}
+            {"type": "pre_deployment", "frequency": "before_changes", "retention": 365},
         ]
 
         for strategy in backup_strategies:
@@ -282,9 +221,8 @@ class TestConfigLogicFast:
         # Test config version migration patterns
         migration_paths = [
             {"from": "v1.0", "to": "v1.1", "changes": ["add_service_regions"]},
-            {"from": "v1.1", "to": "v2.0", "changes": [
-                "restructure_scraper_config"]},
-            {"from": "v2.0", "to": "v2.1", "changes": ["add_metadata_fields"]}
+            {"from": "v1.1", "to": "v2.0", "changes": ["restructure_scraper_config"]},
+            {"from": "v2.0", "to": "v2.1", "changes": ["add_metadata_fields"]},
         ]
 
         for migration in migration_paths:

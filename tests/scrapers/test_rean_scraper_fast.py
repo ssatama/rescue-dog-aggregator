@@ -4,6 +4,7 @@ Fast unit tests for REAN scraper core logic.
 These tests focus on the core business logic without expensive WebDriver operations,
 providing quick feedback during development. They complement the comprehensive slow tests.
 """
+
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -17,16 +18,11 @@ class TestREANScraperFast:
     @pytest.fixture
     def scraper(self):
         """Create a REAN scraper instance for testing."""
-        with patch('scrapers.base_scraper.OrganizationSyncManager') as mock_sync, \
-                patch('scrapers.base_scraper.ConfigLoader') as mock_config_loader:
+        with patch("scrapers.base_scraper.OrganizationSyncManager") as mock_sync, patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader:
 
             mock_config = MagicMock()
             mock_config.name = "REAN Test"
-            mock_config.get_scraper_config_dict.return_value = {
-                "rate_limit_delay": 0.1,  # Faster for tests
-                "max_retries": 1,  # Fewer retries for speed
-                "timeout": 5  # Shorter timeout
-            }
+            mock_config.get_scraper_config_dict.return_value = {"rate_limit_delay": 0.1, "max_retries": 1, "timeout": 5}  # Faster for tests  # Fewer retries for speed  # Shorter timeout
             mock_config.metadata.website_url = "https://rean.org.uk"
 
             mock_config_loader.return_value.load_config.return_value = mock_config
@@ -65,20 +61,13 @@ class TestREANScraperFast:
     def test_determine_location_logic(self, scraper):
         """Test location determination logic quickly."""
         # Romania cases
-        assert scraper.determine_location(
-            "rescued from kill shelter",
-            "romania") == "Romania"
-        assert scraper.determine_location(
-            "found on streets", "romania") == "Romania"
+        assert scraper.determine_location("rescued from kill shelter", "romania") == "Romania"
+        assert scraper.determine_location("found on streets", "romania") == "Romania"
 
         # UK cases
-        assert scraper.determine_location(
-            "foster in Norfolk", "uk_foster") == "Norfolk"
-        assert scraper.determine_location(
-            "fostered in Lincolnshire",
-            "uk_foster") == "Lincolnshire"
-        assert scraper.determine_location(
-            "foster care in Derby", "uk_foster") == "Derby"
+        assert scraper.determine_location("foster in Norfolk", "uk_foster") == "Norfolk"
+        assert scraper.determine_location("fostered in Lincolnshire", "uk_foster") == "Lincolnshire"
+        assert scraper.determine_location("foster care in Derby", "uk_foster") == "Derby"
 
     @pytest.mark.unit
     def test_weight_extraction_patterns(self, scraper):
@@ -102,21 +91,17 @@ class TestREANScraperFast:
         assert scraper.predict_size_from_weight(35.0) == "Large"
 
         # Description-based predictions
-        assert scraper.predict_size_from_description(
-            "medium size boy") == "Medium"
+        assert scraper.predict_size_from_description("medium size boy") == "Medium"
         assert scraper.predict_size_from_description("big soft boy") == "Large"
-        assert scraper.predict_size_from_description(
-            "little friendly dog") == "Small"
+        assert scraper.predict_size_from_description("little friendly dog") == "Small"
 
     @pytest.mark.unit
     def test_medical_status_extraction(self, scraper):
         """Test medical status extraction quickly."""
         test_cases = [
             ("He is vaccinated and chipped", "vaccinated and chipped"),
-            ("She is spayed, vaccinated and chipped",
-             "spayed, vaccinated and chipped"),
-            ("He is neutered, vaccinated and chipped",
-             "neutered, vaccinated and chipped"),
+            ("She is spayed, vaccinated and chipped", "spayed, vaccinated and chipped"),
+            ("He is neutered, vaccinated and chipped", "neutered, vaccinated and chipped"),
         ]
 
         for text, expected in test_cases:
@@ -230,8 +215,7 @@ class TestREANScraperFast:
         dog_data_list = [{"name": "Toby", "age_text": "1.5 years"}]
 
         # More images than dogs
-        many_images = [
-            f"https://img1.wsimg.com/isteam/ip/abc{i}/dog.jpg" for i in range(5)]
+        many_images = [f"https://img1.wsimg.com/isteam/ip/abc{i}/dog.jpg" for i in range(5)]
         result = scraper.associate_images_with_dogs(dog_data_list, many_images)
         assert len(result) == 1
         assert "primary_image_url" in result[0]
@@ -262,15 +246,11 @@ class TestREANScraperFast:
     def test_error_handling_malformed_data(self, scraper):
         """Test error handling with malformed data quickly."""
         # Test with invalid entry (method tries to extract but gets poor data)
-        result = scraper.extract_dog_data(
-            "Random text without dog info", "romania")
+        result = scraper.extract_dog_data("Random text without dog info", "romania")
         # The method may return data but it should be recognizably poor quality
         if result is not None:
             # Check that name extraction found something questionable
-            assert result.get('name') in [
-                'Random', None] or len(
-                result.get(
-                    'name', '')) < 3
+            assert result.get("name") in ["Random", None] or len(result.get("name", "")) < 3
 
         # Test with empty entry
         result = scraper.extract_dog_data("", "romania")
@@ -297,7 +277,7 @@ class TestREANScraperFast:
         assert validated[0] == valid_container
 
     @pytest.mark.unit
-    @patch('requests.get')
+    @patch("requests.get")
     def test_scrape_page_success_fast(self, mock_get, scraper):
         """Test successful page scraping quickly."""
         mock_response = MagicMock()
