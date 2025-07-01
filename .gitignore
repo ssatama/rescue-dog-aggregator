@@ -71,8 +71,11 @@ Thumbs.db
 exploration/
 exploration_backup/
 notebooks/exploration*
-test_*.py
-*_test_*.py
+# Only exclude temporary exploration test files, NOT the actual test suite
+exploration/test_*.py
+temp_test_*.py
+experimental_test_*.py
+*_exploration_test_*.py
 container_*.txt
 *_parser_*.json
 final_correct_parser_*.json
