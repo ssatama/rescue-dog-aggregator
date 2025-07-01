@@ -1,6 +1,5 @@
 import pytest
 
-
 # No global client - use the fixture from conftest.py
 
 
