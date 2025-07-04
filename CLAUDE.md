@@ -66,15 +66,6 @@ python management/config_commands.py sync
 python management/config_commands.py run pets-turkey
 ```
 
-## Data Scientist Bridge Patterns
-
-### Python → TypeScript
-
-- `dict` → `interface/type`
-- List comprehensions → `map/filter`
-- `None` → `null/undefined`
-- Type hints → TypeScript types
-
 ### Common Tasks
 
 - API endpoint: Write test → Create route → Implement
