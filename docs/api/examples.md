@@ -1,78 +1,36 @@
-# 📡 API Reference
+# API Examples
 
-## 🎯 Overview
+This document provides comprehensive examples for using the Rescue Dog Aggregator API. These examples demonstrate practical usage patterns and common use cases.
 
-The Rescue Dog Aggregator API provides RESTful access to aggregated rescue dog data from multiple organizations. The API supports filtering, pagination, and comprehensive search capabilities with production-ready availability management.
+## Basic Usage
 
-**Base URL**: `http://localhost:8000` (development) | `https://api.rescuedogaggregator.com` (production)
+### Authentication
+Currently, the API does not require authentication. All endpoints are publicly accessible.
 
-**API Version**: 0.1.0
+### Base URLs
+- **Development**: `http://localhost:8000`
+- **Production**: `https://api.rescuedogaggregator.com`
 
-## 🔐 Authentication
+## Animals API Examples
 
-Currently, the API does not require authentication for public endpoints. All endpoints are publicly accessible.
+### Get All Animals
 
-## 📄 Response Format
-
-All API responses follow a consistent JSON format:
-
-### Success Response
-```json
-{
-  "data": [...],
-  "meta": {
-    "total": 100,
-    "limit": 20,
-    "offset": 0
-  }
-}
+#### Basic Request
+```bash
+curl "http://localhost:8000/api/animals/"
 ```
 
-### Error Response
-```json
-{
-  "detail": "Error message",
-  "status_code": 400
-}
+#### With Pagination
+```bash
+curl "http://localhost:8000/api/animals/?limit=10&offset=20"
 ```
 
-## Endpoints
-
-### Animals API
-
-#### GET /api/animals/
-
-Get all animals with filtering, pagination, and location support.
-
-**Query Parameters:**
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `limit` | integer | 20 | Number of results to return (1-100) |
-| `offset` | integer | 0 | Number of results to skip |
-| `search` | string | null | Search in animal names and descriptions |
-| `breed` | string | null | Filter by exact breed name |
-| `standardized_breed` | string | null | Filter by standardized breed |
-| `breed_group` | string | null | Filter by breed group |
-| `sex` | string | null | Filter by sex (male, female) |
-| `size` | string | null | Filter by size |
-| `standardized_size` | string | null | Filter by standardized size (small, medium, large) |
-| `age_category` | string | null | Filter by age category |
-| `animal_type` | string | "dog" | Filter by animal type |
-| `status` | string | "available" | Filter by availability status |
-| `location_country` | string | null | Filter by country where animal is located |
-| `available_to_country` | string | null | Filter by adoption destination country |
-| `available_to_region` | string | null | Filter by adoption destination region |
-| `organization_id` | integer | null | Filter by specific organization |
-| `availability_confidence` | string | "high,medium" | Filter by confidence level |
-| `curation_type` | string | "random" | Curation algorithm: "recent", "diverse", "random" |
-
-**Example Request:**
+#### Filter by Breed
 ```bash
 curl "http://localhost:8000/api/animals/?limit=10&breed=Golden%20Retriever&size=large"
 ```
 
-**Example Response:**
+#### Example Response
 ```json
 [
   {
@@ -124,23 +82,19 @@ curl "http://localhost:8000/api/animals/?limit=10&breed=Golden%20Retriever&size=
 ]
 ```
 
-#### GET /api/animals/{id}
+### Get Single Animal
 
-Get a specific animal by ID.
-
-**Path Parameters:**
-- `id` (integer): Animal ID
-
-**Example Request:**
 ```bash
 curl "http://localhost:8000/api/animals/1"
 ```
 
-#### GET /api/animals/statistics
+### Get Animal Statistics
 
-Get aggregated statistics about animals in the system.
+```bash
+curl "http://localhost:8000/api/animals/statistics"
+```
 
-**Example Response:**
+#### Example Response
 ```json
 {
   "total_animals": 414,
@@ -165,13 +119,15 @@ Get aggregated statistics about animals in the system.
 }
 ```
 
-### Organizations API
+## Organizations API Examples
 
-#### GET /api/organizations/
+### Get All Organizations
 
-Get all active rescue organizations.
+```bash
+curl "http://localhost:8000/api/organizations/"
+```
 
-**Example Response:**
+#### Example Response
 ```json
 [
   {
@@ -199,20 +155,21 @@ Get all active rescue organizations.
 ]
 ```
 
-#### GET /api/organizations/{id}
+### Get Single Organization
 
-Get a specific organization by ID.
+```bash
+curl "http://localhost:8000/api/organizations/1"
+```
 
-**Path Parameters:**
-- `id` (integer): Organization ID
+## Health & Monitoring Examples
 
-### Monitoring & Health API
+### Basic Health Check
 
-#### GET /health
+```bash
+curl "http://localhost:8000/health"
+```
 
-Basic health check endpoint.
-
-**Example Response:**
+#### Example Response
 ```json
 {
   "status": "healthy",
@@ -226,11 +183,13 @@ Basic health check endpoint.
 }
 ```
 
-#### GET /health/detailed
+### Detailed Health Check
 
-Detailed health check with component status.
+```bash
+curl "http://localhost:8000/health/detailed"
+```
 
-**Example Response:**
+#### Example Response
 ```json
 {
   "status": "healthy",
@@ -257,11 +216,13 @@ Detailed health check with component status.
 }
 ```
 
-#### GET /monitoring/scrapers
+### Monitor Scrapers
 
-Get scraper status and performance metrics.
+```bash
+curl "http://localhost:8000/monitoring/scrapers"
+```
 
-**Example Response:**
+#### Example Response
 ```json
 [
   {
@@ -282,11 +243,13 @@ Get scraper status and performance metrics.
 ]
 ```
 
-#### GET /monitoring/failures
+### Monitor Failures
 
-Get failure detection summary.
+```bash
+curl "http://localhost:8000/monitoring/failures"
+```
 
-**Example Response:**
+#### Example Response
 ```json
 {
   "catastrophic_failures_24h": 0,
@@ -298,112 +261,42 @@ Get failure detection summary.
 }
 ```
 
-## Data Models
+## Common Use Cases
 
-### Animal Model
-
-```typescript
-interface Animal {
-  id: number;
-  name: string;
-  animal_type: string;
-  breed?: string;
-  standardized_breed?: string;
-  breed_group?: string;
-  age_text?: string;
-  age_min_months?: number;
-  age_max_months?: number;
-  sex?: string;
-  size?: string;
-  standardized_size?: string;
-  status: string;
-  primary_image_url?: string;
-  adoption_url: string;
-  organization_id: number;
-  external_id?: string;
-  language: string;
-  properties: object;
-  created_at: string;
-  updated_at: string;
-  last_scraped_at?: string;
-  availability_confidence: 'high' | 'medium' | 'low';
-  last_seen_at?: string;
-  consecutive_scrapes_missing: number;
-  organization: Organization;
-  images: AnimalImage[];
-}
-```
-
-### Organization Model
-
-```typescript
-interface Organization {
-  id: number;
-  name: string;
-  website_url: string;
-  description?: string;
-  country?: string;
-  city?: string;
-  logo_url?: string;
-  social_media: object;
-  active: boolean;
-  created_at: string;
-  updated_at: string;
-  ships_to: string[];
-  established_year?: number;
-  service_regions: string[];
-  total_dogs: number;
-  new_this_week: number;
-}
-```
-
-### AnimalImage Model
-
-```typescript
-interface AnimalImage {
-  id: number;
-  image_url: string;
-  is_primary: boolean;
-}
-```
-
-## Query Examples
-
-### Common Use Cases
-
-#### Get Recent Dogs (Last 7 Days)
+### Get Recent Dogs (Last 7 Days)
 ```bash
 curl "http://localhost:8000/api/animals/?curation_type=recent&limit=20"
 ```
 
-#### Get One Dog Per Organization (Diverse Selection)
+### Get Diverse Selection (One Dog Per Organization)
 ```bash
 curl "http://localhost:8000/api/animals/?curation_type=diverse&limit=10"
 ```
 
-#### Search for Large Dogs Available to Germany
+### Search for Large Dogs Available to Germany
 ```bash
 curl "http://localhost:8000/api/animals/?size=large&available_to_country=DE"
 ```
 
-#### Get Dogs from Specific Organization
+### Get Dogs from Specific Organization
 ```bash
 curl "http://localhost:8000/api/animals/?organization_id=1"
 ```
 
-#### Get High Confidence Available Dogs Only
+### Get High Confidence Available Dogs Only
 ```bash
 curl "http://localhost:8000/api/animals/?availability_confidence=high"
 ```
 
-#### Search by Breed Group
+### Search by Breed Group
 ```bash
 curl "http://localhost:8000/api/animals/?breed_group=Sporting&limit=15"
 ```
 
-### Advanced Use Cases
+## Advanced Integration Examples
 
-#### Build a Dog Adoption App
+### Build a Dog Adoption App (JavaScript)
+
 ```javascript
 // Frontend integration example
 async function fetchDogsForAdoptionApp() {
@@ -430,7 +323,8 @@ async function fetchDogsForAdoptionApp() {
 }
 ```
 
-#### Create a Dog Search Filter
+### Create a Dog Search Filter (JavaScript)
+
 ```javascript
 // Advanced filtering example
 function buildSearchQuery(filters) {
@@ -465,7 +359,8 @@ const searchUrl = buildSearchQuery({
 });
 ```
 
-#### Monitor Organization Performance
+### Monitor Organization Performance (JavaScript)
+
 ```javascript
 // Organization monitoring example
 async function getOrganizationInsights(orgId) {
@@ -499,34 +394,49 @@ async function getOrganizationInsights(orgId) {
 }
 ```
 
-#### Build a Location-Based Rescue Finder
+## Location-Based Examples
+
+### Find Dogs Available to Specific Countries
 ```bash
-# Find dogs available to specific countries
 curl "http://localhost:8000/api/animals/?available_to_country=DE&limit=50"
+```
 
-# Find dogs located in specific countries
+### Find Dogs Located in Specific Countries
+```bash
 curl "http://localhost:8000/api/animals/?location_country=TR&available_to_country=DE"
+```
 
-# Get organizations that ship to specific countries
+### Get Organizations That Ship to Specific Countries
+```bash
 curl "http://localhost:8000/api/organizations/" | jq '.[] | select(.ships_to | contains(["DE"]))'
 ```
 
-#### Performance Monitoring Dashboard
+## Performance Monitoring Dashboard
+
+### System Health Overview
 ```bash
-# System health overview
 curl "http://localhost:8000/health/detailed"
+```
 
-# Scraper performance metrics
+### Scraper Performance Metrics
+```bash
 curl "http://localhost:8000/monitoring/scrapers"
+```
 
-# Failure detection and alerts
+### Failure Detection and Alerts
+```bash
 curl "http://localhost:8000/monitoring/failures"
+```
 
-# Database statistics
+### Database Statistics
+```bash
 curl "http://localhost:8000/api/animals/statistics"
 ```
 
-#### Data Analysis Examples
+## Data Analysis Examples
+
+### Python Data Analysis
+
 ```python
 # Python example for data analysis
 import requests
@@ -560,43 +470,56 @@ def analyze_rescue_data():
 df, statistics = analyze_rescue_data()
 ```
 
-## Rate Limiting
+## Response Format Examples
 
-Currently, there are no rate limits enforced on the API. However, please be respectful with your requests to ensure service availability for all users.
+### Success Response Format
+```json
+{
+  "data": [...],
+  "meta": {
+    "total": 100,
+    "limit": 20,
+    "offset": 0
+  }
+}
+```
 
-## Error Codes
+### Error Response Format
+```json
+{
+  "detail": "Error message",
+  "status_code": 400
+}
+```
 
-| Status Code | Meaning |
-|-------------|---------|
-| 200 | Success |
-| 400 | Bad Request - Invalid parameters |
-| 404 | Not Found - Resource does not exist |
-| 422 | Unprocessable Entity - Validation error |
-| 500 | Internal Server Error |
+## Testing Examples
 
-## CORS Support
+### Simple API Test
+```bash
+# Test basic connectivity
+curl -f "http://localhost:8000/health" || echo "API not available"
 
-The API supports Cross-Origin Resource Sharing (CORS) for the following origins:
-- `http://localhost:3000` (development frontend)
-- `http://127.0.0.1:3000` (alternative development)
+# Test animal endpoint
+curl -f "http://localhost:8000/api/animals/?limit=1" || echo "Animals endpoint failed"
 
-## API Versioning
+# Test organization endpoint
+curl -f "http://localhost:8000/api/organizations/" || echo "Organizations endpoint failed"
+```
 
-The current API version is 0.1.0. Future versions will be backwards compatible and new versions will be announced with migration guides.
+### Load Testing Example
+```bash
+# Test with multiple concurrent requests
+for i in {1..10}; do
+  curl "http://localhost:8000/api/animals/?limit=5&offset=$((i*5))" &
+done
+wait
+```
 
-## Support
+## Notes
 
-For API support or questions, please:
-1. Check this documentation first
-2. Review the [troubleshooting guide](troubleshooting_guide.md)
-3. Submit an issue on the project repository
-
-## Changelog
-
-### v0.1.0 (Current)
-- Initial API release
-- Animals and Organizations endpoints
-- Filtering and pagination support
-- Availability confidence system
-- Monitoring and health endpoints
-- Curation algorithms (recent, diverse, random)
+- All timestamps are in ISO 8601 format with UTC timezone
+- The API supports JSON responses only
+- Cross-Origin Resource Sharing (CORS) is enabled for localhost:3000 and 127.0.0.1:3000
+- No authentication is currently required
+- Rate limiting is not enforced but please be respectful with request frequency
+- For production use, replace `localhost:8000` with the actual production API URL

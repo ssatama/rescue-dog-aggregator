@@ -255,14 +255,375 @@ function DogFilters({ filters, onFilterChange }) {
 }
 ```
 
+## Database Standards
+
+### Table Design
+
+- **Table names**: `snake_case`, plural (e.g., `animals`, `organizations`)
+- **Column names**: `snake_case` (e.g., `created_at`, `organization_id`)
+- **Primary keys**: `id SERIAL PRIMARY KEY`
+- **Foreign keys**: `table_id` pattern with proper references
+- **Timestamps**: Always include `created_at` and `updated_at`
+
+```sql
+-- GOOD - Proper table structure
+CREATE TABLE IF NOT EXISTS animals (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    organization_id INTEGER NOT NULL REFERENCES organizations(id),
+    breed VARCHAR(255),
+    standardized_breed VARCHAR(100),
+    age_min_months INTEGER,
+    properties JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Unique constraint to prevent duplicates
+    UNIQUE (external_id, organization_id)
+);
+```
+
+### Indexing Strategy
+
+- **Primary indexes**: `idx_table_column` (e.g., `idx_animals_organization_id`)
+- **Foreign key indexes**: `fk_table_column` (e.g., `fk_animals_organization`)
+- **JSONB indexes**: Use GIN indexes for JSONB columns
+- **Composite indexes**: For common query patterns
+
+```sql
+-- GOOD - Proper indexing
+CREATE INDEX idx_animals_organization_id ON animals(organization_id);
+CREATE INDEX idx_animals_breed ON animals(standardized_breed);
+CREATE INDEX gin_animals_properties ON animals USING GIN(properties);
+```
+
+### Migration Standards
+
+- **File naming**: `001_descriptive_name.sql`
+- **Always include**: Description comment at top
+- **Rollback plan**: Document rollback steps
+- **Test migrations**: On copy of production data
+
+```sql
+-- Migration: 001_add_new_feature.sql
+-- Description: Add new functionality for feature X
+-- Rollback: DROP COLUMN new_field; DROP INDEX idx_new_field;
+
+-- Add new column
+ALTER TABLE animals ADD COLUMN new_field VARCHAR(100);
+
+-- Create index
+CREATE INDEX idx_animals_new_field ON animals(new_field);
+```
+
+## Naming Conventions
+
+### Python (Backend)
+
+- **Functions**: `snake_case`, verb-based (e.g., `calculate_adoption_fee`, `validate_organization_config`)
+- **Classes**: `PascalCase` (e.g., `DogScraper`, `AdoptionFeeCalculator`)
+- **Constants**: `UPPER_SNAKE_CASE` (e.g., `MAX_RETRIES`, `DEFAULT_TIMEOUT`)
+- **Files**: `snake_case.py`
+- **Test files**: `test_*.py`
+- **Private methods**: `_single_underscore_prefix`
+- **Module-private**: `__double_underscore_prefix`
+
+```python
+# GOOD - Clear naming patterns
+class PetsTurkeyScraper:
+    MAX_RETRY_ATTEMPTS = 3
+    DEFAULT_TIMEOUT_SECONDS = 30
+    
+    def extract_dog_data(self, html):
+        return self._parse_dog_cards(html)
+    
+    def _parse_dog_cards(self, html):
+        # Private helper method
+        pass
+
+def calculate_adoption_fee(dog):
+    """Calculate adoption fee based on dog attributes."""
+    pass
+
+def validate_organization_config(config):
+    """Validate organization configuration structure."""
+    pass
+```
+
+### JavaScript/React (Frontend)
+
+- **Functions**: `camelCase`, verb-based (e.g., `calculateTotal`, `handleClick`)
+- **Components**: `PascalCase` (e.g., `DogCard`, `FilterPanel`)
+- **Constants**: `UPPER_SNAKE_CASE` for true constants
+- **Files**: Component files `PascalCase.jsx`, others `camelCase.js`
+- **Test files**: `*.test.jsx` or `*.spec.js`
+- **Hooks**: `use` prefix (e.g., `useFavorites`, `useFilteredDogs`)
+- **Event handlers**: `handle` prefix (e.g., `handleSubmit`, `handleFilterChange`)
+
+```javascript
+// GOOD - Clear naming patterns
+const MAX_FAVORITES = 50;
+const API_BASE_URL = "http://localhost:8000";
+
+function DogCard({ dog }) {
+  const [favorited, setFavorited] = useState(false);
+  
+  const handleFavorite = () => {
+    setFavorited(!favorited);
+  };
+  
+  return (
+    <div className="dog-card">
+      <h3>{dog.name}</h3>
+      <button onClick={handleFavorite}>
+        {favorited ? "❤️" : "🤍"}
+      </button>
+    </div>
+  );
+}
+
+// GOOD - Custom hooks
+function useFavoriteDogs() {
+  const [favorites, setFavorites] = useState([]);
+  return { favorites, setFavorites };
+}
+
+function useDebounce(value, delay) {
+  // Hook implementation
+}
+```
+
+### Database Naming
+
+- **Tables**: `snake_case`, plural (e.g., `animals`, `organizations`)
+- **Columns**: `snake_case` (e.g., `created_at`, `organization_id`)
+- **Indexes**: `idx_table_column` (e.g., `idx_animals_organization_id`)
+- **Foreign keys**: `fk_table_column` (e.g., `fk_animals_organization`)
+- **JSONB fields**: Use descriptive names (e.g., `properties`, `social_media`)
+
+### Configuration Files
+
+- **YAML files**: `kebab-case.yaml` (e.g., `pets-turkey.yaml`)
+- **Config IDs**: `kebab-case` matching filename
+- **Environment variables**: `UPPER_SNAKE_CASE` (e.g., `DATABASE_URL`)
+
+## Testing Standards (TDD Required)
+
+### Test-Driven Development Process
+
+**ALWAYS follow this sequence:**
+
+1. **Write failing test** - Define expected behavior
+2. **Run test** - Confirm it fails (red)
+3. **Write minimal code** - Make test pass (green)
+4. **Refactor** - Improve code quality (refactor)
+5. **Repeat** - Continue for next feature
+
+```python
+# GOOD - Test-first approach
+def test_calculate_adoption_fee_for_puppy():
+    # Arrange
+    puppy = {'age_months': 6, 'size': 'small'}
+    
+    # Act
+    fee = calculate_adoption_fee(puppy)
+    
+    # Assert
+    assert fee == 150
+
+# Then implement the function
+def calculate_adoption_fee(dog):
+    if dog['age_months'] < 12 and dog['size'] == 'small':
+        return 150
+    # ... rest of logic
+```
+
+### Test Organization
+
+- **Unit tests**: Test individual functions/methods
+- **Integration tests**: Test component interactions
+- **API tests**: Test endpoint functionality
+- **Frontend tests**: Test component behavior
+
+```bash
+# Backend test commands
+source venv/bin/activate
+pytest tests/ -m "not slow" -v      # Fast tests (development)
+pytest tests/ -m "unit" -v          # Unit tests only
+pytest tests/ -m "api" -v           # API tests only
+
+# Frontend test commands
+cd frontend
+npm test                            # All tests
+npm test -- --coverage              # With coverage
+```
+
+## Configuration Standards
+
+### YAML Configuration Files
+
+- **Schema version**: Always specify version
+- **Consistent structure**: Follow established patterns
+- **Clear organization**: Group related settings
+- **Validation**: Include required fields
+
+```yaml
+# GOOD - Organization configuration
+schema_version: "1.0"
+id: "pets-turkey"
+name: "Pets Turkey"
+enabled: true
+
+scraper:
+  class_name: "PetsTurkeyScraper"
+  module: "scrapers.pets_turkey.dogs_scraper"
+  config:
+    rate_limit_delay: 2.0
+    max_retries: 3
+    timeout: 30
+
+metadata:
+  website_url: "https://petskurtulusis.com"
+  description: "Turkish rescue organization"
+  location:
+    country: "Turkey"
+    city: "Istanbul"
+  service_regions: ["Turkey", "Europe"]
+  ships_to: ["US", "CA", "EU"]
+```
+
+## Enhanced Python Patterns
+
+### Type Hints and Documentation
+
+```python
+from typing import List, Optional, Dict, Any
+
+def get_animals_by_organization(
+    organization_id: int, 
+    limit: Optional[int] = 20
+) -> List[Dict[str, Any]]:
+    """
+    Fetch animals from a specific organization.
+    
+    Args:
+        organization_id: ID of the organization
+        limit: Maximum number of animals to return
+        
+    Returns:
+        List of animal dictionaries
+    """
+    # Implementation here
+    pass
+```
+
+### Error Handling Patterns
+
+```python
+# GOOD - Comprehensive error handling
+def scrape_organization_data(config):
+    try:
+        data = fetch_data(config['url'])
+        validated_data = validate_data(data)
+        return process_data(validated_data)
+    except ValidationError as e:
+        logger.error(f"Validation failed: {e}")
+        raise
+    except NetworkError as e:
+        logger.warning(f"Network issue: {e}")
+        return []  # Return empty list for network issues
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise
+```
+
+## Enhanced JavaScript/React Patterns
+
+### Security Requirements
+
+```javascript
+// GOOD - Always sanitize user content
+import { sanitizeText } from '@/utils/security';
+
+function DogCard({ dog }) {
+  return (
+    <div className="dog-card">
+      <h3>{sanitizeText(dog.name)}</h3>
+      <p>{sanitizeText(dog.description)}</p>
+    </div>
+  );
+}
+```
+
+### Component Structure Standards
+
+```javascript
+// GOOD - Proper component structure
+'use client'; // For client components
+
+import { useState, useEffect, useMemo } from 'react';
+import { sanitizeText } from '@/utils/security';
+
+function DogFilters({ filters, onFilterChange }) {
+  // 1. Hooks at the top
+  const [isExpanded, setIsExpanded] = useState(false);
+  const { user } = useAuth();
+
+  // 2. Derived values
+  const availableBreeds = useMemo(
+    () => getUniqueBreeds(filters.dogs),
+    [filters.dogs]
+  );
+
+  // 3. Event handlers
+  const handleBreedChange = (breed) => {
+    onFilterChange({ ...filters, breed });
+  };
+
+  // 4. Early returns for edge cases
+  if (!filters) return null;
+
+  // 5. Main render
+  return (
+    <div className="dog-filters">
+      {/* Component content */}
+    </div>
+  );
+}
+```
+
 ## File Size Limits
 
 - **Backend**: Maximum 200 lines per file
 - **Frontend**: Maximum 150 lines per component
 - **Tests**: Can be longer but prefer multiple focused test files
+- **Configuration**: Keep YAML files focused and readable
 
 When files grow too large:
 
 1. Extract helper functions to utilities
 2. Split components into smaller sub-components
 3. Create separate modules for related functionality
+4. Use composition over inheritance
+
+## Anti-Patterns (Never Do)
+
+### Code Quality
+- ❌ Skip tests or write code without tests
+- ❌ Delete/modify tests to make them pass
+- ❌ Use localStorage/sessionStorage in frontend
+- ❌ Mutate state or data structures
+- ❌ Create files >200 lines (backend) or >150 lines (frontend)
+- ❌ Commit directly to main branch
+
+### Security
+- ❌ Display user content without sanitization
+- ❌ Store sensitive data in frontend
+- ❌ Skip input validation
+- ❌ Use eval() or similar unsafe functions
+
+### Performance
+- ❌ Make API calls without rate limiting
+- ❌ Create unnecessary re-renders
+- ❌ Skip database indexing for common queries
+- ❌ Load all data at once without pagination

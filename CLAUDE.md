@@ -108,6 +108,12 @@ configs/      # Organization YAMLs
 ## References
 
 - Detailed examples: `docs/examples/`
-- API patterns: `docs/api_reference.md`
+- API patterns: `docs/api/reference.md`
+- API examples: `docs/api/examples.md`
 - Testing guide: `TESTING.md`
-- Troubleshooting: `docs/troubleshooting_guide.md`
+- Development workflow: `docs/development/workflow.md`
+- Contributing guide: `docs/development/contributing.md`
+- Installation guide: `docs/getting-started/installation.md`
+- Configuration guide: `docs/getting-started/configuration.md`
+- Troubleshooting: `docs/operations/troubleshooting.md`
+- Production deployment: `docs/operations/production-deployment.md`

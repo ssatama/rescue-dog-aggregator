@@ -436,7 +436,7 @@ When implementing new features or modifying existing CTA optimization components
    - Document any new utility functions or API integrations
 
 2. **Testing Documentation**:
-   - Update test counts in `docs/development_workflow.md`
+   - Update test counts in `docs/development/workflow.md`
    - Add new test files to testing strategy guides
    - Document any new testing patterns or mocking strategies
 

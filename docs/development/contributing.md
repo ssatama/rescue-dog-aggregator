@@ -37,9 +37,9 @@ We are committed to providing a welcoming and inclusive environment for all cont
 
 Before contributing, ensure you have:
 
-1. **Development Environment**: Follow our [Installation Guide](docs/installation_guide.md)
-2. **Testing Setup**: Review [TESTING.md - Testing Philosophy](TESTING.md#testing-philosophy)
-3. **Development Workflow**: Familiarize yourself with [TDD methodology](docs/development_workflow.md#test-driven-development-tdd)
+1. **Development Environment**: Follow our [Installation Guide](../getting-started/installation.md)
+2. **Testing Setup**: Review [Testing Guide](testing.md)
+3. **Development Workflow**: Familiarize yourself with [Development Workflow](workflow.md)
 4. **Git Knowledge**: Basic familiarity with Git and GitHub workflows
 
 ### Fork and Clone
@@ -57,7 +57,7 @@ Before contributing, ensure you have:
 
 ### Development Setup
 
-Follow the complete setup in our [Installation Guide](docs/installation_guide.md):
+Follow the complete setup in our [Installation Guide](../getting-started/installation.md):
 
 ```bash
 # Backend setup
@@ -370,12 +370,18 @@ npm test -- --coverage
 
 ```
 docs/
-├── api_reference.md          # API endpoints and examples
-├── installation_guide.md     # Setup instructions
-├── development_workflow.md   # Development processes
-├── troubleshooting_guide.md  # Common issues and solutions
-├── weekly_scraping_guide.md  # Production operations
-├── scraper_design.md         # Scraper architecture
+├── api/
+│   └── reference.md         # API endpoints and examples
+├── getting-started/
+│   ├── installation.md      # Setup instructions
+│   └── configuration.md     # Configuration system
+├── development/
+│   ├── workflow.md          # Development processes
+│   └── contributing.md      # This file
+├── operations/
+│   ├── troubleshooting.md   # Common issues and solutions
+│   ├── weekly-scraping.md   # Production operations
+│   └── production-deployment.md
 └── ... (feature-specific docs)
 ```
 
@@ -551,9 +557,9 @@ We use semantic versioning (MAJOR.MINOR.PATCH):
 ### Resources
 
 - **Documentation**: Check [docs/](docs/) directory
-- **API Reference**: [docs/api_reference.md](docs/api_reference.md)
-- **Troubleshooting**: [docs/troubleshooting_guide.md](docs/troubleshooting_guide.md)
-- **Installation**: [docs/installation_guide.md](docs/installation_guide.md)
+- **API Reference**: [docs/api/reference.md](../api/reference.md)
+- **Troubleshooting**: [docs/operations/troubleshooting.md](../operations/troubleshooting.md)
+- **Installation**: [docs/getting-started/installation.md](../getting-started/installation.md)
 
 ### Communication
 

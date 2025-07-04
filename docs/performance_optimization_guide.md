@@ -280,4 +280,4 @@ Key metrics to track in production:
 - Verify keyboard navigation
 - Test with screen readers
 
-For detailed troubleshooting, see the main [troubleshooting guide](troubleshooting_guide.md).
+For detailed troubleshooting, see the main [troubleshooting guide](operations/troubleshooting.md).

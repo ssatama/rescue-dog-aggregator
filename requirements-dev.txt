@@ -1,3 +1,0 @@
-# === Development-only dependencies ===
-# Include base requirements
--r requirements.txt

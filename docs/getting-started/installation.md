@@ -543,7 +543,7 @@ If you encounter issues:
 1. **Check the logs**: Look at console output and log files
 2. **Verify prerequisites**: Ensure all required software is installed
 3. **Run tests**: Use `npm test` and `python -m pytest tests/`
-4. **Check documentation**: Review [troubleshooting guide](troubleshooting_guide.md)
+4. **Check documentation**: Review [troubleshooting guide](../operations/troubleshooting.md)
 5. **Submit an issue**: Include system information and error messages
 
 ### Performance Optimization
@@ -576,6 +576,6 @@ After successful installation:
 5. **Monitoring**: Set up logging and monitoring solutions
 
 For ongoing maintenance, see:
-- [Weekly Scraping Guide](weekly_scraping_guide.md)
-- [API Reference](api_reference.md)
-- [Contributing Guide](../CONTRIBUTING.md)
+- [Weekly Scraping Guide](../operations/weekly-scraping.md)
+- [API Reference](../api/reference.md)
+- [Contributing Guide](../development/contributing.md)

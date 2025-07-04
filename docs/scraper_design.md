@@ -9,7 +9,7 @@ As of 2024, the scraper system uses a configuration-driven approach where scrape
 - **Automatic database sync**: Organizations sync from configs to database
 - **Management commands**: CLI tools for validation and management
 
-See [configuration_system.md](configuration_system.md) for detailed configuration guide.
+See [Configuration System Guide](getting-started/configuration.md) for detailed configuration guide.
 
 ## Legacy Note
 

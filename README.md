@@ -70,9 +70,9 @@ metadata:
 
 ### Quick Start
 
-**For complete setup instructions**, see: **[Installation Guide](docs/installation_guide.md)**
+**For complete setup instructions**, see: **[Installation Guide](docs/getting-started/installation.md)**
 
-**If you encounter setup issues**, refer to: [Troubleshooting Guide](docs/troubleshooting_guide.md)
+**If you encounter setup issues**, refer to: [Troubleshooting Guide](docs/operations/troubleshooting.md)
 
 **Basic setup:**
 ```bash
@@ -101,7 +101,7 @@ source venv/bin/activate && python -m pytest tests/ -m "not slow" -v
 cd frontend && npm test
 ```
 
-**For complete testing strategy**, see: **[Development Workflow - Testing Guide](docs/development_workflow.md#testing-strategy)**
+**For complete testing strategy**, see: **[Testing Guide](TESTING.md)**
 
 ## 🔧 Configuration Management
 
@@ -114,7 +114,7 @@ x      # Sync configs to database
 python management/config_commands.py run-all  # Run all scrapers
 ```
 
-**For complete configuration guide**, see: **[Configuration System Documentation](docs/configuration_system.md)**
+**For complete configuration guide**, see: **[Configuration System Documentation](docs/getting-started/configuration.md)**
 
 ## 🗓️ Weekly Scraping & Production Operations
 
@@ -126,24 +126,26 @@ python management/config_commands.py run-all  # Run all scrapers
 0 2 * * 1 cd /path/to/rescue-dog-aggregator && python management/config_commands.py run-all
 ```
 
-**For complete production operations guide**, see: **[Weekly Scraping Guide](docs/weekly_scraping_guide.md)**
+**For complete production operations guide**, see: **[Weekly Scraping Guide](docs/operations/weekly-scraping.md)**
 
 ## 📚 Documentation Index
 
 ### 🚀 Getting Started
-- **[Installation Guide](docs/installation_guide.md)** - Complete setup for development and production
-- **[API Reference](docs/api_reference.md)** - Comprehensive API documentation with examples
-- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to the project
+- **[Installation Guide](docs/getting-started/installation.md)** - Complete setup for development and production
+- **[Quick Start Guide](docs/getting-started/quick-start.md)** - Fast setup for development
+- **[API Reference](docs/api/reference.md)** - Comprehensive API documentation
+- **[API Examples](docs/api/examples.md)** - Practical usage examples
+- **[Contributing Guide](docs/development/contributing.md)** - How to contribute to the project
 
 ### 🏗️ Architecture & Development
 - **[Project Overview](docs/project_overview.md)** - High-level architecture and design decisions
 - **[Frontend Architecture](docs/frontend_architecture.md)** - Next.js 15 components and patterns
 - **[Scraper Design](docs/scraper_design.md)** - Configuration-driven scraper architecture
-- **[Development Workflow](docs/development_workflow.md)** - TDD methodology and best practices
+- **[Development Workflow](docs/development/workflow.md)** - TDD methodology and best practices
 
 ### 🔧 Configuration & Operations
-- **[Configuration System](docs/configuration_system.md)** - YAML-based organization setup
-- **[Weekly Scraping Guide](docs/weekly_scraping_guide.md)** - Production operations and monitoring
+- **[Configuration System](docs/getting-started/configuration.md)** - YAML-based organization setup
+- **[Weekly Scraping Guide](docs/operations/weekly-scraping.md)** - Production operations and monitoring
 - **[Database Migration History](database/migration_history.md)** - All schema changes and migrations
 
 ### 🧪 Testing & Quality
@@ -152,9 +154,8 @@ python management/config_commands.py run-all  # Run all scrapers
 - **[Performance Optimization](docs/performance_optimization_guide.md)** - Mobile, accessibility, and Core Web Vitals
 
 ### 🚨 Troubleshooting & Monitoring
-- **[Troubleshooting Guide](docs/troubleshooting_guide.md)** - Common issues and solutions
-- **[Navigation Troubleshooting](docs/navigation_troubleshooting_guide.md)** - Hero image loading fixes
-- **[Production Deployment](docs/production_deployment.md)** - Deployment and monitoring setup
+- **[Troubleshooting Guide](docs/operations/troubleshooting.md)** - Common issues and solutions
+- **[Production Deployment](docs/operations/production-deployment.md)** - Deployment and monitoring setup
 
 ### 📱 Features & Implementation
 - **[CTA Optimization](docs/cta_optimization_guide.md)** - Favorites, toast notifications, mobile UX

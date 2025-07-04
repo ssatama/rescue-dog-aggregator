@@ -588,8 +588,8 @@ console.log('RelatedDogsSection state:', { loading, error, relatedDogs });
 
 ### Primary References
 - `docs/frontend_architecture.md` - Complete frontend architecture
-- `docs/development_workflow.md` - TDD methodology and testing
-- `docs/api_reference.md` - API endpoint documentation
+- `docs/development/workflow.md` - TDD methodology and testing
+- `docs/api/reference.md` - API endpoint documentation
 
 ### Implementation Guides
 - `docs/cta_optimization_guide.md` - Related UX patterns
