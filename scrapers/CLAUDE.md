@@ -3,7 +3,7 @@
 ## Workflow
 
 1. Create YAML config in `configs/organizations/`
-2. Write extraction tests with HTML fixtures
+2. Write extraction tests with HTML fixtures / DOM structures
 3. Implement scraper inheriting from BaseScraper
 4. Test with real site (respecting rate limits)
 
