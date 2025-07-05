@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 
 from utils.standardization import apply_standardization, get_size_from_breed, standardize_age, standardize_breed
@@ -137,6 +139,76 @@ class TestAgeStandardization:
 
         result = standardize_age(None)
         assert result["age_category"] is None
+
+    def test_birth_date_format_mm_yyyy(self):
+        """Test parsing of birth date in MM/YYYY format."""
+        # Test current year birth (should be very young)
+        current_year = datetime.now().year
+        birth_date = f"01/{current_year}"
+        result = standardize_age(birth_date)
+
+        # Should be categorized based on months since birth
+        assert result["age_min_months"] is not None
+        assert result["age_max_months"] is not None
+        assert result["age_category"] in ["Puppy", "Young"]
+
+        # Test 2-year-old dog (should be Young)
+        birth_date = f"01/{current_year - 2}"
+        result = standardize_age(birth_date)
+        assert result["age_category"] == "Young"
+        assert result["age_min_months"] >= 20  # At least 20 months old
+        assert result["age_max_months"] <= 40  # Less than 40 months old
+
+    def test_birth_date_format_born_mm_yyyy(self):
+        """Test parsing of birth date with 'Born' prefix."""
+        current_year = datetime.now().year
+
+        # Test "Born MM/YYYY" format
+        birth_date = f"Born 03/{current_year - 4}"
+        result = standardize_age(birth_date)
+        assert result["age_category"] == "Adult"
+        assert result["age_min_months"] >= 45  # Around 4 years old
+
+        # Test "Born MM/YYYY" for puppy
+        birth_date = f"Born 11/{current_year}"
+        result = standardize_age(birth_date)
+        # Should be puppy if born recently this year
+        expected_months = datetime.now().month - 11
+        if expected_months <= 0:
+            expected_months += 12  # Born last year
+        if expected_months < 12:
+            assert result["age_category"] == "Puppy"
+
+    def test_birth_date_format_yyyy(self):
+        """Test parsing of birth date with just year."""
+        current_year = datetime.now().year
+
+        # Test year-only format (assumes June birth)
+        birth_year = str(current_year - 8)
+        result = standardize_age(birth_year)
+        assert result["age_category"] == "Senior"
+        assert result["age_min_months"] >= 90  # Around 8 years old
+
+    def test_german_unknown_age(self):
+        """Test parsing of German 'Unbekannt' (Unknown)."""
+        result = standardize_age("Unbekannt")
+        assert result["age_category"] is None
+        assert result["age_min_months"] is None
+        assert result["age_max_months"] is None
+
+    def test_birth_date_edge_cases(self):
+        """Test edge cases for birth date parsing."""
+        current_year = datetime.now().year
+
+        # Test future birth date (should return None)
+        future_birth = f"01/{current_year + 1}"
+        result = standardize_age(future_birth)
+        assert result["age_category"] is None
+
+        # Test very old dog (should be Senior)
+        old_birth = f"01/{current_year - 15}"
+        result = standardize_age(old_birth)
+        assert result["age_category"] == "Senior"
 
 
 @pytest.mark.slow

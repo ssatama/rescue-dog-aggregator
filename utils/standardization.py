@@ -254,6 +254,67 @@ def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optiona
         months = int(weeks / 4.3)  # Approximate conversion
         return "Puppy", months, min(months + 2, 12)
 
+    # Check for birth date pattern (e.g., "Born 03/2020", "03/2020", "Born 2020")
+    from datetime import datetime
+
+    current_date = datetime.now()
+
+    # Pattern 1: Born MM/YYYY or MM/YYYY
+    birth_date_match = re.search(r"(?:born\s*)?(\d{1,2})[/-](\d{4})", age_text)
+    if birth_date_match:
+        try:
+            birth_month = int(birth_date_match.group(1))
+            birth_year = int(birth_date_match.group(2))
+
+            # Calculate age in months
+            age_years = current_date.year - birth_year
+            age_months = age_years * 12 + (current_date.month - birth_month)
+
+            # Handle future birth months in current year (assume they meant last year)
+            if age_months < 0 and age_years == 0:
+                age_months += 12  # Born last year, not this year
+
+            # Ensure non-negative age after adjustment
+            if age_months < 0:
+                return None, None, None
+
+            # Determine category based on age
+            if age_months < 12:
+                return "Puppy", max(0, age_months), min(age_months + 2, 12)
+            elif age_months < 36:
+                return "Young", age_months, min(age_months + 6, 36)
+            elif age_months < 96:
+                return "Adult", age_months, min(age_months + 12, 96)
+            else:
+                return "Senior", age_months, age_months + 24
+        except (ValueError, TypeError):
+            pass
+
+    # Pattern 2: Born YYYY (just year)
+    birth_year_match = re.search(r"(?:born\s*)?(\d{4})(?:\s|$)", age_text)
+    if birth_year_match and not re.search(r"\d+\s*(?:years?|months?)", age_text):  # Avoid matching "2 years"
+        try:
+            birth_year = int(birth_year_match.group(1))
+            # Assume born in middle of year (June)
+            age_years = current_date.year - birth_year
+            age_months = age_years * 12 + (current_date.month - 6)
+
+            # Ensure non-negative age
+            if age_months < 0:
+                return None, None, None
+
+            # Add some uncertainty since we don't know exact month
+            if age_months < 12:
+                return "Puppy", max(0, age_months - 3), min(age_months + 3, 12)
+            elif age_months < 36:
+                return "Young", max(12, age_months - 6), min(age_months + 6, 36)
+            elif age_months < 96:
+                return "Adult", max(36, age_months - 6), min(age_months + 6, 96)
+            else:
+                return "Senior", max(96, age_months - 6), age_months + 24
+        except (ValueError, TypeError):
+            pass
+
     # Check for exact standardized category names first (fastest check)
     if age_text == "puppy":
         return "Puppy", 2, 10
@@ -297,6 +358,10 @@ def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optiona
                 return "Adult", start_months, end_months
             else:
                 return "Senior", start_months, end_months
+
+    # Check for German "Unbekannt" (Unknown)
+    if "unbekannt" in age_text:
+        return None, None, None
 
     # If we can't determine, return None
     return None, None, None

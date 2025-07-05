@@ -267,6 +267,11 @@ age_patterns = {
     r"(\d+)\s+months?\s+old": lambda m: int(m.group(1)),
     r"(\d+\.5)\s+years?": lambda m: int(float(m.group(1)) * 12),
     
+    # Birth date patterns (NEW)
+    r"born\s+(\d{1,2})/(\d{4})": calculate_age_from_birth_date,
+    r"(\d{1,2})/(\d{4})": calculate_age_from_birth_date,  # MM/YYYY format
+    r"born\s+(\d{4})": calculate_age_from_birth_year,     # Born YYYY format
+    
     # Descriptive patterns
     r"puppy|puppies": 6,      # Average puppy age
     r"young|juvenile": 18,    # Young adult
@@ -277,15 +282,51 @@ age_patterns = {
     r"cachorro": 6,           # Spanish: puppy
     r"joven": 18,             # Spanish: young
     r"adulto": 48,            # Spanish: adult
-    r"anciano": 96            # Spanish: senior
+    r"anciano": 96,           # Spanish: senior
+    r"unbekannt": None        # German: unknown
 }
+```
+
+**Birth Date Processing** (Enhanced Feature):
+The age standardization system now supports birth date formats commonly used by European rescue organizations. This enhancement was specifically implemented to support Daisy Family Rescue e.V. (Germany) and other organizations that provide birth dates instead of descriptive ages:
+
+```python
+def parse_birth_date(age_text: str) -> Optional[Tuple[int, int]]:
+    """Parse birth dates in MM/YYYY or 'Born MM/YYYY' format."""
+    
+    # Pattern 1: Born MM/YYYY or MM/YYYY
+    birth_date_match = re.search(r"(?:born\s*)?(\d{1,2})[/-](\d{4})", age_text, re.IGNORECASE)
+    if birth_date_match:
+        birth_month = int(birth_date_match.group(1))
+        birth_year = int(birth_date_match.group(2))
+        
+        # Calculate current age in months
+        current_date = datetime.now()
+        age_years = current_date.year - birth_year
+        age_months = age_years * 12 + (current_date.month - birth_month)
+        
+        return (age_months, age_months + 12)  # Range with 1-year uncertainty
+    
+    # Pattern 2: Born YYYY (year only, assume June birth)
+    year_match = re.search(r"(?:born\s*)?(\d{4})$", age_text, re.IGNORECASE)
+    if year_match:
+        birth_year = int(year_match.group(1))
+        assumed_birth_month = 6  # Mid-year assumption
+        
+        current_date = datetime.now()
+        age_years = current_date.year - birth_year
+        age_months = age_years * 12 + (current_date.month - assumed_birth_month)
+        
+        return (age_months, age_months + 12)
+    
+    return None
 ```
 
 **Age Categories**:
 - **Puppy**: 0-12 months
-- **Young**: 1-3 years (12-36 months)
-- **Adult**: 3-7 years (36-84 months)
-- **Senior**: 7+ years (84+ months)
+- **Young**: 1-3 years (12-36 months)  
+- **Adult**: 3-8 years (36-96 months)
+- **Senior**: 8+ years (96+ months)
 
 ### Size Standardization with Weight Integration
 
