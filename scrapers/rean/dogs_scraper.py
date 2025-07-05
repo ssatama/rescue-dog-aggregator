@@ -1014,20 +1014,30 @@ class REANScraper(BaseScraper):
                     actual_name.append(word)
             if actual_name:
                 # Take the last non-descriptive word as the name
-                return actual_name[-1]
+                final_name = actual_name[-1]
+                # Filter out organization name
+                if final_name.lower() == "rean":
+                    return None
+                return final_name
 
         # Pattern 2: "Our Name is looking for..."
         our_pattern = r"^Our\s+([A-Za-z]+)\s+is\s+looking"
         match = re.search(our_pattern, text.strip())
         if match:
-            return match.group(1).strip()
+            name = match.group(1).strip()
+            if name.lower() == "rean":
+                return None
+            return name
 
         # Pattern 3: Handle location prefixes in name extraction
         # "- Location Name is..." or "- in Location Name is..."
         location_pattern = r"^-\s*(?:in\s+)?[A-Za-z]+\s+([A-Za-z]+)\s+(?:-\s+\d+\s+(?:months?|years?)\s+old\s+)?(?:is|was)"
         match = re.search(location_pattern, text.strip())
         if match:
-            return match.group(1).strip()
+            name = match.group(1).strip()
+            if name.lower() == "rean":
+                return None
+            return name
 
         # Pattern 4: Look for capitalized words at the beginning, excluding locations
         words = text.strip().split()[:7]  # Check first 7 words for more context
@@ -1057,6 +1067,9 @@ class REANScraper(BaseScraper):
                 continue
             if word[0].isupper() and word.isalpha() and len(word) > 2:
                 if word.lower() not in skip_words:
+                    # Filter out organization name
+                    if word.lower() == "rean":
+                        continue
                     return word
 
         return None

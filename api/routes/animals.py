@@ -452,15 +452,13 @@ async def get_distinct_available_regions(
 ):
     """Get a distinct list of regions within a specific country organizations can adopt to."""
     try:
-        # Query distinct, non-null, non-empty regions for the specified country
-        # Also join with organizations to ensure we only consider active orgs
+        # Query distinct regions from organizations service_regions JSONB field
         cursor.execute(
             """
-            SELECT DISTINCT sr.region
-            FROM service_regions sr
-            JOIN organizations o ON sr.organization_id = o.id
-            WHERE sr.country = %s AND sr.region IS NOT NULL AND sr.region != '' AND o.active = TRUE
-            ORDER BY sr.region ASC
+            SELECT DISTINCT jsonb_array_elements_text(service_regions) as region
+            FROM organizations
+            WHERE country = %s AND service_regions IS NOT NULL AND active = TRUE
+            ORDER BY region ASC
             """,
             (country,),  # Pass the country as a parameter
         )

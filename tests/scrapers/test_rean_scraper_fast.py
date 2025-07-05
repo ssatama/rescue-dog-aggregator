@@ -45,6 +45,21 @@ class TestREANScraperFast:
             assert scraper.extract_name(text) == expected
 
     @pytest.mark.unit
+    def test_extract_name_filters_organization_name(self, scraper):
+        """Test that organization name 'REAN' is filtered out."""
+        test_cases = [
+            ("REAN is looking for homes", None),
+            ("rean needs your help", None),
+            ("Rean dogs available", None),
+            ("REAN", None),
+            ("Reana is a sweet dog", "Reana"),  # Valid name similar to REAN
+            ("Dean is 2 years old", "Dean"),  # Valid name containing 'ean'
+        ]
+
+        for text, expected in test_cases:
+            assert scraper.extract_name(text) == expected
+
+    @pytest.mark.unit
     def test_extract_age_patterns(self, scraper):
         """Test age extraction patterns quickly."""
         test_cases = [
