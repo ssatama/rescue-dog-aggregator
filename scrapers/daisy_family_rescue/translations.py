@@ -565,10 +565,12 @@ def get_translation_cache_stats() -> Dict[str, int]:
     Returns:
         Dictionary with cache statistics
     """
-    return {"cache_size": len(_translation_cache), "cache_types": len(set(key.split(":")[0] for key in _translation_cache.keys()))}
+    return {
+        "cache_size": len(_translation_cache),
+        "cache_types": len(set(key.split(":")[0] for key in _translation_cache.keys())),
+    }
 
 
 def clear_translation_cache() -> None:
     """Clear the translation cache."""
-    global _translation_cache
     _translation_cache.clear()
