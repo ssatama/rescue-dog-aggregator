@@ -483,7 +483,7 @@ export default function DogDetailClient({ params = {} }) {
                         <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">About {sanitizeText(dog.name)}</h2>
                         
                         <DogDescription
-                          description={dog?.properties?.description || ''}
+                          description={dog?.properties?.description || dog?.properties?.raw_description || ''}
                           dogName={dog.name}
                           organizationName={dog.organization?.name}
                           className="mt-0"

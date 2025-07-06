@@ -389,3 +389,112 @@ This approach ensures that all images are properly loaded before extraction, pre
 - Session tracking maintains data consistency
 - Quality scoring validates extraction success
 - Metrics collection enables monitoring and optimization
+
+### Squarespace-Specific Patterns (The Underdog Implementation)
+
+The Underdog scraper demonstrates advanced patterns for handling Squarespace-based websites, which have unique challenges:
+
+#### Lazy Loading Image Extraction
+
+**Challenge**: Squarespace uses `src="No src"` with actual URLs in `data-src` attributes.
+
+**Solution**: Priority-based extraction strategy:
+
+```python
+def _extract_hero_image(self, soup: BeautifulSoup) -> Optional[str]:
+    # PRIORITY 1: Extract from data-src attributes (working URLs)
+    gallery_imgs = soup.select('.ProductItem-gallery img[data-src]')
+    for img in gallery_imgs:
+        data_src = img.get('data-src', '')
+        if data_src.startswith('http'):
+            # Add format parameter for optimization
+            if '?format=' not in data_src:
+                data_src += '?format=1500w'
+            return data_src
+    
+    # PRIORITY 2: Alt-based URL construction
+    # PRIORITY 3: Traditional src extraction
+```
+
+#### Multi-Language Content Processing
+
+**Challenge**: Flag emojis in names require country extraction before text cleaning.
+
+**Solution**: Sequential processing with state preservation:
+
+```python
+def scrape_animal_details(self, url: str) -> Optional[Dict[str, Any]]:
+    # Extract raw name first
+    raw_name = self._extract_raw_name(soup)  # "Vicky 🇬🇧"
+    
+    # Check availability BEFORE cleaning (critical for status detection)
+    if not self._is_available_dog(raw_name):
+        return None
+    
+    # Extract country from flag emoji
+    country = self._extract_country_from_name(raw_name)
+    
+    # Clean name for final output
+    name = self._clean_name(raw_name)  # "Vicky"
+```
+
+#### Flexible Property Parsing
+
+**Challenge**: HTML structure varies between Q&A on same line vs separate lines.
+
+**Solution**: Dual-mode parser with line-by-line processing:
+
+```python
+def _extract_properties_and_description(self, text: str) -> Tuple[Dict[str, str], str]:
+    while i < len(lines):
+        line = lines[i].strip()
+        
+        # Handle Q&A on separate lines
+        if line.endswith("?") and any(keyword in line for keyword in PROPERTY_KEYWORDS):
+            if i + 1 < len(lines):
+                next_line = lines[i + 1].strip()
+                if next_line and not next_line.endswith("?"):
+                    properties[line] = next_line
+                    i += 2  # Skip both lines
+                    continue
+        
+        # Handle Q&A on same line (fallback)
+        property_match = re.match(r"^(.+?)\?\s*(.+)$", line)
+        if property_match:
+            # Process combined format
+```
+
+#### Enhanced Data Structure Preservation
+
+**Pattern**: Store both raw and processed data for maximum flexibility:
+
+```python
+"properties": {
+    "raw_qa_data": {                    # Original Q&A pairs
+        "How big?": "Large (around 30kg)",
+        "How old?": "Young adult (around two years)"
+    },
+    "raw_name": "Vicky 🇬🇧",           # Name with original formatting
+    "raw_description": "Full story...", # Complete description text
+    "page_url": "https://..."           # Source URL for debugging
+}
+```
+
+#### Frontend Integration Patterns
+
+**Challenge**: Different organizations store descriptions in different property fields.
+
+**Solution**: Cascading field access in frontend:
+
+```jsx
+// Frontend compatibility pattern
+<DogDescription
+  description={
+    dog?.properties?.description ||           // REAN format
+    dog?.properties?.raw_description ||       // The Underdog format
+    ''                                       // Fallback
+  }
+/>
+```
+
+This pattern allows the frontend to work with multiple scraper data formats without breaking existing functionality.
