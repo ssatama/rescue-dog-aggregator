@@ -51,6 +51,11 @@ class OrganizationLogoUploader:
             logger.warning(f"No logo URL provided for organization {org_id}")
             return {}
 
+        # Skip GIF files - they can be large and cause timeouts
+        if logo_url.lower().endswith(".gif"):
+            logger.info(f"Skipping Cloudinary upload for GIF logo for {org_id}, using original URL")
+            return {"original": logo_url}
+
         # Check Cloudinary configuration
         if not CloudinaryService._check_configuration():
             if force_upload:

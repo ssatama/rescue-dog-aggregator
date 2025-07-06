@@ -9,7 +9,6 @@ import json
 import os
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -126,6 +125,71 @@ class TestConfigurationValidation:
         if missing_modules:
             pytest.fail(f"Missing scraper modules:\n" + "\n".join(missing_modules))
 
+    def test_enhanced_scraper_config_parameters(self):
+        """Test validation of enhanced scraper configuration parameters"""
+        import jsonschema
+
+        schema_file = PROJECT_ROOT / "configs" / "schemas" / "organization.schema.json"
+        assert schema_file.exists(), "Organization schema file not found"
+
+        # Load the schema
+        with open(schema_file, "r", encoding="utf-8") as f:
+            schema = json.load(f)
+
+        # Test valid enhanced config parameters
+        valid_config = {
+            "schema_version": "1.0",
+            "id": "test-org",
+            "name": "Test Organization",
+            "enabled": True,
+            "scraper": {
+                "class_name": "TestScraper",
+                "module": "test.scraper",
+                "config": {
+                    "rate_limit_delay": 2.5,
+                    "max_retries": 3,
+                    "timeout": 240,
+                    "retry_backoff_factor": 2.0,
+                    "batch_size": 6,
+                    "skip_existing_animals": False,
+                },
+            },
+            "metadata": {"website_url": "https://test.com"},
+        }
+
+        # Should validate successfully
+        try:
+            jsonschema.validate(valid_config, schema)
+        except jsonschema.ValidationError as e:
+            pytest.fail(f"Valid enhanced config failed validation: {e.message}")
+
+        # Test invalid retry_backoff_factor (too high)
+        invalid_config = valid_config.copy()
+        invalid_config["scraper"] = invalid_config["scraper"].copy()
+        invalid_config["scraper"]["config"] = invalid_config["scraper"]["config"].copy()
+        invalid_config["scraper"]["config"]["retry_backoff_factor"] = 15.0
+
+        with pytest.raises(jsonschema.ValidationError, match="15.0 is greater than the maximum of 10.0"):
+            jsonschema.validate(invalid_config, schema)
+
+        # Test invalid batch_size (too low)
+        invalid_config_batch = valid_config.copy()
+        invalid_config_batch["scraper"] = invalid_config_batch["scraper"].copy()
+        invalid_config_batch["scraper"]["config"] = invalid_config_batch["scraper"]["config"].copy()
+        invalid_config_batch["scraper"]["config"]["batch_size"] = 0
+
+        with pytest.raises(jsonschema.ValidationError, match="0 is less than the minimum of 1"):
+            jsonschema.validate(invalid_config_batch, schema)
+
+        # Test invalid skip_existing_animals (wrong type)
+        invalid_config_skip = valid_config.copy()
+        invalid_config_skip["scraper"] = invalid_config_skip["scraper"].copy()
+        invalid_config_skip["scraper"]["config"] = invalid_config_skip["scraper"]["config"].copy()
+        invalid_config_skip["scraper"]["config"]["skip_existing_animals"] = "false"
+
+        with pytest.raises(jsonschema.ValidationError, match="'false' is not of type 'boolean'"):
+            jsonschema.validate(invalid_config_skip, schema)
+
 
 class TestDatabaseConfiguration:
     """Test database configuration and connectivity"""
@@ -145,7 +209,12 @@ class TestDatabaseConfiguration:
 
         for table in essential_tables:
             # Check for various CREATE TABLE patterns
-            patterns = [f"CREATE TABLE {table}", f"CREATE TABLE IF NOT EXISTS {table}", f"create table {table}", f"create table if not exists {table}"]
+            patterns = [
+                f"CREATE TABLE {table}",
+                f"CREATE TABLE IF NOT EXISTS {table}",
+                f"create table {table}",
+                f"create table if not exists {table}",
+            ]
 
             table_found = any(pattern in content for pattern in patterns)
             if not table_found:
@@ -256,7 +325,15 @@ class TestPythonEnvironment:
 
     def test_critical_imports_are_available(self):
         """Ensure critical modules can be imported"""
-        critical_modules = ["fastapi", "uvicorn", "pydantic", "psycopg2", "requests", "selenium", "pytest"]
+        critical_modules = [
+            "fastapi",
+            "uvicorn",
+            "pydantic",
+            "psycopg2",
+            "requests",
+            "selenium",
+            "pytest",
+        ]
 
         missing_modules = []
 
@@ -373,7 +450,10 @@ class TestFileSystemIntegrity:
         required_package_dirs = ["api", "api/models", "api/routes", "scrapers", "utils"]
 
         # Optional package directories (may or may not exist)
-        optional_package_dirs = ["database", "tests"]  # May be treated as scripts rather than package  # Test discovery works without __init__.py in modern pytest
+        optional_package_dirs = [
+            "database",
+            "tests",
+        ]  # May be treated as scripts rather than package  # Test discovery works without __init__.py in modern pytest
 
         missing_init_files = []
 
@@ -403,16 +483,32 @@ class TestFileSystemIntegrity:
     def test_no_sensitive_files_in_repo(self):
         """Ensure no sensitive files are accidentally committed"""
         # Only check for truly sensitive files, not development artifacts
-        sensitive_patterns = ["*.key", "*.pem", ".env", "*.pid"]  # But allow .env.example, .env.local, etc.
+        sensitive_patterns = [
+            "*.key",
+            "*.pem",
+            ".env",
+            "*.pid",
+        ]  # But allow .env.example, .env.local, etc.
 
         found_sensitive = []
 
         # Directories to completely skip
-        skip_dirs = {"venv", "node_modules", ".git", "__pycache__", ".pytest_cache", "htmlcov", "coverage", ".next", ".swc", "screenshots", "frontend"}
+        skip_dirs = {
+            "venv",
+            "node_modules",
+            ".git",
+            "__pycache__",
+            ".pytest_cache",
+            "htmlcov",
+            "coverage",
+            ".next",
+            ".swc",
+            "screenshots",
+            "frontend",
+        }
 
         # Use os.walk for better control over directory traversal
         import fnmatch
-        import os
 
         for root, dirs, files in os.walk(PROJECT_ROOT):
             # Remove skip directories from dirs to prevent traversal
@@ -427,7 +523,12 @@ class TestFileSystemIntegrity:
                         # Allow specific non-sensitive .env files and development .env
                         # with non-sensitive content
                         if match.name.startswith(".env"):
-                            if match.name in {".env.example", ".env.local", ".env.test", ".env.sample"}:
+                            if match.name in {
+                                ".env.example",
+                                ".env.local",
+                                ".env.test",
+                                ".env.sample",
+                            }:
                                 continue
                             # For plain .env files, check if they contain only
                             # development/local settings
@@ -442,7 +543,17 @@ class TestFileSystemIntegrity:
                                     has_dev_marker = any("development" in line.lower() for line in lines)
 
                                     # Check for dangerous production indicators
-                                    has_production_markers = any(keyword in content.lower() for keyword in ["prod", "production.", "live.", "aws_access_key", "stripe_live", "paypal_live"])
+                                    has_production_markers = any(
+                                        keyword in content.lower()
+                                        for keyword in [
+                                            "prod",
+                                            "production.",
+                                            "live.",
+                                            "aws_access_key",
+                                            "stripe_live",
+                                            "paypal_live",
+                                        ]
+                                    )
 
                                     # Allow development .env files that clearly indicate development usage
                                     # This handles the case where development

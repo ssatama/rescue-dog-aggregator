@@ -50,6 +50,11 @@ class BaseScraper(ABC):
             self.max_retries = scraper_config.get("max_retries", 3)
             self.timeout = scraper_config.get("timeout", 30)
 
+            # New retry and batch processing settings
+            self.retry_backoff_factor = scraper_config.get("retry_backoff_factor", 2.0)
+            self.batch_size = scraper_config.get("batch_size", 6)
+            self.skip_existing_animals = scraper_config.get("skip_existing_animals", False)
+
             # Set organization name from config
             self.organization_name = self.org_config.name
 
@@ -62,6 +67,11 @@ class BaseScraper(ABC):
             self.rate_limit_delay = 1.0
             self.max_retries = 3
             self.timeout = 30
+
+            # New retry and batch processing settings (defaults)
+            self.retry_backoff_factor = 2.0
+            self.batch_size = 6
+            self.skip_existing_animals = False
 
             # For legacy mode, use a default organization name
             self.organization_name = f"Organization ID {organization_id}"
@@ -494,6 +504,156 @@ class BaseScraper(ABC):
             List of dictionaries, each containing data for one animal
         """
         pass
+
+    def _scrape_with_retry(self, scrape_method, *args, **kwargs):
+        """Execute scraping method with retry logic for connection errors.
+
+        Args:
+            scrape_method: Method to call for scraping
+            *args, **kwargs: Arguments to pass to scrape_method
+
+        Returns:
+            Result from scrape_method or None if all retries exhausted
+        """
+        from selenium.common.exceptions import TimeoutException, WebDriverException
+
+        for attempt in range(self.max_retries):
+            try:
+                result = scrape_method(*args, **kwargs)
+
+                # Validate result doesn't contain error data
+                if result and isinstance(result, dict):
+                    name = result.get("name", "")
+                    if self._is_invalid_name(name):
+                        self.logger.warning(f"Invalid name detected: {name}, treating as failure")
+                        raise ValueError(f"Invalid animal name: {name}")
+
+                return result
+
+            except (TimeoutException, WebDriverException, ValueError) as e:
+                self.logger.warning(f"Scraping attempt {attempt + 1}/{self.max_retries} failed: {e}")
+
+                if attempt < self.max_retries - 1:  # Not the last attempt
+                    # Exponential backoff
+                    delay = self.rate_limit_delay * (self.retry_backoff_factor**attempt)
+                    self.logger.info(f"Retrying in {delay}s...")
+                    time.sleep(delay)
+                else:
+                    self.logger.error(f"All {self.max_retries} attempts failed for {args}")
+
+        return None
+
+    def _is_invalid_name(self, name: str) -> bool:
+        """Check if extracted name indicates a scraping error.
+
+        Args:
+            name: Animal name to validate
+
+        Returns:
+            True if name indicates an error, False if valid
+        """
+        if not name or not isinstance(name, str):
+            return True
+
+        name_lower = name.lower().strip()
+
+        # Common error patterns
+        error_patterns = [
+            "this site cant be reached",
+            "site can't be reached",
+            "connection failed",
+            "page not found",
+            "error 404",
+            "error 500",
+            "dns_probe_finished_nxdomain",
+            "timeout",
+            "unavailable",
+            "access denied",
+        ]
+
+        return any(pattern in name_lower for pattern in error_patterns)
+
+    def _validate_animal_data(self, animal_data: Dict[str, Any]) -> bool:
+        """Enhanced validation that rejects invalid names and data.
+
+        Args:
+            animal_data: Animal data dictionary to validate
+
+        Returns:
+            True if data is valid, False otherwise
+        """
+        if not animal_data or not isinstance(animal_data, dict):
+            return False
+
+        # Check for required fields
+        required_fields = ["name", "external_id", "adoption_url"]
+        for field in required_fields:
+            if not animal_data.get(field):
+                return False
+
+        # Check for invalid names (connection errors)
+        name = animal_data.get("name", "")
+        if self._is_invalid_name(name):
+            self.logger.warning(f"Rejecting animal with invalid name: {name}")
+            return False
+
+        return True
+
+    def _get_existing_animal_urls(self) -> set:
+        """Get set of existing animal URLs for this organization.
+
+        Returns:
+            Set of adoption URLs for existing animals
+        """
+        if not self.conn:
+            self.logger.warning("No database connection for checking existing animals")
+            return set()
+
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                """
+                SELECT adoption_url 
+                FROM animals 
+                WHERE organization_id = %s AND is_available = true
+            """,
+                (self.organization_id,),
+            )
+
+            existing_urls = {row[0] for row in cursor.fetchall() if row[0]}
+            cursor.close()
+
+            self.logger.info(f"Found {len(existing_urls)} existing animals in database")
+            return existing_urls
+
+        except Exception as e:
+            self.logger.error(f"Error querying existing animal URLs: {e}")
+            return set()
+
+    def _filter_existing_urls(self, all_urls: List[str]) -> List[str]:
+        """Filter out existing URLs if skip_existing_animals is enabled.
+
+        Args:
+            all_urls: List of all URLs to potentially process
+
+        Returns:
+            Filtered list of URLs to process
+        """
+        if not self.skip_existing_animals:
+            return all_urls
+
+        existing_urls = self._get_existing_animal_urls()
+
+        if not existing_urls:
+            return all_urls
+
+        # Filter out existing URLs
+        filtered_urls = [url for url in all_urls if url not in existing_urls]
+
+        skipped_count = len(all_urls) - len(filtered_urls)
+        self.logger.info(f"Skipped {skipped_count} existing animals, processing {len(filtered_urls)} new animals")
+
+        return filtered_urls
 
     def get_organization_name(self) -> str:
         """Get organization name for logging."""
