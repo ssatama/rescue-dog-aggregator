@@ -143,7 +143,9 @@ weiblich, kastriert"""
         # Should return 2 containers (from target sections, not medical)
         assert len(result) == 2
 
-    @pytest.mark.unit
+    @pytest.mark.slow
+    @pytest.mark.selenium
+    @pytest.mark.browser
     def test_handle_lazy_loading(self, scraper):
         """Test lazy loading handling."""
         mock_driver = Mock()

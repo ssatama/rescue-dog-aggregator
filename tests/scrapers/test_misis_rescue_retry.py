@@ -9,7 +9,7 @@ from selenium.common.exceptions import TimeoutException, WebDriverException
 from scrapers.misis_rescue.scraper import MisisRescueScraper
 
 
-@pytest.mark.fast
+@pytest.mark.slow
 class TestMisisRescueRetryMechanism:
     """Test retry functionality for connection errors."""
 

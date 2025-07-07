@@ -8,6 +8,9 @@ from bs4 import BeautifulSoup
 from scrapers.theunderdog.theunderdog_scraper import TheUnderdogScraper
 
 
+@pytest.mark.integration
+@pytest.mark.slow
+@pytest.mark.network
 class TestTheUnderdogIntegration:
     """Integration test suite for The Underdog scraper."""
 

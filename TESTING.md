@@ -11,11 +11,14 @@ Comprehensive testing strategy with 259 backend tests and 1,249 frontend tests a
 # Always activate virtual environment first
 source venv/bin/activate
 
-# Fast development tests (~45s)
-python -m pytest tests/ -m "not slow" -v
+# Fast development tests (~55s, excludes browser/complex_setup)
+python -m pytest tests/ -m "not browser and not complex_setup" -v
 
 # Unit tests only (~1s)
 python -m pytest tests/ -m "unit" -v
+
+# Browser tests only (~1m)
+python -m pytest tests/ -m "browser" -v
 
 # Full test suite
 python -m pytest tests/ -v
@@ -51,7 +54,9 @@ We follow strict Test-Driven Development (TDD):
 - **API Tests** (`-m api`): Endpoint testing
 - **Database Tests** (`-m database`): Data integrity
 - **Integration Tests** (`-m integration`): Full workflows
-- **Slow Tests** (`-m slow`): Browser automation, complex setup
+- **Slow Tests** (`-m slow`): Tests with timeout/retry mechanisms
+- **Browser Tests** (`-m browser`): Selenium WebDriver automation
+- **Complex Setup** (`-m complex_setup`): Tests requiring extensive mocking
 
 ### Frontend Tests
 

@@ -23,7 +23,7 @@ class MockBaseScraper(BaseScraper):
         return {"name": "Test Animal", "external_id": "test123", "adoption_url": url}
 
 
-@pytest.mark.fast
+@pytest.mark.slow
 class TestBaseScrapeRetryMechanism:
     """Test retry functionality for ALL scrapers."""
 

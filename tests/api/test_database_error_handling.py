@@ -1,6 +1,10 @@
+from unittest.mock import MagicMock, patch
+
+import psycopg2
 import pytest
 from fastapi.testclient import TestClient
 
+from api.dependencies import get_db_cursor
 from api.main import app
 
 client = TestClient(app)
@@ -53,3 +57,116 @@ class TestDatabaseErrorHandling:
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
+
+
+class TestDatabaseQueryErrors:
+    """Test database query error handling in animals endpoints."""
+
+    def test_get_animals_database_query_error(self):
+        """Test animals endpoint handles database query errors gracefully."""
+
+        def mock_db_cursor_query_error():
+            mock_cursor = MagicMock()
+            mock_cursor.execute.side_effect = psycopg2.Error("Query failed")
+            yield mock_cursor
+
+        with patch.object(app, "dependency_overrides", {}):
+            app.dependency_overrides[get_db_cursor] = mock_db_cursor_query_error
+
+            try:
+                response = client.get("/api/animals")
+                assert response.status_code == 500
+                error_detail = response.json()["detail"]
+                assert "Database query error" in error_detail
+            finally:
+                app.dependency_overrides.clear()
+
+    def test_get_animal_detail_database_query_error(self):
+        """Test animal detail endpoint handles database query errors gracefully."""
+
+        def mock_db_cursor_query_error():
+            mock_cursor = MagicMock()
+            mock_cursor.execute.side_effect = psycopg2.Error("Detail query failed")
+            yield mock_cursor
+
+        with patch.object(app, "dependency_overrides", {}):
+            app.dependency_overrides[get_db_cursor] = mock_db_cursor_query_error
+
+            try:
+                response = client.get("/api/animals/1")
+                assert response.status_code == 500
+                assert "Database query error" in response.json()["detail"]
+            finally:
+                app.dependency_overrides.clear()
+
+    def test_get_animals_statistics_database_query_error(self):
+        """Test animals statistics endpoint handles database query errors gracefully."""
+
+        def mock_db_cursor_query_error():
+            mock_cursor = MagicMock()
+            mock_cursor.execute.side_effect = psycopg2.Error("Statistics query failed")
+            yield mock_cursor
+
+        with patch.object(app, "dependency_overrides", {}):
+            app.dependency_overrides[get_db_cursor] = mock_db_cursor_query_error
+
+            try:
+                response = client.get("/api/animals/statistics")
+                assert response.status_code == 500
+                assert "Database query error" in response.json()["detail"]
+            finally:
+                app.dependency_overrides.clear()
+
+    def test_get_animals_random_database_query_error(self):
+        """Test random animals endpoint handles database query errors gracefully."""
+
+        def mock_db_cursor_query_error():
+            mock_cursor = MagicMock()
+            mock_cursor.execute.side_effect = psycopg2.Error("Random query failed")
+            yield mock_cursor
+
+        with patch.object(app, "dependency_overrides", {}):
+            app.dependency_overrides[get_db_cursor] = mock_db_cursor_query_error
+
+            try:
+                response = client.get("/api/animals/random")
+                assert response.status_code == 500
+                assert "Database error" in response.json()["detail"]
+            finally:
+                app.dependency_overrides.clear()
+
+    def test_get_distinct_breeds_database_query_error(self):
+        """Test distinct breeds endpoint handles database query errors gracefully."""
+
+        def mock_db_cursor_query_error():
+            mock_cursor = MagicMock()
+            mock_cursor.execute.side_effect = psycopg2.Error("Breeds query failed")
+            yield mock_cursor
+
+        with patch.object(app, "dependency_overrides", {}):
+            app.dependency_overrides[get_db_cursor] = mock_db_cursor_query_error
+
+            try:
+                response = client.get("/api/animals/meta/breeds")
+                assert response.status_code == 500
+                assert "Failed to fetch breed list" in response.json()["detail"]
+            finally:
+                app.dependency_overrides.clear()
+
+    def test_get_distinct_breed_groups_database_query_error(self):
+        """Test distinct breed groups endpoint handles database query errors gracefully."""
+
+        def mock_db_cursor_query_error():
+            mock_cursor = MagicMock()
+            mock_cursor.execute.side_effect = psycopg2.Error("Breed groups query failed")
+            yield mock_cursor
+
+        with patch.object(app, "dependency_overrides", {}):
+            app.dependency_overrides[get_db_cursor] = mock_db_cursor_query_error
+
+            try:
+                response = client.get("/api/animals/meta/breed_groups")
+                assert response.status_code == 500
+                assert "Failed to fetch breed group list" in response.json()["detail"]
+            finally:
+                app.dependency_overrides.clear()

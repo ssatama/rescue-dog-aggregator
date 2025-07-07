@@ -187,6 +187,9 @@ class TestMisisRescueScraper:
             assert driver is not None
             mock_chrome.assert_called_once()
 
+    @pytest.mark.slow
+    @pytest.mark.selenium
+    @pytest.mark.browser
     def test_detail_page_scraping(self, scraper):
         """Test individual detail page scraping."""
         mock_html = """
