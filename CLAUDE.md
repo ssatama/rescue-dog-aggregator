@@ -9,7 +9,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Backend: Python/FastAPI/PostgreSQL
 - Frontend: Next.js 15/React/TypeScript
 - Testing: pytest (backend), Jest (frontend)
-- Current: 259 backend tests, 1,249 frontend tests
+- Current: 78 backend test files, 74 frontend test files, 7 organizations
 
 ## CRITICAL: Planning-First Workflow
 
@@ -52,15 +52,15 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 ```bash
 # Backend (ALWAYS activate venv first)
 source venv/bin/activate
-pytest tests/ -m "not slow" -v          # Fast tests (307)
-pytest tests/ -v                        # All tests (555)
+pytest tests/ -m "not slow" -v          # Fast tests
+pytest tests/ -v                        # All tests
 
 # Frontend
 cd frontend
-npm test                                # All tests (1,249)
+npm test                                # All tests
 npm run build                          # Verify build
 
-# Config Management
+# Config Management (Configuration-Driven Architecture)
 python management/config_commands.py list
 python management/config_commands.py sync
 python management/config_commands.py run pets-turkey
@@ -79,7 +79,7 @@ api/          # FastAPI backend
 scrapers/     # Web scrapers (see scrapers/CLAUDE.md)
 frontend/     # Next.js app (see frontend/CLAUDE.md)
 tests/        # Backend tests
-configs/      # Organization YAMLs
+configs/      # Organization YAMLs (7 orgs)
 ```
 
 ## Quality Gates (Required for ANY commit)
@@ -98,13 +98,11 @@ configs/      # Organization YAMLs
 
 ## References
 
-- Detailed examples: `docs/examples/`
-- API patterns: `docs/api/reference.md`
-- API examples: `docs/api/examples.md`
-- Testing guide: `TESTING.md`
-- Development workflow: `docs/development/workflow.md`
-- Contributing guide: `docs/development/contributing.md`
-- Installation guide: `docs/getting-started/installation.md`
-- Configuration guide: `docs/getting-started/configuration.md`
-- Troubleshooting: `docs/operations/troubleshooting.md`
-- Production deployment: `docs/operations/production-deployment.md`
+- Architecture: `docs/architecture/`
+- Development: `docs/development/workflow.md`
+- Testing: `docs/development/testing.md`
+- Code examples: `docs/examples/`
+- API reference: `docs/api/reference.md`
+- Getting started: `docs/getting-started/installation.md`
+- Configuration: `docs/getting-started/configuration.md`
+- Operations: `docs/operations/troubleshooting.md`
