@@ -1,35 +1,63 @@
-# Frontend Architecture Guide
+# Frontend Architecture Guide - Rescue Dog Aggregator
 
 ## Table of Contents
 
 - [Overview](#overview)
 - [Technology Stack](#technology-stack)
 - [Architecture Patterns](#architecture-patterns)
+- [Component Library & Design System](#component-library--design-system)
 - [Security Implementation](#security-implementation)
 - [Performance Optimization](#performance-optimization)
-- [Related Dogs Feature](#related-dogs-feature)
 - [Accessibility Features](#accessibility-features)
-- [Hero Section with Animated Statistics](#hero-section-with-animated-statistics)
-- [CTA Optimization Components](#cta-optimization-components)
-- [Error Handling & User Experience](#error-handling--user-experience)
-- [Test-Driven Development](#test-driven-development)
+- [State Management](#state-management)
+- [Routing & Navigation](#routing--navigation)
+- [Testing Strategy](#testing-strategy)
 - [Development Workflow](#development-workflow)
+- [Build & Deployment](#build--deployment)
+- [Error Handling](#error-handling)
 - [Performance Monitoring](#performance-monitoring)
+- [Advanced Features](#advanced-features)
+- [Mobile Experience](#mobile-experience)
+- [SEO & Metadata](#seo--metadata)
+- [Code Quality & Standards](#code-quality--standards)
 - [Future Considerations](#future-considerations)
 
 ## Overview
 
-The Rescue Dog Aggregator frontend is built with **Next.js 15** using the **App Router** architecture, implementing modern React patterns with a focus on **performance**, **security**, **accessibility**, and **maintainability**. The architecture follows a **test-driven development (TDD)** approach with comprehensive coverage across security, performance, accessibility, and functionality.
+The Rescue Dog Aggregator frontend is a modern, comprehensive web application built with **Next.js 15** and the **App Router** architecture. It implements cutting-edge React patterns with a focus on **performance**, **security**, **accessibility**, and **maintainability**. The architecture follows a **test-driven development (TDD)** approach with **2,427 total tests** across comprehensive suites covering functionality, performance, accessibility, and security.
+
+### Key Metrics
+- **Framework**: Next.js 15 with App Router
+- **Test Coverage**: 2,427 tests (2,419 passing, 8 skipped)
+- **Component Count**: 45+ reusable components
+- **Performance**: Core Web Vitals optimized
+- **Accessibility**: WCAG 2.1 AA compliant
+- **Security**: XSS prevention and content sanitization
 
 ## Technology Stack
 
-- **Framework**: Next.js 15 with App Router
-- **Language**: TypeScript/JavaScript
-- **Styling**: Tailwind CSS + shadcn/ui components
+### Core Technologies
+- **Framework**: Next.js 15.3.0 with App Router
+- **Language**: TypeScript/JavaScript (mixed codebase)
+- **Styling**: Tailwind CSS 3.3.2 with custom design system
+- **Component Library**: shadcn/ui with Radix UI primitives
 - **State Management**: React hooks with component-level state
-- **Testing**: Jest + React Testing Library (1,249 tests across 88 suites)
+- **Animation**: Framer Motion 12.18.1 for complex animations
+- **Icons**: Heroicons 2.2.0 + Lucide React 0.487.0
+
+### Development Tools
+- **Testing**: Jest 29.7.0 + React Testing Library 16.3.0
+- **Build**: Next.js built-in bundling and optimization
+- **Linting**: ESLint 9.28.0 with Next.js config
 - **Image Optimization**: Cloudinary integration with lazy loading
-- **Build Tools**: Next.js built-in bundling and optimization
+- **Accessibility Testing**: jest-axe 10.0.0
+
+### UI Framework
+- **Base**: Tailwind CSS with custom color scheme
+- **Components**: shadcn/ui components with Radix UI
+- **Variants**: class-variance-authority for component variants
+- **Utilities**: clsx and tailwind-merge for conditional classes
+- **Animations**: tailwindcss-animate for smooth transitions
 
 ## Architecture Patterns
 
@@ -44,6 +72,7 @@ The application uses **Server Components** for SEO and metadata generation, whil
 **Key Files**:
 - `src/app/dogs/[id]/page.jsx` - Dog detail metadata generation
 - `src/app/organizations/[id]/page.jsx` - Organization metadata generation
+- `src/app/layout.js` - Root layout with global metadata
 
 **Implementation Pattern**:
 ```javascript
@@ -58,6 +87,11 @@ export async function generateMetadata({ params }) {
       title: `${dog.name} - Rescue Dog`,
       description: dog.description,
       images: [{ url: dog.primary_image_url }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${dog.name} - Rescue Dog`,
+      description: dog.description,
     },
   };
 }
@@ -76,8 +110,8 @@ export default function DogPage({ params }) {
 - `src/app/dogs/[id]/DogDetailClient.jsx` - Dog detail UI and state
 - `src/app/organizations/[id]/OrganizationDetailClient.jsx` - Organization UI
 - `src/components/dogs/FilterControls.jsx` - Search and filtering
-- `src/components/dogs/RelatedDogsSection.jsx` - Related dogs display
-- `src/components/dogs/RelatedDogsCard.jsx` - Individual dog cards
+- `src/components/home/HeroSection.jsx` - Animated hero section
+- `src/app/HomeClient.jsx` - Homepage client interactions
 
 **Implementation Pattern**:
 ```javascript
@@ -85,6 +119,7 @@ export default function DogPage({ params }) {
 
 import { useState, useEffect } from 'react';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
+import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 
 export default function DogDetailClient({ dogId }) {
   const [dog, setDog] = useState(null);
@@ -100,13 +135,171 @@ export default function DogDetailClient({ dogId }) {
 
   if (loading) return <LoadingSkeleton />;
   if (error) return <ErrorBoundary error={error} />;
+  if (!dog) return <EmptyState message="Dog not found" />;
 
   return (
-    <div>
+    <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Interactive UI components */}
+      <HeroImageWithBlurredBackground dog={dog} />
+      <RelatedDogsSection organizationId={dog.organization_id} currentDogId={dog.id} />
+      <MobileStickyBar dog={dog} />
     </div>
   );
 }
+```
+
+### Component Architecture Patterns
+
+#### Compound Components Pattern
+```javascript
+// Filter system with compound components
+<DogFilters onFiltersChange={handleFiltersChange}>
+  <DogFilters.Search />
+  <DogFilters.Breed />
+  <DogFilters.Age />
+  <DogFilters.Size />
+  <DogFilters.Location />
+</DogFilters>
+```
+
+#### Render Props Pattern
+```javascript
+// Error boundary with render props
+<ErrorBoundary fallback={({ error, retry }) => (
+  <div className="text-center p-8">
+    <h3>Something went wrong</h3>
+    <button onClick={retry}>Try again</button>
+  </div>
+)}>
+  <DogsList />
+</ErrorBoundary>
+```
+
+#### Hook-based State Management
+```javascript
+// Custom hooks for complex state
+const useDogFilters = () => {
+  const [filters, setFilters] = useState(initialFilters);
+  const [filteredDogs, setFilteredDogs] = useState([]);
+  
+  const updateFilter = useCallback((key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  }, []);
+  
+  return { filters, filteredDogs, updateFilter };
+};
+```
+
+## Component Library & Design System
+
+### Design Tokens
+
+**Color System**: Custom warm color palette with dark mode support
+```css
+:root {
+  /* Light mode - warm palette */
+  --background: 31 100% 98%; /* #FDFBF7 warm off-white */
+  --foreground: 222.2 84% 4.9%;
+  --card: 31 100% 99%;
+  --primary: 221 83% 53%;
+  --orange-600: 234 88% 47%; /* Primary orange */
+  --orange-700: 221 83% 41%; /* Darker orange */
+  
+  /* Shadows with blue tint for premium feel */
+  --shadow-blue-md: 0 4px 6px rgba(59, 130, 246, 0.07);
+  --shadow-blue-lg: 0 10px 15px rgba(59, 130, 246, 0.1);
+}
+
+.dark {
+  /* Dark mode variants */
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+}
+```
+
+**Typography Scale**: Responsive typography with custom font loading
+```css
+.text-hero {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.text-body {
+  font-size: clamp(1rem, 2vw, 1.125rem);
+  line-height: 1.6;
+}
+```
+
+### Component Categories
+
+#### Base Components (shadcn/ui)
+- **Button**: `src/components/ui/button.tsx` - Primary, secondary, outline variants
+- **Card**: `src/components/ui/card.tsx` - Content containers with shadows
+- **Input**: `src/components/ui/input.tsx` - Form inputs with validation states
+- **Badge**: `src/components/ui/badge.tsx` - Status indicators and tags
+- **Alert**: `src/components/ui/alert.tsx` - Notification and message display
+
+#### Layout Components
+- **Header**: `src/components/layout/Header.jsx` - Navigation with theme toggle
+- **Footer**: `src/components/layout/Footer.jsx` - Site footer with links
+- **Layout**: `src/components/layout/Layout.jsx` - Main layout wrapper
+
+#### Specialized Components
+- **AnimatedCounter**: `src/components/ui/AnimatedCounter.jsx` - Scroll-triggered counters
+- **LazyImage**: `src/components/ui/LazyImage.jsx` - Optimized image loading
+- **ThemeToggle**: `src/components/ui/ThemeToggle.jsx` - Dark/light mode switcher
+- **CountryFlag**: `src/components/ui/CountryFlag.jsx` - SVG country flags
+
+#### Business Logic Components
+- **DogCard**: `src/components/dogs/DogCard.jsx` - Dog display cards
+- **FilterControls**: `src/components/dogs/FilterControls.jsx` - Search and filtering
+- **RelatedDogsSection**: `src/components/dogs/RelatedDogsSection.jsx` - Related dogs display
+- **HeroSection**: `src/components/home/HeroSection.jsx` - Animated hero section
+
+### Component Patterns
+
+#### Variant-based Components
+```javascript
+// Using class-variance-authority for variants
+const buttonVariants = cva(
+  "inline-flex items-center justify-center rounded-md text-sm font-medium",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline: "border border-input bg-background hover:bg-accent",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+);
+```
+
+#### Responsive Component Design
+```javascript
+// Mobile-first responsive components
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  <div className="p-4 md:p-6 lg:p-8">
+    <h3 className="text-lg md:text-xl lg:text-2xl font-semibold">
+      {dog.name}
+    </h3>
+  </div>
+</div>
 ```
 
 ## Security Implementation
@@ -135,8 +328,8 @@ export function sanitizeHtml(html) {
   
   // Allow safe HTML tags only
   return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li'],
-    ALLOWED_ATTR: []
+    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3'],
+    ALLOWED_ATTR: ['href', 'target', 'rel']
   });
 }
 
@@ -148,6 +341,13 @@ export function isValidUrl(url) {
     return false;
   }
 }
+
+export function sanitizeClassName(className) {
+  if (!className || typeof className !== 'string') return '';
+  
+  // Only allow alphanumeric, hyphens, underscores, and spaces
+  return className.replace(/[^a-zA-Z0-9\-_\s]/g, '');
+}
 ```
 
 **Usage Pattern**:
@@ -157,263 +357,68 @@ import { sanitizeText, sanitizeHtml } from '@/utils/security';
 // Sanitize all user-generated content
 const safeName = sanitizeText(dog.name);
 const safeDescription = sanitizeHtml(dog.description);
+const safeBreed = sanitizeText(dog.breed);
+```
+
+### Content Security Policy
+
+**Next.js configuration** for secure resource loading:
+```javascript
+// next.config.js
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https', 
+        hostname: 'flagcdn.com',
+        port: '',
+        pathname: '/**',
+      }
+    ],
+  },
+  // Additional security headers
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+        ],
+      },
+    ];
+  },
+};
 ```
 
 ### Development Security
 
 - **No console statements in production** - All logging uses development-only logger
 - **Secure external resource handling** - URL validation for all external links
-- **Content Security Policy** considerations for safe resource loading
+- **Environment-based configurations** - Different security levels for dev/prod
+- **Input validation** - All user inputs sanitized before processing
 
 ## Performance Optimization
 
-### Lazy Image Loading
-
-**Custom LazyImage component** with IntersectionObserver for optimal loading performance.
-
-**Key File**: `src/components/ui/LazyImage.jsx`
-
-```javascript
-import { useState, useRef, useEffect } from 'react';
-
-export default function LazyImage({ src, alt, className, ...props }) {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
-  const imgRef = useRef(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsInView(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (imgRef.current) {
-      observer.observe(imgRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div ref={imgRef} className={className}>
-      {isInView && (
-        <img
-          src={src}
-          alt={alt}
-          onLoad={() => setIsLoaded(true)}
-          className={`transition-opacity duration-300 ${
-            isLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-          {...props}
-        />
-      )}
-    </div>
-  );
-}
-```
-
-### Component Memoization
-
-**Strategic use of React.memo** for expensive components:
-
-```javascript
-import React, { memo } from 'react';
-
-const DogCard = memo(function DogCard({ dog, onClick }) {
-  return (
-    <div onClick={() => onClick(dog.id)}>
-      <LazyImage src={dog.primary_image_url} alt={dog.name} />
-      <h3>{dog.name}</h3>
-      <p>{dog.age_text}</p>
-    </div>
-  );
-});
-
-export default DogCard;
-```
-
-## Related Dogs Feature
-
-### Overview
-
-The **Related Dogs section** increases adoption opportunities by showing more dogs from the same organization on individual dog detail pages. This cross-discovery feature encourages users to explore additional adoption options.
-
-### Architecture
-
-**Key Components**:
-- `src/components/dogs/RelatedDogsSection.jsx` - Main container with state management
-- `src/components/dogs/RelatedDogsCard.jsx` - Individual dog card component
-- `src/services/relatedDogsService.js` - API service for fetching related dogs
-
-### RelatedDogsSection Component
-
-**Purpose**: Displays up to 3 related dogs from the same organization with loading, error, and empty states.
-
-**Key Features**:
-- Automatic organization filtering
-- Current dog exclusion from results
-- Responsive 3-column grid (stacks on mobile)
-- Loading skeleton animations
-- Error boundary integration
-- Empty state with consistent messaging
-
-**Implementation Pattern**:
-```javascript
-'use client';
-
-import { useState, useEffect } from 'react';
-import { getRelatedDogs } from '../../services/relatedDogsService';
-import RelatedDogsCard from './RelatedDogsCard';
-
-export default function RelatedDogsSection({ organizationId, currentDogId, organization }) {
-  const [relatedDogs, setRelatedDogs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    const fetchRelatedDogs = async () => {
-      try {
-        const dogs = await getRelatedDogs(organizationId, currentDogId);
-        setRelatedDogs(dogs.slice(0, 3)); // Limit to 3 dogs
-      } catch (err) {
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (organizationId && currentDogId) {
-      fetchRelatedDogs();
-    }
-  }, [organizationId, currentDogId]);
-
-  // Component renders loading, error, success, or empty states
-}
-```
-
-### RelatedDogsCard Component
-
-**Purpose**: Reusable dog card with 4:3 aspect ratio images, hover effects, and accessibility features.
-
-**Key Features**:
-- **4:3 aspect ratio** images with Cloudinary optimization
-- **Hover effects** on card and dog name
-- **Keyboard navigation** with Enter/Space key support
-- **ARIA compliance** with proper labels and roles
-- **LazyImage integration** with fallback placeholders
-- **Click navigation** to individual dog detail pages
-
-**Implementation Pattern**:
-```javascript
-'use client';
-
-import { useRouter } from 'next/navigation';
-import LazyImage from '../ui/LazyImage';
-import { sanitizeText } from '../../utils/security';
-
-export default function RelatedDogsCard({ dog }) {
-  const router = useRouter();
-
-  const handleCardClick = () => {
-    router.push(`/dogs/${dog.id}`);
-  };
-
-  return (
-    <div
-      className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer"
-      onClick={handleCardClick}
-      tabIndex={0}
-      role="button"
-      aria-label={`View details for ${dog.name}`}
-    >
-      {/* 4:3 Aspect Ratio Image Container */}
-      <div className="aspect-[4/3] w-full overflow-hidden rounded-t-lg">
-        <LazyImage
-          src={dog.primary_image_url}
-          alt={dog.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-        />
-      </div>
-
-      {/* Card Content */}
-      <div className="p-4">
-        <h3 className="text-lg font-semibold hover:text-blue-600 transition-colors">
-          {sanitizeText(dog.name)}
-        </h3>
-        <p className="text-sm text-gray-600">{sanitizeText(dog.breed)}</p>
-        <p className="text-sm text-gray-500">{sanitizeText(dog.age_text)}</p>
-      </div>
-    </div>
-  );
-}
-```
-
-### API Service Integration
-
-**Service Layer**: `src/services/relatedDogsService.js`
-
-**Key Features**:
-- Uses existing `/api/animals` endpoint with organization filtering
-- Excludes current dog from results automatically
-- Leverages smart default filtering (available status, high/medium confidence)
-- Error handling with detailed logging
-
-**Implementation**:
-```javascript
-import { getAnimals } from './animalsService';
-
-export async function getRelatedDogs(organizationId, currentDogId) {
-  // Fetch dogs from same organization
-  const dogs = await getAnimals({
-    organization_id: organizationId,
-    limit: 3,
-    status: 'available'
-  });
-
-  // Filter out current dog
-  return dogs.filter(dog => dog.id !== currentDogId);
-}
-```
-
-### TDD Implementation
-
-**Test Coverage**: 34 comprehensive tests across 3 test suites
-
-**Test Files**:
-- `src/services/__tests__/relatedDogsService.test.js` - API integration (6 tests)
-- `src/components/dogs/__tests__/RelatedDogsCard.test.jsx` - Component behavior (13 tests)
-- `src/components/dogs/__tests__/RelatedDogsSection.test.jsx` - State management (15 tests)
-
-**Test Categories**:
-- **API Integration**: Organization filtering, current dog exclusion, error handling
-- **Component Rendering**: Card layout, responsive design, accessibility
-- **User Interactions**: Click navigation, keyboard support, hover effects
-- **State Management**: Loading states, error boundaries, empty state handling
-
-### Performance Optimizations
-
-**Image Loading**:
-- LazyImage component with IntersectionObserver
-- Cloudinary transformations for optimal sizing
-- Fallback placeholders for loading states
-
-**Component Memoization**:
-- Strategic use of React.memo for expensive renders
-- Dependency optimization in useEffect hooks
-
-**API Efficiency**:
-- Single API call with organization filtering
-- Client-side current dog exclusion
-- Limit to 3 dogs for optimal performance
-
 ### Image Optimization
 
-**Cloudinary integration** with automatic optimization:
+**Cloudinary Integration** with automatic optimization:
 
 ```javascript
 // src/utils/imageUtils.js
@@ -435,6 +440,140 @@ export function getOptimizedImageUrl(originalUrl, options = {}) {
 
   return originalUrl;
 }
+
+export function getResponsiveImageSrcSet(url, sizes = [400, 800, 1200, 1600]) {
+  if (!url) return '';
+  
+  return sizes
+    .map(size => `${getOptimizedImageUrl(url, { width: size })} ${size}w`)
+    .join(', ');
+}
+```
+
+**LazyImage Component** with IntersectionObserver:
+
+```javascript
+// src/components/ui/LazyImage.jsx
+import { useState, useRef, useEffect } from 'react';
+
+export default function LazyImage({ src, alt, className, ...props }) {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isInView, setIsInView] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const imgRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1, rootMargin: '50px' }
+    );
+
+    if (imgRef.current) {
+      observer.observe(imgRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={imgRef} className={className}>
+      {isInView && (
+        <img
+          src={src}
+          alt={alt}
+          onLoad={() => setIsLoaded(true)}
+          onError={() => setHasError(true)}
+          className={`transition-opacity duration-300 ${
+            isLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          {...props}
+        />
+      )}
+      {hasError && (
+        <div className="bg-gray-100 flex items-center justify-center">
+          <span className="text-gray-500">Image unavailable</span>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### Component Optimization
+
+**Strategic React.memo** for expensive components:
+
+```javascript
+import React, { memo } from 'react';
+
+const DogCard = memo(function DogCard({ dog, onClick }) {
+  return (
+    <div onClick={() => onClick(dog.id)} className="dog-card">
+      <LazyImage src={dog.primary_image_url} alt={dog.name} />
+      <h3>{dog.name}</h3>
+      <p>{dog.age_text}</p>
+    </div>
+  );
+});
+
+// Only re-render when dog data changes
+export default DogCard;
+```
+
+**Custom hooks** for performance optimization:
+
+```javascript
+// src/hooks/useFilteredDogs.js
+import { useMemo } from 'react';
+
+export function useFilteredDogs(dogs, filters) {
+  return useMemo(() => {
+    if (!dogs || !filters) return dogs;
+    
+    return dogs.filter(dog => {
+      if (filters.breed && !dog.breed.includes(filters.breed)) return false;
+      if (filters.age && !matchesAgeRange(dog.age, filters.age)) return false;
+      if (filters.size && dog.size !== filters.size) return false;
+      return true;
+    });
+  }, [dogs, filters]);
+}
+```
+
+### Bundle Optimization
+
+**Code splitting** and lazy loading:
+
+```javascript
+// Dynamic imports for heavy components
+const HeavyComponent = dynamic(() => import('./HeavyComponent'), {
+  loading: () => <LoadingSkeleton />,
+  ssr: false
+});
+
+// Route-based code splitting (automatic with App Router)
+export default function DogsPage() {
+  return <DogsPageClient />;
+}
+```
+
+**Tree shaking** configuration:
+```javascript
+// package.json
+{
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.cjs.js"
+    }
+  }
+}
 ```
 
 ## Accessibility Features
@@ -447,6 +586,8 @@ export function getOptimizedImageUrl(originalUrl, options = {}) {
 - **Semantic HTML structure** with proper landmark roles
 - **ARIA labels** for all interactive elements
 - **Screen reader optimization** with descriptive content
+- **Keyboard navigation** support
+- **Focus management** and visual indicators
 
 **Implementation Example**:
 ```javascript
@@ -456,6 +597,7 @@ export function getOptimizedImageUrl(originalUrl, options = {}) {
       type="search"
       aria-label="Search for dogs by name, breed, or location"
       aria-describedby="search-help"
+      onKeyDown={handleKeyDown}
     />
     <div id="search-help" className="sr-only">
       Enter keywords to find available rescue dogs
@@ -464,7 +606,12 @@ export function getOptimizedImageUrl(originalUrl, options = {}) {
 
   <section aria-label="Dog results" aria-live="polite">
     {dogs.map(dog => (
-      <article key={dog.id} aria-label={`${dog.name}, ${dog.age_text} old`}>
+      <article 
+        key={dog.id} 
+        aria-label={`${dog.name}, ${dog.age_text} old`}
+        tabIndex={0}
+        onKeyDown={handleCardKeyDown}
+      >
         <img 
           src={dog.image} 
           alt={`Photo of ${dog.name}, a ${dog.breed} available for adoption`}
@@ -486,22 +633,34 @@ export function getOptimizedImageUrl(originalUrl, options = {}) {
 
 **Full keyboard accessibility** with logical tab order:
 
-```css
-/* Focus indicators */
-.focus-visible:focus {
-  @apply outline-2 outline-blue-500 outline-offset-2;
-}
-
-/* Skip links for keyboard users */
-.skip-link {
-  @apply absolute left-0 top-0 -translate-y-full;
-  @apply focus:translate-y-0 focus:z-50;
-  @apply bg-blue-600 text-white p-2;
-}
-```
-
-**JavaScript focus management**:
 ```javascript
+// Focus management utilities
+export function trapFocus(element) {
+  const focusableElements = element.querySelectorAll(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  );
+  
+  const firstElement = focusableElements[0];
+  const lastElement = focusableElements[focusableElements.length - 1];
+  
+  element.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          lastElement.focus();
+          e.preventDefault();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          firstElement.focus();
+          e.preventDefault();
+        }
+      }
+    }
+  });
+}
+
+// Keyboard event handlers
 function handleKeyPress(event) {
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault();
@@ -510,936 +669,730 @@ function handleKeyPress(event) {
 }
 ```
 
-## Hero Section with Animated Statistics
+**CSS Focus Indicators**:
+```css
+/* High-contrast focus indicators */
+.focus-visible:focus {
+  @apply outline-2 outline-blue-500 outline-offset-2;
+}
 
-### Overview
-
-The **Hero Section with Animated Statistics** provides an engaging home page experience with animated counters and dynamic visual elements. This feature was implemented following TDD principles with comprehensive test coverage and accessibility compliance.
-
-### Core Components
-
-#### HeroSection Component
-
-**Purpose**: Main hero section displaying animated statistics, call-to-action buttons, and engaging visual elements.
-
-**Location**: `src/components/home/HeroSection.jsx`
-
-**Key Features**:
-- **Animated statistics** with real-time data fetching from `/api/animals/statistics` endpoint
-- **Responsive hero text** with mobile-optimized typography
-- **Call-to-action buttons** with primary and secondary actions
-- **Animated background** with peach/cream gradient and map dots
-- **Loading states** with shimmer placeholders
-- **Error handling** with retry functionality
-- **Accessibility compliance** with screen reader descriptions
-
-**Implementation**:
-```javascript
-'use client';
-
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import AnimatedCounter from '../ui/AnimatedCounter';
-import { getStatistics } from '../../services/animalsService';
-
-export default function HeroSection() {
-  const [statistics, setStatistics] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Fetch real-time statistics from backend API
-  const fetchStatistics = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const stats = await getStatistics();
-      setStatistics(stats);
-    } catch (err) {
-      setError("Unable to load statistics. Please try again later.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStatistics();
-  }, []);
-
-  return (
-    <section className="hero-gradient relative overflow-hidden py-12 md:py-20 lg:py-24">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 pointer-events-none">
-        {/* Map dots with staggered animations */}
-        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-orange-400 rounded-full animate-pulse-dot opacity-60" 
-             style={{ animationDelay: '0s' }} />
-        {/* Additional animated dots... */}
-      </div>
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
-          {/* Hero Content */}
-          <div className="flex-1 text-center lg:text-left">
-            <h1 className="text-hero font-bold text-gray-900 mb-6 leading-tight">
-              Helping rescue dogs find loving homes
-            </h1>
-            <p className="text-body text-gray-700 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-              Browse available dogs from trusted rescue organizations across multiple countries. 
-              Every dog deserves a second chance at happiness.
-            </p>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Link href="/dogs">
-                <Button size="lg" className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white px-8 py-3">
-                  Find Your New Best Friend
-                </Button>
-              </Link>
-              <Button variant="outline" size="lg" className="w-full sm:w-auto border-orange-600 text-orange-600 hover:bg-orange-50 px-8 py-3">
-                About Our Mission
-              </Button>
-            </div>
-          </div>
-
-          {/* Animated Statistics */}
-          <div className="flex-1 w-full max-w-lg">
-            {statistics && !loading && !error && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                  {/* Dogs Count */}
-                  <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm">
-                    <div className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">
-                      <AnimatedCounter value={statistics.total_dogs} label="Dogs need homes" />
-                    </div>
-                    <div className="text-sm text-gray-600 font-medium">Dogs need homes</div>
-                  </div>
-
-                  {/* Organizations Count */}
-                  <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm">
-                    <div className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">
-                      <AnimatedCounter value={statistics.total_organizations} label="Rescue organizations" />
-                    </div>
-                    <div className="text-sm text-gray-600 font-medium">Rescue organizations</div>
-                  </div>
-
-                  {/* Countries Count */}
-                  <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm">
-                    <div className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">
-                      <AnimatedCounter value={statistics.countries.length} label="Countries" />
-                    </div>
-                    <div className="text-sm text-gray-600 font-medium">Countries</div>
-                  </div>
-                </div>
-
-                {/* Organizations Breakdown */}
-                <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 shadow-sm">
-                  <div className="text-center mb-4">
-                    <div className="text-sm text-gray-600 font-medium">
-                      Dogs available from these organizations:
-                    </div>
-                  </div>
-                  {statistics.organizations.slice(0, 4).map((org) => (
-                    <div key={org.id} className="flex justify-between items-center text-sm">
-                      <span className="text-gray-700 truncate flex-1 mr-2">{org.name}</span>
-                      <span className="text-orange-600 font-medium">({org.dog_count})</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
+/* Skip links for keyboard users */
+.skip-link {
+  @apply absolute left-0 top-0 -translate-y-full z-50;
+  @apply focus:translate-y-0;
+  @apply bg-blue-600 text-white p-2 rounded;
 }
 ```
 
-#### AnimatedCounter Component
+### Screen Reader Support
 
-**Purpose**: Reusable counter component that animates from 0 to target value when scrolled into view.
+**Optimized content** for assistive technologies:
 
-**Location**: `src/components/ui/AnimatedCounter.jsx`
-
-**Key Features**:
-- **Intersection Observer API** for scroll-triggered animations
-- **Custom easing function** (easeOutCubic) for smooth transitions
-- **requestAnimationFrame** for 60fps performance
-- **Reduced motion support** respecting user preferences
-- **Accessibility compliance** with ARIA labels and live regions
-- **Error handling** with graceful fallbacks
-- **Configurable duration** and animation parameters
-
-**Implementation**:
 ```javascript
-'use client';
+// Screen reader announcements
+export function announceToScreenReader(message) {
+  const announcement = document.createElement('div');
+  announcement.setAttribute('aria-live', 'polite');
+  announcement.setAttribute('aria-atomic', 'true');
+  announcement.className = 'sr-only';
+  announcement.textContent = message;
+  
+  document.body.appendChild(announcement);
+  
+  setTimeout(() => {
+    document.body.removeChild(announcement);
+  }, 1000);
+}
 
-import { useState, useEffect, useRef } from 'react';
+// Usage in components
+const handleFilterChange = (newFilters) => {
+  setFilters(newFilters);
+  announceToScreenReader(`Filters updated. Showing ${filteredDogs.length} dogs.`);
+};
+```
 
-const easeOutCubic = (t) => {
-  return 1 - Math.pow(1 - t, 3);
+## State Management
+
+### Hook-based State Management
+
+**React hooks** for component-level state management:
+
+```javascript
+// Complex state with useReducer
+const initialState = {
+  dogs: [],
+  filters: {},
+  loading: false,
+  error: null,
+  pagination: { page: 1, limit: 20 }
 };
 
-export default function AnimatedCounter({ 
-  value, 
-  duration = 2000, 
-  label, 
-  className = '' 
-}) {
-  const [displayValue, setDisplayValue] = useState(0);
-  const [hasAnimated, setHasAnimated] = useState(false);
-  const elementRef = useRef(null);
-  const animationFrameRef = useRef(null);
-
-  useEffect(() => {
-    // Respect reduced motion preferences
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    
-    if (prefersReducedMotion) {
-      setDisplayValue(Math.max(0, Math.round(value)));
-      return;
-    }
-
-    // Setup Intersection Observer for scroll-triggered animation
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry.isIntersecting && !hasAnimated) {
-          startAnimation();
-          setHasAnimated(true);
-        }
-      },
-      {
-        threshold: 0.1,
-        rootMargin: '50px'
-      }
-    );
-
-    if (elementRef.current) {
-      observer.observe(elementRef.current);
-    }
-
-    return () => {
-      observer.disconnect();
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [value, hasAnimated]);
-
-  const startAnimation = () => {
-    const startTime = Date.now();
-    const startValue = displayValue;
-    const targetValue = Math.max(0, Math.round(value));
-    const totalChange = targetValue - startValue;
-
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      
-      // Apply easing function
-      const easedProgress = easeOutCubic(progress);
-      const currentValue = Math.round(startValue + (totalChange * easedProgress));
-      
-      setDisplayValue(currentValue);
-
-      if (progress < 1) {
-        animationFrameRef.current = requestAnimationFrame(animate);
-      }
-    };
-
-    animationFrameRef.current = requestAnimationFrame(animate);
-  };
-
-  return (
-    <span 
-      ref={elementRef}
-      className={`animate-count-up ${className}`}
-      role="status"
-      aria-live="polite"
-      aria-label={label ? `${label}: ${displayValue}` : `${displayValue}`}
-      data-testid="animated-counter"
-    >
-      {displayValue.toLocaleString()}
-    </span>
-  );
-}
-```
-
-### Visual Design Implementation
-
-#### Background Gradient and Animations
-
-**CSS Implementation** in `src/app/globals.css`:
-```css
-/* Hero gradient background - peach/cream tones */
-.hero-gradient {
-  background: linear-gradient(135deg, #fef7ed 0%, #fed7aa 30%, #fdba74 60%, #f97316 100%);
-  background-size: 400% 400%;
-  animation: gradient-shift 20s ease infinite;
-}
-
-@keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
-/* Map dots pulse animation */
-@keyframes pulse-dot {
-  0%, 100% {
-    opacity: 0.4;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.3);
+function dogsReducer(state, action) {
+  switch (action.type) {
+    case 'FETCH_START':
+      return { ...state, loading: true, error: null };
+    case 'FETCH_SUCCESS':
+      return { 
+        ...state, 
+        loading: false, 
+        dogs: action.payload,
+        pagination: { ...state.pagination, ...action.pagination }
+      };
+    case 'FETCH_ERROR':
+      return { ...state, loading: false, error: action.payload };
+    case 'UPDATE_FILTERS':
+      return { ...state, filters: { ...state.filters, ...action.payload } };
+    default:
+      return state;
   }
 }
 
-.animate-pulse-dot {
-  animation: pulse-dot 3s ease-in-out infinite;
-}
-
-/* Counter number animation easing */
-@keyframes count-up {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-count-up {
-  animation: count-up 0.5s ease-out;
-}
-
-/* Responsive typography */
-.text-hero {
-  font-size: var(--font-size-hero);
-  line-height: var(--line-height-tight);
-  letter-spacing: var(--letter-spacing-tight);
-  font-weight: var(--font-weight-bold);
-}
-```
-
-#### Responsive Design Features
-
-**Mobile Optimizations**:
-- **Faster animations** on mobile for better performance (2s vs 3s)
-- **Reduced background complexity** with smaller gradient size
-- **Stacked layout** for mobile with proper spacing
-- **Touch-friendly buttons** with 44px minimum target size
-
-**Accessibility Features**:
-- **High contrast mode support** with alternative color schemes
-- **Reduced motion support** disabling animations when requested
-- **Screen reader descriptions** with ARIA live regions
-- **Keyboard navigation** support for all interactive elements
-
-### Backend API Integration
-
-#### Statistics Endpoint
-
-**New API endpoint**: `/api/animals/statistics`
-
-**Returns**:
-```json
-{
-  "total_dogs": 1234,
-  "total_organizations": 45,
-  "countries": [
-    {"country": "Turkey", "count": 800},
-    {"country": "Spain", "count": 434}
-  ],
-  "organizations": [
-    {"id": 1, "name": "Organization Name", "dog_count": 123}
-  ]
-}
-```
-
-**Service Integration** in `src/services/animalsService.js`:
-```javascript
-export async function getStatistics() {
-  logger.log("Fetching statistics");
-  return get('/api/animals/statistics');
-}
-```
-
-### Performance Optimizations
-
-**Animation Performance**:
-- **requestAnimationFrame** instead of setInterval for 60fps animations  
-- **Single Intersection Observer** per component for efficient scroll detection
-- **Cleanup on unmount** preventing memory leaks
-- **Conditional animation** based on user preferences
-
-**Network Performance**:  
-- **Single API call** for all statistics data
-- **Error handling** with retry functionality
-- **Loading states** with skeleton placeholders
-- **Caching considerations** for repeated visits
-
-### Testing Strategy
-
-**Test Coverage**: 120+ tests across 5 test suites
-
-**Test Files**:
-- `src/components/home/__tests__/HeroSection.test.jsx` - Hero section integration (40+ tests)
-- `src/components/ui/__tests__/AnimatedCounter.test.jsx` - Counter functionality (35+ tests) 
-- `src/services/__tests__/animalsService.test.js` - Statistics API integration (25+ tests)
-- `src/__tests__/integration/hero-section-loading.test.js` - Loading state handling (15+ tests)
-- `src/__tests__/accessibility/hero-section-a11y.test.js` - Accessibility compliance (10+ tests)
-
-**Key Test Categories**:
-- **Animation behavior** - Scroll triggering, easing functions, completion
-- **API integration** - Statistics fetching, error handling, retry logic
-- **Accessibility** - ARIA compliance, screen reader support, keyboard navigation
-- **Performance** - Animation frame usage, memory cleanup, reduced motion
-- **Responsive design** - Mobile layout, typography scaling, touch targets
-
-## CTA Optimization Components
-
-### Overview
-
-The **CTA (Call-to-Action) optimization system** provides comprehensive user engagement features with modern interaction patterns. This system was implemented following TDD principles with 120+ tests covering all functionality.
-
-### Core Components
-
-#### FavoriteButton Component
-
-**Purpose**: Reusable favorite button with multiple variants and visual feedback.
-
-**Location**: `src/components/ui/FavoriteButton.jsx`
-
-**Key Features**:
-- Multiple variants (header variant implemented)
-- Visual state management (favorited/unfavorited)
-- Environment-aware localStorage integration
-- Toast notification integration
-- Accessibility compliance with ARIA labels
-- Error handling with user feedback
-
-**Implementation**:
-```javascript
-'use client';
-
-import { useState, useEffect } from 'react';
-import { FavoritesManager } from '../../utils/favorites';
-import { useToast } from './Toast';
-
-export default function FavoriteButton({ dog, variant = 'header', className = '' }) {
-  const [isFavorited, setIsFavorited] = useState(false);
-  const { showToast } = useToast();
-
-  useEffect(() => {
-    if (dog?.id) {
-      setIsFavorited(FavoritesManager.isFavorite(dog.id));
-    }
-  }, [dog?.id]);
-
-  const handleToggleFavorite = async () => {
+export function useDogs() {
+  const [state, dispatch] = useReducer(dogsReducer, initialState);
+  
+  const fetchDogs = useCallback(async (filters) => {
+    dispatch({ type: 'FETCH_START' });
     try {
-      if (isFavorited) {
-        const result = FavoritesManager.removeFavorite(dog.id);
-        if (result.success) {
-          setIsFavorited(false);
-          showToast('Removed from favorites', 'success');
-        }
-      } else {
-        const dogData = {
-          id: dog.id,
-          name: dog.name,
-          breed: dog.standardized_breed,
-          primary_image_url: dog.primary_image_url,
-          organization: dog.organization,
-          status: dog.status
-        };
-        
-        const result = FavoritesManager.addFavorite(dog.id, dogData);
-        if (result.success) {
-          setIsFavorited(true);
-          showToast('Added to favorites!', 'success');
-        }
-      }
+      const response = await getAnimals(filters);
+      dispatch({ type: 'FETCH_SUCCESS', payload: response.dogs });
     } catch (error) {
-      showToast('Failed to update favorites', 'error');
+      dispatch({ type: 'FETCH_ERROR', payload: error.message });
     }
-  };
-
-  if (variant === 'header') {
-    return (
-      <button
-        onClick={handleToggleFavorite}
-        className={`p-2 rounded-full border-2 border-gray-300 hover:border-gray-400 transition-colors ${className}`}
-        aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-        data-testid="header-favorite-button"
-      >
-        <svg 
-          className={`w-5 h-5 transition-colors ${
-            isFavorited ? 'text-red-500 fill-current' : 'text-gray-600'
-          }`}
-          fill={isFavorited ? 'currentColor' : 'none'}
-          stroke="currentColor" 
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-        </svg>
-      </button>
-    );
-  }
-
-  return null;
+  }, []);
+  
+  return { ...state, fetchDogs };
 }
 ```
 
-#### MobileStickyBar Component
+### Context for Global State
 
-**Purpose**: Mobile-only sticky bottom action bar for enhanced mobile UX.
+**Theme and global state management**:
 
-**Location**: `src/components/ui/MobileStickyBar.jsx`
-
-**Key Features**:
-- Fixed positioning at bottom of screen for mobile users
-- Favorite and contact action buttons
-- Responsive design (hidden on desktop with `md:hidden`)
-- Toast notification integration
-- Proper z-index for overlay display
-- Accessibility compliance
-
-**Implementation**:
 ```javascript
-'use client';
+// src/components/providers/ThemeProvider.jsx
+import { createContext, useContext, useEffect, useState } from 'react';
 
-import { useState, useEffect } from 'react';
-import { FavoritesManager } from '../../utils/favorites';
-import { useToast } from './Toast';
+const ThemeContext = createContext();
 
-export default function MobileStickyBar({ dog, isVisible = true, className = '' }) {
-  const [isFavorited, setIsFavorited] = useState(false);
-  const { showToast } = useToast();
+export function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState('light');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (dog?.id) {
-      setIsFavorited(FavoritesManager.isFavorite(dog.id));
+    setMounted(true);
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      setTheme(savedTheme);
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setTheme('dark');
     }
-  }, [dog?.id]);
+  }, []);
 
-  if (!isVisible || !dog) {
-    return null;
-  }
-
-  const handleToggleFavorite = async () => {
-    // Similar implementation to FavoriteButton
-  };
-
-  const handleContact = () => {
-    if (dog.adoption_url) {
-      window.open(dog.adoption_url, '_blank', 'noopener,noreferrer');
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem('theme', theme);
+      document.documentElement.classList.toggle('dark', theme === 'dark');
     }
+  }, [theme, mounted]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
   return (
-    <div 
-      className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-50 md:hidden ${className}`}
-      data-testid="mobile-sticky-bar"
-    >
-      <div className="flex gap-3 max-w-md mx-auto">
-        <button
-          onClick={handleToggleFavorite}
-          className={`flex-1 py-3 px-4 rounded-lg border-2 font-medium transition-colors ${
-            isFavorited 
-              ? 'bg-red-50 border-red-200 text-red-600' 
-              : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-          }`}
-          aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-          data-testid="mobile-favorite-button"
-        >
-          {isFavorited ? 'Favorited' : 'Favorite'}
-        </button>
-        
-        <button
-          onClick={handleContact}
-          className="flex-1 py-3 px-4 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
-          aria-label="Contact about adoption"
-          data-testid="mobile-contact-button"
-        >
-          Contact
-        </button>
-      </div>
-    </div>
+    <ThemeContext.Provider value={{ theme, toggleTheme, mounted }}>
+      {children}
+    </ThemeContext.Provider>
   );
 }
-```
 
-#### Toast Notification System
-
-**Purpose**: User feedback system with auto-dismiss and manual close functionality.
-
-**Location**: `src/components/ui/Toast.jsx`
-
-**Key Features**:
-- Context-based provider pattern (ToastProvider)
-- Multiple toast types (success, error, info)
-- Auto-dismiss with configurable duration
-- Manual close functionality
-- Proper cleanup and memory management
-- Accessibility compliance (ARIA live regions)
-- Animation support with smooth transitions
-
-**Implementation**:
-```javascript
-'use client';
-
-import React, { createContext, useContext, useState, useCallback } from 'react';
-
-const ToastContext = createContext();
-
-export function useToast() {
-  const context = useContext(ToastContext);
+export function useTheme() {
+  const context = useContext(ThemeContext);
   if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
+    throw new Error('useTheme must be used within ThemeProvider');
   }
   return context;
 }
+```
 
-export function ToastProvider({ children }) {
-  const [toast, setToast] = useState(null);
+### Local Storage Management
 
-  const showToast = useCallback((message, type = 'info', duration = 3000) => {
-    const newToast = {
-      id: Date.now(),
-      message,
-      type,
-      isVisible: true
-    };
-    
-    setToast(newToast);
-    
-    const timer = setTimeout(() => {
-      setToast(prev => {
-        if (prev && prev.id === newToast.id) {
-          return { ...prev, isVisible: false };
-        }
-        return prev;
-      });
-      
-      setTimeout(() => {
-        setToast(prev => {
-          if (prev && prev.id === newToast.id) {
-            return null;
-          }
-          return prev;
-        });
-      }, 300);
-    }, duration);
-    
-    return timer;
-  }, []);
+**Safe localStorage** with SSR compatibility:
 
-  const closeToast = useCallback(() => {
-    setToast(prev => {
-      if (prev) {
-        return { ...prev, isVisible: false };
+```javascript
+// src/utils/storage.js
+export class SafeStorage {
+  static isAvailable() {
+    try {
+      return typeof window !== 'undefined' && 'localStorage' in window;
+    } catch {
+      return false;
+    }
+  }
+
+  static getItem(key, defaultValue = null) {
+    if (!this.isAvailable()) return defaultValue;
+    
+    try {
+      const item = localStorage.getItem(key);
+      return item ? JSON.parse(item) : defaultValue;
+    } catch {
+      return defaultValue;
+    }
+  }
+
+  static setItem(key, value) {
+    if (!this.isAvailable()) return false;
+    
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  static removeItem(key) {
+    if (!this.isAvailable()) return false;
+    
+    try {
+      localStorage.removeItem(key);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+```
+
+## Routing & Navigation
+
+### App Router Structure
+
+**Next.js 15 App Router** with nested layouts:
+
+```
+src/app/
+├── layout.js                 # Root layout
+├── page.jsx                  # Homepage
+├── dogs/
+│   ├── layout.js            # Dogs section layout
+│   ├── page.jsx             # Dogs listing page
+│   └── [id]/
+│       ├── page.jsx         # Individual dog page
+│       └── loading.jsx      # Loading UI
+├── organizations/
+│   ├── page.jsx             # Organizations listing
+│   └── [id]/
+│       └── page.jsx         # Organization detail
+└── about/
+    └── page.jsx             # About page
+```
+
+**Dynamic routing** with type-safe parameters:
+
+```javascript
+// src/app/dogs/[id]/page.jsx
+import { notFound } from 'next/navigation';
+
+export async function generateStaticParams() {
+  const dogs = await getPopularDogs();
+  return dogs.map(dog => ({ id: dog.id.toString() }));
+}
+
+export default async function DogPage({ params }) {
+  const dog = await getDogById(params.id);
+  
+  if (!dog) {
+    notFound();
+  }
+  
+  return <DogDetailClient dog={dog} />;
+}
+```
+
+### Navigation Components
+
+**Responsive navigation** with mobile support:
+
+```javascript
+// src/components/layout/Header.jsx
+import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+export default function Header() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  const navigation = [
+    { name: 'Home', href: '/' },
+    { name: 'Find Dogs', href: '/dogs' },
+    { name: 'Organizations', href: '/organizations' },
+    { name: 'About', href: '/about' },
+  ];
+
+  return (
+    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <Link href="/" className="text-xl font-bold text-primary">
+            Rescue Dogs
+          </Link>
+          
+          <div className="hidden md:flex space-x-8">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`text-sm font-medium transition-colors ${
+                  pathname === item.href
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-primary'
+                }`}
+              >
+                {item.name}
+              </Link>
+            ))}
+          </div>
+          
+          <ThemeToggle />
+        </div>
+      </nav>
+    </header>
+  );
+}
+```
+
+### Programmatic Navigation
+
+**Type-safe navigation** with Next.js hooks:
+
+```javascript
+import { useRouter, useSearchParams } from 'next/navigation';
+
+export function useNavigationHelpers() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const navigateToDog = (dogId) => {
+    router.push(`/dogs/${dogId}`);
+  };
+
+  const updateSearchParams = (params) => {
+    const current = new URLSearchParams(searchParams);
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        current.set(key, value);
+      } else {
+        current.delete(key);
       }
-      return prev;
+    });
+    router.push(`${pathname}?${current.toString()}`);
+  };
+
+  return { navigateToDog, updateSearchParams };
+}
+```
+
+## Testing Strategy
+
+### Comprehensive Test Suite
+
+**Test Coverage**: 2,427 total tests (2,419 passing, 8 skipped)
+
+**Test Structure**:
+```
+src/__tests__/
+├── accessibility/           # ARIA compliance, keyboard navigation
+├── build/                  # Production build validation
+├── cross-browser/          # Browser compatibility
+├── dark-mode/             # Dark mode functionality
+├── error-handling/        # Error boundary testing
+├── integration/           # Full workflow testing
+├── performance/           # Optimization verification
+├── security/              # XSS prevention, sanitization
+├── seo/                   # Metadata validation
+└── responsive/            # Mobile responsiveness
+```
+
+### Test Categories
+
+#### Component Tests
+```javascript
+// src/components/dogs/__tests__/DogCard.test.jsx
+import { render, screen, fireEvent } from '@testing-library/react';
+import DogCard from '../DogCard';
+
+describe('DogCard Component', () => {
+  const mockDog = {
+    id: 1,
+    name: 'Buddy',
+    breed: 'Golden Retriever',
+    age_text: '3 years',
+    primary_image_url: 'https://example.com/image.jpg'
+  };
+
+  it('renders dog information correctly', () => {
+    render(<DogCard dog={mockDog} />);
+    
+    expect(screen.getByText('Buddy')).toBeInTheDocument();
+    expect(screen.getByText('Golden Retriever')).toBeInTheDocument();
+    expect(screen.getByText('3 years')).toBeInTheDocument();
+  });
+
+  it('handles image loading states', () => {
+    render(<DogCard dog={mockDog} />);
+    
+    const image = screen.getByAltText('Photo of Buddy');
+    expect(image).toHaveAttribute('src', mockDog.primary_image_url);
+  });
+
+  it('supports keyboard navigation', () => {
+    const onClick = jest.fn();
+    render(<DogCard dog={mockDog} onClick={onClick} />);
+    
+    const card = screen.getByRole('article');
+    fireEvent.keyDown(card, { key: 'Enter' });
+    expect(onClick).toHaveBeenCalledWith(mockDog.id);
+  });
+});
+```
+
+#### Integration Tests
+```javascript
+// src/__tests__/integration/dog-search-flow.test.js
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import DogsPage from '../../app/dogs/page';
+
+describe('Dog Search Flow', () => {
+  it('completes full search and filter workflow', async () => {
+    const user = userEvent.setup();
+    render(<DogsPage />);
+    
+    // Search for dogs
+    const searchInput = screen.getByLabelText(/search for dogs/i);
+    await user.type(searchInput, 'Golden Retriever');
+    
+    // Apply filters
+    const breedFilter = screen.getByLabelText(/breed/i);
+    await user.selectOptions(breedFilter, 'Golden Retriever');
+    
+    // Wait for results
+    await waitFor(() => {
+      expect(screen.getByText(/golden retriever/i)).toBeInTheDocument();
     });
     
-    setTimeout(() => {
-      setToast(null);
-    }, 300);
-  }, []);
-
-  return (
-    <ToastContext.Provider value={{ showToast, closeToast }}>
-      {children}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          isVisible={toast.isVisible}
-          onClose={closeToast}
-        />
-      )}
-    </ToastContext.Provider>
-  );
-}
-
-export function Toast({ message, type, isVisible, onClose }) {
-  if (!isVisible) return null;
-
-  const typeStyles = {
-    success: 'bg-green-500',
-    error: 'bg-red-500',
-    info: 'bg-blue-500'
-  };
-
-  return (
-    <div 
-      className={`fixed top-4 right-4 ${typeStyles[type]} text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center gap-3 transition-all duration-300`}
-      role="alert"
-      aria-live="polite"
-    >
-      <span>{message}</span>
-      <button
-        onClick={onClose}
-        className="text-white hover:text-gray-200 ml-2"
-        aria-label="Close notification"
-      >
-        ×
-      </button>
-    </div>
-  );
-}
+    // Click on a dog card
+    const dogCard = screen.getByRole('article');
+    await user.click(dogCard);
+    
+    // Verify navigation
+    await waitFor(() => {
+      expect(window.location.pathname).toMatch(/\/dogs\/\d+/);
+    });
+  });
+});
 ```
 
-#### OrganizationSection Component
-
-**Purpose**: Structured organization display with home icon and action links.
-
-**Location**: `src/components/organizations/OrganizationSection.jsx`
-
-**Key Features**:
-- Gray card design with visual hierarchy
-- Home icon for organization branding
-- Dual action links (organization page + adoption page)
-- Responsive layout
-- Consistent styling with design system
-
-**Implementation**:
+#### Accessibility Tests
 ```javascript
-import React from 'react';
+// src/__tests__/accessibility/a11y.test.jsx
+import { render } from '@testing-library/react';
+import { axe, toHaveNoViolations } from 'jest-axe';
+import DogsPage from '../../app/dogs/page';
 
-export default function OrganizationSection({ dog }) {
-  if (!dog?.organization) {
-    return null;
-  }
+expect.extend(toHaveNoViolations);
 
-  return (
-    <div className="border rounded-lg p-6 bg-gray-50" data-testid="organization-section">
-      <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <div className="flex items-center mb-2" data-testid="organization-header">
-            <div className="text-gray-600 mr-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-            </div>
-            <span className="text-sm font-medium text-gray-600">Rescue Organization</span>
-          </div>
-          
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">{dog.organization}</h3>
-          
-          <div className="space-y-2">
-            <a 
-              href={`/organizations/${encodeURIComponent(dog.organization)}`}
-              className="block text-blue-600 hover:text-blue-800 text-sm font-medium"
-            >
-              View Organization →
-            </a>
-            <a 
-              href={dog.adoption_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block text-blue-600 hover:text-blue-800 text-sm font-medium"
-            >
-              Visit Adoption Page →
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+describe('Accessibility', () => {
+  it('has no accessibility violations', async () => {
+    const { container } = render(<DogsPage />);
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
+  });
+
+  it('supports keyboard navigation', () => {
+    render(<DogsPage />);
+    
+    // Test tab navigation
+    const firstButton = screen.getByRole('button', { name: /search/i });
+    firstButton.focus();
+    
+    fireEvent.keyDown(firstButton, { key: 'Tab' });
+    expect(document.activeElement).not.toBe(firstButton);
+  });
+});
 ```
 
-### Utility: Favorites Management
-
-**Purpose**: Client-side localStorage management with cross-environment handling.
-
-**Location**: `src/utils/favorites.js`
-
-**Key Features**:
-- Safe localStorage access across SSR/client environments
-- Complete CRUD operations for favorites
-- Error handling with graceful fallbacks
-- Data validation and sanitization
-- Storage quota management
-
-**Implementation**:
+#### Performance Tests
 ```javascript
-import { reportError } from './logger';
+// src/__tests__/performance/optimization.test.js
+import { render, screen } from '@testing-library/react';
+import { performance } from 'perf_hooks';
+import LazyImage from '../../components/ui/LazyImage';
 
-const STORAGE_KEY = 'rescue-dog-favorites';
+describe('Performance Optimization', () => {
+  it('lazy loads images efficiently', () => {
+    const mockIntersectionObserver = jest.fn();
+    global.IntersectionObserver = jest.fn(() => ({
+      observe: mockIntersectionObserver,
+      disconnect: jest.fn()
+    }));
 
-function getStorage() {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    return window.localStorage;
-  }
-  return {
-    getItem: () => null,
-    setItem: () => {},
-    removeItem: () => {},
-  };
-}
+    render(<LazyImage src="test.jpg" alt="Test" />);
+    expect(mockIntersectionObserver).toHaveBeenCalled();
+  });
 
-export const FavoritesManager = {
-  getFavorites() {
-    try {
-      const storage = getStorage();
-      const stored = storage.getItem(STORAGE_KEY);
-      if (!stored) {
-        return [];
-      }
-      return JSON.parse(stored);
-    } catch (error) {
-      reportError('Error getting favorites', { error: error.message });
-      return [];
-    }
+  it('renders large dog lists without performance degradation', () => {
+    const start = performance.now();
+    const largeDogList = Array(1000).fill(null).map((_, i) => ({
+      id: i,
+      name: `Dog ${i}`,
+      breed: 'Mixed',
+      age_text: '2 years'
+    }));
+
+    render(<DogsGrid dogs={largeDogList} />);
+    
+    const end = performance.now();
+    expect(end - start).toBeLessThan(100); // Should render in under 100ms
+  });
+});
+```
+
+### Test Configuration
+
+**Jest Configuration**:
+```javascript
+// jest.config.js
+module.exports = {
+  testEnvironment: 'jsdom',
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  moduleNameMapping: {
+    '^@/(.*)$': '<rootDir>/src/$1',
   },
-
-  isFavorite(dogId) {
-    const favorites = this.getFavorites();
-    return favorites.some(fav => fav.id === dogId || fav.id === String(dogId));
-  },
-
-  addFavorite(dogId, dogData) {
-    try {
-      const favorites = this.getFavorites();
-      
-      if (this.isFavorite(dogId)) {
-        return { success: false, message: 'Already in favorites' };
-      }
-
-      const favoriteData = {
-        ...dogData,
-        id: dogId,
-        addedAt: new Date().toISOString()
-      };
-
-      favorites.push(favoriteData);
-      
-      const storage = getStorage();
-      storage.setItem(STORAGE_KEY, JSON.stringify(favorites));
-      
-      return { success: true, message: 'Added to favorites!' };
-    } catch (error) {
-      reportError('Error adding favorite', { error: error.message, dogId });
-      return { success: false, message: 'Failed to save favorite' };
-    }
-  },
-
-  removeFavorite(dogId) {
-    try {
-      const favorites = this.getFavorites();
-      const initialLength = favorites.length;
-      
-      const updatedFavorites = favorites.filter(
-        fav => fav.id !== dogId && fav.id !== String(dogId)
-      );
-
-      if (updatedFavorites.length === initialLength) {
-        return { success: false, message: 'Not in favorites' };
-      }
-
-      const storage = getStorage();
-      storage.setItem(STORAGE_KEY, JSON.stringify(updatedFavorites));
-      
-      return { success: true, message: 'Removed from favorites' };
-    } catch (error) {
-      reportError('Error removing favorite', { error: error.message, dogId });
-      return { success: false, message: 'Failed to remove favorite' };
-    }
-  },
-
-  clearFavorites() {
-    try {
-      const storage = getStorage();
-      storage.removeItem(STORAGE_KEY);
-      return { success: true, message: 'All favorites cleared' };
-    } catch (error) {
-      reportError('Error clearing favorites', { error: error.message });
-      return { success: false, message: 'Failed to clear favorites' };
-    }
-  },
-
-  getFavoriteCount() {
-    return this.getFavorites().length;
-  }
+  collectCoverageFrom: [
+    'src/**/*.{js,jsx,ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/__tests__/**/*',
+  ],
+  coverageReporters: ['text', 'lcov', 'html'],
+  testMatch: [
+    '<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}',
+    '<rootDir>/src/**/*.{test,spec}.{js,jsx,ts,tsx}',
+  ],
 };
 ```
 
-### Testing Strategy
+## Development Workflow
 
-The CTA optimization system includes comprehensive test coverage:
+### Code Quality Standards
 
-**Test Categories**:
-- **Component Tests**: Each component has dedicated test suite (Toast.test.jsx, FavoriteButton.test.jsx, etc.)
-- **Integration Tests**: Cross-component interaction testing
-- **Utility Tests**: favorites.js functionality testing
-- **Accessibility Tests**: ARIA compliance and keyboard navigation
-- **Error Handling Tests**: Graceful failure scenarios
-
-**Key Test Files**:
-```
-src/components/ui/__tests__/
-├── FavoriteButton.test.jsx      # 25+ tests for favorite functionality
-├── MobileStickyBar.test.jsx     # 20+ tests for mobile UX
-├── Toast.test.jsx               # 15+ tests for notification system
-└── ...
-
-src/utils/__tests__/
-├── favorites.test.js            # 25+ tests for localStorage management
-└── ...
+**Pre-commit workflow**:
+```bash
+# Frontend verification workflow
+npm test                 # Run all tests (2,427 tests)
+npm run build           # Verify production build
+npm run lint            # ESLint validation
+npm run type-check      # TypeScript validation
 ```
 
-### Design Patterns
-
-**Environment-Aware Storage**: Safe localStorage access across SSR/client environments
+**ESLint Configuration**:
 ```javascript
-// Automatically handles server-side rendering
-const favorites = FavoritesManager.getFavorites(); // Safe across all environments
+// eslint.config.mjs
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+import { FlatCompat } from "@eslint/eslintrc";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+});
+
+const eslintConfig = [
+  ...compat.extends("next/core-web-vitals"),
+  {
+    rules: {
+      "no-unused-vars": "warn",
+      "no-console": "warn",
+      "react/prop-types": "off",
+      "react/react-in-jsx-scope": "off",
+    },
+  },
+];
+
+export default eslintConfig;
 ```
 
-**Context-Based Notifications**: ToastProvider pattern for app-wide toast management
-```javascript
-// Wrap app with provider
-<ToastProvider>
-  <App />
-</ToastProvider>
+### Component Development Pattern
 
-// Use anywhere in component tree
-const { showToast } = useToast();
-showToast('Success!', 'success');
+**TDD Approach**:
+1. **Write tests first** - Define expected behavior
+2. **Implement component** - Meet test requirements
+3. **Add error handling** - Graceful failure modes
+4. **Optimize performance** - Memoization and lazy loading
+5. **Validate accessibility** - ARIA compliance and keyboard support
+
+**Example Development Flow**:
+```javascript
+// 1. Write test first
+describe('NewComponent', () => {
+  it('renders with required props', () => {
+    render(<NewComponent title="Test" />);
+    expect(screen.getByText('Test')).toBeInTheDocument();
+  });
+});
+
+// 2. Implement component
+export default function NewComponent({ title }) {
+  return <h1>{title}</h1>;
+}
+
+// 3. Add error handling
+export default function NewComponent({ title }) {
+  if (!title) return null;
+  return <h1>{sanitizeText(title)}</h1>;
+}
+
+// 4. Optimize performance
+const NewComponent = memo(function NewComponent({ title }) {
+  if (!title) return null;
+  return <h1>{sanitizeText(title)}</h1>;
+});
+
+// 5. Add accessibility
+export default function NewComponent({ title, level = 1 }) {
+  if (!title) return null;
+  
+  const Tag = `h${level}`;
+  return (
+    <Tag 
+      role="heading" 
+      aria-level={level}
+      className="focus:outline-2 focus:outline-blue-500"
+    >
+      {sanitizeText(title)}
+    </Tag>
+  );
+}
 ```
 
-**Variant-Based Components**: Flexible UI components with multiple display modes
-```javascript
-// Different contexts, same component
-<FavoriteButton dog={dog} variant="header" />
-<FavoriteButton dog={dog} variant="card" />
+### File Organization
+
+**Project Structure**:
+```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── layout.js          # Root layout
+│   ├── page.jsx           # Homepage
+│   ├── dogs/              # Dogs section
+│   │   ├── page.jsx       # Dogs listing
+│   │   └── [id]/          # Dynamic dog pages
+│   └── organizations/      # Organizations section
+├── components/            # Reusable UI components
+│   ├── dogs/             # Dog-specific components
+│   ├── error/            # Error boundaries
+│   ├── home/             # Homepage components
+│   ├── layout/           # Layout components
+│   ├── organizations/    # Organization components
+│   ├── providers/        # Context providers
+│   └── ui/               # Base UI components
+├── hooks/                # Custom React hooks
+├── services/             # API communication
+├── utils/                # Utility functions
+├── types/                # TypeScript definitions
+└── __tests__/            # Test suites
 ```
 
-**Mobile-First Responsive**: Dedicated mobile interactions with desktop fallbacks
+## Build & Deployment
+
+### Production Build
+
+**Next.js Build Configuration**:
 ```javascript
-// Mobile-only component
-<MobileStickyBar dog={dog} className="md:hidden" />
+// next.config.js
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: 'standalone',
+  poweredByHeader: false,
+  generateEtags: false,
+  
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
+  
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ['lucide-react', '@heroicons/react'],
+  },
+  
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+};
+
+module.exports = nextConfig;
 ```
 
-## Error Handling & User Experience
+**Build Optimization**:
+```bash
+# Production build with optimization
+npm run build
 
-### Error Boundaries
+# Build output analysis
+npm run analyze
 
-**Multi-level error handling** with graceful degradation:
+# Static export (if needed)
+npm run export
+```
 
-**Global Error Boundary** (`src/components/error/ErrorBoundary.jsx`):
+### Environment Configuration
+
+**Environment Variables**:
+```bash
+# .env.local
+NEXT_PUBLIC_API_URL=https://api.rescuedogs.com
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
+NEXT_PUBLIC_ENVIRONMENT=production
+
+# Build-time variables
+ANALYZE=true
+BUNDLE_ANALYZE=true
+```
+
+### Deployment Checklist
+
+**Pre-deployment Verification**:
+- [ ] All tests pass (2,427 tests)
+- [ ] Build succeeds without warnings
+- [ ] Bundle size analysis reviewed
+- [ ] Accessibility audit complete
+- [ ] Performance metrics validated
+- [ ] Security headers configured
+- [ ] SEO metadata verified
+
+## Error Handling
+
+### Error Boundary Implementation
+
+**Global Error Boundary**:
 ```javascript
+// src/components/error/ErrorBoundary.jsx
 'use client';
 
 import React from 'react';
+import { Button } from '@/components/ui/button';
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -1452,21 +1405,30 @@ export class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('Error boundary caught an error:', error, errorInfo);
+    // Log error to monitoring service
+    console.error('Error boundary caught:', error, errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="error-boundary p-4 border border-red-200 rounded">
-          <h3>Something went wrong</h3>
-          <p>We're sorry, but something unexpected happened.</p>
-          <button 
+        <div className="error-boundary p-8 text-center">
+          <h2 className="text-2xl font-bold mb-4">Something went wrong</h2>
+          <p className="text-muted-foreground mb-6">
+            We're sorry, but something unexpected happened.
+          </p>
+          <Button 
             onClick={() => this.setState({ hasError: false, error: null })}
-            className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
+            className="mr-4"
           >
             Try Again
-          </button>
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={() => window.location.reload()}
+          >
+            Reload Page
+          </Button>
         </div>
       );
     }
@@ -1476,13 +1438,22 @@ export class ErrorBoundary extends React.Component {
 }
 ```
 
-**Component-specific Error Boundary** (`src/components/error/DogCardErrorBoundary.jsx`):
+**Component-specific Error Boundaries**:
 ```javascript
-export function DogCardErrorBoundary({ children, fallback }) {
+// src/components/error/DogCardErrorBoundary.jsx
+export function DogCardErrorBoundary({ children }) {
   return (
     <ErrorBoundary
-      fallback={fallback || <DogCardPlaceholder />}
-      onError={(error) => console.error('Dog card error:', error)}
+      fallback={({ error, retry }) => (
+        <div className="dog-card-error p-4 border border-red-200 rounded">
+          <p className="text-sm text-red-600 mb-2">
+            Unable to load dog information
+          </p>
+          <Button size="sm" onClick={retry}>
+            Retry
+          </Button>
+        </div>
+      )}
     >
       {children}
     </ErrorBoundary>
@@ -1490,213 +1461,736 @@ export function DogCardErrorBoundary({ children, fallback }) {
 }
 ```
 
-### Loading States
+### API Error Handling
 
-**Progressive loading** with skeleton screens:
-
+**Service-level Error Handling**:
 ```javascript
-function LoadingSkeleton() {
+// src/services/animalsService.js
+import { reportError } from '@/utils/logger';
+
+export async function getAnimals(filters = {}) {
+  try {
+    const response = await fetch('/api/animals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(filters),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    reportError('Failed to fetch animals', {
+      error: error.message,
+      filters,
+      timestamp: new Date().toISOString(),
+    });
+    
+    throw new Error('Unable to load dogs. Please try again.');
+  }
+}
+```
+
+**Error State Management**:
+```javascript
+// Custom hook for error handling
+export function useErrorHandler() {
+  const [error, setError] = useState(null);
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  const handleError = useCallback((error, context = {}) => {
+    setError({
+      message: error.message,
+      timestamp: new Date().toISOString(),
+      context,
+    });
+  }, []);
+
+  const retry = useCallback(async (retryFn) => {
+    setIsRetrying(true);
+    try {
+      await retryFn();
+      setError(null);
+    } catch (error) {
+      handleError(error, { retry: true });
+    } finally {
+      setIsRetrying(false);
+    }
+  }, [handleError]);
+
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  return { error, isRetrying, handleError, retry, clearError };
+}
+```
+
+## Performance Monitoring
+
+### Core Web Vitals
+
+**Performance Metrics Tracking**:
+```javascript
+// src/utils/performance.js
+export function trackWebVitals(metric) {
+  const { name, value, id } = metric;
+  
+  // Track Core Web Vitals
+  switch (name) {
+    case 'LCP': // Largest Contentful Paint
+      console.log('LCP:', value);
+      break;
+    case 'FID': // First Input Delay
+      console.log('FID:', value);
+      break;
+    case 'CLS': // Cumulative Layout Shift
+      console.log('CLS:', value);
+      break;
+    case 'TTFB': // Time to First Byte
+      console.log('TTFB:', value);
+      break;
+  }
+}
+
+// Usage in _app.js or layout.js
+export function reportWebVitals(metric) {
+  trackWebVitals(metric);
+}
+```
+
+**Performance Monitoring Component**:
+```javascript
+// src/components/PerformanceMonitor.jsx
+import { useEffect } from 'react';
+
+export function PerformanceMonitor() {
+  useEffect(() => {
+    // Monitor long tasks
+    if ('PerformanceObserver' in window) {
+      const observer = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          if (entry.duration > 50) {
+            console.warn('Long task detected:', entry.duration);
+          }
+        }
+      });
+      
+      observer.observe({ entryTypes: ['longtask'] });
+      
+      return () => observer.disconnect();
+    }
+  }, []);
+
+  return null;
+}
+```
+
+### Bundle Analysis
+
+**Webpack Bundle Analyzer**:
+```bash
+# Analyze bundle size
+npm run analyze
+
+# Generate bundle report
+npm run build -- --analyze
+```
+
+**Performance Budget**:
+```javascript
+// next.config.js
+module.exports = {
+  experimental: {
+    bundlePagesRouterDependencies: true,
+  },
+  
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+      };
+    }
+    
+    return config;
+  },
+};
+```
+
+## Advanced Features
+
+### Animated Statistics (Hero Section)
+
+**HeroSection Component** with real-time data:
+```javascript
+// src/components/home/HeroSection.jsx
+export default function HeroSection() {
+  const [statistics, setStatistics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Real-time statistics from API
+  const fetchStatistics = async () => {
+    try {
+      const stats = await getStatistics();
+      setStatistics(stats);
+    } catch (err) {
+      setError("Unable to load statistics");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="animate-pulse">
-      <div className="bg-gray-200 h-48 w-full rounded mb-4"></div>
-      <div className="bg-gray-200 h-4 w-3/4 rounded mb-2"></div>
-      <div className="bg-gray-200 h-4 w-1/2 rounded"></div>
+    <section className="hero-gradient relative overflow-hidden py-12 md:py-20">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex flex-col lg:flex-row items-center gap-12">
+          {/* Hero Content */}
+          <div className="flex-1 text-center lg:text-left">
+            <h1 className="text-hero font-bold text-foreground mb-6">
+              Helping rescue dogs find loving homes
+            </h1>
+            <p className="text-body text-muted-foreground mb-8">
+              Browse available dogs from trusted organizations across multiple countries.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link href="/dogs">
+                <Button size="lg" className="bg-orange-600 hover:bg-orange-700">
+                  Find Your New Best Friend
+                </Button>
+              </Link>
+              <Button variant="outline" size="lg">
+                About Our Mission
+              </Button>
+            </div>
+          </div>
+
+          {/* Animated Statistics */}
+          <div className="flex-1 max-w-lg">
+            {statistics && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <StatCard
+                  value={statistics.total_dogs}
+                  label="Dogs need homes"
+                />
+                <StatCard
+                  value={statistics.total_organizations}
+                  label="Rescue organizations"
+                />
+                <StatCard
+                  value={statistics.countries.length}
+                  label="Countries"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function StatCard({ value, label }) {
+  return (
+    <div className="bg-card/80 backdrop-blur-sm rounded-lg p-6 text-center">
+      <div className="text-3xl font-bold text-orange-600 mb-2">
+        <AnimatedCounter value={value} label={label} />
+      </div>
+      <div className="text-sm text-muted-foreground">{label}</div>
     </div>
   );
 }
 ```
 
-## Test-Driven Development
-
-### Test Architecture (95+ tests across 17 suites)
-
-**Comprehensive test coverage** ensuring reliability and maintainability:
-
-#### Security Tests (`src/__tests__/security/`)
-
+**AnimatedCounter Component**:
 ```javascript
-// content-sanitization.test.js
-describe('Content Sanitization', () => {
-  test('sanitizeText removes HTML tags', () => {
-    const maliciousInput = '<script>alert("xss")</script>Hello';
-    const result = sanitizeText(maliciousInput);
-    expect(result).toBe('Hello');
-    expect(result).not.toContain('<script>');
-  });
+// src/components/ui/AnimatedCounter.jsx
+export default function AnimatedCounter({ value, duration = 2000, label }) {
+  const [displayValue, setDisplayValue] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const elementRef = useRef(null);
 
-  test('sanitizeHtml allows safe tags only', () => {
-    const input = '<p>Safe content</p><script>alert("bad")</script>';
-    const result = sanitizeHtml(input);
-    expect(result).toBe('<p>Safe content</p>');
-  });
-});
+  const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated) {
+          startAnimation();
+        }
+      },
+      { threshold: 0.1, rootMargin: '50px' }
+    );
+
+    if (elementRef.current) {
+      observer.observe(elementRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasAnimated]);
+
+  const startAnimation = () => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setDisplayValue(value);
+      return;
+    }
+
+    const startTime = Date.now();
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easedProgress = easeOutCubic(progress);
+      
+      setDisplayValue(Math.round(value * easedProgress));
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setHasAnimated(true);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  };
+
+  return (
+    <span
+      ref={elementRef}
+      role="status"
+      aria-live="polite"
+      aria-label={`${label}: ${displayValue}`}
+    >
+      {displayValue.toLocaleString()}
+    </span>
+  );
+}
 ```
 
-#### Performance Tests (`src/__tests__/performance/`)
+### Related Dogs Feature
 
+**RelatedDogsSection Component**:
 ```javascript
-// optimization.test.jsx
-describe('Performance Optimization', () => {
-  test('LazyImage only loads when in viewport', () => {
-    const mockIntersectionObserver = jest.fn();
-    global.IntersectionObserver = jest.fn(() => ({
-      observe: mockIntersectionObserver,
-      disconnect: jest.fn()
-    }));
+// src/components/dogs/RelatedDogsSection.jsx
+export default function RelatedDogsSection({ organizationId, currentDogId }) {
+  const [relatedDogs, setRelatedDogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-    render(<LazyImage src="test.jpg" alt="Test" />);
-    expect(mockIntersectionObserver).toHaveBeenCalled();
-  });
+  useEffect(() => {
+    const fetchRelatedDogs = async () => {
+      try {
+        const dogs = await getRelatedDogs(organizationId, currentDogId);
+        setRelatedDogs(dogs.slice(0, 3));
+      } catch (err) {
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  test('Component memoization prevents unnecessary re-renders', () => {
-    const renderSpy = jest.fn();
-    const MemoizedComponent = memo(() => {
-      renderSpy();
-      return <div>Test</div>;
-    });
+    if (organizationId && currentDogId) {
+      fetchRelatedDogs();
+    }
+  }, [organizationId, currentDogId]);
 
-    const { rerender } = render(<MemoizedComponent prop="value" />);
-    rerender(<MemoizedComponent prop="value" />);
-    
-    expect(renderSpy).toHaveBeenCalledTimes(1);
-  });
-});
+  if (loading) return <RelatedDogsLoadingSkeleton />;
+  if (error) return <RelatedDogsErrorState />;
+  if (!relatedDogs.length) return null;
+
+  return (
+    <section className="py-12">
+      <h2 className="text-2xl font-bold mb-6">
+        More dogs from this organization
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {relatedDogs.map(dog => (
+          <RelatedDogsCard key={dog.id} dog={dog} />
+        ))}
+      </div>
+    </section>
+  );
+}
 ```
 
-#### Accessibility Tests (`src/__tests__/accessibility/`)
+### Theme System
 
+**Dark/Light Mode Implementation**:
 ```javascript
-// a11y.test.jsx
-describe('Accessibility', () => {
-  test('all interactive elements have ARIA labels', () => {
-    render(<DogCard dog={mockDog} />);
+// src/components/providers/ThemeProvider.jsx
+export function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState('light');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const saved = localStorage.getItem('theme');
+    if (saved) {
+      setTheme(saved);
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setTheme('dark');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem('theme', theme);
+      document.documentElement.classList.toggle('dark', theme === 'dark');
+    }
+  }, [theme, mounted]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme, mounted }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+```
+
+## Mobile Experience
+
+### Responsive Design
+
+**Mobile-first approach** with Tailwind CSS:
+```javascript
+// Mobile-optimized components
+<div className="p-4 md:p-6 lg:p-8">
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+    <div className="text-sm md:text-base lg:text-lg">
+      Content scales with viewport
+    </div>
+  </div>
+</div>
+```
+
+**Touch-friendly interactions**:
+```css
+/* Touch targets minimum 44px */
+.touch-target {
+  @apply min-h-[44px] min-w-[44px] touch-manipulation;
+}
+
+/* Smooth scrolling on mobile */
+.mobile-scroll {
+  @apply overscroll-contain scroll-smooth;
+}
+```
+
+### Mobile Components
+
+**MobileStickyBar Component**:
+```javascript
+// src/components/ui/MobileStickyBar.jsx
+export default function MobileStickyBar({ dog }) {
+  const [isFavorited, setIsFavorited] = useState(false);
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 md:hidden">
+      <div className="flex gap-3 max-w-md mx-auto">
+        <Button
+          variant="outline"
+          className="flex-1"
+          onClick={() => setIsFavorited(!isFavorited)}
+        >
+          {isFavorited ? 'Favorited' : 'Favorite'}
+        </Button>
+        <Button
+          className="flex-1 bg-orange-600 hover:bg-orange-700"
+          onClick={() => window.open(dog.adoption_url, '_blank')}
+        >
+          Contact
+        </Button>
+      </div>
+    </div>
+  );
+}
+```
+
+**Mobile Filter Sheet**:
+```javascript
+// src/components/filters/MobileFilterBottomSheet.jsx
+export default function MobileFilterBottomSheet({ filters, onFiltersChange, onClose }) {
+  return (
+    <Sheet open={true} onOpenChange={onClose}>
+      <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Filter Dogs</SheetTitle>
+        </SheetHeader>
+        
+        <div className="space-y-6 py-4">
+          <FilterSection title="Breed" filter="breed" />
+          <FilterSection title="Age" filter="age" />
+          <FilterSection title="Size" filter="size" />
+          <FilterSection title="Location" filter="location" />
+        </div>
+        
+        <div className="flex gap-3 pt-4">
+          <Button variant="outline" onClick={onClose} className="flex-1">
+            Cancel
+          </Button>
+          <Button onClick={onClose} className="flex-1">
+            Apply Filters
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+```
+
+## SEO & Metadata
+
+### Dynamic Metadata Generation
+
+**Page-level SEO**:
+```javascript
+// src/app/dogs/[id]/page.jsx
+export async function generateMetadata({ params }) {
+  const dog = await getDogById(params.id);
+  
+  if (!dog) {
+    return {
+      title: 'Dog Not Found',
+      description: 'The requested dog profile could not be found.',
+    };
+  }
+
+  return {
+    title: `${dog.name} - ${dog.breed} Available for Adoption`,
+    description: `Meet ${dog.name}, a ${dog.age_text} ${dog.breed} looking for a loving home. ${dog.description?.substring(0, 150)}...`,
+    keywords: `dog adoption, ${dog.breed}, rescue dog, ${dog.name}, pet adoption`,
     
-    const button = screen.getByRole('button');
-    expect(button).toHaveAttribute('aria-label');
+    openGraph: {
+      title: `${dog.name} - Rescue Dog Available for Adoption`,
+      description: `Meet ${dog.name}, a ${dog.age_text} ${dog.breed} looking for a loving home.`,
+      images: [
+        {
+          url: dog.primary_image_url,
+          width: 800,
+          height: 600,
+          alt: `Photo of ${dog.name}, a ${dog.breed} available for adoption`,
+        },
+      ],
+      type: 'article',
+      siteName: 'Rescue Dog Aggregator',
+    },
     
-    const image = screen.getByRole('img');
-    expect(image).toHaveAttribute('alt');
-  });
-
-  test('keyboard navigation works correctly', () => {
-    render(<FilterControls />);
+    twitter: {
+      card: 'summary_large_image',
+      title: `${dog.name} - Rescue Dog Available for Adoption`,
+      description: `Meet ${dog.name}, a ${dog.age_text} ${dog.breed} looking for a loving home.`,
+      images: [dog.primary_image_url],
+    },
     
-    const searchInput = screen.getByRole('searchbox');
-    searchInput.focus();
-    
-    fireEvent.keyDown(searchInput, { key: 'Tab' });
-    expect(document.activeElement).not.toBe(searchInput);
-  });
-});
+    alternates: {
+      canonical: `/dogs/${dog.id}`,
+    },
+  };
+}
 ```
 
-### Testing Best Practices
+**Structured Data**:
+```javascript
+// src/components/StructuredData.jsx
+export function DogStructuredData({ dog }) {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Animal",
+    "name": dog.name,
+    "species": "Dog",
+    "breed": dog.breed,
+    "age": dog.age_text,
+    "description": dog.description,
+    "image": dog.primary_image_url,
+    "location": {
+      "@type": "Place",
+      "name": dog.location
+    },
+    "availableForAdoption": true,
+    "provider": {
+      "@type": "Organization",
+      "name": dog.organization,
+      "url": dog.adoption_url
+    }
+  };
 
-**Setup and Configuration**:
-- **Jest configuration** with Next.js integration
-- **React Testing Library** for component testing
-- **Mock setup** for external dependencies (Cloudinary, API calls)
-- **Test utilities** for common testing patterns
-
-**Test Organization**:
-```
-src/__tests__/
-├── accessibility/     # ARIA compliance, keyboard navigation
-├── build/            # Production build validation
-├── error-handling/   # Error boundary testing
-├── integration/      # Full workflow testing
-├── performance/      # Optimization verification
-├── security/         # XSS prevention, sanitization
-└── seo/             # Metadata validation
-```
-
-## Development Workflow
-
-### Code Quality Standards
-
-**Pre-commit checks**:
-```bash
-# Frontend verification workflow
-npm test                 # Run all tests
-npm run build           # Verify production build
-npm run lint            # ESLint validation
-```
-
-**Component Development Pattern**:
-1. **Write tests first** (TDD approach)
-2. **Implement component** with security and accessibility in mind
-3. **Add error boundaries** for graceful degradation
-4. **Optimize performance** with memoization and lazy loading
-5. **Validate accessibility** with screen readers and keyboard testing
-
-### File Organization
-
-```
-src/
-├── app/                 # Next.js App Router pages
-│   ├── dogs/
-│   │   └── [id]/       # Dynamic dog detail pages
-│   └── organizations/
-│       └── [id]/       # Dynamic organization pages
-├── components/          # Reusable UI components
-│   ├── dogs/           # Dog-specific components
-│   ├── error/          # Error boundaries
-│   ├── layout/         # Layout components
-│   ├── organizations/  # Organization components
-│   └── ui/             # Base UI components (shadcn/ui)
-├── services/           # API communication
-├── utils/              # Utility functions
-│   ├── api.js          # API configuration
-│   ├── imageUtils.js   # Image optimization
-│   ├── logger.js       # Development logging
-│   └── security.js     # Sanitization utilities
-└── __tests__/          # Test suites
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+    />
+  );
+}
 ```
 
-## Performance Monitoring
+## Code Quality & Standards
 
-### Key Metrics
+### TypeScript Integration
 
-**Core Web Vitals tracking**:
-- **Largest Contentful Paint (LCP)**: < 2.5s
-- **First Input Delay (FID)**: < 100ms
-- **Cumulative Layout Shift (CLS)**: < 0.1
+**Type Definitions**:
+```typescript
+// src/types/dog.ts
+export interface Dog {
+  id: number;
+  name: string;
+  breed: string;
+  standardized_breed?: string;
+  age_text: string;
+  description?: string;
+  primary_image_url: string;
+  adoption_url: string;
+  organization: string;
+  organization_id: number;
+  status: 'available' | 'pending' | 'adopted';
+  location?: string;
+  size?: 'small' | 'medium' | 'large';
+  created_at: string;
+  updated_at: string;
+}
 
-**Custom Metrics**:
-- Image loading performance
-- Component render times
-- Error boundary activation rates
-- Accessibility compliance scores
+export interface DogFilters {
+  breed?: string;
+  age?: string;
+  size?: string;
+  location?: string;
+  search?: string;
+}
+```
 
-### Optimization Strategies
+**Component Props Types**:
+```typescript
+// src/components/dogs/DogCard.tsx
+interface DogCardProps {
+  dog: Dog;
+  onClick?: (dogId: number) => void;
+  showFavoriteButton?: boolean;
+  className?: string;
+}
 
-**Build Optimization**:
-- Tree shaking for unused code elimination
-- Code splitting for optimal bundle sizes
-- Image optimization through Cloudinary
-- CSS optimization with Tailwind purging
+export default function DogCard({ 
+  dog, 
+  onClick, 
+  showFavoriteButton = true,
+  className = ''
+}: DogCardProps) {
+  // Component implementation
+}
+```
 
-**Runtime Optimization**:
-- Lazy loading for images and heavy components
-- Memoization for expensive calculations
-- Efficient state management
-- Progressive enhancement patterns
+### Code Style Guidelines
+
+**Naming Conventions**:
+- **Components**: PascalCase (`DogCard`, `FilterControls`)
+- **Hooks**: camelCase with `use` prefix (`useDogFilters`, `useTheme`)
+- **Utilities**: camelCase (`sanitizeText`, `getOptimizedImageUrl`)
+- **Constants**: UPPER_SNAKE_CASE (`API_BASE_URL`, `DEFAULT_FILTERS`)
+
+**File Structure**:
+```
+ComponentName/
+├── ComponentName.jsx        # Main component
+├── ComponentName.test.jsx   # Tests
+├── ComponentName.stories.jsx # Storybook stories (if using)
+├── index.js                 # Export barrel
+└── README.md               # Component documentation
+```
+
+**Import Organization**:
+```javascript
+// 1. React imports
+import React, { useState, useEffect } from 'react';
+
+// 2. Third-party imports
+import { clsx } from 'clsx';
+import { motion } from 'framer-motion';
+
+// 3. Internal imports (absolute paths)
+import { Button } from '@/components/ui/button';
+import { sanitizeText } from '@/utils/security';
+
+// 4. Relative imports
+import './ComponentName.css';
+```
 
 ## Future Considerations
 
 ### Planned Enhancements
 
-1. **Progressive Web App (PWA)** features
-2. **Advanced caching strategies** with Service Workers
-3. **Internationalization (i18n)** support
-4. **Advanced analytics** integration
-5. **Real-time updates** with WebSocket integration
+**Progressive Web App (PWA)**:
+- Service Worker implementation
+- Offline functionality
+- Push notifications for new dogs
+- App-like experience on mobile
+
+**Advanced Features**:
+- Real-time updates with WebSockets
+- Advanced search with Elasticsearch
+- Machine learning for dog matching
+- Video content support
+
+**Performance Optimizations**:
+- Server-side rendering improvements
+- Edge caching strategies
+- Image format optimization (AVIF/WebP)
+- Code splitting enhancements
 
 ### Scalability Patterns
 
-- **Component library** extraction for reuse
-- **Micro-frontend** architecture for team scaling
-- **Advanced state management** (Redux/Zustand) if needed
-- **CDN optimization** for global distribution
+**Micro-frontend Architecture**:
+```javascript
+// Module federation for team scaling
+const ModuleFederationPlugin = require("@module-federation/webpack");
 
-This architecture provides a solid foundation for a modern, accessible, secure, and performant web application while maintaining excellent developer experience through comprehensive testing and clear organization patterns.
+module.exports = {
+  plugins: [
+    new ModuleFederationPlugin({
+      name: "dogs_app",
+      filename: "remoteEntry.js",
+      exposes: {
+        "./DogCard": "./src/components/dogs/DogCard",
+        "./FilterControls": "./src/components/dogs/FilterControls",
+      },
+      shared: {
+        react: { singleton: true },
+        "react-dom": { singleton: true },
+      },
+    }),
+  ],
+};
+```
+
+**Component Library Extraction**:
+```javascript
+// Separate package for reusable components
+export { Button } from './components/Button';
+export { Card } from './components/Card';
+export { LazyImage } from './components/LazyImage';
+export { AnimatedCounter } from './components/AnimatedCounter';
+```
+
+### Technology Evolution
+
+**Next.js 16+ Features**:
+- Enhanced App Router capabilities
+- Improved streaming and suspense
+- Better TypeScript integration
+- Advanced caching mechanisms
+
+**React 19+ Features**:
+- Concurrent features
+- Automatic batching improvements
+- Enhanced server components
+- Better hydration patterns
+
+---
+
+This comprehensive frontend architecture provides a solid foundation for a modern, accessible, secure, and performant web application. The architecture emphasizes maintainability through comprehensive testing (2,427 tests), accessibility compliance, and clean code patterns while delivering an exceptional user experience across all devices and user needs.
+
+The implementation demonstrates advanced React patterns, modern Next.js capabilities, and industry best practices for building scalable web applications. The extensive test coverage ensures reliability, while the focus on accessibility and performance makes the application usable by everyone.
