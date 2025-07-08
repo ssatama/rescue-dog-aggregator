@@ -60,10 +60,20 @@ class TheUnderdogScraper(BaseScraper):
         available_dogs = self.get_animal_list()
         self.logger.info(f"Found {len(available_dogs)} available dogs")
 
+        # Apply skip_existing_animals filtering
+        dogs_to_process = available_dogs
+        if self.skip_existing_animals and available_dogs:
+            all_urls = [dog.get("url") for dog in available_dogs if dog.get("url")]
+            filtered_urls = self._filter_existing_urls(all_urls)
+            filtered_urls_set = set(filtered_urls)
+
+            dogs_to_process = [dog for dog in available_dogs if dog.get("url") in filtered_urls_set]
+            self.logger.info(f"After filtering existing animals: processing {len(dogs_to_process)}/{len(available_dogs)} dogs")
+
         # Collect detailed data for each dog
         all_dogs_data = []
 
-        for dog_info in available_dogs:
+        for dog_info in dogs_to_process:
             try:
                 # Respect rate limiting
                 self.respect_rate_limit()
@@ -422,8 +432,10 @@ class TheUnderdogScraper(BaseScraper):
         # PRIORITY 1: Extract from data-src attributes (working Squarespace URLs)
         gallery_imgs = soup.select(".ProductItem-gallery img[data-src]")
         for img in gallery_imgs:
-            data_src = img.get("data-src", "")
-            alt = img.get("alt", "")
+            data_src_attr = img.get("data-src", "")
+            data_src = "".join(data_src_attr) if isinstance(data_src_attr, list) else data_src_attr
+            alt_attr = img.get("alt", "")
+            alt = "".join(alt_attr) if isinstance(alt_attr, list) else str(alt_attr or "")
 
             if data_src and alt:
                 # Skip organization logo
@@ -442,7 +454,8 @@ class TheUnderdogScraper(BaseScraper):
         # PRIORITY 2: Handle Squarespace lazy loading by extracting from alt attributes (fallback)
         gallery_imgs = soup.select(".ProductItem-gallery-slides img")
         for img in gallery_imgs:
-            alt = img.get("alt", "")
+            alt_attr = img.get("alt", "")
+            alt = "".join(alt_attr) if isinstance(alt_attr, list) else str(alt_attr or "")
             if alt and alt != "Underdog International" and alt.lower() != "no src":
                 # Skip organization logo
                 if "underdog" in alt.lower() and "international" in alt.lower():

@@ -179,30 +179,55 @@ class DaisyFamilyRescueScraper(BaseScraper):
             # Find and filter sections
             valid_dog_containers = self._filter_dogs_by_section(driver)
 
-            # Extract dog data from valid containers with progress tracking
+            # First pass: Extract basic dog data and URLs from all containers
+            basic_dogs_data = []
             total_containers = len(valid_dog_containers)
-            processed_count = 0
 
             for i, container in enumerate(valid_dog_containers):
                 try:
                     dog_data = self._extract_dog_from_container(container, i + 1)
                     if dog_data:
-                        # Enhance with detailed information from dog's detail page
-                        enhanced_data = self._enhance_with_detail_page(dog_data)
-                        if enhanced_data:
-                            all_dogs.append(enhanced_data)
-                            processed_count += 1
-                            self.logger.debug(f"Processed {processed_count}/{total_containers}: {enhanced_data.get('name')}")
-                        else:
-                            # Fallback to basic data if detail extraction fails
-                            all_dogs.append(dog_data)
-                            processed_count += 1
-                            self.logger.warning(f"Used basic data for {dog_data.get('name')} (detail extraction failed)")
+                        basic_dogs_data.append(dog_data)
                     else:
                         self.logger.warning(f"Failed to extract data from container {i+1}")
-
                 except Exception as e:
                     self.logger.warning(f"Error processing dog container {i+1}: {e}")
+                    continue
+
+            # Apply skip_existing_animals filtering
+            self.logger.info(f"🔍 skip_existing_animals: {self.skip_existing_animals}")
+            if self.skip_existing_animals and basic_dogs_data:
+                all_urls = [dog.get("adoption_url") for dog in basic_dogs_data if dog.get("adoption_url")]
+                self.logger.info(f"📋 Filtering {len(all_urls)} URLs to skip existing animals...")
+                filtered_urls = self._filter_existing_urls(all_urls)
+                filtered_urls_set = set(filtered_urls)
+
+                # Filter dogs to only those with URLs we should process
+                original_count = len(basic_dogs_data)
+                basic_dogs_data = [dog for dog in basic_dogs_data if dog.get("adoption_url") in filtered_urls_set]
+                skipped_count = original_count - len(basic_dogs_data)
+                self.logger.info(f"✅ SKIP EXISTING ANIMALS: Processing {len(basic_dogs_data)} new dogs (skipped {skipped_count} existing)")
+            else:
+                self.logger.info(f"📊 Processing all {len(basic_dogs_data)} dogs (skip_existing_animals: {self.skip_existing_animals})")
+
+            # Second pass: Process the filtered dogs with detail page enhancement
+            processed_count = 0
+            for dog_data in basic_dogs_data:
+                try:
+                    # Enhance with detailed information from dog's detail page
+                    enhanced_data = self._enhance_with_detail_page(dog_data)
+                    if enhanced_data:
+                        all_dogs.append(enhanced_data)
+                        processed_count += 1
+                        self.logger.debug(f"Processed {processed_count}/{len(basic_dogs_data)}: {enhanced_data.get('name')}")
+                    else:
+                        # Fallback to basic data if detail extraction fails
+                        all_dogs.append(dog_data)
+                        processed_count += 1
+                        self.logger.warning(f"Used basic data for {dog_data.get('name')} (detail extraction failed)")
+
+                except Exception as e:
+                    self.logger.warning(f"Error processing dog {dog_data.get('name', 'unknown')}: {e}")
                     continue
 
             self.logger.info(f"Successfully processed {processed_count} out of {total_containers} containers")

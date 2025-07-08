@@ -119,8 +119,8 @@ class TestBaseScraperImageHandling:
         image_urls = ["http://example.com/image1.jpg", "http://example.com/image2.jpg"]
         result = mock_scraper.save_animal_images(1, image_urls)
 
-        # Should return True on success
-        assert result is True
+        # Should return (success_count, failure_count) tuple
+        assert result == (2, 0)  # 2 images uploaded successfully, 0 failures
         # Verify database operations occurred
         assert mock_cursor.execute.call_count >= 1  # At least one database operation
 
@@ -144,8 +144,8 @@ class TestBaseScraperImageHandling:
         image_urls = ["http://example.com/image1.jpg", "http://example.com/image2.jpg"]
         result = mock_scraper.save_animal_images(1, image_urls)
 
-        # Should continue processing despite partial failure
-        assert result is True
+        # Should return (success_count, failure_count) tuple
+        assert result == (1, 1)  # 1 success, 1 failure
         # Verify both images were processed
         assert mock_scraper.cloudinary_service.upload_image_from_url.call_count == 2
 
@@ -159,9 +159,9 @@ class TestBaseScraperImageHandling:
 
         image_urls = ["http://example.com/image1.jpg"]
 
-        # The method catches database errors and returns False
+        # The method catches database errors and returns (0, failure_count) tuple
         result = mock_scraper.save_animal_images(1, image_urls)
-        assert result is False
+        assert result == (0, 1)  # 0 successes, 1 failure
 
     def test_save_animal_images_empty_list(self, mock_scraper):
         """Test saving empty image list."""
@@ -170,8 +170,8 @@ class TestBaseScraperImageHandling:
 
         result = mock_scraper.save_animal_images(1, [])
 
-        # Should return True for empty list (no work to do)
-        assert result is True
+        # Should return (0, 0) for empty list (no work to do)
+        assert result == (0, 0)  # No images to process
 
     def test_save_animal_images_duplicate_urls(self, mock_scraper):
         """Test saving images with duplicate URLs."""
@@ -195,7 +195,7 @@ class TestBaseScraperImageHandling:
         result = mock_scraper.save_animal_images(1, image_urls)
 
         # Should handle duplicates appropriately
-        assert result is True
+        assert result == (2, 0)  # 2 images uploaded (even if duplicates)
 
 
 @pytest.mark.slow

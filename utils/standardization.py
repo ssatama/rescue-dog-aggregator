@@ -266,6 +266,16 @@ def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optiona
             birth_month = int(birth_date_match.group(1))
             birth_year = int(birth_date_match.group(2))
 
+            # Validate birth date reasonableness (dogs live max ~15-20 years)
+            earliest_reasonable_year = current_date.year - 20
+            if birth_year < earliest_reasonable_year or birth_year > current_date.year + 1:
+                # Dogs don't live 20+ years, future dates are errors
+                return None, None, None
+
+            if birth_month < 1 or birth_month > 12:
+                # Invalid month
+                return None, None, None
+
             # Calculate age in months
             age_years = current_date.year - birth_year
             age_months = age_years * 12 + (current_date.month - birth_month)
@@ -295,6 +305,12 @@ def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optiona
     if birth_year_match and not re.search(r"\d+\s*(?:years?|months?)", age_text):  # Avoid matching "2 years"
         try:
             birth_year = int(birth_year_match.group(1))
+
+            # Validate birth year reasonableness (dogs live max ~15-20 years)
+            earliest_reasonable_year = current_date.year - 20
+            if birth_year < earliest_reasonable_year or birth_year > current_date.year + 1:
+                return None, None, None
+
             # Assume born in middle of year (June)
             age_years = current_date.year - birth_year
             age_months = age_years * 12 + (current_date.month - 6)
@@ -359,8 +375,12 @@ def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optiona
             else:
                 return "Senior", start_months, end_months
 
-    # Check for German "Unbekannt" (Unknown)
-    if "unbekannt" in age_text:
+    # Check for German "Unbekannt" (Unknown) and English "Unknown"
+    if any(unknown in age_text for unknown in ["unbekannt", "unknown"]):
+        return None, None, None
+
+    # Check for corrupted data (gender info in age field)
+    if any(gender_term in age_text for gender_term in ["geschlecht:", "gender:", "sex:"]):
         return None, None, None
 
     # If we can't determine, return None
@@ -413,6 +433,68 @@ def get_size_from_breed(breed: str) -> Optional[str]:
     return None
 
 
+def standardize_size_value(size: str) -> Optional[str]:
+    """
+    Standardize a size value to canonical form.
+
+    Args:
+        size: Size value from scraper (e.g., "small", "LARGE", "medium", etc.)
+
+    Returns:
+        Standardized size (Tiny, Small, Medium, Large, XLarge) or None if invalid
+    """
+    if not size or not isinstance(size, str):
+        return None
+
+    # Clean and normalize the size value
+    clean_size = size.strip().lower()
+
+    # Size mapping to standard categories
+    size_mappings = {
+        # Standard sizes (case variations)
+        "tiny": "Tiny",
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large",
+        "xlarge": "XLarge",
+        "x-large": "XLarge",
+        "extra large": "XLarge",
+        "extra-large": "XLarge",
+        # Alternative spellings/formats
+        "mini": "Tiny",
+        "miniature": "Tiny",
+        "toy": "Tiny",
+        "sm": "Small",
+        "med": "Medium",
+        "lg": "Large",
+        "xl": "XLarge",
+        "xxl": "XLarge",
+        # Size ranges/descriptions
+        "very small": "Tiny",
+        "very large": "XLarge",
+        "giant": "XLarge",
+        # Weight-based descriptions sometimes used as size
+        "lightweight": "Small",
+        "heavy": "Large",
+    }
+
+    # Direct mapping
+    if clean_size in size_mappings:
+        return size_mappings[clean_size]
+
+    # Handle hyphenated or compound sizes
+    if "-" in clean_size:
+        # e.g., "medium-large" -> take the larger size
+        parts = clean_size.split("-")
+        sizes = [size_mappings.get(part.strip()) for part in parts if part.strip() in size_mappings]
+        if sizes:
+            # Return the largest size found
+            size_order = ["Tiny", "Small", "Medium", "Large", "XLarge"]
+            return max(sizes, key=lambda x: size_order.index(x) if x in size_order else -1)
+
+    return None
+
+
 def apply_standardization(animal_data: Dict) -> Dict:
     """
     Apply all standardization functions to animal data.
@@ -436,6 +518,13 @@ def apply_standardization(animal_data: Dict) -> Dict:
         if size_estimate and ("standardized_size" not in result or not result["standardized_size"]):
             result["standardized_size"] = size_estimate
 
+    # Standardize size - NEW: fallback to size field standardization
+    if "standardized_size" not in result or not result["standardized_size"]:
+        if "size" in result and result["size"]:
+            standardized_size = standardize_size_value(result["size"])
+            if standardized_size:
+                result["standardized_size"] = standardized_size
+
     # Standardize age
     if "age_text" in result and result["age_text"]:
         age_info = standardize_age(result["age_text"])
@@ -444,6 +533,81 @@ def apply_standardization(animal_data: Dict) -> Dict:
         result["age_max_months"] = age_info["age_max_months"]
 
     return result
+
+
+def clean_breed_text(breed: str) -> Optional[str]:
+    """
+    Clean and normalize breed text to remove unclear or problematic entries.
+
+    Args:
+        breed: Raw breed text
+
+    Returns:
+        Cleaned breed text or None for invalid/empty input
+    """
+    if not breed or not isinstance(breed, str):
+        return None
+
+    breed = breed.strip()
+    if not breed or breed.lower() in ["n/a", "na", "none"]:
+        return None
+
+    # Handle unclear/meaningless breed categories
+    unclear_patterns = ["size mix", "a mix", "other mix", "unknown mix"]
+
+    breed_lower = breed.lower()
+    if breed_lower in unclear_patterns:
+        return "Mixed Breed"
+
+    # Simplify overly long descriptive names
+    if len(breed) > 40:  # Lowered threshold for better simplification
+        # Try to extract primary breed from long descriptions
+        if "podenco" in breed_lower:
+            return "Podenco Mix"
+        elif "german shepherd" in breed_lower:
+            return "German Shepherd Mix"
+        elif "border collie" in breed_lower:
+            return "Border Collie Mix"
+        elif "beagle" in breed_lower:
+            return "Beagle Mix"
+        else:
+            # Fallback for complex descriptions
+            return "Mixed Breed"
+
+    return breed
+
+
+def normalize_breed_case(breed: str) -> str:
+    """
+    Normalize breed text to consistent capitalization.
+
+    Args:
+        breed: Breed text to normalize
+
+    Returns:
+        Breed text with consistent capitalization
+    """
+    if not breed:
+        return breed
+
+    # Special case mappings for consistent capitalization
+    case_mappings = {
+        "mixed breed": "Mixed Breed",
+        "terrier mix": "Terrier Mix",
+        "labrador mix": "Labrador Mix",
+        "german shepherd mix": "German Shepherd Mix",
+        "podenco mix": "Podenco Mix",
+        "hound mix": "Hound Mix",
+        "spaniel mix": "Spaniel Mix",
+        "retriever mix": "Retriever Mix",
+    }
+
+    breed_lower = breed.lower()
+    if breed_lower in case_mappings:
+        return case_mappings[breed_lower]
+
+    # General title case for other breeds
+    return " ".join(word.capitalize() for word in breed.split())
 
 
 if __name__ == "__main__":

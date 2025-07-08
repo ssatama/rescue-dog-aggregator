@@ -38,9 +38,20 @@ class DaisyFamilyRescueDogDetailScraper:
         ]
 
         # Field mappings for standardization
-        self.sex_translations = {"weiblich": "female", "männlich": "male", "hündin": "female", "rüde": "male"}
+        self.sex_translations = {
+            "weiblich": "Female",
+            "männlich": "Male",
+            "hündin": "Female",
+            "rüde": "Male",
+        }
 
-        self.breed_translations = {"mischling": "mixed breed", "deutscher schäferhund": "german shepherd", "golden retriever": "golden retriever", "labrador": "labrador", "terrier": "terrier"}
+        self.breed_translations = {
+            "mischling": "mixed breed",
+            "deutscher schäferhund": "german shepherd",
+            "golden retriever": "golden retriever",
+            "labrador": "labrador",
+            "terrier": "terrier",
+        }
 
         # Size categories based on height (cm)
         self.size_categories = {"small": (0, 40), "medium": (40, 60), "large": (60, 100)}
@@ -77,7 +88,11 @@ class DaisyFamilyRescueDogDetailScraper:
             dog_data = {
                 "adoption_url": dog_url,
                 "external_id": self._extract_external_id_from_url(dog_url),
-                "properties": {"source": "daisyfamilyrescue.de", "extraction_method": "detail_page", "language": "de"},
+                "properties": {
+                    "source": "daisyfamilyrescue.de",
+                    "extraction_method": "detail_page",
+                    "language": "de",
+                },
             }
 
             # Extract Steckbrief data
@@ -95,7 +110,11 @@ class DaisyFamilyRescueDogDetailScraper:
             # Extract additional description text
             description = self._extract_description(driver, logger)
             if description:
-                dog_data["properties"]["german_description"] = description
+                # Ensure properties is still a dictionary after update
+                if "properties" not in dog_data:
+                    dog_data["properties"] = {}
+                if isinstance(dog_data["properties"], dict):
+                    dog_data["properties"]["german_description"] = description
 
             # Extract dog name from page title or content
             name = self._extract_dog_name(driver, logger)
@@ -131,10 +150,10 @@ class DaisyFamilyRescueDogDetailScraper:
             # Try different container approaches - the data is in the great-grandparent or ancestor section
             try:
                 steckbrief_container = steckbrief_header.find_element(By.XPATH, "../../..")
-            except:
+            except NoSuchElementException:
                 try:
                     steckbrief_container = steckbrief_header.find_element(By.XPATH, "ancestor::section[1]")
-                except:
+                except NoSuchElementException:
                     # Fallback to grandparent
                     steckbrief_container = steckbrief_header.find_element(By.XPATH, "../..")
 
@@ -247,7 +266,7 @@ class DaisyFamilyRescueDogDetailScraper:
         if not age_text:
             return None
 
-        age_data = {}
+        age_data: Dict[str, Any] = {}
 
         # Pattern 1: MM/YYYY (birth month/year)
         date_match = re.search(r"(\d{1,2})/(\d{4})", age_text)
@@ -292,7 +311,7 @@ class DaisyFamilyRescueDogDetailScraper:
         if not sex_text:
             return None
 
-        sex_data = {}
+        sex_data: Dict[str, Any] = {}
         sex_lower = sex_text.lower()
 
         # Determine gender
@@ -310,7 +329,8 @@ class DaisyFamilyRescueDogDetailScraper:
             sex_data["properties"] = {"spayed_neutered": True}
 
         # Store original German text
-        sex_data["properties"] = sex_data.get("properties", {})
+        if "properties" not in sex_data:
+            sex_data["properties"] = {}
         sex_data["properties"]["sex_german"] = sex_text
 
         return sex_data
@@ -356,13 +376,16 @@ class DaisyFamilyRescueDogDetailScraper:
 
     def _determine_size(self, height_cm: int) -> Optional[str]:
         """Determine size category based on height."""
+        # Size mapping with proper case for frontend compatibility
+        size_mapping = {"small": "Small", "medium": "Medium", "large": "Large"}
+
         for size, (min_height, max_height) in self.size_categories.items():
             if min_height <= height_cm < max_height:
-                return size
+                return size_mapping.get(size, size)
 
         # Handle edge cases
         if height_cm >= 100:
-            return "large"
+            return "Large"  # Proper case
         elif height_cm <= 0:
             return None
 
@@ -377,7 +400,13 @@ class DaisyFamilyRescueDogDetailScraper:
         location = location_text.strip()
 
         # Translate common German locations
-        location_translations = {"nordmazedonien": "North Macedonia", "deutschland": "Germany", "münchen": "Munich", "berlin": "Berlin", "köln": "Cologne"}
+        location_translations = {
+            "nordmazedonien": "North Macedonia",
+            "deutschland": "Germany",
+            "münchen": "Munich",
+            "berlin": "Berlin",
+            "köln": "Cologne",
+        }
 
         location_lower = location.lower()
         for german, english in location_translations.items():
@@ -444,7 +473,17 @@ class DaisyFamilyRescueDogDetailScraper:
         alt_lower = alt.lower()
 
         # Skip common non-dog images
-        skip_patterns = ["logo", "close", "cookie", "icon", "button", "facebook", "instagram", "social", "header"]
+        skip_patterns = [
+            "logo",
+            "close",
+            "cookie",
+            "icon",
+            "button",
+            "facebook",
+            "instagram",
+            "social",
+            "header",
+        ]
 
         for pattern in skip_patterns:
             if pattern in src_lower or pattern in alt_lower:
@@ -468,7 +507,13 @@ class DaisyFamilyRescueDogDetailScraper:
         """Extract additional description text from the page."""
         try:
             # Look for content areas that might contain descriptions
-            description_selectors = [".elementor-text-editor", ".entry-content", ".post-content", "main p", ".content p"]
+            description_selectors = [
+                ".elementor-text-editor",
+                ".entry-content",
+                ".post-content",
+                "main p",
+                ".content p",
+            ]
 
             description_parts = []
 

@@ -57,7 +57,7 @@ class TestTheUnderdogNormalizer:
         # Check normalized fields
         assert result["age_text"] == "2 years"
         assert result["breed"] == "Mixed Breed"
-        assert result["sex"] == "F"
+        assert result["sex"] == "Female"  # Updated to new format
         assert result["size"] == "Large"
         assert result["weight_kg"] == 30.0
 
@@ -72,7 +72,7 @@ class TestTheUnderdogNormalizer:
         # Check normalized fields
         assert result["age_text"] is None  # No age info
         assert result["breed"] == "Mixed Breed"  # Default from description
-        assert result["sex"] == "M"
+        assert result["sex"] == "Male"  # Updated to new format
         assert result["size"] == "Medium"
         assert result["weight_kg"] is None  # No weight specified
 
@@ -120,10 +120,11 @@ class TestTheUnderdogNormalizer:
 
     def test_extract_gender(self):
         """Test gender extraction from properties."""
-        assert extract_gender("Female") == "F"
-        assert extract_gender("Male") == "M"
-        assert extract_gender("female") == "F"
-        assert extract_gender("male") == "M"
+        # Updated to new format for frontend compatibility
+        assert extract_gender("Female") == "Female"
+        assert extract_gender("Male") == "Male"
+        assert extract_gender("female") == "Female"
+        assert extract_gender("male") == "Male"
 
         # Edge cases
         assert extract_gender("") is None

@@ -269,8 +269,8 @@ class TestBaseScraper:
         # Verify commit was called
         mock_scraper.conn.commit.assert_called_once()
 
-        # Verify result
-        assert result is True
+        # Verify result - save_animal_images now returns (success_count, failure_count)
+        assert result == (3, 0)  # 3 images uploaded successfully, 0 failures
 
 
 @pytest.mark.slow

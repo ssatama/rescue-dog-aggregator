@@ -125,8 +125,9 @@ class ConfigScraperRunner:
                     "error": f"Could not determine organization ID: {e}",
                 }
 
-            # Create scraper instance with organization_id
-            scraper = scraper_class(organization_id=organization_id)
+            # Create scraper instance with config_id (not organization_id!)
+            # This ensures the scraper loads configuration values like skip_existing_animals
+            scraper = scraper_class(config_id=config_id)
 
             # Run scraper
             success = scraper.run()

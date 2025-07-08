@@ -128,7 +128,7 @@ class TestTheUnderdogIntegration:
         # Test normalized fields - fallback extraction from description should work
         assert vicky["age_text"] == "2 years"  # Extracted via fallback from description
         assert vicky["breed"] == "Mixed Breed"
-        assert vicky["sex"] == "F"  # Extracted via fallback from description
+        assert vicky["sex"] == "Female"  # Updated to new format
         assert vicky["size"] == "Large"  # Extracted from properties "Large (around 30kg)"
         assert vicky["weight_kg"] == 30.0  # Extracted from "Large (around 30kg)"
         assert vicky["country"] == "United Kingdom"
@@ -143,7 +143,7 @@ class TestTheUnderdogIntegration:
 
         # Test normalized fields
         assert luna["breed"] == "Shepherd Mix"  # Extracted from description
-        assert luna["sex"] == "F"
+        assert luna["sex"] == "Female"  # Updated to new format
         assert luna["size"] == "Medium"
         assert luna["country"] == "France"
         assert luna["country_code"] == "FR"
@@ -265,7 +265,7 @@ class TestTheUnderdogIntegration:
         # Test normalized fields
         assert result["breed"] == "Labrador Mix"
         assert result["age_text"] == "2 years"
-        assert result["sex"] == "F"
+        assert result["sex"] == "Female"  # Updated to new format
         assert result["size"] == "Large"
         assert result["weight_kg"] == 25.0
 

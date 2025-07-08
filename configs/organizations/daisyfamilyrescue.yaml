@@ -9,6 +9,7 @@ scraper:
     rate_limit_delay: 2.5
     max_retries: 3
     timeout: 240
+    skip_existing_animals: true
 metadata:
   website_url: "https://daisyfamilyrescue.de"
   description: |

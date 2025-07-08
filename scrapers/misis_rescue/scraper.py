@@ -73,11 +73,23 @@ class MisisRescueScraper(BaseScraper):
                 full_url = urljoin(self.base_url, relative_url)
                 all_urls.append(full_url)
 
+            # Debug: Show sample URLs being processed
+            if all_urls:
+                self.logger.info(f"Sample URLs from listing (first 3):")
+                for url in all_urls[:3]:
+                    self.logger.info(f"  {url}")
+
             # Filter existing URLs if skip is enabled
+            self.logger.info(f"🔍 skip_existing_animals: {self.skip_existing_animals}")
+            if self.skip_existing_animals:
+                self.logger.info(f"📋 Filtering {len(all_urls)} URLs to skip existing animals...")
+
             urls_to_process = self._filter_existing_urls(all_urls)
 
-            if len(urls_to_process) != len(all_urls):
-                self.logger.info(f"Processing {len(urls_to_process)} URLs (skipped {len(all_urls) - len(urls_to_process)} existing)")
+            if self.skip_existing_animals and len(urls_to_process) != len(all_urls):
+                self.logger.info(f"✅ SKIP EXISTING ANIMALS: Processing {len(urls_to_process)} new URLs (skipped {len(all_urls) - len(urls_to_process)} existing)")
+            else:
+                self.logger.info(f"📊 Processing all {len(urls_to_process)} URLs")
 
             # Process URLs in batches with retry mechanism (MisisRescue-specific)
             if urls_to_process:
@@ -848,7 +860,7 @@ class MisisRescueScraper(BaseScraper):
 
             # Find all grid images using WebDriver, but exclude related posts section
             # Try to find main content area first to avoid related posts
-            main_content_images = []
+            main_content_images: List[Any] = []
 
             # Try multiple selectors to find main content area
             main_content_selectors = [
@@ -878,11 +890,14 @@ class MisisRescueScraper(BaseScraper):
                 for img in all_images:
                     try:
                         # Check if image is in related posts section
-                        parent_text = img.find_element(By.XPATH, "./ancestor::*[contains(text(), 'Related') or contains(text(), 'related')]")
+                        parent_text = img.find_element(
+                            By.XPATH,
+                            "./ancestor::*[contains(text(), 'Related') or contains(text(), 'related')]",
+                        )
                         if parent_text:
                             self.logger.debug("Skipping image in related posts section")
                             continue
-                    except:
+                    except NoSuchElementException:
                         # If no related posts parent found, it's likely in main content
                         pass
 
@@ -893,7 +908,7 @@ class MisisRescueScraper(BaseScraper):
                         if img_location["y"] > page_height * 0.8:  # Bottom 20% of page
                             self.logger.debug(f"Skipping image near bottom of page (y={img_location['y']}, page_height={page_height})")
                             continue
-                    except:
+                    except Exception:
                         pass
 
                     main_content_images.append(img)
@@ -987,10 +1002,15 @@ class MisisRescueScraper(BaseScraper):
         # But we need to avoid the related posts section at the bottom
 
         # First try to find images in main content areas only
-        main_content_images = []
+        main_content_images: List[Tag] = []
 
         # Try to find main content containers first
-        main_selectors = ["main img", "article img", "[role='main'] img", ".main img"]  # Images in main content  # Images in article  # Images in main role  # Images in main class
+        main_selectors = [
+            "main img",
+            "article img",
+            "[role='main'] img",
+            ".main img",
+        ]  # Images in main content  # Images in article  # Images in main role  # Images in main class
 
         for selector in main_selectors:
             try:

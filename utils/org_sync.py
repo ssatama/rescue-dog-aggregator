@@ -153,6 +153,14 @@ class OrganizationSyncManager:
         if db_logo_url != config_logo_url:
             return True
 
+        # Check scraper configuration changes (CRITICAL FIX)
+        # Any change in scraper config should trigger a sync
+        if hasattr(config, "scraper") and config.scraper:
+            # For scraper config changes, we always need to update the org
+            # since scraper settings are not stored in the organizations table
+            # but are critical for scraper behavior
+            return True
+
         return False
 
     def _build_social_media_json(self, config: OrganizationConfig) -> dict:

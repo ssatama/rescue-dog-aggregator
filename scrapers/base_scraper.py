@@ -19,7 +19,7 @@ from utils.config_loader import ConfigLoader
 from utils.org_sync import OrganizationSyncManager
 
 # Import the standardization utilities
-from utils.standardization import standardize_age, standardize_breed
+from utils.standardization import standardize_age, standardize_breed, standardize_size_value
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -86,6 +86,11 @@ class BaseScraper(ABC):
         self.current_scrape_session = None
         self.scrape_start_time = None
         self.cloudinary_service = CloudinaryService()
+
+        # Enhanced tracking for detailed metrics
+        self.retry_attempts = 0
+        self.retry_successes = 0
+        self.phase_timings = {}
 
     def _setup_logger(self):
         """Set up a logger for the scraper."""
@@ -287,9 +292,16 @@ class BaseScraper(ABC):
             return None, "error"
 
     def save_animal_images(self, animal_id, image_urls):
-        """Save animal images with Cloudinary upload, only uploading changed images."""
+        """Save animal images with Cloudinary upload, only uploading changed images.
+
+        Returns:
+            Tuple of (success_count, failure_count) for tracking upload results
+        """
         if not image_urls:
-            return True
+            return 0, 0
+
+        upload_success_count = 0
+        upload_failure_count = 0
 
         try:
             cursor = self.conn.cursor()
@@ -358,8 +370,10 @@ class BaseScraper(ABC):
                     )
 
                     if success:
+                        upload_success_count += 1
                         self.logger.info(f"✅ Uploaded new additional image {i+1} for animal {animal_id}")
                     else:
+                        upload_failure_count += 1
                         self.logger.warning(f"❌ Failed to upload additional image {i+1} for animal {animal_id}, using original")
 
             # Delete images that are no longer needed
@@ -369,36 +383,51 @@ class BaseScraper(ABC):
                     self.logger.info(f"🗑️ Removed obsolete image for animal {animal_id}")
 
             self.conn.commit()
-            return True
+            return upload_success_count, upload_failure_count
         except Exception as e:
             self.logger.error(f"Error saving animal images: {e}")
             self.conn.rollback()
-            return False
+            return 0, upload_failure_count or len(image_urls)
 
     def run(self):
         """Run the scraper to collect and save animal data."""
         # Connect to database
         if not self.connect_to_database():
+            self.logger.error("Failed to connect to database")
             return False
 
-        # Start scrape log
+        # Start scrape log - must succeed for proper tracking
         if not self.start_scrape_log():
+            self.logger.error("Failed to create scrape log entry")
+            if self.conn:
+                self.conn.close()
             return False
 
         # Start scrape session for stale data tracking
         if not self.start_scrape_session():
-            return False
+            self.logger.error("Failed to start scrape session")
+            # Still continue with scraping, but log the issue
+            self.complete_scrape_log(
+                status="warning",
+                error_message="Failed to start scrape session, continuing without session tracking",
+                animals_found=0,
+                animals_added=0,
+                animals_updated=0,
+            )
 
         # Track scrape start time for metrics
         self.scrape_start_time = datetime.now()
 
         try:
-            # Collect data using the organization-specific implementation
+            # Phase 1: Data Collection
+            phase_start = datetime.now()
             self.logger.info(f"Starting scrape for {self.get_organization_name()} {self.animal_type}s")
             animals_data = self.collect_data()
+            self.phase_timings["data_collection"] = (datetime.now() - phase_start).total_seconds()
             self.logger.info(f"Collected data for {len(animals_data)} {self.animal_type}s")
 
-            # Save each animal
+            # Phase 2: Database Operations
+            phase_start = datetime.now()
             animals_added = 0
             animals_updated = 0
             animals_unchanged = 0
@@ -418,7 +447,9 @@ class BaseScraper(ABC):
                     # Save animal images if provided
                     image_urls = animal_data.get("image_urls", [])
                     if image_urls and len(image_urls) > 0:
-                        self.save_animal_images(animal_id, image_urls)
+                        success_count, failure_count = self.save_animal_images(animal_id, image_urls)
+                        images_uploaded += success_count
+                        images_failed += failure_count
 
                     # Update counts
                     if action == "added":
@@ -428,13 +459,10 @@ class BaseScraper(ABC):
                     elif action == "no_change":
                         animals_unchanged += 1
 
-                    # Track image upload success/failure
-                    if image_urls:
-                        # Assume success for now
-                        images_uploaded += len(image_urls)
-                        # In a real implementation, we'd track actual upload
-                        # results
+            self.phase_timings["database_operations"] = (datetime.now() - phase_start).total_seconds()
 
+            # Phase 3: Stale Data Detection
+            phase_start = datetime.now()
             # Check for potential partial failure before updating stale data
             potential_failure = self.detect_partial_failure(len(animals_data))
 
@@ -449,6 +477,12 @@ class BaseScraper(ABC):
                     error_message="Potential partial failure - low animal count detected",
                 )
             else:
+                # Fix for skip_existing_animals bug: Mark skipped animals as seen
+                # before running stale data detection to prevent them from being
+                # incorrectly marked as unavailable
+                if self.skip_existing_animals:
+                    self.mark_skipped_animals_as_seen()
+
                 # Update stale data detection for animals not seen in this
                 # scrape
                 self.update_stale_data_detection()
@@ -460,6 +494,8 @@ class BaseScraper(ABC):
                     animals_added=animals_added,
                     animals_updated=animals_updated,
                 )
+
+            self.phase_timings["stale_data_detection"] = (datetime.now() - phase_start).total_seconds()
 
             # Calculate metrics for detailed logging
             scrape_end_time = datetime.now()
@@ -477,6 +513,14 @@ class BaseScraper(ABC):
                 "duration_seconds": duration,
                 "data_quality_score": quality_score,
                 "potential_failure_detected": potential_failure,
+                # Enhanced operational metrics
+                "retry_attempts": self.retry_attempts,
+                "retry_successes": self.retry_successes,
+                "retry_failure_rate": (self.retry_attempts - self.retry_successes) / max(self.retry_attempts, 1),
+                "phase_timings": self.phase_timings,
+                "skip_existing_animals": self.skip_existing_animals,
+                "batch_size": self.batch_size,
+                "rate_limit_delay": self.rate_limit_delay,
             }
 
             self.log_detailed_metrics(detailed_metrics)
@@ -528,9 +572,14 @@ class BaseScraper(ABC):
                         self.logger.warning(f"Invalid name detected: {name}, treating as failure")
                         raise ValueError(f"Invalid animal name: {name}")
 
+                # Track successful retry if this wasn't the first attempt
+                if attempt > 0:
+                    self.retry_successes += 1
+
                 return result
 
             except (TimeoutException, WebDriverException, ValueError) as e:
+                self.retry_attempts += 1
                 self.logger.warning(f"Scraping attempt {attempt + 1}/{self.max_retries} failed: {e}")
 
                 if attempt < self.max_retries - 1:  # Not the last attempt
@@ -615,7 +664,7 @@ class BaseScraper(ABC):
                 """
                 SELECT adoption_url 
                 FROM animals 
-                WHERE organization_id = %s AND is_available = true
+                WHERE organization_id = %s AND status = 'available'
             """,
                 (self.organization_id,),
             )
@@ -640,18 +689,32 @@ class BaseScraper(ABC):
             Filtered list of URLs to process
         """
         if not self.skip_existing_animals:
+            self.logger.debug(f"skip_existing_animals is False, returning all {len(all_urls)} URLs")
             return all_urls
 
+        self.logger.info(f"🔎 Checking database for existing animals...")
         existing_urls = self._get_existing_animal_urls()
 
         if not existing_urls:
+            self.logger.info(f"📊 No existing animals found in database, processing all {len(all_urls)} URLs")
             return all_urls
 
         # Filter out existing URLs
         filtered_urls = [url for url in all_urls if url not in existing_urls]
 
         skipped_count = len(all_urls) - len(filtered_urls)
-        self.logger.info(f"Skipped {skipped_count} existing animals, processing {len(filtered_urls)} new animals")
+        self.logger.info(f"🚫 Found {len(existing_urls)} existing animals in database")
+        self.logger.info(f"✅ Filtered results: Skipped {skipped_count} existing, will process {len(filtered_urls)} new animals")
+
+        # Debug logging to see URL matching
+        if skipped_count == 0 and len(existing_urls) > 0:
+            self.logger.warning("⚠️ No URLs were filtered despite having existing animals!")
+            self.logger.warning("Sample URLs being processed:")
+            for url in all_urls[:3]:
+                self.logger.warning(f"  Processing: {url}")
+            self.logger.warning("Sample existing URLs in database:")
+            for url in list(existing_urls)[:3]:
+                self.logger.warning(f"  Existing: {url}")
 
         return filtered_urls
 
@@ -722,7 +785,7 @@ class BaseScraper(ABC):
 
             # Use size estimate if no size provided
             final_size = animal_data.get("size") or animal_data.get("standardized_size")
-            final_standardized_size = animal_data.get("standardized_size") or size_estimate
+            final_standardized_size = animal_data.get("standardized_size") or size_estimate or standardize_size_value(animal_data.get("size"))
 
             # Prepare values for insertion
             current_time = datetime.now()
@@ -836,7 +899,7 @@ class BaseScraper(ABC):
             new_age_max_months = new_age_info.get("age_max_months")
 
             # Use size estimate if no size provided
-            new_final_standardized_size = animal_data.get("standardized_size") or new_size_estimate
+            new_final_standardized_size = animal_data.get("standardized_size") or new_size_estimate or standardize_size_value(animal_data.get("size"))
 
             # Check for changes in both raw AND standardized fields
             # Compare properties (description) as JSON to detect content changes
@@ -1118,6 +1181,52 @@ class BaseScraper(ABC):
             if self.conn:
                 self.conn.rollback()
             return False
+
+    def mark_skipped_animals_as_seen(self):
+        """Mark animals that were skipped due to skip_existing_animals as seen.
+
+        This method fixes the critical bug where skip_existing_animals=true causes
+        existing animals to be incorrectly marked as unavailable after 3 consecutive
+        scrapes. The bug occurs because skipped animals never reach update_animal()
+        which would update their last_seen_at timestamp.
+
+        Returns:
+            Number of animals marked as seen
+        """
+        try:
+            if not self.skip_existing_animals or not self.current_scrape_session:
+                return 0
+
+            cursor = self.conn.cursor()
+
+            # Mark all existing animals as seen in the current scrape session
+            # This prevents them from being counted as "missing" in stale data detection
+            cursor.execute(
+                """
+                UPDATE animals
+                SET last_seen_at = %s,
+                    consecutive_scrapes_missing = 0,
+                    availability_confidence = 'high'
+                WHERE organization_id = %s
+                AND status = 'available'
+                """,
+                (self.current_scrape_session, self.organization_id),
+            )
+
+            rows_affected = cursor.rowcount
+            self.conn.commit()
+            cursor.close()
+
+            if rows_affected > 0:
+                self.logger.info(f"Marked {rows_affected} skipped animals as seen in current scrape session")
+
+            return rows_affected
+
+        except Exception as e:
+            self.logger.error(f"Error marking skipped animals as seen: {e}")
+            if self.conn:
+                self.conn.rollback()
+            return 0
 
     def get_stale_animals_summary(self):
         """Get summary of animals by availability confidence and status.

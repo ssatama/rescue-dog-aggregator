@@ -282,7 +282,7 @@ def extract_gender(gender_property: Optional[str]) -> Optional[str]:
         gender_property: Text from properties["Male or female?"]
 
     Returns:
-        'M' for Male, 'F' for Female, or None if not determinable
+        'Male' for Male, 'Female' for Female, or None if not determinable
     """
     if not gender_property:
         return None
@@ -290,9 +290,9 @@ def extract_gender(gender_property: Optional[str]) -> Optional[str]:
     text = gender_property.lower().strip()
 
     if "female" in text:
-        return "F"
+        return "Female"
     elif "male" in text:
-        return "M"
+        return "Male"
 
     return None
 
