@@ -26,6 +26,11 @@ class TestEnhancedFailureDetection:
         scraper.logger = Mock()
         scraper.conn = Mock()
 
+        # Add new attributes for skip_existing_animals feature
+        scraper.skip_existing_animals = False
+        scraper.total_animals_before_filter = 0
+        scraper.total_animals_skipped = 0
+
         # Bind the actual methods to the mock
         scraper.detect_partial_failure = BaseScraper.detect_partial_failure.__get__(scraper)
         scraper.detect_catastrophic_failure = BaseScraper.detect_catastrophic_failure.__get__(scraper)
@@ -156,6 +161,11 @@ class TestFailureDetectionEdgeCases:
         scraper.logger = Mock()
         scraper.conn = Mock()
 
+        # Add new attributes for skip_existing_animals feature
+        scraper.skip_existing_animals = False
+        scraper.total_animals_before_filter = 0
+        scraper.total_animals_skipped = 0
+
         # Bind the actual methods to the mock
         scraper.detect_catastrophic_failure = BaseScraper.detect_catastrophic_failure.__get__(scraper)
         scraper.detect_partial_failure = BaseScraper.detect_partial_failure.__get__(scraper)
@@ -205,6 +215,11 @@ class TestFailureDetectionConfiguration:
         scraper.organization_id = 1
         scraper.logger = Mock()
         scraper.conn = Mock()
+
+        # Add new attributes for skip_existing_animals feature
+        scraper.skip_existing_animals = False
+        scraper.total_animals_before_filter = 0
+        scraper.total_animals_skipped = 0
 
         # Bind the actual methods to the mock
         scraper.detect_catastrophic_failure = BaseScraper.detect_catastrophic_failure.__get__(scraper)
@@ -262,6 +277,11 @@ class TestFailureLoggingAndReporting:
         scraper.organization_id = 1
         scraper.logger = Mock()
         scraper.conn = Mock()
+
+        # Add new attributes for skip_existing_animals feature
+        scraper.skip_existing_animals = False
+        scraper.total_animals_before_filter = 0
+        scraper.total_animals_skipped = 0
 
         # Bind the actual methods to the mock
         scraper.detect_catastrophic_failure = BaseScraper.detect_catastrophic_failure.__get__(scraper)

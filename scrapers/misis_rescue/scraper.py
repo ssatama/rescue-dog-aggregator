@@ -86,6 +86,10 @@ class MisisRescueScraper(BaseScraper):
 
             urls_to_process = self._filter_existing_urls(all_urls)
 
+            # Track filtering stats for failure detection
+            total_skipped = len(all_urls) - len(urls_to_process)
+            self.set_filtering_stats(len(all_urls), total_skipped)
+
             if self.skip_existing_animals and len(urls_to_process) != len(all_urls):
                 self.logger.info(f"✅ SKIP EXISTING ANIMALS: Processing {len(urls_to_process)} new URLs (skipped {len(all_urls) - len(urls_to_process)} existing)")
             else:

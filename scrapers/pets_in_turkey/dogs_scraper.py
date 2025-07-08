@@ -185,6 +185,9 @@ class PetsInTurkeyScraper(BaseScraper):
 
             self.logger.info(f"Collected data for {len(dogs_data)} dogs")
 
+            # Track filtering stats (no filtering for this scraper)
+            self.set_filtering_stats(len(dogs_data), 0)
+
         except Exception as e:
             self.logger.error(f"Error collecting dog data: {e}")
             import traceback

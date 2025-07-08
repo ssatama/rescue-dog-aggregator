@@ -405,10 +405,17 @@ class AnimalRescueBosniaScraper(BaseScraper):
             # Filter existing URLs if skip is enabled
             if self.skip_existing_animals:
                 urls_to_process = self._filter_existing_urls(all_urls)
+                skipped_count = len(all_urls) - len(urls_to_process)
+
+                # Track filtering stats for failure detection
+                self.set_filtering_stats(len(all_urls), skipped_count)
+
                 if len(urls_to_process) != len(all_urls):
                     self.logger.info(f"Processing {len(urls_to_process)} URLs (skipped {len(all_urls) - len(urls_to_process)} existing)")
             else:
                 urls_to_process = all_urls
+                # No filtering applied
+                self.set_filtering_stats(len(all_urls), 0)
                 self.logger.info(f"Processing all {len(urls_to_process)} URLs (skip_existing_animals disabled)")
 
             # Process URLs in batches with parallel processing

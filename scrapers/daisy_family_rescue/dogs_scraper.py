@@ -206,8 +206,14 @@ class DaisyFamilyRescueScraper(BaseScraper):
                 original_count = len(basic_dogs_data)
                 basic_dogs_data = [dog for dog in basic_dogs_data if dog.get("adoption_url") in filtered_urls_set]
                 skipped_count = original_count - len(basic_dogs_data)
+
+                # Track filtering stats for failure detection
+                self.set_filtering_stats(original_count, skipped_count)
+
                 self.logger.info(f"✅ SKIP EXISTING ANIMALS: Processing {len(basic_dogs_data)} new dogs (skipped {skipped_count} existing)")
             else:
+                # No filtering applied
+                self.set_filtering_stats(len(basic_dogs_data), 0)
                 self.logger.info(f"📊 Processing all {len(basic_dogs_data)} dogs (skip_existing_animals: {self.skip_existing_animals})")
 
             # Second pass: Process the filtered dogs with detail page enhancement

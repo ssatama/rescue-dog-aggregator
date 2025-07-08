@@ -67,8 +67,17 @@ class TheUnderdogScraper(BaseScraper):
             filtered_urls = self._filter_existing_urls(all_urls)
             filtered_urls_set = set(filtered_urls)
 
+            original_count = len(available_dogs)
             dogs_to_process = [dog for dog in available_dogs if dog.get("url") in filtered_urls_set]
+            skipped_count = original_count - len(dogs_to_process)
+
+            # Track filtering stats for failure detection
+            self.set_filtering_stats(original_count, skipped_count)
+
             self.logger.info(f"After filtering existing animals: processing {len(dogs_to_process)}/{len(available_dogs)} dogs")
+        else:
+            # No filtering applied
+            self.set_filtering_stats(len(available_dogs), 0)
 
         # Collect detailed data for each dog
         all_dogs_data = []

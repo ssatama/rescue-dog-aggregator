@@ -92,6 +92,10 @@ class BaseScraper(ABC):
         self.retry_successes = 0
         self.phase_timings = {}
 
+        # Track animals before and after skip_existing_animals filtering
+        self.total_animals_before_filter = 0
+        self.total_animals_skipped = 0
+
     def _setup_logger(self):
         """Set up a logger for the scraper."""
         logger = logging.getLogger(f"scraper.{self.get_organization_name()}.{self.animal_type}")
@@ -718,6 +722,17 @@ class BaseScraper(ABC):
 
         return filtered_urls
 
+    def set_filtering_stats(self, total_before_filter: int, total_skipped: int):
+        """Set statistics about skip_existing_animals filtering.
+
+        Args:
+            total_before_filter: Total animals found before filtering
+            total_skipped: Number of animals skipped due to existing
+        """
+        self.total_animals_before_filter = total_before_filter
+        self.total_animals_skipped = total_skipped
+        self.logger.info(f"📊 Filtering stats: {total_before_filter} found, {total_skipped} skipped, {total_before_filter - total_skipped} to process")
+
     def get_organization_name(self) -> str:
         """Get organization name for logging."""
         if self.org_config:
@@ -1268,8 +1283,10 @@ class BaseScraper(ABC):
         This method detects complete scraper failures or situations where the count
         is so low that it's almost certainly a system error rather than reality.
 
+        IMPORTANT: Considers skip_existing_animals filtering to avoid false positives.
+
         Args:
-            animals_found: Number of animals found in current scrape
+            animals_found: Number of animals found in current scrape (after filtering)
             absolute_minimum: Absolute minimum count below which failure is assumed
 
         Returns:
@@ -1280,13 +1297,34 @@ class BaseScraper(ABC):
             self.logger.error(f"Invalid negative animal count: {animals_found} for organization_id {self.organization_id}")
             return True
 
-        # Zero animals is always catastrophic
+        # If skip_existing_animals is enabled and we found animals before filtering,
+        # then zero animals after filtering is normal behavior, not a failure
+        if animals_found == 0 and self.skip_existing_animals and self.total_animals_before_filter > 0:
+            self.logger.info(f"✅ Zero animals to process after skip_existing_animals filtering ({self.total_animals_skipped} skipped). This is normal behavior, not a failure.")
+            return False
+
+        # Zero animals is catastrophic only if we didn't find any before filtering either
         if animals_found == 0:
-            self.logger.error(f"Catastrophic failure detected: Zero animals found for organization_id {self.organization_id}. " f"This indicates complete scraper failure or website unavailability.")
+            if self.skip_existing_animals:
+                self.logger.error(
+                    f"Catastrophic failure detected: Zero animals found BEFORE filtering for organization_id {self.organization_id}. "
+                    f"This indicates complete scraper failure or website unavailability."
+                )
+            else:
+                self.logger.error(
+                    f"Catastrophic failure detected: Zero animals found for organization_id {self.organization_id}. " f"This indicates complete scraper failure or website unavailability."
+                )
             return True
 
         # Check against absolute minimum threshold
         if animals_found < absolute_minimum:
+            # If we have skip_existing_animals enabled, check before filtering count
+            if self.skip_existing_animals and self.total_animals_before_filter >= absolute_minimum:
+                self.logger.info(
+                    f"✅ Only {animals_found} animals to process after skip_existing_animals filtering, but {self.total_animals_before_filter} were found before filtering. This is normal behavior."
+                )
+                return False
+
             self.logger.error(
                 f"Catastrophic failure detected: Only {animals_found} animals found for organization_id {self.organization_id} "
                 f"(below absolute minimum of {absolute_minimum}). This likely indicates scraper malfunction."
