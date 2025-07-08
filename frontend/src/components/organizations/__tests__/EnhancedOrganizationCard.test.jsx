@@ -283,7 +283,7 @@ describe('EnhancedOrganizationCard', () => {
       render(<OrganizationCard organization={mockOrganization} />);
       
       expect(screen.getByText('Visit Website')).toBeInTheDocument();
-      expect(screen.getByText('View 33 Dogs →')).toBeInTheDocument();
+      expect(screen.getByText('33 Dogs')).toBeInTheDocument();
     });
 
     test('Visit Website button has correct attributes', () => {
@@ -300,14 +300,14 @@ describe('EnhancedOrganizationCard', () => {
     test('View Dogs button shows correct count', () => {
       render(<OrganizationCard organization={mockOrganization} />);
       
-      expect(screen.getByText('View 33 Dogs →')).toBeInTheDocument();
+      expect(screen.getByText('33 Dogs')).toBeInTheDocument();
     });
 
     test('View Dogs button handles singular form', () => {
       const singleDogOrg = { ...mockOrganization, total_dogs: 1 };
       render(<OrganizationCard organization={singleDogOrg} />);
       
-      expect(screen.getByText('View 1 Dog →')).toBeInTheDocument();
+      expect(screen.getByText('1 Dog')).toBeInTheDocument();
     });
   });
 

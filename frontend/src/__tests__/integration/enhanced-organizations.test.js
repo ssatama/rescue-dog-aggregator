@@ -331,9 +331,9 @@ describe('Enhanced Organizations Integration', () => {
         expect(screen.queryByTestId('loading')).not.toBeInTheDocument();
       });
 
-      expect(screen.getByText('View 33 Dogs →')).toBeInTheDocument();
-      expect(screen.getByText('View 15 Dogs →')).toBeInTheDocument();
-      expect(screen.getByText('View 8 Dogs →')).toBeInTheDocument();
+      expect(screen.getByText('33 Dogs')).toBeInTheDocument();
+      expect(screen.getByText('15 Dogs')).toBeInTheDocument();
+      expect(screen.getByText('8 Dogs')).toBeInTheDocument();
     });
   });
 

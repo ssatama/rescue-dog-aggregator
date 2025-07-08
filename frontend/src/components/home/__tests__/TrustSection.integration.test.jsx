@@ -101,12 +101,12 @@ describe('TrustSection Homepage Integration', () => {
       });
     });
 
-    test('maintains 3-column grid layout on desktop', async () => {
+    test('maintains responsive grid layout', async () => {
       render(<TrustSection />);
       
       await waitFor(() => {
         const grid = screen.getByTestId('organizations-grid');
-        expect(grid).toHaveClass('grid', 'grid-cols-2', 'md:grid-cols-3', 'gap-6');
+        expect(grid).toHaveClass('grid', 'grid-cols-1', 'sm:grid-cols-2', 'lg:grid-cols-3', 'xl:grid-cols-4');
       });
     });
 
@@ -143,7 +143,7 @@ describe('TrustSection Homepage Integration', () => {
       await waitFor(() => {
         const grid = container.querySelector('[data-testid="organizations-grid"]');
         // Should have proper responsive classes
-        expect(grid.className).toMatch(/grid-cols-2.*md:grid-cols-3/);
+        expect(grid.className).toMatch(/grid-cols-1.*sm:grid-cols-2.*lg:grid-cols-3.*xl:grid-cols-4/);
       });
     });
 
@@ -159,12 +159,12 @@ describe('TrustSection Homepage Integration', () => {
   });
 
   describe('Layout and Spacing', () => {
-    test('maintains proper spacing between cards', async () => {
+    test('maintains proper responsive spacing between cards', async () => {
       render(<TrustSection />);
       
       await waitFor(() => {
         const grid = screen.getByTestId('organizations-grid');
-        expect(grid).toHaveClass('gap-6');
+        expect(grid).toHaveClass('gap-4', 'sm:gap-6', 'lg:gap-8');
       });
     });
 
@@ -177,12 +177,12 @@ describe('TrustSection Homepage Integration', () => {
       });
     });
 
-    test('maintains max width constraint', async () => {
+    test('uses expanded max width constraint', async () => {
       render(<TrustSection />);
       
       await waitFor(() => {
         const grid = screen.getByTestId('organizations-grid');
-        expect(grid).toHaveClass('max-w-4xl', 'mx-auto');
+        expect(grid).toHaveClass('max-w-7xl', 'mx-auto');
       });
     });
   });

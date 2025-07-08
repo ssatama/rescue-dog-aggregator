@@ -119,13 +119,13 @@ describe('OrganizationCard Dark Mode', () => {
     
     // Visit Website button (outline variant) - check its parent button element
     const visitButtonText = screen.getByText('Visit Website');
-    const visitButton = visitButtonText.closest('button') || visitButtonText.closest('div[class*="flex-1"]');
+    const visitButton = visitButtonText.closest('a').parentElement; // Get the Button wrapper
     expect(visitButton).toHaveClass('text-foreground');
     expect(visitButton).toHaveClass('border-border');
     expect(visitButton).toHaveClass('hover:bg-muted');
     
     // View Dogs button (primary)
-    const viewButton = screen.getByText(/View \d+ Dogs/);
+    const viewButton = screen.getByText('28 Dogs').closest('button');
     expect(viewButton).toHaveClass('bg-orange-600');
     expect(viewButton).toHaveClass('hover:bg-orange-700');
     expect(viewButton).toHaveClass('text-white');

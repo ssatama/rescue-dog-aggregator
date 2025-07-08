@@ -298,35 +298,47 @@ describe('OrganizationCard Size Variants', () => {
       const { rerender } = render(<OrganizationCard organization={mockOrganization} size="small" />);
       // Check the anchor tag that is styled as a button (Button with asChild)
       const visitLink = screen.getByText('Visit Website').closest('a');
-      expect(visitLink).toHaveClass('min-h-[40px]');
+      expect(visitLink).toHaveClass('min-h-[44px]');
       // Check the actual button
-      const viewButton = screen.getByText(/View.*Dog/);
-      expect(viewButton).toHaveClass('min-h-[40px]');
+      const viewButton = screen.getByText('Meet 25').closest('button');
+      expect(viewButton).toHaveClass('min-h-[44px]');
       
       rerender(<OrganizationCard organization={mockOrganization} size="medium" />);
       const visitLinkMed = screen.getByText('Visit Website').closest('a');
       expect(visitLinkMed).toHaveClass('min-h-[44px]');
-      const viewButtonMed = screen.getByText(/View.*Dog/);
+      const buttonsMed = screen.getAllByRole('button');
+      const viewButtonMed = buttonsMed.find(button => 
+        button.tagName === 'BUTTON' && button.textContent.includes('View') && button.textContent.includes('25') && button.textContent.includes('Dogs')
+      );
       expect(viewButtonMed).toHaveClass('min-h-[44px]');
       
       rerender(<OrganizationCard organization={mockOrganization} size="large" />);
       const visitLinkLarge = screen.getByText('Visit Website').closest('a');
       expect(visitLinkLarge).toHaveClass('min-h-[44px]');
-      const viewButtonLarge = screen.getByText(/View.*Dog/);
+      const buttonsLarge = screen.getAllByRole('button');
+      const viewButtonLarge = buttonsLarge.find(button => 
+        button.tagName === 'BUTTON' && button.textContent.includes('View') && button.textContent.includes('25') && button.textContent.includes('Dogs')
+      );
       expect(viewButtonLarge).toHaveClass('min-h-[44px]');
     });
 
     test('button text remains readable at all sizes', () => {
       const { rerender } = render(<OrganizationCard organization={mockOrganization} size="small" />);
-      let viewDogsBtn = screen.getByText(/View 25 Dogs/);
+      let viewDogsBtn = screen.getByText('Meet 25');
       expect(viewDogsBtn).toBeVisible();
       
       rerender(<OrganizationCard organization={mockOrganization} size="medium" />);
-      viewDogsBtn = screen.getByText(/View 25 Dogs/);
+      const buttonsForVisibility = screen.getAllByRole('button');
+      viewDogsBtn = buttonsForVisibility.find(button => 
+        button.tagName === 'BUTTON' && button.textContent.includes('View') && button.textContent.includes('25') && button.textContent.includes('Dogs')
+      );
       expect(viewDogsBtn).toBeVisible();
       
       rerender(<OrganizationCard organization={mockOrganization} size="large" />);
-      viewDogsBtn = screen.getByText(/View 25 Dogs/);
+      const buttonsForVisibilityLarge = screen.getAllByRole('button');
+      viewDogsBtn = buttonsForVisibilityLarge.find(button => 
+        button.tagName === 'BUTTON' && button.textContent.includes('View') && button.textContent.includes('25') && button.textContent.includes('Dogs')
+      );
       expect(viewDogsBtn).toBeVisible();
     });
   });
@@ -393,10 +405,10 @@ describe('OrganizationCard Size Variants', () => {
       
       // Check footer buttons/links maintain touch targets
       const visitLink = screen.getByText('Visit Website').closest('a');
-      expect(visitLink).toHaveClass('min-h-[40px]');
+      expect(visitLink).toHaveClass('min-h-[44px]');
       
-      const viewButton = screen.getByText(/View.*Dog/);
-      expect(viewButton).toHaveClass('min-h-[40px]');
+      const viewButton = screen.getByText('Meet 25').closest('button');
+      expect(viewButton).toHaveClass('min-h-[44px]');
     });
 
     test('all interactive elements remain keyboard accessible', () => {

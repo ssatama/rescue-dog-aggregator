@@ -243,7 +243,7 @@ describe('Mobile Responsiveness - Dark Mode', () => {
       // Should have tablet-responsive grid for organizations
       const orgsGrid = trustSection.querySelector('[data-testid="organizations-grid"]');
       if (orgsGrid) {
-        expect(orgsGrid).toHaveClass('md:grid-cols-3');
+        expect(orgsGrid).toHaveClass('lg:grid-cols-3');
       }
     });
   });

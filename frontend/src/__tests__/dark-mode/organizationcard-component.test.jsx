@@ -255,7 +255,10 @@ describe('OrganizationCard Component - Dark Mode Support', () => {
       const organization = getMockOrganization();
       renderWithDarkTheme(<OrganizationCard organization={organization} />);
 
-      const viewDogsButton = screen.getByText(/view 25 dogs/i);
+      const buttons = screen.getAllByRole('button');
+      const viewDogsButton = buttons.find(button => 
+        button.tagName === 'BUTTON' && button.textContent.includes('View') && button.textContent.includes('25') && button.textContent.includes('Dogs')
+      );
       
       // Should maintain orange theme
       expect(viewDogsButton.className).toMatch(/bg-orange-600/);

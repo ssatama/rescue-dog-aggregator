@@ -54,9 +54,9 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
       spacing: 'space-y-2',
       padding: 'p-3 sm:p-3',
       contentPadding: 'p-3 sm:p-3 pt-0',
-      footerPadding: 'p-3 sm:p-3 pt-0',
+      footerPadding: 'p-5 md:p-6',
       dogThumbnail: 'w-10 h-10',
-      buttonHeight: 'min-h-[40px]',
+      buttonHeight: 'min-h-[44px] md:min-h-[48px]',
       socialSize: 'xs'
     },
     medium: {
@@ -69,9 +69,9 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
       spacing: 'space-y-2',
       padding: 'p-4 sm:p-4',
       contentPadding: 'p-4 sm:p-4 pt-0',
-      footerPadding: 'p-4 sm:p-4 pt-0',
+      footerPadding: 'p-5 md:p-6',
       dogThumbnail: 'w-11 h-11',
-      buttonHeight: 'min-h-[44px]',
+      buttonHeight: 'min-h-[44px] md:min-h-[48px]',
       socialSize: 'sm'
     },
     large: {
@@ -84,9 +84,9 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
       spacing: 'space-y-2 sm:space-y-3',
       padding: 'p-4 sm:p-6 pb-3 sm:pb-4',
       contentPadding: 'p-4 sm:p-6 pt-0',
-      footerPadding: 'p-4 sm:p-6 pt-0',
+      footerPadding: 'p-4 sm:p-6',
       dogThumbnail: 'w-12 h-12',
-      buttonHeight: 'min-h-[44px]',
+      buttonHeight: 'min-h-[44px] md:min-h-[52px]',
       socialSize: 'sm'
     }
   };
@@ -95,7 +95,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
 
   return (
     <Card 
-      className="overflow-hidden h-full cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2"
+      className="flex flex-col overflow-hidden cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2"
       onClick={() => window.location.href = `/organizations/${id}`}
       role="button"
       tabIndex={0}
@@ -248,8 +248,8 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
         </CardContent>
 
         {/* 6. Two CTAs: "Visit Website" and "View X Dogs →" */}
-        <CardFooter className={styles.footerPadding}>
-          <div className="flex space-x-3 w-full">
+        <CardFooter className={`${styles.footerPadding} mt-auto`}>
+          <div className="flex space-x-3 md:space-x-6 w-full">
             <Button 
               asChild 
               variant="outline" 
@@ -269,9 +269,17 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
             
             <Button 
               size="sm" 
-              className={`flex-1 bg-orange-600 hover:bg-orange-700 text-white animate-button-hover ${styles.buttonHeight}`}
+              className={`flex-1 bg-orange-600 hover:bg-orange-700 text-white animate-button-hover ${styles.buttonHeight} text-center`}
             >
-              View {totalDogs} Dog{totalDogs !== 1 ? 's' : ''} →
+              {size === 'small' ? (
+                <span>Meet {totalDogs}</span>
+              ) : (
+                <>
+                  <span>View </span>
+                  <span>{totalDogs} Dog{totalDogs !== 1 ? 's' : ''}</span>
+                  <span> →</span>
+                </>
+              )}
             </Button>
           </div>
         </CardFooter>
