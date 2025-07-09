@@ -20,7 +20,7 @@ class TestREANEdgeCases:
     @pytest.fixture
     def scraper(self):
         """Create a REAN scraper instance for testing."""
-        with patch("scrapers.base_scraper.OrganizationSyncManager") as mock_sync, patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader:
+        with patch("scrapers.base_scraper.create_default_sync_service") as mock_sync, patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader:
             mock_config = MagicMock()
             mock_config.name = "REAN Test"
             mock_config.get_scraper_config_dict.return_value = {
@@ -31,7 +31,9 @@ class TestREANEdgeCases:
             mock_config.metadata.website_url = "https://rean.org.uk"
 
             mock_config_loader.return_value.load_config.return_value = mock_config
-            mock_sync.return_value.sync_organization.return_value = (1, True)
+            mock_sync_service = Mock()
+            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=1, was_created=False)
+            mock_sync.return_value = mock_sync_service
 
             scraper = REANScraper()
             scraper.logger = Mock()  # Mock logger to avoid output

@@ -12,10 +12,10 @@ class TestMisisRescueListingFix:
     @pytest.fixture
     def scraper(self):
         """Create scraper with mocked dependencies."""
-        with patch("scrapers.base_scraper.OrganizationSyncManager") as mock_sync, patch("scrapers.base_scraper.ConfigLoader") as mock_loader, patch("scrapers.base_scraper.CloudinaryService"):
+        with patch("scrapers.base_scraper.create_default_sync_service") as mock_sync, patch("scrapers.base_scraper.ConfigLoader") as mock_loader, patch("scrapers.base_scraper.CloudinaryService"):
 
             mock_sync_instance = Mock()
-            mock_sync_instance.sync_organization.return_value = (13, True)
+            mock_sync_instance.sync_single_organization.return_value = Mock(organization_id=13, was_created=True)
             mock_sync.return_value = mock_sync_instance
 
             mock_config = Mock()

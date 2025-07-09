@@ -14,12 +14,15 @@ import pytest
 from fastapi.testclient import TestClient
 from psycopg2.extras import RealDictCursor
 
+# Add project root to Python path BEFORE imports
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
+
 from api.dependencies import get_db_cursor  # Import the original dependency
 from api.main import app
 
-# Add project root to Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
+# Import database pool to initialize it
+from utils.db_connection import DatabaseConfig, DatabaseConnectionPool
 
 # Set TESTING environment variable early
 os.environ["TESTING"] = "true"
@@ -30,6 +33,37 @@ TEST_DB_USER = "postgres"
 TEST_DB_PASSWORD = "postgres"
 TEST_DB_NAME = "test_rescue_dogs"
 TEST_DB_HOST = "localhost"
+# ---
+
+
+# --- Database Pool Initialization ---
+@pytest.fixture(scope="session", autouse=True)
+def initialize_database_pool():
+    """Initialize the database connection pool for the entire test session.
+
+    This fixture runs automatically at the start of the test session and ensures
+    the database pool is initialized before any tests that might use the new
+    secure database modules.
+    """
+    print("\n[conftest] Initializing database connection pool for test session...")
+
+    # Create test database configuration
+    test_db_config = DatabaseConfig(host=TEST_DB_HOST, user=TEST_DB_USER, database=TEST_DB_NAME, password=TEST_DB_PASSWORD, port=5432)
+
+    # Initialize the pool
+    from utils.db_connection import initialize_database_pool
+
+    pool = initialize_database_pool(test_db_config)
+    print("[conftest] Database connection pool initialized successfully.")
+
+    yield
+
+    # Cleanup: Close the pool after all tests
+    print("[conftest] Closing database connection pool...")
+    pool.close_all_connections()
+    print("[conftest] Database connection pool closed.")
+
+
 # ---
 
 

@@ -29,8 +29,10 @@ class MockScraper(BaseScraper):
         self.mock_session_manager = create_mock_session_manager()
 
         # Mock the config loading to avoid database dependencies
-        with patch("scrapers.base_scraper.ConfigLoader"), patch("scrapers.base_scraper.OrganizationSyncManager") as mock_sync:
-            mock_sync.return_value.sync_organization.return_value = (organization_id, "test_org")
+        with patch("scrapers.base_scraper.ConfigLoader"), patch("scrapers.base_scraper.create_default_sync_service") as mock_sync:
+            mock_sync_service = Mock()
+            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=organization_id, was_created=False)
+            mock_sync.return_value = mock_sync_service
             super().__init__(config_id="test_config", database_service=self.mock_database_service, session_manager=self.mock_session_manager)
 
         # Override skip_existing_animals setting

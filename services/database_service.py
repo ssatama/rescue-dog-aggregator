@@ -21,7 +21,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import psycopg2
 
-from utils.standardization import standardize_age, standardize_breed, standardize_size_value
+from utils.optimized_standardization import parse_age_text, standardize_breed, standardize_size_value
 
 
 class DatabaseService:
@@ -120,14 +120,14 @@ class DatabaseService:
             language = self._detect_language(description_text)
 
             # Apply standardization
-            standardized_breed, breed_group, size_estimate = standardize_breed(animal_data.get("breed", ""))
-            age_info = standardize_age(animal_data.get("age_text", ""))
-            age_months_min = age_info.get("age_min_months")
-            age_months_max = age_info.get("age_max_months")
+            breed_info = standardize_breed(animal_data.get("breed", ""))
+            age_info = parse_age_text(animal_data.get("age_text", ""))
+            age_months_min = age_info.min_months
+            age_months_max = age_info.max_months
 
             # Use size estimate if no size provided
             final_size = animal_data.get("size") or animal_data.get("standardized_size")
-            final_standardized_size = animal_data.get("standardized_size") or size_estimate or standardize_size_value(animal_data.get("size"))
+            final_standardized_size = animal_data.get("standardized_size") or breed_info.size_estimate or standardize_size_value(animal_data.get("size"))
 
             # Prepare values for insertion
             current_time = datetime.now()
@@ -157,8 +157,8 @@ class DatabaseService:
                     animal_data.get("adoption_url"),
                     animal_data.get("status", "available"),
                     animal_data.get("breed"),
-                    standardized_breed,
-                    breed_group,
+                    breed_info.standardized_name,
+                    breed_info.breed_group,
                     animal_data.get("age_text"),
                     age_months_min,
                     age_months_max,
@@ -222,20 +222,27 @@ class DatabaseService:
                 return None, "error"
 
             # Apply standardization to new data
-            new_standardized_breed, new_breed_group, new_size_estimate = standardize_breed(animal_data.get("breed", ""))
-            new_age_info = standardize_age(animal_data.get("age_text", ""))
-            new_age_min_months = new_age_info.get("age_min_months")
-            new_age_max_months = new_age_info.get("age_max_months")
+            new_breed_info = standardize_breed(animal_data.get("breed", ""))
+            new_age_info = parse_age_text(animal_data.get("age_text", ""))
+            new_age_min_months = new_age_info.min_months
+            new_age_max_months = new_age_info.max_months
 
             # Use size estimate if no size provided
-            new_final_standardized_size = animal_data.get("standardized_size") or new_size_estimate or standardize_size_value(animal_data.get("size"))
+            new_final_standardized_size = animal_data.get("standardized_size") or new_breed_info.size_estimate or standardize_size_value(animal_data.get("size"))
 
             # Check for changes (simplified comparison)
             current_properties_json = current_data[10] if current_data[10] else "{}"
             new_properties_json = json.dumps(animal_data.get("properties")) if animal_data.get("properties") else "{}"
 
             has_changes = self._detect_animal_changes(
-                current_data, animal_data, new_standardized_breed, new_age_min_months, new_age_max_months, new_final_standardized_size, new_properties_json, current_properties_json
+                current_data,
+                animal_data,
+                new_breed_info.standardized_name,
+                new_age_min_months,
+                new_age_max_months,
+                new_final_standardized_size,
+                new_properties_json,
+                current_properties_json,
             )
 
             if not has_changes:
@@ -261,8 +268,8 @@ class DatabaseService:
                 (
                     animal_data.get("name"),
                     animal_data.get("breed"),
-                    new_standardized_breed,
-                    new_breed_group,
+                    new_breed_info.standardized_name,
+                    new_breed_info.breed_group,
                     animal_data.get("age_text"),
                     new_age_min_months,
                     new_age_max_months,
@@ -328,7 +335,15 @@ class DatabaseService:
                 self.conn.rollback()
             return None
 
-    def complete_scrape_log(self, scrape_log_id: int, status: str, animals_found: int = 0, animals_added: int = 0, animals_updated: int = 0, error_message: Optional[str] = None) -> bool:
+    def complete_scrape_log(
+        self,
+        scrape_log_id: int,
+        status: str,
+        animals_found: int = 0,
+        animals_added: int = 0,
+        animals_updated: int = 0,
+        error_message: Optional[str] = None,
+    ) -> bool:
         """Update the scrape log with completion information.
 
         Args:
@@ -394,6 +409,33 @@ class DatabaseService:
             return detect(text)
         except Exception:
             return "en"
+
+    def get_existing_animal_urls(self, organization_id: int) -> set:
+        """Get set of existing animal URLs for this organization.
+
+        Args:
+            organization_id: Organization ID
+
+        Returns:
+            Set of existing animal URLs
+        """
+        if not self.conn:
+            self.logger.error("No database connection available")
+            return set()
+
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                "SELECT adoption_url FROM animals WHERE organization_id = %s AND status = 'available'",
+                (organization_id,),
+            )
+            results = cursor.fetchall()
+            cursor.close()
+
+            return {url[0] for url in results if url[0]}
+        except Exception as e:
+            self.logger.error(f"Error getting existing animal URLs: {e}")
+            return set()
 
     def _detect_animal_changes(
         self,

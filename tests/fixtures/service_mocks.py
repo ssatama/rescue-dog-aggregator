@@ -197,7 +197,7 @@ def create_test_scraper_with_services(
     if config_id:
         # Mock config-based initialization
         with patch("scrapers.base_scraper.ConfigLoader") as mock_loader_class:
-            with patch("scrapers.base_scraper.OrganizationSyncManager") as mock_sync_class:
+            with patch("scrapers.base_scraper.create_default_sync_service") as mock_sync_class:
                 # Mock config
                 mock_config = Mock()
                 mock_config.name = "Test Organization"

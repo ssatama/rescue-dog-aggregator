@@ -18,7 +18,11 @@ class TestDaisyFamilyRescueScraperMain:
     @pytest.fixture
     def scraper(self):
         """Create a scraper instance with mocked dependencies."""
-        with patch("scrapers.base_scraper.OrganizationSyncManager") as mock_sync, patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader, patch("scrapers.base_scraper.CloudinaryService"):
+        with (
+            patch("scrapers.base_scraper.create_default_sync_service") as mock_sync,
+            patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader,
+            patch("scrapers.base_scraper.CloudinaryService"),
+        ):
 
             mock_config = MagicMock()
             mock_config.name = "Daisy Family Rescue e.V."
@@ -31,7 +35,9 @@ class TestDaisyFamilyRescueScraperMain:
             mock_config.get_display_name.return_value = "Daisy Family Rescue e.V."
 
             mock_config_loader.return_value.load_config.return_value = mock_config
-            mock_sync.return_value.sync_organization.return_value = (12, True)
+            mock_sync_service = Mock()
+            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=12, was_created=True)
+            mock_sync.return_value = mock_sync_service
 
             scraper = DaisyFamilyRescueScraper(config_id="daisyfamilyrescue")
             return scraper

@@ -32,10 +32,16 @@ class TestDaisyFamilyRescueIntegration:
     @pytest.fixture
     def scraper(self, mock_config):
         """Create a scraper instance with mocked dependencies."""
-        with patch("scrapers.base_scraper.OrganizationSyncManager") as mock_sync, patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader, patch("scrapers.base_scraper.CloudinaryService"):
+        with (
+            patch("scrapers.base_scraper.create_default_sync_service") as mock_sync,
+            patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader,
+            patch("scrapers.base_scraper.CloudinaryService"),
+        ):
 
             mock_config_loader.return_value.load_config.return_value = mock_config
-            mock_sync.return_value.sync_organization.return_value = (12, True)
+            mock_sync_service = Mock()
+            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=12, was_created=True)
+            mock_sync.return_value = mock_sync_service
 
             scraper = DaisyFamilyRescueScraper(config_id="daisyfamilyrescue")
             return scraper
@@ -234,7 +240,11 @@ class TestDaisyFamilyRescueIntegration:
     @pytest.mark.integration
     def test_configuration_driven_initialization(self):
         """Test that scraper can be initialized through configuration system."""
-        with patch("scrapers.base_scraper.OrganizationSyncManager") as mock_sync, patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader, patch("scrapers.base_scraper.CloudinaryService"):
+        with (
+            patch("scrapers.base_scraper.create_default_sync_service") as mock_sync,
+            patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader,
+            patch("scrapers.base_scraper.CloudinaryService"),
+        ):
 
             # Mock successful config loading
             mock_config = MagicMock()
@@ -247,7 +257,9 @@ class TestDaisyFamilyRescueIntegration:
             mock_config.get_display_name.return_value = "Daisy Family Rescue e.V."
 
             mock_config_loader.return_value.load_config.return_value = mock_config
-            mock_sync.return_value.sync_organization.return_value = (12, True)
+            mock_sync_service = Mock()
+            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=12, was_created=True)
+            mock_sync.return_value = mock_sync_service
 
             # Initialize through config system
             scraper = DaisyFamilyRescueScraper(config_id="daisyfamilyrescue")
@@ -261,7 +273,7 @@ class TestDaisyFamilyRescueIntegration:
     @pytest.mark.integration
     def test_legacy_initialization_compatibility(self):
         """Test backward compatibility with legacy organization_id initialization."""
-        with patch("scrapers.base_scraper.OrganizationSyncManager"), patch("scrapers.base_scraper.ConfigLoader"), patch("scrapers.base_scraper.CloudinaryService"):
+        with patch("scrapers.base_scraper.create_default_sync_service"), patch("scrapers.base_scraper.ConfigLoader"), patch("scrapers.base_scraper.CloudinaryService"):
 
             # Test legacy mode
             scraper = DaisyFamilyRescueScraper(organization_id=12)

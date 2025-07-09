@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -11,7 +11,7 @@ class TestREANScraper:
     @pytest.fixture
     def scraper(self):
         """Create a REAN scraper instance for testing."""
-        with patch("scrapers.base_scraper.OrganizationSyncManager") as mock_sync, patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader:
+        with patch("scrapers.base_scraper.create_default_sync_service") as mock_sync, patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader:
 
             # Mock the config loader and organization sync
             mock_config = MagicMock()
@@ -20,7 +20,9 @@ class TestREANScraper:
             mock_config.metadata.website_url = "https://rean.org.uk"
 
             mock_config_loader.return_value.load_config.return_value = mock_config
-            mock_sync.return_value.sync_organization.return_value = (1, True)
+            mock_sync_service = Mock()
+            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=1, was_created=True)
+            mock_sync.return_value = mock_sync_service
 
             scraper = REANScraper()
             return scraper

@@ -7,7 +7,7 @@ import pytest
 import yaml
 
 from utils.config_loader import ConfigLoader, ConfigValidationError
-from utils.org_sync import OrganizationSyncManager
+from utils.organization_sync_service import create_default_sync_service
 
 
 @pytest.mark.slow
@@ -67,12 +67,12 @@ class TestConfigIntegration:
             assert len(warnings) == 0  # Should have no warnings
 
             # Step 3: Test sync manager (mock database operations)
-            with patch("utils.org_sync.get_db_cursor") as mock_cursor:
-                mock_cursor.return_value.fetchall.return_value = []  # No existing orgs
-                mock_cursor.return_value.fetchone.return_value = None
+            with patch("utils.organization_sync_service.execute_query") as mock_execute_query:
+                mock_execute_query.return_value = []  # No existing orgs
 
-                sync_manager = OrganizationSyncManager(loader)
-                status = sync_manager.get_sync_status()
+                sync_manager = create_default_sync_service()
+                configs = loader.load_all_configs()
+                status = sync_manager.get_sync_status(configs)
 
                 assert status["total_configs"] == 1
                 assert status["missing_from_db"] == ["test-org"]
@@ -182,14 +182,9 @@ class TestConfigIntegration:
                 if config.enabled:
                     print(f"Testing scraper import for: {config_id}")
 
-                    # This should not raise ImportError
-                    scraper_class = runner._import_scraper_class(config)
-
-                    # Verify we got a class
-                    assert callable(scraper_class), f"Scraper class for {config_id} is not callable"
-
-                    # Verify it has the expected name
-                    assert scraper_class.__name__ == config.scraper.class_name, f"Class name mismatch for {config_id}: got {scraper_class.__name__}, expected {config.scraper.class_name}"
+                    # This should not raise ImportError - test validation only
+                    is_valid, error = runner._secure_runner.validate_scraper_config(config_id)
+                    assert is_valid, f"Scraper validation failed for {config_id}: {error}"
 
                     # Try to instantiate it (with mocked org lookup to avoid DB dependency)
                     with patch("utils.org_sync.get_db_connection") as mock_conn:

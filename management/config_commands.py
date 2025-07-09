@@ -10,7 +10,7 @@ from utils.config_loader import ConfigLoader  # noqa: E402
 from utils.config_scraper_runner import ConfigScraperRunner  # noqa: E402
 
 # Now import local modules after path is set
-from utils.org_sync import OrganizationSyncManager  # noqa: E402
+from utils.organization_sync_service import create_default_sync_service  # noqa: E402
 
 
 class ConfigManager:
@@ -19,7 +19,7 @@ class ConfigManager:
     def __init__(self):
         """Initialize the config manager."""
         self.config_loader = ConfigLoader()
-        self.sync_manager = OrganizationSyncManager(self.config_loader)
+        self.sync_manager = create_default_sync_service()
         self.scraper_runner = ConfigScraperRunner(self.config_loader)
         self.logger = logging.getLogger(__name__)
 
@@ -150,7 +150,8 @@ class ConfigManager:
         try:
             if dry_run:
                 print("🔍 Dry run - checking what would be synced...")
-                status = self.sync_manager.get_sync_status()
+                configs = self.config_loader.load_all_configs()
+                status = self.sync_manager.get_sync_status(configs)
 
                 print("📊 Sync Status:")
                 print(f"  Total configs: {status['total_configs']}")
@@ -183,18 +184,19 @@ class ConfigManager:
                         print(f"    - {config_id}")
             else:
                 print("🔄 Syncing organizations to database...")
-                results = self.sync_manager.sync_all_organizations()
+                configs = self.config_loader.load_all_configs()
+                results = self.sync_manager.sync_all_organizations(configs)
 
-                if results["success"]:
+                if results.success:
                     print("✅ Sync completed successfully!")
                     print("📊 Results:")
-                    print(f"  ➕ Created: {results['created']}")
-                    print(f"  🔄 Updated: {results['updated']}")
-                    print(f"  📊 Total processed: {results['processed']}")
+                    print(f"  ➕ Created: {results.created}")
+                    print(f"  🔄 Updated: {results.updated}")
+                    print(f"  📊 Total processed: {results.processed}")
                     print("  🗺️  Service regions synced for all organizations")
                 else:
                     print("❌ Sync failed!")
-                    for error in results.get("errors", []):
+                    for error in results.errors:
                         print(f"  Error: {error}")
 
         except Exception as e:
@@ -210,8 +212,9 @@ class ConfigManager:
         try:
             if sync_first:
                 print("🔄 Syncing organizations to database before scraping...")
-                sync_res = self.sync_manager.sync_all_organizations()
-                if not sync_res.get("success"):
+                configs = self.config_loader.load_all_configs()
+                sync_res = self.sync_manager.sync_all_organizations(configs)
+                if not sync_res.success:
                     print("⚠️ Warning: organization sync reported errors, continuing to scraper")
 
             print(f"🚀 Running scraper for: {config_id}")
@@ -233,8 +236,9 @@ class ConfigManager:
         try:
             if sync_first:
                 print("🔄 Syncing organizations to database before running scrapers...")
-                sync_res = self.sync_manager.sync_all_organizations()
-                if not sync_res.get("success"):
+                configs = self.config_loader.load_all_configs()
+                sync_res = self.sync_manager.sync_all_organizations(configs)
+                if not sync_res.success:
                     print("⚠️ Warning: organization sync reported errors, continuing to scrapers")
 
             print("🚀 Running all enabled scrapers...")
@@ -295,6 +299,16 @@ class ConfigManager:
 
 def main():
     """Main CLI entry point."""
+    # Initialize database pool first
+    from utils.db_connection import create_database_config_from_env, initialize_database_pool
+
+    try:
+        db_config = create_database_config_from_env()
+        initialize_database_pool(db_config)
+    except Exception as e:
+        print(f"❌ Failed to initialize database: {e}")
+        return 1
+
     parser = argparse.ArgumentParser(description="Manage config-driven scrapers")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 

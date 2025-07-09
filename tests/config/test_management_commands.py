@@ -17,7 +17,7 @@ class TestManagementCommands:
         """Mock all dependencies of ConfigManager."""
         with (
             patch("management.config_commands.ConfigLoader") as mock_loader,
-            patch("management.config_commands.OrganizationSyncManager") as mock_sync,
+            patch("management.config_commands.create_default_sync_service") as mock_sync,
             patch("management.config_commands.ConfigScraperRunner") as mock_runner,
         ):
 
@@ -104,7 +104,7 @@ class TestManagementCommands:
         assert "Disabled Org" not in output
 
     @patch("management.config_commands.ConfigLoader")
-    @patch("management.config_commands.OrganizationSyncManager")
+    @patch("management.config_commands.create_default_sync_service")
     @patch("management.config_commands.ConfigScraperRunner")
     def test_show_organization(self, mock_runner, mock_sync, mock_loader):
         """Test showing detailed organization information."""
@@ -217,14 +217,11 @@ class TestManagementCommands:
     def test_sync_organizations_actual(self, mock_config_manager_deps):
         """Test actual sync command."""
         mock_deps = mock_config_manager_deps
-        mock_deps["sync"].return_value.sync_all_organizations.return_value = {
-            "success": True,
-            "total_configs": 1,
-            "processed": 1,
-            "created": 1,
-            "updated": 0,
-            "errors": [],
-        }
+        # Import SyncSummary to create proper mock object
+        from utils.organization_sync_service import SyncSummary
+
+        success_summary = SyncSummary(total_configs=1, processed=1, created=1, updated=0, errors=[], org_mappings={})
+        mock_deps["sync"].return_value.sync_all_organizations.return_value = success_summary
 
         manager = ConfigManager()
 

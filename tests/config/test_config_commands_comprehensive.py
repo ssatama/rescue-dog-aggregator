@@ -51,7 +51,7 @@ class TestConfigManagerErrorHandling:
 
     def test_show_organization_with_validation_warnings(self):
         """Test show organization when config has validation warnings."""
-        with patch("management.config_commands.ConfigLoader") as mock_loader, patch("management.config_commands.OrganizationSyncManager"), patch("management.config_commands.ConfigScraperRunner"):
+        with patch("management.config_commands.ConfigLoader") as mock_loader, patch("management.config_commands.create_default_sync_service"), patch("management.config_commands.ConfigScraperRunner"):
 
             # Create mock config with validation warnings
             mock_config = Mock()
@@ -91,7 +91,7 @@ class TestConfigManagerErrorHandling:
 
     def test_show_organization_with_complex_service_regions(self):
         """Test show organization with complex service regions structure."""
-        with patch("management.config_commands.ConfigLoader") as mock_loader, patch("management.config_commands.OrganizationSyncManager"), patch("management.config_commands.ConfigScraperRunner"):
+        with patch("management.config_commands.ConfigLoader") as mock_loader, patch("management.config_commands.create_default_sync_service"), patch("management.config_commands.ConfigScraperRunner"):
 
             mock_config = Mock()
             mock_config.id = "test-org"
@@ -137,7 +137,7 @@ class TestConfigManagerErrorHandling:
 
     def test_show_organization_with_scraper_config_dict(self):
         """Test show organization with scraper config as dictionary."""
-        with patch("management.config_commands.ConfigLoader") as mock_loader, patch("management.config_commands.OrganizationSyncManager"), patch("management.config_commands.ConfigScraperRunner"):
+        with patch("management.config_commands.ConfigLoader") as mock_loader, patch("management.config_commands.create_default_sync_service"), patch("management.config_commands.ConfigScraperRunner"):
 
             mock_config = Mock()
             mock_config.id = "test-org"
@@ -176,7 +176,7 @@ class TestConfigManagerErrorHandling:
 
     def test_show_organization_with_scraper_config_object(self):
         """Test show organization with scraper config as object."""
-        with patch("management.config_commands.ConfigLoader") as mock_loader, patch("management.config_commands.OrganizationSyncManager"), patch("management.config_commands.ConfigScraperRunner"):
+        with patch("management.config_commands.ConfigLoader") as mock_loader, patch("management.config_commands.create_default_sync_service"), patch("management.config_commands.ConfigScraperRunner"):
 
             mock_config = Mock()
             mock_config.id = "test-org"
@@ -223,7 +223,7 @@ class TestConfigManagerErrorHandling:
 
     def test_sync_organizations_with_service_regions_status(self):
         """Test sync dry run with service regions status."""
-        with patch("management.config_commands.ConfigLoader"), patch("management.config_commands.OrganizationSyncManager") as mock_sync, patch("management.config_commands.ConfigScraperRunner"):
+        with patch("management.config_commands.ConfigLoader"), patch("management.config_commands.create_default_sync_service") as mock_sync, patch("management.config_commands.ConfigScraperRunner"):
 
             # Mock sync status with service regions
             mock_sync.return_value.get_sync_status.return_value = {
@@ -256,9 +256,13 @@ class TestConfigManagerErrorHandling:
 
     def test_sync_organizations_failure(self):
         """Test sync organizations when sync fails."""
-        with patch("management.config_commands.ConfigLoader"), patch("management.config_commands.OrganizationSyncManager") as mock_sync, patch("management.config_commands.ConfigScraperRunner"):
+        with patch("management.config_commands.ConfigLoader"), patch("management.config_commands.create_default_sync_service") as mock_sync, patch("management.config_commands.ConfigScraperRunner"):
 
-            mock_sync.return_value.sync_all_organizations.return_value = {"success": False, "errors": ["Database connection failed", "Validation error"]}
+            # Import SyncSummary to create proper mock object
+            from utils.organization_sync_service import SyncSummary
+
+            failed_summary = SyncSummary(total_configs=2, processed=1, created=0, updated=0, errors=["Database connection failed", "Validation error"], org_mappings={})
+            mock_sync.return_value.sync_all_organizations.return_value = failed_summary
 
             manager = ConfigManager()
 
@@ -273,7 +277,7 @@ class TestConfigManagerErrorHandling:
 
     def test_sync_organizations_error_exception(self):
         """Test sync organizations when exception occurs."""
-        with patch("management.config_commands.ConfigLoader"), patch("management.config_commands.OrganizationSyncManager") as mock_sync, patch("management.config_commands.ConfigScraperRunner"):
+        with patch("management.config_commands.ConfigLoader"), patch("management.config_commands.create_default_sync_service") as mock_sync, patch("management.config_commands.ConfigScraperRunner"):
 
             mock_sync.return_value.sync_all_organizations.side_effect = Exception("Sync exception")
 
@@ -290,12 +294,15 @@ class TestConfigManagerErrorHandling:
         """Test run scraper when sync has errors but continues."""
         with (
             patch("management.config_commands.ConfigLoader"),
-            patch("management.config_commands.OrganizationSyncManager") as mock_sync,
+            patch("management.config_commands.create_default_sync_service") as mock_sync,
             patch("management.config_commands.ConfigScraperRunner") as mock_runner,
         ):
 
             # Sync returns success=False but we continue
-            mock_sync.return_value.sync_all_organizations.return_value = {"success": False, "errors": ["Minor sync error"]}
+            from utils.organization_sync_service import SyncSummary
+
+            sync_summary = SyncSummary(total_configs=1, processed=0, created=0, updated=0, errors=["Minor sync error"], org_mappings={})
+            mock_sync.return_value.sync_all_organizations.return_value = sync_summary
 
             mock_runner.return_value.run_scraper.return_value = {"success": True, "organization": "Test Org", "animals_found": 10}
 
@@ -312,7 +319,7 @@ class TestConfigManagerErrorHandling:
 
     def test_run_scraper_failure(self):
         """Test run scraper when scraper fails."""
-        with patch("management.config_commands.ConfigLoader"), patch("management.config_commands.OrganizationSyncManager"), patch("management.config_commands.ConfigScraperRunner") as mock_runner:
+        with patch("management.config_commands.ConfigLoader"), patch("management.config_commands.create_default_sync_service"), patch("management.config_commands.ConfigScraperRunner") as mock_runner:
 
             mock_runner.return_value.run_scraper.return_value = {"success": False, "error": "Scraper crashed"}
 
@@ -328,7 +335,7 @@ class TestConfigManagerErrorHandling:
 
     def test_run_scraper_exception(self):
         """Test run scraper when exception occurs."""
-        with patch("management.config_commands.ConfigLoader"), patch("management.config_commands.OrganizationSyncManager"), patch("management.config_commands.ConfigScraperRunner") as mock_runner:
+        with patch("management.config_commands.ConfigLoader"), patch("management.config_commands.create_default_sync_service"), patch("management.config_commands.ConfigScraperRunner") as mock_runner:
 
             mock_runner.return_value.run_scraper.side_effect = Exception("Runner exception")
 
@@ -345,11 +352,14 @@ class TestConfigManagerErrorHandling:
         """Test run all scrapers with mixed success/failure results."""
         with (
             patch("management.config_commands.ConfigLoader"),
-            patch("management.config_commands.OrganizationSyncManager") as mock_sync,
+            patch("management.config_commands.create_default_sync_service") as mock_sync,
             patch("management.config_commands.ConfigScraperRunner") as mock_runner,
         ):
 
-            mock_sync.return_value.sync_all_organizations.return_value = {"success": True}
+            from utils.organization_sync_service import SyncSummary
+
+            sync_summary = SyncSummary(total_configs=3, processed=3, created=1, updated=2, errors=[], org_mappings={"org1": 1, "org2": 2, "org3": 3})
+            mock_sync.return_value.sync_all_organizations.return_value = sync_summary
 
             mock_runner.return_value.run_all_enabled_scrapers.return_value = {
                 "results": [
@@ -377,7 +387,7 @@ class TestConfigManagerErrorHandling:
 
     def test_run_all_scrapers_exception(self):
         """Test run all scrapers when exception occurs."""
-        with patch("management.config_commands.ConfigLoader"), patch("management.config_commands.OrganizationSyncManager"), patch("management.config_commands.ConfigScraperRunner") as mock_runner:
+        with patch("management.config_commands.ConfigLoader"), patch("management.config_commands.create_default_sync_service"), patch("management.config_commands.ConfigScraperRunner") as mock_runner:
 
             mock_runner.return_value.run_all_enabled_scrapers.side_effect = Exception("All scrapers failed")
 
@@ -392,7 +402,7 @@ class TestConfigManagerErrorHandling:
 
     def test_validate_configs_with_warnings(self):
         """Test validate configs when some configs have warnings."""
-        with patch("management.config_commands.ConfigLoader") as mock_loader, patch("management.config_commands.OrganizationSyncManager"), patch("management.config_commands.ConfigScraperRunner"):
+        with patch("management.config_commands.ConfigLoader") as mock_loader, patch("management.config_commands.create_default_sync_service"), patch("management.config_commands.ConfigScraperRunner"):
 
             # Create configs with different validation states
             mock_config1 = Mock()
@@ -424,7 +434,7 @@ class TestConfigManagerErrorHandling:
 
     def test_validate_configs_exception(self):
         """Test validate configs when exception occurs."""
-        with patch("management.config_commands.ConfigLoader") as mock_loader, patch("management.config_commands.OrganizationSyncManager"), patch("management.config_commands.ConfigScraperRunner"):
+        with patch("management.config_commands.ConfigLoader") as mock_loader, patch("management.config_commands.create_default_sync_service"), patch("management.config_commands.ConfigScraperRunner"):
 
             mock_loader.return_value.load_all_configs.side_effect = Exception("Validation failed")
 
@@ -530,7 +540,7 @@ class TestConfigManagerEdgeCases:
 
     def test_show_organization_no_service_regions(self):
         """Test show organization when service_regions is None."""
-        with patch("management.config_commands.ConfigLoader") as mock_loader, patch("management.config_commands.OrganizationSyncManager"), patch("management.config_commands.ConfigScraperRunner"):
+        with patch("management.config_commands.ConfigLoader") as mock_loader, patch("management.config_commands.create_default_sync_service"), patch("management.config_commands.ConfigScraperRunner"):
 
             mock_config = Mock()
             mock_config.id = "test-org"
@@ -567,7 +577,7 @@ class TestConfigManagerEdgeCases:
 
     def test_show_organization_unknown_scraper_config_type(self):
         """Test show organization with unknown scraper config type."""
-        with patch("management.config_commands.ConfigLoader") as mock_loader, patch("management.config_commands.OrganizationSyncManager"), patch("management.config_commands.ConfigScraperRunner"):
+        with patch("management.config_commands.ConfigLoader") as mock_loader, patch("management.config_commands.create_default_sync_service"), patch("management.config_commands.ConfigScraperRunner"):
 
             mock_config = Mock()
             mock_config.id = "test-org"
@@ -606,11 +616,14 @@ class TestConfigManagerEdgeCases:
         """Test run all scrapers when no results are returned."""
         with (
             patch("management.config_commands.ConfigLoader"),
-            patch("management.config_commands.OrganizationSyncManager") as mock_sync,
+            patch("management.config_commands.create_default_sync_service") as mock_sync,
             patch("management.config_commands.ConfigScraperRunner") as mock_runner,
         ):
 
-            mock_sync.return_value.sync_all_organizations.return_value = {"success": True}
+            from utils.organization_sync_service import SyncSummary
+
+            sync_summary = SyncSummary(total_configs=0, processed=0, created=0, updated=0, errors=[], org_mappings={})
+            mock_sync.return_value.sync_all_organizations.return_value = sync_summary
 
             # Empty results
             mock_runner.return_value.run_all_enabled_scrapers.return_value = {"results": [], "successful": 0, "failed": 0, "total_orgs": 0}

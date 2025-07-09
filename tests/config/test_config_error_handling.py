@@ -78,7 +78,7 @@ class TestConfigErrorHandling:
             assert status["error"] == "Database connection failed"  # Updated expectation
 
     def test_scraper_import_failure_handling(self):
-        """Test handling of scraper import failures."""
+        """Test handling of scraper import failures through run_scraper."""
         from utils.config_scraper_runner import ConfigScraperRunner
 
         mock_loader = Mock()
@@ -86,12 +86,16 @@ class TestConfigErrorHandling:
         # FIX: Set string values instead of Mock objects
         mock_config.scraper.module = "nonexistent.module"
         mock_config.scraper.class_name = "NonexistentClass"
+        mock_config.id = "test-config"
+        mock_config.is_enabled_for_scraping.return_value = True
         mock_loader.load_config.return_value = mock_config
 
         runner = ConfigScraperRunner(mock_loader)
 
-        with pytest.raises(ImportError):
-            runner._import_scraper_class(mock_config)
+        # Test through public API - run_scraper should handle the import error
+        result = runner.run_scraper("test-config")
+        assert result["success"] is False
+        assert "error" in result
 
     def test_config_id_mismatch(self):
         """Test validation of config ID vs filename mismatch."""

@@ -50,7 +50,7 @@ class TestBackwardCompatibility:
                 return 1, "updated"
 
         # Mock the ConfigLoader class itself, not the instance method
-        with patch("scrapers.base_scraper.ConfigLoader") as mock_loader_class, patch("scrapers.base_scraper.OrganizationSyncManager") as mock_sync:
+        with patch("scrapers.base_scraper.ConfigLoader") as mock_loader_class, patch("scrapers.base_scraper.create_default_sync_service") as mock_sync:
 
             # Mock config
             mock_config = Mock()
@@ -66,7 +66,9 @@ class TestBackwardCompatibility:
             mock_loader_instance.load_config.return_value = mock_config
             mock_loader_class.return_value = mock_loader_instance
 
-            mock_sync.return_value.sync_organization.return_value = (1, False)
+            mock_sync_service = Mock()
+            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=1, was_created=False)
+            mock_sync.return_value = mock_sync_service
 
             # Should work with config initialization
             scraper = ConfigScraper(config_id="test-org")
@@ -106,14 +108,16 @@ class TestBackwardCompatibility:
         assert "Organization ID 1" in scraper_legacy.organization_name
 
         # Test config mode (mock the config loading)
-        with patch("scrapers.base_scraper.ConfigLoader") as mock_loader, patch("scrapers.base_scraper.OrganizationSyncManager") as mock_sync:
+        with patch("scrapers.base_scraper.ConfigLoader") as mock_loader, patch("scrapers.base_scraper.create_default_sync_service") as mock_sync:
 
             mock_config = Mock()
             mock_config.name = "Pets in Turkey"
             mock_config.get_scraper_config_dict.return_value = {"rate_limit_delay": 1.0}
 
             mock_loader.return_value.load_config.return_value = mock_config
-            mock_sync.return_value.sync_organization.return_value = (2, False)
+            mock_sync_service = Mock()
+            mock_sync_service.sync_single_organization.return_value = Mock(organization_id=2, was_created=False)
+            mock_sync.return_value = mock_sync_service
 
             # Mock the actual config file loading to avoid Pydantic validation
             with patch("utils.config_loader.ConfigLoader.load_config", return_value=mock_config):

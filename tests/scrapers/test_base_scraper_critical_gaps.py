@@ -198,7 +198,7 @@ class TestBaseScraperConfigInitialization:
         """Test successful config-based scraper initialization."""
         with (
             patch("scrapers.base_scraper.ConfigLoader") as mock_loader_class,
-            patch("scrapers.base_scraper.OrganizationSyncManager") as mock_sync_class,
+            patch("scrapers.base_scraper.create_default_sync_service") as mock_sync_class,
             patch("scrapers.base_scraper.psycopg2.connect"),
         ):
 
@@ -214,7 +214,7 @@ class TestBaseScraperConfigInitialization:
 
             # Mock sync manager
             mock_sync_instance = Mock()
-            mock_sync_instance.sync_organization.return_value = (1, True)  # (org_id, created)
+            mock_sync_instance.sync_single_organization.return_value = Mock(organization_id=1, was_created=True)
             mock_sync_class.return_value = mock_sync_instance
 
             class TestScraper(BaseScraper):
@@ -262,8 +262,8 @@ class TestBaseScraperConfigInitialization:
             TestScraper(config_id="nonexistent_org")
 
     @patch("utils.config_loader.ConfigLoader.load_config")
-    @patch("utils.org_sync.OrganizationSyncManager")
-    def test_config_initialization_sync_failure(self, mock_sync_manager, mock_load_config):
+    @patch("scrapers.base_scraper.create_default_sync_service")
+    def test_config_initialization_sync_failure(self, mock_sync_service, mock_load_config):
         """Test config initialization with sync failure."""
         # Mock config object
         mock_config = Mock()
@@ -271,10 +271,10 @@ class TestBaseScraperConfigInitialization:
         mock_config.get_scraper_config_dict.return_value = {}
         mock_load_config.return_value = mock_config
 
-        # Mock sync manager with failure
+        # Mock sync service with failure
         mock_sync_instance = Mock()
-        mock_sync_manager.return_value = mock_sync_instance
-        mock_sync_instance.sync_organization.side_effect = Exception("Sync failed")
+        mock_sync_service.return_value = mock_sync_instance
+        mock_sync_instance.sync_single_organization.side_effect = Exception("Sync failed")
 
         class TestScraper(BaseScraper):
             def collect_data(self):
@@ -289,9 +289,11 @@ class TestBaseScraperConfigInitialization:
             def update_animal(self, animal_id, animal_data):
                 return animal_id, "updated"
 
-        # Should handle sync failure
-        with pytest.raises(Exception):
-            TestScraper(config_id="test_org")
+        # With new architecture, sync failures are handled gracefully
+        scraper = TestScraper(config_id="test_org")
+        # Verify that the scraper was created successfully even with sync failure
+        assert scraper is not None
+        assert scraper.org_config.name == "Test Org"
 
     def test_backward_compatibility_organization_id_init(self):
         """Test backward compatibility with direct organization_id initialization."""

@@ -1,13 +1,12 @@
-import importlib
 import logging
 from typing import Any, Dict, List, Optional
 
 from utils.config_loader import ConfigLoader
-from utils.org_sync import OrganizationSyncManager
+from utils.secure_config_scraper_runner import SecureConfigScraperRunner
 
 
 class ConfigScraperRunner:
-    """Manages running scrapers based on config files."""
+    """Manages running scrapers based on config files - now uses secure implementation."""
 
     def __init__(self, config_loader: Optional[ConfigLoader] = None):
         """Initialize the scraper runner.
@@ -17,6 +16,7 @@ class ConfigScraperRunner:
         """
         self.config_loader = config_loader or ConfigLoader()
         self.logger = logging.getLogger(__name__)
+        self._secure_runner = SecureConfigScraperRunner(config_loader)
 
     def list_available_scrapers(self) -> List[Dict[str, Any]]:
         """List all available scrapers from configs.
@@ -24,219 +24,78 @@ class ConfigScraperRunner:
         Returns:
             List of scraper information
         """
-        configs = self.config_loader.load_all_configs()
-        scrapers = []
-
-        for config_id, config in configs.items():
-            scrapers.append(
-                {
-                    "config_id": config_id,
-                    "name": config.name,
-                    "enabled": config.enabled,
-                    "scraper_class": config.scraper.class_name,
-                    "module": config.scraper.module,
-                    "display_name": config.get_display_name(),
-                }
-            )
-
-        return scrapers
-
-    def _import_scraper_class(self, config):
-        """Import scraper class from config.
-
-        Args:
-            config: OrganizationConfig object
-
-        Returns:
-            Scraper class
-
-        Raises:
-            ImportError: If module cannot be imported
-            AttributeError: If class not found in module
-        """
-        try:
-            module_path = config.scraper.module
-            class_name = config.scraper.class_name
-
-            module = importlib.import_module(module_path)
-            scraper_class = getattr(module, class_name)
-
-            self.logger.info(f"Successfully imported {class_name} from {module_path}")
-            return scraper_class
-
-        except ImportError as e:
-            self.logger.error(f"Failed to import module '{module_path}': {e}")
-            raise
-        except AttributeError as e:
-            self.logger.error(f"Class '{class_name}' not found in module '{module_path}': {e}")
-            raise
-
-    def _create_scraper_instance(self, scraper_class, config_id: str):
-        """Create scraper instance with proper configuration.
-
-        Args:
-            scraper_class: The scraper class to instantiate
-            config_id: Configuration ID for the scraper
-
-        Returns:
-            Instantiated scraper object
-        """
-        return scraper_class(config_id=config_id)
-
-    def load_scraper(self, config_id: str):
-        """Load and instantiate a scraper without running it.
-
-        This method is designed for testing imports and instantiation
-        without executing the full scraper logic.
-
-        Args:
-            config_id: Organization config ID
-
-        Returns:
-            Instantiated scraper object (not executed)
-
-        Raises:
-            ImportError: If module cannot be imported
-            AttributeError: If class not found in module
-            Exception: If configuration or instantiation fails
-        """
-        try:
-            # Load config
-            config = self.config_loader.load_config(config_id)
-
-            # Check if enabled
-            if not config.is_enabled_for_scraping():
-                raise ValueError(f"Organization '{config.get_display_name()}' is disabled for scraping")
-
-            # Import scraper class
-            scraper_class = self._import_scraper_class(config)
-
-            # Create scraper instance (without running it)
-            scraper = self._create_scraper_instance(scraper_class, config_id)
-
-            self.logger.info(f"Successfully loaded scraper for {config_id}")
-            return scraper
-
-        except Exception as e:
-            self.logger.error(f"Error loading scraper for {config_id}: {e}")
-            raise
-
-    def run_scraper(self, config_id: str, sync_first: bool = True) -> Dict[str, Any]:
-        """Run a specific scraper by config ID.
-
-        Args:
-            config_id: Organization config ID
-            sync_first: Whether to sync organization to DB first
-
-        Returns:
-            Dictionary with run results
-        """
-        try:
-            # Load config
-            config = self.config_loader.load_config(config_id)
-
-            # Check if enabled
-            if not config.is_enabled_for_scraping():
-                return {
-                    "success": False,
-                    "config_id": config_id,
-                    "error": f"Organization '{config.get_display_name()}' is disabled for scraping",
-                }
-
-            # Import scraper class
-            scraper_class = self._import_scraper_class(config)
-
-            # Get organization database ID
-            # Try to get from config first, fallback to database lookup
-            try:
-                organization_id = getattr(config, "organization_db_id", None)
-                if not organization_id:
-                    # Fallback: sync first to ensure org exists in DB
-                    from utils.org_sync import OrganizationSyncManager
-
-                    sync_manager = OrganizationSyncManager(self.config_loader)
-                    organization_id, created = sync_manager.sync_organization(config)
-            except Exception as e:
-                return {
-                    "success": False,
-                    "config_id": config_id,
-                    "error": f"Could not determine organization ID: {e}",
-                }
-
-            # Create scraper instance with config_id (not organization_id!)
-            # This ensures the scraper loads configuration values like skip_existing_animals
-            scraper = scraper_class(config_id=config_id)
-
-            # Run scraper
-            success = scraper.run()
-
-            if success:
-                return {
-                    "success": True,
-                    "config_id": config_id,
-                    "organization": config.get_display_name(),
-                    "animals_found": getattr(scraper, "animals_found", 0),
-                }
-            else:
-                return {
-                    "success": False,
-                    "config_id": config_id,
-                    "error": "Scraper returned False (check logs for details)",
-                }
-
-        except Exception as e:
-            self.logger.error(f"Error running scraper for {config_id}: {e}")
-            return {
-                "success": False,
-                "config_id": config_id,
-                "error": str(e),
+        scrapers = self._secure_runner.list_available_scrapers()
+        return [
+            {
+                "config_id": scraper.config_id,
+                "name": scraper.name,
+                "enabled": scraper.enabled,
+                "scraper_class": scraper.scraper_class,
+                "module": scraper.module,
+                "display_name": scraper.display_name,
             }
+            for scraper in scrapers
+        ]
+
+    def run_scraper(self, config_id: str) -> Dict[str, Any]:
+        """Run a specific scraper.
+
+        Args:
+            config_id: The config ID of the scraper to run
+
+        Returns:
+            Dictionary with success status and message
+        """
+        result = self._secure_runner.run_scraper(config_id)
+        return {
+            "success": result.success,
+            "config_id": result.config_id,
+            "organization": result.organization,
+            "animals_found": result.animals_found,
+            "error": result.error,
+        }
 
     def run_all_enabled_scrapers(self) -> Dict[str, Any]:
         """Run all enabled scrapers.
 
         Returns:
-            Dictionary with overall results
+            Dictionary with batch run results
         """
-        try:
-            # Sync all organizations first
-            sync_manager = OrganizationSyncManager(self.config_loader)
-            sync_results = sync_manager.sync_all_organizations()
-
-            # Get enabled organizations
-            enabled_orgs = self.config_loader.get_enabled_orgs()
-
-            if not enabled_orgs:
-                return {
-                    "success": True,
-                    "total_orgs": 0,
-                    "successful": 0,
-                    "failed": 0,
-                    "results": [],
+        result = self._secure_runner.run_all_enabled_scrapers()
+        return {
+            "success": result.success,
+            "total_orgs": result.total_orgs,
+            "successful": result.successful,
+            "failed": result.failed,
+            "results": [
+                {
+                    "config_id": r.config_id,
+                    "success": r.success,
+                    "organization": r.organization,
+                    "animals_found": r.animals_found,
+                    "error": r.error,
                 }
+                for r in result.results
+            ],
+            "sync_results": result.sync_results,
+            "error": result.error,
+        }
 
-            results = []
-            successful = 0
-            failed = 0
+    def get_scraper_status(self, config_id: str) -> Dict[str, Any]:
+        """Get status information for a scraper.
 
-            for org_config in enabled_orgs:
-                result = self.run_scraper(org_config.id, sync_first=False)
-                results.append(result)
+        Args:
+            config_id: The config ID of the scraper
 
-                if result["success"]:
-                    successful += 1
-                else:
-                    failed += 1
+        Returns:
+            Dictionary with scraper status
+        """
+        return self._secure_runner.get_scraper_status(config_id)
 
-            return {
-                "success": True,
-                "total_orgs": len(enabled_orgs),
-                "successful": successful,
-                "failed": failed,
-                "results": results,
-                "sync_results": sync_results,
-            }
+    def get_all_scraper_status(self) -> List[Dict[str, Any]]:
+        """Get status for all scrapers.
 
-        except Exception as e:
-            self.logger.error(f"Error running all scrapers: {e}")
-            return {"success": False, "error": str(e)}
+        Returns:
+            List of scraper status dictionaries
+        """
+        return self._secure_runner.get_all_scraper_status()

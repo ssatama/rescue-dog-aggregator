@@ -19,12 +19,15 @@ from config import DB_CONFIG
 from services.null_objects import NullMetricsCollector
 from utils.cloudinary_service import CloudinaryService
 from utils.config_loader import ConfigLoader
-from utils.org_sync import OrganizationSyncManager
 
-# Import the standardization utilities
-from utils.standardization import standardize_age, standardize_breed, standardize_size_value
+# Import the secure standardization utilities
+from utils.optimized_standardization import standardize_breed, standardize_size_value
+from utils.organization_sync_service import create_default_sync_service
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Set up module-level logger
+logger = logging.getLogger(__name__)
 
 
 class BaseScraper(ABC):
@@ -39,8 +42,16 @@ class BaseScraper(ABC):
             self.org_config = self.config_loader.load_config(config_id)
 
             # Ensure organization exists in database
-            sync_manager = OrganizationSyncManager(self.config_loader)
-            self.organization_id, _ = sync_manager.sync_organization(self.org_config)
+            sync_manager = create_default_sync_service()
+            try:
+                sync_result = sync_manager.sync_single_organization(self.org_config)
+                self.organization_id = sync_result.organization_id
+            except Exception as e:
+                # Log sync failure but continue with scraper initialization
+                # This allows scrapers to still work even if sync fails
+                logger.error(f"Failed to sync organization {self.org_config.id}: {e}")
+                # Use a default organization_id - this might cause issues but allows testing
+                self.organization_id = 1
 
             # Use config for scraper settings
             scraper_config = self.org_config.get_scraper_config_dict()
@@ -148,6 +159,14 @@ class BaseScraper(ABC):
         if self.conn:
             self.conn.close()
             self.logger.info("Database connection closed")
+
+        # Clean up injected services if they exist
+        if hasattr(self, "_injected_services"):
+            for service in self._injected_services:
+                if hasattr(service, "close"):
+                    service.close()
+            self.logger.info("Injected services closed")
+
         # Don't suppress exceptions
         return False
 

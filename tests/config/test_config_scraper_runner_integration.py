@@ -73,7 +73,7 @@ class TestConfigScraperRunnerIntegration:
 
             # This should fail gracefully when trying to import non-existent
             # module
-            result = runner.run_scraper("test-org", sync_first=False)
+            result = runner.run_scraper("test-org")
 
             assert result["success"] is False
             assert "error" in result
