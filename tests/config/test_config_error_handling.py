@@ -65,17 +65,17 @@ class TestConfigErrorHandling:
 
     def test_database_connection_failure_in_sync(self):
         """Test sync handling when database is unavailable."""
-        from utils.org_sync import OrganizationSyncManager
+        from utils.organization_sync_service import create_default_sync_service
 
-        with patch("utils.org_sync.get_db_cursor") as mock_cursor:
-            mock_cursor.side_effect = Exception("Database connection failed")
+        with patch("utils.organization_sync_service.execute_query") as mock_execute:
+            mock_execute.side_effect = Exception("Database connection failed")
 
-            loader = Mock()
-            sync_manager = OrganizationSyncManager(loader)
+            sync_manager = create_default_sync_service()
 
             # The sync manager returns error status instead of None
-            status = sync_manager.get_sync_status()
-            assert status["error"] == "Database connection failed"  # Updated expectation
+            status = sync_manager.get_sync_status({})
+            assert "error" in status
+            assert "Database connection failed" in status["error"]
 
     def test_scraper_import_failure_handling(self):
         """Test handling of scraper import failures through run_scraper."""

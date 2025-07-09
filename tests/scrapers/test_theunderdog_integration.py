@@ -17,10 +17,9 @@ class TestTheUnderdogIntegration:
     @pytest.fixture
     def scraper(self):
         """Create a scraper instance for testing."""
-        with patch("utils.org_sync.OrganizationSyncManager"):
-            scraper = TheUnderdogScraper()
-            scraper.organization_id = 14
-            return scraper
+        scraper = TheUnderdogScraper()
+        scraper.organization_id = 14
+        return scraper
 
     @pytest.fixture
     def mock_listing_response(self):

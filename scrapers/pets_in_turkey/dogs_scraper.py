@@ -14,7 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
 from scrapers.base_scraper import BaseScraper
-from utils.standardization import parse_age_text
+from utils.optimized_standardization import parse_age_text
 
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -492,10 +492,10 @@ class PetsInTurkeyScraper(BaseScraper):
 
         # Use parse_age_text to validate and potentially improve the format
         try:
-            parsed_age, _, _ = parse_age_text(age_text)
-            if parsed_age:
+            age_info = parse_age_text(age_text)
+            if age_info.age_category:
                 result = dog_data.copy()
-                result["age_text"] = parsed_age
+                result["age_text"] = age_info.age_category
                 return result
         except Exception:
             # If parsing fails, keep original

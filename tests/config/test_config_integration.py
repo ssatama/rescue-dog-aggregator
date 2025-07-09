@@ -148,8 +148,8 @@ class TestConfigIntegration:
                     return 1, "updated"
 
             # Mock database operations
-            with patch("utils.org_sync.get_db_cursor") as mock_cursor:
-                mock_cursor.return_value.fetchone.return_value = {"id": 1}  # Return org ID as dict for RealDictCursor
+            with patch("utils.organization_sync_service.execute_query") as mock_execute_query:
+                mock_execute_query.return_value = [{"id": 1}]  # Return org ID as dict for RealDictCursor
 
                 # Create scraper with config
                 scraper = TestScraper(config_id="test-org")
@@ -187,10 +187,8 @@ class TestConfigIntegration:
                     assert is_valid, f"Scraper validation failed for {config_id}: {error}"
 
                     # Try to instantiate it (with mocked org lookup to avoid DB dependency)
-                    with patch("utils.org_sync.get_db_connection") as mock_conn:
-                        mock_cursor = Mock()
-                        mock_cursor.fetchone.return_value = [1]  # Mock org ID
-                        mock_conn.return_value.__enter__.return_value.cursor.return_value.__enter__.return_value = mock_cursor
+                    with patch("utils.organization_sync_service.execute_query") as mock_execute_query:
+                        mock_execute_query.return_value = [{"id": 1}]  # Mock org ID
 
                         try:
                             # Use the new load_scraper method to test instantiation WITHOUT execution

@@ -253,20 +253,18 @@ class TestDatabaseConfiguration:
     def test_database_connection_configuration(self):
         """Test that database connection can be established with current config"""
         try:
-            from utils.db import get_connection
+            from utils.db_connection import get_db_connection
 
             # Try to get a connection (this will use environment variables)
-            conn = get_connection()
+            with get_db_connection() as conn:
+                # Basic connectivity test
+                cursor = conn.cursor()
+                cursor.execute("SELECT 1")
+                result = cursor.fetchone()
 
-            # Basic connectivity test
-            cursor = conn.cursor()
-            cursor.execute("SELECT 1")
-            result = cursor.fetchone()
+                assert result[0] == 1, "Database connection test failed"
 
-            assert result[0] == 1, "Database connection test failed"
-
-            cursor.close()
-            conn.close()
+                cursor.close()
 
         except ImportError:
             pytest.skip("Database utilities not available")
