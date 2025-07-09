@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
 from scrapers.base_scraper import BaseScraper
+from tests.fixtures.service_mocks import create_mock_database_service, create_mock_session_manager
 
 
 class MockScraper(BaseScraper):
@@ -23,10 +24,14 @@ class MockScraper(BaseScraper):
 
     def __init__(self, organization_id=1, skip_existing=True):
         """Initialize mock scraper."""
+        # Create services for testing
+        self.mock_database_service = create_mock_database_service()
+        self.mock_session_manager = create_mock_session_manager()
+
         # Mock the config loading to avoid database dependencies
         with patch("scrapers.base_scraper.ConfigLoader"), patch("scrapers.base_scraper.OrganizationSyncManager") as mock_sync:
             mock_sync.return_value.sync_organization.return_value = (organization_id, "test_org")
-            super().__init__(config_id="test_config")
+            super().__init__(config_id="test_config", database_service=self.mock_database_service, session_manager=self.mock_session_manager)
 
         # Override skip_existing_animals setting
         self.skip_existing_animals = skip_existing
@@ -81,7 +86,7 @@ class TestSkipExistingAnimalsStaleDataBug(unittest.TestCase):
         existing_animals = [(1, "Dog1", datetime.now()), (2, "Dog2", datetime.now()), (3, "Dog3", datetime.now())]
 
         # First run: No existing URLs returned (simulate empty database)
-        self.mock_cursor.fetchall.return_value = []
+        scraper.mock_database_service.get_existing_animal_urls.return_value = set()
         scraper.start_scrape_session()
         animals = scraper.collect_data()
 
@@ -89,13 +94,9 @@ class TestSkipExistingAnimalsStaleDataBug(unittest.TestCase):
         self.assertEqual(len(animals), 3)
         self.assertEqual(len(scraper.collected_urls), 3)
 
-        # Simulate saving all animals (they would update last_seen_at)
-        # Reset mock for next test
-        self.mock_cursor.reset_mock()
-
         # Second run: Now existing URLs are returned (simulating animals in DB)
-        existing_urls = {("https://example.com/dog1/",), ("https://example.com/dog2/",), ("https://example.com/dog3/",)}
-        self.mock_cursor.fetchall.return_value = list(existing_urls)
+        existing_urls = {"https://example.com/dog1/", "https://example.com/dog2/", "https://example.com/dog3/"}
+        scraper.mock_database_service.get_existing_animal_urls.return_value = existing_urls
 
         scraper.start_scrape_session()
         animals = scraper.collect_data()
@@ -107,31 +108,11 @@ class TestSkipExistingAnimalsStaleDataBug(unittest.TestCase):
         # Simulate update_stale_data_detection being called
         # This would increment consecutive_scrapes_missing for all 3 animals
         # because none were "seen" in this scrape (they were skipped)
-        scraper.update_stale_data_detection()
+        result = scraper.update_stale_data_detection()
 
-        # Verify the stale data update query was called
-        expected_update_call = unittest.mock.call(
-            """
-                UPDATE animals
-                SET consecutive_scrapes_missing = consecutive_scrapes_missing + 1,
-                    availability_confidence = CASE
-                        WHEN consecutive_scrapes_missing = 0 THEN 'medium'
-                        WHEN consecutive_scrapes_missing >= 1 THEN 'low'
-                        ELSE availability_confidence
-                    END,
-                    status = CASE
-                        WHEN consecutive_scrapes_missing >= 3 THEN 'unavailable'
-                        ELSE status
-                    END
-                WHERE organization_id = %s
-                AND (last_seen_at IS NULL OR last_seen_at < %s)
-                """,
-            (1, scraper.current_scrape_session),
-        )
-
-        # The bug is that this query would affect all 3 animals because
-        # their last_seen_at wasn't updated (they were skipped)
-        self.mock_cursor.execute.assert_called()
+        # Verify the SessionManager update_stale_data_detection was called
+        scraper.mock_session_manager.update_stale_data_detection.assert_called()
+        self.assertTrue(result)
 
     def test_skip_existing_disabled_works_correctly(self):
         """Test that skip_existing_animals=false works correctly.
@@ -142,8 +123,8 @@ class TestSkipExistingAnimalsStaleDataBug(unittest.TestCase):
         scraper.conn = self.mock_conn
 
         # Existing URLs in database
-        existing_urls = {("https://example.com/dog1/",), ("https://example.com/dog2/",), ("https://example.com/dog3/",)}
-        self.mock_cursor.fetchall.return_value = list(existing_urls)
+        existing_urls = {"https://example.com/dog1/", "https://example.com/dog2/", "https://example.com/dog3/"}
+        scraper.mock_database_service.get_existing_animal_urls.return_value = existing_urls
 
         scraper.start_scrape_session()
         animals = scraper.collect_data()
@@ -165,33 +146,19 @@ class TestSkipExistingAnimalsStaleDataBug(unittest.TestCase):
         scraper.conn = self.mock_conn
 
         # Mock existing animals in database
-        self.mock_cursor.fetchall.return_value = [
-            ("https://example.com/dog1/",),
-            ("https://example.com/dog2/",),
-        ]
+        existing_urls = {"https://example.com/dog1/", "https://example.com/dog2/"}
+        scraper.mock_database_service.get_existing_animal_urls.return_value = existing_urls
 
         scraper.start_scrape_session()
 
         # Test that mark_skipped_animals_as_seen method exists and works
-        with patch.object(scraper, "update_stale_data_detection") as mock_stale:
-            result = scraper.mark_skipped_animals_as_seen()
+        result = scraper.mark_skipped_animals_as_seen()
 
-            # Should mark skipped animals as seen
-            self.assertIsInstance(result, int)
+        # Should mark skipped animals as seen using SessionManager
+        self.assertIsInstance(result, int)
 
-            # Verify the correct SQL was executed
-            expected_call = unittest.mock.call(
-                """
-                UPDATE animals
-                SET last_seen_at = %s,
-                    consecutive_scrapes_missing = 0,
-                    availability_confidence = 'high'
-                WHERE organization_id = %s
-                AND status = 'available'
-                """,
-                (scraper.current_scrape_session, 1),
-            )
-            self.mock_cursor.execute.assert_called_with(*expected_call.args)
+        # Verify the SessionManager mark_skipped_animals_as_seen was called
+        scraper.mock_session_manager.mark_skipped_animals_as_seen.assert_called()
 
     def test_consecutive_scrapes_missing_progression(self):
         """Test that demonstrates the progression to unavailable status.
@@ -203,7 +170,8 @@ class TestSkipExistingAnimalsStaleDataBug(unittest.TestCase):
         scraper.conn = self.mock_conn
 
         # Setup: Animal exists in database
-        self.mock_cursor.fetchall.return_value = [("https://example.com/dog1/",)]
+        existing_urls = {"https://example.com/dog1/"}
+        scraper.mock_database_service.get_existing_animal_urls.return_value = existing_urls
 
         # Track calls to update_stale_data_detection specifically
         with patch.object(scraper, "update_stale_data_detection", wraps=scraper.update_stale_data_detection) as mock_stale:
@@ -226,16 +194,8 @@ class TestSkipExistingAnimalsStaleDataBug(unittest.TestCase):
             # Verify that update_stale_data_detection was called 3 times
             self.assertEqual(mock_stale.call_count, 3)
 
-            # Verify that the SQL query contains the unavailable logic
-            # Look for calls that contain the stale data detection query
-            stale_queries = [call for call in self.mock_cursor.execute.call_args_list if call[0] and "consecutive_scrapes_missing" in str(call[0][0])]
-
-            # Should have at least 3 stale data detection queries
-            self.assertGreaterEqual(len(stale_queries), 3)
-
-            # The query should contain the unavailable logic
-            query = stale_queries[-1][0][0]
-            self.assertIn("WHEN consecutive_scrapes_missing >= 3 THEN 'unavailable'", query)
+            # Verify that the SessionManager update_stale_data_detection was called 3 times
+            self.assertEqual(scraper.mock_session_manager.update_stale_data_detection.call_count, 3)
 
 
 if __name__ == "__main__":

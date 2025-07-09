@@ -161,7 +161,11 @@ class TestConfigIntegration:
                 assert scraper.organization_name == "Test Organization"
 
     def test_scraper_module_import_integration(self):
-        """Test that scrapers can actually be imported and instantiated from real configs."""
+        """Test that scrapers can actually be imported and instantiated from real configs.
+
+        This test only verifies import and instantiation - it does NOT run the scrapers,
+        making it safe for CI/CD environments.
+        """
         from utils.config_loader import ConfigLoader
         from utils.config_scraper_runner import ConfigScraperRunner
 
@@ -187,30 +191,32 @@ class TestConfigIntegration:
                     # Verify it has the expected name
                     assert scraper_class.__name__ == config.scraper.class_name, f"Class name mismatch for {config_id}: got {scraper_class.__name__}, expected {config.scraper.class_name}"
 
-                    # Try to instantiate it (with mocked org lookup to avoid DB
-                    # dependency)
+                    # Try to instantiate it (with mocked org lookup to avoid DB dependency)
                     with patch("utils.org_sync.get_db_connection") as mock_conn:
                         mock_cursor = Mock()
                         mock_cursor.fetchone.return_value = [1]  # Mock org ID
                         mock_conn.return_value.__enter__.return_value.cursor.return_value.__enter__.return_value = mock_cursor
 
                         try:
-                            # This tests the actual instantiation path
-                            result = runner.run_scraper(config_id, sync_first=False)
+                            # Use the new load_scraper method to test instantiation WITHOUT execution
+                            scraper_instance = runner.load_scraper(config_id)
 
-                            # Should not fail due to import errors
-                            if not result["success"] and "No module named" in result.get("error", ""):
-                                pytest.fail(f"Module import failed for {config_id}: {result['error']}")
+                            # Verify we got a scraper instance
+                            assert scraper_instance is not None, f"Failed to instantiate scraper for {config_id}"
+
+                            # Verify it has the expected run method
+                            assert hasattr(scraper_instance, "run"), f"Scraper instance for {config_id} doesn't have run method"
+
+                            # Verify it has the expected collect_data method (abstract method from BaseScraper)
+                            assert hasattr(scraper_instance, "collect_data"), f"Scraper instance for {config_id} doesn't have collect_data method"
 
                         except ImportError as e:
                             pytest.fail(f"Failed to import scraper for {config_id}: {e}")
                         except Exception as e:
-                            # Other errors are OK (missing DB, etc.) - we just
-                            # want to test imports
+                            # Other errors are OK (missing DB, etc.) - we just want to test imports
                             if "No module named" in str(e):
                                 pytest.fail(f"Module import failed for {config_id}: {e}")
-                            # Else: expected errors like DB connection issues
-                            # are fine
+                            # Else: expected errors like DB connection issues are fine for instantiation testing
 
         except Exception as e:
             if "No module named" in str(e):

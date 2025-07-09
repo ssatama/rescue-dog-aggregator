@@ -13,6 +13,7 @@ from cloudinary.exceptions import Error as CloudinaryError
 from langdetect.lang_detect_exception import LangDetectException
 
 from scrapers.base_scraper import BaseScraper
+from tests.fixtures.service_mocks import create_mock_database_service, create_mock_image_processing_service, create_mock_session_manager
 
 
 @pytest.mark.slow
@@ -107,47 +108,39 @@ class TestBaseScraperImageHandling:
         mock_scraper.conn.cursor.return_value = mock_cursor
         mock_scraper.organization_name = "Test Organization"  # Required by save_animal_images
 
-        # Mock existing images query - fetchall returns empty list initially
-        mock_cursor.fetchall.return_value = []
-        # Mock animal name query
-        mock_cursor.fetchone.return_value = ("Test Dog",)
-
-        # Mock CloudinaryService directly on the scraper instance
-        mock_scraper.cloudinary_service = Mock()
-        mock_scraper.cloudinary_service.upload_image_from_url.side_effect = [("https://cloudinary.com/image1.jpg", True), ("https://cloudinary.com/image2.jpg", True)]
+        # Inject mock ImageProcessingService
+        mock_image_service = create_mock_image_processing_service()
+        mock_image_service.save_animal_images.return_value = (2, 0)  # 2 success, 0 failures
+        mock_scraper.image_processing_service = mock_image_service
 
         image_urls = ["http://example.com/image1.jpg", "http://example.com/image2.jpg"]
         result = mock_scraper.save_animal_images(1, image_urls)
 
         # Should return (success_count, failure_count) tuple
         assert result == (2, 0)  # 2 images uploaded successfully, 0 failures
-        # Verify database operations occurred
-        assert mock_cursor.execute.call_count >= 1  # At least one database operation
+        # Verify ImageProcessingService was called
+        mock_image_service.save_animal_images.assert_called_once_with(1, image_urls, mock_scraper.conn, "Test Organization")
 
     def test_save_animal_images_partial_failure(self, mock_scraper):
-        """Test saving images with partial Cloudinary failures."""
+        """Test saving images with partial failures."""
         # Mock database connection and cursor
         mock_scraper.conn = Mock()
         mock_cursor = Mock()
         mock_scraper.conn.cursor.return_value = mock_cursor
         mock_scraper.organization_name = "Test Organization"
 
-        # Mock existing images query
-        mock_cursor.fetchall.return_value = []
-        # Mock animal name query
-        mock_cursor.fetchone.return_value = ("Test Dog",)
-
-        # Mock CloudinaryService directly on the scraper instance
-        mock_scraper.cloudinary_service = Mock()
-        mock_scraper.cloudinary_service.upload_image_from_url.side_effect = [("https://cloudinary.com/image1.jpg", True), ("http://example.com/image2.jpg", False)]  # Failure case
+        # Inject mock ImageProcessingService
+        mock_image_service = create_mock_image_processing_service()
+        mock_image_service.save_animal_images.return_value = (1, 1)  # 1 success, 1 failure
+        mock_scraper.image_processing_service = mock_image_service
 
         image_urls = ["http://example.com/image1.jpg", "http://example.com/image2.jpg"]
         result = mock_scraper.save_animal_images(1, image_urls)
 
         # Should return (success_count, failure_count) tuple
         assert result == (1, 1)  # 1 success, 1 failure
-        # Verify both images were processed
-        assert mock_scraper.cloudinary_service.upload_image_from_url.call_count == 2
+        # Verify ImageProcessingService was called
+        mock_image_service.save_animal_images.assert_called_once_with(1, image_urls, mock_scraper.conn, "Test Organization")
 
     def test_save_animal_images_database_error(self, mock_scraper):
         """Test saving images with database error."""
@@ -181,14 +174,10 @@ class TestBaseScraperImageHandling:
         mock_scraper.conn.cursor.return_value = mock_cursor
         mock_scraper.organization_name = "Test Organization"
 
-        # Mock existing images query
-        mock_cursor.fetchall.return_value = []
-        # Mock animal name query
-        mock_cursor.fetchone.return_value = ("Test Dog",)
-
-        # Mock CloudinaryService
-        mock_scraper.cloudinary_service = Mock()
-        mock_scraper.cloudinary_service.upload_image_from_url.return_value = ("https://cloudinary.com/image.jpg", True)
+        # Inject mock ImageProcessingService
+        mock_image_service = create_mock_image_processing_service()
+        mock_image_service.save_animal_images.return_value = (2, 0)  # 2 success, 0 failures
+        mock_scraper.image_processing_service = mock_image_service
 
         # Duplicate URLs
         image_urls = ["http://example.com/image.jpg", "http://example.com/image.jpg"]
@@ -196,6 +185,8 @@ class TestBaseScraperImageHandling:
 
         # Should handle duplicates appropriately
         assert result == (2, 0)  # 2 images uploaded (even if duplicates)
+        # Verify ImageProcessingService was called
+        mock_image_service.save_animal_images.assert_called_once_with(1, image_urls, mock_scraper.conn, "Test Organization")
 
 
 @pytest.mark.slow
@@ -501,24 +492,28 @@ class TestBaseScraperScrapeLogging:
         """Test successful scrape log creation."""
         # Mock database connection
         mock_scraper.conn = Mock()
-        mock_cursor = Mock()
-        mock_scraper.conn.cursor.return_value = mock_cursor
-        mock_cursor.fetchone.return_value = [123]  # Returns list, not dict
+
+        # Inject mock DatabaseService
+        mock_db_service = create_mock_database_service()
+        mock_db_service.create_scrape_log.return_value = 123
+        mock_scraper.database_service = mock_db_service
 
         result = mock_scraper.start_scrape_log()
 
         assert result is True  # Method returns True on success
         assert mock_scraper.scrape_log_id == 123  # ID is stored on scraper
-        # Verify INSERT was called
-        assert mock_cursor.execute.called
+        # Verify DatabaseService was called
+        mock_db_service.create_scrape_log.assert_called_once_with(mock_scraper.organization_id)
 
     def test_start_scrape_log_database_error(self, mock_scraper):
         """Test scrape log creation with database error."""
         # Mock database connection with error
         mock_scraper.conn = Mock()
-        mock_cursor = Mock()
-        mock_scraper.conn.cursor.return_value = mock_cursor
-        mock_cursor.execute.side_effect = psycopg2.Error("Insert failed")
+
+        # Inject mock DatabaseService with error
+        mock_db_service = create_mock_database_service(success_mode=False)
+        mock_db_service.create_scrape_log.return_value = None
+        mock_scraper.database_service = mock_db_service
 
         # Method catches exceptions and returns False
         result = mock_scraper.start_scrape_log()
@@ -528,25 +523,29 @@ class TestBaseScraperScrapeLogging:
         """Test successful scrape log completion."""
         # Mock database connection
         mock_scraper.conn = Mock()
-        mock_cursor = Mock()
-        mock_scraper.conn.cursor.return_value = mock_cursor
         mock_scraper.scrape_log_id = 123
+
+        # Inject mock DatabaseService
+        mock_db_service = create_mock_database_service()
+        mock_db_service.complete_scrape_log.return_value = True
+        mock_scraper.database_service = mock_db_service
 
         result = mock_scraper.complete_scrape_log("completed", 10, 5, 3, 2)
 
-        # Verify UPDATE was called and method succeeded
-        assert mock_cursor.execute.called
+        # Verify DatabaseService was called and method succeeded
+        mock_db_service.complete_scrape_log.assert_called_once_with(123, "completed", 10, 5, 3, 2)
         assert result is True
-        # scrape_log_id should remain (not set to None)
 
     def test_complete_scrape_log_database_error(self, mock_scraper):
         """Test scrape log completion with database error."""
         # Mock database connection with error
         mock_scraper.conn = Mock()
-        mock_cursor = Mock()
-        mock_scraper.conn.cursor.return_value = mock_cursor
-        mock_cursor.execute.side_effect = psycopg2.Error("Update failed")
         mock_scraper.scrape_log_id = 123
+
+        # Inject mock DatabaseService with error
+        mock_db_service = create_mock_database_service(success_mode=False)
+        mock_db_service.complete_scrape_log.return_value = False
+        mock_scraper.database_service = mock_db_service
 
         # Method catches exceptions and returns False
         result = mock_scraper.complete_scrape_log("error", 10, 5, 3, 2)
@@ -556,16 +555,19 @@ class TestBaseScraperScrapeLogging:
         """Test scrape log completion when no scrape_log_id exists."""
         # Mock database connection
         mock_scraper.conn = Mock()
-        mock_cursor = Mock()
-        mock_scraper.conn.cursor.return_value = mock_cursor
         mock_scraper.scrape_log_id = None
+
+        # Inject mock DatabaseService
+        mock_db_service = create_mock_database_service()
+        mock_db_service.complete_scrape_log.return_value = True
+        mock_scraper.database_service = mock_db_service
 
         # Should still execute the update (with None scrape_log_id)
         result = mock_scraper.complete_scrape_log("completed", 10, 5, 3, 2)
 
         # Should still try to execute (the UPDATE will have scrape_log_id = None)
         assert result is True
-        assert mock_cursor.execute.called
+        mock_db_service.complete_scrape_log.assert_called_once_with(None, "completed", 10, 5, 3, 2)
 
 
 @pytest.mark.slow
@@ -596,28 +598,30 @@ class TestBaseScraperStaleDataDetection:
         """Test successful stale data detection update."""
         # Mock database connection
         mock_scraper.conn = Mock()
-        mock_cursor = Mock()
-        mock_scraper.conn.cursor.return_value = mock_cursor
         mock_scraper.current_scrape_session = "session123"  # Required for method to proceed
 
-        # Mock database operations
-        mock_cursor.fetchall.return_value = [{"id": 1, "external_id": "dog1"}, {"id": 2, "external_id": "dog2"}]
+        # Inject mock SessionManager
+        mock_session_manager = create_mock_session_manager()
+        mock_session_manager.update_stale_data_detection.return_value = True
+        mock_scraper.session_manager = mock_session_manager
 
         result = mock_scraper.update_stale_data_detection()
 
         # Should return True on success
         assert result is True
-        # Verify database queries were executed
-        assert mock_cursor.execute.call_count >= 1
+        # Verify SessionManager was called
+        mock_session_manager.update_stale_data_detection.assert_called_once()
 
     def test_update_stale_data_detection_database_error(self, mock_scraper):
         """Test stale data detection with database error."""
         # Mock database connection with error
         mock_scraper.conn = Mock()
-        mock_cursor = Mock()
-        mock_scraper.conn.cursor.return_value = mock_cursor
         mock_scraper.current_scrape_session = "session123"
-        mock_cursor.execute.side_effect = psycopg2.Error("Query failed")
+
+        # Inject mock SessionManager with error
+        mock_session_manager = create_mock_session_manager(success_mode=False)
+        mock_session_manager.update_stale_data_detection.return_value = False
+        mock_scraper.session_manager = mock_session_manager
 
         # Method catches exceptions and returns False
         result = mock_scraper.update_stale_data_detection()
@@ -627,9 +631,12 @@ class TestBaseScraperStaleDataDetection:
         """Test stale data detection with no current scrape session."""
         # Mock database connection
         mock_scraper.conn = Mock()
-        mock_cursor = Mock()
-        mock_scraper.conn.cursor.return_value = mock_cursor
         mock_scraper.current_scrape_session = None  # No active session
+
+        # Inject mock SessionManager
+        mock_session_manager = create_mock_session_manager(success_mode=False)
+        mock_session_manager.update_stale_data_detection.return_value = False
+        mock_scraper.session_manager = mock_session_manager
 
         result = mock_scraper.update_stale_data_detection()
 

@@ -83,6 +83,44 @@ class ConfigScraperRunner:
         """
         return scraper_class(config_id=config_id)
 
+    def load_scraper(self, config_id: str):
+        """Load and instantiate a scraper without running it.
+
+        This method is designed for testing imports and instantiation
+        without executing the full scraper logic.
+
+        Args:
+            config_id: Organization config ID
+
+        Returns:
+            Instantiated scraper object (not executed)
+
+        Raises:
+            ImportError: If module cannot be imported
+            AttributeError: If class not found in module
+            Exception: If configuration or instantiation fails
+        """
+        try:
+            # Load config
+            config = self.config_loader.load_config(config_id)
+
+            # Check if enabled
+            if not config.is_enabled_for_scraping():
+                raise ValueError(f"Organization '{config.get_display_name()}' is disabled for scraping")
+
+            # Import scraper class
+            scraper_class = self._import_scraper_class(config)
+
+            # Create scraper instance (without running it)
+            scraper = self._create_scraper_instance(scraper_class, config_id)
+
+            self.logger.info(f"Successfully loaded scraper for {config_id}")
+            return scraper
+
+        except Exception as e:
+            self.logger.error(f"Error loading scraper for {config_id}: {e}")
+            raise
+
     def run_scraper(self, config_id: str, sync_first: bool = True) -> Dict[str, Any]:
         """Run a specific scraper by config ID.
 
