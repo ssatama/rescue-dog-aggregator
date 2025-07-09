@@ -125,7 +125,7 @@ def create_database_config_from_env() -> DatabaseConfig:
     """Create database configuration from environment variables."""
     from config import DB_CONFIG
 
-    return DatabaseConfig(host=DB_CONFIG["host"], user=DB_CONFIG["user"], database=DB_CONFIG["database"], password=DB_CONFIG.get("password"), port=DB_CONFIG.get("port", 5432))
+    return DatabaseConfig(host=DB_CONFIG["host"], user=DB_CONFIG["user"], database=DB_CONFIG["database"], password=DB_CONFIG.get("password"), port=int(DB_CONFIG.get("port", 5432)))
 
 
 @contextmanager
