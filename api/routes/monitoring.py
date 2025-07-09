@@ -9,10 +9,13 @@ import time
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
+import psycopg2
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from api.dependencies import get_database_connection
+from api.exceptions import APIException, handle_database_error
+from api.models.requests import MonitoringFilterRequest
 from config import DB_CONFIG
 
 router = APIRouter()
@@ -77,8 +80,12 @@ async def health_check(db_conn=Depends(get_database_connection)):
         if db_response_time > 1000:  # More than 1 second
             overall_status = "degraded"
 
+    except psycopg2.Error as db_err:
+        logger.error(f"Health check database error: {db_err}")
+        db_status = {"status": "error", "error": str(db_err), "response_time_ms": None}
+        overall_status = "unhealthy"
     except Exception as e:
-        logger.error(f"Health check database error: {e}")
+        logger.error(f"Health check unexpected error: {e}")
         db_status = {"status": "error", "error": str(e), "response_time_ms": None}
         overall_status = "unhealthy"
 
@@ -91,7 +98,7 @@ async def health_check(db_conn=Depends(get_database_connection)):
 
 
 @router.get("/monitoring/scrapers")
-async def get_scraper_status(db_conn=Depends(get_database_connection)):
+async def get_scraper_status(filters: MonitoringFilterRequest = Depends(), db_conn=Depends(get_database_connection)):
     """
     Get comprehensive status of all scrapers including recent performance.
 
@@ -100,14 +107,20 @@ async def get_scraper_status(db_conn=Depends(get_database_connection)):
     try:
         cursor = db_conn.cursor()
 
-        # Get all organizations
-        cursor.execute(
-            """
+        # Get all organizations with optional filtering
+        query = """
             SELECT id, name, created_at
             FROM organizations
-            ORDER BY name
         """
-        )
+        params = []
+
+        if filters.organization_id:
+            query += " WHERE id = %s"
+            params.append(filters.organization_id)
+
+        query += " ORDER BY name"
+
+        cursor.execute(query, params)
         organizations = cursor.fetchall()
 
         scrapers = []
@@ -131,7 +144,8 @@ async def get_scraper_status(db_conn=Depends(get_database_connection)):
 
             latest_scrape = cursor.fetchone()
 
-            # Get 24h metrics for this organization
+            # Get metrics for this organization within the time range
+            time_cutoff = datetime.now() - timedelta(hours=filters.time_range_hours)
             cursor.execute(
                 """
                 SELECT
@@ -144,11 +158,11 @@ async def get_scraper_status(db_conn=Depends(get_database_connection)):
                 WHERE organization_id = %s
                 AND started_at >= %s
             """,
-                (org_id, datetime.now() - timedelta(hours=24)),
+                (org_id, time_cutoff),
             )
 
-            metrics_24h = cursor.fetchone()
-            scrapes_24h, failed_24h, avg_animals, avg_duration, avg_quality = metrics_24h or (
+            metrics_result = cursor.fetchone()
+            scrapes_in_range, failed_in_range, avg_animals, avg_duration, avg_quality = metrics_result or (
                 0,
                 0,
                 0,
@@ -156,8 +170,8 @@ async def get_scraper_status(db_conn=Depends(get_database_connection)):
                 0,
             )
 
-            total_scrapes_24h += scrapes_24h or 0
-            total_failures_24h += failed_24h or 0
+            total_scrapes_24h += scrapes_in_range or 0
+            total_failures_24h += failed_in_range or 0
 
             # Determine status
             if not latest_scrape:
@@ -176,6 +190,10 @@ async def get_scraper_status(db_conn=Depends(get_database_connection)):
                     status = "warning"
                 else:
                     status = "error"
+
+            # Apply status filter if specified
+            if filters.status_filter and status != filters.status_filter:
+                continue
 
             # Build failure detection info
             failure_detection = {
@@ -208,8 +226,8 @@ async def get_scraper_status(db_conn=Depends(get_database_connection)):
 
             # Build performance metrics
             performance_metrics = {
-                "scrapes_24h": scrapes_24h or 0,
-                "success_rate": (1 - (failed_24h or 0) / max(scrapes_24h or 1, 1)) * 100,
+                f"scrapes_{filters.time_range_hours}h": scrapes_in_range or 0,
+                "success_rate": (1 - (failed_in_range or 0) / max(scrapes_in_range or 1, 1)) * 100,
                 "avg_animals_found": round(avg_animals or 0, 1),
                 "avg_duration_seconds": round(avg_duration or 0, 1),
                 "avg_data_quality": round(avg_quality or 0, 3),
@@ -245,9 +263,11 @@ async def get_scraper_status(db_conn=Depends(get_database_connection)):
             "generated_at": datetime.now(),
         }
 
+    except psycopg2.Error as db_err:
+        handle_database_error(db_err, "get_scraper_status")
     except Exception as e:
         logger.error(f"Error getting scraper status: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise APIException(status_code=500, detail="Failed to fetch scraper status", error_code="INTERNAL_ERROR")
 
 
 @router.get("/monitoring/scrapers/{organization_id}")

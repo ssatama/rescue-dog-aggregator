@@ -49,6 +49,22 @@ jest.mock('../../utils/imageUtils', () => ({
   trackImageLoad: jest.fn(),
 }));
 
+// Mock useAdvancedImage hook
+jest.mock('../../hooks/useAdvancedImage', () => ({
+  useAdvancedImage: jest.fn((src) => ({
+    imageLoaded: true,
+    hasError: false,
+    isLoading: false,
+    isRetrying: false,
+    retryCount: 0,
+    currentSrc: src ? `optimized-${src}` : '/placeholder_dog.svg',
+    position: 'center center',
+    networkStrategy: { loading: 'eager', retry: { maxRetries: 2 } },
+    handleRetry: jest.fn(),
+    hydrated: true
+  }))
+}));
+
 // Mock other components to isolate hero image testing
 jest.mock('../../components/organizations/OrganizationCard', () => {
   return function MockOrganizationCard() {

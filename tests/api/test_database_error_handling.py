@@ -77,7 +77,7 @@ class TestDatabaseQueryErrors:
                 response = client.get("/api/animals")
                 assert response.status_code == 500
                 error_detail = response.json()["detail"]
-                assert "Database query error" in error_detail
+                assert "Failed to fetch animals" in error_detail
             finally:
                 app.dependency_overrides.clear()
 
@@ -95,7 +95,7 @@ class TestDatabaseQueryErrors:
             try:
                 response = client.get("/api/animals/1")
                 assert response.status_code == 500
-                assert "Database query error" in response.json()["detail"]
+                assert "Failed to fetch animal 1" in response.json()["detail"]
             finally:
                 app.dependency_overrides.clear()
 
@@ -113,7 +113,7 @@ class TestDatabaseQueryErrors:
             try:
                 response = client.get("/api/animals/statistics")
                 assert response.status_code == 500
-                assert "Database query error" in response.json()["detail"]
+                assert "Failed to fetch statistics" in response.json()["detail"]
             finally:
                 app.dependency_overrides.clear()
 

@@ -39,6 +39,22 @@ jest.mock('../../hooks/useScrollAnimation', () => ({
   useReducedMotion: jest.fn(() => false)
 }));
 
+// Mock useAdvancedImage hook
+jest.mock('../../hooks/useAdvancedImage', () => ({
+  useAdvancedImage: jest.fn(() => ({
+    imageLoaded: false,
+    hasError: false,
+    isLoading: true,
+    isRetrying: false,
+    retryCount: 0,
+    currentSrc: 'https://example.com/dog.jpg',
+    position: 'center center',
+    networkStrategy: { loading: 'eager', retry: { maxRetries: 2 } },
+    handleRetry: jest.fn(),
+    hydrated: true
+  }))
+}));
+
 // Mock Next.js navigation
 jest.mock('next/navigation', () => ({
   useParams: () => ({ id: 'test-dog-123' }),
@@ -61,6 +77,21 @@ describe('Hero Image Race Condition Fix', () => {
       writable: true,
       value: 'complete'
     });
+    
+    // Reset useAdvancedImage mock to default loading state
+    const { useAdvancedImage } = require('../../hooks/useAdvancedImage');
+    useAdvancedImage.mockReturnValue({
+      imageLoaded: false,
+      hasError: false,
+      isLoading: true,
+      isRetrying: false,
+      retryCount: 0,
+      currentSrc: 'https://example.com/dog.jpg',
+      position: 'center center',
+      networkStrategy: { loading: 'eager', retry: { maxRetries: 2 } },
+      handleRetry: jest.fn(),
+      hydrated: true
+    });
   });
 
   afterEach(() => {
@@ -75,6 +106,21 @@ describe('Hero Image Race Condition Fix', () => {
 
     // Should show "No image available" state
     expect(screen.getByText('No image available')).toBeInTheDocument();
+
+    // Mock the hook to return loading state when src becomes available
+    const { useAdvancedImage } = require('../../hooks/useAdvancedImage');
+    useAdvancedImage.mockReturnValue({
+      imageLoaded: false,
+      hasError: false,
+      isLoading: true,
+      isRetrying: false,
+      retryCount: 0,
+      currentSrc: 'https://example.com/dog.jpg',
+      position: 'center center',
+      networkStrategy: { loading: 'eager', retry: { maxRetries: 2 } },
+      handleRetry: jest.fn(),
+      hydrated: true
+    });
 
     // Now provide src (simulating data becoming available)
     await act(async () => {
@@ -102,6 +148,22 @@ describe('Hero Image Race Condition Fix', () => {
   });
 
   test('should handle rapid src changes (navigation scenario)', async () => {
+    const { useAdvancedImage } = require('../../hooks/useAdvancedImage');
+    
+    // Mock initial loading state for first image
+    useAdvancedImage.mockReturnValue({
+      imageLoaded: false,
+      hasError: false,
+      isLoading: true,
+      isRetrying: false,
+      retryCount: 0,
+      currentSrc: 'https://example.com/dog1.jpg',
+      position: 'center center',
+      networkStrategy: { loading: 'eager', retry: { maxRetries: 2 } },
+      handleRetry: jest.fn(),
+      hydrated: true
+    });
+    
     const { rerender } = render(
       <HeroImageWithBlurredBackground 
         src="https://example.com/dog1.jpg" 
@@ -112,6 +174,20 @@ describe('Hero Image Race Condition Fix', () => {
     // Should start loading first image
     await waitFor(() => {
       expect(screen.getByText('Loading image...')).toBeInTheDocument();
+    });
+
+    // Update mock for second image
+    useAdvancedImage.mockReturnValue({
+      imageLoaded: false,
+      hasError: false,
+      isLoading: true,
+      isRetrying: false,
+      retryCount: 0,
+      currentSrc: 'https://example.com/dog2.jpg',
+      position: 'center center',
+      networkStrategy: { loading: 'eager', retry: { maxRetries: 2 } },
+      handleRetry: jest.fn(),
+      hydrated: true
     });
 
     // Quickly change to second image (simulating navigation)
@@ -135,6 +211,22 @@ describe('Hero Image Race Condition Fix', () => {
   });
 
   test('should force re-render when src changes via key prop', async () => {
+    const { useAdvancedImage } = require('../../hooks/useAdvancedImage');
+    
+    // Mock initial state for first image
+    useAdvancedImage.mockReturnValue({
+      imageLoaded: false,
+      hasError: false,
+      isLoading: true,
+      isRetrying: false,
+      retryCount: 0,
+      currentSrc: 'https://example.com/dog1.jpg',
+      position: 'center center',
+      networkStrategy: { loading: 'eager', retry: { maxRetries: 2 } },
+      handleRetry: jest.fn(),
+      hydrated: true
+    });
+    
     const { rerender } = render(
       <HeroImageWithBlurredBackground 
         src="https://example.com/dog1.jpg" 
@@ -144,6 +236,20 @@ describe('Hero Image Race Condition Fix', () => {
 
     const img1 = screen.getByRole('img');
     const key1 = img1.getAttribute('key') || img1.parentElement.getAttribute('key');
+
+    // Update mock for second image
+    useAdvancedImage.mockReturnValue({
+      imageLoaded: false,
+      hasError: false,
+      isLoading: true,
+      isRetrying: false,
+      retryCount: 0,
+      currentSrc: 'https://example.com/dog2.jpg',
+      position: 'center center',
+      networkStrategy: { loading: 'eager', retry: { maxRetries: 2 } },
+      handleRetry: jest.fn(),
+      hydrated: true
+    });
 
     // Change src
     await act(async () => {

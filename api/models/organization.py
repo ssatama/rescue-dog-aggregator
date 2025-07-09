@@ -3,18 +3,19 @@
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 
 class Organization(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, extra="ignore")
     id: int
     name: str
 
-    website_url: Optional[str] = None
+    website_url: Optional[HttpUrl] = None
     description: Optional[str] = None
     country: Optional[str] = None
     city: Optional[str] = None
-    logo_url: Optional[str] = None
+    logo_url: Optional[HttpUrl] = None
     active: Optional[bool] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -29,7 +30,28 @@ class Organization(BaseModel):
     total_dogs: Optional[int] = None
     new_this_week: Optional[int] = None
 
-    class Config:
-        # ignore any extra keys (so if we ever back‐fill more later, tests
-        # won’t break)
-        extra = "ignore"
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v):
+        """Validate and clean organization name."""
+        if not v or not v.strip():
+            raise ValueError("Organization name cannot be empty")
+        return v.strip()
+
+    @field_validator("description", "country", "city")
+    @classmethod
+    def validate_string_fields(cls, v):
+        """Validate and clean string fields."""
+        return v.strip() if v else v
+
+    @field_validator("established_year")
+    @classmethod
+    def validate_established_year(cls, v):
+        """Validate established year is reasonable."""
+        if v is None:
+            return v
+        if not isinstance(v, int):
+            raise ValueError("established_year must be an integer")
+        if v < 1900 or v > 2030:
+            raise ValueError("established_year must be between 1900 and 2030")
+        return v

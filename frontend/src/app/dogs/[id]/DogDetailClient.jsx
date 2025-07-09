@@ -339,6 +339,14 @@ export default function DogDetailClient({ params = {} }) {
                           );
                         }
                         
+                        // DIAGNOSTIC: Log image URL being passed to component
+                        if (process.env.NODE_ENV === 'development') console.log('[DogDetailClient] About to render HeroImageWithBlurredBackground:', {
+                          dogId: dog.id,
+                          dogName: dog.name,
+                          imageUrl: dog.primary_image_url,
+                          timestamp: Date.now()
+                        });
+                        
                         return (
                           <HeroImageWithBlurredBackground
                             key={`hero-${dogId}-${dog.id}`}

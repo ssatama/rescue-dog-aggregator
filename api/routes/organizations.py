@@ -6,23 +6,27 @@ from typing import List
 import psycopg2
 from fastapi import APIRouter, Depends, HTTPException
 from psycopg2.extras import RealDictCursor
+from pydantic import ValidationError
 
 from api.dependencies import get_db_cursor
+from api.exceptions import APIException, handle_database_error, handle_validation_error, safe_execute
 from api.models.organization import Organization
+from api.models.requests import OrganizationFilterRequest
+from api.utils.json_parser import parse_json_field, parse_organization_fields
 
 router = APIRouter()
 
 
 @router.get("/", response_model=List[Organization])
-def get_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
+def get_organizations(filters: OrganizationFilterRequest = Depends(), cursor: RealDictCursor = Depends(get_db_cursor)):
     """
     Get all organizations.
 
     Returns a list of all active rescue organizations.
     """
     try:
-        cursor.execute(
-            """
+        # Build the base query
+        query = """
             SELECT
                 o.id, o.name, o.website_url, o.description, o.country, o.city,
                 o.logo_url, o.social_media, o.active, o.created_at, o.updated_at,
@@ -32,48 +36,61 @@ def get_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
                 COUNT(DISTINCT a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '7 days') as new_this_week
             FROM organizations o
             LEFT JOIN animals a ON o.id = a.organization_id AND a.status = 'available'
-            WHERE o.active = true
+        """
+
+        # Build conditions
+        conditions = []
+        params = []
+
+        if filters.active_only:
+            conditions.append("o.active = true")
+
+        if filters.country:
+            conditions.append("o.country = %s")
+            params.append(filters.country)
+
+        if filters.search:
+            conditions.append("o.name ILIKE %s")
+            params.append(f"%{filters.search}%")
+
+        # Add WHERE clause if conditions exist
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+
+        # Add GROUP BY and ORDER BY
+        query += """
             GROUP BY o.id, o.name, o.website_url, o.description, o.country, o.city,
                      o.logo_url, o.social_media, o.active, o.created_at, o.updated_at,
                      o.ships_to, o.established_year, o.service_regions
             ORDER BY o.name
+            LIMIT %s OFFSET %s
         """
-        )
+
+        params.extend([filters.limit, filters.offset])
+
+        cursor.execute(query, params)
 
         organizations = cursor.fetchall()
 
-        # Parse JSON fields and prepare data
+        # Parse JSON fields using utility functions
         for org in organizations:
-            # Parse social_media JSON strings if needed
-            if org.get("social_media") and isinstance(org["social_media"], str):
-                try:
-                    org["social_media"] = json.loads(org["social_media"])
-                except json.JSONDecodeError:
-                    org["social_media"] = {}
-            elif org.get("social_media") is None:
-                org["social_media"] = {}
+            org_dict = dict(org)
 
-            # Parse ships_to JSON if needed
-            if org.get("ships_to") and isinstance(org["ships_to"], str):
-                try:
-                    org["ships_to"] = json.loads(org["ships_to"])
-                except json.JSONDecodeError:
-                    org["ships_to"] = []
-            elif org.get("ships_to") is None:
-                org["ships_to"] = []
+            # Parse organization fields
+            parse_json_field(org_dict, "social_media")
+            parse_json_field(org_dict, "ships_to", [])
+            parse_json_field(org_dict, "service_regions", [])
 
-            # Parse service_regions JSON if needed
-            if org.get("service_regions") and isinstance(org["service_regions"], str):
-                try:
-                    org["service_regions"] = json.loads(org["service_regions"])
-                except json.JSONDecodeError:
-                    org["service_regions"] = []
-            elif org.get("service_regions") is None:
-                org["service_regions"] = []
+            # Update the original dict
+            org.update(org_dict)
 
         return organizations
+    except ValidationError as ve:
+        handle_validation_error(ve, "get_organizations")
+    except psycopg2.Error as db_err:
+        handle_database_error(db_err, "get_organizations")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        raise APIException(status_code=500, detail="Failed to fetch organizations", error_code="INTERNAL_ERROR")
 
 
 @router.get("/{organization_id}", response_model=Organization)
@@ -108,40 +125,22 @@ def get_organization(organization_id: int, cursor: RealDictCursor = Depends(get_
         if not organization:
             raise HTTPException(status_code=404, detail="Organization not found")
 
-        # Parse JSON fields and prepare data (same as list endpoint)
-        # Parse social_media JSON strings if needed
-        if organization.get("social_media") and isinstance(organization["social_media"], str):
-            try:
-                organization["social_media"] = json.loads(organization["social_media"])
-            except json.JSONDecodeError:
-                organization["social_media"] = {}
-        elif organization.get("social_media") is None:
-            organization["social_media"] = {}
+        # Parse JSON fields using utility functions
+        org_dict = dict(organization)
+        parse_json_field(org_dict, "social_media")
+        parse_json_field(org_dict, "ships_to", [])
+        parse_json_field(org_dict, "service_regions", [])
 
-        # Parse ships_to JSON if needed
-        if organization.get("ships_to") and isinstance(organization["ships_to"], str):
-            try:
-                organization["ships_to"] = json.loads(organization["ships_to"])
-            except json.JSONDecodeError:
-                organization["ships_to"] = []
-        elif organization.get("ships_to") is None:
-            organization["ships_to"] = []
-
-        # Parse service_regions JSON if needed
-        if organization.get("service_regions") and isinstance(organization["service_regions"], str):
-            try:
-                organization["service_regions"] = json.loads(organization["service_regions"])
-            except json.JSONDecodeError:
-                organization["service_regions"] = []
-        elif organization.get("service_regions") is None:
-            organization["service_regions"] = []
-
-        return organization
+        return org_dict
     except HTTPException:
         # Re-raise HTTP exceptions (like 404)
         raise
-    except psycopg2.Error as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except ValidationError as ve:
+        handle_validation_error(ve, f"get_organization({organization_id})")
+    except psycopg2.Error as db_err:
+        handle_database_error(db_err, f"get_organization({organization_id})")
+    except Exception as e:
+        raise APIException(status_code=500, detail=f"Failed to fetch organization {organization_id}", error_code="INTERNAL_ERROR")
 
 
 @router.get("/{organization_id}/recent-dogs")
@@ -185,8 +184,10 @@ def get_organization_recent_dogs(
 
         return dogs_with_thumbnails
 
-    except psycopg2.Error as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except psycopg2.Error as db_err:
+        handle_database_error(db_err, f"get_organization_recent_dogs({organization_id})")
+    except Exception as e:
+        raise APIException(status_code=500, detail=f"Failed to fetch recent dogs for organization {organization_id}", error_code="INTERNAL_ERROR")
 
 
 @router.get("/{organization_id}/statistics")
@@ -216,5 +217,7 @@ def get_organization_statistics(organization_id: int, cursor: RealDictCursor = D
 
         return dict(stats)
 
-    except psycopg2.Error as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except psycopg2.Error as db_err:
+        handle_database_error(db_err, f"get_organization_statistics({organization_id})")
+    except Exception as e:
+        raise APIException(status_code=500, detail=f"Failed to fetch statistics for organization {organization_id}", error_code="INTERNAL_ERROR")

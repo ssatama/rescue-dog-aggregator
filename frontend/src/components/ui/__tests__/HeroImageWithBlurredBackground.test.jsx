@@ -18,6 +18,22 @@ jest.mock('../../../hooks/useScrollAnimation', () => ({
   useReducedMotion: jest.fn(() => false)
 }));
 
+// Mock the useAdvancedImage hook
+jest.mock('../../../hooks/useAdvancedImage', () => ({
+  useAdvancedImage: jest.fn(() => ({
+    imageLoaded: false,
+    hasError: false,
+    isLoading: true,
+    isRetrying: false,
+    retryCount: 0,
+    currentSrc: 'https://example.com/dog.jpg',
+    position: 'center center',
+    networkStrategy: { loading: 'eager', retry: { maxRetries: 2 } },
+    handleRetry: jest.fn(),
+    hydrated: true
+  }))
+}));
+
 describe('HeroImageWithBlurredBackground', () => {
   const mockProps = {
     src: 'https://example.com/dog.jpg',
@@ -27,6 +43,20 @@ describe('HeroImageWithBlurredBackground', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset useAdvancedImage mock to default state
+    const { useAdvancedImage } = require('../../../hooks/useAdvancedImage');
+    useAdvancedImage.mockReturnValue({
+      imageLoaded: false,
+      hasError: false,
+      isLoading: true,
+      isRetrying: false,
+      retryCount: 0,
+      currentSrc: 'https://example.com/dog.jpg',
+      position: 'center center',
+      networkStrategy: { loading: 'eager', retry: { maxRetries: 2 } },
+      handleRetry: jest.fn(),
+      hydrated: true
+    });
   });
 
   describe('Rendering', () => {
@@ -125,22 +155,47 @@ describe('HeroImageWithBlurredBackground', () => {
     });
 
     it('should handle image error gracefully', () => {
+      const { useAdvancedImage } = require('../../../hooks/useAdvancedImage');
       const onError = jest.fn();
+      
+      // Mock the hook to return error state
+      useAdvancedImage.mockReturnValue({
+        imageLoaded: false,
+        hasError: true,
+        isLoading: false,
+        isRetrying: false,
+        retryCount: 0,
+        currentSrc: 'https://example.com/dog.jpg',
+        position: 'center center',
+        networkStrategy: { loading: 'eager', retry: { maxRetries: 2 } },
+        handleRetry: jest.fn(),
+        hydrated: true
+      });
+      
       render(<HeroImageWithBlurredBackground {...mockProps} onError={onError} />);
       
-      const img = screen.getByRole('img');
-      fireEvent.error(img);
-      
-      expect(onError).toHaveBeenCalled();
+      // Should show error state instead of image
+      expect(screen.getByTestId('error-state')).toBeInTheDocument();
     });
 
     it('should show fallback when image errors', async () => {
+      const { useAdvancedImage } = require('../../../hooks/useAdvancedImage');
+      
+      // Mock the hook to return error state
+      useAdvancedImage.mockReturnValue({
+        imageLoaded: false,
+        hasError: true,
+        isLoading: false,
+        isRetrying: false,
+        retryCount: 0,
+        currentSrc: 'https://example.com/dog.jpg',
+        position: 'center center',
+        networkStrategy: { loading: 'eager', retry: { maxRetries: 2 } },
+        handleRetry: jest.fn(),
+        hydrated: true
+      });
+      
       render(<HeroImageWithBlurredBackground {...mockProps} />);
-      
-      const img = screen.getByRole('img');
-      
-      // First error should trigger error state
-      fireEvent.error(img);
       
       await waitFor(() => {
         expect(screen.getByTestId('error-state')).toBeInTheDocument();

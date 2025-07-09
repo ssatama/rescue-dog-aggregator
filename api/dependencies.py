@@ -9,6 +9,7 @@ import psycopg2
 from fastapi import HTTPException
 from psycopg2.extras import RealDictCursor
 
+from api.database import get_pooled_cursor
 from config import DB_CONFIG  # DB_CONFIG is imported here
 
 # Add project root to path so we can import config
@@ -133,3 +134,18 @@ def get_database_connection() -> Generator[psycopg2.extensions.connection, None,
         if conn:
             logger.debug(f"Monitoring Connection closing: {id(conn)}")
             conn.close()
+
+
+def get_pooled_db_cursor() -> Generator[RealDictCursor, None, None]:
+    """
+    Dependency that provides a database cursor from the connection pool.
+
+    This is an optimized version of get_db_cursor that uses connection pooling
+    for better performance under high load.
+    """
+    try:
+        with get_pooled_cursor() as cursor:
+            yield cursor
+    except Exception as e:
+        logger.error(f"Error with pooled cursor dependency: {e}")
+        raise HTTPException(status_code=500, detail=f"Database connection pool error: {str(e)}")
