@@ -596,7 +596,7 @@ grep "getOptimizedImageUrl" src/utils/imageUtils.js
 
 ## Database Issues
 
-### Migration Problems
+### Database Schema Problems
 
 #### Issue: Missing database columns
 **Symptoms**: SQL errors about missing columns like `availability_confidence`
@@ -606,20 +606,28 @@ grep "getOptimizedImageUrl" src/utils/imageUtils.js
 # Check current schema
 psql -d rescue_dogs -c "\d animals"
 
-# Check migration status
-ls database/migrations/
+# Verify schema.sql is applied
+psql -d rescue_dogs -c "SELECT column_name FROM information_schema.columns WHERE table_name = 'animals';"
 ```
 
 **Solutions**:
-1. **Apply missing migrations**:
+1. **Apply schema.sql (single source of truth)**:
    ```bash
    # Production database
-   psql -d rescue_dogs -f database/migrations/001_add_duplicate_stale_detection.sql
-   psql -d rescue_dogs -f database/migrations/002_add_detailed_metrics.sql
+   psql -d rescue_dogs -f database/schema.sql
    
    # Test database
-   DB_NAME=test_rescue_dogs psql -d test_rescue_dogs -f database/migrations/001_add_duplicate_stale_detection.sql
-   DB_NAME=test_rescue_dogs psql -d test_rescue_dogs -f database/migrations/002_add_detailed_metrics.sql
+   DB_NAME=test_rescue_dogs psql -d test_rescue_dogs -f database/schema.sql
+   
+   # Or use setup script
+   python database/db_setup.py
+   ```
+
+2. **For fresh installation**:
+   ```bash
+   # Complete database reset
+   dropdb rescue_dogs && createdb rescue_dogs
+   python database/db_setup.py
    ```
 
 #### Issue: Database connection failures

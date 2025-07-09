@@ -136,11 +136,15 @@ class TestBaseScraperSessionMetricsIntegration:
         },
     )
     def test_dependency_injection_pattern_consistency(self, mock_scraper_with_services):
-        """Test that dependency injection follows the same pattern as existing services."""
+        """Test that dependency injection follows the correct pattern for each service type."""
+        from services.null_objects import NullMetricsCollector
+
         scraper = mock_scraper_with_services(organization_id=1)
 
-        # Should have service attributes initialized to None
+        # Services with null object pattern should have null object instances
+        assert isinstance(scraper.metrics_collector, NullMetricsCollector)
+
+        # Services without null object pattern should still be None
         assert scraper.session_manager is None
-        assert scraper.metrics_collector is None
-        assert scraper.database_service is None  # From previous phase
-        assert scraper.image_processing_service is None  # From previous phase
+        assert scraper.database_service is None
+        assert scraper.image_processing_service is None

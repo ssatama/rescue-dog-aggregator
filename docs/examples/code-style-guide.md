@@ -350,6 +350,62 @@ def validate_organization_config(config):
     pass
 ```
 
+### Modern Scraper Patterns (Post-Refactoring)
+
+**BaseScraper now implements modern design patterns:**
+
+```python
+from scrapers.base_scraper import BaseScraper
+from services.metrics_collector import MetricsCollector
+
+# GOOD - Modern scraper with design patterns
+class ModernScraper(BaseScraper):
+    """Modern scraper using architectural patterns."""
+    
+    def collect_data(self):
+        """Implementation only focuses on data extraction."""
+        # Context manager handles connections automatically
+        # Metrics collection is automatic via null object pattern
+        # Template method handles the rest
+        
+        return [self._extract_dog(card) for card in self._get_dog_cards()]
+    
+    def _get_dog_cards(self):
+        """Extract dog card elements from the page."""
+        # Implementation here
+        pass
+    
+    def _extract_dog(self, element):
+        """Extract individual dog data from DOM element."""
+        return {
+            'name': self._safe_extract(element, 'h3'),
+            'age': self._normalize_age(self._safe_extract(element, '.age')),
+            'external_id': self._generate_external_id(element)
+        }
+
+# GOOD - Context manager usage (recommended)
+with ModernScraper(config_id="org-name") as scraper:
+    success = scraper.run()  # Automatic connection handling
+
+# GOOD - Service injection for testing
+custom_metrics = MetricsCollector(logger=my_logger)
+scraper = ModernScraper(
+    config_id="org-name",
+    metrics_collector=custom_metrics,
+    session_manager=mock_session_manager
+)
+
+# GOOD - Legacy support (still works)
+scraper = ModernScraper(config_id="org-name")
+success = scraper.run()  # Handles connections internally
+```
+
+**Key architectural improvements:**
+- **Null Object Pattern**: No more `if service:` checks
+- **Context Manager**: Automatic resource management
+- **Template Method**: Focused implementation, framework handles lifecycle
+- **Dependency Injection**: Clean testing and customization
+
 ### JavaScript/React (Frontend)
 
 - **Functions**: `camelCase`, verb-based (e.g., `calculateTotal`, `handleClick`)

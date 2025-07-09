@@ -47,11 +47,21 @@ The Rescue Dog Aggregator uses a sophisticated, production-ready scraper system 
 │  │   (7 orgs)      │  │  (Validation)   │                  │
 │  └─────────────────┘  └─────────────────┘                  │
 ├─────────────────────────────────────────────────────────────┤
-│  BaseScraper Framework                                      │
+│  BaseScraper Framework (Refactored)                        │
 │  ┌─────────────────┐  ┌─────────────────┐                  │
-│  │   CRUD Ops      │  │  Error Handling │                  │
-│  │   Session Mgmt  │  │  Retry Logic    │                  │
-│  │   Metrics       │  │  Monitoring     │                  │
+│  │  Template Method│  │  Context Manager│                  │
+│  │  Pattern        │  │  Pattern        │                  │
+│  │  (5 phases)     │  │  (Auto cleanup) │                  │
+│  └─────────────────┘  └─────────────────┘                  │
+├─────────────────────────────────────────────────────────────┤
+│  Services Layer (Extracted)                                │
+│  ┌─────────────────┐  ┌─────────────────┐                  │
+│  │  Metrics        │  │  Session        │                  │
+│  │  Collector      │  │  Manager        │                  │
+│  └─────────────────┘  └─────────────────┘                  │
+│  ┌─────────────────┐  ┌─────────────────┐                  │
+│  │  Database       │  │  Null Objects   │                  │
+│  │  Service        │  │  (No-op impls)  │                  │
 │  └─────────────────┘  └─────────────────┘                  │
 ├─────────────────────────────────────────────────────────────┤
 │  Organization-Specific Scrapers                            │
@@ -136,6 +146,57 @@ python management/config_commands.py run org-id  # Run specific scraper
 ```
 
 ## BaseScraper Foundation
+
+### Recent Architectural Refactoring
+
+**BaseScraper has been completely refactored with modern design patterns:**
+
+#### 🏗️ **Null Object Pattern**
+- **Services default to null objects** instead of None
+- **Eliminates conditional checks** throughout the codebase
+- **Automatic fallback**: `metrics_collector` defaults to `NullMetricsCollector()`
+- **Cleaner code**: No more `if service:` checks needed
+
+#### 🔄 **Context Manager Pattern**
+- **Automatic resource management** with `with scraper:` syntax
+- **Database connections** automatically opened/closed
+- **Exception-safe cleanup** ensures resources are freed
+- **Backward compatible** with existing manual connection handling
+
+#### 📋 **Template Method Pattern**
+- **`run()` method decomposed** into focused phases:
+  - `_setup_scrape()` - Initialize logging and sessions
+  - `_collect_and_time_data()` - Data collection with timing
+  - `_process_animals_data()` - Database operations
+  - `_finalize_scrape()` - Stale data detection
+  - `_log_completion_metrics()` - Comprehensive metrics
+- **Separation of concerns** - each phase has single responsibility
+- **Extensible** - phases can be overridden for custom behavior
+
+#### 💉 **Enhanced Dependency Injection**
+- **Constructor-level service injection** for clean architecture
+- **Testing-friendly** with mock service support
+- **Null object defaults** prevent conditional logic
+- **Backward compatible** with existing usage patterns
+
+#### 🎯 **Modern Usage Examples**
+
+```python
+# Context manager pattern (recommended)
+with MyScraper(config_id="org-name") as scraper:
+    success = scraper.run()  # Automatic connection handling
+
+# Service injection for testing
+scraper = MyScraper(
+    config_id="org-name",
+    metrics_collector=CustomMetricsCollector(),
+    session_manager=MockSessionManager()
+)
+
+# Legacy support (still works)
+scraper = MyScraper(config_id="org-name")
+success = scraper.run()  # Handles connections internally
+```
 
 ### Core Features
 

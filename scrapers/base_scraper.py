@@ -14,6 +14,9 @@ from langdetect import detect
 
 # Import config
 from config import DB_CONFIG
+
+# Import null object services
+from services.null_objects import NullMetricsCollector
 from utils.cloudinary_service import CloudinaryService
 from utils.config_loader import ConfigLoader
 from utils.org_sync import OrganizationSyncManager
@@ -86,7 +89,7 @@ class BaseScraper(ABC):
         self.database_service = database_service
         self.image_processing_service = image_processing_service
         self.session_manager = session_manager
-        self.metrics_collector = metrics_collector
+        self.metrics_collector = metrics_collector or NullMetricsCollector()
 
         # Track animals for filtering stats
         self.total_animals_before_filter = 0
@@ -133,6 +136,20 @@ class BaseScraper(ABC):
         except Exception as e:
             self.logger.error(f"Database connection error: {e}")
             return False
+
+    def __enter__(self):
+        """Context manager entry - establish database connection."""
+        if not self.connect_to_database():
+            raise ConnectionError("Failed to connect to database")
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - ensure database connection is closed."""
+        if self.conn:
+            self.conn.close()
+            self.logger.info("Database connection closed")
+        # Don't suppress exceptions
+        return False
 
     def start_scrape_log(self):
         """Create a new entry in the scrape_logs table."""
@@ -228,16 +245,48 @@ class BaseScraper(ABC):
 
     def run(self):
         """Run the scraper to collect and save animal data."""
-        # Connect to database
-        if not self.connect_to_database():
-            self.logger.error("Failed to connect to database")
+        try:
+            # Use context manager to ensure proper database connection handling
+            with self:
+                return self._run_with_connection()
+        except ConnectionError as e:
+            self.logger.error(f"Database connection failed: {e}")
+            return False
+        except Exception as e:
+            self.logger.error(f"Unexpected error during scrape setup: {e}")
             return False
 
+    def _run_with_connection(self):
+        """Template method orchestrating the scrape lifecycle."""
+        try:
+            # Phase 1: Setup
+            if not self._setup_scrape():
+                return False
+
+            # Phase 2: Data Collection
+            animals_data = self._collect_and_time_data()
+
+            # Phase 3: Database Operations
+            processing_stats = self._process_animals_data(animals_data)
+
+            # Phase 4: Stale Data Detection
+            self._finalize_scrape(animals_data, processing_stats)
+
+            # Phase 5: Metrics & Logging
+            self._log_completion_metrics(animals_data, processing_stats)
+
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error during scrape: {e}")
+            self.handle_scraper_failure(str(e))
+            return False
+
+    def _setup_scrape(self):
+        """Setup phase: Initialize scrape log, session, and timing."""
         # Start scrape log - must succeed for proper tracking
         if not self.start_scrape_log():
             self.logger.error("Failed to create scrape log entry")
-            if self.conn:
-                self.conn.close()
             return False
 
         # Start scrape session for stale data tracking
@@ -254,135 +303,123 @@ class BaseScraper(ABC):
 
         # Track scrape start time for metrics
         self.scrape_start_time = datetime.now()
+        return True
 
-        try:
-            # Phase 1: Data Collection
-            phase_start = datetime.now()
-            self.logger.info(f"Starting scrape for {self.get_organization_name()} {self.animal_type}s")
-            animals_data = self.collect_data()
-            phase_duration = (datetime.now() - phase_start).total_seconds()
-            if self.metrics_collector:
-                self.metrics_collector.track_phase_timing("data_collection", phase_duration)
-            self.logger.info(f"Collected data for {len(animals_data)} {self.animal_type}s")
+    def _collect_and_time_data(self):
+        """Data collection phase: Collect animal data with timing."""
+        phase_start = datetime.now()
+        self.logger.info(f"Starting scrape for {self.get_organization_name()} {self.animal_type}s")
 
-            # Phase 2: Database Operations
-            phase_start = datetime.now()
-            animals_added = 0
-            animals_updated = 0
-            animals_unchanged = 0
-            images_uploaded = 0
-            images_failed = 0
+        animals_data = self.collect_data()
 
-            for animal_data in animals_data:
-                # Add organization_id and animal_type to the animal data
-                animal_data["organization_id"] = self.organization_id
-                if "animal_type" not in animal_data:
-                    animal_data["animal_type"] = self.animal_type
+        phase_duration = (datetime.now() - phase_start).total_seconds()
+        self.metrics_collector.track_phase_timing("data_collection", phase_duration)
+        self.logger.info(f"Collected data for {len(animals_data)} {self.animal_type}s")
 
-                # Save animal
-                animal_id, action = self.save_animal(animal_data)
+        return animals_data
 
-                if animal_id:
-                    # Save animal images if provided
-                    image_urls = animal_data.get("image_urls", [])
-                    if image_urls and len(image_urls) > 0:
-                        success_count, failure_count = self.save_animal_images(animal_id, image_urls)
-                        images_uploaded += success_count
-                        images_failed += failure_count
+    def _process_animals_data(self, animals_data):
+        """Database operations phase: Process and save animal data."""
+        phase_start = datetime.now()
 
-                    # Update counts
-                    if action == "added":
-                        animals_added += 1
-                    elif action == "updated":
-                        animals_updated += 1
-                    elif action == "no_change":
-                        animals_unchanged += 1
+        processing_stats = {"animals_added": 0, "animals_updated": 0, "animals_unchanged": 0, "images_uploaded": 0, "images_failed": 0}
 
-            phase_duration = (datetime.now() - phase_start).total_seconds()
-            if self.metrics_collector:
-                self.metrics_collector.track_phase_timing("database_operations", phase_duration)
+        for animal_data in animals_data:
+            # Add organization_id and animal_type to the animal data
+            animal_data["organization_id"] = self.organization_id
+            if "animal_type" not in animal_data:
+                animal_data["animal_type"] = self.animal_type
 
-            # Phase 3: Stale Data Detection
-            phase_start = datetime.now()
-            # Check for potential partial failure before updating stale data
-            potential_failure = self.detect_partial_failure(len(animals_data))
+            # Save animal
+            animal_id, action = self.save_animal(animal_data)
 
-            if potential_failure:
-                self.logger.warning("Potential partial failure detected - skipping stale data update")
-                # Complete scrape log with warning status
-                self.complete_scrape_log(
-                    status="warning",
-                    animals_found=len(animals_data),
-                    animals_added=animals_added,
-                    animals_updated=animals_updated,
-                    error_message="Potential partial failure - low animal count detected",
-                )
-            else:
-                # Fix for skip_existing_animals bug: Mark skipped animals as seen
-                # before running stale data detection to prevent them from being
-                # incorrectly marked as unavailable
-                if self.skip_existing_animals:
-                    self.mark_skipped_animals_as_seen()
+            if animal_id:
+                # Save animal images if provided
+                image_urls = animal_data.get("image_urls", [])
+                if image_urls and len(image_urls) > 0:
+                    success_count, failure_count = self.save_animal_images(animal_id, image_urls)
+                    processing_stats["images_uploaded"] += success_count
+                    processing_stats["images_failed"] += failure_count
 
-                # Update stale data detection for animals not seen in this
-                # scrape
-                self.update_stale_data_detection()
+                # Update counts
+                if action == "added":
+                    processing_stats["animals_added"] += 1
+                elif action == "updated":
+                    processing_stats["animals_updated"] += 1
+                elif action == "no_change":
+                    processing_stats["animals_unchanged"] += 1
 
-                # Complete scrape log
-                self.complete_scrape_log(
-                    status="success",
-                    animals_found=len(animals_data),
-                    animals_added=animals_added,
-                    animals_updated=animals_updated,
-                )
+        phase_duration = (datetime.now() - phase_start).total_seconds()
+        self.metrics_collector.track_phase_timing("database_operations", phase_duration)
 
-            phase_duration = (datetime.now() - phase_start).total_seconds()
-            if self.metrics_collector:
-                self.metrics_collector.track_phase_timing("stale_data_detection", phase_duration)
+        return processing_stats
 
-            # Calculate metrics for detailed logging
-            scrape_end_time = datetime.now()
-            if self.metrics_collector:
-                duration = self.metrics_collector.calculate_scrape_duration(self.scrape_start_time, scrape_end_time)
-                quality_score = self.metrics_collector.assess_data_quality(animals_data)
-            else:
-                duration = (scrape_end_time - self.scrape_start_time).total_seconds()
-                quality_score = 0.0
+    def _finalize_scrape(self, animals_data, processing_stats):
+        """Stale data detection phase: Handle partial failures and update stale data."""
+        phase_start = datetime.now()
 
-            # Log detailed metrics
-            if self.metrics_collector:
-                # Use MetricsCollector for comprehensive metrics
-                detailed_metrics = self.metrics_collector.generate_comprehensive_metrics(
-                    animals_found=len(animals_data),
-                    animals_added=animals_added,
-                    animals_updated=animals_updated,
-                    animals_unchanged=animals_unchanged,
-                    images_uploaded=images_uploaded,
-                    images_failed=images_failed,
-                    duration_seconds=duration,
-                    quality_score=quality_score,
-                    potential_failure_detected=potential_failure,
-                    skip_existing_animals=self.skip_existing_animals,
-                    batch_size=self.batch_size,
-                    rate_limit_delay=self.rate_limit_delay,
-                )
-                self.metrics_collector.log_detailed_metrics(detailed_metrics)
-            else:
-                # Simple metrics without MetricsCollector
-                self.logger.info(f"Basic metrics - Animals: {len(animals_data)}, Added: {animals_added}, Updated: {animals_updated}, Duration: {duration:.1f}s")
+        # Check for potential partial failure before updating stale data
+        potential_failure = self.detect_partial_failure(len(animals_data))
+        processing_stats["potential_failure_detected"] = potential_failure
 
-            self.logger.info(f"Scrape completed successfully. Added: {animals_added}, Updated: {animals_updated}, " f"Quality: {quality_score:.2f}, Duration: {duration:.1f}s")
-            return True
-        except Exception as e:
-            self.logger.error(f"Error during scrape: {e}")
-            # Use the new error handling method
-            self.handle_scraper_failure(str(e))
-            return False
-        finally:
-            # Close database connection
-            if self.conn:
-                self.conn.close()
-                self.logger.info("Database connection closed")
+        if potential_failure:
+            self.logger.warning("Potential partial failure detected - skipping stale data update")
+            # Complete scrape log with warning status
+            self.complete_scrape_log(
+                status="warning",
+                animals_found=len(animals_data),
+                animals_added=processing_stats["animals_added"],
+                animals_updated=processing_stats["animals_updated"],
+                error_message="Potential partial failure - low animal count detected",
+            )
+        else:
+            # Fix for skip_existing_animals bug: Mark skipped animals as seen
+            # before running stale data detection to prevent them from being
+            # incorrectly marked as unavailable
+            if self.skip_existing_animals:
+                self.mark_skipped_animals_as_seen()
+
+            # Update stale data detection for animals not seen in this scrape
+            self.update_stale_data_detection()
+
+            # Complete scrape log
+            self.complete_scrape_log(
+                status="success",
+                animals_found=len(animals_data),
+                animals_added=processing_stats["animals_added"],
+                animals_updated=processing_stats["animals_updated"],
+            )
+
+        phase_duration = (datetime.now() - phase_start).total_seconds()
+        self.metrics_collector.track_phase_timing("stale_data_detection", phase_duration)
+
+    def _log_completion_metrics(self, animals_data, processing_stats):
+        """Metrics & logging phase: Calculate and log comprehensive metrics."""
+        # Calculate metrics for detailed logging
+        scrape_end_time = datetime.now()
+        duration = self.metrics_collector.calculate_scrape_duration(self.scrape_start_time, scrape_end_time)
+        quality_score = self.metrics_collector.assess_data_quality(animals_data)
+
+        # Log detailed metrics
+        detailed_metrics = self.metrics_collector.generate_comprehensive_metrics(
+            animals_found=len(animals_data),
+            animals_added=processing_stats["animals_added"],
+            animals_updated=processing_stats["animals_updated"],
+            animals_unchanged=processing_stats["animals_unchanged"],
+            images_uploaded=processing_stats["images_uploaded"],
+            images_failed=processing_stats["images_failed"],
+            duration_seconds=duration,
+            quality_score=quality_score,
+            potential_failure_detected=processing_stats["potential_failure_detected"],
+            skip_existing_animals=self.skip_existing_animals,
+            batch_size=self.batch_size,
+            rate_limit_delay=self.rate_limit_delay,
+        )
+        self.metrics_collector.log_detailed_metrics(detailed_metrics)
+
+        self.logger.info(
+            f"Scrape completed successfully. Added: {processing_stats['animals_added']}, Updated: {processing_stats['animals_updated']}, " f"Quality: {quality_score:.2f}, Duration: {duration:.1f}s"
+        )
 
     @abstractmethod
     def collect_data(self):
@@ -419,14 +456,13 @@ class BaseScraper(ABC):
                         raise ValueError(f"Invalid animal name: {name}")
 
                 # Track successful retry if this wasn't the first attempt
-                if attempt > 0 and self.metrics_collector:
+                if attempt > 0:
                     self.metrics_collector.track_retry(success=True)
 
                 return result
 
             except (TimeoutException, WebDriverException, ValueError) as e:
-                if self.metrics_collector:
-                    self.metrics_collector.track_retry(success=False)
+                self.metrics_collector.track_retry(success=False)
                 self.logger.warning(f"Scraping attempt {attempt + 1}/{self.max_retries} failed: {e}")
 
                 if attempt < self.max_retries - 1:  # Not the last attempt
@@ -737,10 +773,5 @@ class BaseScraper(ABC):
         Returns:
             True if successful, False otherwise
         """
-        if self.metrics_collector:
-            self.metrics_collector.log_detailed_metrics(metrics)
-            return True
-
-        self.logger.info(f"Detailed metrics: {metrics}")
-        self._log_service_unavailable("MetricsCollector", "database logging disabled")
-        return False
+        self.metrics_collector.log_detailed_metrics(metrics)
+        return True

@@ -3,15 +3,13 @@
 import os
 import sys
 
+# Add the project root directory to Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import psycopg2
 from psycopg2 import errors
 
 from config import DB_CONFIG
-
-# Add the project root directory to Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# Import configuration
 
 
 def connect_to_database():

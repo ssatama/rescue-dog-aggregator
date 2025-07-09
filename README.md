@@ -106,7 +106,7 @@ Every year, millions of dogs enter shelters while potential adopters struggle to
 │                      🗄️ PostgreSQL Database                              │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ • JSONB Metadata Storage & Indexing    • Optimized Queries & Performance   │
-│ • Availability & Confidence Tracking   • Migration Management & Versioning │
+│ • Availability & Confidence Tracking   • Schema-Driven Database Management │
 │ • Quality Metrics & Analytics          • Production Monitoring & Alerting  │
 │ • Backup & Recovery Management         • Scalability & Performance Tuning  │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -187,7 +187,7 @@ cd rescue-dog-aggregator
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
-python main.py --setup
+python database/db_setup.py
 ```
 
 **2. Configure Environment**
@@ -424,7 +424,7 @@ python management/config_commands.py stats
 
 ### 🔍 Reference & Management
 - **[Database Schema](docs/reference/database-schema.md)** - Complete database structure and relationships
-- **[Migration History](database/migration_history.md)** - All schema changes and comprehensive upgrade paths
+- **[Database Schema Guide](database/migration_history.md)** - Database setup and schema management
 - **[Development Log](DEVELOPMENT_LOG.md)** - Feature timeline and architectural decision records
 - **[Frontend Documentation](frontend/README.md)** - Frontend-specific setup and component library
 

@@ -90,7 +90,10 @@ CREATE TABLE IF NOT EXISTS scrape_logs (
     dogs_updated INTEGER,
     status VARCHAR(50) NOT NULL,
     error_message TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    detailed_metrics JSONB,
+    duration_seconds NUMERIC(10,2),
+    data_quality_score NUMERIC(3,2) CHECK (data_quality_score >= 0 AND data_quality_score <= 1)
 );
 
 -- Service Regions
@@ -133,3 +136,8 @@ CREATE INDEX IF NOT EXISTS idx_animals_availability_confidence ON animals(availa
 -- Add index for performance
 CREATE INDEX IF NOT EXISTS idx_animals_original_image_url ON animals(original_image_url);
 CREATE INDEX IF NOT EXISTS idx_animal_images_original_image_url ON animal_images(original_image_url);
+
+-- Scrape logs indexes
+CREATE INDEX IF NOT EXISTS idx_scrape_logs_detailed_metrics ON scrape_logs USING gin(detailed_metrics);
+CREATE INDEX IF NOT EXISTS idx_scrape_logs_duration ON scrape_logs(duration_seconds);
+CREATE INDEX IF NOT EXISTS idx_scrape_logs_quality_score ON scrape_logs(data_quality_score);

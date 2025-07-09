@@ -69,14 +69,38 @@ python management/config_commands.py run pets-turkey
 ### Common Tasks
 
 - API endpoint: Write test → Create route → Implement
-- Scraper: Config YAML → Test extraction → Implement
+- Scraper: Config YAML → Test extraction → Implement (now with modern patterns)
 - Component: Test behavior → Create component → Style
+
+### Scraper Architecture (Recent Refactoring)
+
+**BaseScraper now implements modern design patterns:**
+
+- **Null Object Pattern**: Services default to null objects (no conditional checks)
+- **Context Manager**: Use `with scraper:` for automatic connection handling  
+- **Template Method**: `run()` decomposed into focused phases
+- **Dependency Injection**: Clean service injection at constructor level
+
+**Example Usage:**
+```python
+# Modern pattern with context manager
+with MyScraper(config_id="org-name") as scraper:
+    result = scraper.run()  # Automatic connection management
+
+# Service injection for testing/customization
+scraper = MyScraper(
+    config_id="org-name",
+    metrics_collector=CustomMetricsCollector(),
+    session_manager=CustomSessionManager()
+)
+```
 
 ## Project Structure
 
 ```
 api/          # FastAPI backend
 scrapers/     # Web scrapers (see scrapers/CLAUDE.md)
+services/     # Extracted services (metrics, session, database, null objects)
 frontend/     # Next.js app (see frontend/CLAUDE.md)
 tests/        # Backend tests
 configs/      # Organization YAMLs (7 orgs)

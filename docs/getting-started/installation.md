@@ -69,20 +69,17 @@ GRANT ALL PRIVILEGES ON DATABASE rescue_dogs TO rescue_user;
 \q
 ```
 
-#### Apply Database Schema
+#### Initialize Database Schema
 
 ```bash
-# Apply the main schema
-psql -h localhost -d rescue_dogs -U rescue_user < database/schema.sql
+# Method 1: Use the setup script (recommended)
+python database/db_setup.py
 
-# Apply migrations (if needed)
-psql -h localhost -d rescue_dogs -U rescue_user -f database/migrations/001_add_duplicate_stale_detection.sql
-psql -h localhost -d rescue_dogs -U rescue_user -f database/migrations/002_add_detailed_metrics.sql
-psql -h localhost -d rescue_dogs -U rescue_user -f database/migrations/scrape_sessions.sql
-psql -h localhost -d rescue_dogs -U rescue_user -f database/migrations/001_add_social_media.sql
-psql -h localhost -d rescue_dogs -U rescue_user -f database/migrations/003_add_config_support.sql
-psql -h localhost -d rescue_dogs -U rescue_user -f database/migrations/003_add_missing_fields.sql
+# Method 2: Apply schema manually
+psql -h localhost -d rescue_dogs -U rescue_user < database/schema.sql
 ```
+
+**Note**: The project now uses `schema.sql` as the single source of truth. All previous migration files have been consolidated into this schema file.
 
 ### 3. Backend Setup
 
@@ -552,7 +549,7 @@ For better performance:
 
 #### Database
 - **Connection pooling**: Use pgBouncer for connection pooling
-- **Indexes**: Ensure all migrations are applied
+- **Schema verification**: Ensure schema.sql is properly applied
 - **Vacuuming**: Set up automated vacuum and analyze
 
 #### API
