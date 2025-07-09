@@ -493,9 +493,9 @@ class PetsInTurkeyScraper(BaseScraper):
         # Use parse_age_text to validate and potentially improve the format
         try:
             age_info = parse_age_text(age_text)
-            if age_info.age_category:
+            if age_info.category:
                 result = dog_data.copy()
-                result["age_text"] = age_info.age_category
+                result["age_text"] = age_info.category
                 return result
         except Exception:
             # If parsing fails, keep original

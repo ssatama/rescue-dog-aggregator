@@ -153,7 +153,7 @@ class TestBackendFileIntegrity:
         """Validate utils directory structure"""
         utils_dir = PROJECT_ROOT / "utils"
 
-        critical_utils = ["db.py", "config_loader.py"]  # Database utilities  # Configuration loading
+        critical_utils = ["db_connection.py", "config_loader.py"]  # Database utilities  # Configuration loading
 
         missing_utils = []
         for util_file in critical_utils:
