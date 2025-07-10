@@ -390,17 +390,15 @@ python management/config_commands.py stats
 - **[Contributing Guide](docs/development/contributing.md)** - How to contribute code, documentation, and innovative ideas
 
 ### 🏗️ Architecture & Development
-- **[System Architecture](docs/architecture/system-overview.md)** - High-level system design and comprehensive data flow
-- **[Frontend Architecture](docs/architecture/frontend.md)** - Next.js 15 App Router patterns and component architecture
+- **[System Architecture](docs/architecture/project-overview.md)** - High-level system design and comprehensive data flow
+- **[Frontend Architecture](docs/architecture/frontend-architecture.md)** - Next.js 15 App Router patterns and component architecture
 - **[Backend Architecture](docs/architecture/backend.md)** - FastAPI structure and comprehensive database design
-- **[Scraper Architecture](docs/architecture/scrapers.md)** - Configuration-driven scraper system and best practices
+- **[Scraper Architecture](docs/architecture/scraper-design.md)** - Configuration-driven scraper system and best practices
 - **[Development Workflow](docs/development/workflow.md)** - TDD methodology and development best practices
 
 ### 🔧 API & Integration
 - **[API Reference](docs/api/reference.md)** - Complete REST API documentation with OpenAPI specification
 - **[API Examples](docs/api/examples.md)** - Practical usage examples and comprehensive code samples
-- **[Authentication Guide](docs/api/authentication.md)** - Security protocols and access control mechanisms
-- **[Rate Limiting](docs/api/rate-limiting.md)** - API usage limits and optimization strategies
 
 ### 🧪 Testing & Quality Assurance
 - **[Testing Guide](TESTING.md)** - Comprehensive testing strategy covering all 1,800+ tests
@@ -417,7 +415,7 @@ python management/config_commands.py stats
 ### 📱 Features & User Experience
 - **[CTA Optimization](docs/features/cta-optimization.md)** - Favorites, notifications, and mobile UX enhancement
 - **[Related Dogs System](docs/features/related-dogs.md)** - Cross-discovery and intelligent recommendation engine
-- **[Data Standardization](docs/features/data-standardization.md)** - AI-powered breed, age, and size normalization
+- **[Data Standardization](docs/architecture/data-standardization.md)** - Automated breed, age, and size normalization
 - **[Accessibility Guide](docs/features/accessibility.md)** - WCAG 2.1 AA compliance and screen reader optimization
 
 ### 🔍 Reference & Management
