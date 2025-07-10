@@ -5,6 +5,7 @@ Follows CLAUDE.md principles: immutable data, pure functions, dependency injecti
 
 import importlib
 import logging
+import sys
 from dataclasses import dataclass
 from typing import Dict, Optional, Protocol, Set, Type
 
@@ -101,6 +102,9 @@ class SecureScraperLoader:
             raise ValueError(f"Invalid class name: {module_info.class_name}")
 
         try:
+            # Ensure project root is in Python path before importing
+            self._ensure_project_path()
+
             # Import module
             module = importlib.import_module(module_info.module_path)
 
@@ -210,6 +214,25 @@ class SecureScraperLoader:
     def clear_cache(self):
         """Clear module cache (for testing)."""
         self._module_cache.clear()
+
+    def _ensure_project_path(self):
+        """Ensure project root is in Python path for module imports."""
+        import os
+        import sys
+
+        # Calculate project root relative to this file
+        current_file = os.path.abspath(__file__)
+        utils_dir = os.path.dirname(current_file)
+        project_root = os.path.dirname(utils_dir)
+
+        # Always ensure project root is at the beginning of sys.path for proper import resolution
+        if project_root in sys.path:
+            # Remove it from its current position
+            sys.path.remove(project_root)
+
+        # Insert at the beginning
+        sys.path.insert(0, project_root)
+        logger.debug(f"Ensured project root is at beginning of Python path: {project_root}")
 
 
 class SecurityError(Exception):

@@ -6,11 +6,37 @@ capabilities and rollback procedures for scraper failures.
 """
 
 from datetime import datetime, timedelta
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
-from management.emergency_operations import DataRecoveryManager, EmergencyOperations, RollbackManager
+from management.emergency.data_recovery_service import DataRecoveryService
+from management.emergency.rollback_service import RollbackService
+from management.emergency_operations import EmergencyOperations
+from management.services.database_service import DatabaseService
+
+
+@pytest.fixture
+def mock_database_service():
+    """Create mock DatabaseService for testing."""
+    mock_service = Mock(spec=DatabaseService)
+
+    # Create mock connection for context manager
+    mock_connection = Mock()
+    mock_cursor = Mock()
+    mock_connection.cursor.return_value = mock_cursor
+
+    # Configure cursor methods
+    mock_cursor.execute = Mock()  # Accept any parameters
+    mock_cursor.fetchone.return_value = (0,)  # Mock result for COUNT(*) queries
+    mock_cursor.fetchall.return_value = []  # Mock result for SELECT multiple queries
+    mock_cursor.close = Mock()
+
+    # Configure context manager
+    mock_service.__enter__ = Mock(return_value=mock_connection)
+    mock_service.__exit__ = Mock(return_value=None)
+
+    return mock_service
 
 
 @pytest.mark.slow
@@ -20,9 +46,9 @@ class TestEmergencyOperations:
     """Test core emergency operations functionality."""
 
     @pytest.fixture
-    def emergency_ops(self):
+    def emergency_ops(self, mock_database_service):
         """Create emergency operations manager for testing."""
-        return EmergencyOperations()
+        return EmergencyOperations(database_service=mock_database_service)
 
     def test_emergency_ops_initialization(self, emergency_ops):
         """Test that emergency operations manager initializes properly."""
@@ -47,8 +73,8 @@ class TestEmergencyOperations:
 
     def test_emergency_stop_all_scrapers(self, emergency_ops):
         """Test emergency stop functionality."""
-        with patch.object(emergency_ops, "_stop_running_scrapers") as mock_stop:
-            mock_stop.return_value = {"stopped": 3, "failed": 0}
+        with patch.object(emergency_ops.coordinator, "emergency_stop_all_scrapers") as mock_stop:
+            mock_stop.return_value = {"success": True, "stopped": 3, "failed": 0}
 
             result = emergency_ops.emergency_stop_all_scrapers()
 
@@ -61,8 +87,13 @@ class TestEmergencyOperations:
         org_id = 1
         reason = "Catastrophic failure detected"
 
-        with patch.object(emergency_ops, "_disable_organization_scrapers") as mock_disable:
-            mock_disable.return_value = True
+        with patch.object(emergency_ops.coordinator, "emergency_disable_organization") as mock_disable:
+            mock_disable.return_value = {
+                "success": True,
+                "organization_id": org_id,
+                "reason": reason,
+                "timestamp": datetime.now(),
+            }
 
             result = emergency_ops.emergency_disable_organization(org_id, reason)
 
@@ -76,30 +107,29 @@ class TestRollbackManager:
     """Test rollback functionality for scraper data."""
 
     @pytest.fixture
-    def rollback_manager(self):
+    def rollback_manager(self, mock_database_service):
         """Create rollback manager for testing."""
-        return RollbackManager()
+        return RollbackService(database_service=mock_database_service)
 
     def test_rollback_manager_initialization(self, rollback_manager):
         """Test rollback manager initializes properly."""
         assert rollback_manager is not None
         assert hasattr(rollback_manager, "logger")
 
-    def test_get_available_snapshots(self, rollback_manager):
+    def test_get_available_snapshots(self, rollback_manager, mock_database_service):
         """Test getting available data snapshots for rollback."""
         org_id = 1
+        mock_connection = mock_database_service.__enter__.return_value
+        mock_cursor = mock_connection.cursor.return_value
 
-        with patch.object(rollback_manager, "_query_snapshots") as mock_query:
-            mock_snapshots = [
-                {"snapshot_id": "snap_20231201_120000", "created_at": datetime.now() - timedelta(hours=1), "organization_id": org_id, "animals_count": 45, "scrape_session": "session_123"}
-            ]
-            mock_query.return_value = mock_snapshots
+        # Mock snapshot data from database
+        mock_cursor.fetchall.return_value = [("snap_20231201_120000", datetime.now() - timedelta(hours=1), org_id, 45, "session_123")]
 
-            snapshots = rollback_manager.get_available_snapshots(org_id)
+        snapshots = rollback_manager.get_available_snapshots(org_id)
 
-            assert len(snapshots) == 1
-            assert snapshots[0]["organization_id"] == org_id
-            mock_query.assert_called_once_with(org_id)
+        assert len(snapshots) == 1
+        assert snapshots[0]["organization_id"] == org_id
+        assert snapshots[0]["animals_count"] == 45
 
     def test_rollback_to_snapshot(self, rollback_manager):
         """Test rolling back organization data to a specific snapshot."""
@@ -151,9 +181,9 @@ class TestDataRecoveryManager:
     """Test data recovery and repair functionality."""
 
     @pytest.fixture
-    def recovery_manager(self):
+    def recovery_manager(self, mock_database_service):
         """Create data recovery manager for testing."""
-        return DataRecoveryManager()
+        return DataRecoveryService(database_service=mock_database_service)
 
     def test_recovery_manager_initialization(self, recovery_manager):
         """Test recovery manager initializes properly."""
@@ -232,60 +262,39 @@ class TestEmergencyOperationsIntegration:
         """Test complete emergency recovery workflow."""
         org_id = 1
 
-        # Mock all the workflow steps
-        with patch.object(emergency_ops, "_validate_operation_safety") as mock_safety:
-            with patch.object(emergency_ops, "emergency_stop_all_scrapers") as mock_stop:
-                with patch.object(emergency_ops.rollback_manager, "create_data_backup") as mock_backup:
-                    with patch.object(emergency_ops.rollback_manager, "rollback_last_scrape") as mock_rollback:
-                        with patch.object(emergency_ops.recovery_manager, "validate_data_consistency") as mock_validate:
+        # Mock the coordinator's execute_emergency_recovery method
+        with patch.object(emergency_ops.coordinator, "execute_emergency_recovery") as mock_recovery:
+            mock_recovery.return_value = {"success": True, "backup_id": "backup_123", "recovery_summary": {"animals_affected": 5, "data_consistent": True}}
 
-                            # Setup mock returns
-                            mock_safety.return_value = {"safe": True, "reasons": []}
-                            mock_stop.return_value = {"success": True, "stopped": 1}
-                            mock_backup.return_value = {"backup_id": "backup_123"}
-                            mock_rollback.return_value = {"success": True, "animals_affected": 5}
-                            mock_validate.return_value = {"consistent": True}
+            result = emergency_ops.execute_emergency_recovery(org_id)
 
-                            result = emergency_ops.execute_emergency_recovery(org_id)
+            assert result["success"] is True
+            assert "backup_id" in result
+            assert "recovery_summary" in result
 
-                            assert result["success"] is True
-                            assert "backup_id" in result
-                            assert "recovery_summary" in result
-
-                            # Verify workflow steps were called
-                            mock_safety.assert_called_once()
-                            mock_stop.assert_called_once()
-                            mock_backup.assert_called_once()
-                            mock_rollback.assert_called_once()
-                            mock_validate.assert_called_once()
+            # Verify coordinator was called
+            mock_recovery.assert_called_once_with(org_id)
 
     def test_emergency_recovery_with_failure(self, emergency_ops):
         """Test emergency recovery handles intermediate failures gracefully."""
         org_id = 1
 
-        with patch.object(emergency_ops, "_validate_operation_safety") as mock_safety:
-            with patch.object(emergency_ops, "emergency_stop_all_scrapers") as mock_stop:
-                with patch.object(emergency_ops.rollback_manager, "create_data_backup") as mock_backup:
-                    with patch.object(emergency_ops.rollback_manager, "rollback_last_scrape") as mock_rollback:
+        # Mock the coordinator's execute_emergency_recovery method to return failure
+        with patch.object(emergency_ops.coordinator, "execute_emergency_recovery") as mock_recovery:
+            mock_recovery.return_value = {"success": False, "backup_id": "backup_123", "error": "Rollback failed: Database connection failed"}
 
-                        # Setup scenario where backup succeeds but rollback
-                        # fails
-                        mock_safety.return_value = {"safe": True, "reasons": []}
-                        mock_stop.return_value = {"success": True, "stopped": 1}
-                        mock_backup.return_value = {"backup_id": "backup_123"}
-                        mock_rollback.return_value = {"success": False, "error": "Database connection failed"}
+            result = emergency_ops.execute_emergency_recovery(org_id)
 
-                        result = emergency_ops.execute_emergency_recovery(org_id)
-
-                        assert result["success"] is False
-                        assert "backup_id" in result  # Backup should still be created
-                        assert "error" in result
-                        assert "rollback" in result["error"].lower()
+            assert result["success"] is False
+            assert "backup_id" in result  # Backup should still be created
+            assert "error" in result
+            assert "rollback" in result["error"].lower()
+            mock_recovery.assert_called_once_with(org_id)
 
     def test_get_recovery_status(self, emergency_ops):
         """Test getting status of ongoing recovery operations."""
-        with patch.object(emergency_ops, "_check_recovery_operations") as mock_check:
-            mock_check.return_value = {
+        with patch.object(emergency_ops.coordinator, "get_recovery_status") as mock_status:
+            mock_status.return_value = {
                 "active_recoveries": 1,
                 "completed_recoveries": 3,
                 "failed_recoveries": 0,
@@ -297,7 +306,7 @@ class TestEmergencyOperationsIntegration:
             assert "active_recoveries" in status
             assert "operations" in status
             assert len(status["operations"]) == 1
-            mock_check.assert_called_once()
+            mock_status.assert_called_once()
 
 
 class TestEmergencyOperationsCommands:
@@ -321,7 +330,7 @@ class TestEmergencyOperationsCommands:
 
         cli = EmergencyOperationsCommands()
 
-        with patch.object(cli.emergency_ops, "emergency_stop_all_scrapers") as mock_stop:
+        with patch.object(cli.cli, "emergency_stop") as mock_stop:
             mock_stop.return_value = {"success": True, "stopped": 2}
 
             result = cli.emergency_stop()
@@ -336,7 +345,7 @@ class TestEmergencyOperationsCommands:
         cli = EmergencyOperationsCommands()
         org_id = 1
 
-        with patch.object(cli.emergency_ops.rollback_manager, "rollback_last_scrape") as mock_rollback:
+        with patch.object(cli.cli, "rollback_organization") as mock_rollback:
             mock_rollback.return_value = {"success": True, "animals_affected": 10}
 
             result = cli.rollback_organization(org_id)
@@ -350,7 +359,7 @@ class TestEmergencyOperationsCommands:
 
         cli = EmergencyOperationsCommands()
 
-        with patch.object(cli.emergency_ops, "get_system_status") as mock_status:
+        with patch.object(cli.cli, "system_status") as mock_status:
             mock_status.return_value = {"system_health": "healthy", "active_scrapers": 0, "recent_failures": 0}
 
             result = cli.system_status()
@@ -399,7 +408,7 @@ class TestEmergencyOperationsSafety:
         """Test that operations validate safety before execution."""
         org_id = 1
 
-        with patch.object(emergency_ops, "_validate_operation_safety") as mock_validate:
+        with patch.object(emergency_ops.coordinator, "_validate_operation_safety") as mock_validate:
             mock_validate.return_value = {"safe": False, "reasons": ["Active scraper running", "Recent backup not found"]}
 
             result = emergency_ops.execute_emergency_recovery(org_id)
@@ -412,12 +421,11 @@ class TestEmergencyOperationsSafety:
         """Test that all emergency operations are comprehensively logged."""
         org_id = 1
 
-        with patch.object(emergency_ops.logger, "info") as mock_info:
-            with patch.object(emergency_ops.logger, "warning") as mock_warning:
-                with patch.object(emergency_ops, "_stop_running_scrapers") as mock_stop_impl:
-                    mock_stop_impl.return_value = {"stopped": 1, "failed": 0}
+        with patch.object(emergency_ops.scraper_control.logger, "warning") as mock_warning:
+            with patch.object(emergency_ops.scraper_control, "stop_running_scrapers") as mock_stop_impl:
+                mock_stop_impl.return_value = {"stopped": 1, "failed": 0}
 
-                    emergency_ops.emergency_stop_all_scrapers()
+                emergency_ops.emergency_stop_all_scrapers()
 
-                    # Should log the emergency operation
-                    assert mock_info.called or mock_warning.called
+                # Should log the emergency operation
+                assert mock_warning.called

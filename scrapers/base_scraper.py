@@ -12,6 +12,9 @@ from typing import Any, Dict, List, Optional
 import psycopg2
 from langdetect import detect
 
+# Add the project root directory to Python path BEFORE any local imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 # Import config
 from config import DB_CONFIG
 
@@ -23,8 +26,6 @@ from utils.config_loader import ConfigLoader
 # Import the secure standardization utilities
 from utils.optimized_standardization import standardize_breed, standardize_size_value
 from utils.organization_sync_service import create_default_sync_service
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Set up module-level logger
 logger = logging.getLogger(__name__)
