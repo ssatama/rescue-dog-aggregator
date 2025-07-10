@@ -52,7 +52,7 @@ Before contributing, ensure you have:
    ```
 3. **Add upstream remote**:
    ```bash
-   git remote add upstream https://github.com/original-owner/rescue-dog-aggregator.git
+   git remote add upstream https://github.com/rescue-dog-aggregator/rescue-dog-aggregator.git
    ```
 
 ### Development Setup

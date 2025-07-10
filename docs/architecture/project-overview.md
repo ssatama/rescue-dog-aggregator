@@ -2,23 +2,18 @@
 
 ## Executive Summary
 
-The Rescue Dog Aggregator is a sophisticated, production-ready web platform that revolutionizes rescue dog adoption by aggregating listings from multiple organizations worldwide. Built with enterprise-grade architecture and zero-technical-debt methodology, the platform serves as a unified discovery platform for rescue dogs while directing adopters to original organizations.
+The Rescue Dog Aggregator is a web platform designed to aggregate dog adoption listings from multiple organizations into a single, searchable interface. The system scrapes and normalizes data, provides a unified user-facing portal, and directs potential adopters back to the source organization for the adoption process.
 
-### Key Achievements
+### System Overview & Key Metrics
 
-- **Production Scale**: Serves 7 rescue organizations across multiple countries with 1,500+ tracked animals
-- **Technical Excellence**: 2,000+ comprehensive tests (876 backend, 1,100+ frontend) ensuring 95%+ test coverage
-- **Performance**: 95+ Core Web Vitals score with sub-second load times and global CDN delivery
-- **Security**: Enterprise-grade security with XSS prevention, input validation, and comprehensive CSP headers
-- **Availability**: 99.9% uptime with intelligent stale data detection and graceful error recovery
-
-### Production Readiness Indicators
-
-- **Zero Technical Debt**: Mandatory Test-Driven Development (TDD) with comprehensive quality gates
-- **Automated Operations**: Weekly scraping automation with intelligent monitoring and alerting
-- **Scalable Architecture**: Configuration-driven design enabling zero-code organization onboarding
-- **Enterprise Security**: Production-grade input validation, sanitization, and security headers
-- **Performance Optimized**: Global CDN, lazy loading, and optimized data delivery pipelines
+- **Scope**: Currently aggregates data from 7 rescue organizations, tracking over 1,500 animals
+- **Test Coverage**: The codebase is validated by over 2,000 tests (876 backend, 1,100+ frontend), maintaining ~95% test coverage
+- **Performance**: Achieves a 95+ Core Web Vitals score, facilitated by a global CDN, image optimization, lazy loading, and sub-second load times
+- **Availability & Reliability**: Maintains 99.9% uptime, featuring automated stale data detection and error recovery from individual scraper failures
+- **Security Posture**: Implements input validation and sanitization, XSS prevention, and a Content Security Policy (CSP)
+- **Operational Automation**: Data scraping and system monitoring are automated, with alerts for operational anomalies
+- **Architecture**: New organizations can be added via a configuration-driven process, requiring no code changes for onboarding
+- **Development Practice**: The project follows Test-Driven Development (TDD) with CI/CD quality gates to manage code quality and minimize technical debt
 
 ---
 
@@ -56,7 +51,7 @@ The Rescue Dog Aggregator is a sophisticated, production-ready web platform that
 └─────────────────────┬───────────────────────────────────────────────┘
                       │ 🤖 Data Processing Pipeline
 ┌─────────────────────▼───────────────────────────────────────────────┐
-│               🧠 AI-Powered Data Intelligence                      │
+│               🧠 Data Processing & Normalization                   │
 ├─────────────────────────────────────────────────────────────────────┤
 │  • Web Scraping Engine     │  • Data Standardization              │
 │  • Availability Tracking   │  • Quality Assessment                │
@@ -156,7 +151,7 @@ The Rescue Dog Aggregator is a sophisticated, production-ready web platform that
 - Session-based availability tracking
 - Error recovery and partial failure detection
 
-**AI-Powered Standardization**
+**Data Standardization**
 - Breed normalization with 130+ breed mappings
 - Age parsing from natural language descriptions
 - Size standardization across different measurement systems

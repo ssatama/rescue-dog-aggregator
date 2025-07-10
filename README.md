@@ -1,65 +1,63 @@
 # Rescue Dog Aggregator
 
-> **The production-ready platform revolutionizing how rescue dogs find their forever homes**
+> An open-source platform for aggregating rescue dog listings from multiple organizations.
 
-An enterprise-grade, open-source web platform that transforms the rescue dog adoption landscape by aggregating listings from multiple organizations, applying AI-powered data intelligence, and delivering exceptional user experiences through cutting-edge web technologies.
+This project provides a unified interface to search for adoptable dogs across multiple rescue organizations. It uses a data pipeline to normalize information from different sources and is built with a modern web stack for performance and maintainability.
 
-**🚀 Production Status**: Currently serving **7 rescue organizations** with **1,800+ comprehensive tests** ensuring bulletproof reliability
-
----
-
-## ✨ Why This Project Changes Everything
-
-Every year, millions of dogs enter shelters while potential adopters struggle to find them across fragmented, hard-to-navigate websites. This platform eliminates that barrier entirely, creating a unified, intelligent discovery experience that saves both dogs and families.
-
-### 🎯 The Impact
-- **🔍 Unified Discovery**: Search across multiple organizations from one beautiful interface
-- **🧠 AI-Powered Intelligence**: Smart breed, age, and size normalization across all data sources
-- **⚡ Lightning Performance**: Next.js 15 with App Router, optimized for Core Web Vitals (95+ score)
-- **🔄 Always Current**: Intelligent availability tracking with confidence-based filtering
-- **📱 Mobile Excellence**: Progressive enhancement with full accessibility compliance
-- **🏗️ Zero-Code Scaling**: Add new organizations via YAML configs, not code changes
-
-### 🏆 Production-Grade Excellence
-
-**Technical Achievements That Matter**:
-- **1,800+ Test Suite**: 259 backend + 1,500+ frontend tests ensuring zero-regression deployments
-- **Enterprise Security**: SQL injection prevention, XSS protection, and comprehensive CSP headers
-- **Advanced Error Recovery**: Partial failure detection prevents false negatives from individual scraper issues
-- **Performance Optimized**: Lazy loading, image optimization, and intelligent component memoization
-- **Configuration-Driven**: Hot-reload capabilities with zero-downtime deployments
+**🚀 Production Status**: Live with **7 rescue organizations** and validated by **1,800+ tests**.
 
 ---
 
-## 🚀 Core Features & Capabilities
+## Motivation
 
-### 🎯 Intelligent Data Management
-- **Multi-Source Aggregation**: Unified data pipeline from 7+ rescue organizations
-- **AI-Powered Normalization**: Advanced breed, age, and size standardization across all sources
-- **Availability Intelligence**: Sophisticated confidence scoring (high → medium → low → unavailable)
-- **Quality Metrics**: Automatic data completeness assessment with 0-1 scoring scale
-- **Session-Based Tracking**: Multi-session availability monitoring with smart change detection
+Potential adopters often struggle to find dogs across many disparate shelter websites, each with different interfaces and data formats. This platform addresses that challenge by providing a single search interface that aggregates listings from multiple sources, normalizes the data, and presents it in a consistent format.
 
-### 🚀 Modern Web Performance
-- **Next.js 15 App Router**: Server/client component separation for optimal SEO and performance
-- **Cloudinary Integration**: Automated image optimization with global CDN delivery
-- **Progressive Enhancement**: Fully functional without JavaScript, enhanced with it
-- **Accessibility First**: WCAG 2.1 AA compliant with comprehensive screen reader support
-- **Core Web Vitals**: Consistently achieving 95+ scores on mobile and desktop
+### Core Features
+- **🔍 Multi-Organization Search**: Single interface to search across multiple rescue organizations
+- **🧠 Data Normalization**: Automated standardization of breed, age, and size information across sources
+- **⚡ High Performance**: Built on Next.js 15 (App Router) achieving 95+ Lighthouse scores
+- **🔄 Real-Time Updates**: Availability tracking with confidence-based filtering for data freshness
+- **📱 Mobile & Accessible**: Responsive design with WCAG 2.1 AA compliance
+- **🏗️ Configuration-Driven**: Add new organizations via YAML configuration without code changes
 
-### 🛡️ Enterprise Security & Reliability
-- **Content Sanitization**: Comprehensive XSS prevention with DOMPurify integration
-- **Input Validation**: Multi-layer backend validation using Pydantic models
-- **Rate Limiting**: Configurable per-organization scraping limits with intelligent backoff
-- **Security Headers**: CSP, HSTS, and security-focused HTTP headers across all endpoints
-- **Graceful Degradation**: Error boundaries with automatic retry functionality
+### Technical Highlights
+- **1,800+ Test Suite**: 259 backend + 1,500+ frontend tests supporting stable deployments
+- **Security Features**: SQL injection prevention, XSS protection, and Content Security Policy headers
+- **Error Resilience**: Partial failure detection ensures service availability during individual scraper issues
+- **Performance Optimizations**: Lazy loading, image optimization, and component memoization
+- **Hot Configuration**: Configuration changes apply without server restarts
 
-### 📊 Production Operations Excellence
-- **Automated Monitoring**: Intelligent stale data detection with confidence-based filtering
-- **Error Recovery**: Partial failure detection prevents false positives from individual scraper issues
-- **Weekly Automation**: Cron-ready scraping with comprehensive logging and alerting
-- **Health Checks**: Comprehensive API and database health monitoring endpoints
-- **Performance Metrics**: Real-time monitoring of Core Web Vitals and user experience
+---
+
+## Technical Architecture
+
+### Data Management
+- **Multi-Source Aggregation**: Data pipeline supporting 7+ rescue organizations
+- **Normalization Engine**: Automated standardization of breed, age, and size data across sources
+- **Availability Tracking**: Confidence scoring system (high → medium → low → unavailable)
+- **Quality Assessment**: Automated data completeness scoring (0-1 scale)
+- **Session Tracking**: Multi-session availability monitoring with change detection
+
+### Frontend Architecture
+- **Next.js 15 App Router**: Server and client component separation for SEO and performance
+- **Image Optimization**: Cloudinary integration with global CDN delivery
+- **Progressive Enhancement**: Functional without JavaScript, enhanced with it enabled
+- **Accessibility**: WCAG 2.1 AA compliant with screen reader support
+- **Performance**: 95+ Lighthouse scores on mobile and desktop
+
+### Security & Reliability
+- **Input Sanitization**: XSS prevention using DOMPurify integration
+- **Data Validation**: Multi-layer validation with Pydantic models
+- **Rate Limiting**: Configurable per-organization limits with exponential backoff
+- **Security Headers**: CSP, HSTS, and security headers on all endpoints
+- **Error Handling**: Error boundaries with automatic retry logic
+
+### Operations
+- **Monitoring**: Automated stale data detection with confidence-based filtering
+- **Resilience**: Partial failure detection maintains service availability
+- **Scheduling**: Cron-compatible scraping with logging and alerting
+- **Health Checks**: API and database health monitoring endpoints
+- **Metrics**: Real-time Core Web Vitals and performance monitoring
 
 ---
 
@@ -112,9 +110,9 @@ Every year, millions of dogs enter shelters while potential adopters struggle to
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 🎛️ Configuration-First Architecture
+### Configuration Management
 
-**Revolutionary zero-code deployment**: Add new rescue organizations via simple YAML configuration without touching any code:
+**YAML-Based Setup**: Add new rescue organizations through configuration files without code changes:
 
 ```yaml
 # configs/organizations/example-org.yaml
@@ -146,21 +144,21 @@ metadata:
       instagram: "https://instagram.com/example-rescue"
 ```
 
-### 🔄 Intelligent Data Processing Pipeline
+### Data Processing Pipeline
 
-**7-stage processing pipeline ensures maximum data quality and availability**:
+**7-stage processing workflow for data quality and availability**:
 
 1. **🔧 Configuration Loading**: YAML files define organization scrapers with comprehensive validation
 2. **🔄 Organization Sync**: Configs automatically sync to database with hot-reload support
-3. **🌐 Data Collection**: Advanced scrapers gather listings with session tracking and error recovery
+3. **🌐 Data Collection**: Web scrapers gather listings with session tracking and error recovery
 4. **🧠 AI-Powered Standardization**: Breed, age, size normalization with confidence scoring
-5. **📊 Availability Intelligence**: Multi-session tracking with sophisticated confidence levels
+5. **📊 Availability Tracking**: Multi-session monitoring with confidence level assignment
 6. **✅ Quality Assessment**: Automatic data completeness scoring with 0-1 scale metrics
-7. **🚀 Smart API Delivery**: Confidence-based filtering with production-ready defaults
+7. **🚀 API Delivery**: Confidence-based filtering with configurable defaults
 
-### 🎯 Production-Grade Availability Management
+### Availability Management
 
-**Intelligent confidence scoring system prevents false negatives and ensures data accuracy**:
+**Confidence scoring system for data freshness and accuracy**:
 
 - **🟢 High Confidence**: Recently seen (last scrape) → Always visible to users
 - **🟡 Medium Confidence**: 1 missed scrape → Visible by default with confidence indicator
@@ -182,7 +180,7 @@ metadata:
 
 **1. Clone and Setup Backend**
 ```bash
-git clone https://github.com/your-org/rescue-dog-aggregator.git
+git clone https://github.com/rescue-dog-aggregator/rescue-dog-aggregator.git
 cd rescue-dog-aggregator
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -247,7 +245,7 @@ python management/config_commands.py run my-org
 
 ## 🧪 Testing & Quality Excellence
 
-**Industry-leading test coverage with 1,800+ tests** providing bulletproof reliability for production deployments.
+**Comprehensive test coverage with 1,800+ tests** supporting stable production deployments.
 
 ### 📊 Test Suite Overview
 

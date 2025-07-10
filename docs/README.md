@@ -1,6 +1,6 @@
 # Rescue Dog Aggregator Documentation
 
-Welcome to the comprehensive documentation for the Rescue Dog Aggregator - a production-ready platform that aggregates rescue dog listings from multiple organizations worldwide.
+Welcome to the documentation for the Rescue Dog Aggregator - an open-source platform that aggregates rescue dog listings from multiple organizations.
 
 ## 📚 Documentation Structure
 
@@ -19,7 +19,7 @@ Deep dive into the technical architecture and system design.
 - **[Project Overview](architecture/project-overview.md)** - High-level system architecture and design principles
 - **[Frontend Architecture](architecture/frontend-architecture.md)** - Next.js frontend structure and patterns
 - **[Scraper Design](architecture/scraper-design.md)** - Web scraping engine architecture
-- **[Data Standardization](architecture/data-standardization.md)** - AI-powered data normalization system
+- **[Data Standardization](architecture/data-standardization.md)** - Automated data normalization system
 
 *[Browse all architecture docs →](architecture/)*
 
@@ -91,10 +91,10 @@ Practical examples and code samples for common tasks.
 
 - **🧪 Tests**: 2,000+ comprehensive tests (876 backend, 1,249+ frontend)
 - **🚀 Performance**: 95+ Core Web Vitals score
-- **🔒 Security**: Enterprise-grade security with comprehensive validation
+- **🔒 Security**: Input validation and XSS protection
 - **🌍 Organizations**: 7 rescue organizations across multiple countries
 - **🐕 Animals**: 1,500+ tracked rescue dogs
-- **⚡ Uptime**: 99.9% availability with intelligent error recovery
+- **⚡ Uptime**: High availability with error recovery mechanisms
 
 ---
 
@@ -108,8 +108,8 @@ We welcome contributions to both the codebase and documentation! Please read our
 - Issue reporting and feature requests
 
 ### Quick Contribution Links
-- **Report Issues**: [GitHub Issues](https://github.com/your-repo/issues)
-- **Feature Requests**: [GitHub Discussions](https://github.com/your-repo/discussions)
+- **Report Issues**: [GitHub Issues](https://github.com/rescue-dog-aggregator/rescue-dog-aggregator/issues)
+- **Feature Requests**: [GitHub Discussions](https://github.com/rescue-dog-aggregator/rescue-dog-aggregator/discussions)
 - **Code Contributions**: [Contributing Guide](development/contributing.md)
 - **Documentation**: Help improve these docs!
 

@@ -2,7 +2,7 @@
 
 ## Mission Statement
 
-This guide documents our sophisticated testing infrastructure designed to ensure zero technical debt and maintain production-ready code quality. Our testing strategy encompasses **1,800+ tests** across 152 test files, covering everything from unit tests to complex integration scenarios.
+This guide documents our testing infrastructure designed to maintain code quality and minimize technical debt. Our testing strategy encompasses **1,800+ tests** across 152 test files, covering everything from unit tests to complex integration scenarios.
 
 ## Quick Reference
 
@@ -83,7 +83,7 @@ Every commit must pass:
 
 ### Backend Test Markers (21 Categories)
 
-Our pytest configuration defines sophisticated test categorization:
+Our pytest configuration defines test categorization:
 
 ```python
 # Fast execution tests
