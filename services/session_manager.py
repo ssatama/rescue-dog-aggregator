@@ -24,7 +24,7 @@ import psycopg2
 class SessionManager:
     """Service for session management and stale data detection extracted from BaseScraper."""
 
-    def __init__(self, db_config: Dict[str, str], organization_id: int, skip_existing_animals: bool = False, logger: Optional[logging.Logger] = None):
+    def __init__(self, db_config: Dict[str, str], organization_id: int, skip_existing_animals: bool = False, logger: Optional[logging.Logger] = None, connection_pool=None):
         """Initialize SessionManager with configuration.
 
         Args:
@@ -32,11 +32,13 @@ class SessionManager:
             organization_id: Organization ID for session tracking
             skip_existing_animals: Whether to skip existing animals
             logger: Optional logger instance
+            connection_pool: Optional ConnectionPoolService for pooled connections
         """
         self.db_config = db_config
         self.organization_id = organization_id
         self.skip_existing_animals = skip_existing_animals
         self.logger = logger or logging.getLogger(__name__)
+        self.connection_pool = connection_pool
         self.conn = None
         self.current_scrape_session: Optional[datetime] = None
 
@@ -103,15 +105,38 @@ class SessionManager:
         Returns:
             True if successful, False otherwise
         """
+        if not self.current_scrape_session:
+            self.logger.warning("No active scrape session when marking animal as seen")
+            return False
+
+        # Use connection pool if available
+        if self.connection_pool:
+            try:
+                with self.connection_pool.get_connection_context() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        """
+                        UPDATE animals
+                        SET last_seen_at = %s,
+                            consecutive_scrapes_missing = 0,
+                            availability_confidence = 'high'
+                        WHERE id = %s
+                        """,
+                        (self.current_scrape_session, animal_id),
+                    )
+                    conn.commit()
+                    cursor.close()
+                    return True
+            except Exception as e:
+                self.logger.error(f"Error marking animal as seen: {e}")
+                return False
+
+        # Fallback to direct connection
         if not self.conn:
             self.logger.error("No database connection available for marking animal as seen")
             return False
 
         try:
-            if not self.current_scrape_session:
-                self.logger.warning("No active scrape session when marking animal as seen")
-                return False
-
             cursor = self.conn.cursor()
             cursor.execute(
                 """
@@ -138,15 +163,52 @@ class SessionManager:
         Returns:
             True if successful, False otherwise
         """
+        if not self.current_scrape_session:
+            self.logger.warning("No active scrape session for stale data detection")
+            return False
+
+        # Use connection pool if available
+        if self.connection_pool:
+            try:
+                with self.connection_pool.get_connection_context() as conn:
+                    cursor = conn.cursor()
+
+                    # Update animals not seen in current scrape
+                    cursor.execute(
+                        """
+                        UPDATE animals
+                        SET consecutive_scrapes_missing = consecutive_scrapes_missing + 1,
+                            availability_confidence = CASE
+                                WHEN consecutive_scrapes_missing = 0 THEN 'medium'
+                                WHEN consecutive_scrapes_missing >= 1 THEN 'low'
+                                ELSE availability_confidence
+                            END,
+                            status = CASE
+                                WHEN consecutive_scrapes_missing >= 3 THEN 'unavailable'
+                                ELSE status
+                            END
+                        WHERE organization_id = %s
+                        AND (last_seen_at IS NULL OR last_seen_at < %s)
+                        """,
+                        (self.organization_id, self.current_scrape_session),
+                    )
+
+                    rows_affected = cursor.rowcount
+                    conn.commit()
+                    cursor.close()
+
+                    self.logger.info(f"Updated stale data detection for {rows_affected} animals")
+                    return True
+            except Exception as e:
+                self.logger.error(f"Error updating stale data detection: {e}")
+                return False
+
+        # Fallback to direct connection
         if not self.conn:
             self.logger.error("No database connection available for stale data detection")
             return False
 
         try:
-            if not self.current_scrape_session:
-                self.logger.warning("No active scrape session for stale data detection")
-                return False
-
             cursor = self.conn.cursor()
 
             # Update animals not seen in current scrape
@@ -327,6 +389,37 @@ class SessionManager:
         Returns:
             Dictionary with (confidence, status) tuples as keys and counts as values
         """
+        # Use connection pool if available
+        if self.connection_pool:
+            try:
+                with self.connection_pool.get_connection_context() as conn:
+                    cursor = conn.cursor()
+
+                    cursor.execute(
+                        """
+                        SELECT availability_confidence, status, COUNT(*)
+                        FROM animals
+                        WHERE organization_id = %s
+                        GROUP BY availability_confidence, status
+                        ORDER BY availability_confidence, status
+                        """,
+                        (self.organization_id,),
+                    )
+
+                    results = cursor.fetchall()
+                    cursor.close()
+
+                    # Convert to dictionary
+                    summary = {}
+                    for confidence, status, count in results:
+                        summary[(confidence, status)] = count
+
+                    return summary
+            except Exception as e:
+                self.logger.error(f"Error getting stale animals summary: {e}")
+                return {}
+
+        # Fallback to direct connection
         if not self.conn:
             self.logger.error("No database connection available for stale animals summary")
             return {}
@@ -381,15 +474,51 @@ class SessionManager:
         Returns:
             True if potential partial failure detected, False otherwise
         """
+        # First check for catastrophic failure
+        if self._detect_catastrophic_failure(animals_found, absolute_minimum, total_animals_before_filter, total_animals_skipped):
+            return True
+
+        # Use connection pool if available
+        if self.connection_pool:
+            try:
+                with self.connection_pool.get_connection_context() as conn:
+                    cursor = conn.cursor()
+
+                    # Get historical average of animals found
+                    cursor.execute(
+                        """
+                        SELECT AVG(dogs_found), COUNT(*)
+                        FROM (
+                            SELECT dogs_found
+                            FROM scrape_logs
+                            WHERE organization_id = %s
+                            AND status = 'success'
+                            AND dogs_found > 0
+                            ORDER BY started_at DESC
+                            LIMIT %s
+                        ) recent_scrapes
+                        """,
+                        (
+                            self.organization_id,
+                            minimum_historical_scrapes * 3,
+                        ),
+                    )
+
+                    result = cursor.fetchone()
+                    cursor.close()
+
+                    return self._evaluate_partial_failure(result, animals_found, threshold_percentage, absolute_minimum, minimum_historical_scrapes, total_animals_before_filter, total_animals_skipped)
+            except Exception as e:
+                self.logger.error(f"Error detecting partial failure: {e}")
+                # Default to safe mode - assume potential failure to prevent data loss
+                return True
+
+        # Fallback to direct connection
         if not self.conn:
             self.logger.error("No database connection available for failure detection")
             return True  # Assume failure if no connection
 
         try:
-            # First check for catastrophic failure
-            if self._detect_catastrophic_failure(animals_found, absolute_minimum, total_animals_before_filter, total_animals_skipped):
-                return True
-
             cursor = self.conn.cursor()
 
             # Get historical average of animals found
@@ -415,6 +544,28 @@ class SessionManager:
             result = cursor.fetchone()
             cursor.close()
 
+            return self._evaluate_partial_failure(result, animals_found, threshold_percentage, absolute_minimum, minimum_historical_scrapes, total_animals_before_filter, total_animals_skipped)
+        except Exception as e:
+            self.logger.error(f"Error detecting partial failure: {e}")
+            # Default to safe mode - assume potential failure to prevent data loss
+            return True
+
+    def _evaluate_partial_failure(self, result, animals_found, threshold_percentage, absolute_minimum, minimum_historical_scrapes, total_animals_before_filter, total_animals_skipped):
+        """Evaluate partial failure based on database query result (pure function).
+
+        Args:
+            result: Database query result (avg, count)
+            animals_found: Number of animals found in current scrape
+            threshold_percentage: Minimum percentage of historical average
+            absolute_minimum: Absolute minimum count
+            minimum_historical_scrapes: Minimum historical scrapes needed
+            total_animals_before_filter: Total animals before filtering
+            total_animals_skipped: Number of animals skipped
+
+        Returns:
+            True if partial failure detected, False otherwise
+        """
+        try:
             if not result or not result[0] or (len(result) > 1 and result[1] < minimum_historical_scrapes):
                 # No historical data or insufficient data - use absolute minimum
                 scrape_count = result[1] if (result and len(result) > 1) else 0

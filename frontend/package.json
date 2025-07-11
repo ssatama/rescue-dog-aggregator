@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "check:duplicates": "node scripts/fix-duplicates.js",
+    "fix:duplicates": "node scripts/fix-duplicates.js --interactive"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

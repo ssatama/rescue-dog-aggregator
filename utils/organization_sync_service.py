@@ -180,16 +180,17 @@ class OrganizationSyncService:
 
         query = """
             INSERT INTO organizations (
-                name, website_url, description, social_media,
+                name, config_id, website_url, description, social_media,
                 created_at, updated_at,
                 ships_to, established_year, logo_url, country, city, service_regions
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) RETURNING id
         """
 
         params = (
             config.name,
+            config.id,  # Add config_id
             str(config.metadata.website_url),
             config.metadata.description,
             psycopg2.extras.Json(social_media),
@@ -222,7 +223,7 @@ class OrganizationSyncService:
 
         query = """
             UPDATE organizations SET
-                name = %s, website_url = %s, description = %s, social_media = %s,
+                name = %s, config_id = %s, website_url = %s, description = %s, social_media = %s,
                 updated_at = %s, ships_to = %s,
                 established_year = %s, logo_url = %s, country = %s, city = %s,
                 service_regions = %s
@@ -231,6 +232,7 @@ class OrganizationSyncService:
 
         params = (
             config.name,
+            config.id,  # Add config_id
             str(config.metadata.website_url),
             config.metadata.description,
             psycopg2.extras.Json(social_media),

@@ -7,7 +7,7 @@ Uses dependency overrides for TestClient database access.
 
 import os
 import sys
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import psycopg2
 import pytest
@@ -114,7 +114,7 @@ def manage_test_data():
         print("[conftest manage_test_data] Inserting base test data...")
         org_sql = """
         INSERT INTO organizations (id, name, website_url, country, city, active, social_media)
-        VALUES (901, 'Test Organization', 'http://example.com', 'Testland', 'Testville', TRUE, '{"facebook": "https://facebook.com/testorg", "instagram": "https://instagram.com/testorg"}')
+        VALUES (901, 'Mock Test Org', 'http://example.com', 'Testland', 'Testville', TRUE, '{"facebook": "https://facebook.com/testorg", "instagram": "https://instagram.com/testorg"}')
         ON CONFLICT (id) DO UPDATE SET
             name = EXCLUDED.name,
             website_url = EXCLUDED.website_url,
@@ -195,6 +195,78 @@ def client():
     # Clear overrides after test
     app.dependency_overrides.clear()
     print("[conftest client] TestClient finished and dependency override cleared.")
+
+
+# --- Global Database Isolation Fixture ---
+@pytest.fixture(autouse=True)
+def isolate_database_writes():
+    """Automatically prevent ALL tests from writing to production database.
+
+    This fixture runs for every test and mocks all potential database write operations
+    that could contaminate the production database. It specifically prevents:
+    - Organization sync service database writes
+    - Scraper service injection that connects to production database
+    - Any other production database connections from test code
+
+    Note: This uses stop_all=False to allow test-specific mocks to override these.
+    """
+    # Start patches but don't use context manager to allow test overrides
+    mock_sync_service = patch("utils.organization_sync_service.create_default_sync_service")
+    mock_execute_query = patch("utils.db_connection.execute_query")
+    mock_execute_command = patch("utils.db_connection.execute_command")
+    mock_inject_services = patch("utils.secure_scraper_loader.SecureScraperLoader._inject_services")
+
+    # Start all patches
+    mock_sync_service_obj = mock_sync_service.start()
+    mock_execute_query_obj = mock_execute_query.start()
+    mock_execute_command_obj = mock_execute_command.start()
+    mock_inject_services_obj = mock_inject_services.start()
+
+    # Mock database queries globally to prevent any database reads/writes
+    mock_execute_query_obj.return_value = [
+        {
+            "id": 1,
+            "name": "Mock Organization",
+            "website_url": "https://mock.org",
+            "description": "Mock organization for testing",
+            "social_media": None,
+            "created_at": "2024-01-01T00:00:00",
+            "updated_at": "2024-01-01T00:00:00",
+            "ships_to": None,
+            "established_year": None,
+            "logo_url": None,
+            "country": "US",
+            "city": "Mock City",
+            "service_regions": None,
+        }
+    ]
+
+    # Smart mock that returns appropriate values based on query type
+    def smart_execute_command(query, params=None):
+        # If query expects a returned ID (INSERT ... RETURNING id)
+        if query and "RETURNING id" in query.upper():
+            return 1  # Return a realistic ID for INSERT operations
+        # Standard return for other operations
+        return None
+
+    mock_execute_command_obj.side_effect = smart_execute_command
+
+    # Mock the sync service to return a safe mock object
+    mock_sync_obj = Mock()
+    mock_sync_obj.get_organization_by_id.return_value = {"id": 1, "name": "Mock Organization"}
+    mock_sync_obj.update_organization.return_value = None
+    mock_sync_service_obj.return_value = mock_sync_obj
+
+    # Mock service injection to prevent database connections
+    mock_inject_services_obj.return_value = None
+
+    yield
+
+    # Clean up all patches
+    mock_sync_service.stop()
+    mock_execute_query.stop()
+    mock_execute_command.stop()
+    mock_inject_services.stop()
 
 
 @pytest.fixture(scope="module")

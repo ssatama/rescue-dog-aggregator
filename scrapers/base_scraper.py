@@ -42,17 +42,22 @@ class BaseScraper(ABC):
             self.config_loader = ConfigLoader()
             self.org_config = self.config_loader.load_config(config_id)
 
-            # Ensure organization exists in database
-            sync_manager = create_default_sync_service()
-            try:
-                sync_result = sync_manager.sync_single_organization(self.org_config)
-                self.organization_id = sync_result.organization_id
-            except Exception as e:
-                # Log sync failure but continue with scraper initialization
-                # This allows scrapers to still work even if sync fails
-                logger.error(f"Failed to sync organization {self.org_config.id}: {e}")
-                # Use a default organization_id - this might cause issues but allows testing
-                self.organization_id = 1
+            # Skip organization sync during most tests, but allow specific tests to validate sync behavior
+            if os.environ.get("TESTING") and not os.environ.get("TESTING_VALIDATE_SYNC"):
+                # Test environment - use mock values (most tests)
+                self.organization_id = 1  # Default test organization ID
+                logger.info(f"Test mode: Skipping organization sync for {config_id}")
+            else:
+                # Production environment - ensure organization exists in database
+                sync_manager = create_default_sync_service()
+                try:
+                    sync_result = sync_manager.sync_single_organization(self.org_config)
+                    if not sync_result or not sync_result.success:
+                        raise ValueError(f"Organization sync failed for {self.org_config.id}. Halting scraper.")
+                    self.organization_id = sync_result.organization_id
+                except Exception as e:
+                    logger.error(f"Failed to sync organization {self.org_config.id}: {e}")
+                    raise ValueError(f"Could not initialize scraper due to organization sync failure for {self.org_config.id}") from e
 
             # Use config for scraper settings
             scraper_config = self.org_config.get_scraper_config_dict()
@@ -354,6 +359,9 @@ class BaseScraper(ABC):
             animal_id, action = self.save_animal(animal_data)
 
             if animal_id:
+                # Mark animal as seen in current session for confidence tracking
+                self.mark_animal_as_seen(animal_id)
+
                 # Save animal images if provided
                 image_urls = animal_data.get("image_urls", [])
                 if image_urls and len(image_urls) > 0:

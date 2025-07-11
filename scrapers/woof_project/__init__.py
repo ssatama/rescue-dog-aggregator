@@ -1,0 +1,1 @@
+"""Woof Project scraper module."""

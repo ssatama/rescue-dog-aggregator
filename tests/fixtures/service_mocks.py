@@ -200,7 +200,7 @@ def create_test_scraper_with_services(
             with patch("scrapers.base_scraper.create_default_sync_service") as mock_sync_class:
                 # Mock config
                 mock_config = Mock()
-                mock_config.name = "Test Organization"
+                mock_config.name = "Mock Test Org"
                 mock_config.get_scraper_config_dict.return_value = {"rate_limit_delay": 1.0, "max_retries": 3, "timeout": 30}
 
                 # Mock loader

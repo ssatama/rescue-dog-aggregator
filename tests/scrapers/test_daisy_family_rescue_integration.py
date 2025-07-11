@@ -36,6 +36,7 @@ class TestDaisyFamilyRescueIntegration:
             patch("scrapers.base_scraper.create_default_sync_service") as mock_sync,
             patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader,
             patch("scrapers.base_scraper.CloudinaryService"),
+            patch.dict("os.environ", {"TESTING_VALIDATE_SYNC": "true"}),
         ):
 
             mock_config_loader.return_value.load_config.return_value = mock_config
@@ -244,6 +245,7 @@ class TestDaisyFamilyRescueIntegration:
             patch("scrapers.base_scraper.create_default_sync_service") as mock_sync,
             patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader,
             patch("scrapers.base_scraper.CloudinaryService"),
+            patch.dict("os.environ", {"TESTING_VALIDATE_SYNC": "true"}),
         ):
 
             # Mock successful config loading

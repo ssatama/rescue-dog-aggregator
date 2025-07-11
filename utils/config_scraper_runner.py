@@ -99,3 +99,14 @@ class ConfigScraperRunner:
             List of scraper status dictionaries
         """
         return self._secure_runner.get_all_scraper_status()
+
+    def load_scraper(self, config_id: str):
+        """Load scraper instance for testing (delegates to secure runner).
+
+        Args:
+            config_id: The config ID of the scraper to load
+
+        Returns:
+            Scraper instance
+        """
+        return self._secure_runner.load_scraper_safely(config_id)

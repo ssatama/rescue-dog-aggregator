@@ -51,6 +51,7 @@ class SecureScraperLoader:
         "scrapers.rean.dogs_scraper",
         "scrapers.theunderdog.theunderdog_scraper",
         "scrapers.tierschutzverein_europa.dogs_scraper",
+        "scrapers.woof_project.dogs_scraper",
         # Add new modules here as needed
     }
 
@@ -165,14 +166,23 @@ class SecureScraperLoader:
         """Inject services into scraper instance after organization_id is established."""
         try:
             from config import DB_CONFIG
+            from services.connection_pool import ConnectionPoolService
             from services.database_service import DatabaseService
             from services.image_processing_service import ImageProcessingService
             from services.metrics_collector import MetricsCollector
             from services.session_manager import SessionManager
 
-            # Create DatabaseService and establish connection
-            database_service = DatabaseService(DB_CONFIG)
-            if not database_service.connect():
+            # Create connection pool for shared database access
+            connection_pool = None
+            try:
+                connection_pool = ConnectionPoolService(DB_CONFIG, min_connections=2, max_connections=10)
+                logger.info("Connection pool created successfully")
+            except Exception as e:
+                logger.warning(f"Failed to create connection pool: {e}. Falling back to direct connections.")
+
+            # Create DatabaseService with connection pool
+            database_service = DatabaseService(DB_CONFIG, connection_pool=connection_pool)
+            if not connection_pool and not database_service.connect():
                 logger.error("Failed to connect DatabaseService to database")
                 return  # Fall back to null objects
 
@@ -182,17 +192,20 @@ class SecureScraperLoader:
             # Create MetricsCollector (no dependencies)
             metrics_collector = MetricsCollector()
 
-            # Create SessionManager with organization_id and skip_existing_animals from scraper
-            session_manager = SessionManager(DB_CONFIG, scraper_instance.organization_id, scraper_instance.skip_existing_animals)
+            # Create SessionManager with connection pool
+            session_manager = SessionManager(DB_CONFIG, scraper_instance.organization_id, scraper_instance.skip_existing_animals, connection_pool=connection_pool)
 
-            # Establish connection for SessionManager
-            if not session_manager.connect():
+            # Establish connection for SessionManager only if no connection pool
+            if not connection_pool and not session_manager.connect():
                 logger.error("Failed to connect SessionManager to database")
                 database_service.close()  # Clean up successful connection
                 return  # Fall back to null objects
 
             # Store services for cleanup
-            scraper_instance._injected_services = [database_service, session_manager]
+            services_to_store = [database_service, session_manager]
+            if connection_pool:
+                services_to_store.append(connection_pool)
+            scraper_instance._injected_services = services_to_store
 
             # Inject services into the scraper instance
             scraper_instance.database_service = database_service
@@ -200,7 +213,7 @@ class SecureScraperLoader:
             scraper_instance.session_manager = session_manager
             scraper_instance.metrics_collector = metrics_collector
 
-            logger.info(f"Services successfully injected and connected for scraper instance")
+            logger.info(f"Services successfully injected and connected for scraper instance (pool: {'enabled' if connection_pool else 'disabled'})")
 
         except Exception as e:
             logger.error(f"Failed to inject services: {e}")

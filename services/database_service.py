@@ -27,15 +27,17 @@ from utils.optimized_standardization import parse_age_text, standardize_breed, s
 class DatabaseService:
     """Service for all database operations extracted from BaseScraper."""
 
-    def __init__(self, db_config: Dict[str, str], logger: Optional[logging.Logger] = None):
+    def __init__(self, db_config: Dict[str, str], logger: Optional[logging.Logger] = None, connection_pool=None):
         """Initialize DatabaseService with configuration.
 
         Args:
             db_config: Database connection configuration
             logger: Optional logger instance
+            connection_pool: Optional ConnectionPoolService for pooled connections
         """
         self.db_config = db_config
         self.logger = logger or logging.getLogger(__name__)
+        self.connection_pool = connection_pool
         self.conn = None
 
     def connect(self) -> bool:
@@ -80,6 +82,23 @@ class DatabaseService:
         Returns:
             Tuple of (id, name, updated_at) if found, None otherwise
         """
+        # Use connection pool if available
+        if self.connection_pool:
+            try:
+                with self.connection_pool.get_connection_context() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        "SELECT id, name, updated_at FROM animals WHERE external_id = %s AND organization_id = %s",
+                        (external_id, organization_id),
+                    )
+                    result = cursor.fetchone()
+                    cursor.close()
+                    return result
+            except Exception as e:
+                self.logger.error(f"Error checking existing animal: {e}")
+                return None
+
+        # Fallback to direct connection
         if not self.conn:
             self.logger.error("No database connection available")
             return None
@@ -108,86 +127,107 @@ class DatabaseService:
         Returns:
             Tuple of (animal_id, "added") if successful, (None, "error") if failed
         """
+        # Use connection pool if available
+        if self.connection_pool:
+            try:
+                with self.connection_pool.get_connection_context() as conn:
+                    return self._create_animal_with_connection(conn, animal_data)
+            except Exception as e:
+                self.logger.error(f"Error creating animal: {e}")
+                return None, "error"
+
+        # Fallback to direct connection
         if not self.conn:
             self.logger.error("No database connection available")
             return None, "error"
 
         try:
-            cursor = self.conn.cursor()
-
-            # Detect language from animal data
-            description_text = f"{animal_data.get('name', '')} {animal_data.get('breed', '')} {animal_data.get('age_text', '')}"
-            language = self._detect_language(description_text)
-
-            # Apply standardization
-            breed_info = standardize_breed(animal_data.get("breed", ""))
-            age_info = parse_age_text(animal_data.get("age_text", ""))
-            age_months_min = age_info.min_months
-            age_months_max = age_info.max_months
-
-            # Use size estimate if no size provided
-            final_size = animal_data.get("size") or animal_data.get("standardized_size")
-            final_standardized_size = animal_data.get("standardized_size") or breed_info.size_estimate or standardize_size_value(animal_data.get("size"))
-
-            # Prepare values for insertion
-            current_time = datetime.now()
-
-            cursor.execute(
-                """
-                INSERT INTO animals (
-                    name, organization_id, animal_type, external_id,
-                    primary_image_url, original_image_url, adoption_url, status,
-                    breed, standardized_breed, breed_group, age_text, age_min_months, age_max_months,
-                    sex, size, standardized_size, language, properties,
-                    created_at, updated_at, last_scraped_at, last_seen_at,
-                    consecutive_scrapes_missing, availability_confidence
-                ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s, %s, %s
-                )
-                RETURNING id
-                """,
-                (
-                    animal_data.get("name"),
-                    animal_data.get("organization_id"),
-                    animal_data.get("animal_type", "dog"),
-                    animal_data.get("external_id"),
-                    animal_data.get("primary_image_url"),
-                    animal_data.get("original_image_url"),
-                    animal_data.get("adoption_url"),
-                    animal_data.get("status", "available"),
-                    animal_data.get("breed"),
-                    breed_info.standardized_name,
-                    breed_info.breed_group,
-                    animal_data.get("age_text"),
-                    age_months_min,
-                    age_months_max,
-                    animal_data.get("sex"),
-                    final_size,
-                    final_standardized_size,
-                    language,
-                    (json.dumps(animal_data.get("properties")) if animal_data.get("properties") else None),
-                    current_time,  # created_at
-                    current_time,  # updated_at
-                    current_time,  # last_scraped_at
-                    current_time,  # last_seen_at
-                    0,  # consecutive_scrapes_missing
-                    "high",  # availability_confidence
-                ),
-            )
-
-            animal_id = cursor.fetchone()[0]
-            self.conn.commit()
-            cursor.close()
-
-            self.logger.info(f"Created new animal with ID {animal_id}: {animal_data.get('name')}")
-            return animal_id, "added"
-
+            return self._create_animal_with_connection(self.conn, animal_data)
         except Exception as e:
             self.logger.error(f"Error creating animal: {e}")
             if self.conn:
                 self.conn.rollback()
             return None, "error"
+
+    def _create_animal_with_connection(self, conn, animal_data: Dict[str, Any]) -> Tuple[Optional[int], str]:
+        """Create animal using provided connection (pure function).
+
+        Args:
+            conn: Database connection to use
+            animal_data: Dictionary containing animal information
+
+        Returns:
+            Tuple of (animal_id, "added") if successful, (None, "error") if failed
+        """
+        cursor = conn.cursor()
+
+        # Detect language from animal data
+        description_text = f"{animal_data.get('name', '')} {animal_data.get('breed', '')} {animal_data.get('age_text', '')}"
+        language = self._detect_language(description_text)
+
+        # Apply standardization
+        breed_info = standardize_breed(animal_data.get("breed", ""))
+        age_info = parse_age_text(animal_data.get("age_text", ""))
+        age_months_min = age_info.min_months
+        age_months_max = age_info.max_months
+
+        # Use size estimate if no size provided
+        final_size = animal_data.get("size") or animal_data.get("standardized_size")
+        final_standardized_size = animal_data.get("standardized_size") or breed_info.size_estimate or standardize_size_value(animal_data.get("size"))
+
+        # Prepare values for insertion
+        current_time = datetime.now()
+
+        cursor.execute(
+            """
+            INSERT INTO animals (
+                name, organization_id, animal_type, external_id,
+                primary_image_url, original_image_url, adoption_url, status,
+                breed, standardized_breed, breed_group, age_text, age_min_months, age_max_months,
+                sex, size, standardized_size, language, properties,
+                created_at, updated_at, last_scraped_at, last_seen_at,
+                consecutive_scrapes_missing, availability_confidence
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s, %s
+            )
+            RETURNING id
+            """,
+            (
+                animal_data.get("name"),
+                animal_data.get("organization_id"),
+                animal_data.get("animal_type", "dog"),
+                animal_data.get("external_id"),
+                animal_data.get("primary_image_url"),
+                animal_data.get("original_image_url"),
+                animal_data.get("adoption_url"),
+                animal_data.get("status", "available"),
+                animal_data.get("breed"),
+                breed_info.standardized_name,
+                breed_info.breed_group,
+                animal_data.get("age_text"),
+                age_months_min,
+                age_months_max,
+                animal_data.get("sex"),
+                final_size,
+                final_standardized_size,
+                language,
+                (json.dumps(animal_data.get("properties")) if animal_data.get("properties") else None),
+                current_time,  # created_at
+                current_time,  # updated_at
+                current_time,  # last_scraped_at
+                current_time,  # last_seen_at
+                0,  # consecutive_scrapes_missing
+                "high",  # availability_confidence
+            ),
+        )
+
+        animal_id = cursor.fetchone()[0]
+        conn.commit()
+        cursor.close()
+
+        self.logger.info(f"Created new animal with ID {animal_id}: {animal_data.get('name')}")
+        return animal_id, "added"
 
     def update_animal(self, animal_id: int, animal_data: Dict[str, Any]) -> Tuple[Optional[int], str]:
         """Update an existing animal in the database.
@@ -309,6 +349,30 @@ class DatabaseService:
         Returns:
             Scrape log ID if successful, None if failed
         """
+        # Use connection pool if available
+        if self.connection_pool:
+            try:
+                with self.connection_pool.get_connection_context() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        """
+                        INSERT INTO scrape_logs
+                        (organization_id, started_at, status)
+                        VALUES (%s, %s, %s)
+                        RETURNING id
+                        """,
+                        (organization_id, datetime.now(), "running"),
+                    )
+                    scrape_log_id = cursor.fetchone()[0]
+                    conn.commit()
+                    cursor.close()
+                    self.logger.info(f"Created scrape log with ID: {scrape_log_id}")
+                    return scrape_log_id
+            except Exception as e:
+                self.logger.error(f"Error creating scrape log: {e}")
+                return None
+
+        # Fallback to direct connection
         if not self.conn:
             self.logger.error("No database connection available")
             return None

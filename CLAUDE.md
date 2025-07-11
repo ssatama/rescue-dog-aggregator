@@ -71,6 +71,7 @@ python management/config_commands.py run pets-turkey
 - API endpoint: Write test → Create route → Implement
 - Scraper: Config YAML → Test extraction → Implement (now with modern patterns)
 - Component: Test behavior → Create component → Style
+- **Duplicate check**: `npm run check:duplicates` (frontend only)
 
 ### Scraper Architecture (Recent Refactoring)
 
@@ -112,6 +113,29 @@ configs/      # Organization YAMLs (7 orgs)
 - Linting/formatting clean
 - No new type errors
 - Test count stable or increasing
+- **No JSX/TSX duplicate files** (automatically enforced by pre-commit hook)
+- **Complete database isolation in tests** (automatically enforced by global conftest.py fixture)
+
+## Database Isolation for Tests
+
+**CRITICAL**: All Python tests are automatically protected from writing to production database.
+
+### Global Protection
+- `tests/conftest.py` contains `isolate_database_writes()` fixture that runs for ALL tests
+- Automatically mocks organization sync service and scraper service injection
+- Prevents any test from creating real database connections or data
+
+### Previous Issue Fixed
+- Tests were contaminating production database with "Test Organization" records
+- Root cause: `test_config_integration.py` created real scraper instances
+- Solution: Comprehensive global mocking prevents all database writes during testing
+
+### Implementation
+```python
+@pytest.fixture(autouse=True)
+def isolate_database_writes():
+    # Automatically mocks all database operations for every test
+```
 
 ## When Stuck
 

@@ -65,12 +65,16 @@ class TestConfigErrorHandling:
 
     def test_database_connection_failure_in_sync(self):
         """Test sync handling when database is unavailable."""
-        from utils.organization_sync_service import create_default_sync_service
+        # Import the real function before mocking
+        from utils.organization_sync_service import OrganizationSyncService
 
+        # Create a real sync service instance bypassing the global mock
+        # Mock the global execute_query function used by organization_sync_service
         with patch("utils.organization_sync_service.execute_query") as mock_execute:
             mock_execute.side_effect = Exception("Database connection failed")
 
-            sync_manager = create_default_sync_service()
+            # Directly instantiate the real service
+            sync_manager = OrganizationSyncService()
 
             # The sync manager returns error status instead of None
             status = sync_manager.get_sync_status({})
