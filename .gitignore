@@ -146,10 +146,16 @@ coverage.xml
 
 # === Environment Variables ===
 .env
+.env.*
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+# Additional environment file patterns
+*.env
+.environment
+config.ini
+secrets.json
 
 # === Database ===
 *.db
