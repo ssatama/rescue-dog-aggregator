@@ -13,6 +13,7 @@ import psycopg2
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from api.auth import verify_admin_key
 from api.dependencies import get_database_connection
 from api.exceptions import APIException, handle_database_error
 from api.models.requests import MonitoringFilterRequest
@@ -97,7 +98,7 @@ async def health_check(db_conn=Depends(get_database_connection)):
     )
 
 
-@router.get("/monitoring/scrapers")
+@router.get("/monitoring/scrapers", dependencies=[Depends(verify_admin_key)])
 async def get_scraper_status(filters: MonitoringFilterRequest = Depends(), db_conn=Depends(get_database_connection)):
     """
     Get comprehensive status of all scrapers including recent performance.
@@ -270,7 +271,7 @@ async def get_scraper_status(filters: MonitoringFilterRequest = Depends(), db_co
         raise APIException(status_code=500, detail="Failed to fetch scraper status", error_code="INTERNAL_ERROR")
 
 
-@router.get("/monitoring/scrapers/{organization_id}")
+@router.get("/monitoring/scrapers/{organization_id}", dependencies=[Depends(verify_admin_key)])
 async def get_individual_scraper_details(organization_id: int, db_conn=Depends(get_database_connection)):
     """
     Get detailed information about a specific scraper.
@@ -398,7 +399,7 @@ async def get_individual_scraper_details(organization_id: int, db_conn=Depends(g
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/monitoring/failures")
+@router.get("/monitoring/failures", dependencies=[Depends(verify_admin_key)])
 async def get_failure_detection_metrics(db_conn=Depends(get_database_connection)):
     """
     Get failure detection metrics and recent failure analysis.
@@ -545,7 +546,7 @@ async def get_failure_detection_metrics(db_conn=Depends(get_database_connection)
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/monitoring/performance")
+@router.get("/monitoring/performance", dependencies=[Depends(verify_admin_key)])
 async def get_performance_metrics(db_conn=Depends(get_database_connection)):
     """
     Get system and scraper performance metrics.
@@ -633,7 +634,7 @@ async def get_performance_metrics(db_conn=Depends(get_database_connection)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/monitoring/alerts/config")
+@router.get("/monitoring/alerts/config", dependencies=[Depends(verify_admin_key)])
 async def get_alerting_configuration():
     """
     Get current alerting configuration and thresholds.
@@ -667,7 +668,7 @@ async def get_alerting_configuration():
     return config
 
 
-@router.get("/monitoring/alerts/active")
+@router.get("/monitoring/alerts/active", dependencies=[Depends(verify_admin_key)])
 async def get_active_alerts(db_conn=Depends(get_database_connection)):
     """
     Get currently active alerts and alert summary.

@@ -9,8 +9,22 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# Configure basic logging if not already set up elsewhere
-logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
+# === ENVIRONMENT-BASED LOGGING CONFIGURATION ===
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO" if ENVIRONMENT == "development" else "WARNING")
+
+# Configure logging based on environment
+logging.basicConfig(
+    level=getattr(logging, LOG_LEVEL.upper()),
+    format="%(levelname)s:%(name)s:%(message)s"
+)
+
+# Disable verbose logging in production
+if ENVIRONMENT == "production":
+    logging.getLogger("api.dependencies").setLevel(logging.WARNING)
+    logging.getLogger("api.database").setLevel(logging.WARNING)
+    logging.getLogger("api.database.connection_pool").setLevel(logging.WARNING)
+
 logger = logging.getLogger(__name__)
 
 # --- ADD: Safety Check ---
@@ -67,7 +81,7 @@ logger.info(f"[config.py]   user: {DB_CONFIG['user']}")
 logger.info(f"[config.py]   password: {'******' if DB_CONFIG['password'] else 'None'}")
 
 # === CORS Security Configuration ===
-ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
+# ENVIRONMENT already defined above
 
 
 def parse_cors_origins() -> List[str]:
