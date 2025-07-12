@@ -26,7 +26,7 @@ class TestImageProcessingServiceInterface:
             assert hasattr(ImageProcessingService, "__init__")
             assert hasattr(ImageProcessingService, "process_primary_image")
             assert hasattr(ImageProcessingService, "save_animal_images")
-            assert hasattr(ImageProcessingService, "upload_image_to_cloudinary")
+            assert hasattr(ImageProcessingService, "upload_image_to_r2")
             assert hasattr(ImageProcessingService, "validate_image_url")
         except ImportError:
             pytest.fail("ImageProcessingService not yet implemented - expected for TDD")
@@ -40,8 +40,8 @@ class TestImageProcessingServiceInterface:
         """Test save_animal_images method signature and return type."""
         pytest.skip("ImageProcessingService not yet implemented")
 
-    def test_upload_image_to_cloudinary_signature(self):
-        """Test upload_image_to_cloudinary method signature and return type."""
+    def test_upload_image_to_r2_signature(self):
+        """Test upload_image_to_r2 method signature and return type."""
         pytest.skip("ImageProcessingService not yet implemented")
 
 
@@ -49,10 +49,10 @@ class TestImageProcessingServiceImplementation:
     """Test ImageProcessingService implementation with mocked dependencies."""
 
     @pytest.fixture
-    def mock_cloudinary_service(self):
-        """Mock Cloudinary service."""
+    def mock_r2_service(self):
+        """Mock R2 service."""
         mock_service = Mock()
-        mock_service.upload_image_from_url.return_value = ("https://cloudinary.com/test.jpg", True)
+        mock_service.upload_image_from_url.return_value = ("https://images.rescuedogs.me/test.jpg", True)
         mock_service.is_configured.return_value = True
         return mock_service
 
@@ -64,13 +64,13 @@ class TestImageProcessingServiceImplementation:
         mock_conn.cursor.return_value = mock_cursor
         return mock_conn, mock_cursor
 
-    def test_process_primary_image_new_animal(self, mock_cloudinary_service, mock_database_connection):
+    def test_process_primary_image_new_animal(self, mock_r2_service, mock_database_connection):
         """Test processing primary image for new animal."""
         from services.image_processing_service import ImageProcessingService
 
         mock_conn, mock_cursor = mock_database_connection
 
-        service = ImageProcessingService(mock_cloudinary_service)
+        service = ImageProcessingService(mock_r2_service)
 
         animal_data = {"name": "Test Dog", "primary_image_url": "https://example.com/test.jpg"}
 
@@ -78,31 +78,31 @@ class TestImageProcessingServiceImplementation:
         result = service.process_primary_image(animal_data, existing_animal=None, database_connection=mock_conn, organization_name="Test Org")
 
         # Should upload image and update animal_data
-        mock_cloudinary_service.upload_image_from_url.assert_called_once()
-        assert result["primary_image_url"] == "https://cloudinary.com/test.jpg"
+        mock_r2_service.upload_image_from_url.assert_called_once()
+        assert result["primary_image_url"] == "https://images.rescuedogs.me/test.jpg"
         assert result["original_image_url"] == "https://example.com/test.jpg"
 
-    def test_process_primary_image_existing_unchanged(self, mock_cloudinary_service, mock_database_connection):
+    def test_process_primary_image_existing_unchanged(self, mock_r2_service, mock_database_connection):
         """Test processing primary image for existing animal with unchanged image."""
         pytest.skip("ImageProcessingService not yet implemented")
 
-    def test_process_primary_image_existing_changed(self, mock_cloudinary_service, mock_database_connection):
+    def test_process_primary_image_existing_changed(self, mock_r2_service, mock_database_connection):
         """Test processing primary image for existing animal with changed image."""
         pytest.skip("ImageProcessingService not yet implemented")
 
-    def test_save_animal_images_success(self, mock_cloudinary_service, mock_database_connection):
+    def test_save_animal_images_success(self, mock_r2_service, mock_database_connection):
         """Test successful saving of multiple animal images."""
         pytest.skip("ImageProcessingService not yet implemented")
 
-    def test_save_animal_images_partial_failure(self, mock_cloudinary_service, mock_database_connection):
+    def test_save_animal_images_partial_failure(self, mock_r2_service, mock_database_connection):
         """Test saving animal images with some upload failures."""
         pytest.skip("ImageProcessingService not yet implemented")
 
-    def test_upload_image_to_cloudinary_success(self, mock_cloudinary_service):
-        """Test successful image upload to Cloudinary."""
+    def test_upload_image_to_r2_success(self, mock_r2_service):
+        """Test successful image upload to R2."""
         pytest.skip("ImageProcessingService not yet implemented")
 
-    def test_upload_image_to_cloudinary_failure(self, mock_cloudinary_service):
+    def test_upload_image_to_r2_failure(self, mock_r2_service):
         """Test image upload failure handling."""
         pytest.skip("ImageProcessingService not yet implemented")
 
@@ -118,8 +118,8 @@ class TestImageProcessingServiceImplementation:
 class TestImageProcessingServiceErrorHandling:
     """Test ImageProcessingService error handling patterns."""
 
-    def test_cloudinary_service_unavailable(self):
-        """Test handling when Cloudinary service is unavailable."""
+    def test_r2_service_unavailable(self):
+        """Test handling when R2 service is unavailable."""
         pytest.skip("ImageProcessingService not yet implemented")
 
     def test_database_connection_error(self):

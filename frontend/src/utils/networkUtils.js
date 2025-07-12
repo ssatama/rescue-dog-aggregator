@@ -55,33 +55,33 @@ export function isSlowConnection() {
 
 /**
  * Get adaptive image quality based on network conditions
- * @returns {string} Cloudinary quality parameter
+ * @returns {string} Cloudflare quality parameter
  */
 export function getAdaptiveImageQuality() {
   const { effectiveType, downlink, saveData } = getNetworkInfo();
   
   // Data saver mode - use lowest quality
   if (saveData) {
-    return 'q_auto:low';
+    return 'q_60';
   }
   
   // Slow connections - use lower quality
   if (effectiveType === '2g' || effectiveType === 'slow-2g') {
-    return 'q_auto:low';
+    return 'q_60';
   }
   
   // Very slow downlink - use lower quality
   if (downlink !== null && downlink < 0.5) {
-    return 'q_auto:low';
+    return 'q_60';
   }
   
-  // Moderate connections - use eco quality
+  // Moderate connections - use medium quality
   if (effectiveType === '3g' || (downlink !== null && downlink < 2)) {
-    return 'q_auto:eco';
+    return 'q_75';
   }
   
-  // Fast connections - use good quality
-  return 'q_auto:good';
+  // Fast connections - use auto quality
+  return 'q_auto';
 }
 
 /**
@@ -94,8 +94,8 @@ export function getAdaptiveImageDimensions(context = 'catalog') {
   
   const dimensions = {
     hero: {
-      fast: { width: 800, height: 450 },
-      slow: { width: 600, height: 338 }
+      fast: { width: 900, height: 400 },
+      slow: { width: 675, height: 300 }
     },
     catalog: {
       fast: { width: 400, height: 300 },

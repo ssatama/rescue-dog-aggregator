@@ -24,11 +24,11 @@
 
 ## Overview
 
-The Rescue Dog Aggregator frontend is a modern, comprehensive web application built with **Next.js 15** and the **App Router** architecture. It implements cutting-edge React patterns with a focus on **performance**, **security**, **accessibility**, and **maintainability**. The architecture follows a **test-driven development (TDD)** approach with **2,427 total tests** across comprehensive suites covering functionality, performance, accessibility, and security.
+The Rescue Dog Aggregator frontend is a modern web application built with **Next.js 15** and the **App Router** architecture. It implements React patterns with a focus on **performance**, **security**, **accessibility**, and **maintainability**. The architecture follows a **test-driven development (TDD)** approach.
 
 ### Key Metrics
 - **Framework**: Next.js 15 with App Router
-- **Test Coverage**: 2,427 tests (2,419 passing, 8 skipped)
+- **Test Coverage**: 1,897 tests (1,896 passing, 1 failed)
 - **Component Count**: 45+ reusable components
 - **Performance**: Core Web Vitals optimized
 - **Accessibility**: WCAG 2.1 AA compliant
@@ -49,7 +49,7 @@ The Rescue Dog Aggregator frontend is a modern, comprehensive web application bu
 - **Testing**: Jest 29.7.0 + React Testing Library 16.3.0
 - **Build**: Next.js built-in bundling and optimization
 - **Linting**: ESLint 9.28.0 with Next.js config
-- **Image Optimization**: Cloudinary integration with lazy loading
+- **Image Optimization**: Cloudflare R2 + Images with comprehensive security validation
 - **Accessibility Testing**: jest-axe 10.0.0
 
 ### UI Framework
@@ -370,7 +370,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'res.cloudinary.com',
+        hostname: 'images.rescuedogs.me',
         port: '',
         pathname: '/**',
       },
@@ -418,37 +418,91 @@ const nextConfig = {
 
 ### Image Optimization
 
-**Cloudinary Integration** with automatic optimization:
+**Cloudflare R2 + Images Integration** with advanced security and performance:
 
 ```javascript
-// src/utils/imageUtils.js
-export function getOptimizedImageUrl(originalUrl, options = {}) {
-  const {
-    width = 'auto',
-    height = 'auto',
-    crop = 'fill',
-    gravity = 'auto',
-    quality = 'auto',
-    format = 'auto'
-  } = options;
-
-  // Transform Cloudinary URLs for optimization
-  if (originalUrl?.includes('res.cloudinary.com')) {
-    const transformation = `w_${width},h_${height},c_${crop},g_${gravity},q_${quality},f_${format}`;
-    return originalUrl.replace('/upload/', `/upload/${transformation}/`);
+// src/utils/imageUtils.js - Updated for Cloudflare Images v2.0
+export function createTransformationParams(preset = 'catalog', options = {}, isSlowConnection = false) {
+  const presets = {
+    catalog: { width: 400, height: 300, fit: 'cover', quality: 'auto' },
+    hero: { width: 800, height: 600, fit: 'contain', quality: 'auto' },
+    thumbnail: { width: 200, height: 200, fit: 'cover', quality: 60 },
+    mobile: { width: 320, height: 240, fit: 'cover', quality: 70 }
+  };
+  
+  const config = presets[preset] || presets.catalog;
+  const finalConfig = { ...config, ...options };
+  
+  // Network-aware quality adjustment
+  if (isSlowConnection && finalConfig.quality === 'auto') {
+    finalConfig.quality = 60;
   }
-
-  return originalUrl;
+  
+  return `w=${finalConfig.width},h=${finalConfig.height},fit=${finalConfig.fit},quality=${finalConfig.quality}`;
 }
 
-export function getResponsiveImageSrcSet(url, sizes = [400, 800, 1200, 1600]) {
-  if (!url) return '';
+export function buildSecureCloudflareUrl(imageUrl, params) {
+  if (!imageUrl || !isR2Url(imageUrl)) {
+    return imageUrl;
+  }
   
-  return sizes
-    .map(size => `${getOptimizedImageUrl(url, { width: size })} ${size}w`)
-    .join(', ');
+  // Comprehensive security validation
+  if (!validateImageUrl(imageUrl)) {
+    throw new Error('Invalid image path - security validation failed');
+  }
+  
+  // Parameter sanitization for injection prevention
+  if (params) {
+    const allowedParams = /^[wh]=\d+|fit=(cover|contain|crop|scale-down|fill|pad)|quality=(auto|\d+)$/;
+    const paramsList = params.split(',');
+    
+    for (const param of paramsList) {
+      if (!allowedParams.test(param.trim())) {
+        throw new Error('Invalid transformation parameters');
+      }
+    }
+  }
+  
+  if (!params) return imageUrl;
+  
+  const imagePath = imageUrl.replace(`https://${R2_CUSTOM_DOMAIN}/`, '');
+  return `https://${R2_CUSTOM_DOMAIN}/cdn-cgi/image/${params}/${imagePath}`;
+}
+
+export function getOptimizedImage(url, preset = 'catalog', options = {}, isSlowConnection = false) {
+  if (!url) return '/placeholder_dog.svg';
+  if (!isR2Url(url)) return url;
+  
+  // Memoization for performance
+  const cacheKey = `${url}:${preset}:${JSON.stringify(options)}:${isSlowConnection}`;
+  if (imageUrlCache.has(cacheKey)) {
+    return imageUrlCache.get(cacheKey);
+  }
+  
+  try {
+    const params = createTransformationParams(preset, options, isSlowConnection);
+    const result = buildSecureCloudflareUrl(url, params);
+    
+    // Cache with size management
+    imageUrlCache.set(cacheKey, result);
+    if (imageUrlCache.size > 1000) {
+      const firstKey = imageUrlCache.keys().next().value;
+      imageUrlCache.delete(firstKey);
+    }
+    
+    return result;
+  } catch (error) {
+    logger.warn('Failed to create optimized image URL', { url, error: error.message });
+    return url;
+  }
 }
 ```
+
+**Security Features**:
+- **Path traversal prevention** - Validates URLs before processing
+- **Parameter injection protection** - Sanitizes transformation parameters
+- **R2 domain validation** - Only processes trusted domain images
+- **Error boundary fallbacks** - Graceful handling of transformation failures
 
 **LazyImage Component** with IntersectionObserver:
 
@@ -1363,7 +1417,7 @@ npm run export
 ```bash
 # .env.local
 NEXT_PUBLIC_API_URL=https://api.rescuedogs.com
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
+NEXT_PUBLIC_R2_CUSTOM_DOMAIN=images.rescuedogs.me
 NEXT_PUBLIC_ENVIRONMENT=production
 
 # Build-time variables
@@ -1374,7 +1428,7 @@ BUNDLE_ANALYZE=true
 ### Deployment Checklist
 
 **Pre-deployment Verification**:
-- [ ] All tests pass (2,427 tests)
+- [ ] All tests pass (1,897 tests)
 - [ ] Build succeeds without warnings
 - [ ] Bundle size analysis reviewed
 - [ ] Accessibility audit complete

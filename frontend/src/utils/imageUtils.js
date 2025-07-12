@@ -1,31 +1,233 @@
-// frontend/src/utils/imageUtils.js
+/**
+ * @fileoverview Image Utilities for Cloudflare R2 and Image Transformations
+ * 
+ * This module provides comprehensive image optimization and transformation utilities
+ * for the rescue dog aggregator frontend. It handles:
+ * - Cloudflare R2 image transformations using the new Cloudflare Images API
+ * - Security validation to prevent path traversal attacks
+ * - Performance optimizations including memoization and network-aware quality
+ * - Error handling and fallback strategies
+ * - Image preloading and smart positioning
+ * 
+ * Architecture:
+ * - Uses Cloudflare's modern parameter format (w=X,h=Y,fit=Z,quality=N)
+ * - Implements comprehensive security validation before URL processing
+ * - Provides memoized transformation functions for performance
+ * - Includes monitoring and analytics for image loading performance
+ * 
+ * @author Claude Code
+ * @version 2.0.0 - Cloudflare Images Migration
+ * @since 1.0.0
+ */
 
 import { logger } from './logger';
 import { getAdaptiveImageQuality, getAdaptiveImageDimensions, isSlowConnection } from './networkUtils';
 
-const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-
-// Enable Cloudinary now that we have upload flow
-const USE_CLOUDINARY = true;
+// Configuration constants
+const R2_CUSTOM_DOMAIN = process.env.NEXT_PUBLIC_R2_CUSTOM_DOMAIN || 'images.rescuedogs.me';
+const USE_R2_IMAGES = true; // Enable R2 transformations using Cloudflare Image Resizing
+const PLACEHOLDER_IMAGE = '/placeholder_dog.svg';
 
 /**
- * Validate Cloudinary configuration on startup
+ * Helper function to determine whether to use transformed or original URL
+ * @private
+ * @param {string} originalUrl - The original image URL
+ * @param {string} transformedUrl - The transformed image URL
+ * @returns {string} The URL to use based on configuration
  */
-function validateCloudinaryConfig() {
-  if (!CLOUDINARY_CLOUD_NAME) {
-    if (process.env.NODE_ENV !== 'production') console.error('❌ NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME is not configured!');
+function getOriginalOrTransformed(originalUrl, transformedUrl) {
+  return USE_R2_IMAGES ? transformedUrl : originalUrl;
+}
+
+// Memoization cache for performance optimization
+const imageUrlCache = new Map();
+
+/**
+ * Validate image URL for security
+ * @param {string} url - Image URL to validate
+ * @returns {boolean} True if URL is safe
+ */
+export function validateImageUrl(url) {
+  if (!url || typeof url !== 'string') {
     return false;
   }
   
-  // Validate cloud name format (should be alphanumeric with possible hyphens/underscores)
-  if (!CLOUDINARY_CLOUD_NAME.match(/^[a-zA-Z0-9_-]+$/)) {
-    if (process.env.NODE_ENV !== 'production') console.error('❌ Cloudinary cloud name contains invalid characters');
+  // Check original URL string for traversal patterns BEFORE URL normalization
+  const dangerousPatterns = [
+    '../', '..\\', '..\\\\',
+    './', '.\\', 
+    '%2E%2E/', '%2E%2E%2F', '%2E%2E%5C',
+    '%2F%2E%2E', '%5C%2E%2E',
+    'etc/passwd', 'etc\\passwd',
+    'windows\\system32', 'winnt\\system32',
+    '%2E%2F', '%2E%5C' // encoded ./ and .\
+  ];
+  
+  for (const pattern of dangerousPatterns) {
+    if (url.includes(pattern)) {
+      return false;
+    }
+  }
+  
+  try {
+    const urlObj = new URL(url);
+    
+    // Only allow R2 URLs
+    if (!urlObj.hostname.includes(R2_CUSTOM_DOMAIN)) {
+      return false;
+    }
+    
+    // Check the normalized path as well
+    const path = urlObj.pathname;
+    const decodedPath = decodeURIComponent(path);
+    
+    for (const pattern of dangerousPatterns) {
+      if (path.includes(pattern) || decodedPath.includes(pattern)) {
+        return false;
+      }
+    }
+    
+    // Special check for current directory reference
+    if (path === '/.' || path.includes('/./')) {
+      return false;
+    }
+    
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Create transformation parameters in Cloudflare format
+ * @param {string} preset - Preset name (catalog, hero, thumbnail, mobile)
+ * @param {Object} options - Custom options override
+ * @param {boolean} isSlowConnection - Whether connection is slow
+ * @returns {string} Cloudflare transformation parameters
+ */
+export function createTransformationParams(preset = 'catalog', options = {}, isSlowConnection = false) {
+  const presets = {
+    catalog: { width: 400, height: 300, fit: 'cover', quality: 'auto' },
+    hero: { width: 800, height: 600, fit: 'contain', quality: 'auto' },
+    thumbnail: { width: 200, height: 200, fit: 'cover', quality: 60 },
+    mobile: { width: 320, height: 240, fit: 'cover', quality: 70 }
+  };
+  
+  const config = presets[preset] || presets.catalog;
+  const finalConfig = { ...config, ...options };
+  
+  // Adjust quality for slow connections
+  if (isSlowConnection && finalConfig.quality === 'auto') {
+    finalConfig.quality = 60;
+  }
+  
+  return `w=${finalConfig.width},h=${finalConfig.height},fit=${finalConfig.fit},quality=${finalConfig.quality}`;
+}
+
+/**
+ * Build secure Cloudflare transformation URL
+ * @param {string} imageUrl - Original image URL
+ * @param {string} params - Transformation parameters
+ * @returns {string} Secure Cloudflare URL
+ */
+export function buildSecureCloudflareUrl(imageUrl, params) {
+  if (!imageUrl || !isR2Url(imageUrl)) {
+    return imageUrl;
+  }
+  
+  // Validate URL for security
+  if (!validateImageUrl(imageUrl)) {
+    throw new Error('Invalid image path');
+  }
+  
+  // Validate parameters for security - strict validation
+  if (params) {
+    // Allow only specific Cloudflare parameters
+    const allowedParams = /^[wh]=\d+|fit=(cover|contain|crop|scale-down|fill|pad)|quality=(auto|\d+)$/;
+    const paramsList = params.split(',');
+    
+    for (const param of paramsList) {
+      if (!allowedParams.test(param.trim())) {
+        throw new Error('Invalid transformation parameters');
+      }
+    }
+    
+    // Check for dangerous characters
+    if (params.includes(';') || params.includes('&') || params.includes('script') || params.includes('redirect')) {
+      throw new Error('Invalid transformation parameters');
+    }
+  }
+  
+  if (!params) {
+    return imageUrl;
+  }
+  
+  const imagePath = imageUrl.replace(`https://${R2_CUSTOM_DOMAIN}/`, '');
+  return `https://${R2_CUSTOM_DOMAIN}/cdn-cgi/image/${params}/${imagePath}`;
+}
+
+/**
+ * Get optimized image with memoization
+ * @param {string} url - Original image URL
+ * @param {string} preset - Preset name
+ * @param {Object} options - Custom options
+ * @param {boolean} isSlowConnection - Whether connection is slow
+ * @returns {string} Optimized image URL
+ */
+export function getOptimizedImage(url, preset = 'catalog', options = {}, isSlowConnection = false) {
+  if (!url) {
+    return PLACEHOLDER_IMAGE;
+  }
+  
+  if (!isR2Url(url)) {
+    return url;
+  }
+  
+  // Create cache key
+  const cacheKey = `${url}:${preset}:${JSON.stringify(options)}:${isSlowConnection}`;
+  
+  if (imageUrlCache.has(cacheKey)) {
+    return imageUrlCache.get(cacheKey);
+  }
+  
+  try {
+    const params = createTransformationParams(preset, options, isSlowConnection);
+    const result = buildSecureCloudflareUrl(url, params);
+    
+    // Cache result immediately
+    imageUrlCache.set(cacheKey, result);
+    
+    // Prevent cache from growing too large
+    if (imageUrlCache.size > 1000) {
+      const firstKey = imageUrlCache.keys().next().value;
+      imageUrlCache.delete(firstKey);
+    }
+    
+    return result;
+  } catch (error) {
+    logger.warn('Failed to create optimized image URL', { url, error: error.message });
+    return url;
+  }
+}
+
+// Add cache clearing method for testing
+getOptimizedImage.clearCache = () => {
+  imageUrlCache.clear();
+};
+
+/**
+ * Validate R2 configuration on startup
+ */
+function validateR2Config() {
+  if (!R2_CUSTOM_DOMAIN) {
+    if (process.env.NODE_ENV !== 'production') console.error('❌ NEXT_PUBLIC_R2_CUSTOM_DOMAIN is not configured!');
     return false;
   }
   
-  // Validate minimum length
-  if (CLOUDINARY_CLOUD_NAME.length < 3) {
-    if (process.env.NODE_ENV !== 'production') console.warn('⚠️ Cloudinary cloud name seems unusually short');
+  // Validate domain format
+  if (!R2_CUSTOM_DOMAIN.match(/^[a-zA-Z0-9.-]+$/)) {
+    if (process.env.NODE_ENV !== 'production') console.error('❌ R2 custom domain contains invalid characters');
+    return false;
   }
   
   return true;
@@ -33,16 +235,30 @@ function validateCloudinaryConfig() {
 
 // Run validation in development
 if (process.env.NODE_ENV === 'development') {
-  validateCloudinaryConfig();
+  validateR2Config();
 }
 
 const PLACEHOLDER_IMAGE = '/placeholder_dog.svg';
 
 /**
- * Check if URL is from Cloudinary
+ * Check if URL is from R2 custom domain
  */
-export function isCloudinaryUrl(url) {
-  return !!(url && url.includes('res.cloudinary.com'));
+export function isR2Url(url) {
+  return !!(url && url.includes(R2_CUSTOM_DOMAIN));
+}
+
+/**
+ * Build Cloudflare Images transformation URL
+ * @param {string} imageUrl - Original R2 image URL
+ * @param {string} transformations - Transformation string (e.g., 'w_320,h_240,c_fill,q_70')
+ * @returns {string} Cloudflare Images URL with transformations
+ */
+function buildCloudflareImagesUrl(imageUrl, transformations) {
+  if (!imageUrl || !transformations) return imageUrl;
+  
+  // Handle complex R2 URLs with proper domain extraction
+  const imagePath = imageUrl.replace(`https://${R2_CUSTOM_DOMAIN}/`, '');
+  return `https://${R2_CUSTOM_DOMAIN}/cdn-cgi/image/${transformations}/${imagePath}`;
 }
 
 /**
@@ -51,18 +267,18 @@ export function isCloudinaryUrl(url) {
  * @returns {string} Mobile-optimized image URL
  */
 export function getMobileOptimizedImage(url) {
-  if (!url || !isCloudinaryUrl(url)) {
+  if (!url || !isR2Url(url)) {
     return url || PLACEHOLDER_IMAGE;
   }
 
-  if (!USE_CLOUDINARY || !validateCloudinaryConfig()) {
+  if (!USE_R2_IMAGES || !validateR2Config()) {
     return url;
   }
 
   try {
     const quality = isSlowConnection() ? 'q_50' : 'q_70';
-    const transformation = `w_320,h_240,c_fill,${quality},f_auto`;
-    return url.replace('/upload/', `/upload/${transformation}/`);
+    const transformations = `w_320,h_240,c_fill,${quality}`;
+    return buildCloudflareImagesUrl(url, transformations);
   } catch (error) {
     logger.warn('Failed to create mobile optimized image URL', { url, error: error.message });
     return url;
@@ -77,23 +293,7 @@ export function getHomeCardImage(originalUrl) {
     return PLACEHOLDER_IMAGE;
   }
   
-  // If it's already a Cloudinary URL, add home card transformations
-  if (isCloudinaryUrl(originalUrl)) {
-    return originalUrl.replace('/upload/', '/upload/w_400,h_300,c_fill,g_auto:subject,q_auto,f_auto/');
-  }
-  
-  // If Cloudinary is disabled or not configured, use original
-  if (!USE_CLOUDINARY || !CLOUDINARY_CLOUD_NAME) {
-    return originalUrl;
-  }
-  
-  // Fallback: use Cloudinary fetch
-  try {
-    const encodedUrl = encodeURIComponent(originalUrl);
-    return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/w_400,h_300,c_fill,g_auto:subject,q_auto,f_auto/${encodedUrl}`;
-  } catch (error) {
-    return originalUrl;
-  }
+  return getOptimizedImage(originalUrl, 'catalog', {}, isSlowConnection());
 }
 
 /**
@@ -105,29 +305,7 @@ export function getCatalogCardImage(originalUrl) {
     return PLACEHOLDER_IMAGE;
   }
   
-  // Debug logging removed for production builds
-  
-  // If it's already a Cloudinary URL, add enhanced catalog card transformations
-  if (isCloudinaryUrl(originalUrl)) {
-    // Use fixed dimensions for 4:3 aspect ratio
-    // The w_auto syntax doesn't work with this Cloudinary setup
-    const transformed = originalUrl.replace('/upload/', '/upload/w_400,h_300,c_fill,g_auto,f_auto,q_auto/');
-    // Debug logging removed for production builds
-    return transformed;
-  }
-  
-  // If Cloudinary is disabled or not configured, use original
-  if (!USE_CLOUDINARY || !CLOUDINARY_CLOUD_NAME) {
-    return originalUrl;
-  }
-  
-  // Fallback: use Cloudinary fetch with fixed dimensions for 4:3 aspect ratio
-  try {
-    const encodedUrl = encodeURIComponent(originalUrl);
-    return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/w_400,h_300,c_fill,g_auto,f_auto,q_auto/${encodedUrl}`;
-  } catch (error) {
-    return originalUrl;
-  }
+  return getOptimizedImage(originalUrl, 'catalog', {}, isSlowConnection());
 }
 
 /**
@@ -138,24 +316,7 @@ export function getDogThumbnail(originalUrl) {
     return PLACEHOLDER_IMAGE;
   }
   
-  // If it's already a Cloudinary URL, add thumbnail transformations
-  if (isCloudinaryUrl(originalUrl)) {
-    // Use c_fill with g_auto for better face/subject detection instead of g_face
-    return originalUrl.replace('/upload/', '/upload/w_300,h_300,c_fill,g_auto,q_auto,f_auto/');
-  }
-  
-  // If Cloudinary is disabled or not configured, use original
-  if (!USE_CLOUDINARY || !CLOUDINARY_CLOUD_NAME) {
-    return originalUrl;
-  }
-  
-  // Fallback: use Cloudinary fetch
-  try {
-    const encodedUrl = encodeURIComponent(originalUrl);
-    return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/w_300,h_300,c_fill,g_auto,q_auto,f_auto/${encodedUrl}`;
-  } catch (error) {
-    return originalUrl;
-  }
+  return getOptimizedImage(originalUrl, 'catalog', { width: 300, height: 300 }, isSlowConnection());
 }
 
 /**
@@ -167,24 +328,7 @@ export function getDetailHeroImage(originalUrl) {
     return PLACEHOLDER_IMAGE;
   }
   
-  // If it's already a Cloudinary URL, add enhanced hero transformations
-  if (isCloudinaryUrl(originalUrl)) {
-    // Use optimized dimensions for hero images - reduced from 1200x675 for better loading
-    // The responsive w_auto syntax doesn't work with this Cloudinary setup
-    return originalUrl.replace('/upload/', '/upload/w_800,h_450,c_fill,g_auto,f_auto,q_auto/');
-  }
-  
-  if (!USE_CLOUDINARY || !CLOUDINARY_CLOUD_NAME) {
-    return originalUrl;
-  }
-  
-  // Fallback: use Cloudinary fetch with responsive settings
-  try {
-    const encodedUrl = encodeURIComponent(originalUrl);
-    return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/w_800,h_450,c_fill,g_auto:subject,f_auto,q_auto:good/${encodedUrl}`;
-  } catch (error) {
-    return originalUrl;
-  }
+  return getOptimizedImage(originalUrl, 'hero', {}, isSlowConnection());
 }
 
 /**
@@ -196,28 +340,10 @@ export function getDetailHeroImageAdaptive(originalUrl) {
     return PLACEHOLDER_IMAGE;
   }
   
-  // Get adaptive parameters based on network conditions
-  const adaptiveQuality = getAdaptiveImageQuality();
   const { width, height } = getAdaptiveImageDimensions('hero');
+  const quality = getAdaptiveImageQuality().replace('q_', '');
   
-  // If it's already a Cloudinary URL, add network-adaptive hero transformations
-  if (isCloudinaryUrl(originalUrl)) {
-    const transformations = `w_${width},h_${height},c_fill,g_auto,f_auto,${adaptiveQuality}`;
-    return originalUrl.replace('/upload/', `/upload/${transformations}/`);
-  }
-  
-  if (!USE_CLOUDINARY || !CLOUDINARY_CLOUD_NAME) {
-    return originalUrl;
-  }
-  
-  // Fallback: use Cloudinary fetch with adaptive settings
-  try {
-    const encodedUrl = encodeURIComponent(originalUrl);
-    const transformations = `w_${width},h_${height},c_fill,g_auto:subject,f_auto,${adaptiveQuality}`;
-    return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/${transformations}/${encodedUrl}`;
-  } catch (error) {
-    return originalUrl;
-  }
+  return getOptimizedImage(originalUrl, 'hero', { width, height, quality }, isSlowConnection());
 }
 
 /**
@@ -228,23 +354,7 @@ export function getDogDetailImage(originalUrl) {
     return PLACEHOLDER_IMAGE;
   }
   
-  // If it's already a Cloudinary URL, add detail transformations
-  if (isCloudinaryUrl(originalUrl)) {
-    // Use c_fit instead of c_fill to maintain aspect ratio and show full image
-    return originalUrl.replace('/upload/', '/upload/w_800,h_600,c_fit,q_auto,f_auto/');
-  }
-  
-  if (!USE_CLOUDINARY || !CLOUDINARY_CLOUD_NAME) {
-    return originalUrl;
-  }
-  
-  // Fallback: use Cloudinary fetch
-  try {
-    const encodedUrl = encodeURIComponent(originalUrl);
-    return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/w_800,h_600,c_fit,q_auto,f_auto/${encodedUrl}`;
-  } catch (error) {
-    return originalUrl;
-  }
+  return getOptimizedImage(originalUrl, 'hero', {}, isSlowConnection());
 }
 
 /**
@@ -256,22 +366,7 @@ export function getThumbnailImage(originalUrl) {
     return PLACEHOLDER_IMAGE;
   }
   
-  if (isCloudinaryUrl(originalUrl)) {
-    // Square thumbnails with enhanced performance settings
-    // Lower quality for thumbnails to improve loading speed
-    return originalUrl.replace('/upload/', '/upload/w_200,h_200,c_fill,g_auto,f_auto,q_auto:low/');
-  }
-  
-  if (!USE_CLOUDINARY || !CLOUDINARY_CLOUD_NAME) {
-    return originalUrl;
-  }
-  
-  try {
-    const encodedUrl = encodeURIComponent(originalUrl);
-    return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/w_200,h_200,c_fill,g_auto:subject,f_auto,q_auto:low/${encodedUrl}`;
-  } catch (error) {
-    return originalUrl;
-  }
+  return getOptimizedImage(originalUrl, 'thumbnail', {}, isSlowConnection());
 }
 
 /**
@@ -282,47 +377,39 @@ export function getDogSmallThumbnail(originalUrl) {
     return PLACEHOLDER_IMAGE;
   }
   
-  if (isCloudinaryUrl(originalUrl)) {
-    // Small thumbnails with c_fit to avoid weird cropping
-    return originalUrl.replace('/upload/', '/upload/w_150,h_150,c_fit,q_auto,f_auto/');
-  }
-  
-  if (!USE_CLOUDINARY || !CLOUDINARY_CLOUD_NAME) {
-    return originalUrl;
-  }
-  
-  try {
-    const encodedUrl = encodeURIComponent(originalUrl);
-    return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/w_150,h_150,c_fit,q_auto,f_auto/${encodedUrl}`;
-  } catch (error) {
-    return originalUrl;
-  }
+  return getOptimizedImage(originalUrl, 'thumbnail', { width: 150, height: 150, fit: 'contain' }, isSlowConnection());
 }
 
 /**
  * Enhanced error handling with monitoring and progressive fallback
  */
 export function handleImageError(event, originalUrl, context = 'unknown') {
+  // Defensive check for event and target
+  if (!event || !event.target) {
+    if (process.env.NODE_ENV !== 'production') console.error('handleImageError called with invalid event object:', event);
+    return;
+  }
+  
   const currentSrc = event.target.src;
   
   // Track image loading failures for monitoring
   trackImageError(currentSrc, originalUrl, context);
   
   // Progressive fallback strategy
-  if (isCloudinaryUrl(currentSrc) && originalUrl && !isCloudinaryUrl(originalUrl)) {
-    // Try original URL if Cloudinary transformation failed
-    logger.warn('Cloudinary image failed, trying original:', originalUrl);
+  if (isR2Url(currentSrc) && originalUrl && !isR2Url(originalUrl)) {
+    // Try original URL if R2 transformation failed
+    logger.warn('R2 image failed, trying original:', originalUrl);
     event.target.src = originalUrl;
     event.target.onerror = (e) => handleImageError(e, originalUrl, `${context}-fallback`);
     return;
   }
   
   // If current URL contains transformations, try without transformations
-  if (isCloudinaryUrl(currentSrc) && currentSrc.includes('/upload/') && currentSrc.split('/upload/').length > 1) {
-    const parts = currentSrc.split('/upload/');
-    if (parts[1].includes('/')) {
+  if (isR2Url(currentSrc) && currentSrc.includes('/cdn-cgi/image/')) {
+    const parts = currentSrc.split('/cdn-cgi/image/');
+    if (parts.length > 1) {
       // Remove transformation parameters
-      const baseUrl = parts[0] + '/upload/';
+      const baseUrl = parts[0] + '/';
       const imagePath = parts[1].split('/').slice(1).join('/');
       const simpleUrl = baseUrl + imagePath;
       
@@ -350,7 +437,7 @@ export function handleImageError(event, originalUrl, context = 'unknown') {
  */
 let imageErrorStats = {
   total: 0,
-  cloudinary: 0,
+  r2: 0,
   external: 0,
   lastErrors: []
 };
@@ -368,8 +455,8 @@ let imageLoadStats = {
 function trackImageError(failedUrl, originalUrl, context) {
   imageErrorStats.total++;
   
-  if (isCloudinaryUrl(failedUrl)) {
-    imageErrorStats.cloudinary++;
+  if (isR2Url(failedUrl)) {
+    imageErrorStats.r2++;
   } else {
     imageErrorStats.external++;
   }
@@ -458,11 +545,6 @@ export function trackImageLoad(imageUrl, loadTime, context = 'unknown', retryCou
       imageLoadStats.networkConditions.shift();
     }
   }
-  
-  // Development logging
-  if (process.env.NODE_ENV === 'development') {
-    // Development-only logging removed for production builds
-  }
 }
 
 /**
@@ -481,7 +563,7 @@ export function getImageLoadStats() {
 export function resetImageErrorStats() {
   imageErrorStats = {
     total: 0,
-    cloudinary: 0,
+    r2: 0,
     external: 0,
     lastErrors: []
   };
@@ -512,7 +594,7 @@ function reportImageErrorBatch() {
   // For now, just log aggregate stats in development only
   if (process.env.NODE_ENV !== 'production') console.warn('Image loading error rate:', {
     total: imageErrorStats.total,
-    cloudinaryFailures: imageErrorStats.cloudinary,
+    r2Failures: imageErrorStats.r2,
     externalFailures: imageErrorStats.external,
     recentErrors: imageErrorStats.lastErrors.slice(-3)
   });
@@ -545,25 +627,7 @@ export function getCatalogCardImageWithPosition(originalUrl) {
     return { src: PLACEHOLDER_IMAGE, position: 'center center' };
   }
   
-  // Enhanced transformation for catalog cards with proper 4:3 aspect ratio
-  let src = '';
-  
-  // If it's already a Cloudinary URL, add enhanced catalog card transformations
-  if (isCloudinaryUrl(originalUrl)) {
-    // Use ar_4:3 aspect ratio with c_fill and g_auto for better catalog display
-    src = originalUrl.replace('/upload/', '/upload/ar_4:3,c_fill,g_auto,f_auto,q_auto/');
-  } else if (USE_CLOUDINARY && CLOUDINARY_CLOUD_NAME) {
-    // Fallback: use Cloudinary fetch with ar_4:3 aspect ratio
-    try {
-      const encodedUrl = encodeURIComponent(originalUrl);
-      src = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/ar_4:3,c_fill,g_auto,f_auto,q_auto/${encodedUrl}`;
-    } catch (error) {
-      src = originalUrl;
-    }
-  } else {
-    src = originalUrl;
-  }
-  
+  const src = getOptimizedImage(originalUrl, 'catalog', {}, isSlowConnection());
   const position = getSmartObjectPosition(originalUrl, 'card');
   
   return { src, position };
@@ -596,8 +660,8 @@ export function getDetailHeroImageWithPosition(originalUrl, bustCache = false) {
     return { src: PLACEHOLDER_IMAGE, position: 'center center' };
   }
   
-  // Use adaptive image generation for better network performance
-  let src = getDetailHeroImageAdaptive(originalUrl);
+  // Use standard hero image generation
+  let src = getDetailHeroImage(originalUrl);
   const position = getSmartObjectPosition(originalUrl, 'hero');
   
   // Add cache-busting for navigation if requested

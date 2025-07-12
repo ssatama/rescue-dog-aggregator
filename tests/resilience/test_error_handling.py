@@ -66,17 +66,17 @@ class TestErrorResilience:
             "CLOUDINARY_API_SECRET": "test-secret",
         },
     )
-    @patch("utils.cloudinary_service.requests.get")
+    @patch("utils.r2_service.requests.get")
     def test_image_download_timeout_handling(self, mock_requests):
         """Test handling of image download timeouts."""
         # Mock timeout
         import requests
 
-        from utils.cloudinary_service import CloudinaryService
+        from utils.r2_service import R2Service
 
         mock_requests.side_effect = requests.exceptions.Timeout("Request timeout")
 
-        service = CloudinaryService()
+        service = R2Service()
         url, success = service.upload_image_from_url("https://example.com/slow-image.jpg", "Test Dog", "Test Org")
 
         assert success is False
@@ -136,10 +136,10 @@ class TestErrorResilience:
             "CLOUDINARY_API_SECRET": "test-secret",
         },
     )
-    @patch("utils.cloudinary_service.requests.get")
+    @patch("utils.r2_service.requests.get")
     def test_invalid_image_content_handling(self, mock_requests):
         """Test handling of invalid image content."""
-        from utils.cloudinary_service import CloudinaryService
+        from utils.r2_service import R2Service
 
         # Mock response with invalid content type
         mock_response = Mock()
@@ -148,7 +148,7 @@ class TestErrorResilience:
         mock_response.content = b"<html>Not an image</html>"
         mock_requests.return_value = mock_response
 
-        service = CloudinaryService()
+        service = R2Service()
         url, success = service.upload_image_from_url("https://example.com/fake-image.jpg", "Test Dog", "Test Org")
 
         assert success is False

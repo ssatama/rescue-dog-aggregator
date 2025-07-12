@@ -13,7 +13,7 @@ class TestMisisRescueScraper:
     @pytest.fixture
     def scraper(self):
         """Create scraper with mocked dependencies."""
-        with patch("scrapers.base_scraper.create_default_sync_service") as mock_sync, patch("scrapers.base_scraper.ConfigLoader") as mock_loader, patch("scrapers.base_scraper.CloudinaryService"):
+        with patch("scrapers.base_scraper.create_default_sync_service") as mock_sync, patch("scrapers.base_scraper.ConfigLoader") as mock_loader, patch("scrapers.base_scraper.R2Service"):
 
             # Mock the sync manager to return organization_id
             mock_sync_instance = Mock()

@@ -11,9 +11,9 @@ from typing import Any, Dict, List, Optional, Protocol, Tuple
 
 import psycopg2.extras
 
-from utils.cloudinary_utils import OrganizationLogoUploader
 from utils.config_models import OrganizationConfig
 from utils.db_connection import execute_command, execute_query, execute_transaction, get_db_cursor
+from utils.r2_logo_uploader import R2OrganizationLogoUploader as OrganizationLogoUploader
 
 logger = logging.getLogger(__name__)
 

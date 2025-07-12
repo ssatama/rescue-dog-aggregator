@@ -7,7 +7,7 @@ The Rescue Dog Aggregator is a web platform designed to aggregate dog adoption l
 ### System Overview & Key Metrics
 
 - **Scope**: Currently aggregates data from 7 rescue organizations, tracking over 1,500 animals
-- **Test Coverage**: The codebase is validated by over 2,000 tests (876 backend, 1,100+ frontend), maintaining ~95% test coverage
+- **Test Coverage**: The codebase is validated by over 2,000 tests (78 backend test files, 1,897 frontend tests), maintaining ~95% test coverage
 - **Performance**: Achieves a 95+ Core Web Vitals score, facilitated by a global CDN, image optimization, lazy loading, and sub-second load times
 - **Availability & Reliability**: Maintains 99.9% uptime, featuring automated stale data detection and error recovery from individual scraper failures
 - **Security Posture**: Implements input validation and sanitization, XSS prevention, and a Content Security Policy (CSP)

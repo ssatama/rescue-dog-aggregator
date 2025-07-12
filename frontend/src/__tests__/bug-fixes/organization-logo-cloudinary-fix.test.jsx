@@ -1,12 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react';
 
-// Mock organization data with various logo URL scenarios
+// Mock organization data with R2 logo URL scenarios
 const mockOrganizations = [
   {
     id: 2,
     name: 'Pets in Turkey',
     config_id: 'pets-in-turkey',
-    logo_url: 'https://res.cloudinary.com/dy8y3boog/image/upload/v1750180713/organizations/logos/organizations/logos/pets-in-turkey.jpg',
+    logo_url: 'https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-pets-in-turkey.jpg',
     description: 'We are a group of animal and nature loving people...',
     website_url: 'https://www.petsinturkey.org/',
     total_dogs: 33,
@@ -16,7 +16,7 @@ const mockOrganizations = [
     id: 11,
     name: 'Tierschutzverein Europa e.V.',
     config_id: 'tierschutzverein-europa',
-    logo_url: 'https://res.cloudinary.com/dy8y3boog/image/upload/v1750180464/organizations/logos/organizations/logos/tierschutzverein-europa.jpg',
+    logo_url: 'https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-tierschutzverein-europa.jpg',
     description: 'Since 2006, the members have been committed...',
     website_url: 'https://tierschutzverein-europa.de',
     total_dogs: 15,
@@ -26,7 +26,7 @@ const mockOrganizations = [
     id: 5,
     name: 'REAN (Rescuing European Animals in Need)',
     config_id: 'rean',
-    logo_url: 'https://res.cloudinary.com/dy8y3boog/image/upload/v1750180801/rescue_dogs/rean/logo_rean_b99d67d8.jpg',
+    logo_url: 'https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-rean.jpg',
     description: 'UK charity rescuing dogs from Romanian shelters...',
     website_url: 'https://www.rean.org.uk',
     total_dogs: 8,
@@ -56,25 +56,25 @@ const MockOrganizationCard = ({ organization, size = 'medium' }) => {
   );
 };
 
-describe('Organization Logo Cloudinary Fix', () => {
+describe('Organization Logo R2 Migration', () => {
   describe('Logo URL Validation', () => {
-    it('should have Cloudinary URLs for all organizations', () => {
+    it('should have R2 URLs for all organizations', () => {
       mockOrganizations.forEach(org => {
-        expect(org.logo_url).toMatch(/cloudinary\.com/);
+        expect(org.logo_url).toMatch(/images\.rescuedogs\.me/);
         expect(org.logo_url).toMatch(/^https:\/\//);
         expect(org.logo_url).not.toMatch(/\/Users\//); // No local file paths
         expect(org.logo_url).not.toMatch(/org_logos/); // No local org_logos references
       });
     });
 
-    it('should have valid Cloudinary transformation paths', () => {
-      const cloudinaryOrgs = mockOrganizations.filter(org => 
-        org.logo_url.includes('cloudinary.com')
+    it('should have valid R2 paths', () => {
+      const r2Orgs = mockOrganizations.filter(org => 
+        org.logo_url.includes('images.rescuedogs.me')
       );
       
-      cloudinaryOrgs.forEach(org => {
-        // Should have proper Cloudinary structure
-        expect(org.logo_url).toMatch(/\/upload\/v\d+\//);
+      r2Orgs.forEach(org => {
+        // Should have proper R2 structure
+        expect(org.logo_url).toMatch(/\/rescue_dogs\/organizations\//);
         // Should end with proper image format
         expect(org.logo_url).toMatch(/\.(jpg|jpeg|png|webp)$/i);
       });
@@ -157,37 +157,37 @@ describe('Organization Logo Cloudinary Fix', () => {
         expect(card).toBeInTheDocument();
         expect(logo).toBeInTheDocument();
         expect(logo.src).toBe(org.logo_url);
-        expect(logo.src).toMatch(/cloudinary\.com/);
+        expect(logo.src).toMatch(/images\.rescuedogs\.me/);
       });
     });
   });
 
   describe('Logo URL Structure Validation', () => {
-    it('should have consistent Cloudinary folder structure for uploaded logos', () => {
+    it('should have consistent R2 folder structure for uploaded logos', () => {
       const uploadedLogos = mockOrganizations.filter(org => 
-        org.logo_url.includes('/organizations/logos/')
+        org.logo_url.includes('/rescue_dogs/organizations/')
       );
       
       uploadedLogos.forEach(org => {
-        expect(org.logo_url).toMatch(/\/organizations\/logos\//);
-        expect(org.logo_url).toMatch(new RegExp(`${org.config_id}\\.(jpg|jpeg|png)$`));
+        expect(org.logo_url).toMatch(/\/rescue_dogs\/organizations\//);
+        expect(org.logo_url).toMatch(new RegExp(`org-logo-${org.config_id}\\.(jpg|jpeg|png)$`));
       });
     });
 
-    it('should support different logo size transformations', () => {
-      const baseUrl = 'https://res.cloudinary.com/dy8y3boog/image/upload/v1750180713/organizations/logos/organizations/logos/pets-in-turkey.jpg';
+    it('should support different logo size transformations with Cloudflare Images', () => {
+      const baseUrl = 'https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-pets-in-turkey.jpg';
       
-      // Test that we can generate different size URLs
-      const thumbnailUrl = baseUrl.replace('/upload/', '/upload/w_64,h_64,c_fill,g_center/');
-      const mediumUrl = baseUrl.replace('/upload/', '/upload/w_128,h_128,c_fill,g_center/');
-      const largeUrl = baseUrl.replace('/upload/', '/upload/w_256,h_256,c_fill,g_center/');
+      // Test that we can generate different size URLs using Cloudflare Images
+      const thumbnailUrl = `https://images.rescuedogs.me/cdn-cgi/image/w_64,h_64,c_fill,g_center/${baseUrl.replace('https://images.rescuedogs.me/', '')}`;
+      const mediumUrl = `https://images.rescuedogs.me/cdn-cgi/image/w_128,h_128,c_fill,g_center/${baseUrl.replace('https://images.rescuedogs.me/', '')}`;
+      const largeUrl = `https://images.rescuedogs.me/cdn-cgi/image/w_256,h_256,c_fill,g_center/${baseUrl.replace('https://images.rescuedogs.me/', '')}`;
       
       expect(thumbnailUrl).toMatch(/w_64,h_64/);
       expect(mediumUrl).toMatch(/w_128,h_128/);
       expect(largeUrl).toMatch(/w_256,h_256/);
       
       [thumbnailUrl, mediumUrl, largeUrl].forEach(url => {
-        expect(url).toMatch(/cloudinary\.com/);
+        expect(url).toMatch(/images\.rescuedogs\.me/);
         expect(url).not.toMatch(/\/Users\//);
       });
     });
@@ -213,9 +213,9 @@ describe('Organization Logo Cloudinary Fix', () => {
 
     it('should have accessible URLs that do not return 404', () => {
       // This test would ideally make HTTP requests to verify URLs are accessible
-      // For now, we verify they follow the correct Cloudinary pattern
+      // For now, we verify they follow the correct R2 pattern
       mockOrganizations.forEach(org => {
-        expect(org.logo_url).toMatch(/^https:\/\/res\.cloudinary\.com/);
+        expect(org.logo_url).toMatch(/^https:\/\/images\.rescuedogs\.me/);
         expect(org.logo_url).not.toMatch(/localhost/);
         expect(org.logo_url).not.toMatch(/127\.0\.0\.1/);
         expect(org.logo_url).not.toMatch(/file:\/\//);
@@ -227,9 +227,9 @@ describe('Organization Logo Cloudinary Fix', () => {
     it('should have logos that match organization sync process results', () => {
       // Verify that the URLs match what the sync process would generate
       const expectedPatterns = {
-        'pets-in-turkey': /pets-in-turkey\.jpg$/,
-        'tierschutzverein-europa': /tierschutzverein-europa\.jpg$/,
-        'rean': /logo_rean_[a-f0-9]+\.jpg$/,
+        'pets-in-turkey': /org-logo-pets-in-turkey\.jpg$/,
+        'tierschutzverein-europa': /org-logo-tierschutzverein-europa\.jpg$/,
+        'rean': /org-logo-rean\.jpg$/,
       };
 
       mockOrganizations.forEach(org => {

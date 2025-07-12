@@ -46,7 +46,7 @@ export default function FavoriteButton({
     setIsLoading(true);
     
     try {
-      let result;
+      let result: { success: boolean; message: string };
       if (isFavorite) {
         result = FavoritesManager.removeFavorite(dog.id);
         if (result.success) {

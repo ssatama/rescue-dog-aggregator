@@ -98,9 +98,11 @@ const ProgressiveImage = memo(function ProgressiveImage({
     if (placeholder) return placeholder;
     if (!src) return '/placeholder_dog.svg';
     
-    // For Cloudinary images, create a tiny blurred version
-    if (src.includes('res.cloudinary.com')) {
-      return src.replace('/upload/', '/upload/w_20,h_20,q_10,f_auto,e_blur:300/');
+    // For R2 images, create a tiny blurred version using Cloudflare Images
+    if (src.includes('images.rescuedogs.me')) {
+      // Extract the path from the R2 URL
+      const imagePath = src.replace('https://images.rescuedogs.me/', '');
+      return `https://images.rescuedogs.me/cdn-cgi/image/w_20,h_20,q_10,f_auto,blur_300/${imagePath}`;
     }
     
     return '/placeholder_dog.svg';

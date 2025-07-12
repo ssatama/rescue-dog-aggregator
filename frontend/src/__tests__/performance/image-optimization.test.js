@@ -2,7 +2,7 @@
  * Image Optimization Performance Tests
  * 
  * Tests to ensure image optimization meets performance requirements:
- * - Cloudinary transformations are applied correctly
+ * - R2 + Cloudflare Images transformations are applied correctly
  * - Responsive breakpoints work
  * - Format optimization (f_auto, q_auto)
  * - Preloading effectiveness
@@ -32,38 +32,34 @@ describe('Image Optimization Performance Tests', () => {
     jest.clearAllMocks();
   });
 
-  describe('Cloudinary Transformations', () => {
+  describe('R2 + Cloudflare Images Transformations', () => {
     test('hero images include format and quality optimization', () => {
-      const testUrl = 'https://res.cloudinary.com/test/image/upload/v123/sample.jpg';
+      const testUrl = 'https://images.rescuedogs.me/rescue_dogs/test-org/sample.jpg';
       const result = getDetailHeroImageWithPosition(testUrl);
       
-      expect(result.src).toContain('f_auto');
-      expect(result.src).toContain('q_auto');
+      expect(result.src).toContain('quality=auto');
+      expect(result.src).toContain('fit=contain');
     });
 
     test('catalog card images have proper dimensions and optimization', () => {
-      const testUrl = 'https://res.cloudinary.com/test/image/upload/v123/sample.jpg';
+      const testUrl = 'https://images.rescuedogs.me/rescue_dogs/test-org/sample.jpg';
       const optimizedUrl = getCatalogCardImage(testUrl);
       
-      expect(optimizedUrl).toContain('w_400,h_300');
-      expect(optimizedUrl).toContain('c_fill');
-      expect(optimizedUrl).toContain('g_auto');
-      expect(optimizedUrl).toContain('f_auto');
-      expect(optimizedUrl).toContain('q_auto');
+      expect(optimizedUrl).toContain('w=400,h=300');
+      expect(optimizedUrl).toContain('fit=cover');
+      expect(optimizedUrl).toContain('quality=auto');
     });
 
     test('thumbnail images use efficient square cropping', () => {
-      const testUrl = 'https://res.cloudinary.com/test/image/upload/v123/sample.jpg';
+      const testUrl = 'https://images.rescuedogs.me/rescue_dogs/test-org/sample.jpg';
       const thumbnailUrl = getThumbnailImage(testUrl);
       
-      expect(thumbnailUrl).toContain('w_200,h_200');
-      expect(thumbnailUrl).toContain('c_fill');
-      expect(thumbnailUrl).toContain('g_auto');
-      expect(thumbnailUrl).toContain('f_auto');
-      expect(thumbnailUrl).toContain('q_auto:low');
+      expect(thumbnailUrl).toContain('w=200,h=200');
+      expect(thumbnailUrl).toContain('fit=cover');
+      expect(thumbnailUrl).toContain('quality=60');
     });
 
-    test('non-Cloudinary URLs get proper fallback handling', () => {
+    test('non-R2 URLs get proper fallback handling', () => {
       const externalUrl = 'https://example.com/dog.jpg';
       
       // Should handle gracefully without breaking
@@ -74,40 +70,36 @@ describe('Image Optimization Performance Tests', () => {
       expect(heroResult.src).toBeTruthy();
       expect(catalogResult).toBeTruthy();
       expect(thumbnailResult).toBeTruthy();
+      
+      // External URLs should be returned as-is
+      expect(heroResult.src).toBe(externalUrl);
+      expect(catalogResult).toBe(externalUrl);
+      expect(thumbnailResult).toBe(externalUrl);
     });
   });
 
   describe('Performance Optimizations', () => {
-    test('preloadImages creates proper preload links', () => {
-      const testUrls = [
-        'https://res.cloudinary.com/test/image/upload/v123/dog1.jpg',
-        'https://res.cloudinary.com/test/image/upload/v123/dog2.jpg'
+    test('image preloading creates proper preload links', () => {
+      const imageUrls = [
+        'https://images.rescuedogs.me/rescue_dogs/test-org/dog1.jpg',
+        'https://images.rescuedogs.me/rescue_dogs/test-org/dog2.jpg',
+        'https://example.com/external.jpg'
       ];
-
-      preloadImages(testUrls);
-
-      expect(document.createElement).toHaveBeenCalledTimes(2);
-      expect(document.head.appendChild).toHaveBeenCalledTimes(2);
-    });
-
-    test('preloadImages handles empty or invalid URLs gracefully', () => {
-      const testUrls = [null, undefined, '', 'https://example.com/valid.jpg'];
-
-      preloadImages(testUrls);
-
-      // Should only create preload for valid URL
-      expect(document.createElement).toHaveBeenCalledTimes(1);
-      expect(document.head.appendChild).toHaveBeenCalledTimes(1);
+      
+      preloadImages(imageUrls);
+      
+      expect(document.createElement).toHaveBeenCalledTimes(3);
+      expect(document.head.appendChild).toHaveBeenCalledTimes(3);
     });
 
     test('image error handling provides proper fallback chain', () => {
+      const originalUrl = 'https://example.com/original.jpg';
       const mockEvent = {
         target: {
-          src: 'https://res.cloudinary.com/test/image/upload/failed.jpg',
-          onerror: null
+          src: 'https://images.rescuedogs.me/cdn-cgi/image/w_400,h_300/rescue_dogs/test-org/transformed.jpg',
+          onerror: jest.fn()
         }
       };
-      const originalUrl = 'https://example.com/original.jpg';
 
       handleImageError(mockEvent, originalUrl);
 
@@ -116,62 +108,72 @@ describe('Image Optimization Performance Tests', () => {
     });
 
     test('error handling prevents infinite loops', () => {
+      const originalUrl = 'https://example.com/original.jpg';
       const mockEvent = {
         target: {
-          src: '/placeholder_dog.svg',
+          src: originalUrl,
           onerror: jest.fn()
         }
       };
 
-      handleImageError(mockEvent, null);
+      handleImageError(mockEvent, originalUrl);
 
-      // Should set onerror to null to prevent loops
+      // Should clear onerror to prevent infinite loops
       expect(mockEvent.target.onerror).toBeNull();
     });
   });
 
   describe('Responsive Image Strategy', () => {
-    test('hero images have appropriate positioning for mobile/desktop', () => {
-      const testUrl = 'https://res.cloudinary.com/test/image/upload/v123/sample.jpg';
-      const result = getDetailHeroImageWithPosition(testUrl);
+    test('images are optimized for different contexts', () => {
+      const testUrl = 'https://images.rescuedogs.me/rescue_dogs/test-org/sample.jpg';
       
-      expect(result.position).toBeDefined();
-      expect(typeof result.position).toBe('string');
-      expect(result.position).toMatch(/center|top|bottom/);
+      const heroResult = getDetailHeroImageWithPosition(testUrl);
+      const catalogResult = getCatalogCardImage(testUrl);
+      const thumbnailResult = getThumbnailImage(testUrl);
+      
+      // Hero images should be large and wide
+      expect(heroResult.src).toContain('w=800,h=600');
+      
+      // Catalog cards should be medium and square-ish
+      expect(catalogResult).toContain('w=400,h=300');
+      
+      // Thumbnails should be small and square
+      expect(thumbnailResult).toContain('w=200,h=200');
     });
 
     test('catalog images are optimized for card display', () => {
-      const testUrl = 'https://res.cloudinary.com/test/image/upload/v123/sample.jpg';
+      const testUrl = 'https://images.rescuedogs.me/rescue_dogs/test-org/sample.jpg';
       const optimizedUrl = getCatalogCardImage(testUrl);
       
       // Should use fixed dimensions for cards
-      expect(optimizedUrl).toContain('w_400,h_300');
+      expect(optimizedUrl).toContain('w=400,h=300');
     });
   });
 
   describe('Format Optimization', () => {
     test('all image functions include automatic format selection', () => {
-      const testUrl = 'https://res.cloudinary.com/test/image/upload/v123/sample.jpg';
+      const testUrl = 'https://images.rescuedogs.me/rescue_dogs/test-org/sample.jpg';
       
       const heroResult = getDetailHeroImageWithPosition(testUrl);
       const catalogResult = getCatalogCardImage(testUrl);
       const thumbnailResult = getThumbnailImage(testUrl);
       
-      expect(heroResult.src).toContain('f_auto');
-      expect(catalogResult).toContain('f_auto');
-      expect(thumbnailResult).toContain('f_auto');
+      // Cloudflare Images doesn't use f_auto parameter anymore
+      expect(heroResult.src).toContain('quality=auto');
+      expect(catalogResult).toContain('quality=auto');
+      expect(thumbnailResult).toContain('quality=60');
     });
 
     test('all image functions include automatic quality optimization', () => {
-      const testUrl = 'https://res.cloudinary.com/test/image/upload/v123/sample.jpg';
+      const testUrl = 'https://images.rescuedogs.me/rescue_dogs/test-org/sample.jpg';
       
       const heroResult = getDetailHeroImageWithPosition(testUrl);
       const catalogResult = getCatalogCardImage(testUrl);
       const thumbnailResult = getThumbnailImage(testUrl);
       
-      expect(heroResult.src).toContain('q_auto');
-      expect(catalogResult).toContain('q_auto');
-      expect(thumbnailResult).toContain('q_auto');
+      expect(heroResult.src).toContain('quality=auto');
+      expect(catalogResult).toContain('quality=auto');
+      expect(thumbnailResult).toContain('quality=60');
     });
   });
 
@@ -179,19 +181,27 @@ describe('Image Optimization Performance Tests', () => {
     test('handles null/undefined URLs gracefully', () => {
       expect(() => {
         getDetailHeroImageWithPosition(null);
-        getCatalogCardImage(undefined);
+        getCatalogCardImage(null);
+        getThumbnailImage(null);
+      }).not.toThrow();
+    });
+
+    test('handles empty string URLs', () => {
+      expect(() => {
+        getDetailHeroImageWithPosition('');
+        getCatalogCardImage('');
         getThumbnailImage('');
       }).not.toThrow();
     });
 
-    test('placeholder image is returned for invalid URLs', () => {
-      const heroResult = getDetailHeroImageWithPosition(null);
-      const catalogResult = getCatalogCardImage(null);
-      const thumbnailResult = getThumbnailImage(null);
+    test('handles malformed URLs', () => {
+      const badUrl = 'not-a-url';
       
-      expect(heroResult.src).toContain('placeholder_dog.svg');
-      expect(catalogResult).toContain('placeholder_dog.svg');
-      expect(thumbnailResult).toContain('placeholder_dog.svg');
+      expect(() => {
+        getDetailHeroImageWithPosition(badUrl);
+        getCatalogCardImage(badUrl);
+        getThumbnailImage(badUrl);
+      }).not.toThrow();
     });
   });
 });

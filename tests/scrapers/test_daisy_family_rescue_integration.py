@@ -35,7 +35,7 @@ class TestDaisyFamilyRescueIntegration:
         with (
             patch("scrapers.base_scraper.create_default_sync_service") as mock_sync,
             patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader,
-            patch("scrapers.base_scraper.CloudinaryService"),
+            patch("scrapers.base_scraper.R2Service"),
             patch.dict("os.environ", {"TESTING_VALIDATE_SYNC": "true"}),
         ):
 
@@ -244,7 +244,7 @@ class TestDaisyFamilyRescueIntegration:
         with (
             patch("scrapers.base_scraper.create_default_sync_service") as mock_sync,
             patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader,
-            patch("scrapers.base_scraper.CloudinaryService"),
+            patch("scrapers.base_scraper.R2Service"),
             patch.dict("os.environ", {"TESTING_VALIDATE_SYNC": "true"}),
         ):
 
@@ -275,7 +275,7 @@ class TestDaisyFamilyRescueIntegration:
     @pytest.mark.integration
     def test_legacy_initialization_compatibility(self):
         """Test backward compatibility with legacy organization_id initialization."""
-        with patch("scrapers.base_scraper.create_default_sync_service"), patch("scrapers.base_scraper.ConfigLoader"), patch("scrapers.base_scraper.CloudinaryService"):
+        with patch("scrapers.base_scraper.create_default_sync_service"), patch("scrapers.base_scraper.ConfigLoader"), patch("scrapers.base_scraper.R2Service"):
 
             # Test legacy mode
             scraper = DaisyFamilyRescueScraper(organization_id=12)

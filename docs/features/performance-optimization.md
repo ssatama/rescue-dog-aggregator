@@ -6,20 +6,29 @@ This guide documents the comprehensive performance optimizations implemented for
 
 ## Image Optimization
 
-### Cloudinary Responsive Transformations
+### Cloudflare R2 + Images Transformations
 
-The platform uses advanced Cloudinary transformations for optimal image delivery:
+The platform uses Cloudflare Images API for optimal delivery with comprehensive security:
 
 ```javascript
 // Hero images - responsive with quality optimization
-w_auto:100:1200,h_auto:300:675,c_fill,g_auto:subject,f_auto,q_auto:good,dpr_auto
+w=800,h=600,fit=contain,quality=auto
 
 // Catalog cards - mobile-first responsive
-w_auto:280:400,h_auto:210:300,c_fill,g_auto:subject,f_auto,q_auto:eco,dpr_auto
+w=400,h=300,fit=cover,quality=auto
 
 // Thumbnails - bandwidth optimized
-w_auto:120:200,h_auto:120:200,c_fill,g_auto:subject,f_auto,q_auto:low,dpr_auto
+w=200,h=200,fit=cover,quality=60
+
+// Mobile optimized
+w=320,h=240,fit=cover,quality=70
 ```
+
+**Security Features**:
+- Path traversal validation before URL processing
+- Parameter injection protection with strict regex validation
+- R2 domain validation to prevent external resource access
+- Error boundary fallbacks for transformation failures
 
 ### Image Loading Strategy
 

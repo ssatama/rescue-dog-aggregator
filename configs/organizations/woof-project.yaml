@@ -9,7 +9,7 @@ scraper:
     rate_limit_delay: 3.0 # Increased for API calls
     max_retries: 3
     timeout: 60 # Increased for AI processing
-    skip_existing_animals: false
+    skip_existing_animals: true
 metadata:
   website_url: "https://woofproject.eu/"
   description: |
@@ -59,4 +59,4 @@ metadata:
     facebook: "https://www.facebook.com/woofproject.eu/"
     instagram: "https://www.instagram.com/woofprojecteu/"
   established_year: 2020
-  logo_url: "https://res.cloudinary.com/dy8y3boog/image/upload/v1752216315/organizations/logos/organizations/logos/woof-project.jpg"
+  logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-woof-project.jpeg"

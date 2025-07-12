@@ -120,10 +120,12 @@ API_HOST=0.0.0.0
 API_PORT=8000
 ENVIRONMENT=development
 
-# Cloudinary configuration (required for image handling)
-CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+# Cloudflare R2 configuration (required for image handling)
+R2_ACCOUNT_ID=your_r2_account_id
+R2_ACCESS_KEY_ID=your_r2_access_key
+R2_SECRET_ACCESS_KEY=your_r2_secret_key
+R2_BUCKET_NAME=rescue-dog-images
+R2_CUSTOM_DOMAIN=images.rescuedogs.me
 
 # CORS configuration
 ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
@@ -161,9 +163,11 @@ API_WORKERS=4
 | `API_HOST` | No | `0.0.0.0` | API bind address |
 | `API_PORT` | No | `8000` | API port |
 | `ENVIRONMENT` | No | `development` | Environment: `development` or `production` |
-| `CLOUDINARY_CLOUD_NAME` | Yes | None | Cloudinary cloud name |
-| `CLOUDINARY_API_KEY` | Yes | None | Cloudinary API key |
-| `CLOUDINARY_API_SECRET` | Yes | None | Cloudinary API secret |
+| `R2_ACCOUNT_ID` | Yes | None | Cloudflare R2 account ID |
+| `R2_ACCESS_KEY_ID` | Yes | None | R2 access key ID |
+| `R2_SECRET_ACCESS_KEY` | Yes | None | R2 secret access key |
+| `R2_BUCKET_NAME` | Yes | None | R2 bucket name |
+| `R2_CUSTOM_DOMAIN` | Yes | None | R2 custom domain |
 | `ALLOWED_ORIGINS` | No | Auto-detected | Comma-separated CORS origins |
 | `CORS_ALLOW_CREDENTIALS` | No | `false` | Allow credentials in CORS |
 | `CORS_MAX_AGE` | No | `3600` | CORS preflight cache duration |
@@ -217,8 +221,8 @@ Create `frontend/.env.local`:
 # API Configuration
 NEXT_PUBLIC_API_URL=http://localhost:8000
 
-# Cloudinary Configuration (must match backend)
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+# R2 Configuration (must match backend)
+NEXT_PUBLIC_R2_CUSTOM_DOMAIN=images.rescuedogs.me
 
 # Development settings
 NODE_ENV=development
@@ -519,18 +523,18 @@ npm install
 npm run build
 ```
 
-#### Cloudinary Configuration
+#### R2 Configuration
 
 **Error**: Images not loading or showing as broken
 
 **Solution**:
 ```bash
-# Verify Cloudinary configuration
-echo $CLOUDINARY_CLOUD_NAME
-echo $NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+# Verify R2 configuration
+echo $R2_CUSTOM_DOMAIN
+echo $NEXT_PUBLIC_R2_CUSTOM_DOMAIN
 
-# Test Cloudinary connectivity
-curl -I "https://res.cloudinary.com/your_cloud_name/image/upload/sample.jpg"
+# Test R2 connectivity
+curl -I "https://$R2_CUSTOM_DOMAIN/test-image.jpg"
 ```
 
 ### Getting Help

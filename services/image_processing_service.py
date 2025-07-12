@@ -17,20 +17,20 @@ Following CLAUDE.md principles:
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-from utils.cloudinary_service import CloudinaryService
+from utils.r2_service import R2Service
 
 
 class ImageProcessingService:
     """Service for all image processing operations extracted from BaseScraper."""
 
-    def __init__(self, cloudinary_service: Optional[CloudinaryService] = None, logger: Optional[logging.Logger] = None):
+    def __init__(self, r2_service: Optional[R2Service] = None, logger: Optional[logging.Logger] = None):
         """Initialize ImageProcessingService with dependencies.
 
         Args:
-            cloudinary_service: CloudinaryService instance for image uploads
+            r2_service: R2Service instance for image uploads
             logger: Optional logger instance
         """
-        self.cloudinary_service = cloudinary_service or CloudinaryService()
+        self.r2_service = r2_service or R2Service()
         self.logger = logger or logging.getLogger(__name__)
 
     def process_primary_image(self, animal_data: Dict[str, Any], existing_animal: Optional[Tuple] = None, database_connection=None, organization_name: str = "unknown") -> Dict[str, Any]:
@@ -118,8 +118,8 @@ class ImageProcessingService:
                 database_connection.rollback()
             return 0, upload_failure_count or len(image_urls)
 
-    def upload_image_to_cloudinary(self, image_url: str, animal_name: str, organization_name: str = "unknown") -> Tuple[Optional[str], bool]:
-        """Upload image to Cloudinary service.
+    def upload_image_to_r2(self, image_url: str, animal_name: str, organization_name: str = "unknown") -> Tuple[Optional[str], bool]:
+        """Upload image to R2 service.
 
         Args:
             image_url: URL of image to upload
@@ -127,9 +127,9 @@ class ImageProcessingService:
             organization_name: Organization name for folder structure
 
         Returns:
-            Tuple of (cloudinary_url, success_boolean)
+            Tuple of (r2_url, success_boolean)
         """
-        return self.cloudinary_service.upload_image_from_url(image_url, animal_name, organization_name)
+        return self.r2_service.upload_image_from_url(image_url, animal_name, organization_name)
 
     def validate_image_url(self, image_url: str) -> bool:
         """Validate image URL format and accessibility.
@@ -184,14 +184,14 @@ class ImageProcessingService:
         if current_original_url == original_url:
             processed_data["primary_image_url"] = current_primary_url
             processed_data["original_image_url"] = current_original_url
-            self.logger.info(f"🔄 Image unchanged for {processed_data.get('name')}, using existing Cloudinary URL")
+            self.logger.info(f"🔄 Image unchanged for {processed_data.get('name')}, using existing R2 URL")
             return False
 
-        # Handle legacy case where original_image_url is a Cloudinary URL
-        if current_original_url and "cloudinary.com" in current_original_url:
+        # Handle legacy case where original_image_url is a R2 URL
+        if current_original_url and "images.rescuedogs.me" in current_original_url:
             processed_data["primary_image_url"] = current_primary_url
             processed_data["original_image_url"] = original_url
-            self.logger.info(f"🔄 Updated original_image_url to source URL for {processed_data.get('name')}, keeping existing Cloudinary URL")
+            self.logger.info(f"🔄 Updated original_image_url to source URL for {processed_data.get('name')}, keeping existing R2 URL")
             return False
 
         return True
@@ -207,18 +207,18 @@ class ImageProcessingService:
         Returns:
             Updated processed data dictionary
         """
-        self.logger.info(f"📤 Uploading primary image to Cloudinary for {processed_data.get('name', 'unknown')}")
+        self.logger.info(f"📤 Uploading primary image to R2 for {processed_data.get('name', 'unknown')}")
 
-        cloudinary_url, success = self.cloudinary_service.upload_image_from_url(
+        r2_url, success = self.r2_service.upload_image_from_url(
             original_url,
             processed_data.get("name", "unknown"),
             organization_name,
         )
 
-        if success and cloudinary_url:
-            processed_data["primary_image_url"] = cloudinary_url
+        if success and r2_url:
+            processed_data["primary_image_url"] = r2_url
             processed_data["original_image_url"] = original_url
-            self.logger.info(f"✅ Successfully uploaded primary image to Cloudinary for {processed_data.get('name')}")
+            self.logger.info(f"✅ Successfully uploaded primary image to R2 for {processed_data.get('name')}")
         else:
             self.logger.warning(f"❌ Failed to upload primary image for {processed_data.get('name')}, keeping original URL")
             processed_data["original_image_url"] = original_url
@@ -276,10 +276,10 @@ class ImageProcessingService:
         """Handle new image upload and database insertion."""
         self.logger.info(f"📤 Uploading new additional image {index+1} for animal {animal_id}")
 
-        cloudinary_url, success = self.cloudinary_service.upload_image_from_url(image_url, animal_name, organization_name)
+        r2_url, success = self.r2_service.upload_image_from_url(image_url, animal_name, organization_name)
 
-        # Use Cloudinary URL if successful, otherwise fallback to original
-        final_url = cloudinary_url if success else image_url
+        # Use R2 URL if successful, otherwise fallback to original
+        final_url = r2_url if success else image_url
 
         cursor.execute(
             """

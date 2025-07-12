@@ -164,7 +164,9 @@ export function useAdvancedImage(
         
         setHasError(true);
         setIsLoading(false);
-        handleImageError(optimizedSrc, 'Image failed to load');
+        // handleImageError expects an event object, but we don't have one here
+        // Just log the error for monitoring
+        if (process.env.NODE_ENV === 'development') console.error('[useAdvancedImage] Image failed to load:', optimizedSrc);
         onError();
       }
     };

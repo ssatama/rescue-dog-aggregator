@@ -74,8 +74,8 @@ The Rescue Dog Aggregator uses a sophisticated, production-ready scraper system 
 │  Data Processing Pipeline                                   │
 │  ┌─────────────────┐  ┌─────────────────┐                  │
 │  │  Standardization│  │  Image Processing│                  │
-│  │  Validation     │  │  Cloudinary     │                  │
-│  │  Language Det.  │  │  Upload         │                  │
+│  │  Validation     │  │  R2 + Cloudflare│                  │
+│  │  Language Det.  │  │  Images Upload  │                  │
 │  └─────────────────┘  └─────────────────┘                  │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -258,7 +258,7 @@ consecutive_scrapes_missing = 4  # → status = "unavailable"
 ### Image Processing Pipeline
 
 ```python
-# Cloudinary Integration
+# R2 + Cloudflare Images Integration
 def save_animal(self, animal_data: Dict[str, Any]) -> Tuple[Optional[int], str]:
     """Handles primary image upload with fallback."""
     
@@ -1097,12 +1097,12 @@ else:
 
 ```python
 # Image upload with fallback
-cloudinary_url, success = self.cloudinary_service.upload_image_from_url(
+r2_url, success = self.r2_service.upload_image_from_url(
     original_url, animal_name, self.organization_name
 )
 
 if success:
-    animal_data["primary_image_url"] = cloudinary_url
+    animal_data["primary_image_url"] = r2_url
     animal_data["original_image_url"] = original_url
 else:
     # Fallback: keep original URL
@@ -1111,10 +1111,11 @@ else:
 ```
 
 **Solutions:**
-- Check Cloudinary configuration
+- Check R2 configuration (credentials, bucket name, custom domain)
 - Verify image URLs are accessible
 - Check for CORS issues
 - Review image size limits
+- Validate R2 bucket permissions
 
 #### 3. Rate Limiting Issues
 

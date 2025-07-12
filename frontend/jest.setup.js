@@ -83,7 +83,7 @@ jest.mock("next/navigation", () => ({
 // Simple mocks for Next.js components
 jest.mock("next/image", () => ({
   __esModule: true,
-  default: (props) => <img {...props} />, // Using JSX here is fine
+  default: ({ priority, ...props }) => <img {...props} />, // Filter out Next.js-specific props
 }));
 
 jest.mock("next/link", () => ({

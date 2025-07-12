@@ -20,7 +20,6 @@ selenium>=4.18.0,<5.0.0         # Allow 4.34.x
 webdriver-manager>=4.0.0,<5.0.0
 
 # === Image Processing ===
-cloudinary>=1.36.0,<2.0.0
 Pillow>=10.0.0,<12.0.0          # Allow 11.x
 
 # === CLI & Utilities ===
@@ -29,6 +28,7 @@ colorama>=0.4.6,<1.0.0
 rich>=13.0.0,<15.0.0            # Allow 14.x
 langdetect==1.0.9
 python-dotenv>=1.0.0,<2.0.0
+boto3>=1.30.0,<2.0.0              # Allow 1.35.x
 
 # === Date/Time Handling ===
 python-dateutil>=2.8.2,<3.0.0

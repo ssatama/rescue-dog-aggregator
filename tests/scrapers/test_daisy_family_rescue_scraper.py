@@ -21,7 +21,7 @@ class TestDaisyFamilyRescueScraperMain:
         with (
             patch("scrapers.base_scraper.create_default_sync_service") as mock_sync,
             patch("scrapers.base_scraper.ConfigLoader") as mock_config_loader,
-            patch("scrapers.base_scraper.CloudinaryService"),
+            patch("scrapers.base_scraper.R2Service"),
         ):
 
             mock_config = MagicMock()

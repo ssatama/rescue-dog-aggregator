@@ -78,7 +78,7 @@ export default function OrganizationHero({ organization }) {
                       width={120}
                       height={120}
                       className="w-16 h-16 md:w-28 md:h-28 rounded-full object-cover"
-                      priority
+                      priority={true}
                     />
                   ) : (
                     <span className="text-lg md:text-2xl font-bold text-orange-600 dark:text-orange-400">

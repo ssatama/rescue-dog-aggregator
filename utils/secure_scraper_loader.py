@@ -186,7 +186,7 @@ class SecureScraperLoader:
                 logger.error("Failed to connect DatabaseService to database")
                 return  # Fall back to null objects
 
-            # Create ImageProcessingService (doesn't need DB_CONFIG - uses CloudinaryService)
+            # Create ImageProcessingService (doesn't need DB_CONFIG - uses R2Service)
             image_processing_service = ImageProcessingService()
 
             # Create MetricsCollector (no dependencies)

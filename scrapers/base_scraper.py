@@ -20,12 +20,12 @@ from config import DB_CONFIG
 
 # Import null object services
 from services.null_objects import NullMetricsCollector
-from utils.cloudinary_service import CloudinaryService
 from utils.config_loader import ConfigLoader
 
 # Import the secure standardization utilities
 from utils.optimized_standardization import standardize_breed, standardize_size_value
 from utils.organization_sync_service import create_default_sync_service
+from utils.r2_service import R2Service
 
 # Set up module-level logger
 logger = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ class BaseScraper(ABC):
             self.org_config = self.config_loader.load_config(config_id)
 
             # Skip organization sync during most tests, but allow specific tests to validate sync behavior
-            if os.environ.get("TESTING") and not os.environ.get("TESTING_VALIDATE_SYNC"):
+            if sys.modules.get("pytest") is not None and not os.environ.get("TESTING_VALIDATE_SYNC"):
                 # Test environment - use mock values (most tests)
                 self.organization_id = 1  # Default test organization ID
                 logger.info(f"Test mode: Skipping organization sync for {config_id}")
@@ -100,7 +100,7 @@ class BaseScraper(ABC):
         self.scrape_log_id = None
         self.current_scrape_session = None
         self.scrape_start_time = None
-        self.cloudinary_service = CloudinaryService()
+        self.r2_service = R2Service()
 
         # Initialize services (dependency injection)
         self.database_service = database_service
