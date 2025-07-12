@@ -100,8 +100,10 @@ class DatabaseService:
 
         # Fallback to direct connection
         if not self.conn:
-            self.logger.error("No database connection available")
-            return None
+            # Try to establish connection before failing
+            if not self.connect():
+                self.logger.error("No database connection available")
+                return None
 
         try:
             cursor = self.conn.cursor()
@@ -138,8 +140,10 @@ class DatabaseService:
 
         # Fallback to direct connection
         if not self.conn:
-            self.logger.error("No database connection available")
-            return None, "error"
+            # Try to establish connection before failing
+            if not self.connect():
+                self.logger.error("No database connection available")
+                return None, "error"
 
         try:
             return self._create_animal_with_connection(self.conn, animal_data)
@@ -240,8 +244,10 @@ class DatabaseService:
             Tuple of (animal_id, action) where action is "updated" or "no_change"
         """
         if not self.conn:
-            self.logger.error("No database connection available")
-            return None, "error"
+            # Try to establish connection before failing
+            if not self.connect():
+                self.logger.error("No database connection available")
+                return None, "error"
 
         try:
             cursor = self.conn.cursor()
@@ -374,8 +380,10 @@ class DatabaseService:
 
         # Fallback to direct connection
         if not self.conn:
-            self.logger.error("No database connection available")
-            return None
+            # Try to establish connection before failing
+            if not self.connect():
+                self.logger.error("No database connection available")
+                return None
 
         try:
             cursor = self.conn.cursor()
@@ -422,8 +430,10 @@ class DatabaseService:
             True if successful, False otherwise
         """
         if not self.conn:
-            self.logger.error("No database connection available")
-            return False
+            # Try to establish connection before failing
+            if not self.connect():
+                self.logger.error("No database connection available")
+                return False
 
         try:
             cursor = self.conn.cursor()
@@ -484,8 +494,10 @@ class DatabaseService:
             Set of existing animal URLs
         """
         if not self.conn:
-            self.logger.error("No database connection available")
-            return set()
+            # Try to establish connection before failing
+            if not self.connect():
+                self.logger.error("No database connection available")
+                return set()
 
         try:
             cursor = self.conn.cursor()

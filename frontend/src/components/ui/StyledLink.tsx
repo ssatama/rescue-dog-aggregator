@@ -30,7 +30,7 @@ const StyledLink = React.forwardRef<HTMLAnchorElement, StyledLinkProps>(({
     nav: 'text-gray-700 hover:text-orange-600 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-600 focus-visible:ring-offset-2'
   };
 
-  const baseStyles = variantStyles[variant] || variantStyles.text;
+  const baseStyles = variantStyles[variant as keyof typeof variantStyles] || variantStyles.text;
 
   return (
     <Link

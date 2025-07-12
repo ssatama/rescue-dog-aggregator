@@ -13,6 +13,6 @@ export { useShare } from './useShare';
 export type { UseShareOptions, UseShareReturn } from './useShare';
 
 // Existing hooks (re-exported for completeness)
-export { useFilteredDogs } from './useFilteredDogs';
+export { default as useFilteredDogs } from './useFilteredDogs';
 export { usePageTransition } from './usePageTransition';
 export { useReducedMotion } from './useScrollAnimation';

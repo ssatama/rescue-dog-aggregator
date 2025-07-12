@@ -146,7 +146,7 @@ const ProgressiveImage = memo(function ProgressiveImage({
           onError={handleLoadError}
           style={{
             // Improve image rendering performance
-            imageRendering: context === 'thumbnail' ? 'optimizeSpeed' : 'optimizeQuality'
+            imageRendering: context === 'thumbnail' ? 'pixelated' : 'auto'
           }}
         />
       )}

@@ -133,8 +133,10 @@ class SessionManager:
 
         # Fallback to direct connection
         if not self.conn:
-            self.logger.error("No database connection available for marking animal as seen")
-            return False
+            # Try to establish connection before failing
+            if not self.connect():
+                self.logger.error("No database connection available for marking animal as seen")
+                return False
 
         try:
             cursor = self.conn.cursor()
@@ -205,8 +207,10 @@ class SessionManager:
 
         # Fallback to direct connection
         if not self.conn:
-            self.logger.error("No database connection available for stale data detection")
-            return False
+            # Try to establish connection before failing
+            if not self.connect():
+                self.logger.error("No database connection available for stale data detection")
+                return False
 
         try:
             cursor = self.conn.cursor()
@@ -254,8 +258,10 @@ class SessionManager:
             Number of animals marked as unavailable
         """
         if not self.conn:
-            self.logger.error("No database connection available for marking animals unavailable")
-            return 0
+            # Try to establish connection before failing
+            if not self.connect():
+                self.logger.error("No database connection available for marking animals unavailable")
+                return 0
 
         try:
             cursor = self.conn.cursor()

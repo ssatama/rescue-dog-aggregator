@@ -11,9 +11,9 @@ export interface LazyImageProps {
   /** Custom placeholder element */
   placeholder?: React.ReactNode;
   /** Callback when image loads */
-  onLoad?: (event: Event) => void;
+  onLoad?: (event: React.SyntheticEvent<HTMLImageElement>) => void;
   /** Callback when image fails to load */
-  onError?: (event: Event) => void;
+  onError?: (event: React.SyntheticEvent<HTMLImageElement>) => void;
   /** Whether to enable progressive loading with blur/low-quality versions */
   enableProgressiveLoading?: boolean;
   /** High priority images load immediately (above-fold) */

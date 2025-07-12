@@ -46,9 +46,9 @@ export default function MobileStickyBar({
     setIsLoading(true);
     
     try {
-      let result;
+      let result: { success: boolean; message: string };
       if (isFavorite) {
-        result = FavoritesManager.removeFavorite(dog.id);
+        result = FavoritesManager.removeFavorite(dog.id) as { success: boolean; message: string };
         if (result.success) {
           setIsFavorite(false);
           showToast(`${dog.name} removed from favorites`, 'info');
@@ -62,7 +62,7 @@ export default function MobileStickyBar({
           organization: dog.organization,
           status: dog.status
         };
-        result = FavoritesManager.addFavorite(dog.id, dogData);
+        result = FavoritesManager.addFavorite(dog.id, dogData) as { success: boolean; message: string };
         if (result.success) {
           setIsFavorite(true);
           showToast(`${dog.name} added to favorites!`, 'success');

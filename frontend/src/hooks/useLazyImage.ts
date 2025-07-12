@@ -6,9 +6,9 @@ export interface UseLazyImageOptions {
   /** Whether to enable progressive loading with blur/low-quality versions */
   enableProgressiveLoading?: boolean;
   /** Callback when image loads */
-  onLoad?: (event: Event) => void;
+  onLoad?: (event: React.SyntheticEvent<HTMLImageElement>) => void;
   /** Callback when image fails to load */
-  onError?: (event: Event) => void;
+  onError?: (event: React.SyntheticEvent<HTMLImageElement>) => void;
 }
 
 export interface UseLazyImageReturn {
@@ -23,7 +23,7 @@ export interface UseLazyImageReturn {
   /** Whether the blur placeholder has loaded */
   blurPlaceholderLoaded: boolean;
   /** Ref to attach to the image element */
-  imgRef: React.RefObject<HTMLElement>;
+  imgRef: React.RefObject<HTMLDivElement | null>;
   /** Generated progressive URLs */
   progressiveUrls: {
     lowQuality?: string;
@@ -31,8 +31,8 @@ export interface UseLazyImageReturn {
   };
   /** Handlers for image events */
   handlers: {
-    onLoad: (event: Event) => void;
-    onError: (event: Event) => void;
+    onLoad: (event: React.SyntheticEvent<HTMLImageElement>) => void;
+    onError: (event: React.SyntheticEvent<HTMLImageElement>) => void;
     onLowQualityLoad: () => void;
     onBlurPlaceholderLoad: () => void;
   };
@@ -57,7 +57,7 @@ export function useLazyImage(
   const [hasError, setHasError] = useState(false);
   const [lowQualityLoaded, setLowQualityLoaded] = useState(false);
   const [blurPlaceholderLoaded, setBlurPlaceholderLoaded] = useState(false);
-  const imgRef = useRef<HTMLElement>(null);
+  const imgRef = useRef<HTMLDivElement>(null);
 
   // Generate progressive loading URLs if enabled
   const generateProgressiveUrls = useCallback((originalSrc: string) => {
@@ -112,12 +112,12 @@ export function useLazyImage(
   }, [priority]);
 
   // Image event handlers
-  const handleLoad = useCallback((event: Event) => {
+  const handleLoad = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
     setIsLoaded(true);
     onLoad(event);
   }, [onLoad]);
 
-  const handleError = useCallback((event: Event) => {
+  const handleError = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
     setHasError(true);
     onError(event);
   }, [onError]);

@@ -25,7 +25,7 @@ const SkeletonPulse = React.memo<SkeletonPulseProps>(function SkeletonPulse({
   const ariaProps = standalone ? {
     role: "status",
     "aria-label": "Loading content",
-    "aria-busy": "true"
+    "aria-busy": true
   } : {};
 
   return (

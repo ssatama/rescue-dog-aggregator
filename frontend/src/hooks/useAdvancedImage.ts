@@ -130,7 +130,7 @@ export function useAdvancedImage(
     
     if (process.env.NODE_ENV === 'development') console.log('[useAdvancedImage] Creating image loader for:', optimizedSrc);
     
-    const timeoutDuration = networkStrategy.timeout || 10000;
+    const timeoutDuration = (networkStrategy as any).timeout || 10000;
     timeoutRef.current = setTimeout(() => {
       if (!isCancelled) {
         if (process.env.NODE_ENV === 'development') console.log('[useAdvancedImage] Image load timeout');
@@ -146,7 +146,7 @@ export function useAdvancedImage(
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         
         const loadTime = Date.now() - (loadStartTimeRef.current || 0);
-        trackImageLoad(optimizedSrc, loadTime, retryCount);
+        trackImageLoad(optimizedSrc, loadTime, type, retryCount);
         
         // CRITICAL FIX: Set the currentSrc so the <img> tag can render the image.
         setCurrentSrc(optimizedSrc);
@@ -177,7 +177,7 @@ export function useAdvancedImage(
       isCancelled = true;
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [isLoading, optimizedSrc, networkStrategy, onLoad, onError, retryCount]);
+  }, [isLoading, optimizedSrc, networkStrategy, onLoad, onError, retryCount, type]);
 
   // Manual retry function
   const handleRetry = useCallback(() => {

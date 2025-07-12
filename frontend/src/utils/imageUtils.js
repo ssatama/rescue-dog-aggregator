@@ -238,8 +238,6 @@ if (process.env.NODE_ENV === 'development') {
   validateR2Config();
 }
 
-const PLACEHOLDER_IMAGE = '/placeholder_dog.svg';
-
 /**
  * Check if URL is from R2 custom domain
  */

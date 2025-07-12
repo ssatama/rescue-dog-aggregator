@@ -613,9 +613,15 @@ describe('DogsPage Component', () => {
   describe('Session 7: Final Polish & Visual Consistency', () => {
     test('Load More button matches dog card CTA styling', async () => {
       const initialDogs = Array.from({ length: 20 }, (_, i) => createMockDog(i + 1, `Dog ${i + 1}`));
-      getAnimals.mockResolvedValueOnce(initialDogs);
+      // Mock the main call and ensure hasMore is true by returning exactly 20 items
+      getAnimals.mockResolvedValue(initialDogs);
 
       render(<DogsPage />);
+      
+      // Wait for the dogs to load first
+      await waitFor(() => {
+        expect(screen.getByText('Dog 1')).toBeInTheDocument();
+      });
       
       const loadMoreButton = await screen.findByRole('button', { name: /Load More Dogs/i });
       
@@ -638,9 +644,15 @@ describe('DogsPage Component', () => {
 
     test('Load More button styling is consistent with dog card CTAs', async () => {
       const initialDogs = Array.from({ length: 20 }, (_, i) => createMockDog(i + 1, `Dog ${i + 1}`));
-      getAnimals.mockResolvedValueOnce(initialDogs);
+      // Mock the main call and ensure hasMore is true by returning exactly 20 items
+      getAnimals.mockResolvedValue(initialDogs);
 
       render(<DogsPage />);
+      
+      // Wait for the dogs to load first
+      await waitFor(() => {
+        expect(screen.getByText('Dog 1')).toBeInTheDocument();
+      });
       
       const loadMoreButton = await screen.findByRole('button', { name: /Load More Dogs/i });
       

@@ -166,6 +166,17 @@ class SecureScraperLoader:
         """Inject services into scraper instance after organization_id is established."""
         try:
             from config import DB_CONFIG
+
+            # CRITICAL FIX: Initialize global database pool FIRST
+            try:
+                from utils.db_connection import create_database_config_from_env, initialize_database_pool
+
+                db_config = create_database_config_from_env()
+                initialize_database_pool(db_config)
+                logger.info("Global database pool initialized successfully")
+            except Exception as e:
+                logger.warning(f"Failed to initialize global database pool: {e}")
+
             from services.connection_pool import ConnectionPoolService
             from services.database_service import DatabaseService
             from services.image_processing_service import ImageProcessingService
@@ -176,7 +187,7 @@ class SecureScraperLoader:
             connection_pool = None
             try:
                 connection_pool = ConnectionPoolService(DB_CONFIG, min_connections=2, max_connections=10)
-                logger.info("Connection pool created successfully")
+                logger.info("Service connection pool created successfully")
             except Exception as e:
                 logger.warning(f"Failed to create connection pool: {e}. Falling back to direct connections.")
 
