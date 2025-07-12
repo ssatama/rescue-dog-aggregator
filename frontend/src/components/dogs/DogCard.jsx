@@ -156,7 +156,7 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
         {/* Ships to countries as flag emojis */}
         {shipsToCountries.length > 0 && (
           <div data-testid="ships-to-display" className="flex items-start gap-2 text-xs">
-            <span className="text-muted-foreground mt-1 whitespace-nowrap">Ships to:</span>
+            <span className="text-muted-foreground mt-1 whitespace-nowrap">Adoptable to:</span>
             <div data-testid="ships-to-flags" className="flex-1 min-w-0">
               {formatShipsToList(shipsToCountries, 3)}
             </div>

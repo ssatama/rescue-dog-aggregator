@@ -179,7 +179,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
             {/* Ships to: [first 3 flags] +X more */}
             {shipsTo.length > 0 && (
               <div className="text-foreground">
-                <span className="font-medium">Ships to:</span>{' '}
+                <span className="font-medium">Adoptable to:</span>{' '}
                 <span className="hidden sm:inline">
                   {formatShipsToList(shipsTo, 3)}
                 </span>

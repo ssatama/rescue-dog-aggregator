@@ -118,10 +118,10 @@ describe('OrganizationHero', () => {
       // In real implementation, this would render flags via the formatting function
     });
 
-    test('displays "Ships to" with shipping countries', () => {
+    test('displays "Adoptable to" with adoption countries', () => {
       render(<OrganizationHero organization={mockOrganization} />);
       
-      expect(screen.getByText('Ships to:')).toBeInTheDocument();
+      expect(screen.getByText('Adoptable to:')).toBeInTheDocument();
       // The formatShipsToList function is mocked to return text
       // In real implementation, this would render flags via the formatting function
     });

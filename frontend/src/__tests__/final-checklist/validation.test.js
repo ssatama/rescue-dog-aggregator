@@ -64,11 +64,6 @@ jest.mock('../../components/ui/DogDetailSkeleton', () => {
   };
 });
 
-jest.mock('../../components/ui/FavoriteButton', () => {
-  return function MockFavoriteButton() {
-    return <button data-testid="favorite-button" className="rounded-full transition-all duration-200 hover:scale-110 hover:shadow-md focus:ring-2 focus:ring-orange-600">♥</button>;
-  };
-});
 
 jest.mock('../../components/ui/ShareButton', () => {
   return function MockShareButton() {

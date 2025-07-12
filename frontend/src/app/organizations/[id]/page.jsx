@@ -1,4 +1,5 @@
 import { getOrganizationById } from '../../../services/organizationsService';
+import { generateOrganizationSchema, generateJsonLdScript } from '../../../utils/schema';
 import OrganizationDetailClient from './OrganizationDetailClient';
 import { isValidOpenGraphType } from '../../../types/opengraph';
 
@@ -28,19 +29,25 @@ export async function generateMetadata(props) {
       description += ` Located in ${location}.`;
     }
 
+    // Generate Organization schema for structured data
+    const organizationSchema = generateOrganizationSchema(organization);
+    
     // Enhanced OpenGraph metadata with validation
     const openGraphType = 'website'; // Primary type for organization pages
 
-    return {
+    const metadata = {
       title,
       description,
+      alternates: {
+        canonical: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rescuedogs.me'}/organizations/${resolvedParams.id}`
+      },
       openGraph: {
         title: `${organization.name} - Dog Rescue Organization`,
         description: `Learn about ${organization.name} and their available dogs for adoption.${organization.description ? ` ${organization.description}` : ''}`,
         type: openGraphType,
         siteName: 'Rescue Dog Aggregator',
         // Enhanced metadata for better social sharing
-        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rescuedogaggregator.com'}/organizations/${resolvedParams.id}`,
+        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rescuedogs.me'}/organizations/${resolvedParams.id}`,
         ...(organization.logo_url && { images: [organization.logo_url] })
       },
       twitter: {
@@ -49,6 +56,15 @@ export async function generateMetadata(props) {
         description: `Learn about ${organization.name} and their available dogs for adoption.`
       }
     };
+
+    // Add structured data as JSON-LD in the head
+    if (organizationSchema) {
+      metadata.other = {
+        'script:ld+json': generateJsonLdScript(organizationSchema)
+      };
+    }
+
+    return metadata;
   } catch (error) {
     return {
       title: 'Organization Not Found | Rescue Dog Aggregator',

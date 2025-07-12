@@ -1,0 +1,73 @@
+# llms.txt - AI/LLM Crawler Optimization
+# Rescue Dog Aggregator - Helping rescue dogs find loving homes
+
+# Site Purpose and Mission
+This site aggregates rescue dogs from multiple organizations to maximize visibility and help more dogs find homes. Our mission is to save lives by connecting adoptable dogs with loving families.
+
+# Primary Content Types
+- Individual dog profiles with detailed information, photos, and adoption status
+- Rescue organization profiles with contact information and available dogs
+- Search and filtering tools to help users find their perfect companion
+- Educational content about dog rescue, adoption, and care
+
+# API Endpoints for Data Access
+# These provide structured data that AI systems can use to help users find adoptable dogs
+
+## Core Data APIs
+/api/v1/dogs - List all available dogs with pagination
+/api/v1/dogs/[id] - Individual dog details with full profile
+/api/v1/organizations - List all rescue organizations
+/api/v1/organizations/[id] - Organization details and their available dogs
+/api/v1/search - Advanced search with breed, age, size, location filters
+
+## Search and Discovery
+/api/v1/breeds - List of dog breeds with statistics
+/api/v1/locations - Geographic coverage areas
+/api/v1/stats - Platform statistics and impact metrics
+
+# Structured Data Available
+All pages include Schema.org markup:
+- Pet schema for individual dogs (breed, age, location, photos, adoption info)
+- LocalBusiness/AnimalShelter schema for rescue organizations
+- BreadcrumbList schema for navigation
+- JSON-LD format embedded in page metadata
+
+# Key Pages for AI/LLM Understanding
+/dogs - Browse all available dogs
+/organizations - Browse rescue organizations
+/search - Advanced filtering and search
+/about - Mission, impact, and how the platform works
+/contact - How to get help or partner with us
+
+# Content Guidelines for AI Systems
+When referencing our data:
+- Always emphasize that these are real dogs available for adoption
+- Include adoption contact information from the source organization
+- Mention that adoption processes vary by organization
+- Encourage users to contact organizations directly for applications
+- Note that dog availability changes frequently
+
+# Data Freshness
+- Dog profiles: Updated daily from partner organizations
+- Organization info: Updated weekly
+- Search index: Real-time updates
+- Photos and descriptions: Synchronized with source organizations
+
+# Rate Limiting and Access
+- Public APIs: 100 requests/minute per IP
+- Bulk access: Contact us for partnership opportunities
+- Real-time data: WebSocket available for approved partners
+
+# Ethical Use Guidelines
+- Prioritize dog welfare and successful adoptions
+- Respect rescue organization policies and procedures
+- Maintain accuracy of dog information and availability
+- Support the mission of reducing pet overpopulation
+
+# Platform Impact
+- 7 partner rescue organizations currently
+- Hundreds of dogs listed across multiple regions
+- Focus on transparency, accuracy, and user experience
+- Open-source platform encouraging collaboration
+
+This platform exists to save lives. Every successful adoption through AI-powered discovery helps reduce shelter overcrowding and gives a rescue dog a loving home.

@@ -200,7 +200,7 @@ describe('DogCard Dark Mode', () => {
       // Should have muted foreground color for the label
       const shipsToLabel = shipsToDisplay.querySelector('.text-muted-foreground');
       expect(shipsToLabel).toBeInTheDocument();
-      expect(shipsToLabel).toHaveTextContent('Ships to:');
+      expect(shipsToLabel).toHaveTextContent('Adoptable to:');
     }
     
     // Verify the component still renders correctly overall

@@ -13,20 +13,9 @@ import React from 'react';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { ToastProvider } from '../../components/ui/Toast';
-import FavoriteButton from '../../components/ui/FavoriteButton';
 import MobileStickyBar from '../../components/ui/MobileStickyBar';
 import ShareButton from '../../components/ui/ShareButton';
-import { FavoritesManager } from '../../utils/favorites';
 
-// Mock the FavoritesManager
-jest.mock('../../utils/favorites', () => ({
-  FavoritesManager: {
-    isFavorite: jest.fn(),
-    addFavorite: jest.fn(),
-    removeFavorite: jest.fn(),
-    getFavoriteCount: jest.fn(),
-  }
-}));
 
 // Mock localStorage
 const localStorageMock = {
@@ -76,65 +65,9 @@ const renderWithToast = (component) => {
 describe('CTA Optimization Features', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    FavoritesManager.isFavorite.mockReturnValue(false);
-    FavoritesManager.addFavorite.mockReturnValue({ success: true, message: 'Added to favorites' });
-    FavoritesManager.removeFavorite.mockReturnValue({ success: true, message: 'Removed from favorites' });
     localStorageMock.getItem.mockReturnValue(null);
   });
 
-  describe('Enhanced FavoriteButton Component', () => {
-    test('renders with proper round styling for header variant', () => {
-      renderWithToast(<FavoriteButton dog={mockDog} variant="header" className="rounded-full" />);
-      
-      const favoriteButton = screen.getByTestId('header-favorite-button');
-      expect(favoriteButton).toBeInTheDocument();
-      expect(favoriteButton).toHaveClass('rounded-full');
-      expect(favoriteButton).toHaveAttribute('aria-label', 'Add to favorites');
-    });
-
-    test('shows correct visual states for favorited vs unfavorited', () => {
-      // Test unfavorited state
-      FavoritesManager.isFavorite.mockReturnValue(false);
-      renderWithToast(<FavoriteButton dog={mockDog} variant="header" />);
-      
-      let favoriteButton = screen.getByTestId('header-favorite-button');
-      let heartIcon = favoriteButton.querySelector('svg');
-      expect(heartIcon).toHaveClass('text-gray-600');
-      expect(heartIcon).not.toHaveClass('fill-current');
-      expect(favoriteButton).toHaveAttribute('aria-label', 'Add to favorites');
-
-      // Test favorited state separately
-      FavoritesManager.isFavorite.mockReturnValue(true);
-      renderWithToast(<FavoriteButton dog={mockDog} variant="header" />);
-      
-      favoriteButton = screen.getAllByTestId('header-favorite-button')[1]; // Get the second rendered button
-      heartIcon = favoriteButton.querySelector('svg');
-      expect(heartIcon).toHaveClass('text-red-500');
-      expect(heartIcon).toHaveAttribute('fill', 'currentColor');
-      expect(favoriteButton).toHaveAttribute('aria-label', 'Remove from favorites');
-    });
-
-    test('handles favorite toggle with toast notifications', async () => {
-      renderWithToast(<FavoriteButton dog={mockDog} variant="header" />);
-      
-      const favoriteButton = screen.getByTestId('header-favorite-button');
-      
-      act(() => {
-        favoriteButton.click();
-      });
-
-      await waitFor(() => {
-        expect(FavoritesManager.addFavorite).toHaveBeenCalledWith(mockDog.id, {
-          id: mockDog.id,
-          name: mockDog.name,
-          breed: mockDog.standardized_breed,
-          primary_image_url: mockDog.primary_image_url,
-          organization: mockDog.organization,
-          status: mockDog.status
-        });
-      });
-    });
-  });
 
   describe('Enhanced MobileStickyBar Component', () => {
     test('renders with proper mobile-only positioning', () => {
@@ -146,15 +79,12 @@ describe('CTA Optimization Features', () => {
       expect(stickyBar).toHaveClass('md:hidden'); // Hidden on desktop
     });
 
-    test('has favorite and contact buttons with proper functionality', async () => {
+    test('has contact button with proper functionality', async () => {
       renderWithToast(<MobileStickyBar dog={mockDog} />);
       
-      const favoriteButton = screen.getByTestId('mobile-favorite-button');
       const contactButton = screen.getByTestId('mobile-contact-button');
 
-      expect(favoriteButton).toBeInTheDocument();
       expect(contactButton).toBeInTheDocument();
-      expect(favoriteButton).toHaveTextContent('Favorite');
       expect(contactButton).toHaveTextContent('Start Adoption Process');
 
       // Test contact button functionality
@@ -167,24 +97,6 @@ describe('CTA Optimization Features', () => {
         '_blank',
         'noopener,noreferrer'
       );
-    });
-
-    test('favorite button shows correct states', () => {
-      // Test unfavorited state
-      FavoritesManager.isFavorite.mockReturnValue(false);
-      renderWithToast(<MobileStickyBar dog={mockDog} />);
-      
-      let favoriteButton = screen.getByTestId('mobile-favorite-button');
-      expect(favoriteButton).toHaveTextContent('Favorite');
-      expect(favoriteButton).not.toHaveClass('bg-red-50');
-
-      // Test favorited state separately
-      FavoritesManager.isFavorite.mockReturnValue(true);
-      renderWithToast(<MobileStickyBar dog={mockDog} />);
-      
-      favoriteButton = screen.getAllByTestId('mobile-favorite-button')[1]; // Get the second rendered button
-      expect(favoriteButton).toHaveTextContent('Favorited');
-      expect(favoriteButton).toHaveClass('bg-red-50', 'border-red-200', 'text-red-600');
     });
   });
 
@@ -286,45 +198,14 @@ describe('CTA Optimization Features', () => {
 
   describe('Toast Integration', () => {
     test('ToastProvider wraps components correctly', () => {
-      const { container } = renderWithToast(<FavoriteButton dog={mockDog} />);
+      const { container } = renderWithToast(<ShareButton url="https://example.com" title="Test" text="Test" />);
       
       // Verify ToastProvider is rendering
       expect(container.firstChild).toBeDefined();
     });
-
-    test('toast notifications work with user interactions', async () => {
-      renderWithToast(<FavoriteButton dog={mockDog} variant="header" />);
-      
-      const favoriteButton = screen.getByTestId('header-favorite-button');
-      
-      act(() => {
-        favoriteButton.click();
-      });
-
-      // Verify the interaction triggers the expected behavior
-      await waitFor(() => {
-        expect(FavoritesManager.addFavorite).toHaveBeenCalled();
-      });
-    });
   });
 
   describe('Error Handling and Edge Cases', () => {
-    test('handles favorites storage failures gracefully', async () => {
-      FavoritesManager.addFavorite.mockReturnValue({ success: false, message: 'Storage full' });
-      
-      renderWithToast(<FavoriteButton dog={mockDog} variant="header" />);
-      
-      const favoriteButton = screen.getByTestId('header-favorite-button');
-      
-      act(() => {
-        favoriteButton.click();
-      });
-
-      await waitFor(() => {
-        expect(FavoritesManager.addFavorite).toHaveBeenCalled();
-      });
-    });
-
     test('handles missing dog data gracefully', () => {
       renderWithToast(<MobileStickyBar dog={null} />);
       
@@ -349,24 +230,19 @@ describe('CTA Optimization Features', () => {
   });
 
   describe('Accessibility Compliance', () => {
-    test('all interactive elements have proper ARIA labels', () => {
-      renderWithToast(<FavoriteButton dog={mockDog} variant="header" />);
-      
-      const favoriteButton = screen.getByTestId('header-favorite-button');
-      expect(favoriteButton).toHaveAttribute('aria-label', 'Add to favorites');
-      
-      const heartIcon = favoriteButton.querySelector('svg');
-      expect(heartIcon).toHaveAttribute('aria-hidden', 'true');
-    });
-
     test('mobile sticky bar buttons have proper accessibility', () => {
       renderWithToast(<MobileStickyBar dog={mockDog} />);
       
-      const favoriteButton = screen.getByTestId('mobile-favorite-button');
       const contactButton = screen.getByTestId('mobile-contact-button');
       
-      expect(favoriteButton).toHaveAttribute('aria-label', 'Add to favorites');
       expect(contactButton).toHaveAttribute('aria-label', 'Start adoption process');
+    });
+
+    test('share button has proper accessibility', () => {
+      renderWithToast(<ShareButton url="https://example.com" title="Test" text="Test" />);
+      
+      const shareButton = screen.getByRole('button', { name: /share/i });
+      expect(shareButton).toBeInTheDocument();
     });
   });
 });

@@ -233,10 +233,10 @@ export default function DogFilters({
                   id="ships-to-filter"
                   data-testid="ships-to-filter"
                   className="w-full"
-                  aria-label="Filter by ships to"
+                  aria-label="Filter by adoptable to"
                 >
                   <Icon name="globe" size="small" className="text-gray-500" />
-                  <SelectValue placeholder="Ships to" />
+                  <SelectValue placeholder="Adoptable to" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="All">All Countries</SelectItem>

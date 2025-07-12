@@ -1,4 +1,5 @@
 import { getAnimalById } from '../../../services/animalsService';
+import { generatePetSchema, generateJsonLdScript } from '../../../utils/schema';
 import DogDetailClient from './DogDetailClient';
 
 /**
@@ -33,14 +34,21 @@ export async function generateMetadata(props) {
       }
     }
 
+    // Generate Pet schema for structured data
+    const petSchema = generatePetSchema(dog);
+    
     const metadata = {
       title,
       description,
+      alternates: {
+        canonical: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rescuedogs.me'}/dogs/${resolvedParams.id}`
+      },
       openGraph: {
         title: `${dog.name} - Available for Adoption`,
         description: `Meet ${dog.name}, a ${dog.standardized_breed || dog.breed || 'lovely dog'} looking for a forever home.${(dog.description || dog.properties?.description) ? ` ${dog.description || dog.properties.description}` : ''}`,
         type: 'article',
-        siteName: 'Rescue Dog Aggregator'
+        siteName: 'Rescue Dog Aggregator',
+        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rescuedogs.me'}/dogs/${resolvedParams.id}`
       },
       twitter: {
         card: 'summary_large_image',
@@ -52,6 +60,13 @@ export async function generateMetadata(props) {
     if (dog.primary_image_url) {
       metadata.openGraph.images = [dog.primary_image_url];
       metadata.twitter.images = [dog.primary_image_url];
+    }
+
+    // Add structured data as JSON-LD in the head
+    if (petSchema) {
+      metadata.other = {
+        'script:ld+json': generateJsonLdScript(petSchema)
+      };
     }
 
     return metadata;

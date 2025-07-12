@@ -52,10 +52,10 @@ describe('<FilterControls />', () => {
     expect(screen.getByLabelText(/Age/i)).toBeInTheDocument();
     // Location Country
     expect(screen.getByLabelText(/Located In/i)).toBeInTheDocument();
-    // Ships To Country
-    expect(screen.getByLabelText(/Ships To Country/i)).toBeInTheDocument();
-    // Ships To Region
-    expect(screen.getByLabelText(/Ships To Region/i)).toBeInTheDocument();
+    // Adoptable in Country
+    expect(screen.getByLabelText(/Adoptable in Country/i)).toBeInTheDocument();
+    // Adoptable in Region
+    expect(screen.getByLabelText(/Adoptable in Region/i)).toBeInTheDocument();
   });
 
   it('calls handlers when selects change', async () => {
@@ -93,12 +93,12 @@ describe('<FilterControls />', () => {
     expect(mockProps.setLocationCountryFilter).toHaveBeenCalledWith('US');
 
     // Change Available Country
-    await user.click(screen.getByLabelText(/Ships To Country/i));
+    await user.click(screen.getByLabelText(/Adoptable in Country/i));
     await user.click(await screen.findByRole('option', { name: 'US' }));
     expect(mockProps.setAvailableCountryFilter).toHaveBeenCalledWith('US');
   });
 
-  it('disables "Ships To Region" when no country is selected', () => {
+  it('disables "Adoptable in Region" when no country is selected', () => {
     render(
       <FilterControls
         {...mockProps}
@@ -106,10 +106,10 @@ describe('<FilterControls />', () => {
         availableRegions={['Any region', 'CA']}
       />
     );
-    expect(screen.getByLabelText(/Ships To Region/i)).toBeDisabled();
+    expect(screen.getByLabelText(/Adoptable in Region/i)).toBeDisabled();
   });
 
-  it('enables "Ships To Region" when a real country is selected', () => {
+  it('enables "Adoptable in Region" when a real country is selected', () => {
     render(
       <FilterControls
         {...mockProps}
@@ -117,6 +117,6 @@ describe('<FilterControls />', () => {
         availableRegions={['Any region', 'CA']}
       />
     );
-    expect(screen.getByLabelText(/Ships To Region/i)).toBeEnabled();
+    expect(screen.getByLabelText(/Adoptable in Region/i)).toBeEnabled();
   });
 });

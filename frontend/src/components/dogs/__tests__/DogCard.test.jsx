@@ -886,8 +886,8 @@ describe('DogCard Component', () => {
       const shipsToDisplay = screen.getByTestId('ships-to-display');
       expect(shipsToDisplay).toBeInTheDocument();
       
-      // Should show "Ships to:" label
-      expect(shipsToDisplay).toHaveTextContent('Ships to:');
+      // Should show "Adoptable to:" label
+      expect(shipsToDisplay).toHaveTextContent('Adoptable to:');
       
       // Check for flag emojis - formatShipsToList should show max 3 + overflow indicator
       const flagContainer = within(shipsToDisplay).getByTestId('ships-to-flags');

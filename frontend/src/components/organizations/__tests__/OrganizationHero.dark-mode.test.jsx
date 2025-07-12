@@ -146,7 +146,7 @@ describe('OrganizationHero Dark Mode', () => {
       
       const basedInLabel = screen.getByText('Based in:');
       const dogsInLabel = screen.getByText('Dogs located in:');
-      const shipsToLabel = screen.getByText('Ships to:');
+      const shipsToLabel = screen.getByText('Adoptable to:');
       
       [basedInLabel, dogsInLabel, shipsToLabel].forEach(label => {
         expect(label).toHaveClass('text-gray-700');

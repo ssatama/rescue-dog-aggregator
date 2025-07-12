@@ -126,7 +126,7 @@ export default function OrganizationHero({ organization }) {
                   {/* Ships to */}
                   {organization.ships_to && organization.ships_to.length > 0 && (
                     <div className="flex items-center justify-center sm:justify-start space-x-2">
-                      <span className="font-medium text-gray-700 dark:text-gray-300">Ships to:</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">Adoptable to:</span>
                       <div className="hidden sm:flex items-center space-x-1">
                         {formatShipsToList(organization.ships_to, 3)}
                       </div>

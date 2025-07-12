@@ -164,7 +164,7 @@ describe('DogCard Component - Dark Mode Support', () => {
       renderWithDarkTheme(<DogCard dog={dog} />);
 
       // Find ships-to text by content if it exists
-      const shipsToLabel = screen.queryByText('Ships to:');
+      const shipsToLabel = screen.queryByText('Adoptable to:');
       if (shipsToLabel) {
         // Should not use hard-coded gray-500 color
         expect(shipsToLabel.className).not.toMatch(/text-gray-500(?!\s+dark:)/);

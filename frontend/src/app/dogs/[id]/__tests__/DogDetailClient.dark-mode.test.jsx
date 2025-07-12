@@ -23,11 +23,6 @@ jest.mock('../../../../components/ui/DogDetailSkeleton', () => {
   };
 });
 
-jest.mock('../../../../components/ui/FavoriteButton', () => {
-  return function MockFavoriteButton() {
-    return <button data-testid="favorite-button">♥</button>;
-  };
-});
 
 jest.mock('../../../../components/ui/ShareButton', () => {
   return function MockShareButton() {

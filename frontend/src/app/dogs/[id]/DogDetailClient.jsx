@@ -14,7 +14,6 @@ import { getDetailHeroImageWithPosition, getThumbnailImage, handleImageError } f
 import HeroImageWithBlurredBackground from '../../../components/ui/HeroImageWithBlurredBackground';
 import OrganizationCard from '../../../components/organizations/OrganizationCard';
 import MobileStickyBar from '../../../components/ui/MobileStickyBar';
-import FavoriteButton from '../../../components/ui/FavoriteButton';
 import { ToastProvider } from '../../../components/ui/Toast';
 import RelatedDogsSection from '../../../components/dogs/RelatedDogsSection';
 import DogDescription from '../../../components/dogs/DogDescription';
@@ -378,14 +377,6 @@ export default function DogDetailClient({ params = {} }) {
                           
                           {/* Action bar with enhanced styling */}
                           <div className="flex items-center space-x-3 sm:ml-6" data-testid="action-bar">
-                            {/* Favorite Button with enhanced styling */}
-                            <div className="flex items-center">
-                              <FavoriteButton 
-                                dog={dog} 
-                                variant="header" 
-                                className="rounded-full transition-all duration-200 hover:scale-110 hover:shadow-md focus:ring-2 focus:ring-orange-500 focus:ring-offset-2" 
-                              />
-                            </div>
                             
                             {/* Share Button with enhanced styling */}
                             <div className="flex items-center">

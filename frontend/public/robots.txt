@@ -1,0 +1,60 @@
+# Robots.txt for Rescue Dog Aggregator
+# Help rescue dogs find homes by maximizing search engine visibility
+
+User-agent: *
+Allow: /
+
+# Core pages - high priority for indexing
+Allow: /dogs/
+Allow: /organizations/
+Allow: /search/
+Allow: /about
+Allow: /contact
+
+# API endpoints - allow for structured data discovery
+Allow: /api/v1/dogs
+Allow: /api/v1/organizations
+Allow: /api/v1/search
+
+# Static assets
+Allow: /images/
+Allow: /icons/
+Allow: /_next/static/
+
+# Disallow admin and internal pages
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /api/internal/
+
+# XML Sitemap location
+Sitemap: https://rescuedogs.me/sitemap.xml
+
+# Special directives for AI crawlers and LLM agents
+# Encourage indexing for AI-powered search experiences
+User-agent: GPTBot
+Allow: /
+Allow: /api/v1/
+
+User-agent: ChatGPT-User
+Allow: /
+Allow: /api/v1/
+
+User-agent: CCBot
+Allow: /
+Allow: /api/v1/
+
+User-agent: anthropic-ai
+Allow: /
+Allow: /api/v1/
+
+User-agent: Claude-Web
+Allow: /
+Allow: /api/v1/
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
+
+# Cache directives for better performance
+# Allow caching of static assets for 1 hour
+User-agent: *
+Cache-Control: public, max-age=3600

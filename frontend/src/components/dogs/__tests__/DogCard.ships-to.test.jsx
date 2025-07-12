@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import DogCard from '../DogCard';
 
-describe('DogCard Ships-To Feature', () => {
+describe('DogCard Adoption Availability Feature', () => {
   const mockDogWithSingleCountry = {
     id: 1,
     name: 'Lucky',
@@ -41,7 +41,7 @@ describe('DogCard Ships-To Feature', () => {
     
     const shipsToElement = screen.getByTestId('ships-to-display');
     expect(shipsToElement).toBeInTheDocument();
-    expect(shipsToElement).toHaveTextContent('Ships to:');
+    expect(shipsToElement).toHaveTextContent('Adoptable to:');
     expect(shipsToElement).toHaveTextContent('United Kingdom');
   });
 
@@ -50,7 +50,7 @@ describe('DogCard Ships-To Feature', () => {
     
     const shipsToElement = screen.getByTestId('ships-to-display');
     expect(shipsToElement).toBeInTheDocument();
-    expect(shipsToElement).toHaveTextContent('Ships to:');
+    expect(shipsToElement).toHaveTextContent('Adoptable to:');
     expect(shipsToElement).toHaveTextContent('Germany');
     expect(shipsToElement).toHaveTextContent('Netherlands');
     expect(shipsToElement).toHaveTextContent('Belgium');
@@ -87,9 +87,9 @@ describe('DogCard Ships-To Feature', () => {
     expect(shipsToElement).toHaveClass('flex', 'items-start', 'gap-2', 'text-xs');
     
     const label = Array.from(shipsToElement.querySelectorAll('*')).find(
-      el => el.textContent === 'Ships to:'
+      el => el.textContent === 'Adoptable to:'
     );
-    expect(label).toHaveTextContent('Ships to:');
+    expect(label).toHaveTextContent('Adoptable to:');
     expect(label).toHaveClass('mt-1', 'whitespace-nowrap');
   });
 });

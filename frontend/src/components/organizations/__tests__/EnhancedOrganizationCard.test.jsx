@@ -162,10 +162,10 @@ describe('EnhancedOrganizationCard', () => {
       expect(screen.getByText('🇹🇷 Turkey, 🇷🇴 Romania')).toBeInTheDocument();
     });
 
-    test('renders "Ships to" information', () => {
+    test('renders "Adoptable to" information', () => {
       render(<OrganizationCard organization={mockOrganization} />);
       
-      expect(screen.getByText('Ships to:')).toBeInTheDocument();
+      expect(screen.getByText('Adoptable to:')).toBeInTheDocument();
       // Check that ships to information is displayed (mock function called with ships_to array)
       const shipsToElements = screen.getAllByText('🇩🇪 🇳🇱 🇧🇪 +2 more');
       expect(shipsToElements.length).toBeGreaterThanOrEqual(1); // Should find at least one (could be 2 for responsive)
@@ -183,7 +183,7 @@ describe('EnhancedOrganizationCard', () => {
       
       expect(screen.queryByText('Based in:')).not.toBeInTheDocument();
       expect(screen.queryByText('Dogs in:')).not.toBeInTheDocument();
-      expect(screen.queryByText('Ships to:')).not.toBeInTheDocument();
+      expect(screen.queryByText('Adoptable to:')).not.toBeInTheDocument();
     });
   });
 

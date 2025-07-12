@@ -415,7 +415,7 @@ export default function DesktopFilters({
           {/* Ships to Country Section - Simplified from Location */}
           <FilterSection 
             id="ships-to-country" 
-            title="Ships to Country" 
+            title="Adoptable in Country" 
             defaultOpen={false}
             count={sectionCounts.shipsToCountry}
           >

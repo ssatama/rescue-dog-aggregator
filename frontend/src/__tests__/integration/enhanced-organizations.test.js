@@ -165,7 +165,7 @@ describe('Enhanced Organizations Integration', () => {
       // Check geographic information (multiple organizations mean multiple instances of these labels)
       expect(screen.getAllByText('Based in:').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Dogs in:').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText('Ships to:').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Adoptable to:').length).toBeGreaterThanOrEqual(1);
 
       // Check dog statistics
       expect(screen.getByText('33')).toBeInTheDocument(); // Pets in Turkey dogs

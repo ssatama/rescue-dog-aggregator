@@ -152,7 +152,7 @@ describe('OrganizationCard Component - Dark Mode Support', () => {
       // Find information sections by their content and get parent divs
       const basedInText = screen.getByText(/Based in:/).closest('div');
       const dogsInText = screen.getByText(/Dogs in:/).closest('div');
-      const shipsToText = screen.getByText(/Ships to:/).closest('div');
+      const shipsToText = screen.getByText(/Adoptable to:/).closest('div');
 
       [basedInText, dogsInText, shipsToText].forEach(element => {
         // Should not use hard-coded gray-700 color

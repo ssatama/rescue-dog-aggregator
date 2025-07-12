@@ -40,23 +40,31 @@ describe('SEO Meta Tags', () => {
 
       const metadata = await generateDogMetadata({ params: { id: '1' } });
 
-      expect(metadata).toEqual({
-        title: 'Buddy - Labrador Retriever Available for Adoption | Rescue Dog Aggregator',
-        description: 'Meet Buddy, a Labrador Retriever looking for a forever home. A friendly dog looking for a loving home. Available for adoption from Happy Paws Rescue in San Francisco, USA.',
-        openGraph: {
-          title: 'Buddy - Available for Adoption',
-          description: 'Meet Buddy, a Labrador Retriever looking for a forever home. A friendly dog looking for a loving home.',
-          images: ['https://example.com/buddy.jpg'],
-          type: 'article',
-          siteName: 'Rescue Dog Aggregator'
-        },
-        twitter: {
-          card: 'summary_large_image',
-          title: 'Buddy - Available for Adoption',
-          description: 'Meet Buddy, a Labrador Retriever looking for a forever home.',
-          images: ['https://example.com/buddy.jpg']
-        }
-      });
+      expect(metadata.title).toBe('Buddy - Labrador Retriever Available for Adoption | Rescue Dog Aggregator');
+      expect(metadata.description).toBe('Meet Buddy, a Labrador Retriever looking for a forever home. A friendly dog looking for a loving home. Available for adoption from Happy Paws Rescue in San Francisco, USA.');
+      
+      // Check canonical URL
+      expect(metadata.alternates.canonical).toBe('https://rescuedogs.me/dogs/1');
+      
+      // Check OpenGraph
+      expect(metadata.openGraph.title).toBe('Buddy - Available for Adoption');
+      expect(metadata.openGraph.description).toBe('Meet Buddy, a Labrador Retriever looking for a forever home. A friendly dog looking for a loving home.');
+      expect(metadata.openGraph.images).toEqual(['https://example.com/buddy.jpg']);
+      expect(metadata.openGraph.type).toBe('article');
+      expect(metadata.openGraph.siteName).toBe('Rescue Dog Aggregator');
+      expect(metadata.openGraph.url).toBe('https://rescuedogs.me/dogs/1');
+      
+      // Check Twitter
+      expect(metadata.twitter.card).toBe('summary_large_image');
+      expect(metadata.twitter.title).toBe('Buddy - Available for Adoption');
+      expect(metadata.twitter.description).toBe('Meet Buddy, a Labrador Retriever looking for a forever home.');
+      expect(metadata.twitter.images).toEqual(['https://example.com/buddy.jpg']);
+      
+      // Check structured data
+      expect(metadata.other['script:ld+json']).toBeDefined();
+      const structuredData = JSON.parse(metadata.other['script:ld+json']);
+      expect(structuredData['@type']).toBe('Pet');
+      expect(structuredData.name).toBe('Buddy');
     });
 
     test('should generate meta tags for dog without description', async () => {
@@ -105,22 +113,29 @@ describe('SEO Meta Tags', () => {
 
       const metadata = await generateOrgMetadata({ params: { id: '1' } });
 
-      expect(metadata).toEqual({
-        title: 'Happy Paws Rescue - Dog Rescue Organization | Rescue Dog Aggregator',
-        description: 'Learn about Happy Paws Rescue and their available dogs for adoption. Dedicated to rescuing and rehoming dogs in need. Located in San Francisco, USA.',
-        openGraph: {
-          title: 'Happy Paws Rescue - Dog Rescue Organization',
-          description: 'Learn about Happy Paws Rescue and their available dogs for adoption. Dedicated to rescuing and rehoming dogs in need.',
-          type: 'website',
-          siteName: 'Rescue Dog Aggregator',
-          url: 'https://rescuedogaggregator.com/organizations/1'
-        },
-        twitter: {
-          card: 'summary',
-          title: 'Happy Paws Rescue - Dog Rescue Organization',
-          description: 'Learn about Happy Paws Rescue and their available dogs for adoption.'
-        }
-      });
+      expect(metadata.title).toBe('Happy Paws Rescue - Dog Rescue Organization | Rescue Dog Aggregator');
+      expect(metadata.description).toBe('Learn about Happy Paws Rescue and their available dogs for adoption. Dedicated to rescuing and rehoming dogs in need. Located in San Francisco, USA.');
+      
+      // Check canonical URL
+      expect(metadata.alternates.canonical).toBe('https://rescuedogs.me/organizations/1');
+      
+      // Check OpenGraph
+      expect(metadata.openGraph.title).toBe('Happy Paws Rescue - Dog Rescue Organization');
+      expect(metadata.openGraph.description).toBe('Learn about Happy Paws Rescue and their available dogs for adoption. Dedicated to rescuing and rehoming dogs in need.');
+      expect(metadata.openGraph.type).toBe('website');
+      expect(metadata.openGraph.siteName).toBe('Rescue Dog Aggregator');
+      expect(metadata.openGraph.url).toBe('https://rescuedogs.me/organizations/1');
+      
+      // Check Twitter
+      expect(metadata.twitter.card).toBe('summary');
+      expect(metadata.twitter.title).toBe('Happy Paws Rescue - Dog Rescue Organization');
+      expect(metadata.twitter.description).toBe('Learn about Happy Paws Rescue and their available dogs for adoption.');
+      
+      // Check structured data
+      expect(metadata.other['script:ld+json']).toBeDefined();
+      const structuredData = JSON.parse(metadata.other['script:ld+json']);
+      expect(structuredData['@type']).toEqual(['LocalBusiness', 'AnimalShelter']);
+      expect(structuredData.name).toBe('Happy Paws Rescue');
     });
 
     test('should only allow valid OpenGraph types', async () => {

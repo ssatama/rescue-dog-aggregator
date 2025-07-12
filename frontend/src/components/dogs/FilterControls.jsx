@@ -211,7 +211,7 @@ export default function FilterControls({
       <div>
         <label htmlFor="available-country-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
           <Icon name="globe" size="small" className="mr-2" color="default" />
-          Ships To Country
+          Adoptable in Country
         </label>
         <Select value={availableCountryFilter} onValueChange={setAvailableCountryFilter}>
           <SelectTrigger id="available-country-filter">
@@ -231,7 +231,7 @@ export default function FilterControls({
       <div>
         <label htmlFor="available-region-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
           <Icon name="locate-fixed" size="small" className="mr-2" color="default" />
-          Ships To Region
+          Adoptable in Region
         </label>
         <Select
           value={availableRegionFilter}

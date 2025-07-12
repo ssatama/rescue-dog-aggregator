@@ -237,7 +237,7 @@ describe('OrganizationCard Size Variants', () => {
       expect(screen.getByText('25')).toBeInTheDocument();
       expect(screen.getByText('Based in:')).toBeInTheDocument();
       expect(screen.getByText('Dogs in:')).toBeInTheDocument();
-      expect(screen.getByText('Ships to:')).toBeInTheDocument();
+      expect(screen.getByText('Adoptable to:')).toBeInTheDocument();
       
       // Social media links should be visible
       expect(screen.getByTestId('social-media-links')).toBeInTheDocument();
@@ -251,7 +251,7 @@ describe('OrganizationCard Size Variants', () => {
       expect(screen.getByText('25')).toBeInTheDocument();
       expect(screen.getByText('Based in:')).toBeInTheDocument();
       expect(screen.getByText('Dogs in:')).toBeInTheDocument();
-      expect(screen.getByText('Ships to:')).toBeInTheDocument();
+      expect(screen.getByText('Adoptable to:')).toBeInTheDocument();
       expect(screen.getByTestId('social-media-links')).toBeInTheDocument();
       
       // Dog preview images should be visible

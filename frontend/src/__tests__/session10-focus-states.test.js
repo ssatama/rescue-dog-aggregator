@@ -12,7 +12,6 @@ import OrganizationCard from '../components/organizations/OrganizationCard';
 import Header from '../components/layout/Header';
 import RelatedDogsCard from '../components/dogs/RelatedDogsCard';
 import { Input } from '../components/ui/input';
-import FavoriteButton from '../components/ui/FavoriteButton';
 import { Toast } from '../components/ui/Toast';
 import OrganizationLink from '../components/ui/OrganizationLink';
 
@@ -141,17 +140,6 @@ describe('Session 10: Focus States Implementation', () => {
   });
 
   describe('Secondary Interactive Elements', () => {
-    test('FavoriteButton should have proper focus states', () => {
-      // Test the focus classes directly instead of rendering complex component
-      const mockButton = {
-        className: 'p-2 rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2'
-      };
-
-      expect(mockButton.className).toMatch(/focus:outline-none/);
-      expect(mockButton.className).toMatch(/focus:ring-2/);
-      expect(mockButton.className).toMatch(/focus:ring-orange-600/);
-      expect(mockButton.className).toMatch(/focus:ring-offset-2/);
-    });
 
     test('Toast close button should have proper focus states', () => {
       render(
