@@ -83,20 +83,3 @@ async def root():
         "documentation": "/docs",
         "environment": ENVIRONMENT,  # Show current environment
     }
-
-
-if __name__ == "__main__":
-    import os
-
-    import uvicorn
-
-    # Use PORT from environment (Railway) or default to 8000 (local)
-    port = int(os.getenv("PORT", 8000))
-
-    # Bind to 0.0.0.0 for Railway, but still works locally
-    host = "0.0.0.0"
-
-    # Disable reload in production
-    reload = os.getenv("ENVIRONMENT", "development") == "development"
-
-    uvicorn.run("api.main:app", host=host, port=port, reload=reload)
