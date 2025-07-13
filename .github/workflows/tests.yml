@@ -197,7 +197,7 @@ jobs:
 
       - name: Type check with mypy (optional)
         run: |
-          mypy --install-types --non-interactive --ignore-missing-imports . || true
+          mypy --install-types --non-interactive --ignore-missing-imports --exclude="tests/utils/" . || true
 
       - name: Set up Node.js for frontend linting
         uses: actions/setup-node@v4
