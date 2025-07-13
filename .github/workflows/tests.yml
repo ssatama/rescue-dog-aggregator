@@ -28,7 +28,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-
       - name: Set up Python 3.13
         uses: actions/setup-python@v4
         with:
@@ -104,7 +103,6 @@ jobs:
             fi
           done
 
-
       - name: Run backend tests
         env:
           TESTING: "true"
@@ -158,10 +156,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.9
+      - name: Set up Python 3.13
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.13"
           cache: "pip"
 
       - name: Install dependencies
