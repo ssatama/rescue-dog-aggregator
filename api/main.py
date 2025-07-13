@@ -10,7 +10,14 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from api.routes import animals, monitoring, organizations
 
 # Import CORS configuration
-from config import ALLOWED_ORIGINS, CORS_ALLOW_CREDENTIALS, CORS_ALLOW_HEADERS, CORS_ALLOW_METHODS, CORS_MAX_AGE, ENVIRONMENT
+from config import (
+    ALLOWED_ORIGINS,
+    CORS_ALLOW_CREDENTIALS,
+    CORS_ALLOW_HEADERS,
+    CORS_ALLOW_METHODS,
+    CORS_MAX_AGE,
+    ENVIRONMENT,
+)
 
 # Create FastAPI app
 app = FastAPI(
@@ -79,6 +86,17 @@ async def root():
 
 
 if __name__ == "__main__":
+    import os
+
     import uvicorn
 
-    uvicorn.run("api.main:app", host="127.0.0.1", port=8000, reload=True)
+    # Use PORT from environment (Railway) or default to 8000 (local)
+    port = int(os.getenv("PORT", 8000))
+
+    # Bind to 0.0.0.0 for Railway, but still works locally
+    host = "0.0.0.0"
+
+    # Disable reload in production
+    reload = os.getenv("ENVIRONMENT", "development") == "development"
+
+    uvicorn.run("api.main:app", host=host, port=port, reload=reload)
