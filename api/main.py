@@ -1,5 +1,8 @@
 # api/main.py
+import os
 
+print(f"=== PORT from env: {os.getenv('PORT', 'NOT SET')} ===")
+print(f"=== All env vars: {list(os.environ.keys())} ===")
 import logging
 
 from fastapi import FastAPI
