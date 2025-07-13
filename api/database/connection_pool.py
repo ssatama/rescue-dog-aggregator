@@ -57,7 +57,9 @@ class ConnectionPool:
                 conn_params["password"] = DB_CONFIG["password"]
 
             # Create threaded connection pool
-            self._pool = psycopg2.pool.ThreadedConnectionPool(minconn=2, maxconn=20, **conn_params)  # Minimum connections  # Maximum connections
+            self._pool = psycopg2.pool.ThreadedConnectionPool(
+                minconn=2, maxconn=20, **conn_params
+            )  # Minimum connections  # Maximum connections
 
             logger.info(f"Connection pool created: min=2, max=20, database={DB_CONFIG['database']}")
 
@@ -118,27 +120,37 @@ class ConnectionPool:
 
         # Note: psycopg2 ThreadedConnectionPool doesn't expose these stats directly
         # This is a simplified version for monitoring
-        return {"status": "active", "min_connections": 2, "max_connections": 20, "pool_type": "ThreadedConnectionPool"}
+        return {
+            "status": "active",
+            "min_connections": 2,
+            "max_connections": 20,
+            "pool_type": "ThreadedConnectionPool",
+        }
 
 
-# Global connection pool instance
-_connection_pool = ConnectionPool()
+# Global connection pool instance (lazy loaded)
+_connection_pool = None
 
 
 def get_connection_pool() -> ConnectionPool:
     """Get the global connection pool instance."""
+    global _connection_pool
+    if _connection_pool is None:
+        _connection_pool = ConnectionPool()
     return _connection_pool
 
 
 @contextmanager
 def get_pooled_connection():
     """Context manager for getting a pooled database connection."""
-    with _connection_pool.get_connection() as conn:
+    pool = get_connection_pool()  # This will create pool on first use
+    with pool.get_connection() as conn:
         yield conn
 
 
 @contextmanager
 def get_pooled_cursor():
     """Context manager for getting a cursor from the connection pool."""
-    with _connection_pool.get_cursor() as cursor:
+    pool = get_connection_pool()  # This will create pool on first use
+    with pool.get_cursor() as cursor:
         yield cursor
