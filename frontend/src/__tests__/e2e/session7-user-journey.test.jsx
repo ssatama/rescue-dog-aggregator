@@ -175,7 +175,7 @@ describe('Session 7: End-to-End User Journey Tests', () => {
       await screen.findByText('Buddy');
 
       // 1. MOBILE FILTER ACCESS - User opens mobile filter panel
-      const mobileFilterButton = screen.getByRole('button', { name: /Filter & Sort/i });
+      const mobileFilterButton = screen.getByRole('button', { name: /Filter/i });
       expect(mobileFilterButton).toBeInTheDocument();
       expect(mobileFilterButton).toHaveClass('mobile-touch-target'); // Touch target
       
@@ -408,7 +408,7 @@ describe('Session 7: End-to-End User Journey Tests', () => {
       expect(dogsGrid).toHaveClass('grid-cols-1', 'sm:grid-cols-2', 'lg:grid-cols-3');
 
       // 3. Responsive design - Touch targets
-      const mobileFilterButton = screen.getByRole('button', { name: /Filter & Sort/i });
+      const mobileFilterButton = screen.getByRole('button', { name: /Filter/i });
       expect(mobileFilterButton).toHaveClass('mobile-touch-target');
 
       // 4. Performance - GPU acceleration

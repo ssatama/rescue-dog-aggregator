@@ -11,7 +11,8 @@ from api.database import create_batch_executor
 from api.dependencies import get_db_cursor
 from api.exceptions import APIException, handle_database_error, handle_validation_error, safe_execute
 from api.models.dog import Animal, AnimalImage, AnimalWithImages
-from api.models.requests import AnimalFilterRequest
+from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
+from api.models.responses import FilterCountsResponse
 from api.services import AnimalService
 from api.utils.json_parser import build_organization_object, parse_json_field
 
@@ -191,6 +192,35 @@ async def get_distinct_available_regions(
 
 
 # --- END NEW ---
+
+
+# --- Filter Counts Meta Endpoint ---
+@router.get("/meta/filter_counts", response_model=FilterCountsResponse)
+async def get_filter_counts(
+    filters: AnimalFilterCountRequest = Depends(),
+    cursor: RealDictCursor = Depends(get_db_cursor),
+):
+    """
+    Get dynamic counts for each filter option based on current filter context.
+
+    Only returns options that have at least one matching animal to prevent
+    dead-end filtering scenarios. This endpoint enables the frontend to show
+    real-time filter counts like "Large (12)" and hide options with 0 results.
+    """
+    try:
+        animal_service = AnimalService(cursor)
+        return animal_service.get_filter_counts(filters)
+
+    except ValidationError as ve:
+        handle_validation_error(ve, "get_filter_counts")
+    except psycopg2.Error as db_err:
+        handle_database_error(db_err, "get_filter_counts")
+    except APIException:
+        # Re-raise APIException from service layer without modification
+        raise
+    except Exception as e:
+        logger.exception(f"Unexpected error in get_filter_counts: {e}")
+        raise APIException(status_code=500, detail="Failed to fetch filter counts", error_code="INTERNAL_ERROR")
 
 
 # --- Statistics Endpoint ---

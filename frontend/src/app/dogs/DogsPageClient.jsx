@@ -15,13 +15,14 @@ import {
   getLocationCountries,
   getAvailableCountries,
   getAvailableRegions,
+  getFilterCounts,
 } from '../../services/animalsService';
 import { getOrganizations } from '../../services/organizationsService';
 import { Button } from "@/components/ui/button";
 import { Filter, X } from 'lucide-react';
 import FilterControls from '../../components/dogs/FilterControls';
 import DesktopFilters from '../../components/filters/DesktopFilters';
-import MobileFilterBottomSheet from '../../components/filters/MobileFilterBottomSheet';
+import MobileFilterDrawer from '../../components/filters/MobileFilterDrawer';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { reportError } from '../../utils/logger';
 import { Badge } from "@/components/ui/badge";
@@ -67,6 +68,7 @@ export default function DogsPageClient() {
   const [activeFilterCount, setActiveFilterCount] = useState(0);
   const [resetTrigger, setResetTrigger] = useState(0);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [filterCounts, setFilterCounts] = useState(null);
 
   const sexOptions = ["Any", "Male", "Female"];
   const sizeOptions = ["Any size", "Tiny", "Small", "Medium", "Large", "Extra Large"];
@@ -208,10 +210,43 @@ export default function DogsPageClient() {
       resetTrigger
     ]);
 
+  // Fetch Filter Counts
+  const fetchFilterCounts = useCallback(async () => {
+    try {
+      const filterParams = {
+        search: searchQuery || null,
+        standardized_breed: standardizedBreedFilter === "Any breed" ? null : standardizedBreedFilter,
+        organization_id: organizationFilter === "any" ? null : organizationFilter,
+        sex: sexFilter === "Any" ? null : sexFilter,
+        standardized_size: mapUiSizeToStandardized(sizeFilter),
+        age_category: ageCategoryFilter === "Any age" ? null : ageCategoryFilter,
+        location_country: locationCountryFilter === "Any country" ? null : locationCountryFilter,
+        available_to_country: availableCountryFilter === "Any country" ? null : availableCountryFilter,
+        available_to_region: availableRegionFilter === "Any region" ? null : availableRegionFilter,
+      };
+
+      const counts = await getFilterCounts(filterParams);
+      React.startTransition(() => {
+        setFilterCounts(counts);
+      });
+    } catch (err) {
+      reportError("Error fetching filter counts", { error: err.message });
+      // Don't show error to user for filter counts, just log it
+      React.startTransition(() => {
+        setFilterCounts(null);
+      });
+    }
+  }, [
+    searchQuery, standardizedBreedFilter, organizationFilter, sexFilter, sizeFilter, ageCategoryFilter,
+    locationCountryFilter, availableCountryFilter, availableRegionFilter,
+    resetTrigger
+  ]);
+
   // Trigger Fetch on Filter/Search/Reset Change
   useEffect(() => {
     fetchDogs(1, false, true); // isFilterChange = true for filter/search changes
-  }, [fetchDogs]);
+    fetchFilterCounts(); // Fetch filter counts when filters change
+  }, [fetchDogs, fetchFilterCounts]);
 
   // Handle Load More
   const handleLoadMore = () => {
@@ -287,19 +322,6 @@ export default function DogsPageClient() {
   };
 
   // Handle Mobile Filter Changes
-  const handleMobileFiltersChange = useCallback((newFilters) => {
-    // Update all filter states based on mobile filter changes
-    setAgeCategoryFilter(newFilters.age === "All" ? "Any age" : newFilters.age);
-    setStandardizedBreedFilter(newFilters.breed === "" ? "Any breed" : newFilters.breed);
-    setSexFilter(newFilters.sex || "Any");
-    setSizeFilter(newFilters.size || "Any size");
-    setOrganizationFilter(newFilters.organization || "any");
-    
-    // Reset pagination
-    setPage(1);
-    setHasMore(true);
-    setResetTrigger(prev => prev + 1);
-  }, []);
 
   // Render Active Filter Badges
   const renderActiveFilters = () => {
@@ -380,6 +402,7 @@ export default function DogsPageClient() {
             setAvailableRegionFilter={setAvailableRegionFilter}
             availableRegions={availableRegions}
             resetFilters={resetFilters}
+            filterCounts={filterCounts}
           />
 
           <main className="flex-1 min-w-0">
@@ -391,7 +414,7 @@ export default function DogsPageClient() {
                 onClick={() => setIsSheetOpen(true)}
               >
                 <Filter className="mr-2 h-5 w-5 text-orange-600" />
-                <span className="font-medium">Filter & Sort</span>
+                <span className="font-medium">Filter</span>
                 {activeFilterCount > 0 && (
                   <span className="ml-2 bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full text-sm">
                     {activeFilterCount}
@@ -400,24 +423,48 @@ export default function DogsPageClient() {
               </Button>
             </div>
             
-            {/* Mobile Filter Bottom Sheet */}
-            <MobileFilterBottomSheet
+            {/* Mobile Filter Drawer */}
+            <MobileFilterDrawer
               isOpen={isSheetOpen}
               onClose={() => setIsSheetOpen(false)}
-              filters={{
-                age: ageCategoryFilter === "Any age" ? "All" : ageCategoryFilter,
-                breed: standardizedBreedFilter === "Any breed" ? "" : standardizedBreedFilter,
-                sex: sexFilter,
-                size: sizeFilter,
-                organization: organizationFilter,
-                sort: 'newest' // Add sort functionality
-              }}
-              onFiltersChange={handleMobileFiltersChange}
-              availableBreeds={standardizedBreeds}
+              // Search
+              searchQuery={searchQuery}
+              handleSearchChange={handleSearchChange}
+              clearSearch={clearSearch}
+              
+              // Organization
+              organizationFilter={organizationFilter}
+              setOrganizationFilter={setOrganizationFilter}
               organizations={organizations}
-              totalCount={dogs?.length || 0}
-              hasActiveFilters={activeFilterCount > 0}
-              onClearAll={resetFilters}
+              
+              // Breed
+              standardizedBreedFilter={standardizedBreedFilter}
+              setStandardizedBreedFilter={setStandardizedBreedFilter}
+              standardizedBreeds={standardizedBreeds}
+              
+              // Pet Details
+              sexFilter={sexFilter}
+              setSexFilter={setSexFilter}
+              sexOptions={sexOptions}
+              
+              sizeFilter={sizeFilter}
+              setSizeFilter={setSizeFilter}
+              sizeOptions={sizeOptions}
+              
+              ageCategoryFilter={ageCategoryFilter}
+              setAgeCategoryFilter={setAgeCategoryFilter}
+              ageOptions={ageOptions}
+              
+              // Location
+              availableCountryFilter={availableCountryFilter}
+              setAvailableCountryFilter={setAvailableCountryFilter}
+              availableCountries={availableCountries}
+              
+              // Filter management
+              resetFilters={resetFilters}
+              
+              // Dynamic filter counts
+              filterCounts={filterCounts}
             />
 
             {renderActiveFilters()}

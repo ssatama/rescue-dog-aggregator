@@ -91,6 +91,65 @@ class OrganizationFilterRequest(BaseModel):
     active_only: bool = Field(default=True, description="Only return active organizations")
 
 
+class AnimalFilterCountRequest(BaseModel):
+    """
+    Request model for filter counts endpoint.
+
+    Similar to AnimalFilterRequest but focused on getting counts for filter options
+    based on current filter context.
+    """
+
+    # Search and basic filters (context for counting)
+    search: Optional[str] = Field(default=None, description="Search context for counting")
+    animal_type: str = Field(default="dog", description="Type of animal for counting")
+    status: Union[AnimalStatus, str] = Field(default=AnimalStatus.AVAILABLE, description="Status context for counting")
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, v):
+        """Validate status field, allowing 'all' as a special case."""
+        if v == "all":
+            return v
+        if isinstance(v, AnimalStatus):
+            return v
+        try:
+            return AnimalStatus(v)
+        except ValueError:
+            raise ValueError(f"Invalid status value: {v}. Must be one of: {', '.join([s.value for s in AnimalStatus])} or 'all'")
+
+    # Breed filters (context for counting)
+    breed: Optional[str] = Field(default=None, description="Breed context for counting")
+    standardized_breed: Optional[str] = Field(default=None, description="Standardized breed context for counting")
+    breed_group: Optional[str] = Field(default=None, description="Breed group context for counting")
+
+    # Physical characteristics (context for counting)
+    sex: Optional[str] = Field(default=None, description="Sex context for counting")
+    size: Optional[str] = Field(default=None, description="Size context for counting")
+    standardized_size: Optional[StandardizedSize] = Field(default=None, description="Standardized size context for counting")
+    age_category: Optional[str] = Field(default=None, description="Age category context for counting")
+
+    # Location filters (context for counting)
+    location_country: Optional[str] = Field(default=None, description="Location country context for counting")
+    available_to_country: Optional[str] = Field(default=None, description="Available to country context for counting")
+    available_to_region: Optional[str] = Field(default=None, description="Available to region context for counting")
+
+    # Organization filter (context for counting)
+    organization_id: Optional[int] = Field(default=None, description="Organization context for counting")
+
+    # Availability and confidence (context for counting)
+    availability_confidence: str = Field(default="high,medium", description="Availability confidence context for counting")
+
+    def get_confidence_levels(self) -> list[str]:
+        """Get parsed confidence levels from string."""
+        if self.availability_confidence == "all":
+            return []
+        return [level.strip() for level in self.availability_confidence.split(",")]
+
+    def needs_service_region_join(self) -> bool:
+        """Check if query needs service_regions table join."""
+        return bool(self.available_to_country or self.available_to_region)
+
+
 class MonitoringFilterRequest(BaseModel):
     """Request model for monitoring endpoint parameters."""
 

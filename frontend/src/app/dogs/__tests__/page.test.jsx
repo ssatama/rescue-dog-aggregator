@@ -303,7 +303,7 @@ describe('DogsPage Component', () => {
       getAnimals.mockResolvedValue([]);
       render(<DogsPage />);
 
-      const mobileFilterButton = screen.getByRole('button', { name: /Filter & Sort/i });
+      const mobileFilterButton = screen.getByRole('button', { name: /Filter/i });
       expect(mobileFilterButton).toBeInTheDocument();
       expect(mobileFilterButton).toHaveClass('border-2', 'border-orange-200', 'hover:border-orange-300');
     });
@@ -322,7 +322,7 @@ describe('DogsPage Component', () => {
       await user.click(orgOption);
 
       await waitFor(() => {
-        const mobileFilterButton = screen.getByRole('button', { name: /Filter & Sort.*1/i });
+        const mobileFilterButton = screen.getByRole('button', { name: /Filter.*1/i });
         expect(mobileFilterButton).toBeInTheDocument();
         
         // Check for the orange badge styling
@@ -341,7 +341,7 @@ describe('DogsPage Component', () => {
       render(<DogsPage />);
 
       // Initially no count shown
-      expect(screen.getByRole('button', { name: /^Filter & Sort$/ })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /^Filter$/ })).toBeInTheDocument();
 
       // Apply first filter - should show (1)
       const orgSelect = screen.getByTestId('organization-select');
@@ -350,7 +350,7 @@ describe('DogsPage Component', () => {
       await user.click(orgOption);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Filter & Sort.*1/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Filter.*1/i })).toBeInTheDocument();
       });
 
       // Apply second filter - should show (2)
@@ -358,7 +358,7 @@ describe('DogsPage Component', () => {
       await user.click(sizeButton);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Filter & Sort.*2/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Filter.*2/i })).toBeInTheDocument();
       });
 
       // Clear one filter - should show (1)
@@ -366,7 +366,7 @@ describe('DogsPage Component', () => {
       await user.click(removeOrgBtn);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Filter & Sort.*1/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Filter.*1/i })).toBeInTheDocument();
       });
     });
 
@@ -384,7 +384,7 @@ describe('DogsPage Component', () => {
       await user.click(orgOption);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Filter & Sort.*1/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Filter.*1/i })).toBeInTheDocument();
       });
 
       // Clear all filters
@@ -393,8 +393,8 @@ describe('DogsPage Component', () => {
       await user.click(clearAllButton);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /^Filter & Sort$/ })).toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: /Filter & Sort.*\d/i })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^Filter$/ })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /Filter.*\d/i })).not.toBeInTheDocument();
       });
     });
   });

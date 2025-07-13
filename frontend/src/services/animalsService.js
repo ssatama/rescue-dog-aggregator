@@ -190,3 +190,40 @@ export async function getAllAnimals(params = {}) {
   logger.log("Fetching all animals for sitemap");
   return getAnimals({ ...params, limit: 10000 }); // Large limit for sitemap
 }
+
+/**
+ * Fetches filter counts for each option based on current filter context.
+ * @param {object} params - Current filter context (search, animal_type, status, etc.)
+ * @returns {Promise<object>} - Promise resolving to filter counts response.
+ */
+export async function getFilterCounts(params = {}) {
+  logger.log("Fetching filter counts with params:", params);
+  
+  // Remove null/undefined/default values before sending
+  const cleanParams = Object.fromEntries(
+    Object.entries(params).filter(([key, v]) =>
+        v != null &&
+        v !== '' &&
+        !(key === 'sex' && v === 'Any') &&
+        !(key === 'standardized_size' && v === 'Any size') &&
+        !(key === 'age_category' && v === 'Any age') &&
+        !(key === 'standardized_breed' && v === 'Any breed') &&
+        !(key === 'organization_id' && v === 'Any organization') &&
+        !(key === 'location_country' && v === 'Any country') &&
+        !(key === 'available_to_country' && v === 'Any country') &&
+        !(key === 'available_to_region' && v === 'Any region')
+    )
+  );
+
+  // Ensure animal_type is always sent if not explicitly provided otherwise
+  if (!cleanParams.animal_type) {
+    cleanParams.animal_type = 'dog';
+  }
+  // Ensure status is 'available' if not explicitly provided otherwise
+  if (!cleanParams.status) {
+    cleanParams.status = 'available';
+  }
+
+  logger.log("Cleaned filter count params for API:", cleanParams);
+  return get('/api/animals/meta/filter_counts', cleanParams);
+}

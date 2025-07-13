@@ -7,7 +7,7 @@ import Layout from '../../../components/layout/Layout';
 import DogsGrid from '../../../components/dogs/DogsGrid';
 import DogFilters from '../../../components/filters/DogFilters';
 import OrganizationHero from '../../../components/organizations/OrganizationHero';
-import MobileFilterBottomSheet from '../../../components/filters/MobileFilterBottomSheet';
+import MobileFilterDrawer from '../../../components/filters/MobileFilterDrawer';
 import useFilteredDogs from '../../../hooks/useFilteredDogs';
 import { getDefaultFilters } from '../../../utils/dogFilters';
 import { Button } from '../../../components/ui/button';
@@ -305,17 +305,34 @@ export default function OrganizationDetailClient({ params = {} }) {
         
       </div>
 
-      {/* Mobile Filter Bottom Sheet */}
-      <MobileFilterBottomSheet
+      {/* Mobile Filter Drawer */}
+      <MobileFilterDrawer
         isOpen={isMobileFilterOpen}
         onClose={handleMobileFilterClose}
-        filters={filters}
-        onFiltersChange={setFilters}
-        availableBreeds={availableBreeds}
-        organizations={[]} // No organization filter needed for organization pages
-        hasActiveFilters={hasActiveFilters}
-        onClearAll={handleClearAllFilters}
-        isOrganizationPage={true}
+        // Basic props for organization page (limited filters)
+        searchQuery=""
+        handleSearchChange={() => {}}
+        clearSearch={() => {}}
+        organizationFilter="any"
+        setOrganizationFilter={() => {}}
+        organizations={[]}
+        standardizedBreedFilter={filters.breed || 'Any breed'}
+        setStandardizedBreedFilter={(breed) => setFilters(prev => ({ ...prev, breed }))}
+        standardizedBreeds={availableBreeds}
+        sexFilter="Any"
+        setSexFilter={() => {}}
+        sexOptions={['Any']}
+        sizeFilter="Any size"
+        setSizeFilter={() => {}}
+        sizeOptions={['Any size']}
+        ageCategoryFilter={filters.age || 'Any age'}
+        setAgeCategoryFilter={(age) => setFilters(prev => ({ ...prev, age }))}
+        ageOptions={['Any age', 'Puppy', 'Young', 'Adult', 'Senior']}
+        availableCountryFilter="Any country"
+        setAvailableCountryFilter={() => {}}
+        availableCountries={['Any country']}
+        resetFilters={handleClearAllFilters}
+        filterCounts={null}
       />
     </Layout>
   );

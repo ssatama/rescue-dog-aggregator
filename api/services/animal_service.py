@@ -15,7 +15,8 @@ from psycopg2.extras import RealDictCursor
 from api.database import create_batch_executor
 from api.exceptions import APIException, handle_database_error
 from api.models.dog import Animal, AnimalWithImages
-from api.models.requests import AnimalFilterRequest
+from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
+from api.models.responses import FilterCountsResponse, FilterOption
 from api.utils.json_parser import build_organization_object, parse_json_field
 
 logger = logging.getLogger(__name__)
@@ -392,17 +393,14 @@ class AnimalService:
             params.append(filters.standardized_size.value)
 
         if filters.age_category:
-            age_conditions = []
             if filters.age_category == "Puppy":
-                age_conditions.append("(a.age_max_months < 12)")
+                conditions.append("(a.age_max_months < 12)")
             elif filters.age_category == "Young":
-                age_conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
+                conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
             elif filters.age_category == "Adult":
-                age_conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
+                conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
             elif filters.age_category == "Senior":
-                age_conditions.append("(a.age_min_months >= 96)")
-            if age_conditions:
-                conditions.append(f"({' OR '.join(age_conditions)})")
+                conditions.append("(a.age_min_months >= 96)")
 
         if filters.organization_id:
             conditions.append("a.organization_id = %s")
@@ -450,8 +448,453 @@ class AnimalService:
                 LIMIT %s OFFSET %s
             """
         else:
-            query = f"{query_base}{joins} WHERE {where_clause} ORDER BY a.last_scraped_at DESC, a.id DESC LIMIT %s OFFSET %s"
+            query = f"{query_base}{joins} WHERE {where_clause} ORDER BY a.created_at DESC, a.id DESC LIMIT %s OFFSET %s"
 
         params.extend([filters.limit, filters.offset])
 
         return query, params
+
+    def get_filter_counts(self, filters: AnimalFilterCountRequest) -> FilterCountsResponse:
+        """
+        Get counts for each filter option based on current filter context.
+
+        Only returns options that have at least one matching animal to prevent
+        dead-end filtering scenarios.
+
+        Args:
+            filters: Current filter context for counting
+
+        Returns:
+            FilterCountsResponse with counts for each available option
+        """
+        try:
+            response = FilterCountsResponse()
+
+            # Build base query conditions for context
+            base_conditions, base_params = self._build_count_base_conditions(filters)
+
+            # Get size counts
+            response.size_options = self._get_size_counts(base_conditions, base_params, filters)
+
+            # Get age counts
+            response.age_options = self._get_age_counts(base_conditions, base_params, filters)
+
+            # Get sex counts
+            response.sex_options = self._get_sex_counts(base_conditions, base_params, filters)
+
+            # Get breed counts (limit to top breeds to avoid overwhelming response)
+            response.breed_options = self._get_breed_counts(base_conditions, base_params, filters)
+
+            # Get organization counts
+            response.organization_options = self._get_organization_counts(base_conditions, base_params, filters)
+
+            # Get location country counts
+            response.location_country_options = self._get_location_country_counts(base_conditions, base_params, filters)
+
+            # Get available country counts
+            response.available_country_options = self._get_available_country_counts(base_conditions, base_params, filters)
+
+            # Get available region counts (if country is selected)
+            if filters.available_to_country:
+                response.available_region_options = self._get_available_region_counts(base_conditions, base_params, filters)
+
+            return response
+
+        except Exception as e:
+            logger.error(f"Error in get_filter_counts: {e}")
+            raise APIException(status_code=500, detail="Failed to fetch filter counts", error_code="INTERNAL_ERROR")
+
+    def _build_count_base_conditions(self, filters: AnimalFilterCountRequest) -> tuple[List[str], List[Any]]:
+        """Build base WHERE conditions for filter counting queries."""
+        conditions = [
+            "a.animal_type = %s",
+            "o.active = TRUE",
+        ]
+        params = [filters.animal_type]
+
+        # Add status filter
+        if filters.status and filters.status != "all":
+            if hasattr(filters.status, "value"):
+                conditions.append("a.status = %s")
+                params.append(filters.status.value)
+            else:
+                conditions.append("a.status = %s")
+                params.append(filters.status)
+
+        # Add confidence filter
+        confidence_levels = filters.get_confidence_levels()
+        if confidence_levels:
+            if len(confidence_levels) == 1:
+                conditions.append("a.availability_confidence = %s")
+                params.append(confidence_levels[0])
+            else:
+                placeholders = ",".join(["%s"] * len(confidence_levels))
+                conditions.append(f"a.availability_confidence IN ({placeholders})")
+                params.extend(confidence_levels)
+
+        # Add search filter
+        if filters.search:
+            conditions.append("(a.name ILIKE %s OR a.breed ILIKE %s OR a.standardized_breed ILIKE %s)")
+            search_term = f"%{filters.search}%"
+            params.extend([search_term, search_term, search_term])
+
+        # Add other filters (excluding the one we're counting)
+        if filters.breed:
+            conditions.append("a.breed = %s")
+            params.append(filters.breed)
+
+        if filters.standardized_breed:
+            conditions.append("a.standardized_breed = %s")
+            params.append(filters.standardized_breed)
+
+        if filters.breed_group:
+            conditions.append("a.breed_group = %s")
+            params.append(filters.breed_group)
+
+        if filters.location_country:
+            conditions.append("o.country = %s")
+            params.append(filters.location_country)
+
+        if filters.organization_id:
+            conditions.append("a.organization_id = %s")
+            params.append(filters.organization_id)
+
+        return conditions, params
+
+    def _get_size_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
+        """Get counts for each size option, excluding current size filter."""
+        conditions = base_conditions.copy()
+        params = base_params.copy()
+
+        # Don't include current size filter in the count query
+        # Add other non-size filters
+        if filters.sex:
+            conditions.append("a.sex = %s")
+            params.append(filters.sex)
+
+        if filters.age_category:
+            if filters.age_category == "Puppy":
+                conditions.append("(a.age_max_months < 12)")
+            elif filters.age_category == "Young":
+                conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
+            elif filters.age_category == "Adult":
+                conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
+            elif filters.age_category == "Senior":
+                conditions.append("(a.age_min_months >= 96)")
+
+        query = f"""
+            SELECT a.standardized_size, COUNT(*) as count
+            FROM animals a
+            LEFT JOIN organizations o ON a.organization_id = o.id
+            WHERE {' AND '.join(conditions)}
+              AND a.standardized_size IS NOT NULL
+            GROUP BY a.standardized_size
+            HAVING COUNT(*) > 0
+            ORDER BY 
+                CASE a.standardized_size
+                    WHEN 'Tiny' THEN 1
+                    WHEN 'Small' THEN 2
+                    WHEN 'Medium' THEN 3
+                    WHEN 'Large' THEN 4
+                    WHEN 'XLarge' THEN 5
+                    ELSE 6
+                END
+        """
+
+        self.cursor.execute(query, params)
+        results = self.cursor.fetchall()
+
+        # Map standardized sizes to UI labels
+        size_labels = {"Tiny": "Tiny", "Small": "Small", "Medium": "Medium", "Large": "Large", "XLarge": "Extra Large"}
+
+        return [FilterOption(value=row["standardized_size"], label=size_labels.get(row["standardized_size"], row["standardized_size"]), count=row["count"]) for row in results if row["count"] > 0]
+
+    def _get_age_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
+        """Get counts for each age category, excluding current age filter."""
+        conditions = base_conditions.copy()
+        params = base_params.copy()
+
+        # Add other non-age filters
+        if filters.sex:
+            conditions.append("a.sex = %s")
+            params.append(filters.sex)
+
+        if filters.standardized_size:
+            conditions.append("a.standardized_size = %s")
+            params.append(filters.standardized_size.value)
+
+        query = f"""
+            SELECT 
+                CASE 
+                    WHEN a.age_max_months < 12 THEN 'Puppy'
+                    WHEN a.age_min_months >= 12 AND a.age_max_months <= 36 THEN 'Young'
+                    WHEN a.age_min_months >= 36 AND a.age_max_months <= 96 THEN 'Adult'
+                    WHEN a.age_min_months >= 96 THEN 'Senior'
+                    ELSE 'Unknown'
+                END as age_category,
+                COUNT(*) as count
+            FROM animals a
+            LEFT JOIN organizations o ON a.organization_id = o.id
+            WHERE {' AND '.join(conditions)}
+              AND a.age_min_months IS NOT NULL
+              AND a.age_max_months IS NOT NULL
+            GROUP BY 1
+            HAVING COUNT(*) > 0
+            ORDER BY 1
+        """
+
+        self.cursor.execute(query, params)
+        results = self.cursor.fetchall()
+
+        return [FilterOption(value=row["age_category"], label=row["age_category"], count=row["count"]) for row in results if row["age_category"] != "Unknown" and row["count"] > 0]
+
+    def _get_sex_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
+        """Get counts for each sex option, excluding current sex filter."""
+        conditions = base_conditions.copy()
+        params = base_params.copy()
+
+        # Add other non-sex filters
+        if filters.standardized_size:
+            conditions.append("a.standardized_size = %s")
+            params.append(filters.standardized_size.value)
+
+        if filters.age_category:
+            if filters.age_category == "Puppy":
+                conditions.append("(a.age_max_months < 12)")
+            elif filters.age_category == "Young":
+                conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
+            elif filters.age_category == "Adult":
+                conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
+            elif filters.age_category == "Senior":
+                conditions.append("(a.age_min_months >= 96)")
+
+        query = f"""
+            SELECT a.sex, COUNT(*) as count
+            FROM animals a
+            LEFT JOIN organizations o ON a.organization_id = o.id
+            WHERE {' AND '.join(conditions)}
+              AND a.sex IS NOT NULL
+            GROUP BY a.sex
+            HAVING COUNT(*) > 0
+            ORDER BY a.sex
+        """
+
+        self.cursor.execute(query, params)
+        results = self.cursor.fetchall()
+
+        return [FilterOption(value=row["sex"], label=row["sex"], count=row["count"]) for row in results if row["count"] > 0]
+
+    def _get_breed_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
+        """Get counts for top breeds, excluding current breed filter."""
+        conditions = base_conditions.copy()
+        params = base_params.copy()
+
+        # Add other non-breed filters
+        if filters.sex:
+            conditions.append("a.sex = %s")
+            params.append(filters.sex)
+
+        if filters.standardized_size:
+            conditions.append("a.standardized_size = %s")
+            params.append(filters.standardized_size.value)
+
+        if filters.age_category:
+            if filters.age_category == "Puppy":
+                conditions.append("(a.age_max_months < 12)")
+            elif filters.age_category == "Young":
+                conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
+            elif filters.age_category == "Adult":
+                conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
+            elif filters.age_category == "Senior":
+                conditions.append("(a.age_min_months >= 96)")
+
+        query = f"""
+            SELECT a.standardized_breed, COUNT(*) as count
+            FROM animals a
+            LEFT JOIN organizations o ON a.organization_id = o.id
+            WHERE {' AND '.join(conditions)}
+              AND a.standardized_breed IS NOT NULL
+              AND a.standardized_breed != ''
+            GROUP BY a.standardized_breed
+            HAVING COUNT(*) > 0
+            ORDER BY count DESC, a.standardized_breed ASC
+            LIMIT 20
+        """
+
+        self.cursor.execute(query, params)
+        results = self.cursor.fetchall()
+
+        return [FilterOption(value=row["standardized_breed"], label=row["standardized_breed"], count=row["count"]) for row in results if row["count"] > 0]
+
+    def _get_organization_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
+        """Get counts for each organization, excluding current organization filter."""
+        conditions = base_conditions.copy()
+        params = base_params.copy()
+
+        # Add other non-organization filters
+        if filters.sex:
+            conditions.append("a.sex = %s")
+            params.append(filters.sex)
+
+        if filters.standardized_size:
+            conditions.append("a.standardized_size = %s")
+            params.append(filters.standardized_size.value)
+
+        if filters.age_category:
+            if filters.age_category == "Puppy":
+                conditions.append("(a.age_max_months < 12)")
+            elif filters.age_category == "Young":
+                conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
+            elif filters.age_category == "Adult":
+                conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
+            elif filters.age_category == "Senior":
+                conditions.append("(a.age_min_months >= 96)")
+
+        query = f"""
+            SELECT o.id, o.name, COUNT(*) as count
+            FROM animals a
+            LEFT JOIN organizations o ON a.organization_id = o.id
+            WHERE {' AND '.join(conditions)}
+            GROUP BY o.id, o.name
+            HAVING COUNT(*) > 0
+            ORDER BY o.name ASC
+        """
+
+        self.cursor.execute(query, params)
+        results = self.cursor.fetchall()
+
+        return [FilterOption(value=str(row["id"]), label=row["name"], count=row["count"]) for row in results if row["count"] > 0]
+
+    def _get_location_country_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
+        """Get counts for each location country, excluding current location country filter."""
+        conditions = base_conditions.copy()
+        params = base_params.copy()
+
+        # Add other non-location filters
+        if filters.sex:
+            conditions.append("a.sex = %s")
+            params.append(filters.sex)
+
+        if filters.standardized_size:
+            conditions.append("a.standardized_size = %s")
+            params.append(filters.standardized_size.value)
+
+        if filters.age_category:
+            if filters.age_category == "Puppy":
+                conditions.append("(a.age_max_months < 12)")
+            elif filters.age_category == "Young":
+                conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
+            elif filters.age_category == "Adult":
+                conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
+            elif filters.age_category == "Senior":
+                conditions.append("(a.age_min_months >= 96)")
+
+        query = f"""
+            SELECT o.country, COUNT(*) as count
+            FROM animals a
+            LEFT JOIN organizations o ON a.organization_id = o.id
+            WHERE {' AND '.join(conditions)}
+              AND o.country IS NOT NULL
+              AND o.country != ''
+            GROUP BY o.country
+            HAVING COUNT(*) > 0
+            ORDER BY o.country ASC
+        """
+
+        self.cursor.execute(query, params)
+        results = self.cursor.fetchall()
+
+        return [FilterOption(value=row["country"], label=row["country"], count=row["count"]) for row in results if row["count"] > 0]
+
+    def _get_available_country_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
+        """Get counts for each available-to country, excluding current available country filter."""
+        conditions = base_conditions.copy()
+        params = base_params.copy()
+
+        # Need to join with service_regions for this query
+        if not filters.needs_service_region_join():
+            # Add the join condition for this specific query
+            pass
+
+        # Add other non-available-country filters
+        if filters.sex:
+            conditions.append("a.sex = %s")
+            params.append(filters.sex)
+
+        if filters.standardized_size:
+            conditions.append("a.standardized_size = %s")
+            params.append(filters.standardized_size.value)
+
+        if filters.age_category:
+            if filters.age_category == "Puppy":
+                conditions.append("(a.age_max_months < 12)")
+            elif filters.age_category == "Young":
+                conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
+            elif filters.age_category == "Adult":
+                conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
+            elif filters.age_category == "Senior":
+                conditions.append("(a.age_min_months >= 96)")
+
+        query = f"""
+            SELECT sr.country, COUNT(DISTINCT a.id) as count
+            FROM animals a
+            LEFT JOIN organizations o ON a.organization_id = o.id
+            JOIN service_regions sr ON a.organization_id = sr.organization_id
+            WHERE {' AND '.join(conditions)}
+              AND sr.country IS NOT NULL
+              AND sr.country != ''
+            GROUP BY sr.country
+            HAVING COUNT(DISTINCT a.id) > 0
+            ORDER BY sr.country ASC
+        """
+
+        self.cursor.execute(query, params)
+        results = self.cursor.fetchall()
+
+        return [FilterOption(value=row["country"], label=row["country"], count=row["count"]) for row in results if row["count"] > 0]
+
+    def _get_available_region_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
+        """Get counts for each available-to region for the selected country."""
+        conditions = base_conditions.copy()
+        params = base_params.copy()
+
+        # Add country filter for regions
+        conditions.append("sr.country = %s")
+        params.append(filters.available_to_country)
+
+        # Add other non-region filters
+        if filters.sex:
+            conditions.append("a.sex = %s")
+            params.append(filters.sex)
+
+        if filters.standardized_size:
+            conditions.append("a.standardized_size = %s")
+            params.append(filters.standardized_size.value)
+
+        if filters.age_category:
+            if filters.age_category == "Puppy":
+                conditions.append("(a.age_max_months < 12)")
+            elif filters.age_category == "Young":
+                conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
+            elif filters.age_category == "Adult":
+                conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
+            elif filters.age_category == "Senior":
+                conditions.append("(a.age_min_months >= 96)")
+
+        query = f"""
+            SELECT sr.region, COUNT(DISTINCT a.id) as count
+            FROM animals a
+            LEFT JOIN organizations o ON a.organization_id = o.id
+            JOIN service_regions sr ON a.organization_id = sr.organization_id
+            WHERE {' AND '.join(conditions)}
+              AND sr.region IS NOT NULL
+              AND sr.region != ''
+            GROUP BY sr.region
+            HAVING COUNT(DISTINCT a.id) > 0
+            ORDER BY sr.region ASC
+        """
+
+        self.cursor.execute(query, params)
+        results = self.cursor.fetchall()
+
+        return [FilterOption(value=row["region"], label=row["region"], count=row["count"]) for row in results if row["count"] > 0]

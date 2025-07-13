@@ -40,8 +40,8 @@ jest.mock('../../../../components/organizations/OrganizationHero', () => {
   };
 });
 
-jest.mock('../../../../components/filters/MobileFilterBottomSheet', () => {
-  return function MockMobileFilterBottomSheet() {
+jest.mock('../../../../components/filters/MobileFilterDrawer', () => {
+  return function MockMobileFilterDrawer() {
     return <div data-testid="mobile-filter-sheet">Mobile Filter Sheet</div>;
   };
 });

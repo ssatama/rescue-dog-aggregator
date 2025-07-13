@@ -115,7 +115,7 @@ describe('Session 7: Comprehensive Integration Tests', () => {
     test('mobile filter button appears on small screens', async () => {
       render(<DogsPage />);
       
-      const mobileFilterButton = screen.getByRole('button', { name: /Filter & Sort/i });
+      const mobileFilterButton = screen.getByRole('button', { name: /Filter/i });
       expect(mobileFilterButton).toBeInTheDocument();
       
       // Button should have mobile styling classes
@@ -146,7 +146,7 @@ describe('Session 7: Comprehensive Integration Tests', () => {
       expect(dogCardCTA).toHaveClass('mobile-touch-target');
       
       // Mobile filter button should also meet requirements
-      const mobileFilterButton = screen.getByRole('button', { name: /Filter & Sort/i });
+      const mobileFilterButton = screen.getByRole('button', { name: /Filter/i });
       expect(mobileFilterButton).toHaveClass('mobile-touch-target');
     });
   });
@@ -309,7 +309,7 @@ describe('Session 7: Comprehensive Integration Tests', () => {
       expect(dogCardCTA).toHaveClass('mobile-touch-target');
       
       // Mobile filter button
-      const mobileFilterButton = screen.getByRole('button', { name: /Filter & Sort/i });
+      const mobileFilterButton = screen.getByRole('button', { name: /Filter/i });
       expect(mobileFilterButton).toHaveClass('mobile-touch-target');
     });
 

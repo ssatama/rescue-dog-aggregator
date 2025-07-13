@@ -81,7 +81,7 @@ describe('Session 7: Accessibility Audit', () => {
     test('mobile filter button is keyboard accessible', async () => {
       render(<DogsPage />);
       
-      const mobileFilterButton = screen.getByRole('button', { name: /Filter & Sort/i });
+      const mobileFilterButton = screen.getByRole('button', { name: /Filter/i });
       expect(mobileFilterButton).toBeInTheDocument();
       
       // Should be focusable
@@ -180,7 +180,7 @@ describe('Session 7: Accessibility Audit', () => {
   describe('Focus Management', () => {
     test('focus trap in mobile filter bottom sheet', async () => {
       // This would test that focus stays within the bottom sheet when open
-      // Actual implementation would require the MobileFilterBottomSheet to be rendered
+      // Actual implementation would require the MobileFilterDrawer to be rendered
       expect(true).toBe(true);
     });
 
