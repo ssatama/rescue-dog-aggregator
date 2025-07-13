@@ -70,8 +70,7 @@ def sync_organizations_to_railway(chunk_size: int = 1000) -> bool:
                 with local_conn.cursor() as cursor:
                     cursor.execute(
                         """
-                        SELECT id, name, website_url, description, country, city, logo_url, 
-                               created_at, social_media, ships_to, config_id
+                        SELECT id, name, website_url, description, country, city, logo_url, active, created_at, updated_at, social_media, config_id, last_config_sync, established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs
                         FROM organizations
                         ORDER BY id
                     """
@@ -110,10 +109,7 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
             with local_conn.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT id, name, animal_type, size, age_text, sex, breed, 
-                           primary_image_url, organization_id, created_at, updated_at,
-                           availability_confidence, last_seen_at, consecutive_scrapes_missing,
-                           status, properties, adoption_url, external_id
+                    SELECT id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, source_last_updated, breed_group, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, last_session_id, active
                     FROM animals
                     ORDER BY id
                 """
@@ -170,22 +166,33 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
                         {
                             "id": animal[0],
                             "name": animal[1],
-                            "animal_type": animal[2],
-                            "size": animal[3],
-                            "age_text": animal[4],
-                            "sex": animal[5],
-                            "breed": animal[6],
-                            "primary_image_url": animal[7],
-                            "organization_id": animal[8],
-                            "created_at": animal[9],
-                            "updated_at": animal[10],
-                            "availability_confidence": animal[11],
-                            "last_seen_at": animal[12],
-                            "consecutive_scrapes_missing": animal[13],
-                            "status": animal[14],
-                            "properties": json.dumps(animal[15]) if animal[15] is not None else None,
-                            "adoption_url": animal[16],
-                            "external_id": animal[17],
+                            "organization_id": animal[2],
+                            "animal_type": animal[3],
+                            "external_id": animal[4],
+                            "primary_image_url": animal[5],
+                            "adoption_url": animal[6],
+                            "status": animal[7],
+                            "breed": animal[8],
+                            "standardized_breed": animal[9],
+                            "age_text": animal[10],
+                            "age_min_months": animal[11],
+                            "age_max_months": animal[12],
+                            "sex": animal[13],
+                            "size": animal[14],
+                            "standardized_size": animal[15],
+                            "language": animal[16],
+                            "properties": json.dumps(animal[17]) if animal[17] is not None else None,
+                            "created_at": animal[18],
+                            "updated_at": animal[19],
+                            "last_scraped_at": animal[20],
+                            "source_last_updated": animal[21],
+                            "breed_group": animal[22],
+                            "original_image_url": animal[23],
+                            "last_seen_at": animal[24],
+                            "consecutive_scrapes_missing": animal[25],
+                            "availability_confidence": animal[26],
+                            "last_session_id": animal[27],
+                            "active": animal[28],
                         }
                     )
 
@@ -474,8 +481,7 @@ def _sync_organizations_to_railway_in_transaction(session, chunk_size: int = 100
             with local_conn.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT id, name, website_url, description, country, city, logo_url, 
-                           created_at, social_media, ships_to, config_id
+                    SELECT id, name, website_url, description, country, city, logo_url, active, created_at, updated_at, social_media, config_id, last_config_sync, established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs
                     FROM organizations
                     ORDER BY id
                 """
@@ -514,10 +520,7 @@ def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 
             with local_conn.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT id, name, animal_type, size, age_text, sex, breed, 
-                           primary_image_url, organization_id, created_at, updated_at,
-                           availability_confidence, last_seen_at, consecutive_scrapes_missing,
-                           status, properties, adoption_url, external_id
+                    SELECT id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, source_last_updated, breed_group, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, last_session_id, active
                     FROM animals
                     ORDER BY id
                 """
@@ -533,15 +536,9 @@ def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 
         insert_sql = text(
             """
             INSERT INTO animals 
-            (id, name, animal_type, size, age_text, sex, breed,
-             primary_image_url, organization_id, created_at, updated_at,
-             availability_confidence, last_seen_at, consecutive_scrapes_missing,
-             status, properties, adoption_url, external_id)
+            (id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, source_last_updated, breed_group, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, last_session_id, active)
             VALUES 
-            (:id, :name, :animal_type, :size, :age_text, :sex, :breed,
-             :primary_image_url, :organization_id, :created_at, :updated_at,
-             :availability_confidence, :last_seen_at, :consecutive_scrapes_missing,
-             :status, :properties, :adoption_url, :external_id)
+            (:id, :name, :organization_id, :animal_type, :external_id, :primary_image_url, :adoption_url, :status, :breed, :standardized_breed, :age_text, :age_min_months, :age_max_months, :sex, :size, :standardized_size, :language, :properties, :created_at, :updated_at, :last_scraped_at, :source_last_updated, :breed_group, :original_image_url, :last_seen_at, :consecutive_scrapes_missing, :availability_confidence, :last_session_id, :active)
             ON CONFLICT (external_id, organization_id) DO UPDATE SET
                 name = EXCLUDED.name,
                 animal_type = EXCLUDED.animal_type,
@@ -565,7 +562,7 @@ def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 
 
             batch_params = []
             for animal in batch:
-                local_org_id = animal[8]
+                local_org_id = animal[2]
                 railway_org_id = org_id_mapping.get(local_org_id)
 
                 if railway_org_id is None:
@@ -576,22 +573,33 @@ def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 
                     {
                         "id": animal[0],
                         "name": animal[1],
-                        "animal_type": animal[2],
-                        "size": animal[3],
-                        "age_text": animal[4],
-                        "sex": animal[5],
-                        "breed": animal[6],
-                        "primary_image_url": animal[7],
                         "organization_id": railway_org_id,  # Use pre-built mapping
-                        "created_at": animal[9],
-                        "updated_at": animal[10],
-                        "availability_confidence": animal[11],
-                        "last_seen_at": animal[12],
-                        "consecutive_scrapes_missing": animal[13],
-                        "status": animal[14],
-                        "properties": json.dumps(animal[15]) if animal[15] is not None else None,
-                        "adoption_url": animal[16],
-                        "external_id": animal[17],
+                        "animal_type": animal[3],
+                        "external_id": animal[4],
+                        "primary_image_url": animal[5],
+                        "adoption_url": animal[6],
+                        "status": animal[7],
+                        "breed": animal[8],
+                        "standardized_breed": animal[9],
+                        "age_text": animal[10],
+                        "age_min_months": animal[11],
+                        "age_max_months": animal[12],
+                        "sex": animal[13],
+                        "size": animal[14],
+                        "standardized_size": animal[15],
+                        "language": animal[16],
+                        "properties": json.dumps(animal[17]) if animal[17] is not None else None,
+                        "created_at": animal[18],
+                        "updated_at": animal[19],
+                        "last_scraped_at": animal[20],
+                        "source_last_updated": animal[21],
+                        "breed_group": animal[22],
+                        "original_image_url": animal[23],
+                        "last_seen_at": animal[24],
+                        "consecutive_scrapes_missing": animal[25],
+                        "availability_confidence": animal[26],
+                        "last_session_id": animal[27],
+                        "active": animal[28],
                     }
                 )
 
@@ -636,10 +644,7 @@ def _sync_animals_to_railway_in_transaction(session, batch_size: int = 100) -> b
             with local_conn.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT id, name, animal_type, size, age_text, sex, breed, 
-                           primary_image_url, organization_id, created_at, updated_at,
-                           availability_confidence, last_seen_at, consecutive_scrapes_missing,
-                           status, properties, adoption_url, external_id
+                    SELECT id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, source_last_updated, breed_group, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, last_session_id, active
                     FROM animals
                     ORDER BY id
                 """
@@ -659,15 +664,9 @@ def _sync_animals_to_railway_in_transaction(session, batch_size: int = 100) -> b
         insert_sql = text(
             """
             INSERT INTO animals 
-            (id, name, animal_type, size, age_text, sex, breed,
-             primary_image_url, organization_id, created_at, updated_at,
-             availability_confidence, last_seen_at, consecutive_scrapes_missing,
-             status, properties, adoption_url, external_id)
+            (id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, source_last_updated, breed_group, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, last_session_id, active)
             VALUES 
-            (:id, :name, :animal_type, :size, :age_text, :sex, :breed,
-             :primary_image_url, :organization_id, :created_at, :updated_at,
-             :availability_confidence, :last_seen_at, :consecutive_scrapes_missing,
-             :status, :properties, :adoption_url, :external_id)
+            (:id, :name, :organization_id, :animal_type, :external_id, :primary_image_url, :adoption_url, :status, :breed, :standardized_breed, :age_text, :age_min_months, :age_max_months, :sex, :size, :standardized_size, :language, :properties, :created_at, :updated_at, :last_scraped_at, :source_last_updated, :breed_group, :original_image_url, :last_seen_at, :consecutive_scrapes_missing, :availability_confidence, :last_session_id, :active)
             ON CONFLICT (external_id, organization_id) DO UPDATE SET
                 name = EXCLUDED.name,
                 animal_type = EXCLUDED.animal_type,
@@ -691,7 +690,7 @@ def _sync_animals_to_railway_in_transaction(session, batch_size: int = 100) -> b
 
             batch_params = []
             for animal in batch:
-                local_org_id = animal[8]
+                local_org_id = animal[2]
                 railway_org_id = org_id_mapping.get(local_org_id)
 
                 if railway_org_id is None:
