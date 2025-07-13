@@ -187,24 +187,20 @@ def status():
             click.echo(f"Railway Connection: ✗ Error - {e}")
             sys.exit(0)
 
-        # Get data counts
+        # Get data counts for all tables
         click.echo("\nData Summary:")
         click.echo("-" * 20)
 
-        local_orgs = get_local_data_count("organizations")
-        local_animals = get_local_data_count("animals")
-        railway_orgs = get_railway_data_count("organizations")
-        railway_animals = get_railway_data_count("animals")
-
-        click.echo(f"Organizations: {local_orgs} (local) → {railway_orgs} (Railway)")
-        click.echo(f"Animals: {local_animals} (local) → {railway_animals} (Railway)")
-
-        # Check for mismatches
+        tables = ["organizations", "animals", "animal_images", "scrape_logs", "service_regions"]
         mismatches = []
-        if local_orgs != railway_orgs:
-            mismatches.append(f"Organizations: {local_orgs} vs {railway_orgs}")
-        if local_animals != railway_animals:
-            mismatches.append(f"Animals: {local_animals} vs {railway_animals}")
+
+        for table in tables:
+            local_count = get_local_data_count(table)
+            railway_count = get_railway_data_count(table)
+            click.echo(f"{table.title()}: {local_count} (local) → {railway_count} (Railway)")
+
+            if local_count != railway_count:
+                mismatches.append(f"{table.title()}: {local_count} vs {railway_count}")
 
         if mismatches:
             click.echo("\n⚠ Data mismatch detected:")

@@ -168,9 +168,7 @@ from sqlalchemy import pool
 from alembic import context
 import os
 
-# Import your models here for autogenerate support
-# from your_app.models import Base
-# target_metadata = Base.metadata
+# No SQLAlchemy models in this project - using manual migrations
 target_metadata = None
 
 config = context.config
@@ -261,21 +259,78 @@ def downgrade() -> None:
 
 
 def create_initial_migration(message: str = "Initial Railway schema") -> bool:
-    """Create initial migration for Railway database."""
+    """Create initial migration for Railway database using manual SQL schema."""
     try:
-        # Change to project root for Alembic command
-        original_dir = os.getcwd()
+        # First, create a blank migration
+        cmd = ["alembic", "-c", "migrations/railway/alembic.ini", "revision", "-m", message]
 
-        cmd = ["alembic", "-c", "migrations/railway/alembic.ini", "revision", "--autogenerate", "-m", message]
+        result = subprocess.run(cmd, capture_output=True, text=True)
 
-        result = subprocess.run(cmd, capture_output=True, text=True, cwd=original_dir)
-
-        if result.returncode == 0:
-            logger.info("Railway migration created successfully")
-            return True
-        else:
-            logger.error(f"Failed to create Railway migration: {result.stderr}")
+        if result.returncode != 0:
+            logger.error(f"Failed to create blank Railway migration: {result.stderr}")
             return False
+
+        # Find the created migration file
+        versions_dir = Path("migrations/railway/versions")
+        migration_files = list(versions_dir.glob("*.py"))
+        if not migration_files:
+            logger.error("No migration file found after creation")
+            return False
+
+        # Get the most recent migration file
+        latest_migration = max(migration_files, key=lambda f: f.stat().st_mtime)
+
+        # Read the existing schema.sql
+        schema_path = Path("database/schema.sql")
+        if not schema_path.exists():
+            logger.error("database/schema.sql not found")
+            return False
+
+        with open(schema_path, "r") as f:
+            schema_sql = f.read()
+
+        # Create migration content with the schema
+        migration_content = f'''"""Initial Railway schema
+
+Revision ID: {latest_migration.stem.split('_')[0]}
+Revises: 
+Create Date: {latest_migration.stat().st_mtime}
+
+"""
+from alembic import op
+import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
+
+# revision identifiers, used by Alembic.
+revision = '{latest_migration.stem.split('_')[0]}'
+down_revision = None
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    """Create initial schema from database/schema.sql"""
+    # Execute the schema creation SQL
+    op.execute("""
+{schema_sql}
+    """)
+
+
+def downgrade() -> None:
+    """Drop all tables"""
+    op.execute("DROP TABLE IF EXISTS animal_images CASCADE;")
+    op.execute("DROP TABLE IF EXISTS animals CASCADE;")
+    op.execute("DROP TABLE IF EXISTS scrape_logs CASCADE;")
+    op.execute("DROP TABLE IF EXISTS service_regions CASCADE;")
+    op.execute("DROP TABLE IF EXISTS organizations CASCADE;")
+'''
+
+        # Write the updated migration file
+        with open(latest_migration, "w") as f:
+            f.write(migration_content)
+
+        logger.info("Railway migration created successfully with schema.sql content")
+        return True
 
     except Exception as e:
         logger.error(f"Error creating Railway migration: {e}")

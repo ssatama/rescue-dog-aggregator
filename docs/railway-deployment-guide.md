@@ -21,8 +21,11 @@ This guide provides complete instructions for deploying the Rescue Dog Aggregato
    - Status tracking and dry-run capabilities
 
 3. **Data Synchronization** (`services/railway/sync.py`)
-   - Full data sync from local to Railway database
-   - Batch processing for large datasets (organizations, animals)
+   - Full data sync from local to Railway database (all 5 tables)
+   - Batch processing for large datasets (organizations, animals, animal_images, scrape_logs, service_regions)
+   - Schema validation with automatic column order verification
+   - Independent transaction processing for each table
+   - Bulk ID mapping to prevent N+1 query performance issues
    - Data integrity validation
    - Incremental sync detection
 
@@ -181,12 +184,51 @@ python management/railway_commands.py setup --dry-run
 
 ### Ongoing Sync Operations
 
+#### Typical Week-to-Week Usage
+
+**Daily Operations** (Automated/As Needed):
+```bash
+# Quick status check
+python management/railway_commands.py status
+
+# If data mismatches detected, sync immediately  
+python management/railway_commands.py sync
+```
+
+**Weekly Operations** (Recommended):
+```bash
+# Monday: Full status review
+python management/railway_commands.py status
+
+# Wednesday: Preventive sync (if needed)
+python management/railway_commands.py sync --dry-run
+python management/railway_commands.py sync
+
+# Friday: End-of-week validation
+python management/railway_commands.py status
+```
+
+**After Major Data Updates** (Post-Scraping):
+```bash
+# After running scrapers or config updates
+python management/config_commands.py sync    # Update local data first
+python management/railway_commands.py sync   # Then sync to Railway
+python management/railway_commands.py status # Verify 100% match
+```
+
+**Typical Data Patterns**:
+- **Organizations**: 8 records (stable, rarely changes)
+- **Animals**: 800+ records (high turnover, daily updates)
+- **Animal_images**: 200+ records (grows with new animals)
+- **Scrape_logs**: 300+ records (grows continuously)
+- **Service_regions**: 100+ records (stable, occasional updates)
+
 #### Regular Data Sync
 ```bash
 # Check current status
 python management/railway_commands.py status
 
-# Sync new/updated data
+# Sync new/updated data  
 python management/railway_commands.py sync
 
 # Verify sync completed successfully
@@ -215,25 +257,53 @@ python management/railway_commands.py status
 
 The system syncs the following tables from local to Railway:
 
-1. **organizations**
-   - Core organization data
+1. **organizations** (8 records typically)
+   - Core organization data with explicit ID preservation
    - Configuration metadata
-   - Social media links
+   - Social media links  
    - Shipping information
 
-2. **animals**
-   - Complete animal profiles
+2. **animals** (800+ records typically)
+   - Complete animal profiles with explicit ID preservation
    - Adoption status
-   - Image URLs
+   - Primary image URLs
    - Availability tracking
+
+3. **animal_images** (200+ records typically)
+   - Additional animal photos with explicit ID preservation
+   - Primary/secondary image flags
+   - Original image URLs
+
+4. **scrape_logs** (300+ records typically)
+   - Scraping operation history with explicit ID preservation
+   - Performance metrics
+   - Error tracking
+
+5. **service_regions** (100+ records typically)
+   - Organization service areas with explicit ID preservation
+   - Country/region mappings
+   - Service availability status
 
 ### Sync Behavior
 
+- **ID Preservation**: All tables maintain exact ID values from local database (critical fix applied 2025-07-13)
+- **Schema Validation**: Pre-sync verification ensures Railway tables match local schema exactly
 - **Conflict Resolution**: Uses `ON CONFLICT ... DO UPDATE` (UPSERT)
 - **Batch Size**: 100 records per batch (configurable)
-- **Validation**: Automatic record count comparison
-- **Dependencies**: Organizations synced before animals
+- **Transaction Isolation**: Each table syncs in independent transactions for partial success capability
+- **Bulk Operations**: Organization ID mapping built in bulk to prevent N+1 query performance issues
+- **Validation**: Automatic record count comparison post-sync
+- **Dependencies**: Organizations synced before animals, then animal_images, scrape_logs, and service_regions
 - **Safety**: All operations support dry-run mode
+
+### Recent Critical Fixes (2025-07-13)
+
+**Issue Resolved**: Railway database schema incompatibility
+- **Problem**: Railway tables had `id` columns with `default: None, nullable: NO` requiring explicit ID values
+- **Solution**: Updated all sync functions to include `id` columns in SELECT and INSERT statements
+- **Impact**: All 5 tables now sync correctly with 100% data integrity
+- **Tables Fixed**: organizations, animals, animal_images, scrape_logs, service_regions
+- **Performance**: Added bulk ID mapping to eliminate N+1 query bottlenecks
 
 ## Troubleshooting
 

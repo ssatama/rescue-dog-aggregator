@@ -4,9 +4,7 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-# Import your models here for autogenerate support
-# from your_app.models import Base
-# target_metadata = Base.metadata
+# No SQLAlchemy models in this project - using manual migrations
 target_metadata = None
 
 config = context.config

@@ -1,3 +1,27 @@
+"""Initial Railway schema
+
+Revision ID: ab4e01a661ef
+Revises:
+Create Date: 1752431499.9757042
+
+"""
+
+import sqlalchemy as sa
+from alembic import op
+from sqlalchemy.dialects import postgresql
+
+# revision identifiers, used by Alembic.
+revision = "ab4e01a661ef"
+down_revision = None
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    """Create initial schema from database/schema.sql"""
+    # Execute the schema creation SQL
+    op.execute(
+        """
 -- Source Organizations
 CREATE TABLE IF NOT EXISTS organizations (
     id SERIAL PRIMARY KEY,
@@ -144,3 +168,15 @@ CREATE INDEX IF NOT EXISTS idx_animal_images_original_image_url ON animal_images
 CREATE INDEX IF NOT EXISTS idx_scrape_logs_detailed_metrics ON scrape_logs USING gin(detailed_metrics);
 CREATE INDEX IF NOT EXISTS idx_scrape_logs_duration ON scrape_logs(duration_seconds);
 CREATE INDEX IF NOT EXISTS idx_scrape_logs_quality_score ON scrape_logs(data_quality_score);
+
+    """
+    )
+
+
+def downgrade() -> None:
+    """Drop all tables"""
+    op.execute("DROP TABLE IF EXISTS animal_images CASCADE;")
+    op.execute("DROP TABLE IF EXISTS animals CASCADE;")
+    op.execute("DROP TABLE IF EXISTS scrape_logs CASCADE;")
+    op.execute("DROP TABLE IF EXISTS service_regions CASCADE;")
+    op.execute("DROP TABLE IF EXISTS organizations CASCADE;")

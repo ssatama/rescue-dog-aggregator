@@ -57,9 +57,7 @@ class ConnectionPool:
                 conn_params["password"] = DB_CONFIG["password"]
 
             # Create threaded connection pool
-            self._pool = psycopg2.pool.ThreadedConnectionPool(
-                minconn=2, maxconn=20, **conn_params
-            )  # Minimum connections  # Maximum connections
+            self._pool = psycopg2.pool.ThreadedConnectionPool(minconn=2, maxconn=20, **conn_params)  # Minimum connections  # Maximum connections
 
             logger.info(f"Connection pool created: min=2, max=20, database={DB_CONFIG['database']}")
 

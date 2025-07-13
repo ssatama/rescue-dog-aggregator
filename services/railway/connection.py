@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from typing import Optional
 from urllib.parse import urlparse
 
-from sqlalchemy import Engine, create_engine
+from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -42,7 +42,7 @@ def get_railway_engine() -> Engine:
         try:
             # Test if engine is still valid
             with _railway_engine_cache.connect() as conn:
-                conn.execute("SELECT 1")
+                conn.execute(text("SELECT 1"))
             return _railway_engine_cache
         except Exception:
             # Engine is no longer valid, dispose and recreate
@@ -79,7 +79,7 @@ def check_railway_connection() -> bool:
     try:
         engine = get_railway_engine()
         with engine.connect() as connection:
-            connection.execute("SELECT 1")
+            connection.execute(text("SELECT 1"))
         return True
     except OperationalError as e:
         logger.error(f"Railway connection failed: {e}")
