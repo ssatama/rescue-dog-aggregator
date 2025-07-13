@@ -4,6 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "python healthcheck.py && cd /app && PYTHONPATH=/app uvicorn api.main:app --host 0.0.0.0 --port $PORT"
+    "startCommand": "uvicorn api.main:app --host 0.0.0.0 --port 8080",
+    "restartPolicyType": "ON_FAILURE"
   }
 }
