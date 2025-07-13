@@ -176,13 +176,15 @@ class SessionManager:
                     cursor = conn.cursor()
 
                     # Update animals not seen in current scrape
+                    # FIXED: Use original consecutive_scrapes_missing value in CASE statements
                     cursor.execute(
                         """
                         UPDATE animals
                         SET consecutive_scrapes_missing = consecutive_scrapes_missing + 1,
                             availability_confidence = CASE
                                 WHEN consecutive_scrapes_missing = 0 THEN 'medium'
-                                WHEN consecutive_scrapes_missing >= 1 THEN 'low'
+                                WHEN consecutive_scrapes_missing = 1 THEN 'low'
+                                WHEN consecutive_scrapes_missing >= 2 THEN 'low'
                                 ELSE availability_confidence
                             END,
                             status = CASE
@@ -216,13 +218,15 @@ class SessionManager:
             cursor = self.conn.cursor()
 
             # Update animals not seen in current scrape
+            # FIXED: Use original consecutive_scrapes_missing value in CASE statements
             cursor.execute(
                 """
                 UPDATE animals
                 SET consecutive_scrapes_missing = consecutive_scrapes_missing + 1,
                     availability_confidence = CASE
                         WHEN consecutive_scrapes_missing = 0 THEN 'medium'
-                        WHEN consecutive_scrapes_missing >= 1 THEN 'low'
+                        WHEN consecutive_scrapes_missing = 1 THEN 'low'
+                        WHEN consecutive_scrapes_missing >= 2 THEN 'low'
                         ELSE availability_confidence
                     END,
                     status = CASE
@@ -350,14 +354,49 @@ class SessionManager:
         Returns:
             Number of animals marked as seen
         """
-        if not self.conn:
-            self.logger.error("No database connection available for marking skipped animals")
+        if not self.skip_existing_animals or not self.current_scrape_session:
             return 0
 
-        try:
-            if not self.skip_existing_animals or not self.current_scrape_session:
+        # Use connection pool if available
+        if self.connection_pool:
+            try:
+                with self.connection_pool.get_connection_context() as conn:
+                    cursor = conn.cursor()
+
+                    # Mark all existing animals as seen in the current scrape session
+                    # This prevents them from being counted as "missing" in stale data detection
+                    cursor.execute(
+                        """
+                        UPDATE animals
+                        SET last_seen_at = %s,
+                            consecutive_scrapes_missing = 0,
+                            availability_confidence = 'high'
+                        WHERE organization_id = %s
+                        AND status = 'available'
+                        """,
+                        (self.current_scrape_session, self.organization_id),
+                    )
+
+                    rows_affected = cursor.rowcount
+                    conn.commit()
+                    cursor.close()
+
+                    if rows_affected > 0:
+                        self.logger.info(f"Marked {rows_affected} skipped animals as seen in current scrape session")
+
+                    return rows_affected
+            except Exception as e:
+                self.logger.error(f"Error marking skipped animals as seen: {e}")
                 return 0
 
+        # Fallback to direct connection
+        if not self.conn:
+            # Try to establish connection before failing
+            if not self.connect():
+                self.logger.error("No database connection available for marking skipped animals")
+                return 0
+
+        try:
             cursor = self.conn.cursor()
 
             # Mark all existing animals as seen in the current scrape session

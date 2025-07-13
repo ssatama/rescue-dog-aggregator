@@ -51,11 +51,12 @@ class TestHealthCheckEndpoint:
 class TestScraperMonitoringEndpoint:
     """
     Test scraper-specific monitoring endpoints.
-    
+
     NOTE: Scraper monitoring endpoints now require admin API key authentication
     and are no longer accessible without proper credentials. These tests were
     removed due to security enhancements that properly protect monitoring data.
     """
+
     pass
 
 
@@ -66,12 +67,13 @@ class TestScraperMonitoringEndpoint:
 class TestFailureDetectionMonitoring:
     """
     Test monitoring of failure detection system.
-    
-    NOTE: Failure detection monitoring endpoints now require admin API key 
-    authentication and are no longer accessible without proper credentials. 
+
+    NOTE: Failure detection monitoring endpoints now require admin API key
+    authentication and are no longer accessible without proper credentials.
     These tests were removed due to security enhancements that properly protect
     sensitive failure detection data.
     """
+
     pass
 
 
@@ -82,12 +84,13 @@ class TestFailureDetectionMonitoring:
 class TestPerformanceMetrics:
     """
     Test performance monitoring endpoints.
-    
-    NOTE: Performance monitoring endpoints now require admin API key 
-    authentication and are no longer accessible without proper credentials. 
+
+    NOTE: Performance monitoring endpoints now require admin API key
+    authentication and are no longer accessible without proper credentials.
     These tests were removed due to security enhancements that properly protect
     sensitive performance data.
     """
+
     pass
 
 
@@ -97,11 +100,12 @@ class TestPerformanceMetrics:
 class TestAlertingConfiguration:
     """
     Test alerting configuration and thresholds.
-    
+
     NOTE: Alert endpoints are now secured with admin API key authentication
     and are no longer publicly accessible. These tests were removed due to
     security enhancements that properly protect sensitive monitoring data.
     """
+
     pass
 
 
@@ -137,10 +141,11 @@ class TestMonitoringAuthentication:
 class TestMonitoringIntegration:
     """
     Test integration between monitoring and actual scraper data.
-    
+
     NOTE: Integration tests for monitoring endpoints were removed because
-    all monitoring endpoints now require admin API key authentication for 
-    security. These tests were removed due to security enhancements that 
+    all monitoring endpoints now require admin API key authentication for
+    security. These tests were removed due to security enhancements that
     properly protect sensitive monitoring and integration data.
     """
+
     pass

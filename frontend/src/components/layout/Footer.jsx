@@ -22,7 +22,7 @@ export default function Footer() {
             </Link>
             {/* *** Change Contact to mailto link *** */}
             <a
-              href="mailto:rescuedogaggregator@gmail.com"
+              href="mailto:rescuedogsme@gmail.com"
               className="text-small text-muted-foreground hover:text-foreground"
             >
               Contact

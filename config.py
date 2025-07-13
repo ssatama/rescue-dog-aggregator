@@ -14,10 +14,7 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO" if ENVIRONMENT == "development" else "WARNING")
 
 # Configure logging based on environment
-logging.basicConfig(
-    level=getattr(logging, LOG_LEVEL.upper()),
-    format="%(levelname)s:%(name)s:%(message)s"
-)
+logging.basicConfig(level=getattr(logging, LOG_LEVEL.upper()), format="%(levelname)s:%(name)s:%(message)s")
 
 # Disable verbose logging in production
 if ENVIRONMENT == "production":

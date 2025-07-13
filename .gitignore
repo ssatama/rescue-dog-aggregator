@@ -186,3 +186,5 @@ yarn-error.log*
 # MCP artifacts
 screenshots/
 test-results/
+requirements.txt
+requirements-dev.txt

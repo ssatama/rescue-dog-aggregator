@@ -3,7 +3,7 @@ Service mocks for BaseScraper testing after refactoring.
 
 Provides comprehensive mocking infrastructure for the four services:
 - DatabaseService
-- ImageProcessingService  
+- ImageProcessingService
 - SessionManager
 - MetricsCollector
 

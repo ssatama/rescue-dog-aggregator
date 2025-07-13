@@ -90,6 +90,9 @@ class R2Service:
         """Build URL using custom domain"""
         custom_domain = os.getenv("R2_CUSTOM_DOMAIN", "").rstrip("/")
         if custom_domain:
+            # Ensure custom domain has https:// protocol
+            if not custom_domain.startswith(("http://", "https://")):
+                custom_domain = f"https://{custom_domain}"
             return f"{custom_domain}/{key}"
 
         # Fallback to R2 endpoint if no custom domain

@@ -150,6 +150,6 @@ describe('About Page Dark Mode', () => {
     expect(contactButton).toBeInTheDocument();
     
     // The button should be wrapped by the Button component which handles its own dark mode styling
-    expect(contactButton.closest('a')).toHaveAttribute('href', '/contact');
+    expect(contactButton.closest('a')).toHaveAttribute('href', 'mailto:rescuedogsme@gmail.com');
   });
 });

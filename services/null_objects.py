@@ -1,12 +1,12 @@
 """
 Null Object implementations for services.
 
-These classes implement the same interface as their real counterparts but 
+These classes implement the same interface as their real counterparts but
 perform no-op operations, eliminating the need for conditional checks.
 
 Following CLAUDE.md principles:
 - Pure functions, no mutations
-- Early returns, no nested conditionals  
+- Early returns, no nested conditionals
 - Immutable data patterns
 - Clear error handling
 """

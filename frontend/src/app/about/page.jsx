@@ -79,11 +79,11 @@ export default function AboutPage() {
           <p className="text-body text-gray-700 dark:text-gray-300 leading-relaxed mb-6 max-w-2xl mx-auto">
             Are you a rescue organization interested in listing your dogs? Or do you have questions or feedback for us? We'd love to hear from you.
           </p>
-          {/* Example using Button, linking to a potential contact page */}
+          {/* Contact button with mailto link */}
           <Button asChild size="lg">
-            <Link href="/contact">
+            <a href="mailto:rescuedogsme@gmail.com">
               Contact Us
-            </Link>
+            </a>
           </Button>
         </section>
 

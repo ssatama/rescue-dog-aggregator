@@ -15,7 +15,7 @@ describe('<Footer />', () => {
 
   it('renders a mailto “Contact” link', () => {
     const contact = screen.getByRole('link', { name: /Contact/i });
-    expect(contact).toHaveAttribute('href', 'mailto:rescuedogaggregator@gmail.com');
+    expect(contact).toHaveAttribute('href', 'mailto:rescuedogsme@gmail.com');
   });
 
   it('does not render a Privacy Policy link', () => {

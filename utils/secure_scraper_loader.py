@@ -167,15 +167,18 @@ class SecureScraperLoader:
         try:
             from config import DB_CONFIG
 
-            # CRITICAL FIX: Initialize global database pool FIRST
+            # CRITICAL FIX: Initialize global database pool FIRST with validation
             try:
                 from utils.db_connection import create_database_config_from_env, initialize_database_pool
 
                 db_config = create_database_config_from_env()
-                initialize_database_pool(db_config)
-                logger.info("Global database pool initialized successfully")
+                global_pool = initialize_database_pool(db_config)
+                if global_pool is None:
+                    raise RuntimeError("Global database pool validation failed")
+                logger.info("Global database pool initialized and validated successfully")
             except Exception as e:
-                logger.warning(f"Failed to initialize global database pool: {e}")
+                logger.error(f"CRITICAL: Global database pool initialization failed: {e}")
+                raise RuntimeError(f"Global database pool validation failed: {e}") from e
 
             from services.connection_pool import ConnectionPoolService
             from services.database_service import DatabaseService
@@ -186,16 +189,17 @@ class SecureScraperLoader:
             # Create connection pool for shared database access
             connection_pool = None
             try:
-                connection_pool = ConnectionPoolService(DB_CONFIG, min_connections=2, max_connections=10)
+                connection_pool = ConnectionPoolService(DB_CONFIG, min_connections=2, max_connections=25)
                 logger.info("Service connection pool created successfully")
             except Exception as e:
-                logger.warning(f"Failed to create connection pool: {e}. Falling back to direct connections.")
+                logger.error(f"CRITICAL: Connection pool creation failed: {e}")
+                raise RuntimeError(f"Connection pool creation failed: {e}") from e
 
             # Create DatabaseService with connection pool
             database_service = DatabaseService(DB_CONFIG, connection_pool=connection_pool)
             if not connection_pool and not database_service.connect():
-                logger.error("Failed to connect DatabaseService to database")
-                return  # Fall back to null objects
+                logger.error("CRITICAL: DatabaseService connection failed")
+                raise RuntimeError("DatabaseService connection failed - scraper cannot operate without database access")
 
             # Create ImageProcessingService (doesn't need DB_CONFIG - uses R2Service)
             image_processing_service = ImageProcessingService()
@@ -208,9 +212,9 @@ class SecureScraperLoader:
 
             # Establish connection for SessionManager only if no connection pool
             if not connection_pool and not session_manager.connect():
-                logger.error("Failed to connect SessionManager to database")
+                logger.error("CRITICAL: SessionManager connection failed")
                 database_service.close()  # Clean up successful connection
-                return  # Fall back to null objects
+                raise RuntimeError("SessionManager connection failed - scraper cannot track stale data without session management")
 
             # Store services for cleanup
             services_to_store = [database_service, session_manager]
@@ -227,9 +231,8 @@ class SecureScraperLoader:
             logger.info(f"Services successfully injected and connected for scraper instance (pool: {'enabled' if connection_pool else 'disabled'})")
 
         except Exception as e:
-            logger.error(f"Failed to inject services: {e}")
-            # Continue with null objects already set in BaseScraper
-            pass
+            logger.error(f"CRITICAL: Service injection failed: {e}")
+            raise RuntimeError(f"Scraper cannot operate without database services: {e}") from e
 
     def get_allowed_modules(self) -> Set[str]:
         """Get copy of allowed modules (immutable)."""

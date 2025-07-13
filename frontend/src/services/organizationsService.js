@@ -106,3 +106,11 @@ export async function getEnhancedOrganizations() {
     throw error;
   }
 }
+
+/**
+ * Fetches all organizations (alias for sitemap generation).
+ * @returns {Promise<Array>} - Promise resolving to an array of organization objects.
+ */
+export async function getAllOrganizations() {
+  return getOrganizations();
+}

@@ -37,7 +37,7 @@ app.add_middleware(
 # Security Headers Middleware
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add security headers to all responses."""
-    
+
     async def dispatch(self, request, call_next):
         response = await call_next(request)
         # Add security headers

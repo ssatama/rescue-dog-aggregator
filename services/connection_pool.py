@@ -3,7 +3,7 @@ ConnectionPoolService - Centralized database connection pooling.
 
 Provides thread-safe connection pool management following CLAUDE.md principles:
 - Immutable configuration
-- Clean resource management  
+- Clean resource management
 - Context manager support
 - Early returns for error handling
 """
@@ -22,7 +22,7 @@ class PoolConfig:
     """Immutable connection pool configuration."""
 
     min_connections: int = 2
-    max_connections: int = 10
+    max_connections: int = 25
 
     def __post_init__(self):
         """Validate pool configuration."""
@@ -35,7 +35,7 @@ class PoolConfig:
 class ConnectionPoolService:
     """Thread-safe database connection pool service."""
 
-    def __init__(self, db_config: Dict[str, str], min_connections: int = 2, max_connections: int = 10):
+    def __init__(self, db_config: Dict[str, str], min_connections: int = 2, max_connections: int = 25):
         """Initialize connection pool with database configuration.
 
         Args:
