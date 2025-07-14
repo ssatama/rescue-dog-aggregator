@@ -65,7 +65,7 @@ describe('HeroImageWithBlurredBackground', () => {
       
       const container = screen.getByTestId('hero-image-clean');
       expect(container).toBeInTheDocument();
-      expect(container).toHaveClass('relative', 'w-full', 'aspect-[16/9]', 'rounded-lg', 'overflow-hidden');
+      expect(container).toHaveClass('relative', 'w-full', 'aspect-square', 'md:aspect-[16/9]', 'rounded-lg', 'overflow-hidden');
     });
 
     it('should apply custom className', () => {
@@ -220,11 +220,11 @@ describe('HeroImageWithBlurredBackground', () => {
   });
 
   describe('Responsive design', () => {
-    it('should maintain 16:9 aspect ratio', () => {
+    it('should have square aspect ratio on mobile and 16:9 on desktop', () => {
       render(<HeroImageWithBlurredBackground {...mockProps} />);
       
       const container = screen.getByTestId('hero-image-clean');
-      expect(container).toHaveClass('aspect-[16/9]');
+      expect(container).toHaveClass('aspect-square', 'md:aspect-[16/9]');
     });
 
     it('should be full width', () => {
@@ -243,11 +243,11 @@ describe('HeroImageWithBlurredBackground', () => {
   });
 
   describe('Hero image enhancements', () => {
-    it('should use object-contain for proper dog display without cropping', () => {
+    it('should use object-cover on mobile and object-contain on desktop', () => {
       render(<HeroImageWithBlurredBackground {...mockProps} />);
       
       const img = screen.getByRole('img');
-      expect(img).toHaveClass('object-contain');
+      expect(img).toHaveClass('object-cover', 'md:object-contain');
     });
 
     it('should support gradient background as fallback', () => {
@@ -353,17 +353,16 @@ describe('HeroImageWithBlurredBackground', () => {
       expect(imageContainer).toHaveClass('flex', 'items-center', 'justify-center');
       
       const img = screen.getByRole('img');
-      expect(img).toHaveClass('object-contain');
+      expect(img).toHaveClass('object-cover', 'md:object-contain');
     });
 
     it('should handle landscape images properly', () => {
       render(<HeroImageWithBlurredBackground {...mockProps} />);
       
       const img = screen.getByRole('img');
-      expect(img).toHaveClass('w-full', 'h-full', 'object-contain');
+      expect(img).toHaveClass('w-full', 'h-full', 'object-cover', 'md:object-contain');
       
       // Should never distort the image
-      expect(img).not.toHaveClass('object-cover');
       expect(img).not.toHaveClass('object-fill');
     });
 
@@ -371,11 +370,11 @@ describe('HeroImageWithBlurredBackground', () => {
       render(<HeroImageWithBlurredBackground {...mockProps} />);
       
       const img = screen.getByRole('img');
-      expect(img).toHaveClass('object-contain');
+      expect(img).toHaveClass('object-cover', 'md:object-contain');
       
       // Should be within a container that maintains aspect ratio
       const container = screen.getByTestId('hero-image-clean');
-      expect(container).toHaveClass('aspect-[16/9]');
+      expect(container).toHaveClass('aspect-square', 'md:aspect-[16/9]');
     });
   });
 
@@ -386,7 +385,7 @@ describe('HeroImageWithBlurredBackground', () => {
       // Should have clean, simple structure
       const mainContainer = container.querySelector('[data-testid="hero-image-clean"]');
       expect(mainContainer).toBeInTheDocument();
-      expect(mainContainer).toHaveClass('relative', 'w-full', 'aspect-[16/9]', 'rounded-lg', 'overflow-hidden');
+      expect(mainContainer).toHaveClass('relative', 'w-full', 'aspect-square', 'md:aspect-[16/9]', 'rounded-lg', 'overflow-hidden');
     });
 
     it('should not have complex layering system', () => {

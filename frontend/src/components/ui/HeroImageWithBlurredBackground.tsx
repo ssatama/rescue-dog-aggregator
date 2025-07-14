@@ -68,7 +68,7 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
   if (!src || src.trim() === '') {
     return (
       <div 
-        className={`relative w-full aspect-[16/9] rounded-lg overflow-hidden bg-white dark:bg-gray-900 shadow-md ${className}`}
+        className={`relative w-full aspect-square md:aspect-[16/9] rounded-lg overflow-hidden bg-white dark:bg-gray-900 shadow-md ${className}`}
         data-testid="hero-image-clean"
       >
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
@@ -85,7 +85,7 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
 
   return (
     <div 
-      className={`relative w-full aspect-[16/9] rounded-lg overflow-hidden bg-white dark:bg-gray-900 shadow-md ${className}`}
+      className={`relative w-full aspect-square md:aspect-[16/9] rounded-lg overflow-hidden bg-white dark:bg-gray-900 shadow-md ${className}`}
       data-testid="hero-image-clean"
     >
       {/* Image container for centering and TDD compliance */}
@@ -100,7 +100,7 @@ const HeroImageWithBlurredBackground = memo(function HeroImageWithBlurredBackgro
           src={currentSrc || '/placeholder_dog.svg'}
           alt={alt}
           className={`
-            w-full h-full object-contain transition-all duration-700
+            w-full h-full object-cover md:object-contain transition-all duration-700
             ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}
             ${hasError ? 'hidden' : ''}
           `}
