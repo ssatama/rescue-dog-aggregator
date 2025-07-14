@@ -215,10 +215,10 @@ describe('DesktopFilters Component', () => {
       
       // === DROPDOWN FILTERS SECTION ===
       
-      // Search & Basic section
-      const searchSection = screen.getByTestId('filter-section-search');
-      expect(searchSection).toBeInTheDocument();
-      expect(searchSection.tagName).toBe('DETAILS');
+      // Search input (not in a collapsible section)
+      const searchInput = screen.getByTestId('search-input');
+      expect(searchInput).toBeInTheDocument();
+      expect(searchInput.tagName).toBe('INPUT');
       
       // Breed section
       const breedSection = screen.getByTestId('filter-section-breed');
@@ -251,16 +251,16 @@ describe('DesktopFilters Component', () => {
     test('filter sections have proper summary headers with chevron icons', () => {
       render(<DesktopFilters {...mockProps} />);
       
-      const searchSummary = screen.getByTestId('filter-summary-search');
-      expect(searchSummary.tagName).toBe('SUMMARY');
-      expect(searchSummary).toHaveClass('flex');
-      expect(searchSummary).toHaveClass('items-center');
-      expect(searchSummary).toHaveClass('justify-between');
-      expect(searchSummary).toHaveClass('cursor-pointer');
-      expect(searchSummary).toHaveClass('py-3');
+      const breedSummary = screen.getByTestId('filter-summary-breed');
+      expect(breedSummary.tagName).toBe('SUMMARY');
+      expect(breedSummary).toHaveClass('flex');
+      expect(breedSummary).toHaveClass('items-center');
+      expect(breedSummary).toHaveClass('justify-between');
+      expect(breedSummary).toHaveClass('cursor-pointer');
+      expect(breedSummary).toHaveClass('py-3');
       
       // Should have chevron icon
-      const chevron = within(searchSummary).getByTestId('chevron-icon-search');
+      const chevron = within(breedSummary).getByTestId('chevron-icon-breed');
       expect(chevron).toBeInTheDocument();
       expect(chevron).toHaveClass('transition-transform');
       expect(chevron).toHaveClass('group-open:rotate-180');
@@ -269,30 +269,30 @@ describe('DesktopFilters Component', () => {
     test('sections are expandable and collapsible', () => {
       render(<DesktopFilters {...mockProps} />);
       
-      const searchSection = screen.getByTestId('filter-section-search');
-      const searchSummary = screen.getByTestId('filter-summary-search');
+      const breedSection = screen.getByTestId('filter-section-breed');
+      const breedSummary = screen.getByTestId('filter-summary-breed');
       
-      // Section should start open (default)
-      expect(searchSection).toHaveAttribute('open');
+      // Section should start closed (defaultOpen is false for breed)
+      expect(breedSection).not.toHaveAttribute('open');
       
-      // Click to collapse
-      fireEvent.click(searchSummary);
-      expect(searchSection).not.toHaveAttribute('open');
+      // Click to expand
+      fireEvent.click(breedSummary);
+      expect(breedSection).toHaveAttribute('open');
       
-      // Click to expand again
-      fireEvent.click(searchSummary);
-      expect(searchSection).toHaveAttribute('open');
+      // Click to collapse again
+      fireEvent.click(breedSummary);
+      expect(breedSection).not.toHaveAttribute('open');
     });
 
     test('chevron icon rotates when section is expanded/collapsed', () => {
       render(<DesktopFilters {...mockProps} />);
       
-      const searchSection = screen.getByTestId('filter-section-search');
-      const searchSummary = screen.getByTestId('filter-summary-search');
-      const chevron = within(searchSummary).getByTestId('chevron-icon-search');
+      const breedSection = screen.getByTestId('filter-section-breed');
+      const breedSummary = screen.getByTestId('filter-summary-breed');
+      const chevron = within(breedSummary).getByTestId('chevron-icon-breed');
       
       // Should have group class for CSS targeting
-      expect(searchSection).toHaveClass('group');
+      expect(breedSection).toHaveClass('group');
       
       // Chevron should have rotation classes
       expect(chevron).toHaveClass('transition-transform');
@@ -302,20 +302,20 @@ describe('DesktopFilters Component', () => {
     test('section headers have proper hover states', () => {
       render(<DesktopFilters {...mockProps} />);
       
-      const searchSummary = screen.getByTestId('filter-summary-search');
+      const breedSummary = screen.getByTestId('filter-summary-breed');
       
       // Should have hover styling
-      expect(searchSummary).toHaveClass('hover:bg-gray-50/50');
-      expect(searchSummary).toHaveClass('rounded-lg');
-      expect(searchSummary).toHaveClass('px-4');
+      expect(breedSummary).toHaveClass('hover:bg-gray-50/50');
+      expect(breedSummary).toHaveClass('rounded-lg');
+      expect(breedSummary).toHaveClass('px-4');
     });
 
     test('filter section content containers have proper styling', () => {
       render(<DesktopFilters {...mockProps} />);
       
-      const searchContent = screen.getByTestId('filter-content-search');
-      expect(searchContent).toHaveClass('mt-3');
-      expect(searchContent).toHaveClass('space-y-3');
+      const organizationContent = screen.getByTestId('filter-content-organization');
+      expect(organizationContent).toHaveClass('mt-3');
+      expect(organizationContent).toHaveClass('space-y-3');
       
       const breedContent = screen.getByTestId('filter-content-breed');
       expect(breedContent).toHaveClass('mt-3');
@@ -329,31 +329,31 @@ describe('DesktopFilters Component', () => {
     test('sections start with appropriate default open/closed states', () => {
       render(<DesktopFilters {...mockProps} />);
       
-      // Search & Basic should be open by default
-      const searchSection = screen.getByTestId('filter-section-search');
-      expect(searchSection).toHaveAttribute('open');
-      
-      // Breed section should be closed by default
+      // All collapsible sections should be closed by default
       const breedSection = screen.getByTestId('filter-section-breed');
       expect(breedSection).not.toHaveAttribute('open');
       
       // Ships to Country section should be closed by default
       const shipsToCountrySection = screen.getByTestId('filter-section-ships-to-country');
       expect(shipsToCountrySection).not.toHaveAttribute('open');
+      
+      // Organization section should be closed by default
+      const organizationSection = screen.getByTestId('filter-section-organization');
+      expect(organizationSection).not.toHaveAttribute('open');
     });
 
     test('sections have proper accessibility attributes', () => {
       render(<DesktopFilters {...mockProps} />);
       
-      const searchSection = screen.getByTestId('filter-section-search');
-      const searchSummary = screen.getByTestId('filter-summary-search');
+      const breedSection = screen.getByTestId('filter-section-breed');
+      const breedSummary = screen.getByTestId('filter-summary-breed');
       
       // Summary should have proper ARIA attributes
-      expect(searchSummary).toHaveAttribute('aria-expanded');
-      expect(searchSummary).toHaveAttribute('role', 'button');
+      expect(breedSummary).toHaveAttribute('aria-expanded');
+      expect(breedSummary).toHaveAttribute('role', 'button');
       
       // Section should be properly labeled
-      expect(searchSection).toHaveAttribute('aria-label');
+      expect(breedSection).toHaveAttribute('aria-label');
     });
 
     test('filter sections maintain proper spacing between each other', () => {
@@ -803,24 +803,24 @@ describe('DesktopFilters Component', () => {
       test('filter sections have smooth collapse transition classes', () => {
         render(<DesktopFilters {...mockProps} />);
         
-        const searchSection = screen.getByTestId('filter-section-search');
+        const breedSection = screen.getByTestId('filter-section-breed');
         
         // Should have filter-section class for transitions
-        expect(searchSection).toHaveClass('filter-section');
-        expect(searchSection).toHaveClass('overflow-hidden');
+        expect(breedSection).toHaveClass('filter-section');
+        expect(breedSection).toHaveClass('overflow-hidden');
       });
 
       test('filter content has fade transition classes', () => {
         render(<DesktopFilters {...mockProps} />);
         
-        const searchContent = screen.getByTestId('filter-content-search');
+        const breedContent = screen.getByTestId('filter-content-breed');
         
         // Should have content transition classes
-        expect(searchContent).toHaveClass('filter-section-content');
-        expect(searchContent).toHaveClass('transition-opacity');
-        expect(searchContent).toHaveClass('transition-transform');
-        expect(searchContent).toHaveClass('duration-200');
-        expect(searchContent).toHaveClass('ease-out');
+        expect(breedContent).toHaveClass('filter-section-content');
+        expect(breedContent).toHaveClass('transition-opacity');
+        expect(breedContent).toHaveClass('transition-transform');
+        expect(breedContent).toHaveClass('duration-200');
+        expect(breedContent).toHaveClass('ease-out');
       });
 
       test('collapsed sections apply appropriate classes', () => {
@@ -838,23 +838,26 @@ describe('DesktopFilters Component', () => {
       test('chevron icons have smooth rotation transition', () => {
         render(<DesktopFilters {...mockProps} />);
         
-        const searchChevron = screen.getByTestId('chevron-icon-search');
+        const breedChevron = screen.getByTestId('chevron-icon-breed');
         
         // Should have enhanced chevron transition classes
-        expect(searchChevron).toHaveClass('chevron-icon');
-        expect(searchChevron).toHaveClass('transition-transform');
-        expect(searchChevron).toHaveClass('duration-200');
-        expect(searchChevron).toHaveClass('ease-out');
+        expect(breedChevron).toHaveClass('chevron-icon');
+        expect(breedChevron).toHaveClass('transition-transform');
+        expect(breedChevron).toHaveClass('duration-200');
+        expect(breedChevron).toHaveClass('ease-out');
       });
 
       test('open sections apply rotate-180 to chevron', () => {
         render(<DesktopFilters {...mockProps} />);
         
-        // Search section is open by default
-        const searchChevron = screen.getByTestId('chevron-icon-search');
+        // Click to open breed section
+        const breedSummary = screen.getByTestId('filter-summary-breed');
+        fireEvent.click(breedSummary);
+        
+        const breedChevron = screen.getByTestId('chevron-icon-breed');
         
         // Should have open state rotation
-        expect(searchChevron).toHaveClass('chevron-open');
+        expect(breedChevron).toHaveClass('chevron-open');
       });
 
       test('closed sections do not have rotation class', () => {
@@ -872,23 +875,23 @@ describe('DesktopFilters Component', () => {
       test('animated elements have will-change properties', () => {
         render(<DesktopFilters {...mockProps} />);
         
-        const searchSection = screen.getByTestId('filter-section-search');
-        const searchContent = screen.getByTestId('filter-content-search');
+        const breedSection = screen.getByTestId('filter-section-breed');
+        const breedContent = screen.getByTestId('filter-content-breed');
         
         // Performance optimization classes
-        expect(searchSection).toHaveClass('will-change-transform');
-        expect(searchContent).toHaveClass('will-change-transform');
+        expect(breedSection).toHaveClass('will-change-transform');
+        expect(breedContent).toHaveClass('will-change-transform');
       });
 
       test('transitions use 200ms duration consistently', () => {
         render(<DesktopFilters {...mockProps} />);
         
-        const searchContent = screen.getByTestId('filter-content-search');
-        const searchChevron = screen.getByTestId('chevron-icon-search');
+        const breedContent = screen.getByTestId('filter-content-breed');
+        const breedChevron = screen.getByTestId('chevron-icon-breed');
         
         // Consistent timing
-        expect(searchContent).toHaveClass('duration-200');
-        expect(searchChevron).toHaveClass('duration-200');
+        expect(breedContent).toHaveClass('duration-200');
+        expect(breedChevron).toHaveClass('duration-200');
       });
 
       test('animations respect reduced motion preferences', () => {
@@ -952,48 +955,48 @@ describe('DesktopFilters Component', () => {
       test('section headers have enhanced padding and spacing', () => {
         render(<DesktopFilters {...mockProps} />);
         
-        const searchSummary = screen.getByTestId('filter-summary-search');
+        const breedSummary = screen.getByTestId('filter-summary-breed');
         
         // Enhanced header padding
-        expect(searchSummary).toHaveClass('py-3');
-        expect(searchSummary).toHaveClass('px-4');
-        expect(searchSummary).toHaveClass('cursor-pointer');
+        expect(breedSummary).toHaveClass('py-3');
+        expect(breedSummary).toHaveClass('px-4');
+        expect(breedSummary).toHaveClass('cursor-pointer');
       });
 
       test('section headers have enhanced hover states', () => {
         render(<DesktopFilters {...mockProps} />);
         
-        const searchSummary = screen.getByTestId('filter-summary-search');
+        const breedSummary = screen.getByTestId('filter-summary-breed');
         
         // Enhanced hover styling
-        expect(searchSummary).toHaveClass('hover:bg-gray-50/50');
-        expect(searchSummary).toHaveClass('rounded-lg');
-        expect(searchSummary).toHaveClass('transition-all');
-        expect(searchSummary).toHaveClass('duration-200');
-        expect(searchSummary).toHaveClass('ease-out');
+        expect(breedSummary).toHaveClass('hover:bg-gray-50/50');
+        expect(breedSummary).toHaveClass('rounded-lg');
+        expect(breedSummary).toHaveClass('transition-all');
+        expect(breedSummary).toHaveClass('duration-200');
+        expect(breedSummary).toHaveClass('ease-out');
       });
 
       test('section headers maintain accessibility', () => {
         render(<DesktopFilters {...mockProps} />);
         
-        const searchSummary = screen.getByTestId('filter-summary-search');
+        const breedSummary = screen.getByTestId('filter-summary-breed');
         
         // Accessibility attributes
-        expect(searchSummary).toHaveAttribute('role', 'button');
-        expect(searchSummary).toHaveAttribute('tabIndex', '0');
-        expect(searchSummary).toHaveAttribute('aria-expanded');
+        expect(breedSummary).toHaveAttribute('role', 'button');
+        expect(breedSummary).toHaveAttribute('tabIndex', '0');
+        expect(breedSummary).toHaveAttribute('aria-expanded');
       });
     });
 
     describe('Active Section Indicators', () => {
       test('sections with active filters get indicator styling', () => {
-        const propsWithSearch = { ...mockProps, searchQuery: 'labrador' };
-        render(<DesktopFilters {...propsWithSearch} />);
+        const propsWithBreed = { ...mockProps, standardizedBreedFilter: 'Labrador' };
+        render(<DesktopFilters {...propsWithBreed} />);
         
-        const searchSection = screen.getByTestId('filter-section-search');
+        const breedSection = screen.getByTestId('filter-section-breed');
         
         // Should have active section styling
-        expect(searchSection).toHaveClass('filter-section-active');
+        expect(breedSection).toHaveClass('filter-section-active');
       });
 
       test('sections without active filters do not get indicator styling', () => {
@@ -1019,18 +1022,20 @@ describe('DesktopFilters Component', () => {
       test('multiple active sections can have indicators simultaneously', () => {
         const propsWithMultiple = { 
           ...mockProps, 
-          searchQuery: 'test',
           standardizedBreedFilter: 'Labrador',
-          ageCategoryFilter: 'Puppy'
+          availableCountryFilter: 'United States',
+          organizationFilter: '1'
         };
         render(<DesktopFilters {...propsWithMultiple} />);
         
-        const searchSection = screen.getByTestId('filter-section-search');
         const breedSection = screen.getByTestId('filter-section-breed');
+        const shipsToSection = screen.getByTestId('filter-section-ships-to-country');
+        const orgSection = screen.getByTestId('filter-section-organization');
         
-        // Both should have active styling
-        expect(searchSection).toHaveClass('filter-section-active');
+        // All should have active styling
         expect(breedSection).toHaveClass('filter-section-active');
+        expect(shipsToSection).toHaveClass('filter-section-active');
+        expect(orgSection).toHaveClass('filter-section-active');
       });
     });
 
@@ -1063,20 +1068,20 @@ describe('DesktopFilters Component', () => {
       test('sections maintain styling consistency across screen sizes', () => {
         render(<DesktopFilters {...mockProps} />);
         
-        const searchSection = screen.getByTestId('filter-section-search');
+        const breedSection = screen.getByTestId('filter-section-breed');
         
         // Should have consistent styling
-        expect(searchSection).toHaveClass('filter-section');
-        expect(searchSection).toHaveClass('overflow-hidden');
+        expect(breedSection).toHaveClass('filter-section');
+        expect(breedSection).toHaveClass('overflow-hidden');
       });
 
       test('hover states work properly on touch devices', () => {
         render(<DesktopFilters {...mockProps} />);
         
-        const searchSummary = screen.getByTestId('filter-summary-search');
+        const breedSummary = screen.getByTestId('filter-summary-breed');
         
         // Should include touch-friendly hover states
-        expect(searchSummary).toHaveClass('hover:bg-gray-50/50');
+        expect(breedSummary).toHaveClass('hover:bg-gray-50/50');
       });
     });
   });
@@ -1145,14 +1150,14 @@ describe('DesktopFilters Component', () => {
       test('all interactive elements use consistent transition timing', () => {
         render(<DesktopFilters {...mockProps} />);
         
-        const searchSummary = screen.getByTestId('filter-summary-search');
         const breedSummary = screen.getByTestId('filter-summary-breed');
+        const orgSummary = screen.getByTestId('filter-summary-organization');
         
         // All should use transition-all duration-200
-        expect(searchSummary).toHaveClass('transition-all');
-        expect(searchSummary).toHaveClass('duration-200');
         expect(breedSummary).toHaveClass('transition-all');
         expect(breedSummary).toHaveClass('duration-200');
+        expect(orgSummary).toHaveClass('transition-all');
+        expect(orgSummary).toHaveClass('duration-200');
       });
 
       test('button elements have consistent transitions', () => {
@@ -1168,12 +1173,12 @@ describe('DesktopFilters Component', () => {
       test('chevron icons have consistent rotation timing', () => {
         render(<DesktopFilters {...mockProps} />);
         
-        const searchChevron = screen.getByTestId('chevron-icon-search');
         const breedChevron = screen.getByTestId('chevron-icon-breed');
+        const orgChevron = screen.getByTestId('chevron-icon-organization');
         
         // All chevrons should have consistent timing
-        expect(searchChevron).toHaveClass('duration-200');
         expect(breedChevron).toHaveClass('duration-200');
+        expect(orgChevron).toHaveClass('duration-200');
       });
     });
 
@@ -1181,11 +1186,11 @@ describe('DesktopFilters Component', () => {
       test('section headers provide visual feedback on hover', () => {
         render(<DesktopFilters {...mockProps} />);
         
-        const searchSummary = screen.getByTestId('filter-summary-search');
+        const breedSummary = screen.getByTestId('filter-summary-breed');
         
         // Should have hover background change
-        expect(searchSummary).toHaveClass('hover:bg-gray-50/50');
-        expect(searchSummary).toHaveClass('rounded-lg');
+        expect(breedSummary).toHaveClass('hover:bg-gray-50/50');
+        expect(breedSummary).toHaveClass('rounded-lg');
       });
 
       test('filter buttons provide enhanced hover states', () => {
@@ -1214,10 +1219,10 @@ describe('DesktopFilters Component', () => {
       test('all interactive elements have proper cursor styling', () => {
         render(<DesktopFilters {...mockProps} />);
         
-        const searchSummary = screen.getByTestId('filter-summary-search');
+        const breedSummary = screen.getByTestId('filter-summary-breed');
         
         // Should have cursor pointer
-        expect(searchSummary).toHaveClass('cursor-pointer');
+        expect(breedSummary).toHaveClass('cursor-pointer');
       });
 
       test('disabled states are handled gracefully', () => {
@@ -1247,78 +1252,52 @@ describe('DesktopFilters Component', () => {
       test('focus indicators work with orange theme', () => {
         render(<DesktopFilters {...mockProps} />);
         
-        const searchSummary = screen.getByTestId('filter-summary-search');
+        const breedSummary = screen.getByTestId('filter-summary-breed');
         
         // Should be focusable
-        searchSummary.focus();
-        expect(searchSummary).toHaveFocus();
+        breedSummary.focus();
+        expect(breedSummary).toHaveFocus();
       });
 
       test('keyboard navigation provides visual feedback', () => {
         render(<DesktopFilters {...mockProps} />);
         
-        const searchSummary = screen.getByTestId('filter-summary-search');
+        const breedSummary = screen.getByTestId('filter-summary-breed');
         
         // Should have proper tabIndex for keyboard navigation
-        expect(searchSummary).toHaveAttribute('tabIndex', '0');
+        expect(breedSummary).toHaveAttribute('tabIndex', '0');
       });
 
       test('screen reader states are properly communicated', () => {
         render(<DesktopFilters {...mockProps} />);
         
-        const searchSummary = screen.getByTestId('filter-summary-search');
+        const breedSummary = screen.getByTestId('filter-summary-breed');
         
         // Should have proper ARIA attributes
-        expect(searchSummary).toHaveAttribute('aria-expanded');
-        expect(searchSummary).toHaveAttribute('role', 'button');
+        expect(breedSummary).toHaveAttribute('aria-expanded');
+        expect(breedSummary).toHaveAttribute('role', 'button');
       });
     });
   });
 
   describe('Filter Section Count Badges', () => {
-    describe('Search & Basic Section Count Badge', () => {
-      test('shows count badge when search query is active', () => {
-        const propsWithSearch = { ...mockProps, searchQuery: 'labrador' };
-        render(<DesktopFilters {...propsWithSearch} />);
-        
-        const searchSection = screen.getByTestId('filter-section-search');
-        const summary = within(searchSection).getByTestId('filter-summary-search');
-        
-        // Should show count badge for active search
-        expect(within(summary).queryByText('(1)')).toBeInTheDocument();
-      });
-
+    describe('Organization Section Count Badge', () => {
       test('shows count badge when organization filter is active', () => {
         const propsWithOrg = { ...mockProps, organizationFilter: '1' };
         render(<DesktopFilters {...propsWithOrg} />);
         
-        const searchSection = screen.getByTestId('filter-section-search');
-        const summary = within(searchSection).getByTestId('filter-summary-search');
+        const orgSection = screen.getByTestId('filter-section-organization');
+        const summary = within(orgSection).getByTestId('filter-summary-organization');
         
         // Should show count badge for active organization filter
         expect(within(summary).queryByText('(1)')).toBeInTheDocument();
       });
 
-      test('shows combined count when multiple filters are active in section', () => {
-        const propsWithMultiple = { 
-          ...mockProps, 
-          searchQuery: 'test',
-          organizationFilter: '1'
-        };
-        render(<DesktopFilters {...propsWithMultiple} />);
-        
-        const searchSection = screen.getByTestId('filter-section-search');
-        const summary = within(searchSection).getByTestId('filter-summary-search');
-        
-        // Should show combined count
-        expect(within(summary).queryByText('(2)')).toBeInTheDocument();
-      });
-
-      test('does not show count badge when no filters are active in section', () => {
+      test('does not show count badge when no organization filter is active', () => {
         render(<DesktopFilters {...mockProps} />);
         
-        const searchSection = screen.getByTestId('filter-section-search');
-        const summary = within(searchSection).getByTestId('filter-summary-search');
+        const orgSection = screen.getByTestId('filter-section-organization');
+        const summary = within(orgSection).getByTestId('filter-summary-organization');
         
         // Should not show count badge
         expect(within(summary).queryByText(/\(\d+\)/)).not.toBeInTheDocument();
@@ -1420,28 +1399,28 @@ describe('DesktopFilters Component', () => {
       test('count badges have correct styling classes', () => {
         const propsWithFilters = { 
           ...mockProps, 
-          searchQuery: 'test search',
-          standardizedBreedFilter: 'Labrador'
+          standardizedBreedFilter: 'Labrador',
+          organizationFilter: '1'
         };
         render(<DesktopFilters {...propsWithFilters} />);
         
         // Find count badges by section
-        const searchSection = screen.getByTestId('filter-section-search');
         const breedSection = screen.getByTestId('filter-section-breed');
+        const orgSection = screen.getByTestId('filter-section-organization');
         
-        const searchBadge = within(searchSection).getByText('(1)');
         const breedBadge = within(breedSection).getByText('(1)');
-        
-        expect(searchBadge).toHaveClass('inline-flex');
-        expect(searchBadge).toHaveClass('bg-orange-100'); 
-        expect(searchBadge).toHaveClass('text-orange-700');
-        expect(searchBadge).toHaveClass('px-2');
-        expect(searchBadge).toHaveClass('rounded-full');
-        expect(searchBadge).toHaveClass('text-xs');
+        const orgBadge = within(orgSection).getByText('(1)');
         
         expect(breedBadge).toHaveClass('inline-flex');
-        expect(breedBadge).toHaveClass('bg-orange-100');
+        expect(breedBadge).toHaveClass('bg-orange-100'); 
         expect(breedBadge).toHaveClass('text-orange-700');
+        expect(breedBadge).toHaveClass('px-2');
+        expect(breedBadge).toHaveClass('rounded-full');
+        expect(breedBadge).toHaveClass('text-xs');
+        
+        expect(orgBadge).toHaveClass('inline-flex');
+        expect(orgBadge).toHaveClass('bg-orange-100');
+        expect(orgBadge).toHaveClass('text-orange-700');
       });
     });
 
@@ -1453,8 +1432,8 @@ describe('DesktopFilters Component', () => {
         expect(screen.queryByText(/\(\d+\)/)).not.toBeInTheDocument();
         
         // Add a filter
-        const propsWithSearch = { ...mockProps, searchQuery: 'labrador' };
-        rerender(<DesktopFilters {...propsWithSearch} />);
+        const propsWithBreed = { ...mockProps, standardizedBreedFilter: 'Labrador' };
+        rerender(<DesktopFilters {...propsWithBreed} />);
         
         // Should now show badge
         expect(screen.getByText('(1)')).toBeInTheDocument();

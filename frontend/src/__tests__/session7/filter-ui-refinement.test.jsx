@@ -110,9 +110,9 @@ describe('Session 7: Filter UI Refinement', () => {
       render(<DesktopFilters {...mockProps} />);
       
       // Check for section headers with enhanced styling
-      const searchSection = screen.getByTestId('filter-summary-search');
-      expect(searchSection).toContainElement(
-        screen.getByText('Search & Basic')
+      const breedSection = screen.getByTestId('filter-summary-breed');
+      expect(breedSection).toContainElement(
+        screen.getByText('Breed')
       );
     });
 
@@ -120,9 +120,11 @@ describe('Session 7: Filter UI Refinement', () => {
       render(<DesktopFilters {...mockProps} />);
       
       // Look for elements that should have the new section header styling
-      const elements = screen.getAllByText(/filter by|search|basic/i);
-      // This test will pass when we implement the new section header styling
-      expect(elements.length).toBeGreaterThan(0);
+      const sizeHeader = screen.getByText(/^Size/);
+      expect(sizeHeader).toHaveClass('uppercase', 'tracking-wider');
+      
+      const ageHeader = screen.getByText(/^Age/);
+      expect(ageHeader).toHaveClass('uppercase', 'tracking-wider');
     });
 
     it('should have proper font weights and text colors', () => {
