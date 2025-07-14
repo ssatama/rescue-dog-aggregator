@@ -7,7 +7,12 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
 
+from dotenv import load_dotenv
+
 from .connection import check_railway_connection, get_railway_database_url
+
+# Load environment variables
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -112,13 +117,13 @@ def init_railway_alembic() -> bool:
             # Directory already exists, which is fine
             pass
 
-        # Create alembic.ini for Railway
+        # Create alembic.ini for Railway (use environment variable, not hardcoded URL)
         alembic_ini_content = f"""# Railway Alembic Configuration
 [alembic]
 script_location = migrations/railway
 prepend_sys_path = .
 version_path_separator = os
-sqlalchemy.url = {get_railway_database_url()}
+sqlalchemy.url = test
 
 [post_write_hooks]
 
@@ -413,10 +418,17 @@ class RailwayMigrationManager:
                     self.logger.error("Failed to initialize Railway Alembic")
                     return False
 
-                # Create initial migration
-                if not create_initial_migration():
-                    self.logger.error("Failed to create initial Railway migration")
-                    return False
+                # Check if migration files already exist
+                versions_dir = Path("migrations/railway/versions")
+                existing_migrations = list(versions_dir.glob("*.py")) if versions_dir.exists() else []
+
+                if not existing_migrations:
+                    # Create initial migration only if none exist
+                    if not create_initial_migration():
+                        self.logger.error("Failed to create initial Railway migration")
+                        return False
+                else:
+                    self.logger.info(f"Found {len(existing_migrations)} existing migration files, skipping creation")
 
                 # Run migrations
                 if not run_railway_migrations():

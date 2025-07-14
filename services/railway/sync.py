@@ -130,7 +130,7 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
             insert_sql = text(
                 """
                 INSERT INTO animals 
-                (name, animal_type, size, age_text, sex, breed,
+                (id, name, animal_type, size, age_text, sex, breed,
                  primary_image_url, organization_id, created_at, updated_at,
                  availability_confidence, last_seen_at, consecutive_scrapes_missing,
                  status, properties, adoption_url, external_id)
@@ -209,53 +209,64 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
 
 
 def _validate_table_schemas() -> bool:
-    """Validate that local and Railway table schemas match exactly."""
+    """Validate that local and Railway table schemas match exactly by column name and data type."""
     try:
         tables_to_validate = ["organizations", "animals", "animal_images", "scrape_logs", "service_regions"]
 
         for table in tables_to_validate:
             # Get local schema
-            local_schema = []
+            local_schema = {}
             with get_pooled_connection() as local_conn:
                 with local_conn.cursor() as cursor:
                     cursor.execute(
                         """
-                        SELECT column_name, data_type, ordinal_position 
+                        SELECT column_name, data_type
                         FROM information_schema.columns 
                         WHERE table_name = %s 
-                        ORDER BY ordinal_position
                     """,
                         (table,),
                     )
-                    local_schema = cursor.fetchall()
+                    for row in cursor.fetchall():
+                        local_schema[row[0]] = row[1]
 
             # Get Railway schema
-            railway_schema = []
+            railway_schema = {}
             with railway_session() as session:
                 result = session.execute(
                     text(
                         """
-                    SELECT column_name, data_type, ordinal_position 
+                    SELECT column_name, data_type
                     FROM information_schema.columns 
                     WHERE table_name = :table_name 
-                    ORDER BY ordinal_position
                 """
                     ),
                     {"table_name": table},
                 )
-                railway_schema = result.fetchall()
+                for row in result.fetchall():
+                    railway_schema[row[0]] = row[1]
 
-            # Compare schemas
+            # Compare schemas by column name (ignore positional order)
             if len(local_schema) != len(railway_schema):
                 logger.error(f"Schema mismatch in {table}: different column counts")
                 logger.error(f"Local: {len(local_schema)} columns, Railway: {len(railway_schema)} columns")
                 return False
 
-            for i, (local_col, railway_col) in enumerate(zip(local_schema, railway_schema)):
-                if local_col[0] != railway_col[0] or local_col[1] != railway_col[1]:
-                    logger.error(f"Schema mismatch in {table} at position {i+1}")
-                    logger.error(f"Local: {local_col[0]} ({local_col[1]})")
-                    logger.error(f"Railway: {railway_col[0]} ({railway_col[1]})")
+            # Check each column exists with correct data type
+            for column_name, local_data_type in local_schema.items():
+                if column_name not in railway_schema:
+                    logger.error(f"Schema mismatch in {table}: column '{column_name}' missing in Railway")
+                    return False
+
+                railway_data_type = railway_schema[column_name]
+                if local_data_type != railway_data_type:
+                    logger.error(f"Schema mismatch in {table}: column '{column_name}' data type differs")
+                    logger.error(f"Local: {local_data_type}, Railway: {railway_data_type}")
+                    return False
+
+            # Check for extra columns in Railway
+            for column_name in railway_schema:
+                if column_name not in local_schema:
+                    logger.error(f"Schema mismatch in {table}: extra column '{column_name}' in Railway")
                     return False
 
             logger.info(f"Schema validation passed for {table}: {len(local_schema)} columns match")
@@ -435,11 +446,13 @@ def _process_organizations_chunk(session, organizations_chunk):
     insert_sql = text(
         """
         INSERT INTO organizations 
-        (id, name, website_url, description, country, city, logo_url, 
-         created_at, social_media, ships_to, config_id)
+        (id, name, website_url, description, country, city, logo_url, active,
+         created_at, updated_at, social_media, config_id, last_config_sync, 
+         established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs)
         VALUES 
-        (:id, :name, :website_url, :description, :country, :city, :logo_url,
-         :created_at, :social_media, :ships_to, :config_id)
+        (:id, :name, :website_url, :description, :country, :city, :logo_url, :active,
+         :created_at, :updated_at, :social_media, :config_id, :last_config_sync,
+         :established_year, :ships_to, :service_regions, :total_dogs, :new_this_week, :recent_dogs)
         ON CONFLICT (config_id) DO UPDATE SET
             name = EXCLUDED.name,
             website_url = EXCLUDED.website_url,
@@ -447,12 +460,37 @@ def _process_organizations_chunk(session, organizations_chunk):
             country = EXCLUDED.country,
             city = EXCLUDED.city,
             logo_url = EXCLUDED.logo_url,
+            active = EXCLUDED.active,
+            updated_at = EXCLUDED.updated_at,
             social_media = EXCLUDED.social_media,
-            ships_to = EXCLUDED.ships_to
+            last_config_sync = EXCLUDED.last_config_sync,
+            established_year = EXCLUDED.established_year,
+            ships_to = EXCLUDED.ships_to,
+            service_regions = EXCLUDED.service_regions,
+            total_dogs = EXCLUDED.total_dogs,
+            new_this_week = EXCLUDED.new_this_week,
+            recent_dogs = EXCLUDED.recent_dogs
     """
     )
 
+    def safe_json_serialize(value):
+        """Safely serialize value to JSON, handling datetime objects."""
+        if value is None:
+            return None
+        if isinstance(value, (dict, list)):
+            import json
+            from datetime import date, datetime
+
+            def json_serializer(obj):
+                if isinstance(obj, (datetime, date)):
+                    return obj.isoformat()
+                raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+
+            return json.dumps(value, default=json_serializer)
+        return value
+
     for org in organizations_chunk:
+        # Map all 19 columns: id, name, website_url, description, country, city, logo_url, active, created_at, updated_at, social_media, config_id, last_config_sync, established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs
         session.execute(
             insert_sql,
             {
@@ -463,10 +501,18 @@ def _process_organizations_chunk(session, organizations_chunk):
                 "country": org[4],
                 "city": org[5],
                 "logo_url": org[6],
-                "created_at": org[7],
-                "social_media": json.dumps(org[8]) if org[8] is not None else None,
-                "ships_to": json.dumps(org[9]) if org[9] is not None else None,
-                "config_id": org[10],
+                "active": org[7],
+                "created_at": org[8],
+                "updated_at": org[9],
+                "social_media": safe_json_serialize(org[10]),
+                "config_id": org[11],
+                "last_config_sync": org[12],
+                "established_year": org[13],
+                "ships_to": safe_json_serialize(org[14]),
+                "service_regions": safe_json_serialize(org[15]),
+                "total_dogs": org[16],
+                "new_this_week": org[17],
+                "recent_dogs": safe_json_serialize(org[18]),
             },
         )
 
@@ -699,23 +745,35 @@ def _sync_animals_to_railway_in_transaction(session, batch_size: int = 100) -> b
 
                 batch_params.append(
                     {
-                        "name": animal[0],
-                        "animal_type": animal[1],
-                        "size": animal[2],
-                        "age_text": animal[3],
-                        "sex": animal[4],
-                        "breed": animal[5],
-                        "primary_image_url": animal[6],
+                        "id": animal[0],
+                        "name": animal[1],
                         "organization_id": railway_org_id,  # Use mapped Railway org ID
-                        "created_at": animal[8],
-                        "updated_at": animal[9],
-                        "availability_confidence": animal[10],
-                        "last_seen_at": animal[11],
-                        "consecutive_scrapes_missing": animal[12],
-                        "status": animal[13],
-                        "properties": json.dumps(animal[14]) if animal[14] is not None else None,
-                        "adoption_url": animal[15],
-                        "external_id": animal[16],
+                        "animal_type": animal[3],
+                        "external_id": animal[4],
+                        "primary_image_url": animal[5],
+                        "adoption_url": animal[6],
+                        "status": animal[7],
+                        "breed": animal[8],
+                        "standardized_breed": animal[9],
+                        "age_text": animal[10],
+                        "age_min_months": animal[11],
+                        "age_max_months": animal[12],
+                        "sex": animal[13],
+                        "size": animal[14],
+                        "standardized_size": animal[15],
+                        "language": animal[16],
+                        "properties": json.dumps(animal[17]) if animal[17] is not None else None,
+                        "created_at": animal[18],
+                        "updated_at": animal[19],
+                        "last_scraped_at": animal[20],
+                        "source_last_updated": animal[21],
+                        "breed_group": animal[22],
+                        "original_image_url": animal[23],
+                        "last_seen_at": animal[24],
+                        "consecutive_scrapes_missing": animal[25],
+                        "availability_confidence": animal[26],
+                        "last_session_id": animal[27],
+                        "active": animal[28],
                     }
                 )
 
@@ -784,6 +842,11 @@ def _sync_animal_images_with_mapping(session, org_id_mapping: dict, batch_size: 
             (id, animal_id, image_url, is_primary, created_at, original_image_url)
             VALUES 
             (:id, :animal_id, :image_url, :is_primary, :created_at, :original_image_url)
+            ON CONFLICT (id) DO UPDATE SET
+                animal_id = EXCLUDED.animal_id,
+                image_url = EXCLUDED.image_url,
+                is_primary = EXCLUDED.is_primary,
+                original_image_url = EXCLUDED.original_image_url
             """
         )
 
@@ -857,6 +920,18 @@ def _sync_scrape_logs_with_mapping(session, org_id_mapping: dict, batch_size: in
             (:id, :organization_id, :started_at, :completed_at, :dogs_found, :dogs_added,
              :dogs_updated, :status, :error_message, :created_at, :detailed_metrics,
              :duration_seconds, :data_quality_score)
+            ON CONFLICT (id) DO UPDATE SET
+                organization_id = EXCLUDED.organization_id,
+                started_at = EXCLUDED.started_at,
+                completed_at = EXCLUDED.completed_at,
+                dogs_found = EXCLUDED.dogs_found,
+                dogs_added = EXCLUDED.dogs_added,
+                dogs_updated = EXCLUDED.dogs_updated,
+                status = EXCLUDED.status,
+                error_message = EXCLUDED.error_message,
+                detailed_metrics = EXCLUDED.detailed_metrics,
+                duration_seconds = EXCLUDED.duration_seconds,
+                data_quality_score = EXCLUDED.data_quality_score
             """
         )
 
@@ -931,7 +1006,7 @@ def _sync_service_regions_with_mapping(session, org_id_mapping: dict, batch_size
             (id, organization_id, country, active, notes, created_at, updated_at, region)
             VALUES 
             (:id, :organization_id, :country, :active, :notes, :created_at, :updated_at, :region)
-            ON CONFLICT (organization_id, country, region) DO UPDATE SET
+            ON CONFLICT (organization_id, country) DO UPDATE SET
                 active = EXCLUDED.active,
                 notes = EXCLUDED.notes,
                 updated_at = EXCLUDED.updated_at
@@ -1234,7 +1309,7 @@ def _sync_service_regions_to_railway_in_transaction(session, batch_size: int = 1
             (id, organization_id, country, active, notes, created_at, updated_at, region)
             VALUES 
             (:id, :organization_id, :country, :active, :notes, :created_at, :updated_at, :region)
-            ON CONFLICT (organization_id, country, region) DO UPDATE SET
+            ON CONFLICT (organization_id, country) DO UPDATE SET
                 active = EXCLUDED.active,
                 notes = EXCLUDED.notes,
                 updated_at = EXCLUDED.updated_at

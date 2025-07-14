@@ -12,9 +12,13 @@ import subprocess
 import sys
 
 import click
+from dotenv import load_dotenv
 
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Load environment variables from .env file
+load_dotenv()
 
 from services.railway.connection import check_railway_connection
 from services.railway.migration import RailwayMigrationManager
@@ -87,6 +91,11 @@ def railway_cli():
 def test_connection():
     """Test connection to Railway database."""
     try:
+        # Clear any stale cached Railway engine to ensure fresh connection
+        from services.railway.connection import dispose_railway_engine
+
+        dispose_railway_engine()
+
         if not os.getenv("RAILWAY_DATABASE_URL"):
             click.echo("❌ RAILWAY_DATABASE_URL environment variable not set", err=True)
             sys.exit(1)
@@ -108,6 +117,11 @@ def test_connection():
 def migrate(dry_run):
     """Run Railway database migrations."""
     try:
+        # Clear any stale cached Railway engine to ensure fresh connection
+        from services.railway.connection import dispose_railway_engine
+
+        dispose_railway_engine()
+
         manager = RailwayMigrationManager()
 
         if dry_run:
@@ -140,6 +154,11 @@ def migrate(dry_run):
 def sync(dry_run, skip_validation):
     """Sync data from local database to Railway."""
     try:
+        # Clear any stale cached Railway engine to ensure fresh connection
+        from services.railway.connection import dispose_railway_engine
+
+        dispose_railway_engine()
+
         syncer = RailwayDataSyncer()
         validate_after = not skip_validation
 
@@ -171,6 +190,11 @@ def sync(dry_run, skip_validation):
 def status():
     """Show Railway database status and sync information."""
     try:
+        # Clear any stale cached Railway engine to ensure fresh connection
+        from services.railway.connection import dispose_railway_engine
+
+        dispose_railway_engine()
+
         click.echo("🔍 Railway Database Status")
         click.echo("=" * 40)
 
@@ -222,6 +246,11 @@ def status():
 def setup(dry_run):
     """Complete Railway database setup (migration + initial sync)."""
     try:
+        # Clear any stale cached Railway engine to ensure fresh connection
+        from services.railway.connection import dispose_railway_engine
+
+        dispose_railway_engine()
+
         if dry_run:
             click.echo("🔍 Running Railway setup dry run...")
 

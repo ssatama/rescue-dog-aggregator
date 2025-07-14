@@ -1,8 +1,8 @@
 """Initial Railway schema
 
-Revision ID: 1a87bb7fa003
+Revision ID: a05b40da5dd1
 Revises:
-Create Date: 1752417266.8537228
+Create Date: 1752476220.5026906
 
 """
 
@@ -11,7 +11,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "1a87bb7fa003"
+revision = "a05b40da5dd1"
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -125,9 +125,12 @@ CREATE TABLE IF NOT EXISTS service_regions (
     id SERIAL PRIMARY KEY,
     organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     country VARCHAR(100) NOT NULL,
-    region VARCHAR(100),
+    active BOOLEAN DEFAULT TRUE,
+    notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (organization_id, country, region)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    region VARCHAR(100),
+    UNIQUE (organization_id, country)
 );
 
 -- Indexes for Performance

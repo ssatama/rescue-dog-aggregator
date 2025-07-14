@@ -38,6 +38,9 @@ data/*
 .env.test.local
 .env.production.local
 
+# Railway migration config (contains database URL)
+migrations/railway/alembic.ini
+
 # IDE specific files
 .idea/
 .vscode/
