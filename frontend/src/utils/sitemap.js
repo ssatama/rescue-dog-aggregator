@@ -132,7 +132,10 @@ const generateDogPages = (dogs) => {
 
     // Add lastmod if available
     if (dog.updated_at) {
-      entry.lastmod = dog.updated_at;
+      const formattedDate = formatDateForSitemap(dog.updated_at);
+      if (formattedDate) {
+        entry.lastmod = formattedDate;
+      }
     }
 
     return formatSitemapEntry(entry);
@@ -158,7 +161,10 @@ const generateOrganizationPages = (organizations) => {
 
     // Add lastmod if available
     if (org.updated_at) {
-      entry.lastmod = org.updated_at;
+      const formattedDate = formatDateForSitemap(org.updated_at);
+      if (formattedDate) {
+        entry.lastmod = formattedDate;
+      }
     }
 
     return formatSitemapEntry(entry);
@@ -208,6 +214,38 @@ const entriesToXml = (entries) => {
     ...urlElements,
     urlsetClose
   ].join('\n');
+};
+
+/**
+ * Format date for XML sitemap (W3C Datetime format)
+ * @param {string} dateString - Date string from API
+ * @returns {string|null} Formatted date for sitemap or null if invalid
+ */
+export const formatDateForSitemap = (dateString) => {
+  if (!dateString) return null;
+  
+  try {
+    let date;
+    
+    // Handle API dates that don't have timezone info - assume UTC
+    if (dateString.includes('T') && !dateString.includes('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
+      // Add Z to indicate UTC for timezone-less ISO strings
+      date = new Date(dateString + 'Z');
+    } else {
+      date = new Date(dateString);
+    }
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return null;
+    }
+    
+    // Convert to W3C Datetime format (ISO 8601 with timezone)
+    // Remove milliseconds and add +00:00 timezone
+    return date.toISOString().replace(/\.\d{3}Z$/, '+00:00');
+  } catch (error) {
+    return null;
+  }
 };
 
 /**

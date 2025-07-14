@@ -16,7 +16,7 @@ import { getAllAnimals } from '../../services/animalsService';
 import { getAllOrganizations } from '../../services/organizationsService';
 
 // Import the sitemap generation function (to be implemented)
-import { generateSitemap, formatSitemapEntry } from '../../utils/sitemap';
+import { generateSitemap, formatSitemapEntry, formatDateForSitemap } from '../../utils/sitemap';
 
 describe('Dynamic Sitemap Generation', () => {
   beforeEach(() => {
@@ -156,9 +156,9 @@ describe('Dynamic Sitemap Generation', () => {
       expect(sitemap).toContain('<loc>https://rescuedogs.me/dogs/1</loc>');
       expect(sitemap).toContain('<loc>https://rescuedogs.me/dogs/2</loc>');
 
-      // Should include lastmod dates from dog data
-      expect(sitemap).toContain('<lastmod>2024-01-15T10:00:00Z</lastmod>');
-      expect(sitemap).toContain('<lastmod>2024-01-16T11:00:00Z</lastmod>');
+      // Should include lastmod dates from dog data (formatted for XML sitemap)
+      expect(sitemap).toContain('<lastmod>2024-01-15T10:00:00+00:00</lastmod>');
+      expect(sitemap).toContain('<lastmod>2024-01-16T11:00:00+00:00</lastmod>');
 
       // Dog pages should have high priority and daily updates
       expect(sitemap).toContain('<changefreq>daily</changefreq>');
@@ -175,9 +175,9 @@ describe('Dynamic Sitemap Generation', () => {
       expect(sitemap).toContain('<loc>https://rescuedogs.me/organizations/1</loc>');
       expect(sitemap).toContain('<loc>https://rescuedogs.me/organizations/2</loc>');
 
-      // Should include lastmod dates from organization data
-      expect(sitemap).toContain('<lastmod>2024-01-10T09:00:00Z</lastmod>');
-      expect(sitemap).toContain('<lastmod>2024-01-12T14:00:00Z</lastmod>');
+      // Should include lastmod dates from organization data (formatted for XML sitemap)
+      expect(sitemap).toContain('<lastmod>2024-01-10T09:00:00+00:00</lastmod>');
+      expect(sitemap).toContain('<lastmod>2024-01-12T14:00:00+00:00</lastmod>');
 
       // Organization pages should have medium-high priority and weekly updates
       expect(sitemap).toContain('<changefreq>weekly</changefreq>');
@@ -264,6 +264,119 @@ describe('Dynamic Sitemap Generation', () => {
       // Should properly encode URLs and handle special characters
       expect(sitemap).toContain('<loc>https://rescuedogs.me/dogs/1</loc>');
       expect(sitemap).not.toContain('&'); // Should not contain unescaped ampersands
+    });
+  });
+
+  describe('formatDateForSitemap', () => {
+    test('should format API date with microseconds to W3C datetime format', () => {
+      const apiDate = '2025-07-14T08:58:28.426257';
+      const result = formatDateForSitemap(apiDate);
+      
+      // Should be in W3C datetime format (ISO 8601 with timezone)
+      expect(result).toBe('2025-07-14T08:58:28+00:00');
+    });
+
+    test('should handle API date without microseconds', () => {
+      const apiDate = '2025-07-14T08:58:28';
+      const result = formatDateForSitemap(apiDate);
+      
+      expect(result).toBe('2025-07-14T08:58:28+00:00');
+    });
+
+    test('should handle API date with timezone already present', () => {
+      const apiDate = '2025-07-14T08:58:28Z';
+      const result = formatDateForSitemap(apiDate);
+      
+      expect(result).toBe('2025-07-14T08:58:28+00:00');
+    });
+
+    test('should return null for invalid date strings', () => {
+      expect(formatDateForSitemap('invalid-date')).toBeNull();
+      expect(formatDateForSitemap('2025-13-40T99:99:99')).toBeNull();
+    });
+
+    test('should return null for null or undefined input', () => {
+      expect(formatDateForSitemap(null)).toBeNull();
+      expect(formatDateForSitemap(undefined)).toBeNull();
+      expect(formatDateForSitemap('')).toBeNull();
+    });
+
+    test('should handle edge case of future dates', () => {
+      const futureDate = '2030-12-31T23:59:59.999999';
+      const result = formatDateForSitemap(futureDate);
+      
+      expect(result).toBe('2030-12-31T23:59:59+00:00');
+    });
+
+    test('should handle edge case of very old dates', () => {
+      const oldDate = '1970-01-01T00:00:00.000000';
+      const result = formatDateForSitemap(oldDate);
+      
+      expect(result).toBe('1970-01-01T00:00:00+00:00');
+    });
+  });
+
+  describe('generateDogPages with real API date format', () => {
+    test('should format dog dates correctly with real API microsecond format', async () => {
+      // Mock dogs with the actual API date format (microseconds, no timezone)
+      const mockDogsWithRealDates = [
+        {
+          id: 1,
+          name: 'Buddy',
+          updated_at: '2025-07-14T08:58:28.426257', // Real API format
+          organization: { name: 'Happy Paws' }
+        },
+        {
+          id: 2,
+          name: 'Luna',
+          updated_at: '2025-07-11T20:13:59.641485', // Real API format
+          organization: { name: 'City Shelter' }
+        }
+      ];
+
+      getAllAnimals.mockResolvedValue(mockDogsWithRealDates);
+      getAllOrganizations.mockResolvedValue([]);
+
+      const sitemap = await generateSitemap();
+
+      // Should contain properly formatted lastmod dates
+      expect(sitemap).toContain('<lastmod>2025-07-14T08:58:28+00:00</lastmod>');
+      expect(sitemap).toContain('<lastmod>2025-07-11T20:13:59+00:00</lastmod>');
+      
+      // Should not contain the raw API date format
+      expect(sitemap).not.toContain('2025-07-14T08:58:28.426257');
+      expect(sitemap).not.toContain('2025-07-11T20:13:59.641485');
+    });
+  });
+
+  describe('generateOrganizationPages with real API date format', () => {
+    test('should format organization dates correctly with real API microsecond format', async () => {
+      // Mock organizations with the actual API date format (microseconds, no timezone)
+      const mockOrgsWithRealDates = [
+        {
+          id: 1,
+          name: 'Happy Paws Rescue',
+          updated_at: '2025-07-11T20:13:59.641485' // Real API format
+        },
+        {
+          id: 2,
+          name: 'City Animal Shelter',
+          updated_at: '2025-07-10T15:30:45.123456' // Real API format
+        }
+      ];
+
+      getAllAnimals.mockResolvedValue([]);
+      getAllOrganizations.mockResolvedValue(mockOrgsWithRealDates);
+
+      const sitemap = await generateSitemap();
+
+      // Should contain properly formatted lastmod dates
+      expect(sitemap).toContain('<lastmod>2025-07-11T20:13:59+00:00</lastmod>');
+      expect(sitemap).toContain('<lastmod>2025-07-10T15:30:45+00:00</lastmod>');
+      
+      // Should not contain the raw API date format
+      expect(sitemap).not.toContain('2025-07-11T20:13:59.641485');
+      expect(sitemap).not.toContain('2025-07-10T15:30:45.123456');
     });
   });
 });
