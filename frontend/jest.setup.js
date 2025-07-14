@@ -102,6 +102,19 @@ jest.mock("@heroicons/react/24/outline", () => ({
   ),
 }));
 
+// Mock Vercel Analytics and Speed Insights
+jest.mock("@vercel/analytics/react", () => ({
+  Analytics: function MockAnalytics() {
+    return <div data-testid="vercel-analytics" />;
+  }
+}));
+
+jest.mock("@vercel/speed-insights/react", () => ({
+  SpeedInsights: function MockSpeedInsights() {
+    return <div data-testid="vercel-speed-insights" />;
+  }
+}));
+
 // Suppress React act() warnings for startTransition in tests
 // These warnings occur because startTransition is async but test environment
 // doesn't always wait for all transitions to complete

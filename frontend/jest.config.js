@@ -14,7 +14,10 @@ const customJestConfig = {
 
     // Handle static assets
     '\\.(jpg|jpeg|png|gif|svg)$': '<rootDir>/src/__mocks__/fileMock.js'
-  }
+  },
+  transformIgnorePatterns: [
+    'node_modules/(?!(@vercel/analytics|@vercel/speed-insights)/)'
+  ]
 }
 
 module.exports = createJestConfig(customJestConfig)
