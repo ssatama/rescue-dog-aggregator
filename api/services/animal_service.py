@@ -40,7 +40,11 @@ class AnimalService:
             List of animals with their images
         """
         try:
-            # Build the query
+            # Handle recent_with_fallback curation type specially
+            if filters.curation_type == "recent_with_fallback":
+                return self._get_animals_with_fallback(filters)
+
+            # Build the query for other curation types
             query, params = self._build_animals_query(filters)
 
             # Execute query
@@ -49,38 +53,88 @@ class AnimalService:
             animal_rows = self.cursor.fetchall()
             logger.info(f"Found {len(animal_rows)} animals matching criteria.")
 
-            # Extract animal IDs for batch operations
-            animal_ids = [row["id"] for row in animal_rows]
-
-            # Use batch executor to fetch images for all animals in one query
-            images_by_animal = self.batch_executor.fetch_animals_with_images(animal_ids)
-
-            # Build response with batch-fetched data
-            animals_with_images = []
-            for row in animal_rows:
-                # Convert row to dictionary for manipulation
-                row_dict = dict(row)
-
-                # Parse JSON properties using utility function
-                parse_json_field(row_dict, "properties")
-
-                # Build nested organization using utility function
-                organization = build_organization_object(row_dict)
-
-                # Strip out raw org_* keys and add organization
-                clean = {k: v for k, v in row_dict.items() if not k.startswith("org_")}
-                clean["organization"] = organization
-
-                # Get images from batch query results
-                animal_id = clean["id"]
-                images = images_by_animal.get(animal_id, [])
-                animals_with_images.append(AnimalWithImages(**clean, images=images))
-
-            return animals_with_images
+            return self._build_animals_response(animal_rows)
 
         except Exception as e:
             logger.error(f"Error in get_animals: {e}")
             raise APIException(status_code=500, detail="Failed to fetch animals", error_code="INTERNAL_ERROR")
+
+    def _get_animals_with_fallback(self, filters: AnimalFilterRequest) -> List[AnimalWithImages]:
+        """
+        Get animals with recent_with_fallback curation logic.
+        
+        First tries to get dogs from last 7 days. If empty, falls back to latest available dogs.
+        
+        Args:
+            filters: Filter criteria with curation_type="recent_with_fallback"
+            
+        Returns:
+            List of animals with their images
+        """
+        # First attempt: try recent dogs (last 7 days)
+        recent_filters = filters.model_copy()
+        recent_filters.curation_type = "recent"
+        
+        query, params = self._build_animals_query(recent_filters)
+        logger.debug(f"Executing recent query: {query} with params: {params}")
+        self.cursor.execute(query, tuple(params))
+        animal_rows = self.cursor.fetchall()
+        
+        if len(animal_rows) > 0:
+            logger.info(f"Found {len(animal_rows)} recent animals (normal case)")
+            return self._build_animals_response(animal_rows)
+        
+        # Fallback: get latest available dogs (no time restriction)
+        logger.info("No recent animals found, falling back to latest available")
+        fallback_filters = filters.model_copy()
+        fallback_filters.curation_type = "random"  # Use default ordering (latest first)
+        
+        fallback_query, fallback_params = self._build_animals_query(fallback_filters)
+        logger.debug(f"Executing fallback query: {fallback_query} with params: {fallback_params}")
+        self.cursor.execute(fallback_query, tuple(fallback_params))
+        fallback_rows = self.cursor.fetchall()
+        
+        logger.info(f"Found {len(fallback_rows)} animals in fallback")
+        return self._build_animals_response(fallback_rows)
+
+    def _build_animals_response(self, animal_rows) -> List[AnimalWithImages]:
+        """
+        Build AnimalWithImages response from database rows.
+        
+        Args:
+            animal_rows: Database query results
+            
+        Returns:
+            List of animals with their images
+        """
+        # Extract animal IDs for batch operations
+        animal_ids = [row["id"] for row in animal_rows]
+
+        # Use batch executor to fetch images for all animals in one query
+        images_by_animal = self.batch_executor.fetch_animals_with_images(animal_ids)
+
+        # Build response with batch-fetched data
+        animals_with_images = []
+        for row in animal_rows:
+            # Convert row to dictionary for manipulation
+            row_dict = dict(row)
+
+            # Parse JSON properties using utility function
+            parse_json_field(row_dict, "properties")
+
+            # Build nested organization using utility function
+            organization = build_organization_object(row_dict)
+
+            # Strip out raw org_* keys and add organization
+            clean = {k: v for k, v in row_dict.items() if not k.startswith("org_")}
+            clean["organization"] = organization
+
+            # Get images from batch query results
+            animal_id = clean["id"]
+            images = images_by_animal.get(animal_id, [])
+            animals_with_images.append(AnimalWithImages(**clean, images=images))
+
+        return animals_with_images
 
     def get_animal_by_id(self, animal_id: int) -> Optional[AnimalWithImages]:
         """

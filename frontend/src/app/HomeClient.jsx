@@ -19,7 +19,7 @@ export default function HomeClient() {
         <DogSection
           title="Just Added"
           subtitle="New dogs looking for homes"
-          curationType="recent"
+          curationType="recent_with_fallback"
           viewAllHref="/dogs?curation=recent"
         />
       </DogSectionErrorBoundary>

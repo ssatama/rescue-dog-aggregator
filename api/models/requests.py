@@ -68,7 +68,16 @@ class AnimalFilterRequest(BaseModel):
     availability_confidence: str = Field(default="high,medium", description="Filter by availability confidence: 'high', 'medium', 'low', or 'all'")
 
     # Curation
-    curation_type: str = Field(default="random", description="Curation type: 'recent' (last 7 days), 'diverse' (one per org), or 'random' (default)")
+    curation_type: str = Field(default="random", description="Curation type: 'recent' (last 7 days), 'recent_with_fallback' (recent or latest), 'diverse' (one per org), or 'random' (default)")
+
+    @field_validator("curation_type")
+    @classmethod
+    def validate_curation_type(cls, v):
+        """Validate curation_type field."""
+        valid_types = ["recent", "recent_with_fallback", "diverse", "random"]
+        if v not in valid_types:
+            raise ValueError(f"Invalid curation_type: {v}. Must be one of: {', '.join(valid_types)}")
+        return v
 
     def get_confidence_levels(self) -> list[str]:
         """Get parsed confidence levels from string."""

@@ -158,9 +158,9 @@ export async function getAnimalsByCuration(curationType, limit = 4) {
     throw new Error('Curation type is required');
   }
 
-  const validCurationTypes = ['recent', 'diverse', 'random'];
+  const validCurationTypes = ['recent', 'recent_with_fallback', 'diverse', 'random'];
   if (!validCurationTypes.includes(curationType)) {
-    throw new Error('Invalid curation type. Must be one of: recent, diverse, random');
+    throw new Error('Invalid curation type. Must be one of: recent, recent_with_fallback, diverse, random');
   }
 
   if (typeof limit !== 'number' || limit <= 0) {

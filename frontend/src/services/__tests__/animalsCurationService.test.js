@@ -162,9 +162,18 @@ describe('getAnimalsByCuration', () => {
       expect(callArgs.curation_type).toBe('random');
     });
 
+    test('accepts valid curation type: recent_with_fallback', async () => {
+      mockGet.mockResolvedValue(mockDogs);
+
+      await expect(getAnimalsByCuration('recent_with_fallback', 4)).resolves.toBeDefined();
+      
+      const callArgs = mockGet.mock.calls[0][1];
+      expect(callArgs.curation_type).toBe('recent_with_fallback');
+    });
+
     test('throws error for invalid curation type', async () => {
       await expect(getAnimalsByCuration('invalid', 4)).rejects.toThrow(
-        'Invalid curation type. Must be one of: recent, diverse, random'
+        'Invalid curation type. Must be one of: recent, recent_with_fallback, diverse, random'
       );
       
       expect(mockGet).not.toHaveBeenCalled();
