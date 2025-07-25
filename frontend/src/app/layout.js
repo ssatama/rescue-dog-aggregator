@@ -16,6 +16,25 @@ export const metadata = {
   title: 'Rescue Dog Aggregator - Find Your Perfect Rescue Dog',
   description: 'Find your perfect rescue dog from multiple organizations, all in one place. Browse available dogs for adoption and connect with rescue organizations.',
   keywords: 'rescue dogs, dog adoption, pet rescue, animal shelter, adopt a dog, rescue organizations',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+    other: [
+      {
+        rel: 'icon',
+        type: 'image/png',
+        sizes: '32x32',
+        url: '/favicon-32x32.png',
+      },
+      {
+        rel: 'icon',
+        type: 'image/png',
+        sizes: '16x16',
+        url: '/favicon-16x16.png',
+      },
+    ],
+  },
+  manifest: '/site.webmanifest',
   openGraph: {
     title: 'Rescue Dog Aggregator - Find Your Perfect Rescue Dog',
     description: 'Find your perfect rescue dog from multiple organizations, all in one place. Browse available dogs for adoption and connect with rescue organizations.',
