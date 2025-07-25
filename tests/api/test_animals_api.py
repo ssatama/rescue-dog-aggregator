@@ -281,6 +281,7 @@ class TestAnimalsAPI:
         # This test verifies that invalid curation types are rejected
         # The actual validation error handling is tested elsewhere
         import pytest
+
         with pytest.raises(Exception) as exc_info:
             response = client.get("/api/animals?curation_type=invalid&limit=5")
         # Verify that the error mentions curation_type validation
@@ -329,7 +330,7 @@ class TestAnimalsAPI:
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
-        
+
         # If we have data, verify it's properly ordered by created_at DESC
         if len(data) >= 2:
             for i in range(len(data) - 1):
@@ -345,7 +346,7 @@ class TestAnimalsAPI:
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
-        
+
         # Should return some dogs (fallback to latest available) or empty list if no dogs at all
         # This test verifies the API doesn't error out when no recent dogs exist
         if len(data) > 0:
@@ -354,7 +355,7 @@ class TestAnimalsAPI:
             assert "id" in first_dog
             assert "name" in first_dog
             assert "created_at" in first_dog
-            
+
             # Verify ordered by created_at DESC (latest first)
             if len(data) >= 2:
                 for i in range(len(data) - 1):

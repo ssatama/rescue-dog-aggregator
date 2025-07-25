@@ -1,11 +1,11 @@
-import { getAnimalById } from '../../../services/animalsService';
+import { getAnimalBySlug } from '../../../services/animalsService';
 import { generatePetSchema, generateJsonLdScript } from '../../../utils/schema';
 import DogDetailClient from './DogDetailClient';
 
 /**
  * Generate metadata for dog detail page
  * @param {Object} props - The props object
- * @param {Promise<{id: string}>} props.params - The params promise
+ * @param {Promise<{slug: string}>} props.params - The params promise
  */
 export async function generateMetadata(props) {
   try {
@@ -13,7 +13,7 @@ export async function generateMetadata(props) {
     const resolvedParams = params && typeof params.then === 'function' 
       ? await params 
       : params || {};
-    const dog = await getAnimalById(resolvedParams.id);
+    const dog = await getAnimalBySlug(resolvedParams.slug);
     
     const title = `${dog.name} - ${dog.standardized_breed || dog.breed || 'Dog'} Available for Adoption | Rescue Dog Aggregator`;
     
@@ -41,14 +41,14 @@ export async function generateMetadata(props) {
       title,
       description,
       alternates: {
-        canonical: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rescuedogs.me'}/dogs/${resolvedParams.id}`
+        canonical: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rescuedogs.me'}/dogs/${resolvedParams.slug}`
       },
       openGraph: {
         title: `${dog.name} - Available for Adoption`,
         description: `Meet ${dog.name}, a ${dog.standardized_breed || dog.breed || 'lovely dog'} looking for a forever home.${(dog.description || dog.properties?.description) ? ` ${dog.description || dog.properties.description}` : ''}`,
         type: 'article',
         siteName: 'Rescue Dog Aggregator',
-        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rescuedogs.me'}/dogs/${resolvedParams.id}`
+        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rescuedogs.me'}/dogs/${resolvedParams.slug}`
       },
       twitter: {
         card: 'summary_large_image',
@@ -84,7 +84,7 @@ const isTestEnvironment = typeof process !== 'undefined' && process.env.NODE_ENV
 /**
  * Dog detail page component
  * @param {Object} props - The props object
- * @param {Promise<{id: string}>} props.params - The params promise
+ * @param {Promise<{slug: string}>} props.params - The params promise
  */
 function DogDetailPage(props) {
   // For Jest tests, return synchronously to avoid Promise rendering issues

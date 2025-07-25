@@ -26,12 +26,14 @@ describe('Dynamic Sitemap Generation', () => {
   const mockDogs = [
     {
       id: 1,
+      slug: 'buddy-mixed-breed-1',
       name: 'Buddy',
       updated_at: '2024-01-15T10:00:00Z',
       organization: { name: 'Happy Paws' }
     },
     {
       id: 2,
+      slug: 'luna-labrador-retriever-2',
       name: 'Luna',
       updated_at: '2024-01-16T11:00:00Z',
       organization: { name: 'City Shelter' }
@@ -41,11 +43,13 @@ describe('Dynamic Sitemap Generation', () => {
   const mockOrganizations = [
     {
       id: 1,
+      slug: 'happy-paws-rescue-1',
       name: 'Happy Paws Rescue',
       updated_at: '2024-01-10T09:00:00Z'
     },
     {
       id: 2,
+      slug: 'city-animal-shelter-2',
       name: 'City Animal Shelter',
       updated_at: '2024-01-12T14:00:00Z'
     }
@@ -153,8 +157,8 @@ describe('Dynamic Sitemap Generation', () => {
       const sitemap = await generateSitemap();
 
       // Should include individual dog pages
-      expect(sitemap).toContain('<loc>https://rescuedogs.me/dogs/1</loc>');
-      expect(sitemap).toContain('<loc>https://rescuedogs.me/dogs/2</loc>');
+      expect(sitemap).toContain('<loc>https://rescuedogs.me/dogs/buddy-mixed-breed-1</loc>');
+      expect(sitemap).toContain('<loc>https://rescuedogs.me/dogs/luna-labrador-retriever-2</loc>');
 
       // Should include lastmod dates from dog data (formatted for XML sitemap)
       expect(sitemap).toContain('<lastmod>2024-01-15T10:00:00+00:00</lastmod>');
@@ -172,8 +176,8 @@ describe('Dynamic Sitemap Generation', () => {
       const sitemap = await generateSitemap();
 
       // Should include individual organization pages
-      expect(sitemap).toContain('<loc>https://rescuedogs.me/organizations/1</loc>');
-      expect(sitemap).toContain('<loc>https://rescuedogs.me/organizations/2</loc>');
+      expect(sitemap).toContain('<loc>https://rescuedogs.me/organizations/happy-paws-rescue-1</loc>');
+      expect(sitemap).toContain('<loc>https://rescuedogs.me/organizations/city-animal-shelter-2</loc>');
 
       // Should include lastmod dates from organization data (formatted for XML sitemap)
       expect(sitemap).toContain('<lastmod>2024-01-10T09:00:00+00:00</lastmod>');
@@ -262,7 +266,7 @@ describe('Dynamic Sitemap Generation', () => {
       const sitemap = await generateSitemap();
 
       // Should properly encode URLs and handle special characters
-      expect(sitemap).toContain('<loc>https://rescuedogs.me/dogs/1</loc>');
+      expect(sitemap).toContain('<loc>https://rescuedogs.me/dogs/unknown-dog-1</loc>');
       expect(sitemap).not.toContain('&'); // Should not contain unescaped ampersands
     });
   });

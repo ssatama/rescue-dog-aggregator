@@ -10,14 +10,14 @@ import OrganizationDetailClient from '../OrganizationDetailClient';
 
 // Mock the services
 jest.mock('../../../../services/organizationsService', () => ({
-  getOrganizationById: jest.fn(),
+  getOrganizationBySlug: jest.fn(),
   getOrganizationDogs: jest.fn()
 }));
 
 // Mock Next.js hooks
 const mockPush = jest.fn();
 jest.mock('next/navigation', () => ({
-  useParams: () => ({ id: '1' }),
+  useParams: () => ({ slug: 'test-org-1' }),
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ push: mockPush })
 }));
@@ -86,9 +86,9 @@ describe('Session 6 Filtering Integration', () => {
   ];
 
   beforeEach(() => {
-    const { getOrganizationById, getOrganizationDogs } = require('../../../../services/organizationsService');
+    const { getOrganizationBySlug, getOrganizationDogs } = require('../../../../services/organizationsService');
     
-    getOrganizationById.mockResolvedValue(mockOrganization);
+    getOrganizationBySlug.mockResolvedValue(mockOrganization);
     getOrganizationDogs.mockResolvedValue(mockDogs);
     
     jest.clearAllMocks();
@@ -96,7 +96,7 @@ describe('Session 6 Filtering Integration', () => {
 
   describe('Filter System Integration', () => {
     test('renders DogFilters component when dogs are loaded', async () => {
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       // Wait for data to load
       await waitFor(() => {
@@ -114,7 +114,7 @@ describe('Session 6 Filtering Integration', () => {
     });
 
     test('displays dogs without count text', async () => {
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('dog-filters')).toBeInTheDocument();
@@ -125,7 +125,7 @@ describe('Session 6 Filtering Integration', () => {
 
     test('shows Load More button when organization has more than 20 dogs', async () => {
       // Mock an organization with many dogs
-      const { getOrganizationById, getOrganizationDogs } = require('../../../../services/organizationsService');
+      const { getOrganizationBySlug, getOrganizationDogs } = require('../../../../services/organizationsService');
       
       const largeMockOrganization = {
         ...mockOrganization,
@@ -142,10 +142,10 @@ describe('Session 6 Filtering Integration', () => {
         organization: mockOrganization
       }));
       
-      getOrganizationById.mockResolvedValue(largeMockOrganization);
+      getOrganizationBySlug.mockResolvedValue(largeMockOrganization);
       getOrganizationDogs.mockResolvedValue(firstPageDogs);
 
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('load-more-button')).toBeInTheDocument();
@@ -155,7 +155,7 @@ describe('Session 6 Filtering Integration', () => {
 
     test('Load More button loads additional dogs when clicked', async () => {
       const user = userEvent.setup();
-      const { getOrganizationById, getOrganizationDogs } = require('../../../../services/organizationsService');
+      const { getOrganizationBySlug, getOrganizationDogs } = require('../../../../services/organizationsService');
       
       const largeMockOrganization = {
         ...mockOrganization,
@@ -182,12 +182,12 @@ describe('Session 6 Filtering Integration', () => {
         organization: mockOrganization
       }));
       
-      getOrganizationById.mockResolvedValue(largeMockOrganization);
+      getOrganizationBySlug.mockResolvedValue(largeMockOrganization);
       getOrganizationDogs
         .mockResolvedValueOnce(firstPageDogs) // First call
         .mockResolvedValueOnce(secondPageDogs); // Second call after Load More
 
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       // Wait for initial load
       await waitFor(() => {
@@ -206,7 +206,7 @@ describe('Session 6 Filtering Integration', () => {
     });
 
     test('displays correct total count in organization stats when dogs are paginated', async () => {
-      const { getOrganizationById, getOrganizationDogs } = require('../../../../services/organizationsService');
+      const { getOrganizationBySlug, getOrganizationDogs } = require('../../../../services/organizationsService');
       
       const largeMockOrganization = {
         ...mockOrganization,
@@ -222,10 +222,10 @@ describe('Session 6 Filtering Integration', () => {
         organization: mockOrganization
       }));
       
-      getOrganizationById.mockResolvedValue(largeMockOrganization);
+      getOrganizationBySlug.mockResolvedValue(largeMockOrganization);
       getOrganizationDogs.mockResolvedValue(firstPageDogs);
 
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       // The organization hero should show the total count from organization data
       await waitFor(() => {
@@ -239,7 +239,7 @@ describe('Session 6 Filtering Integration', () => {
     });
 
     test('breed filter is populated from dog data', async () => {
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('breed-filter')).toBeInTheDocument();
@@ -252,7 +252,7 @@ describe('Session 6 Filtering Integration', () => {
 
     test('filters work correctly - age filter', async () => {
       const user = userEvent.setup();
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('age-filter')).toBeInTheDocument();
@@ -272,7 +272,7 @@ describe('Session 6 Filtering Integration', () => {
 
     test('breed search filter works', async () => {
       const user = userEvent.setup();
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('breed-filter')).toBeInTheDocument();
@@ -290,7 +290,7 @@ describe('Session 6 Filtering Integration', () => {
 
     test('clear all filters works', async () => {
       const user = userEvent.setup();
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('age-filter')).toBeInTheDocument();
@@ -319,7 +319,7 @@ describe('Session 6 Filtering Integration', () => {
       const { getOrganizationDogs } = require('../../../../services/organizationsService');
       getOrganizationDogs.mockResolvedValue([]); // No dogs
 
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       await waitFor(() => {
         // Count text removed - verify no dogs by checking filter absence
@@ -331,11 +331,11 @@ describe('Session 6 Filtering Integration', () => {
 
     test('handles loading state correctly', () => {
       // Don't resolve the promises to simulate loading
-      const { getOrganizationById, getOrganizationDogs } = require('../../../../services/organizationsService');
-      getOrganizationById.mockImplementation(() => new Promise(() => {})); // Never resolves
+      const { getOrganizationBySlug, getOrganizationDogs } = require('../../../../services/organizationsService');
+      getOrganizationBySlug.mockImplementation(() => new Promise(() => {})); // Never resolves
       getOrganizationDogs.mockImplementation(() => new Promise(() => {})); // Never resolves
 
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       // Should show skeleton screens instead of simple loading
       const loadingSkeletons = screen.getAllByTestId('dog-card-skeleton');
@@ -346,7 +346,7 @@ describe('Session 6 Filtering Integration', () => {
 
   describe('Session 6 Success Criteria Validation', () => {
     test('✓ Filter bar has correct styling (white background, shadow, sticky)', async () => {
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       await waitFor(() => {
         const filterBar = screen.getByTestId('dog-filters');
@@ -357,7 +357,7 @@ describe('Session 6 Filtering Integration', () => {
     });
 
     test('✓ All required filter options are present for organization pages', async () => {
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       await waitFor(() => {
         // Age groups filter
@@ -378,7 +378,7 @@ describe('Session 6 Filtering Integration', () => {
 
     test('✓ Active filter count and clear all functionality', async () => {
       const user = userEvent.setup();
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('age-filter')).toBeInTheDocument();
@@ -399,7 +399,7 @@ describe('Session 6 Filtering Integration', () => {
 
     test('✓ Dog count shows filter results', async () => {
       const user = userEvent.setup();
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       await waitFor(() => {
         // Count text removed - verify dogs are loaded by checking filter presence
@@ -444,7 +444,7 @@ describe('Session 6 Filtering Integration', () => {
     });
 
     test('renders mobile filter button when data is loaded', async () => {
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('mobile-filter-button')).toBeInTheDocument();
@@ -456,7 +456,7 @@ describe('Session 6 Filtering Integration', () => {
 
     test('mobile filter button shows active filter count', async () => {
       const user = userEvent.setup();
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('age-filter')).toBeInTheDocument();
@@ -476,7 +476,7 @@ describe('Session 6 Filtering Integration', () => {
 
     test('mobile filter button opens bottom sheet', async () => {
       const user = userEvent.setup();
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('mobile-filter-button')).toBeInTheDocument();
@@ -502,7 +502,7 @@ describe('Session 6 Filtering Integration', () => {
 
     test('mobile filter sheet applies filters correctly', async () => {
       const user = userEvent.setup();
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('mobile-filter-button')).toBeInTheDocument();
@@ -526,7 +526,7 @@ describe('Session 6 Filtering Integration', () => {
 
     test('mobile filter sheet breed search works', async () => {
       const user = userEvent.setup();
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('mobile-filter-button')).toBeInTheDocument();
@@ -550,7 +550,7 @@ describe('Session 6 Filtering Integration', () => {
 
     test('mobile filter sheet clear all works', async () => {
       const user = userEvent.setup();
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('mobile-filter-button')).toBeInTheDocument();
@@ -582,7 +582,7 @@ describe('Session 6 Filtering Integration', () => {
 
     test('mobile filter sheet closes with backdrop click', async () => {
       const user = userEvent.setup();
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('mobile-filter-button')).toBeInTheDocument();
@@ -606,7 +606,7 @@ describe('Session 6 Filtering Integration', () => {
 
     test('mobile filter sheet accessibility compliance', async () => {
       const user = userEvent.setup();
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('mobile-filter-button')).toBeInTheDocument();
@@ -641,7 +641,7 @@ describe('Session 6 Filtering Integration', () => {
     });
 
     test('shows clean mobile interface without count text', async () => {
-      render(<OrganizationDetailClient params={{ id: '1' }} />);
+      render(<OrganizationDetailClient params={{ slug: 'test-org-1' }} />);
 
       await waitFor(() => {
         expect(screen.getByTestId('mobile-filter-button')).toBeInTheDocument();

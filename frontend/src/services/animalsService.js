@@ -50,6 +50,16 @@ export async function getAnimalById(id) {
 }
 
 /**
+ * Fetches a single animal by its slug.
+ * @param {string} slug - The slug of the animal.
+ * @returns {Promise<object>} - Promise resolving to the animal object.
+ */
+export async function getAnimalBySlug(slug) {
+  logger.log(`Fetching animal by slug: ${slug}`);
+  return get(`/api/animals/${slug}`);
+}
+
+/**
  * Fetches animals filtered by standardized breed.
  * @param {string} standardizedBreed - The standardized breed name.
  * @param {object} additionalParams - Other filtering parameters.

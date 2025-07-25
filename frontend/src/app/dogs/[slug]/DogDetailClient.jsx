@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Layout from '../../../components/layout/Layout';
 import Loading from '../../../components/ui/Loading';
 import { Button } from "../../../components/ui/button";
-import { getAnimalById } from '../../../services/animalsService';
+import { getAnimalBySlug } from '../../../services/animalsService';
 import { Alert, AlertDescription, AlertTitle } from "../../../components/ui/alert";
 import { Badge } from "../../../components/ui/badge";
 import ShareButton from '../../../components/ui/ShareButton';
@@ -26,7 +26,7 @@ import { ScrollAnimationWrapper } from '../../../hooks/useScrollAnimation';
 export default function DogDetailClient({ params = {} }) {
   const urlParams = useParams();
   const pathname = usePathname();
-  const dogId = params?.id || urlParams?.id;
+  const dogSlug = params?.slug || urlParams?.slug;
   const [dog, setDog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -35,7 +35,7 @@ export default function DogDetailClient({ params = {} }) {
   // Development monitoring only
   useEffect(() => {
     process.env.NODE_ENV === 'development' && console.log('[DogDetail] Component mounted:', {
-      dogId,
+      dogSlug,
       pathname,
       documentReady: document.readyState === 'complete'
     });
@@ -50,7 +50,7 @@ export default function DogDetailClient({ params = {} }) {
     
     // Development logging only
     process.env.NODE_ENV === 'development' && console.log('[DogDetail] API call:', { 
-      dogId, 
+      dogSlug, 
       retryCount
     });
     
@@ -71,7 +71,7 @@ export default function DogDetailClient({ params = {} }) {
       
       // Race between API call and timeout
       const data = await Promise.race([
-        getAnimalById(dogId),
+        getAnimalBySlug(dogSlug),
         timeoutPromise
       ]);
       
@@ -95,7 +95,7 @@ export default function DogDetailClient({ params = {} }) {
       const errorInfo = {
         message: err.message,
         name: err.name,
-        dogId,
+        dogSlug,
         retryCount,
         fetchDuration: Date.now() - fetchStartTime,
         isAbortError: err.name === 'AbortError',
@@ -133,7 +133,7 @@ export default function DogDetailClient({ params = {} }) {
         setLoading(false);
       }
     }
-  }, [dogId]);
+  }, [dogSlug]);
   
   useEffect(() => {
     // Reset loading state for new navigation
@@ -172,7 +172,7 @@ export default function DogDetailClient({ params = {} }) {
     return () => {
       mountedRef.current = false;
     };
-  }, [dogId]); // Changed from fetchDogData to dogId to prevent unnecessary re-runs
+  }, [dogSlug]); // Changed from fetchDogData to dogSlug to prevent unnecessary re-runs
   
   // Cleanup on unmount
   useEffect(() => {
@@ -253,7 +253,7 @@ export default function DogDetailClient({ params = {} }) {
 
   return (
     <ToastProvider>
-      <DogDetailErrorBoundary dogId={dogId}>
+      <DogDetailErrorBoundary dogSlug={dogSlug}>
         <Layout>
           <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
             {/* Enhanced Breadcrumb Navigation */}
@@ -321,7 +321,7 @@ export default function DogDetailClient({ params = {} }) {
                         // Development logging only
                         process.env.NODE_ENV === 'development' && console.log('[DogDetail] Navigation: rendering hero section', { 
                           pathname, 
-                          dogId, 
+                          dogSlug, 
                           hasDog: !!dog, 
                           hasImageUrl: !!dog?.primary_image_url,
                           imageUrl: dog?.primary_image_url,
@@ -340,7 +340,7 @@ export default function DogDetailClient({ params = {} }) {
                         
                         // DIAGNOSTIC: Log image URL being passed to component
                         if (process.env.NODE_ENV === 'development') console.log('[DogDetailClient] About to render HeroImageWithBlurredBackground:', {
-                          dogId: dog.id,
+                          dogSlug: dog.slug,
                           dogName: dog.name,
                           imageUrl: dog.primary_image_url,
                           timestamp: Date.now()
@@ -348,13 +348,13 @@ export default function DogDetailClient({ params = {} }) {
                         
                         return (
                           <HeroImageWithBlurredBackground
-                            key={`hero-${dogId}-${dog.id}`}
+                            key={`hero-${dogSlug}-${dog.id}`}
                             src={dog.primary_image_url}
                             alt={`${sanitizeText(dog.name)} - Hero Image`}
                             className="mb-6 shadow-xl"
                             onError={() => {
                               reportError("Hero image failed to load", { 
-                                dogId: dog.id, 
+                                dogSlug: dog.slug, 
                                 imageUrl: dog.primary_image_url 
                               });
                             }}

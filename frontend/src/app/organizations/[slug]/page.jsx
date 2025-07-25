@@ -1,4 +1,4 @@
-import { getOrganizationById } from '../../../services/organizationsService';
+import { getOrganizationBySlug } from '../../../services/organizationsService';
 import { generateOrganizationSchema, generateJsonLdScript } from '../../../utils/schema';
 import OrganizationDetailClient from './OrganizationDetailClient';
 import { isValidOpenGraphType } from '../../../types/opengraph';
@@ -6,7 +6,7 @@ import { isValidOpenGraphType } from '../../../types/opengraph';
 /**
  * Generate metadata for organization detail page
  * @param {Object} props - The props object
- * @param {Promise<{id: string}>} props.params - The params promise
+ * @param {Promise<{slug: string}>} props.params - The params promise
  */
 export async function generateMetadata(props) {
   try {
@@ -14,7 +14,7 @@ export async function generateMetadata(props) {
     const resolvedParams = params && typeof params.then === 'function' 
       ? await params 
       : params || {};
-    const organization = await getOrganizationById(resolvedParams.id);
+    const organization = await getOrganizationBySlug(resolvedParams.slug);
     
     const title = `${organization.name} - Dog Rescue Organization | Rescue Dog Aggregator`;
     
@@ -39,7 +39,7 @@ export async function generateMetadata(props) {
       title,
       description,
       alternates: {
-        canonical: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rescuedogs.me'}/organizations/${resolvedParams.id}`
+        canonical: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rescuedogs.me'}/organizations/${resolvedParams.slug}`
       },
       openGraph: {
         title: `${organization.name} - Dog Rescue Organization`,
@@ -47,7 +47,7 @@ export async function generateMetadata(props) {
         type: openGraphType,
         siteName: 'Rescue Dog Aggregator',
         // Enhanced metadata for better social sharing
-        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rescuedogs.me'}/organizations/${resolvedParams.id}`,
+        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rescuedogs.me'}/organizations/${resolvedParams.slug}`,
         ...(organization.logo_url && { images: [organization.logo_url] })
       },
       twitter: {
@@ -79,7 +79,7 @@ const isTestEnvironment = typeof process !== 'undefined' && process.env.NODE_ENV
 /**
  * Organization detail page component
  * @param {Object} props - The props object
- * @param {Promise<{id: string}>} props.params - The params promise
+ * @param {Promise<{slug: string}>} props.params - The params promise
  */
 function OrganizationDetailPage(props) {
   // For Jest tests, return synchronously to avoid Promise rendering issues

@@ -20,7 +20,10 @@ CREATE TABLE IF NOT EXISTS organizations (
     total_dogs INTEGER DEFAULT 0,
     new_this_week INTEGER DEFAULT 0,
     recent_dogs JSONB DEFAULT '[]',
-    established_year INTEGER
+    established_year INTEGER,
+    
+    -- SEO-friendly URL slug
+    slug VARCHAR(255) UNIQUE
 );
 
 -- Animals (Dogs only for now)
@@ -62,6 +65,9 @@ CREATE TABLE IF NOT EXISTS animals (
 
     -- Add column to store original image URLs for fallback
     original_image_url TEXT,
+    
+    -- SEO-friendly URL slug
+    slug VARCHAR(255) UNIQUE,
     
     -- Unique constraint to prevent duplicates
     UNIQUE (external_id, organization_id)
@@ -144,3 +150,7 @@ CREATE INDEX IF NOT EXISTS idx_animal_images_original_image_url ON animal_images
 CREATE INDEX IF NOT EXISTS idx_scrape_logs_detailed_metrics ON scrape_logs USING gin(detailed_metrics);
 CREATE INDEX IF NOT EXISTS idx_scrape_logs_duration ON scrape_logs(duration_seconds);
 CREATE INDEX IF NOT EXISTS idx_scrape_logs_quality_score ON scrape_logs(data_quality_score);
+
+-- SEO slug indexes
+CREATE UNIQUE INDEX IF NOT EXISTS idx_organizations_slug ON organizations(slug);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_animals_slug ON animals(slug);

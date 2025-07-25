@@ -62,48 +62,48 @@ class AnimalService:
     def _get_animals_with_fallback(self, filters: AnimalFilterRequest) -> List[AnimalWithImages]:
         """
         Get animals with recent_with_fallback curation logic.
-        
+
         First tries to get dogs from last 7 days. If empty, falls back to latest available dogs.
-        
+
         Args:
             filters: Filter criteria with curation_type="recent_with_fallback"
-            
+
         Returns:
             List of animals with their images
         """
         # First attempt: try recent dogs (last 7 days)
         recent_filters = filters.model_copy()
         recent_filters.curation_type = "recent"
-        
+
         query, params = self._build_animals_query(recent_filters)
         logger.debug(f"Executing recent query: {query} with params: {params}")
         self.cursor.execute(query, tuple(params))
         animal_rows = self.cursor.fetchall()
-        
+
         if len(animal_rows) > 0:
             logger.info(f"Found {len(animal_rows)} recent animals (normal case)")
             return self._build_animals_response(animal_rows)
-        
+
         # Fallback: get latest available dogs (no time restriction)
         logger.info("No recent animals found, falling back to latest available")
         fallback_filters = filters.model_copy()
         fallback_filters.curation_type = "random"  # Use default ordering (latest first)
-        
+
         fallback_query, fallback_params = self._build_animals_query(fallback_filters)
         logger.debug(f"Executing fallback query: {fallback_query} with params: {fallback_params}")
         self.cursor.execute(fallback_query, tuple(fallback_params))
         fallback_rows = self.cursor.fetchall()
-        
+
         logger.info(f"Found {len(fallback_rows)} animals in fallback")
         return self._build_animals_response(fallback_rows)
 
     def _build_animals_response(self, animal_rows) -> List[AnimalWithImages]:
         """
         Build AnimalWithImages response from database rows.
-        
+
         Args:
             animal_rows: Database query results
-            
+
         Returns:
             List of animals with their images
         """
@@ -148,12 +148,13 @@ class AnimalService:
         """
         try:
             query = """
-                SELECT a.id, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
+                SELECT a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
                        a.age_text, a.age_min_months, a.age_max_months,
                        a.sex, a.size, a.standardized_size, a.status, a.properties,
                        a.primary_image_url, a.adoption_url, a.created_at, a.updated_at,
                        a.organization_id, a.external_id, a.language, a.last_scraped_at,
                        o.name as org_name,
+                       o.slug as org_slug,
                        o.city as org_city,
                        o.country as org_country,
                        o.website_url as org_website_url,
@@ -170,12 +171,12 @@ class AnimalService:
                     AND a2.status = 'available'
                     AND a2.availability_confidence IN ('high', 'medium')
                 WHERE a.id = %s
-                GROUP BY a.id, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
+                GROUP BY a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
                          a.age_text, a.age_min_months, a.age_max_months,
                          a.sex, a.size, a.standardized_size, a.status, a.properties,
                          a.primary_image_url, a.adoption_url, a.created_at, a.updated_at,
                          a.organization_id, a.external_id, a.language, a.last_scraped_at,
-                         o.id, o.name, o.city, o.country, o.website_url, o.social_media,
+                         o.id, o.slug, o.name, o.city, o.country, o.website_url, o.social_media,
                          o.ships_to, o.logo_url, o.service_regions, o.description
             """
 
@@ -218,6 +219,89 @@ class AnimalService:
         except Exception as e:
             logger.error(f"Error in get_animal_by_id({animal_id}): {e}")
             raise APIException(status_code=500, detail=f"Failed to fetch animal {animal_id}", error_code="INTERNAL_ERROR")
+
+    def get_animal_by_slug(self, slug: str) -> Optional[AnimalWithImages]:
+        """
+        Get a specific animal by slug.
+
+        Args:
+            slug: Slug of the animal to fetch
+
+        Returns:
+            Animal with images or None if not found
+        """
+        try:
+            query = """
+                SELECT a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
+                       a.age_text, a.age_min_months, a.age_max_months,
+                       a.sex, a.size, a.standardized_size, a.status, a.properties,
+                       a.primary_image_url, a.adoption_url, a.created_at, a.updated_at,
+                       a.organization_id, a.external_id, a.language, a.last_scraped_at,
+                       o.name as org_name,
+                       o.slug as org_slug,
+                       o.city as org_city,
+                       o.country as org_country,
+                       o.website_url as org_website_url,
+                       o.social_media as org_social_media,
+                       o.ships_to as org_ships_to,
+                       o.logo_url as org_logo_url,
+                       o.service_regions as org_service_regions,
+                       o.description as org_description,
+                       COUNT(a2.id) as org_total_dogs,
+                       COUNT(CASE WHEN a2.created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as org_new_this_week
+                FROM animals a
+                LEFT JOIN organizations o ON a.organization_id = o.id
+                LEFT JOIN animals a2 ON o.id = a2.organization_id
+                    AND a2.status = 'available'
+                    AND a2.availability_confidence IN ('high', 'medium')
+                WHERE a.slug = %s
+                GROUP BY a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
+                         a.age_text, a.age_min_months, a.age_max_months,
+                         a.sex, a.size, a.standardized_size, a.status, a.properties,
+                         a.primary_image_url, a.adoption_url, a.created_at, a.updated_at,
+                         a.organization_id, a.external_id, a.language, a.last_scraped_at,
+                         o.id, o.slug, o.name, o.city, o.country, o.website_url, o.social_media,
+                         o.ships_to, o.logo_url, o.service_regions, o.description
+            """
+            self.cursor.execute(query, (slug,))
+            animal_dict = self.cursor.fetchone()
+
+            if not animal_dict:
+                return None
+
+            # Fetch images using batch executor
+            animal_id = animal_dict["id"]
+            images_by_animal = self.batch_executor.fetch_animals_with_images([animal_id])
+            animal_images = images_by_animal.get(animal_id, [])
+
+            # Process the animal data
+            clean_dict = dict(animal_dict)
+            # Parse properties JSON using utility function
+            parse_json_field(clean_dict, "properties")
+
+            # Build organization data using utility function
+            organization_data = build_organization_object(clean_dict)
+
+            # Add extra fields specific to this endpoint
+            if organization_data:
+                organization_data.update(
+                    {
+                        "total_dogs": clean_dict["org_total_dogs"],
+                        "new_this_week": clean_dict["org_new_this_week"],
+                        "recent_dogs": [],  # Will be populated by separate query if needed
+                    }
+                )
+
+            # Remove org_ prefixed fields and add nested organization
+            final_dict = {k: v for k, v in clean_dict.items() if not k.startswith("org_")}
+            final_dict["organization"] = organization_data
+
+            # Create and return the model
+            return AnimalWithImages(**final_dict, images=animal_images)
+
+        except Exception as e:
+            logger.error(f"Error in get_animal_by_slug({slug}): {e}")
+            raise APIException(status_code=500, detail=f"Failed to fetch animal {slug}", error_code="INTERNAL_ERROR")
 
     def get_distinct_breeds(self, breed_group: Optional[str] = None) -> List[str]:
         """Get distinct standardized breeds."""
@@ -328,7 +412,7 @@ class AnimalService:
             # Get organizations with statistics
             self.cursor.execute(
                 """
-                SELECT o.id, o.name, o.logo_url, o.country, o.city, o.ships_to, o.service_regions,
+                SELECT o.id, o.name, o.slug, o.logo_url, o.country, o.city, o.ships_to, o.service_regions,
                        o.social_media, o.website_url, o.description,
                        COUNT(a.id) as dog_count,
                        COUNT(CASE WHEN a.created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as new_this_week
@@ -337,7 +421,7 @@ class AnimalService:
                     AND a.status = 'available'
                     AND a.availability_confidence IN ('high', 'medium')
                 WHERE o.active = TRUE
-                GROUP BY o.id, o.name, o.logo_url, o.country, o.city, o.ships_to, o.service_regions,
+                GROUP BY o.id, o.name, o.slug, o.logo_url, o.country, o.city, o.ships_to, o.service_regions,
                          o.social_media, o.website_url, o.description
                 HAVING COUNT(a.id) > 0
                 ORDER BY dog_count DESC, o.name ASC
@@ -347,6 +431,7 @@ class AnimalService:
                 {
                     "id": row["id"],
                     "name": row["name"],
+                    "slug": row["slug"],
                     "dog_count": row["dog_count"],
                     "new_this_week": row["new_this_week"],
                     "logo_url": row["logo_url"],
@@ -371,12 +456,13 @@ class AnimalService:
         """Build the animals query with filters."""
         # Base query selects distinct animals and joins with organizations
         query_base = """
-            SELECT DISTINCT a.id, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
+            SELECT DISTINCT a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
                    a.age_text, a.age_min_months, a.age_max_months, a.sex, a.size, a.standardized_size,
                    a.status, a.primary_image_url, a.adoption_url, a.organization_id, a.external_id,
                    a.language, a.properties, a.created_at, a.updated_at, a.last_scraped_at,
                    a.availability_confidence, a.last_seen_at, a.consecutive_scrapes_missing,
                    o.name as org_name,
+                   o.slug as org_slug,
                    o.city as org_city,
                    o.country as org_country,
                    o.website_url as org_website_url,
@@ -483,12 +569,13 @@ class AnimalService:
         elif filters.curation_type == "diverse":
             query = f"""
                 SELECT DISTINCT ON (a.organization_id)
-                       a.id, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
+                       a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
                        a.age_text, a.age_min_months, a.age_max_months, a.sex, a.size, a.standardized_size,
                        a.status, a.primary_image_url, a.adoption_url, a.organization_id, a.external_id,
                        a.language, a.properties, a.created_at, a.updated_at, a.last_scraped_at,
                        a.availability_confidence, a.last_seen_at, a.consecutive_scrapes_missing,
                        o.name as org_name,
+                       o.slug as org_slug,
                        o.city as org_city,
                        o.country as org_country,
                        o.website_url as org_website_url,

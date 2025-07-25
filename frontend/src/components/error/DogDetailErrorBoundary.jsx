@@ -34,7 +34,7 @@ class DogDetailErrorBoundary extends React.Component {
       stack: error.stack,
       componentStack: errorInfo.componentStack,
       retryCount: this.state.retryCount,
-      dogId: this.props.dogId,
+      dogSlug: this.props.dogSlug,
     });
   }
 

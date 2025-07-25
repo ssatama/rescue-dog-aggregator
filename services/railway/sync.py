@@ -70,7 +70,7 @@ def sync_organizations_to_railway(chunk_size: int = 1000) -> bool:
                 with local_conn.cursor() as cursor:
                     cursor.execute(
                         """
-                        SELECT id, name, website_url, description, country, city, logo_url, active, created_at, updated_at, social_media, config_id, last_config_sync, established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs
+                        SELECT id, name, website_url, description, country, city, logo_url, active, created_at, updated_at, social_media, config_id, last_config_sync, established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs, slug
                         FROM organizations
                         ORDER BY id
                     """
@@ -109,7 +109,7 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
             with local_conn.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, source_last_updated, breed_group, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, last_session_id, active
+                    SELECT id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, source_last_updated, breed_group, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, last_session_id, active, slug
                     FROM animals
                     ORDER BY id
                 """
@@ -133,12 +133,12 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
                 (id, name, animal_type, size, age_text, sex, breed,
                  primary_image_url, organization_id, created_at, updated_at,
                  availability_confidence, last_seen_at, consecutive_scrapes_missing,
-                 status, properties, adoption_url, external_id)
+                 status, properties, adoption_url, external_id, slug)
                 VALUES 
                 (:id, :name, :animal_type, :size, :age_text, :sex, :breed,
                  :primary_image_url, :organization_id, :created_at, :updated_at,
                  :availability_confidence, :last_seen_at, :consecutive_scrapes_missing,
-                 :status, :properties, :adoption_url, :external_id)
+                 :status, :properties, :adoption_url, :external_id, :slug)
                 ON CONFLICT (external_id, organization_id) DO UPDATE SET
                     name = EXCLUDED.name,
                     animal_type = EXCLUDED.animal_type,
@@ -153,7 +153,8 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
                     consecutive_scrapes_missing = EXCLUDED.consecutive_scrapes_missing,
                     status = EXCLUDED.status,
                     properties = EXCLUDED.properties,
-                    adoption_url = EXCLUDED.adoption_url
+                    adoption_url = EXCLUDED.adoption_url,
+                slug = EXCLUDED.slug
             """
             )
 
@@ -193,6 +194,8 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
                             "availability_confidence": animal[26],
                             "last_session_id": animal[27],
                             "active": animal[28],
+                            "slug": animal[29],
+                            "slug": animal[29],
                         }
                     )
 
@@ -448,11 +451,11 @@ def _process_organizations_chunk(session, organizations_chunk):
         INSERT INTO organizations 
         (id, name, website_url, description, country, city, logo_url, active,
          created_at, updated_at, social_media, config_id, last_config_sync, 
-         established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs)
+         established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs, slug)
         VALUES 
         (:id, :name, :website_url, :description, :country, :city, :logo_url, :active,
          :created_at, :updated_at, :social_media, :config_id, :last_config_sync,
-         :established_year, :ships_to, :service_regions, :total_dogs, :new_this_week, :recent_dogs)
+         :established_year, :ships_to, :service_regions, :total_dogs, :new_this_week, :recent_dogs, :slug)
         ON CONFLICT (config_id) DO UPDATE SET
             name = EXCLUDED.name,
             website_url = EXCLUDED.website_url,
@@ -469,7 +472,8 @@ def _process_organizations_chunk(session, organizations_chunk):
             service_regions = EXCLUDED.service_regions,
             total_dogs = EXCLUDED.total_dogs,
             new_this_week = EXCLUDED.new_this_week,
-            recent_dogs = EXCLUDED.recent_dogs
+            recent_dogs = EXCLUDED.recent_dogs,
+            slug = EXCLUDED.slug
     """
     )
 
@@ -490,7 +494,7 @@ def _process_organizations_chunk(session, organizations_chunk):
         return value
 
     for org in organizations_chunk:
-        # Map all 19 columns: id, name, website_url, description, country, city, logo_url, active, created_at, updated_at, social_media, config_id, last_config_sync, established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs
+        # Map all 20 columns: id, name, website_url, description, country, city, logo_url, active, created_at, updated_at, social_media, config_id, last_config_sync, established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs, slug
         session.execute(
             insert_sql,
             {
@@ -513,6 +517,7 @@ def _process_organizations_chunk(session, organizations_chunk):
                 "total_dogs": org[16],
                 "new_this_week": org[17],
                 "recent_dogs": safe_json_serialize(org[18]),
+                "slug": org[19],
             },
         )
 
@@ -527,7 +532,7 @@ def _sync_organizations_to_railway_in_transaction(session, chunk_size: int = 100
             with local_conn.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT id, name, website_url, description, country, city, logo_url, active, created_at, updated_at, social_media, config_id, last_config_sync, established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs
+                    SELECT id, name, website_url, description, country, city, logo_url, active, created_at, updated_at, social_media, config_id, last_config_sync, established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs, slug
                     FROM organizations
                     ORDER BY id
                 """
@@ -566,7 +571,7 @@ def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 
             with local_conn.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, source_last_updated, breed_group, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, last_session_id, active
+                    SELECT id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, source_last_updated, breed_group, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, last_session_id, active, slug
                     FROM animals
                     ORDER BY id
                 """
@@ -582,9 +587,9 @@ def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 
         insert_sql = text(
             """
             INSERT INTO animals 
-            (id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, source_last_updated, breed_group, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, last_session_id, active)
+            (id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, source_last_updated, breed_group, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, last_session_id, active, slug)
             VALUES 
-            (:id, :name, :organization_id, :animal_type, :external_id, :primary_image_url, :adoption_url, :status, :breed, :standardized_breed, :age_text, :age_min_months, :age_max_months, :sex, :size, :standardized_size, :language, :properties, :created_at, :updated_at, :last_scraped_at, :source_last_updated, :breed_group, :original_image_url, :last_seen_at, :consecutive_scrapes_missing, :availability_confidence, :last_session_id, :active)
+            (:id, :name, :organization_id, :animal_type, :external_id, :primary_image_url, :adoption_url, :status, :breed, :standardized_breed, :age_text, :age_min_months, :age_max_months, :sex, :size, :standardized_size, :language, :properties, :created_at, :updated_at, :last_scraped_at, :source_last_updated, :breed_group, :original_image_url, :last_seen_at, :consecutive_scrapes_missing, :availability_confidence, :last_session_id, :active, :slug)
             ON CONFLICT (external_id, organization_id) DO UPDATE SET
                 name = EXCLUDED.name,
                 animal_type = EXCLUDED.animal_type,
@@ -599,7 +604,8 @@ def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 
                 consecutive_scrapes_missing = EXCLUDED.consecutive_scrapes_missing,
                 status = EXCLUDED.status,
                 properties = EXCLUDED.properties,
-                adoption_url = EXCLUDED.adoption_url
+                adoption_url = EXCLUDED.adoption_url,
+                slug = EXCLUDED.slug
         """
         )
 
@@ -646,6 +652,7 @@ def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 
                         "availability_confidence": animal[26],
                         "last_session_id": animal[27],
                         "active": animal[28],
+                        "slug": animal[29],
                     }
                 )
 
@@ -690,7 +697,7 @@ def _sync_animals_to_railway_in_transaction(session, batch_size: int = 100) -> b
             with local_conn.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, source_last_updated, breed_group, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, last_session_id, active
+                    SELECT id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, source_last_updated, breed_group, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, last_session_id, active, slug
                     FROM animals
                     ORDER BY id
                 """
@@ -710,9 +717,9 @@ def _sync_animals_to_railway_in_transaction(session, batch_size: int = 100) -> b
         insert_sql = text(
             """
             INSERT INTO animals 
-            (id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, source_last_updated, breed_group, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, last_session_id, active)
+            (id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, source_last_updated, breed_group, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, last_session_id, active, slug)
             VALUES 
-            (:id, :name, :organization_id, :animal_type, :external_id, :primary_image_url, :adoption_url, :status, :breed, :standardized_breed, :age_text, :age_min_months, :age_max_months, :sex, :size, :standardized_size, :language, :properties, :created_at, :updated_at, :last_scraped_at, :source_last_updated, :breed_group, :original_image_url, :last_seen_at, :consecutive_scrapes_missing, :availability_confidence, :last_session_id, :active)
+            (:id, :name, :organization_id, :animal_type, :external_id, :primary_image_url, :adoption_url, :status, :breed, :standardized_breed, :age_text, :age_min_months, :age_max_months, :sex, :size, :standardized_size, :language, :properties, :created_at, :updated_at, :last_scraped_at, :source_last_updated, :breed_group, :original_image_url, :last_seen_at, :consecutive_scrapes_missing, :availability_confidence, :last_session_id, :active, :slug)
             ON CONFLICT (external_id, organization_id) DO UPDATE SET
                 name = EXCLUDED.name,
                 animal_type = EXCLUDED.animal_type,
@@ -727,7 +734,8 @@ def _sync_animals_to_railway_in_transaction(session, batch_size: int = 100) -> b
                 consecutive_scrapes_missing = EXCLUDED.consecutive_scrapes_missing,
                 status = EXCLUDED.status,
                 properties = EXCLUDED.properties,
-                adoption_url = EXCLUDED.adoption_url
+                adoption_url = EXCLUDED.adoption_url,
+                slug = EXCLUDED.slug
         """
         )
 
@@ -774,6 +782,7 @@ def _sync_animals_to_railway_in_transaction(session, batch_size: int = 100) -> b
                         "availability_confidence": animal[26],
                         "last_session_id": animal[27],
                         "active": animal[28],
+                        "slug": animal[29],
                     }
                 )
 

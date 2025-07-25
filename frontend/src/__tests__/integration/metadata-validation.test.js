@@ -1,20 +1,20 @@
 /**
  * Integration tests for Next.js metadata processing and validation
  */
-import { generateMetadata as generateDogMetadata } from '../../app/dogs/[id]/page';
-import { generateMetadata as generateOrgMetadata } from '../../app/organizations/[id]/page';
+import { generateMetadata as generateDogMetadata } from '../../app/dogs/[slug]/page';
+import { generateMetadata as generateOrgMetadata } from '../../app/organizations/[slug]/page';
 
 // Mock the services
 jest.mock('../../services/animalsService', () => ({
-  getAnimalById: jest.fn()
+  getAnimalBySlug: jest.fn()
 }));
 
 jest.mock('../../services/organizationsService', () => ({
-  getOrganizationById: jest.fn()
+  getOrganizationBySlug: jest.fn()
 }));
 
-import { getAnimalById } from '../../services/animalsService';
-import { getOrganizationById } from '../../services/organizationsService';
+import { getAnimalBySlug } from '../../services/animalsService';
+import { getOrganizationBySlug } from '../../services/organizationsService';
 
 describe('Metadata Validation Integration Tests', () => {
   beforeEach(() => {
@@ -33,24 +33,26 @@ describe('Metadata Validation Integration Tests', () => {
       // Test dog detail page
       const mockDog = {
         id: 1,
+        slug: 'test-dog-test-breed-1',
         name: 'Test Dog',
         standardized_breed: 'Test Breed',
         organization: { name: 'Test Org' }
       };
-      getAnimalById.mockResolvedValue(mockDog);
+      getAnimalBySlug.mockResolvedValue(mockDog);
       
-      const dogMetadata = await generateDogMetadata({ params: { id: '1' } });
+      const dogMetadata = await generateDogMetadata({ params: { slug: 'test-dog-test-breed-1' } });
       expect(validTypes).toContain(dogMetadata.openGraph.type);
 
       // Test organization detail page
       const mockOrg = {
         id: 1,
+        slug: 'test-organization-1',
         name: 'Test Organization',
         description: 'Test description'
       };
-      getOrganizationById.mockResolvedValue(mockOrg);
+      getOrganizationBySlug.mockResolvedValue(mockOrg);
       
-      const orgMetadata = await generateOrgMetadata({ params: { id: '1' } });
+      const orgMetadata = await generateOrgMetadata({ params: { slug: 'test-organization-1' } });
       expect(validTypes).toContain(orgMetadata.openGraph.type);
     });
 
@@ -63,12 +65,13 @@ describe('Metadata Validation Integration Tests', () => {
 
       const mockOrg = {
         id: 1,
+        slug: 'test-organization-1',
         name: 'Test Organization',
         description: 'Test description'
       };
-      getOrganizationById.mockResolvedValue(mockOrg);
+      getOrganizationBySlug.mockResolvedValue(mockOrg);
       
-      const orgMetadata = await generateOrgMetadata({ params: { id: '1' } });
+      const orgMetadata = await generateOrgMetadata({ params: { slug: 'test-organization-1' } });
       
       invalidTypes.forEach(invalidType => {
         expect(orgMetadata.openGraph.type).not.toBe(invalidType);
@@ -80,12 +83,13 @@ describe('Metadata Validation Integration Tests', () => {
     test('should include all required OpenGraph fields', async () => {
       const mockOrg = {
         id: 1,
+        slug: 'test-organization-1',
         name: 'Test Organization',
         description: 'Test description'
       };
-      getOrganizationById.mockResolvedValue(mockOrg);
+      getOrganizationBySlug.mockResolvedValue(mockOrg);
       
-      const metadata = await generateOrgMetadata({ params: { id: '1' } });
+      const metadata = await generateOrgMetadata({ params: { slug: 'test-organization-1' } });
       
       // Required OpenGraph fields
       expect(metadata.openGraph.title).toBeDefined();
@@ -103,12 +107,13 @@ describe('Metadata Validation Integration Tests', () => {
     test('should include Twitter Card metadata', async () => {
       const mockOrg = {
         id: 1,
+        slug: 'test-organization-1',
         name: 'Test Organization',
         description: 'Test description'
       };
-      getOrganizationById.mockResolvedValue(mockOrg);
+      getOrganizationBySlug.mockResolvedValue(mockOrg);
       
-      const metadata = await generateOrgMetadata({ params: { id: '1' } });
+      const metadata = await generateOrgMetadata({ params: { slug: 'test-organization-1' } });
       
       expect(metadata.twitter).toBeDefined();
       expect(metadata.twitter.card).toBeDefined();
@@ -123,9 +128,9 @@ describe('Metadata Validation Integration Tests', () => {
 
   describe('Error Handling in Metadata Generation', () => {
     test('should handle service errors gracefully', async () => {
-      getOrganizationById.mockRejectedValue(new Error('Service error'));
+      getOrganizationBySlug.mockRejectedValue(new Error('Service error'));
       
-      const metadata = await generateOrgMetadata({ params: { id: '999' } });
+      const metadata = await generateOrgMetadata({ params: { slug: '999' } });
       
       expect(metadata.title).toContain('Not Found');
       expect(metadata.description).toBeDefined();
@@ -136,12 +141,13 @@ describe('Metadata Validation Integration Tests', () => {
     test('should handle missing data gracefully', async () => {
       const mockOrgMinimal = {
         id: 1,
+        slug: 'test-organization-1',
         name: 'Test Organization'
         // Missing description, city, country
       };
-      getOrganizationById.mockResolvedValue(mockOrgMinimal);
+      getOrganizationBySlug.mockResolvedValue(mockOrgMinimal);
       
-      const metadata = await generateOrgMetadata({ params: { id: '1' } });
+      const metadata = await generateOrgMetadata({ params: { slug: 'test-organization-1' } });
       
       expect(metadata.title).toBeDefined();
       expect(metadata.description).toBeDefined();

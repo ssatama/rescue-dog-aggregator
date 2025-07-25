@@ -2,19 +2,19 @@ import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import OrgDetailPage from '../page'
-import { getOrganizationById, getOrganizationDogs } from '../../../../services/organizationsService'
+import { getOrganizationBySlug, getOrganizationDogs } from '../../../../services/organizationsService'
 
 // mock the service
 jest.mock('../../../../services/organizationsService', () => ({
-  getOrganizationById:  jest.fn(),
+  getOrganizationBySlug:  jest.fn(),
   getOrganizationDogs: jest.fn().mockResolvedValue([]),
 }))
 
 // mock next/navigation
 jest.mock('next/navigation', () => ({
-  useParams: () => ({ id: '42' }),
+  useParams: () => ({ slug: 'test-org-42' }),
   useRouter: () => ({ back: jest.fn() }),
-  usePathname: () => '/organizations/42',
+  usePathname: () => '/organizations/test-org-42',
   useSearchParams: () => ({ get: () => null }),
 }))
 
@@ -26,7 +26,7 @@ jest.mock('../../../../components/ui/Loading', () => () => <div data-testid="loa
 describe('OrgDetailPage – share buttons', () => {
   it('renders SocialMediaLinks with the org social_media URLs', async () => {
     // arrange: service returns an org with social_media
-    getOrganizationById.mockResolvedValueOnce({
+    getOrganizationBySlug.mockResolvedValueOnce({
       id: 42,
       name: 'Test Org',
       description: 'Desc',
@@ -55,7 +55,7 @@ describe('OrgDetailPage – share buttons', () => {
   })
 
   it('hides SocialMediaLinks when social_media is empty', async () => {
-    getOrganizationById.mockResolvedValueOnce({
+    getOrganizationBySlug.mockResolvedValueOnce({
       id: 42,
       name: 'Test Org',
       description: 'Desc',

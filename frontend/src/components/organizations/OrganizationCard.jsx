@@ -24,6 +24,7 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
   const logoUrl = organization?.logo_url || null;
   const socialMedia = organization?.social_media || {};
   const id = organization?.id || "0";
+  const slug = organization?.slug || `unknown-org-${id}`;
   
   // Enhanced data for the new card design
   const country = organization?.country;
@@ -96,13 +97,13 @@ const OrganizationCard = memo(function OrganizationCard({ organization, size = '
   return (
     <Card 
       className="flex flex-col overflow-hidden cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2"
-      onClick={() => window.location.href = `/organizations/${id}`}
+      onClick={() => window.location.href = `/organizations/${slug}`}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          window.location.href = `/organizations/${id}`;
+          window.location.href = `/organizations/${slug}`;
         }
       }}
     >

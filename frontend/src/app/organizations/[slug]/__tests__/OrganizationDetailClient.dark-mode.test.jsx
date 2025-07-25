@@ -8,7 +8,7 @@ import OrganizationDetailClient from '../OrganizationDetailClient';
 
 // Mock the services
 jest.mock('../../../../services/organizationsService', () => ({
-  getOrganizationById: jest.fn(),
+  getOrganizationBySlug: jest.fn(),
   getOrganizationDogs: jest.fn()
 }));
 
@@ -60,13 +60,13 @@ jest.mock('../../../../utils/logger', () => ({
 }));
 
 jest.mock('next/navigation', () => ({
-  useParams: () => ({ id: 'test-org-1' }),
+  useParams: () => ({ slug: 'test-org-1' }),
   useSearchParams: () => ({
     get: jest.fn(() => null)
   })
 }));
 
-import { getOrganizationById, getOrganizationDogs } from '../../../../services/organizationsService';
+import { getOrganizationBySlug, getOrganizationDogs } from '../../../../services/organizationsService';
 
 describe('OrganizationDetailClient Dark Mode', () => {
   const mockOrganization = {
@@ -86,13 +86,13 @@ describe('OrganizationDetailClient Dark Mode', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    getOrganizationById.mockResolvedValue(mockOrganization);
+    getOrganizationBySlug.mockResolvedValue(mockOrganization);
     getOrganizationDogs.mockResolvedValue(mockDogs);
   });
 
   describe('Loading State Dark Mode', () => {
     test('hero skeleton has dark mode styling', () => {
-      getOrganizationById.mockImplementation(() => new Promise(() => {})); // Never resolves
+      getOrganizationBySlug.mockImplementation(() => new Promise(() => {})); // Never resolves
       
       render(<OrganizationDetailClient params={{ id: 'test-org-1' }} />);
       
@@ -104,7 +104,7 @@ describe('OrganizationDetailClient Dark Mode', () => {
     });
 
     test('skeleton elements have dark mode styling', () => {
-      getOrganizationById.mockImplementation(() => new Promise(() => {}));
+      getOrganizationBySlug.mockImplementation(() => new Promise(() => {}));
       
       render(<OrganizationDetailClient params={{ id: 'test-org-1' }} />);
       
@@ -118,7 +118,7 @@ describe('OrganizationDetailClient Dark Mode', () => {
 
   describe('Error State Dark Mode', () => {
     test('error container has dark mode background', async () => {
-      getOrganizationById.mockRejectedValue(new Error('Not found'));
+      getOrganizationBySlug.mockRejectedValue(new Error('Not found'));
       
       render(<OrganizationDetailClient params={{ id: 'test-org-1' }} />);
       
@@ -132,7 +132,7 @@ describe('OrganizationDetailClient Dark Mode', () => {
     });
 
     test('error heading has dark mode text color', async () => {
-      getOrganizationById.mockRejectedValue(new Error('Not found'));
+      getOrganizationBySlug.mockRejectedValue(new Error('Not found'));
       
       render(<OrganizationDetailClient params={{ id: 'test-org-1' }} />);
       
@@ -144,7 +144,7 @@ describe('OrganizationDetailClient Dark Mode', () => {
     });
 
     test('error description has dark mode text color', async () => {
-      getOrganizationById.mockRejectedValue(new Error('Not found'));
+      getOrganizationBySlug.mockRejectedValue(new Error('Not found'));
       
       render(<OrganizationDetailClient params={{ id: 'test-org-1' }} />);
       
@@ -156,7 +156,7 @@ describe('OrganizationDetailClient Dark Mode', () => {
     });
 
     test('error return button maintains orange theme', async () => {
-      getOrganizationById.mockRejectedValue(new Error('Not found'));
+      getOrganizationBySlug.mockRejectedValue(new Error('Not found'));
       
       render(<OrganizationDetailClient params={{ id: 'test-org-1' }} />);
       

@@ -13,20 +13,21 @@
 
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { act } from '@testing-library/react';
-import DogDetailClient from '../../app/dogs/[id]/DogDetailClient';
+import DogDetailClient from '../../app/dogs/[slug]/DogDetailClient';
 
 // Mock Next.js navigation
 jest.mock('next/navigation', () => ({
-  useParams: () => ({ id: 'test-dog-123' }),
+  useParams: () => ({ slug: 'test-dog-mixed-breed-123' }),
   useRouter: () => ({ back: jest.fn() }),
-  usePathname: () => '/dogs/test-dog-123',
+  usePathname: () => '/dogs/test-dog-mixed-breed-123',
   useSearchParams: () => ({ get: () => null }),
 }));
 
 // Mock services
 jest.mock('../../services/animalsService', () => ({
-  getAnimalById: jest.fn(() => Promise.resolve({
+  getAnimalBySlug: jest.fn(() => Promise.resolve({
     id: 'test-dog-123',
+    slug: 'test-dog-mixed-breed-123',
     name: 'Test Dog',
     breed: 'Mixed Breed',
     age_text: '2 years old',
@@ -216,28 +217,29 @@ describe('Final Checklist Validation', () => {
 
   describe('✓ Description Fallbacks', () => {
     test('description component handles empty content gracefully', async () => {
-      // Mock empty description
-      jest.mocked(require('../../services/animalsService').getAnimalById)
-        .mockResolvedValueOnce({
-          id: 'test-dog-123',
-          name: 'Test Dog',
-          breed: 'Mixed Breed',
-          age_text: '2 years old',
-          sex: 'Male',
-          size: 'Medium',
-          primary_image_url: 'https://example.com/dog.jpg',
-          properties: {
-            description: '' // Empty description
-          },
-          organization: {
-            id: 1,
-            name: 'Test Rescue',
-            website_url: 'https://testrescue.org'
-          },
-          organization_id: 1,
-          status: 'available',
-          adoption_url: 'https://testrescue.org/adopt'
-        });
+      // Mock empty description using the existing getAnimalBySlug mock
+      const { getAnimalBySlug } = require('../../services/animalsService');
+      getAnimalBySlug.mockResolvedValueOnce({
+        id: 'test-dog-123',
+        slug: 'test-dog-mixed-breed-123',
+        name: 'Test Dog',
+        breed: 'Mixed Breed',
+        age_text: '2 years old',
+        sex: 'Male',
+        size: 'Medium',
+        primary_image_url: 'https://example.com/dog.jpg',
+        properties: {
+          description: '' // Empty description
+        },
+        organization: {
+          id: 1,
+          name: 'Test Rescue',
+          website_url: 'https://testrescue.org'
+        },
+        organization_id: 1,
+        status: 'available',
+        adoption_url: 'https://testrescue.org/adopt'
+      });
 
       await act(async () => {
         render(<DogDetailClient />);
@@ -255,28 +257,29 @@ describe('Final Checklist Validation', () => {
     });
 
     test('description handles short content appropriately', async () => {
-      // Mock short description
-      jest.mocked(require('../../services/animalsService').getAnimalById)
-        .mockResolvedValueOnce({
-          id: 'test-dog-123',
-          name: 'Test Dog',
-          breed: 'Mixed Breed',
-          age_text: '2 years old',
-          sex: 'Male',
-          size: 'Medium',
-          primary_image_url: 'https://example.com/dog.jpg',
-          properties: {
-            description: 'Friendly dog.' // Very short description
-          },
-          organization: {
-            id: 1,
-            name: 'Test Rescue',
-            website_url: 'https://testrescue.org'
-          },
-          organization_id: 1,
-          status: 'available',
-          adoption_url: 'https://testrescue.org/adopt'
-        });
+      // Mock short description using the existing getAnimalBySlug mock
+      const { getAnimalBySlug } = require('../../services/animalsService');
+      getAnimalBySlug.mockResolvedValueOnce({
+        id: 'test-dog-123',
+        slug: 'test-dog-mixed-breed-123',
+        name: 'Test Dog',
+        breed: 'Mixed Breed',
+        age_text: '2 years old',
+        sex: 'Male',
+        size: 'Medium',
+        primary_image_url: 'https://example.com/dog.jpg',
+        properties: {
+          description: 'Friendly dog.' // Very short description
+        },
+        organization: {
+          id: 1,
+          name: 'Test Rescue',
+          website_url: 'https://testrescue.org'
+        },
+        organization_id: 1,
+        status: 'available',
+        adoption_url: 'https://testrescue.org/adopt'
+      });
 
       await act(async () => {
         render(<DogDetailClient />);

@@ -1,20 +1,20 @@
 /**
  * Tests for SEO meta tags implementation
  */
-import { generateMetadata as generateDogMetadata } from '../../app/dogs/[id]/page';
-import { generateMetadata as generateOrgMetadata } from '../../app/organizations/[id]/page';
+import { generateMetadata as generateDogMetadata } from '../../app/dogs/[slug]/page';
+import { generateMetadata as generateOrgMetadata } from '../../app/organizations/[slug]/page';
 
 // Mock the services
 jest.mock('../../services/animalsService', () => ({
-  getAnimalById: jest.fn()
+  getAnimalBySlug: jest.fn()
 }));
 
 jest.mock('../../services/organizationsService', () => ({
-  getOrganizationById: jest.fn()
+  getOrganizationBySlug: jest.fn()
 }));
 
-import { getAnimalById } from '../../services/animalsService';
-import { getOrganizationById } from '../../services/organizationsService';
+import { getAnimalBySlug } from '../../services/animalsService';
+import { getOrganizationBySlug } from '../../services/organizationsService';
 
 describe('SEO Meta Tags', () => {
   beforeEach(() => {
@@ -25,6 +25,7 @@ describe('SEO Meta Tags', () => {
     test('should generate meta tags for dog detail page', async () => {
       const mockDog = {
         id: 1,
+        slug: 'buddy-labrador-retriever-1',
         name: 'Buddy',
         standardized_breed: 'Labrador Retriever',
         primary_image_url: 'https://example.com/buddy.jpg',
@@ -36,15 +37,15 @@ describe('SEO Meta Tags', () => {
         }
       };
 
-      getAnimalById.mockResolvedValue(mockDog);
+      getAnimalBySlug.mockResolvedValue(mockDog);
 
-      const metadata = await generateDogMetadata({ params: { id: '1' } });
+      const metadata = await generateDogMetadata({ params: { slug: 'buddy-labrador-retriever-1' } });
 
       expect(metadata.title).toBe('Buddy - Labrador Retriever Available for Adoption | Rescue Dog Aggregator');
       expect(metadata.description).toBe('Meet Buddy, a Labrador Retriever looking for a forever home. A friendly dog looking for a loving home. Available for adoption from Happy Paws Rescue in San Francisco, USA.');
       
       // Check canonical URL
-      expect(metadata.alternates.canonical).toBe('https://rescuedogs.me/dogs/1');
+      expect(metadata.alternates.canonical).toBe('https://rescuedogs.me/dogs/buddy-labrador-retriever-1');
       
       // Check OpenGraph
       expect(metadata.openGraph.title).toBe('Buddy - Available for Adoption');
@@ -52,7 +53,7 @@ describe('SEO Meta Tags', () => {
       expect(metadata.openGraph.images).toEqual(['https://example.com/buddy.jpg']);
       expect(metadata.openGraph.type).toBe('article');
       expect(metadata.openGraph.siteName).toBe('Rescue Dog Aggregator');
-      expect(metadata.openGraph.url).toBe('https://rescuedogs.me/dogs/1');
+      expect(metadata.openGraph.url).toBe('https://rescuedogs.me/dogs/buddy-labrador-retriever-1');
       
       // Check Twitter
       expect(metadata.twitter.card).toBe('summary_large_image');
@@ -70,6 +71,7 @@ describe('SEO Meta Tags', () => {
     test('should generate meta tags for dog without description', async () => {
       const mockDog = {
         id: 2,
+        slug: 'luna-poodle-2',
         name: 'Luna',
         standardized_breed: 'Poodle',
         primary_image_url: 'https://example.com/luna.jpg',
@@ -78,18 +80,18 @@ describe('SEO Meta Tags', () => {
         }
       };
 
-      getAnimalById.mockResolvedValue(mockDog);
+      getAnimalBySlug.mockResolvedValue(mockDog);
 
-      const metadata = await generateDogMetadata({ params: { id: '2' } });
+      const metadata = await generateDogMetadata({ params: { slug: 'luna-poodle-2' } });
 
       expect(metadata.description).toContain('Meet Luna, a Poodle looking for a forever home');
       expect(metadata.description).toContain('Available for adoption now');
     });
 
     test('should handle API errors gracefully', async () => {
-      getAnimalById.mockRejectedValue(new Error('Dog not found'));
+      getAnimalBySlug.mockRejectedValue(new Error('Dog not found'));
 
-      const metadata = await generateDogMetadata({ params: { id: '999' } });
+      const metadata = await generateDogMetadata({ params: { slug: 'unknown-dog-999' } });
 
       expect(metadata).toEqual({
         title: 'Dog Not Found | Rescue Dog Aggregator',
@@ -102,6 +104,7 @@ describe('SEO Meta Tags', () => {
     test('should generate meta tags for organization detail page', async () => {
       const mockOrg = {
         id: 1,
+        slug: 'happy-paws-rescue-1',
         name: 'Happy Paws Rescue',
         description: 'Dedicated to rescuing and rehoming dogs in need.',
         city: 'San Francisco',
@@ -109,22 +112,22 @@ describe('SEO Meta Tags', () => {
         website_url: 'https://happypaws.org'
       };
 
-      getOrganizationById.mockResolvedValue(mockOrg);
+      getOrganizationBySlug.mockResolvedValue(mockOrg);
 
-      const metadata = await generateOrgMetadata({ params: { id: '1' } });
+      const metadata = await generateOrgMetadata({ params: { slug: 'happy-paws-rescue-1' } });
 
       expect(metadata.title).toBe('Happy Paws Rescue - Dog Rescue Organization | Rescue Dog Aggregator');
       expect(metadata.description).toBe('Learn about Happy Paws Rescue and their available dogs for adoption. Dedicated to rescuing and rehoming dogs in need. Located in San Francisco, USA.');
       
       // Check canonical URL
-      expect(metadata.alternates.canonical).toBe('https://rescuedogs.me/organizations/1');
+      expect(metadata.alternates.canonical).toBe('https://rescuedogs.me/organizations/happy-paws-rescue-1');
       
       // Check OpenGraph
       expect(metadata.openGraph.title).toBe('Happy Paws Rescue - Dog Rescue Organization');
       expect(metadata.openGraph.description).toBe('Learn about Happy Paws Rescue and their available dogs for adoption. Dedicated to rescuing and rehoming dogs in need.');
       expect(metadata.openGraph.type).toBe('website');
       expect(metadata.openGraph.siteName).toBe('Rescue Dog Aggregator');
-      expect(metadata.openGraph.url).toBe('https://rescuedogs.me/organizations/1');
+      expect(metadata.openGraph.url).toBe('https://rescuedogs.me/organizations/happy-paws-rescue-1');
       
       // Check Twitter
       expect(metadata.twitter.card).toBe('summary');
@@ -141,13 +144,14 @@ describe('SEO Meta Tags', () => {
     test('should only allow valid OpenGraph types', async () => {
       const mockOrg = {
         id: 1,
+        slug: 'test-org-1',
         name: 'Test Org',
         description: 'Test description'
       };
 
-      getOrganizationById.mockResolvedValue(mockOrg);
+      getOrganizationBySlug.mockResolvedValue(mockOrg);
 
-      const metadata = await generateOrgMetadata({ params: { id: '1' } });
+      const metadata = await generateOrgMetadata({ params: { slug: 'test-org-1' } });
 
       // Valid OpenGraph types according to specification
       const validTypes = ['website', 'article', 'profile', 'book', 'video.movie', 'video.episode', 'video.tv_show', 'video.other', 'music.song', 'music.album', 'music.playlist', 'music.radio_station'];

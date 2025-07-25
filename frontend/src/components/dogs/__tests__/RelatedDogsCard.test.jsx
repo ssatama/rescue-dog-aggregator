@@ -19,6 +19,7 @@ describe('RelatedDogsCard', () => {
   const mockPush = jest.fn();
   const mockDog = {
     id: 123,
+    slug: 'luna-mixed-breed-123',
     name: 'Luna',
     breed: 'Mixed Breed',
     age_text: '2 years',
@@ -103,7 +104,7 @@ describe('RelatedDogsCard', () => {
       fireEvent.click(card);
 
       // Assert
-      expect(mockPush).toHaveBeenCalledWith('/dogs/123');
+      expect(mockPush).toHaveBeenCalledWith('/dogs/luna-mixed-breed-123');
     });
 
     it('should apply hover effects on card', () => {
@@ -142,7 +143,7 @@ describe('RelatedDogsCard', () => {
       fireEvent.keyDown(card, { key: 'Enter', code: 'Enter' });
 
       // Assert
-      expect(mockPush).toHaveBeenCalledWith('/dogs/123');
+      expect(mockPush).toHaveBeenCalledWith('/dogs/luna-mixed-breed-123');
     });
 
     it('should handle keyboard navigation (Space key)', () => {
@@ -152,7 +153,7 @@ describe('RelatedDogsCard', () => {
       fireEvent.keyDown(card, { key: ' ', code: 'Space' });
 
       // Assert
-      expect(mockPush).toHaveBeenCalledWith('/dogs/123');
+      expect(mockPush).toHaveBeenCalledWith('/dogs/luna-mixed-breed-123');
     });
   });
 

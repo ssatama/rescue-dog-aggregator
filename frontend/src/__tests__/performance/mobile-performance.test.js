@@ -11,13 +11,13 @@
 
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { act } from '@testing-library/react';
-import DogDetailClient from '../../app/dogs/[id]/DogDetailClient';
+import DogDetailClient from '../../app/dogs/[slug]/DogDetailClient';
 import MobileStickyBar from '../../components/ui/MobileStickyBar';
 import { ToastProvider } from '../../components/ui/Toast';
 
 // Mock Next.js navigation
 jest.mock('next/navigation', () => ({
-  useParams: () => ({ id: 'test-dog-123' }),
+  useParams: () => ({ slug: 'test-dog-123' }),
   useRouter: () => ({ back: jest.fn() }),
   usePathname: () => '/dogs/test-dog-123',
   useSearchParams: () => ({ get: () => null }),
@@ -25,8 +25,9 @@ jest.mock('next/navigation', () => ({
 
 // Mock services
 jest.mock('../../services/animalsService', () => ({
-  getAnimalById: jest.fn(() => Promise.resolve({
+  getAnimalBySlug: jest.fn(() => Promise.resolve({
     id: 'test-dog-123',
+    slug: 'test-dog-mixed-breed-123',
     name: 'Test Dog',
     breed: 'Mixed Breed',
     age_text: '2 years old',

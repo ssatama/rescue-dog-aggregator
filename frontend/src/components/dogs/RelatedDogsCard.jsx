@@ -9,8 +9,9 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
   const router = useRouter();
 
   const handleCardClick = useCallback(() => {
-    router.push(`/dogs/${dog.id}`);
-  }, [router, dog.id]);
+    const slug = dog.slug || `unknown-dog-${dog.id}`;
+    router.push(`/dogs/${slug}`);
+  }, [router, dog.id, dog.slug]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' || e.key === ' ') {

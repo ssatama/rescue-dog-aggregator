@@ -11,13 +11,13 @@ import MobileFilterDrawer from '../../../components/filters/MobileFilterDrawer';
 import useFilteredDogs from '../../../hooks/useFilteredDogs';
 import { getDefaultFilters } from '../../../utils/dogFilters';
 import { Button } from '../../../components/ui/button';
-import { getOrganizationById, getOrganizationDogs } from '../../../services/organizationsService';
+import { getOrganizationBySlug, getOrganizationDogs } from '../../../services/organizationsService';
 import { reportError } from '../../../utils/logger';
 
 export default function OrganizationDetailClient({ params = {} }) {
   const urlParams = useParams();
   const searchParams = useSearchParams();
-  const organizationId = params?.id || urlParams?.id;
+  const organizationSlug = params?.slug || urlParams?.slug;
   
   const [organization, setOrganization] = useState(null);
   const [dogs, setDogs] = useState([]);
@@ -104,7 +104,7 @@ export default function OrganizationDetailClient({ params = {} }) {
     }
 
     try {
-      const dogsData = await getOrganizationDogs(organizationId, apiParams);
+      const dogsData = await getOrganizationDogs(organization?.id, apiParams);
       
       setDogs(prevDogs => loadMore ? [...prevDogs, ...dogsData] : dogsData);
       setHasMore(dogsData.length === limit);
@@ -113,13 +113,13 @@ export default function OrganizationDetailClient({ params = {} }) {
       setLoadingMore(false);
 
     } catch (err) {
-      reportError('Error fetching organization dogs', { error: err.message, organizationId });
+      reportError('Error fetching organization dogs', { error: err.message, organizationId: organization?.id });
       setError(err);
       setHasMore(false);
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [organizationId, filters]);
+  }, [organization?.id, filters]);
 
 
   // Handle Load More
@@ -131,27 +131,44 @@ export default function OrganizationDetailClient({ params = {} }) {
   
   useEffect(() => {
     const fetchData = async () => {
+      if (!organizationSlug) return;
+      
       try {
         setLoading(true);
         setError(null);
         
         // Fetch organization details
-        const orgData = await getOrganizationById(organizationId);
+        const orgData = await getOrganizationBySlug(organizationSlug);
         setOrganization(orgData);
         setTotalDogs(orgData.total_dogs || 0);
         
-        // Fetch first page of dogs
-        await fetchOrganizationDogs(1, false);
+        // Fetch first page of dogs using the organization ID
+        const limit = 20;
+        const apiParams = { limit, offset: 0 };
+        
+        // Add current filters
+        if (filters.age && filters.age !== 'All') {
+          apiParams.age_category = filters.age;
+        }
+        if (filters.breed && filters.breed.trim() !== '') {
+          apiParams.standardized_breed = filters.breed;
+        }
+        
+        const dogsData = await getOrganizationDogs(orgData.id, apiParams);
+        setDogs(dogsData);
+        setHasMore(dogsData.length === limit);
+        setPage(1);
+        setLoading(false);
         
       } catch (err) {
-        reportError('Error fetching organization data', { error: err.message, organizationId });
+        reportError('Error fetching organization data', { error: err.message, organizationSlug });
         setError(err);
         setLoading(false);
       }
     };
     
     fetchData();
-  }, [organizationId, fetchOrganizationDogs]);
+  }, [organizationSlug, filters]);
 
   // Reset pagination when filters change
   useEffect(() => {

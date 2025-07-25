@@ -3,18 +3,18 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import DogDetailPage from '../page';
-import { getAnimalById } from '../../../../services/animalsService';
+import { getAnimalBySlug } from '../../../../services/animalsService';
 
 // mock the service
 jest.mock('../../../../services/animalsService', () => ({
-  getAnimalById: jest.fn()
+  getAnimalBySlug: jest.fn()
 }));
 
 // mock next/navigation
 jest.mock('next/navigation', () => ({
-  useParams: () => ({ id: '1' }),
+  useParams: () => ({ slug: 'test-dog-mixed-breed-1' }),
   useRouter: () => ({ back: jest.fn() }),
-  usePathname: () => '/dogs/1',
+  usePathname: () => '/dogs/test-dog-mixed-breed-1',
   useSearchParams: () => ({ get: () => null }),
 }));
 
@@ -34,6 +34,7 @@ describe('DogDetailPage', () => {
   it('renders full animal details when API succeeds', async () => {
     const mockDog = {
       id: 1,
+      slug: 'test-dog-mixed-breed-1',
       name: 'Rover',
       standardized_breed: 'Beagle',
       breed_group: 'Hound',
@@ -41,9 +42,14 @@ describe('DogDetailPage', () => {
       status: 'available',
       properties: { weight: '20 lbs', neutered_spayed: true },
       sex: 'Male',
+      organization: {
+        id: 1,
+        name: 'Test Rescue'
+      },
+      organization_id: 1,
       // …add whatever else you render…
     };
-    getAnimalById.mockResolvedValue(mockDog);
+    getAnimalBySlug.mockResolvedValue(mockDog);
 
     render(<DogDetailPage />);
 
@@ -64,7 +70,7 @@ describe('DogDetailPage', () => {
 
   it('shows an error message when API returns 404', async () => {
     // simulate any rejection
-    getAnimalById.mockRejectedValue(new Error('Not Found'));
+    getAnimalBySlug.mockRejectedValue(new Error('Not Found'));
 
     render(<DogDetailPage />);
 
@@ -75,7 +81,7 @@ describe('DogDetailPage', () => {
   });
 
   test('shows loading state initially', () => {
-    getAnimalById.mockImplementation(() => new Promise(() => {}));
+    getAnimalBySlug.mockImplementation(() => new Promise(() => {}));
     
     render(<DogDetailPage />);
     
@@ -87,7 +93,7 @@ describe('DogDetailPage', () => {
 describe('DogDetailPage – organization integration', () => {
   it('renders page successfully with organization integration in place', async () => {
     // arrange: return a dog similar to successful tests
-    getAnimalById.mockResolvedValue({
+    getAnimalBySlug.mockResolvedValue({
       id: 1,
       name: 'Rover',
       standardized_breed: 'Beagle',
@@ -111,7 +117,7 @@ describe('DogDetailPage – organization integration', () => {
   });
 
   it('handles missing organization data gracefully', async () => {
-    getAnimalById.mockResolvedValue({
+    getAnimalBySlug.mockResolvedValue({
       id: 1,
       name: 'Rover',
       primary_image_url: 'https://img.test/rover.jpg',
@@ -149,7 +155,7 @@ describe('DogDetailPage - Breed Display', () => {
       properties: {},
       sex: 'Male',
     };
-    getAnimalById.mockResolvedValue(mockDog);
+    getAnimalBySlug.mockResolvedValue(mockDog);
 
     render(<DogDetailPage />);
 
@@ -171,7 +177,7 @@ describe('DogDetailPage - Breed Display', () => {
       properties: {},
       sex: 'Male',
     };
-    getAnimalById.mockResolvedValue(mockDog);
+    getAnimalBySlug.mockResolvedValue(mockDog);
 
     render(<DogDetailPage />);
 
@@ -193,7 +199,7 @@ describe('DogDetailPage - Breed Display', () => {
       properties: {},
       sex: 'Male',
     };
-    getAnimalById.mockResolvedValue(mockDog);
+    getAnimalBySlug.mockResolvedValue(mockDog);
 
     render(<DogDetailPage />);
 
@@ -218,7 +224,7 @@ describe('DogDetailPage - Hero Layout', () => {
       sex: 'Male',
       organization: { name: 'Test Rescue', id: 1 }
     };
-    getAnimalById.mockResolvedValue(mockDog);
+    getAnimalBySlug.mockResolvedValue(mockDog);
 
     const { container } = render(<DogDetailPage />);
 
@@ -245,7 +251,7 @@ describe('DogDetailPage - Hero Layout', () => {
       properties: {},
       sex: 'Male',
     };
-    getAnimalById.mockResolvedValue(mockDog);
+    getAnimalBySlug.mockResolvedValue(mockDog);
 
     const { container } = render(<DogDetailPage />);
 
@@ -266,7 +272,7 @@ describe('DogDetailPage - Hero Layout', () => {
       properties: {},
       sex: 'Male',
     };
-    getAnimalById.mockResolvedValue(mockDog);
+    getAnimalBySlug.mockResolvedValue(mockDog);
 
     render(<DogDetailPage />);
 
@@ -303,7 +309,7 @@ describe('DogDetailPage - Hero Layout', () => {
       properties: {},
       sex: 'Male',
     };
-    getAnimalById.mockResolvedValue(mockDog);
+    getAnimalBySlug.mockResolvedValue(mockDog);
 
     render(<DogDetailPage />);
 
@@ -329,7 +335,7 @@ describe('DogDetailPage - Hero Layout', () => {
       standardized_breed: 'Terrier Mix',
       standardized_size: 'Medium Size',
     };
-    getAnimalById.mockResolvedValue(mockDog);
+    getAnimalBySlug.mockResolvedValue(mockDog);
 
     const { container } = render(<DogDetailPage />);
 
@@ -356,7 +362,7 @@ describe('DogDetailPage - Hero Layout', () => {
       sex: 'Male',
       standardized_breed: 'Terrier Mix',
     };
-    getAnimalById.mockResolvedValue(mockDog);
+    getAnimalBySlug.mockResolvedValue(mockDog);
 
     const { container } = render(<DogDetailPage />);
 
@@ -390,7 +396,7 @@ describe('DogDetailPage - Enhanced Description Section', () => {
       properties: { description: 'A lovely dog' },
       sex: 'Male',
     };
-    getAnimalById.mockResolvedValue(mockDog);
+    getAnimalBySlug.mockResolvedValue(mockDog);
 
     render(<DogDetailPage />);
 
@@ -413,7 +419,7 @@ describe('DogDetailPage - Enhanced Description Section', () => {
       properties: { description: 'A lovely dog who loves to play' },
       sex: 'Male',
     };
-    getAnimalById.mockResolvedValue(mockDog);
+    getAnimalBySlug.mockResolvedValue(mockDog);
 
     render(<DogDetailPage />);
 
@@ -434,7 +440,7 @@ describe('DogDetailPage - Enhanced Description Section', () => {
       properties: {}, // No description
       sex: 'Male',
     };
-    getAnimalById.mockResolvedValue(mockDog);
+    getAnimalBySlug.mockResolvedValue(mockDog);
 
     render(<DogDetailPage />);
 
@@ -456,7 +462,7 @@ describe('DogDetailPage - Enhanced Description Section', () => {
       properties: { description: longDescription },
       sex: 'Male',
     };
-    getAnimalById.mockResolvedValue(mockDog);
+    getAnimalBySlug.mockResolvedValue(mockDog);
 
     render(<DogDetailPage />);
 
@@ -478,7 +484,7 @@ describe('DogDetailPage - Enhanced Description Section', () => {
       properties: { description: shortDescription },
       sex: 'Male',
     };
-    getAnimalById.mockResolvedValue(mockDog);
+    getAnimalBySlug.mockResolvedValue(mockDog);
 
     render(<DogDetailPage />);
 
@@ -499,7 +505,7 @@ describe('DogDetailPage - Enhanced Description Section', () => {
       properties: { description: longDescription },
       sex: 'Male',
     };
-    getAnimalById.mockResolvedValue(mockDog);
+    getAnimalBySlug.mockResolvedValue(mockDog);
 
     const user = userEvent.setup();
 
@@ -535,7 +541,7 @@ describe('DogDetailPage - Enhanced Description Section', () => {
       properties: { description: htmlDescription },
       sex: 'Male',
     };
-    getAnimalById.mockResolvedValue(mockDog);
+    getAnimalBySlug.mockResolvedValue(mockDog);
 
     render(<DogDetailPage />);
 

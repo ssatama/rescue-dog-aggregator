@@ -10,19 +10,21 @@
 
 import React from 'react';
 import { render, screen, act, waitFor } from '@testing-library/react';
-import DogDetailClient from '../../app/dogs/[id]/DogDetailClient';
-import { getAnimalById } from '../../services/animalsService';
+import DogDetailClient from '../../app/dogs/[slug]/DogDetailClient';
+import { getAnimalBySlug } from '../../services/animalsService';
 
 // Mock the services
-jest.mock('../../services/animalsService');
+jest.mock('../../services/animalsService', () => ({
+  getAnimalBySlug: jest.fn()
+}));
 jest.mock('../../services/relatedDogsService', () => ({
   getRelatedDogs: jest.fn().mockResolvedValue([])
 }));
 
 // Mock Next.js navigation
 jest.mock('next/navigation', () => ({
-  useParams: () => ({ id: 'test-dog-123' }),
-  usePathname: () => '/dogs/test-dog-123',
+  useParams: () => ({ slug: 'test-dog-mixed-breed-123' }),
+  usePathname: () => '/dogs/test-dog-mixed-breed-123',
   useRouter: () => ({
     push: jest.fn(),
     replace: jest.fn(),
@@ -80,6 +82,7 @@ jest.mock('../../components/dogs/RelatedDogsSection', () => {
 
 const mockDog = {
   id: 'test-dog-123',
+  slug: 'test-dog-mixed-breed-123',
   name: 'Buddy',
   primary_image_url: 'https://example.com/buddy.jpg',
   standardized_breed: 'Golden Retriever',
@@ -106,7 +109,8 @@ describe('Hero Image Loading Fixes', () => {
     jest.clearAllMocks();
     // Use real timers for async operations
     jest.useRealTimers();
-    getAnimalById.mockResolvedValue(mockDog);
+    const { getAnimalBySlug } = require('../../services/animalsService');
+    getAnimalBySlug.mockResolvedValue(mockDog);
     getRelatedDogs.mockResolvedValue([]);
     
     // Mock document.readyState to be 'complete' so API call starts immediately
@@ -123,7 +127,7 @@ describe('Hero Image Loading Fixes', () => {
 
   test('Fix 1: Hero image component should have force key prop', async () => {
     await act(async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-123' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-123' }} />);
     });
 
     // Wait for the API call to complete and data to load
@@ -152,9 +156,10 @@ describe('Hero Image Loading Fixes', () => {
   test('Fix 2: Loading check prevents rendering without primary_image_url', () => {
     // Test with dog that has no primary_image_url
     const dogWithoutImage = { ...mockDog, primary_image_url: null };
-    getAnimalById.mockResolvedValue(dogWithoutImage);
+    const { getAnimalBySlug } = require('../../services/animalsService');
+    getAnimalBySlug.mockResolvedValue(dogWithoutImage);
 
-    render(<DogDetailClient params={{ id: 'test-dog-123' }} />);
+    render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-123' }} />);
 
     // Initially should show loading state - this is handled by the loading check
     // The component should not attempt to render HeroImageWithBlurredBackground without src
@@ -169,7 +174,7 @@ describe('Hero Image Loading Fixes', () => {
 
   test('Fix 3: Hero image should use eager loading', async () => {
     await act(async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-123' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-123' }} />);
     });
 
     // Wait for skeleton to disappear and data to load
@@ -193,7 +198,7 @@ describe('Hero Image Loading Fixes', () => {
 
   test('All fixes work together: Component renders correctly with key prop', async () => {
     await act(async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-123' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-123' }} />);
     });
 
     // Wait for loading to complete
@@ -213,7 +218,7 @@ describe('Hero Image Loading Fixes', () => {
 
   test('Loading state handling during navigation', async () => {
     await act(async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-123' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-123' }} />);
     });
 
     // Initially should show loading skeleton
@@ -245,10 +250,11 @@ describe('Hero Image Loading Fixes', () => {
       ...mockDog, 
       primary_image_url: 'not-a-valid-url' 
     };
-    getAnimalById.mockResolvedValue(dogWithBadImage);
+    const { getAnimalBySlug } = require('../../services/animalsService');
+    getAnimalBySlug.mockResolvedValue(dogWithBadImage);
 
     await act(async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-123' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-123' }} />);
     });
 
     // Wait for loading to complete

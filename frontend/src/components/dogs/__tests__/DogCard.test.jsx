@@ -6,6 +6,7 @@ describe('DogCard Component', () => {
   test('renders dog card with correct information', () => {
     const mockDog = {
       id: 1,
+      slug: 'buddy-labrador-retriever-1',
       name: 'Buddy',
       standardized_breed: 'Labrador Retriever',
       breed: 'Lab Mix',
@@ -40,7 +41,7 @@ describe('DogCard Component', () => {
     const ctaButton = screen.getByText('Meet Buddy →');
     expect(ctaButton).toBeInTheDocument();
     // Check if it's inside a link pointing to the correct dog page
-    expect(ctaButton.closest('a')).toHaveAttribute('href', `/dogs/${mockDog.id}`);
+    expect(ctaButton.closest('a')).toHaveAttribute('href', `/dogs/${mockDog.slug}`);
   });
   
   test('handles missing data gracefully', () => {
@@ -444,6 +445,7 @@ describe('DogCard Component', () => {
     test('displays Meet CTA button', () => {
       const mockDog = {
         id: 1,
+        slug: 'buddy-dog-1',
         name: 'Buddy',
         status: 'available',
         organization: { name: 'Test Org' }
@@ -453,7 +455,7 @@ describe('DogCard Component', () => {
       
       const ctaButton = screen.getByText('Meet Buddy →');
       expect(ctaButton).toBeInTheDocument();
-      expect(ctaButton.closest('a')).toHaveAttribute('href', '/dogs/1');
+      expect(ctaButton.closest('a')).toHaveAttribute('href', '/dogs/buddy-dog-1');
     });
   });
 
@@ -932,6 +934,7 @@ describe('DogCard Component', () => {
     test('CTA button is full width within card footer', () => {
       const mockDog = {
         id: 1,
+        slug: 'buddy-dog-1',
         name: 'Buddy',
         status: 'available',
         organization: { name: 'Test Org' }
@@ -944,7 +947,7 @@ describe('DogCard Component', () => {
       
       // Button should still be inside a link
       const linkWrapper = ctaButton.closest('a');
-      expect(linkWrapper).toHaveAttribute('href', '/dogs/1');
+      expect(linkWrapper).toHaveAttribute('href', '/dogs/buddy-dog-1');
       expect(linkWrapper).toHaveClass('w-full');
     });
 

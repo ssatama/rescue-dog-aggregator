@@ -45,6 +45,7 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
   const { src: optimizedImageUrl, position: objectPosition } = getCatalogCardImageWithPosition(originalImageUrl);
   
   const id = dog?.id || "0";
+  const slug = dog?.slug || `unknown-dog-${id}`;
   const status = sanitizeText(dog?.status || 'unknown');
   
   // Enhanced data using helper functions
@@ -66,7 +67,7 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
     >
       <CardHeader className="p-0">
         <Link 
-          href={`/dogs/${id}`} 
+          href={`/dogs/${slug}`} 
           className="block focus:outline-none focus:ring-2 focus:ring-orange-600 dark:focus:ring-orange-400 focus:ring-offset-2 rounded-md" 
           aria-label={`View details for ${name.replace(/&[^;]+;/g, '')}`}
         >
@@ -111,7 +112,7 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
       <CardContent data-testid="card-content" className="p-4 sm:p-6 flex flex-col flex-grow space-y-4">
         {/* Enhanced prominent name display */}
         <CardTitle className="mb-0">
-          <Link href={`/dogs/${id}`} className="hover:underline transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-600 dark:focus:ring-orange-400 focus:ring-offset-2 rounded">
+          <Link href={`/dogs/${slug}`} className="hover:underline transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-600 dark:focus:ring-orange-400 focus:ring-offset-2 rounded">
             <h3 data-testid="dog-name" className="text-card-title truncate group-hover:text-orange-600 dark:group-hover:text-orange-400 mb-2">{name}</h3>
           </Link>
         </CardTitle>
@@ -165,7 +166,7 @@ const DogCard = React.memo(function DogCard({ dog, priority = false, animationDe
       </CardContent>
 
       <CardFooter data-testid="card-footer" className="p-4 sm:p-6 pt-0">
-         <Link href={`/dogs/${id}`} className="w-full enhanced-focus-link">
+         <Link href={`/dogs/${slug}`} className="w-full enhanced-focus-link">
            <Button
              type="button"
              size="sm"

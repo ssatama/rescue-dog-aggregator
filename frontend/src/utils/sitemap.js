@@ -125,7 +125,7 @@ const generateDogPages = (dogs) => {
 
   return dogs.map(dog => {
     const entry = {
-      url: `${BASE_URL}/dogs/${dog.id}`,
+      url: `${BASE_URL}/dogs/${dog.slug || `unknown-dog-${dog.id}`}`,
       changefreq: 'daily',
       priority: 0.8
     };
@@ -154,7 +154,7 @@ const generateOrganizationPages = (organizations) => {
 
   return organizations.map(org => {
     const entry = {
-      url: `${BASE_URL}/organizations/${org.id}`,
+      url: `${BASE_URL}/organizations/${org.slug || `unknown-org-${org.id}`}`,
       changefreq: 'weekly',
       priority: 0.7
     };

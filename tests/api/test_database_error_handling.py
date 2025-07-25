@@ -31,16 +31,16 @@ class TestDatabaseErrorHandling:
         assert response.json()["detail"] == "Organization not found"
 
     def test_invalid_animal_id_type(self, client):
-        """Test invalid animal ID type handling."""
+        """Test invalid animal slug handling."""
         response = client.get("/api/animals/not_a_number")
 
-        assert response.status_code == 422  # Validation error
+        assert response.status_code == 404  # Not found (slug-based routing)
 
     def test_invalid_organization_id_type(self, client):
-        """Test invalid organization ID type handling."""
+        """Test invalid organization slug handling."""
         response = client.get("/api/organizations/not_a_number")
 
-        assert response.status_code == 422  # Validation error
+        assert response.status_code == 404  # Not found (slug-based routing)
 
     def test_animals_endpoint_success(self, client):
         """Test animals endpoint works with test database."""

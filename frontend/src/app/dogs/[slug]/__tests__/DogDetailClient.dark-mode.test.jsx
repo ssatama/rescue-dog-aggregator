@@ -1,14 +1,16 @@
-// src/app/dogs/[id]/__tests__/DogDetailClient.dark-mode.test.jsx
+// src/app/dogs/[slug]/__tests__/DogDetailClient.dark-mode.test.jsx
 // TDD Phase 1: RED - Tests for DogDetailClient dark mode functionality
 
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import DogDetailClient from '../DogDetailClient';
-import { getAnimalById } from '../../../../services/animalsService';
+import { getAnimalBySlug } from '../../../../services/animalsService';
 
 // Mock the animalsService
-jest.mock('../../../../services/animalsService');
+jest.mock('../../../../services/animalsService', () => ({
+  getAnimalBySlug: jest.fn()
+}));
 
 // Mock all components to focus on dark mode styling
 jest.mock('../../../../components/layout/Layout', () => {
@@ -86,13 +88,14 @@ jest.mock('../../../../utils/logger', () => ({
 }));
 
 jest.mock('next/navigation', () => ({
-  useParams: () => ({ id: 'test-dog-1' }),
-  usePathname: () => '/dogs/test-dog-1'
+  useParams: () => ({ slug: 'test-dog-mixed-breed-1' }),
+  usePathname: () => '/dogs/test-dog-mixed-breed-1'
 }));
 
 describe('DogDetailClient Dark Mode', () => {
   const mockDogData = {
     id: 'test-dog-1',
+    slug: 'test-dog-mixed-breed-1',
     name: 'Buddy',
     primary_image_url: 'https://example.com/buddy.jpg',
     breed: 'Golden Retriever',
@@ -114,16 +117,17 @@ describe('DogDetailClient Dark Mode', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    getAnimalById.mockResolvedValue(mockDogData);
+    const { getAnimalBySlug } = require('../../../../services/animalsService');
+    getAnimalBySlug.mockResolvedValue(mockDogData);
     
     // Mock window.location
     delete window.location;
-    window.location = { href: 'http://localhost/dogs/test-dog-1' };
+    window.location = { href: 'http://localhost/dogs/test-dog-mixed-breed-1' };
   });
 
   describe('Breadcrumb Dark Mode', () => {
     test('breadcrumb navigation has dark mode classes', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         const breadcrumbContainer = screen.getByRole('navigation', { name: /breadcrumb/i });
@@ -137,7 +141,7 @@ describe('DogDetailClient Dark Mode', () => {
     });
 
     test('breadcrumb links have dark mode text colors', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         const homeLink = screen.getByRole('link', { name: /home/i });
@@ -156,7 +160,7 @@ describe('DogDetailClient Dark Mode', () => {
     });
 
     test('breadcrumb current page has dark mode styling', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         const breadcrumbNav = screen.getByRole('navigation', { name: /breadcrumb/i });
@@ -172,7 +176,7 @@ describe('DogDetailClient Dark Mode', () => {
 
   describe('Main Content Dark Mode', () => {
     test('main content container has proper styling structure', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         // Since ScrollAnimationWrapper is mocked, just verify the component renders
@@ -188,7 +192,7 @@ describe('DogDetailClient Dark Mode', () => {
     });
 
     test('section headings have dark mode text colors', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         const aboutHeading = screen.getByRole('heading', { name: /about buddy/i });
@@ -199,7 +203,7 @@ describe('DogDetailClient Dark Mode', () => {
     });
 
     test('metadata cards have dark mode styling', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         const metadataCards = screen.getByTestId('metadata-cards');
@@ -219,7 +223,7 @@ describe('DogDetailClient Dark Mode', () => {
     });
 
     test('metadata card text has dark mode colors', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         const metadataCards = screen.getByTestId('metadata-cards');
@@ -237,7 +241,7 @@ describe('DogDetailClient Dark Mode', () => {
 
   describe('CTA Button Dark Mode', () => {
     test('adoption CTA button maintains orange theme in dark mode', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         const ctaButton = screen.getByRole('link', { name: /start adoption process/i });
@@ -250,7 +254,7 @@ describe('DogDetailClient Dark Mode', () => {
     });
 
     test('CTA helper text has dark mode styling', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         const helperText = screen.getByText(/you'll be redirected to the rescue organization's website/i);
@@ -263,7 +267,7 @@ describe('DogDetailClient Dark Mode', () => {
 
   describe('Back Button Dark Mode', () => {
     test('back to dogs button has dark mode styling', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         // Find the button that contains "Back to all dogs" text  
@@ -282,9 +286,10 @@ describe('DogDetailClient Dark Mode', () => {
 
   describe('Error State Dark Mode', () => {
     test('error alert uses destructive variant with CSS variables', async () => {
-      getAnimalById.mockRejectedValue(new Error('API Error'));
+      const { getAnimalBySlug } = require('../../../../services/animalsService');
+      getAnimalBySlug.mockRejectedValue(new Error('API Error'));
       
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         const errorAlert = screen.getByRole('alert');
@@ -297,9 +302,10 @@ describe('DogDetailClient Dark Mode', () => {
     });
 
     test('error buttons use outline variant with CSS variables', async () => {
-      getAnimalById.mockRejectedValue(new Error('API Error'));
+      const { getAnimalBySlug } = require('../../../../services/animalsService');
+      getAnimalBySlug.mockRejectedValue(new Error('API Error'));
       
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         const tryAgainButton = screen.getByRole('button', { name: /try again/i });

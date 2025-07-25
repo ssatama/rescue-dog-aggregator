@@ -106,6 +106,7 @@ def build_organization_object(row_dict: Dict[str, Any]) -> Optional[Dict[str, An
     organization = {
         "id": row_dict["organization_id"],
         "name": row_dict["org_name"],
+        "slug": row_dict["org_slug"],
         "city": row_dict["org_city"],
         "country": row_dict["org_country"],
         "website_url": row_dict["org_website_url"],

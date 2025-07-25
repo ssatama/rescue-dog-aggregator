@@ -40,7 +40,7 @@ describe('DogDetailErrorBoundary', () => {
 
   it('should render children when no error occurs', () => {
     render(
-      <DogDetailErrorBoundary dogId="123">
+      <DogDetailErrorBoundary dogSlug="test-slug-123">
         <ThrowError shouldThrow={false} />
       </DogDetailErrorBoundary>
     );
@@ -51,7 +51,7 @@ describe('DogDetailErrorBoundary', () => {
 
   it('should render error UI when child component throws error', () => {
     render(
-      <DogDetailErrorBoundary dogId="123">
+      <DogDetailErrorBoundary dogSlug="test-slug-123">
         <ThrowError shouldThrow={true} />
       </DogDetailErrorBoundary>
     );
@@ -63,7 +63,7 @@ describe('DogDetailErrorBoundary', () => {
 
   it('should show retry button when retry count is under limit', () => {
     render(
-      <DogDetailErrorBoundary dogId="123">
+      <DogDetailErrorBoundary dogSlug="test-slug-123">
         <ThrowError shouldThrow={true} />
       </DogDetailErrorBoundary>
     );
@@ -75,7 +75,7 @@ describe('DogDetailErrorBoundary', () => {
 
   it('should handle retry functionality', () => {
     render(
-      <DogDetailErrorBoundary dogId="123">
+      <DogDetailErrorBoundary dogSlug="test-slug-123">
         <ThrowError shouldThrow={true} />
       </DogDetailErrorBoundary>
     );
@@ -94,7 +94,7 @@ describe('DogDetailErrorBoundary', () => {
 
   it('should track retry count and show it in button text', () => {
     render(
-      <DogDetailErrorBoundary dogId="123">
+      <DogDetailErrorBoundary dogSlug="test-slug-123">
         <ThrowError shouldThrow={true} />
       </DogDetailErrorBoundary>
     );
@@ -111,7 +111,7 @@ describe('DogDetailErrorBoundary', () => {
 
   it('should hide retry button after 3 attempts', () => {
     const { rerender } = render(
-      <DogDetailErrorBoundary dogId="123">
+      <DogDetailErrorBoundary dogSlug="test-slug-123">
         <ThrowError shouldThrow={true} />
       </DogDetailErrorBoundary>
     );
@@ -121,7 +121,7 @@ describe('DogDetailErrorBoundary', () => {
     fireEvent.click(retryButton);
     
     rerender(
-      <DogDetailErrorBoundary dogId="123">
+      <DogDetailErrorBoundary dogSlug="test-slug-123">
         <ThrowError shouldThrow={true} />
       </DogDetailErrorBoundary>
     );
@@ -129,7 +129,7 @@ describe('DogDetailErrorBoundary', () => {
     fireEvent.click(screen.getByRole('button', { name: /try again/i }));
     
     rerender(
-      <DogDetailErrorBoundary dogId="123">
+      <DogDetailErrorBoundary dogSlug="test-slug-123">
         <ThrowError shouldThrow={true} />
       </DogDetailErrorBoundary>
     );
@@ -137,7 +137,7 @@ describe('DogDetailErrorBoundary', () => {
     fireEvent.click(screen.getByRole('button', { name: /try again/i }));
 
     rerender(
-      <DogDetailErrorBoundary dogId="123">
+      <DogDetailErrorBoundary dogSlug="test-slug-123">
         <ThrowError shouldThrow={true} />
       </DogDetailErrorBoundary>
     );
@@ -149,7 +149,7 @@ describe('DogDetailErrorBoundary', () => {
 
   it('should handle go back button functionality', () => {
     render(
-      <DogDetailErrorBoundary dogId="123">
+      <DogDetailErrorBoundary dogSlug="test-slug-123">
         <ThrowError shouldThrow={true} />
       </DogDetailErrorBoundary>
     );
@@ -162,7 +162,7 @@ describe('DogDetailErrorBoundary', () => {
 
   it('should provide browse all dogs link', () => {
     render(
-      <DogDetailErrorBoundary dogId="123">
+      <DogDetailErrorBoundary dogSlug="test-slug-123">
         <ThrowError shouldThrow={true} />
       </DogDetailErrorBoundary>
     );
@@ -174,7 +174,7 @@ describe('DogDetailErrorBoundary', () => {
 
   it('should show helpful suggestions section', () => {
     render(
-      <DogDetailErrorBoundary dogId="123">
+      <DogDetailErrorBoundary dogSlug="test-slug-123">
         <ThrowError shouldThrow={true} />
       </DogDetailErrorBoundary>
     );
@@ -189,7 +189,7 @@ describe('DogDetailErrorBoundary', () => {
     const { reportError } = require('../../../utils/logger');
     
     render(
-      <DogDetailErrorBoundary dogId="test-dog-123">
+      <DogDetailErrorBoundary dogSlug="test-dog-mixed-breed-123">
         <ThrowError shouldThrow={true} />
       </DogDetailErrorBoundary>
     );
@@ -198,7 +198,7 @@ describe('DogDetailErrorBoundary', () => {
       'DogDetailErrorBoundary caught error',
       expect.objectContaining({
         error: 'Test error',
-        dogId: 'test-dog-123',
+        dogSlug: 'test-dog-mixed-breed-123',
         retryCount: 0,
       })
     );
@@ -206,7 +206,7 @@ describe('DogDetailErrorBoundary', () => {
 
   it('should include error icon in alert title', () => {
     render(
-      <DogDetailErrorBoundary dogId="123">
+      <DogDetailErrorBoundary dogSlug="test-slug-123">
         <ThrowError shouldThrow={true} />
       </DogDetailErrorBoundary>
     );
@@ -218,7 +218,7 @@ describe('DogDetailErrorBoundary', () => {
 
   it('should have proper button styling and icons', () => {
     render(
-      <DogDetailErrorBoundary dogId="123">
+      <DogDetailErrorBoundary dogSlug="test-slug-123">
         <ThrowError shouldThrow={true} />
       </DogDetailErrorBoundary>
     );
@@ -251,7 +251,7 @@ describe('DogDetailErrorBoundary accessibility', () => {
 
   it('should have proper ARIA labels and roles', () => {
     render(
-      <DogDetailErrorBoundary dogId="123">
+      <DogDetailErrorBoundary dogSlug="test-slug-123">
         <ThrowError shouldThrow={true} />
       </DogDetailErrorBoundary>
     );
@@ -264,7 +264,7 @@ describe('DogDetailErrorBoundary accessibility', () => {
 
   it('should be keyboard navigable', () => {
     render(
-      <DogDetailErrorBoundary dogId="123">
+      <DogDetailErrorBoundary dogSlug="test-slug-123">
         <ThrowError shouldThrow={true} />
       </DogDetailErrorBoundary>
     );
@@ -281,7 +281,7 @@ describe('DogDetailErrorBoundary accessibility', () => {
 
   it('should provide clear error messaging', () => {
     render(
-      <DogDetailErrorBoundary dogId="123">
+      <DogDetailErrorBoundary dogSlug="test-slug-123">
         <ThrowError shouldThrow={true} />
       </DogDetailErrorBoundary>
     );

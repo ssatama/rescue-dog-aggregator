@@ -54,14 +54,14 @@ class TestInputValidationComprehensive:
         assert response.status_code == 200  # Should accept valid offset
 
     def test_numeric_parameter_type_validation(self, client):
-        """Test numeric parameter type validation."""
-        # Test invalid organization_id
+        """Test slug-based URL validation."""
+        # Test invalid organization slug
         response = client.get("/api/organizations/not_a_number")
-        assert response.status_code == 422  # Should reject non-numeric ID
+        assert response.status_code == 404  # Should return not found for invalid slug
 
-        # Test invalid animal_id
+        # Test invalid animal slug
         response = client.get("/api/animals/not_a_number")
-        assert response.status_code == 422  # Should reject non-numeric ID
+        assert response.status_code == 404  # Should return not found for invalid slug
 
         # Test valid numeric IDs
         response = client.get("/api/organizations/1")

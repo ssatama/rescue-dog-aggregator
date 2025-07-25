@@ -28,7 +28,7 @@ def get_organizations(filters: OrganizationFilterRequest = Depends(), cursor: Re
         # Build the base query
         query = """
             SELECT
-                o.id, o.name, o.website_url, o.description, o.country, o.city,
+                o.id, o.slug, o.name, o.website_url, o.description, o.country, o.city,
                 o.logo_url, o.social_media, o.active, o.created_at, o.updated_at,
                 o.ships_to, o.established_year, o.service_regions,
                 -- Dog statistics
@@ -59,7 +59,7 @@ def get_organizations(filters: OrganizationFilterRequest = Depends(), cursor: Re
 
         # Add GROUP BY and ORDER BY
         query += """
-            GROUP BY o.id, o.name, o.website_url, o.description, o.country, o.city,
+            GROUP BY o.id, o.slug, o.name, o.website_url, o.description, o.country, o.city,
                      o.logo_url, o.social_media, o.active, o.created_at, o.updated_at,
                      o.ships_to, o.established_year, o.service_regions
             ORDER BY o.name
@@ -93,18 +93,30 @@ def get_organizations(filters: OrganizationFilterRequest = Depends(), cursor: Re
         raise APIException(status_code=500, detail="Failed to fetch organizations", error_code="INTERNAL_ERROR")
 
 
-@router.get("/{organization_id}", response_model=Organization)
-def get_organization(organization_id: int, cursor: RealDictCursor = Depends(get_db_cursor)):
+@router.get("/{organization_slug}", response_model=Organization)
+def get_organization_by_slug(organization_slug: str, cursor: RealDictCursor = Depends(get_db_cursor)):
     """
-    Get a specific organization by ID.
+    Get a specific organization by slug, with legacy ID redirect support.
 
     Returns detailed information about the requested organization including statistics.
     """
     try:
+        # Check if it's a numeric ID (legacy route)
+        if organization_slug.isdigit():
+            organization_id = int(organization_slug)
+            # Get org by ID and redirect to slug
+            cursor.execute("SELECT slug FROM organizations WHERE id = %s AND active = true", (organization_id,))
+            result = cursor.fetchone()
+            if result:
+                from fastapi.responses import RedirectResponse
+
+                return RedirectResponse(url=f"/api/organizations/{result['slug']}", status_code=301)
+
+        # Lookup by slug
         cursor.execute(
             """
             SELECT
-                o.id, o.name, o.website_url, o.description, o.country, o.city,
+                o.id, o.slug, o.name, o.website_url, o.description, o.country, o.city,
                 o.logo_url, o.social_media, o.active, o.created_at, o.updated_at,
                 o.ships_to, o.established_year, o.service_regions,
                 -- Dog statistics
@@ -112,12 +124,12 @@ def get_organization(organization_id: int, cursor: RealDictCursor = Depends(get_
                 COUNT(DISTINCT a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '7 days') as new_this_week
             FROM organizations o
             LEFT JOIN animals a ON o.id = a.organization_id AND a.status = 'available'
-            WHERE o.id = %s AND o.active = true
-            GROUP BY o.id, o.name, o.website_url, o.description, o.country, o.city,
+            WHERE o.slug = %s AND o.active = true
+            GROUP BY o.id, o.slug, o.name, o.website_url, o.description, o.country, o.city,
                      o.logo_url, o.social_media, o.active, o.created_at, o.updated_at,
                      o.ships_to, o.established_year, o.service_regions
         """,
-            (organization_id,),
+            (organization_slug,),
         )
 
         organization = cursor.fetchone()
@@ -136,11 +148,33 @@ def get_organization(organization_id: int, cursor: RealDictCursor = Depends(get_
         # Re-raise HTTP exceptions (like 404)
         raise
     except ValidationError as ve:
-        handle_validation_error(ve, f"get_organization({organization_id})")
+        handle_validation_error(ve, f"get_organization_by_slug({organization_slug})")
     except psycopg2.Error as db_err:
-        handle_database_error(db_err, f"get_organization({organization_id})")
+        handle_database_error(db_err, f"get_organization_by_slug({organization_slug})")
     except Exception as e:
-        raise APIException(status_code=500, detail=f"Failed to fetch organization {organization_id}", error_code="INTERNAL_ERROR")
+        raise APIException(status_code=500, detail=f"Failed to fetch organization {organization_slug}", error_code="INTERNAL_ERROR")
+
+
+# --- Legacy ID Route (Explicit Redirect) ---
+@router.get("/id/{organization_id}", response_model=Organization)
+def get_organization_by_id_legacy(organization_id: int, cursor: RealDictCursor = Depends(get_db_cursor)):
+    """Legacy endpoint - redirects to slug URL."""
+    try:
+        cursor.execute("SELECT slug FROM organizations WHERE id = %s AND active = true", (organization_id,))
+        result = cursor.fetchone()
+
+        if not result:
+            raise HTTPException(status_code=404, detail="Organization not found")
+
+        # 301 redirect to new slug URL
+        from fastapi.responses import RedirectResponse
+
+        return RedirectResponse(url=f"/api/organizations/{result['slug']}", status_code=301)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise APIException(status_code=500, detail="Internal server error", error_code="INTERNAL_ERROR")
 
 
 @router.get("/{organization_id}/recent-dogs")

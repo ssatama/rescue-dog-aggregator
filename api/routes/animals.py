@@ -254,7 +254,7 @@ async def get_random_animals(
     """Get random available dogs for featured section."""
     try:
         query = """
-            SELECT id, name, animal_type, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, status, primary_image_url, adoption_url, organization_id, external_id, language, properties, created_at, updated_at, last_scraped_at
+            SELECT id, name, slug, animal_type, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, status, primary_image_url, adoption_url, organization_id, external_id, language, properties, created_at, updated_at, last_scraped_at
             FROM animals
             WHERE animal_type = 'dog' AND status = %s
             ORDER BY RANDOM()
@@ -272,13 +272,25 @@ async def get_random_animals(
         raise APIException(status_code=500, detail="Failed to fetch random animals", error_code="INTERNAL_ERROR")
 
 
-# --- Single Animal Detail ---
-@router.get("/{animal_id}", response_model=AnimalWithImages)
-async def get_animal_by_id(animal_id: int, cursor: RealDictCursor = Depends(get_db_cursor)):
-    """Get a specific animal by ID, including its images."""
+# --- Single Animal Detail (New Slug-Based Route) ---
+@router.get("/{animal_slug}", response_model=AnimalWithImages)
+async def get_animal_by_slug(animal_slug: str, cursor: RealDictCursor = Depends(get_db_cursor)):
+    """Get a specific animal by slug, with legacy ID redirect support."""
     try:
         animal_service = AnimalService(cursor)
-        animal = animal_service.get_animal_by_id(animal_id)
+
+        # Check if it's a numeric ID (legacy route)
+        if animal_slug.isdigit():
+            animal_id = int(animal_slug)
+            animal = animal_service.get_animal_by_id(animal_id)
+            if animal and hasattr(animal, "slug"):
+                # 301 redirect to new slug URL
+                from fastapi.responses import RedirectResponse
+
+                return RedirectResponse(url=f"/api/animals/{animal.slug}", status_code=301)
+
+        # Lookup by slug
+        animal = animal_service.get_animal_by_slug(animal_slug)
 
         if not animal:
             raise HTTPException(status_code=404, detail="Animal not found")
@@ -288,12 +300,35 @@ async def get_animal_by_id(animal_id: int, cursor: RealDictCursor = Depends(get_
     except HTTPException:
         raise
     except ValidationError as ve:
-        handle_validation_error(ve, f"get_animal_by_id({animal_id})")
+        handle_validation_error(ve, f"get_animal_by_slug({animal_slug})")
     except psycopg2.Error as db_err:
-        handle_database_error(db_err, f"get_animal_by_id({animal_id})")
+        handle_database_error(db_err, f"get_animal_by_slug({animal_slug})")
     except APIException:
         # Re-raise APIException from service layer without modification
         raise
     except Exception as e:
-        logger.exception(f"Unexpected error fetching animal ID {animal_id}: {e}")
-        raise APIException(status_code=500, detail=f"Internal server error fetching animal {animal_id}", error_code="INTERNAL_ERROR")
+        logger.exception(f"Unexpected error fetching animal {animal_slug}: {e}")
+        raise APIException(status_code=500, detail=f"Internal server error fetching animal {animal_slug}", error_code="INTERNAL_ERROR")
+
+
+# --- Legacy ID Route (Explicit Redirect) ---
+@router.get("/id/{animal_id}", response_model=AnimalWithImages)
+async def get_animal_by_id_legacy(animal_id: int, cursor: RealDictCursor = Depends(get_db_cursor)):
+    """Legacy endpoint - redirects to slug URL."""
+    try:
+        animal_service = AnimalService(cursor)
+        animal = animal_service.get_animal_by_id(animal_id)
+
+        if not animal:
+            raise HTTPException(status_code=404, detail="Animal not found")
+
+        # 301 redirect to new slug URL
+        from fastapi.responses import RedirectResponse
+
+        return RedirectResponse(url=f"/api/animals/{animal.slug}", status_code=301)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Error in legacy animal ID redirect {animal_id}: {e}")
+        raise APIException(status_code=500, detail="Internal server error", error_code="INTERNAL_ERROR")

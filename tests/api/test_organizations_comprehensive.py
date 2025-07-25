@@ -32,6 +32,7 @@ class TestOrganizationsJSONParsing:
                 {
                     "id": 1,
                     "name": "Test Org",
+                    "slug": "test-org",
                     "website_url": "http://example.com",
                     "description": "Test description",
                     "country": "Test Country",
@@ -74,6 +75,7 @@ class TestOrganizationsJSONParsing:
                 {
                     "id": 1,
                     "name": "Test Org",
+                    "slug": "test-org",
                     "website_url": "http://example.com",
                     "description": "Test description",
                     "country": "Test Country",
@@ -116,6 +118,7 @@ class TestOrganizationsJSONParsing:
                 {
                     "id": 1,
                     "name": "Test Org",
+                    "slug": "test-org",
                     "website_url": "http://example.com",
                     "description": "Test description",
                     "country": "Test Country",
@@ -158,6 +161,7 @@ class TestOrganizationsJSONParsing:
                 {
                     "id": 1,
                     "name": "Test Org",
+                    "slug": "test-org",
                     "website_url": "http://example.com",
                     "description": "Test description",
                     "country": "Test Country",
@@ -481,6 +485,7 @@ class TestOrganizationDetailEdgeCases:
             mock_cursor.fetchone.return_value = {
                 "id": 1,
                 "name": "Test Org",
+                "slug": "test-org",
                 "website_url": "http://example.com",
                 "description": "Test description",
                 "country": "Test Country",
@@ -522,6 +527,7 @@ class TestOrganizationDetailEdgeCases:
             mock_cursor.fetchone.return_value = {
                 "id": 1,
                 "name": "Test Org",
+                "slug": "test-org",
                 "website_url": "http://example.com",
                 "description": "Test description",
                 "country": "Test Country",

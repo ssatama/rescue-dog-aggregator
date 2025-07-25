@@ -2,20 +2,20 @@
  * Tests for structured data integration in pages
  */
 
-import { generateMetadata as generateDogMetadata } from '../../app/dogs/[id]/page';
-import { generateMetadata as generateOrgMetadata } from '../../app/organizations/[id]/page';
+import { generateMetadata as generateDogMetadata } from '../../app/dogs/[slug]/page';
+import { generateMetadata as generateOrgMetadata } from '../../app/organizations/[slug]/page';
 
 // Mock the services
 jest.mock('../../services/animalsService', () => ({
-  getAnimalById: jest.fn()
+  getAnimalBySlug: jest.fn()
 }));
 
 jest.mock('../../services/organizationsService', () => ({
-  getOrganizationById: jest.fn()
+  getOrganizationBySlug: jest.fn()
 }));
 
-import { getAnimalById } from '../../services/animalsService';
-import { getOrganizationById } from '../../services/organizationsService';
+import { getAnimalBySlug } from '../../services/animalsService';
+import { getOrganizationBySlug } from '../../services/organizationsService';
 
 describe('Structured Data Integration', () => {
   beforeEach(() => {
@@ -25,6 +25,7 @@ describe('Structured Data Integration', () => {
   describe('Dog Detail Page Structured Data', () => {
     const mockDog = {
       id: 1,
+      slug: 'buddy-labrador-retriever-1',
       name: 'Buddy',
       standardized_breed: 'Labrador Retriever',
       sex: 'male',
@@ -39,9 +40,9 @@ describe('Structured Data Integration', () => {
     };
 
     test('should include Pet schema in metadata', async () => {
-      getAnimalById.mockResolvedValue(mockDog);
+      getAnimalBySlug.mockResolvedValue(mockDog);
 
-      const metadata = await generateDogMetadata({ params: { id: '1' } });
+      const metadata = await generateDogMetadata({ params: { slug: 'buddy-labrador-retriever-1' } });
 
       expect(metadata.other).toBeDefined();
       expect(metadata.other['script:ld+json']).toBeDefined();
@@ -79,35 +80,35 @@ describe('Structured Data Integration', () => {
     });
 
     test('should include canonical URL in metadata', async () => {
-      getAnimalById.mockResolvedValue(mockDog);
+      getAnimalBySlug.mockResolvedValue(mockDog);
 
-      const metadata = await generateDogMetadata({ params: { id: '1' } });
+      const metadata = await generateDogMetadata({ params: { slug: 'buddy-labrador-retriever-1' } });
 
       expect(metadata.alternates).toBeDefined();
-      expect(metadata.alternates.canonical).toBe('https://rescuedogs.me/dogs/1');
+      expect(metadata.alternates.canonical).toBe('https://rescuedogs.me/dogs/buddy-labrador-retriever-1');
     });
 
     test('should include canonical URL in OpenGraph metadata', async () => {
-      getAnimalById.mockResolvedValue(mockDog);
+      getAnimalBySlug.mockResolvedValue(mockDog);
 
-      const metadata = await generateDogMetadata({ params: { id: '1' } });
+      const metadata = await generateDogMetadata({ params: { slug: 'buddy-labrador-retriever-1' } });
 
-      expect(metadata.openGraph.url).toBe('https://rescuedogs.me/dogs/1');
+      expect(metadata.openGraph.url).toBe('https://rescuedogs.me/dogs/buddy-labrador-retriever-1');
     });
 
     test('should not include structured data if dog is invalid', async () => {
-      getAnimalById.mockResolvedValue(null);
+      getAnimalBySlug.mockResolvedValue(null);
 
-      const metadata = await generateDogMetadata({ params: { id: '999' } });
+      const metadata = await generateDogMetadata({ params: { slug: '999' } });
 
       expect(metadata.title).toBe('Dog Not Found | Rescue Dog Aggregator');
       expect(metadata.other).toBeUndefined();
     });
 
     test('should handle API errors gracefully', async () => {
-      getAnimalById.mockRejectedValue(new Error('Dog not found'));
+      getAnimalBySlug.mockRejectedValue(new Error('Dog not found'));
 
-      const metadata = await generateDogMetadata({ params: { id: '999' } });
+      const metadata = await generateDogMetadata({ params: { slug: '999' } });
 
       expect(metadata.title).toBe('Dog Not Found | Rescue Dog Aggregator');
       expect(metadata.other).toBeUndefined();
@@ -116,15 +117,16 @@ describe('Structured Data Integration', () => {
     test('should handle missing optional dog fields in schema', async () => {
       const minimalDog = {
         id: 2,
+        slug: 'luna-poodle-2',
         name: 'Luna',
         organization: {
           name: 'City Shelter'
         }
       };
 
-      getAnimalById.mockResolvedValue(minimalDog);
+      getAnimalBySlug.mockResolvedValue(minimalDog);
 
-      const metadata = await generateDogMetadata({ params: { id: '2' } });
+      const metadata = await generateDogMetadata({ params: { slug: 'luna-poodle-2' } });
 
       expect(metadata.other).toBeDefined();
       
@@ -139,6 +141,7 @@ describe('Structured Data Integration', () => {
   describe('Organization Detail Page Structured Data', () => {
     const mockOrganization = {
       id: 1,
+      slug: 'happy-paws-rescue-1',
       name: 'Happy Paws Rescue',
       description: 'Dedicated to rescuing and rehoming dogs in need.',
       website_url: 'https://happypaws.org',
@@ -150,9 +153,9 @@ describe('Structured Data Integration', () => {
     };
 
     test('should include Organization schema in metadata', async () => {
-      getOrganizationById.mockResolvedValue(mockOrganization);
+      getOrganizationBySlug.mockResolvedValue(mockOrganization);
 
-      const metadata = await generateOrgMetadata({ params: { id: '1' } });
+      const metadata = await generateOrgMetadata({ params: { slug: 'happy-paws-rescue-1' } });
 
       expect(metadata.other).toBeDefined();
       expect(metadata.other['script:ld+json']).toBeDefined();
@@ -187,24 +190,25 @@ describe('Structured Data Integration', () => {
     });
 
     test('should include canonical URL in organization metadata', async () => {
-      getOrganizationById.mockResolvedValue(mockOrganization);
+      getOrganizationBySlug.mockResolvedValue(mockOrganization);
 
-      const metadata = await generateOrgMetadata({ params: { id: '1' } });
+      const metadata = await generateOrgMetadata({ params: { slug: 'happy-paws-rescue-1' } });
 
       expect(metadata.alternates).toBeDefined();
-      expect(metadata.alternates.canonical).toBe('https://rescuedogs.me/organizations/1');
+      expect(metadata.alternates.canonical).toBe('https://rescuedogs.me/organizations/happy-paws-rescue-1');
     });
 
     test('should handle organization with minimal data', async () => {
       const minimalOrg = {
         id: 2,
+        slug: 'small-rescue-2',
         name: 'Small Rescue',
         website_url: 'https://smallrescue.org'
       };
 
-      getOrganizationById.mockResolvedValue(minimalOrg);
+      getOrganizationBySlug.mockResolvedValue(minimalOrg);
 
-      const metadata = await generateOrgMetadata({ params: { id: '2' } });
+      const metadata = await generateOrgMetadata({ params: { slug: 'small-rescue-2' } });
 
       expect(metadata.other).toBeDefined();
       
@@ -217,9 +221,9 @@ describe('Structured Data Integration', () => {
     });
 
     test('should not include structured data for invalid organization', async () => {
-      getOrganizationById.mockRejectedValue(new Error('Organization not found'));
+      getOrganizationBySlug.mockRejectedValue(new Error('Organization not found'));
 
-      const metadata = await generateOrgMetadata({ params: { id: '999' } });
+      const metadata = await generateOrgMetadata({ params: { slug: '999' } });
 
       expect(metadata.title).toBe('Organization Not Found | Rescue Dog Aggregator');
       expect(metadata.other).toBeUndefined();

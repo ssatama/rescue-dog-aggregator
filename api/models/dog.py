@@ -90,6 +90,7 @@ class Animal(AnimalBase):
     """Complete animal schema including database fields."""
 
     id: int
+    slug: str
     organization_id: int
     external_id: Optional[str] = None
     language: str = "en"

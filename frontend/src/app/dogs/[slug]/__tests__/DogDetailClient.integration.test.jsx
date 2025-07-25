@@ -1,14 +1,16 @@
-// src/app/dogs/[id]/__tests__/DogDetailClient.integration.test.jsx
+// src/app/dogs/[slug]/__tests__/DogDetailClient.integration.test.jsx
 // TDD Phase 3: RED - Tests for dog detail OrganizationCard integration
 
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import DogDetailClient from '../DogDetailClient';
-import { getAnimalById } from '../../../../services/animalsService';
+import { getAnimalBySlug } from '../../../../services/animalsService';
 
 // Mock the animalsService
-jest.mock('../../../../services/animalsService');
+jest.mock('../../../../services/animalsService', () => ({
+  getAnimalBySlug: jest.fn()
+}));
 
 // Mock OrganizationCard to verify props
 jest.mock('../../../../components/organizations/OrganizationCard', () => {
@@ -70,8 +72,8 @@ jest.mock('../../../../utils/logger', () => ({
 }));
 
 jest.mock('next/navigation', () => ({
-  useParams: () => ({ id: 'test-dog-1' }),
-  usePathname: () => '/dogs/test-dog-1'
+  useParams: () => ({ slug: 'test-dog-mixed-breed-1' }),
+  usePathname: () => '/dogs/test-dog-mixed-breed-1'
 }));
 
 // Mock all other potentially problematic components
@@ -100,6 +102,7 @@ jest.mock('../../../../components/ui/HeroImageWithBlurredBackground', () => {
 describe('DogDetailClient Dog Detail Integration', () => {
   const mockDogData = {
     id: 'test-dog-1',
+    slug: 'test-dog-mixed-breed-1',
     name: 'Buddy',
     primary_image_url: 'https://example.com/buddy.jpg',
     breed: 'Golden Retriever',
@@ -136,16 +139,17 @@ describe('DogDetailClient Dog Detail Integration', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    getAnimalById.mockResolvedValue(mockDogData);
+    const { getAnimalBySlug } = require('../../../../services/animalsService');
+    getAnimalBySlug.mockResolvedValue(mockDogData);
     
     // Mock window.location for navigation tests
     delete window.location;
-    window.location = { href: 'http://localhost/dogs/test-dog-1' };
+    window.location = { href: 'http://localhost/dogs/test-dog-mixed-breed-1' };
   });
 
   describe('OrganizationCard Integration', () => {
     test('renders OrganizationCard instead of OrganizationSection', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         expect(screen.getByTestId('organization-card-mock')).toBeInTheDocument();
@@ -153,7 +157,7 @@ describe('DogDetailClient Dog Detail Integration', () => {
     });
 
     test('passes size="medium" prop to OrganizationCard', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         const orgCard = screen.getByTestId('organization-card-mock');
@@ -162,7 +166,7 @@ describe('DogDetailClient Dog Detail Integration', () => {
     });
 
     test('passes correct organization data to OrganizationCard', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         const orgCard = screen.getByTestId('organization-card-mock');
@@ -172,7 +176,7 @@ describe('DogDetailClient Dog Detail Integration', () => {
     });
 
     test('no longer renders OrganizationSection component', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         // Should not find the old OrganizationSection elements
@@ -185,7 +189,7 @@ describe('DogDetailClient Dog Detail Integration', () => {
     });
 
     test('maintains organization container positioning', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         const container = screen.getByTestId('organization-container');
@@ -198,7 +202,7 @@ describe('DogDetailClient Dog Detail Integration', () => {
     });
 
     test('OrganizationCard appears in proper DOM order', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         const orgContainer = screen.getByTestId('organization-container');
@@ -213,7 +217,7 @@ describe('DogDetailClient Dog Detail Integration', () => {
 
   describe('Data Integration', () => {
     test('passes full organization object from dog data', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         const orgCard = screen.getByTestId('organization-card-mock');
@@ -225,9 +229,10 @@ describe('DogDetailClient Dog Detail Integration', () => {
 
     test('handles missing organization data gracefully', async () => {
       const dogWithoutOrg = { ...mockDogData, organization: null };
-      getAnimalById.mockResolvedValue(dogWithoutOrg);
+      const { getAnimalBySlug } = require('../../../../services/animalsService');
+      getAnimalBySlug.mockResolvedValue(dogWithoutOrg);
       
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         // Should show loading placeholder when no organization data
@@ -240,7 +245,7 @@ describe('DogDetailClient Dog Detail Integration', () => {
     });
 
     test('preserves all organization features in medium size', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         const orgCard = screen.getByTestId('organization-card-mock');
@@ -255,7 +260,7 @@ describe('DogDetailClient Dog Detail Integration', () => {
 
   describe('Layout and Styling', () => {
     test('maintains proper spacing and margins', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         const orgContainer = screen.getByTestId('organization-container');
@@ -264,7 +269,7 @@ describe('DogDetailClient Dog Detail Integration', () => {
     });
 
     test('organization section and related dogs section both render', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         const orgContainer = screen.getByTestId('organization-container');
@@ -278,9 +283,10 @@ describe('DogDetailClient Dog Detail Integration', () => {
 
   describe('Error Handling', () => {
     test('handles API errors gracefully', async () => {
-      getAnimalById.mockRejectedValue(new Error('API Error'));
+      const { getAnimalBySlug } = require('../../../../services/animalsService');
+      getAnimalBySlug.mockRejectedValue(new Error('API Error'));
       
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         // Should show error state, not organization card
@@ -297,9 +303,10 @@ describe('DogDetailClient Dog Detail Integration', () => {
           // Missing other fields
         }
       };
-      getAnimalById.mockResolvedValue(dogWithIncompleteOrg);
+      const { getAnimalBySlug } = require('../../../../services/animalsService');
+      getAnimalBySlug.mockResolvedValue(dogWithIncompleteOrg);
       
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         const orgCard = screen.getByTestId('organization-card-mock');
@@ -311,13 +318,13 @@ describe('DogDetailClient Dog Detail Integration', () => {
 
   describe('Loading States', () => {
     test('shows skeleton while loading dog data', () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       expect(screen.getByTestId('dog-detail-skeleton')).toBeInTheDocument();
     });
 
     test('removes skeleton after data loads', async () => {
-      render(<DogDetailClient params={{ id: 'test-dog-1' }} />);
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
       
       await waitFor(() => {
         expect(screen.queryByTestId('dog-detail-skeleton')).not.toBeInTheDocument();

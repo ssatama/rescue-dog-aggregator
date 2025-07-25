@@ -10,6 +10,7 @@ class Organization(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, extra="ignore")
     id: int
     name: str
+    slug: str
 
     website_url: Optional[HttpUrl] = None
     description: Optional[str] = None

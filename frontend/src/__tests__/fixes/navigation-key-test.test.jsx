@@ -4,19 +4,21 @@
 
 import React from 'react';
 import { render, screen, act, waitFor } from '@testing-library/react';
-import DogDetailClient from '../../app/dogs/[id]/DogDetailClient';
-import { getAnimalById } from '../../services/animalsService';
+import DogDetailClient from '../../app/dogs/[slug]/DogDetailClient';
+import { getAnimalBySlug } from '../../services/animalsService';
 
 // Mock the services
-jest.mock('../../services/animalsService');
+jest.mock('../../services/animalsService', () => ({
+  getAnimalBySlug: jest.fn()
+}));
 jest.mock('../../services/relatedDogsService', () => ({
   getRelatedDogs: jest.fn().mockResolvedValue([])
 }));
 
 // Mock Next.js navigation
 jest.mock('next/navigation', () => ({
-  useParams: () => ({ id: 'test-dog-123' }),
-  usePathname: () => '/dogs/test-dog-123',
+  useParams: () => ({ slug: 'test-dog-mixed-breed-123' }),
+  usePathname: () => '/dogs/test-dog-mixed-breed-123',
   useRouter: () => ({
     push: jest.fn(),
     replace: jest.fn(),
@@ -47,6 +49,7 @@ jest.mock('../../components/dogs/RelatedDogsSection', () => {
 
 const mockDog = {
   id: 'test-dog-123',
+  slug: 'test-dog-mixed-breed-123',
   name: 'Buddy',
   primary_image_url: 'https://example.com/buddy.jpg',
   standardized_breed: 'Golden Retriever',
@@ -69,7 +72,8 @@ describe('Navigation Key Fix', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useRealTimers();
-    getAnimalById.mockResolvedValue(mockDog);
+    const { getAnimalBySlug } = require('../../services/animalsService');
+    getAnimalBySlug.mockResolvedValue(mockDog);
     
     // Mock document.readyState to be 'complete'
     Object.defineProperty(document, 'readyState', {
@@ -80,7 +84,7 @@ describe('Navigation Key Fix', () => {
 
   test('should use proper key format for hero image component', async () => {
     const { container } = await act(async () => {
-      return render(<DogDetailClient params={{ id: 'test-dog-123' }} />);
+      return render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-123' }} />);
     });
     
     // Wait for the component to render

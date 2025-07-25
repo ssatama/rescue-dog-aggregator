@@ -20,36 +20,45 @@ export async function getOrganizationById(id) {
 }
 
 /**
+ * Fetch a specific organization by slug
+ * @param {string} slug - Organization slug
+ * @returns {Promise} - Resolved promise with organization data
+ */
+export async function getOrganizationBySlug(slug) {
+  return get(`/api/organizations/${slug}`);
+}
+
+/**
  * Fetch dogs from a specific organization
- * @param {number|string} id - Organization ID
+ * @param {number|string} idOrSlug - Organization ID or slug
  * @param {Object} params - Filter and pagination parameters
  * @returns {Promise} - Resolved promise with dogs data
  */
-export async function getOrganizationDogs(id, params = {}) {
+export async function getOrganizationDogs(idOrSlug, params = {}) {
   return get('/api/animals', {
     ...params,
-    organization_id: id,
+    organization_id: idOrSlug,
     animal_type: 'dog' // Also explicitly filter for dogs here
   });
 }
 
 /**
  * Fetch statistics for a specific organization
- * @param {number|string} id - Organization ID
+ * @param {number|string} idOrSlug - Organization ID or slug
  * @returns {Promise} - Resolved promise with organization statistics
  */
-export async function getOrganizationStatistics(id) {
-  return get(`/api/organizations/${id}/statistics`);
+export async function getOrganizationStatistics(idOrSlug) {
+  return get(`/api/organizations/${idOrSlug}/statistics`);
 }
 
 /**
  * Fetch recent dogs from a specific organization for preview thumbnails
- * @param {number|string} id - Organization ID
+ * @param {number|string} idOrSlug - Organization ID or slug
  * @param {number} limit - Maximum number of dogs to fetch (default: 3)
  * @returns {Promise} - Resolved promise with recent dogs data
  */
-export async function getOrganizationRecentDogs(id, limit = 3) {
-  return get(`/api/organizations/${id}/recent-dogs`, { limit });
+export async function getOrganizationRecentDogs(idOrSlug, limit = 3) {
+  return get(`/api/organizations/${idOrSlug}/recent-dogs`, { limit });
 }
 
 /**
