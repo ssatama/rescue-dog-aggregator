@@ -198,7 +198,7 @@ export async function getAnimalsByCuration(curationType, limit = 4) {
  */
 export async function getAllAnimals(params = {}) {
   logger.log("Fetching all animals for sitemap");
-  return getAnimals(params); // No limit - let API return default amount
+  return getAnimals({ ...params, limit: 10000 }); // Request maximum limit for sitemap
 }
 
 /**

@@ -5,6 +5,8 @@
 
 import { generateSitemap } from '../../utils/sitemap';
 
+export const revalidate = 3600; // Revalidate at most every hour
+
 export async function GET() {
   try {
     const sitemapXml = await generateSitemap();
