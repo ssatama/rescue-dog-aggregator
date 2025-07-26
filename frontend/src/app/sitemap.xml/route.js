@@ -1,13 +1,10 @@
 /**
- * Dynamic sitemap.xml generation API route for Next.js 15 App Router
- * Generates XML sitemap with all dogs, organizations, and static pages
+ * Dynamic sitemap.xml generation with force-dynamic to bypass ISR issues
  */
 
 import { generateSitemap } from '../../utils/sitemap';
 
-// Force dynamic generation to bypass ISR caching issues
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 export async function GET() {
   try {
@@ -16,14 +13,13 @@ export async function GET() {
     return new Response(sitemapXml, {
       status: 200,
       headers: {
-        'Content-Type': 'application/xml',
-        'Cache-Control': 'no-cache, no-store, must-revalidate', // No caching
-        'Pragma': 'no-cache',
-        'Expires': '0',
+        'Content-Type': 'application/xml; charset=utf-8',
+        'Cache-Control': 'public, max-age=3600, s-maxage=3600', // Allow edge caching
+        'Vary': 'Accept-Encoding',
       },
     });
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') console.error('Sitemap generation failed:', error);
+    console.error('Sitemap generation failed:', error);
     
     // Return minimal sitemap on error
     const fallbackSitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -38,8 +34,8 @@ export async function GET() {
     return new Response(fallbackSitemap, {
       status: 200,
       headers: {
-        'Content-Type': 'application/xml',
-        'Cache-Control': 'public, max-age=300, s-maxage=300', // Shorter cache on error
+        'Content-Type': 'application/xml; charset=utf-8',
+        'Cache-Control': 'public, max-age=300, s-maxage=300',
       },
     });
   }
