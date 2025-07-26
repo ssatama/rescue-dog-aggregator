@@ -5,7 +5,9 @@
 
 import { generateSitemap } from '../../utils/sitemap';
 
-export const revalidate = 3600; // Revalidate at most every hour
+// Note: ISR revalidate doesn't work reliably in production
+// Using on-demand revalidation instead via /api/revalidate-sitemap
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
