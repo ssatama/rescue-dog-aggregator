@@ -12,8 +12,9 @@ const path = require('path');
 
 const FRONTEND_DIR = path.join(__dirname, '../../frontend');
 const OUTPUT_DIR = path.join(__dirname, 'storybook-artifacts');
-const STORYBOOK_PORT = 6006;
-const STORYBOOK_URL = `http://localhost:${STORYBOOK_PORT}`;
+const STORYBOOK_PORTS = [6006, 6007];
+let STORYBOOK_PORT = null;
+let STORYBOOK_URL = null;
 
 // Configuration for comprehensive capture
 const CAPTURE_CONFIG = {
@@ -27,15 +28,24 @@ const CAPTURE_CONFIG = {
 };
 
 /**
- * Check if Storybook is running
+ * Check if Storybook is running on any port
  */
 async function checkStorybookRunning() {
-  try {
-    const response = await fetch(STORYBOOK_URL);
-    return response.ok;
-  } catch {
-    return false;
+  for (const port of STORYBOOK_PORTS) {
+    try {
+      const url = `http://localhost:${port}`;
+      const response = await fetch(url);
+      if (response.ok) {
+        STORYBOOK_PORT = port;
+        STORYBOOK_URL = url;
+        console.log(`✅ Found Storybook running on port ${port}`);
+        return true;
+      }
+    } catch {
+      // Continue to next port
+    }
   }
+  return false;
 }
 
 /**
@@ -248,9 +258,10 @@ module.exports = {
  */
 async function fetchStories() {
   try {
-    const response = await fetch(`${STORYBOOK_URL}/stories.json`);
+    const response = await fetch(`${STORYBOOK_URL}/index.json`);
     const data = await response.json();
-    return Object.values(data.stories || {});
+    const stories = Object.values(data.entries || {}).filter(entry => entry.type === 'story');
+    return stories;
   } catch (error) {
     console.error('Failed to fetch stories:', error.message);
     return [];
@@ -323,9 +334,9 @@ async function main() {
   console.log('🎨 Starting Playwright screenshot capture...');
 
   // Fetch stories
-  const response = await fetch(\`\${STORYBOOK_URL}/stories.json\`);
+  const response = await fetch(\`\${STORYBOOK_URL}/index.json\`);
   const data = await response.json();
-  const stories = Object.values(data.stories || {});
+  const stories = Object.values(data.entries || {}).filter(entry => entry.type === 'story');
 
   console.log(\`📋 Found \${stories.length} stories\`);
 
@@ -595,9 +606,10 @@ async function main() {
 
     // Check if Storybook is running, start if needed
     if (!(await checkStorybookRunning())) {
-      storybookProcess = await startStorybook();
-    } else {
-      console.log('✅ Storybook already running');
+      console.log('⚠️  Storybook not detected on ports 6006 or 6007');
+      console.log('Please ensure Storybook is running first with:');
+      console.log('cd frontend && npm run storybook');
+      process.exit(1);
     }
 
     // Wait a bit more for Storybook to fully load

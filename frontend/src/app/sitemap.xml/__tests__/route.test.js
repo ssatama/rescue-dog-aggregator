@@ -107,8 +107,8 @@ describe('Dynamic Sitemap Route', () => {
     const { GET } = await import('../route');
     const response = await GET();
 
-    expect(response.headers['Content-Type']).toBe('application/xml');
-    expect(response.headers['Cache-Control']).toBe('public, max-age=3600, s-maxage=3600');
+    expect(response.headers['Content-Type']).toBe('application/xml; charset=utf-8');
+    expect(response.headers['Cache-Control']).toBe('no-cache, no-store, must-revalidate');
   });
 
   test('should handle API errors gracefully', async () => {

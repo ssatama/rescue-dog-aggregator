@@ -4,6 +4,62 @@ require("@testing-library/jest-dom");
 // Do NOT hardcode any secrets or cloud names here
 require("dotenv").config({ path: ".env.local" });
 
+// Polyfill for TextEncoder/TextDecoder for Node.js environment
+if (typeof global.TextEncoder === 'undefined') {
+  const { TextEncoder, TextDecoder } = require('util');
+  global.TextEncoder = TextEncoder;
+  global.TextDecoder = TextDecoder;
+}
+
+// Polyfill for fetch for Node.js environment (needed for Next.js route testing)
+if (typeof global.fetch === 'undefined') {
+  global.fetch = jest.fn().mockResolvedValue({
+    ok: true,
+    status: 200,
+    json: async () => ({}),
+    text: async () => '',
+  });
+}
+
+if (typeof global.Request === 'undefined') {
+  global.Request = class MockRequest {
+    constructor(input, init = {}) {
+      this.url = input;
+      this.method = init.method || 'GET';
+      this.headers = new Headers(init.headers);
+      this.body = init.body;
+    }
+  };
+}
+
+if (typeof global.Response === 'undefined') {
+  global.Response = class MockResponse {
+    constructor(body, init = {}) {
+      this.body = body;
+      this.status = init.status || 200;
+      this.statusText = init.statusText || 'OK';
+      this.headers = new Headers(init.headers);
+    }
+  };
+}
+
+if (typeof global.Headers === 'undefined') {
+  global.Headers = class MockHeaders {
+    constructor(init = {}) {
+      this._headers = new Map();
+      if (init) {
+        Object.entries(init).forEach(([key, value]) => {
+          this.set(key, value);
+        });
+      }
+    }
+    set(name, value) { this._headers.set(name.toLowerCase(), value); }
+    get(name) { return this._headers.get(name.toLowerCase()); }
+    has(name) { return this._headers.has(name.toLowerCase()); }
+    delete(name) { this._headers.delete(name.toLowerCase()); }
+  };
+}
+
 // Polyfill for PointerEvent methods not implemented in JSDOM
 if (typeof window !== "undefined") {
   if (!window.Element.prototype.hasPointerCapture) {

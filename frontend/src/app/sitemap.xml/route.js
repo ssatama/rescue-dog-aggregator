@@ -25,7 +25,6 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('Sitemap generation failed:', error);
     
     // Return minimal sitemap on error
     const fallbackSitemap = `<?xml version="1.0" encoding="UTF-8"?>

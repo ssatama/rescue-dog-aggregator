@@ -71,11 +71,9 @@ const DogSection = React.memo(function DogSection({
       }
     } catch (err) {
       reportError(`Error fetching ${curationType} dogs`, { error: err.message });
-      // Use startTransition for error state updates too
-      React.startTransition(() => {
-        setError(`Could not load dogs. Please try again later.`);
-        setLoading(false);
-      });
+      // Set error state directly for better test reliability
+      setError(`Could not load dogs. Please try again later.`);
+      setLoading(false);
     }
   };
 
