@@ -6,8 +6,11 @@
 import { getAllAnimals } from '../services/animalsService';
 import { getAllOrganizations } from '../services/organizationsService';
 
-// Base URL for sitemap URLs - should match canonical URLs
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://rescuedogs.me';
+/**
+ * Get base URL dynamically for sitemap generation
+ * @returns {string} Base URL for sitemap URLs
+ */
+const getBaseUrl = () => process.env.NEXT_PUBLIC_SITE_URL || 'https://rescuedogs.me';
 
 // Sitemap limits per Google standards
 const MAX_URLS_PER_SITEMAP = 50000;
@@ -77,34 +80,35 @@ export const formatSitemapEntry = (entry) => {
  * @returns {Array<Object>} Array of static page sitemap entries
  */
 const generateStaticPages = () => {
+  const baseUrl = getBaseUrl();
   const staticPages = [
     {
-      url: `${BASE_URL}/`,
+      url: `${baseUrl}/`,
       changefreq: 'daily',
       priority: 1.0
     },
     {
-      url: `${BASE_URL}/dogs`,
+      url: `${baseUrl}/dogs`,
       changefreq: 'hourly',
       priority: 0.9
     },
     {
-      url: `${BASE_URL}/organizations`,
+      url: `${baseUrl}/organizations`,
       changefreq: 'daily',
       priority: 0.9
     },
     {
-      url: `${BASE_URL}/search`,
+      url: `${baseUrl}/search`,
       changefreq: 'daily',
       priority: 0.8
     },
     {
-      url: `${BASE_URL}/about`,
+      url: `${baseUrl}/about`,
       changefreq: 'monthly',
       priority: 0.6
     },
     {
-      url: `${BASE_URL}/contact`,
+      url: `${baseUrl}/contact`,
       changefreq: 'monthly',
       priority: 0.5
     }
@@ -123,9 +127,10 @@ const generateDogPages = (dogs) => {
     return [];
   }
 
+  const baseUrl = getBaseUrl();
   return dogs.map(dog => {
     const entry = {
-      url: `${BASE_URL}/dogs/${dog.slug || `unknown-dog-${dog.id}`}`,
+      url: `${baseUrl}/dogs/${dog.slug || `unknown-dog-${dog.id}`}`,
       changefreq: 'daily',
       priority: 0.8
     };
@@ -152,9 +157,10 @@ const generateOrganizationPages = (organizations) => {
     return [];
   }
 
+  const baseUrl = getBaseUrl();
   return organizations.map(org => {
     const entry = {
-      url: `${BASE_URL}/organizations/${org.slug || `unknown-org-${org.id}`}`,
+      url: `${baseUrl}/organizations/${org.slug || `unknown-org-${org.id}`}`,
       changefreq: 'weekly',
       priority: 0.7
     };

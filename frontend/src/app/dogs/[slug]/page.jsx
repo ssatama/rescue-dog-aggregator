@@ -1,4 +1,4 @@
-import { getAnimalBySlug } from '../../../services/animalsService';
+import { getAnimalBySlug, getAllAnimals } from '../../../services/animalsService';
 import { generatePetSchema, generateJsonLdScript } from '../../../utils/schema';
 import DogDetailClient from './DogDetailClient';
 
@@ -114,6 +114,30 @@ async function DogDetailPageAsync(props) {
   }
   
   return <DogDetailClient />;
+}
+
+// Incremental Static Regeneration - revalidate every hour for fresh content
+export const revalidate = 3600; // 1 hour in seconds
+
+/**
+ * Generate static parameters for all dog pages at build time
+ * This enables static generation of individual dog pages for better SEO
+ * @returns {Promise<Array<{slug: string}>>} Array of slug objects for static generation
+ */
+export async function generateStaticParams() {
+  try {
+    const dogs = await getAllAnimals();
+    
+    // Filter dogs with valid slugs and map to Next.js static params format
+    return dogs
+      .filter(dog => dog && dog.slug && typeof dog.slug === 'string' && dog.slug.trim() !== '')
+      .map(dog => ({
+        slug: dog.slug
+      }));
+  } catch (error) {
+    // Return empty array on error to prevent build failure
+    return [];
+  }
 }
 
 // Export the appropriate version based on environment

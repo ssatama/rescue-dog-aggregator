@@ -1,4 +1,4 @@
-import { getOrganizationBySlug } from '../../../services/organizationsService';
+import { getOrganizationBySlug, getAllOrganizations } from '../../../services/organizationsService';
 import { generateOrganizationSchema, generateJsonLdScript } from '../../../utils/schema';
 import OrganizationDetailClient from './OrganizationDetailClient';
 import { isValidOpenGraphType } from '../../../types/opengraph';
@@ -109,6 +109,30 @@ async function OrganizationDetailPageAsync(props) {
   }
   
   return <OrganizationDetailClient />;
+}
+
+// Incremental Static Regeneration - revalidate daily for organization changes
+export const revalidate = 86400; // 24 hours in seconds
+
+/**
+ * Generate static parameters for all organization pages at build time
+ * This enables static generation of individual organization pages for better SEO
+ * @returns {Promise<Array<{slug: string}>>} Array of slug objects for static generation
+ */
+export async function generateStaticParams() {
+  try {
+    const organizations = await getAllOrganizations();
+    
+    // Filter organizations with valid slugs and map to Next.js static params format
+    return organizations
+      .filter(org => org && org.slug && typeof org.slug === 'string' && org.slug.trim() !== '')
+      .map(org => ({
+        slug: org.slug
+      }));
+  } catch (error) {
+    // Return empty array on error to prevent build failure
+    return [];
+  }
 }
 
 // Export the appropriate version based on environment
