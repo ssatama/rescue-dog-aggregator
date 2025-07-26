@@ -5,9 +5,9 @@
 
 import { generateSitemap } from '../../utils/sitemap';
 
-// Note: ISR revalidate doesn't work reliably in production
-// Using on-demand revalidation instead via /api/revalidate-sitemap
+// Force dynamic generation to bypass ISR caching issues
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET() {
   try {
@@ -17,7 +17,9 @@ export async function GET() {
       status: 200,
       headers: {
         'Content-Type': 'application/xml',
-        'Cache-Control': 'public, max-age=3600, s-maxage=3600', // Cache for 1 hour
+        'Cache-Control': 'no-cache, no-store, must-revalidate', // No caching
+        'Pragma': 'no-cache',
+        'Expires': '0',
       },
     });
   } catch (error) {
