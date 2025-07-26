@@ -5,6 +5,8 @@
 import { generateSitemap } from '../../utils/sitemap';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 export async function GET() {
   try {
@@ -14,7 +16,7 @@ export async function GET() {
       status: 200,
       headers: {
         'Content-Type': 'application/xml; charset=utf-8',
-        'Cache-Control': 'public, max-age=3600, s-maxage=3600', // Allow edge caching
+        'Cache-Control': 'no-cache, no-store, must-revalidate', // Force fresh generation
         'Vary': 'Accept-Encoding',
       },
     });
