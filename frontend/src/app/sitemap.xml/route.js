@@ -1,7 +1,8 @@
 /**
- * Dynamic sitemap.xml generation with force-dynamic to bypass ISR issues
+ * Dynamic sitemap.xml generation with unstable_noStore to bypass Full Route Cache
  */
 
+import { unstable_noStore as noStore } from 'next/cache';
 import { generateSitemap } from '../../utils/sitemap';
 
 export const dynamic = 'force-dynamic';
@@ -9,6 +10,9 @@ export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
 export async function GET() {
+  // Bypass Next.js Full Route Cache completely
+  noStore();
+  
   try {
     const sitemapXml = await generateSitemap();
 
