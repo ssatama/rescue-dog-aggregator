@@ -22,7 +22,7 @@ class AnimalFilterRequest(BaseModel):
     """
 
     # Pagination
-    limit: int = Field(default=20, ge=1, le=100, description="Number of results to return")
+    limit: int = Field(default=20, ge=1, le=10000, description="Number of results to return")
     offset: int = Field(default=0, ge=0, description="Number of results to skip")
 
     # Search and basic filters
@@ -93,7 +93,7 @@ class AnimalFilterRequest(BaseModel):
 class OrganizationFilterRequest(BaseModel):
     """Request model for organization filtering parameters."""
 
-    limit: int = Field(default=20, ge=1, le=100, description="Number of results to return")
+    limit: int = Field(default=20, ge=1, le=10000, description="Number of results to return")
     offset: int = Field(default=0, ge=0, description="Number of results to skip")
     search: Optional[str] = Field(default=None, description="Search in organization names")
     country: Optional[str] = Field(default=None, description="Filter by country")
