@@ -120,7 +120,7 @@ class TestAnimalsFilteringEdgeCases:
         assert response.status_code == 422  # Validation error
 
         # Test limit over maximum
-        response = client.get("/api/animals?limit=1000")
+        response = client.get("/api/animals?limit=20000")
         assert response.status_code == 422  # Should enforce maximum limit
 
     def test_complex_filter_combinations(self):

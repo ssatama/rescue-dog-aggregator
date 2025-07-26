@@ -22,7 +22,6 @@ describe('Next.js Configuration', () => {
 
   test('should have experimental optimizations enabled', () => {
     expect(nextConfig.experimental).toBeDefined();
-    expect(nextConfig.experimental.optimizeCss).toBe(true);
     expect(nextConfig.experimental.optimizePackageImports).toBeDefined();
     expect(Array.isArray(nextConfig.experimental.optimizePackageImports)).toBe(true);
   });

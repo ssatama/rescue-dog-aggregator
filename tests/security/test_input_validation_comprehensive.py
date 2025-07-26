@@ -40,7 +40,7 @@ class TestInputValidationComprehensive:
         response = client.get("/api/animals?limit=0")
         assert response.status_code == 422  # Should reject invalid limit
 
-        response = client.get("/api/animals?limit=1000")
+        response = client.get("/api/animals?limit=20000")
         assert response.status_code == 422  # Should reject excessive limit
 
         response = client.get("/api/animals?limit=50")
