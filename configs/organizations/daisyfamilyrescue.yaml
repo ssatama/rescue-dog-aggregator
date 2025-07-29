@@ -1,0 +1,31 @@
+schema_version: "1.0"
+id: "daisyfamilyrescue"
+name: "Daisy Family Rescue e.V."
+enabled: true
+scraper:
+  class_name: "DaisyFamilyRescueScraper"
+  module: "scrapers.daisy_family_rescue.dogs_scraper"
+  config:
+    rate_limit_delay: 2.5
+    max_retries: 3
+    timeout: 240
+    skip_existing_animals: true
+metadata:
+  website_url: "https://daisyfamilyrescue.de"
+  description: |
+    North Macedonia is a small country in the heart of the Balkans. But behind the idyllic landscape lies a major challenge: countless street dogs fight for survival here every day. Without protection, without medical care and often without hope. Their lives are characterised by hunger, disease and abuse. But we believe that there is a better future for them.
+
+    Our vision is a world in which humans and animals live together in harmony - a symbiosis based on respect, compassion and mutual trust. A future in which every dog can lead a healthy, species-appropriate and dignified life, whether in a loving home or in a safe environment, free from the challenges that arise from inadequate care and overcrowding. We dream of a society in which the peaceful coexistence of humans and animals is not only possible, but a matter of course, and in which responsibility for every life is borne with respect and appreciation.
+
+    To realise this vision, we are committed to sustainable animal welfare.
+  location:
+    country: "DE" # Organization's base country
+    city: "Berlin" # Organization's base city
+  service_regions: ["DE", "MK"]
+  ships_to: ["DE"] # Countries they ship to
+  social_media:
+    website: "https://daisyfamilyrescue.de/"
+    facebook: "https://www.facebook.com/daisyfamilyrescueeV/"
+    instagram: "https://www.instagram.com/daisyfamilyrescue/"
+  established_year: 2020
+  logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/logo_daisyfamilyrescue_26e6c1c5.jpg"

@@ -1,0 +1,65 @@
+schema_version: "1.0"
+id: "misisrescue"
+name: "MISIs Animal Rescue"
+enabled: true
+scraper:
+  class_name: "MisisRescueScraper"
+  module: "scrapers.misis_rescue.scraper"
+  config:
+    rate_limit_delay: 2.5
+    max_retries: 3
+    timeout: 240
+    retry_backoff_factor: 2.0
+    batch_size: 6
+    skip_existing_animals: true
+metadata:
+  website_url: "https://www.misisrescue.com/"
+  description: |
+    MISI's rescue is an animal rescue, which was launched by and named after the four of us, Ivana, Martina, Isidora and Slobodanka.
+
+    We help stray dogs to find their forever homes. We re-home animals from Eastern Europe across the UK and Europe.
+
+    There are lots of dogs in these parts of the world who need our help, and whilst we would love to keep them all and it is so hard to say goodbye, we know that
+    their lives will be amazing with their new families and that the more dogs we re-home, the more we can bring in to foster and help find their forever homes too.
+  location:
+    country: "SR" # Organization's base country
+    city: "Belgrade" # Organization's base city
+  service_regions: ["SR", "MK"]
+  ships_to: [
+      "UK",
+      "CH",
+      "NO",
+      "AT",
+      "BE",
+      "BG",
+      "CY",
+      "CZ",
+      "DE",
+      "DK",
+      "EE",
+      "ES",
+      "FI",
+      "FR",
+      "GR",
+      "HR",
+      "HU",
+      "IE",
+      "IT",
+      "LT",
+      "LU",
+      "LV",
+      "MT",
+      "NL",
+      "PL",
+      "PT",
+      "RO",
+      "SE",
+      "SI",
+      "SK",
+    ] # Countries they ship to
+  social_media:
+    website: "https://www.misisrescue.com/"
+    facebook: "https://www.facebook.com/misisrescue/"
+    instagram: "https://www.instagram.com/misisrescue/"
+  established_year: 2021
+  logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-misisrescue.jpeg"

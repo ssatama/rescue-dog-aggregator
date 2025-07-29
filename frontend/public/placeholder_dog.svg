@@ -1,0 +1,38 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="300" height="300" fill="#f3f4f6"/>
+  
+  <!-- Dog silhouette -->
+  <g transform="translate(75, 75)">
+    <!-- Body -->
+    <ellipse cx="75" cy="100" rx="60" ry="45" fill="#9ca3af"/>
+    
+    <!-- Head -->
+    <ellipse cx="75" cy="50" rx="35" ry="30" fill="#9ca3af"/>
+    
+    <!-- Ears -->
+    <ellipse cx="55" cy="35" rx="12" ry="20" fill="#6b7280"/>
+    <ellipse cx="95" cy="35" rx="12" ry="20" fill="#6b7280"/>
+    
+    <!-- Eyes -->
+    <circle cx="65" cy="45" r="3" fill="#374151"/>
+    <circle cx="85" cy="45" r="3" fill="#374151"/>
+    
+    <!-- Nose -->
+    <ellipse cx="75" cy="55" rx="4" ry="3" fill="#374151"/>
+    
+    <!-- Tail -->
+    <ellipse cx="125" cy="90" rx="8" ry="25" fill="#9ca3af" transform="rotate(20 125 90)"/>
+    
+    <!-- Legs -->
+    <rect x="50" y="130" width="8" height="20" fill="#6b7280" rx="4"/>
+    <rect x="65" y="130" width="8" height="20" fill="#6b7280" rx="4"/>
+    <rect x="80" y="130" width="8" height="20" fill="#6b7280" rx="4"/>
+    <rect x="95" y="130" width="8" height="20" fill="#6b7280" rx="4"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="150" y="200" text-anchor="middle" fill="#6b7280" font-family="Arial, sans-serif" font-size="14">
+    Photo not available
+  </text>
+</svg>

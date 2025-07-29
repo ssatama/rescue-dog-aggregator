@@ -1,0 +1,26 @@
+schema_version: "1.0"
+id: "tierschutzverein-europa"
+name: "Tierschutzverein Europa e.V."
+enabled: true
+scraper:
+  class_name: "TierschutzvereinEuropaScraper"
+  module: "scrapers.tierschutzverein_europa.dogs_scraper"
+  config:
+    rate_limit_delay: 2.5
+    max_retries: 3
+    timeout: 30
+    skip_existing_animals: true
+metadata:
+  website_url: "https://tierschutzverein-europa.de"
+  description: "Since 2006, the members of Tierschutzverein Europa e.V. have been committed to helping suffering animals and spreading the idea of animal welfare. The entire team works exclusively on a voluntary basis to ensure that all donations go to the animals. To help abandoned, abused and neglected dogs and cats, we work closely with our animal welfare partners in Germany and other European countries. We see our most important task in supporting our partner animal shelters in their work where we can. We do this in different ways: we offer financial help, send donations in kind and food, and most importantly, we offer foster homes and find a good home for each of the many rescued animals."
+  location:
+    country: "DE" # Organization's base country
+    city: "Berlin" # Organization's base city
+  service_regions: ["DE", "ES", "RO"]
+  ships_to: ["DE"] # Countries they ship to
+  social_media:
+    website: "https://tierschutzverein-europa.de"
+    facebook: "https://www.facebook.com/TierschutzvereinEuropa/"
+    instagram: "https://www.instagram.com/tierschutzverein_europa"
+  established_year: 2006
+  logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-tierschutzverein-europa.jpg"

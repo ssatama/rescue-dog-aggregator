@@ -1,0 +1,28 @@
+schema_version: "1.0"
+id: "animalrescuebosnia"
+name: "Animal Rescue Bosnia"
+enabled: true
+scraper:
+  class_name: "AnimalRescueBosniaScraper"
+  module: "scrapers.animalrescuebosnia.animalrescuebosnia_scraper"
+  config:
+    rate_limit_delay: 2.5
+    max_retries: 3
+    timeout: 240
+    batch_size: 6
+    skip_existing_animals: true
+metadata:
+  website_url: "https://www.animal-rescue-bosnia.org/"
+  description: |
+    Animal Rescue Bosnia is a project of the EMKA Group for the rescue and placement of stray dogs without a home in new and loving hands in Europe. To this end, we have set up a dog rescue center according to European standards in Goražde in Bosnia. The welfare of the dogs is important to us and we are happy when each of our protégés finds a new home.
+  location:
+    country: "BA"
+    city: "Goražde"
+  service_regions: ["BA"]
+  ships_to: ["UK", "AT", "DE", "DK", "NL"]
+  social_media:
+    website: "https://www.animal-rescue-bosnia.org/"
+    facebook: "https://www.facebook.com/animalrescuebosnia/"
+    instagram: "https://www.instagram.com/animalrescuebosnia/"
+  established_year: 2019
+  logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-animalrescuebosnia.png"

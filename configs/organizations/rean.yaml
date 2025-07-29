@@ -1,0 +1,26 @@
+schema_version: "1.0"
+id: "rean"
+name: "REAN (Rescuing European Animals in Need)"
+enabled: true
+scraper:
+  class_name: "REANScraper"
+  module: "scrapers.rean.dogs_scraper"
+  config:
+    rate_limit_delay: 2.5
+    max_retries: 3
+    timeout: 30
+    skip_existing_animals: true
+metadata:
+  website_url: "https://www.rean.org.uk"
+  description: "UK charity rescuing dogs from Romanian shelters and streets, transporting to UK homes"
+  location:
+    country: "UK" # Organization's base country
+    city: "London" # Organization's base city
+  service_regions: ["UK", "RO"]
+  ships_to: ["UK"] # Countries they ship to
+  social_media:
+    website: "https://www.rean.org.uk"
+    facebook: "https://facebook.com/REAN.CO.UK"
+    instagram: "https://www.instagram.com/rean_rescue/"
+  established_year: 2010
+  logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-rean.jpg"

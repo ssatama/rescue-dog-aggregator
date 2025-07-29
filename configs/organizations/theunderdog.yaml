@@ -1,0 +1,68 @@
+schema_version: "1.0"
+id: "theunderdog"
+name: "The Underdog"
+enabled: true
+scraper:
+  class_name: "TheUnderdogScraper"
+  module: "scrapers.theunderdog.theunderdog_scraper"
+  config:
+    rate_limit_delay: 2.5
+    max_retries: 3
+    timeout: 240
+    skip_existing_animals: true
+metadata:
+  website_url: "https://www.theunderdog.org"
+  description: |
+    The world is a better place when we live in harmony with nature and the other creatures on our planet.
+
+    One way for children to appreciate the connection we have to all living creatures is by creating shared experiences. Most often, this happens when we create a bond with a family pet, particularly dogs.
+
+    In recent years, research has proven how beneficial, and valuable, the bond between dog and human has become.
+
+    This is why Underdog International focuses on initiatives that share these vital experiences with as many children across the world as possible.
+
+    We are a global charity based in the UK whose motto is Children helping Dogs. Dogs helping Children.  We aim to positively impact one million children and dogs by 2025 through our 'dogs in schools' programme, global education projects and their dog adoption initiatives.
+  location:
+    country: "UK"
+    city: "London"
+  service_regions: ["RO", "CY", "BA", "FR"]
+  ships_to:
+    [
+      "UK",
+      "CH",
+      "NO",
+      "AT",
+      "BE",
+      "BG",
+      "CY",
+      "CZ",
+      "DE",
+      "DK",
+      "EE",
+      "ES",
+      "FI",
+      "FR",
+      "GR",
+      "HR",
+      "HU",
+      "IE",
+      "IT",
+      "LT",
+      "LU",
+      "LV",
+      "MT",
+      "NL",
+      "PL",
+      "PT",
+      "RO",
+      "SE",
+      "SI",
+      "SK",
+    ]
+  social_media:
+    website: "https://www.theunderdog.org/"
+    facebook: "https://www.facebook.com/underdoginternational"
+    twitter: "https://x.com/Underdog_Int"
+    instagram: "https://www.instagram.com/underdoginternational/"
+  established_year: 2019
+  logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-theunderdog.png"

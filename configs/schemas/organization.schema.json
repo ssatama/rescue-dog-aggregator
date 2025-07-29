@@ -1,0 +1,221 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "organization.schema.json",
+  "title": "Organization Configuration Schema",
+  "description": "Schema for rescue organization configuration files",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
+      "description": "Schema version for future migrations",
+      "default": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "minLength": 2,
+      "maxLength": 50,
+      "description": "Unique identifier for the organization (kebab-case)"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Human-readable organization name"
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "Whether this organization's scraper is enabled"
+    },
+    "scraper": {
+      "type": "object",
+      "properties": {
+        "class_name": {
+          "type": "string",
+          "pattern": "^[A-Z][a-zA-Z0-9]*$",
+          "description": "Python class name for the scraper (PascalCase)"
+        },
+        "module": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.]+$",
+          "description": "Python module path relative to scrapers/ directory"
+        },
+        "config": {
+          "type": "object",
+          "description": "Scraper-specific configuration options",
+          "properties": {
+            "rate_limit_delay": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Delay between requests in seconds"
+            },
+            "max_retries": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10,
+              "description": "Maximum number of retry attempts"
+            },
+            "timeout": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 300,
+              "description": "Request timeout in seconds"
+            },
+            "headless": {
+              "type": "boolean",
+              "description": "Whether to run Selenium in headless mode"
+            },
+            "retry_backoff_factor": {
+              "type": "number",
+              "minimum": 1.0,
+              "maximum": 10.0,
+              "description": "Exponential backoff factor for retry delays (e.g., 2.0 means 1s, 2s, 4s)"
+            },
+            "batch_size": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Number of items to process concurrently in batches"
+            },
+            "skip_existing_animals": {
+              "type": "boolean",
+              "description": "Whether to skip animals already in database (by adoption_url)"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "required": ["class_name", "module"],
+      "additionalProperties": false
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "website_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Main website URL for the organization"
+        },
+        "social_media": {
+          "type": "object",
+          "properties": {
+            "facebook": {
+              "type": "string",
+              "format": "uri",
+              "description": "Facebook page URL"
+            },
+            "instagram": {
+              "type": "string",
+              "format": "uri",
+              "description": "Instagram profile URL"
+            },
+            "twitter": {
+              "type": "string",
+              "format": "uri",
+              "description": "Twitter profile URL"
+            },
+            "linkedin": {
+              "type": "string",
+              "format": "uri",
+              "description": "LinkedIn profile URL"
+            },
+            "youtube": {
+              "type": "string",
+              "format": "uri",
+              "description": "YouTube channel URL"
+            },
+            "website": {
+              "type": "string",
+              "format": "uri",
+              "description": "Additional website URL"
+            }
+          },
+          "additionalProperties": false
+        },
+        "location": {
+          "type": "object",
+          "properties": {
+            "country": {
+              "type": "string",
+              "pattern": "^[A-Z]{2}$",
+              "description": "ISO 3166-1 alpha-2 country code"
+            },
+            "region": {
+              "type": "string",
+              "maxLength": 100,
+              "description": "State, province, or region"
+            },
+            "city": {
+              "type": "string",
+              "maxLength": 100,
+              "description": "City name"
+            }
+          },
+          "additionalProperties": false
+        },
+        "service_regions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$",
+            "description": "ISO 3166-1 alpha-2 country code"
+          },
+          "description": "Countries where this organization has dogs available"
+        },
+        "ships_to": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$",
+            "description": "ISO 3166-1 alpha-2 country code"
+          },
+          "description": "Countries where this organization can ship dogs for adoption"
+        },
+        "established_year": {
+          "type": "integer",
+          "minimum": 1900,
+          "maximum": 2030,
+          "description": "Year the organization was established"
+        },
+        "logo_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to the organization's logo image"
+        },
+        "contact": {
+          "type": "object",
+          "properties": {
+            "email": {
+              "type": "string",
+              "format": "email",
+              "description": "Contact email address"
+            },
+            "phone": {
+              "type": "string",
+              "pattern": "^\\+?[1-9]\\d{1,14}$",
+              "description": "Contact phone number in international format"
+            }
+          },
+          "additionalProperties": false
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "Brief description of the organization"
+        }
+      },
+      "required": ["website_url"],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "name",
+    "enabled",
+    "scraper",
+    "metadata"
+  ],
+  "additionalProperties": false
+}

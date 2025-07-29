@@ -1,0 +1,62 @@
+schema_version: "1.0"
+id: "woof-project"
+name: "Woof Project"
+enabled: true
+scraper:
+  class_name: "WoofProjectScraper"
+  module: "scrapers.woof_project.dogs_scraper"
+  config:
+    rate_limit_delay: 3.0 # Increased for API calls
+    max_retries: 3
+    timeout: 60 # Increased for AI processing
+    skip_existing_animals: true
+metadata:
+  website_url: "https://woofproject.eu/"
+  description: |
+    WOOF Project is a non-profit organization dedicated to rescuing and rehoming dogs in need. We work tirelessly to find loving forever homes for rescued dogs as quickly as possible, inspiring dog adoption and saving lives.
+
+    Our mission is to create a world where every dog has a loving home. We believe that every dog deserves a second chance, and we are committed to making that happen through our rescue and rehoming efforts.
+
+    We collaborate with local shelters, veterinarians, and volunteers to provide the best care for our rescued dogs. Our team works diligently to ensure that each dog receives the love, attention, and medical care they need before finding their forever home.
+  location:
+    country: "CY" # Organization's base country
+    city: "Nicosia" # Organization's base city
+  service_regions: ["CY"]
+  ships_to: [
+      "UK",
+      "CH",
+      "NO",
+      "AT",
+      "BE",
+      "BG",
+      "CY",
+      "CZ",
+      "DE",
+      "DK",
+      "EE",
+      "ES",
+      "FI",
+      "FR",
+      "GR",
+      "HR",
+      "HU",
+      "IE",
+      "IT",
+      "LT",
+      "LU",
+      "LV",
+      "MT",
+      "NL",
+      "PL",
+      "PT",
+      "RO",
+      "SE",
+      "SI",
+      "SK",
+    ] # Countries they ship to
+  social_media:
+    website: "https://woofproject.eu/"
+    facebook: "https://www.facebook.com/woofproject.eu/"
+    instagram: "https://www.instagram.com/woofprojecteu/"
+  established_year: 2020
+  logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-woof-project.jpeg"

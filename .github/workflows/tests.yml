@@ -1,0 +1,215 @@
+name: Run Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_rescue_dogs
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements-dev.txt ]; then
+            pip install -r requirements-dev.txt
+          else
+            pip install -r requirements.txt
+            pip install pytest pytest-cov pytest-mock pytest-asyncio black isort flake8
+          fi
+
+      - name: Wait for PostgreSQL
+        run: |
+          for i in {1..10}; do
+            if pg_isready -h localhost -p 5432; then
+              echo "PostgreSQL is ready"
+              break
+            fi
+            echo "Waiting for PostgreSQL... attempt $i/10"
+            sleep 2
+          done
+
+      - name: Setup test database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -c "CREATE DATABASE test_rescue_dogs;" || true
+          psql -h localhost -U postgres -d test_rescue_dogs -c "GRANT ALL PRIVILEGES ON DATABASE test_rescue_dogs TO postgres;" || true
+          psql -h localhost -U postgres -d test_rescue_dogs -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO postgres;" || true
+          psql -h localhost -U postgres -d test_rescue_dogs -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO postgres;" || true
+
+      - name: Initialize database schema
+        env:
+          TESTING: "true"
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: test_rescue_dogs
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -c "
+          from database.db_setup import initialize_database
+          conn = initialize_database()
+          if conn:
+              print('Database schema initialized successfully')
+              conn.close()
+          else:
+              print('Database initialization failed')
+              exit(1)
+          " || echo "Database initialization completed or already initialized"
+
+      - name: Run database migrations
+        env:
+          TESTING: "true"
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: test_rescue_dogs
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          PGPASSWORD: postgres
+        run: |
+          echo "Running database migrations..."
+          for migration in database/migrations/*.sql; do
+            if [ -f "$migration" ]; then
+              echo "Running migration: $(basename $migration)"
+              psql -h localhost -U postgres -d test_rescue_dogs -f "$migration" || echo "Migration $(basename $migration) may have already been applied"
+            fi
+          done
+
+      - name: Run backend tests
+        env:
+          TESTING: "true"
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: test_rescue_dogs
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m pytest tests/ -m "not browser and not complex_setup and not requires_migrations" -v
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
+
+      - name: Create .env.example if missing
+        run: |
+          if [ ! -f .env.example ]; then
+            echo "# Environment variables for development" > .env.example
+            echo "NEXT_PUBLIC_API_URL=http://localhost:8000" >> .env.example
+            echo "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=dy8y3boog" >> .env.example
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+          NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: dy8y3boog
+          CI: true
+          NODE_ENV: test
+        run: npm test -- --watchAll=false --passWithNoTests --silent
+
+  lint-and-format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install black isort flake8 mypy
+          if [ -f requirements-dev.txt ]; then
+            pip install -r requirements-dev.txt
+          else
+            pip install -r requirements.txt
+          fi
+
+      - name: Check Python code formatting with Black
+        run: |
+          if [ -f pyproject.toml ]; then
+            black --check --diff .
+          else
+            black --check --diff --line-length=200 .
+          fi
+        continue-on-error: false
+
+      - name: Check Python imports with isort
+        run: |
+          if [ -f pyproject.toml ]; then
+            isort --check-only --diff .
+          else
+            isort --check-only --diff --line-length=200 .
+          fi
+        continue-on-error: false
+
+      - name: Lint Python code with flake8
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --exit-zero --statistics
+
+      - name: Type check with mypy (optional)
+        run: |
+          mypy --install-types --non-interactive --ignore-missing-imports --exclude="tests/utils/" . || true
+
+      - name: Set up Node.js for frontend linting
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Lint frontend code
+        working-directory: ./frontend
+        run: npm run lint || echo "Frontend linting issues found. Run 'npm run lint' locally to check."
