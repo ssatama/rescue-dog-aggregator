@@ -89,10 +89,10 @@ Practical examples and code samples for common tasks.
 
 ## 📊 Project Stats
 
-- **🧪 Tests**: 2,000+ comprehensive tests (876 backend, 1,249+ frontend)
+- **🧪 Tests**: 500+ comprehensive test files (108 backend, 434 frontend)
 - **🚀 Performance**: 95+ Core Web Vitals score
 - **🔒 Security**: Input validation and XSS protection
-- **🌍 Organizations**: 7 rescue organizations across multiple countries
+- **🌍 Organizations**: 8 rescue organizations across multiple countries
 - **🐕 Animals**: 1,500+ tracked rescue dogs
 - **⚡ Uptime**: High availability with error recovery mechanisms
 

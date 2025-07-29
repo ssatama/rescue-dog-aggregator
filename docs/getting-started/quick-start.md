@@ -1,69 +1,104 @@
-# Quick Start Guide
+# ⚡ Quick Start Guide
 
-## Prerequisites
+Get up and running with the Rescue Dog Aggregator in under 5 minutes.
 
-- Python 3.9+ (3.9.6 recommended)
-- PostgreSQL 13+
-- Node.js 18+ (required for Next.js 15)
-- Cloudinary account (for image processing)
+## 📋 Prerequisites
 
-## Basic Setup
+- **Python 3.9+** (3.9.6 recommended for optimal compatibility)
+- **PostgreSQL 13+** (14+ recommended for enhanced JSON performance)
+- **Node.js 18+** (required for Next.js 15 App Router features)
+- **Cloudflare R2** account (for production image optimization and CDN)
 
-**For complete setup instructions**, see: **[Installation Guide](installation.md)**
+## 🚀 30-Second Setup
 
-**If you encounter setup issues**, refer to: [Troubleshooting Guide](../operations/troubleshooting.md)
-
-### 1. Backend Setup
+### 1. Clone and Initialize
 
 ```bash
-# Activate virtual environment
-source venv/bin/activate
+git clone https://github.com/rescue-dog-aggregator/rescue-dog-aggregator.git
+cd rescue-dog-aggregator
 
-# Install dependencies
+# Backend setup
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
-# Initialize database and setup
-python main.py --setup
-
-# Start development server
-uvicorn api.main:app --reload
+# Database initialization
+python database/db_setup.py
 ```
 
-### 2. Frontend Setup
+### 2. Environment Configuration
+
+Create `.env` file in project root:
 
 ```bash
-# Navigate to frontend directory
+# Database (required)
+DB_HOST=localhost
+DB_NAME=rescue_dogs
+DB_USER=rescue_user
+DB_PASSWORD=your_secure_password
+
+# Cloudflare R2 (required for image handling)
+R2_ACCOUNT_ID=your_r2_account_id
+R2_ACCESS_KEY_ID=your_r2_access_key
+R2_SECRET_ACCESS_KEY=your_r2_secret_key
+R2_BUCKET_NAME=rescue-dog-images
+R2_CUSTOM_DOMAIN=images.rescuedogs.me
+
+# API Configuration
+ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+```
+
+**💡 For complete environment configuration**, see: **[Installation Guide](installation.md)**
+
+### 3. Start Development Servers
+
+```bash
+# Terminal 1: Backend API (http://localhost:8000)
+source venv/bin/activate
+uvicorn api.main:app --reload
+
+# Terminal 2: Frontend App (http://localhost:3000)
 cd frontend
-
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
 ```
 
-## Environment Configuration
+## ✅ Verification
 
-**Important**: Configure environment variables (`.env` file) with your database and Cloudinary credentials before running. See [Installation Guide](installation.md) for details.
-
-## Verification
-
-### Test Commands
+### Health Check
 
 ```bash
-# Backend tests (fast development workflow)
-source venv/bin/activate && python -m pytest tests/ -m "not slow" -v
+# Test API functionality
+curl http://localhost:8000/health
+curl "http://localhost:8000/api/animals?limit=5"
 
-# Frontend tests (all 88 suites)
-cd frontend && npm test
+# Visit frontend in browser
+open http://localhost:3000
 ```
 
-### Configuration Management
+### Test Suite Validation
 
 ```bash
-# Add new organization
-python management/config_commands.py sync    # Sync configs to database
-python management/config_commands.py run-all  # Run all scrapers
+# Backend tests (259 tests, ~3 seconds)
+source venv/bin/activate
+pytest tests/ -m "not slow" -v
+
+# Frontend tests (1,500+ tests, ~15 seconds)
+cd frontend
+npm test
+```
+
+### Organization Setup
+
+```bash
+# Sync organizations from config files
+python management/config_commands.py sync
+
+# List configured organizations
+python management/config_commands.py list
+
+# Test scraper (optional - may take time)
+python management/config_commands.py run pets-in-turkey
 ```
 
 ## Next Steps

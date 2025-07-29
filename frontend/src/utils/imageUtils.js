@@ -55,7 +55,7 @@ export function validateImageUrl(url) {
   // Check original URL string for traversal patterns BEFORE URL normalization
   const dangerousPatterns = [
     '../', '..\\', '..\\\\',
-    './', '.\\', 
+    '/./', '/\\', // Only match at path boundaries to avoid false positives with organization names
     '%2E%2E/', '%2E%2E%2F', '%2E%2E%5C',
     '%2F%2E%2E', '%5C%2E%2E',
     'etc/passwd', 'etc\\passwd',
@@ -87,8 +87,8 @@ export function validateImageUrl(url) {
       }
     }
     
-    // Special check for current directory reference
-    if (path === '/.' || path.includes('/./')) {
+    // Special check for current directory reference at path boundaries
+    if (path === '/.' || path.includes('/./' )) {
       return false;
     }
     

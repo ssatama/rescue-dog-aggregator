@@ -6,8 +6,8 @@ The Rescue Dog Aggregator is a web platform designed to aggregate dog adoption l
 
 ### System Overview & Key Metrics
 
-- **Scope**: Currently aggregates data from 7 rescue organizations, tracking over 1,500 animals
-- **Test Coverage**: The codebase is validated by over 2,000 tests (78 backend test files, 1,897 frontend tests), maintaining ~95% test coverage
+- **Scope**: Currently aggregates data from 8 rescue organizations, tracking over 1,500 animals
+- **Test Coverage**: The codebase is validated by over 500 test files (108 backend test files, 434 frontend test files), maintaining high test coverage
 - **Performance**: Achieves a 95+ Core Web Vitals score, facilitated by a global CDN, image optimization, lazy loading, and sub-second load times
 - **Availability & Reliability**: Maintains 99.9% uptime, featuring automated stale data detection and error recovery from individual scraper failures
 - **Security Posture**: Implements input validation and sanitization, XSS prevention, and a Content Security Policy (CSP)
@@ -95,7 +95,7 @@ The Rescue Dog Aggregator is a web platform designed to aggregate dog adoption l
 - **Framework**: Next.js 15.3.0 with App Router architecture
 - **Language**: TypeScript 5.8.2 with strict type checking
 - **Styling**: Tailwind CSS 3.3.2 with custom design system
-- **Testing**: Jest 29.7.0 with React Testing Library and accessibility testing
+- **Testing**: Jest 29.7.0 with React Testing Library (434 test files) and accessibility testing
 
 #### 2. Backend Layer - FastAPI Engine
 
@@ -121,7 +121,7 @@ The Rescue Dog Aggregator is a web platform designed to aggregate dog adoption l
 - **Framework**: FastAPI 0.104+ with Python 3.9+
 - **Database**: PostgreSQL 14+ with SQLAlchemy ORM
 - **Validation**: Pydantic v2 with custom validators
-- **Testing**: pytest with 876 comprehensive tests
+- **Testing**: pytest with 108 comprehensive test files
 
 #### 3. Configuration Engine
 
@@ -269,14 +269,14 @@ Session 4: Dog not found → unavailable (hidden from API)
 
 ### 4. Comprehensive Testing Strategy
 
-**Backend Testing (876 Tests)**
+**Backend Testing (108 Test Files)**
 - **Unit Tests**: Pure logic validation with no I/O dependencies
 - **Integration Tests**: Database interactions and API endpoint testing
 - **Security Tests**: Input validation, SQL injection prevention
 - **Performance Tests**: Load testing and optimization validation
 - **Resilience Tests**: Error handling and recovery mechanisms
 
-**Frontend Testing (1,100+ Tests)**
+**Frontend Testing (434 Test Files)**
 - **Component Tests**: UI behavior and rendering validation
 - **Accessibility Tests**: WCAG 2.1 AA compliance verification
 - **Performance Tests**: Core Web Vitals and optimization testing
@@ -292,7 +292,7 @@ pytest tests/ -m "database" -v       # Database integration tests
 pytest tests/ -m "security" -v       # Security validation tests
 
 # Frontend test execution
-npm test                             # All 1,100+ tests
+npm test                             # All tests in 434 test files
 npm test -- --testPathPattern=a11y  # Accessibility tests
 npm test -- --testPathPattern=perf  # Performance tests
 ```
@@ -338,7 +338,7 @@ pytest tests/new_feature/ -v
 ```
 
 **Quality Gates (Pre-Commit)**
-- ✅ All 2,000+ tests passing (zero flaky tests)
+- ✅ All 500+ test files passing (zero flaky tests)
 - ✅ Code coverage thresholds maintained (95%+)
 - ✅ Zero linting errors (ESLint + Black formatting)
 - ✅ No type errors (TypeScript strict + Python type hints)
@@ -549,7 +549,7 @@ The Rescue Dog Aggregator represents a sophisticated, production-ready platform 
 
 ### Technical Achievements
 
-- **2,000+ Tests**: Comprehensive test coverage ensuring production reliability
+- **500+ Test Files**: Comprehensive test coverage ensuring production reliability
 - **95% Performance Score**: Optimized user experience across all devices
 - **Enterprise Security**: Production-grade security with comprehensive validation
 - **Zero-Code Scaling**: Configuration-driven architecture for rapid expansion

@@ -4,7 +4,7 @@
 
 This project provides a unified interface to search for adoptable dogs across multiple rescue organizations. It uses a data pipeline to normalize information from different sources and is built with a modern web stack for performance and maintainability.
 
-**🚀 Production Status**: Live with **7 rescue organizations** and validated by **1,800+ tests**.
+**🚀 Production Status**: Live with **8 rescue organizations** and validated by **500+ comprehensive tests**.
 
 ---
 
@@ -21,7 +21,7 @@ Potential adopters often struggle to find dogs across many disparate shelter web
 - **🏗️ Configuration-Driven**: Add new organizations via YAML configuration without code changes
 
 ### Technical Highlights
-- **1,800+ Test Suite**: 259 backend + 1,500+ frontend tests supporting stable deployments
+- **500+ Test Suite**: 108 backend + 434 frontend test files supporting stable deployments
 - **Security Features**: SQL injection prevention, XSS protection, and Content Security Policy headers
 - **Error Resilience**: Partial failure detection ensures service availability during individual scraper issues
 - **Performance Optimizations**: Lazy loading, image optimization, and component memoization
@@ -210,8 +210,8 @@ npm run dev
 ```bash
 # Run comprehensive test suite to ensure everything works perfectly
 source venv/bin/activate
-pytest tests/ -m "not slow" -v    # Backend tests (259 passing in ~3 seconds)
-cd frontend && npm test            # Frontend tests (1,500+ passing in ~15 seconds)
+pytest tests/ -m "not slow" -v    # Backend tests (fast subset in ~3 seconds)
+cd frontend && npm test            # Frontend tests (full suite in ~30 seconds)
 ```
 
 ### 🎯 Your First Organization
@@ -245,23 +245,26 @@ python management/config_commands.py run my-org
 
 ## 🧪 Testing & Quality Excellence
 
-**Comprehensive test coverage with 1,800+ tests** supporting stable production deployments.
+**Comprehensive test coverage with 500+ test files** supporting stable production deployments.
 
 ### 📊 Test Suite Overview
 
 ```
-🔧 Backend Tests (259 tests - 78 test files):
-├── 🧪 Unit Tests (180)           → Core business logic & algorithms
-├── 🔗 Integration Tests (45)     → Database & API interactions  
-├── 🌐 End-to-End Tests (20)      → Complete user workflows
-└── ⚡ Performance Tests (14)     → Load testing & optimization
+🔧 Backend Tests (108 test files):
+├── 🧪 Unit Tests                → Core business logic & algorithms
+├── 🔗 Integration Tests         → Database & API interactions  
+├── 🌐 End-to-End Tests          → Complete user workflows
+├── ⚡ Performance Tests         → Load testing & optimization
+├── 🛡️ Security Tests           → Input validation & SQL injection prevention
+└── 🔄 Scraper Tests            → Web scraping validation & data extraction
 
-🎨 Frontend Tests (1,500+ tests - 74 test files):
-├── 🧩 Component Tests (800)      → UI behavior & rendering
-├── 🔗 Integration Tests (300)    → API communication & data flow
-├── ♿ Accessibility Tests (200)   → WCAG 2.1 AA compliance
-├── ⚡ Performance Tests (100)    → Core Web Vitals optimization
-└── 🛡️ Security Tests (100)      → XSS prevention & CSP validation
+🎨 Frontend Tests (434 test files):
+├── 🧩 Component Tests           → UI behavior & rendering
+├── 🔗 Integration Tests         → API communication & data flow
+├── ♿ Accessibility Tests        → WCAG 2.1 AA compliance
+├── ⚡ Performance Tests         → Core Web Vitals optimization
+├── 🛡️ Security Tests           → XSS prevention & CSP validation
+└── 📱 Mobile Tests             → Responsive design & touch interactions
 ```
 
 ### 🔄 Test-Driven Development Workflow
@@ -429,9 +432,9 @@ python management/config_commands.py stats
 ## 📈 Project Status & Metrics
 
 ### 🏭 Current Production Status
-- **🏢 Active Organizations**: 7 rescue organizations (animalrescuebosnia, daisyfamilyrescue, misisrescue, pets-in-turkey, rean, theunderdog, tierschutzverein-europa)
+- **🏢 Active Organizations**: 8 rescue organizations (animalrescuebosnia, daisyfamilyrescue, misisrescue, pets-in-turkey, rean, theunderdog, tierschutzverein-europa, woof-project)
 - **🐕 Animals Tracked**: 1,500+ rescue dogs across multiple countries
-- **🧪 Test Coverage**: 1,800+ tests (259 backend + 1,500+ frontend) with 95%+ coverage
+- **🧪 Test Coverage**: 500+ comprehensive tests (108 backend + 434 frontend test files) with high coverage
 - **⚡ Performance**: Core Web Vitals score 95+ (mobile & desktop) with sub-second load times
 - **🔒 Security**: Zero known vulnerabilities, A+ security rating, comprehensive CSP implementation
 
