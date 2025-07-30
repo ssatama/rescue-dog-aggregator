@@ -236,6 +236,16 @@ export class MockAPI {
         return;
       }
       
+      // Handle /api/animals/meta/filter_counts endpoint
+      if (url.includes('/meta/filter_counts')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(mockFilterCounts)
+        });
+        return;
+      }
+      
       if (slug === 'statistics') {
         if (this.options.errorScenarios?.statistics) {
           await this.handleError(route, 500, 'Statistics service unavailable');
