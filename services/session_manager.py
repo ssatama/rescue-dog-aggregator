@@ -633,7 +633,7 @@ class SessionManager:
                             f"but {total_animals_before_filter} were found before filtering. This is normal behavior."
                         )
                         return False
-                    
+
                     self.logger.warning(f"Potential failure detected: {animals_found} animals found " f"(below absolute minimum of {absolute_minimum}) for new organization")
                     return True
                 return False

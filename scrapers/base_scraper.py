@@ -119,13 +119,13 @@ class BaseScraper(ABC):
 
     def _setup_logger(self):
         """Set up a logger for the scraper with world-class centralized logging.
-        
+
         Individual scrapers now use silent loggers while BaseScraper provides
         all progress updates through the ProgressTracker system.
         """
         # Enable world-class logging configuration
         enable_world_class_scraper_logging()
-        
+
         # Create a silent logger for this individual scraper
         # All progress will be handled by ProgressTracker
         logger = logging.getLogger(f"scraper.{self.get_organization_name()}.{self.animal_type}")
@@ -337,7 +337,7 @@ class BaseScraper(ABC):
         try:
             # Initialize comprehensive progress tracker for entire scrape lifecycle
             self.progress_tracker = None
-            
+
             # Phase 1: Setup
             if not self._setup_scrape():
                 return False
@@ -348,34 +348,19 @@ class BaseScraper(ABC):
             # Store count for scraper runner interface
             # Use the same logic as database logging to ensure consistency
             self.animals_found = self._get_correct_animals_found_count(animals_data)
-            
+
             # Initialize comprehensive progress tracker with discovered animals
             if len(animals_data) > 0:
-                self.progress_tracker = ProgressTracker(
-                    total_items=len(animals_data), 
-                    logger=logging.getLogger("scraper"),  # Use central scraper logger
-                    config=self._get_logging_config()
-                )
-                
+                self.progress_tracker = ProgressTracker(total_items=len(animals_data), logger=logging.getLogger("scraper"), config=self._get_logging_config())  # Use central scraper logger
+
                 # Track discovery phase stats
-                self.progress_tracker.track_discovery_stats(
-                    dogs_found=len(animals_data),
-                    pages_processed=1,  # Single page scrape
-                    extraction_failures=0
-                )
-                
+                self.progress_tracker.track_discovery_stats(dogs_found=len(animals_data), pages_processed=1, extraction_failures=0)  # Single page scrape
+
                 # Track filtering phase stats
-                self.progress_tracker.track_filtering_stats(
-                    dogs_skipped=self.total_animals_skipped,
-                    new_dogs=len(animals_data) - self.total_animals_skipped
-                )
-                
+                self.progress_tracker.track_filtering_stats(dogs_skipped=self.total_animals_skipped, new_dogs=len(animals_data) - self.total_animals_skipped)
+
                 # Log discovery completion
-                self.progress_tracker.log_phase_complete(
-                    "Discovery", 
-                    0.0,  # Will be updated with actual timing
-                    f"{len(animals_data)} dogs found"
-                )
+                self.progress_tracker.log_phase_complete("Discovery", 0.0, f"{len(animals_data)} dogs found")  # Will be updated with actual timing
 
             # Phase 3: Database Operations
             processing_stats = self._process_animals_data(animals_data)
@@ -400,7 +385,7 @@ class BaseScraper(ABC):
         # Use centralized logger for setup phase
         central_logger = logging.getLogger("scraper")
         central_logger.info(f"🚀 Starting scrape for {self.get_organization_name()}")
-        
+
         # Start scrape log - must succeed for proper tracking
         if not self.start_scrape_log():
             central_logger.error("❌ Failed to create scrape log entry")
@@ -432,7 +417,7 @@ class BaseScraper(ABC):
 
         phase_duration = (datetime.now() - phase_start).total_seconds()
         self.metrics_collector.track_phase_timing("data_collection", phase_duration)
-        
+
         # World-class discovery completion message
         # Use the same logic as _get_correct_animals_found_count to avoid misleading warnings
         # when skip_existing_animals causes filtering
@@ -622,34 +607,23 @@ class BaseScraper(ABC):
             )
 
         # World-class completion summary via ProgressTracker
-        if hasattr(self, 'progress_tracker') and self.progress_tracker:
+        if hasattr(self, "progress_tracker") and self.progress_tracker:
             # Update final stats
             self.progress_tracker.track_processing_stats(
-                dogs_added=processing_stats["animals_added"],
-                dogs_updated=processing_stats["animals_updated"],
-                dogs_unchanged=processing_stats["animals_unchanged"],
-                processing_failures=0
+                dogs_added=processing_stats["animals_added"], dogs_updated=processing_stats["animals_updated"], dogs_unchanged=processing_stats["animals_unchanged"], processing_failures=0
             )
-            
-            self.progress_tracker.track_image_stats(
-                images_uploaded=processing_stats["images_uploaded"],
-                images_failed=processing_stats["images_failed"]
-            )
-            
-            self.progress_tracker.track_quality_stats(
-                data_quality_score=quality_score,
-                completion_rate=100.0
-            )
-            
+
+            self.progress_tracker.track_image_stats(images_uploaded=processing_stats["images_uploaded"], images_failed=processing_stats["images_failed"])
+
+            self.progress_tracker.track_quality_stats(data_quality_score=quality_score, completion_rate=100.0)
+
             # Log comprehensive completion summary
             self.progress_tracker.log_completion_summary()
         else:
             # Fallback to basic logging if no ProgressTracker
             central_logger = logging.getLogger("scraper")
             central_logger.info(
-                f"✅ Scrape completed: {processing_stats['animals_added']} added, "
-                f"{processing_stats['animals_updated']} updated, Quality: {quality_score:.2f}, "
-                f"Duration: {duration:.1f}s"
+                f"✅ Scrape completed: {processing_stats['animals_added']} added, " f"{processing_stats['animals_updated']} updated, Quality: {quality_score:.2f}, " f"Duration: {duration:.1f}s"
             )
 
     @abstractmethod

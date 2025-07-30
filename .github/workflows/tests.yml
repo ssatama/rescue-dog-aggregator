@@ -216,7 +216,7 @@ jobs:
 
   e2e-tests:
     runs-on: ubuntu-latest
-    needs: [frontend-tests]  # Run after frontend tests succeed
+    needs: [frontend-tests] # Run after frontend tests succeed
     timeout-minutes: 10
     defaults:
       run:

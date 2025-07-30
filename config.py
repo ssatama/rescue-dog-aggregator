@@ -25,14 +25,14 @@ if ENVIRONMENT == "production":
 
 def suppress_service_logging():
     """Suppress verbose operational logging from services for world-class scraper experience.
-    
+
     This function silences routine operational logs from services (INFO/DEBUG level)
     while preserving error and warning logs. This creates a clean, professional
     logging experience focused on scraper progress and results.
     """
     service_loggers = [
         "services.database_service",
-        "services.image_processing_service", 
+        "services.image_processing_service",
         "services.session_manager",
         "services.connection_pool",
         "services.metrics_collector",
@@ -43,11 +43,11 @@ def suppress_service_logging():
         "WDM",  # WebDriver Manager
         "selenium",
     ]
-    
+
     for service_name in service_loggers:
         service_logger = logging.getLogger(service_name)
         service_logger.setLevel(logging.WARNING)
-        
+
     # Also suppress verbose config logging in scrapers
     config_logger = logging.getLogger(__name__)
     config_logger.setLevel(logging.WARNING)
@@ -55,17 +55,18 @@ def suppress_service_logging():
 
 def enable_world_class_scraper_logging():
     """Enable world-class scraper logging with centralized control.
-    
+
     This function configures the logging system for an optimal scraper experience:
     - Suppresses verbose service operational logs
     - Preserves error and warning logs from all sources
     - Enables professional progress tracking through ProgressTracker
     """
     suppress_service_logging()
-    
+
     # Ensure scraper loggers use appropriate levels
     scraper_logger = logging.getLogger("scraper")
     scraper_logger.setLevel(logging.INFO)  # Keep scraper progress logs
+
 
 logger = logging.getLogger(__name__)
 
