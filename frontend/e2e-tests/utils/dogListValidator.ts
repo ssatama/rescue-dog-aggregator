@@ -7,7 +7,7 @@ import {
   DogCardValidationResult 
 } from './dogTestHelperTypes';
 import { getTimeoutConfig } from './testHelpers';
-import { DogCardValidator } from './DogCardValidator';
+import { DogCardValidator } from './dogCardValidator';
 
 /**
  * Comprehensive validator for dog listing pages with detailed validation results
