@@ -160,15 +160,18 @@ class TestDatabaseServiceIntegration:
         try:
             # First ensure we have an organization in the database
             from api.database.connection_pool import get_pooled_cursor
+
             with get_pooled_cursor() as cursor:
                 # Insert a test organization if it doesn't exist
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT INTO organizations (id, name, slug, website_url, country, city, active)
                     VALUES (999, 'Test Org for Scrape', 'test-org-scrape', 'http://test.com', 'Test', 'Test', TRUE)
                     ON CONFLICT (id) DO NOTHING
-                """)
+                """
+                )
                 cursor.connection.commit()
-            
+
             # Create a scrape log
             scrape_log_id = db_service.create_scrape_log(organization_id=999)  # Use our test org
             assert scrape_log_id is not None
