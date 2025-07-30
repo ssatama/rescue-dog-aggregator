@@ -11,12 +11,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from services.railway.sync import (
+    SAFETY_THRESHOLDS,
     RailwayDataSyncer,
+    SyncMode,
     get_local_data_count,
     get_railway_data_count,
     sync_organizations_to_railway,
-    SyncMode,
-    SAFETY_THRESHOLDS,
     validate_sync_by_mode,
 )
 
@@ -139,7 +139,7 @@ class TestSyncModeValidation:
         # Local count >= Railway count should pass
         assert validate_sync_by_mode(SyncMode.INCREMENTAL, "animals", 100, 90) is True
         assert validate_sync_by_mode(SyncMode.INCREMENTAL, "animals", 100, 100) is True
-        
+
         # Local count < Railway count should fail
         assert validate_sync_by_mode(SyncMode.INCREMENTAL, "animals", 90, 100) is False
 
@@ -148,7 +148,7 @@ class TestSyncModeValidation:
         # Should pass if local count meets safety threshold
         assert validate_sync_by_mode(SyncMode.REBUILD, "organizations", 10, 100) is True
         assert validate_sync_by_mode(SyncMode.REBUILD, "animals", 50, 500) is True
-        
+
         # Should fail if local count below safety threshold
         assert validate_sync_by_mode(SyncMode.REBUILD, "organizations", 2, 100) is False
         assert validate_sync_by_mode(SyncMode.REBUILD, "animals", 5, 500) is False
@@ -164,22 +164,22 @@ class TestSyncModeValidation:
         assert validate_sync_by_mode(SyncMode.INCREMENTAL, "invalid_table", 10, 10) is False
 
 
-@pytest.mark.unit  
+@pytest.mark.unit
 class TestRailwayDataSyncerModes:
     """Test RailwayDataSyncer with sync modes."""
 
     def test_sync_mode_validation_methods_exist(self):
         """Test that sync mode validation methods exist."""
         syncer = RailwayDataSyncer()
-        assert hasattr(syncer, '_validate_sync_mode')
-        assert hasattr(syncer, '_clear_railway_tables')
+        assert hasattr(syncer, "_validate_sync_mode")
+        assert hasattr(syncer, "_clear_railway_tables")
 
     def test_invalid_sync_mode_returns_false(self):
         """Test that invalid sync mode returns False."""
         with patch("services.railway.sync.check_railway_connection") as mock_check:
             mock_check.return_value = True
-            
+
             syncer = RailwayDataSyncer()
             result = syncer.perform_full_sync(sync_mode="invalid_mode")
-            
+
             assert result is False

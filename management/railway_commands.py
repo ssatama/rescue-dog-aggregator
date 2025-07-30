@@ -22,7 +22,7 @@ load_dotenv()
 
 from services.railway.connection import check_railway_connection
 from services.railway.migration import RailwayMigrationManager
-from services.railway.sync import RailwayDataSyncer, get_local_data_count, get_railway_data_count, SyncMode
+from services.railway.sync import RailwayDataSyncer, SyncMode, get_local_data_count, get_railway_data_count
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -151,15 +151,13 @@ def migrate(dry_run):
 @railway_cli.command()
 @click.option("--dry-run", is_flag=True, help="Show what would be synced without making changes")
 @click.option("--skip-validation", is_flag=True, help="Skip post-sync validation")
-@click.option("--mode", type=click.Choice(['incremental', 'rebuild', 'force']), 
-              default='incremental', help="Sync mode: incremental (default), rebuild, or force")
-@click.option("--confirm-destructive", is_flag=True, 
-              help="Required confirmation for destructive operations (rebuild/force modes)")
+@click.option("--mode", type=click.Choice(["incremental", "rebuild", "force"]), default="incremental", help="Sync mode: incremental (default), rebuild, or force")
+@click.option("--confirm-destructive", is_flag=True, help="Required confirmation for destructive operations (rebuild/force modes)")
 def sync(dry_run, skip_validation, mode, confirm_destructive):
     """Sync data from local database to Railway."""
     try:
         # Validate destructive mode confirmation
-        if mode in ['rebuild', 'force'] and not confirm_destructive:
+        if mode in ["rebuild", "force"] and not confirm_destructive:
             click.echo(f"❌ {mode.title()} mode requires --confirm-destructive flag", err=True)
             sys.exit(1)
 

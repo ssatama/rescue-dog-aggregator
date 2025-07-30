@@ -88,7 +88,7 @@ class TestRailwayCliCommands:
 
             assert result.exit_code == 0
             assert "Railway data sync completed successfully" in result.output
-            mock_syncer.perform_full_sync.assert_called_once_with(dry_run=False, validate_after=True, sync_mode='incremental')
+            mock_syncer.perform_full_sync.assert_called_once_with(dry_run=False, validate_after=True, sync_mode="incremental")
 
     def test_sync_dry_run(self):
         with patch("management.railway_commands.RailwayDataSyncer") as mock_syncer_class:
@@ -100,7 +100,7 @@ class TestRailwayCliCommands:
 
             assert result.exit_code == 0
             assert "Railway sync dry run completed" in result.output
-            mock_syncer.perform_full_sync.assert_called_once_with(dry_run=True, validate_after=True, sync_mode='incremental')
+            mock_syncer.perform_full_sync.assert_called_once_with(dry_run=True, validate_after=True, sync_mode="incremental")
 
     def test_sync_no_validation(self):
         with patch("management.railway_commands.RailwayDataSyncer") as mock_syncer_class:
@@ -111,7 +111,7 @@ class TestRailwayCliCommands:
             result = self.runner.invoke(sync, ["--skip-validation"])
 
             assert result.exit_code == 0
-            mock_syncer.perform_full_sync.assert_called_once_with(dry_run=False, validate_after=False, sync_mode='incremental')
+            mock_syncer.perform_full_sync.assert_called_once_with(dry_run=False, validate_after=False, sync_mode="incremental")
 
     def test_sync_failure(self):
         with patch("management.railway_commands.RailwayDataSyncer") as mock_syncer_class:
@@ -224,7 +224,7 @@ class TestRailwayCliCommands:
                 assert result.exit_code == 0
                 assert "Railway setup dry run completed" in result.output
                 mock_migration_instance.setup_and_migrate.assert_called_once_with(dry_run=True)
-                mock_syncer_instance.perform_full_sync.assert_called_once_with(dry_run=True, validate_after=True, sync_mode='incremental')
+                mock_syncer_instance.perform_full_sync.assert_called_once_with(dry_run=True, validate_after=True, sync_mode="incremental")
 
 
 @pytest.mark.unit
@@ -355,9 +355,7 @@ class TestRailwaySyncModes:
 
             assert result.exit_code == 0
             # Should call perform_full_sync with default incremental mode
-            mock_syncer_instance.perform_full_sync.assert_called_once_with(
-                dry_run=False, validate_after=True, sync_mode="incremental"
-            )
+            mock_syncer_instance.perform_full_sync.assert_called_once_with(dry_run=False, validate_after=True, sync_mode="incremental")
 
     def test_sync_incremental_mode_explicit(self):
         """Test sync with explicit incremental mode."""
@@ -369,9 +367,7 @@ class TestRailwaySyncModes:
             result = self.runner.invoke(sync, ["--mode", "incremental"])
 
             assert result.exit_code == 0
-            mock_syncer_instance.perform_full_sync.assert_called_once_with(
-                dry_run=False, validate_after=True, sync_mode="incremental"
-            )
+            mock_syncer_instance.perform_full_sync.assert_called_once_with(dry_run=False, validate_after=True, sync_mode="incremental")
 
     def test_sync_rebuild_mode_success(self):
         """Test sync with rebuild mode."""
@@ -383,9 +379,7 @@ class TestRailwaySyncModes:
             result = self.runner.invoke(sync, ["--mode", "rebuild", "--confirm-destructive"])
 
             assert result.exit_code == 0
-            mock_syncer_instance.perform_full_sync.assert_called_once_with(
-                dry_run=False, validate_after=True, sync_mode="rebuild"
-            )
+            mock_syncer_instance.perform_full_sync.assert_called_once_with(dry_run=False, validate_after=True, sync_mode="rebuild")
 
     def test_sync_rebuild_mode_without_confirmation(self):
         """Test sync rebuild mode requires confirmation."""
@@ -404,9 +398,7 @@ class TestRailwaySyncModes:
             result = self.runner.invoke(sync, ["--mode", "force", "--confirm-destructive"])
 
             assert result.exit_code == 0
-            mock_syncer_instance.perform_full_sync.assert_called_once_with(
-                dry_run=False, validate_after=True, sync_mode="force"
-            )
+            mock_syncer_instance.perform_full_sync.assert_called_once_with(dry_run=False, validate_after=True, sync_mode="force")
 
     def test_sync_force_mode_without_confirmation(self):
         """Test sync force mode requires confirmation."""
@@ -433,6 +425,4 @@ class TestRailwaySyncModes:
             result = self.runner.invoke(sync, ["--mode", "rebuild", "--confirm-destructive", "--dry-run"])
 
             assert result.exit_code == 0
-            mock_syncer_instance.perform_full_sync.assert_called_once_with(
-                dry_run=True, validate_after=True, sync_mode="rebuild"
-            )
+            mock_syncer_instance.perform_full_sync.assert_called_once_with(dry_run=True, validate_after=True, sync_mode="rebuild")

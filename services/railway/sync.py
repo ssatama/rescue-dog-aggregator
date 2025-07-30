@@ -18,18 +18,19 @@ logger = logging.getLogger(__name__)
 
 class SyncMode(Enum):
     """Sync modes for Railway data synchronization."""
+
     INCREMENTAL = "incremental"  # Default: local_count >= railway_count
-    REBUILD = "rebuild"          # Clear railway, push all local data
-    FORCE = "force"             # Skip validation (emergency only)
+    REBUILD = "rebuild"  # Clear railway, push all local data
+    FORCE = "force"  # Skip validation (emergency only)
 
 
 # Safety thresholds for rebuild mode validation
 SAFETY_THRESHOLDS: Dict[str, int] = {
-    "organizations": 5,        # Must have at least 5 organizations
-    "animals": 50,            # Must have at least 50 animals
-    "scrape_logs": 10,        # Must have at least 10 logs
-    "service_regions": 1,     # Must have at least 1 region
-    "animal_images": 0,       # Can be legitimately empty
+    "organizations": 5,  # Must have at least 5 organizations
+    "animals": 50,  # Must have at least 50 animals
+    "scrape_logs": 10,  # Must have at least 10 logs
+    "service_regions": 1,  # Must have at least 1 region
+    "animal_images": 0,  # Can be legitimately empty
 }
 
 
@@ -1577,18 +1578,18 @@ class RailwayDataSyncer:
         """Validate sync operation based on the specified mode."""
         try:
             tables = ["organizations", "animals", "animal_images", "scrape_logs", "service_regions"]
-            
+
             for table in tables:
                 local_count = get_local_data_count(table)
                 railway_count = get_railway_data_count(table)
-                
+
                 if not validate_sync_by_mode(mode, table, local_count, railway_count):
                     self.logger.error(f"Sync validation failed for table {table}: local={local_count}, railway={railway_count}, mode={mode.value}")
                     return False
-                    
+
             self.logger.info(f"Sync mode validation passed for all tables: {mode.value}")
             return True
-            
+
         except Exception as e:
             self.logger.error(f"Sync mode validation error: {e}")
             return False
@@ -1597,17 +1598,17 @@ class RailwayDataSyncer:
         """Clear all Railway tables for rebuild mode."""
         try:
             tables = ["animal_images", "animals", "scrape_logs", "service_regions", "organizations"]  # Order matters for FK constraints
-            
+
             with railway_session() as session:
                 for table in tables:
                     self.logger.info(f"Clearing Railway table: {table}")
                     result = session.execute(text(f"DELETE FROM {table}"))
                     self.logger.info(f"Cleared {result.rowcount} rows from {table}")
-                
+
                 session.commit()
                 self.logger.info("Successfully cleared all Railway tables")
                 return True
-                
+
         except Exception as e:
             self.logger.error(f"Failed to clear Railway tables: {e}")
             return False
