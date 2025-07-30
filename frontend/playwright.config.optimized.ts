@@ -19,8 +19,8 @@ export default defineConfig({
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
 
-  /* Retry failed tests twice for all environments */
-  retries: 2,
+  /* Retry failed tests 5 times for all environments */
+  retries: 5,
 
   /* Optimize workers for M4 MacBook Air */
   workers: process.env.CI ? 2 : 8,

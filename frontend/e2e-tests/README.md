@@ -29,7 +29,7 @@ npm run test:e2e:optimized:critical  # All critical tests, 2 devices
 # Fast critical path validation
 npm run test:e2e:quick-debug      # Critical tests + stops after 5 failures
 npm run test:e2e:optimized:critical  # All critical tests, 2 devices
-npm test -- --grep="@critical"   # All critical tests, all devices
+npm run test:e2e:critical   # All critical tests, all devices
 ```
 
 ### 🔍 **Debugging & Failure Analysis**
