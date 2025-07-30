@@ -6,7 +6,7 @@ import {
   FilterInteractionResult 
 } from './dogTestHelperTypes';
 import { getTimeoutConfig } from './testHelpers';
-import { DogDetailValidator } from './DogDetailValidator';
+import { DogDetailValidator } from './dogDetailValidator';
 
 /**
  * Comprehensive helper class for interacting with dog-related elements and testing user interactions
