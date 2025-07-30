@@ -106,7 +106,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
             if current_dog and current_dog["url"] and current_dog["name"]:
                 animals.append(current_dog)
 
-            self.logger.info(f"Found {len(animals)} dogs in Bosnia section")
+            # World-class logging: Bosnia section stats handled by centralized system
             return animals
 
         except Exception as e:
@@ -139,13 +139,13 @@ class AnimalRescueBosniaScraper(BaseScraper):
 
             # Check if this is a non-dog page (organization description, etc.)
             if self._is_non_dog_page(name, soup):
-                self.logger.info(f"Skipping {name} - not a dog page")
+                # World-class logging: Non-dog page detection handled by centralized system
                 return None
 
             # Check if dog is in Germany - look for Germany indicators
             page_text = soup.get_text()
             if "We are already in Germany" in page_text or "Location: Germany" in page_text:
-                self.logger.info(f"Skipping {name} - dog is in Germany")
+                # World-class logging: Location filtering handled by centralized system
                 return None
 
             # Extract external ID from name
@@ -397,7 +397,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
         try:
             # Get list of animals in Bosnia
             animals_list = self.get_animal_list()
-            self.logger.info(f"Found {len(animals_list)} animals from listing page")
+            # World-class logging: Animal list stats handled by centralized system
 
             # Extract URLs from animal list
             all_urls = [animal["url"] for animal in animals_list]
@@ -411,12 +411,13 @@ class AnimalRescueBosniaScraper(BaseScraper):
                 self.set_filtering_stats(len(all_urls), skipped_count)
 
                 if len(urls_to_process) != len(all_urls):
-                    self.logger.info(f"Processing {len(urls_to_process)} URLs (skipped {len(all_urls) - len(urls_to_process)} existing)")
+                    # World-class logging: URL filtering stats handled by centralized system
+                    pass
             else:
                 urls_to_process = all_urls
                 # No filtering applied
                 self.set_filtering_stats(len(all_urls), 0)
-                self.logger.info(f"Processing all {len(urls_to_process)} URLs (skip_existing_animals disabled)")
+                # World-class logging: Processing stats handled by centralized system
 
             # Process URLs in batches with parallel processing
             if urls_to_process:
@@ -424,7 +425,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
             else:
                 all_animals = []
 
-            self.logger.info(f"Successfully collected data for {len(all_animals)} animals")
+            # World-class logging: Collection results handled by centralized system
             return all_animals
 
         except Exception as e:
@@ -447,10 +448,10 @@ class AnimalRescueBosniaScraper(BaseScraper):
         batches = [urls[i : i + self.batch_size] for i in range(0, len(urls), self.batch_size)]
         all_results = []
 
-        self.logger.info(f"Processing {len(urls)} URLs in {len(batches)} batches of {self.batch_size}")
+        # World-class logging: Batch processing handled by centralized system
 
         for batch_num, batch_urls in enumerate(batches, 1):
-            self.logger.info(f"Processing batch {batch_num}/{len(batches)} ({len(batch_urls)} URLs)")
+            # World-class logging: Batch progress handled by centralized system
 
             batch_results = self._process_single_batch(batch_urls)
             all_results.extend(batch_results)
@@ -460,7 +461,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
                 self.logger.debug(f"Rate limiting for {self.rate_limit_delay}s between batches")
                 self.respect_rate_limit()
 
-        self.logger.info(f"Batch processing complete. Processed {len(all_results)} valid dogs from {len(urls)} URLs")
+        # World-class logging: Batch completion handled by centralized system
         return all_results
 
     def _process_single_batch(self, urls: List[str]) -> List[Dict[str, Any]]:

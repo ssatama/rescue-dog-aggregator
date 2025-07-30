@@ -54,11 +54,11 @@ class TheUnderdogScraper(BaseScraper):
         Returns:
             List of dog data dictionaries
         """
-        self.logger.info("Starting The Underdog data collection")
+        # World-class logging: Data collection initiation handled by centralized system
 
         # Get list of available dogs from listing page
         available_dogs = self.get_animal_list()
-        self.logger.info(f"Found {len(available_dogs)} available dogs")
+        # World-class logging: Available dogs count handled by centralized system
 
         # Apply skip_existing_animals filtering
         dogs_to_process = available_dogs
@@ -74,7 +74,7 @@ class TheUnderdogScraper(BaseScraper):
             # Track filtering stats for failure detection
             self.set_filtering_stats(original_count, skipped_count)
 
-            self.logger.info(f"After filtering existing animals: processing {len(dogs_to_process)}/{len(available_dogs)} dogs")
+            # World-class logging: Filtering results handled by centralized system
         else:
             # No filtering applied
             self.set_filtering_stats(len(available_dogs), 0)
@@ -98,7 +98,7 @@ class TheUnderdogScraper(BaseScraper):
                 self.logger.error(f"Error collecting data for {dog_info.get('url', 'unknown')}: {e}")
                 continue
 
-        self.logger.info(f"Successfully collected detailed data for {len(all_dogs_data)} dogs")
+        # World-class logging: Collection results handled by centralized system
         return all_dogs_data
 
     def get_animal_list(self) -> List[Dict[str, str]]:
@@ -121,7 +121,7 @@ class TheUnderdogScraper(BaseScraper):
 
             # Find all dog cards
             dog_cards = soup.select(".ProductList-item")
-            self.logger.info(f"Found {len(dog_cards)} total dogs on listing page")
+            # World-class logging: Dog cards count handled by centralized system
 
             available_dogs = []
 
@@ -138,7 +138,7 @@ class TheUnderdogScraper(BaseScraper):
                 else:
                     self.logger.debug(f"Skipping unavailable dog: {dog_info['name']}")
 
-            self.logger.info(f"Found {len(available_dogs)} available dogs after filtering")
+            # World-class logging: Available dogs filtering handled by centralized system
             return available_dogs
 
         except Exception as e:
@@ -152,7 +152,7 @@ class TheUnderdogScraper(BaseScraper):
             BeautifulSoup object or None if error
         """
         try:
-            self.logger.info(f"Fetching listing page: {self.listing_url}")
+            # World-class logging: Page fetching handled by centralized system
 
             response = requests.get(self.listing_url, timeout=self.timeout, headers={"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"})
             response.raise_for_status()
@@ -250,7 +250,7 @@ class TheUnderdogScraper(BaseScraper):
 
             # Check if dog is adopted/reserved on detail page (use raw name before cleaning)
             if not self._is_available_dog(raw_name):
-                self.logger.info(f"Skipping reserved/adopted dog: {raw_name}")
+                # World-class logging: Status filtering handled by centralized system
                 return None
 
             # Extract country from raw name (with flag emoji)

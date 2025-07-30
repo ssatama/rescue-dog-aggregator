@@ -63,7 +63,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
         all_dogs = []
 
         try:
-            self.logger.info(f"Starting Daisy Family Rescue scrape from {self.listing_url}")
+            # World-class logging: Scrape initiation handled by centralized system
 
             # Step 1: Extract dogs using Selenium with section filtering
             all_dogs = self._extract_with_selenium()
@@ -72,13 +72,13 @@ class DaisyFamilyRescueScraper(BaseScraper):
                 self.logger.warning("No dogs extracted from main listing")
                 return []
 
-            self.logger.info(f"Extracted {len(all_dogs)} dogs from main listing")
+            # World-class logging: Extraction stats handled by centralized system
 
             # Step 2: Apply translation before returning to BaseScraper
             # This ensures all German text is translated to English for standardization
             all_dogs = self._translate_and_normalize_dogs(all_dogs)
 
-            self.logger.info(f"Translation completed for {len(all_dogs)} dogs")
+            # World-class logging: Translation completion handled by centralized system
             return all_dogs
 
         except Exception as e:
@@ -134,7 +134,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
         if translation_errors > 0:
             self.logger.warning(f"Translation errors occurred for {translation_errors} dogs")
 
-        self.logger.info(f"Translated {len(translated_dogs) - translation_errors}/{len(translated_dogs)} dogs from German to English")
+        # World-class logging: Translation stats handled by centralized system
         return translated_dogs
 
     def _extract_with_selenium(self) -> List[Dict[str, Any]]:
@@ -167,7 +167,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
 
             driver = webdriver.Chrome(options=chrome_options)
 
-            self.logger.info(f"Loading main page: {self.listing_url}")
+            # World-class logging: Page loading handled by centralized system
             driver.get(self.listing_url)
 
             # Wait for page to load
@@ -195,10 +195,10 @@ class DaisyFamilyRescueScraper(BaseScraper):
                     continue
 
             # Apply skip_existing_animals filtering
-            self.logger.info(f"🔍 skip_existing_animals: {self.skip_existing_animals}")
+            # World-class logging: Configuration handled by centralized system
             if self.skip_existing_animals and basic_dogs_data:
                 all_urls = [dog.get("adoption_url") for dog in basic_dogs_data if dog.get("adoption_url")]
-                self.logger.info(f"📋 Filtering {len(all_urls)} URLs to skip existing animals...")
+                # World-class logging: URL filtering handled by centralized system
                 filtered_urls = self._filter_existing_urls(all_urls)
                 filtered_urls_set = set(filtered_urls)
 
@@ -210,11 +210,11 @@ class DaisyFamilyRescueScraper(BaseScraper):
                 # Track filtering stats for failure detection
                 self.set_filtering_stats(original_count, skipped_count)
 
-                self.logger.info(f"✅ SKIP EXISTING ANIMALS: Processing {len(basic_dogs_data)} new dogs (skipped {skipped_count} existing)")
+                # World-class logging: Skip existing stats handled by centralized system
             else:
                 # No filtering applied
                 self.set_filtering_stats(len(basic_dogs_data), 0)
-                self.logger.info(f"📊 Processing all {len(basic_dogs_data)} dogs (skip_existing_animals: {self.skip_existing_animals})")
+                # World-class logging: Processing stats handled by centralized system
 
             # Second pass: Process the filtered dogs with detail page enhancement
             processed_count = 0
@@ -236,7 +236,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
                     self.logger.warning(f"Error processing dog {dog_data.get('name', 'unknown')}: {e}")
                     continue
 
-            self.logger.info(f"Successfully processed {processed_count} out of {total_containers} containers")
+            # World-class logging: Processing results handled by centralized system
 
             # Apply rate limiting using BaseScraper method
             self.respect_rate_limit()
@@ -306,7 +306,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
 
     def _handle_lazy_loading(self, driver: webdriver.Chrome):
         """Handle lazy loading based on inspection findings."""
-        self.logger.info("Handling potential lazy loading...")
+        # World-class logging: Lazy loading handled by centralized system
 
         # Based on inspection, WordPress uses native lazy loading, not JavaScript
         # Scroll to trigger any lazy-loaded content
@@ -333,12 +333,12 @@ class DaisyFamilyRescueScraper(BaseScraper):
             # Find all section headers
             section_headers = driver.find_elements(By.CSS_SELECTOR, "h2.elementor-heading-title.elementor-size-default")
 
-            self.logger.info(f"Found {len(section_headers)} section headers")
+            # World-class logging: Section discovery handled by centralized system
 
             # Find all dog containers
             all_dog_containers = driver.find_elements(By.CSS_SELECTOR, "article.elementor-post.elementor-grid-item.ecs-post-loop")
 
-            self.logger.info(f"Found {len(all_dog_containers)} total dog containers")
+            # World-class logging: Container discovery handled by centralized system
 
             # Map sections to their positions in DOM
             section_positions = {}
@@ -354,7 +354,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
                         header,
                     )
                     section_positions[section_text] = header_position
-                    self.logger.info(f"Found section '{section_text}' at DOM position {header_position}")
+                    # World-class logging: Section discovery handled by centralized system
 
             # Filter containers by section
             for container in all_dog_containers:
@@ -384,7 +384,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
             # Fallback: use all dog containers
             valid_containers = driver.find_elements(By.CSS_SELECTOR, "article.elementor-post.elementor-grid-item.ecs-post-loop")
 
-        self.logger.info(f"Filtered to {len(valid_containers)} valid dog containers")
+        # World-class logging: Container filtering handled by centralized system
         return valid_containers
 
     def _find_container_section(self, container_position: int, section_positions: Dict[str, int]) -> Optional[str]:

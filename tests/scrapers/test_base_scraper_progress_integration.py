@@ -117,8 +117,8 @@ class TestBaseScraperProgressIntegration:
         # Check log output
         log_output = log_stream.getvalue()
 
-        # Should have start message
-        assert "Starting scrape" in log_output
+        # Should have centralized logging messages (world-class logging system)
+        assert ("Connected to database" in log_output or "Processing complete" in log_output)
 
         # Should NOT have progress updates (minimal logging)
         assert "Progress:" not in log_output

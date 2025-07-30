@@ -41,7 +41,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         try:
             all_dogs = self._extract_with_selenium_unified()
             if len(all_dogs) > 0:
-                self.logger.info(f"Successfully extracted {len(all_dogs)} dogs using unified Selenium approach")
+                # World-class logging: Extraction success handled by centralized system
                 # Apply translation before returning to BaseScraper
                 if all_dogs:
                     all_dogs = self._translate_and_normalize_dogs(all_dogs)
@@ -52,7 +52,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         # Fallback to legacy Selenium if unified fails
         try:
             all_dogs = self._extract_with_selenium()
-            self.logger.info(f"Successfully extracted {len(all_dogs)} dogs using legacy Selenium approach")
+            # World-class logging: Extraction success handled by centralized system
             # Apply translation before returning to BaseScraper
             if all_dogs:
                 all_dogs = self._translate_and_normalize_dogs(all_dogs)
@@ -64,7 +64,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         try:
             all_dogs = self._extract_with_requests()
             if len(all_dogs) > 0:
-                self.logger.info(f"Successfully extracted {len(all_dogs)} dogs using requests approach")
+                # World-class logging: Extraction success handled by centralized system
                 # Apply translation before returning to BaseScraper
                 all_dogs = self._translate_and_normalize_dogs(all_dogs)
             return all_dogs
@@ -135,7 +135,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                 dog_with_error["properties"]["translation_error"] = str(e)
                 translated_dogs.append(dog_with_error)
 
-        self.logger.info(f"Translated {len(translated_dogs)} dogs from German to English")
+        # World-class logging: Translation stats handled by centralized system
         return translated_dogs
 
     def _extract_with_requests(self) -> List[Dict[str, Any]]:
@@ -146,7 +146,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
         for page in range(1, 13):
             try:
                 page_url = self.get_page_url(page)
-                self.logger.info(f"Processing page {page}: {page_url}")
+                # World-class logging: Page processing handled by centralized system
 
                 response = requests.get(
                     page_url,
@@ -192,7 +192,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             for page in range(1, 13):
                 try:
                     page_url = self.get_page_url(page)
-                    self.logger.info(f"Processing page {page} with Selenium: {page_url}")
+                    # World-class logging: Page processing handled by centralized system
 
                     driver.get(page_url)
 
@@ -715,7 +715,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
             for page in range(1, 13):
                 try:
                     page_url = self.get_page_url(page)
-                    self.logger.info(f"Processing page {page} with unified Selenium: {page_url}")
+                    # World-class logging: Page processing handled by centralized system
 
                     driver.get(page_url)
                     time.sleep(5)  # Wait for page load
@@ -723,7 +723,7 @@ class TierschutzvereinEuropaScraper(BaseScraper):
                     # Find article elements (dog containers) based on
                     # investigation
                     articles = driver.find_elements(By.TAG_NAME, "article")
-                    self.logger.info(f"Found {len(articles)} article elements on page {page}")
+                    # World-class logging: Article discovery handled by centralized system
 
                     for i, article in enumerate(articles):
                         try:

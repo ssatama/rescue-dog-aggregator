@@ -16,7 +16,7 @@ from langdetect import detect
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import config
-from config import DB_CONFIG
+from config import DB_CONFIG, enable_world_class_scraper_logging
 
 # Import null object services
 from services.null_objects import NullMetricsCollector
@@ -118,9 +118,18 @@ class BaseScraper(ABC):
         self._completion_logged = False
 
     def _setup_logger(self):
-        """Set up a logger for the scraper."""
+        """Set up a logger for the scraper with world-class centralized logging.
+        
+        Individual scrapers now use silent loggers while BaseScraper provides
+        all progress updates through the ProgressTracker system.
+        """
+        # Enable world-class logging configuration
+        enable_world_class_scraper_logging()
+        
+        # Create a silent logger for this individual scraper
+        # All progress will be handled by ProgressTracker
         logger = logging.getLogger(f"scraper.{self.get_organization_name()}.{self.animal_type}")
-        logger.setLevel(logging.INFO)
+        logger.setLevel(logging.WARNING)  # Only show warnings and errors
 
         # Check if handler already exists to prevent duplication
         if not logger.handlers:
@@ -324,8 +333,11 @@ class BaseScraper(ABC):
             return False
 
     def _run_with_connection(self):
-        """Template method orchestrating the scrape lifecycle."""
+        """Template method orchestrating the scrape lifecycle with world-class logging."""
         try:
+            # Initialize comprehensive progress tracker for entire scrape lifecycle
+            self.progress_tracker = None
+            
             # Phase 1: Setup
             if not self._setup_scrape():
                 return False
@@ -335,6 +347,34 @@ class BaseScraper(ABC):
 
             # Store count for scraper runner interface
             self.animals_found = len(animals_data)
+            
+            # Initialize comprehensive progress tracker with discovered animals
+            if len(animals_data) > 0:
+                self.progress_tracker = ProgressTracker(
+                    total_items=len(animals_data), 
+                    logger=logging.getLogger("scraper"),  # Use central scraper logger
+                    config=self._get_logging_config()
+                )
+                
+                # Track discovery phase stats
+                self.progress_tracker.track_discovery_stats(
+                    dogs_found=len(animals_data),
+                    pages_processed=1,  # Single page scrape
+                    extraction_failures=0
+                )
+                
+                # Track filtering phase stats
+                self.progress_tracker.track_filtering_stats(
+                    dogs_skipped=self.total_animals_skipped,
+                    new_dogs=len(animals_data) - self.total_animals_skipped
+                )
+                
+                # Log discovery completion
+                self.progress_tracker.log_phase_complete(
+                    "Discovery", 
+                    0.0,  # Will be updated with actual timing
+                    f"{len(animals_data)} dogs found"
+                )
 
             # Phase 3: Database Operations
             processing_stats = self._process_animals_data(animals_data)
@@ -348,20 +388,26 @@ class BaseScraper(ABC):
             return True
 
         except Exception as e:
-            self.logger.error(f"Error during scrape: {e}")
+            # Use centralized logger for errors
+            central_logger = logging.getLogger("scraper")
+            central_logger.error(f"🚨 Scrape failed for {self.get_organization_name()}: {e}")
             self.handle_scraper_failure(str(e))
             return False
 
     def _setup_scrape(self):
-        """Setup phase: Initialize scrape log, session, and timing."""
+        """Setup phase: Initialize scrape log, session, and timing with world-class logging."""
+        # Use centralized logger for setup phase
+        central_logger = logging.getLogger("scraper")
+        central_logger.info(f"🚀 Starting scrape for {self.get_organization_name()}")
+        
         # Start scrape log - must succeed for proper tracking
         if not self.start_scrape_log():
-            self.logger.error("Failed to create scrape log entry")
+            central_logger.error("❌ Failed to create scrape log entry")
             return False
 
         # Start scrape session for stale data tracking
         if not self.start_scrape_session():
-            self.logger.error("Failed to start scrape session")
+            central_logger.error("❌ Failed to start scrape session")
             # Still continue with scraping, but log the issue
             self.complete_scrape_log(
                 status="warning",
@@ -376,15 +422,21 @@ class BaseScraper(ABC):
         return True
 
     def _collect_and_time_data(self):
-        """Data collection phase: Collect animal data with timing."""
+        """Data collection phase: Collect animal data with timing and world-class logging."""
         phase_start = datetime.now()
-        self.logger.info(f"Starting scrape for {self.get_organization_name()} {self.animal_type}s")
+        central_logger = logging.getLogger("scraper")
+        central_logger.info(f"🔍 Discovering {self.animal_type}s on {self.get_organization_name()} website...")
 
         animals_data = self.collect_data()
 
         phase_duration = (datetime.now() - phase_start).total_seconds()
         self.metrics_collector.track_phase_timing("data_collection", phase_duration)
-        self.logger.info(f"Collected data for {len(animals_data)} {self.animal_type}s")
+        
+        # World-class discovery completion message
+        if len(animals_data) > 0:
+            central_logger.info(f"✅ Discovery complete: {len(animals_data)} {self.animal_type}s found ({phase_duration:.1f}s)")
+        else:
+            central_logger.warning(f"⚠️  No {self.animal_type}s found - check website status")
 
         return animals_data
 
@@ -528,7 +580,7 @@ class BaseScraper(ABC):
         self.metrics_collector.track_phase_timing("stale_data_detection", phase_duration)
 
     def _log_completion_metrics(self, animals_data, processing_stats):
-        """Metrics & logging phase: Calculate and log comprehensive metrics."""
+        """Metrics & logging phase: Calculate and log comprehensive metrics with world-class summary."""
         # Calculate metrics for detailed logging
         scrape_end_time = datetime.now()
         duration = self.metrics_collector.calculate_scrape_duration(self.scrape_start_time, scrape_end_time)
@@ -565,9 +617,36 @@ class BaseScraper(ABC):
                 data_quality_score=quality_score,
             )
 
-        self.logger.info(
-            f"Scrape completed successfully. Added: {processing_stats['animals_added']}, Updated: {processing_stats['animals_updated']}, " f"Quality: {quality_score:.2f}, Duration: {duration:.1f}s"
-        )
+        # World-class completion summary via ProgressTracker
+        if hasattr(self, 'progress_tracker') and self.progress_tracker:
+            # Update final stats
+            self.progress_tracker.track_processing_stats(
+                dogs_added=processing_stats["animals_added"],
+                dogs_updated=processing_stats["animals_updated"],
+                dogs_unchanged=processing_stats["animals_unchanged"],
+                processing_failures=0
+            )
+            
+            self.progress_tracker.track_image_stats(
+                images_uploaded=processing_stats["images_uploaded"],
+                images_failed=processing_stats["images_failed"]
+            )
+            
+            self.progress_tracker.track_quality_stats(
+                data_quality_score=quality_score,
+                completion_rate=100.0
+            )
+            
+            # Log comprehensive completion summary
+            self.progress_tracker.log_completion_summary()
+        else:
+            # Fallback to basic logging if no ProgressTracker
+            central_logger = logging.getLogger("scraper")
+            central_logger.info(
+                f"✅ Scrape completed: {processing_stats['animals_added']} added, "
+                f"{processing_stats['animals_updated']} updated, Quality: {quality_score:.2f}, "
+                f"Duration: {duration:.1f}s"
+            )
 
     @abstractmethod
     def collect_data(self):

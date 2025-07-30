@@ -44,11 +44,11 @@ class WoofProjectScraper(BaseScraper):
         Returns:
             List of dog data dictionaries
         """
-        self.logger.info("Starting Woof Project data collection")
+        # World-class logging: Data collection initiation handled by centralized system
 
         # Get all available dogs from all pages
         available_dogs = self.get_animal_list()
-        self.logger.info(f"Found {len(available_dogs)} available dogs")
+        # World-class logging: Available dogs count handled by centralized system
 
         # Apply skip_existing_animals filtering
         dogs_to_process = available_dogs
@@ -64,7 +64,7 @@ class WoofProjectScraper(BaseScraper):
             # Track filtering stats for failure detection
             self.set_filtering_stats(original_count, skipped_count)
 
-            self.logger.info(f"After filtering existing animals: processing {len(dogs_to_process)}/{len(available_dogs)} dogs")
+            # World-class logging: Filtering results handled by centralized system
         else:
             # No filtering applied
             self.set_filtering_stats(len(available_dogs), 0)
@@ -88,7 +88,7 @@ class WoofProjectScraper(BaseScraper):
                 self.logger.error(f"Error collecting data for {dog_info.get('url', 'unknown')}: {e}")
                 continue
 
-        self.logger.info(f"Successfully collected detailed data for {len(all_dogs_data)} dogs")
+        # World-class logging: Collection results handled by centralized system
         return all_dogs_data
 
     def _is_available_dog(self, element: Tag) -> bool:
@@ -265,13 +265,13 @@ class WoofProjectScraper(BaseScraper):
                 page_dogs = self._extract_dogs_from_page(soup)
                 all_dogs.extend(page_dogs)
 
-                self.logger.info(f"Found {len(page_dogs)} dogs on page: {page_url}")
+                # World-class logging: Page results handled by centralized system
 
             except Exception as e:
                 self.logger.error(f"Error processing page {page_url}: {e}")
                 continue
 
-        self.logger.info(f"Found {len(all_dogs)} total available dogs across all pages")
+        # World-class logging: Total dogs count handled by centralized system
         return all_dogs
 
     def _get_pagination_urls(self) -> List[str]:
@@ -315,7 +315,7 @@ class WoofProjectScraper(BaseScraper):
                     if page_num > 1:  # Page 1 already added
                         urls.append(f"{self.listing_url}page/{page_num}/")
 
-                self.logger.info(f"Discovered {len(urls)} pages through pagination")
+                # World-class logging: Pagination discovery handled by centralized system
 
         except Exception as e:
             self.logger.warning(f"Could not auto-discover pagination, using fallback: {e}")
@@ -542,7 +542,7 @@ class WoofProjectScraper(BaseScraper):
             # Fallback to section-based extraction
             dogs.extend(self._extract_dogs_by_content_sections(soup))
 
-        self.logger.info(f"Extracted {len(dogs)} dogs using robust method")
+        # World-class logging: Extraction results handled by centralized system
         return dogs
 
     def _extract_dogs_by_widget_containers(self, soup: BeautifulSoup) -> List[Dict[str, str]]:

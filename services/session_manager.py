@@ -616,7 +616,24 @@ class SessionManager:
                 scrape_count = result[1] if (result and len(result) > 1) else 0
                 self.logger.info(f"Insufficient historical data for organization_id {self.organization_id} " f"({scrape_count} scrapes). Using absolute minimum threshold.")
 
+                # Check if low count is due to skip_existing_animals filtering (for new organizations)
+                if self.skip_existing_animals and animals_found == 0 and total_animals_before_filter > 0:
+                    self.logger.info(
+                        f"Zero animals after skip_existing_animals filtering is normal behavior for new organization "
+                        f"({total_animals_before_filter} found before filtering, {total_animals_skipped} skipped). "
+                        f"Not considering this a partial failure."
+                    )
+                    return False
+
                 if animals_found < absolute_minimum:
+                    # Also check skip_existing_animals for counts below absolute minimum
+                    if self.skip_existing_animals and total_animals_before_filter >= absolute_minimum:
+                        self.logger.info(
+                            f"Only {animals_found} animals to process after skip_existing_animals filtering for new organization, "
+                            f"but {total_animals_before_filter} were found before filtering. This is normal behavior."
+                        )
+                        return False
+                    
                     self.logger.warning(f"Potential failure detected: {animals_found} animals found " f"(below absolute minimum of {absolute_minimum}) for new organization")
                     return True
                 return False

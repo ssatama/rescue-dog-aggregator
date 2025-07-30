@@ -91,7 +91,8 @@ class MetricsCollector:
             return 0.0
 
         total_score = 0.0
-        required_fields = ["name", "breed", "age_text", "external_id"]
+        # Fixed: Check for normalized fields instead of raw scraped fields
+        required_fields = ["name", "breed", "age_years", "external_id"]  # was "age_text"
         optional_fields = ["sex", "size", "primary_image_url", "adoption_url"]
 
         for animal in animals_data:
@@ -100,7 +101,11 @@ class MetricsCollector:
             # Check required fields (70% of score)
             required_present = 0
             for field in required_fields:
-                if animal.get(field) and str(animal[field]).strip():
+                if field == "age_years":
+                    # Check for either age_years (normalized) or age_text (raw) for age data
+                    if (animal.get("age_years") is not None) or (animal.get("age_text") and str(animal["age_text"]).strip()):
+                        required_present += 1
+                elif animal.get(field) and str(animal[field]).strip():
                     required_present += 1
             animal_score += (required_present / len(required_fields)) * 0.7
 

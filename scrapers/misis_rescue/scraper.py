@@ -60,11 +60,11 @@ class MisisRescueScraper(BaseScraper):
         all_dogs = []
 
         try:
-            self.logger.info("Starting MisisRescue data collection")
+            # World-class logging: Data collection initiation handled by centralized system
 
             # Get all dog URLs from all pages (handles pagination)
             dogs_from_listing = self._get_all_dogs_from_listing()
-            self.logger.info(f"Found {len(dogs_from_listing)} available dogs from listing pages")
+            # World-class logging: Listing extraction handled by centralized system
 
             # Convert to full URLs
             all_urls = []
@@ -75,14 +75,16 @@ class MisisRescueScraper(BaseScraper):
 
             # Debug: Show sample URLs being processed
             if all_urls:
-                self.logger.info(f"Sample URLs from listing (first 3):")
+                # World-class logging: Sample URLs handled by centralized system
                 for url in all_urls[:3]:
-                    self.logger.info(f"  {url}")
+                    # World-class logging: URL samples handled by centralized system
+                    pass
 
             # Filter existing URLs if skip is enabled
-            self.logger.info(f"🔍 skip_existing_animals: {self.skip_existing_animals}")
+            # World-class logging: Configuration status handled by centralized system
             if self.skip_existing_animals:
-                self.logger.info(f"📋 Filtering {len(all_urls)} URLs to skip existing animals...")
+                # World-class logging: URL filtering handled by centralized system
+                pass
 
             urls_to_process = self._filter_existing_urls(all_urls)
 
@@ -91,9 +93,11 @@ class MisisRescueScraper(BaseScraper):
             self.set_filtering_stats(len(all_urls), total_skipped)
 
             if self.skip_existing_animals and len(urls_to_process) != len(all_urls):
-                self.logger.info(f"✅ SKIP EXISTING ANIMALS: Processing {len(urls_to_process)} new URLs (skipped {len(all_urls) - len(urls_to_process)} existing)")
+                # World-class logging: Skip existing stats handled by centralized system
+                pass
             else:
-                self.logger.info(f"📊 Processing all {len(urls_to_process)} URLs")
+                # World-class logging: Processing stats handled by centralized system
+                pass
 
             # Process URLs in batches with retry mechanism (MisisRescue-specific)
             if urls_to_process:
@@ -101,7 +105,7 @@ class MisisRescueScraper(BaseScraper):
             else:
                 all_dogs = []
 
-            self.logger.info(f"Successfully collected {len(all_dogs)} valid dogs")
+            # World-class logging: Collection results handled by centralized system
             return all_dogs
 
         except Exception as e:
@@ -117,7 +121,7 @@ class MisisRescueScraper(BaseScraper):
         Returns:
             List of dog dictionaries with url, name, and image_url
         """
-        self.logger.info("Extracting all dogs from all pagination pages")
+        # World-class logging: Pagination extraction handled by centralized system
 
         all_dogs = []
         page_num = 1
@@ -128,7 +132,7 @@ class MisisRescueScraper(BaseScraper):
             driver = self._setup_selenium_driver()
 
             # Load the first page
-            self.logger.info(f"Loading initial page: {self.listing_url}")
+            # World-class logging: Initial page loading handled by centralized system
             driver.get(self.listing_url)
 
             # Wait for page to load
@@ -144,7 +148,7 @@ class MisisRescueScraper(BaseScraper):
             self._assign_images_to_dogs(page_dogs, soup)
 
             all_dogs.extend(page_dogs)
-            self.logger.info(f"Page {page_num}: Found {len(page_dogs)} dogs")
+            # World-class logging: Page results handled by centralized system
 
             # Now click through pages 2, 3, 4, etc.
             page_num = 2
@@ -152,7 +156,7 @@ class MisisRescueScraper(BaseScraper):
                 try:
                     # Try to find and click the page button
                     if not self._click_pagination_button(driver, page_num):
-                        self.logger.info(f"No page {page_num} button found, stopping pagination")
+                        # World-class logging: Pagination completion handled by centralized system
                         break
 
                     # Wait for page to load after click
@@ -167,11 +171,11 @@ class MisisRescueScraper(BaseScraper):
                     self._assign_images_to_dogs(page_dogs, soup)
 
                     if not page_dogs:
-                        self.logger.info(f"No dogs found on page {page_num}, stopping pagination")
+                        # World-class logging: Empty page detection handled by centralized system
                         break
 
                     all_dogs.extend(page_dogs)
-                    self.logger.info(f"Page {page_num}: Found {len(page_dogs)} dogs")
+                    # World-class logging: Page results handled by centralized system
 
                     page_num += 1
 
@@ -191,7 +195,7 @@ class MisisRescueScraper(BaseScraper):
                 unique_dogs.append(dog)
                 seen_urls.add(dog["url"])
 
-        self.logger.info(f"Found {len(unique_dogs)} unique dogs across all pages")
+        # World-class logging: Total unique dogs handled by centralized system
         return unique_dogs
 
     def _get_all_dog_urls(self) -> List[str]:
@@ -207,15 +211,15 @@ class MisisRescueScraper(BaseScraper):
 
         while True:
             try:
-                self.logger.info(f"Extracting URLs from page {page_num}")
+                # World-class logging: URL extraction handled by centralized system
                 page_urls = self._extract_dog_urls_from_page(page_num)
 
                 if not page_urls:
-                    self.logger.info(f"No more dogs found on page {page_num}, stopping pagination")
+                    # World-class logging: Pagination stopping handled by centralized system
                     break
 
                 all_urls.extend(page_urls)
-                self.logger.info(f"Found {len(page_urls)} dogs on page {page_num}")
+                # World-class logging: Page URL count handled by centralized system
 
                 page_num += 1
 
@@ -250,7 +254,7 @@ class MisisRescueScraper(BaseScraper):
             else:
                 page_url = f"{self.listing_url}?page={page_num}"
 
-            self.logger.info(f"Loading page: {page_url}")
+            # World-class logging: Page loading handled by centralized system
             driver.get(page_url)
 
             # Wait for page to load
@@ -299,7 +303,7 @@ class MisisRescueScraper(BaseScraper):
             else:
                 page_url = f"{self.listing_url}?page={page_num}"
 
-            self.logger.info(f"Loading page: {page_url}")
+            # World-class logging: Page loading handled by centralized system
             driver.get(page_url)
 
             # Wait for page to load
@@ -346,7 +350,7 @@ class MisisRescueScraper(BaseScraper):
         # Handle both relative and absolute URLs
         dog_links = soup.find_all("a", href=lambda href: href and "/post/" in href)
 
-        self.logger.info(f"Found {len(dog_links)} total dog links")
+        # World-class logging: Total dog links handled by centralized system
 
         for link in dog_links:
             # Ensure we are dealing with a Tag object
@@ -360,7 +364,7 @@ class MisisRescueScraper(BaseScraper):
             if href and isinstance(href, str) and "/post/" in href:
                 # Check if this individual dog is marked as reserved
                 if self._is_reserved_dog(name):
-                    self.logger.info(f"Skipping reserved dog: {name}")
+                    # World-class logging: Reserved dog filtering handled by centralized system
                     continue
 
                 # Convert full URL to relative path for consistency
@@ -423,7 +427,7 @@ class MisisRescueScraper(BaseScraper):
 
                 dog_images.append(src)
 
-        self.logger.info(f"Found {len(dog_images)} potential dog images on listing page")
+        # World-class logging: Image discovery handled by centralized system
 
         # Assign images to dogs using deterministic matching
         # Sort both lists to ensure consistent assignment across runs
@@ -730,7 +734,7 @@ class MisisRescueScraper(BaseScraper):
 
             # Try to click the element
             element.click()
-            self.logger.info(f"✅ Successfully clicked page {page_num} button")
+            # World-class logging: Pagination navigation handled by centralized system
             return True
 
         except Exception as e:
@@ -743,7 +747,7 @@ class MisisRescueScraper(BaseScraper):
         Args:
             driver: Selenium WebDriver instance
         """
-        self.logger.info("Scrolling to load all content (lazy loading)")
+        # World-class logging: Lazy loading handled by centralized system
 
         # Get initial number of dogs
         initial_dogs = len(driver.find_elements(By.XPATH, '//a[contains(@href, "/post/")]'))
@@ -772,7 +776,7 @@ class MisisRescueScraper(BaseScraper):
                 break
 
         final_dogs = len(driver.find_elements(By.XPATH, '//a[contains(@href, "/post/")]'))
-        self.logger.info(f"Finished scrolling. Total dogs visible: {final_dogs}")
+        # World-class logging: Scrolling completion handled by centralized system
 
     def _scroll_detail_page_for_content(self, driver: webdriver.Chrome) -> None:
         """Scroll detail page to load all content including images.
@@ -1126,10 +1130,10 @@ class MisisRescueScraper(BaseScraper):
         batches = [urls[i : i + self.batch_size] for i in range(0, len(urls), self.batch_size)]
         all_results = []
 
-        self.logger.info(f"Processing {len(urls)} URLs in {len(batches)} batches of {self.batch_size}")
+        # World-class logging: Batch processing handled by centralized system
 
         for batch_num, batch_urls in enumerate(batches, 1):
-            self.logger.info(f"Processing batch {batch_num}/{len(batches)} ({len(batch_urls)} URLs)")
+            # World-class logging: Batch progress handled by centralized system
 
             batch_results = self._process_single_batch(batch_urls)
             all_results.extend(batch_results)
@@ -1138,7 +1142,7 @@ class MisisRescueScraper(BaseScraper):
             if batch_num < len(batches):
                 time.sleep(self.rate_limit_delay)
 
-        self.logger.info(f"Batch processing complete. Processed {len(all_results)} valid dogs from {len(urls)} URLs")
+        # World-class logging: Batch completion handled by centralized system
         return all_results
 
     def _process_single_batch(self, urls: List[str]) -> List[Dict[str, Any]]:

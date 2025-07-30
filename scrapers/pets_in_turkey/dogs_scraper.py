@@ -73,9 +73,11 @@ class PetsInTurkeyScraper(BaseScraper):
             driver.set_page_load_timeout(60)  # Increased timeout
             driver.implicitly_wait(10)  # Add implicit wait
 
-            self.logger.info("Selenium WebDriver set up successfully")
+            # World-class logging: Use centralized logging only
+            # self.logger.info("Selenium WebDriver set up successfully")
             return driver
         except Exception as e:
+            # Keep error logging for debugging
             self.logger.error(f"Error setting up Selenium: {e}")
             return None
 
@@ -84,6 +86,7 @@ class PetsInTurkeyScraper(BaseScraper):
         try:
             return operation(*args, **kwargs)
         except Exception as e:
+            # Keep error logging for debugging
             self.logger.error(f"Driver operation failed: {e}")
             return None
 
@@ -95,22 +98,20 @@ class PetsInTurkeyScraper(BaseScraper):
             # Set up Selenium
             self.driver = self._setup_selenium()
             if not self.driver:
+                # Keep critical error logging
                 self.logger.error("Failed to set up Selenium WebDriver")
                 return dogs_data
 
-            # Navigate to the dogs page
-            self.logger.info(f"Navigating to: {self.base_url}")
+            # Navigate to the dogs page (world-class logging handles progress)
             self.driver.get(self.base_url)
 
             # Wait for the page to load
-            self.logger.info("Waiting for page to load...")
             WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
 
             # Wait longer for dynamic content to load
             time.sleep(10)
 
             # Scroll through the page to ensure all content is loaded
-            self.logger.info("Scrolling to load all content...")
             for i in range(5):
                 self.driver.execute_script(f"window.scrollTo(0, {i * 1000});")
                 time.sleep(2)
@@ -121,7 +122,7 @@ class PetsInTurkeyScraper(BaseScraper):
 
             # Find all "Breed" elements as entry points
             breed_elements = self.driver.find_elements(By.XPATH, "//span[text()='Breed' or text()='BREED']")
-            self.logger.info(f"Found {len(breed_elements)} 'Breed' elements")
+            # World-class logging handles progress reporting
 
             # Process each breed element to find dog containers
             for idx, breed_elem in enumerate(breed_elements):
@@ -178,17 +179,19 @@ class PetsInTurkeyScraper(BaseScraper):
 
                             # Add to our collection
                             dogs_data.append(dog_data)
-                            self.logger.info(f"Extracted data for dog: {dog_data['name']}")
+                            # World-class logging: Individual extractions handled by centralized progress tracking
 
                 except Exception as e:
+                    # Keep error logging for debugging
                     self.logger.error(f"Error processing breed element {idx}: {e}")
 
-            self.logger.info(f"Collected data for {len(dogs_data)} dogs")
+            # World-class logging: Collection stats handled by centralized system
 
             # Track filtering stats (no filtering for this scraper)
             self.set_filtering_stats(len(dogs_data), 0)
 
         except Exception as e:
+            # Keep error logging for debugging
             self.logger.error(f"Error collecting dog data: {e}")
             import traceback
 
@@ -199,8 +202,10 @@ class PetsInTurkeyScraper(BaseScraper):
             if self.driver:
                 try:
                     self.driver.quit()
-                    self.logger.info("Selenium WebDriver closed successfully")
+                    # World-class logging handles cleanup reporting
+                    pass
                 except Exception as cleanup_error:
+                    # Keep cleanup warnings for debugging
                     self.logger.warning(f"Error during WebDriver cleanup: {cleanup_error}")
                 finally:
                     self.driver = None  # Ensure driver reference is cleared
