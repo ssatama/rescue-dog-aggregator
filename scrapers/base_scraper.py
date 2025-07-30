@@ -346,7 +346,8 @@ class BaseScraper(ABC):
             animals_data = self._collect_and_time_data()
 
             # Store count for scraper runner interface
-            self.animals_found = len(animals_data)
+            # Use the same logic as database logging to ensure consistency
+            self.animals_found = self._get_correct_animals_found_count(animals_data)
             
             # Initialize comprehensive progress tracker with discovered animals
             if len(animals_data) > 0:
@@ -433,8 +434,11 @@ class BaseScraper(ABC):
         self.metrics_collector.track_phase_timing("data_collection", phase_duration)
         
         # World-class discovery completion message
-        if len(animals_data) > 0:
-            central_logger.info(f"✅ Discovery complete: {len(animals_data)} {self.animal_type}s found ({phase_duration:.1f}s)")
+        # Use the same logic as _get_correct_animals_found_count to avoid misleading warnings
+        # when skip_existing_animals causes filtering
+        actual_animals_found = self._get_correct_animals_found_count(animals_data)
+        if actual_animals_found > 0:
+            central_logger.info(f"✅ Discovery complete: {actual_animals_found} {self.animal_type}s found ({phase_duration:.1f}s)")
         else:
             central_logger.warning(f"⚠️  No {self.animal_type}s found - check website status")
 

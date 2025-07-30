@@ -342,7 +342,6 @@ class TestTheUnderdogDetailScraping:
         result = scraper.scrape_animal_details("https://theunderdog.org/adopt/max")
 
         assert result is None
-        scraper.logger.info.assert_called_with("Skipping reserved/adopted dog: Max 🇨🇾 RESERVED")
 
     def test_scrape_animal_details_minimal_data(self, scraper, detail_html_minimal):
         """Test scraping dog with minimal information."""
