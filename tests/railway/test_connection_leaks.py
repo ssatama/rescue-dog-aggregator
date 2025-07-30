@@ -14,8 +14,7 @@ import pytest
 from services.railway.connection import get_railway_engine, get_railway_session
 
 
-@pytest.mark.complex_setup
-@pytest.mark.requires_migrations
+@pytest.mark.unit
 class TestRailwayConnectionLeaks:
     """Resource leak tests for Railway connection management."""
 

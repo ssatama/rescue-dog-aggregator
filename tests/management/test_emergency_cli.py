@@ -13,6 +13,10 @@ from unittest.mock import Mock, patch
 import pytest
 
 
+@pytest.mark.integration
+@pytest.mark.emergency
+@pytest.mark.management
+@pytest.mark.slow
 class TestEmergencyCLIInterface:
     """Test EmergencyCLI interface contract."""
 

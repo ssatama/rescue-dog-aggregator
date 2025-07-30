@@ -74,7 +74,9 @@ class TestDatabaseServiceWithConnectionPool:
         mock_context.__exit__ = Mock(return_value=None)
         mock_pool_service.get_connection_context.return_value = mock_context
         mock_connection.cursor.return_value = mock_cursor
-        mock_cursor.fetchone.return_value = (456,)  # New animal ID
+
+        # Mock responses for slug uniqueness check and animal creation
+        mock_cursor.fetchone.side_effect = [(0,), (456,)]  # First call: slug uniqueness check (0 = unique)  # Second call: INSERT RETURNING id
 
         # Create DatabaseService with pool
         db_service = DatabaseService(db_config={"host": "localhost", "user": "test", "database": "test_db"}, connection_pool=mock_pool_service)
@@ -99,8 +101,9 @@ class TestDatabaseServiceWithConnectionPool:
         # Verify pool context manager was used
         mock_pool_service.get_connection_context.assert_called_once()
 
-        # Verify database operations
-        mock_cursor.execute.assert_called_once()
+        # Verify database operations - now expects multiple calls due to slug generation
+        # (1 call for slug uniqueness check + 1 call for INSERT)
+        assert mock_cursor.execute.call_count >= 2
         mock_connection.commit.assert_called_once()
 
         # Verify result

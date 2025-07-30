@@ -5,6 +5,9 @@ import pytest
 from scrapers.theunderdog.normalizer import extract_age_text, extract_breed_from_description, extract_gender, extract_size_and_weight, normalize_animal_data
 
 
+@pytest.mark.computation
+@pytest.mark.integration
+@pytest.mark.slow
 class TestTheUnderdogNormalizer:
     """Test suite for The Underdog normalizer functions."""
 

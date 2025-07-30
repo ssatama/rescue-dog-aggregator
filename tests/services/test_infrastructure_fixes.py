@@ -24,6 +24,9 @@ import pytest
 pytestmark = pytest.mark.skip(reason="Infrastructure tests need complex test setup - skipping for CI/CD")
 
 
+@pytest.mark.database
+@pytest.mark.integration
+@pytest.mark.slow
 class TestServiceInjectionErrorHandling:
     """Test fail-fast behavior for service injection failures."""
 

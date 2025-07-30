@@ -52,7 +52,8 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 ```bash
 # Backend (ALWAYS activate venv first)
 source venv/bin/activate
-pytest tests/ -m "not slow" -v          # Fast tests
+pytest tests/ -m "unit or fast" -v      # Fast development feedback (RECOMMENDED)
+pytest tests/ -m "not browser and not requires_migrations" -v  # CI pipeline
 pytest tests/ -v                        # All tests
 
 # Frontend

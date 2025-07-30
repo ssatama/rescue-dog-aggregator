@@ -7,6 +7,8 @@ This test file specifically addresses the PostgreSQL GROUP BY error:
 
 from unittest.mock import Mock
 
+import pytest
+
 # Import at module level
 from scrapers.base_scraper import BaseScraper
 
@@ -19,6 +21,8 @@ except ImportError:
     PSYCOPG2_AVAILABLE = False
 
 
+@pytest.mark.integration
+@pytest.mark.slow
 class TestDetectPartialFailure:
     """Test suite for detect_partial_failure method."""
 

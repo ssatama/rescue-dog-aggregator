@@ -14,6 +14,11 @@ from unittest.mock import Mock, patch
 import pytest
 
 
+@pytest.mark.computation
+@pytest.mark.database
+@pytest.mark.integration
+@pytest.mark.network
+@pytest.mark.slow
 class TestImageProcessingServiceInterface:
     """Test ImageProcessingService interface contract."""
 

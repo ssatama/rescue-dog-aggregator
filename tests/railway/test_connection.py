@@ -8,8 +8,7 @@ from sqlalchemy.exc import OperationalError
 from services.railway.connection import RailwayConnectionManager, check_railway_connection, get_railway_engine, get_railway_session
 
 
-@pytest.mark.complex_setup
-@pytest.mark.requires_migrations
+@pytest.mark.unit
 class TestRailwayConnection:
 
     def test_get_railway_engine_with_valid_url(self):

@@ -3,10 +3,15 @@
 import unittest
 from unittest.mock import patch
 
+import pytest
+
 from scrapers.daisy_family_rescue.dog_detail_scraper import DaisyFamilyRescueDogDetailScraper
 from utils.standardization import apply_standardization, standardize_size_value
 
 
+@pytest.mark.api
+@pytest.mark.integration
+@pytest.mark.slow
 class TestSizeStandardizationFixes(unittest.TestCase):
     """Test all size standardization fixes."""
 

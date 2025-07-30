@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import psycopg2
 
 from utils.optimized_standardization import parse_age_text, standardize_breed, standardize_size_value
+from utils.slug_generator import generate_unique_animal_slug
 
 
 class DatabaseService:
@@ -179,6 +180,21 @@ class DatabaseService:
         final_size = animal_data.get("size") or animal_data.get("standardized_size")
         final_standardized_size = animal_data.get("standardized_size") or breed_info.size_estimate or standardize_size_value(animal_data.get("size"))
 
+        # Generate temporary unique slug for animal (Phase 1: before ID is available)
+        try:
+            temp_slug = generate_unique_animal_slug(
+                name=animal_data.get("name"), breed=animal_data.get("breed"), standardized_breed=breed_info.standardized_name, animal_id=None, connection=conn  # ID not available during creation
+            )
+            # Add temp suffix to distinguish from final slug
+            animal_slug = f"{temp_slug}-temp"
+        except Exception as e:
+            self.logger.error(f"Failed to generate temp slug for animal: {e}")
+            # Use a fallback slug based on external_id or timestamp
+            import time
+
+            fallback_slug = f"animal-{animal_data.get('external_id', str(int(time.time())))}-temp"
+            animal_slug = fallback_slug[:250]  # Ensure it fits in database
+
         # Prepare values for insertion
         current_time = datetime.now()
 
@@ -188,11 +204,11 @@ class DatabaseService:
                 name, organization_id, animal_type, external_id,
                 primary_image_url, original_image_url, adoption_url, status,
                 breed, standardized_breed, breed_group, age_text, age_min_months, age_max_months,
-                sex, size, standardized_size, language, properties,
+                sex, size, standardized_size, language, properties, slug,
                 created_at, updated_at, last_scraped_at, last_seen_at,
                 consecutive_scrapes_missing, availability_confidence
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                 %s, %s, %s, %s, %s, %s
             )
             RETURNING id
@@ -217,6 +233,7 @@ class DatabaseService:
                 final_standardized_size,
                 language,
                 (json.dumps(animal_data.get("properties")) if animal_data.get("properties") else None),
+                animal_slug,  # slug
                 current_time,  # created_at
                 current_time,  # updated_at
                 current_time,  # last_scraped_at
@@ -227,6 +244,22 @@ class DatabaseService:
         )
 
         animal_id = cursor.fetchone()[0]
+
+        # Phase 2: Generate final slug with animal ID and update
+        try:
+            final_slug = generate_unique_animal_slug(
+                name=animal_data.get("name"), breed=animal_data.get("breed"), standardized_breed=breed_info.standardized_name, animal_id=animal_id, connection=conn  # ID now available
+            )
+
+            # Update the animal with the final slug containing ID
+            cursor.execute("UPDATE animals SET slug = %s WHERE id = %s", (final_slug, animal_id))
+
+            self.logger.debug(f"Updated animal {animal_id} slug from temp to final: {final_slug}")
+
+        except Exception as e:
+            self.logger.warning(f"Failed to update final slug for animal {animal_id}: {e}")
+            # Continue with temp slug rather than failing the entire operation
+
         conn.commit()
         cursor.close()
 
@@ -415,6 +448,9 @@ class DatabaseService:
         animals_added: int = 0,
         animals_updated: int = 0,
         error_message: Optional[str] = None,
+        detailed_metrics: Optional[Dict[str, Any]] = None,
+        duration_seconds: Optional[float] = None,
+        data_quality_score: Optional[float] = None,
     ) -> bool:
         """Update the scrape log with completion information.
 
@@ -425,6 +461,9 @@ class DatabaseService:
             animals_added: Number of animals added
             animals_updated: Number of animals updated
             error_message: Optional error message
+            detailed_metrics: Optional detailed metrics as JSONB
+            duration_seconds: Optional scrape duration in seconds
+            data_quality_score: Optional data quality score (0.0-1.0)
 
         Returns:
             True if successful, False otherwise
@@ -442,7 +481,8 @@ class DatabaseService:
                 UPDATE scrape_logs
                 SET completed_at = %s, status = %s,
                     dogs_found = %s, dogs_added = %s, dogs_updated = %s,
-                    error_message = %s
+                    error_message = %s, detailed_metrics = %s,
+                    duration_seconds = %s, data_quality_score = %s
                 WHERE id = %s
                 """,
                 (
@@ -452,6 +492,9 @@ class DatabaseService:
                     animals_added,
                     animals_updated,
                     error_message,
+                    json.dumps(detailed_metrics) if detailed_metrics else None,
+                    duration_seconds,
+                    data_quality_score,
                     scrape_log_id,
                 ),
             )

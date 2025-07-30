@@ -65,5 +65,6 @@ class NullMetricsCollector:
         pass
 
     def generate_comprehensive_metrics(self, **kwargs) -> Dict[str, Any]:
-        """Generate comprehensive metrics - returns empty dict."""
-        return {}
+        """Generate comprehensive metrics - returns the provided metrics."""
+        # Return the metrics as provided - this ensures duration_seconds is preserved
+        return kwargs

@@ -21,6 +21,9 @@ from tests.fixtures.database_fixtures import animal_quality_test_data, failure_s
 # from services.metrics_collector import MetricsCollector
 
 
+@pytest.mark.database
+@pytest.mark.integration
+@pytest.mark.slow
 class TestMetricsCollectorInterface:
     """Test MetricsCollector interface contract."""
 

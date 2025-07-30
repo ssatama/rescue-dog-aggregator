@@ -19,6 +19,12 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 FRONTEND_ROOT = PROJECT_ROOT / "frontend"
 
 
+@pytest.mark.api
+@pytest.mark.database
+@pytest.mark.filesystem
+@pytest.mark.integration
+@pytest.mark.security
+@pytest.mark.slow
 class TestProjectStructureIntegrity:
     """Test overall project structure and organization"""
 

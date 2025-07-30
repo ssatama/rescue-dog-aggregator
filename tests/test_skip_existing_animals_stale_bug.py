@@ -15,6 +15,8 @@ import unittest
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
+import pytest
+
 from scrapers.base_scraper import BaseScraper
 from tests.fixtures.service_mocks import create_mock_database_service, create_mock_session_manager
 
@@ -66,6 +68,9 @@ class MockScraper(BaseScraper):
         return animals
 
 
+@pytest.mark.integration
+@pytest.mark.slow
+@pytest.mark.database
 class TestSkipExistingAnimalsStaleDataBug(unittest.TestCase):
     """Test cases for the skip_existing_animals stale data detection bug."""
 

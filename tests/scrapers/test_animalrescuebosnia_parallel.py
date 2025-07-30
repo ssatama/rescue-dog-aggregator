@@ -4,9 +4,13 @@ import unittest
 from concurrent.futures import Future
 from unittest.mock import Mock, call, patch
 
+import pytest
+
 from scrapers.animalrescuebosnia.animalrescuebosnia_scraper import AnimalRescueBosniaScraper
 
 
+@pytest.mark.integration
+@pytest.mark.slow
 class TestAnimalRescueBosniaParallel(unittest.TestCase):
     """Test cases for parallel processing and skip existing animals."""
 

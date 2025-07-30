@@ -3,6 +3,8 @@ import pytest
 from api.services.slug_service import generate_animal_slug, generate_organization_slug, sanitize_for_url
 
 
+@pytest.mark.integration
+@pytest.mark.slow
 class TestSanitizeForUrl:
     """Test URL sanitization function."""
 

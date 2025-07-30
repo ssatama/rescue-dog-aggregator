@@ -3,9 +3,15 @@
 import unittest
 from unittest.mock import Mock, patch
 
+import pytest
+
 from scrapers.animalrescuebosnia.animalrescuebosnia_scraper import AnimalRescueBosniaScraper
 
 
+@pytest.mark.computation
+@pytest.mark.database
+@pytest.mark.integration
+@pytest.mark.slow
 class TestAnimalRescueBosniaFixes(unittest.TestCase):
     """Test cases for bug fixes."""
 

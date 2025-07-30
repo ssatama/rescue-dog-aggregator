@@ -9,6 +9,7 @@ from utils.config_loader import ConfigLoader, ConfigLoadError
 
 
 @pytest.mark.file_io
+@pytest.mark.unit
 class TestConfigErrorHandling:
     """Test error handling in config system."""
 

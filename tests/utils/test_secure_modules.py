@@ -17,6 +17,9 @@ from utils.secure_file_handler import FileValidationConfig, SecureFileHandler
 from utils.secure_scraper_loader import ScraperModuleInfo, SecureScraperLoader, SecurityError
 
 
+@pytest.mark.security
+@pytest.mark.integration
+@pytest.mark.slow
 class TestDatabaseConfig:
     """Test database configuration validation."""
 

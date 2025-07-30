@@ -13,8 +13,7 @@ import pytest
 from services.railway.sync import get_railway_data_count
 
 
-@pytest.mark.complex_setup
-@pytest.mark.requires_migrations
+@pytest.mark.unit
 class TestRailwaySyncSecurity:
     """Security tests for Railway sync operations."""
 

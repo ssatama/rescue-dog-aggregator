@@ -16,6 +16,9 @@ import pytest
 from management.services.database_service import DatabaseService
 
 
+@pytest.mark.integration
+@pytest.mark.management
+@pytest.mark.slow
 class TestDataRecoveryServiceInterface:
     """Test DataRecoveryService interface contract."""
 
@@ -33,6 +36,9 @@ class TestDataRecoveryServiceInterface:
             pytest.fail("DataRecoveryService not yet implemented - expected for TDD")
 
 
+@pytest.mark.integration
+@pytest.mark.management
+@pytest.mark.slow
 class TestDataRecoveryServiceImplementation:
     """Test DataRecoveryService implementation with mocked dependencies."""
 

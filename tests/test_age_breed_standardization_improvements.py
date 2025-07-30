@@ -3,9 +3,14 @@
 import unittest
 from datetime import date
 
+import pytest
+
 from utils.standardization import clean_breed_text, normalize_breed_case, parse_age_text, standardize_age, standardize_breed
 
 
+@pytest.mark.api
+@pytest.mark.database
+@pytest.mark.slow
 class TestAgeStandardizationImprovements(unittest.TestCase):
     """Test age standardization improvements and bug fixes."""
 

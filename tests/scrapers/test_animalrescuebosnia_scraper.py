@@ -3,9 +3,16 @@
 import unittest
 from unittest.mock import Mock, patch
 
+import pytest
+
 from scrapers.animalrescuebosnia.animalrescuebosnia_scraper import AnimalRescueBosniaScraper
 
 
+@pytest.mark.api
+@pytest.mark.computation
+@pytest.mark.integration
+@pytest.mark.network
+@pytest.mark.slow
 class TestAnimalRescueBosniaScraper(unittest.TestCase):
     """Test cases for Animal Rescue Bosnia scraper."""
 

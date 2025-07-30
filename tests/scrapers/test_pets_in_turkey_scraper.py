@@ -11,6 +11,12 @@ from scrapers.pets_in_turkey.dogs_scraper import PetsInTurkeyScraper
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
+@pytest.mark.api
+@pytest.mark.browser
+@pytest.mark.computation
+@pytest.mark.integration
+@pytest.mark.selenium
+@pytest.mark.slow
 class TestPetsInTurkeyScraper:
     """Test Pets in Turkey scraper functionality critical for primary data source."""
 

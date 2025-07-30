@@ -14,6 +14,9 @@ from services.session_manager import SessionManager
 from tests.fixtures.database_fixtures import mock_session_manager_db
 
 
+@pytest.mark.database
+@pytest.mark.integration
+@pytest.mark.slow
 class TestAvailabilityConfidenceFix:
     """Test the fix for availability confidence SQL logic bug."""
 

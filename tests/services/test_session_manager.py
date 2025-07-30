@@ -29,6 +29,9 @@ from tests.fixtures.database_fixtures import (
 # from services.session_manager import SessionManager
 
 
+@pytest.mark.database
+@pytest.mark.integration
+@pytest.mark.slow
 class TestSessionManagerInterface:
     """Test SessionManager interface contract."""
 

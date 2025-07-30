@@ -2,9 +2,13 @@
 
 import unittest
 
+import pytest
+
 from scrapers.theunderdog.normalizer import extract_gender
 
 
+@pytest.mark.integration
+@pytest.mark.slow
 class TestUnderdogSexFix(unittest.TestCase):
     """Test cases for The Underdog sex standardization fix."""
 

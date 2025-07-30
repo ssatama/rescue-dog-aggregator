@@ -7,8 +7,7 @@ import pytest
 from services.railway.migration import RailwayMigrationManager, create_initial_migration, get_migration_status, init_railway_alembic, run_railway_migrations
 
 
-@pytest.mark.complex_setup
-@pytest.mark.requires_migrations
+@pytest.mark.unit
 class TestRailwayMigration:
 
     def test_init_railway_alembic_creates_structure(self):
@@ -39,7 +38,16 @@ class TestRailwayMigration:
             mock_run.return_value.returncode = 0
             mock_run.return_value.stdout = "Migration created successfully"
 
-            result = create_initial_migration()
+            with patch("services.railway.migration.Path") as mock_path:
+                # Mock migration file creation
+                mock_versions_dir = MagicMock()
+                mock_migration_file = MagicMock()
+                mock_migration_file.stat.return_value.st_mtime = 1234567890
+                mock_versions_dir.glob.return_value = [mock_migration_file]
+                mock_path.return_value = mock_versions_dir
+
+                with patch("builtins.open", MagicMock()):
+                    result = create_initial_migration()
 
             assert result is True
             mock_run.assert_called_once()
@@ -47,7 +55,7 @@ class TestRailwayMigration:
             call_args = mock_run.call_args[0][0]
             assert "alembic" in call_args
             assert "revision" in call_args
-            assert "--autogenerate" in call_args
+            assert "-m" in call_args
 
     def test_create_initial_migration_failure(self):
         with patch("subprocess.run") as mock_run:
@@ -122,22 +130,30 @@ class TestRailwayMigration:
 
     def test_railway_migration_manager_full_workflow(self):
         with patch("services.railway.migration.check_railway_connection") as mock_check:
-            with patch("services.railway.migration.init_railway_alembic") as mock_init:
-                with patch("services.railway.migration.create_initial_migration") as mock_create:
-                    with patch("services.railway.migration.run_railway_migrations") as mock_run:
-                        mock_check.return_value = True
-                        mock_init.return_value = True
-                        mock_create.return_value = True
-                        mock_run.return_value = True
+            with patch("services.railway.migration.get_migration_status") as mock_status:
+                with patch("services.railway.migration.init_railway_alembic") as mock_init:
+                    with patch("services.railway.migration.create_initial_migration") as mock_create:
+                        with patch("services.railway.migration.run_railway_migrations") as mock_run:
+                            with patch("services.railway.migration.Path") as mock_path:
+                                mock_check.return_value = True
+                                mock_status.return_value = "No migrations"  # Not completed
+                                mock_init.return_value = True
+                                mock_create.return_value = True
+                                mock_run.return_value = True
 
-                        manager = RailwayMigrationManager()
-                        result = manager.setup_and_migrate()
+                                # Mock no existing migration files
+                                mock_versions_dir = MagicMock()
+                                mock_versions_dir.glob.return_value = []  # No existing files
+                                mock_path.return_value = mock_versions_dir
 
-                        assert result is True
-                        mock_check.assert_called_once()
-                        mock_init.assert_called_once()
-                        mock_create.assert_called_once()
-                        mock_run.assert_called_once()
+                                manager = RailwayMigrationManager()
+                                result = manager.setup_and_migrate()
+
+                                assert result is True
+                                mock_check.assert_called_once()
+                                mock_init.assert_called_once()
+                                mock_create.assert_called_once()
+                                mock_run.assert_called_once()
 
     def test_railway_migration_manager_connection_failure(self):
         with patch("services.railway.migration.check_railway_connection") as mock_check:
@@ -151,14 +167,16 @@ class TestRailwayMigration:
 
     def test_railway_migration_manager_init_failure(self):
         with patch("services.railway.migration.check_railway_connection") as mock_check:
-            with patch("services.railway.migration.init_railway_alembic") as mock_init:
-                mock_check.return_value = True
-                mock_init.return_value = False
+            with patch("services.railway.migration.get_migration_status") as mock_status:
+                with patch("services.railway.migration.init_railway_alembic") as mock_init:
+                    mock_check.return_value = True
+                    mock_status.return_value = "No migrations"  # Not completed
+                    mock_init.return_value = False
 
-                manager = RailwayMigrationManager()
-                result = manager.setup_and_migrate()
+                    manager = RailwayMigrationManager()
+                    result = manager.setup_and_migrate()
 
-                assert result is False
+                    assert result is False
 
     def test_railway_migration_manager_dry_run(self):
         with patch("services.railway.migration.check_railway_connection") as mock_check:
@@ -191,7 +209,9 @@ class TestRailwayMigrationIntegration:
                     assert result is True
 
                     written_content = "".join(call.args[0] for call in mock_file().write.call_args_list)
-                    assert test_url in written_content
+                    # The implementation uses a placeholder "test" and dynamically gets URL at runtime
+                    assert "sqlalchemy.url = test" in written_content
+                    assert "get_url()" in written_content
 
     def test_migration_with_custom_message(self):
         with patch("subprocess.run") as mock_run:

@@ -7,8 +7,7 @@ from click.testing import CliRunner
 from management.railway_commands import migrate, railway_cli, setup, status, sync, test_connection
 
 
-@pytest.mark.complex_setup
-@pytest.mark.requires_migrations
+@pytest.mark.unit
 class TestRailwayCliCommands:
 
     def setup_method(self):
@@ -130,8 +129,9 @@ class TestRailwayCliCommands:
             with patch("management.railway_commands.get_railway_data_count") as mock_railway:
                 with patch("management.railway_commands.check_railway_connection") as mock_check:
                     mock_check.return_value = True
-                    mock_local.side_effect = [7, 850]  # orgs, animals
-                    mock_railway.side_effect = [7, 850]
+                    # Mock all tables: organizations, animals, animal_images, scrape_logs, service_regions
+                    mock_local.side_effect = [7, 850, 100, 50, 5]
+                    mock_railway.side_effect = [7, 850, 100, 50, 5]
 
                     result = self.runner.invoke(status)
 
@@ -154,8 +154,9 @@ class TestRailwayCliCommands:
             with patch("management.railway_commands.get_railway_data_count") as mock_railway:
                 with patch("management.railway_commands.check_railway_connection") as mock_check:
                     mock_check.return_value = True
-                    mock_local.side_effect = [7, 850]
-                    mock_railway.side_effect = [7, 800]  # Different animal count
+                    # Mock all tables: organizations, animals, animal_images, scrape_logs, service_regions
+                    mock_local.side_effect = [7, 850, 100, 50, 5]
+                    mock_railway.side_effect = [7, 800, 100, 50, 5]  # Different animal count
 
                     result = self.runner.invoke(status)
 
@@ -226,8 +227,7 @@ class TestRailwayCliCommands:
                 mock_syncer_instance.perform_full_sync.assert_called_once_with(dry_run=True, validate_after=True)
 
 
-@pytest.mark.complex_setup
-@pytest.mark.requires_migrations
+@pytest.mark.unit
 class TestRailwayCliGroup:
 
     def setup_method(self):
@@ -261,8 +261,7 @@ class TestRailwayCliGroup:
         assert result.exit_code != 0
 
 
-@pytest.mark.complex_setup
-@pytest.mark.requires_migrations
+@pytest.mark.unit
 class TestRailwayCliIntegration:
 
     def setup_method(self):
@@ -301,8 +300,9 @@ class TestRailwayCliIntegration:
                         # Test status
                         with patch("management.railway_commands.get_local_data_count") as mock_local:
                             with patch("management.railway_commands.get_railway_data_count") as mock_railway:
-                                mock_local.side_effect = [5, 100]
-                                mock_railway.side_effect = [5, 100]
+                                # Mock all tables: organizations, animals, animal_images, scrape_logs, service_regions
+                                mock_local.side_effect = [5, 100, 20, 10, 2]
+                                mock_railway.side_effect = [5, 100, 20, 10, 2]
 
                                 result = self.runner.invoke(railway_cli, ["status"])
                                 assert result.exit_code == 0

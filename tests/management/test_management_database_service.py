@@ -6,6 +6,10 @@ import pytest
 from management.services.database_service import DatabaseConfig, DatabaseService
 
 
+@pytest.mark.integration
+@pytest.mark.management
+@pytest.mark.database
+@pytest.mark.slow
 class TestDatabaseService:
     """Test suite for DatabaseService following TDD methodology."""
 

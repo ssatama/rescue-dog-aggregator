@@ -16,6 +16,10 @@ import pytest
 from management.services.database_service import DatabaseService
 
 
+@pytest.mark.integration
+@pytest.mark.emergency
+@pytest.mark.management
+@pytest.mark.slow
 class TestEmergencyCoordinatorInterface:
     """Test EmergencyCoordinator interface contract."""
 

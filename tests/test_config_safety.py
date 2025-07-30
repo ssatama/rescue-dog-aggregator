@@ -11,10 +11,14 @@ def prevent_dev_db_write(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "sqlite:///:memory:")
 
 
+@pytest.mark.unit
+@pytest.mark.config
 def test_database_connection():
     assert os.getenv("DATABASE_URL") == "sqlite:///:memory:"
 
 
+@pytest.mark.unit
+@pytest.mark.config
 def test_no_dev_db_write():
     # Simulate a write operation
     with pytest.raises(Exception):
@@ -25,6 +29,8 @@ def test_no_dev_db_write():
 # Test the safety mechanism in config.py
 
 
+@pytest.mark.unit
+@pytest.mark.config
 def test_config_fails_if_testing_uses_dev_db():
     """Verify config.py exits if TESTING=true but DB_NAME is the dev DB."""
     # Mock environment variables to simulate this dangerous scenario
@@ -49,6 +55,8 @@ def test_config_fails_if_testing_uses_dev_db():
         assert "CRITICAL SAFETY ERROR" in str(excinfo.value)
 
 
+@pytest.mark.unit
+@pytest.mark.config
 def test_config_allows_test_db_when_testing():
     """Verify config.py allows the test DB when TESTING=true."""
     test_env = {
@@ -72,6 +80,8 @@ def test_config_allows_test_db_when_testing():
             pytest.fail("config.py exited unexpectedly when configured correctly for testing.")
 
 
+@pytest.mark.unit
+@pytest.mark.config
 def test_config_defaults_to_dev_db_when_not_testing():
     """Verify config.py defaults to the dev DB when TESTING is not set."""
     import getpass
@@ -91,6 +101,8 @@ def test_config_defaults_to_dev_db_when_not_testing():
         assert config.DB_CONFIG["user"] == expected_user
 
 
+@pytest.mark.unit
+@pytest.mark.config
 def test_config_warns_but_allows_test_db_when_not_testing_if_explicit(caplog):
     """Verify config.py warns but allows connecting to test DB if explicitly set when not testing."""
     explicit_test_env_no_testing = {

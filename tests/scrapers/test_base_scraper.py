@@ -185,9 +185,9 @@ class TestBaseScraper:
     @patch.object(BaseScraper, "connect_to_database")
     @patch.object(BaseScraper, "start_scrape_log")
     @patch.object(BaseScraper, "save_animal")
-    @patch.object(BaseScraper, "complete_scrape_log")
+    @patch.object(BaseScraper, "complete_scrape_log_with_metrics")
     @patch.object(BaseScraper, "detect_partial_failure")
-    def test_run_success(self, mock_failure_detection, mock_complete_log, mock_save, mock_start_log, mock_connect, mock_scraper):
+    def test_run_success(self, mock_failure_detection, mock_complete_log_with_metrics, mock_save, mock_start_log, mock_connect, mock_scraper):
         """Test successful run of the scraper."""
         # Configure mocks
         mock_connect.return_value = True
@@ -196,7 +196,7 @@ class TestBaseScraper:
             (1, "added"),
             (2, "added"),
         ]  # ID and action for each dog
-        mock_complete_log.return_value = True
+        mock_complete_log_with_metrics.return_value = True
         mock_failure_detection.return_value = False  # No failure detected
 
         # Set a mock connection
@@ -209,9 +209,9 @@ class TestBaseScraper:
         mock_connect.assert_called_once()
         mock_start_log.assert_called_once()
         assert mock_save.call_count == 2  # Two test dogs
-        mock_complete_log.assert_called_once()
+        mock_complete_log_with_metrics.assert_called_once()
 
-        # Check complete_scrape_log was called with correct parameters
+        # Check complete_scrape_log_with_metrics was called with correct parameters
         expected_args = {
             "status": "success",
             "animals_found": 2,
@@ -219,7 +219,7 @@ class TestBaseScraper:
             "animals_updated": 0,
         }
         for key, value in expected_args.items():
-            assert mock_complete_log.call_args[1][key] == value
+            assert mock_complete_log_with_metrics.call_args[1][key] == value
 
         # Verify result
         assert result is True

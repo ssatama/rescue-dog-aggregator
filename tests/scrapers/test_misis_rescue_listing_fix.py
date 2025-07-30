@@ -6,6 +6,10 @@ from bs4 import BeautifulSoup
 from scrapers.misis_rescue.scraper import MisisRescueScraper
 
 
+@pytest.mark.computation
+@pytest.mark.integration
+@pytest.mark.network
+@pytest.mark.slow
 class TestMisisRescueListingFix:
     """Test fixes for MisisRescue listing page extraction."""
 

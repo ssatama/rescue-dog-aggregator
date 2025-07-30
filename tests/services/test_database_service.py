@@ -18,6 +18,9 @@ import pytest
 # from services.database_service import DatabaseService
 
 
+@pytest.mark.integration
+@pytest.mark.database
+@pytest.mark.slow
 class TestDatabaseServiceInterface:
     """Test DatabaseService interface contract."""
 
@@ -139,3 +142,63 @@ class TestDatabaseServiceIntegration:
     def test_existing_functionality_preserved(self):
         """Test that existing BaseScraper functionality is preserved."""
         pytest.skip("Integration tests pending service implementation")
+
+    def test_complete_scrape_log_with_detailed_metrics(self):
+        """Test that complete_scrape_log can store detailed metrics, duration, and quality score."""
+        # Following TDD - this test should FAIL initially
+        import json
+
+        from config import DB_CONFIG
+        from services.database_service import DatabaseService
+
+        db_service = DatabaseService(DB_CONFIG)
+        db_service.connect()
+
+        try:
+            # Create a scrape log
+            scrape_log_id = db_service.create_scrape_log(organization_id=5)  # Use existing org
+            assert scrape_log_id is not None
+
+            # Test data for detailed metrics
+            detailed_metrics = {
+                "animals_found": 25,
+                "animals_added": 5,
+                "animals_updated": 20,
+                "images_uploaded": 15,
+                "images_failed": 2,
+                "retry_attempts": 3,
+                "retry_successes": 2,
+                "phase_timings": {"data_collection": 45.2, "database_operations": 12.8},
+            }
+            duration_seconds = 58.3
+            data_quality_score = 0.92
+
+            # This should work but currently fails because method doesn't accept these params
+            success = db_service.complete_scrape_log(
+                scrape_log_id=scrape_log_id,
+                status="success",
+                animals_found=25,
+                animals_added=5,
+                animals_updated=20,
+                error_message=None,
+                detailed_metrics=detailed_metrics,
+                duration_seconds=duration_seconds,
+                data_quality_score=data_quality_score,
+            )
+
+            assert success is True
+
+            # Verify the data was stored in database
+            from api.database.connection_pool import get_pooled_cursor
+
+            with get_pooled_cursor() as cursor:
+                cursor.execute("SELECT detailed_metrics, duration_seconds, data_quality_score FROM scrape_logs WHERE id = %s", (scrape_log_id,))
+                result = cursor.fetchone()
+
+                assert result is not None
+                assert result["detailed_metrics"] == detailed_metrics  # JSONB comparison
+                assert abs(float(result["duration_seconds"]) - duration_seconds) < 0.1
+                assert abs(float(result["data_quality_score"]) - data_quality_score) < 0.01
+
+        finally:
+            db_service.close()

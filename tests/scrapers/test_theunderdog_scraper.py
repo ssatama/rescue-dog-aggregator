@@ -8,6 +8,12 @@ from bs4 import BeautifulSoup
 from scrapers.theunderdog.theunderdog_scraper import TheUnderdogScraper
 
 
+@pytest.mark.api
+@pytest.mark.computation
+@pytest.mark.database
+@pytest.mark.integration
+@pytest.mark.network
+@pytest.mark.slow
 class TestTheUnderdogScraper:
     """Test suite for The Underdog scraper."""
 

@@ -12,6 +12,8 @@ from scrapers.daisy_family_rescue.dog_detail_scraper import DaisyFamilyRescueDog
 from scrapers.daisy_family_rescue.dogs_scraper import DaisyFamilyRescueScraper
 
 
+@pytest.mark.integration
+@pytest.mark.slow
 class TestDaisyFamilyRescueIntegration:
     """Integration tests for Daisy Family Rescue scraper."""
 

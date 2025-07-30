@@ -5,6 +5,8 @@ from bs4 import BeautifulSoup
 from scrapers.misis_rescue.detail_parser import MisisRescueDetailParser
 
 
+@pytest.mark.integration
+@pytest.mark.slow
 class TestMisisRescueDetailParser:
     """Test detail page parsing for MisisRescue.
 

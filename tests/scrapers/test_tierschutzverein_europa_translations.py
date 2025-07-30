@@ -10,6 +10,10 @@ from scrapers.tierschutzverein_europa.translations import normalize_name, transl
 from utils.standardization import standardize_age, standardize_breed
 
 
+@pytest.mark.api
+@pytest.mark.database
+@pytest.mark.integration
+@pytest.mark.slow
 class TestGenderTranslation:
     """Test translation of all gender values found in production database."""
 

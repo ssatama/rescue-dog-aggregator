@@ -17,6 +17,9 @@ from scrapers.misis_rescue.normalizer import (
 )
 
 
+@pytest.mark.database
+@pytest.mark.integration
+@pytest.mark.slow
 class TestMisisRescueNormalizer:
     """Test normalization functions for MisisRescue data.
 

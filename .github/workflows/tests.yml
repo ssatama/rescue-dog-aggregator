@@ -113,7 +113,7 @@ jobs:
           DB_PASSWORD: postgres
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          python -m pytest tests/ -m "not browser and not complex_setup and not requires_migrations" -v
+          python -m pytest tests/ -m "not browser and not requires_migrations" -v
 
   frontend-tests:
     runs-on: ubuntu-latest

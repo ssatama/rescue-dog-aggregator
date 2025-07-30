@@ -16,6 +16,9 @@ import pytest
 from management.services.database_service import DatabaseService
 
 
+@pytest.mark.integration
+@pytest.mark.management
+@pytest.mark.slow
 class TestSystemMonitoringServiceInterface:
     """Test SystemMonitoringService interface contract."""
 

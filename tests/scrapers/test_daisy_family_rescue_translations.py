@@ -24,6 +24,9 @@ from scrapers.daisy_family_rescue.translations import (
 from utils.standardization import standardize_age, standardize_breed
 
 
+@pytest.mark.api
+@pytest.mark.integration
+@pytest.mark.slow
 class TestNameNormalization:
     """Test name normalization and capitalization."""
 
