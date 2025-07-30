@@ -144,7 +144,7 @@ class TestDatabaseServiceIntegration:
         """Test that existing BaseScraper functionality is preserved."""
         pytest.skip("Integration tests pending service implementation")
 
-    @pytest.mark.skipif(os.environ.get("CI") == "true", reason="Skipping in CI due to database isolation issues")
+    @pytest.mark.skip(reason="Test creates real database records and contaminates production data")
     def test_complete_scrape_log_with_detailed_metrics(self):
         """Test that complete_scrape_log can store detailed metrics, duration, and quality score."""
         # Following TDD - this test should FAIL initially

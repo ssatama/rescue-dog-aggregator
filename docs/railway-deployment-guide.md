@@ -112,8 +112,17 @@ python -m management.railway_commands migrate --dry-run
 
 #### 3. Data Synchronization
 ```bash
-# Full sync
+# Full sync (default incremental mode)
 python -m management.railway_commands sync
+
+# Explicit incremental sync
+python -m management.railway_commands sync --mode incremental
+
+# Rebuild sync (clears Railway, pushes all local data)
+python -m management.railway_commands sync --mode rebuild --confirm-destructive
+
+# Force sync (bypasses all validation - emergency use only)
+python -m management.railway_commands sync --mode force --confirm-destructive
 
 # Dry run (preview changes)
 python -m management.railway_commands sync --dry-run
@@ -122,12 +131,17 @@ python -m management.railway_commands sync --dry-run
 python -m management.railway_commands sync --skip-validation
 ```
 - **Purpose**: Sync data from local database to Railway
+- **Sync Modes**:
+  - **incremental** (default): Local count must be ≥ Railway count for each table
+  - **rebuild**: Clears Railway tables, pushes all local data (requires safety thresholds)
+  - **force**: Bypasses all validation checks (emergency use only)
 - **Features**:
   - Batch processing (100 records per batch by default)
   - Organizations synced first (animals reference organizations)
   - Automatic data integrity validation
   - Conflict resolution with UPSERT operations (100% idempotent)
   - Can be run multiple times per day without issues
+  - Safety thresholds prevent accidental data loss
 
 #### 4. Status Monitoring
 ```bash
@@ -217,6 +231,15 @@ python -m management.railway_commands sync   # Then sync to Railway (100% idempo
 python -m management.railway_commands status # Verify 100% match
 ```
 
+**Data Recovery Scenarios**:
+```bash
+# If you accidentally cleared local data and need fresh start from Railway
+python -m management.railway_commands sync --mode rebuild --confirm-destructive
+
+# If sync validation is blocking legitimate operations (emergency only)
+python -m management.railway_commands sync --mode force --confirm-destructive
+```
+
 **High-Frequency Sync Support**:
 The system is designed to handle frequent synchronization:
 - Can be run 100+ times per day without issues
@@ -230,6 +253,71 @@ The system is designed to handle frequent synchronization:
 - **Animal_images**: 200+ records (grows with new animals)
 - **Scrape_logs**: 300+ records (grows continuously)
 - **Service_regions**: 100+ records (stable, occasional updates)
+
+### Sync Mode Details
+
+#### Incremental Mode (Default)
+**Usage**: `python -m management.railway_commands sync` or `--mode incremental`
+
+**Validation Rules**:
+- Local record count must be ≥ Railway record count for each table
+- Prevents data loss when Railway has more recent data
+- Best for routine syncing after local updates
+
+**Use Cases**:
+- Daily sync operations
+- After scraping new animals
+- Regular maintenance sync
+
+#### Rebuild Mode
+**Usage**: `python -m management.railway_commands sync --mode rebuild --confirm-destructive`
+
+**Validation Rules**:
+- Local data must meet safety thresholds:
+  - Organizations: ≥5 records
+  - Animals: ≥50 records  
+  - Scrape_logs: ≥10 records
+  - Service_regions: ≥1 record
+  - Animal_images: ≥0 records (can be empty)
+- Clears ALL Railway tables before pushing local data
+- **DESTRUCTIVE**: Permanently deletes Railway data
+
+**Use Cases**:
+- After intentionally clearing local data for fresh start
+- When local database structure has changed significantly
+- Database corruption recovery
+
+#### Force Mode (Emergency Only)
+**Usage**: `python -m management.railway_commands sync --mode force --confirm-destructive`
+
+**Validation Rules**:
+- **BYPASSES ALL VALIDATION**
+- No safety checks or data integrity validation
+- **DANGEROUS**: Can cause data loss or corruption
+
+**Use Cases**:
+- Emergency situations when validation is incorrectly blocking sync
+- Database recovery when normal validation fails
+- Should only be used by experienced administrators
+
+### Problem-Specific Examples  
+
+#### Scenario: "I cleared scrape_logs locally and now sync fails"
+**Problem**: Local scrape_logs=88, Railway=413, sync fails with validation error
+
+**Solution**:
+```bash
+# Option 1: Use rebuild mode (recommended)
+python -m management.railway_commands sync --mode rebuild --confirm-destructive
+
+# Option 2: Force mode (if rebuild validation fails)  
+python -m management.railway_commands sync --mode force --confirm-destructive
+
+# Verify the sync worked
+python -m management.railway_commands status
+```
+
+**Explanation**: Clearing local data creates a count mismatch. Rebuild mode safely clears Railway and repopulates with current local data.
 
 #### Regular Data Sync
 ```bash

@@ -3,7 +3,8 @@ import logging
 import time
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Any, List, Optional, Tuple
+from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
@@ -13,6 +14,23 @@ from api.database import get_pooled_connection
 from .connection import check_railway_connection, railway_session
 
 logger = logging.getLogger(__name__)
+
+
+class SyncMode(Enum):
+    """Sync modes for Railway data synchronization."""
+    INCREMENTAL = "incremental"  # Default: local_count >= railway_count
+    REBUILD = "rebuild"          # Clear railway, push all local data
+    FORCE = "force"             # Skip validation (emergency only)
+
+
+# Safety thresholds for rebuild mode validation
+SAFETY_THRESHOLDS: Dict[str, int] = {
+    "organizations": 5,        # Must have at least 5 organizations
+    "animals": 50,            # Must have at least 50 animals
+    "scrape_logs": 10,        # Must have at least 10 logs
+    "service_regions": 1,     # Must have at least 1 region
+    "animal_images": 0,       # Can be legitimately empty
+}
 
 
 def get_local_data_count(table_name: str) -> int:
@@ -1403,6 +1421,29 @@ def _validate_sync_integrity_in_transaction(session) -> bool:
         return False
 
 
+def validate_sync_by_mode(mode: SyncMode, table: str, local_count: int, railway_count: int) -> bool:
+    """Validate sync counts based on the specified mode."""
+    # Validate table name first
+    valid_tables = ["organizations", "animals", "animal_images", "scrape_logs", "service_regions"]
+    if table not in valid_tables:
+        logger.error(f"validate_sync_by_mode: Invalid table name: {table}")
+        return False
+
+    if mode == SyncMode.INCREMENTAL:
+        # Incremental mode: local count should be >= railway count
+        return local_count >= railway_count
+    elif mode == SyncMode.REBUILD:
+        # Rebuild mode: check if local count meets safety threshold
+        threshold = SAFETY_THRESHOLDS.get(table, 0)
+        return local_count >= threshold
+    elif mode == SyncMode.FORCE:
+        # Force mode: skip all validation
+        return True
+    else:
+        logger.error(f"validate_sync_by_mode: Unknown sync mode: {mode}")
+        return False
+
+
 def validate_sync_integrity() -> bool:
     """Validate that sync was successful by comparing record counts."""
     try:
@@ -1431,7 +1472,7 @@ class RailwayDataSyncer:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
-    def perform_full_sync(self, dry_run: bool = False, validate_after: bool = True, max_retries: int = 3) -> bool:
+    def perform_full_sync(self, dry_run: bool = False, validate_after: bool = True, max_retries: int = 3, sync_mode: str = "incremental") -> bool:
         """Perform complete data synchronization to Railway with retry logic and transaction boundaries."""
         try:
             # Check Railway connection first
@@ -1442,8 +1483,27 @@ class RailwayDataSyncer:
             if dry_run:
                 return self._perform_dry_run()
 
+            # Convert string to SyncMode enum for validation
+            try:
+                mode_enum = SyncMode(sync_mode)
+            except ValueError:
+                self.logger.error(f"Invalid sync mode: {sync_mode}")
+                return False
+
+            # Perform sync mode validation (skip for force mode)
+            if mode_enum != SyncMode.FORCE:
+                if not self._validate_sync_mode(mode_enum):
+                    self.logger.error(f"Sync mode validation failed for mode: {sync_mode}")
+                    return False
+
+            # Clear Railway tables if in rebuild mode
+            if mode_enum == SyncMode.REBUILD:
+                if not self._clear_railway_tables():
+                    self.logger.error("Failed to clear Railway tables for rebuild mode")
+                    return False
+
             # Perform actual sync with retry mechanism
-            self.logger.info("Starting full data synchronization to Railway with transaction boundaries")
+            self.logger.info(f"Starting full data synchronization to Railway with sync mode: {sync_mode}")
 
             # Retry logic for transient failures
             for attempt in range(max_retries):
@@ -1472,7 +1532,8 @@ class RailwayDataSyncer:
                         return False
 
             # Final validation (not retried as it should be deterministic)
-            if validate_after and not validate_sync_integrity():
+            # Skip validation in force mode
+            if validate_after and mode_enum != SyncMode.FORCE and not validate_sync_integrity():
                 self.logger.error("Post-sync validation failed")
                 return False
 
@@ -1510,6 +1571,45 @@ class RailwayDataSyncer:
 
         except Exception as e:
             self.logger.error(f"Dry run failed: {e}")
+            return False
+
+    def _validate_sync_mode(self, mode: SyncMode) -> bool:
+        """Validate sync operation based on the specified mode."""
+        try:
+            tables = ["organizations", "animals", "animal_images", "scrape_logs", "service_regions"]
+            
+            for table in tables:
+                local_count = get_local_data_count(table)
+                railway_count = get_railway_data_count(table)
+                
+                if not validate_sync_by_mode(mode, table, local_count, railway_count):
+                    self.logger.error(f"Sync validation failed for table {table}: local={local_count}, railway={railway_count}, mode={mode.value}")
+                    return False
+                    
+            self.logger.info(f"Sync mode validation passed for all tables: {mode.value}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Sync mode validation error: {e}")
+            return False
+
+    def _clear_railway_tables(self) -> bool:
+        """Clear all Railway tables for rebuild mode."""
+        try:
+            tables = ["animal_images", "animals", "scrape_logs", "service_regions", "organizations"]  # Order matters for FK constraints
+            
+            with railway_session() as session:
+                for table in tables:
+                    self.logger.info(f"Clearing Railway table: {table}")
+                    result = session.execute(text(f"DELETE FROM {table}"))
+                    self.logger.info(f"Cleared {result.rowcount} rows from {table}")
+                
+                session.commit()
+                self.logger.info("Successfully cleared all Railway tables")
+                return True
+                
+        except Exception as e:
+            self.logger.error(f"Failed to clear Railway tables: {e}")
             return False
 
 
