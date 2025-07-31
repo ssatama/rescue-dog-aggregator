@@ -12,7 +12,7 @@ export class DogsPage extends BasePage {
 
   constructor(page: Page) {
     super(page, {
-      throwOnError: true,
+      // Inherit CI-aware throwOnError behavior from console-error-logging.ts
       logLevel: 'error'
     });
     this.dog = new DogTestHelper(page);

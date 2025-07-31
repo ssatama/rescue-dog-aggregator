@@ -44,7 +44,7 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
   return (
     <div
       data-testid="related-dog-card"
-      className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 hover:transform hover:-translate-y-1 cursor-pointer group will-change-transform focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2"
+      className="bg-card rounded-lg shadow-sm hover:shadow-md transition-all duration-200 hover:transform hover:-translate-y-1 cursor-pointer group will-change-transform focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2"
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}
       tabIndex={0}
@@ -76,18 +76,18 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
         {/* Dog Name */}
         <h3 
           data-testid="related-dog-name"
-          className="text-card-title text-gray-900 hover:text-orange-600 transition-colors duration-300 mb-1"
+          className="text-card-title text-gray-900 dark:text-gray-100 hover:text-orange-600 transition-colors duration-300 mb-1"
         >
           {sanitizeText(dog.name)}
         </h3>
 
         {/* Breed */}
-        <p className="text-sm text-gray-600 mb-1">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
           {sanitizeText(formatBreed(dog))}
         </p>
 
         {/* Age */}
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           {sanitizeText(formatAge(dog))}
         </p>
       </div>

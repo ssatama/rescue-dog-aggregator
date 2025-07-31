@@ -318,9 +318,14 @@ export const getDogsWithFilters = (filters: Record<string, any>): EnhancedDog[] 
             }
         }
         
+        // Backend-specific parameters that should be ignored in E2E tests
+        // These would normally be handled by backend curation logic
+        const backendOnlyParams = ['curation_type', 'limit', 'offset'];
+        
         // Handle other filters
         for (const key in filters) {
             if (key === 'search') continue; // Already handled above
+            if (backendOnlyParams.includes(key)) continue; // Skip backend-only params in tests
             
             if (filters[key] && dog[key as keyof EnhancedDog] !== filters[key]) {
                 return false;

@@ -413,9 +413,9 @@ export default function DogDetailClient({ params = {} }) {
                           <div className="mb-6">
                             <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-3">Breed</h2>
                             <div className="flex flex-wrap gap-1 items-center">
-                              <span className="text-base leading-relaxed text-gray-800">{sanitizeText(breed)}</span>
+                              <span className="text-base leading-relaxed text-gray-800 dark:text-gray-100">{sanitizeText(breed)}</span>
                               {dog.standardized_breed && dog.breed && dog.standardized_breed !== dog.breed && (
-                                <span className="text-sm text-gray-500 ml-2">(originally listed as: {sanitizeText(dog.breed)})</span>
+                                <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">(originally listed as: {sanitizeText(dog.breed)})</span>
                               )}
                             </div>
                             {dog.breed_group && dog.breed_group !== 'Unknown' && (
@@ -433,7 +433,7 @@ export default function DogDetailClient({ params = {} }) {
                         <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-md border border-purple-100 dark:border-purple-800/30" data-testid="dog-age-card">
                           <div className="text-3xl mb-2">🎂</div>
                           <p className="text-xs text-purple-600 dark:text-purple-400 font-medium mb-1">Age</p>
-                          <p className="text-sm font-semibold text-gray-800">
+                          <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
                             {formatAge(dog) || 'Age Unknown'}
                           </p>
                         </div>
@@ -445,7 +445,7 @@ export default function DogDetailClient({ params = {} }) {
                              dog.sex && dog.sex.toLowerCase() === 'female' ? '♀️' : '❓'}
                           </div>
                           <p className="text-xs text-orange-600 dark:text-orange-400 font-medium mb-1">Gender</p>
-                          <p className="text-sm font-semibold text-gray-800">
+                          <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
                             {dog.sex && dog.sex.toLowerCase() !== 'unknown' ? dog.sex : 'Unknown'}
                           </p>
                         </div>
@@ -457,7 +457,7 @@ export default function DogDetailClient({ params = {} }) {
                           <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-md border border-green-100 dark:border-green-800/30" data-testid="dog-breed-card">
                             <div className="text-3xl mb-2">🐕</div>
                             <p className="text-xs text-green-600 dark:text-green-400 font-medium mb-1">Breed</p>
-                            <p className="text-sm font-semibold text-gray-800">
+                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
                               {dog.standardized_breed || dog.breed}
                             </p>
                           </div>
@@ -468,7 +468,7 @@ export default function DogDetailClient({ params = {} }) {
                           <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-md border border-orange-100 dark:border-orange-800/30" data-testid="dog-size-card">
                             <div className="text-3xl mb-2">📏</div>
                             <p className="text-xs text-orange-600 dark:text-orange-400 font-medium mb-1">Size</p>
-                            <p className="text-sm font-semibold text-gray-800">
+                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
                               {dog.standardized_size || dog.size}
                             </p>
                           </div>

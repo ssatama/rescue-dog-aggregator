@@ -48,6 +48,25 @@ describe('RelatedDogsCard', () => {
       expect(imageContainer).toBeInTheDocument();
     });
 
+    it('should have proper dark mode styling classes', () => {
+      // Act
+      render(<RelatedDogsCard dog={mockDog} />);
+
+      // Assert
+      const card = screen.getByTestId('related-dog-card');
+      expect(card).toHaveClass('bg-card'); // Theme-aware background
+      
+      const dogName = screen.getByTestId('related-dog-name');
+      expect(dogName).toHaveClass('dark:text-gray-100');
+      
+      // Check breed and age text have dark mode variants
+      const breedText = screen.getByText('Mixed Breed');
+      expect(breedText).toHaveClass('dark:text-gray-400');
+      
+      const ageText = screen.getByText('2 years');
+      expect(ageText).toHaveClass('dark:text-gray-400');
+    });
+
     it('should render with 4:3 aspect ratio image container', () => {
       // Act
       render(<RelatedDogsCard dog={mockDog} />);

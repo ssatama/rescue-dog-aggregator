@@ -1,13 +1,24 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { jest } from '@jest/globals';
-import DogSection from '../DogSection';
+import { flushSync } from 'react-dom';
 
-// Mock all services first
-jest.mock('../../../services/animalsService');
+// Mock the animalsService module using a factory function
+jest.doMock('../../../services/animalsService', () => ({
+  getAnimals: jest.fn(),
+  getAnimalById: jest.fn(),
+  getAnimalsByCuration: jest.fn(),
+  getStandardizedBreeds: jest.fn(),
+  getBreedGroups: jest.fn(),
+  getLocationCountries: jest.fn(),
+  getAvailableCountries: jest.fn(),
+  getAvailableRegions: jest.fn(),
+  getOrganizations: jest.fn(),
+  getStatistics: jest.fn(),
+}));
 
-// Import after mocking
-const { getAnimalsByCuration } = require('../../../services/animalsService');
+// Now import DogSection after the mock is set up
+const DogSection = require('../DogSection').default;
 
 // Mock other dependencies
 jest.mock('../../../utils/logger', () => ({
@@ -91,12 +102,14 @@ const mockDogs = [
   }
 ];
 
+// Import the mocked module to use in tests
+const { getAnimalsByCuration } = require('../../../services/animalsService');
+
 describe('DogSection', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Setup default successful mock using imported function
+    // Setup default successful mock
     getAnimalsByCuration.mockImplementation(() => {
-      console.log('Mock getAnimalsByCuration called!');
       return Promise.resolve(mockDogs);
     });
   });
@@ -131,31 +144,36 @@ describe('DogSection', () => {
       expect(viewAllLink.closest('a')).toHaveAttribute('href', '/dogs?curation=diverse');
     });
 
-    test.skip('renders error state when API fails', async () => {
+    test('renders error state when API fails', async () => {
       // Mock the function to reject
       getAnimalsByCuration.mockRejectedValue(new Error('API Error'));
       
-      render(
-        <DogSection
-          title="Test Section"
-          subtitle="Test subtitle"
-          curationType="recent"
-          viewAllHref="/dogs"
-        />
-      );
-
-      // Should show error message
-      await waitFor(() => {
-        expect(screen.getByText('Could not load dogs. Please try again later.')).toBeInTheDocument();
+      let component;
+      await act(async () => {
+        component = render(
+          <DogSection
+            title="Test Section"
+            subtitle="Test subtitle"
+            curationType="recent"
+            viewAllHref="/dogs"
+          />
+        );
+        // Force React to flush all effects and state updates
+        await new Promise(resolve => setTimeout(resolve, 0));
       });
+
+      // Wait for error state to appear
+      await waitFor(() => {
+        expect(screen.getByTestId('dog-section-error')).toBeInTheDocument();
+      }, { timeout: 5000 });
       
       // Should show retry button
-      expect(screen.getByText('Retry')).toBeInTheDocument();
+      expect(screen.getByTestId('dog-section-retry')).toBeInTheDocument();
     });
   });
 
   describe('API Integration', () => {
-    test.skip('attempts to call getAnimalsByCuration on mount', async () => {
+    test('attempts to call getAnimalsByCuration on mount', async () => {
       render(
         <DogSection
           title="Just Added"
@@ -172,9 +190,10 @@ describe('DogSection', () => {
       
       // The function should have been called even if it fails
       expect(getAnimalsByCuration).toHaveBeenCalled();
+      expect(getAnimalsByCuration).toHaveBeenCalledWith('recent', 4);
     });
 
-    test.skip('rerenders when curationType changes', async () => {
+    test('rerenders when curationType changes', async () => {
       const { rerender } = render(
         <DogSection
           title="Test"
@@ -203,6 +222,7 @@ describe('DogSection', () => {
       // Should be called again on rerender with different curationType
       await waitFor(() => {
         expect(getAnimalsByCuration).toHaveBeenCalledTimes(callCount + 1);
+        expect(getAnimalsByCuration).toHaveBeenLastCalledWith('recent', 4);
       });
     });
   });
@@ -268,7 +288,7 @@ describe('DogSection', () => {
     test('should show mobile carousel skeletons during loading', () => {
       // Mock mobile viewport
       Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 375 });
-      getAnimalsByCuration.mockImplementation(() => new Promise(() => {}));
+      jest.mocked(getAnimalsByCuration).mockImplementation(() => new Promise(() => {}));
       
       render(
         <DogSection 
@@ -284,7 +304,7 @@ describe('DogSection', () => {
       expect(skeletons.length).toBeGreaterThan(0);
     });
 
-    test.skip('should show different content when loading completes', async () => {
+    test('should show different content when loading completes', async () => {
       // Test the basic transition from loading to loaded state
       getAnimalsByCuration.mockResolvedValue(mockDogs);
       
@@ -339,59 +359,63 @@ describe('DogSection', () => {
   });
 
   describe('Error Handling', () => {
-    test.skip('shows error message when API call fails', async () => {
+    test('shows error message when API call fails', async () => {
       // Mock async rejection
       getAnimalsByCuration.mockRejectedValue(new Error('API Error'));
 
-      render(
-        <DogSection
-          title="Test"
-          subtitle="Test"
-          curationType="recent"
-          viewAllHref="/dogs"
-        />
-      );
-
-      // Debug: check if loading state is showing first
-      expect(screen.getByTestId('dog-section-container-recent')).toBeInTheDocument();
+      let component;
+      await act(async () => {
+        component = render(
+          <DogSection
+            title="Test"
+            subtitle="Test"
+            curationType="recent"
+            viewAllHref="/dogs"
+          />
+        );
+        // Force React to flush all effects and state updates
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
 
       // Wait for the error state to be set
       await waitFor(() => {
-        expect(screen.getByText(/Could not load dogs/)).toBeInTheDocument();
-      }, { timeout: 10000 });
+        expect(screen.getByTestId('dog-section-error')).toBeInTheDocument();
+      }, { timeout: 5000 });
     });
 
-    test.skip('shows retry button on error', async () => {
+    test('shows retry button on error', async () => {
       // Mock async rejection
       getAnimalsByCuration.mockRejectedValue(new Error('API Error'));
 
-      render(
-        <DogSection
-          title="Test"
-          subtitle="Test"
-          curationType="recent"
-          viewAllHref="/dogs"
-        />
-      );
+      let component;
+      await act(async () => {
+        component = render(
+          <DogSection
+            title="Test"
+            subtitle="Test"
+            curationType="recent"
+            viewAllHref="/dogs"
+          />
+        );
+        // Force React to flush all effects and state updates
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
 
-      // Wait for the error state to be set
+      // Wait for the error state with retry button
       await waitFor(() => {
-        expect(screen.getByText('Could not load dogs. Please try again later.')).toBeInTheDocument();
-      }, { timeout: 5000 });
-
-      // Then check for the Retry button
-      await waitFor(() => {
-        expect(screen.getByText('Retry')).toBeInTheDocument();
+        expect(screen.getByTestId('dog-section-error')).toBeInTheDocument();
+        expect(screen.getByTestId('dog-section-retry')).toBeInTheDocument();
       }, { timeout: 5000 });
     });
 
-    test.skip('retry button refetches data', async () => {
+    test('retry button refetches data', async () => {
       getAnimalsByCuration
         .mockRejectedValueOnce(new Error('API Error'))
         .mockResolvedValueOnce(mockDogs);
 
+      let component;
       await act(async () => {
-        render(
+        component = render(
           <DogSection
             title="Test"
             subtitle="Test"
@@ -399,30 +423,36 @@ describe('DogSection', () => {
             viewAllHref="/dogs"
           />
         );
+        // Force React to flush all effects and state updates
+        await new Promise(resolve => setTimeout(resolve, 0));
       });
 
       await waitFor(() => {
         expect(screen.getByText('Retry')).toBeInTheDocument();
-      });
+      }, { timeout: 5000 });
 
       await act(async () => {
         fireEvent.click(screen.getByText('Retry'));
+        // Force React to flush all effects and state updates
+        await new Promise(resolve => setTimeout(resolve, 0));
       });
 
       await waitFor(() => {
         expect(getAnimalsByCuration).toHaveBeenCalledTimes(2);
-        expect(screen.getByTestId('dog-card-1')).toBeInTheDocument();
-      });
-    });
+        expect(screen.getByTestId('dog-grid')).toBeInTheDocument();
+        expect(screen.getAllByTestId('dog-card')).toHaveLength(mockDogs.length);
+      }, { timeout: 5000 });
+    }, 10000); // Increase timeout to 10 seconds
   });
 
   describe('Empty State', () => {
-    test.skip('shows empty message when no dogs returned', async () => {
+    test('shows empty message when no dogs returned', async () => {
       // Override default mock for this test
       getAnimalsByCuration.mockResolvedValue([]);
 
+      let component;
       await act(async () => {
-        render(
+        component = render(
           <DogSection
             title="Test"
             subtitle="Test"
@@ -430,11 +460,14 @@ describe('DogSection', () => {
             viewAllHref="/dogs"
           />
         );
+        // Force React to flush all effects and state updates
+        await new Promise(resolve => setTimeout(resolve, 0));
       });
 
+      // Should show empty state message
       await waitFor(() => {
-        expect(screen.getByText(/No dogs available/)).toBeInTheDocument();
-      });
+        expect(screen.getByText('No dogs available at the moment.')).toBeInTheDocument();
+      }, { timeout: 5000 });
     });
   });
 

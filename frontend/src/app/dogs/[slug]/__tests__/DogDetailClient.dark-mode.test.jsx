@@ -196,9 +196,32 @@ describe('DogDetailClient Dark Mode', () => {
       
       await waitFor(() => {
         const aboutHeading = screen.getByRole('heading', { name: /about buddy/i });
+        const breedHeading = screen.getByRole('heading', { name: /breed/i });
         
         expect(aboutHeading).toHaveClass('text-gray-800');
         expect(aboutHeading).toHaveClass('dark:text-gray-200');
+        
+        expect(breedHeading).toHaveClass('text-gray-800');
+        expect(breedHeading).toHaveClass('dark:text-gray-200');
+      });
+    });
+
+    test('breed section text has proper dark mode colors', async () => {
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
+      
+      await waitFor(() => {
+        // Test main breed text
+        const breedText = document.querySelector('.text-gray-800.dark\\:text-gray-100');
+        expect(breedText).toHaveClass('text-gray-800');
+        expect(breedText).toHaveClass('dark:text-gray-100');
+        expect(breedText).toHaveTextContent('Golden Retriever');
+        
+        // Test subtitle text (originally listed as)
+        const subtitleText = document.querySelector('.text-gray-500.dark\\:text-gray-400');
+        if (subtitleText) {
+          expect(subtitleText).toHaveClass('text-gray-500');
+          expect(subtitleText).toHaveClass('dark:text-gray-400');
+        }
       });
     });
 
@@ -235,6 +258,27 @@ describe('DogDetailClient Dark Mode', () => {
         
         expect(sexLabel).toHaveClass('text-orange-600');
         expect(sexLabel).toHaveClass('dark:text-orange-400');
+      });
+    });
+
+    test('metadata card content text has dark mode colors for visibility', async () => {
+      render(<DogDetailClient params={{ slug: 'test-dog-mixed-breed-1' }} />);
+      
+      await waitFor(() => {
+        const metadataCards = screen.getByTestId('metadata-cards');
+        
+        // Test age content text
+        const ageCard = screen.getByTestId('dog-age-card');
+        const ageContent = ageCard.querySelector('.text-gray-800.dark\\:text-gray-100');
+        expect(ageContent).toHaveClass('text-gray-800');
+        expect(ageContent).toHaveClass('dark:text-gray-100');
+        
+        // Test sex/gender content text
+        const sexCard = screen.getByTestId('dog-sex-card');
+        const sexContent = sexCard.querySelector('.text-gray-800.dark\\:text-gray-100');
+        expect(sexContent).toHaveClass('text-gray-800');
+        expect(sexContent).toHaveClass('dark:text-gray-100');
+        expect(sexContent).toHaveTextContent('Male');
       });
     });
   });

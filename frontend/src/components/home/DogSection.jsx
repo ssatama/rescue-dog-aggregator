@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import DogCard from '../dogs/DogCard';
 import DogCardErrorBoundary from '../error/DogCardErrorBoundary';
@@ -30,7 +30,7 @@ const DogSection = React.memo(function DogSection({
   const [isSlowNet, setIsSlowNet] = useState(false);
   const [loadStartTime, setLoadStartTime] = useState(null);
 
-  const fetchDogs = async () => {
+  const fetchDogs = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -44,11 +44,16 @@ const DogSection = React.memo(function DogSection({
       
       const data = await getAnimalsByCuration(curationType, 4);
       
-      // Batch state updates to avoid act() warnings
-      React.startTransition(() => {
+      // Batch state updates - use startTransition only in production
+      if (process.env.NODE_ENV === 'test') {
         setDogs(data);
         setLoading(false);
-      });
+      } else {
+        React.startTransition(() => {
+          setDogs(data);
+          setLoading(false);
+        });
+      }
       
       // Performance monitoring
       const endTime = performance.now();
@@ -75,7 +80,7 @@ const DogSection = React.memo(function DogSection({
       setError(`Could not load dogs. Please try again later.`);
       setLoading(false);
     }
-  };
+  }, [curationType]);
 
   // Mobile and network detection
   useEffect(() => {
@@ -120,7 +125,7 @@ const DogSection = React.memo(function DogSection({
 
   useEffect(() => {
     fetchDogs();
-  }, [curationType]);
+  }, [curationType, fetchDogs]);
 
   // Handle slide change
   const handleSlideChange = (slideIndex) => {

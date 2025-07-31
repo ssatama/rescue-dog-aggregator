@@ -153,24 +153,27 @@ describe('OrganizationCardSkeleton', () => {
       expect(skeleton).toHaveClass('animate-pulse');
     });
 
-    it('uses gray-200 color for skeleton elements', () => {
+    it('uses gray-200 color for skeleton elements with dark mode support', () => {
       render(<OrganizationCardSkeleton />);
       
-      // Check specific skeleton elements that should have bg-gray-200
+      // Check specific skeleton elements that should have bg-gray-200 and dark:bg-gray-700
       const logoSkeleton = screen.getByTestId('skeleton-logo');
       const nameSkeleton = screen.getByTestId('skeleton-org-name');
       const dogCountSkeleton = screen.getByTestId('skeleton-dog-count');
       
       expect(logoSkeleton).toHaveClass('bg-gray-200');
+      expect(logoSkeleton).toHaveClass('dark:bg-gray-700');
       expect(nameSkeleton).toHaveClass('bg-gray-200');
+      expect(nameSkeleton).toHaveClass('dark:bg-gray-700');
       expect(dogCountSkeleton).toHaveClass('bg-gray-200');
+      expect(dogCountSkeleton).toHaveClass('dark:bg-gray-700');
     });
 
-    it('matches OrganizationCard styling', () => {
+    it('matches OrganizationCard styling with dark mode support', () => {
       render(<OrganizationCardSkeleton />);
       
       const skeleton = screen.getByTestId('organization-card-skeleton');
-      expect(skeleton).toHaveClass('overflow-hidden', 'h-full', 'border', 'border-gray-200', 'bg-white', 'animate-pulse');
+      expect(skeleton).toHaveClass('overflow-hidden', 'h-full', 'border', 'border-gray-200', 'dark:border-gray-700', 'bg-white', 'dark:bg-gray-800', 'animate-pulse');
     });
   });
 

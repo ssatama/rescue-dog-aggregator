@@ -140,12 +140,13 @@ export class MockAPI {
       );
     }
     
-    // Handle curation types for home page
-    if (curationType) {
-      // console.log(`MockAPI: handling curation_type=${curationType}`);
-      // For home page, return dogs regardless of curation type
-      // The actual curation logic would be handled by the backend
-    }
+    // Backend-specific parameters that should be ignored in E2E tests
+    // These would normally be handled by backend curation logic
+    const backendOnlyParams = ['curation_type', 'limit', 'offset'];
+    
+    // Handle curation types for home page - just ignore them in mock
+    // The actual curation logic would be handled by the backend
+    // No filtering needed here since we want dogs to appear regardless of curation_type
     
     const paginatedDogs = filteredDogs.slice(offset, offset + limit);
     const hasMore = offset + limit < filteredDogs.length;
