@@ -251,7 +251,7 @@ jobs:
           CI: true
           E2E_SELECTOR_STRATEGY: strict
           NEXT_PUBLIC_API_URL: http://localhost:3000
-        run: npm run test:e2e:optimized:critical
+        run: npm run test:e2e:optimized:critical:ci
 
       - name: Upload test results on failure
         if: failure()
