@@ -246,12 +246,28 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium webkit
 
-      - name: Run critical E2E tests
+      - name: Install wait-on for service coordination
+        run: npm install --no-save wait-on
+
+      - name: Run critical E2E tests with proper service startup
         env:
           CI: true
           E2E_SELECTOR_STRATEGY: strict
           NEXT_PUBLIC_API_URL: http://localhost:3000
-        run: npm run test:e2e:optimized:critical:ci
+        run: |
+          # Start dev server and wait for it to be ready before running tests
+          npm run dev &
+          DEV_PID=$!
+          echo "Started dev server with PID: $DEV_PID"
+          
+          # Wait for both health endpoint and main page to be ready
+          npx wait-on http://localhost:3000/api/health http://localhost:3000 --timeout 120000 --interval 2000
+          
+          # Run the tests
+          npm run test:e2e:optimized:critical:ci
+          
+          # Clean up
+          kill $DEV_PID || true
 
       - name: Upload test results on failure
         if: failure()

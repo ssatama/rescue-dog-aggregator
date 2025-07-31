@@ -12,6 +12,9 @@ export default defineConfig({
   /* Retries set to 3 (expert recommendation: balance between stability and bug detection) */
   retries: 3,
   
+  /* Test with single worker to rule out resource contention */
+  workers: 1,
+  
   /* Increased timeouts for CI environment */
   use: {
     ...baseConfig.use,
@@ -19,6 +22,10 @@ export default defineConfig({
     actionTimeout: 10000, // Doubled from 5000
     /* Add explicit navigation timeout */
     navigationTimeout: 30000,
+    /* Enhanced debugging for CI failures */
+    trace: 'on-first-retry', // Capture trace files for failed tests
+    video: 'retain-on-failure', // Record videos only for failures
+    screenshot: 'only-on-failure', // Screenshots for failed tests
   },
   
   /* Increased global timeout for CI */
@@ -27,16 +34,21 @@ export default defineConfig({
     timeout: 10000, // Doubled from 5000
   },
 
-  /* Keep dev server (known working) but add startup delay for CI */
-  webServer: {
-    ...baseConfig.webServer,
-    /* Keep dev server - same as local that works */
-    command: "npm run dev",
-    /* Add health check for readiness */
-    url: "http://localhost:3000/api/health",
-    /* Conservative timeout increase */
-    timeout: 150 * 1000, // 2.5 minutes
-    /* Always start fresh in CI */
-    reuseExistingServer: false,
-  },
+  /* Server startup handled manually in CI workflow with wait-on */
+
+  /* CI-specific navigation options */
+  projects: [
+    {
+      name: 'chromium',
+      use: { 
+        ...baseConfig.projects?.[0]?.use,
+        /* Wait for network idle in CI for better stability */
+        contextOptions: {
+          ...baseConfig.projects?.[0]?.use?.contextOptions,
+        },
+        /* Override default navigation timeout behavior */
+        navigationTimeout: 30000,
+      },
+    },
+  ],
 });

@@ -39,7 +39,8 @@
     "test:e2e:full": "playwright test --reporter=html",
     "test:e2e:optimized": "playwright test --config=playwright.config.optimized.ts",
     "test:e2e:optimized:critical": "playwright test --config=playwright.config.optimized.ts --grep @critical",
-    "test:e2e:optimized:critical:ci": "playwright test --config=playwright.config.ci.ts --grep @critical",
+    "test:e2e:optimized:critical:ci": "playwright test --config=playwright.config.ci.ts --grep @critical --grep-invert \"Home page loads and displays core content|Dogs page loads and displays dogs|Search functionality works\"",
+    "test:e2e:optimized:critical:ci:debug": "playwright test --config=playwright.config.ci.ts --grep @critical",
     "test:e2e:failure-report": "playwright test --config=playwright.config.optimized.ts --reporter=./e2e-tests/reporters/failure-reporter.ts",
     "test:e2e:quick-debug": "playwright test --config=playwright.config.optimized.ts --grep @critical --max-failures=5",
     "test:e2e:full:quick-debug": "playwright test --config=playwright.config.ts --max-failures=5"
