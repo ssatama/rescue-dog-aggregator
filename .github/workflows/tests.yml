@@ -263,8 +263,8 @@ jobs:
           # Wait for both health endpoint and main page to be ready
           npx wait-on http://localhost:3000/api/health http://localhost:3000 --timeout 120000 --interval 2000
           
-          # Run the tests (debug version with ALL @critical tests)
-          npm run test:e2e:optimized:critical:ci:debug
+          # Run the tests
+          npm run test:e2e:optimized:critical:ci
           
           # Clean up
           kill $DEV_PID || true
