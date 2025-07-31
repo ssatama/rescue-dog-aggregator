@@ -35,6 +35,7 @@ export default defineConfig({
   },
 
   /* Server startup handled manually in CI workflow with wait-on */
+  webServer: undefined,
 
   /* CI-specific navigation options */
   projects: [
