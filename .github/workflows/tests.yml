@@ -259,13 +259,13 @@ jobs:
           npm run dev &
           DEV_PID=$!
           echo "Started dev server with PID: $DEV_PID"
-          
+
           # Wait for both health endpoint and main page to be ready
           npx wait-on http://localhost:3000/api/health http://localhost:3000 --timeout 120000 --interval 2000
-          
+
           # Run the tests
           npm run test:e2e:optimized:critical:ci
-          
+
           # Clean up
           kill $DEV_PID || true
 

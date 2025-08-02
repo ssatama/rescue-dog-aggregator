@@ -98,7 +98,8 @@ final_correct_parser_*.json
 *.cache
 
 # === Development Artifacts ===
-.vscode/settings.json
+.vscode/settings.json.user
+.vscode/launch.json
 .idea/
 
 docs/design-artifacts/
@@ -127,7 +128,7 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
-
+qr.png
 # === Virtual Environments ===
 venv/
 env/
