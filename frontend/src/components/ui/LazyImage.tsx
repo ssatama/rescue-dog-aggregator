@@ -1,5 +1,5 @@
-import React from 'react';
-import { useLazyImage } from '../../hooks/useLazyImage';
+import React from "react";
+import { useLazyImage } from "../../hooks/useLazyImage";
 
 export interface LazyImageProps {
   /** Image source URL */
@@ -24,23 +24,23 @@ export interface LazyImageProps {
   [key: string]: any;
 }
 
-export const LazyImage: React.FC<LazyImageProps> = ({ 
-  src, 
-  alt, 
-  className = '', 
+export const LazyImage: React.FC<LazyImageProps> = ({
+  src,
+  alt,
+  className = "",
   placeholder = null,
   onLoad = () => {},
   onError = () => {},
   enableProgressiveLoading = false,
   priority = false,
   sizes = undefined,
-  ...props 
+  ...props
 }) => {
   // Filter out React-specific props before spreading to DOM elements
-  const { 
+  const {
     enableProgressiveLoading: _enableProgressiveLoading,
     priority: _priority,
-    ...domProps 
+    ...domProps
   } = props;
   const {
     isLoaded,
@@ -50,39 +50,56 @@ export const LazyImage: React.FC<LazyImageProps> = ({
     blurPlaceholderLoaded,
     imgRef,
     progressiveUrls,
-    handlers
+    handlers,
   } = useLazyImage(src, {
     priority,
     enableProgressiveLoading,
     onLoad,
-    onError
+    onError,
   });
 
-  const { lowQuality: lowQualitySrc, blurPlaceholder: blurPlaceholderSrc } = progressiveUrls;
+  const { lowQuality: lowQualitySrc, blurPlaceholder: blurPlaceholderSrc } =
+    progressiveUrls;
 
   const defaultPlaceholder = (
-    <div 
+    <div
       className={`bg-gray-200 dark:bg-gray-700 animate-pulse flex items-center justify-center ${className}`}
       data-testid="image-placeholder"
       role="img"
       aria-label={alt || "Image loading"}
     >
-      <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-        <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+      <svg
+        className="w-8 h-8 text-gray-400 dark:text-gray-500"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+      >
+        <path
+          fillRule="evenodd"
+          d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+          clipRule="evenodd"
+        />
       </svg>
     </div>
   );
 
   if (hasError) {
     return (
-      <div 
+      <div
         className={`bg-gray-100 dark:bg-gray-800 flex items-center justify-center ${className}`}
         data-testid="image-error"
         role="img"
         aria-label={`${alt || "Image"} - Failed to load`}
       >
-        <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+        <svg
+          className="w-8 h-8 text-gray-400 dark:text-gray-500"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fillRule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+            clipRule="evenodd"
+          />
         </svg>
       </div>
     );
@@ -91,32 +108,38 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   return (
     <div ref={imgRef} className="relative">
       {/* Stage 1: Default placeholder until we have any image loaded */}
-      {!blurPlaceholderLoaded && !lowQualityLoaded && !isLoaded && (placeholder || defaultPlaceholder)}
-      
+      {!blurPlaceholderLoaded &&
+        !lowQualityLoaded &&
+        !isLoaded &&
+        (placeholder || defaultPlaceholder)}
+
       {isInView && (
         <>
           {/* Stage 1: Blur placeholder (immediate) */}
-          {enableProgressiveLoading && blurPlaceholderSrc && !lowQualityLoaded && !isLoaded && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={blurPlaceholderSrc}
-              alt={alt}
-              className={`${className} ${blurPlaceholderLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100`}
-              loading="lazy"
-              sizes={sizes}
-              onLoad={handlers.onBlurPlaceholderLoad}
-              onError={handlers.onError}
-              {...domProps}
-            />
-          )}
-          
+          {enableProgressiveLoading &&
+            blurPlaceholderSrc &&
+            !lowQualityLoaded &&
+            !isLoaded && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={blurPlaceholderSrc}
+                alt={alt}
+                className={`${className} ${blurPlaceholderLoaded ? "opacity-100" : "opacity-0"} transition-opacity duration-100`}
+                loading="lazy"
+                sizes={sizes}
+                onLoad={handlers.onBlurPlaceholderLoad}
+                onError={handlers.onError}
+                {...domProps}
+              />
+            )}
+
           {/* Stage 2: Low quality image */}
           {enableProgressiveLoading && lowQualitySrc && !isLoaded && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={lowQualitySrc}
               alt={alt}
-              className={`${className} ${lowQualityLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-200 ${blurPlaceholderLoaded || lowQualityLoaded ? 'absolute inset-0' : ''}`}
+              className={`${className} ${lowQualityLoaded ? "opacity-100" : "opacity-0"} transition-opacity duration-200 ${blurPlaceholderLoaded || lowQualityLoaded ? "absolute inset-0" : ""}`}
               loading="lazy"
               sizes={sizes}
               onLoad={handlers.onLowQualityLoad}
@@ -124,13 +147,13 @@ export const LazyImage: React.FC<LazyImageProps> = ({
               {...domProps}
             />
           )}
-          
+
           {/* Stage 3: Full quality image with smooth 300ms fade-in transition */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={src}
             alt={alt}
-            className={`${className} ${isLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300 ${enableProgressiveLoading && (blurPlaceholderLoaded || lowQualityLoaded) && !isLoaded ? 'absolute inset-0' : ''}`}
+            className={`${className} ${isLoaded ? "opacity-100" : "opacity-0"} transition-opacity duration-300 ${enableProgressiveLoading && (blurPlaceholderLoaded || lowQualityLoaded) && !isLoaded ? "absolute inset-0" : ""}`}
             loading="lazy"
             sizes={sizes}
             onLoad={handlers.onLoad}

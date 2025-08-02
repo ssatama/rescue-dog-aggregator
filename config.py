@@ -1,6 +1,7 @@
 import getpass
 import logging
 import os
+import socket
 import sys
 from typing import List
 
@@ -168,7 +169,44 @@ def parse_cors_origins() -> List[str]:
 
 
 # Parse CORS configuration
-ALLOWED_ORIGINS = parse_cors_origins()
+def get_local_ip():
+    """Get the local network IP address."""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]
+    except Exception:
+        return "localhost"
+
+
+def get_dynamic_cors_origins():
+    """Get CORS origins including dynamic local IP."""
+    # Get base origins from environment
+    base_origins = parse_cors_origins()
+
+    # In development, add local network IP automatically
+    if ENVIRONMENT == "development":
+        local_ip = get_local_ip()
+        logger.info(f"[config.py] Detected local IP: {local_ip}")
+
+        network_origins = [
+            f"http://{local_ip}:3000",
+        ]
+
+        # Add network origins if not already present
+        for origin in network_origins:
+            if origin not in base_origins:
+                base_origins.append(origin)
+                logger.info(f"[config.py] Added dynamic CORS origin: {origin}")
+            else:
+                logger.info(f"[config.py] CORS origin already exists: {origin}")
+
+    logger.info(f"[config.py] Final CORS origins: {base_origins}")
+    return base_origins
+
+
+# Parse CORS configuration with dynamic IP support
+ALLOWED_ORIGINS = get_dynamic_cors_origins()
 CORS_ALLOW_CREDENTIALS = os.getenv("CORS_ALLOW_CREDENTIALS", "false").lower() == "true"
 
 # CORS settings for different environments

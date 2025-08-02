@@ -3,18 +3,16 @@ Comprehensive tests for secure utility modules.
 Follows CLAUDE.md principles: TDD, immutable data, pure functions.
 """
 
-from dataclasses import dataclass
-from typing import Any, Dict
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
-from utils.db_connection import DatabaseConfig, DatabaseConnectionPool
+from utils.db_connection import DatabaseConfig
 from utils.optimized_standardization import AgeInfo, BreedInfo, StandardizedAnimal, parse_age_text, standardize_animal_data, standardize_breed, standardize_size_value
 from utils.organization_sync_service import OrganizationSyncService, SyncResult
 from utils.secure_config_scraper_runner import ScraperRunResult, SecureConfigScraperRunner
 from utils.secure_file_handler import FileValidationConfig, SecureFileHandler
-from utils.secure_scraper_loader import ScraperModuleInfo, SecureScraperLoader, SecurityError
+from utils.secure_scraper_loader import ScraperModuleInfo, SecureScraperLoader
 
 
 @pytest.mark.security

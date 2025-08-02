@@ -3,7 +3,6 @@
 These tests verify the complete integration with BaseScraper and the configuration system.
 """
 
-import json
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest

@@ -5,7 +5,6 @@ scraping process for MisisRescue website, including pagination handling,
 Reserved section detection, and data collection.
 """
 
-import re
 import time
 from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin, urlparse

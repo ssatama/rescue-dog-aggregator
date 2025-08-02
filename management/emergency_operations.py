@@ -10,18 +10,11 @@ import json
 import logging
 import os
 import sys
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
-import psycopg2
-
-from config import DB_CONFIG
 from management.emergency.emergency_cli import EmergencyCLI
 from management.emergency.emergency_coordinator import EmergencyCoordinator
-from management.emergency.scraper_control_service import ScraperControlService
-from management.emergency.system_monitoring_service import SystemMonitoringService
-from management.services.database_service import DatabaseService, create_database_service_from_config
-from utils.config_loader import ConfigLoader
+from management.services.database_service import DatabaseService
 
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

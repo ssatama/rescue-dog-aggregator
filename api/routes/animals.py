@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import List, Optional
 
@@ -7,14 +6,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from psycopg2.extras import RealDictCursor
 from pydantic import ValidationError
 
-from api.database import create_batch_executor
 from api.dependencies import get_db_cursor
 from api.exceptions import APIException, handle_database_error, handle_validation_error, safe_execute
 from api.models.dog import Animal, AnimalImage, AnimalWithImages
 from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
 from api.models.responses import FilterCountsResponse
 from api.services import AnimalService
-from api.utils.json_parser import build_organization_object, parse_json_field
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

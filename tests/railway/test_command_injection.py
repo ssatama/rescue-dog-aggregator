@@ -5,8 +5,6 @@ Command injection tests for Railway management commands.
 Tests designed to catch command injection vulnerabilities that could allow
 arbitrary command execution through CLI parameters.
 """
-
-import subprocess
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -35,9 +33,6 @@ class TestRailwayCommandInjection:
         with patch("os.system") as mock_system:
             with patch("sys.executable", "/usr/bin/python3"):
                 with patch("management.railway_commands.__file__", "/path/to/railway_commands.py"):
-
-                    # Import and test the vulnerable code pattern
-                    import os
                     import sys
 
                     # Simulate the vulnerable line

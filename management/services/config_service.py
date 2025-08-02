@@ -3,7 +3,7 @@ Configuration service for management operations following CLAUDE.md principles.
 Provides pure business logic functions for configuration management.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from utils.config_loader import ConfigLoader
 from utils.config_scraper_runner import ConfigScraperRunner

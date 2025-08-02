@@ -6,7 +6,6 @@ that provides professional, comprehensive statistics and progress tracking.
 """
 
 import logging
-from datetime import datetime
 from unittest.mock import Mock, patch
 
 import pytest

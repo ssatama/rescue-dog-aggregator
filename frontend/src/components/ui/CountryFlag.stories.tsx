@@ -1,21 +1,21 @@
-import type { Meta, StoryObj } from '@storybook/nextjs';
-import CountryFlag from './CountryFlag';
+import type { Meta, StoryObj } from "@storybook/nextjs";
+import CountryFlag from "./CountryFlag";
 
 const meta: Meta<typeof CountryFlag> = {
-  title: 'UI/CountryFlag',
+  title: "UI/CountryFlag",
   component: CountryFlag,
   parameters: {
-    layout: 'centered',
+    layout: "centered",
   },
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   argTypes: {
     country: {
-      control: { type: 'select' },
-      options: ['BA', 'TR', 'DE', 'GB', 'AT', 'CH', 'FR', 'NL', 'BE', 'DK'],
+      control: { type: "select" },
+      options: ["BA", "TR", "DE", "GB", "AT", "CH", "FR", "NL", "BE", "DK"],
     },
     size: {
-      control: { type: 'select' },
-      options: ['sm', 'md', 'lg'],
+      control: { type: "select" },
+      options: ["sm", "md", "lg"],
     },
   },
 };
@@ -25,43 +25,43 @@ type Story = StoryObj<typeof meta>;
 
 export const Bosnia: Story = {
   args: {
-    country: 'BA',
-    size: 'md',
+    country: "BA",
+    size: "md",
   },
 };
 
 export const Turkey: Story = {
   args: {
-    country: 'TR',
-    size: 'md',
+    country: "TR",
+    size: "md",
   },
 };
 
 export const Germany: Story = {
   args: {
-    country: 'DE',
-    size: 'md',
+    country: "DE",
+    size: "md",
   },
 };
 
 export const UnitedKingdom: Story = {
   args: {
-    country: 'GB',
-    size: 'md',
+    country: "GB",
+    size: "md",
   },
 };
 
 export const Small: Story = {
   args: {
-    country: 'BA',
-    size: 'sm',
+    country: "BA",
+    size: "sm",
   },
 };
 
 export const Large: Story = {
   args: {
-    country: 'TR',
-    size: 'lg',
+    country: "TR",
+    size: "lg",
   },
 };
 

@@ -1,20 +1,20 @@
 /**
  * Test for Organizations Console Error Fix
- * 
- * This test verifies that successful organization loading no longer 
+ *
+ * This test verifies that successful organization loading no longer
  * generates console errors by using logger.info instead of reportError
  */
-import { render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import OrganizationsClient from '../../app/organizations/OrganizationsClient';
-import { getEnhancedOrganizations } from '../../services/organizationsService';
-import { logger, reportError } from '../../utils/logger';
+import { render, screen, waitFor } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import OrganizationsClient from "../../app/organizations/OrganizationsClient";
+import { getEnhancedOrganizations } from "../../services/organizationsService";
+import { logger, reportError } from "../../utils/logger";
 
 // Mock services
-jest.mock('../../services/organizationsService');
+jest.mock("../../services/organizationsService");
 
 // Mock logger and reportError
-jest.mock('../../utils/logger', () => ({
+jest.mock("../../utils/logger", () => ({
   logger: {
     info: jest.fn(),
     log: jest.fn(),
@@ -26,7 +26,7 @@ jest.mock('../../utils/logger', () => ({
 }));
 
 // Mock Layout component
-jest.mock('../../components/layout/Layout', () => {
+jest.mock("../../components/layout/Layout", () => {
   return function MockLayout({ children }) {
     return <div data-testid="layout">{children}</div>;
   };
@@ -35,18 +35,18 @@ jest.mock('../../components/layout/Layout', () => {
 const mockOrganizations = [
   {
     id: 1,
-    name: 'Test Organization',
+    name: "Test Organization",
     total_dogs: 10,
-    recent_dogs: [{ id: 1, name: 'Test Dog' }],
+    recent_dogs: [{ id: 1, name: "Test Dog" }],
   },
 ];
 
-describe('Organizations Console Error Fix', () => {
+describe("Organizations Console Error Fix", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  test('successful organizations loading uses logger.info instead of reportError', async () => {
+  test("successful organizations loading uses logger.info instead of reportError", async () => {
     // Mock successful API response
     getEnhancedOrganizations.mockResolvedValue(mockOrganizations);
 
@@ -54,71 +54,77 @@ describe('Organizations Console Error Fix', () => {
 
     // Wait for organizations to load
     await waitFor(() => {
-      expect(screen.getByText('Test Organization')).toBeInTheDocument();
+      expect(screen.getByText("Test Organization")).toBeInTheDocument();
     });
 
     // Verify that logger.info was called for success (not reportError)
     expect(logger.info).toHaveBeenCalledWith(
-      'Organizations loaded successfully',
+      "Organizations loaded successfully",
       {
         count: 1,
         withStats: 1,
         withRecentDogs: 1,
-      }
+      },
     );
 
     // Verify that reportError was NOT called for success
     expect(reportError).not.toHaveBeenCalledWith(
-      expect.stringContaining('successfully'),
-      expect.any(Object)
+      expect.stringContaining("successfully"),
+      expect.any(Object),
     );
   });
 
-  test('error cases still use reportError correctly', async () => {
+  test("error cases still use reportError correctly", async () => {
     // Mock API error
-    const testError = new Error('Test API error');
+    const testError = new Error("Test API error");
     getEnhancedOrganizations.mockRejectedValue(testError);
 
     render(<OrganizationsClient />);
 
     // Wait for error to be processed
     await waitFor(() => {
-      expect(screen.getByText('There was an error loading organizations. Please try again later.')).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "There was an error loading organizations. Please try again later.",
+        ),
+      ).toBeInTheDocument();
     });
 
     // Verify that reportError was called for actual error
     expect(reportError).toHaveBeenCalledWith(
-      'Error fetching enhanced organizations',
+      "Error fetching enhanced organizations",
       {
-        error: 'Test API error',
+        error: "Test API error",
         stack: expect.any(String),
-      }
+      },
     );
 
     // Verify that logger.info was NOT called on error
     expect(logger.info).not.toHaveBeenCalled();
   });
 
-  test('no console errors are generated on successful load', async () => {
+  test("no console errors are generated on successful load", async () => {
     // Mock successful API response
     getEnhancedOrganizations.mockResolvedValue(mockOrganizations);
 
     // Spy on console.error to ensure no errors are logged
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleErrorSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     render(<OrganizationsClient />);
 
     // Wait for organizations to load
     await waitFor(() => {
-      expect(screen.getByText('Test Organization')).toBeInTheDocument();
+      expect(screen.getByText("Test Organization")).toBeInTheDocument();
     });
 
     // Verify no console errors were generated by our success logging
     expect(consoleErrorSpy).not.toHaveBeenCalledWith(
-      'Error:',
-      'Organizations loaded successfully',
-      'Context:',
-      expect.any(Object)
+      "Error:",
+      "Organizations loaded successfully",
+      "Context:",
+      expect.any(Object),
     );
 
     consoleErrorSpy.mockRestore();

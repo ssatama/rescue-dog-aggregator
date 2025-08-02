@@ -7,7 +7,6 @@ data extraction, and integration with the detail scraper.
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-from selenium.webdriver.common.by import By
 
 from scrapers.daisy_family_rescue.dogs_scraper import DaisyFamilyRescueScraper
 
@@ -214,7 +213,7 @@ weiblich, kastriert"""
 
             try:
                 scraper._extract_with_selenium()
-            except:
+            except Exception:
                 pass  # We expect this to fail due to mocking, just testing setup
 
             # Verify Chrome options were configured

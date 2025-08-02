@@ -15,12 +15,11 @@ Following CLAUDE.md principles:
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
-from unittest.mock import MagicMock, Mock, patch
+from typing import Optional
+from unittest.mock import Mock, patch
 
 import pytest
 
-from config import DB_CONFIG
 from scrapers.base_scraper import BaseScraper
 
 

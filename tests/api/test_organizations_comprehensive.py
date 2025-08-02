@@ -4,7 +4,6 @@ Comprehensive test suite for api/routes/organizations.py critical gaps
 Tests missing endpoints, JSON parsing, error handling, and edge cases.
 """
 
-import json
 from unittest.mock import MagicMock, patch
 
 import psycopg2

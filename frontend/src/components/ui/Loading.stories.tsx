@@ -1,13 +1,13 @@
-import type { Meta, StoryObj } from '@storybook/nextjs';
-import Loading from './Loading';
+import type { Meta, StoryObj } from "@storybook/nextjs";
+import Loading from "./Loading";
 
 const meta: Meta<typeof Loading> = {
-  title: 'UI/Loading',
+  title: "UI/Loading",
   component: Loading,
   parameters: {
-    layout: 'centered',
+    layout: "centered",
   },
-  tags: ['autodocs'],
+  tags: ["autodocs"],
 };
 
 export default meta;
@@ -17,30 +17,30 @@ export const Default: Story = {};
 
 export const WithText: Story = {
   args: {
-    text: 'Loading rescue dogs...',
+    text: "Loading rescue dogs...",
   },
 };
 
 export const LoadingDogs: Story = {
   args: {
-    text: 'Finding dogs in need of homes...',
+    text: "Finding dogs in need of homes...",
   },
 };
 
 export const LoadingOrganizations: Story = {
   args: {
-    text: 'Loading rescue organizations...',
+    text: "Loading rescue organizations...",
   },
 };
 
 export const SearchingDogs: Story = {
   args: {
-    text: 'Searching for your perfect companion...',
+    text: "Searching for your perfect companion...",
   },
 };
 
 export const SavingFavorites: Story = {
   args: {
-    text: 'Saving to favorites...',
+    text: "Saving to favorites...",
   },
 };

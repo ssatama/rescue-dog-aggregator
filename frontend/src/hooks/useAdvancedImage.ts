@@ -1,13 +1,17 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { getDetailHeroImageWithPosition, trackImageLoad, handleImageError } from '../utils/imageUtils';
-import { getLoadingStrategy, onNetworkChange } from '../utils/networkUtils';
+import { useState, useEffect, useRef, useCallback } from "react";
+import {
+  getDetailHeroImageWithPosition,
+  trackImageLoad,
+  handleImageError,
+} from "../utils/imageUtils";
+import { getLoadingStrategy, onNetworkChange } from "../utils/networkUtils";
 
 // Base configuration constants
 const BASE_RETRY_DELAY = 1000; // 1 second base delay between retries
 
 // Test-aware state update utility
 const safeSetState = (setState: (value: any) => void, value: any) => {
-  if (process.env.NODE_ENV === 'test') {
+  if (process.env.NODE_ENV === "test") {
     queueMicrotask(() => setState(value));
   } else {
     setState(value);
@@ -18,7 +22,7 @@ export interface UseAdvancedImageOptions {
   onError?: () => void;
   onLoad?: () => void;
   useGradientFallback?: boolean;
-  type?: 'hero' | 'standard';
+  type?: "hero" | "standard";
 }
 
 export interface UseAdvancedImageReturn {
@@ -37,44 +41,59 @@ export interface UseAdvancedImageReturn {
 
 export function useAdvancedImage(
   src: string,
-  options: UseAdvancedImageOptions = {}
+  options: UseAdvancedImageOptions = {},
 ): UseAdvancedImageReturn {
-  const { onError = () => {}, onLoad = () => {}, useGradientFallback = false, type = 'hero' } = options;
-  
+  const {
+    onError = () => {},
+    onLoad = () => {},
+    useGradientFallback = false,
+    type = "hero",
+  } = options;
+
   const [hydrated, setHydrated] = useState(false);
-  const isSSR = typeof window === 'undefined';
-  
+  const isSSR = typeof window === "undefined";
+
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
-  const [currentSrc, setCurrentSrc] = useState('');
+  const [currentSrc, setCurrentSrc] = useState("");
   const [isReady, setIsReady] = useState(false);
-  const [networkStrategy, setNetworkStrategy] = useState(() => getLoadingStrategy(type));
-  
+  const [networkStrategy, setNetworkStrategy] = useState(() =>
+    getLoadingStrategy(type),
+  );
+
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const loadStartTimeRef = useRef<number | null>(null);
   const imageLoaderRef = useRef<HTMLImageElement | null>(null);
 
-  const { src: optimizedSrc, position } = getDetailHeroImageWithPosition(src, true);
-  
+  const { src: optimizedSrc, position } = getDetailHeroImageWithPosition(
+    src,
+    true,
+  );
+
   // DIAGNOSTIC: Log the URL transformation
-  if (process.env.NODE_ENV === 'development') console.log('[useAdvancedImage] URL transformation:', { originalSrc: src, optimizedSrc, position });
-  
+  if (process.env.NODE_ENV === "development")
+    console.log("[useAdvancedImage] URL transformation:", {
+      originalSrc: src,
+      optimizedSrc,
+      position,
+    });
+
   // Hydration effect
   useEffect(() => {
     if (!isSSR && !hydrated) {
       const handleHydration = () => {
         setHydrated(true);
-        setIsReady(document.readyState === 'complete');
+        setIsReady(document.readyState === "complete");
       };
-      
-      if (document.readyState === 'complete') {
+
+      if (document.readyState === "complete") {
         handleHydration();
       } else {
-        window.addEventListener('load', handleHydration);
-        return () => window.removeEventListener('load', handleHydration);
+        window.addEventListener("load", handleHydration);
+        return () => window.removeEventListener("load", handleHydration);
       }
     }
   }, [isSSR, hydrated]);
@@ -85,30 +104,42 @@ export function useAdvancedImage(
       setNetworkStrategy(getLoadingStrategy(type));
     };
 
-    if (typeof window !== 'undefined' && 'connection' in navigator) {
-      (navigator as any).connection?.addEventListener('change', handleNetworkChange);
+    if (typeof window !== "undefined" && "connection" in navigator) {
+      (navigator as any).connection?.addEventListener(
+        "change",
+        handleNetworkChange,
+      );
       return () => {
-        (navigator as any).connection?.removeEventListener('change', handleNetworkChange);
+        (navigator as any).connection?.removeEventListener(
+          "change",
+          handleNetworkChange,
+        );
       };
     }
   }, [type]);
 
   // Effect 1: Reset state and trigger loading when src changes.
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') console.log('[useAdvancedImage] Reset effect triggered:', { src, isReady, hydrated });
-    
+    if (process.env.NODE_ENV === "development")
+      console.log("[useAdvancedImage] Reset effect triggered:", {
+        src,
+        isReady,
+        hydrated,
+      });
+
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    if (imageLoaderRef.current) imageLoaderRef.current.src = ''; // Abort ongoing load
+    if (imageLoaderRef.current) imageLoaderRef.current.src = ""; // Abort ongoing load
 
     setImageLoaded(false);
     setHasError(false);
     setIsRetrying(false);
     setRetryCount(0);
-    setCurrentSrc('');
-    
+    setCurrentSrc("");
+
     // Start loading only if we have a valid src and the document is ready.
     if (src && isReady && hydrated) {
-      if (process.env.NODE_ENV === 'development') console.log('[useAdvancedImage] Starting load for:', src);
+      if (process.env.NODE_ENV === "development")
+        console.log("[useAdvancedImage] Starting load for:", src);
       setIsLoading(true);
     } else {
       setIsLoading(false);
@@ -117,8 +148,12 @@ export function useAdvancedImage(
 
   // Effect 2: Perform the image loading side-effect.
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') console.log('[useAdvancedImage] Loading effect:', { isLoading, optimizedSrc });
-    
+    if (process.env.NODE_ENV === "development")
+      console.log("[useAdvancedImage] Loading effect:", {
+        isLoading,
+        optimizedSrc,
+      });
+
     if (!isLoading || !optimizedSrc) {
       return;
     }
@@ -127,27 +162,33 @@ export function useAdvancedImage(
     const img = new Image();
     imageLoaderRef.current = img;
     loadStartTimeRef.current = Date.now();
-    
-    if (process.env.NODE_ENV === 'development') console.log('[useAdvancedImage] Creating image loader for:', optimizedSrc);
-    
+
+    if (process.env.NODE_ENV === "development")
+      console.log(
+        "[useAdvancedImage] Creating image loader for:",
+        optimizedSrc,
+      );
+
     const timeoutDuration = (networkStrategy as any).timeout || 10000;
     timeoutRef.current = setTimeout(() => {
       if (!isCancelled) {
-        if (process.env.NODE_ENV === 'development') console.log('[useAdvancedImage] Image load timeout');
+        if (process.env.NODE_ENV === "development")
+          console.log("[useAdvancedImage] Image load timeout");
         setHasError(true);
         setIsLoading(false);
         onError();
       }
     }, timeoutDuration);
-    
+
     img.onload = () => {
       if (!isCancelled) {
-        if (process.env.NODE_ENV === 'development') console.log('[useAdvancedImage] Image loaded successfully');
+        if (process.env.NODE_ENV === "development")
+          console.log("[useAdvancedImage] Image loaded successfully");
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        
+
         const loadTime = Date.now() - (loadStartTimeRef.current || 0);
         trackImageLoad(optimizedSrc, loadTime, type, retryCount);
-        
+
         // CRITICAL FIX: Set the currentSrc so the <img> tag can render the image.
         setCurrentSrc(optimizedSrc);
         setImageLoaded(true);
@@ -156,38 +197,52 @@ export function useAdvancedImage(
         onLoad();
       }
     };
-    
+
     img.onerror = () => {
       if (!isCancelled) {
-        if (process.env.NODE_ENV === 'development') console.log('[useAdvancedImage] Image load error');
+        if (process.env.NODE_ENV === "development")
+          console.log("[useAdvancedImage] Image load error");
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        
+
         setHasError(true);
         setIsLoading(false);
         // handleImageError expects an event object, but we don't have one here
         // Just log the error for monitoring
-        if (process.env.NODE_ENV === 'development') console.error('[useAdvancedImage] Image failed to load:', optimizedSrc);
+        if (process.env.NODE_ENV === "development")
+          console.error(
+            "[useAdvancedImage] Image failed to load:",
+            optimizedSrc,
+          );
         onError();
       }
     };
-    
+
     img.src = optimizedSrc;
-    
+
     return () => {
       isCancelled = true;
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [isLoading, optimizedSrc, networkStrategy, onLoad, onError, retryCount, type]);
+  }, [
+    isLoading,
+    optimizedSrc,
+    networkStrategy,
+    onLoad,
+    onError,
+    retryCount,
+    type,
+  ]);
 
   // Manual retry function
   const handleRetry = useCallback(() => {
     if (optimizedSrc) {
-      if (process.env.NODE_ENV === 'development') console.log('[useAdvancedImage] Retry requested');
+      if (process.env.NODE_ENV === "development")
+        console.log("[useAdvancedImage] Retry requested");
       // Reset state to trigger a new loading attempt
       setHasError(false);
       setImageLoaded(false);
       setIsRetrying(true);
-      setRetryCount(prev => prev + 1);
+      setRetryCount((prev) => prev + 1);
       setIsLoading(true); // This will re-trigger the loading effect
     }
   }, [optimizedSrc]);
@@ -212,6 +267,6 @@ export function useAdvancedImage(
     isReady,
     networkStrategy,
     handleRetry,
-    hydrated
+    hydrated,
   };
 }

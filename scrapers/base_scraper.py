@@ -1,6 +1,5 @@
 # scrapers/base_scraper.py
 
-import json
 import logging
 import os
 import sys
@@ -22,9 +21,6 @@ from config import DB_CONFIG, enable_world_class_scraper_logging
 from services.null_objects import NullMetricsCollector
 from services.progress_tracker import ProgressTracker
 from utils.config_loader import ConfigLoader
-
-# Import the secure standardization utilities
-from utils.optimized_standardization import standardize_breed, standardize_size_value
 from utils.organization_sync_service import create_default_sync_service
 from utils.r2_service import R2Service
 
@@ -349,18 +345,21 @@ class BaseScraper(ABC):
             # Use the same logic as database logging to ensure consistency
             self.animals_found = self._get_correct_animals_found_count(animals_data)
 
-            # Initialize comprehensive progress tracker with discovered animals
-            if len(animals_data) > 0:
-                self.progress_tracker = ProgressTracker(total_items=len(animals_data), logger=logging.getLogger("scraper"), config=self._get_logging_config())  # Use central scraper logger
+            # Initialize comprehensive progress tracker for consistent logging
+            # Always create progress_tracker to ensure consistent terminal output across all scrapers
+            # Use discovery count (not filtered count) to ensure proper verbosity level for completion summary
+            self.progress_tracker = ProgressTracker(total_items=max(self.animals_found, 1), logger=logging.getLogger("scraper"), config=self._get_logging_config())  # Use central scraper logger
 
-                # Track discovery phase stats
-                self.progress_tracker.track_discovery_stats(dogs_found=len(animals_data), pages_processed=1, extraction_failures=0)  # Single page scrape
+            # Track discovery phase stats
+            # Use correct animals found count to show actual discovery metrics
+            correct_animals_found = self._get_correct_animals_found_count(animals_data)
+            self.progress_tracker.track_discovery_stats(dogs_found=correct_animals_found, pages_processed=1, extraction_failures=0)  # Single page scrape
 
-                # Track filtering phase stats
-                self.progress_tracker.track_filtering_stats(dogs_skipped=self.total_animals_skipped, new_dogs=len(animals_data) - self.total_animals_skipped)
+            # Track filtering phase stats
+            self.progress_tracker.track_filtering_stats(dogs_skipped=self.total_animals_skipped, new_dogs=len(animals_data) - self.total_animals_skipped)
 
-                # Log discovery completion
-                self.progress_tracker.log_phase_complete("Discovery", 0.0, f"{len(animals_data)} dogs found")  # Will be updated with actual timing
+            # Log discovery completion
+            self.progress_tracker.log_phase_complete("Discovery", 0.0, f"{correct_animals_found} dogs found")  # Will be updated with actual timing
 
             # Phase 3: Database Operations
             processing_stats = self._process_animals_data(animals_data)
@@ -440,13 +439,13 @@ class BaseScraper(ABC):
         else:
             logging_config = {}
 
-        # Set defaults
+        # Set defaults - Force detailed verbosity for consistent completion banners
         return {
             "batch_size": logging_config.get("batch_size", 10),
             "show_progress_bar": logging_config.get("show_progress_bar", True),
             "show_throughput": logging_config.get("show_throughput", True),
             "eta_enabled": logging_config.get("eta_enabled", True),
-            "verbosity_level": logging_config.get("verbosity_level", "auto"),
+            "verbosity_level": logging_config.get("verbosity_level", "comprehensive"),  # Force comprehensive for consistent terminal output
         }
 
     def _process_animals_data(self, animals_data):
@@ -540,7 +539,7 @@ class BaseScraper(ABC):
         phase_start = datetime.now()
 
         # Check for potential partial failure before updating stale data
-        potential_failure = self.detect_partial_failure(len(animals_data))
+        potential_failure = self.detect_partial_failure(self._get_correct_animals_found_count(animals_data))
         processing_stats["potential_failure_detected"] = potential_failure
 
         if potential_failure:

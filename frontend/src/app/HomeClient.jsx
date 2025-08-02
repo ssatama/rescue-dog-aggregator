@@ -1,10 +1,10 @@
 "use client";
 
-import Layout from '../components/layout/Layout';
-import HeroSection from '../components/home/HeroSection';
-import DogSection from '../components/home/DogSection';
-import TrustSection from '../components/home/TrustSection';
-import DogSectionErrorBoundary from '../components/error/DogSectionErrorBoundary';
+import Layout from "../components/layout/Layout";
+import HeroSection from "../components/home/HeroSection";
+import DogSection from "../components/home/DogSection";
+import TrustSection from "../components/home/TrustSection";
+import DogSectionErrorBoundary from "../components/error/DogSectionErrorBoundary";
 
 export default function HomeClient() {
   // Component now uses DogSection components which handle their own state

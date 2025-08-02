@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from "react";
 
 export interface UseLazyImageOptions {
   /** Whether this image should load immediately (high priority) */
@@ -43,13 +43,13 @@ export interface UseLazyImageReturn {
  */
 export function useLazyImage(
   src: string,
-  options: UseLazyImageOptions = {}
+  options: UseLazyImageOptions = {},
 ): UseLazyImageReturn {
   const {
     priority = false,
     enableProgressiveLoading = false,
     onLoad = () => {},
-    onError = () => {}
+    onError = () => {},
   } = options;
 
   const [isLoaded, setIsLoaded] = useState(false);
@@ -60,22 +60,28 @@ export function useLazyImage(
   const imgRef = useRef<HTMLDivElement>(null);
 
   // Generate progressive loading URLs if enabled
-  const generateProgressiveUrls = useCallback((originalSrc: string) => {
-    if (!originalSrc || !enableProgressiveLoading) return {};
-    
-    if (originalSrc.includes('res.cloudinary.com')) {
+  const generateProgressiveUrls = useCallback(
+    (originalSrc: string) => {
+      if (!originalSrc || !enableProgressiveLoading) return {};
+
+      if (originalSrc.includes("res.cloudinary.com")) {
+        return {
+          lowQuality: originalSrc.replace("/upload/", "/upload/q_20,f_auto/"),
+          blurPlaceholder: originalSrc.replace(
+            "/upload/",
+            "/upload/w_50,q_auto,e_blur:300,f_auto/",
+          ),
+        };
+      }
+
+      // For non-Cloudinary URLs, we can only do basic progressive loading
       return {
-        lowQuality: originalSrc.replace('/upload/', '/upload/q_20,f_auto/'),
-        blurPlaceholder: originalSrc.replace('/upload/', '/upload/w_50,q_auto,e_blur:300,f_auto/')
+        lowQuality: originalSrc,
+        blurPlaceholder: undefined,
       };
-    }
-    
-    // For non-Cloudinary URLs, we can only do basic progressive loading
-    return {
-      lowQuality: originalSrc,
-      blurPlaceholder: undefined
-    };
-  }, [enableProgressiveLoading]);
+    },
+    [enableProgressiveLoading],
+  );
 
   const progressiveUrls = generateProgressiveUrls(src);
 
@@ -85,7 +91,7 @@ export function useLazyImage(
     if (priority) return;
 
     // Gracefully handle browsers without IntersectionObserver support
-    if (typeof IntersectionObserver === 'undefined') {
+    if (typeof IntersectionObserver === "undefined") {
       // For older browsers, just load the image immediately
       setIsInView(true);
       return;
@@ -98,10 +104,10 @@ export function useLazyImage(
           observer.disconnect();
         }
       },
-      { 
+      {
         threshold: 0.1,
-        rootMargin: '200px' // Load images 200px before they enter viewport
-      }
+        rootMargin: "200px", // Load images 200px before they enter viewport
+      },
     );
 
     if (imgRef.current) {
@@ -112,15 +118,21 @@ export function useLazyImage(
   }, [priority]);
 
   // Image event handlers
-  const handleLoad = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
-    setIsLoaded(true);
-    onLoad(event);
-  }, [onLoad]);
+  const handleLoad = useCallback(
+    (event: React.SyntheticEvent<HTMLImageElement>) => {
+      setIsLoaded(true);
+      onLoad(event);
+    },
+    [onLoad],
+  );
 
-  const handleError = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
-    setHasError(true);
-    onError(event);
-  }, [onError]);
+  const handleError = useCallback(
+    (event: React.SyntheticEvent<HTMLImageElement>) => {
+      setHasError(true);
+      onError(event);
+    },
+    [onError],
+  );
 
   const handleLowQualityLoad = useCallback(() => {
     setLowQualityLoaded(true);
@@ -142,7 +154,7 @@ export function useLazyImage(
       onLoad: handleLoad,
       onError: handleError,
       onLowQualityLoad: handleLowQualityLoad,
-      onBlurPlaceholderLoad: handleBlurPlaceholderLoad
-    }
+      onBlurPlaceholderLoad: handleBlurPlaceholderLoad,
+    },
   };
 }

@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react';
-import { reportError } from '../utils/logger';
-import { validateUrl, sanitizeText } from '../utils/security';
-import { useToast } from '../components/ui/Toast';
+import { useState, useCallback } from "react";
+import { reportError } from "../utils/logger";
+import { validateUrl, sanitizeText } from "../utils/security";
+import { useToast } from "../components/ui/Toast";
 
 export interface UseShareOptions {
   /** URL to share */
@@ -28,7 +28,7 @@ export interface UseShareReturn {
   /** Copy link handler */
   handleCopyLink: () => Promise<void>;
   /** Social share handler */
-  handleSocialShare: (platform: 'facebook' | 'x' | 'whatsapp') => void;
+  handleSocialShare: (platform: "facebook" | "x" | "whatsapp") => void;
 }
 
 /**
@@ -40,22 +40,36 @@ export function useShare(options: UseShareOptions = {}): UseShareReturn {
   const { showToast } = useToast();
 
   // Sanitize and validate inputs
-  const safeUrl = url && validateUrl(url) ? url : (typeof window !== 'undefined' ? window.location.href : '');
-  const safeTitle = sanitizeText(title || '');
-  const safeText = sanitizeText(text || '');
+  const safeUrl =
+    url && validateUrl(url)
+      ? url
+      : typeof window !== "undefined"
+        ? window.location.href
+        : "";
+  const safeTitle = sanitizeText(title || "");
+  const safeText = sanitizeText(text || "");
 
   // Check if native share is available
-  const hasNativeShare = typeof navigator !== 'undefined' && 'share' in navigator;
+  const hasNativeShare =
+    typeof navigator !== "undefined" && "share" in navigator;
 
   const handleNativeShare = useCallback(async () => {
     if (hasNativeShare) {
       try {
-        await navigator.share({ title: safeTitle, text: safeText, url: safeUrl });
-        showToast('Share successful!', 'success');
+        await navigator.share({
+          title: safeTitle,
+          text: safeText,
+          url: safeUrl,
+        });
+        showToast("Share successful!", "success");
       } catch (err) {
-        if (err instanceof Error && err.name !== 'AbortError') {
-          reportError('Error sharing', { error: err.message, url: safeUrl, title: safeTitle });
-          showToast('Share failed. Please try again.', 'error');
+        if (err instanceof Error && err.name !== "AbortError") {
+          reportError("Error sharing", {
+            error: err.message,
+            url: safeUrl,
+            title: safeTitle,
+          });
+          showToast("Share failed. Please try again.", "error");
         }
       }
     }
@@ -65,40 +79,47 @@ export function useShare(options: UseShareOptions = {}): UseShareReturn {
     try {
       await navigator.clipboard.writeText(safeUrl);
       setCopied(true);
-      showToast('Link copied to clipboard!', 'success');
+      showToast("Link copied to clipboard!", "success");
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      reportError('Failed to copy link', { error: errorMessage, url: safeUrl });
-      showToast('Failed to copy link. Please try again.', 'error');
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      reportError("Failed to copy link", { error: errorMessage, url: safeUrl });
+      showToast("Failed to copy link. Please try again.", "error");
     }
   }, [safeUrl, showToast]);
 
-  const handleSocialShare = useCallback((platform: 'facebook' | 'x' | 'whatsapp') => {
-    const encodedUrl = encodeURIComponent(safeUrl);
-    const encodedText = encodeURIComponent(safeText);
-    
-    const urls = {
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
-      x: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedText}`,
-      whatsapp: `https://wa.me/?text=${encodedText}%20${encodedUrl}`
-    };
-    
-    const platformNames = {
-      facebook: 'Facebook',
-      x: 'X (Twitter)',
-      whatsapp: 'WhatsApp'
-    };
-    
-    try {
-      window.open(urls[platform], '_blank', 'width=600,height=400');
-      showToast(`Opening share on ${platformNames[platform]}...`, 'info');
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      reportError('Failed to open social share', { error: errorMessage, platform });
-      showToast('Failed to open share dialog. Please try again.', 'error');
-    }
-  }, [safeUrl, safeText, showToast]);
+  const handleSocialShare = useCallback(
+    (platform: "facebook" | "x" | "whatsapp") => {
+      const encodedUrl = encodeURIComponent(safeUrl);
+      const encodedText = encodeURIComponent(safeText);
+
+      const urls = {
+        facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+        x: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedText}`,
+        whatsapp: `https://wa.me/?text=${encodedText}%20${encodedUrl}`,
+      };
+
+      const platformNames = {
+        facebook: "Facebook",
+        x: "X (Twitter)",
+        whatsapp: "WhatsApp",
+      };
+
+      try {
+        window.open(urls[platform], "_blank", "width=600,height=400");
+        showToast(`Opening share on ${platformNames[platform]}...`, "info");
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error";
+        reportError("Failed to open social share", {
+          error: errorMessage,
+          platform,
+        });
+        showToast("Failed to open share dialog. Please try again.", "error");
+      }
+    },
+    [safeUrl, safeText, showToast],
+  );
 
   return {
     copied,
@@ -108,6 +129,6 @@ export function useShare(options: UseShareOptions = {}): UseShareReturn {
     hasNativeShare,
     handleNativeShare,
     handleCopyLink,
-    handleSocialShare
+    handleSocialShare,
   };
 }

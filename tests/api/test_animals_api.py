@@ -4,11 +4,18 @@ from datetime import datetime, timedelta
 import pytest
 from fastapi.testclient import TestClient
 
+from api.main import app
+
 
 @pytest.mark.slow
 @pytest.mark.database
 @pytest.mark.api
 class TestAnimalsAPI:
+    @pytest.fixture
+    def client(self):
+        """Create test client."""
+        return TestClient(app)
+
     # Sample animal data (useful for potential future tests or reference)
     sample_animal = {
         "id": 1,
@@ -372,3 +379,132 @@ class TestAnimalsAPI:
         data = response.json()
         assert isinstance(data, list)
         # Should handle empty case without errors
+
+    def test_pagination_offset(self, client: TestClient):
+        """Test pagination with offset - consolidated from test_animals_list.py."""
+        # page 1
+        r1 = client.get("/api/animals?limit=2&offset=0")
+        assert r1.status_code == 200, r1.text
+        a1 = r1.json()
+        # page 2
+        r2 = client.get("/api/animals?limit=2&offset=2")
+        assert r2.status_code == 200, r2.text
+        a2 = r2.json()
+
+        # no overlap
+        ids1 = {x["id"] for x in a1}
+        ids2 = {x["id"] for x in a2}
+        assert ids1.isdisjoint(ids2)
+
+    @pytest.mark.parametrize("sex", ["Male", "Female"])
+    def test_filter_by_sex(self, sex, client: TestClient):
+        """Test filtering by sex - consolidated from test_animals_list.py."""
+        resp = client.get(f"/api/animals?sex={sex}")
+        assert resp.status_code == 200, resp.text
+        for animal in resp.json():
+            assert animal["sex"] == sex
+
+    def test_filter_by_breed(self, client: TestClient):
+        """Test filtering by breed - consolidated from test_animals_list.py."""
+        # pick the first real breed from meta (skip placeholder)
+        breeds = client.get("/api/animals/meta/breeds").json()
+        if len(breeds) < 2:
+            pytest.skip("not enough breeds to test")
+        breed = breeds[1]
+        resp = client.get(f"/api/animals?standardized_breed={breed}")
+        assert resp.status_code == 200, resp.text
+        for animal in resp.json():
+            assert animal["standardized_breed"] == breed
+
+    def test_filter_by_organization(self, client: TestClient):
+        """Test filtering by organization - consolidated from test_animals_list.py."""
+        # grab one animal to pick its org_id
+        base = client.get("/api/animals?limit=1").json()
+        if not base:
+            pytest.skip("no animals to test")
+        # prefer top‐level organization_id, else nested.organization.id
+        org_id = base[0].get("organization_id") or base[0].get("organization", {}).get("id")
+        assert org_id is not None, "Response did not include an org ID"
+
+        # now filter by that ID
+        resp = client.get(f"/api/animals?organization_id={org_id}")
+        assert resp.status_code == 200, resp.text
+        for animal in resp.json():
+            # again prefer top‐level
+            got = animal.get("organization_id") or animal.get("organization", {}).get("id")
+            assert got == org_id, f"Expected org_id={org_id}, got {got}"
+
+    def test_get_animal_by_valid_id_detailed(self, client: TestClient):
+        """Test GET /api/animals/{id} with detailed validation - consolidated from test_animals_detail.py."""
+        # First fetch one animal to know a valid ID
+        list_resp = client.get("/api/animals?limit=1")
+        assert list_resp.status_code == 200, list_resp.text
+        animals = list_resp.json()
+        assert animals, "No animals in database to test with"
+        test_id = animals[0]["id"]
+
+        # Now fetch detail by that ID
+        resp = client.get(f"/api/animals/{test_id}")
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+        # core fields
+        assert data["id"] == test_id
+        assert isinstance(data.get("name"), str) and data["name"]
+        assert data["animal_type"] == "dog"
+        assert data["status"] == "available"
+        # images key should be present and a list of AnimalImage objects
+        assert isinstance(data.get("images"), list)
+        for img in data["images"]:
+            assert isinstance(img, dict)
+            assert "id" in img and isinstance(img["id"], int)
+            assert "image_url" in img and isinstance(img["image_url"], str)
+            assert img["image_url"].startswith("http")
+            assert "is_primary" in img and isinstance(img["is_primary"], bool)
+
+    def test_get_animal_by_invalid_id_detailed(self, client: TestClient):
+        """Test GET /api/animals/{id} with invalid ID - consolidated from test_animals_detail.py."""
+        resp = client.get("/api/animals/999999")
+        assert resp.status_code == 404
+        err = resp.json()
+        assert err.get("detail") == "Animal not found"
+
+    # API Response Consistency Tests - consolidated from test_response_consistency.py
+    def test_all_endpoints_return_json_content_type(self, client: TestClient):
+        """Test that all endpoints return proper JSON content type - consolidated from test_response_consistency.py."""
+        endpoints = [
+            "/api/animals",
+            "/api/organizations",
+        ]
+
+        for endpoint in endpoints:
+            response = client.get(endpoint)
+            assert "application/json" in response.headers.get("content-type", "")
+
+    def test_error_responses_have_consistent_format(self, client: TestClient):
+        """Test that error responses follow consistent format - consolidated from test_response_consistency.py."""
+        # Test 404 responses
+        response = client.get("/api/animals/999999")
+        assert response.status_code == 404
+        error_data = response.json()
+        assert "detail" in error_data
+        assert isinstance(error_data["detail"], str)
+
+        response = client.get("/api/organizations/999999")
+        assert response.status_code == 404
+        error_data = response.json()
+        assert "detail" in error_data
+        assert isinstance(error_data["detail"], str)
+
+    def test_success_responses_have_expected_structure(self, client: TestClient):
+        """Test that successful responses have expected structure - consolidated from test_response_consistency.py."""
+        # Test organizations list
+        response = client.get("/api/organizations")
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+
+        # Test animals list
+        response = client.get("/api/animals")
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)

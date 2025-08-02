@@ -1,9 +1,8 @@
 """Integration tests for The Underdog scraper complete pipeline."""
 
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
-from bs4 import BeautifulSoup
 
 from scrapers.theunderdog.theunderdog_scraper import TheUnderdogScraper
 

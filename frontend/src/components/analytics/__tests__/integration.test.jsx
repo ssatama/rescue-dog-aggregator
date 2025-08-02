@@ -1,26 +1,29 @@
-import { render } from '@testing-library/react';
-import { Analytics, SpeedInsights } from '../index';
+import { render } from "@testing-library/react";
+import { Analytics, SpeedInsights } from "../index";
 
-describe('Analytics Integration', () => {
-  it('exports Analytics and SpeedInsights components', () => {
+describe("Analytics Integration", () => {
+  it("exports Analytics and SpeedInsights components", () => {
     expect(Analytics).toBeDefined();
     expect(SpeedInsights).toBeDefined();
   });
 
-  it('renders both components without errors', () => {
+  it("renders both components without errors", () => {
     expect(() => {
       render(
         <div>
           <Analytics />
           <SpeedInsights />
-        </div>
+        </div>,
       );
     }).not.toThrow();
   });
 
-  it('can be imported using named imports', () => {
-    const { Analytics: AnalyticsComponent, SpeedInsights: SpeedInsightsComponent } = require('../index');
-    
+  it("can be imported using named imports", () => {
+    const {
+      Analytics: AnalyticsComponent,
+      SpeedInsights: SpeedInsightsComponent,
+    } = require("../index");
+
     expect(AnalyticsComponent).toBeDefined();
     expect(SpeedInsightsComponent).toBeDefined();
   });

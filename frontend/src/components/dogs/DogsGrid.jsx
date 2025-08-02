@@ -1,30 +1,34 @@
-import React from 'react';
-import DogCard from './DogCard';
-import DogCardErrorBoundary from '../error/DogCardErrorBoundary';
-import DogCardSkeleton from '../ui/DogCardSkeleton';
-import EmptyState from '../ui/EmptyState';
+import React from "react";
+import DogCard from "./DogCard";
+import DogCardErrorBoundary from "../error/DogCardErrorBoundary";
+import DogCardSkeleton from "../ui/DogCardSkeleton";
+import EmptyState from "../ui/EmptyState";
 
 /**
  * Responsive grid component for displaying dog cards
  * Implements CSS Grid with auto-fill and responsive breakpoints
  */
-const DogsGrid = React.memo(function DogsGrid({ 
-  dogs = [], 
-  loading = false, 
+const DogsGrid = React.memo(function DogsGrid({
+  dogs = [],
+  loading = false,
   skeletonCount = 8,
-  className = '',
-  emptyStateVariant = 'noDogsOrganization',
+  className = "",
+  emptyStateVariant = "noDogsOrganization",
   onClearFilters,
   onBrowseOrganizations,
-  loadingType = 'initial', // 'initial' | 'filter' | 'pagination'
-  ...props 
+  loadingType = "initial", // 'initial' | 'filter' | 'pagination'
+  ...props
 }) {
   // Handle loading state with skeleton cards
   if (loading) {
     // Different loading animations based on type
-    const animationClass = loadingType === 'filter' ? 'animate-in fade-in duration-200' : 'animate-in fade-in duration-300';
-    const adjustedSkeletonCount = loadingType === 'filter' ? Math.min(skeletonCount, 6) : skeletonCount;
-    
+    const animationClass =
+      loadingType === "filter"
+        ? "animate-in fade-in duration-200"
+        : "animate-in fade-in duration-300";
+    const adjustedSkeletonCount =
+      loadingType === "filter" ? Math.min(skeletonCount, 6) : skeletonCount;
+
     return (
       <div
         data-testid="dogs-grid"
@@ -33,8 +37,8 @@ const DogsGrid = React.memo(function DogsGrid({
         {...props}
       >
         {Array.from({ length: adjustedSkeletonCount }, (_, index) => (
-          <DogCardSkeleton 
-            key={`skeleton-${index}`} 
+          <DogCardSkeleton
+            key={`skeleton-${index}`}
             animationDelay={index * 50}
           />
         ))}
@@ -73,8 +77,8 @@ const DogsGrid = React.memo(function DogsGrid({
 
         return (
           <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
-            <DogCard 
-              dog={dog} 
+            <DogCard
+              dog={dog}
               priority={index < 4} // Prioritize loading for first 4 images
               animationDelay={animationDelay} // Stagger animations with max limit
             />
@@ -84,6 +88,5 @@ const DogsGrid = React.memo(function DogsGrid({
     </div>
   );
 });
-
 
 export default DogsGrid;

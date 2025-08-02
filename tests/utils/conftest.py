@@ -11,7 +11,7 @@ import pytest
 # Add project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from utils.db_connection import DatabaseConfig, DatabaseConnectionPool
+from utils.db_connection import DatabaseConfig
 
 # Test database configuration (matching main conftest)
 TEST_DB_USER = "postgres"

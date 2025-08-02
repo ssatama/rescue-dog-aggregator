@@ -2,7 +2,7 @@
  * Dog filtering and sorting utilities
  */
 
-import { getAgeCategory } from './dogHelpers';
+import { getAgeCategory } from "./dogHelpers";
 
 /**
  * Filter dogs by age category using backend-compatible logic
@@ -12,39 +12,48 @@ import { getAgeCategory } from './dogHelpers';
  */
 export const filterByAge = (dogs, ageFilter) => {
   if (!dogs || !Array.isArray(dogs)) return [];
-  if (!ageFilter || ageFilter === 'All') return dogs;
+  if (!ageFilter || ageFilter === "All") return dogs;
 
-  const filtered = dogs.filter(dog => {
+  const filtered = dogs.filter((dog) => {
     if (!dog) return false;
-    
+
     // Check multiple possible field names for age data
     const ageMin = dog.age_min_months || dog.ageMinMonths;
     const ageMax = dog.age_max_months || dog.ageMaxMonths;
-    
+
     // Handle Unknown age case
-    if (ageFilter === 'Unknown') {
+    if (ageFilter === "Unknown") {
       return !ageMin && !ageMax;
     }
-    
+
     // If no minimum age data, exclude from age-specific filters
     if (!ageMin && ageMin !== 0) return false;
-    
+
     // Use backend-compatible age range logic to match API filtering exactly
     switch (ageFilter) {
-      case 'Puppy':  // < 12 months
+      case "Puppy": // < 12 months
         return ageMax && ageMax < 12;
-      case 'Young':  // 12 to 36 months
+      case "Young": // 12 to 36 months
         // Match backend SQL: (age_min_months >= 12 AND age_max_months <= 36)
-        return ageMin >= 12 && ageMax !== null && ageMax !== undefined && ageMax <= 36;
-      case 'Adult':  // 36 to 96 months  
-        return ageMin >= 36 && ageMax !== null && ageMax !== undefined && ageMax <= 96;
-      case 'Senior': // > 96 months
+        return (
+          ageMin >= 12 &&
+          ageMax !== null &&
+          ageMax !== undefined &&
+          ageMax <= 36
+        );
+      case "Adult": // 36 to 96 months
+        return (
+          ageMin >= 36 &&
+          ageMax !== null &&
+          ageMax !== undefined &&
+          ageMax <= 96
+        );
+      case "Senior": // > 96 months
         return ageMin >= 96;
       default:
         return false;
     }
   });
-
 
   return filtered;
 };
@@ -57,15 +66,15 @@ export const filterByAge = (dogs, ageFilter) => {
  */
 export const filterByBreed = (dogs, breedFilter) => {
   if (!dogs || !Array.isArray(dogs)) return [];
-  if (!breedFilter || breedFilter.trim() === '') return dogs;
+  if (!breedFilter || breedFilter.trim() === "") return dogs;
 
   const searchTerm = breedFilter.toLowerCase().trim();
-  
-  return dogs.filter(dog => {
+
+  return dogs.filter((dog) => {
     if (!dog) return false;
-    
+
     // Check standardized_breed first, then fall back to breed
-    const breed = (dog.standardized_breed || dog.breed || '').toLowerCase();
+    const breed = (dog.standardized_breed || dog.breed || "").toLowerCase();
     return breed.includes(searchTerm);
   });
 };
@@ -78,11 +87,11 @@ export const filterByBreed = (dogs, breedFilter) => {
  */
 export const filterByLocation = (dogs, locationFilter) => {
   if (!dogs || !Array.isArray(dogs)) return [];
-  if (!locationFilter || locationFilter === 'All') return dogs;
+  if (!locationFilter || locationFilter === "All") return dogs;
 
-  return dogs.filter(dog => {
+  return dogs.filter((dog) => {
     if (!dog || !dog.organization) return false;
-    
+
     const serviceRegions = dog.organization.service_regions || [];
     return serviceRegions.includes(locationFilter);
   });
@@ -96,11 +105,11 @@ export const filterByLocation = (dogs, locationFilter) => {
  */
 export const filterByShipsTo = (dogs, shipsToFilter) => {
   if (!dogs || !Array.isArray(dogs)) return [];
-  if (!shipsToFilter || shipsToFilter === 'All') return dogs;
+  if (!shipsToFilter || shipsToFilter === "All") return dogs;
 
-  return dogs.filter(dog => {
+  return dogs.filter((dog) => {
     if (!dog || !dog.organization) return false;
-    
+
     const shipsTo = dog.organization.ships_to || [];
     return shipsTo.includes(shipsToFilter);
   });
@@ -114,26 +123,26 @@ export const filterByShipsTo = (dogs, shipsToFilter) => {
  */
 export const sortDogs = (dogs, sortBy) => {
   if (!dogs || !Array.isArray(dogs)) return [];
-  
+
   // Create a copy to avoid mutating the original array
   const sortedDogs = [...dogs];
 
   switch (sortBy) {
-    case 'name-asc':
+    case "name-asc":
       return sortedDogs.sort((a, b) => {
-        const nameA = (a?.name || '').toLowerCase();
-        const nameB = (b?.name || '').toLowerCase();
+        const nameA = (a?.name || "").toLowerCase();
+        const nameB = (b?.name || "").toLowerCase();
         return nameA.localeCompare(nameB);
       });
 
-    case 'name-desc':
+    case "name-desc":
       return sortedDogs.sort((a, b) => {
-        const nameA = (a?.name || '').toLowerCase();
-        const nameB = (b?.name || '').toLowerCase();
+        const nameA = (a?.name || "").toLowerCase();
+        const nameB = (b?.name || "").toLowerCase();
         return nameB.localeCompare(nameA);
       });
 
-    case 'newest':
+    case "newest":
     default:
       return sortedDogs.sort((a, b) => {
         const dateA = a?.created_at ? new Date(a.created_at) : new Date(0);
@@ -159,7 +168,7 @@ export const applyAllFilters = (dogs, filters, includeShipsTo = true) => {
   // Apply filters in sequence
   filteredDogs = filterByAge(filteredDogs, filters.age);
   filteredDogs = filterByBreed(filteredDogs, filters.breed);
-  
+
   // Only apply shipsTo filter if enabled (not needed for organization pages)
   if (includeShipsTo) {
     filteredDogs = filterByShipsTo(filteredDogs, filters.shipsTo);
@@ -180,11 +189,11 @@ export const extractAvailableBreeds = (dogs) => {
   if (!dogs || !Array.isArray(dogs)) return [];
 
   const breeds = new Set();
-  
-  dogs.forEach(dog => {
+
+  dogs.forEach((dog) => {
     if (dog) {
       const breed = dog.standardized_breed || dog.breed;
-      if (breed && breed !== 'Unknown') {
+      if (breed && breed !== "Unknown") {
         breeds.add(breed);
       }
     }
@@ -202,10 +211,10 @@ export const extractAvailableLocations = (dogs) => {
   if (!dogs || !Array.isArray(dogs)) return [];
 
   const locations = new Set();
-  
-  dogs.forEach(dog => {
+
+  dogs.forEach((dog) => {
     if (dog && dog.organization && dog.organization.service_regions) {
-      dog.organization.service_regions.forEach(region => {
+      dog.organization.service_regions.forEach((region) => {
         if (region) {
           locations.add(region);
         }
@@ -225,10 +234,10 @@ export const extractAvailableShipsTo = (dogs) => {
   if (!dogs || !Array.isArray(dogs)) return [];
 
   const shipsTo = new Set();
-  
-  dogs.forEach(dog => {
+
+  dogs.forEach((dog) => {
     if (dog && dog.organization && dog.organization.ships_to) {
-      dog.organization.ships_to.forEach(country => {
+      dog.organization.ships_to.forEach((country) => {
         if (country) {
           shipsTo.add(country);
         }
@@ -249,9 +258,9 @@ export const hasActiveFilters = (filters, includeShipsTo = true) => {
   if (!filters) return false;
 
   return (
-    (filters.age && filters.age !== 'All') ||
-    (filters.breed && filters.breed.trim() !== '') ||
-    (includeShipsTo && filters.shipsTo && filters.shipsTo !== 'All')
+    (filters.age && filters.age !== "All") ||
+    (filters.breed && filters.breed.trim() !== "") ||
+    (includeShipsTo && filters.shipsTo && filters.shipsTo !== "All")
     // Note: sort is not considered an "active filter" for the badge
   );
 };
@@ -261,10 +270,10 @@ export const hasActiveFilters = (filters, includeShipsTo = true) => {
  * @returns {Object} Default filter object
  */
 export const getDefaultFilters = () => ({
-  age: 'All',
-  breed: '',
-  shipsTo: 'All',
-  sort: 'newest'
+  age: "All",
+  breed: "",
+  shipsTo: "All",
+  sort: "newest",
 });
 
 /**
@@ -272,12 +281,12 @@ export const getDefaultFilters = () => ({
  * @returns {Array} Array of age filter options
  */
 export const getAgeFilterOptions = () => [
-  { value: 'All', label: 'All Ages' },
-  { value: 'Puppy', label: 'Puppy' },
-  { value: 'Young', label: 'Young (1-3 years)' },
-  { value: 'Adult', label: 'Adult (3-8 years)' },
-  { value: 'Senior', label: 'Senior (8+ years)' },
-  { value: 'Unknown', label: 'Age Unknown' }
+  { value: "All", label: "All Ages" },
+  { value: "Puppy", label: "Puppy" },
+  { value: "Young", label: "Young (1-3 years)" },
+  { value: "Adult", label: "Adult (3-8 years)" },
+  { value: "Senior", label: "Senior (8+ years)" },
+  { value: "Unknown", label: "Age Unknown" },
 ];
 
 /**
@@ -285,7 +294,7 @@ export const getAgeFilterOptions = () => [
  * @returns {Array} Array of sort options
  */
 export const getSortFilterOptions = () => [
-  { value: 'newest', label: 'Newest First' },
-  { value: 'name-asc', label: 'Name A-Z' },
-  { value: 'name-desc', label: 'Name Z-A' }
+  { value: "newest", label: "Newest First" },
+  { value: "name-asc", label: "Name A-Z" },
+  { value: "name-desc", label: "Name Z-A" },
 ];

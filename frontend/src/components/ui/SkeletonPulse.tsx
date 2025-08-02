@@ -1,5 +1,5 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
+import React from "react";
+import { cn } from "@/lib/utils";
 
 export interface SkeletonPulseProps {
   /** Additional CSS classes to apply */
@@ -12,34 +12,33 @@ export interface SkeletonPulseProps {
 
 /**
  * SkeletonPulse - Base skeleton loading component with consistent orange-tinted shimmer
- * 
+ *
  * Provides a standardized skeleton element that can be used for any loading placeholder.
  * Uses the existing .skeleton class for orange-tinted shimmer animation and maintains
  * accessibility standards.
  */
-const SkeletonPulse = React.memo<SkeletonPulseProps>(function SkeletonPulse({ 
-  className = '', 
+const SkeletonPulse = React.memo<SkeletonPulseProps>(function SkeletonPulse({
+  className = "",
   standalone = true,
-  ...props 
+  ...props
 }) {
-  const ariaProps = standalone ? {
-    role: "status",
-    "aria-label": "Loading content",
-    "aria-busy": true
-  } : {};
+  const ariaProps = standalone
+    ? {
+        role: "status",
+        "aria-label": "Loading content",
+        "aria-busy": true,
+      }
+    : {};
 
   return (
     <div
       {...ariaProps}
-      className={cn(
-        "bg-muted animate-pulse rounded",
-        className
-      )}
+      className={cn("bg-muted animate-pulse rounded", className)}
       {...props}
     />
   );
 });
 
-SkeletonPulse.displayName = 'SkeletonPulse';
+SkeletonPulse.displayName = "SkeletonPulse";
 
 export default SkeletonPulse;

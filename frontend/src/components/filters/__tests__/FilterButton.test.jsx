@@ -1,249 +1,259 @@
-import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import FilterButton from '../FilterButton';
+import React from "react";
+import { render, screen, fireEvent } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import FilterButton from "../FilterButton";
 
-describe('FilterButton', () => {
+describe("FilterButton", () => {
   const defaultProps = {
     active: false,
     onClick: jest.fn(),
-    children: 'Test Button',
-    count: 0
+    children: "Test Button",
+    count: 0,
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('Basic Rendering', () => {
-    it('renders children correctly', () => {
+  describe("Basic Rendering", () => {
+    it("renders children correctly", () => {
       render(<FilterButton {...defaultProps} />);
-      expect(screen.getByRole('button', { name: 'Test Button' })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Test Button" }),
+      ).toBeInTheDocument();
     });
 
-    it('calls onClick when clicked', () => {
+    it("calls onClick when clicked", () => {
       const mockOnClick = jest.fn();
       render(<FilterButton {...defaultProps} onClick={mockOnClick} />);
-      
-      fireEvent.click(screen.getByRole('button'));
+
+      fireEvent.click(screen.getByRole("button"));
       expect(mockOnClick).toHaveBeenCalledTimes(1);
     });
 
-    it('renders without crashing when children is missing', () => {
+    it("renders without crashing when children is missing", () => {
       render(<FilterButton {...defaultProps} children={undefined} />);
-      expect(screen.getByRole('button')).toBeInTheDocument();
+      expect(screen.getByRole("button")).toBeInTheDocument();
     });
   });
 
-  describe('Visual States - Default State', () => {
-    it('applies default styling when not active', () => {
+  describe("Visual States - Default State", () => {
+    it("applies default styling when not active", () => {
       render(<FilterButton {...defaultProps} active={false} />);
-      const button = screen.getByRole('button');
-      
-      expect(button).toHaveClass('bg-white');
-      expect(button).toHaveClass('border-orange-200');
-      expect(button).not.toHaveClass('bg-orange-100');
-      expect(button).not.toHaveClass('border-orange-400');
-      expect(button).not.toHaveClass('text-orange-700');
+      const button = screen.getByRole("button");
+
+      expect(button).toHaveClass("bg-white");
+      expect(button).toHaveClass("border-orange-200");
+      expect(button).not.toHaveClass("bg-orange-100");
+      expect(button).not.toHaveClass("border-orange-400");
+      expect(button).not.toHaveClass("text-orange-700");
     });
 
-    it('includes hover states in className', () => {
+    it("includes hover states in className", () => {
       render(<FilterButton {...defaultProps} active={false} />);
-      const button = screen.getByRole('button');
-      
-      expect(button).toHaveClass('hover:bg-orange-50');
-      expect(button).toHaveClass('hover:border-orange-300');
+      const button = screen.getByRole("button");
+
+      expect(button).toHaveClass("hover:bg-orange-50");
+      expect(button).toHaveClass("hover:border-orange-300");
     });
   });
 
-  describe('Visual States - Active State', () => {
-    it('applies active styling when active is true', () => {
+  describe("Visual States - Active State", () => {
+    it("applies active styling when active is true", () => {
       render(<FilterButton {...defaultProps} active={true} />);
-      const button = screen.getByRole('button');
-      
-      expect(button).toHaveClass('bg-orange-100');
-      expect(button).toHaveClass('border-orange-400');
-      expect(button).toHaveClass('text-orange-700');
-      expect(button).not.toHaveClass('bg-white');
-      expect(button).not.toHaveClass('border-orange-200');
+      const button = screen.getByRole("button");
+
+      expect(button).toHaveClass("bg-orange-100");
+      expect(button).toHaveClass("border-orange-400");
+      expect(button).toHaveClass("text-orange-700");
+      expect(button).not.toHaveClass("bg-white");
+      expect(button).not.toHaveClass("border-orange-200");
     });
 
-    it('does not include hover classes when active', () => {
+    it("does not include hover classes when active", () => {
       render(<FilterButton {...defaultProps} active={true} />);
-      const button = screen.getByRole('button');
-      
-      expect(button).not.toHaveClass('hover:bg-orange-50');
-      expect(button).not.toHaveClass('hover:border-orange-300');
+      const button = screen.getByRole("button");
+
+      expect(button).not.toHaveClass("hover:bg-orange-50");
+      expect(button).not.toHaveClass("hover:border-orange-300");
     });
   });
 
-  describe('Interactive Behavior', () => {
-    it('includes transition and animation classes', () => {
+  describe("Interactive Behavior", () => {
+    it("includes transition and animation classes", () => {
       render(<FilterButton {...defaultProps} />);
-      const button = screen.getByRole('button');
-      
-      expect(button).toHaveClass('transition-all');
-      expect(button).toHaveClass('duration-150');
-      expect(button).toHaveClass('ease-out');
-      expect(button).toHaveClass('active:scale-[0.98]');
+      const button = screen.getByRole("button");
+
+      expect(button).toHaveClass("transition-all");
+      expect(button).toHaveClass("duration-150");
+      expect(button).toHaveClass("ease-out");
+      expect(button).toHaveClass("active:scale-[0.98]");
     });
 
-    it('includes proper base styling classes', () => {
+    it("includes proper base styling classes", () => {
       render(<FilterButton {...defaultProps} />);
-      const button = screen.getByRole('button');
-      
-      expect(button).toHaveClass('px-3');
-      expect(button).toHaveClass('py-2');
-      expect(button).toHaveClass('rounded-lg');
-      expect(button).toHaveClass('border');
-      expect(button).toHaveClass('text-sm');
-      expect(button).toHaveClass('font-medium');
+      const button = screen.getByRole("button");
+
+      expect(button).toHaveClass("px-3");
+      expect(button).toHaveClass("py-2");
+      expect(button).toHaveClass("rounded-lg");
+      expect(button).toHaveClass("border");
+      expect(button).toHaveClass("text-sm");
+      expect(button).toHaveClass("font-medium");
     });
   });
 
-  describe('Count Badge Logic', () => {
-    it('does not show badge when count is 0', () => {
+  describe("Count Badge Logic", () => {
+    it("does not show badge when count is 0", () => {
       render(<FilterButton {...defaultProps} count={0} />);
-      expect(screen.queryByText('0')).not.toBeInTheDocument();
+      expect(screen.queryByText("0")).not.toBeInTheDocument();
     });
 
-    it('does not show badge when count is undefined', () => {
+    it("does not show badge when count is undefined", () => {
       render(<FilterButton {...defaultProps} count={undefined} />);
-      expect(screen.queryByText('0')).not.toBeInTheDocument();
+      expect(screen.queryByText("0")).not.toBeInTheDocument();
     });
 
-    it('shows badge when count is greater than 0', () => {
+    it("shows badge when count is greater than 0", () => {
       render(<FilterButton {...defaultProps} count={3} />);
-      expect(screen.getByText('3')).toBeInTheDocument();
+      expect(screen.getByText("3")).toBeInTheDocument();
     });
 
-    it('applies correct badge styling', () => {
+    it("applies correct badge styling", () => {
       render(<FilterButton {...defaultProps} count={2} />);
-      const badge = screen.getByText('2');
-      
-      expect(badge).toHaveClass('ml-1.5');
-      expect(badge).toHaveClass('inline-flex');
-      expect(badge).toHaveClass('items-center');
-      expect(badge).toHaveClass('justify-center');
-      expect(badge).toHaveClass('px-1.5');
-      expect(badge).toHaveClass('py-0.5');
-      expect(badge).toHaveClass('text-xs');
-      expect(badge).toHaveClass('bg-orange-200');
-      expect(badge).toHaveClass('text-orange-800');
-      expect(badge).toHaveClass('rounded-full');
+      const badge = screen.getByText("2");
+
+      expect(badge).toHaveClass("ml-1.5");
+      expect(badge).toHaveClass("inline-flex");
+      expect(badge).toHaveClass("items-center");
+      expect(badge).toHaveClass("justify-center");
+      expect(badge).toHaveClass("px-1.5");
+      expect(badge).toHaveClass("py-0.5");
+      expect(badge).toHaveClass("text-xs");
+      expect(badge).toHaveClass("bg-orange-200");
+      expect(badge).toHaveClass("text-orange-800");
+      expect(badge).toHaveClass("rounded-full");
     });
 
-    it('shows correct count values', () => {
+    it("shows correct count values", () => {
       const { rerender } = render(<FilterButton {...defaultProps} count={1} />);
-      expect(screen.getByText('1')).toBeInTheDocument();
-      
+      expect(screen.getByText("1")).toBeInTheDocument();
+
       rerender(<FilterButton {...defaultProps} count={99} />);
-      expect(screen.getByText('99')).toBeInTheDocument();
+      expect(screen.getByText("99")).toBeInTheDocument();
     });
   });
 
-  describe('Accessibility', () => {
-    it('is focusable', () => {
+  describe("Accessibility", () => {
+    it("is focusable", () => {
       render(<FilterButton {...defaultProps} />);
-      const button = screen.getByRole('button');
-      
+      const button = screen.getByRole("button");
+
       button.focus();
       expect(button).toHaveFocus();
     });
 
-    it('has proper button role', () => {
+    it("has proper button role", () => {
       render(<FilterButton {...defaultProps} />);
-      expect(screen.getByRole('button')).toBeInTheDocument();
+      expect(screen.getByRole("button")).toBeInTheDocument();
     });
 
-    it('supports keyboard interaction', () => {
+    it("supports keyboard interaction", () => {
       const mockOnClick = jest.fn();
       render(<FilterButton {...defaultProps} onClick={mockOnClick} />);
-      const button = screen.getByRole('button');
-      
-      fireEvent.keyDown(button, { key: 'Enter' });
+      const button = screen.getByRole("button");
+
+      fireEvent.keyDown(button, { key: "Enter" });
       // Note: onClick should be called by default button behavior
       button.click();
       expect(mockOnClick).toHaveBeenCalled();
     });
 
-    it('provides accessible text when badge is present', () => {
-      render(<FilterButton {...defaultProps} count={3}>Age</FilterButton>);
-      expect(screen.getByText('Age')).toBeInTheDocument();
-      expect(screen.getByText('3')).toBeInTheDocument();
+    it("provides accessible text when badge is present", () => {
+      render(
+        <FilterButton {...defaultProps} count={3}>
+          Age
+        </FilterButton>,
+      );
+      expect(screen.getByText("Age")).toBeInTheDocument();
+      expect(screen.getByText("3")).toBeInTheDocument();
     });
   });
 
-  describe('Props Validation', () => {
-    it('handles missing onClick gracefully', () => {
+  describe("Props Validation", () => {
+    it("handles missing onClick gracefully", () => {
       const { onClick, ...propsWithoutOnClick } = defaultProps;
       expect(() => {
         render(<FilterButton {...propsWithoutOnClick} />);
       }).not.toThrow();
     });
 
-    it('handles boolean active prop correctly', () => {
-      const { rerender } = render(<FilterButton {...defaultProps} active={false} />);
-      expect(screen.getByRole('button')).toHaveClass('bg-white');
-      
+    it("handles boolean active prop correctly", () => {
+      const { rerender } = render(
+        <FilterButton {...defaultProps} active={false} />,
+      );
+      expect(screen.getByRole("button")).toHaveClass("bg-white");
+
       rerender(<FilterButton {...defaultProps} active={true} />);
-      expect(screen.getByRole('button')).toHaveClass('bg-orange-100');
+      expect(screen.getByRole("button")).toHaveClass("bg-orange-100");
     });
 
-    it('handles string children', () => {
+    it("handles string children", () => {
       render(<FilterButton {...defaultProps}>String Child</FilterButton>);
-      expect(screen.getByText('String Child')).toBeInTheDocument();
+      expect(screen.getByText("String Child")).toBeInTheDocument();
     });
 
-    it('handles React element children', () => {
+    it("handles React element children", () => {
       render(
         <FilterButton {...defaultProps}>
           <span data-testid="child-element">Element Child</span>
-        </FilterButton>
+        </FilterButton>,
       );
-      expect(screen.getByTestId('child-element')).toBeInTheDocument();
+      expect(screen.getByTestId("child-element")).toBeInTheDocument();
     });
 
-    it('handles negative count values', () => {
+    it("handles negative count values", () => {
       render(<FilterButton {...defaultProps} count={-1} />);
       // Should not show badge for negative values
-      expect(screen.queryByText('-1')).not.toBeInTheDocument();
+      expect(screen.queryByText("-1")).not.toBeInTheDocument();
     });
   });
 
-  describe('Edge Cases', () => {
-    it('handles very large count values', () => {
+  describe("Edge Cases", () => {
+    it("handles very large count values", () => {
       render(<FilterButton {...defaultProps} count={999} />);
-      expect(screen.getByText('999')).toBeInTheDocument();
+      expect(screen.getByText("999")).toBeInTheDocument();
     });
 
-    it('handles rapid clicking', () => {
+    it("handles rapid clicking", () => {
       const mockOnClick = jest.fn();
       render(<FilterButton {...defaultProps} onClick={mockOnClick} />);
-      const button = screen.getByRole('button');
-      
+      const button = screen.getByRole("button");
+
       // Simulate rapid clicking
       fireEvent.click(button);
       fireEvent.click(button);
       fireEvent.click(button);
-      
+
       expect(mockOnClick).toHaveBeenCalledTimes(3);
     });
 
-    it('maintains styling during active state changes', () => {
-      const { rerender } = render(<FilterButton {...defaultProps} active={false} />);
-      const button = screen.getByRole('button');
-      
+    it("maintains styling during active state changes", () => {
+      const { rerender } = render(
+        <FilterButton {...defaultProps} active={false} />,
+      );
+      const button = screen.getByRole("button");
+
       // Verify initial state
-      expect(button).toHaveClass('bg-white');
-      
+      expect(button).toHaveClass("bg-white");
+
       // Change to active
       rerender(<FilterButton {...defaultProps} active={true} />);
-      expect(button).toHaveClass('bg-orange-100');
-      
+      expect(button).toHaveClass("bg-orange-100");
+
       // Change back to inactive
       rerender(<FilterButton {...defaultProps} active={false} />);
-      expect(button).toHaveClass('bg-white');
+      expect(button).toHaveClass("bg-white");
     });
   });
 });

@@ -30,11 +30,3 @@ rm -rf node_modules
 npm install
 
 echo "✅ Environment cleaned!"
-
-# Ask if user wants to start dev server
-read -p "Start dev server? (y/n): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "🚀 Starting dev server..."
-    npm run dev
-fi

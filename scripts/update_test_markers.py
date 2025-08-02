@@ -3,8 +3,6 @@
 Script to automatically add pytest markers to untagged test files.
 Based on file patterns and content analysis.
 """
-
-import os
 import re
 from pathlib import Path
 

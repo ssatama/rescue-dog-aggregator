@@ -5,13 +5,11 @@ Resource leak tests for Railway connection management.
 Tests designed to catch resource leaks that could cause
 connection pool exhaustion in production.
 """
-
-import gc
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from services.railway.connection import get_railway_engine, get_railway_session
+from services.railway.connection import get_railway_session
 
 
 @pytest.mark.unit

@@ -11,7 +11,7 @@ Provides thread-safe connection pool management following CLAUDE.md principles:
 import logging
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict
 
 import psycopg2
 import psycopg2.pool

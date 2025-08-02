@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,40 +11,49 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Icon } from '../ui/Icon';
+import { Icon } from "../ui/Icon";
 
 /**
  * Enhanced FilterSection component for mobile drawer with custom collapse animations
  */
-function MobileFilterSection({ id, title, defaultOpen = false, children, count = 0 }) {
+function MobileFilterSection({
+  id,
+  title,
+  defaultOpen = false,
+  children,
+  count = 0,
+}) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   const handleToggle = useCallback((e) => {
     e.preventDefault();
-    setIsOpen(prev => !prev);
+    setIsOpen((prev) => !prev);
   }, []);
 
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      handleToggle(e);
-    }
-  }, [handleToggle]);
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleToggle(e);
+      }
+    },
+    [handleToggle],
+  );
 
   const hasActiveFilters = count > 0;
 
   return (
-    <details 
+    <details
       data-testid={`filter-section-${id}`}
       data-open={isOpen}
       className={`filter-section overflow-hidden will-change-transform group ${
-        hasActiveFilters ? 'filter-section-active' : ''
-      } ${!isOpen ? 'collapsed' : ''}`}
+        hasActiveFilters ? "filter-section-active" : ""
+      } ${!isOpen ? "collapsed" : ""}`}
       aria-label={`${title} filters section`}
       open={isOpen}
       role="region"
     >
-      <summary 
+      <summary
         data-testid={`filter-summary-${id}`}
         className="flex items-center justify-between cursor-pointer py-3 px-4 hover:bg-gray-50/50 dark:hover:bg-gray-700/50 rounded-lg transition-all duration-200 ease-out interactive-enhanced btn-focus-ring"
         onClick={handleToggle}
@@ -54,23 +63,25 @@ function MobileFilterSection({ id, title, defaultOpen = false, children, count =
         role="button"
       >
         <div className="flex items-center gap-2">
-          <h3 className="font-medium text-gray-700 dark:text-gray-300">{title}</h3>
+          <h3 className="font-medium text-gray-700 dark:text-gray-300">
+            {title}
+          </h3>
           {count > 0 && (
             <span className="inline-flex bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2 rounded-full text-xs">
               ({count})
             </span>
           )}
         </div>
-        <Icon 
+        <Icon
           name="chevron-down"
           size="small"
           data-testid={`chevron-icon-${id}`}
           className={`text-gray-500 chevron-icon transition-transform duration-200 ease-out ${
-            isOpen ? 'chevron-open' : ''
+            isOpen ? "chevron-open" : ""
           } group-open:rotate-180`}
         />
       </summary>
-      <div 
+      <div
         data-testid={`filter-content-${id}`}
         className="filter-section-content transition-opacity transition-transform duration-200 ease-out will-change-transform mt-3 space-y-3 px-4 pb-2"
       >
@@ -89,92 +100,95 @@ export default function MobileFilterDrawer({
   // Drawer state
   isOpen = false,
   onClose,
-  
+
   // Search
   searchQuery,
   handleSearchChange,
   clearSearch,
-  
+
   // Organization
   organizationFilter,
   setOrganizationFilter,
   organizations,
-  
+
   // Breed
   standardizedBreedFilter,
   setStandardizedBreedFilter,
   standardizedBreeds,
-  
+
   // Pet Details
   sexFilter,
   setSexFilter,
   sexOptions,
-  
+
   sizeFilter,
   setSizeFilter,
   sizeOptions,
-  
+
   ageCategoryFilter,
   setAgeCategoryFilter,
   ageOptions,
-  
+
   // Location
   availableCountryFilter,
   setAvailableCountryFilter,
   availableCountries,
-  
+
   // Filter management
   resetFilters,
-  
+
   // Dynamic filter counts
-  filterCounts
+  filterCounts,
 }) {
   // Local state for breed input to handle real-time suggestions
   const [breedInputValue, setBreedInputValue] = useState(
-    standardizedBreedFilter === 'Any breed' ? '' : standardizedBreedFilter
+    standardizedBreedFilter === "Any breed" ? "" : standardizedBreedFilter,
   );
 
   // Helper function to merge static options with dynamic counts
-  const getOptionsWithCounts = useCallback((staticOptions, dynamicOptions, filterType) => {
-    if (!filterCounts || !dynamicOptions) return staticOptions;
-    
-    return staticOptions.filter(option => {
-      if (option.includes('Any')) return true; // Always include "Any" options
-      
-      // Find matching dynamic option
-      const dynamicOption = dynamicOptions.find(dynOpt => {
-        if (filterType === 'size') {
-          // Map static size options to dynamic values
-          const sizeMapping = {
-            "Tiny": "Tiny",
-            "Small": "Small", 
-            "Medium": "Medium",
-            "Large": "Large",
-            "Extra Large": "XLarge"
-          };
-          return dynOpt.value === sizeMapping[option];
-        }
-        return dynOpt.value === option || dynOpt.label === option;
+  const getOptionsWithCounts = useCallback(
+    (staticOptions, dynamicOptions, filterType) => {
+      if (!filterCounts || !dynamicOptions) return staticOptions;
+
+      return staticOptions.filter((option) => {
+        if (option.includes("Any")) return true; // Always include "Any" options
+
+        // Find matching dynamic option
+        const dynamicOption = dynamicOptions.find((dynOpt) => {
+          if (filterType === "size") {
+            // Map static size options to dynamic values
+            const sizeMapping = {
+              Tiny: "Tiny",
+              Small: "Small",
+              Medium: "Medium",
+              Large: "Large",
+              "Extra Large": "XLarge",
+            };
+            return dynOpt.value === sizeMapping[option];
+          }
+          return dynOpt.value === option || dynOpt.label === option;
+        });
+
+        return dynamicOption && dynamicOption.count > 0;
       });
-      
-      return dynamicOption && dynamicOption.count > 0;
-    });
-  }, [filterCounts]);
-  
+    },
+    [filterCounts],
+  );
+
   // Dynamic options with counts (only show options that have results)
-  const dynamicSizeOptions = useMemo(() => 
-    getOptionsWithCounts(sizeOptions, filterCounts?.size_options, 'size'), 
-    [filterCounts?.size_options, getOptionsWithCounts, sizeOptions]
+  const dynamicSizeOptions = useMemo(
+    () => getOptionsWithCounts(sizeOptions, filterCounts?.size_options, "size"),
+    [filterCounts?.size_options, getOptionsWithCounts, sizeOptions],
   );
-  
-  const dynamicAgeOptions = useMemo(() => 
-    getOptionsWithCounts(ageOptions, filterCounts?.age_options, 'age'), 
-    [filterCounts?.age_options, getOptionsWithCounts, ageOptions]
+
+  const dynamicAgeOptions = useMemo(
+    () => getOptionsWithCounts(ageOptions, filterCounts?.age_options, "age"),
+    [filterCounts?.age_options, getOptionsWithCounts, ageOptions],
   );
-  
-  const dynamicSexOptions = useMemo(() => 
-    getOptionsWithCounts(sexOptions, filterCounts?.sex_options, 'sex'), 
-    [filterCounts?.sex_options, getOptionsWithCounts, sexOptions]
+
+  const dynamicSexOptions = useMemo(
+    () => getOptionsWithCounts(sexOptions, filterCounts?.sex_options, "sex"),
+    [filterCounts?.sex_options, getOptionsWithCounts, sexOptions],
   );
 
   // Handle opening/closing with body scroll lock
@@ -182,78 +196,88 @@ export default function MobileFilterDrawer({
     if (isOpen) {
       // Store current scroll position
       const scrollY = window.scrollY;
-      
+
       // Apply scroll lock styles
-      document.body.style.position = 'fixed';
+      document.body.style.position = "fixed";
       document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
-      document.body.style.overflow = 'hidden';
+      document.body.style.width = "100%";
+      document.body.style.overflow = "hidden";
     } else {
       // Restore scroll position
       const scrollY = document.body.style.top;
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
-      document.body.style.overflow = '';
-      
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      document.body.style.overflow = "";
+
       if (scrollY) {
-        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+        window.scrollTo(0, parseInt(scrollY || "0") * -1);
       }
     }
 
     return () => {
       // Cleanup on unmount
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
-      document.body.style.overflow = '';
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      document.body.style.overflow = "";
     };
   }, [isOpen]);
 
   // Handle ESC key
   useEffect(() => {
     const handleEscape = (e) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === "Escape" && isOpen) {
         onClose?.();
       }
     };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      return () => document.removeEventListener('keydown', handleEscape);
+      document.addEventListener("keydown", handleEscape);
+      return () => document.removeEventListener("keydown", handleEscape);
     }
   }, [isOpen, onClose]);
 
   // Optimized handlers with useCallback
-  const handleBreedInputChange = useCallback((e) => {
-    const value = e.target.value;
-    setBreedInputValue(value);
-    setStandardizedBreedFilter(value || 'Any breed');
-  }, [setStandardizedBreedFilter]);
+  const handleBreedInputChange = useCallback(
+    (e) => {
+      const value = e.target.value;
+      setBreedInputValue(value);
+      setStandardizedBreedFilter(value || "Any breed");
+    },
+    [setStandardizedBreedFilter],
+  );
 
   const handleBreedClear = useCallback(() => {
-    setBreedInputValue('');
-    setStandardizedBreedFilter('Any breed');
+    setBreedInputValue("");
+    setStandardizedBreedFilter("Any breed");
   }, [setStandardizedBreedFilter]);
 
-  const handleBreedSuggestionClick = useCallback((breed) => {
-    setBreedInputValue(breed);
-    setStandardizedBreedFilter(breed);
-  }, [setStandardizedBreedFilter]);
+  const handleBreedSuggestionClick = useCallback(
+    (breed) => {
+      setBreedInputValue(breed);
+      setStandardizedBreedFilter(breed);
+    },
+    [setStandardizedBreedFilter],
+  );
 
-  const handleBackdropClick = useCallback((e) => {
-    if (e.target === e.currentTarget) {
-      onClose?.();
-    }
-  }, [onClose]);
+  const handleBackdropClick = useCallback(
+    (e) => {
+      if (e.target === e.currentTarget) {
+        onClose?.();
+      }
+    },
+    [onClose],
+  );
 
   // Filtered breeds for suggestions (memoized for performance)
   const filteredBreeds = useMemo(() => {
     if (!breedInputValue || breedInputValue.trim().length === 0) return [];
     return standardizedBreeds
-      .filter(breed => 
-        breed.toLowerCase().includes(breedInputValue.toLowerCase()) && 
-        breed !== 'Any breed'
+      .filter(
+        (breed) =>
+          breed.toLowerCase().includes(breedInputValue.toLowerCase()) &&
+          breed !== "Any breed",
       )
       .slice(0, 5);
   }, [breedInputValue, standardizedBreeds]);
@@ -261,28 +285,30 @@ export default function MobileFilterDrawer({
   // Calculate active filter count
   const activeFilterCount = useMemo(() => {
     let count = 0;
-    
+
     // Search query
-    if (searchQuery && searchQuery.trim() !== '') count++;
-    
+    if (searchQuery && searchQuery.trim() !== "") count++;
+
     // Organization filter
-    if (organizationFilter && organizationFilter !== 'any') count++;
-    
+    if (organizationFilter && organizationFilter !== "any") count++;
+
     // Breed filter
-    if (standardizedBreedFilter && standardizedBreedFilter !== 'Any breed') count++;
-    
+    if (standardizedBreedFilter && standardizedBreedFilter !== "Any breed")
+      count++;
+
     // Sex filter
-    if (sexFilter && sexFilter !== 'Any') count++;
-    
+    if (sexFilter && sexFilter !== "Any") count++;
+
     // Size filter
-    if (sizeFilter && sizeFilter !== 'Any size') count++;
-    
+    if (sizeFilter && sizeFilter !== "Any size") count++;
+
     // Age filter
-    if (ageCategoryFilter && ageCategoryFilter !== 'Any age') count++;
-    
+    if (ageCategoryFilter && ageCategoryFilter !== "Any age") count++;
+
     // Available country filter
-    if (availableCountryFilter && availableCountryFilter !== 'Any country') count++;
-    
+    if (availableCountryFilter && availableCountryFilter !== "Any country")
+      count++;
+
     return count;
   }, [
     searchQuery,
@@ -291,7 +317,7 @@ export default function MobileFilterDrawer({
     sexFilter,
     sizeFilter,
     ageCategoryFilter,
-    availableCountryFilter
+    availableCountryFilter,
   ]);
 
   // Calculate section-specific filter counts
@@ -302,26 +328,29 @@ export default function MobileFilterDrawer({
       shipsToCountry: 0,
       age: 0,
       size: 0,
-      sex: 0
+      sex: 0,
     };
 
     // Organization section
-    if (organizationFilter && organizationFilter !== 'any') counts.organization++;
+    if (organizationFilter && organizationFilter !== "any")
+      counts.organization++;
 
     // Breed section
-    if (standardizedBreedFilter && standardizedBreedFilter !== 'Any breed') counts.breed++;
+    if (standardizedBreedFilter && standardizedBreedFilter !== "Any breed")
+      counts.breed++;
 
     // Ships to Country section
-    if (availableCountryFilter && availableCountryFilter !== 'Any country') counts.shipsToCountry++;
+    if (availableCountryFilter && availableCountryFilter !== "Any country")
+      counts.shipsToCountry++;
 
     // Age section
-    if (ageCategoryFilter && ageCategoryFilter !== 'Any age') counts.age++;
+    if (ageCategoryFilter && ageCategoryFilter !== "Any age") counts.age++;
 
     // Size section
-    if (sizeFilter && sizeFilter !== 'Any size') counts.size++;
+    if (sizeFilter && sizeFilter !== "Any size") counts.size++;
 
-    // Sex section  
-    if (sexFilter && sexFilter !== 'Any') counts.sex++;
+    // Sex section
+    if (sexFilter && sexFilter !== "Any") counts.sex++;
 
     return counts;
   }, [
@@ -330,7 +359,7 @@ export default function MobileFilterDrawer({
     availableCountryFilter,
     ageCategoryFilter,
     sizeFilter,
-    sexFilter
+    sexFilter,
   ]);
 
   if (!isOpen) {
@@ -354,13 +383,13 @@ export default function MobileFilterDrawer({
 
           {/* Slide-out Drawer (left-to-right) */}
           <motion.div
-            initial={{ x: '-100%' }}
+            initial={{ x: "-100%" }}
             animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
-            transition={{ 
-              type: 'spring', 
-              damping: 25, 
-              stiffness: 300 
+            exit={{ x: "-100%" }}
+            transition={{
+              type: "spring",
+              damping: 25,
+              stiffness: 300,
             }}
             className="fixed top-0 left-0 bottom-0 w-80 bg-white dark:bg-gray-900 shadow-2xl z-50 overflow-hidden md:hidden will-change-transform gpu-accelerated"
             data-testid="mobile-filter-drawer"
@@ -372,8 +401,17 @@ export default function MobileFilterDrawer({
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
               <div className="flex items-center gap-3">
-                <Icon name="filter" size="default" className="text-orange-600" />
-                <h2 id="filter-drawer-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100">Filters</h2>
+                <Icon
+                  name="filter"
+                  size="default"
+                  className="text-orange-600"
+                />
+                <h2
+                  id="filter-drawer-title"
+                  className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+                >
+                  Filters
+                </h2>
               </div>
               <div className="flex items-center gap-2">
                 {activeFilterCount > 0 && (
@@ -387,7 +425,7 @@ export default function MobileFilterDrawer({
                   onClick={onClose}
                   className="h-12 w-12 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-600 dark:focus:ring-orange-400"
                   aria-label="Close filters"
-                  style={{ minHeight: '48px', minWidth: '48px' }}
+                  style={{ minHeight: "48px", minWidth: "48px" }}
                 >
                   <Icon name="x" size="default" />
                 </Button>
@@ -395,13 +433,19 @@ export default function MobileFilterDrawer({
             </div>
 
             {/* Content */}
-            <div className="overflow-y-auto" style={{ height: 'calc(100vh - 140px)' }}>
+            <div
+              className="overflow-y-auto"
+              style={{ height: "calc(100vh - 140px)" }}
+            >
               <div className="p-4 space-y-6">
-                
                 {/* Persistent Search Bar */}
                 <div>
                   <div className="relative input-container form-enhanced">
-                    <Icon name="search" size="small" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Icon
+                      name="search"
+                      size="small"
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    />
                     <Input
                       data-testid="search-input"
                       type="text"
@@ -409,7 +453,7 @@ export default function MobileFilterDrawer({
                       value={searchQuery}
                       onChange={handleSearchChange}
                       className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
-                      style={{ minHeight: '48px' }}
+                      style={{ minHeight: "48px" }}
                     />
                     {searchQuery && (
                       <Button
@@ -418,7 +462,7 @@ export default function MobileFilterDrawer({
                         size="icon"
                         onClick={clearSearch}
                         className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 text-gray-400 hover:text-gray-600 interactive-enhanced btn-focus-ring"
-                        style={{ minHeight: '48px', minWidth: '48px' }}
+                        style={{ minHeight: "48px", minWidth: "48px" }}
                       >
                         <Icon name="x" size="small" />
                       </Button>
@@ -428,20 +472,22 @@ export default function MobileFilterDrawer({
 
                 {/* === COLLAPSIBLE FILTER SECTIONS === */}
                 {/* Required order: Adoptable in Country → Size → Age → Sex → Breed → Organization */}
-                
+
                 {/* 1. Adoptable in Country Section - PRIMARY FILTER */}
-                <MobileFilterSection 
-                  id="ships-to-country" 
-                  title="Adoptable in Country" 
+                <MobileFilterSection
+                  id="ships-to-country"
+                  title="Adoptable in Country"
                   defaultOpen={false}
                   count={sectionCounts.shipsToCountry}
                 >
                   {/* Hidden Location Select for E2E Tests */}
                   <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
-                    <select 
+                    <select
                       data-testid="location-filter"
                       value={availableCountryFilter}
-                      onChange={(e) => setAvailableCountryFilter(e.target.value)}
+                      onChange={(e) =>
+                        setAvailableCountryFilter(e.target.value)
+                      }
                     >
                       {availableCountries.map((country) => (
                         <option key={country} value={country}>
@@ -450,15 +496,15 @@ export default function MobileFilterDrawer({
                       ))}
                     </select>
                   </div>
-                  
+
                   <div>
-                    <Select 
-                      value={availableCountryFilter} 
+                    <Select
+                      value={availableCountryFilter}
                       onValueChange={setAvailableCountryFilter}
                     >
-                      <SelectTrigger 
+                      <SelectTrigger
                         className="select-focus enhanced-hover enhanced-focus-select focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
-                        style={{ minHeight: '48px' }}
+                        style={{ minHeight: "48px" }}
                       >
                         <SelectValue placeholder="Select country" />
                       </SelectTrigger>
@@ -474,35 +520,48 @@ export default function MobileFilterDrawer({
                 </MobileFilterSection>
 
                 {/* === BUTTON/LOLLIPOP FILTERS SECTION === */}
-                
+
                 {/* 2. Size Filter - PHYSICAL CONSTRAINT */}
-                <div className={`space-y-3 ${sectionCounts.size > 0 ? 'filter-section-active' : ''}`} role="region">
+                <div
+                  className={`space-y-3 ${sectionCounts.size > 0 ? "filter-section-active" : ""}`}
+                  role="region"
+                >
                   <div className="flex items-center gap-2 mb-3">
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">Size</h4>
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                      Size
+                    </h4>
                     {sectionCounts.size > 0 && (
                       <span className="inline-flex bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2 rounded-full text-xs">
                         ({sectionCounts.size})
                       </span>
                     )}
                   </div>
-                  
+
                   {/* Hidden Size Select for E2E Tests */}
                   <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
-                    <select 
+                    <select
                       data-testid="size-filter"
-                      value={sizeFilter === 'Any size' ? 'any' : sizeFilter}
-                      onChange={(e) => setSizeFilter(e.target.value === 'any' ? 'Any size' : e.target.value)}
+                      value={sizeFilter === "Any size" ? "any" : sizeFilter}
+                      onChange={(e) =>
+                        setSizeFilter(
+                          e.target.value === "any"
+                            ? "Any size"
+                            : e.target.value,
+                        )
+                      }
                     >
                       <option value="any">Any size</option>
-                      {dynamicSizeOptions.filter(size => size !== 'Any size').map((size) => (
-                        <option key={size} value={size}>
-                          {size}
-                        </option>
-                      ))}
+                      {dynamicSizeOptions
+                        .filter((size) => size !== "Any size")
+                        .map((size) => (
+                          <option key={size} value={size}>
+                            {size}
+                          </option>
+                        ))}
                     </select>
                   </div>
-                  
-                  <div 
+
+                  <div
                     data-testid="size-button-grid"
                     className="grid grid-cols-2 gap-2"
                   >
@@ -515,11 +574,11 @@ export default function MobileFilterDrawer({
                           variant="outline"
                           onClick={() => setSizeFilter(size)}
                           className={`justify-start cross-browser-transition hover:scale-[1.02] focus:scale-[1.02] interactive-enhanced enhanced-focus-button mobile-touch-target ${
-                            isActive 
-                              ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50 cross-browser-shadow' 
-                              : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-sm'
+                            isActive
+                              ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50 cross-browser-shadow"
+                              : "bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-sm"
                           }`}
-                          style={{ minHeight: '48px' }}
+                          style={{ minHeight: "48px" }}
                           aria-pressed={isActive}
                         >
                           {size}
@@ -528,35 +587,50 @@ export default function MobileFilterDrawer({
                     })}
                   </div>
                 </div>
-                
+
                 {/* 3. Age Filter - LIFE STAGE PREFERENCE */}
-                <div className={`space-y-3 ${sectionCounts.age > 0 ? 'filter-section-active' : ''}`} role="region">
+                <div
+                  className={`space-y-3 ${sectionCounts.age > 0 ? "filter-section-active" : ""}`}
+                  role="region"
+                >
                   <div className="flex items-center gap-2 mb-3">
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">Age</h4>
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                      Age
+                    </h4>
                     {sectionCounts.age > 0 && (
                       <span className="inline-flex bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2 rounded-full text-xs">
                         ({sectionCounts.age})
                       </span>
                     )}
                   </div>
-                  
+
                   {/* Hidden Age Select for E2E Tests */}
                   <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
-                    <select 
+                    <select
                       data-testid="age-filter"
-                      value={ageCategoryFilter === 'Any age' ? 'any' : ageCategoryFilter}
-                      onChange={(e) => setAgeCategoryFilter(e.target.value === 'any' ? 'Any age' : e.target.value)}
+                      value={
+                        ageCategoryFilter === "Any age"
+                          ? "any"
+                          : ageCategoryFilter
+                      }
+                      onChange={(e) =>
+                        setAgeCategoryFilter(
+                          e.target.value === "any" ? "Any age" : e.target.value,
+                        )
+                      }
                     >
                       <option value="any">Any age</option>
-                      {dynamicAgeOptions.filter(age => age !== 'Any age').map((age) => (
-                        <option key={age} value={age}>
-                          {age}
-                        </option>
-                      ))}
+                      {dynamicAgeOptions
+                        .filter((age) => age !== "Any age")
+                        .map((age) => (
+                          <option key={age} value={age}>
+                            {age}
+                          </option>
+                        ))}
                     </select>
                   </div>
-                  
-                  <div 
+
+                  <div
                     data-testid="age-button-grid"
                     className="grid grid-cols-2 gap-2"
                   >
@@ -569,11 +643,11 @@ export default function MobileFilterDrawer({
                           variant="outline"
                           onClick={() => setAgeCategoryFilter(age)}
                           className={`justify-start cross-browser-transition hover:scale-[1.02] focus:scale-[1.02] interactive-enhanced enhanced-focus-button mobile-touch-target ${
-                            isActive 
-                              ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50 cross-browser-shadow' 
-                              : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-sm'
+                            isActive
+                              ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50 cross-browser-shadow"
+                              : "bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-sm"
                           }`}
-                          style={{ minHeight: '48px' }}
+                          style={{ minHeight: "48px" }}
                           aria-pressed={isActive}
                         >
                           {age}
@@ -582,35 +656,46 @@ export default function MobileFilterDrawer({
                     })}
                   </div>
                 </div>
-                
+
                 {/* 4. Sex Filter - BASIC PREFERENCE */}
-                <div className={`space-y-3 ${sectionCounts.sex > 0 ? 'filter-section-active' : ''}`} role="region">
+                <div
+                  className={`space-y-3 ${sectionCounts.sex > 0 ? "filter-section-active" : ""}`}
+                  role="region"
+                >
                   <div className="flex items-center gap-2 mb-3">
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">Sex</h4>
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                      Sex
+                    </h4>
                     {sectionCounts.sex > 0 && (
                       <span className="inline-flex bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2 rounded-full text-xs">
                         ({sectionCounts.sex})
                       </span>
                     )}
                   </div>
-                  
+
                   {/* Hidden Sex Select for E2E Tests */}
                   <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
-                    <select 
+                    <select
                       data-testid="sex-filter"
-                      value={sexFilter === 'Any' ? 'any' : sexFilter}
-                      onChange={(e) => setSexFilter(e.target.value === 'any' ? 'Any' : e.target.value)}
+                      value={sexFilter === "Any" ? "any" : sexFilter}
+                      onChange={(e) =>
+                        setSexFilter(
+                          e.target.value === "any" ? "Any" : e.target.value,
+                        )
+                      }
                     >
                       <option value="any">Any</option>
-                      {dynamicSexOptions.filter(sex => sex !== 'Any').map((sex) => (
-                        <option key={sex} value={sex}>
-                          {sex}
-                        </option>
-                      ))}
+                      {dynamicSexOptions
+                        .filter((sex) => sex !== "Any")
+                        .map((sex) => (
+                          <option key={sex} value={sex}>
+                            {sex}
+                          </option>
+                        ))}
                     </select>
                   </div>
-                  
-                  <div 
+
+                  <div
                     data-testid="sex-button-grid"
                     className="grid grid-cols-3 gap-2"
                   >
@@ -623,11 +708,11 @@ export default function MobileFilterDrawer({
                           variant="outline"
                           onClick={() => setSexFilter(sex)}
                           className={`justify-center cross-browser-transition hover:scale-[1.02] focus:scale-[1.02] interactive-enhanced enhanced-focus-button mobile-touch-target ${
-                            isActive 
-                              ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50 cross-browser-shadow' 
-                              : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-sm'
+                            isActive
+                              ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50 cross-browser-shadow"
+                              : "bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-sm"
                           }`}
-                          style={{ minHeight: '48px' }}
+                          style={{ minHeight: "48px" }}
                           aria-pressed={isActive}
                         >
                           {sex}
@@ -636,34 +721,50 @@ export default function MobileFilterDrawer({
                     })}
                   </div>
                 </div>
-                
+
                 {/* 5. Breed Section - SECONDARY CONSIDERATION */}
-                <MobileFilterSection 
-                  id="breed" 
-                  title="Breed" 
+                <MobileFilterSection
+                  id="breed"
+                  title="Breed"
                   defaultOpen={false}
                   count={sectionCounts.breed}
                 >
                   <div className="space-y-3">
                     {/* Hidden Breed Select for E2E tests */}
                     <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
-                      <select 
+                      <select
                         data-testid="breed-filter"
-                        value={standardizedBreedFilter === 'Any breed' ? 'any' : standardizedBreedFilter}
-                        onChange={(e) => setStandardizedBreedFilter(e.target.value === 'any' ? 'Any breed' : e.target.value)}
+                        value={
+                          standardizedBreedFilter === "Any breed"
+                            ? "any"
+                            : standardizedBreedFilter
+                        }
+                        onChange={(e) =>
+                          setStandardizedBreedFilter(
+                            e.target.value === "any"
+                              ? "Any breed"
+                              : e.target.value,
+                          )
+                        }
                       >
                         <option value="any">Any breed</option>
-                        {standardizedBreeds.filter(breed => breed !== 'Any breed').map((breed) => (
-                          <option key={breed} value={breed}>
-                            {breed}
-                          </option>
-                        ))}
+                        {standardizedBreeds
+                          .filter((breed) => breed !== "Any breed")
+                          .map((breed) => (
+                            <option key={breed} value={breed}>
+                              {breed}
+                            </option>
+                          ))}
                       </select>
                     </div>
-                    
+
                     {/* Breed Search Input */}
                     <div className="relative input-container form-enhanced">
-                      <Icon name="search" size="small" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Icon
+                        name="search"
+                        size="small"
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                      />
                       <Input
                         data-testid="breed-search-input"
                         type="text"
@@ -671,7 +772,7 @@ export default function MobileFilterDrawer({
                         value={breedInputValue}
                         onChange={handleBreedInputChange}
                         className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
-                        style={{ minHeight: '48px' }}
+                        style={{ minHeight: "48px" }}
                       />
                       {breedInputValue && (
                         <Button
@@ -680,60 +781,62 @@ export default function MobileFilterDrawer({
                           size="icon"
                           onClick={handleBreedClear}
                           className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 text-gray-400 hover:text-gray-600 interactive-enhanced btn-focus-ring"
-                          style={{ minHeight: '48px', minWidth: '48px' }}
+                          style={{ minHeight: "48px", minWidth: "48px" }}
                         >
                           <Icon name="x" size="small" />
                         </Button>
                       )}
                     </div>
-                    
+
                     {/* Breed Suggestions - Show when user has typed something */}
                     {filteredBreeds.length > 0 && (
-                      <div 
+                      <div
                         data-testid="breed-suggestions"
                         className="max-h-32 overflow-y-auto border dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 shadow-sm animate-in slide-in-from-top-2 duration-200"
                       >
                         {/* Show filtered breed suggestions */}
-                        {filteredBreeds.map(breed => (
+                        {filteredBreeds.map((breed) => (
                           <button
                             key={breed}
                             className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm text-gray-900 dark:text-gray-100 transition-colors duration-150 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none"
                             onClick={() => handleBreedSuggestionClick(breed)}
-                            style={{ minHeight: '40px' }}
+                            style={{ minHeight: "40px" }}
                           >
                             {breed}
                           </button>
                         ))}
                       </div>
                     )}
-                    {breedInputValue && breedInputValue.trim().length > 0 && filteredBreeds.length === 0 && (
-                      <div 
-                        data-testid="breed-suggestions"
-                        className="border dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 shadow-sm animate-in slide-in-from-top-2 duration-200"
-                      >
-                        <div className="p-2 text-sm text-gray-500 dark:text-gray-400">
-                          No breeds found for "{breedInputValue}"
+                    {breedInputValue &&
+                      breedInputValue.trim().length > 0 &&
+                      filteredBreeds.length === 0 && (
+                        <div
+                          data-testid="breed-suggestions"
+                          className="border dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 shadow-sm animate-in slide-in-from-top-2 duration-200"
+                        >
+                          <div className="p-2 text-sm text-gray-500 dark:text-gray-400">
+                            No breeds found for "{breedInputValue}"
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </div>
                 </MobileFilterSection>
-                
+
                 {/* 6. Organization Section - OPTIONAL/ADVANCED */}
-                <MobileFilterSection 
-                  id="organization" 
-                  title="Organization" 
+                <MobileFilterSection
+                  id="organization"
+                  title="Organization"
                   defaultOpen={false}
                   count={sectionCounts.organization}
                 >
                   {/* Hidden Organization Select for E2E Tests */}
                   <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
-                    <select 
+                    <select
                       data-testid="organization-filter"
-                      value={organizationFilter || 'any'}
+                      value={organizationFilter || "any"}
                       onChange={(e) => setOrganizationFilter(e.target.value)}
                     >
-                      {organizations.map(org => (
+                      {organizations.map((org) => (
                         <option
                           key={org.id ?? "any"}
                           value={org.id != null ? org.id.toString() : "any"}
@@ -743,25 +846,27 @@ export default function MobileFilterDrawer({
                       ))}
                     </select>
                   </div>
-                  
+
                   <div>
-                    <Select 
-                      value={organizationFilter || 'any'} 
+                    <Select
+                      value={organizationFilter || "any"}
                       onValueChange={setOrganizationFilter}
                     >
-                      <SelectTrigger 
+                      <SelectTrigger
                         className="select-focus enhanced-hover enhanced-focus-select focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
-                        style={{ minHeight: '48px' }}
+                        style={{ minHeight: "48px" }}
                       >
                         <SelectValue>
-                          {organizationFilter === 'any' || !organizationFilter 
-                            ? 'Any Organization' 
-                            : organizations.find(org => org.id?.toString() === organizationFilter)?.name || 'Any Organization'
-                          }
+                          {organizationFilter === "any" || !organizationFilter
+                            ? "Any Organization"
+                            : organizations.find(
+                                (org) =>
+                                  org.id?.toString() === organizationFilter,
+                              )?.name || "Any Organization"}
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        {organizations.map(org => (
+                        {organizations.map((org) => (
                           <SelectItem
                             key={org.id ?? "any"}
                             value={org.id != null ? org.id.toString() : "any"}
@@ -775,7 +880,7 @@ export default function MobileFilterDrawer({
                 </MobileFilterSection>
               </div>
             </div>
-            
+
             {/* Footer with Clear All Button */}
             {activeFilterCount > 0 && (
               <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
@@ -783,7 +888,7 @@ export default function MobileFilterDrawer({
                   data-testid="clear-all-filters"
                   className="w-full text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950/30 font-medium py-2 px-4 rounded-lg transition-colors duration-200 interactive-enhanced enhanced-focus-button focus:ring-2 focus:ring-orange-600"
                   onClick={resetFilters}
-                  style={{ minHeight: '48px' }}
+                  style={{ minHeight: "48px" }}
                 >
                   Clear All Filters
                 </button>

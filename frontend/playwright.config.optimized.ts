@@ -8,10 +8,6 @@ import { defineConfig, devices } from "playwright/test";
 export default defineConfig({
   testDir: "./e2e-tests",
 
-  /* Load environment variables for E2E tests */
-  ...(process.env.NODE_ENV !== 'production' && {
-    globalSetup: './e2e-tests/setup/global-setup.ts',
-  }),
 
   /* Run tests in files in parallel */
   fullyParallel: true,

@@ -22,7 +22,7 @@ from api.dependencies import get_db_cursor  # Import the original dependency
 from api.main import app
 
 # Import database pool to initialize it
-from utils.db_connection import DatabaseConfig, DatabaseConnectionPool
+from utils.db_connection import DatabaseConfig
 
 # Set TESTING environment variable early
 os.environ["TESTING"] = "true"

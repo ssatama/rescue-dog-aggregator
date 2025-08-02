@@ -30,56 +30,55 @@ class TestRailwayMigrationRaceConditions:
 
         # Mock successful connection and database URL
         with patch("services.railway.migration.check_railway_connection", return_value=True):
-            with patch("services.railway.migration.get_railway_database_url", return_value="postgresql://test"):
-                # Mock subprocess calls to prevent actual migrations
-                with patch("services.railway.migration.subprocess.run") as mock_subprocess:
-                    mock_result = MagicMock()
-                    mock_result.returncode = 0
-                    mock_result.stdout = "Migration complete"
-                    mock_subprocess.return_value = mock_result
+            # Mock subprocess calls to prevent actual migrations
+            with patch("services.railway.migration.subprocess.run") as mock_subprocess:
+                mock_result = MagicMock()
+                mock_result.returncode = 0
+                mock_result.stdout = "Migration complete"
+                mock_subprocess.return_value = mock_result
 
-                    # Mock file operations
-                    with patch("services.railway.migration.os.makedirs"):
-                        with patch("builtins.open", MagicMock()):
+                # Mock file operations
+                with patch("services.railway.migration.os.makedirs"):
+                    with patch("builtins.open", MagicMock()):
 
-                            results = []
-                            exceptions = []
+                        results = []
+                        exceptions = []
 
-                            def run_setup_and_migrate():
-                                try:
-                                    result = manager.setup_and_migrate(dry_run=False)
-                                    results.append(result)
-                                except Exception as e:
-                                    exceptions.append(e)
+                        def run_setup_and_migrate():
+                            try:
+                                result = manager.setup_and_migrate(dry_run=False)
+                                results.append(result)
+                            except Exception as e:
+                                exceptions.append(e)
 
-                            # Launch multiple threads simultaneously
-                            threads = []
-                            for i in range(2):
-                                thread = threading.Thread(target=run_setup_and_migrate)
-                                threads.append(thread)
+                        # Launch multiple threads simultaneously
+                        threads = []
+                        for i in range(2):
+                            thread = threading.Thread(target=run_setup_and_migrate)
+                            threads.append(thread)
 
-                            # Start all threads at once
-                            for thread in threads:
-                                thread.start()
+                        # Start all threads at once
+                        for thread in threads:
+                            thread.start()
 
-                            # Wait for all to complete
-                            for thread in threads:
-                                thread.join()
+                        # Wait for all to complete
+                        for thread in threads:
+                            thread.join()
 
-                            # Check for race condition indicators
-                            assert len(results) == 2, f"Expected 2 results, got {len(results)}"
+                        # Check for race condition indicators
+                        assert len(results) == 2, f"Expected 2 results, got {len(results)}"
 
-                            # All should succeed if no race condition
-                            all_successful = all(results)
+                        # All should succeed if no race condition
+                        all_successful = all(results)
 
-                            # If there are exceptions, it indicates a race condition
-                            if exceptions:
-                                pytest.fail(f"Race condition detected - exceptions: {exceptions}")
+                        # If there are exceptions, it indicates a race condition
+                        if exceptions:
+                            pytest.fail(f"Race condition detected - exceptions: {exceptions}")
 
-                            # Verify that subprocess was called multiple times concurrently
-                            # This is the race condition - multiple processes trying to create/run migrations
-                            assert mock_subprocess.call_count >= 2, "Multiple concurrent migration attempts detected"
-                            print(f"✅ Race condition demonstrated: {mock_subprocess.call_count} concurrent subprocess calls")
+                        # Verify that subprocess was called multiple times concurrently
+                        # This is the race condition - multiple processes trying to create/run migrations
+                        assert mock_subprocess.call_count >= 2, "Multiple concurrent migration attempts detected"
+                        print(f"✅ Race condition demonstrated: {mock_subprocess.call_count} concurrent subprocess calls")
 
     def test_concurrent_alembic_initialization_race_condition(self):
         """
@@ -92,34 +91,33 @@ class TestRailwayMigrationRaceConditions:
         exceptions = []
 
         # Mock database URL
-        with patch("services.railway.migration.get_railway_database_url", return_value="postgresql://test"):
 
-            def run_init_alembic():
-                try:
-                    result = init_railway_alembic()
-                    results.append(result)
-                except Exception as e:
-                    exceptions.append(e)
+        def run_init_alembic():
+            try:
+                result = init_railway_alembic()
+                results.append(result)
+            except Exception as e:
+                exceptions.append(e)
 
-            # Launch multiple threads
-            threads = []
-            for i in range(2):
-                thread = threading.Thread(target=run_init_alembic)
-                threads.append(thread)
+        # Launch multiple threads
+        threads = []
+        for i in range(2):
+            thread = threading.Thread(target=run_init_alembic)
+            threads.append(thread)
 
-            # Start all threads simultaneously
-            for thread in threads:
-                thread.start()
+        # Start all threads simultaneously
+        for thread in threads:
+            thread.start()
 
-            # Wait for completion
-            for thread in threads:
-                thread.join()
+        # Wait for completion
+        for thread in threads:
+            thread.join()
 
-            # Check results
-            if exceptions:
-                print(f"✅ Race condition demonstrated: {len(exceptions)} exceptions during concurrent initialization")
-            else:
-                print(f"No race condition detected in Alembic initialization")
+        # Check results
+        if exceptions:
+            print(f"✅ Race condition demonstrated: {len(exceptions)} exceptions during concurrent initialization")
+        else:
+            print(f"No race condition detected in Alembic initialization")
 
     def test_concurrent_migration_creation_race_condition(self):
         """
@@ -219,54 +217,53 @@ class TestRailwayMigrationRaceConditions:
         execution_log = []
 
         with patch("services.railway.migration.check_railway_connection", return_value=True):
-            with patch("services.railway.migration.get_railway_database_url", return_value="postgresql://test"):
-                with patch("services.railway.migration.get_migration_status", return_value="No migrations"):
-                    with patch("services.railway.migration.subprocess.run") as mock_subprocess:
-                        mock_result = MagicMock()
-                        mock_result.returncode = 0
-                        mock_result.stdout = "Migration complete"
-                        mock_subprocess.return_value = mock_result
+            with patch("services.railway.migration.get_migration_status", return_value="No migrations"):
+                with patch("services.railway.migration.subprocess.run") as mock_subprocess:
+                    mock_result = MagicMock()
+                    mock_result.returncode = 0
+                    mock_result.stdout = "Migration complete"
+                    mock_subprocess.return_value = mock_result
 
-                        with patch("services.railway.migration.os.makedirs"):
-                            with patch("builtins.open", MagicMock()):
+                    with patch("services.railway.migration.os.makedirs"):
+                        with patch("builtins.open", MagicMock()):
 
-                                def run_setup_and_migrate(thread_id):
-                                    start_time = time.time()
-                                    execution_log.append(f"Thread {thread_id} started at {start_time}")
+                            def run_setup_and_migrate(thread_id):
+                                start_time = time.time()
+                                execution_log.append(f"Thread {thread_id} started at {start_time}")
 
-                                    result = manager.setup_and_migrate(dry_run=False)
+                                result = manager.setup_and_migrate(dry_run=False)
 
-                                    end_time = time.time()
-                                    execution_log.append(f"Thread {thread_id} completed at {end_time} (duration: {end_time - start_time:.2f}s)")
+                                end_time = time.time()
+                                execution_log.append(f"Thread {thread_id} completed at {end_time} (duration: {end_time - start_time:.2f}s)")
 
-                                    return result
+                                return result
 
-                                # Launch multiple threads
-                                threads = []
-                                results = []
+                            # Launch multiple threads
+                            threads = []
+                            results = []
 
-                                for i in range(2):
+                            for i in range(2):
 
-                                    def thread_target(tid=i):
-                                        result = run_setup_and_migrate(tid)
-                                        results.append(result)
+                                def thread_target(tid=i):
+                                    result = run_setup_and_migrate(tid)
+                                    results.append(result)
 
-                                    thread = threading.Thread(target=thread_target)
-                                    threads.append(thread)
+                                thread = threading.Thread(target=thread_target)
+                                threads.append(thread)
 
-                                # Start all threads at once
-                                for thread in threads:
-                                    thread.start()
+                            # Start all threads at once
+                            for thread in threads:
+                                thread.start()
 
-                                # Wait for all to complete
-                                for thread in threads:
-                                    thread.join()
+                            # Wait for all to complete
+                            for thread in threads:
+                                thread.join()
 
-                                # All should succeed
-                                assert all(results), f"All migrations should succeed, got: {results}"
-                                assert len(results) == 2, f"Expected 2 results, got {len(results)}"
+                            # All should succeed
+                            assert all(results), f"All migrations should succeed, got: {results}"
+                            assert len(results) == 2, f"Expected 2 results, got {len(results)}"
 
-                                print("✅ File locking successfully prevented concurrent migrations")
+                            print("✅ File locking successfully prevented concurrent migrations")
 
     def test_migration_lock_context_manager(self):
         """

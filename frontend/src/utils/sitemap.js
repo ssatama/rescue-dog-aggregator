@@ -3,14 +3,15 @@
  * Pure functions for generating SEO-optimized XML sitemaps
  */
 
-import { getAllAnimals } from '../services/animalsService';
-import { getAllOrganizations } from '../services/organizationsService';
+import { getAllAnimals } from "../services/animalsService";
+import { getAllOrganizations } from "../services/organizationsService";
 
 /**
  * Get base URL dynamically for sitemap generation
  * @returns {string} Base URL for sitemap URLs
  */
-const getBaseUrl = () => process.env.NEXT_PUBLIC_SITE_URL || 'https://rescuedogs.me';
+const getBaseUrl = () =>
+  process.env.NEXT_PUBLIC_SITE_URL || "https://rescuedogs.me";
 
 // Sitemap limits per Google standards
 const MAX_URLS_PER_SITEMAP = 50000;
@@ -25,38 +26,50 @@ const MAX_URLS_PER_SITEMAP = 50000;
  * @returns {Object} Validated sitemap entry
  */
 export const formatSitemapEntry = (entry) => {
-  if (!entry || typeof entry !== 'object') {
-    throw new Error('Sitemap entry must be an object');
+  if (!entry || typeof entry !== "object") {
+    throw new Error("Sitemap entry must be an object");
   }
 
-  if (!entry.url || typeof entry.url !== 'string' || entry.url.trim() === '') {
-    throw new Error('Sitemap entry must have a valid URL');
+  if (!entry.url || typeof entry.url !== "string" || entry.url.trim() === "") {
+    throw new Error("Sitemap entry must have a valid URL");
   }
 
   // Validate URL format
   try {
     new URL(entry.url);
   } catch {
-    throw new Error('Sitemap entry URL must be a valid URL');
+    throw new Error("Sitemap entry URL must be a valid URL");
   }
 
   // Validate priority if provided
   if (entry.priority !== undefined) {
-    if (typeof entry.priority !== 'number' || entry.priority < 0 || entry.priority > 1) {
-      throw new Error('Priority must be a number between 0.0 and 1.0');
+    if (
+      typeof entry.priority !== "number" ||
+      entry.priority < 0 ||
+      entry.priority > 1
+    ) {
+      throw new Error("Priority must be a number between 0.0 and 1.0");
     }
   }
 
   // Validate changefreq if provided
   if (entry.changefreq !== undefined) {
-    const validFreqs = ['always', 'hourly', 'daily', 'weekly', 'monthly', 'yearly', 'never'];
+    const validFreqs = [
+      "always",
+      "hourly",
+      "daily",
+      "weekly",
+      "monthly",
+      "yearly",
+      "never",
+    ];
     if (!validFreqs.includes(entry.changefreq)) {
-      throw new Error(`changefreq must be one of: ${validFreqs.join(', ')}`);
+      throw new Error(`changefreq must be one of: ${validFreqs.join(", ")}`);
     }
   }
 
   const validatedEntry = {
-    url: entry.url
+    url: entry.url,
   };
 
   // Add optional fields only if they exist
@@ -84,34 +97,34 @@ const generateStaticPages = () => {
   const staticPages = [
     {
       url: `${baseUrl}/`,
-      changefreq: 'daily',
-      priority: 1.0
+      changefreq: "daily",
+      priority: 1.0,
     },
     {
       url: `${baseUrl}/dogs`,
-      changefreq: 'hourly',
-      priority: 0.9
+      changefreq: "hourly",
+      priority: 0.9,
     },
     {
       url: `${baseUrl}/organizations`,
-      changefreq: 'daily',
-      priority: 0.9
+      changefreq: "daily",
+      priority: 0.9,
     },
     {
       url: `${baseUrl}/search`,
-      changefreq: 'daily',
-      priority: 0.8
+      changefreq: "daily",
+      priority: 0.8,
     },
     {
       url: `${baseUrl}/about`,
-      changefreq: 'monthly',
-      priority: 0.6
+      changefreq: "monthly",
+      priority: 0.6,
     },
     {
       url: `${baseUrl}/contact`,
-      changefreq: 'monthly',
-      priority: 0.5
-    }
+      changefreq: "monthly",
+      priority: 0.5,
+    },
   ];
 
   return staticPages.map(formatSitemapEntry);
@@ -128,11 +141,11 @@ const generateDogPages = (dogs) => {
   }
 
   const baseUrl = getBaseUrl();
-  return dogs.map(dog => {
+  return dogs.map((dog) => {
     const entry = {
       url: `${baseUrl}/dogs/${dog.slug || `unknown-dog-${dog.id}`}`,
-      changefreq: 'daily',
-      priority: 0.8
+      changefreq: "daily",
+      priority: 0.8,
     };
 
     // Add lastmod if available
@@ -158,11 +171,11 @@ const generateOrganizationPages = (organizations) => {
   }
 
   const baseUrl = getBaseUrl();
-  return organizations.map(org => {
+  return organizations.map((org) => {
     const entry = {
       url: `${baseUrl}/organizations/${org.slug || `unknown-org-${org.id}`}`,
-      changefreq: 'weekly',
-      priority: 0.7
+      changefreq: "weekly",
+      priority: 0.7,
     };
 
     // Add lastmod if available
@@ -191,11 +204,12 @@ const entriesToXml = (entries) => {
   const limitedEntries = entries.slice(0, MAX_URLS_PER_SITEMAP);
 
   const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>';
-  const urlsetOpen = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
-  const urlsetClose = '</urlset>';
+  const urlsetOpen =
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+  const urlsetClose = "</urlset>";
 
-  const urlElements = limitedEntries.map(entry => {
-    let urlXml = '  <url>\n';
+  const urlElements = limitedEntries.map((entry) => {
+    let urlXml = "  <url>\n";
     urlXml += `    <loc>${escapeXml(entry.url)}</loc>\n`;
 
     if (entry.lastmod) {
@@ -210,16 +224,11 @@ const entriesToXml = (entries) => {
       urlXml += `    <priority>${entry.priority}</priority>\n`;
     }
 
-    urlXml += '  </url>';
+    urlXml += "  </url>";
     return urlXml;
   });
 
-  return [
-    xmlHeader,
-    urlsetOpen,
-    ...urlElements,
-    urlsetClose
-  ].join('\n');
+  return [xmlHeader, urlsetOpen, ...urlElements, urlsetClose].join("\n");
 };
 
 /**
@@ -229,26 +238,31 @@ const entriesToXml = (entries) => {
  */
 export const formatDateForSitemap = (dateString) => {
   if (!dateString) return null;
-  
+
   try {
     let date;
-    
+
     // Handle API dates that don't have timezone info - assume UTC
-    if (dateString.includes('T') && !dateString.includes('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
+    if (
+      dateString.includes("T") &&
+      !dateString.includes("Z") &&
+      !dateString.includes("+") &&
+      !dateString.includes("-", 10)
+    ) {
       // Add Z to indicate UTC for timezone-less ISO strings
-      date = new Date(dateString + 'Z');
+      date = new Date(dateString + "Z");
     } else {
       date = new Date(dateString);
     }
-    
+
     // Check if date is valid
     if (isNaN(date.getTime())) {
       return null;
     }
-    
+
     // Convert to W3C Datetime format (ISO 8601 with timezone)
     // Remove milliseconds and add +00:00 timezone
-    return date.toISOString().replace(/\.\d{3}Z$/, '+00:00');
+    return date.toISOString().replace(/\.\d{3}Z$/, "+00:00");
   } catch (error) {
     return null;
   }
@@ -260,16 +274,16 @@ export const formatDateForSitemap = (dateString) => {
  * @returns {string} XML-escaped string
  */
 const escapeXml = (str) => {
-  if (typeof str !== 'string') {
-    return '';
+  if (typeof str !== "string") {
+    return "";
   }
 
   return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
 };
 
 /**
@@ -289,21 +303,27 @@ export const generateSitemap = async () => {
       const dogs = await getAllAnimals();
       allEntries.push(...generateDogPages(dogs));
     } catch (error) {
-      if (process.env.NODE_ENV !== 'production') console.warn('Failed to fetch dogs for sitemap:', error.message);
+      if (process.env.NODE_ENV !== "production")
+        console.warn("Failed to fetch dogs for sitemap:", error.message);
     }
 
     try {
       const organizations = await getAllOrganizations();
       allEntries.push(...generateOrganizationPages(organizations));
     } catch (error) {
-      if (process.env.NODE_ENV !== 'production') console.warn('Failed to fetch organizations for sitemap:', error.message);
+      if (process.env.NODE_ENV !== "production")
+        console.warn(
+          "Failed to fetch organizations for sitemap:",
+          error.message,
+        );
     }
 
     // Convert to XML
     return entriesToXml(allEntries);
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') console.error('Error generating sitemap:', error);
-    
+    if (process.env.NODE_ENV !== "production")
+      console.error("Error generating sitemap:", error);
+
     // Fallback: return sitemap with static pages only
     const staticEntries = generateStaticPages();
     return entriesToXml(staticEntries);
@@ -318,11 +338,12 @@ export const getSitemapStats = async () => {
   try {
     const [dogs, organizations] = await Promise.allSettled([
       getAllAnimals(),
-      getAllOrganizations()
+      getAllOrganizations(),
     ]);
 
-    const dogCount = dogs.status === 'fulfilled' ? dogs.value.length : 0;
-    const orgCount = organizations.status === 'fulfilled' ? organizations.value.length : 0;
+    const dogCount = dogs.status === "fulfilled" ? dogs.value.length : 0;
+    const orgCount =
+      organizations.status === "fulfilled" ? organizations.value.length : 0;
     const staticCount = generateStaticPages().length;
 
     return {
@@ -330,7 +351,7 @@ export const getSitemapStats = async () => {
       staticPages: staticCount,
       dogPages: dogCount,
       organizationPages: orgCount,
-      lastGenerated: new Date().toISOString()
+      lastGenerated: new Date().toISOString(),
     };
   } catch (error) {
     return {
@@ -339,7 +360,7 @@ export const getSitemapStats = async () => {
       dogPages: 0,
       organizationPages: 0,
       lastGenerated: new Date().toISOString(),
-      error: error.message
+      error: error.message,
     };
   }
 };

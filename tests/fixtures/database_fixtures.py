@@ -12,8 +12,7 @@ Following CLAUDE.md principles:
 """
 
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 
 import pytest
 

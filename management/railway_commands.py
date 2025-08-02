@@ -22,7 +22,7 @@ load_dotenv()
 
 from services.railway.connection import check_railway_connection
 from services.railway.migration import RailwayMigrationManager
-from services.railway.sync import RailwayDataSyncer, SyncMode, get_local_data_count, get_railway_data_count
+from services.railway.sync import RailwayDataSyncer, get_local_data_count, get_railway_data_count
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)

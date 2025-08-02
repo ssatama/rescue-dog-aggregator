@@ -9,7 +9,7 @@ from typing import Optional
 
 from dotenv import load_dotenv
 
-from .connection import check_railway_connection, get_railway_database_url
+from .connection import check_railway_connection
 
 # Load environment variables
 load_dotenv()

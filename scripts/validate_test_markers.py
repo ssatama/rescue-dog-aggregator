@@ -2,8 +2,6 @@
 """
 Validation script for pytest markers - ensures consistency and compliance.
 """
-
-import os
 import re
 from collections import defaultdict
 from pathlib import Path

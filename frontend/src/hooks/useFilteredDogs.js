@@ -2,14 +2,14 @@
  * Custom hook for filtering and managing dog data
  */
 
-import { useMemo } from 'react';
-import { 
-  applyAllFilters, 
-  extractAvailableBreeds, 
-  extractAvailableLocations, 
+import { useMemo } from "react";
+import {
+  applyAllFilters,
+  extractAvailableBreeds,
+  extractAvailableLocations,
   extractAvailableShipsTo,
-  hasActiveFilters as checkActiveFilters
-} from '../utils/dogFilters';
+  hasActiveFilters as checkActiveFilters,
+} from "../utils/dogFilters";
 
 /**
  * Custom hook for filtering dogs with memoized results
@@ -31,14 +31,14 @@ const useFilteredDogs = (dogs, filters, includeShipsTo = true) => {
       return {
         breeds: [],
         locations: [],
-        shipsTo: []
+        shipsTo: [],
       };
     }
 
     return {
       breeds: extractAvailableBreeds(dogs),
       locations: extractAvailableLocations(dogs),
-      shipsTo: extractAvailableShipsTo(dogs)
+      shipsTo: extractAvailableShipsTo(dogs),
     };
   }, [dogs]);
 
@@ -58,7 +58,7 @@ const useFilteredDogs = (dogs, filters, includeShipsTo = true) => {
     hasActiveFilters,
     availableBreeds: availableOptions.breeds,
     availableLocations: availableOptions.locations,
-    availableShipsTo: availableOptions.shipsTo
+    availableShipsTo: availableOptions.shipsTo,
   };
 };
 

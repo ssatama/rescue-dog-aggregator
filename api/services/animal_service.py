@@ -13,8 +13,8 @@ from typing import Any, Dict, List, Optional
 from psycopg2.extras import RealDictCursor
 
 from api.database import create_batch_executor
-from api.exceptions import APIException, handle_database_error
-from api.models.dog import Animal, AnimalWithImages
+from api.exceptions import APIException
+from api.models.dog import AnimalWithImages
 from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
 from api.models.responses import FilterCountsResponse, FilterOption
 from api.utils.json_parser import build_organization_object, parse_json_field

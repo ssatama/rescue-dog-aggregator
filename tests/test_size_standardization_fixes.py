@@ -1,7 +1,6 @@
 """Comprehensive tests for size standardization fixes."""
 
 import unittest
-from unittest.mock import patch
 
 import pytest
 

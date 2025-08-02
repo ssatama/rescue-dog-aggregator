@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Icon } from '../ui/Icon';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Icon } from "../ui/Icon";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 /**
  * Mobile-optimized bottom sheet filter component with native touch gestures
@@ -31,43 +31,50 @@ export default function MobileFilterBottomSheet({
   totalCount = 0,
   hasActiveFilters = false,
   onClearAll,
-  isOrganizationPage = false
+  isOrganizationPage = false,
 }) {
-  const [localBreedInput, setLocalBreedInput] = useState(filters?.breed || '');
+  const [localBreedInput, setLocalBreedInput] = useState(filters?.breed || "");
   const [isVisible, setIsVisible] = useState(false);
 
   // Filter options
-  const ageOptions = ['All', 'Puppy', 'Young', 'Adult', 'Senior'];
-  const sexOptions = ['Any', 'Male', 'Female'];
-  const sizeOptions = ['Any size', 'Tiny', 'Small', 'Medium', 'Large', 'Extra Large'];
+  const ageOptions = ["All", "Puppy", "Young", "Adult", "Senior"];
+  const sexOptions = ["Any", "Male", "Female"];
+  const sizeOptions = [
+    "Any size",
+    "Tiny",
+    "Small",
+    "Medium",
+    "Large",
+    "Extra Large",
+  ];
   const sortOptions = [
-    { value: 'newest', label: 'Newest First' },
-    { value: 'oldest', label: 'Oldest First' },
-    { value: 'name', label: 'Name A-Z' },
-    { value: 'name-desc', label: 'Name Z-A' }
+    { value: "newest", label: "Newest First" },
+    { value: "oldest", label: "Oldest First" },
+    { value: "name", label: "Name A-Z" },
+    { value: "name-desc", label: "Name Z-A" },
   ];
 
   // Handle opening/closing with body scroll lock
   useEffect(() => {
     if (isOpen) {
       setIsVisible(true);
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
       // Delay hiding to allow exit animation
       const timer = setTimeout(() => setIsVisible(false), 200);
       return () => clearTimeout(timer);
     }
 
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     };
   }, [isOpen]);
 
   // Sync local breed input with external filter changes
   useEffect(() => {
     if (filters?.breed !== localBreedInput) {
-      setLocalBreedInput(filters?.breed || '');
+      setLocalBreedInput(filters?.breed || "");
     }
   }, [filters?.breed]);
 
@@ -75,65 +82,72 @@ export default function MobileFilterBottomSheet({
   useEffect(() => {
     const timer = setTimeout(() => {
       if (localBreedInput !== filters?.breed) {
-        handleFilterChange('breed', localBreedInput);
+        handleFilterChange("breed", localBreedInput);
       }
     }, 300);
-    
+
     return () => clearTimeout(timer);
   }, [localBreedInput, filters?.breed]);
 
   // Handle ESC key
   useEffect(() => {
     const handleEscape = (e) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === "Escape" && isOpen) {
         onClose?.();
       }
     };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      return () => document.removeEventListener('keydown', handleEscape);
+      document.addEventListener("keydown", handleEscape);
+      return () => document.removeEventListener("keydown", handleEscape);
     }
   }, [isOpen, onClose]);
 
-  const handleFilterChange = useCallback((filterType, value) => {
-    if (!onFiltersChange) return;
-    
-    const newFilters = {
-      ...filters,
-      [filterType]: value
-    };
-    
-    onFiltersChange(newFilters);
-  }, [filters, onFiltersChange]);
+  const handleFilterChange = useCallback(
+    (filterType, value) => {
+      if (!onFiltersChange) return;
 
-  const handleBackdropClick = useCallback((e) => {
-    if (e.target === e.currentTarget) {
-      onClose?.();
-    }
-  }, [onClose]);
+      const newFilters = {
+        ...filters,
+        [filterType]: value,
+      };
+
+      onFiltersChange(newFilters);
+    },
+    [filters, onFiltersChange],
+  );
+
+  const handleBackdropClick = useCallback(
+    (e) => {
+      if (e.target === e.currentTarget) {
+        onClose?.();
+      }
+    },
+    [onClose],
+  );
 
   // Filter button component for consistency
-  const FilterButton = ({ 
-    value, 
-    currentValue, 
-    onSelect, 
-    children, 
-    testId 
+  const FilterButton = ({
+    value,
+    currentValue,
+    onSelect,
+    children,
+    testId,
   }) => {
     const isActive = currentValue === value;
-    
+
     return (
       <Button
-        variant={isActive ? 'default' : 'outline'}
+        variant={isActive ? "default" : "outline"}
         size="sm"
         onClick={() => onSelect(value)}
         data-testid={testId}
         className={`
           min-h-[48px] px-4 py-3 animate-button-hover focus-ring transition-colors duration-200
-          ${isActive 
-            ? 'bg-orange-600 dark:bg-orange-600 hover:bg-orange-700 dark:hover:bg-orange-700 text-white border-orange-600 dark:border-orange-600 focus:ring-2 focus:ring-orange-600 dark:focus:ring-orange-400 focus:ring-offset-2' 
-            : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-orange-600 dark:focus:ring-orange-400 focus:ring-offset-2'
+          ${
+            isActive
+              ? "bg-orange-600 dark:bg-orange-600 hover:bg-orange-700 dark:hover:bg-orange-700 text-white border-orange-600 dark:border-orange-600 focus:ring-2 focus:ring-orange-600 dark:focus:ring-orange-400 focus:ring-offset-2"
+              : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-orange-600 dark:focus:ring-orange-400 focus:ring-offset-2"
           }
         `}
         aria-pressed={isActive}
@@ -164,13 +178,13 @@ export default function MobileFilterBottomSheet({
 
           {/* Bottom Sheet */}
           <motion.div
-            initial={{ y: '100%' }}
+            initial={{ y: "100%" }}
             animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ 
-              type: 'spring', 
-              damping: 25, 
-              stiffness: 300 
+            exit={{ y: "100%" }}
+            transition={{
+              type: "spring",
+              damping: 25,
+              stiffness: 300,
             }}
             className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl z-50 max-h-[85vh] overflow-hidden md:hidden will-change-transform gpu-accelerated"
             data-testid="mobile-filter-sheet"
@@ -187,7 +201,9 @@ export default function MobileFilterBottomSheet({
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-3">
                 <Icon name="filter" size="default" color="active" />
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Filter & Sort</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Filter & Sort
+                </h2>
               </div>
               <Button
                 variant="ghost"
@@ -222,14 +238,18 @@ export default function MobileFilterBottomSheet({
             </div>
 
             {/* Filter Content */}
-            <div className="overflow-y-auto" style={{ maxHeight: 'calc(85vh - 160px)' }}>
+            <div
+              className="overflow-y-auto"
+              style={{ maxHeight: "calc(85vh - 160px)" }}
+            >
               <div className="p-4 space-y-6">
-                
                 {/* Age Filter */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Icon name="calendar" size="small" color="default" />
-                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Age</h3>
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Age
+                    </h3>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     {ageOptions.map((age) => (
@@ -237,7 +257,7 @@ export default function MobileFilterBottomSheet({
                         key={age}
                         value={age}
                         currentValue={filters?.age}
-                        onSelect={(value) => handleFilterChange('age', value)}
+                        onSelect={(value) => handleFilterChange("age", value)}
                         testId={`age-filter-${age}`}
                       >
                         {age}
@@ -250,10 +270,16 @@ export default function MobileFilterBottomSheet({
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Icon name="paw-print" size="small" color="default" />
-                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Breed</h3>
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Breed
+                    </h3>
                   </div>
                   <div className="relative">
-                    <Icon name="search" size="small" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+                    <Icon
+                      name="search"
+                      size="small"
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500"
+                    />
                     <Input
                       type="text"
                       placeholder="Search for specific breed..."
@@ -276,7 +302,9 @@ export default function MobileFilterBottomSheet({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Icon name="tag" size="small" color="default" />
-                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Sex</h3>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Sex
+                      </h3>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       {sexOptions.map((sex) => (
@@ -284,7 +312,7 @@ export default function MobileFilterBottomSheet({
                           key={sex}
                           value={sex}
                           currentValue={filters?.sex}
-                          onSelect={(value) => handleFilterChange('sex', value)}
+                          onSelect={(value) => handleFilterChange("sex", value)}
                           testId={`sex-filter-${sex}`}
                         >
                           {sex}
@@ -299,7 +327,9 @@ export default function MobileFilterBottomSheet({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Icon name="ruler" size="small" color="default" />
-                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Size</h3>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Size
+                      </h3>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       {sizeOptions.map((size) => (
@@ -307,7 +337,9 @@ export default function MobileFilterBottomSheet({
                           key={size}
                           value={size}
                           currentValue={filters?.size}
-                          onSelect={(value) => handleFilterChange('size', value)}
+                          onSelect={(value) =>
+                            handleFilterChange("size", value)
+                          }
                           testId={`size-filter-${size}`}
                         >
                           {size}
@@ -322,16 +354,20 @@ export default function MobileFilterBottomSheet({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Icon name="home" size="small" color="default" />
-                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Organization</h3>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Organization
+                      </h3>
                     </div>
                     <div className="grid grid-cols-1 gap-2">
                       {organizations.map((org) => (
                         <FilterButton
-                          key={org.id ?? 'any'}
-                          value={org.id?.toString() ?? 'any'}
+                          key={org.id ?? "any"}
+                          value={org.id?.toString() ?? "any"}
                           currentValue={filters?.organization}
-                          onSelect={(value) => handleFilterChange('organization', value)}
-                          testId={`organization-filter-${org.id ?? 'any'}`}
+                          onSelect={(value) =>
+                            handleFilterChange("organization", value)
+                          }
+                          testId={`organization-filter-${org.id ?? "any"}`}
                         >
                           {org.name}
                         </FilterButton>
@@ -344,7 +380,9 @@ export default function MobileFilterBottomSheet({
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Icon name="sort-desc" size="small" color="default" />
-                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Sort By</h3>
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Sort By
+                    </h3>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     {sortOptions.map((sort) => (
@@ -352,7 +390,7 @@ export default function MobileFilterBottomSheet({
                         key={sort.value}
                         value={sort.value}
                         currentValue={filters?.sort}
-                        onSelect={(value) => handleFilterChange('sort', value)}
+                        onSelect={(value) => handleFilterChange("sort", value)}
                         testId={`sort-filter-${sort.value}`}
                       >
                         {sort.label}
@@ -360,7 +398,6 @@ export default function MobileFilterBottomSheet({
                     ))}
                   </div>
                 </div>
-
               </div>
             </div>
 

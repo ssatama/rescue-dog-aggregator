@@ -10,7 +10,7 @@ from typing import Optional, Union
 
 from pydantic import BaseModel, Field, field_validator
 
-from .dog import AnimalStatus, AvailabilityConfidence, StandardizedSize
+from .dog import AnimalStatus, StandardizedSize
 
 
 class AnimalFilterRequest(BaseModel):

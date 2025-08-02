@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
@@ -14,13 +14,14 @@ class DogSectionErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     // Only log in development
-    if (process.env.NODE_ENV === 'development') console.error('DogSection Error:', error, errorInfo);
-    
+    if (process.env.NODE_ENV === "development")
+      console.error("DogSection Error:", error, errorInfo);
+
     // Report error to logging service
-    if (typeof window !== 'undefined' && window.reportError) {
-      window.reportError('DogSection Component Error', {
+    if (typeof window !== "undefined" && window.reportError) {
+      window.reportError("DogSection Component Error", {
         error: error.message,
-        componentStack: errorInfo.componentStack
+        componentStack: errorInfo.componentStack,
       });
     }
   }
@@ -37,10 +38,11 @@ class DogSectionErrorBoundary extends React.Component {
             <Alert variant="destructive" className="max-w-2xl mx-auto">
               <AlertTitle>Section Unavailable</AlertTitle>
               <AlertDescription>
-                This section could not be loaded. Please try refreshing the page.
-                <Button 
-                  variant="link" 
-                  size="sm" 
+                This section could not be loaded. Please try refreshing the
+                page.
+                <Button
+                  variant="link"
+                  size="sm"
                   onClick={this.handleRetry}
                   className="mt-2 text-red-700 hover:text-red-800 p-0 h-auto block"
                 >

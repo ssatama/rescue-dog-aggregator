@@ -15,7 +15,6 @@ from datetime import datetime, timedelta
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from api.database import get_pooled_connection
-from config import DB_CONFIG
 
 
 def fix_availability_confidence():

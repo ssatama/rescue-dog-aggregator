@@ -17,17 +17,18 @@ test.describe('Home Page Functionality', () => {
       await homePage.navigate();
       await homePage.waitForPageLoad();
       
-      // Try to find dog section first, but if not visible, check for container
+      // Wait for dog section to load with generous timeout
+      await page.locator('[data-testid*="dog-section"]').first().waitFor({ state: 'visible', timeout: 10000 });
+      
+      // Check if dog section is visible or fallback to container check
       const dogSectionVisible = await homePage.isDogSectionVisible();
-      if (!dogSectionVisible) {
+      if (dogSectionVisible) {
+        const dogCount = await homePage.getDogSectionDogCount();
+        expect(dogCount).toBeGreaterThan(0);
+      } else {
         // Fallback: check if any dog section container exists
         const containerVisible = await page.locator('[data-testid*="dog-section-container-"]').first().isVisible();
         expect(containerVisible).toBe(true);
-      } else {
-        expect(dogSectionVisible).toBe(true);
-        
-        const dogCount = await homePage.getDogSectionDogCount();
-        expect(dogCount).toBeGreaterThan(0);
       }
     });
 

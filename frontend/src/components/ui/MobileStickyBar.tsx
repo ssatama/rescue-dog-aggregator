@@ -1,8 +1,8 @@
 "use client";
 
-import React from 'react';
+import React from "react";
 import { Button } from "./button";
-import { Icon } from './Icon';
+import { Icon } from "./Icon";
 
 interface Dog {
   id: string | number;
@@ -21,17 +21,15 @@ interface MobileStickyBarProps {
   className?: string;
 }
 
-export default function MobileStickyBar({ 
-  dog, 
-  isVisible = true, 
-  className = "" 
+export default function MobileStickyBar({
+  dog,
+  isVisible = true,
+  className = "",
 }: MobileStickyBarProps) {
-
-
   const handleContactClick = (): void => {
     if (dog?.adoption_url) {
       // Open the adoption URL
-      window.open(dog.adoption_url, '_blank', 'noopener,noreferrer');
+      window.open(dog.adoption_url, "_blank", "noopener,noreferrer");
     }
   };
 
@@ -40,12 +38,11 @@ export default function MobileStickyBar({
   }
 
   return (
-    <div 
+    <div
       className={`fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg md:hidden ${className}`}
       data-testid="mobile-sticky-bar"
     >
       <div className="flex items-center justify-between px-4 py-3">
-
         {/* Contact/Adopt Button */}
         <Button
           size="lg"
@@ -58,7 +55,7 @@ export default function MobileStickyBar({
           Start Adoption Process
         </Button>
       </div>
-      
+
       {/* Bottom safe area padding for iOS */}
       <div className="h-safe-area-inset-bottom bg-white"></div>
     </div>

@@ -57,7 +57,7 @@ class TestPetsInTurkeyScraper:
             assert result == mock_driver
             mock_driver.set_page_load_timeout.assert_called_once_with(60)
             mock_driver.implicitly_wait.assert_called_once_with(10)
-            scraper.logger.info.assert_called_with("Selenium WebDriver set up successfully")
+            # Success logging was removed in recent logging updates
 
     @patch("scrapers.pets_in_turkey.dogs_scraper.ChromeDriverManager")
     def test_setup_selenium_failure(self, mock_driver_manager):

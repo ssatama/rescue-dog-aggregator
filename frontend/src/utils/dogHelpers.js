@@ -10,18 +10,18 @@
 export const formatAge = (dog) => {
   if (dog?.age_min_months) {
     if (dog.age_min_months < 12) {
-      return `${dog.age_min_months} month${dog.age_min_months === 1 ? '' : 's'}`;
+      return `${dog.age_min_months} month${dog.age_min_months === 1 ? "" : "s"}`;
     } else {
       const years = Math.floor(dog.age_min_months / 12);
       const months = dog.age_min_months % 12;
       if (months === 0) {
-        return `${years} year${years === 1 ? '' : 's'}`;
+        return `${years} year${years === 1 ? "" : "s"}`;
       } else {
-        return `${years} year${years === 1 ? '' : 's'}, ${months} month${months === 1 ? '' : 's'}`;
+        return `${years} year${years === 1 ? "" : "s"}, ${months} month${months === 1 ? "" : "s"}`;
       }
     }
   }
-  return dog?.age_text || 'Age unknown';
+  return dog?.age_text || "Age unknown";
 };
 
 /**
@@ -33,30 +33,32 @@ export const getAgeCategory = (dog) => {
   // Prefer age_min_months when available (most accurate)
   if (dog?.age_min_months) {
     const months = dog.age_min_months;
-    
+
     if (months < 12) {
-      return 'Puppy';
-    } else if (months < 36) { // Less than 3 years
-      return 'Young';
-    } else if (months < 96) { // Less than 8 years (matches backend standardization)
-      return 'Adult';
+      return "Puppy";
+    } else if (months < 36) {
+      // Less than 3 years
+      return "Young";
+    } else if (months < 96) {
+      // Less than 8 years (matches backend standardization)
+      return "Adult";
     } else {
-      return 'Senior';
+      return "Senior";
     }
   }
-  
+
   // Fall back to standardized age_text when age_min_months not available
   if (dog?.age_text) {
     const ageText = dog.age_text.toLowerCase();
-    
+
     // Handle standardized age categories
-    if (ageText === 'puppy') return 'Puppy';
-    if (ageText === 'young') return 'Young';
-    if (ageText === 'adult') return 'Adult';
-    if (ageText === 'senior') return 'Senior';
+    if (ageText === "puppy") return "Puppy";
+    if (ageText === "young") return "Young";
+    if (ageText === "adult") return "Adult";
+    if (ageText === "senior") return "Senior";
   }
-  
-  return 'Unknown';
+
+  return "Unknown";
 };
 
 /**
@@ -66,7 +68,11 @@ export const getAgeCategory = (dog) => {
  */
 export const formatBreed = (dog) => {
   const rawBreed = dog?.standardized_breed || dog?.breed;
-  if (!rawBreed || rawBreed === 'Unknown' || rawBreed.toLowerCase() === 'unknown') {
+  if (
+    !rawBreed ||
+    rawBreed === "Unknown" ||
+    rawBreed.toLowerCase() === "unknown"
+  ) {
     return null;
   }
   return rawBreed;
@@ -79,16 +85,16 @@ export const formatBreed = (dog) => {
  */
 export const formatGender = (dog) => {
   const sex = dog?.sex?.toLowerCase();
-  
+
   switch (sex) {
-    case 'male':
-    case 'm':
-      return { text: 'Male', icon: '♂️' };
-    case 'female':
-    case 'f':
-      return { text: 'Female', icon: '♀️' };
+    case "male":
+    case "m":
+      return { text: "Male", icon: "♂️" };
+    case "female":
+    case "f":
+      return { text: "Female", icon: "♀️" };
     default:
-      return { text: 'Unknown', icon: '❓' };
+      return { text: "Unknown", icon: "❓" };
   }
 };
 
@@ -99,7 +105,7 @@ export const formatGender = (dog) => {
  */
 export const isRecentDog = (dog) => {
   if (!dog?.created_at) return false;
-  
+
   try {
     const createdDate = new Date(dog.created_at);
     const sevenDaysAgo = new Date();
@@ -116,7 +122,7 @@ export const isRecentDog = (dog) => {
  * @returns {string} Organization name or fallback
  */
 export const getOrganizationName = (dog) => {
-  return dog?.organization?.name || 'Unknown Organization';
+  return dog?.organization?.name || "Unknown Organization";
 };
 
 /**
@@ -135,7 +141,7 @@ export const getShipsToCountries = (dog) => {
  */
 export const formatSize = (dog) => {
   const size = dog?.standardized_size || dog?.size;
-  if (!size || size === 'Unknown' || size.toLowerCase() === 'unknown') {
+  if (!size || size === "Unknown" || size.toLowerCase() === "unknown") {
     return null;
   }
   return size;

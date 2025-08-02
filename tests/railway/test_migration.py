@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
@@ -13,25 +12,19 @@ class TestRailwayMigration:
     def test_init_railway_alembic_creates_structure(self):
         with patch("os.makedirs") as mock_makedirs:
             with patch("builtins.open", mock_open()) as mock_file:
-                with patch("services.railway.migration.get_railway_database_url") as mock_url:
-                    mock_url.return_value = "postgresql://user:pass@host:5432/db"
+                result = init_railway_alembic()
 
-                    result = init_railway_alembic()
-
-                    assert result is True
-                    mock_makedirs.assert_called()
-                    mock_file.assert_called()
+                assert result is True
+                mock_makedirs.assert_called()
+                mock_file.assert_called()
 
     def test_init_railway_alembic_handles_existing_directory(self):
         with patch("os.makedirs", side_effect=FileExistsError()):
             with patch("builtins.open", mock_open()) as mock_file:
-                with patch("services.railway.migration.get_railway_database_url") as mock_url:
-                    mock_url.return_value = "postgresql://user:pass@host:5432/db"
+                result = init_railway_alembic()
 
-                    result = init_railway_alembic()
-
-                    assert result is True
-                    mock_file.assert_called()
+                assert result is True
+                mock_file.assert_called()
 
     def test_create_initial_migration_success(self):
         with patch("subprocess.run") as mock_run:
@@ -229,13 +222,10 @@ class TestRailwayMigrationIntegration:
 
             with patch("os.makedirs") as mock_makedirs:
                 with patch("builtins.open", mock_open()):
-                    with patch("services.railway.migration.get_railway_database_url") as mock_url:
-                        mock_url.return_value = "postgresql://user:pass@host:5432/db"
+                    result = init_railway_alembic()
 
-                        result = init_railway_alembic()
-
-                        assert result is True
-                        mock_makedirs.assert_called()
+                    assert result is True
+                    mock_makedirs.assert_called()
 
     def test_migration_status_parsing(self):
         complex_output = """

@@ -3,8 +3,6 @@ Command-line interface for configuration management operations.
 Handles CLI commands and coordinates between services and formatters.
 """
 
-from typing import Optional
-
 from management.formatters.config_formatter import ConfigFormatter
 from management.services.config_service import ConfigService
 

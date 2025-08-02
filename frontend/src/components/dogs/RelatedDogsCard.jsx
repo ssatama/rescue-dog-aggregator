@@ -1,9 +1,9 @@
 "use client";
-import React, { memo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import LazyImage from '../ui/LazyImage';
-import { getThumbnailImage, handleImageError } from '../../utils/imageUtils';
-import { sanitizeText } from '../../utils/security';
+import React, { memo, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import LazyImage from "../ui/LazyImage";
+import { getThumbnailImage, handleImageError } from "../../utils/imageUtils";
+import { sanitizeText } from "../../utils/security";
 
 const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
   const router = useRouter();
@@ -13,32 +13,35 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
     router.push(`/dogs/${slug}`);
   }, [router, dog.id, dog.slug]);
 
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      handleCardClick();
-    }
-  }, [handleCardClick]);
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleCardClick();
+      }
+    },
+    [handleCardClick],
+  );
 
   const formatAge = (dog) => {
     if (dog.age_min_months) {
       if (dog.age_min_months < 12) {
-        return `${dog.age_min_months} month${dog.age_min_months === 1 ? '' : 's'}`;
+        return `${dog.age_min_months} month${dog.age_min_months === 1 ? "" : "s"}`;
       } else {
         const years = Math.floor(dog.age_min_months / 12);
         const months = dog.age_min_months % 12;
         if (months === 0) {
-          return `${years} year${years === 1 ? '' : 's'}`;
+          return `${years} year${years === 1 ? "" : "s"}`;
         } else {
-          return `${years} year${years === 1 ? '' : 's'}, ${months} month${months === 1 ? '' : 's'}`;
+          return `${years} year${years === 1 ? "" : "s"}, ${months} month${months === 1 ? "" : "s"}`;
         }
       }
     }
-    return dog.age_text || 'Age unknown';
+    return dog.age_text || "Age unknown";
   };
 
   const formatBreed = (dog) => {
-    return dog.standardized_breed || dog.breed || 'Mixed breed';
+    return dog.standardized_breed || dog.breed || "Mixed breed";
   };
 
   return (
@@ -52,7 +55,7 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
       aria-label={`View details for ${dog.name}`}
     >
       {/* Image Container with 4:3 Aspect Ratio */}
-      <div 
+      <div
         data-testid="related-dog-image-container"
         className="aspect-[4/3] w-full overflow-hidden rounded-t-lg bg-gray-200"
       >
@@ -74,7 +77,7 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
       {/* Card Content */}
       <div className="p-4">
         {/* Dog Name */}
-        <h3 
+        <h3
           data-testid="related-dog-name"
           className="text-card-title text-gray-900 dark:text-gray-100 hover:text-orange-600 transition-colors duration-300 mb-1"
         >

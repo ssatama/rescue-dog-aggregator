@@ -1,7 +1,7 @@
 // This file contains functions to interact with the animal-related API endpoints.
 
-import { get } from '../utils/api'; // Assuming api utility exists
-import { logger } from '../utils/logger';
+import { get } from "../utils/api"; // Assuming api utility exists
+import { logger } from "../utils/logger";
 
 /**
  * Fetches a list of animals based on provided filters.
@@ -12,31 +12,32 @@ export async function getAnimals(params = {}) {
   logger.log("Fetching animals with params:", params);
   // Remove null/undefined/default values before sending
   const cleanParams = Object.fromEntries(
-    Object.entries(params).filter(([key, v]) =>
+    Object.entries(params).filter(
+      ([key, v]) =>
         v != null &&
-        v !== '' &&
-        !(key === 'sex' && v === 'Any') &&
-        !(key === 'standardized_size' && v === 'Any size') && // Check standardized_size
-        !(key === 'age_category' && v === 'Any age') &&
-        !(key === 'standardized_breed' && v === 'Any breed') &&
-        !(key === 'organization_id' && v === 'Any organization') &&
-        !(key === 'location_country' && v === 'Any country') &&
-        !(key === 'available_to_country' && v === 'Any country') &&
-        !(key === 'available_to_region' && v === 'Any region')
-    )
+        v !== "" &&
+        !(key === "sex" && v === "Any") &&
+        !(key === "standardized_size" && v === "Any size") && // Check standardized_size
+        !(key === "age_category" && v === "Any age") &&
+        !(key === "standardized_breed" && v === "Any breed") &&
+        !(key === "organization_id" && v === "Any organization") &&
+        !(key === "location_country" && v === "Any country") &&
+        !(key === "available_to_country" && v === "Any country") &&
+        !(key === "available_to_region" && v === "Any region"),
+    ),
   );
 
   // Ensure animal_type is always sent if not explicitly provided otherwise
   if (!cleanParams.animal_type) {
-    cleanParams.animal_type = 'dog';
+    cleanParams.animal_type = "dog";
   }
   // Ensure status is 'available' if not explicitly provided otherwise
   if (!cleanParams.status) {
-      cleanParams.status = 'available';
+    cleanParams.status = "available";
   }
 
   logger.log("Cleaned params for API:", cleanParams);
-  return get('/api/animals', cleanParams);
+  return get("/api/animals", cleanParams);
 }
 
 /**
@@ -65,11 +66,14 @@ export async function getAnimalBySlug(slug) {
  * @param {object} additionalParams - Other filtering parameters.
  * @returns {Promise<Array>} - Promise resolving to an array of animal objects.
  */
-export async function getAnimalsByStandardizedBreed(standardizedBreed, additionalParams = {}) {
+export async function getAnimalsByStandardizedBreed(
+  standardizedBreed,
+  additionalParams = {},
+) {
   const params = {
     ...additionalParams,
     standardized_breed: standardizedBreed,
-    animal_type: 'dog' // Ensure we are fetching dogs
+    animal_type: "dog", // Ensure we are fetching dogs
   };
   logger.log("Fetching animals by standardized breed:", params);
   return getAnimals(params);
@@ -83,7 +87,7 @@ export async function getAnimalsByStandardizedBreed(standardizedBreed, additiona
 export const getRandomAnimals = async (limit = 3) => {
   logger.log(`Fetching ${limit} random animals`);
   // The backend /random endpoint now defaults to dogs and available status
-  return get('/api/animals/random', { limit });
+  return get("/api/animals/random", { limit });
 };
 
 // --- Meta Endpoints ---
@@ -95,32 +99,36 @@ export const getRandomAnimals = async (limit = 3) => {
  */
 export async function getStandardizedBreeds(breedGroup = null) {
   const params = {};
-  if (breedGroup && breedGroup !== 'Any group') {
+  if (breedGroup && breedGroup !== "Any group") {
     params.breed_group = breedGroup;
   }
   logger.log("Fetching standardized breeds with params:", params);
-  
+
   try {
-    const response = await get('/api/animals/meta/breeds', params);
-    
+    const response = await get("/api/animals/meta/breeds", params);
+
     // Defensive handling for different response structures
     // API might return: array directly, {data: array}, {breeds: array}, or other wrapper
     if (Array.isArray(response)) {
       return response;
     }
-    
+
     // Check for common wrapper patterns
     if (response && Array.isArray(response.data)) {
       return response.data;
     }
-    
+
     if (response && Array.isArray(response.breeds)) {
       return response.breeds;
     }
-    
+
     // Log unexpected response structure for debugging
-    logger.warn("Unexpected breeds API response structure:", typeof response, Object.keys(response || {}));
-    
+    logger.warn(
+      "Unexpected breeds API response structure:",
+      typeof response,
+      Object.keys(response || {}),
+    );
+
     // Return empty array as fallback to prevent .filter() errors
     return [];
   } catch (error) {
@@ -135,7 +143,7 @@ export async function getStandardizedBreeds(breedGroup = null) {
  */
 export async function getBreedGroups() {
   logger.log("Fetching breed groups");
-  return get('/api/animals/meta/breed_groups');
+  return get("/api/animals/meta/breed_groups");
 }
 
 // --- NEW: Location Meta Endpoints ---
@@ -146,7 +154,7 @@ export async function getBreedGroups() {
  */
 export async function getLocationCountries() {
   logger.log("Fetching location countries");
-  return get('/api/animals/meta/location_countries');
+  return get("/api/animals/meta/location_countries");
 }
 
 /**
@@ -155,7 +163,7 @@ export async function getLocationCountries() {
  */
 export async function getAvailableCountries() {
   logger.log("Fetching available-to countries");
-  return get('/api/animals/meta/available_countries');
+  return get("/api/animals/meta/available_countries");
 }
 
 /**
@@ -164,12 +172,12 @@ export async function getAvailableCountries() {
  * @returns {Promise<Array<string>>} - Promise resolving to an array of region names.
  */
 export async function getAvailableRegions(country) {
-  if (!country || country === 'Any country') {
+  if (!country || country === "Any country") {
     logger.log("Skipping fetch for available regions - no country selected.");
     return Promise.resolve([]); // Return empty array if no country specified
   }
   logger.log(`Fetching available regions for country: ${country}`);
-  return get('/api/animals/meta/available_regions', { country });
+  return get("/api/animals/meta/available_regions", { country });
 }
 
 // --- END NEW ---
@@ -180,7 +188,7 @@ export async function getAvailableRegions(country) {
  */
 export async function getStatistics() {
   logger.log("Fetching statistics");
-  return get('/api/animals/statistics');
+  return get("/api/animals/statistics");
 }
 
 /**
@@ -192,30 +200,39 @@ export async function getStatistics() {
 export async function getAnimalsByCuration(curationType, limit = 4) {
   // Input validation
   if (!curationType) {
-    throw new Error('Curation type is required');
+    throw new Error("Curation type is required");
   }
 
-  const validCurationTypes = ['recent', 'recent_with_fallback', 'diverse', 'random'];
+  const validCurationTypes = [
+    "recent",
+    "recent_with_fallback",
+    "diverse",
+    "random",
+  ];
   if (!validCurationTypes.includes(curationType)) {
-    throw new Error('Invalid curation type. Must be one of: recent, recent_with_fallback, diverse, random');
+    throw new Error(
+      "Invalid curation type. Must be one of: recent, recent_with_fallback, diverse, random",
+    );
   }
 
-  if (typeof limit !== 'number' || limit <= 0) {
-    throw new Error('Limit must be a positive number');
+  if (typeof limit !== "number" || limit <= 0) {
+    throw new Error("Limit must be a positive number");
   }
 
-  logger.log(`Fetching animals with curation type: ${curationType}, limit: ${limit}`);
-  
+  logger.log(
+    `Fetching animals with curation type: ${curationType}, limit: ${limit}`,
+  );
+
   const params = {
     curation_type: curationType,
     limit,
-    animal_type: 'dog',
-    status: 'available'
+    animal_type: "dog",
+    status: "available",
   };
 
-  logger.log('API call parameters:', params);
-  
-  return get('/api/animals', params);
+  logger.log("API call parameters:", params);
+
+  return get("/api/animals", params);
 }
 
 /**
@@ -235,32 +252,33 @@ export async function getAllAnimals(params = {}) {
  */
 export async function getFilterCounts(params = {}) {
   logger.log("Fetching filter counts with params:", params);
-  
+
   // Remove null/undefined/default values before sending
   const cleanParams = Object.fromEntries(
-    Object.entries(params).filter(([key, v]) =>
+    Object.entries(params).filter(
+      ([key, v]) =>
         v != null &&
-        v !== '' &&
-        !(key === 'sex' && v === 'Any') &&
-        !(key === 'standardized_size' && v === 'Any size') &&
-        !(key === 'age_category' && v === 'Any age') &&
-        !(key === 'standardized_breed' && v === 'Any breed') &&
-        !(key === 'organization_id' && v === 'Any organization') &&
-        !(key === 'location_country' && v === 'Any country') &&
-        !(key === 'available_to_country' && v === 'Any country') &&
-        !(key === 'available_to_region' && v === 'Any region')
-    )
+        v !== "" &&
+        !(key === "sex" && v === "Any") &&
+        !(key === "standardized_size" && v === "Any size") &&
+        !(key === "age_category" && v === "Any age") &&
+        !(key === "standardized_breed" && v === "Any breed") &&
+        !(key === "organization_id" && v === "Any organization") &&
+        !(key === "location_country" && v === "Any country") &&
+        !(key === "available_to_country" && v === "Any country") &&
+        !(key === "available_to_region" && v === "Any region"),
+    ),
   );
 
   // Ensure animal_type is always sent if not explicitly provided otherwise
   if (!cleanParams.animal_type) {
-    cleanParams.animal_type = 'dog';
+    cleanParams.animal_type = "dog";
   }
   // Ensure status is 'available' if not explicitly provided otherwise
   if (!cleanParams.status) {
-    cleanParams.status = 'available';
+    cleanParams.status = "available";
   }
 
   logger.log("Cleaned filter count params for API:", cleanParams);
-  return get('/api/animals/meta/filter_counts', cleanParams);
+  return get("/api/animals/meta/filter_counts", cleanParams);
 }

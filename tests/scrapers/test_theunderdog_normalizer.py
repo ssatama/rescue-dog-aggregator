@@ -122,17 +122,34 @@ class TestTheUnderdogNormalizer:
         assert extract_breed_from_description(None) == "Mixed Breed"
 
     def test_extract_gender(self):
-        """Test gender extraction from properties."""
+        """Test gender extraction from properties - includes sex standardization fix tests."""
         # Updated to new format for frontend compatibility
         assert extract_gender("Female") == "Female"
         assert extract_gender("Male") == "Male"
         assert extract_gender("female") == "Female"
         assert extract_gender("male") == "Male"
 
-        # Edge cases
-        assert extract_gender("") is None
-        assert extract_gender(None) is None
-        assert extract_gender("Unknown") is None
+        # Additional test cases from sex fix (consolidated from test_underdog_sex_fix.py)
+        male_cases = ["Male", "male", "MALE", "The dog is male", "This is a male dog"]
+        for test_input in male_cases:
+            assert extract_gender(test_input) == "Male", f"Failed for input: {test_input}"
+
+        female_cases = ["Female", "female", "FEMALE", "The dog is female", "This is a female dog"]
+        for test_input in female_cases:
+            assert extract_gender(test_input) == "Female", f"Failed for input: {test_input}"
+
+        # Edge cases and None cases (expanded)
+        none_cases = [None, "", "   ", "unknown", "not specified", "other", "Unknown"]
+        for test_input in none_cases:
+            assert extract_gender(test_input) is None, f"Failed for input: {test_input}"
+
+        # Frontend compatibility verification (from sex fix)
+        male_result = extract_gender("male")
+        female_result = extract_gender("female")
+        assert male_result == "Male"  # Must be exact match for frontend filters
+        assert female_result == "Female"  # Must be exact match for frontend filters
+        assert male_result != "M"  # Should not be old M/F format
+        assert female_result != "F"  # Should not be old M/F format
 
     def test_extract_size_and_weight(self):
         """Test size and weight extraction."""

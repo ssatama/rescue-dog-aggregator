@@ -3,7 +3,7 @@
 Tests the complete flow: extract German data → translate → standardize with base_scraper.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 

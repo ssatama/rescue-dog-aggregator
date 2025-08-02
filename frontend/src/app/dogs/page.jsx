@@ -1,5 +1,5 @@
-import { Suspense } from 'react';
-import DogsPageClient from './DogsPageClient';
+import { Suspense } from "react";
+import DogsPageClient from "./DogsPageClient";
 
 export default function DogsPage() {
   return (

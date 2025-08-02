@@ -8,11 +8,11 @@
  * @returns {Response} robots.txt response with proper headers
  */
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://rescuedogs.me';
-  const isProduction = process.env.NODE_ENV === 'production';
-  
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://rescuedogs.me";
+  const isProduction = process.env.NODE_ENV === "production";
+
   const robots = `User-agent: *
-${isProduction ? 'Allow: /' : 'Disallow: /'}
+${isProduction ? "Allow: /" : "Disallow: /"}
 
 # Core pages - high priority for indexing
 Allow: /dogs/
@@ -66,8 +66,8 @@ Crawl-delay: 1`;
 
   return new Response(robots, {
     headers: {
-      'Content-Type': 'text/plain',
-      'Cache-Control': 'public, max-age=86400' // Cache for 24 hours
-    }
+      "Content-Type": "text/plain",
+      "Cache-Control": "public, max-age=86400", // Cache for 24 hours
+    },
   });
 }

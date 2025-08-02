@@ -8,11 +8,10 @@ import logging
 import os
 from io import BytesIO
 from typing import Dict, Optional, Tuple
-from urllib.parse import urljoin
 
 import boto3
 import requests
-from botocore.exceptions import ClientError, NoCredentialsError
+from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
 

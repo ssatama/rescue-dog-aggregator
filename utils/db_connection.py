@@ -4,11 +4,10 @@ Follows CLAUDE.md principles: immutable data, pure functions, context managers.
 """
 
 import logging
-import os
 from contextlib import contextmanager
 from dataclasses import dataclass
 from threading import Lock
-from typing import Any, Dict, Generator, Optional
+from typing import Generator, Optional
 
 import psycopg2
 from psycopg2 import pool

@@ -2,12 +2,10 @@ import json
 import logging
 import time
 from contextlib import contextmanager
-from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict
 
 from sqlalchemy import text
-from sqlalchemy.exc import SQLAlchemyError
 
 from api.database import get_pooled_connection
 

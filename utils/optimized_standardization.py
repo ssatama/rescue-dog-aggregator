@@ -4,10 +4,10 @@ Follows CLAUDE.md principles: immutable data, pure functions, performance optimi
 """
 
 import re
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from datetime import datetime
 from functools import lru_cache
-from typing import Dict, NamedTuple, Optional, Tuple
+from typing import Dict, Optional
 
 # Pre-compiled regex patterns for performance
 _COMPILED_PATTERNS = {

@@ -8,7 +8,7 @@ Following CLAUDE.md principles:
 - Early returns, no nested conditionals
 """
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 

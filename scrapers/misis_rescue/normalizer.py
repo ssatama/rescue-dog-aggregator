@@ -5,7 +5,6 @@ from MisisRescue website "Things you should know" sections.
 """
 
 import re
-from datetime import datetime
 from typing import List, Optional
 
 

@@ -2,7 +2,6 @@ import os
 from unittest.mock import MagicMock, patch
 
 import pytest
-from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 
 from services.railway.connection import RailwayConnectionManager, check_railway_connection, get_railway_engine, get_railway_session

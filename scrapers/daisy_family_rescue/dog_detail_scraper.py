@@ -1,7 +1,6 @@
 import re
-import time
-from datetime import date, datetime
-from typing import Any, Dict, List, Optional
+from datetime import date
+from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
 from selenium import webdriver
@@ -10,8 +9,6 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-
-from scrapers.base_scraper import BaseScraper
 
 
 class DaisyFamilyRescueDogDetailScraper:

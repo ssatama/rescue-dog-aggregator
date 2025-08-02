@@ -1,12 +1,11 @@
 """Scraper implementation for The Underdog organization."""
 
 import re
-import time
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urljoin
 
 import requests
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
 

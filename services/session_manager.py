@@ -16,7 +16,7 @@ Following CLAUDE.md principles:
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 import psycopg2
 

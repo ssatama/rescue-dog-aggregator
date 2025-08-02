@@ -382,10 +382,17 @@ export class HomePage extends BasePage {
 
   async isDogSectionVisible(): Promise<boolean> {
     try {
+      // Wait a bit for the section to potentially load, but don't fail if it doesn't
+      await this.dogSection.waitFor({ state: 'visible', timeout: 2000 });
       return await this.dogSection.isVisible();
     } catch (error) {
-      console.log('[HomePage] isDogSectionVisible failed:', error.message);
-      return false;
+      // If waiting fails, try a simple visibility check
+      try {
+        return await this.dogSection.isVisible({ timeout: 1000 });
+      } catch (finalError) {
+        console.log('[HomePage] isDogSectionVisible failed:', finalError.message);
+        return false;
+      }
     }
   }
 

@@ -8,7 +8,6 @@ Following CLAUDE.md principles:
 - Early returns, no nested conditionals
 """
 
-from datetime import datetime, timedelta
 from unittest.mock import Mock
 
 import pytest

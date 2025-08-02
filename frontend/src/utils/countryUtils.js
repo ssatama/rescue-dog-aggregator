@@ -4,56 +4,56 @@
  * Country code to flag emoji mapping for enhanced organization cards
  */
 export const COUNTRY_FLAGS = {
-  'TR': '🇹🇷',
-  'DE': '🇩🇪', 
-  'NL': '🇳🇱',
-  'BE': '🇧🇪',
-  'FR': '🇫🇷',
-  'UK': '🇬🇧',
-  'GB': '🇬🇧', // Alternative for UK
-  'AT': '🇦🇹',
-  'CH': '🇨🇭',
-  'RO': '🇷🇴',
-  'ES': '🇪🇸',
-  'IT': '🇮🇹',
-  'SE': '🇸🇪',
-  'DK': '🇩🇰',
-  'NO': '🇳🇴',
-  'FI': '🇫🇮',
-  'GR': '🇬🇷',
-  'PT': '🇵🇹',
-  'PL': '🇵🇱',
-  'CZ': '🇨🇿',
-  'HU': '🇭🇺',
-  'SK': '🇸🇰'
+  TR: "🇹🇷",
+  DE: "🇩🇪",
+  NL: "🇳🇱",
+  BE: "🇧🇪",
+  FR: "🇫🇷",
+  UK: "🇬🇧",
+  GB: "🇬🇧", // Alternative for UK
+  AT: "🇦🇹",
+  CH: "🇨🇭",
+  RO: "🇷🇴",
+  ES: "🇪🇸",
+  IT: "🇮🇹",
+  SE: "🇸🇪",
+  DK: "🇩🇰",
+  NO: "🇳🇴",
+  FI: "🇫🇮",
+  GR: "🇬🇷",
+  PT: "🇵🇹",
+  PL: "🇵🇱",
+  CZ: "🇨🇿",
+  HU: "🇭🇺",
+  SK: "🇸🇰",
 };
 
 /**
  * Country code to full name mapping
  */
 export const COUNTRY_NAMES = {
-  'TR': 'Turkey',
-  'DE': 'Germany', 
-  'NL': 'Netherlands',
-  'BE': 'Belgium',
-  'FR': 'France',
-  'UK': 'United Kingdom',
-  'GB': 'United Kingdom',
-  'AT': 'Austria',
-  'CH': 'Switzerland',
-  'RO': 'Romania',
-  'ES': 'Spain',
-  'IT': 'Italy',
-  'SE': 'Sweden',
-  'DK': 'Denmark',
-  'NO': 'Norway',
-  'FI': 'Finland',
-  'GR': 'Greece',
-  'PT': 'Portugal',
-  'PL': 'Poland',
-  'CZ': 'Czech Republic',
-  'HU': 'Hungary',
-  'SK': 'Slovakia'
+  TR: "Turkey",
+  DE: "Germany",
+  NL: "Netherlands",
+  BE: "Belgium",
+  FR: "France",
+  UK: "United Kingdom",
+  GB: "United Kingdom",
+  AT: "Austria",
+  CH: "Switzerland",
+  RO: "Romania",
+  ES: "Spain",
+  IT: "Italy",
+  SE: "Sweden",
+  DK: "Denmark",
+  NO: "Norway",
+  FI: "Finland",
+  GR: "Greece",
+  PT: "Portugal",
+  PL: "Poland",
+  CZ: "Czech Republic",
+  HU: "Hungary",
+  SK: "Slovakia",
 };
 
 /**
@@ -62,7 +62,7 @@ export const COUNTRY_NAMES = {
  * @returns {string} Flag emoji or country code if no flag available
  */
 export function getCountryFlag(countryCode) {
-  if (!countryCode) return '';
+  if (!countryCode) return "";
   return COUNTRY_FLAGS[countryCode.toUpperCase()] || countryCode;
 }
 
@@ -72,7 +72,7 @@ export function getCountryFlag(countryCode) {
  * @returns {string} Country name or country code if no name available
  */
 export function getCountryName(countryCode) {
-  if (!countryCode) return '';
+  if (!countryCode) return "";
   return COUNTRY_NAMES[countryCode.toUpperCase()] || countryCode;
 }
 
@@ -84,17 +84,17 @@ export function getCountryName(countryCode) {
  */
 export function formatShipsTo(countries, maxShow = 3) {
   if (!countries || !Array.isArray(countries) || countries.length === 0) {
-    return '';
+    return "";
   }
-  
+
   if (countries.length <= maxShow) {
-    return countries.map(code => getCountryFlag(code)).join(' ');
+    return countries.map((code) => getCountryFlag(code)).join(" ");
   }
-  
+
   const shown = countries.slice(0, maxShow);
   const remaining = countries.length - maxShow;
-  const flags = shown.map(code => getCountryFlag(code)).join(' ');
-  
+  const flags = shown.map((code) => getCountryFlag(code)).join(" ");
+
   return `${flags} +${remaining} more`;
 }
 
@@ -105,23 +105,31 @@ export function formatShipsTo(countries, maxShow = 3) {
  * @param {boolean} abbreviate - Whether to use abbreviated format for mobile
  * @returns {string} Formatted string with flags and optionally names
  */
-export function formatServiceRegions(countries, showNames = true, abbreviate = false) {
+export function formatServiceRegions(
+  countries,
+  showNames = true,
+  abbreviate = false,
+) {
   if (!countries || !Array.isArray(countries) || countries.length === 0) {
-    return '';
+    return "";
   }
-  
+
   if (abbreviate) {
     // Mobile format: flags + abbreviated codes
-    return countries.map(code => `${getCountryFlag(code)} ${code}`).join(', ');
+    return countries
+      .map((code) => `${getCountryFlag(code)} ${code}`)
+      .join(", ");
   }
-  
+
   if (showNames) {
     // Desktop format: flags + full names
-    return countries.map(code => `${getCountryFlag(code)} ${getCountryName(code)}`).join(', ');
+    return countries
+      .map((code) => `${getCountryFlag(code)} ${getCountryName(code)}`)
+      .join(", ");
   }
-  
+
   // Flags only
-  return countries.map(code => getCountryFlag(code)).join(' ');
+  return countries.map((code) => getCountryFlag(code)).join(" ");
 }
 
 /**
@@ -131,17 +139,25 @@ export function formatServiceRegions(countries, showNames = true, abbreviate = f
  * @param {boolean} abbreviate - Whether to use abbreviated format for mobile
  * @returns {string} Formatted location string
  */
-export function formatBasedIn(countryCode, cityName = null, abbreviate = false) {
-  if (!countryCode) return '';
-  
+export function formatBasedIn(
+  countryCode,
+  cityName = null,
+  abbreviate = false,
+) {
+  if (!countryCode) return "";
+
   const flag = getCountryFlag(countryCode);
-  
+
   if (abbreviate) {
-    return cityName ? `${flag} ${cityName}, ${countryCode}` : `${flag} ${countryCode}`;
+    return cityName
+      ? `${flag} ${cityName}, ${countryCode}`
+      : `${flag} ${countryCode}`;
   }
-  
+
   const countryName = getCountryName(countryCode);
-  return cityName ? `${flag} ${cityName}, ${countryName}` : `${flag} ${countryName}`;
+  return cityName
+    ? `${flag} ${cityName}, ${countryName}`
+    : `${flag} ${countryName}`;
 }
 
 /**

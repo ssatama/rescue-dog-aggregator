@@ -1,4 +1,4 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiRequest, NextApiResponse } from "next";
 
 /**
  * Health check endpoint for E2E tests
@@ -7,10 +7,10 @@ import { NextApiRequest, NextApiResponse } from 'next';
  */
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   // Simple health check - let Playwright's built-in polling handle timing
-  res.status(200).json({ 
-    status: 'ok', 
+  res.status(200).json({
+    status: "ok",
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    ci: !!process.env.CI
+    environment: process.env.NODE_ENV || "development",
+    ci: !!process.env.CI,
   });
 }

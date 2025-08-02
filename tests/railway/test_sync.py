@@ -4,7 +4,6 @@ Essential Railway sync tests - streamlined for core functionality only.
 
 Focused on testing the most critical sync operations with fast unit tests.
 """
-import os
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 

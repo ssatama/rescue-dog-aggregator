@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState } from "react";
 
 /**
  * Custom hook for fade-in animations using Intersection Observer
@@ -12,9 +12,9 @@ import { useRef, useEffect, useState } from 'react';
 export const useFadeInAnimation = (options = {}) => {
   const {
     threshold = 0.1,
-    rootMargin = '50px',
+    rootMargin = "50px",
     triggerOnce = true,
-    delay = 0
+    delay = 0,
   } = options;
 
   const ref = useRef(null);
@@ -26,9 +26,10 @@ export const useFadeInAnimation = (options = {}) => {
     if (!element) return;
 
     // Check if user prefers reduced motion
-    const prefersReducedMotion = typeof window !== 'undefined' && 
-      window.matchMedia && 
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReducedMotion) {
       setIsVisible(true);
       setHasAnimated(true);
@@ -36,7 +37,7 @@ export const useFadeInAnimation = (options = {}) => {
     }
 
     // Check if IntersectionObserver is available
-    if (typeof window === 'undefined' || !window.IntersectionObserver) {
+    if (typeof window === "undefined" || !window.IntersectionObserver) {
       // Fallback: make element visible immediately
       setIsVisible(true);
       if (triggerOnce) setHasAnimated(true);
@@ -68,7 +69,7 @@ export const useFadeInAnimation = (options = {}) => {
       {
         threshold,
         rootMargin,
-      }
+      },
     );
 
     observer.observe(element);
@@ -88,11 +89,15 @@ export const useFadeInAnimation = (options = {}) => {
  * @param {Object} observerOptions - Options for Intersection Observer
  * @returns {Object} { containerRef, getItemProps }
  */
-export const useStaggerAnimation = (itemCount, baseDelay = 100, observerOptions = {}) => {
+export const useStaggerAnimation = (
+  itemCount,
+  baseDelay = 100,
+  observerOptions = {},
+) => {
   const {
     threshold = 0.1,
-    rootMargin = '50px',
-    triggerOnce = true
+    rootMargin = "50px",
+    triggerOnce = true,
   } = observerOptions;
 
   const containerRef = useRef(null);
@@ -104,9 +109,10 @@ export const useStaggerAnimation = (itemCount, baseDelay = 100, observerOptions 
     if (!container) return;
 
     // Check if user prefers reduced motion
-    const prefersReducedMotion = typeof window !== 'undefined' && 
-      window.matchMedia && 
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReducedMotion) {
       setIsVisible(true);
       setHasAnimated(true);
@@ -114,7 +120,7 @@ export const useStaggerAnimation = (itemCount, baseDelay = 100, observerOptions 
     }
 
     // Check if IntersectionObserver is available
-    if (typeof window === 'undefined' || !window.IntersectionObserver) {
+    if (typeof window === "undefined" || !window.IntersectionObserver) {
       // Fallback: make container visible immediately
       setIsVisible(true);
       if (triggerOnce) setHasAnimated(true);
@@ -136,7 +142,7 @@ export const useStaggerAnimation = (itemCount, baseDelay = 100, observerOptions 
       {
         threshold,
         rootMargin,
-      }
+      },
     );
 
     observer.observe(container);
@@ -154,15 +160,15 @@ export const useStaggerAnimation = (itemCount, baseDelay = 100, observerOptions 
   const getItemProps = (index) => {
     const delay = index * baseDelay;
     const staggerClass = `animate-stagger-${Math.min(index + 1, 6)}`; // Max 6 stagger classes
-    
+
     return {
-      className: isVisible 
-        ? `animate-fade-in-up ${staggerClass}` 
-        : 'opacity-0 translate-y-5',
+      className: isVisible
+        ? `animate-fade-in-up ${staggerClass}`
+        : "opacity-0 translate-y-5",
       style: {
         animationDelay: `${delay}ms`,
-        animationFillMode: 'forwards'
-      }
+        animationFillMode: "forwards",
+      },
     };
   };
 
@@ -179,7 +185,7 @@ export const useHoverAnimation = (options = {}) => {
     scale = 1.02,
     translateY = -4,
     duration = 300,
-    easing = 'cubic-bezier(0.4, 0, 0.2, 1)'
+    easing = "cubic-bezier(0.4, 0, 0.2, 1)",
   } = options;
 
   const ref = useRef(null);
@@ -190,11 +196,11 @@ export const useHoverAnimation = (options = {}) => {
     onMouseLeave: () => setIsHovered(false),
     style: {
       transition: `transform ${duration}ms ${easing}`,
-      transform: isHovered 
+      transform: isHovered
         ? `scale(${scale}) translateY(${translateY}px)`
-        : 'scale(1) translateY(0px)',
-      willChange: 'transform' // Optimize for animations
-    }
+        : "scale(1) translateY(0px)",
+      willChange: "transform", // Optimize for animations
+    },
   };
 
   return { ref, isHovered, hoverProps };
@@ -207,14 +213,18 @@ export const useHoverAnimation = (options = {}) => {
  * @param {number} delay - Animation delay index for staggering
  * @returns {string} CSS class names
  */
-export const getAnimationClasses = (isVisible, animationType = 'fade-in', delay = 0) => {
+export const getAnimationClasses = (
+  isVisible,
+  animationType = "fade-in",
+  delay = 0,
+) => {
   if (!isVisible) {
-    return 'opacity-0';
+    return "opacity-0";
   }
-  
+
   const baseClass = `animate-${animationType}`;
-  const staggerClass = delay > 0 ? `animate-stagger-${Math.min(delay, 6)}` : '';
-  
+  const staggerClass = delay > 0 ? `animate-stagger-${Math.min(delay, 6)}` : "";
+
   return `${baseClass} ${staggerClass}`.trim();
 };
 
@@ -252,11 +262,11 @@ export const useOptimizedScroll = (callback, throttle = 16) => {
     };
 
     const scrollHandler = throttle > 0 ? throttledScroll : handleScroll;
-    
-    window.addEventListener('scroll', scrollHandler, { passive: true });
-    
+
+    window.addEventListener("scroll", scrollHandler, { passive: true });
+
     return () => {
-      window.removeEventListener('scroll', scrollHandler);
+      window.removeEventListener("scroll", scrollHandler);
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, [callback, throttle]);
@@ -276,7 +286,7 @@ export const useSequentialAnimation = (elements = [], baseDelay = 200) => {
     if (elements.length === 0) return;
 
     setCurrentIndex(0);
-    
+
     elements.forEach((_, index) => {
       setTimeout(() => {
         setCurrentIndex(index);
@@ -299,7 +309,7 @@ export const useSequentialAnimation = (elements = [], baseDelay = 200) => {
     isComplete,
     startAnimation,
     resetAnimation,
-    isElementVisible
+    isElementVisible,
   };
 };
 
@@ -325,21 +335,20 @@ export const useImagePreloader = (imageUrls = []) => {
 
     const handleImageLoad = (url) => {
       loadedCount++;
-      setLoadedImages(prev => new Set([...prev, url]));
+      setLoadedImages((prev) => new Set([...prev, url]));
       setProgress((loadedCount / totalImages) * 100);
-      
+
       if (loadedCount === totalImages) {
         setIsLoading(false);
       }
     };
 
-    imageUrls.forEach(url => {
+    imageUrls.forEach((url) => {
       const img = new Image();
       img.onload = () => handleImageLoad(url);
       img.onerror = () => handleImageLoad(url); // Count failed loads too
       img.src = url;
     });
-
   }, [imageUrls]);
 
   return { loadedImages, isLoading, progress };

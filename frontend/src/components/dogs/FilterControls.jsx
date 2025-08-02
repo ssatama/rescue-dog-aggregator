@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"; // <<< Import Input component
 // --- NEW: Import unified Icon component ---
-import { Icon } from '../ui/Icon';
+import { Icon } from "../ui/Icon";
 // --- END NEW ---
 
 // Define props expected by this component
@@ -54,10 +54,14 @@ export default function FilterControls({
   return (
     // --- MODIFIED: Change grid to single column for vertical stacking ---
     <div className="grid grid-cols-1 gap-4" data-testid="filter-controls">
-
       {/* Search Input */}
-      <div className="relative"> {/* Removed col-span */}
-        <label htmlFor="search-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
+      <div className="relative">
+        {" "}
+        {/* Removed col-span */}
+        <label
+          htmlFor="search-filter"
+          className="flex items-center text-sm font-medium text-gray-700 mb-1"
+        >
           {/* Use Search icon */}
           <Icon name="search" size="small" className="mr-2" color="default" />
           Search
@@ -87,16 +91,25 @@ export default function FilterControls({
 
       {/* New Rescue Organization Filter */}
       <div>
-        <label htmlFor="organization-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="organization-filter"
+          className="flex items-center text-sm font-medium text-gray-700 mb-1"
+        >
           <Icon name="home" size="small" className="mr-2" color="default" />
           Rescue Organization
         </label>
-        <Select value={organizationFilter} onValueChange={setOrganizationFilter}>
-          <SelectTrigger id="organization-filter" data-testid="organization-select">
+        <Select
+          value={organizationFilter}
+          onValueChange={setOrganizationFilter}
+        >
+          <SelectTrigger
+            id="organization-filter"
+            data-testid="organization-select"
+          >
             <SelectValue placeholder="Any organization" />
           </SelectTrigger>
           <SelectContent>
-            {organizations.map(org => (
+            {organizations.map((org) => (
               <SelectItem
                 key={org.id ?? "any"}
                 value={org.id != null ? org.id.toString() : "any"} // "any" = reset
@@ -110,11 +123,22 @@ export default function FilterControls({
 
       {/* Standardized Breed Filter */}
       <div>
-        <label htmlFor="breed-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
-          <Icon name="paw-print" size="small" className="mr-2" color="default" />
+        <label
+          htmlFor="breed-filter"
+          className="flex items-center text-sm font-medium text-gray-700 mb-1"
+        >
+          <Icon
+            name="paw-print"
+            size="small"
+            className="mr-2"
+            color="default"
+          />
           Breed
         </label>
-        <Select value={standardizedBreedFilter} onValueChange={setStandardizedBreedFilter}>
+        <Select
+          value={standardizedBreedFilter}
+          onValueChange={setStandardizedBreedFilter}
+        >
           <SelectTrigger id="breed-filter" data-testid="breed-select">
             <SelectValue placeholder="Any breed" />
           </SelectTrigger>
@@ -130,8 +154,12 @@ export default function FilterControls({
 
       {/* Sex Filter */}
       <div>
-        <label htmlFor="sex-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
-          <Icon name="tag" size="small" className="mr-2" color="default" /> {/* Using Tag as placeholder */}
+        <label
+          htmlFor="sex-filter"
+          className="flex items-center text-sm font-medium text-gray-700 mb-1"
+        >
+          <Icon name="tag" size="small" className="mr-2" color="default" />{" "}
+          {/* Using Tag as placeholder */}
           Sex
         </label>
         <Select value={sexFilter} onValueChange={setSexFilter}>
@@ -150,7 +178,10 @@ export default function FilterControls({
 
       {/* Size Filter */}
       <div>
-        <label htmlFor="size-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="size-filter"
+          className="flex items-center text-sm font-medium text-gray-700 mb-1"
+        >
           <Icon name="ruler" size="small" className="mr-2" color="default" />
           Size
         </label>
@@ -170,7 +201,10 @@ export default function FilterControls({
 
       {/* Age Category Filter */}
       <div>
-        <label htmlFor="age-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="age-filter"
+          className="flex items-center text-sm font-medium text-gray-700 mb-1"
+        >
           <Icon name="calendar" size="small" className="mr-2" color="default" />
           Age
         </label>
@@ -191,11 +225,17 @@ export default function FilterControls({
       {/* --- NEW: Location Filters with Labels --- */}
       {/* Location Country Filter */}
       <div>
-        <label htmlFor="location-country-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="location-country-filter"
+          className="flex items-center text-sm font-medium text-gray-700 mb-1"
+        >
           <Icon name="map-pin" size="small" className="mr-2" color="default" />
           Located In
         </label>
-        <Select value={locationCountryFilter} onValueChange={setLocationCountryFilter}>
+        <Select
+          value={locationCountryFilter}
+          onValueChange={setLocationCountryFilter}
+        >
           <SelectTrigger id="location-country-filter">
             <SelectValue placeholder="Any country" />
           </SelectTrigger>
@@ -211,11 +251,17 @@ export default function FilterControls({
 
       {/* Available To Country Filter */}
       <div>
-        <label htmlFor="available-country-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
+        <label
+          htmlFor="available-country-filter"
+          className="flex items-center text-sm font-medium text-gray-700 mb-1"
+        >
           <Icon name="globe" size="small" className="mr-2" color="default" />
           Adoptable in Country
         </label>
-        <Select value={availableCountryFilter} onValueChange={setAvailableCountryFilter}>
+        <Select
+          value={availableCountryFilter}
+          onValueChange={setAvailableCountryFilter}
+        >
           <SelectTrigger id="available-country-filter">
             <SelectValue placeholder="Any country" />
           </SelectTrigger>
@@ -231,15 +277,27 @@ export default function FilterControls({
 
       {/* Available To Region Filter */}
       <div>
-        <label htmlFor="available-region-filter" className="flex items-center text-sm font-medium text-gray-700 mb-1">
-          <Icon name="locate-fixed" size="small" className="mr-2" color="default" />
+        <label
+          htmlFor="available-region-filter"
+          className="flex items-center text-sm font-medium text-gray-700 mb-1"
+        >
+          <Icon
+            name="locate-fixed"
+            size="small"
+            className="mr-2"
+            color="default"
+          />
           Adoptable in Region
         </label>
         <Select
           value={availableRegionFilter}
           onValueChange={setAvailableRegionFilter}
           // Disable if no country is selected or only "Any country" is available
-          disabled={!availableCountryFilter || availableCountryFilter === "Any country" || availableRegions.length <= 1}
+          disabled={
+            !availableCountryFilter ||
+            availableCountryFilter === "Any country" ||
+            availableRegions.length <= 1
+          }
         >
           <SelectTrigger id="available-region-filter">
             <SelectValue placeholder="Any region" />
@@ -254,7 +312,6 @@ export default function FilterControls({
         </Select>
       </div>
       {/* --- END NEW --- */}
-
     </div> // --- MODIFIED: Close the outer grid div ---
   );
 }

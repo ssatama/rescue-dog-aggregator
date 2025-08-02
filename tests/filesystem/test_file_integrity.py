@@ -5,12 +5,9 @@ These tests validate the integrity of the file system structure across
 both frontend and backend, catching configuration drift and missing files.
 """
 
-import json
 import os
-import subprocess
-import sys
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, List
 
 import pytest
 

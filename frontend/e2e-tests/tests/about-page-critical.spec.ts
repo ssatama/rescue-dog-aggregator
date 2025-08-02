@@ -121,10 +121,19 @@ test.describe('About Page Critical Tests', () => {
   });
 
   test('about page handles missing content gracefully @critical', async ({ page }) => {
-    // Test with slow network conditions
+    // Test with slow network conditions - use single route handler to avoid conflicts
     await page.route('**/*', async (route) => {
+      const url = route.request().url();
+      
       // Add delay to simulate slow network
       await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Abort image requests to test error handling
+      if (url.match(/\.(png|jpg|jpeg|gif|svg)$/)) {
+        await route.abort();
+        return;
+      }
+      
       await route.continue();
     });
     
@@ -141,12 +150,7 @@ test.describe('About Page Critical Tests', () => {
     await expect(mainContent.getByRole('heading', { name: 'Our Mission' })).toBeVisible();
     await expect(mainContent.getByRole('link', { name: 'Contact Us' })).toBeVisible();
     
-    // Test error handling for broken images or resources
-    await page.route('**/*.{png,jpg,jpeg,gif,svg}', route => route.abort());
-    
-    await page.reload();
-    
-    // Verify page content is still accessible without images
+    // Verify page content is accessible without images
     await expect(mainContent.locator('h1')).toBeVisible();
     await expect(mainContent.locator('text=Our mission is to simplify')).toBeVisible();
     

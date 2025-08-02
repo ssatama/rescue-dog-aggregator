@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import React, { useState, useEffect, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -12,9 +12,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Icon } from '../ui/Icon';
-import { getAgeFilterOptions, getSortFilterOptions, getDefaultFilters } from '@/utils/dogFilters';
-import { getCountryName } from '@/utils/countryHelpers';
+import { Icon } from "../ui/Icon";
+import {
+  getAgeFilterOptions,
+  getSortFilterOptions,
+  getDefaultFilters,
+} from "@/utils/dogFilters";
+import { getCountryName } from "@/utils/countryHelpers";
 
 /**
  * DogFilters component for filtering and sorting dogs
@@ -36,55 +40,58 @@ export default function DogFilters({
   totalCount = 0,
   hasActiveFilters = false,
   showShipsToFilter = true,
-  onMobileFilterClick
+  onMobileFilterClick,
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [localBreedInput, setLocalBreedInput] = useState(filters?.breed || '');
+  const [localBreedInput, setLocalBreedInput] = useState(filters?.breed || "");
 
   // Debounced breed input handling
   useEffect(() => {
     const timer = setTimeout(() => {
       if (localBreedInput !== filters?.breed) {
-        handleFilterChange('breed', localBreedInput);
+        handleFilterChange("breed", localBreedInput);
       }
     }, 300);
-    
+
     return () => clearTimeout(timer);
   }, [localBreedInput, filters?.breed]);
 
   // Sync local breed input with external filter changes
   useEffect(() => {
     if (filters?.breed !== localBreedInput) {
-      setLocalBreedInput(filters?.breed || '');
+      setLocalBreedInput(filters?.breed || "");
     }
   }, [filters?.breed]);
 
-  const handleFilterChange = useCallback((filterType, value) => {
-    if (!onFiltersChange) return;
-    
-    const newFilters = {
-      ...filters,
-      [filterType]: value
-    };
-    
-    onFiltersChange(newFilters);
-    
-    // Update URL params for shareable views
-    const params = new URLSearchParams(searchParams);
-    if (value && value !== 'All' && value !== '') {
-      params.set(filterType, value);
-    } else {
-      params.delete(filterType);
-    }
-    router.push(`?${params.toString()}`, { scroll: false });
-  }, [filters, onFiltersChange, router, searchParams]);
+  const handleFilterChange = useCallback(
+    (filterType, value) => {
+      if (!onFiltersChange) return;
+
+      const newFilters = {
+        ...filters,
+        [filterType]: value,
+      };
+
+      onFiltersChange(newFilters);
+
+      // Update URL params for shareable views
+      const params = new URLSearchParams(searchParams);
+      if (value && value !== "All" && value !== "") {
+        params.set(filterType, value);
+      } else {
+        params.delete(filterType);
+      }
+      router.push(`?${params.toString()}`, { scroll: false });
+    },
+    [filters, onFiltersChange, router, searchParams],
+  );
 
   const handleClearAll = useCallback(() => {
     const defaultFilters = getDefaultFilters();
-    setLocalBreedInput('');
+    setLocalBreedInput("");
     onFiltersChange?.(defaultFilters);
-    
+
     // Clear URL params
     router.push(window.location.pathname, { scroll: false });
   }, [onFiltersChange, router]);
@@ -96,15 +103,16 @@ export default function DogFilters({
   const activeFilterCount = React.useMemo(() => {
     if (!filters) return 0;
     let count = 0;
-    if (filters.age && filters.age !== 'All') count++;
-    if (filters.breed && filters.breed.trim() !== '') count++;
-    if (showShipsToFilter && filters.shipsTo && filters.shipsTo !== 'All') count++;
+    if (filters.age && filters.age !== "All") count++;
+    if (filters.breed && filters.breed.trim() !== "") count++;
+    if (showShipsToFilter && filters.shipsTo && filters.shipsTo !== "All")
+      count++;
     return count;
   }, [filters, showShipsToFilter]);
 
   return (
-    <div 
-      data-testid="dog-filters" 
+    <div
+      data-testid="dog-filters"
       className="bg-white dark:bg-gray-900 shadow-sm border-b md:sticky top-0 z-20"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -114,11 +122,13 @@ export default function DogFilters({
           <div className="hidden md:flex items-center gap-3">
             <div className="flex items-center gap-2">
               <Icon name="filter" size="default" className="text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">Filter by:</span>
+              <span className="text-sm font-medium text-gray-700">
+                Filter by:
+              </span>
             </div>
             {hasActiveFilters && (
-              <Badge 
-                variant="secondary" 
+              <Badge
+                variant="secondary"
                 data-testid="active-filters-badge"
                 className="text-xs"
               >
@@ -139,8 +149,8 @@ export default function DogFilters({
               <Icon name="filter" size="default" />
               <span className="font-medium">Filter & Sort</span>
               {hasActiveFilters && (
-                <Badge 
-                  variant="secondary" 
+                <Badge
+                  variant="secondary"
                   data-testid="mobile-active-filters-badge"
                   className="bg-orange-600 text-white text-xs"
                 >
@@ -149,7 +159,7 @@ export default function DogFilters({
               )}
             </Button>
           </div>
-          
+
           {/* Results Count and Clear All */}
           <div className="flex items-center gap-4">
             {/* Hide count on mobile to avoid crowding with mobile filter button */}
@@ -175,18 +185,20 @@ export default function DogFilters({
         </div>
 
         {/* Filter Controls - Desktop Only */}
-        <div 
+        <div
           data-testid="filters-container"
           className="hidden md:flex gap-4 overflow-x-auto md:overflow-x-visible pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
         >
           {/* Age Filter */}
           <div className="flex-shrink-0 min-w-[160px]">
-            <label htmlFor="age-filter" className="sr-only">Filter by age</label>
-            <Select 
-              value={filters?.age || 'All'} 
-              onValueChange={(value) => handleFilterChange('age', value)}
+            <label htmlFor="age-filter" className="sr-only">
+              Filter by age
+            </label>
+            <Select
+              value={filters?.age || "All"}
+              onValueChange={(value) => handleFilterChange("age", value)}
             >
-              <SelectTrigger 
+              <SelectTrigger
                 id="age-filter"
                 data-testid="age-filter"
                 className="w-full"
@@ -207,7 +219,9 @@ export default function DogFilters({
 
           {/* Breed Filter */}
           <div className="flex-shrink-0 min-w-[200px]">
-            <label htmlFor="breed-filter" className="sr-only">Search breeds</label>
+            <label htmlFor="breed-filter" className="sr-only">
+              Search breeds
+            </label>
             <Input
               id="breed-filter"
               data-testid="breed-filter"
@@ -220,16 +234,17 @@ export default function DogFilters({
             />
           </div>
 
-
           {/* Ships To Filter - only show if enabled */}
           {showShipsToFilter && (
             <div className="flex-shrink-0 min-w-[160px]">
-              <label htmlFor="ships-to-filter" className="sr-only">Filter by ships to</label>
-              <Select 
-                value={filters?.shipsTo || 'All'} 
-                onValueChange={(value) => handleFilterChange('shipsTo', value)}
+              <label htmlFor="ships-to-filter" className="sr-only">
+                Filter by ships to
+              </label>
+              <Select
+                value={filters?.shipsTo || "All"}
+                onValueChange={(value) => handleFilterChange("shipsTo", value)}
               >
-                <SelectTrigger 
+                <SelectTrigger
                   id="ships-to-filter"
                   data-testid="ships-to-filter"
                   className="w-full"
@@ -252,12 +267,14 @@ export default function DogFilters({
 
           {/* Sort Filter */}
           <div className="flex-shrink-0 min-w-[160px]">
-            <label htmlFor="sort-filter" className="sr-only">Sort dogs</label>
-            <Select 
-              value={filters?.sort || 'newest'} 
-              onValueChange={(value) => handleFilterChange('sort', value)}
+            <label htmlFor="sort-filter" className="sr-only">
+              Sort dogs
+            </label>
+            <Select
+              value={filters?.sort || "newest"}
+              onValueChange={(value) => handleFilterChange("sort", value)}
             >
-              <SelectTrigger 
+              <SelectTrigger
                 id="sort-filter"
                 data-testid="sort-filter"
                 className="w-full"

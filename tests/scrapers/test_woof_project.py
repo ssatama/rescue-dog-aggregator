@@ -1,6 +1,6 @@
 """Optimized tests for Woof Project scraper - essential functionality only."""
 
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 from bs4 import BeautifulSoup

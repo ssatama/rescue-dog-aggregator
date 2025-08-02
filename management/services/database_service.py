@@ -3,7 +3,6 @@ Database service for management operations following CLAUDE.md principles.
 Provides centralized database connection management with context manager support.
 """
 
-from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 

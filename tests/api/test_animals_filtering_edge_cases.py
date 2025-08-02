@@ -208,3 +208,162 @@ class TestAnimalsMetaEndpointsEdgeCases:
         """Test available regions endpoint properly validates required country parameter."""
         response = client.get("/api/animals/meta/available_regions")
         assert response.status_code == 422  # Should require country parameter
+
+
+@pytest.mark.slow
+@pytest.mark.database
+@pytest.mark.api
+class TestAvailabilityFiltering:
+    """Test API endpoints filter animals by availability status and confidence - consolidated from test_availability_filtering.py."""
+
+    def test_default_filters_show_only_available_animals(self):
+        """Test that API only shows available animals by default."""
+        response = client.get("/api/animals")
+
+        assert response.status_code == 200
+        animals = response.json()
+
+        # All returned animals should have status = 'available'
+        for animal in animals:
+            assert animal["status"] == "available"
+
+    def test_can_explicitly_request_unavailable_animals(self):
+        """Test that unavailable animals can be explicitly requested."""
+        response = client.get("/api/animals?status=unavailable")
+
+        assert response.status_code == 200
+        animals = response.json()
+
+        # All returned animals should have status = 'unavailable'
+        for animal in animals:
+            assert animal["status"] == "unavailable"
+
+    def test_can_request_all_statuses(self):
+        """Test that all animals can be requested regardless of status."""
+        response = client.get("/api/animals?status=all")
+
+        assert response.status_code == 200
+        animals = response.json()
+
+        # Should return animals with any status
+        statuses = set(animal["status"] for animal in animals)
+        # We might have both available and unavailable animals
+        assert len(statuses) >= 1
+
+    def test_default_filters_high_and_medium_confidence(self):
+        """Test that API only shows high and medium confidence animals by default."""
+        response = client.get("/api/animals")
+
+        assert response.status_code == 200
+        animals = response.json()
+
+        # All returned animals should have high or medium confidence
+        for animal in animals:
+            assert animal["availability_confidence"] in ["high", "medium"]
+
+    def test_can_explicitly_request_low_confidence_animals(self):
+        """Test that low confidence animals can be explicitly requested."""
+        response = client.get("/api/animals?availability_confidence=low")
+
+        assert response.status_code == 200
+        animals = response.json()
+
+        # All returned animals should have low confidence
+        for animal in animals:
+            assert animal["availability_confidence"] == "low"
+
+    def test_can_request_all_confidence_levels(self):
+        """Test that all confidence levels can be requested."""
+        response = client.get("/api/animals?availability_confidence=all")
+
+        assert response.status_code == 200
+        animals = response.json()
+
+        # Should return animals with any confidence level
+        confidence_levels = set(animal["availability_confidence"] for animal in animals)
+        assert len(confidence_levels) >= 1
+
+    def test_combined_availability_and_confidence_filtering(self):
+        """Test combining status and confidence filters."""
+        response = client.get("/api/animals?status=available&availability_confidence=high")
+
+        assert response.status_code == 200
+        animals = response.json()
+
+        # All animals should be available with high confidence
+        for animal in animals:
+            assert animal["status"] == "available"
+            assert animal["availability_confidence"] == "high"
+
+    def test_individual_animal_endpoint_respects_availability(self):
+        """Test that individual animal endpoint includes availability info."""
+        # First get list of animals to get an ID
+        response = client.get("/api/animals?limit=1")
+        assert response.status_code == 200
+        animals = response.json()
+
+        if animals:
+            animal_id = animals[0]["id"]
+
+            # Get individual animal
+            response = client.get(f"/api/animals/{animal_id}")
+            assert response.status_code == 200
+
+            animal = response.json()
+            assert "status" in animal
+            assert "availability_confidence" in animal
+            assert animal["status"] in ["available", "unavailable"]
+            assert animal["availability_confidence"] in ["high", "medium", "low"]
+
+    def test_organization_filtering_via_main_endpoint(self):
+        """Test that organization filtering works via main animals endpoint."""
+        # Get organizations first
+        org_response = client.get("/api/organizations")
+        assert org_response.status_code == 200
+        organizations = org_response.json()
+
+        if organizations:
+            org_id = organizations[0]["id"]
+
+            # Test filtering animals by organization
+            response = client.get(f"/api/animals?organization_id={org_id}")
+            assert response.status_code == 200
+            animals = response.json()
+
+            # All returned animals should be from the specified organization
+            for animal in animals:
+                assert animal["organization_id"] == org_id
+                assert animal["status"] == "available"  # Default filtering
+                assert animal["availability_confidence"] in ["high", "medium"]
+
+    def test_random_animals_respect_availability_filters(self):
+        """Test that random animal endpoint respects availability filters."""
+        response = client.get("/api/animals/random?count=5")
+
+        assert response.status_code == 200
+        animals = response.json()
+
+        # All random animals should be available with good confidence
+        for animal in animals:
+            assert animal["status"] == "available"
+            assert animal["availability_confidence"] in ["high", "medium"]
+
+    def test_availability_fields_in_response(self):
+        """Test that availability fields are included in API responses."""
+        response = client.get("/api/animals?limit=1")
+        assert response.status_code == 200
+        animals = response.json()
+
+        if animals:
+            animal = animals[0]
+
+            # Check that all availability-related fields are present
+            assert "status" in animal
+            assert "availability_confidence" in animal
+            assert "last_seen_at" in animal
+            assert "consecutive_scrapes_missing" in animal
+
+            # Check field values are valid
+            assert animal["status"] in ["available", "unavailable"]
+            assert animal["availability_confidence"] in ["high", "medium", "low"]
+            assert isinstance(animal["consecutive_scrapes_missing"], (int, type(None)))

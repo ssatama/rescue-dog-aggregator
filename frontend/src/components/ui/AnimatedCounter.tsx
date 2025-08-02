@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from "react";
 
 interface AnimatedCounterProps {
   /** Target value to animate to */
@@ -18,11 +18,11 @@ interface AnimatedCounterProps {
 /**
  * AnimatedCounter component that animates from 0 to the target value when scrolled into view
  */
-export default function AnimatedCounter({ 
-  value, 
-  duration = 2000, 
-  label = '', 
-  className = '' 
+export default function AnimatedCounter({
+  value,
+  duration = 2000,
+  label = "",
+  className = "",
 }: AnimatedCounterProps) {
   const [displayValue, setDisplayValue] = useState(0);
   const [hasAnimated, setHasAnimated] = useState(false);
@@ -30,8 +30,9 @@ export default function AnimatedCounter({
   const animationFrameRef = useRef<number | null>(null);
 
   // Check for reduced motion preference
-  const prefersReducedMotion = typeof window !== 'undefined' && 
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const prefersReducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // Easing function for smooth animation
   const easeOutCubic = (t: number): number => {
@@ -54,17 +55,20 @@ export default function AnimatedCounter({
     const animate = (): void => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      
+
       // Apply easing function
       const easedProgress = easeOutCubic(progress);
-      const currentValue = Math.round(startValue + (totalChange * easedProgress));
-      
+      const currentValue = Math.round(startValue + totalChange * easedProgress);
+
       setDisplayValue(currentValue);
 
       if (progress < 1) {
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
           animationFrameRef.current = window.requestAnimationFrame(animate);
-        } else if (typeof global !== 'undefined' && global.requestAnimationFrame) {
+        } else if (
+          typeof global !== "undefined" &&
+          global.requestAnimationFrame
+        ) {
           animationFrameRef.current = global.requestAnimationFrame(animate);
         }
       } else {
@@ -72,9 +76,9 @@ export default function AnimatedCounter({
       }
     };
 
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       animationFrameRef.current = window.requestAnimationFrame(animate);
-    } else if (typeof global !== 'undefined' && global.requestAnimationFrame) {
+    } else if (typeof global !== "undefined" && global.requestAnimationFrame) {
       animationFrameRef.current = global.requestAnimationFrame(animate);
     }
   }, [hasAnimated, prefersReducedMotion, value, displayValue, duration]);
@@ -93,8 +97,8 @@ export default function AnimatedCounter({
       },
       {
         threshold: 0.1,
-        rootMargin: '50px'
-      }
+        rootMargin: "50px",
+      },
     );
 
     observer.observe(currentRef);
@@ -102,9 +106,12 @@ export default function AnimatedCounter({
     return () => {
       observer.disconnect();
       if (animationFrameRef.current) {
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
           window.cancelAnimationFrame(animationFrameRef.current);
-        } else if (typeof global !== 'undefined' && global.cancelAnimationFrame) {
+        } else if (
+          typeof global !== "undefined" &&
+          global.cancelAnimationFrame
+        ) {
           global.cancelAnimationFrame(animationFrameRef.current);
         }
       }
@@ -119,7 +126,9 @@ export default function AnimatedCounter({
     }
   }, [value, hasAnimated, displayValue]);
 
-  const ariaLabel = label ? `${label}: ${displayValue}` : displayValue.toString();
+  const ariaLabel = label
+    ? `${label}: ${displayValue}`
+    : displayValue.toString();
 
   return (
     <span

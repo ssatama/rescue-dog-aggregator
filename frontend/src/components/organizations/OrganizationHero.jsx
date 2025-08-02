@@ -1,15 +1,15 @@
-import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import StyledLink from '../ui/StyledLink';
-import CountryFlag from '../ui/CountryFlag';
-import SocialMediaLinks from '../ui/SocialMediaLinks';
-import { 
-  formatBasedIn, 
-  formatServiceRegions, 
+import React from "react";
+import Link from "next/link";
+import Image from "next/image";
+import StyledLink from "../ui/StyledLink";
+import CountryFlag from "../ui/CountryFlag";
+import SocialMediaLinks from "../ui/SocialMediaLinks";
+import {
+  formatBasedIn,
+  formatServiceRegions,
   formatShipsToList,
-  getCountryName 
-} from '../../utils/countries';
+  getCountryName,
+} from "../../utils/countries";
 
 /**
  * Hero section for individual organization pages
@@ -21,7 +21,9 @@ export default function OrganizationHero({ organization }) {
     return (
       <div className="min-h-[400px] bg-gradient-to-br from-amber-100 dark:from-gray-800 to-orange-200 dark:to-gray-700 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Organization not found</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            Organization not found
+          </h1>
           <StyledLink href="/organizations" variant="text">
             ← Back to Organizations
           </StyledLink>
@@ -32,10 +34,13 @@ export default function OrganizationHero({ organization }) {
 
   // Generate organization initials for logo fallback
   const getInitials = (name) => {
-    if (!name) return '??';
-    const words = name.split(' ');
+    if (!name) return "??";
+    const words = name.split(" ");
     if (words.length === 1) return words[0].charAt(0).toUpperCase();
-    return words.slice(0, 3).map(word => word.charAt(0).toUpperCase()).join('');
+    return words
+      .slice(0, 3)
+      .map((word) => word.charAt(0).toUpperCase())
+      .join("");
   };
 
   // Calculate statistics
@@ -44,7 +49,7 @@ export default function OrganizationHero({ organization }) {
   const newThisWeek = organization.new_this_week || 0;
 
   return (
-    <div 
+    <div
       className="bg-gradient-to-br from-amber-100 dark:from-gray-800 to-orange-200 dark:to-gray-700 py-8 px-4 sm:px-6 lg:px-8"
       data-testid="organization-hero"
     >
@@ -52,14 +57,16 @@ export default function OrganizationHero({ organization }) {
         {/* Breadcrumb Navigation */}
         <nav className="mb-6" aria-label="Breadcrumb">
           <div className="flex items-center space-x-2 text-sm">
-            <Link 
-              href="/organizations" 
+            <Link
+              href="/organizations"
               className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
             >
               ← Organizations
             </Link>
             <span className="text-gray-500 dark:text-gray-400">/</span>
-            <span className="text-gray-900 dark:text-gray-100 font-medium">{organization.name}</span>
+            <span className="text-gray-900 dark:text-gray-100 font-medium">
+              {organization.name}
+            </span>
           </div>
         </nav>
 
@@ -100,41 +107,65 @@ export default function OrganizationHero({ organization }) {
                   {/* Based in */}
                   {organization.country && (
                     <div className="flex items-center justify-center sm:justify-start space-x-2">
-                      <span className="font-medium text-gray-700 dark:text-gray-300">Based in:</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">
+                        Based in:
+                      </span>
                       <div className="hidden sm:flex items-center space-x-1">
-                        {formatBasedIn(organization.country, organization.city, false)}
+                        {formatBasedIn(
+                          organization.country,
+                          organization.city,
+                          false,
+                        )}
                       </div>
                       <div className="sm:hidden flex items-center space-x-1">
-                        {formatBasedIn(organization.country, organization.city, true)}
+                        {formatBasedIn(
+                          organization.country,
+                          organization.city,
+                          true,
+                        )}
                       </div>
                     </div>
                   )}
 
                   {/* Dogs located in */}
-                  {organization.service_regions && organization.service_regions.length > 0 && (
-                    <div className="flex items-center justify-center sm:justify-start space-x-2">
-                      <span className="font-medium text-gray-700 dark:text-gray-300">Dogs located in:</span>
-                      <div className="hidden sm:flex items-center space-x-1">
-                        {formatServiceRegions(organization.service_regions, true, false)}
+                  {organization.service_regions &&
+                    organization.service_regions.length > 0 && (
+                      <div className="flex items-center justify-center sm:justify-start space-x-2">
+                        <span className="font-medium text-gray-700 dark:text-gray-300">
+                          Dogs located in:
+                        </span>
+                        <div className="hidden sm:flex items-center space-x-1">
+                          {formatServiceRegions(
+                            organization.service_regions,
+                            true,
+                            false,
+                          )}
+                        </div>
+                        <div className="sm:hidden flex items-center space-x-1">
+                          {formatServiceRegions(
+                            organization.service_regions,
+                            false,
+                            true,
+                          )}
+                        </div>
                       </div>
-                      <div className="sm:hidden flex items-center space-x-1">
-                        {formatServiceRegions(organization.service_regions, false, true)}
-                      </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Ships to */}
-                  {organization.ships_to && organization.ships_to.length > 0 && (
-                    <div className="flex items-center justify-center sm:justify-start space-x-2">
-                      <span className="font-medium text-gray-700 dark:text-gray-300">Adoptable to:</span>
-                      <div className="hidden sm:flex items-center space-x-1">
-                        {formatShipsToList(organization.ships_to, 3)}
+                  {organization.ships_to &&
+                    organization.ships_to.length > 0 && (
+                      <div className="flex items-center justify-center sm:justify-start space-x-2">
+                        <span className="font-medium text-gray-700 dark:text-gray-300">
+                          Adoptable to:
+                        </span>
+                        <div className="hidden sm:flex items-center space-x-1">
+                          {formatShipsToList(organization.ships_to, 3)}
+                        </div>
+                        <div className="sm:hidden flex items-center space-x-1">
+                          {formatShipsToList(organization.ships_to, 2)}
+                        </div>
                       </div>
-                      <div className="sm:hidden flex items-center space-x-1">
-                        {formatShipsToList(organization.ships_to, 2)}
-                      </div>
-                    </div>
-                  )}
+                    )}
                 </div>
 
                 {/* Organization Description */}
@@ -149,7 +180,7 @@ export default function OrganizationHero({ organization }) {
 
           {/* Right Column - Statistics Cards */}
           <div className="lg:col-span-1">
-            <div 
+            <div
               className="grid grid-cols-2 md:flex md:flex-row lg:grid lg:grid-cols-1 gap-4"
               data-testid="statistics-cards"
             >
@@ -158,7 +189,9 @@ export default function OrganizationHero({ organization }) {
                 <div className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">
                   {totalDogs}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Dogs Available</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Dogs Available
+                </div>
               </div>
 
               {/* Countries Served */}
@@ -166,7 +199,9 @@ export default function OrganizationHero({ organization }) {
                 <div className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">
                   {countriesServed}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Countries</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Countries
+                </div>
               </div>
 
               {/* New This Week (only show if > 0) */}
@@ -175,7 +210,9 @@ export default function OrganizationHero({ organization }) {
                   <div className="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-400 mb-1">
                     {newThisWeek}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">New This Week</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    New This Week
+                  </div>
                 </div>
               )}
             </div>
@@ -185,15 +222,16 @@ export default function OrganizationHero({ organization }) {
         {/* Bottom Section - Social Media and CTA */}
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
           {/* Social Media Links */}
-          {organization.social_media && Object.keys(organization.social_media).length > 0 && (
-            <div data-testid="social-media-section">
-              <SocialMediaLinks 
-                socialMedia={organization.social_media}
-                className="flex space-x-3"
-                size="lg"
-              />
-            </div>
-          )}
+          {organization.social_media &&
+            Object.keys(organization.social_media).length > 0 && (
+              <div data-testid="social-media-section">
+                <SocialMediaLinks
+                  socialMedia={organization.social_media}
+                  className="flex space-x-3"
+                  size="lg"
+                />
+              </div>
+            )}
 
           {/* Primary CTA */}
           {organization.website_url && (

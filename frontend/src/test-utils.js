@@ -1,14 +1,10 @@
-import React from 'react';
-import { render } from '@testing-library/react';
-import { ToastProvider } from './components/ui/Toast';
+import React from "react";
+import { render } from "@testing-library/react";
+import { ToastProvider } from "./components/ui/Toast";
 
 // Test wrapper that provides necessary context providers
 const AllProviders = ({ children }) => {
-  return (
-    <ToastProvider>
-      {children}
-    </ToastProvider>
-  );
+  return <ToastProvider>{children}</ToastProvider>;
 };
 
 // Custom render function that includes providers
@@ -24,7 +20,7 @@ export const createMockIntersectionObserver = () => {
     unobserve: jest.fn(),
     disconnect: jest.fn(),
     root: null,
-    rootMargin: '0px',
+    rootMargin: "0px",
     thresholds: [0],
   });
   return mockIntersectionObserver;
@@ -36,7 +32,7 @@ export const withIntersectionObserver = (testFn) => {
     const originalIO = global.IntersectionObserver;
     const mockIO = createMockIntersectionObserver();
     global.IntersectionObserver = mockIO;
-    
+
     try {
       return testFn();
     } finally {
@@ -50,7 +46,7 @@ export const withoutIntersectionObserver = (testFn) => {
   return () => {
     const originalIO = global.IntersectionObserver;
     delete global.IntersectionObserver;
-    
+
     try {
       return testFn();
     } finally {
@@ -60,5 +56,5 @@ export const withoutIntersectionObserver = (testFn) => {
 };
 
 // Re-export everything from testing-library
-export * from '@testing-library/react';
+export * from "@testing-library/react";
 export { renderWithProviders as render };

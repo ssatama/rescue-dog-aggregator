@@ -1,13 +1,13 @@
-import type { Meta, StoryObj } from '@storybook/nextjs';
-import AnimatedCounter from './AnimatedCounter';
+import type { Meta, StoryObj } from "@storybook/nextjs";
+import AnimatedCounter from "./AnimatedCounter";
 
 const meta: Meta<typeof AnimatedCounter> = {
-  title: 'UI/AnimatedCounter',
+  title: "UI/AnimatedCounter",
   component: AnimatedCounter,
   parameters: {
-    layout: 'centered',
+    layout: "centered",
   },
-  tags: ['autodocs'],
+  tags: ["autodocs"],
 };
 
 export default meta;

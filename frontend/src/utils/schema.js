@@ -4,7 +4,7 @@
  */
 
 // Base URL for canonical URLs - should be from environment variable
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://rescuedogs.me';
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://rescuedogs.me";
 
 /**
  * Generate Schema.org Pet markup for dog detail pages
@@ -17,19 +17,19 @@ export const generatePetSchema = (dog) => {
   }
 
   // Build description by combining all available description sources
-  const descriptions = [
-    dog.description,
-    dog.properties?.description
-  ].filter(Boolean);
-  
-  const description = descriptions.length > 0 ? descriptions.join(' ') : undefined;
+  const descriptions = [dog.description, dog.properties?.description].filter(
+    Boolean,
+  );
+
+  const description =
+    descriptions.length > 0 ? descriptions.join(" ") : undefined;
 
   // Format gender with proper capitalization
   const formatGender = (sex) => {
     if (!sex) return undefined;
     const normalized = sex.toLowerCase();
-    if (normalized === 'male' || normalized === 'm') return 'Male';
-    if (normalized === 'female' || normalized === 'f') return 'Female';
+    if (normalized === "male" || normalized === "m") return "Male";
+    if (normalized === "female" || normalized === "f") return "Female";
     return undefined;
   };
 
@@ -38,19 +38,19 @@ export const generatePetSchema = (dog) => {
     if (!dog.organization) return undefined;
 
     const location = {
-      '@type': 'Place',
-      'name': dog.organization.name
+      "@type": "Place",
+      name: dog.organization.name,
     };
 
     if (dog.organization.city || dog.organization.country) {
       location.address = {
-        '@type': 'PostalAddress'
+        "@type": "PostalAddress",
       };
-      
+
       if (dog.organization.city) {
         location.address.addressLocality = dog.organization.city;
       }
-      
+
       if (dog.organization.country) {
         location.address.addressCountry = dog.organization.country;
       }
@@ -60,10 +60,10 @@ export const generatePetSchema = (dog) => {
   };
 
   const schema = {
-    '@context': 'https://schema.org',
-    '@type': 'Pet',
-    'name': dog.name,
-    'animal': 'Dog'
+    "@context": "https://schema.org",
+    "@type": "Pet",
+    name: dog.name,
+    animal: "Dog",
   };
 
   // Add optional fields only if they exist
@@ -97,11 +97,11 @@ export const generatePetSchema = (dog) => {
 
   // Add adoption offer information
   schema.offers = {
-    '@type': 'Offer',
-    'availability': 'https://schema.org/InStock',
-    'price': '0',
-    'priceCurrency': 'USD',
-    'description': 'Pet adoption - no purchase price, adoption fees may apply'
+    "@type": "Offer",
+    availability: "https://schema.org/InStock",
+    price: "0",
+    priceCurrency: "USD",
+    description: "Pet adoption - no purchase price, adoption fees may apply",
   };
 
   return schema;
@@ -118,10 +118,10 @@ export const generateOrganizationSchema = (organization) => {
   }
 
   const schema = {
-    '@context': 'https://schema.org',
-    '@type': ['LocalBusiness', 'AnimalShelter'],
-    'name': organization.name,
-    'knowsAbout': 'Dog rescue and adoption services'
+    "@context": "https://schema.org",
+    "@type": ["LocalBusiness", "AnimalShelter"],
+    name: organization.name,
+    knowsAbout: "Dog rescue and adoption services",
   };
 
   // Add optional fields only if they exist
@@ -144,7 +144,7 @@ export const generateOrganizationSchema = (organization) => {
   // Build address if location data available
   if (organization.city || organization.country) {
     schema.address = {
-      '@type': 'PostalAddress'
+      "@type": "PostalAddress",
     };
 
     if (organization.city) {
@@ -156,11 +156,13 @@ export const generateOrganizationSchema = (organization) => {
     }
 
     // Add service area
-    const serviceAreaParts = [organization.city, organization.country].filter(Boolean);
+    const serviceAreaParts = [organization.city, organization.country].filter(
+      Boolean,
+    );
     if (serviceAreaParts.length > 0) {
       schema.serviceArea = {
-        '@type': 'Place',
-        'name': serviceAreaParts.join(', ')
+        "@type": "Place",
+        name: serviceAreaParts.join(", "),
       };
     }
   }
@@ -168,9 +170,9 @@ export const generateOrganizationSchema = (organization) => {
   // Add additional property for available dogs count
   if (organization.total_dogs && organization.total_dogs > 0) {
     schema.additionalProperty = {
-      '@type': 'PropertyValue',
-      'name': 'Available Dogs',
-      'value': organization.total_dogs
+      "@type": "PropertyValue",
+      name: "Available Dogs",
+      value: organization.total_dogs,
     };
   }
 
@@ -183,15 +185,19 @@ export const generateOrganizationSchema = (organization) => {
  * @returns {Object|null} Schema.org BreadcrumbList markup or null if invalid
  */
 export const generateBreadcrumbSchema = (breadcrumbData) => {
-  if (!breadcrumbData || !breadcrumbData.items || !Array.isArray(breadcrumbData.items)) {
+  if (
+    !breadcrumbData ||
+    !breadcrumbData.items ||
+    !Array.isArray(breadcrumbData.items)
+  ) {
     return null;
   }
 
   const itemListElement = breadcrumbData.items.map((item, index) => {
     const listItem = {
-      '@type': 'ListItem',
-      'position': index + 1,
-      'name': item.name
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
     };
 
     // Add item URL if provided (current page typically doesn't have URL)
@@ -203,9 +209,9 @@ export const generateBreadcrumbSchema = (breadcrumbData) => {
   });
 
   return {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    'itemListElement': itemListElement
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: itemListElement,
   };
 };
 
@@ -216,20 +222,20 @@ export const generateBreadcrumbSchema = (breadcrumbData) => {
  * @returns {boolean} True if valid, false otherwise
  */
 export const validateSchemaData = (schemaType, data) => {
-  if (!data || typeof data !== 'object') {
+  if (!data || typeof data !== "object") {
     return false;
   }
 
   switch (schemaType) {
-    case 'Pet':
+    case "Pet":
       return !!(data.name && data.animal);
-    
-    case 'Organization':
-      return !!(data.name && data['@type']);
-    
-    case 'JsonLD':
-      return !!(data['@context'] && data['@type']);
-    
+
+    case "Organization":
+      return !!(data.name && data["@type"]);
+
+    case "JsonLD":
+      return !!(data["@context"] && data["@type"]);
+
     default:
       return false;
   }
@@ -242,7 +248,7 @@ export const validateSchemaData = (schemaType, data) => {
  */
 export const generateJsonLdScript = (schema) => {
   if (!schema) {
-    return '';
+    return "";
   }
 
   return JSON.stringify(schema, null, 2);
@@ -254,10 +260,12 @@ export const generateJsonLdScript = (schema) => {
  * @returns {string} Combined JSON-LD script content
  */
 export const combineSchemas = (schemas) => {
-  const validSchemas = schemas.filter(schema => schema && typeof schema === 'object');
-  
+  const validSchemas = schemas.filter(
+    (schema) => schema && typeof schema === "object",
+  );
+
   if (validSchemas.length === 0) {
-    return '';
+    return "";
   }
 
   if (validSchemas.length === 1) {

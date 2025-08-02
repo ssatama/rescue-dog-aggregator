@@ -1,6 +1,6 @@
 /**
  * Progressive Image Loading Component
- * 
+ *
  * Features:
  * - Blur-up placeholder technique for better perceived performance
  * - Lazy loading with intersection observer
@@ -10,10 +10,15 @@
  */
 "use client";
 
-import React, { useState, useRef, useEffect, memo } from 'react';
-import { getCatalogCardImage, getDetailHeroImage, getThumbnailImage, handleImageError } from '../../utils/imageUtils';
+import React, { useState, useRef, useEffect, memo } from "react";
+import {
+  getCatalogCardImage,
+  getDetailHeroImage,
+  getThumbnailImage,
+  handleImageError,
+} from "../../utils/imageUtils";
 
-type ImageContext = 'hero' | 'card' | 'thumbnail';
+type ImageContext = "hero" | "card" | "thumbnail";
 
 interface ProgressiveImageProps extends React.HTMLAttributes<HTMLDivElement> {
   src: string;
@@ -29,9 +34,9 @@ interface ProgressiveImageProps extends React.HTMLAttributes<HTMLDivElement> {
 const ProgressiveImage = memo(function ProgressiveImage({
   src,
   alt,
-  className = '',
+  className = "",
   placeholder,
-  context = 'card', // 'hero', 'card', 'thumbnail'
+  context = "card", // 'hero', 'card', 'thumbnail'
   priority = false, // For LCP images
   onLoad,
   onError,
@@ -55,9 +60,9 @@ const ProgressiveImage = memo(function ProgressiveImage({
         }
       },
       {
-        rootMargin: '50px', // Start loading 50px before image comes into view
-        threshold: 0.1
-      }
+        rootMargin: "50px", // Start loading 50px before image comes into view
+        threshold: 0.1,
+      },
     );
 
     observer.observe(imgRef.current);
@@ -68,11 +73,11 @@ const ProgressiveImage = memo(function ProgressiveImage({
   // Get optimized image URL based on context
   const getOptimizedSrc = (originalSrc: string): string | null => {
     if (!originalSrc) return null;
-    
+
     switch (context) {
-      case 'hero':
+      case "hero":
         return getDetailHeroImage(originalSrc);
-      case 'thumbnail':
+      case "thumbnail":
         return getThumbnailImage(originalSrc);
       default:
         return getCatalogCardImage(originalSrc);
@@ -87,7 +92,9 @@ const ProgressiveImage = memo(function ProgressiveImage({
     onLoad?.(event);
   };
 
-  const handleLoadError = (event: React.SyntheticEvent<HTMLImageElement>): void => {
+  const handleLoadError = (
+    event: React.SyntheticEvent<HTMLImageElement>,
+  ): void => {
     setHasError(true);
     handleImageError(event, src);
     onError?.(event);
@@ -96,22 +103,22 @@ const ProgressiveImage = memo(function ProgressiveImage({
   // Generate low-quality placeholder for blur-up effect
   const generatePlaceholder = (): string => {
     if (placeholder) return placeholder;
-    if (!src) return '/placeholder_dog.svg';
-    
+    if (!src) return "/placeholder_dog.svg";
+
     // For R2 images, create a tiny blurred version using Cloudflare Images
-    if (src.includes('images.rescuedogs.me')) {
+    if (src.includes("images.rescuedogs.me")) {
       // Extract the path from the R2 URL
-      const imagePath = src.replace('https://images.rescuedogs.me/', '');
+      const imagePath = src.replace("https://images.rescuedogs.me/", "");
       return `https://images.rescuedogs.me/cdn-cgi/image/w_20,h_20,q_10,f_auto,blur_300/${imagePath}`;
     }
-    
-    return '/placeholder_dog.svg';
+
+    return "/placeholder_dog.svg";
   };
 
   const placeholderSrc = generatePlaceholder();
 
   return (
-    <div 
+    <div
       ref={imgRef}
       className={`relative overflow-hidden ${className}`}
       {...props}
@@ -122,11 +129,13 @@ const ProgressiveImage = memo(function ProgressiveImage({
         src={placeholderSrc}
         alt=""
         className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
-          isLoaded ? 'opacity-0' : 'opacity-100'
+          isLoaded ? "opacity-0" : "opacity-100"
         }`}
         style={{
-          filter: placeholderSrc === '/placeholder_dog.svg' ? 'none' : 'blur(5px)',
-          transform: placeholderSrc === '/placeholder_dog.svg' ? 'none' : 'scale(1.1)'
+          filter:
+            placeholderSrc === "/placeholder_dog.svg" ? "none" : "blur(5px)",
+          transform:
+            placeholderSrc === "/placeholder_dog.svg" ? "none" : "scale(1.1)",
         }}
         aria-hidden="true"
       />
@@ -138,21 +147,21 @@ const ProgressiveImage = memo(function ProgressiveImage({
           src={optimizedSrc}
           alt={alt}
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
-            isLoaded ? 'opacity-100' : 'opacity-0'
+            isLoaded ? "opacity-100" : "opacity-0"
           }`}
-          loading={priority ? 'eager' : 'lazy'}
+          loading={priority ? "eager" : "lazy"}
           decoding="async"
           onLoad={handleLoad}
           onError={handleLoadError}
           style={{
             // Improve image rendering performance
-            imageRendering: context === 'thumbnail' ? 'pixelated' : 'auto'
+            imageRendering: context === "thumbnail" ? "pixelated" : "auto",
           }}
         />
       )}
 
       {/* Loading indicator for hero images */}
-      {context === 'hero' && !isLoaded && !hasError && (
+      {context === "hero" && !isLoaded && !hasError && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
           <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
         </div>
@@ -161,6 +170,6 @@ const ProgressiveImage = memo(function ProgressiveImage({
   );
 });
 
-ProgressiveImage.displayName = 'ProgressiveImage';
+ProgressiveImage.displayName = "ProgressiveImage";
 
 export default ProgressiveImage;

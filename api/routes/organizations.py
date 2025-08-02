@@ -1,6 +1,5 @@
 # api/routes/organizations.py
 
-import json
 from typing import List
 
 import psycopg2
@@ -9,10 +8,10 @@ from psycopg2.extras import RealDictCursor
 from pydantic import ValidationError
 
 from api.dependencies import get_db_cursor
-from api.exceptions import APIException, handle_database_error, handle_validation_error, safe_execute
+from api.exceptions import APIException, handle_database_error, handle_validation_error
 from api.models.organization import Organization
 from api.models.requests import OrganizationFilterRequest
-from api.utils.json_parser import parse_json_field, parse_organization_fields
+from api.utils.json_parser import parse_json_field
 
 router = APIRouter()
 

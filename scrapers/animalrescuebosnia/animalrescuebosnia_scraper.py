@@ -1,6 +1,5 @@
 """Animal Rescue Bosnia scraper implementation."""
 
-import logging
 import re
 from typing import Any, Dict, List, Optional
 
@@ -473,7 +472,6 @@ class AnimalRescueBosniaScraper(BaseScraper):
         Returns:
             List of valid dog data dictionaries from this batch
         """
-        import time
         from concurrent.futures import ThreadPoolExecutor, as_completed
 
         results = []

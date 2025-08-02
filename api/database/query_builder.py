@@ -8,7 +8,7 @@ and batch operations to prevent N+1 query patterns.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 from psycopg2.extras import RealDictCursor
 

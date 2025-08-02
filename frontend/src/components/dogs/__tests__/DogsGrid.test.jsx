@@ -1,266 +1,303 @@
-import React from 'react';
-import { render, screen } from '@testing-library/react';
-import DogsGrid from '../DogsGrid';
+import React from "react";
+import { render, screen } from "@testing-library/react";
+import DogsGrid from "../DogsGrid";
 
 // Mock DogCard component
-jest.mock('../DogCard', () => {
+jest.mock("../DogCard", () => {
   return function MockDogCard({ dog }) {
-    return <div data-testid={`dog-card-${dog.id}`}>Mock DogCard: {dog.name}</div>;
+    return (
+      <div data-testid={`dog-card-${dog.id}`}>Mock DogCard: {dog.name}</div>
+    );
   };
 });
 
-describe('DogsGrid Component', () => {
+describe("DogsGrid Component", () => {
   const mockDogs = [
     {
       id: 1,
-      name: 'Buddy',
-      status: 'available',
-      organization: { name: 'Test Org 1' }
+      name: "Buddy",
+      status: "available",
+      organization: { name: "Test Org 1" },
     },
     {
       id: 2,
-      name: 'Max',
-      status: 'available',
-      organization: { name: 'Test Org 2' }
+      name: "Max",
+      status: "available",
+      organization: { name: "Test Org 2" },
     },
     {
       id: 3,
-      name: 'Luna',
-      status: 'available',
-      organization: { name: 'Test Org 3' }
-    }
+      name: "Luna",
+      status: "available",
+      organization: { name: "Test Org 3" },
+    },
   ];
 
-  describe('Basic Rendering', () => {
-    test('renders dogs in a grid layout', () => {
+  describe("Basic Rendering", () => {
+    test("renders dogs in a grid layout", () => {
       render(<DogsGrid dogs={mockDogs} />);
-      
+
       // Check that all dogs are rendered
-      expect(screen.getByTestId('dog-card-1')).toBeInTheDocument();
-      expect(screen.getByTestId('dog-card-2')).toBeInTheDocument();
-      expect(screen.getByTestId('dog-card-3')).toBeInTheDocument();
+      expect(screen.getByTestId("dog-card-1")).toBeInTheDocument();
+      expect(screen.getByTestId("dog-card-2")).toBeInTheDocument();
+      expect(screen.getByTestId("dog-card-3")).toBeInTheDocument();
     });
 
-    test('applies correct grid classes with updated responsive breakpoints', () => {
+    test("applies correct grid classes with updated responsive breakpoints", () => {
       render(<DogsGrid dogs={mockDogs} />);
-      
-      const gridContainer = screen.getByTestId('dogs-grid');
-      expect(gridContainer).toHaveClass('grid');
-      expect(gridContainer).toHaveClass('grid-cols-1');
-      expect(gridContainer).toHaveClass('sm:grid-cols-2');
-      expect(gridContainer).toHaveClass('lg:grid-cols-3');
+
+      const gridContainer = screen.getByTestId("dogs-grid");
+      expect(gridContainer).toHaveClass("grid");
+      expect(gridContainer).toHaveClass("grid-cols-1");
+      expect(gridContainer).toHaveClass("sm:grid-cols-2");
+      expect(gridContainer).toHaveClass("lg:grid-cols-3");
       // Should NOT have lg:grid-cols-4 anymore
-      expect(gridContainer).not.toHaveClass('lg:grid-cols-4');
+      expect(gridContainer).not.toHaveClass("lg:grid-cols-4");
     });
 
-    test('applies correct gap spacing with updated desktop spacing', () => {
+    test("applies correct gap spacing with updated desktop spacing", () => {
       render(<DogsGrid dogs={mockDogs} />);
-      
-      const gridContainer = screen.getByTestId('dogs-grid');
-      expect(gridContainer).toHaveClass('gap-4'); // Mobile gap (unchanged)
-      expect(gridContainer).toHaveClass('md:gap-6'); // Desktop gap (increased from gap-4)
+
+      const gridContainer = screen.getByTestId("dogs-grid");
+      expect(gridContainer).toHaveClass("gap-4"); // Mobile gap (unchanged)
+      expect(gridContainer).toHaveClass("md:gap-6"); // Desktop gap (increased from gap-4)
     });
   });
 
-  describe('Empty States', () => {
-    test('renders empty state when no dogs provided', () => {
+  describe("Empty States", () => {
+    test("renders empty state when no dogs provided", () => {
       render(<DogsGrid dogs={[]} />);
-      
-      const emptyState = screen.getByTestId('empty-state');
+
+      const emptyState = screen.getByTestId("empty-state");
       expect(emptyState).toBeInTheDocument();
-      expect(emptyState).toHaveTextContent('No dogs available');
+      expect(emptyState).toHaveTextContent("No dogs available");
     });
 
-    test('renders empty state when dogs array is null/undefined', () => {
+    test("renders empty state when dogs array is null/undefined", () => {
       render(<DogsGrid dogs={null} />);
-      
-      const emptyState = screen.getByTestId('empty-state');
+
+      const emptyState = screen.getByTestId("empty-state");
       expect(emptyState).toBeInTheDocument();
     });
 
-    test('empty state has proper styling', () => {
+    test("empty state has proper styling", () => {
       render(<DogsGrid dogs={[]} />);
-      
-      const emptyState = screen.getByTestId('empty-state');
-      expect(emptyState).toHaveClass('bg-gradient-to-br', 'from-orange-50', 'to-orange-100/50');
-      expect(emptyState).toHaveClass('rounded-xl');
-      expect(emptyState).toHaveClass('p-8');
-      expect(emptyState).toHaveClass('text-center');
+
+      const emptyState = screen.getByTestId("empty-state");
+      expect(emptyState).toHaveClass(
+        "bg-gradient-to-br",
+        "from-orange-50",
+        "to-orange-100/50",
+      );
+      expect(emptyState).toHaveClass("rounded-xl");
+      expect(emptyState).toHaveClass("p-8");
+      expect(emptyState).toHaveClass("text-center");
     });
   });
 
-  describe('Loading States', () => {
-    test('renders loading skeleton when in loading state', () => {
+  describe("Loading States", () => {
+    test("renders loading skeleton when in loading state", () => {
       render(<DogsGrid dogs={[]} loading={true} />);
-      
-      const loadingSkeletons = screen.getAllByTestId('dog-card-skeleton');
+
+      const loadingSkeletons = screen.getAllByTestId("dog-card-skeleton");
       expect(loadingSkeletons).toHaveLength(8); // Default skeleton count
     });
 
-    test('renders custom number of loading skeletons', () => {
+    test("renders custom number of loading skeletons", () => {
       render(<DogsGrid dogs={[]} loading={true} skeletonCount={12} />);
-      
-      const loadingSkeletons = screen.getAllByTestId('dog-card-skeleton');
+
+      const loadingSkeletons = screen.getAllByTestId("dog-card-skeleton");
       expect(loadingSkeletons).toHaveLength(12);
     });
 
-    test('skeleton cards have proper structure', () => {
+    test("skeleton cards have proper structure", () => {
       render(<DogsGrid dogs={[]} loading={true} skeletonCount={1} />);
-      
-      const skeleton = screen.getByTestId('dog-card-skeleton');
-      expect(skeleton).toHaveClass('animate-shimmer-premium');
-      expect(skeleton).toHaveClass('bg-card');
-      expect(skeleton).toHaveClass('shadow-sm');
+
+      const skeleton = screen.getByTestId("dog-card-skeleton");
+      expect(skeleton).toHaveClass("animate-shimmer-premium");
+      expect(skeleton).toHaveClass("bg-card");
+      expect(skeleton).toHaveClass("shadow-sm");
     });
   });
 
-  describe('Grid Responsiveness', () => {
-    test('applies auto-fit grid with minimum card width', () => {
+  describe("Grid Responsiveness", () => {
+    test("applies auto-fit grid with minimum card width", () => {
       render(<DogsGrid dogs={mockDogs} />);
-      
-      const gridContainer = screen.getByTestId('dogs-grid');
+
+      const gridContainer = screen.getByTestId("dogs-grid");
       const computedStyle = window.getComputedStyle(gridContainer);
-      
+
       // The CSS Grid should use the classes we set
-      expect(gridContainer).toHaveClass('grid');
+      expect(gridContainer).toHaveClass("grid");
     });
 
-    test('handles single dog correctly', () => {
+    test("handles single dog correctly", () => {
       const singleDog = [mockDogs[0]];
       render(<DogsGrid dogs={singleDog} />);
-      
-      expect(screen.getByTestId('dog-card-1')).toBeInTheDocument();
-      expect(screen.queryByTestId('dog-card-2')).not.toBeInTheDocument();
+
+      expect(screen.getByTestId("dog-card-1")).toBeInTheDocument();
+      expect(screen.queryByTestId("dog-card-2")).not.toBeInTheDocument();
     });
 
-    test('handles many dogs correctly', () => {
+    test("handles many dogs correctly", () => {
       const manyDogs = Array.from({ length: 20 }, (_, i) => ({
         id: i + 1,
         name: `Dog ${i + 1}`,
-        status: 'available',
-        organization: { name: `Org ${i + 1}` }
+        status: "available",
+        organization: { name: `Org ${i + 1}` },
       }));
-      
+
       render(<DogsGrid dogs={manyDogs} />);
-      
+
       // Check first and last dogs are rendered
-      expect(screen.getByTestId('dog-card-1')).toBeInTheDocument();
-      expect(screen.getByTestId('dog-card-20')).toBeInTheDocument();
+      expect(screen.getByTestId("dog-card-1")).toBeInTheDocument();
+      expect(screen.getByTestId("dog-card-20")).toBeInTheDocument();
     });
   });
 
-  describe('Error Boundaries', () => {
-    test('handles invalid dog data gracefully', () => {
+  describe("Error Boundaries", () => {
+    test("handles invalid dog data gracefully", () => {
       const invalidDogs = [
-        { id: 1, name: 'Valid Dog' },
+        { id: 1, name: "Valid Dog" },
         null,
         { id: 3 }, // missing name
-        undefined
+        undefined,
       ];
-      
+
       // Should not crash and should render valid dogs
       render(<DogsGrid dogs={invalidDogs} />);
-      
+
       // Should still render the valid dog
-      expect(screen.getByTestId('dog-card-1')).toBeInTheDocument();
+      expect(screen.getByTestId("dog-card-1")).toBeInTheDocument();
     });
   });
 
-  describe('Performance', () => {
-    test('applies correct aria-label for grid', () => {
+  describe("Performance", () => {
+    test("applies correct aria-label for grid", () => {
       render(<DogsGrid dogs={mockDogs} />);
-      
-      const gridContainer = screen.getByTestId('dogs-grid');
-      expect(gridContainer).toHaveAttribute('aria-label', 'Dogs available for adoption');
+
+      const gridContainer = screen.getByTestId("dogs-grid");
+      expect(gridContainer).toHaveAttribute(
+        "aria-label",
+        "Dogs available for adoption",
+      );
     });
 
-    test('supports custom className prop', () => {
+    test("supports custom className prop", () => {
       render(<DogsGrid dogs={mockDogs} className="custom-grid-class" />);
-      
-      const gridContainer = screen.getByTestId('dogs-grid');
-      expect(gridContainer).toHaveClass('custom-grid-class');
+
+      const gridContainer = screen.getByTestId("dogs-grid");
+      expect(gridContainer).toHaveClass("custom-grid-class");
     });
 
-    test('forwards additional props to grid container', () => {
+    test("forwards additional props to grid container", () => {
       render(<DogsGrid dogs={mockDogs} data-custom="test-value" />);
-      
-      const gridContainer = screen.getByTestId('dogs-grid');
-      expect(gridContainer).toHaveAttribute('data-custom', 'test-value');
+
+      const gridContainer = screen.getByTestId("dogs-grid");
+      expect(gridContainer).toHaveAttribute("data-custom", "test-value");
     });
   });
 
-  describe('Session 6: Enhanced Loading States & Transitions', () => {
-    test('supports different loading types with appropriate animations', () => {
-      const { rerender } = render(<DogsGrid dogs={[]} loading={true} loadingType="initial" />);
-      
-      let gridContainer = screen.getByTestId('dogs-grid');
-      expect(gridContainer).toHaveClass('duration-300');
-      
+  describe("Session 6: Enhanced Loading States & Transitions", () => {
+    test("supports different loading types with appropriate animations", () => {
+      const { rerender } = render(
+        <DogsGrid dogs={[]} loading={true} loadingType="initial" />,
+      );
+
+      let gridContainer = screen.getByTestId("dogs-grid");
+      expect(gridContainer).toHaveClass("duration-300");
+
       // Test filter loading type
       rerender(<DogsGrid dogs={[]} loading={true} loadingType="filter" />);
-      gridContainer = screen.getByTestId('dogs-grid');
-      expect(gridContainer).toHaveClass('duration-200');
+      gridContainer = screen.getByTestId("dogs-grid");
+      expect(gridContainer).toHaveClass("duration-200");
     });
 
-    test('adjusts skeleton count for filter loading type', () => {
-      render(<DogsGrid dogs={[]} loading={true} loadingType="filter" skeletonCount={12} />);
-      
+    test("adjusts skeleton count for filter loading type", () => {
+      render(
+        <DogsGrid
+          dogs={[]}
+          loading={true}
+          loadingType="filter"
+          skeletonCount={12}
+        />,
+      );
+
       // Should limit to 6 skeletons for filter loading
-      const skeletons = screen.getAllByTestId('dog-card-skeleton');
+      const skeletons = screen.getAllByTestId("dog-card-skeleton");
       expect(skeletons).toHaveLength(6);
     });
 
-    test('applies staggered animation delays to dog cards', () => {
+    test("applies staggered animation delays to dog cards", () => {
       render(<DogsGrid dogs={mockDogs} />);
-      
+
       // Each dog card should receive appropriate animation delay
-      const gridContainer = screen.getByTestId('dogs-grid');
-      expect(gridContainer).toHaveClass('animate-in', 'fade-in', 'duration-500');
+      const gridContainer = screen.getByTestId("dogs-grid");
+      expect(gridContainer).toHaveClass(
+        "animate-in",
+        "fade-in",
+        "duration-500",
+      );
     });
 
-    test('applies staggered animation system correctly', () => {
+    test("applies staggered animation system correctly", () => {
       render(<DogsGrid dogs={mockDogs} />);
-      
+
       // Check that all dog cards are rendered (validates the staggered animation logic)
-      expect(screen.getByTestId('dog-card-1')).toBeInTheDocument();
-      expect(screen.getByTestId('dog-card-2')).toBeInTheDocument();
-      expect(screen.getByTestId('dog-card-3')).toBeInTheDocument();
-      
+      expect(screen.getByTestId("dog-card-1")).toBeInTheDocument();
+      expect(screen.getByTestId("dog-card-2")).toBeInTheDocument();
+      expect(screen.getByTestId("dog-card-3")).toBeInTheDocument();
+
       // Verify grid has proper animation classes
-      const gridContainer = screen.getByTestId('dogs-grid');
-      expect(gridContainer).toHaveClass('animate-in', 'fade-in', 'duration-500');
+      const gridContainer = screen.getByTestId("dogs-grid");
+      expect(gridContainer).toHaveClass(
+        "animate-in",
+        "fade-in",
+        "duration-500",
+      );
     });
 
-    test('handles many dogs with staggered animations', () => {
+    test("handles many dogs with staggered animations", () => {
       const manyDogs = Array.from({ length: 10 }, (_, i) => ({
         id: i + 1,
         name: `Dog ${i + 1}`,
-        status: 'available',
-        organization: { name: `Org ${i + 1}` }
+        status: "available",
+        organization: { name: `Org ${i + 1}` },
       }));
 
       render(<DogsGrid dogs={manyDogs} />);
-      
+
       // Verify all dogs are rendered
-      expect(screen.getByTestId('dog-card-1')).toBeInTheDocument();
-      expect(screen.getByTestId('dog-card-10')).toBeInTheDocument();
-      
+      expect(screen.getByTestId("dog-card-1")).toBeInTheDocument();
+      expect(screen.getByTestId("dog-card-10")).toBeInTheDocument();
+
       // Verify grid animation classes
-      const gridContainer = screen.getByTestId('dogs-grid');
-      expect(gridContainer).toHaveClass('animate-in', 'fade-in', 'duration-500');
+      const gridContainer = screen.getByTestId("dogs-grid");
+      expect(gridContainer).toHaveClass(
+        "animate-in",
+        "fade-in",
+        "duration-500",
+      );
     });
 
-    test('skeletons with filter loading have staggered animation delays', () => {
-      render(<DogsGrid dogs={[]} loading={true} loadingType="filter" skeletonCount={4} />);
-      
-      const skeletons = screen.getAllByTestId('dog-card-skeleton');
+    test("skeletons with filter loading have staggered animation delays", () => {
+      render(
+        <DogsGrid
+          dogs={[]}
+          loading={true}
+          loadingType="filter"
+          skeletonCount={4}
+        />,
+      );
+
+      const skeletons = screen.getAllByTestId("dog-card-skeleton");
       expect(skeletons).toHaveLength(4);
-      
+
       // Each skeleton should have incremental animation delay
-      expect(skeletons[0]).toHaveStyle('animation-delay: 0ms');
-      expect(skeletons[1]).toHaveStyle('animation-delay: 50ms');
-      expect(skeletons[2]).toHaveStyle('animation-delay: 100ms');
-      expect(skeletons[3]).toHaveStyle('animation-delay: 150ms');
+      expect(skeletons[0]).toHaveStyle("animation-delay: 0ms");
+      expect(skeletons[1]).toHaveStyle("animation-delay: 50ms");
+      expect(skeletons[2]).toHaveStyle("animation-delay: 100ms");
+      expect(skeletons[3]).toHaveStyle("animation-delay: 150ms");
     });
   });
 });

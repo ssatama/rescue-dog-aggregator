@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tests for MisisRescue batch processing."""
 
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import patch
 
 import pytest
 

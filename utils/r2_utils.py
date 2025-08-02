@@ -1,9 +1,7 @@
 # utils/r2_utils.py
 
 import logging
-import os
-from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict
 from urllib.parse import urlparse
 
 import requests

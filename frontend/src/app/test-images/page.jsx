@@ -1,27 +1,27 @@
 // Simple test page to check image loading
-'use client';
+"use client";
 
-import { useState } from 'react';
-import HeroImageWithBlurredBackground from '../../components/ui/HeroImageWithBlurredBackground';
-import LazyImage from '../../components/ui/LazyImage';
-import { 
-  getDetailHeroImageWithPosition, 
-  getCatalogCardImage, 
-  handleImageError 
-} from '../../utils/imageUtils';
+import { useState } from "react";
+import HeroImageWithBlurredBackground from "../../components/ui/HeroImageWithBlurredBackground";
+import LazyImage from "../../components/ui/LazyImage";
+import {
+  getDetailHeroImageWithPosition,
+  getCatalogCardImage,
+  handleImageError,
+} from "../../utils/imageUtils";
 
 export default function TestImages() {
   const [logs, setLogs] = useState([]);
   const [imageErrors, setImageErrors] = useState([]);
 
   const addLog = (message) => {
-    setLogs(prev => [...prev, `${new Date().toISOString()}: ${message}`]);
-    process.env.NODE_ENV === 'development' && console.log(message);
+    setLogs((prev) => [...prev, `${new Date().toISOString()}: ${message}`]);
+    process.env.NODE_ENV === "development" && console.log(message);
   };
 
   const handleImageErrorWithLog = (e, originalUrl) => {
     const error = `Image failed to load: ${e.target.src}`;
-    setImageErrors(prev => [...prev, error]);
+    setImageErrors((prev) => [...prev, error]);
     addLog(error);
     handleImageError(e, originalUrl);
   };
@@ -29,41 +29,46 @@ export default function TestImages() {
   // Test different image scenarios
   const testImages = [
     {
-      name: 'Valid External URL',
-      url: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=800&h=600&fit=crop',
-      type: 'external'
+      name: "Valid External URL",
+      url: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=800&h=600&fit=crop",
+      type: "external",
     },
     {
-      name: 'Cloudinary URL (if available)',
-      url: 'https://res.cloudinary.com/dy8y3booq/image/upload/v1234567/sample.jpg',
-      type: 'cloudinary'
+      name: "Cloudinary URL (if available)",
+      url: "https://res.cloudinary.com/dy8y3booq/image/upload/v1234567/sample.jpg",
+      type: "cloudinary",
     },
     {
-      name: 'Local Placeholder',
-      url: '/placeholder_dog.svg',
-      type: 'local'
+      name: "Local Placeholder",
+      url: "/placeholder_dog.svg",
+      type: "local",
     },
     {
-      name: 'Invalid URL',
-      url: 'https://example.com/nonexistent.jpg',
-      type: 'invalid'
+      name: "Invalid URL",
+      url: "https://example.com/nonexistent.jpg",
+      type: "invalid",
     },
     {
-      name: 'Null URL',
+      name: "Null URL",
       url: null,
-      type: 'null'
-    }
+      type: "null",
+    },
   ];
 
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-3xl font-bold mb-8">Image Loading Test Page</h1>
-      
+
       {/* Environment Info */}
       <div className="bg-gray-100 p-4 rounded mb-8">
         <h2 className="text-xl font-semibold mb-2">Environment</h2>
-        <p>NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: {process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'Not set'}</p>
-        <p>NEXT_PUBLIC_API_URL: {process.env.NEXT_PUBLIC_API_URL || 'Not set'}</p>
+        <p>
+          NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME:{" "}
+          {process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "Not set"}
+        </p>
+        <p>
+          NEXT_PUBLIC_API_URL: {process.env.NEXT_PUBLIC_API_URL || "Not set"}
+        </p>
         <p>NODE_ENV: {process.env.NODE_ENV}</p>
       </div>
 
@@ -71,15 +76,25 @@ export default function TestImages() {
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Image Utility Output</h2>
         {testImages.map((test, index) => {
-          const heroResult = test.url ? getDetailHeroImageWithPosition(test.url) : { src: '/placeholder_dog.svg', position: 'center center' };
-          const catalogResult = test.url ? getCatalogCardImage(test.url) : '/placeholder_dog.svg';
-          
+          const heroResult = test.url
+            ? getDetailHeroImageWithPosition(test.url)
+            : { src: "/placeholder_dog.svg", position: "center center" };
+          const catalogResult = test.url
+            ? getCatalogCardImage(test.url)
+            : "/placeholder_dog.svg";
+
           return (
             <div key={index} className="bg-white border rounded p-4 mb-4">
               <h3 className="font-medium">{test.name}</h3>
-              <p className="text-sm text-gray-600">Original: {test.url || 'null'}</p>
-              <p className="text-sm text-gray-600">Hero optimized: {heroResult.src}</p>
-              <p className="text-sm text-gray-600">Catalog optimized: {catalogResult}</p>
+              <p className="text-sm text-gray-600">
+                Original: {test.url || "null"}
+              </p>
+              <p className="text-sm text-gray-600">
+                Hero optimized: {heroResult.src}
+              </p>
+              <p className="text-sm text-gray-600">
+                Catalog optimized: {catalogResult}
+              </p>
             </div>
           );
         })}
@@ -92,10 +107,12 @@ export default function TestImages() {
           {testImages.map((test, index) => (
             <div key={index} className="border rounded p-4">
               <h3 className="font-medium mb-2">{test.name}</h3>
-              
+
               {/* Hero Image Component */}
               <div className="mb-4">
-                <h4 className="text-sm font-medium mb-2">Hero Image Component:</h4>
+                <h4 className="text-sm font-medium mb-2">
+                  Hero Image Component:
+                </h4>
                 <HeroImageWithBlurredBackground
                   src={test.url}
                   alt={`Test ${test.name}`}
@@ -108,18 +125,20 @@ export default function TestImages() {
               <div className="mb-4">
                 <h4 className="text-sm font-medium mb-2">Regular img tag:</h4>
                 <img
-                  src={test.url || '/placeholder_dog.svg'}
+                  src={test.url || "/placeholder_dog.svg"}
                   alt={`Test ${test.name} regular`}
                   onError={(e) => handleImageErrorWithLog(e, test.url)}
                   onLoad={() => addLog(`Regular img loaded: ${test.name}`)}
                   className="w-full max-w-sm h-48 object-cover border"
-                  style={{ backgroundColor: '#f0f0f0' }}
+                  style={{ backgroundColor: "#f0f0f0" }}
                 />
               </div>
 
               {/* LazyImage Component */}
               <div>
-                <h4 className="text-sm font-medium mb-2">LazyImage Component:</h4>
+                <h4 className="text-sm font-medium mb-2">
+                  LazyImage Component:
+                </h4>
                 <LazyImage
                   src={test.url}
                   alt={`Test ${test.name} lazy`}
@@ -141,9 +160,13 @@ export default function TestImages() {
         <button
           onClick={async () => {
             try {
-              addLog('Testing fetch to external image...');
-              const response = await fetch('https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=100&h=100&fit=crop');
-              addLog(`Fetch response: ${response.status} ${response.statusText}`);
+              addLog("Testing fetch to external image...");
+              const response = await fetch(
+                "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=100&h=100&fit=crop",
+              );
+              addLog(
+                `Fetch response: ${response.status} ${response.statusText}`,
+              );
             } catch (error) {
               addLog(`Fetch error: ${error.message}`);
             }
@@ -168,10 +191,14 @@ export default function TestImages() {
       {/* Image Errors */}
       {imageErrors.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-red-600">Image Errors</h2>
+          <h2 className="text-xl font-semibold mb-4 text-red-600">
+            Image Errors
+          </h2>
           <div className="bg-red-50 border border-red-200 p-4 rounded">
             {imageErrors.map((error, index) => (
-              <p key={index} className="text-red-700">{error}</p>
+              <p key={index} className="text-red-700">
+                {error}
+              </p>
             ))}
           </div>
         </div>

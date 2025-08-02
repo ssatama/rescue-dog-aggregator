@@ -49,8 +49,14 @@ class ProgressTracker:
         self.show_throughput = config.get("show_throughput", True)
         self.eta_enabled = config.get("eta_enabled", True)
 
-        # Determine verbosity level based on total items
-        self.verbosity_level = self._determine_logging_level(total_items)
+        # Determine verbosity level - check config override first
+        config_verbosity = config.get("verbosity_level", "auto")
+        if config_verbosity in ["minimal", "standard", "detailed", "comprehensive"]:
+            # Use forced verbosity from config for consistent logging
+            self.verbosity_level = LoggingLevel(config_verbosity)
+        else:
+            # Use automatic determination based on total items
+            self.verbosity_level = self._determine_logging_level(total_items)
 
         # Operation tracking
         self.operation_counts: Dict[str, int] = {}
