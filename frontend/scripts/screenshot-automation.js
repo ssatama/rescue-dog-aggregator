@@ -1,0 +1,470 @@
+const { chromium } = require('playwright');
+const fs = require('fs').promises;
+const path = require('path');
+
+/*
+ * Device specifications verified through comprehensive research using multiple authoritative sources.
+ * Each device spec includes CSS viewport dimensions (NOT physical resolution), device pixel ratio,
+ * and current 2025 user agent strings. See individual research documentation for source verification.
+ * 
+ * Key breakpoint behavior with Tailwind CSS (md: 768px):
+ * - < 768px = Mobile layout (mobile filter button)
+ * - ≥ 768px = Desktop layout (desktop filter sidebar)
+ */
+const DEVICES = [
+  // === MOBILE PHONES (< 768px) ===
+  { 
+    name: 'iphone-se-3rd-gen',
+    // Source: iOS Resolution Database, Blisk.io, YesViz
+    // CSS Viewport: 375×667 (mobile layout < 768px)
+    width: 375, 
+    height: 667, 
+    deviceScaleFactor: 2,
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Mobile/15E148 Safari/604.1'
+  },
+  { 
+    name: 'iphone-16-pro-max',
+    // Source: Blisk.io, YesViz, Apple Official
+    // CSS Viewport: 440×956 (mobile layout < 768px)
+    width: 440, 
+    height: 956, 
+    deviceScaleFactor: 3,
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Mobile/15E148 Safari/604.1'
+  },
+  { 
+    name: 'samsung-galaxy-s24-ultra',
+    // Source: Blisk.io, WebMobileFirst
+    // CSS Viewport: 384×824 (mobile layout < 768px)
+    width: 384, 
+    height: 824, 
+    deviceScaleFactor: 3.75,
+    userAgent: 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Mobile Safari/537.36'
+  },
+  
+  // === TABLETS (Mixed based on orientation) ===
+  { 
+    name: 'ipad-mini-6th-gen',
+    // Source: iOS Resolution Database (authoritative)
+    // CSS Viewport: 744×1133 portrait (mobile layout < 768px)
+    // Note: This matches user's real device showing mobile layout
+    width: 744, 
+    height: 1133, 
+    deviceScaleFactor: 2,
+    userAgent: 'Mozilla/5.0 (iPad; CPU OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Mobile/15E148 Safari/604.1'
+  },
+  { 
+    name: 'ipad-air-11-inch-m2',
+    // Source: iOS Resolution Database
+    // CSS Viewport: 820×1180 portrait (desktop layout ≥ 768px)
+    // Note: User confirmed this shows correct layout
+    width: 820, 
+    height: 1180, 
+    deviceScaleFactor: 2,
+    userAgent: 'Mozilla/5.0 (iPad; CPU OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Mobile/15E148 Safari/604.1'
+  },
+  { 
+    name: 'ipad-pro-11-inch-m4',
+    // Source: Apple Official, iOS Resolution Database, Blisk.io
+    // CSS Viewport: 834×1194 portrait (desktop layout ≥ 768px)
+    width: 834, 
+    height: 1194, 
+    deviceScaleFactor: 2,
+    userAgent: 'Mozilla/5.0 (iPad; CPU OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Mobile/15E148 Safari/604.1'
+  },
+  { 
+    name: 'ipad-pro-13-inch-m4',
+    // Source: iOS Resolution Database, Apple Official
+    // CSS Viewport: 1032×1376 portrait (desktop layout ≥ 768px)
+    width: 1032, 
+    height: 1376, 
+    deviceScaleFactor: 2,
+    userAgent: 'Mozilla/5.0 (iPad; CPU OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Mobile/15E148 Safari/604.1'
+  },
+  
+  // === DESKTOP (≥ 768px) ===
+  { 
+    name: 'macbook-air-13-inch-m3',
+    // Source: Apple Official, YesViz, established Retina scaling patterns
+    // CSS Viewport: 1280×832 (desktop layout ≥ 768px)
+    // Note: Default 2:1 scaling from native 2560×1664
+    width: 1280, 
+    height: 832, 
+    deviceScaleFactor: 2,
+    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+    isDesktop: true
+  }
+];
+
+const PAGES = [
+  { name: 'home', url: 'http://localhost:3000' },
+  { name: 'dogs', url: 'http://localhost:3000/dogs' },
+  { name: 'dog-detail', url: 'http://localhost:3000/dogs/saga-mixed-breed-1835' },
+  { name: 'organizations', url: 'http://localhost:3000/organizations' },
+  { name: 'organization-detail', url: 'http://localhost:3000/organizations/tierschutzverein-europa-ev-11' }
+];
+
+async function ensureDirectoryExists(dirPath) {
+  try {
+    await fs.access(dirPath);
+  } catch {
+    await fs.mkdir(dirPath, { recursive: true });
+    console.log(`Created directory: ${dirPath}`);
+  }
+}
+
+async function verifyViewport(page, expectedWidth, expectedHeight) {
+  const viewport = page.viewportSize();
+  if (viewport.width !== expectedWidth || viewport.height !== expectedHeight) {
+    throw new Error(`Viewport mismatch! Expected ${expectedWidth}x${expectedHeight}, got ${viewport.width}x${viewport.height}`);
+  }
+  console.log(`✓ Viewport verified: ${expectedWidth}x${expectedHeight}`);
+}
+
+/**
+ * Production-code-based page readiness detection
+ */
+async function waitForPageReady(page, pageConfig) {
+  console.log(`    ⏱️  Navigating to ${pageConfig.url}...`);
+  
+  // Add error listener only (skip verbose console logging)
+  page.on('pageerror', err => console.log('    ❌ ERROR:', err.message));
+  
+  // Navigate and wait for DOM
+  await page.goto(pageConfig.url, { 
+    waitUntil: 'domcontentloaded',
+    timeout: 30000
+  });
+  
+  console.log(`    ⌛ Waiting for network idle...`);
+  await page.waitForLoadState('networkidle', { timeout: 15000 });
+  
+  console.log(`    🔄 Checking page-specific content readiness...`);
+  
+  const pathname = new URL(pageConfig.url).pathname;
+  
+  try {
+    if (pathname === '/') {
+      // Home page: wait for hero section with statistics loaded
+      console.log(`    🏠 Waiting for home page content...`);
+      await page.waitForSelector('[data-testid="hero-section"]', { 
+        state: 'visible',
+        timeout: 15000 
+      });
+      
+      // Wait for hero content to be loaded (not loading state)
+      await page.waitForSelector('[data-testid="hero-content"]', { 
+        state: 'visible',
+        timeout: 10000 
+      });
+      
+      // Wait for statistics to load (not showing loading state)
+      await page.waitForFunction(() => {
+        const heroSection = document.querySelector('[data-testid="hero-section"]');
+        if (!heroSection) return false;
+        
+        // Check if there's actual content, not just loading text
+        const hasLoadingText = heroSection.textContent.includes('Loading');
+        const hasStatistics = heroSection.textContent.match(/\d+/) !== null; // Has numbers (statistics)
+        
+        return !hasLoadingText && hasStatistics;
+      }, { timeout: 20000 });
+      
+    } else if (pathname === '/dogs') {
+      // Dogs page: wait for the main container and grid
+      console.log(`    🐕 Waiting for dogs page content...`);
+      await page.waitForSelector('[data-testid="dogs-page-container"]', { 
+        state: 'visible',
+        timeout: 15000 
+      });
+      
+      // Wait for the dogs grid to be present
+      await page.waitForSelector('[data-testid="dogs-grid"]', { 
+        state: 'visible',
+        timeout: 15000 
+      });
+      
+      // Wait for either dog cards to load OR empty state
+      await Promise.race([
+        // Dogs loaded
+        page.waitForSelector('[data-testid="dogs-grid"] article', { 
+          state: 'visible',
+          timeout: 15000 
+        }),
+        // Empty state
+        page.waitForSelector('[data-testid*="empty"]', { 
+          state: 'visible',
+          timeout: 15000 
+        }),
+        // Just wait a bit if neither appears
+        page.waitForTimeout(3000)
+      ]);
+      
+    } else if (pathname.startsWith('/dogs/')) {
+      // Dog detail page: wait for main content
+      console.log(`    🐶 Waiting for dog detail content...`);
+      await page.waitForSelector('h1', { 
+        state: 'visible',
+        timeout: 15000 
+      });
+      
+      await page.waitForSelector('main', { 
+        state: 'visible',
+        timeout: 10000 
+      });
+      
+    } else if (pathname === '/organizations') {
+      // Organizations page: wait for content
+      console.log(`    🏢 Waiting for organizations page content...`);
+      await page.waitForSelector('h1', { 
+        state: 'visible',
+        timeout: 15000 
+      });
+      
+      await page.waitForSelector('main', { 
+        state: 'visible',
+        timeout: 10000 
+      });
+      
+    } else if (pathname.startsWith('/organizations/')) {
+      // Organization detail page: wait for content
+      console.log(`    🏛️ Waiting for organization detail content...`);
+      await page.waitForSelector('h1', { 
+        state: 'visible',
+        timeout: 15000 
+      });
+      
+      await page.waitForSelector('main', { 
+        state: 'visible',
+        timeout: 10000 
+      });
+    }
+    
+    console.log(`    ✅ Page content loaded for ${pageConfig.name}`);
+    
+    // Wait for any lazy images to start loading
+    await page.waitForTimeout(2000);
+    
+  } catch (error) {
+    console.log(`    ⚠️  Content check timeout for ${pageConfig.name}, continuing anyway...`);
+    console.log(`    Details: ${error.message}`);
+    // Don't throw - continue with screenshot
+  }
+  
+  console.log(`    ✅ Page ready for ${pageConfig.name}`);
+}
+
+/**
+ * Simplified scrolling with proper lazy loading handling
+ */
+async function triggerLazyLoading(page) {
+  console.log(`    📜 Triggering lazy content loading...`);
+  
+  // Set up screen media emulation for consistent rendering
+  await page.emulateMedia({ media: 'screen' });
+  
+  // Add print-specific CSS adjustments
+  await page.addStyleTag({
+    content: `
+      * { 
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      body { 
+        overflow-x: visible !important;
+      }
+    `
+  });
+  
+  // Scroll to trigger lazy loading, then detect when back at top
+  const isAtTop = await page.evaluate(async () => {
+    // First scroll to bottom to get full height
+    window.scrollTo(0, document.body.scrollHeight);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const fullHeight = Math.max(
+      document.body.scrollHeight,
+      document.documentElement.scrollHeight
+    );
+    
+    // Now scroll from bottom to top in larger increments (faster)
+    const scrollStep = 200; // Larger increments for faster scrolling
+    const scrollDelay = 150; // Faster delay but still enough for lazy loading
+    
+    // Start from bottom
+    let currentPosition = fullHeight;
+    let loadingImageCount = 0;
+    
+    while (currentPosition > 0) {
+      currentPosition = Math.max(0, currentPosition - scrollStep);
+      window.scrollTo(0, currentPosition);
+      
+      // Wait for lazy loading to trigger at this position
+      await new Promise(resolve => setTimeout(resolve, scrollDelay));
+      
+      // Check for loading images but only log occasionally to reduce noise
+      const loadingImages = Array.from(document.querySelectorAll('img')).filter(img => 
+        !img.complete || img.naturalHeight === 0
+      );
+      
+      if (loadingImages.length > 0 && loadingImages.length !== loadingImageCount) {
+        loadingImageCount = loadingImages.length;
+        // Only log when count changes significantly
+        if (loadingImageCount % 5 === 0) {
+          console.log(`${loadingImageCount} images still loading...`);
+        }
+        await new Promise(resolve => setTimeout(resolve, 400));
+      }
+    }
+    
+    // Final scroll to top
+    window.scrollTo(0, 0);
+    
+    // Return immediately when at top - no unnecessary waiting
+    return window.scrollY === 0;
+  });
+  
+  if (isAtTop) {
+    console.log(`    ✅ Scrolled to top, ready for capture`);
+    // Skip image check - we already triggered lazy loading during scroll
+  } else {
+    console.log(`    ⚠️  Not quite at top, waiting briefly...`);
+    await page.waitForTimeout(500);
+    
+    // Only do image check if we weren't properly positioned
+    await page.waitForFunction(() => {
+      const images = Array.from(document.querySelectorAll('img'));
+      if (images.length === 0) return true;
+      
+      return images.every(img => {
+        if (!img.src || img.src.startsWith('data:')) return true;
+        return img.complete && img.naturalHeight !== 0;
+      });
+    }, { timeout: 3000 }).catch(() => {
+      console.log(`    ⚠️  Some images still loading, capturing anyway...`);
+    });
+  }
+  
+  console.log(`    ✅ Lazy loading complete`);
+}
+
+/**
+ * Calculate full document height for PDF generation (fast version)
+ */
+async function getFullPageHeight(page) {
+  return await page.evaluate(() => {
+    // Simple, fast method - just use document height since we already scrolled
+    return Math.max(
+      document.documentElement.scrollHeight,
+      document.documentElement.offsetHeight,
+      document.body.scrollHeight,
+      document.body.offsetHeight
+    );
+  });
+}
+
+async function captureScreenshots() {
+  // Create both mobile and desktop directories
+  const mobileOutputDir = path.join(__dirname, '..', '..', 'screenshots', 'mobile');
+  const desktopOutputDir = path.join(__dirname, '..', '..', 'screenshots', 'desktop');
+  await ensureDirectoryExists(mobileOutputDir);
+  await ensureDirectoryExists(desktopOutputDir);
+
+  // Launch browser in headless mode for background operation
+  const browser = await chromium.launch({ 
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
+  
+  try {
+    let totalCaptured = 0;
+    const totalScreenshots = DEVICES.length * PAGES.length;
+    
+    for (const device of DEVICES) {
+      console.log(`\n📱 Starting captures for ${device.name} (${device.width}x${device.height})`);
+      
+      const context = await browser.newContext({
+        viewport: { width: device.width, height: device.height },
+        deviceScaleFactor: device.deviceScaleFactor || 1,
+        isMobile: !device.isDesktop,
+        hasTouch: !device.isDesktop,
+        userAgent: device.userAgent,
+      });
+      
+      const page = await context.newPage();
+      
+      // Verify viewport
+      await verifyViewport(page, device.width, device.height);
+      
+      for (const pageConfig of PAGES) {
+        console.log(`  📄 Capturing ${pageConfig.name}...`);
+        
+        try {
+          // Enhanced page loading and readiness detection
+          await waitForPageReady(page, pageConfig);
+          
+          // Trigger all lazy loading
+          console.log(`    📜 Starting lazy loading...`);
+          await triggerLazyLoading(page);
+          console.log(`    📜 Lazy loading finished`);
+          
+          // Calculate accurate page height
+          console.log(`    📏 Calculating page height...`);
+          const fullHeight = await getFullPageHeight(page);
+          console.log(`    📏 Full page height: ${fullHeight}px`);
+          
+          // Generate PDF with optimized settings
+          console.log(`    📄 Generating PDF...`);
+          const filename = `${device.name}-${pageConfig.name}.pdf`;
+          const outputDir = device.isDesktop ? desktopOutputDir : mobileOutputDir;
+          const outputPath = path.join(outputDir, filename);
+          
+          await page.pdf({
+            path: outputPath,
+            width: `${device.width}px`,
+            height: `${Math.ceil(fullHeight + 50)}px`, // Small buffer
+            printBackground: true,
+            margin: { top: '0', bottom: '0', left: '0', right: '0' },
+            preferCSSPageSize: false,
+            scale: 1.0,
+            // Additional PDF options for better quality
+            format: undefined, // Use custom dimensions
+            landscape: false
+          });
+          
+          totalCaptured++;
+          console.log(`    ✅ Saved: ${filename} (${totalCaptured}/${totalScreenshots})`);
+          
+        } catch (error) {
+          console.error(`    ❌ Error capturing ${pageConfig.name}:`, error.message);
+          console.error(`    Details:`, error.stack);
+        }
+      }
+      
+      await context.close();
+      console.log(`✅ Completed ${device.name}`);
+    }
+    
+  } catch (error) {
+    console.error('❌ Fatal error in screenshot automation:', error);
+  } finally {
+    await browser.close();
+  }
+  
+  console.log(`\n🎉 Screenshot automation complete!`);
+  console.log(`📁 Mobile files saved to: ${mobileOutputDir}`);
+  console.log(`📁 Desktop files saved to: ${desktopOutputDir}`);
+  console.log(`📊 Total screenshots captured: ${totalCaptured}/${DEVICES.length * PAGES.length}`);
+}
+
+// Enhanced error handling
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+// Run the automation
+captureScreenshots().catch(error => {
+  console.error('Script failed:', error);
+  process.exit(1);
+});
