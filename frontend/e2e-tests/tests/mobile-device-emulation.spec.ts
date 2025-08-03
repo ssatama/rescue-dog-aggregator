@@ -4,24 +4,24 @@ import { createMobileTestHelpers, MOBILE_DEVICES } from '../utils/mobileTestHelp
 test.describe('Mobile Device Emulation', () => {
   // Skip these tests for Firefox as it doesn't support isMobile option
   test.skip(({ browserName }) => browserName === 'firefox', 'Firefox does not support isMobile option');
-  test.describe('iPhone 16 Pro Emulation', () => {
+  test.describe('iPhone 15 Emulation', () => {
     test.use({ 
-      ...MOBILE_DEVICES.iPhone16Pro,
-      viewport: MOBILE_DEVICES.iPhone16Pro.viewport,
-      deviceScaleFactor: MOBILE_DEVICES.iPhone16Pro.deviceScaleFactor,
-      isMobile: MOBILE_DEVICES.iPhone16Pro.isMobile,
-      hasTouch: MOBILE_DEVICES.iPhone16Pro.hasTouch,
-      userAgent: MOBILE_DEVICES.iPhone16Pro.userAgent
+      ...MOBILE_DEVICES.iPhone15,
+      viewport: MOBILE_DEVICES.iPhone15.viewport,
+      deviceScaleFactor: MOBILE_DEVICES.iPhone15.deviceScaleFactor,
+      isMobile: MOBILE_DEVICES.iPhone15.isMobile,
+      hasTouch: MOBILE_DEVICES.iPhone15.hasTouch,
+      userAgent: MOBILE_DEVICES.iPhone15.userAgent
     });
 
-    test('should emulate iPhone 16 Pro correctly', async ({ page }) => {
+    test('should emulate iPhone 15 correctly', async ({ page }) => {
       await page.goto('/');
       
       const mobileHelpers = createMobileTestHelpers(page);
       const deviceInfo = await mobileHelpers.getCurrentDeviceInfo();
       
-      expect(deviceInfo.viewport.width).toBe(393);
-      expect(deviceInfo.viewport.height).toBe(852);
+      expect(deviceInfo.viewport.width).toBe(390);
+      expect(deviceInfo.viewport.height).toBe(659);
       expect(deviceInfo.deviceScaleFactor).toBe(3);
       expect(deviceInfo.isMobile).toBe(true);
       expect(deviceInfo.hasTouch).toBe(true);
@@ -156,24 +156,24 @@ test.describe('Mobile Device Emulation', () => {
     });
   });
 
-  test.describe('iPad Mini Emulation', () => {
+  test.describe('iPad Mini 6th Gen Emulation', () => {
     test.use({ 
-      ...MOBILE_DEVICES.iPadMini,
-      viewport: MOBILE_DEVICES.iPadMini.viewport,
-      deviceScaleFactor: MOBILE_DEVICES.iPadMini.deviceScaleFactor,
-      isMobile: MOBILE_DEVICES.iPadMini.isMobile,
-      hasTouch: MOBILE_DEVICES.iPadMini.hasTouch,
-      userAgent: MOBILE_DEVICES.iPadMini.userAgent
+      ...MOBILE_DEVICES.iPadMini6th,
+      viewport: MOBILE_DEVICES.iPadMini6th.viewport,
+      deviceScaleFactor: MOBILE_DEVICES.iPadMini6th.deviceScaleFactor,
+      isMobile: MOBILE_DEVICES.iPadMini6th.isMobile,
+      hasTouch: MOBILE_DEVICES.iPadMini6th.hasTouch,
+      userAgent: MOBILE_DEVICES.iPadMini6th.userAgent
     });
 
-    test('should emulate iPad Mini correctly', async ({ page }) => {
+    test('should emulate iPad Mini 6th Gen correctly', async ({ page }) => {
       await page.goto('/');
       
       const mobileHelpers = createMobileTestHelpers(page);
       const deviceInfo = await mobileHelpers.getCurrentDeviceInfo();
       
-      expect(deviceInfo.viewport.width).toBe(768);
-      expect(deviceInfo.viewport.height).toBe(1024);
+      expect(deviceInfo.viewport.width).toBe(744);
+      expect(deviceInfo.viewport.height).toBe(1026);
       expect(deviceInfo.deviceScaleFactor).toBe(2);
       expect(deviceInfo.isMobile).toBe(false); // Tablet
       expect(deviceInfo.hasTouch).toBe(true);
@@ -203,7 +203,7 @@ test.describe('Mobile Device Emulation', () => {
         
         // Should utilize tablet width
         expect(gridWidth).toBeGreaterThan(500);
-        expect(gridWidth).toBeLessThanOrEqual(768);
+        expect(gridWidth).toBeLessThanOrEqual(744);
       }
     });
 
@@ -284,9 +284,9 @@ test.describe('Mobile Device Emulation', () => {
 
   test.describe('Cross-Device Consistency', () => {
     const devices = [
-      { name: 'iPhone', config: MOBILE_DEVICES.iPhone16Pro },
+      { name: 'iPhone', config: MOBILE_DEVICES.iPhone15 },
       { name: 'Samsung', config: MOBILE_DEVICES.samsungGalaxyS21 },
-      { name: 'iPad', config: MOBILE_DEVICES.iPadMini }
+      { name: 'iPad', config: MOBILE_DEVICES.iPadMini6th }
     ];
 
     devices.forEach(device => {

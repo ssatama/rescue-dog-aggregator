@@ -548,7 +548,7 @@ export default function DogsPageClient() {
 
             <main className="flex-1 min-w-0">
               {/* Mobile Filter Button */}
-              <div className="md:hidden mb-4">
+              <div className="lg:hidden mb-4">
                 <Button
                   data-testid="mobile-filter-button"
                   variant="outline"

@@ -386,7 +386,7 @@ describe("DogFilters Component", () => {
 
       const filtersContainer = screen.getByTestId("filters-container");
       expect(filtersContainer).toHaveClass("overflow-x-auto");
-      expect(filtersContainer).toHaveClass("md:overflow-x-visible");
+      expect(filtersContainer).toHaveClass("lg:overflow-x-visible");
     });
   });
 

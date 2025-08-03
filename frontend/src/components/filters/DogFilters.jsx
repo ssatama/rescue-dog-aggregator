@@ -119,7 +119,7 @@ export default function DogFilters({
         {/* Filter Header - Desktop and Mobile */}
         <div className="flex items-center justify-between mb-4">
           {/* Desktop Filter Header */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-3">
             <div className="flex items-center gap-2">
               <Icon name="filter" size="default" className="text-gray-600" />
               <span className="text-sm font-medium text-gray-700">
@@ -138,7 +138,7 @@ export default function DogFilters({
           </div>
 
           {/* Mobile Filter Button */}
-          <div className="md:hidden flex-1">
+          <div className="lg:hidden flex-1">
             <Button
               variant="outline"
               onClick={onMobileFilterClick}
@@ -164,7 +164,7 @@ export default function DogFilters({
           <div className="flex items-center gap-4">
             {/* Hide count on mobile to avoid crowding with mobile filter button */}
             {totalCount > 0 && (
-              <span className="hidden md:inline text-sm text-gray-600">
+              <span className="hidden lg:inline text-sm text-gray-600">
                 {totalCount} dogs
               </span>
             )}
@@ -175,7 +175,7 @@ export default function DogFilters({
                 onClick={handleClearAll}
                 data-testid="clear-filters-button"
                 aria-label="Clear all filters"
-                className="hidden md:flex text-sm text-gray-600 hover:text-gray-900"
+                className="hidden lg:flex text-sm text-gray-600 hover:text-gray-900"
               >
                 <Icon name="x" size="small" className="mr-1" />
                 Clear all
@@ -187,7 +187,7 @@ export default function DogFilters({
         {/* Filter Controls - Desktop Only */}
         <div
           data-testid="filters-container"
-          className="hidden md:flex gap-4 overflow-x-auto md:overflow-x-visible pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+          className="hidden lg:flex gap-4 overflow-x-auto lg:overflow-x-visible pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
         >
           {/* Age Filter */}
           <div className="flex-shrink-0 min-w-[160px]">

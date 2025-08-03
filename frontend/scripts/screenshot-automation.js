@@ -7,6 +7,8 @@ const path = require('path');
  * Each device spec includes CSS viewport dimensions (NOT physical resolution), device pixel ratio,
  * and current 2025 user agent strings. See individual research documentation for source verification.
  * 
+ * Source of Truth: https://gist.github.com/mfehrenbach/aaf646bee2e8880b5142d92e20b633d4
+ * 
  * Key breakpoint behavior with Tailwind CSS (md: 768px):
  * - < 768px = Mobile layout (mobile filter button)
  * - ≥ 768px = Desktop layout (desktop filter sidebar)
@@ -14,20 +16,20 @@ const path = require('path');
 const DEVICES = [
   // === MOBILE PHONES (< 768px) ===
   { 
-    name: 'iphone-se-3rd-gen',
-    // Source: iOS Resolution Database, Blisk.io, YesViz
-    // CSS Viewport: 375×667 (mobile layout < 768px)
-    width: 375, 
-    height: 667, 
+    name: 'iphone-se',
+    // Source: https://gist.github.com/mfehrenbach/aaf646bee2e8880b5142d92e20b633d4 - iPhone SE
+    // CSS Viewport: 320×449 (mobile layout < 768px)
+    width: 320, 
+    height: 449, 
     deviceScaleFactor: 2,
     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Mobile/15E148 Safari/604.1'
   },
   { 
-    name: 'iphone-16-pro-max',
-    // Source: Blisk.io, YesViz, Apple Official
-    // CSS Viewport: 440×956 (mobile layout < 768px)
-    width: 440, 
-    height: 956, 
+    name: 'iphone-15-plus',
+    // Source: https://gist.github.com/mfehrenbach/aaf646bee2e8880b5142d92e20b633d4 - iPhone 15 Plus
+    // CSS Viewport: 428×739 (mobile layout < 768px)
+    width: 428, 
+    height: 739, 
     deviceScaleFactor: 3,
     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Mobile/15E148 Safari/604.1'
   },
@@ -43,52 +45,40 @@ const DEVICES = [
   
   // === TABLETS (Mixed based on orientation) ===
   { 
-    name: 'ipad-mini-6th-gen',
-    // Source: iOS Resolution Database (authoritative)
-    // CSS Viewport: 744×1133 portrait (mobile layout < 768px)
-    // Note: This matches user's real device showing mobile layout
+    name: 'ipad-mini-6th',
+    // Source: https://gist.github.com/mfehrenbach/aaf646bee2e8880b5142d92e20b633d4 - iPad Mini 6th
+    // CSS Viewport: 744×1026 portrait (mobile layout < 768px)
     width: 744, 
-    height: 1133, 
+    height: 1026, 
     deviceScaleFactor: 2,
     userAgent: 'Mozilla/5.0 (iPad; CPU OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Mobile/15E148 Safari/604.1'
   },
   { 
-    name: 'ipad-air-11-inch-m2',
-    // Source: iOS Resolution Database
+    name: 'ipad-10th-gen',
+    // Source: https://gist.github.com/mfehrenbach/aaf646bee2e8880b5142d92e20b633d4 - iPad 10th
     // CSS Viewport: 820×1180 portrait (desktop layout ≥ 768px)
-    // Note: User confirmed this shows correct layout
     width: 820, 
     height: 1180, 
     deviceScaleFactor: 2,
     userAgent: 'Mozilla/5.0 (iPad; CPU OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Mobile/15E148 Safari/604.1'
   },
   { 
-    name: 'ipad-pro-11-inch-m4',
-    // Source: Apple Official, iOS Resolution Database, Blisk.io
-    // CSS Viewport: 834×1194 portrait (desktop layout ≥ 768px)
-    width: 834, 
-    height: 1194, 
-    deviceScaleFactor: 2,
-    userAgent: 'Mozilla/5.0 (iPad; CPU OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Mobile/15E148 Safari/604.1'
-  },
-  { 
-    name: 'ipad-pro-13-inch-m4',
-    // Source: iOS Resolution Database, Apple Official
-    // CSS Viewport: 1032×1376 portrait (desktop layout ≥ 768px)
-    width: 1032, 
-    height: 1376, 
+    name: 'ipad-pro-129-inch',
+    // Source: https://gist.github.com/mfehrenbach/aaf646bee2e8880b5142d92e20b633d4 - iPad Pro 12.9"
+    // CSS Viewport: 1024×1366 portrait (desktop layout ≥ 768px)
+    width: 1024, 
+    height: 1366, 
     deviceScaleFactor: 2,
     userAgent: 'Mozilla/5.0 (iPad; CPU OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Mobile/15E148 Safari/604.1'
   },
   
   // === DESKTOP (≥ 768px) ===
   { 
-    name: 'macbook-air-13-inch-m3',
-    // Source: Apple Official, YesViz, established Retina scaling patterns
-    // CSS Viewport: 1280×832 (desktop layout ≥ 768px)
-    // Note: Default 2:1 scaling from native 2560×1664
+    name: 'macbook-air-13-inch',
+    // Source: https://gist.github.com/mfehrenbach/aaf646bee2e8880b5142d92e20b633d4 - MacBook Air 13"
+    // CSS Viewport: 1280×715 (desktop layout ≥ 768px)
     width: 1280, 
-    height: 832, 
+    height: 715, 
     deviceScaleFactor: 2,
     userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
     isDesktop: true

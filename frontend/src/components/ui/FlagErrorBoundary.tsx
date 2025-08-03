@@ -30,8 +30,9 @@ class FlagErrorBoundary extends React.Component<
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     // Log flag loading errors for monitoring in development only
-    if (process.env.NODE_ENV !== "production")
+    if (process.env.NODE_ENV !== 'production') {
       console.warn("Flag loading error:", error, errorInfo);
+    }
   }
 
   render(): React.ReactNode {

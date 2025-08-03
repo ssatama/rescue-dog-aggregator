@@ -16,7 +16,7 @@ export default function TestImages() {
 
   const addLog = (message) => {
     setLogs((prev) => [...prev, `${new Date().toISOString()}: ${message}`]);
-    process.env.NODE_ENV === "development" && console.log(message);
+    process.env.NODE_ENV !== 'production' && console.log(message);
   };
 
   const handleImageErrorWithLog = (e, originalUrl) => {

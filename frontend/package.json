@@ -31,7 +31,7 @@
     "e2e:touch": "playwright test mobile-*-interactions.spec.ts",
     "e2e:responsive": "playwright test responsive-*.spec.ts",
     "e2e:accessibility:mobile": "playwright test touch-accessibility-validation.spec.ts",
-    "e2e:devices": "playwright test --project \"iPhone 16 Pro - Mobile Safari\" --project \"Samsung Galaxy S21 - Mobile Chrome\" --project \"iPad Mini - Mobile Safari\"",
+    "e2e:devices": "playwright test --project \"iPhone 15 Pro - Mobile Safari\" --project \"Samsung Galaxy S21 - Mobile Chrome\" --project \"iPad Mini 6th Gen - Mobile Safari\"",
     "e2e:mobile:install": "playwright install chromium webkit",
     "test:e2e": "playwright test",
     "test:e2e:critical": "playwright test --grep @critical",

@@ -417,24 +417,25 @@ export function createMobileTestHelpers(page: Page): MobileTestHelpers {
 
 /**
  * Common mobile device configurations
+ * Source: https://gist.github.com/mfehrenbach/aaf646bee2e8880b5142d92e20b633d4
  */
 export const MOBILE_DEVICES = {
-  iPhone16Pro: {
-    viewport: { width: 393, height: 852 },
+  iPhone15: {
+    viewport: { width: 390, height: 659 },  // Source: iPhone 15 (390×659)
     deviceScaleFactor: 3,
     isMobile: true,
     hasTouch: true,
     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
   },
   samsungGalaxyS21: {
-    viewport: { width: 360, height: 800 },
+    viewport: { width: 360, height: 800 },  // Kept unchanged per request
     deviceScaleFactor: 3,
     isMobile: true,
     hasTouch: true,
     userAgent: 'Mozilla/5.0 (Linux; Android 13; SM-S911B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36'
   },
-  iPadMini: {
-    viewport: { width: 768, height: 1024 },
+  iPadMini6th: {
+    viewport: { width: 744, height: 1026 },  // Source: iPad Mini 6th (744×1026)
     deviceScaleFactor: 2,
     isMobile: false,
     hasTouch: true,

@@ -90,11 +90,12 @@ export async function getEnhancedOrganizations() {
           };
         } catch (error) {
           // If fetching recent dogs fails, return organization without previews
-          if (process.env.NODE_ENV === "development")
+          if (process.env.NODE_ENV !== 'production') {
             console.warn(
               `Failed to fetch recent dogs for organization ${org.id}:`,
               error,
             );
+          }
           return {
             ...org,
             recent_dogs: [],
@@ -109,11 +110,12 @@ export async function getEnhancedOrganizations() {
         return result.value;
       } else {
         // If enhancement failed, return original organization data
-        if (process.env.NODE_ENV === "development")
+        if (process.env.NODE_ENV !== 'production') {
           console.warn(
             `Enhancement failed for organization ${organizations[index].id}:`,
             result.reason,
           );
+        }
         return {
           ...organizations[index],
           recent_dogs: [],
@@ -122,8 +124,9 @@ export async function getEnhancedOrganizations() {
     });
   } catch (error) {
     // If the main organizations call fails, re-throw the error
-    if (process.env.NODE_ENV === "development")
+    if (process.env.NODE_ENV !== 'production') {
       console.error("Failed to fetch enhanced organizations:", error);
+    }
     throw error;
   }
 }

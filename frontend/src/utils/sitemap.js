@@ -303,26 +303,29 @@ export const generateSitemap = async () => {
       const dogs = await getAllAnimals();
       allEntries.push(...generateDogPages(dogs));
     } catch (error) {
-      if (process.env.NODE_ENV !== "production")
+      if (process.env.NODE_ENV !== 'production') {
         console.warn("Failed to fetch dogs for sitemap:", error.message);
+      }
     }
 
     try {
       const organizations = await getAllOrganizations();
       allEntries.push(...generateOrganizationPages(organizations));
     } catch (error) {
-      if (process.env.NODE_ENV !== "production")
+      if (process.env.NODE_ENV !== 'production') {
         console.warn(
           "Failed to fetch organizations for sitemap:",
           error.message,
         );
+      }
     }
 
     // Convert to XML
     return entriesToXml(allEntries);
   } catch (error) {
-    if (process.env.NODE_ENV !== "production")
+    if (process.env.NODE_ENV !== 'production') {
       console.error("Error generating sitemap:", error);
+    }
 
     // Fallback: return sitemap with static pages only
     const staticEntries = generateStaticPages();
