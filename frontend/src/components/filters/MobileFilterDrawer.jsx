@@ -389,7 +389,7 @@ export default function MobileFilterDrawer({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 md:hidden"
+            className="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 lg:hidden"
             data-testid="filter-drawer-backdrop"
             onClick={handleBackdropClick}
           />
@@ -404,7 +404,7 @@ export default function MobileFilterDrawer({
               damping: 25,
               stiffness: 300,
             }}
-            className="fixed top-0 left-0 bottom-0 w-80 bg-white dark:bg-gray-900 shadow-2xl z-50 overflow-hidden md:hidden will-change-transform gpu-accelerated"
+            className="fixed top-0 left-0 bottom-0 w-80 bg-white dark:bg-gray-900 shadow-2xl z-50 overflow-hidden lg:hidden will-change-transform gpu-accelerated"
             data-testid="mobile-filter-drawer"
             role="dialog"
             aria-label="Filter options"

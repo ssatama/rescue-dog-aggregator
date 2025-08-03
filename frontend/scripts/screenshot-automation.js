@@ -86,11 +86,47 @@ const DEVICES = [
 ];
 
 const PAGES = [
-  { name: 'home', url: 'http://localhost:3000' },
-  { name: 'dogs', url: 'http://localhost:3000/dogs' },
+  { 
+    name: 'home', 
+    url: 'http://localhost:3000',
+    mobileStates: [
+      {
+        name: 'nav-open',
+        action: async (page) => {
+          await page.click('[data-testid="mobile-menu-button"]');
+          await page.waitForTimeout(4000);
+        }
+      }
+    ]
+  },
+  { 
+    name: 'dogs', 
+    url: 'http://localhost:3000/dogs',
+    mobileStates: [
+      {
+        name: 'filters-open',
+        action: async (page) => {
+          await page.click('[data-testid="mobile-filter-button"]');
+          await page.waitForTimeout(4000);
+        }
+      }
+    ]
+  },
   { name: 'dog-detail', url: 'http://localhost:3000/dogs/saga-mixed-breed-1835' },
   { name: 'organizations', url: 'http://localhost:3000/organizations' },
-  { name: 'organization-detail', url: 'http://localhost:3000/organizations/tierschutzverein-europa-ev-11' }
+  { 
+    name: 'organization-detail', 
+    url: 'http://localhost:3000/organizations/tierschutzverein-europa-ev-11',
+    mobileStates: [
+      {
+        name: 'filters-open',
+        action: async (page) => {
+          await page.click('[data-testid="mobile-filter-button"]');
+          await page.waitForTimeout(4000);
+        }
+      }
+    ]
+  }
 ];
 
 async function ensureDirectoryExists(dirPath) {
@@ -376,7 +412,19 @@ async function captureScreenshots() {
   let totalCaptured = 0;
   
   try {
-    const totalScreenshots = DEVICES.length * PAGES.length;
+    // Calculate total screenshots including mobile states
+    let totalScreenshots = 0;
+    for (const device of DEVICES) {
+      for (const pageConfig of PAGES) {
+        totalScreenshots++; // Base screenshot
+        
+        // Add mobile state screenshots for mobile devices
+        const isMobile = device.width < 1024;
+        if (isMobile && pageConfig.mobileStates) {
+          totalScreenshots += pageConfig.mobileStates.length;
+        }
+      }
+    }
     
     for (const device of DEVICES) {
       console.log(`\n📱 Starting captures for ${device.name} (${device.width}x${device.height})`);
@@ -433,6 +481,50 @@ async function captureScreenshots() {
           totalCaptured++;
           console.log(`    ✅ Saved: ${filename} (${totalCaptured}/${totalScreenshots})`);
           
+          // NEW: Handle mobile state captures for devices < 1024px
+          const isMobile = device.width < 1024;
+          if (isMobile && pageConfig.mobileStates) {
+            console.log(`    📱 Capturing ${pageConfig.mobileStates.length} mobile state(s)...`);
+            
+            for (const state of pageConfig.mobileStates) {
+              try {
+                console.log(`      🎯 Capturing ${state.name} state...`);
+                
+                // Re-load the page for clean state
+                await waitForPageReady(page, pageConfig);
+                await triggerLazyLoading(page);
+                
+                // Perform the state-changing action (click + wait)
+                await state.action(page);
+                
+                // Calculate page height after state change
+                const stateHeight = await getFullPageHeight(page);
+                
+                // Generate PDF for this state
+                const stateFilename = `${prefix}_${device.name}-${pageConfig.name}-${state.name}_${timestamp}.pdf`;
+                const stateOutputPath = path.join(outputDir, stateFilename);
+                
+                await page.pdf({
+                  path: stateOutputPath,
+                  width: `${device.width}px`,
+                  height: `${Math.ceil(stateHeight + 50)}px`,
+                  printBackground: true,
+                  margin: { top: '0', bottom: '0', left: '0', right: '0' },
+                  preferCSSPageSize: false,
+                  scale: 1.0,
+                  format: undefined,
+                  landscape: false
+                });
+                
+                totalCaptured++;
+                console.log(`      ✅ Saved: ${stateFilename}`);
+                
+              } catch (stateError) {
+                console.error(`      ❌ Error capturing ${state.name}:`, stateError.message);
+              }
+            }
+          }
+          
         } catch (error) {
           console.error(`    ❌ Error capturing ${pageConfig.name}:`, error.message);
           console.error(`    Details:`, error.stack);
@@ -451,7 +543,7 @@ async function captureScreenshots() {
   
   console.log(`\n🎉 Screenshot automation complete!`);
   console.log(`📁 Files saved to: ${outputDir}`);
-  console.log(`📊 Total screenshots captured: ${totalCaptured}/${DEVICES.length * PAGES.length}`);
+  console.log(`📊 Total screenshots captured: ${totalCaptured}/${totalScreenshots}`);
 }
 
 // Enhanced error handling

@@ -88,6 +88,83 @@ def override_get_db_cursor():
         conn.close()
 
 
+def _clear_test_tables_robust(cursor, conn, max_retries=3):
+    """Robust table clearing with retry logic and proper foreign key handling.
+
+    Handles network issues, connection timeouts, and foreign key constraints
+    by retrying with proper deletion order and connection recovery.
+    """
+    import time
+
+    import psycopg2
+
+    # Define deletion order respecting foreign key constraints
+    # Must delete child tables before parent tables
+    deletion_order = [
+        "animal_images",  # References animals(id)
+        "animals",  # References organizations(id)
+        "scrape_logs",  # References organizations(id)
+        "organizations",  # Parent table - delete last
+    ]
+
+    for attempt in range(max_retries):
+        try:
+            print(f"[conftest robust_cleanup] Attempt {attempt + 1}/{max_retries}")
+
+            # Method 1: Try normal deletion order
+            for table in deletion_order:
+                cursor.execute(f"DELETE FROM {table};")
+                print(f"[conftest robust_cleanup] Cleared {table}")
+
+            # Commit all deletions together
+            conn.commit()
+            print("[conftest robust_cleanup] All tables cleared successfully")
+            return
+
+        except psycopg2.IntegrityError as e:
+            # Foreign key constraint violation
+            print(f"[conftest robust_cleanup] Foreign key constraint error (attempt {attempt + 1}): {e}")
+            conn.rollback()
+
+            if attempt == max_retries - 1:
+                # Last attempt: use CASCADE deletion
+                try:
+                    print("[conftest robust_cleanup] Using CASCADE deletion as fallback")
+                    cursor.execute("DELETE FROM organizations CASCADE;")
+                    cursor.execute("DELETE FROM animal_images;")  # Clean up any remaining
+                    conn.commit()
+                    print("[conftest robust_cleanup] CASCADE deletion successful")
+                    return
+                except Exception as cascade_error:
+                    print(f"[conftest robust_cleanup] CASCADE deletion failed: {cascade_error}")
+                    conn.rollback()
+                    raise
+
+            # Wait before retry
+            time.sleep(0.1 * (attempt + 1))
+
+        except (psycopg2.OperationalError, psycopg2.DatabaseError) as e:
+            # Network/connection issues
+            print(f"[conftest robust_cleanup] Database connection error (attempt {attempt + 1}): {e}")
+            conn.rollback()
+
+            if attempt == max_retries - 1:
+                raise
+
+            # Wait longer for network issues
+            time.sleep(0.5 * (attempt + 1))
+
+        except Exception as e:
+            # Unexpected error
+            print(f"[conftest robust_cleanup] Unexpected error (attempt {attempt + 1}): {e}")
+            conn.rollback()
+
+            if attempt == max_retries - 1:
+                raise
+
+            time.sleep(0.2 * (attempt + 1))
+
+
 # --- Test Data Management Fixture ---
 # MODIFIED: Now uses the override_get_db_cursor logic directly
 @pytest.fixture(scope="function", autouse=True)
