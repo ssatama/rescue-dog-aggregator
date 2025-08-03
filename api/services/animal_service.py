@@ -561,12 +561,25 @@ class AnimalService:
         # Build WHERE clause
         where_clause = " AND ".join(conditions)
 
+        # Build ORDER BY clause based on sort parameter
+        def get_order_clause():
+            if filters.sort == "name-asc":
+                return "ORDER BY a.name ASC, a.id ASC"
+            elif filters.sort == "name-desc":
+                return "ORDER BY a.name DESC, a.id DESC"
+            elif filters.sort == "oldest":
+                return "ORDER BY a.created_at ASC, a.id ASC"
+            else:  # newest (default)
+                return "ORDER BY a.created_at DESC, a.id DESC"
+
         # Handle different curation types
         if filters.curation_type == "recent":
             conditions.append("a.created_at >= NOW() - INTERVAL '7 days'")
             where_clause = " AND ".join(conditions)
-            query = f"{query_base}{joins} WHERE {where_clause} ORDER BY a.created_at DESC, a.id DESC LIMIT %s OFFSET %s"
+            order_clause = get_order_clause()
+            query = f"{query_base}{joins} WHERE {where_clause} {order_clause} LIMIT %s OFFSET %s"
         elif filters.curation_type == "diverse":
+            # For diverse curation, maintain original random ordering per organization
             query = f"""
                 SELECT DISTINCT ON (a.organization_id)
                        a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
@@ -589,7 +602,8 @@ class AnimalService:
                 LIMIT %s OFFSET %s
             """
         else:
-            query = f"{query_base}{joins} WHERE {where_clause} ORDER BY a.created_at DESC, a.id DESC LIMIT %s OFFSET %s"
+            order_clause = get_order_clause()
+            query = f"{query_base}{joins} WHERE {where_clause} {order_clause} LIMIT %s OFFSET %s"
 
         params.extend([filters.limit, filters.offset])
 

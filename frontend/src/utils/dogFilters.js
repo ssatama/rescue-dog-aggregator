@@ -297,4 +297,5 @@ export const getSortFilterOptions = () => [
   { value: "newest", label: "Newest First" },
   { value: "name-asc", label: "Name A-Z" },
   { value: "name-desc", label: "Name Z-A" },
+  { value: "oldest", label: "Oldest First" },
 ];

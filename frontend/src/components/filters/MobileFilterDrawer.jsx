@@ -139,6 +139,18 @@ export default function MobileFilterDrawer({
 
   // Dynamic filter counts
   filterCounts,
+
+  // Context-aware filtering
+  filterConfig = {
+    showAge: true,
+    showBreed: true,
+    showSort: true,
+    showSize: true,
+    showSex: true,
+    showShipsTo: true,
+    showOrganization: true,
+    showSearch: true,
+  },
 }) {
   // Local state for breed input to handle real-time suggestions
   const [breedInputValue, setBreedInputValue] = useState(
@@ -282,35 +294,36 @@ export default function MobileFilterDrawer({
       .slice(0, 5);
   }, [breedInputValue, standardizedBreeds]);
 
-  // Calculate active filter count
+  // Calculate active filter count (only for visible filters)
   const activeFilterCount = useMemo(() => {
     let count = 0;
 
-    // Search query
-    if (searchQuery && searchQuery.trim() !== "") count++;
+    // Search query (if search is shown)
+    if (filterConfig.showSearch && searchQuery && searchQuery.trim() !== "") count++;
 
-    // Organization filter
-    if (organizationFilter && organizationFilter !== "any") count++;
+    // Organization filter (if organization section is shown)
+    if (filterConfig.showOrganization && organizationFilter && organizationFilter !== "any") count++;
 
-    // Breed filter
-    if (standardizedBreedFilter && standardizedBreedFilter !== "Any breed")
+    // Breed filter (if breed section is shown)
+    if (filterConfig.showBreed && standardizedBreedFilter && standardizedBreedFilter !== "Any breed")
       count++;
 
-    // Sex filter
-    if (sexFilter && sexFilter !== "Any") count++;
+    // Sex filter (if sex section is shown)
+    if (filterConfig.showSex && sexFilter && sexFilter !== "Any") count++;
 
-    // Size filter
-    if (sizeFilter && sizeFilter !== "Any size") count++;
+    // Size filter (if size section is shown)
+    if (filterConfig.showSize && sizeFilter && sizeFilter !== "Any size") count++;
 
-    // Age filter
-    if (ageCategoryFilter && ageCategoryFilter !== "Any age") count++;
+    // Age filter (if age section is shown)
+    if (filterConfig.showAge && ageCategoryFilter && ageCategoryFilter !== "Any age") count++;
 
-    // Available country filter
-    if (availableCountryFilter && availableCountryFilter !== "Any country")
+    // Available country filter (if ships-to section is shown)
+    if (filterConfig.showShipsTo && availableCountryFilter && availableCountryFilter !== "Any country")
       count++;
 
     return count;
   }, [
+    filterConfig,
     searchQuery,
     organizationFilter,
     standardizedBreedFilter,
@@ -439,296 +452,307 @@ export default function MobileFilterDrawer({
             >
               <div className="p-4 space-y-6">
                 {/* Persistent Search Bar */}
-                <div>
-                  <div className="relative input-container form-enhanced">
-                    <Icon
-                      name="search"
-                      size="small"
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                    />
-                    <Input
-                      data-testid="search-input"
-                      type="text"
-                      placeholder="Search dogs..."
-                      value={searchQuery}
-                      onChange={handleSearchChange}
-                      className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
-                      style={{ minHeight: "48px" }}
-                    />
-                    {searchQuery && (
-                      <Button
-                        data-testid="search-clear-button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={clearSearch}
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 text-gray-400 hover:text-gray-600 interactive-enhanced btn-focus-ring"
-                        style={{ minHeight: "48px", minWidth: "48px" }}
-                      >
-                        <Icon name="x" size="small" />
-                      </Button>
-                    )}
+                {filterConfig.showSearch && (
+                  <div>
+                    <div className="relative input-container form-enhanced">
+                      <Icon
+                        name="search"
+                        size="small"
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                      />
+                      <Input
+                        data-testid="search-input"
+                        type="text"
+                        placeholder="Search dogs..."
+                        value={searchQuery}
+                        onChange={handleSearchChange}
+                        className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
+                        style={{ minHeight: "48px" }}
+                      />
+                      {searchQuery && (
+                        <Button
+                          data-testid="search-clear-button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={clearSearch}
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 text-gray-400 hover:text-gray-600 interactive-enhanced btn-focus-ring"
+                          style={{ minHeight: "48px", minWidth: "48px" }}
+                        >
+                          <Icon name="x" size="small" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* === COLLAPSIBLE FILTER SECTIONS === */}
-                {/* Required order: Adoptable in Country → Size → Age → Sex → Breed → Organization */}
+                {/* Required order: Adoptable to Country → Size → Age → Sex → Breed → Organization */}
 
-                {/* 1. Adoptable in Country Section - PRIMARY FILTER */}
-                <MobileFilterSection
-                  id="ships-to-country"
-                  title="Adoptable in Country"
-                  defaultOpen={false}
-                  count={sectionCounts.shipsToCountry}
-                >
-                  {/* Hidden Location Select for E2E Tests */}
-                  <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
-                    <select
-                      data-testid="location-filter"
-                      value={availableCountryFilter}
-                      onChange={(e) =>
-                        setAvailableCountryFilter(e.target.value)
-                      }
-                    >
-                      {availableCountries.map((country) => (
-                        <option key={country} value={country}>
-                          {country}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <Select
-                      value={availableCountryFilter}
-                      onValueChange={setAvailableCountryFilter}
-                    >
-                      <SelectTrigger
-                        className="select-focus enhanced-hover enhanced-focus-select focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
-                        style={{ minHeight: "48px" }}
+                {/* 1. Adoptable to Country Section - PRIMARY FILTER */}
+                {filterConfig.showShipsTo && (
+                  <MobileFilterSection
+                    id="ships-to-country"
+                    title="Adoptable to Country"
+                    defaultOpen={false}
+                    count={sectionCounts.shipsToCountry}
+                  >
+                    {/* Hidden Location Select for E2E Tests */}
+                    <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
+                      <select
+                        data-testid="location-filter"
+                        value={availableCountryFilter}
+                        onChange={(e) =>
+                          setAvailableCountryFilter(e.target.value)
+                        }
                       >
-                        <SelectValue placeholder="Select country" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-48">
                         {availableCountries.map((country) => (
-                          <SelectItem key={country} value={country}>
+                          <option key={country} value={country}>
                             {country}
-                          </SelectItem>
+                          </option>
                         ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </MobileFilterSection>
+                      </select>
+                    </div>
+
+                    <div>
+                      <Select
+                        value={availableCountryFilter}
+                        onValueChange={setAvailableCountryFilter}
+                      >
+                        <SelectTrigger
+                          className="select-focus enhanced-hover enhanced-focus-select focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
+                          style={{ minHeight: "48px" }}
+                        >
+                          <SelectValue placeholder="Select country" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-48">
+                          {availableCountries.map((country) => (
+                            <SelectItem key={country} value={country}>
+                              {country}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </MobileFilterSection>
+                )}
 
                 {/* === BUTTON/LOLLIPOP FILTERS SECTION === */}
 
                 {/* 2. Size Filter - PHYSICAL CONSTRAINT */}
-                <div
-                  className={`space-y-3 ${sectionCounts.size > 0 ? "filter-section-active" : ""}`}
-                  role="region"
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
-                      Size
-                    </h4>
-                    {sectionCounts.size > 0 && (
-                      <span className="inline-flex bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2 rounded-full text-xs">
-                        ({sectionCounts.size})
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Hidden Size Select for E2E Tests */}
-                  <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
-                    <select
-                      data-testid="size-filter"
-                      value={sizeFilter === "Any size" ? "any" : sizeFilter}
-                      onChange={(e) =>
-                        setSizeFilter(
-                          e.target.value === "any"
-                            ? "Any size"
-                            : e.target.value,
-                        )
-                      }
-                    >
-                      <option value="any">Any size</option>
-                      {dynamicSizeOptions
-                        .filter((size) => size !== "Any size")
-                        .map((size) => (
-                          <option key={size} value={size}>
-                            {size}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-
+                {filterConfig.showSize && (
                   <div
-                    data-testid="size-button-grid"
-                    className="grid grid-cols-2 gap-2"
+                    className={`space-y-3 ${sectionCounts.size > 0 ? "filter-section-active" : ""}`}
+                    role="region"
                   >
-                    {dynamicSizeOptions.map((size) => {
-                      const isActive = sizeFilter === size;
-                      return (
-                        <Button
-                          key={size}
-                          data-testid={`size-button-${size}`}
-                          variant="outline"
-                          onClick={() => setSizeFilter(size)}
-                          className={`justify-start cross-browser-transition hover:scale-[1.02] focus:scale-[1.02] interactive-enhanced enhanced-focus-button mobile-touch-target ${
-                            isActive
-                              ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50 cross-browser-shadow"
-                              : "bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-sm"
-                          }`}
-                          style={{ minHeight: "48px" }}
-                          aria-pressed={isActive}
-                        >
-                          {size}
-                        </Button>
-                      );
-                    })}
+                    <div className="flex items-center gap-2 mb-3">
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                        Size
+                      </h4>
+                      {sectionCounts.size > 0 && (
+                        <span className="inline-flex bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2 rounded-full text-xs">
+                          ({sectionCounts.size})
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Hidden Size Select for E2E Tests */}
+                    <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
+                      <select
+                        data-testid="size-filter"
+                        value={sizeFilter === "Any size" ? "any" : sizeFilter}
+                        onChange={(e) =>
+                          setSizeFilter(
+                            e.target.value === "any"
+                              ? "Any size"
+                              : e.target.value,
+                          )
+                        }
+                      >
+                        <option value="any">Any size</option>
+                        {dynamicSizeOptions
+                          .filter((size) => size !== "Any size")
+                          .map((size) => (
+                            <option key={size} value={size}>
+                              {size}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                    <div
+                      data-testid="size-button-grid"
+                      className="grid grid-cols-2 gap-2"
+                    >
+                      {dynamicSizeOptions.map((size) => {
+                        const isActive = sizeFilter === size;
+                        return (
+                          <Button
+                            key={size}
+                            data-testid={`size-button-${size}`}
+                            variant="outline"
+                            onClick={() => setSizeFilter(size)}
+                            className={`justify-start cross-browser-transition hover:scale-[1.02] focus:scale-[1.02] interactive-enhanced enhanced-focus-button mobile-touch-target ${
+                              isActive
+                                ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50 cross-browser-shadow"
+                                : "bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-sm"
+                            }`}
+                            style={{ minHeight: "48px" }}
+                            aria-pressed={isActive}
+                          >
+                            {size}
+                          </Button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* 3. Age Filter - LIFE STAGE PREFERENCE */}
-                <div
-                  className={`space-y-3 ${sectionCounts.age > 0 ? "filter-section-active" : ""}`}
-                  role="region"
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
-                      Age
-                    </h4>
-                    {sectionCounts.age > 0 && (
-                      <span className="inline-flex bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2 rounded-full text-xs">
-                        ({sectionCounts.age})
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Hidden Age Select for E2E Tests */}
-                  <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
-                    <select
-                      data-testid="age-filter"
-                      value={
-                        ageCategoryFilter === "Any age"
-                          ? "any"
-                          : ageCategoryFilter
-                      }
-                      onChange={(e) =>
-                        setAgeCategoryFilter(
-                          e.target.value === "any" ? "Any age" : e.target.value,
-                        )
-                      }
-                    >
-                      <option value="any">Any age</option>
-                      {dynamicAgeOptions
-                        .filter((age) => age !== "Any age")
-                        .map((age) => (
-                          <option key={age} value={age}>
-                            {age}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-
+                {filterConfig.showAge && (
                   <div
-                    data-testid="age-button-grid"
-                    className="grid grid-cols-2 gap-2"
+                    className={`space-y-3 ${sectionCounts.age > 0 ? "filter-section-active" : ""}`}
+                    role="region"
                   >
-                    {dynamicAgeOptions.map((age) => {
-                      const isActive = ageCategoryFilter === age;
-                      return (
-                        <Button
-                          key={age}
-                          data-testid={`age-button-${age}`}
-                          variant="outline"
-                          onClick={() => setAgeCategoryFilter(age)}
-                          className={`justify-start cross-browser-transition hover:scale-[1.02] focus:scale-[1.02] interactive-enhanced enhanced-focus-button mobile-touch-target ${
-                            isActive
-                              ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50 cross-browser-shadow"
-                              : "bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-sm"
-                          }`}
-                          style={{ minHeight: "48px" }}
-                          aria-pressed={isActive}
-                        >
-                          {age}
-                        </Button>
-                      );
-                    })}
+                    <div className="flex items-center gap-2 mb-3">
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                        Age
+                      </h4>
+                      {sectionCounts.age > 0 && (
+                        <span className="inline-flex bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2 rounded-full text-xs">
+                          ({sectionCounts.age})
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Hidden Age Select for E2E Tests */}
+                    <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
+                      <select
+                        data-testid="age-filter"
+                        value={
+                          ageCategoryFilter === "Any age"
+                            ? "any"
+                            : ageCategoryFilter
+                        }
+                        onChange={(e) =>
+                          setAgeCategoryFilter(
+                            e.target.value === "any" ? "Any age" : e.target.value,
+                          )
+                        }
+                      >
+                        <option value="any">Any age</option>
+                        {dynamicAgeOptions
+                          .filter((age) => age !== "Any age")
+                          .map((age) => (
+                            <option key={age} value={age}>
+                              {age}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                    <div
+                      data-testid="age-button-grid"
+                      className="grid grid-cols-2 gap-2"
+                    >
+                      {dynamicAgeOptions.map((age) => {
+                        const isActive = ageCategoryFilter === age;
+                        return (
+                          <Button
+                            key={age}
+                            data-testid={`age-button-${age}`}
+                            variant="outline"
+                            onClick={() => setAgeCategoryFilter(age)}
+                            className={`justify-start cross-browser-transition hover:scale-[1.02] focus:scale-[1.02] interactive-enhanced enhanced-focus-button mobile-touch-target ${
+                              isActive
+                                ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50 cross-browser-shadow"
+                                : "bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-sm"
+                            }`}
+                            style={{ minHeight: "48px" }}
+                            aria-pressed={isActive}
+                          >
+                            {age}
+                          </Button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* 4. Sex Filter - BASIC PREFERENCE */}
-                <div
-                  className={`space-y-3 ${sectionCounts.sex > 0 ? "filter-section-active" : ""}`}
-                  role="region"
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
-                      Sex
-                    </h4>
-                    {sectionCounts.sex > 0 && (
-                      <span className="inline-flex bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2 rounded-full text-xs">
-                        ({sectionCounts.sex})
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Hidden Sex Select for E2E Tests */}
-                  <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
-                    <select
-                      data-testid="sex-filter"
-                      value={sexFilter === "Any" ? "any" : sexFilter}
-                      onChange={(e) =>
-                        setSexFilter(
-                          e.target.value === "any" ? "Any" : e.target.value,
-                        )
-                      }
-                    >
-                      <option value="any">Any</option>
-                      {dynamicSexOptions
-                        .filter((sex) => sex !== "Any")
-                        .map((sex) => (
-                          <option key={sex} value={sex}>
-                            {sex}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-
+                {filterConfig.showSex && (
                   <div
-                    data-testid="sex-button-grid"
-                    className="grid grid-cols-3 gap-2"
+                    className={`space-y-3 ${sectionCounts.sex > 0 ? "filter-section-active" : ""}`}
+                    role="region"
                   >
-                    {dynamicSexOptions.map((sex) => {
-                      const isActive = sexFilter === sex;
-                      return (
-                        <Button
-                          key={sex}
-                          data-testid={`sex-button-${sex}`}
-                          variant="outline"
-                          onClick={() => setSexFilter(sex)}
-                          className={`justify-center cross-browser-transition hover:scale-[1.02] focus:scale-[1.02] interactive-enhanced enhanced-focus-button mobile-touch-target ${
-                            isActive
-                              ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50 cross-browser-shadow"
-                              : "bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-sm"
-                          }`}
-                          style={{ minHeight: "48px" }}
-                          aria-pressed={isActive}
-                        >
-                          {sex}
-                        </Button>
-                      );
-                    })}
+                    <div className="flex items-center gap-2 mb-3">
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                        Sex
+                      </h4>
+                      {sectionCounts.sex > 0 && (
+                        <span className="inline-flex bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2 rounded-full text-xs">
+                          ({sectionCounts.sex})
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Hidden Sex Select for E2E Tests */}
+                    <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
+                      <select
+                        data-testid="sex-filter"
+                        value={sexFilter === "Any" ? "any" : sexFilter}
+                        onChange={(e) =>
+                          setSexFilter(
+                            e.target.value === "any" ? "Any" : e.target.value,
+                          )
+                        }
+                      >
+                        <option value="any">Any</option>
+                        {dynamicSexOptions
+                          .filter((sex) => sex !== "Any")
+                          .map((sex) => (
+                            <option key={sex} value={sex}>
+                              {sex}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                    <div
+                      data-testid="sex-button-grid"
+                      className="grid grid-cols-3 gap-2"
+                    >
+                      {dynamicSexOptions.map((sex) => {
+                        const isActive = sexFilter === sex;
+                        return (
+                          <Button
+                            key={sex}
+                            data-testid={`sex-button-${sex}`}
+                            variant="outline"
+                            onClick={() => setSexFilter(sex)}
+                            className={`justify-center cross-browser-transition hover:scale-[1.02] focus:scale-[1.02] interactive-enhanced enhanced-focus-button mobile-touch-target ${
+                              isActive
+                                ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50 cross-browser-shadow"
+                                : "bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-sm"
+                            }`}
+                            style={{ minHeight: "48px" }}
+                            aria-pressed={isActive}
+                          >
+                            {sex}
+                          </Button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* 5. Breed Section - SECONDARY CONSIDERATION */}
-                <MobileFilterSection
-                  id="breed"
-                  title="Breed"
-                  defaultOpen={false}
-                  count={sectionCounts.breed}
-                >
+                {filterConfig.showBreed && (
+                  <MobileFilterSection
+                    id="breed"
+                    title="Breed"
+                    defaultOpen={false}
+                    count={sectionCounts.breed}
+                  >
                   <div className="space-y-3">
                     {/* Hidden Breed Select for E2E tests */}
                     <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
@@ -820,15 +844,17 @@ export default function MobileFilterDrawer({
                         </div>
                       )}
                   </div>
-                </MobileFilterSection>
+                  </MobileFilterSection>
+                )}
 
                 {/* 6. Organization Section - OPTIONAL/ADVANCED */}
-                <MobileFilterSection
-                  id="organization"
-                  title="Organization"
-                  defaultOpen={false}
-                  count={sectionCounts.organization}
-                >
+                {filterConfig.showOrganization && (
+                  <MobileFilterSection
+                    id="organization"
+                    title="Organization"
+                    defaultOpen={false}
+                    count={sectionCounts.organization}
+                  >
                   {/* Hidden Organization Select for E2E Tests */}
                   <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
                     <select
@@ -877,7 +903,8 @@ export default function MobileFilterDrawer({
                       </SelectContent>
                     </Select>
                   </div>
-                </MobileFilterSection>
+                  </MobileFilterSection>
+                )}
               </div>
             </div>
 

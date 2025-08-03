@@ -382,12 +382,12 @@ export default function DesktopFilters({
         {/* Filters container with collapsible sections */}
         <div data-testid="filters-container" className="space-y-6">
           {/* === DROPDOWN FILTERS SECTION === */}
-          {/* Required order: Adoptable in Country → Size → Age → Sex → Breed → Organization */}
+          {/* Required order: Adoptable to Country → Size → Age → Sex → Breed → Organization */}
 
-          {/* 1. Adoptable in Country Section - PRIMARY FILTER */}
+          {/* 1. Adoptable to Country Section - PRIMARY FILTER */}
           <FilterSection
             id="ships-to-country"
-            title="Adoptable in Country"
+            title="Adoptable to Country"
             defaultOpen={false}
             count={sectionCounts.shipsToCountry}
           >

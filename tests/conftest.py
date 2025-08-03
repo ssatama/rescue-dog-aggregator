@@ -102,12 +102,9 @@ def manage_test_data():
     conn = cursor.connection  # Get the underlying connection from the cursor
 
     try:
-        # Clear tables
+        # Clear tables with robust error handling
         print("[conftest manage_test_data] Clearing test tables...")
-        cursor.execute("DELETE FROM animal_images;")
-        cursor.execute("DELETE FROM animals;")
-        cursor.execute("DELETE FROM scrape_logs;")
-        cursor.execute("DELETE FROM organizations;")
+        _clear_test_tables_robust(cursor, conn)
         print("[conftest manage_test_data] Test tables cleared.")
 
         # Insert base data

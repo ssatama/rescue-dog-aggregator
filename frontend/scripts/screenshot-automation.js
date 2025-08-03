@@ -354,11 +354,18 @@ async function getFullPageHeight(page) {
 }
 
 async function captureScreenshots() {
-  // Create both mobile and desktop directories
-  const mobileOutputDir = path.join(__dirname, '..', '..', 'screenshots', 'mobile');
-  const desktopOutputDir = path.join(__dirname, '..', '..', 'screenshots', 'desktop');
-  await ensureDirectoryExists(mobileOutputDir);
-  await ensureDirectoryExists(desktopOutputDir);
+  // Create timestamp for this run
+  const now = new Date();
+  const timestamp = now.toLocaleDateString('en-CA') + '_' + now.toLocaleTimeString('en-US', {
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  }).replace(/:/g, '-');
+
+  // Create screenshots directory
+  const outputDir = path.join(__dirname, '..', '..', 'screenshots');
+  await ensureDirectoryExists(outputDir);
 
   // Launch browser in headless mode for background operation
   const browser = await chromium.launch({ 
@@ -366,8 +373,9 @@ async function captureScreenshots() {
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
   
+  let totalCaptured = 0;
+  
   try {
-    let totalCaptured = 0;
     const totalScreenshots = DEVICES.length * PAGES.length;
     
     for (const device of DEVICES) {
@@ -405,8 +413,8 @@ async function captureScreenshots() {
           
           // Generate PDF with optimized settings
           console.log(`    📄 Generating PDF...`);
-          const filename = `${device.name}-${pageConfig.name}.pdf`;
-          const outputDir = device.isDesktop ? desktopOutputDir : mobileOutputDir;
+          const prefix = device.isDesktop ? 'desktop' : 'mobile';
+          const filename = `${prefix}_${device.name}-${pageConfig.name}_${timestamp}.pdf`;
           const outputPath = path.join(outputDir, filename);
           
           await page.pdf({
@@ -442,8 +450,7 @@ async function captureScreenshots() {
   }
   
   console.log(`\n🎉 Screenshot automation complete!`);
-  console.log(`📁 Mobile files saved to: ${mobileOutputDir}`);
-  console.log(`📁 Desktop files saved to: ${desktopOutputDir}`);
+  console.log(`📁 Files saved to: ${outputDir}`);
   console.log(`📊 Total screenshots captured: ${totalCaptured}/${DEVICES.length * PAGES.length}`);
 }
 

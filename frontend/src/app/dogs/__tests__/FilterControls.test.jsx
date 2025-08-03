@@ -55,8 +55,8 @@ describe("<FilterControls />", () => {
     expect(screen.getByLabelText(/Age/i)).toBeInTheDocument();
     // Location Country
     expect(screen.getByLabelText(/Located In/i)).toBeInTheDocument();
-    // Adoptable in Country
-    expect(screen.getByLabelText(/Adoptable in Country/i)).toBeInTheDocument();
+    // Adoptable to Country
+    expect(screen.getByLabelText(/Adoptable to Country/i)).toBeInTheDocument();
     // Adoptable in Region
     expect(screen.getByLabelText(/Adoptable in Region/i)).toBeInTheDocument();
   });
@@ -96,7 +96,7 @@ describe("<FilterControls />", () => {
     expect(mockProps.setLocationCountryFilter).toHaveBeenCalledWith("US");
 
     // Change Available Country
-    await user.click(screen.getByLabelText(/Adoptable in Country/i));
+    await user.click(screen.getByLabelText(/Adoptable to Country/i));
     await user.click(await screen.findByRole("option", { name: "US" }));
     expect(mockProps.setAvailableCountryFilter).toHaveBeenCalledWith("US");
   });

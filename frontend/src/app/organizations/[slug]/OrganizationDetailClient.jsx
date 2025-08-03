@@ -34,13 +34,14 @@ export default function OrganizationDetailClient({ params = {} }) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalDogs, setTotalDogs] = useState(0);
 
-  // Filter state management (only age, breed, sort for organization pages)
+  // Filter state management (age, breed, sex, sort for organization pages)
   const [filters, setFilters] = useState(() => {
     // Initialize filters from URL parameters or defaults (no shipsTo for org pages)
     const defaultFilters = getDefaultFilters();
     return {
       age: searchParams?.get("age") || defaultFilters.age,
       breed: searchParams?.get("breed") || defaultFilters.breed,
+      sex: searchParams?.get("sex") || "Any",
       sort: searchParams?.get("sort") || defaultFilters.sort,
     };
   });
@@ -57,7 +58,8 @@ export default function OrganizationDetailClient({ params = {} }) {
   const filteredDogs = dogs;
   const hasActiveFilters =
     (filters.age && filters.age !== "All") ||
-    (filters.breed && filters.breed.trim() !== "");
+    (filters.breed && filters.breed.trim() !== "") ||
+    (filters.sex && filters.sex !== "Any");
 
   // Ships To filter not needed for organization pages - all dogs have same shipping options
 
@@ -75,6 +77,7 @@ export default function OrganizationDetailClient({ params = {} }) {
     setFilters({
       age: defaultFilters.age,
       breed: defaultFilters.breed,
+      sex: "Any",
       sort: defaultFilters.sort,
     });
   };
@@ -97,6 +100,7 @@ export default function OrganizationDetailClient({ params = {} }) {
       const apiParams = {
         limit,
         offset,
+        sort: filters.sort || "newest", // Always include sort parameter
       };
 
       // Add age filter if selected
@@ -107,6 +111,11 @@ export default function OrganizationDetailClient({ params = {} }) {
       // Add breed filter if selected
       if (filters.breed && filters.breed.trim() !== "") {
         apiParams.standardized_breed = filters.breed;
+      }
+
+      // Add sex filter if selected
+      if (filters.sex && filters.sex !== "Any") {
+        apiParams.sex = filters.sex;
       }
 
       try {
@@ -155,7 +164,7 @@ export default function OrganizationDetailClient({ params = {} }) {
 
         // Fetch first page of dogs using the organization ID
         const limit = 20;
-        const apiParams = { limit, offset: 0 };
+        const apiParams = { limit, offset: 0, sort: filters.sort || "newest" };
 
         // Add current filters
         if (filters.age && filters.age !== "All") {
@@ -163,6 +172,9 @@ export default function OrganizationDetailClient({ params = {} }) {
         }
         if (filters.breed && filters.breed.trim() !== "") {
           apiParams.standardized_breed = filters.breed;
+        }
+        if (filters.sex && filters.sex !== "Any") {
+          apiParams.sex = filters.sex;
         }
 
         const dogsData = await getOrganizationDogs(orgData.id, apiParams);
@@ -325,6 +337,7 @@ export default function OrganizationDetailClient({ params = {} }) {
               availableBreeds={availableBreeds}
               hasActiveFilters={hasActiveFilters}
               showShipsToFilter={false}
+              showSortFilter={false}
               onMobileFilterClick={handleMobileFilterOpen}
             />
           )}
@@ -376,7 +389,17 @@ export default function OrganizationDetailClient({ params = {} }) {
       <MobileFilterDrawer
         isOpen={isMobileFilterOpen}
         onClose={handleMobileFilterClose}
-        // Basic props for organization page (limited filters)
+        // Context-aware filters for organization page (only age, breed, sex)
+        filterConfig={{
+          showAge: true,
+          showBreed: true,
+          showSort: false, // No sorting UI on mobile
+          showSize: false, // No size filter for organization pages
+          showSex: true, // Include sex filter for organization pages
+          showShipsTo: false, // No ships-to for organization pages
+          showOrganization: false, // No organization filter for organization pages
+          showSearch: false, // No search for organization pages
+        }}
         searchQuery=""
         handleSearchChange={() => {}}
         clearSearch={() => {}}
@@ -388,9 +411,9 @@ export default function OrganizationDetailClient({ params = {} }) {
           setFilters((prev) => ({ ...prev, breed }))
         }
         standardizedBreeds={availableBreeds}
-        sexFilter="Any"
-        setSexFilter={() => {}}
-        sexOptions={["Any"]}
+        sexFilter={filters.sex || "Any"}
+        setSexFilter={(sex) => setFilters((prev) => ({ ...prev, sex }))}
+        sexOptions={["Any", "Male", "Female"]}
         sizeFilter="Any size"
         setSizeFilter={() => {}}
         sizeOptions={["Any size"]}

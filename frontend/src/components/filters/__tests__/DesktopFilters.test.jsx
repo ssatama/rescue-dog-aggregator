@@ -81,6 +81,6 @@ describe("DesktopFilters Component", () => {
     expect(screen.getByText("Sex")).toBeInTheDocument();
     expect(screen.getByText("Breed")).toBeInTheDocument();
     expect(screen.getByText("Organization")).toBeInTheDocument();
-    expect(screen.getByText("Adoptable in Country")).toBeInTheDocument();
+    expect(screen.getByText("Adoptable to Country")).toBeInTheDocument();
   });
 });

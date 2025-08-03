@@ -256,7 +256,7 @@ export default function FilterControls({
           className="flex items-center text-sm font-medium text-gray-700 mb-1"
         >
           <Icon name="globe" size="small" className="mr-2" color="default" />
-          Adoptable in Country
+          Adoptable to Country
         </label>
         <Select
           value={availableCountryFilter}

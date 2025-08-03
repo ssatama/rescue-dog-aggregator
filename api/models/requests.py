@@ -70,6 +70,9 @@ class AnimalFilterRequest(BaseModel):
     # Curation
     curation_type: str = Field(default="random", description="Curation type: 'recent' (last 7 days), 'recent_with_fallback' (recent or latest), 'diverse' (one per org), or 'random' (default)")
 
+    # Sorting
+    sort: Optional[str] = Field(default="newest", description="Sort order: 'newest', 'oldest', 'name-asc', 'name-desc'")
+
     @field_validator("curation_type")
     @classmethod
     def validate_curation_type(cls, v):
@@ -77,6 +80,17 @@ class AnimalFilterRequest(BaseModel):
         valid_types = ["recent", "recent_with_fallback", "diverse", "random"]
         if v not in valid_types:
             raise ValueError(f"Invalid curation_type: {v}. Must be one of: {', '.join(valid_types)}")
+        return v
+
+    @field_validator("sort")
+    @classmethod
+    def validate_sort(cls, v):
+        """Validate sort field."""
+        if v is None:
+            return "newest"
+        valid_sorts = ["newest", "oldest", "name-asc", "name-desc"]
+        if v not in valid_sorts:
+            raise ValueError(f"Invalid sort value: {v}. Must be one of: {', '.join(valid_sorts)}")
         return v
 
     def get_confidence_levels(self) -> list[str]:

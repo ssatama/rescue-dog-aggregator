@@ -30,6 +30,7 @@ import { getCountryName } from "@/utils/countryHelpers";
  * @param {number} props.totalCount - Total number of filtered results
  * @param {boolean} props.hasActiveFilters - Whether any filters are active
  * @param {boolean} props.showShipsToFilter - Whether to show ships-to filter (default: true)
+ * @param {boolean} props.showSortFilter - Whether to show sort filter (default: true)
  * @param {Function} props.onMobileFilterClick - Callback for mobile filter button click
  */
 export default function DogFilters({
@@ -40,6 +41,7 @@ export default function DogFilters({
   totalCount = 0,
   hasActiveFilters = false,
   showShipsToFilter = true,
+  showSortFilter = true,
   onMobileFilterClick,
 }) {
   const router = useRouter();
@@ -143,11 +145,11 @@ export default function DogFilters({
               variant="outline"
               onClick={onMobileFilterClick}
               data-testid="mobile-filter-button"
-              aria-label="Open filter and sort options"
+              aria-label={showSortFilter ? "Open filter and sort options" : "Open filter options"}
               className="w-full h-12 justify-center gap-3 border-gray-300 hover:border-orange-600 hover:bg-orange-50 text-gray-700 hover:text-orange-600"
             >
               <Icon name="filter" size="default" />
-              <span className="font-medium">Filter & Sort</span>
+              <span className="font-medium">{showSortFilter ? "Filter & Sort" : "Filter"}</span>
               {hasActiveFilters && (
                 <Badge
                   variant="secondary"
