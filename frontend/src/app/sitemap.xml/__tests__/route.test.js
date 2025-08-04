@@ -6,13 +6,17 @@
 // Mock the services
 jest.mock("../../../services/animalsService", () => ({
   getAllAnimals: jest.fn(),
+  getAllAnimalsForSitemap: jest.fn(),
 }));
 
 jest.mock("../../../services/organizationsService", () => ({
   getAllOrganizations: jest.fn(),
 }));
 
-import { getAllAnimals } from "../../../services/animalsService";
+import {
+  getAllAnimals,
+  getAllAnimalsForSitemap,
+} from "../../../services/animalsService";
 import { getAllOrganizations } from "../../../services/organizationsService";
 
 // Mock Next.js Response
@@ -60,7 +64,7 @@ describe("Dynamic Sitemap Route", () => {
   ];
 
   test("should generate valid XML sitemap with all content", async () => {
-    getAllAnimals.mockResolvedValue(mockDogs);
+    getAllAnimalsForSitemap.mockResolvedValue(mockDogs);
     getAllOrganizations.mockResolvedValue(mockOrganizations);
 
     const { GET } = await import("../route");
@@ -102,7 +106,7 @@ describe("Dynamic Sitemap Route", () => {
   test("should use custom base URL from environment", async () => {
     process.env.NEXT_PUBLIC_SITE_URL = "https://staging.rescuedogs.me";
 
-    getAllAnimals.mockResolvedValue(mockDogs);
+    getAllAnimalsForSitemap.mockResolvedValue(mockDogs);
     getAllOrganizations.mockResolvedValue(mockOrganizations);
 
     const { GET } = await import("../route");
@@ -117,7 +121,7 @@ describe("Dynamic Sitemap Route", () => {
   });
 
   test("should include proper HTTP headers", async () => {
-    getAllAnimals.mockResolvedValue(mockDogs);
+    getAllAnimalsForSitemap.mockResolvedValue(mockDogs);
     getAllOrganizations.mockResolvedValue(mockOrganizations);
 
     const { GET } = await import("../route");
@@ -145,7 +149,7 @@ describe("Dynamic Sitemap Route", () => {
   });
 
   test("should include lastmod dates when available", async () => {
-    getAllAnimals.mockResolvedValue(mockDogs);
+    getAllAnimalsForSitemap.mockResolvedValue(mockDogs);
     getAllOrganizations.mockResolvedValue(mockOrganizations);
 
     const { GET } = await import("../route");
@@ -161,7 +165,7 @@ describe("Dynamic Sitemap Route", () => {
   });
 
   test("should handle empty data gracefully", async () => {
-    getAllAnimals.mockResolvedValue([]);
+    getAllAnimalsForSitemap.mockResolvedValue([]);
     getAllOrganizations.mockResolvedValue([]);
 
     const { GET } = await import("../route");
@@ -182,7 +186,7 @@ describe("Dynamic Sitemap Route", () => {
       { id: 3, slug: "", name: "Empty Slug Dog" },
     ];
 
-    getAllAnimals.mockResolvedValue(dogsWithInvalidSlugs);
+    getAllAnimalsForSitemap.mockResolvedValue(dogsWithInvalidSlugs);
     getAllOrganizations.mockResolvedValue([]);
 
     const { GET } = await import("../route");
@@ -200,7 +204,7 @@ describe("Dynamic Sitemap Route", () => {
   });
 
   test("should include priority and changefreq for SEO optimization", async () => {
-    getAllAnimals.mockResolvedValue(mockDogs);
+    getAllAnimalsForSitemap.mockResolvedValue(mockDogs);
     getAllOrganizations.mockResolvedValue(mockOrganizations);
 
     const { GET } = await import("../route");

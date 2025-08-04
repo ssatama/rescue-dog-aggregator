@@ -42,12 +42,13 @@ export default function DogDetailClient({ params = {} }) {
 
   // Development monitoring only
   useEffect(() => {
-    process.env.NODE_ENV !== "production" &&
+    if (process.env.NODE_ENV !== "production") {
       console.log("[DogDetail] Component mounted:", {
         dogSlug,
         pathname,
-        documentReady: document.readyState === "complete",
+        timestamp: Date.now(),
       });
+    }
   }, []);
 
   // Enhanced fetchDogData with comprehensive error handling and retry logic
@@ -59,19 +60,21 @@ export default function DogDetailClient({ params = {} }) {
       const maxRetries = 3;
 
       // Development logging only
-      process.env.NODE_ENV !== "production" &&
+      if (process.env.NODE_ENV !== "production") {
         console.log("[DogDetail] API call:", {
           dogSlug,
           retryCount,
         });
+      }
 
       try {
         setLoading(true);
         setError(false);
 
         // Minimal production logging for API calls
-        process.env.NODE_ENV !== "production" &&
+        if (process.env.NODE_ENV !== "production") {
           console.log("[DogDetail] Making API request...");
+        }
 
         // Create timeout promise for hanging requests detection
         const timeoutMs = 10000; // 10 second timeout
@@ -88,22 +91,24 @@ export default function DogDetailClient({ params = {} }) {
         ]);
 
         // Production: Only log API success for monitoring
-        process.env.NODE_ENV !== "production" &&
+        if (process.env.NODE_ENV !== "production") {
           console.log("[DogDetail] API request successful:", {
             dogName: data?.name,
             responseTime: `${Date.now() - fetchStartTime}ms`,
           });
+        }
 
         // Only update state if component is still mounted
         if (mountedRef.current) {
           setDog(data);
 
           // Development logging for state updates
-          process.env.NODE_ENV !== "production" &&
+          if (process.env.NODE_ENV !== "production") {
             console.log("[DogDetail] Dog state set:", {
               dogName: data?.name,
               hasImageUrl: !!data?.primary_image_url,
             });
+          }
         }
       } catch (err) {
         const errorInfo = {
@@ -118,11 +123,12 @@ export default function DogDetailClient({ params = {} }) {
         };
 
         // Always report errors for monitoring
-        reportError("Error fetching dog data", errorInfo);
+        reportError(err, errorInfo);
 
         // Development logging for errors
-        process.env.NODE_ENV !== "production" &&
+        if (process.env.NODE_ENV !== "production") {
           console.log("[DogDetail] API ERROR:", errorInfo);
+        }
 
         // Retry logic for certain types of errors
         if (
@@ -444,10 +450,13 @@ export default function DogDetailClient({ params = {} }) {
                             alt={`${sanitizeText(dog.name)} - Hero Image`}
                             className="mb-6 shadow-xl"
                             onError={() => {
-                              reportError("Hero image failed to load", {
-                                dogSlug: dog.slug,
-                                imageUrl: dog.primary_image_url,
-                              });
+                              reportError(
+                                new Error("Hero image failed to load"),
+                                {
+                                  dogSlug: dog.slug,
+                                  imageUrl: dog.primary_image_url,
+                                },
+                              );
                             }}
                           />
                         );

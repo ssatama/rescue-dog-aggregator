@@ -6,13 +6,17 @@
 // Mock the services
 jest.mock("../../services/animalsService", () => ({
   getAllAnimals: jest.fn(),
+  getAllAnimalsForSitemap: jest.fn(),
 }));
 
 jest.mock("../../services/organizationsService", () => ({
   getAllOrganizations: jest.fn(),
 }));
 
-import { getAllAnimals } from "../../services/animalsService";
+import {
+  getAllAnimals,
+  getAllAnimalsForSitemap,
+} from "../../services/animalsService";
 import { getAllOrganizations } from "../../services/organizationsService";
 
 // Import the sitemap generation function (to be implemented)
@@ -140,7 +144,7 @@ describe("Dynamic Sitemap Generation", () => {
 
   describe("generateSitemap", () => {
     test("should generate complete sitemap with all content types", async () => {
-      getAllAnimals.mockResolvedValue(mockDogs);
+      getAllAnimalsForSitemap.mockResolvedValue(mockDogs);
       getAllOrganizations.mockResolvedValue(mockOrganizations);
 
       const sitemap = await generateSitemap();
@@ -153,7 +157,7 @@ describe("Dynamic Sitemap Generation", () => {
     });
 
     test("should include static pages with correct priorities", async () => {
-      getAllAnimals.mockResolvedValue([]);
+      getAllAnimalsForSitemap.mockResolvedValue([]);
       getAllOrganizations.mockResolvedValue([]);
 
       const sitemap = await generateSitemap();
@@ -175,7 +179,7 @@ describe("Dynamic Sitemap Generation", () => {
     });
 
     test("should include all dog pages with dynamic content", async () => {
-      getAllAnimals.mockResolvedValue(mockDogs);
+      getAllAnimalsForSitemap.mockResolvedValue(mockDogs);
       getAllOrganizations.mockResolvedValue([]);
 
       const sitemap = await generateSitemap();
@@ -198,7 +202,7 @@ describe("Dynamic Sitemap Generation", () => {
     });
 
     test("should include all organization pages", async () => {
-      getAllAnimals.mockResolvedValue([]);
+      getAllAnimalsForSitemap.mockResolvedValue([]);
       getAllOrganizations.mockResolvedValue(mockOrganizations);
 
       const sitemap = await generateSitemap();
@@ -221,7 +225,7 @@ describe("Dynamic Sitemap Generation", () => {
     });
 
     test("should handle empty data gracefully", async () => {
-      getAllAnimals.mockResolvedValue([]);
+      getAllAnimalsForSitemap.mockResolvedValue([]);
       getAllOrganizations.mockResolvedValue([]);
 
       const sitemap = await generateSitemap();
@@ -250,7 +254,7 @@ describe("Dynamic Sitemap Generation", () => {
     });
 
     test("should validate generated XML format", async () => {
-      getAllAnimals.mockResolvedValue(mockDogs);
+      getAllAnimalsForSitemap.mockResolvedValue(mockDogs);
       getAllOrganizations.mockResolvedValue(mockOrganizations);
 
       const sitemap = await generateSitemap();
@@ -279,7 +283,7 @@ describe("Dynamic Sitemap Generation", () => {
         updated_at: "2024-01-15T10:00:00Z",
       }));
 
-      getAllAnimals.mockResolvedValue(largeDogList);
+      getAllAnimalsForSitemap.mockResolvedValue(largeDogList);
       getAllOrganizations.mockResolvedValue([]);
 
       const sitemap = await generateSitemap();
@@ -298,7 +302,7 @@ describe("Dynamic Sitemap Generation", () => {
         },
       ];
 
-      getAllAnimals.mockResolvedValue(dogsWithSpecialChars);
+      getAllAnimalsForSitemap.mockResolvedValue(dogsWithSpecialChars);
       getAllOrganizations.mockResolvedValue([]);
 
       const sitemap = await generateSitemap();
@@ -378,7 +382,7 @@ describe("Dynamic Sitemap Generation", () => {
         },
       ];
 
-      getAllAnimals.mockResolvedValue(mockDogsWithRealDates);
+      getAllAnimalsForSitemap.mockResolvedValue(mockDogsWithRealDates);
       getAllOrganizations.mockResolvedValue([]);
 
       const sitemap = await generateSitemap();
@@ -409,7 +413,7 @@ describe("Dynamic Sitemap Generation", () => {
         },
       ];
 
-      getAllAnimals.mockResolvedValue([]);
+      getAllAnimalsForSitemap.mockResolvedValue([]);
       getAllOrganizations.mockResolvedValue(mockOrgsWithRealDates);
 
       const sitemap = await generateSitemap();

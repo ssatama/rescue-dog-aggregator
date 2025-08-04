@@ -3,7 +3,7 @@
  * Pure functions for generating SEO-optimized XML sitemaps
  */
 
-import { getAllAnimals } from "../services/animalsService";
+import { getAllAnimalsForSitemap } from "../services/animalsService";
 import { getAllOrganizations } from "../services/organizationsService";
 
 /**
@@ -357,7 +357,7 @@ export const generateSitemap = async () => {
 
     // Fetch and add dynamic content
     try {
-      const dogs = await getAllAnimals();
+      const dogs = await getAllAnimalsForSitemap();
       allEntries.push(...generateDogPages(dogs));
     } catch (error) {
       if (process.env.NODE_ENV !== "production") {
@@ -397,7 +397,7 @@ export const generateSitemap = async () => {
 export const getSitemapStats = async () => {
   try {
     const [dogs, organizations] = await Promise.allSettled([
-      getAllAnimals(),
+      getAllAnimalsForSitemap(),
       getAllOrganizations(),
     ]);
 

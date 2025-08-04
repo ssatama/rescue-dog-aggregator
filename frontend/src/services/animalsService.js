@@ -236,11 +236,24 @@ export async function getAnimalsByCuration(curationType, limit = 4) {
 }
 
 /**
- * Fetches all animals (alias for sitemap generation).
+ * Fetches all animals (for static generation and general use).
  * @param {object} params - Optional filtering parameters
  * @returns {Promise<Array>} - Promise resolving to an array of animal objects.
  */
 export async function getAllAnimals(params = {}) {
+  logger.log("Fetching all animals");
+  return getAnimals({
+    ...params,
+    limit: 10000, // Request maximum limit
+  });
+}
+
+/**
+ * Fetches all animals with quality filtering for sitemap generation.
+ * @param {object} params - Optional filtering parameters
+ * @returns {Promise<Array>} - Promise resolving to an array of animal objects with quality descriptions.
+ */
+export async function getAllAnimalsForSitemap(params = {}) {
   logger.log("Fetching all animals for sitemap");
   // Enable quality filtering for sitemap to only include dogs with meaningful descriptions
   return getAnimals({

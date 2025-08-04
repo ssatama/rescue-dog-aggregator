@@ -97,8 +97,8 @@ export default function DogsPageClient() {
           setStandardizedBreeds(["Any breed", ...filtered]);
         });
       } catch (err) {
-        reportError("Failed to fetch standardized breeds", {
-          error: err.message,
+        reportError(err, {
+          context: "Failed to fetch standardized breeds",
         });
         React.startTransition(() => {
           setStandardizedBreeds(["Any breed"]);
@@ -119,8 +119,8 @@ export default function DogsPageClient() {
         setLocationCountries(["Any country", ...locCountries]);
         setAvailableCountries(["Any country", ...availCountries]);
       } catch (err) {
-        reportError("Failed to fetch location metadata", {
-          error: err.message,
+        reportError(err, {
+          context: "Failed to fetch location metadata",
         });
       }
     };
@@ -135,8 +135,8 @@ export default function DogsPageClient() {
           const regions = await getAvailableRegions(availableCountryFilter);
           setAvailableRegions(["Any region", ...regions]);
         } catch (err) {
-          reportError(`Failed to fetch regions for ${availableCountryFilter}`, {
-            error: err.message,
+          reportError(err, {
+            context: `Failed to fetch regions for ${availableCountryFilter}`,
           });
           setAvailableRegions(["Any region"]);
         }
@@ -160,7 +160,7 @@ export default function DogsPageClient() {
         });
       })
       .catch((err) =>
-        reportError("Failed to fetch organizations", { error: err.message }),
+        reportError(err, { context: "Failed to fetch organizations" }),
       );
   }, []);
 
@@ -237,8 +237,8 @@ export default function DogsPageClient() {
           setLoadingMore(false);
         });
       } catch (err) {
-        reportError("Error fetching dogs", {
-          error: err.message,
+        reportError(err, {
+          context: "Error fetching dogs",
           params: cleanParams,
         });
         React.startTransition(() => {
@@ -295,7 +295,7 @@ export default function DogsPageClient() {
         setFilterCounts(counts);
       });
     } catch (err) {
-      reportError("Error fetching filter counts", { error: err.message });
+      reportError(err, { context: "Error fetching filter counts" });
       // Don't show error to user for filter counts, just log it
       React.startTransition(() => {
         setFilterCounts(null);
