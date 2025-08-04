@@ -1,6 +1,6 @@
 # Database Schema Reference
 
-This document provides complete documentation of the PostgreSQL database schema for the Rescue Dog Aggregator platform.
+This document provides complete documentation of the PostgreSQL database schema for the Rescue Dog Aggregator platform as of August 2025.
 
 ## Schema Overview
 
@@ -10,8 +10,9 @@ The database is designed around a central challenge: **normalizing heterogeneous
 - **Data Quality Tracking**: Monitoring availability confidence and scrape operation metrics
 - **Flexible Metadata**: Using JSONB fields for semi-structured data that varies by source
 - **Performance Optimization**: Strategic indexing including full-text search capabilities
+- **Global Test Isolation**: Comprehensive fixtures prevent test data contamination
 
-This design accommodates the reality that source data is inconsistent while providing a clean, queryable interface for the application.
+This design accommodates the reality that source data is inconsistent while providing a clean, queryable interface for the application across 8 active organizations.
 
 ## Core Tables
 
@@ -37,6 +38,10 @@ Stores rescue organization metadata and configuration.
 | `new_this_week` | INTEGER | New dogs added this week |
 | `recent_dogs` | JSONB | Recent dog listing metadata |
 | `established_year` | INTEGER | Year organization was established |
+| `adoption_url` | TEXT | Base URL for adoption process (Added 2025) |
+| `donate_url` | TEXT | Donation page URL (Added 2025) |
+| `is_foster_based` | BOOLEAN | Whether organization uses foster homes |
+| `slug` | VARCHAR(100) UNIQUE | URL-friendly organization identifier |
 
 **JSONB Field Examples:**
 ```json
@@ -85,6 +90,12 @@ Main table storing animal (primarily dog) listings with availability tracking.
 | `last_seen_at` | TIMESTAMP | Last time animal was found during scraping |
 | `consecutive_scrapes_missing` | INTEGER | Count of consecutive scrapes where animal was not found |
 | `availability_confidence` | VARCHAR(10) | Confidence level: 'high', 'medium', 'low' |
+| `created_at` | TIMESTAMP | When the animal was first added |
+| `updated_at` | TIMESTAMP | Last modification timestamp |
+| `description` | TEXT | Animal description/bio (Added 2025) |
+| `location` | VARCHAR(255) | Geographic location |
+| `weight` | VARCHAR(50) | Original weight description |
+| `standardized_weight_lbs` | INTEGER | Normalized weight in pounds |
 
 **Availability Confidence Logic:**
 - **High**: Animal seen in last scrape (0 missing scrapes)
@@ -238,10 +249,45 @@ WHERE detailed_metrics->>'parsing_errors'::int > 5;
 - Index commonly queried JSONB keys for performance
 - Preserve original structure while normalizing critical search fields
 
+## 2025 Schema Updates
+
+### Recent Additions
+- **Organization enhancements**: Added `adoption_url`, `donate_url`, `is_foster_based`, `slug` fields
+- **Animal improvements**: Added `description`, `location`, `weight`, `standardized_weight_lbs`, `created_at`, `updated_at`
+- **Test isolation**: Global fixtures prevent test data from affecting production schema
+- **Railway deployment**: Production database hosted on Railway with automatic migrations
+
+### Migration Files
+Recent migrations include:
+```
+database/migrations/
+├── 001_initial_schema.sql
+├── 002_add_standardization_fields.sql  
+├── 003_add_missing_fields.sql
+└── 004_add_organization_enhanced_fields.sql
+
+database/migrations/railway/
+├── versions/
+└── alembic.ini (Production migrations)
+```
+
+### Performance Optimizations
+- **Composite indexes**: Added for common filter combinations (`status` + `availability_confidence`)
+- **JSONB GIN indexes**: Optimized for properties and social_media queries
+- **Full-text search**: Enhanced tsvector indexes for breed and name searching
+- **Query monitoring**: Added query performance tracking for slow query identification
+
+### Development vs Production
+- **Development**: Uses local PostgreSQL with test isolation fixtures
+- **Production**: Railway PostgreSQL with automated backups and monitoring
+- **Testing**: Comprehensive database isolation prevents test contamination
+- **Migrations**: Automated via Alembic for production, manual for development
+
 ## Migration and Maintenance
 
 For database setup and migration information, see:
 - [Database Migration History](../../database/migration_history.md)
 - [Installation Guide](../getting-started/installation.md)
+- [Railway Deployment Guide](../operations/production-deployment.md)
 
-The schema supports both development and production environments with identical structure and indexing strategies.
+The schema supports both development and production environments with identical structure and indexing strategies, enhanced test isolation, and comprehensive monitoring.

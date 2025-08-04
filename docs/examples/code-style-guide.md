@@ -1,255 +1,486 @@
 # Code Style Guide
 
+This guide reflects the actual patterns used in the Rescue Dog Aggregator codebase after the major 2024 architectural refactoring. It emphasizes clean architecture, modern design patterns, and maintainable code.
+
 ## Python (Backend)
+
+### Service Layer Architecture
+
+The codebase now implements a modern service layer pattern with dependency injection:
+
+```python
+# GOOD - Modern service layer pattern
+from services.metrics_collector import MetricsCollector, NullMetricsCollector
+from services.session_manager import SessionManager, NullSessionManager
+
+class AnimalService:
+    """Service layer for animal operations."""
+    
+    def __init__(
+        self,
+        metrics_collector: MetricsCollector = None,
+        session_manager: SessionManager = None
+    ):
+        # Null Object Pattern - no conditional checks needed
+        self.metrics = metrics_collector or NullMetricsCollector()
+        self.session = session_manager or NullSessionManager()
+    
+    def get_animals_with_images(self, filters: AnimalFilterRequest) -> List[AnimalWithImages]:
+        """Fetch animals with their images using batch queries."""
+        self.metrics.increment('animals.query.started')
+        
+        animals = self._get_filtered_animals(filters)
+        self._batch_load_images(animals)  # Eliminates N+1 queries
+        
+        self.metrics.increment('animals.query.completed')
+        return animals
+
+    def _get_filtered_animals(self, filters) -> List[Animal]:
+        """Private method with focused responsibility."""
+        # Implementation here
+        pass
+
+    def _batch_load_images(self, animals: List[Animal]) -> None:
+        """Load all images in a single batch query."""
+        # Batch loading implementation
+        pass
+```
+
+### Modern Scraper Architecture
+
+**Post-refactoring scrapers use architectural patterns:**
+
+```python
+from scrapers.base_scraper import BaseScraper
+from services.metrics_collector import MetricsCollector
+
+class ModernOrganizationScraper(BaseScraper):
+    """Modern scraper implementing architectural patterns."""
+    
+    def __init__(
+        self, 
+        config_id: str = "organization-name",
+        organization_id: int = None,
+        metrics_collector: MetricsCollector = None,
+        session_manager = None
+    ):
+        # Configuration-driven initialization (preferred)
+        if organization_id is not None:
+            super().__init__(organization_id=organization_id)  # Legacy mode
+        else:
+            super().__init__(config_id=config_id)  # Modern mode
+            
+        # Dependency injection for testing
+        if metrics_collector:
+            self.metrics_collector = metrics_collector
+        if session_manager:
+            self.session_manager = session_manager
+
+    def collect_data(self) -> List[Dict]:
+        """Template method implementation - only focus on data extraction."""
+        # Context manager and lifecycle handled by parent
+        # Metrics collection automatic via null object pattern
+        
+        dog_cards = self._get_dog_cards()
+        return [self._extract_dog_data(card) for card in dog_cards]
+
+    def _get_dog_cards(self) -> List[Any]:
+        """Extract dog card elements from scraped content."""
+        soup = BeautifulSoup(self.page_content, 'html.parser')
+        return soup.find_all('div', class_='dog-card')
+
+    def _extract_dog_data(self, card_element) -> Dict[str, Any]:
+        """Extract structured data from a single dog card."""
+        return {
+            'name': self._safe_extract_text(card_element, 'h3'),
+            'breed': self._safe_extract_text(card_element, '.breed'),
+            'age_text': self._safe_extract_text(card_element, '.age'),
+            'images': self._extract_image_urls(card_element),
+            'external_id': self._generate_external_id(card_element)
+        }
+
+# RECOMMENDED - Context manager usage
+with ModernOrganizationScraper(config_id="pets-turkey") as scraper:
+    success = scraper.run()  # Automatic connection/cleanup
+
+# GOOD - Service injection for testing  
+custom_metrics = MetricsCollector(logger=test_logger)
+scraper = ModernOrganizationScraper(
+    config_id="pets-turkey",
+    metrics_collector=custom_metrics,
+    session_manager=mock_session_manager
+)
+```
 
 ### Functional Programming Approach
 
-Follow a "functional light" approach:
-
-- **No mutation** - work with immutable data structures
-- **Pure functions** wherever possible
-- **No side effects** in business logic
-- Use comprehensions and functional tools (`map`, `filter`, `reduce`)
+Follow a "functional light" approach with immutable data:
 
 ```python
-# AVOID - Mutation
-def add_dog_to_list(dogs, new_dog):
-    dogs.append(new_dog)  # Mutates the list!
-    return dogs
-
-# GOOD - Immutable
-def add_dog_to_list(dogs, new_dog):
-    return dogs + [new_dog]  # Returns new list
-
-# AVOID - Side effects in business logic
-class DogProcessor:
-    def process(self, dog):
-        self.last_processed = dog  # Side effect!
-        dog['processed'] = True    # Mutation!
-        return dog
-
-# GOOD - Pure function
-def process_dog(dog):
-    return {**dog, 'processed': True}  # Returns new dict
-
-# GOOD - Functional approach with error handling
-def validate_dog(dog):
-    """Pure validation function."""
-    errors = []
-
-    if not dog.get('name'):
-        errors.append("Name is required")
-
-    if dog.get('age_months', 0) < 0:
-        errors.append("Age cannot be negative")
-
-    return {'valid': len(errors) == 0, 'errors': errors}
-
-# GOOD - Composition
-def process_dogs(dogs):
-    return [
-        process_dog(dog)
-        for dog in dogs
-        if validate_dog(dog)['valid']
-    ]
-```
-
-### Code Structure
-
-- **No nested if/else statements** - use early returns or guard clauses
-- **Small functions** - each should do one thing well
-- **Clear naming** - functions should be verbs, variables should be descriptive
-
-```python
-# AVOID - Nested conditionals
-def calculate_adoption_fee(dog):
-    if dog['age_months'] < 12:
-        if dog['size'] == 'small':
-            return 150
-        else:
-            return 200
-    else:
-        if dog['medical_needs']:
-            return 50
-        else:
-            return 100
-
-# GOOD - Early returns, clear logic
-def calculate_adoption_fee(dog):
-    if is_puppy(dog) and dog['size'] == 'small':
-        return 150
-
-    if is_puppy(dog):
-        return 200
-
-    if dog.get('medical_needs'):
-        return 50
-
-    return 100
-
-def is_puppy(dog):
-    return dog['age_months'] < 12
-```
-
-### No Comments in Code
-
-Code should be self-documenting through clear naming and structure:
-
-```python
-# AVOID - Comments explaining what code does
-def process_scraper_data(html):
-    # Parse the HTML
-    soup = BeautifulSoup(html, 'html.parser')
-
-    # Find all dog cards
-    cards = soup.find_all('div', class_='dog-card')
-
-    # Extract data from each card
-    dogs = []
-    for card in cards:
-        # Get the dog name
-        name = card.find('h3').text
-        dogs.append({'name': name})
-
-    return dogs
-
-# GOOD - Self-documenting code
-def extract_dogs_from_html(html):
-    parsed_content = BeautifulSoup(html, 'html.parser')
-    dog_cards = parsed_content.find_all('div', class_='dog-card')
-
-    return [extract_dog_from_card(card) for card in dog_cards]
-
-def extract_dog_from_card(card):
-    return {
-        'name': extract_text(card, 'h3'),
-        'breed': extract_text(card, '.breed'),
-        'age': extract_text(card, '.age')
+# GOOD - Pure functions with immutable data
+def standardize_breed(breed_text: str) -> Optional[str]:
+    """Pure function - no side effects."""
+    if not breed_text:
+        return None
+        
+    normalized = breed_text.strip().lower()
+    breed_mappings = {
+        'golden ret': 'Golden Retriever',
+        'german shep': 'German Shepherd',
+        'lab mix': 'Labrador Mix'
     }
+    
+    return breed_mappings.get(normalized, breed_text.title())
 
-def extract_text(element, selector):
-    found = element.select_one(selector)
-    return found.text.strip() if found else None
+def process_animal_data(raw_animals: List[Dict]) -> List[Dict]:
+    """Transform raw data immutably."""
+    return [
+        {
+            **animal,
+            'standardized_breed': standardize_breed(animal.get('breed')),
+            'age_category': categorize_age(animal.get('age_months')),
+            'processed_at': datetime.utcnow().isoformat()
+        }
+        for animal in raw_animals
+        if is_valid_animal_data(animal)
+    ]
+
+def is_valid_animal_data(animal: Dict) -> bool:
+    """Pure validation function."""
+    required_fields = ['name', 'external_id']
+    return all(animal.get(field) for field in required_fields)
 ```
 
-## JavaScript/React (Frontend)
+### Code Structure and Documentation
 
-### Functional Components Only
+The codebase uses both docstrings and targeted inline comments:
 
-Use functional components with hooks:
+```python
+# GOOD - Modern documentation approach
+class DatabaseService:
+    """Service for database operations with connection pooling."""
+    
+    def __init__(self, connection_pool_size: int = 10):
+        """Initialize with configurable connection pool."""
+        self.connection_pool = self._create_connection_pool(connection_pool_size)
+    
+    def batch_insert_animals(
+        self, 
+        animals: List[Dict[str, Any]], 
+        organization_id: int
+    ) -> List[int]:
+        """
+        Insert multiple animals in a single transaction.
+        
+        Args:
+            animals: List of animal data dictionaries
+            organization_id: ID of the organization
+            
+        Returns:
+            List of created animal IDs
+            
+        Raises:
+            ValidationError: If animal data is invalid
+            DatabaseError: If insertion fails
+        """
+        validated_animals = [self._validate_animal(a) for a in animals]
+        
+        with self.connection_pool.get_connection() as conn:
+            # Batch insert for performance
+            return self._execute_batch_insert(conn, validated_animals, organization_id)
 
-```javascript
-// AVOID - Class components
-class DogCard extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { favorited: false };
-  }
+    def _validate_animal(self, animal: Dict) -> Dict:
+        """Validate and normalize animal data."""
+        # Clear validation logic with early returns
+        if not animal.get('name'):
+            raise ValidationError("Animal name is required")
+            
+        if animal.get('age_months', 0) < 0:
+            raise ValidationError("Age cannot be negative")
+            
+        return {
+            'name': animal['name'].strip(),
+            'breed': animal.get('breed'),
+            'age_months': animal.get('age_months'),
+            'external_id': animal['external_id']
+        }
+```
 
-  render() {
-    return <div>{this.props.dog.name}</div>;
-  }
+### Error Handling Patterns
+
+```python
+# GOOD - Comprehensive error handling with service layer
+from api.exceptions import ValidationError, NotFoundError
+
+@safe_execute  # Decorator for consistent error handling
+async def get_animal_by_slug(slug: str) -> AnimalWithImages:
+    """Get animal by slug with comprehensive error handling."""
+    try:
+        animal_service = ServiceFactory.get_animal_service()
+        animal = await animal_service.get_by_slug(slug)
+        
+        if not animal:
+            raise NotFoundError(f"Animal with slug '{slug}' not found")
+            
+        return animal
+        
+    except ValidationError:
+        # Re-raise validation errors as-is
+        raise
+    except DatabaseError as e:
+        # Log and convert to internal error
+        logger.error(f"Database error fetching animal {slug}: {e}")
+        raise InternalServerError("Unable to fetch animal data")
+    except Exception as e:
+        # Catch-all for unexpected errors
+        logger.error(f"Unexpected error fetching animal {slug}: {e}")
+        raise InternalServerError("An unexpected error occurred")
+```
+
+## TypeScript/React (Frontend)
+
+### Next.js 15 App Directory Structure
+
+```typescript
+// GOOD - Modern Next.js 15 pattern with TypeScript
+'use client'; // Client component marker
+
+import { useState, useEffect, useMemo } from 'react';
+import { AnimalWithImages, AnimalFilters } from '@/types/api';
+import { useAnimals } from '@/hooks/useAnimals';
+import { DogCard } from '@/components/dogs/DogCard';
+
+interface AnimalsPageProps {
+  searchParams: { [key: string]: string | string[] | undefined };
 }
 
-// GOOD - Functional component with hooks
-function DogCard({ dog }) {
-  const [favorited, setFavorited] = useState(false);
+export default function AnimalsPage({ searchParams }: AnimalsPageProps) {
+  // 1. State and hooks at the top
+  const [filters, setFilters] = useState<AnimalFilters>(() => 
+    parseSearchParams(searchParams)
+  );
+  
+  const { animals, loading, error, refetch } = useAnimals(filters);
 
-  const handleFavorite = () => {
-    setFavorited(!favorited);
-    // Save to localStorage or API
+  // 2. Derived values with useMemo
+  const filteredAnimals = useMemo(
+    () => animals?.filter(animal => animal.availability_confidence !== 'low') || [],
+    [animals]
+  );
+
+  // 3. Event handlers
+  const handleFilterChange = (newFilters: Partial<AnimalFilters>) => {
+    setFilters(prevFilters => ({ ...prevFilters, ...newFilters }));
   };
 
+  const handleAnimalFavorite = (animalId: number) => {
+    // Handle favoriting logic
+  };
+
+  // 4. Early returns for edge cases
+  if (error) {
+    return <ErrorBoundary error={error} onRetry={refetch} />;
+  }
+
+  // 5. Main render with TypeScript safety
   return (
-    <div className="dog-card">
-      <h3>{dog.name}</h3>
-      <button onClick={handleFavorite}>{favorited ? "❤️" : "🤍"}</button>
+    <div className="animals-page">
+      <FilterPanel filters={filters} onChange={handleFilterChange} />
+      
+      {loading ? (
+        <LoadingSpinner />
+      ) : (
+        <div className="animals-grid">
+          {filteredAnimals.map((animal) => (
+            <DogCard
+              key={animal.id}
+              animal={animal}
+              onFavorite={() => handleAnimalFavorite(animal.id)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
-```
 
-### Immutable State Updates
-
-Never mutate state directly:
-
-```javascript
-// AVOID - Mutating state
-function DogList() {
-  const [dogs, setDogs] = useState([]);
-
-  const addDog = (newDog) => {
-    dogs.push(newDog); // NO! Mutates array
-    setDogs(dogs); // React won't re-render
-  };
-
-  const updateDog = (id, updates) => {
-    const dog = dogs.find((d) => d.id === id);
-    dog.name = updates.name; // NO! Mutates object
-    setDogs(dogs);
+function parseSearchParams(params: any): AnimalFilters {
+  // Type-safe parameter parsing
+  return {
+    breed: params.breed as string,
+    size: params.size as string,
+    organization: params.organization as string,
   };
 }
+```
 
-// GOOD - Immutable updates
+### Modern React Patterns
+
+```typescript
+// GOOD - Custom hooks with TypeScript
+interface UseAnimalsReturn {
+  animals: AnimalWithImages[] | null;
+  loading: boolean;
+  error: Error | null;
+  refetch: () => Promise<void>;
+}
+
+function useAnimals(filters: AnimalFilters): UseAnimalsReturn {
+  const [animals, setAnimals] = useState<AnimalWithImages[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchAnimals = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await apiClient.getAnimals(filters);
+      setAnimals(response.data);
+      
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Unknown error'));
+    } finally {
+      setLoading(false);
+    }
+  }, [filters]);
+
+  useEffect(() => {
+    fetchAnimals();
+  }, [fetchAnimals]);
+
+  return { animals, loading, error, refetch: fetchAnimals };
+}
+
+// GOOD - Immutable state updates with TypeScript
+interface DogListState {
+  dogs: AnimalWithImages[];
+  selectedDog: AnimalWithImages | null;
+  favorites: number[];
+}
+
 function DogList() {
-  const [dogs, setDogs] = useState([]);
+  const [state, setState] = useState<DogListState>({
+    dogs: [],
+    selectedDog: null,
+    favorites: []
+  });
 
-  const addDog = (newDog) => {
-    setDogs([...dogs, newDog]); // New array
+  const addToFavorites = (dogId: number) => {
+    setState(prevState => ({
+      ...prevState,
+      favorites: [...prevState.favorites, dogId] // Immutable update
+    }));
   };
 
-  const updateDog = (id, updates) => {
-    setDogs(
-      dogs.map((dog) =>
-        dog.id === id
-          ? { ...dog, ...updates } // New object
+  const removeDog = (dogId: number) => {
+    setState(prevState => ({
+      ...prevState,
+      dogs: prevState.dogs.filter(dog => dog.id !== dogId), // Immutable filter
+      selectedDog: prevState.selectedDog?.id === dogId ? null : prevState.selectedDog
+    }));
+  };
+
+  const updateDog = (dogId: number, updates: Partial<AnimalWithImages>) => {
+    setState(prevState => ({
+      ...prevState,
+      dogs: prevState.dogs.map(dog =>
+        dog.id === dogId
+          ? { ...dog, ...updates } // Immutable object update
           : dog
       )
-    );
-  };
-
-  const removeDog = (id) => {
-    setDogs(dogs.filter((dog) => dog.id !== id));
+    }));
   };
 }
 ```
 
-### Component Structure
+### Component Architecture
 
-```javascript
-// GOOD - Well-structured component
-function DogFilters({ filters, onFilterChange }) {
-  // Hooks at the top
-  const [isExpanded, setIsExpanded] = useState(false);
-  const { user } = useAuth();
+```typescript
+// GOOD - Well-structured component with TypeScript interfaces
+interface DogCardProps {
+  animal: AnimalWithImages;
+  onFavorite: (id: number) => void;
+  onView: (slug: string) => void;
+  showOrganization?: boolean;
+}
+
+function DogCard({ 
+  animal, 
+  onFavorite, 
+  onView, 
+  showOrganization = false 
+}: DogCardProps) {
+  // Hooks
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [favorited, setFavorited] = useState(false);
 
   // Derived values
-  const availableBreeds = useMemo(
-    () => getUniqueBreeds(filters.dogs),
-    [filters.dogs]
+  const displayAge = useMemo(() => 
+    formatAge(animal.age_text, animal.age_min_months), 
+    [animal.age_text, animal.age_min_months]
   );
 
   // Event handlers
-  const handleBreedChange = (breed) => {
-    onFilterChange({ ...filters, breed });
+  const handleFavoriteClick = () => {
+    setFavorited(prev => !prev);
+    onFavorite(animal.id);
   };
 
-  const handleSizeChange = (size) => {
-    onFilterChange({ ...filters, size });
+  const handleCardClick = () => {
+    onView(animal.slug);
   };
 
-  // Early returns for edge cases
-  if (!filters) return null;
+  // Early return for invalid data
+  if (!animal?.name) {
+    return null;
+  }
 
-  // Main render
   return (
-    <div className="dog-filters">
-      <BreedFilter
-        breeds={availableBreeds}
-        selected={filters.breed}
-        onChange={handleBreedChange}
-      />
-      <SizeFilter selected={filters.size} onChange={handleSizeChange} />
+    <div 
+      className="dog-card cursor-pointer" 
+      onClick={handleCardClick}
+      role="button"
+      tabIndex={0}
+      onKeyPress={(e) => e.key === 'Enter' && handleCardClick()}
+    >
+      <div className="relative">
+        <LazyImage
+          src={animal.primary_image_url}
+          alt={`Photo of ${animal.name}`}
+          onLoad={() => setImageLoaded(true)}
+          className="dog-card__image"
+        />
+        
+        <button
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent card click
+            handleFavoriteClick();
+          }}
+          className="dog-card__favorite-btn"
+          aria-label={favorited ? 'Remove from favorites' : 'Add to favorites'}
+        >
+          {favorited ? '❤️' : '🤍'}
+        </button>
+      </div>
+
+      <div className="dog-card__content">
+        <h3 className="dog-card__name">{animal.name}</h3>
+        
+        {animal.breed && (
+          <p className="dog-card__breed">{animal.breed}</p>
+        )}
+        
+        {displayAge && (
+          <p className="dog-card__age">{displayAge}</p>
+        )}
+
+        {showOrganization && animal.organization && (
+          <p className="dog-card__organization">
+            {animal.organization.name}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -257,279 +488,141 @@ function DogFilters({ filters, onFilterChange }) {
 
 ## Database Standards
 
-### Table Design
-
-- **Table names**: `snake_case`, plural (e.g., `animals`, `organizations`)
-- **Column names**: `snake_case` (e.g., `created_at`, `organization_id`)
-- **Primary keys**: `id SERIAL PRIMARY KEY`
-- **Foreign keys**: `table_id` pattern with proper references
-- **Timestamps**: Always include `created_at` and `updated_at`
+### Modern Table Design
 
 ```sql
--- GOOD - Proper table structure
+-- GOOD - Current database schema patterns
 CREATE TABLE IF NOT EXISTS animals (
     id SERIAL PRIMARY KEY,
+    slug VARCHAR(255) UNIQUE NOT NULL, -- SEO-friendly URLs
     name VARCHAR(255) NOT NULL,
-    organization_id INTEGER NOT NULL REFERENCES organizations(id),
+    organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    
+    -- Breed information
     breed VARCHAR(255),
     standardized_breed VARCHAR(100),
-    age_min_months INTEGER,
-    properties JSONB,
+    breed_group VARCHAR(100),
+    
+    -- Age information
+    age_text VARCHAR(100),
+    age_min_months INTEGER CHECK (age_min_months >= 0),
+    age_max_months INTEGER CHECK (age_max_months >= age_min_months),
+    age_category VARCHAR(20) CHECK (age_category IN ('puppy', 'young', 'adult', 'senior')),
+    
+    -- Physical attributes
+    sex VARCHAR(10) CHECK (sex IN ('male', 'female')),
+    size VARCHAR(50),
+    standardized_size VARCHAR(20) CHECK (standardized_size IN ('small', 'medium', 'large')),
+    
+    -- Behavioral attributes (JSONB for flexibility)
+    properties JSONB DEFAULT '{}',
+    
+    -- Availability tracking
+    availability_status VARCHAR(20) DEFAULT 'available' 
+        CHECK (availability_status IN ('available', 'adopted', 'removed')),
+    availability_confidence VARCHAR(10) DEFAULT 'high'
+        CHECK (availability_confidence IN ('high', 'medium', 'low')),
+    last_seen_at TIMESTAMP,
+    consecutive_scrapes_missing INTEGER DEFAULT 0,
+    
+    -- Metadata
+    external_id VARCHAR(255) NOT NULL,
+    adoption_url TEXT,
+    language VARCHAR(5) DEFAULT 'en',
+    
+    -- Timestamps
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_scraped_at TIMESTAMP,
+    
+    -- Constraints
+    UNIQUE (external_id, organization_id),
+    INDEX idx_animals_slug (slug),
+    INDEX idx_animals_organization_id (organization_id),
+    INDEX idx_animals_availability (availability_status, availability_confidence),
+    INDEX gin_animals_properties USING GIN(properties)
+);
+
+-- GOOD - Organizations with modern features
+CREATE TABLE IF NOT EXISTS organizations (
+    id SERIAL PRIMARY KEY,
+    slug VARCHAR(255) UNIQUE NOT NULL, -- SEO-friendly URLs
+    name VARCHAR(255) NOT NULL,
+    
+    -- Contact information
+    website_url TEXT,
+    description TEXT,
+    country VARCHAR(2), -- ISO country code
+    city VARCHAR(100),
+    logo_url TEXT,
+    
+    -- Social media (JSONB for flexibility)
+    social_media JSONB DEFAULT '{}',
+    
+    -- Service information
+    service_regions JSONB DEFAULT '[]', -- Array of service regions
+    ships_to TEXT[] DEFAULT '{}', -- Array of country codes
+    established_year INTEGER CHECK (established_year > 1800),
+    
+    -- Status
+    active BOOLEAN DEFAULT true,
+    
+    -- Timestamps
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    -- Unique constraint to prevent duplicates
-    UNIQUE (external_id, organization_id)
+    -- Indexes
+    INDEX idx_organizations_slug (slug),
+    INDEX idx_organizations_active (active),
+    INDEX gin_organizations_service_regions USING GIN(service_regions),
+    INDEX gin_organizations_ships_to USING GIN(ships_to)
 );
-```
-
-### Indexing Strategy
-
-- **Primary indexes**: `idx_table_column` (e.g., `idx_animals_organization_id`)
-- **Foreign key indexes**: `fk_table_column` (e.g., `fk_animals_organization`)
-- **JSONB indexes**: Use GIN indexes for JSONB columns
-- **Composite indexes**: For common query patterns
-
-```sql
--- GOOD - Proper indexing
-CREATE INDEX idx_animals_organization_id ON animals(organization_id);
-CREATE INDEX idx_animals_breed ON animals(standardized_breed);
-CREATE INDEX gin_animals_properties ON animals USING GIN(properties);
 ```
 
 ### Migration Standards
 
-- **File naming**: `001_descriptive_name.sql`
-- **Always include**: Description comment at top
-- **Rollback plan**: Document rollback steps
-- **Test migrations**: On copy of production data
-
 ```sql
--- Migration: 001_add_new_feature.sql
--- Description: Add new functionality for feature X
--- Rollback: DROP COLUMN new_field; DROP INDEX idx_new_field;
+-- Migration: 007_add_slug_support.sql
+-- Description: Add slug support for SEO-friendly URLs with automatic generation
+-- Rollback: DROP COLUMN slug; DROP INDEX idx_animals_slug; DROP INDEX idx_organizations_slug;
 
--- Add new column
-ALTER TABLE animals ADD COLUMN new_field VARCHAR(100);
+-- Add slug columns
+ALTER TABLE animals ADD COLUMN slug VARCHAR(255);
+ALTER TABLE organizations ADD COLUMN slug VARCHAR(255);
 
--- Create index
-CREATE INDEX idx_animals_new_field ON animals(new_field);
-```
+-- Generate slugs for existing records
+UPDATE animals SET slug = LOWER(REGEXP_REPLACE(
+    REGEXP_REPLACE(name || '-' || id::text, '[^a-zA-Z0-9]+', '-', 'g'),
+    '^-|-$', '', 'g'
+));
 
-## Naming Conventions
+UPDATE organizations SET slug = LOWER(REGEXP_REPLACE(
+    REGEXP_REPLACE(name, '[^a-zA-Z0-9]+', '-', 'g'),
+    '^-|-$', '', 'g'
+));
 
-### Python (Backend)
+-- Add constraints and indexes
+ALTER TABLE animals ALTER COLUMN slug SET NOT NULL;
+ALTER TABLE organizations ALTER COLUMN slug SET NOT NULL;
 
-- **Functions**: `snake_case`, verb-based (e.g., `calculate_adoption_fee`, `validate_organization_config`)
-- **Classes**: `PascalCase` (e.g., `DogScraper`, `AdoptionFeeCalculator`)
-- **Constants**: `UPPER_SNAKE_CASE` (e.g., `MAX_RETRIES`, `DEFAULT_TIMEOUT`)
-- **Files**: `snake_case.py`
-- **Test files**: `test_*.py`
-- **Private methods**: `_single_underscore_prefix`
-- **Module-private**: `__double_underscore_prefix`
-
-```python
-# GOOD - Clear naming patterns
-class PetsTurkeyScraper:
-    MAX_RETRY_ATTEMPTS = 3
-    DEFAULT_TIMEOUT_SECONDS = 30
-    
-    def extract_dog_data(self, html):
-        return self._parse_dog_cards(html)
-    
-    def _parse_dog_cards(self, html):
-        # Private helper method
-        pass
-
-def calculate_adoption_fee(dog):
-    """Calculate adoption fee based on dog attributes."""
-    pass
-
-def validate_organization_config(config):
-    """Validate organization configuration structure."""
-    pass
-```
-
-### Modern Scraper Patterns (Post-Refactoring)
-
-**BaseScraper now implements modern design patterns:**
-
-```python
-from scrapers.base_scraper import BaseScraper
-from services.metrics_collector import MetricsCollector
-
-# GOOD - Modern scraper with design patterns
-class ModernScraper(BaseScraper):
-    """Modern scraper using architectural patterns."""
-    
-    def collect_data(self):
-        """Implementation only focuses on data extraction."""
-        # Context manager handles connections automatically
-        # Metrics collection is automatic via null object pattern
-        # Template method handles the rest
-        
-        return [self._extract_dog(card) for card in self._get_dog_cards()]
-    
-    def _get_dog_cards(self):
-        """Extract dog card elements from the page."""
-        # Implementation here
-        pass
-    
-    def _extract_dog(self, element):
-        """Extract individual dog data from DOM element."""
-        return {
-            'name': self._safe_extract(element, 'h3'),
-            'age': self._normalize_age(self._safe_extract(element, '.age')),
-            'external_id': self._generate_external_id(element)
-        }
-
-# GOOD - Context manager usage (recommended)
-with ModernScraper(config_id="org-name") as scraper:
-    success = scraper.run()  # Automatic connection handling
-
-# GOOD - Service injection for testing
-custom_metrics = MetricsCollector(logger=my_logger)
-scraper = ModernScraper(
-    config_id="org-name",
-    metrics_collector=custom_metrics,
-    session_manager=mock_session_manager
-)
-
-# GOOD - Legacy support (still works)
-scraper = ModernScraper(config_id="org-name")
-success = scraper.run()  # Handles connections internally
-```
-
-**Key architectural improvements:**
-- **Null Object Pattern**: No more `if service:` checks
-- **Context Manager**: Automatic resource management
-- **Template Method**: Focused implementation, framework handles lifecycle
-- **Dependency Injection**: Clean testing and customization
-
-### JavaScript/React (Frontend)
-
-- **Functions**: `camelCase`, verb-based (e.g., `calculateTotal`, `handleClick`)
-- **Components**: `PascalCase` (e.g., `DogCard`, `FilterPanel`)
-- **Constants**: `UPPER_SNAKE_CASE` for true constants
-- **Files**: Component files `PascalCase.jsx`, others `camelCase.js`
-- **Test files**: `*.test.jsx` or `*.spec.js`
-- **Hooks**: `use` prefix (e.g., `useFavorites`, `useFilteredDogs`)
-- **Event handlers**: `handle` prefix (e.g., `handleSubmit`, `handleFilterChange`)
-
-```javascript
-// GOOD - Clear naming patterns
-const MAX_FAVORITES = 50;
-const API_BASE_URL = "http://localhost:8000";
-
-function DogCard({ dog }) {
-  const [favorited, setFavorited] = useState(false);
-  
-  const handleFavorite = () => {
-    setFavorited(!favorited);
-  };
-  
-  return (
-    <div className="dog-card">
-      <h3>{dog.name}</h3>
-      <button onClick={handleFavorite}>
-        {favorited ? "❤️" : "🤍"}
-      </button>
-    </div>
-  );
-}
-
-// GOOD - Custom hooks
-function useFavoriteDogs() {
-  const [favorites, setFavorites] = useState([]);
-  return { favorites, setFavorites };
-}
-
-function useDebounce(value, delay) {
-  // Hook implementation
-}
-```
-
-### Database Naming
-
-- **Tables**: `snake_case`, plural (e.g., `animals`, `organizations`)
-- **Columns**: `snake_case` (e.g., `created_at`, `organization_id`)
-- **Indexes**: `idx_table_column` (e.g., `idx_animals_organization_id`)
-- **Foreign keys**: `fk_table_column` (e.g., `fk_animals_organization`)
-- **JSONB fields**: Use descriptive names (e.g., `properties`, `social_media`)
-
-### Configuration Files
-
-- **YAML files**: `kebab-case.yaml` (e.g., `pets-turkey.yaml`)
-- **Config IDs**: `kebab-case` matching filename
-- **Environment variables**: `UPPER_SNAKE_CASE` (e.g., `DATABASE_URL`)
-
-## Testing Standards (TDD Required)
-
-### Test-Driven Development Process
-
-**ALWAYS follow this sequence:**
-
-1. **Write failing test** - Define expected behavior
-2. **Run test** - Confirm it fails (red)
-3. **Write minimal code** - Make test pass (green)
-4. **Refactor** - Improve code quality (refactor)
-5. **Repeat** - Continue for next feature
-
-```python
-# GOOD - Test-first approach
-def test_calculate_adoption_fee_for_puppy():
-    # Arrange
-    puppy = {'age_months': 6, 'size': 'small'}
-    
-    # Act
-    fee = calculate_adoption_fee(puppy)
-    
-    # Assert
-    assert fee == 150
-
-# Then implement the function
-def calculate_adoption_fee(dog):
-    if dog['age_months'] < 12 and dog['size'] == 'small':
-        return 150
-    # ... rest of logic
-```
-
-### Test Organization
-
-- **Unit tests**: Test individual functions/methods
-- **Integration tests**: Test component interactions
-- **API tests**: Test endpoint functionality
-- **Frontend tests**: Test component behavior
-
-```bash
-# Backend test commands
-source venv/bin/activate
-pytest tests/ -m "not slow" -v      # Fast tests (development)
-pytest tests/ -m "unit" -v          # Unit tests only
-pytest tests/ -m "api" -v           # API tests only
-
-# Frontend test commands
-cd frontend
-npm test                            # All tests
-npm test -- --coverage              # With coverage
+CREATE UNIQUE INDEX idx_animals_slug ON animals(slug);
+CREATE UNIQUE INDEX idx_organizations_slug ON organizations(slug);
 ```
 
 ## Configuration Standards
 
 ### YAML Configuration Files
 
-- **Schema version**: Always specify version
-- **Consistent structure**: Follow established patterns
-- **Clear organization**: Group related settings
-- **Validation**: Include required fields
+Current organization configuration pattern:
 
 ```yaml
-# GOOD - Organization configuration
-schema_version: "1.0"
+# configs/organizations/pets-turkey.yaml
+schema_version: "1.1"
 id: "pets-turkey"
 name: "Pets Turkey"
 enabled: true
 
+# Scraper configuration
 scraper:
   class_name: "PetsTurkeyScraper"
   module: "scrapers.pets_turkey.dogs_scraper"
@@ -537,149 +630,327 @@ scraper:
     rate_limit_delay: 2.0
     max_retries: 3
     timeout: 30
+    user_agent: "Mozilla/5.0 (compatible; RescueDogBot/1.0)"
 
+# Organization metadata
 metadata:
-  website_url: "https://petskurtulusis.com"
-  description: "Turkish rescue organization"
+  website_url: "https://petsinturkey.org"
+  description: "Turkish rescue organization helping street dogs"
   location:
-    country: "Turkey"
-    city: "Istanbul"
-  service_regions: ["Turkey", "Europe"]
-  ships_to: ["US", "CA", "EU"]
+    country: "TR"
+    country_name: "Turkey"
+    city: "Izmir"
+  
+  # Service regions with detailed information
+  service_regions:
+    - country_code: "TR"
+      country_name: "Turkey"
+      regions: ["Istanbul", "Ankara", "Izmir"]
+      shipping_info: "Local transport available"
+  
+  # Shipping destinations
+  ships_to: ["DE", "NL", "BE", "FR", "UK", "AT", "CH"]
+  
+  # Social media
+  social_media:
+    website: "https://petsinturkey.org"
+    facebook: "https://facebook.com/petsinturkey"
+    instagram: "petsinturkey"
+
+# Processing configuration
+processing:
+  image_processing:
+    enabled: true
+    cloudinary_folder: "pets-turkey"
+    max_images_per_animal: 5
+  
+  data_validation:
+    required_fields: ["name", "external_id"]
+    age_validation: true
+    breed_standardization: true
 ```
 
-## Enhanced Python Patterns
+## Testing Standards (TDD Required)
 
-### Type Hints and Documentation
+### Modern Testing Patterns
 
 ```python
-from typing import List, Optional, Dict, Any
+# GOOD - Service layer testing with dependency injection
+import pytest
+from unittest.mock import Mock, patch
+from services.animal_service import AnimalService
+from services.metrics_collector import NullMetricsCollector
 
-def get_animals_by_organization(
-    organization_id: int, 
-    limit: Optional[int] = 20
-) -> List[Dict[str, Any]]:
-    """
-    Fetch animals from a specific organization.
-    
-    Args:
-        organization_id: ID of the organization
-        limit: Maximum number of animals to return
+class TestAnimalService:
+    """Test suite for AnimalService with modern patterns."""
+
+    @pytest.fixture
+    def mock_metrics(self):
+        """Mock metrics collector for testing."""
+        return Mock()
+
+    @pytest.fixture
+    def animal_service(self, mock_metrics):
+        """Animal service with injected dependencies."""
+        return AnimalService(metrics_collector=mock_metrics)
+
+    def test_get_animals_with_filters_success(self, animal_service, mock_metrics):
+        """Test successful animal retrieval with filters."""
+        # Arrange
+        filters = AnimalFilterRequest(breed="Golden Retriever", limit=10)
+        expected_animals = [
+            {"id": 1, "name": "Buddy", "breed": "Golden Retriever"},
+            {"id": 2, "name": "Max", "breed": "Golden Retriever"}
+        ]
         
-    Returns:
-        List of animal dictionaries
-    """
-    # Implementation here
-    pass
+        with patch.object(animal_service, '_get_filtered_animals') as mock_get:
+            mock_get.return_value = expected_animals
+            
+            # Act
+            result = animal_service.get_animals_with_images(filters)
+            
+            # Assert
+            assert result == expected_animals
+            mock_metrics.increment.assert_any_call('animals.query.started')
+            mock_metrics.increment.assert_any_call('animals.query.completed')
+            mock_get.assert_called_once_with(filters)
+
+    def test_null_object_pattern_works(self):
+        """Test that null object pattern eliminates conditional checks."""
+        # Arrange - No metrics collector provided
+        service = AnimalService()  # Uses NullMetricsCollector internally
+        
+        # Act & Assert - Should not raise any errors
+        filters = AnimalFilterRequest(limit=1)
+        # This should work without any conditional checks in the code
+        # because NullMetricsCollector handles all calls gracefully
+        with patch.object(service, '_get_filtered_animals', return_value=[]):
+            result = service.get_animals_with_images(filters)
+            assert result == []
+
+# GOOD - Modern scraper testing with context manager
+class TestModernScraper:
+    """Test modern scraper patterns."""
+
+    @pytest.fixture
+    def mock_config(self):
+        return {
+            'id': 'test-org',
+            'scraper': {
+                'config': {
+                    'rate_limit_delay': 1.0,
+                    'max_retries': 2
+                }
+            }
+        }
+
+    def test_context_manager_usage(self, mock_config):
+        """Test that scraper works as context manager."""
+        # Arrange
+        with patch('scrapers.base_scraper.load_organization_config') as mock_load:
+            mock_load.return_value = mock_config
+            
+            # Act & Assert - Context manager should handle setup/cleanup
+            with ModernOrganizationScraper(config_id="test-org") as scraper:
+                assert scraper is not None
+                # Scraper should be properly initialized
+                
+            # Context manager should have cleaned up resources
+
+    def test_service_injection_for_testing(self):
+        """Test that services can be injected for testing."""
+        # Arrange
+        mock_metrics = Mock()
+        mock_session = Mock()
+        
+        # Act
+        scraper = ModernOrganizationScraper(
+            config_id="test-org",
+            metrics_collector=mock_metrics,
+            session_manager=mock_session
+        )
+        
+        # Assert
+        assert scraper.metrics_collector == mock_metrics
+        assert scraper.session_manager == mock_session
 ```
 
-### Error Handling Patterns
+### Frontend Testing with TypeScript
 
-```python
-# GOOD - Comprehensive error handling
-def scrape_organization_data(config):
-    try:
-        data = fetch_data(config['url'])
-        validated_data = validate_data(data)
-        return process_data(validated_data)
-    except ValidationError as e:
-        logger.error(f"Validation failed: {e}")
-        raise
-    except NetworkError as e:
-        logger.warning(f"Network issue: {e}")
-        return []  # Return empty list for network issues
-    except Exception as e:
-        logger.error(f"Unexpected error: {e}")
-        raise
+```typescript
+// GOOD - Modern React testing with TypeScript
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { vi } from 'vitest';
+import { DogCard } from '@/components/dogs/DogCard';
+import { AnimalWithImages } from '@/types/api';
+
+// Mock data factory
+const createMockAnimal = (overrides: Partial<AnimalWithImages> = {}): AnimalWithImages => ({
+  id: 1,
+  slug: 'buddy-golden-retriever-123',
+  name: 'Buddy',
+  breed: 'Golden Retriever',
+  age_text: '2 years',
+  primary_image_url: 'https://example.com/buddy.jpg',
+  organization: {
+    id: 1,
+    slug: 'pets-turkey',
+    name: 'Pets Turkey',
+    // ... other required fields
+  },
+  images: [],
+  // ... other required fields
+  ...overrides,
+});
+
+describe('DogCard', () => {
+  const mockOnFavorite = vi.fn();
+  const mockOnView = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('renders dog information correctly', () => {
+    // Arrange
+    const animal = createMockAnimal();
+
+    // Act
+    render(
+      <DogCard 
+        animal={animal} 
+        onFavorite={mockOnFavorite} 
+        onView={mockOnView} 
+      />
+    );
+
+    // Assert
+    expect(screen.getByText('Buddy')).toBeInTheDocument();
+    expect(screen.getByText('Golden Retriever')).toBeInTheDocument();
+    expect(screen.getByText('2 years')).toBeInTheDocument();
+  });
+
+  it('calls onFavorite when favorite button is clicked', async () => {
+    // Arrange
+    const animal = createMockAnimal({ id: 123 });
+    render(
+      <DogCard 
+        animal={animal} 
+        onFavorite={mockOnFavorite} 
+        onView={mockOnView} 
+      />
+    );
+
+    // Act
+    const favoriteButton = screen.getByLabelText(/add to favorites/i);
+    fireEvent.click(favoriteButton);
+
+    // Assert
+    await waitFor(() => {
+      expect(mockOnFavorite).toHaveBeenCalledWith(123);
+    });
+  });
+
+  it('prevents card click when favorite button is clicked', async () => {
+    // Arrange
+    const animal = createMockAnimal();
+    render(
+      <DogCard 
+        animal={animal} 
+        onFavorite={mockOnFavorite} 
+        onView={mockOnView} 
+      />
+    );
+
+    // Act
+    const favoriteButton = screen.getByLabelText(/add to favorites/i);
+    fireEvent.click(favoriteButton);
+
+    // Assert
+    expect(mockOnView).not.toHaveBeenCalled();
+    expect(mockOnFavorite).toHaveBeenCalled();
+  });
+});
 ```
 
-## Enhanced JavaScript/React Patterns
+## File Size and Organization Standards
 
-### Security Requirements
+### File Size Limits
+- **Backend Python**: 200 lines maximum
+- **Frontend TypeScript**: 150 lines per component
+- **Service classes**: 250 lines maximum (due to complexity)
+- **Test files**: Can be longer but prefer focused test suites
 
-```javascript
-// GOOD - Always sanitize user content
-import { sanitizeText } from '@/utils/security';
+### Modern File Organization
 
-function DogCard({ dog }) {
-  return (
-    <div className="dog-card">
-      <h3>{sanitizeText(dog.name)}</h3>
-      <p>{sanitizeText(dog.description)}</p>
-    </div>
-  );
-}
 ```
+src/
+├── services/              # Service layer
+│   ├── animal_service.py
+│   ├── metrics_collector.py
+│   ├── session_manager.py
+│   └── null_objects.py    # Null object implementations
+├── scrapers/
+│   ├── base_scraper.py    # Modern base with patterns
+│   └── pets_turkey/
+│       ├── dogs_scraper.py
+│       └── detail_parser.py
+├── api/
+│   ├── routes/
+│   ├── dependencies.py    # FastAPI dependency injection
+│   └── exceptions.py      # Standardized exceptions
+└── utils/
+    ├── validation.py
+    └── standardization.py
 
-### Component Structure Standards
-
-```javascript
-// GOOD - Proper component structure
-'use client'; // For client components
-
-import { useState, useEffect, useMemo } from 'react';
-import { sanitizeText } from '@/utils/security';
-
-function DogFilters({ filters, onFilterChange }) {
-  // 1. Hooks at the top
-  const [isExpanded, setIsExpanded] = useState(false);
-  const { user } = useAuth();
-
-  // 2. Derived values
-  const availableBreeds = useMemo(
-    () => getUniqueBreeds(filters.dogs),
-    [filters.dogs]
-  );
-
-  // 3. Event handlers
-  const handleBreedChange = (breed) => {
-    onFilterChange({ ...filters, breed });
-  };
-
-  // 4. Early returns for edge cases
-  if (!filters) return null;
-
-  // 5. Main render
-  return (
-    <div className="dog-filters">
-      {/* Component content */}
-    </div>
-  );
-}
+frontend/src/
+├── app/                   # Next.js 15 app directory
+│   ├── dogs/
+│   │   ├── [slug]/
+│   │   │   └── page.tsx   # Slug-based routing
+│   │   └── page.tsx
+│   └── organizations/
+├── components/            # Reusable components
+│   ├── dogs/
+│   │   ├── DogCard.tsx
+│   │   └── DogCard.stories.tsx  # Storybook stories
+│   └── ui/
+├── hooks/                 # Custom React hooks
+│   ├── useAnimals.ts
+│   └── useDebounce.ts
+├── types/                 # TypeScript interfaces
+│   ├── api.ts
+│   └── components.ts
+└── utils/
+    ├── api.ts
+    └── validation.ts
 ```
-
-## File Size Limits
-
-- **Backend**: Maximum 200 lines per file
-- **Frontend**: Maximum 150 lines per component
-- **Tests**: Can be longer but prefer multiple focused test files
-- **Configuration**: Keep YAML files focused and readable
-
-When files grow too large:
-
-1. Extract helper functions to utilities
-2. Split components into smaller sub-components
-3. Create separate modules for related functionality
-4. Use composition over inheritance
 
 ## Anti-Patterns (Never Do)
+
+### Architecture
+- ❌ Skip service layer - always use service classes for business logic
+- ❌ Conditional null checks - use null object pattern instead
+- ❌ Direct database access in routes - use service layer
+- ❌ Skip dependency injection - makes testing difficult
 
 ### Code Quality
 - ❌ Skip tests or write code without tests
 - ❌ Delete/modify tests to make them pass
-- ❌ Use localStorage/sessionStorage in frontend
-- ❌ Mutate state or data structures
-- ❌ Create files >200 lines (backend) or >150 lines (frontend)
+- ❌ Create files over size limits
 - ❌ Commit directly to main branch
+- ❌ Mix business logic with HTTP handling
+
+### Frontend
+- ❌ Use localStorage/sessionStorage for sensitive data
+- ❌ Mutate state directly
+- ❌ Skip TypeScript interfaces
+- ❌ Create components without proper prop types
 
 ### Security
 - ❌ Display user content without sanitization
-- ❌ Store sensitive data in frontend
 - ❌ Skip input validation
 - ❌ Use eval() or similar unsafe functions
+- ❌ Store API keys in frontend code
 
-### Performance
-- ❌ Make API calls without rate limiting
-- ❌ Create unnecessary re-renders
-- ❌ Skip database indexing for common queries
-- ❌ Load all data at once without pagination
+This updated guide reflects the modern architectural patterns actually used in the codebase and provides concrete examples for building maintainable, testable code.

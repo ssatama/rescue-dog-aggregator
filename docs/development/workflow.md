@@ -50,15 +50,19 @@ python management/config_commands.py validate
 
 ### Configuration Management Commands
 
-The project uses YAML-driven configuration management. Two execution methods are available:
+The project uses YAML-driven configuration management with modern BaseScraper architecture:
 
 ```bash
+# ALWAYS activate virtual environment first
+source venv/bin/activate
+
 # Direct execution (recommended)
 python management/config_commands.py list              # List all organizations
 python management/config_commands.py sync              # Sync to database
 python management/config_commands.py validate          # Validate configs
 python management/config_commands.py sync --dry-run    # Preview changes
 python management/config_commands.py show rean         # Show specific org
+python management/config_commands.py run pets-turkey   # Run specific scraper
 
 # Module execution (alternative)
 python -m management.config_commands list
@@ -67,6 +71,36 @@ python -m management.config_commands list
 touch utils/__init__.py management/__init__.py         # Ensure packages exist
 source venv/bin/activate                               # Activate environment
 ```
+
+### Modern BaseScraper Architecture (Critical Updates)
+
+**New Design Patterns** (implemented in recent refactoring):
+
+```python
+# Context Manager Pattern - Automatic connection handling
+with MyScraper(config_id="org-name") as scraper:
+    result = scraper.run()  # Automatic setup/teardown
+
+# Service Injection - Clean dependency management
+scraper = MyScraper(
+    config_id="org-name",
+    metrics_collector=CustomMetricsCollector(),
+    session_manager=CustomSessionManager()
+)
+
+# Null Object Pattern - No conditional service checks needed
+class MyScraper(BaseScraper):
+    def collect_data(self):
+        # Services always available (null objects if not injected)
+        self.metrics_collector.record_event("scrape_start")
+        self.session_manager.mark_animal_as_seen(animal_id)
+```
+
+**Key Architecture Benefits**:
+- **Template Method**: `run()` method provides consistent lifecycle
+- **Null Object Pattern**: All services default to null objects (no conditionals)
+- **Context Manager**: Automatic resource management via `with` statements
+- **Dependency Injection**: Clean service injection at constructor level
 
 ### Frontend Environment
 
@@ -278,8 +312,13 @@ test(api): add availability filtering test coverage
 
 ### Backend Commands
 ```bash
-# Run tests
-pytest tests/
+# ALWAYS activate virtual environment first
+source venv/bin/activate
+
+# Run tests (optimized with markers)
+python -m pytest tests/ -m "not slow" -v            # Fast development feedback
+python -m pytest tests/ -m "unit or fast" -v        # Unit + fast tests
+python -m pytest tests/ -v                          # Full test suite
 
 # Code quality
 black . && isort . && flake8 --exclude=venv .
@@ -287,9 +326,10 @@ black . && isort . && flake8 --exclude=venv .
 # Security scan
 bandit -r . -x venv/
 
-# Config management
+# Config management (with modern BaseScraper)
 python management/config_commands.py list
 python management/config_commands.py sync
+python management/config_commands.py run organization-name
 ```
 
 ### Frontend Commands
@@ -310,10 +350,17 @@ npm audit --audit-level=moderate
 ## Essential Quality Standards
 
 ### Code Quality Metrics
-- **Current baseline**: ~1000 flake8 violations (mostly E501 line length)
+- **Current baseline**: <750 flake8 violations (improved from ~1000)
 - **Target improvements**: F401 (unused imports) = 0, W291/W293 (whitespace) ≤ 5
 - **Formatting**: Use `black .` and `isort .` for consistent style
 - **Security**: Run `bandit -r . -x venv/` for vulnerability scanning
+- **Database Isolation**: Global conftest.py prevents test database contamination
+
+### Modern Testing Standards
+- **Test Markers**: Use `pytest -m "unit or fast"` for development
+- **Database Protection**: All tests automatically isolated via conftest.py
+- **Frontend**: 384+ test files with Next.js 15 compatibility
+- **Backend**: 99+ test files with optimized marker strategy
 
 ### Documentation Standards
 - **Python**: Use comprehensive docstrings with Args, Returns, Raises, Examples

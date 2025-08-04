@@ -70,8 +70,9 @@ cd frontend
 npm install
 
 # Verify setup
-python -m pytest tests/ -m "not slow" --tb=no -q
-npm test
+source venv/bin/activate                            # Activate virtual environment
+python -m pytest tests/ -m "not slow" --tb=no -q  # Backend tests (99+ test files)
+npm test                                            # Frontend tests (384+ test files)
 ```
 
 ## Development Workflow
@@ -137,11 +138,12 @@ test(scrapers): add tests for unified DOM extraction
 
 1. **Run all tests**:
    ```bash
-   # Backend tests (REQUIRED)
+   # Backend tests (REQUIRED - 99+ test files)
    source venv/bin/activate
-   python -m pytest tests/ -m "not slow" -v
+   python -m pytest tests/ -m "not slow" -v      # Fast tests for development
+   python -m pytest tests/ -m "unit or fast" -v  # Unit + fast tests
 
-   # Frontend tests (REQUIRED)
+   # Frontend tests (REQUIRED - 384+ test files)
    cd frontend
    npm test
 
@@ -151,10 +153,14 @@ test(scrapers): add tests for unified DOM extraction
 
 2. **Code quality checks**:
    ```bash
-   # Python linting (aim for <750 violations)
+   # ALWAYS activate virtual environment first
+   source venv/bin/activate
+   
+   # Python linting (current baseline: <750 violations)
    flake8 --exclude=venv . | wc -l
 
    # Fix common issues
+   black . && isort .  # Format code
    autopep8 --in-place --aggressive --exclude=venv --recursive .
    ```
 
@@ -175,10 +181,11 @@ Brief description of changes and motivation.
 - [ ] Documentation update
 
 ## Testing
-- [ ] Backend tests pass (`python -m pytest tests/ -m "not slow"`)
+- [ ] Backend tests pass (`source venv/bin/activate && python -m pytest tests/ -m "not slow"`)
 - [ ] Frontend tests pass (`npm test`)
 - [ ] Build succeeds (`npm run build`)
 - [ ] Manual testing completed
+- [ ] Database isolation automatically enforced (via global conftest.py)
 
 ## Checklist
 - [ ] Code follows project style guidelines
@@ -209,7 +216,8 @@ Any additional information, dependencies, or migration steps.
 - Follow PEP 8 with line length of 120 characters
 - Use type hints where appropriate
 - Write docstrings for functions and classes
-- Current baseline: <750 flake8 violations accepted
+- Current baseline: <750 flake8 violations (improved from ~1000)
+- ALWAYS activate virtual environment: `source venv/bin/activate`
 
 **Example:**
 ```python
@@ -234,10 +242,13 @@ def get_animals_by_organization(
 ```
 
 **Required Patterns:**
-- Use virtual environment: `source venv/bin/activate`
-- Configuration-driven approach for new scrapers
+- Use virtual environment: `source venv/bin/activate` (MANDATORY)
+- Configuration-driven approach for new scrapers (YAML-based)
+- Modern BaseScraper architecture with Context Manager pattern
+- Service injection for metrics and session management
 - Comprehensive error handling with logging
 - Database transactions for data consistency
+- Database isolation automatically enforced in tests
 
 ### JavaScript/React (Frontend)
 
@@ -316,8 +327,9 @@ We follow TDD principles:
 # Activate virtual environment (REQUIRED)
 source venv/bin/activate
 
-# Fast test suite (recommended for development)
-python -m pytest tests/ -m "not slow" -v
+# Fast test suite (recommended for development - 99+ test files)
+python -m pytest tests/ -m "not slow" -v      # Excludes slow tests
+python -m pytest tests/ -m "unit or fast" -v  # Unit + fast tests
 
 # Specific test categories
 python -m pytest tests/ -m "unit" -v          # Unit tests (~1s)
@@ -328,18 +340,25 @@ python -m pytest tests/ -m "database" -v      # Database tests
 python -m pytest tests/ -v
 ```
 
+**Critical: Database Isolation**
+- All tests automatically protected by global `conftest.py`
+- Impossible to write to production database during tests
+- No manual setup required - protection is automatic
+
 **Test Standards:**
 - Unit tests for business logic
 - API tests for endpoint functionality
 - Integration tests for complex workflows
 - Mock external dependencies appropriately
+- Database isolation automatically enforced
+- Use optimized test markers (unit, fast, slow)
 
 ### Frontend Testing
 
 ```bash
 cd frontend
 
-# All tests (1,249 tests across 88 suites)
+# All tests (384+ test files)
 npm test
 
 # Specific test categories
@@ -351,11 +370,17 @@ npm test -- --testPathPattern="cross-browser"   # Cross-browser tests
 npm test -- --coverage
 ```
 
+**Next.js 15 Compatibility**:
+- Environment-aware testing patterns for dynamic routes
+- Automatic mocking of Next.js navigation in test setup
+
 **Test Standards:**
 - Component tests for UI functionality
 - Integration tests for user workflows
 - Performance tests for load times
 - Accessibility tests for WCAG 2.1 AA compliance
+- Next.js 15 compatible environment-aware patterns
+- Mobile-first responsive design testing
 
 ## Documentation
 

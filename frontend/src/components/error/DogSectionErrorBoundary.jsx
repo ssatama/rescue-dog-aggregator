@@ -14,7 +14,7 @@ class DogSectionErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     // Only log in development
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== "production") {
       console.error("DogSection Error:", error, errorInfo);
     }
 

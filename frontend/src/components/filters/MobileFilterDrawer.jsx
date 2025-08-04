@@ -299,26 +299,46 @@ export default function MobileFilterDrawer({
     let count = 0;
 
     // Search query (if search is shown)
-    if (filterConfig.showSearch && searchQuery && searchQuery.trim() !== "") count++;
+    if (filterConfig.showSearch && searchQuery && searchQuery.trim() !== "")
+      count++;
 
     // Organization filter (if organization section is shown)
-    if (filterConfig.showOrganization && organizationFilter && organizationFilter !== "any") count++;
+    if (
+      filterConfig.showOrganization &&
+      organizationFilter &&
+      organizationFilter !== "any"
+    )
+      count++;
 
     // Breed filter (if breed section is shown)
-    if (filterConfig.showBreed && standardizedBreedFilter && standardizedBreedFilter !== "Any breed")
+    if (
+      filterConfig.showBreed &&
+      standardizedBreedFilter &&
+      standardizedBreedFilter !== "Any breed"
+    )
       count++;
 
     // Sex filter (if sex section is shown)
     if (filterConfig.showSex && sexFilter && sexFilter !== "Any") count++;
 
     // Size filter (if size section is shown)
-    if (filterConfig.showSize && sizeFilter && sizeFilter !== "Any size") count++;
+    if (filterConfig.showSize && sizeFilter && sizeFilter !== "Any size")
+      count++;
 
     // Age filter (if age section is shown)
-    if (filterConfig.showAge && ageCategoryFilter && ageCategoryFilter !== "Any age") count++;
+    if (
+      filterConfig.showAge &&
+      ageCategoryFilter &&
+      ageCategoryFilter !== "Any age"
+    )
+      count++;
 
     // Available country filter (if ships-to section is shown)
-    if (filterConfig.showShipsTo && availableCountryFilter && availableCountryFilter !== "Any country")
+    if (
+      filterConfig.showShipsTo &&
+      availableCountryFilter &&
+      availableCountryFilter !== "Any country"
+    )
       count++;
 
     return count;
@@ -635,7 +655,9 @@ export default function MobileFilterDrawer({
                         }
                         onChange={(e) =>
                           setAgeCategoryFilter(
-                            e.target.value === "any" ? "Any age" : e.target.value,
+                            e.target.value === "any"
+                              ? "Any age"
+                              : e.target.value,
                           )
                         }
                       >
@@ -753,97 +775,97 @@ export default function MobileFilterDrawer({
                     defaultOpen={false}
                     count={sectionCounts.breed}
                   >
-                  <div className="space-y-3">
-                    {/* Hidden Breed Select for E2E tests */}
-                    <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
-                      <select
-                        data-testid="breed-filter"
-                        value={
-                          standardizedBreedFilter === "Any breed"
-                            ? "any"
-                            : standardizedBreedFilter
-                        }
-                        onChange={(e) =>
-                          setStandardizedBreedFilter(
-                            e.target.value === "any"
-                              ? "Any breed"
-                              : e.target.value,
-                          )
-                        }
-                      >
-                        <option value="any">Any breed</option>
-                        {standardizedBreeds
-                          .filter((breed) => breed !== "Any breed")
-                          .map((breed) => (
-                            <option key={breed} value={breed}>
-                              {breed}
-                            </option>
-                          ))}
-                      </select>
-                    </div>
-
-                    {/* Breed Search Input */}
-                    <div className="relative input-container form-enhanced">
-                      <Icon
-                        name="search"
-                        size="small"
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                      />
-                      <Input
-                        data-testid="breed-search-input"
-                        type="text"
-                        placeholder="Search breeds..."
-                        value={breedInputValue}
-                        onChange={handleBreedInputChange}
-                        className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
-                        style={{ minHeight: "48px" }}
-                      />
-                      {breedInputValue && (
-                        <Button
-                          data-testid="breed-clear-button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={handleBreedClear}
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 text-gray-400 hover:text-gray-600 interactive-enhanced btn-focus-ring"
-                          style={{ minHeight: "48px", minWidth: "48px" }}
+                    <div className="space-y-3">
+                      {/* Hidden Breed Select for E2E tests */}
+                      <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
+                        <select
+                          data-testid="breed-filter"
+                          value={
+                            standardizedBreedFilter === "Any breed"
+                              ? "any"
+                              : standardizedBreedFilter
+                          }
+                          onChange={(e) =>
+                            setStandardizedBreedFilter(
+                              e.target.value === "any"
+                                ? "Any breed"
+                                : e.target.value,
+                            )
+                          }
                         >
-                          <Icon name="x" size="small" />
-                        </Button>
-                      )}
-                    </div>
-
-                    {/* Breed Suggestions - Show when user has typed something */}
-                    {filteredBreeds.length > 0 && (
-                      <div
-                        data-testid="breed-suggestions"
-                        className="max-h-32 overflow-y-auto border dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 shadow-sm animate-in slide-in-from-top-2 duration-200"
-                      >
-                        {/* Show filtered breed suggestions */}
-                        {filteredBreeds.map((breed) => (
-                          <button
-                            key={breed}
-                            className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm text-gray-900 dark:text-gray-100 transition-colors duration-150 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none"
-                            onClick={() => handleBreedSuggestionClick(breed)}
-                            style={{ minHeight: "40px" }}
-                          >
-                            {breed}
-                          </button>
-                        ))}
+                          <option value="any">Any breed</option>
+                          {standardizedBreeds
+                            .filter((breed) => breed !== "Any breed")
+                            .map((breed) => (
+                              <option key={breed} value={breed}>
+                                {breed}
+                              </option>
+                            ))}
+                        </select>
                       </div>
-                    )}
-                    {breedInputValue &&
-                      breedInputValue.trim().length > 0 &&
-                      filteredBreeds.length === 0 && (
+
+                      {/* Breed Search Input */}
+                      <div className="relative input-container form-enhanced">
+                        <Icon
+                          name="search"
+                          size="small"
+                          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                        />
+                        <Input
+                          data-testid="breed-search-input"
+                          type="text"
+                          placeholder="Search breeds..."
+                          value={breedInputValue}
+                          onChange={handleBreedInputChange}
+                          className="pl-10 w-full enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
+                          style={{ minHeight: "48px" }}
+                        />
+                        {breedInputValue && (
+                          <Button
+                            data-testid="breed-clear-button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleBreedClear}
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 text-gray-400 hover:text-gray-600 interactive-enhanced btn-focus-ring"
+                            style={{ minHeight: "48px", minWidth: "48px" }}
+                          >
+                            <Icon name="x" size="small" />
+                          </Button>
+                        )}
+                      </div>
+
+                      {/* Breed Suggestions - Show when user has typed something */}
+                      {filteredBreeds.length > 0 && (
                         <div
                           data-testid="breed-suggestions"
-                          className="border dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 shadow-sm animate-in slide-in-from-top-2 duration-200"
+                          className="max-h-32 overflow-y-auto border dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 shadow-sm animate-in slide-in-from-top-2 duration-200"
                         >
-                          <div className="p-2 text-sm text-gray-500 dark:text-gray-400">
-                            No breeds found for "{breedInputValue}"
-                          </div>
+                          {/* Show filtered breed suggestions */}
+                          {filteredBreeds.map((breed) => (
+                            <button
+                              key={breed}
+                              className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 text-sm text-gray-900 dark:text-gray-100 transition-colors duration-150 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none"
+                              onClick={() => handleBreedSuggestionClick(breed)}
+                              style={{ minHeight: "40px" }}
+                            >
+                              {breed}
+                            </button>
+                          ))}
                         </div>
                       )}
-                  </div>
+                      {breedInputValue &&
+                        breedInputValue.trim().length > 0 &&
+                        filteredBreeds.length === 0 && (
+                          <div
+                            data-testid="breed-suggestions"
+                            className="border dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 shadow-sm animate-in slide-in-from-top-2 duration-200"
+                          >
+                            <div className="p-2 text-sm text-gray-500 dark:text-gray-400">
+                              No breeds found for "{breedInputValue}"
+                            </div>
+                          </div>
+                        )}
+                    </div>
                   </MobileFilterSection>
                 )}
 
@@ -855,54 +877,54 @@ export default function MobileFilterDrawer({
                     defaultOpen={false}
                     count={sectionCounts.organization}
                   >
-                  {/* Hidden Organization Select for E2E Tests */}
-                  <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
-                    <select
-                      data-testid="organization-filter"
-                      value={organizationFilter || "any"}
-                      onChange={(e) => setOrganizationFilter(e.target.value)}
-                    >
-                      {organizations.map((org) => (
-                        <option
-                          key={org.id ?? "any"}
-                          value={org.id != null ? org.id.toString() : "any"}
-                        >
-                          {org.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <Select
-                      value={organizationFilter || "any"}
-                      onValueChange={setOrganizationFilter}
-                    >
-                      <SelectTrigger
-                        className="select-focus enhanced-hover enhanced-focus-select focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
-                        style={{ minHeight: "48px" }}
+                    {/* Hidden Organization Select for E2E Tests */}
+                    <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
+                      <select
+                        data-testid="organization-filter"
+                        value={organizationFilter || "any"}
+                        onChange={(e) => setOrganizationFilter(e.target.value)}
                       >
-                        <SelectValue>
-                          {organizationFilter === "any" || !organizationFilter
-                            ? "Any Organization"
-                            : organizations.find(
-                                (org) =>
-                                  org.id?.toString() === organizationFilter,
-                              )?.name || "Any Organization"}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
                         {organizations.map((org) => (
-                          <SelectItem
+                          <option
                             key={org.id ?? "any"}
                             value={org.id != null ? org.id.toString() : "any"}
                           >
                             {org.name}
-                          </SelectItem>
+                          </option>
                         ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                      </select>
+                    </div>
+
+                    <div>
+                      <Select
+                        value={organizationFilter || "any"}
+                        onValueChange={setOrganizationFilter}
+                      >
+                        <SelectTrigger
+                          className="select-focus enhanced-hover enhanced-focus-select focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
+                          style={{ minHeight: "48px" }}
+                        >
+                          <SelectValue>
+                            {organizationFilter === "any" || !organizationFilter
+                              ? "Any Organization"
+                              : organizations.find(
+                                  (org) =>
+                                    org.id?.toString() === organizationFilter,
+                                )?.name || "Any Organization"}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {organizations.map((org) => (
+                            <SelectItem
+                              key={org.id ?? "any"}
+                              value={org.id != null ? org.id.toString() : "any"}
+                            >
+                              {org.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </MobileFilterSection>
                 )}
               </div>

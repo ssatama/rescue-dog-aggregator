@@ -9,9 +9,9 @@ This guide provides step-by-step instructions for setting up the Rescue Dog Aggr
 Before installing, ensure you have the following prerequisites:
 
 ### Required Software
-- **Python 3.9+** (Python 3.9.6 recommended)
-- **Node.js 18+** (Node.js 18+ required for Next.js 15)
-- **PostgreSQL 13+** (PostgreSQL 13 or later)
+- **Python 3.9+** (Python 3.13 compatible, 3.9.6+ recommended)
+- **Node.js 18+** (Node.js 18+ required for Next.js 15.3.0+)
+- **PostgreSQL 13+** (PostgreSQL 14+ recommended for enhanced JSON performance)
 - **Git** (for cloning the repository)
 
 ### Optional (for production)
@@ -29,7 +29,7 @@ Before installing, ensure you have the following prerequisites:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/rescue-dog-aggregator.git
+git clone https://github.com/rescue-dog-aggregator/rescue-dog-aggregator.git
 cd rescue-dog-aggregator
 ```
 
@@ -194,8 +194,11 @@ except Exception as e:
     print(f'❌ Database connection failed: {e}')
 "
 
-# Run backend tests
+# Run backend tests (fast subset - 3 seconds)
 python -m pytest tests/ -m "not slow" -v
+
+# Run all backend tests (comprehensive)
+python -m pytest tests/ -m "not browser and not requires_migrations" -v
 
 # Test configuration commands
 python management/config_commands.py list
@@ -233,7 +236,7 @@ NODE_ENV=development
 ```bash
 cd frontend
 
-# Run tests
+# Run tests (1,500+ tests, ~15 seconds)
 npm test
 
 # Build for production (to verify setup)
@@ -241,6 +244,10 @@ npm run build
 
 # Verify build was successful
 ls -la .next/
+
+# Run E2E tests (optional - for comprehensive validation)
+npm run e2e:install  # Install Playwright browsers
+npm run e2e          # Run E2E test suite
 ```
 
 ### 5. Organization Configuration
@@ -317,7 +324,7 @@ source venv/bin/activate
 # Test scraper functionality (optional - may take time)
 python management/config_commands.py run pets-in-turkey
 
-# Check results
+# Check results and service regions
 python management/config_commands.py show pets-in-turkey
 ```
 
@@ -519,6 +526,10 @@ cd frontend
 rm -rf node_modules package-lock.json
 npm install
 
+# Check for duplicate files (automated fix)
+npm run check:duplicates
+npm run fix:duplicates --interactive
+
 # Try building again
 npm run build
 ```
@@ -536,6 +547,30 @@ echo $NEXT_PUBLIC_R2_CUSTOM_DOMAIN
 # Test R2 connectivity
 curl -I "https://$R2_CUSTOM_DOMAIN/test-image.jpg"
 ```
+
+#### Testing Architecture Issues
+
+**Error**: Tests failing or test isolation problems
+
+**Solution**:
+```bash
+# Backend: Database isolation is automatic via global fixtures
+python -m pytest tests/ -v --tb=short
+
+# Frontend: Clear test cache if needed
+cd frontend
+npm test -- --clearCache
+npm test
+
+# E2E: Reset browser state
+npm run e2e:install
+npm run e2e
+```
+
+**Understanding Test Boundaries**:
+- **Jest Tests**: Component logic, mobile responsiveness, API integrations
+- **E2E Tests**: Critical user journeys, cross-browser compatibility
+- **Database Isolation**: All Python tests automatically protected from production DB writes
 
 ### Getting Help
 

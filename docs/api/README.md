@@ -19,7 +19,7 @@ The Rescue Dog Aggregator provides a modern, enterprise-grade RESTful API built 
 
 ### Base URL
 ```
-Production: https://api.rescue-dogs.org
+Production: https://api.rescuedogs.me
 Development: http://localhost:8000
 ```
 
@@ -43,13 +43,13 @@ Development: http://localhost:8000
 ### Basic Usage
 ```bash
 # Get all available animals
-curl "https://api.rescue-dogs.org/api/animals"
+curl "https://api.rescuedogs.me/api/animals"
 
 # Get a specific animal
-curl "https://api.rescue-dogs.org/api/animals/123"
+curl "https://api.rescuedogs.me/api/animals/123"
 
 # Get animals with filtering
-curl "https://api.rescue-dogs.org/api/animals?breed=labrador&size=large"
+curl "https://api.rescuedogs.me/api/animals?breed=labrador&size=large"
 ```
 
 ### Response Format

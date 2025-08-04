@@ -57,17 +57,19 @@ describe("MobileFilterDrawer Context-Aware Filtering", () => {
         <MobileFilterDrawer
           {...defaultProps}
           filterConfig={organizationFilterConfig}
-        />
+        />,
       );
 
       // Should show these sections
       expect(screen.getByText("Age")).toBeInTheDocument();
       expect(screen.getByText("Breed")).toBeInTheDocument();
 
-      // Should NOT show these sections  
+      // Should NOT show these sections
       expect(screen.queryByText("Size")).not.toBeInTheDocument();
       expect(screen.queryByText("Sex")).not.toBeInTheDocument();
-      expect(screen.queryByText("Adoptable to Country")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Adoptable to Country"),
+      ).not.toBeInTheDocument();
       expect(screen.queryByText("Organization")).not.toBeInTheDocument();
 
       // Search should not be shown
@@ -106,7 +108,7 @@ describe("MobileFilterDrawer Context-Aware Filtering", () => {
         <MobileFilterDrawer
           {...defaultProps}
           filterConfig={dogCatalogFilterConfig}
-        />
+        />,
       );
 
       // Should show all sections

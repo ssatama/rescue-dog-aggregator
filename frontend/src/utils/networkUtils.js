@@ -240,7 +240,7 @@ export function preloadImagesAdaptive(urls, context = "catalog") {
 
       document.head.appendChild(link);
     } catch (error) {
-      if (process.env.NODE_ENV !== 'production') {
+      if (process.env.NODE_ENV !== "production") {
         console.warn("Preload failed for:", url);
       }
     }

@@ -15,13 +15,14 @@ Set up automated weekly scraping using cron jobs:
 crontab -e
 
 # Add weekly scraping jobs
-# Run all scrapers every Monday at 2 AM
+# Run all scrapers every Monday at 2 AM (8 organizations total)
 0 2 * * 1 cd /path/to/rescue-dog-aggregator && source venv/bin/activate && python management/config_commands.py run-all >> /var/log/rescue-scraper.log 2>&1
 
-# Or stagger individual organizations to distribute load (current organizations: 3 total)
+# Or stagger individual organizations to distribute load (current organizations: 8 total)
 0 2 * * 1 cd /path/to/rescue-dog-aggregator && source venv/bin/activate && python management/config_commands.py run pets-in-turkey >> /var/log/rescue-scraper.log 2>&1
-0 3 * * 1 cd /path/to/rescue-dog-aggregator && source venv/bin/activate && python management/config_commands.py run tierschutzverein-europa >> /var/log/rescue-scraper.log 2>&1
-0 4 * * 1 cd /path/to/rescue-dog-aggregator && source venv/bin/activate && python management/config_commands.py run rean >> /var/log/rescue-scraper.log 2>&1
+0 3 * * 1 cd /path/to/rescue-dog-aggregator && source venv/bin/activate && python management/config_commands.py run rean >> /var/log/rescue-scraper.log 2>&1
+0 4 * * 1 cd /path/to/rescue-dog-aggregator && source venv/bin/activate && python management/config_commands.py run tierschutzverein-europa >> /var/log/rescue-scraper.log 2>&1
+# Add remaining 5 organizations as needed
 ```
 
 ### Environment Considerations
@@ -78,17 +79,17 @@ if [ "$RECENT_FAILURES" -gt "0" ]; then
     echo "Failed scrapes detected: $RECENT_FAILURES" | mail -s "Scraper Health Alert" admin@yoursite.com
 fi
 
-# Check availability distribution (Current normal range: 10-20 low confidence animals)
+# Check availability distribution (Normal range: varies with modern confidence system)
 LOW_CONFIDENCE=$(psql -t -h localhost $DB_NAME -c "
 SELECT COUNT(*) FROM animals 
 WHERE availability_confidence = 'low' AND status = 'available';
 ")
 
-if [ "$LOW_CONFIDENCE" -gt "25" ]; then
-    echo "[$DATE] WARNING: $LOW_CONFIDENCE animals with low confidence (normal: 10-20)" >> $LOG_FILE
+if [ "$LOW_CONFIDENCE" -gt "50" ]; then
+    echo "[$DATE] WARNING: $LOW_CONFIDENCE animals with low confidence (check thresholds)" >> $LOG_FILE
 fi
 
-# Check for stale organizations (Current active orgs: 3)
+# Check for stale organizations (Current active orgs: 8)
 STALE_ORGS=$(psql -t -h localhost $DB_NAME -c "
 SELECT COUNT(*) FROM organizations o
 WHERE o.active = true AND NOT EXISTS (
@@ -193,19 +194,20 @@ ORDER BY sl.started_at DESC;
 
 #### Manual Recovery
 ```bash
-# Activate virtual environment (REQUIRED)
+# ALWAYS activate virtual environment first (REQUIRED)
 source venv/bin/activate
 
-# Re-run failed scraper
+# Re-run failed scraper (8 organizations available)
 python management/config_commands.py run pets-in-turkey
 
 # Check specific organization status
 python management/config_commands.py show pets-in-turkey
 
-# Validate configuration
+# Validate configuration for all organizations
 python management/config_commands.py validate
 
-# Available organizations: pets-in-turkey, tierschutzverein-europa, rean
+# List all available organizations (should show 8)
+python management/config_commands.py list
 ```
 
 ### Partial Failures
@@ -402,7 +404,10 @@ ORDER BY avg_duration DESC;
 
 #### Rate Limiting Optimization
 ```bash
-# Review and adjust rate limiting in organization configs
+# ALWAYS activate virtual environment first
+source venv/bin/activate
+
+# Review and adjust rate limiting in organization configs (8 organizations)
 python -c "
 from utils.config_loader import ConfigLoader
 loader = ConfigLoader()
@@ -507,12 +512,13 @@ ORDER BY time;
 Monitor the new unified DOM extraction approach for supported organizations:
 
 ```sql
--- Check unified extraction success rates
+-- Check unified extraction success rates (modern BaseScraper architecture)
 SELECT 
     o.name,
     COUNT(CASE WHEN sl.detailed_metrics->>'unified_extraction_used' = 'true' THEN 1 END) as unified_count,
     COUNT(CASE WHEN sl.detailed_metrics->>'fallback_to_legacy' = 'true' THEN 1 END) as fallback_count,
-    COUNT(*) as total_scrapes
+    COUNT(*) as total_scrapes,
+    AVG(sl.data_quality_score) as avg_quality_score
 FROM scrape_logs sl
 JOIN organizations o ON sl.organization_id = o.id
 WHERE sl.started_at > NOW() - INTERVAL '30 days'
@@ -541,26 +547,30 @@ ORDER BY image_success_rate DESC;
 ### Troubleshooting Unified Extraction
 
 ```bash
-# Debug extraction issues
+# ALWAYS activate virtual environment first
+source venv/bin/activate
+
+# Debug extraction issues with modern BaseScraper architecture
 python -c "
 from scrapers.rean.dogs_scraper import REANScraper
-scraper = REANScraper(config_id='rean')
-try:
-    # Test extraction
-    animals = scraper.collect_data()
-    print(f'Found {len(animals)} animals')
-    
-    # Check image associations
-    with_images = [d for d in animals if d.get('primary_image_url')]
-    print(f'{len(with_images)} animals have associated images')
-    
-    # Sample output
-    if animals:
-        sample = animals[0]
-        print(f'Sample animal: {sample.get(\"name\")} - Image: {sample.get(\"primary_image_url\", \"None\")[:50]}...')
+# Use modern context manager pattern
+with REANScraper(config_id='rean') as scraper:
+    try:
+        # Test extraction with service injection
+        animals = scraper.collect_data()
+        print(f'Found {len(animals)} animals')
         
-except Exception as e:
-    print(f'Extraction error: {e}')
+        # Check image associations
+        with_images = [d for d in animals if d.get('primary_image_url')]
+        print(f'{len(with_images)} animals have associated images')
+        
+        # Sample output
+        if animals:
+            sample = animals[0]
+            print(f'Sample animal: {sample.get(\"name\")} - Image: {sample.get(\"primary_image_url\", \"None\")[:50]}...')
+            
+    except Exception as e:
+        print(f'Extraction error: {e}')
 "
 ```
 

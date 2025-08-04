@@ -59,6 +59,123 @@ class AnimalService:
             logger.error(f"Error in get_animals: {e}")
             raise APIException(status_code=500, detail="Failed to fetch animals", error_code="INTERNAL_ERROR")
 
+    def get_animals_for_sitemap(self, filters: AnimalFilterRequest) -> List[AnimalWithImages]:
+        """
+        Get animals filtered for sitemap generation with meaningful descriptions.
+
+        This method applies quality filtering to only include animals with
+        substantial descriptions (>200 characters) to improve SEO performance
+        and Google crawl budget usage.
+
+        Args:
+            filters: Filter criteria for animals (sitemap_quality_filter should be True)
+
+        Returns:
+            List of animals with meaningful descriptions for sitemap inclusion
+        """
+        try:
+            # Get all animals matching base criteria
+            animals = self.get_animals(filters)
+
+            # Apply description quality filtering if requested
+            if filters.sitemap_quality_filter:
+                return self._filter_by_description_quality(animals)
+
+            return animals
+
+        except Exception as e:
+            logger.error(f"Error in get_animals_for_sitemap: {e}")
+            raise APIException(status_code=500, detail="Failed to fetch animals for sitemap", error_code="INTERNAL_ERROR")
+
+    def _filter_by_description_quality(self, animals: List[AnimalWithImages]) -> List[AnimalWithImages]:
+        """
+        Filter animals by description quality for sitemap inclusion.
+
+        Only includes animals with meaningful descriptions (>200 characters)
+        to improve SEO performance and avoid wasting Google crawl budget on
+        low-quality content.
+
+        Quality criteria:
+        - Description must exist and be non-null
+        - Description must be longer than 200 characters (plain text)
+        - Excludes common fallback patterns
+
+        Args:
+            animals: List of animals to filter
+
+        Returns:
+            Filtered list containing only animals with quality descriptions
+        """
+        quality_animals = []
+
+        for animal in animals:
+            # Get description from properties
+            description = None
+            if hasattr(animal, "properties") and animal.properties:
+                description = animal.properties.get("description") or animal.properties.get("raw_description")
+
+            # Skip if no description
+            if not description or not isinstance(description, str):
+                continue
+
+            # Calculate plain text length (strip HTML if present)
+            plain_text = self._strip_html_tags(description.strip())
+
+            # Skip if too short
+            if len(plain_text) < 200:
+                continue
+
+            # Skip if contains fallback patterns
+            if self._is_fallback_content(plain_text):
+                continue
+
+            quality_animals.append(animal)
+
+        logger.info(f"Filtered {len(animals)} animals to {len(quality_animals)} with quality descriptions for sitemap")
+        return quality_animals
+
+    def _strip_html_tags(self, text: str) -> str:
+        """
+        Remove HTML tags from text for length calculation.
+
+        Args:
+            text: Text that may contain HTML
+
+        Returns:
+            Plain text with HTML tags removed
+        """
+        import re
+
+        return re.sub(r"<[^>]+>", "", text)
+
+    def _is_fallback_content(self, text: str) -> bool:
+        """
+        Check if text contains common fallback content patterns.
+
+        Args:
+            text: Plain text description
+
+        Returns:
+            True if text appears to be generic fallback content
+        """
+        # Convert to lowercase for pattern matching
+        text_lower = text.lower()
+
+        # Common fallback patterns to exclude
+        fallback_patterns = [
+            "looking for a loving forever home",
+            "contact the rescue organization to learn more",
+            "contact [organization] to learn more",
+            "wonderful dog's personality, needs, and how you can provide",
+            "ready to fly",
+        ]
+
+        # Check if text contains multiple fallback patterns (likely generated)
+        pattern_count = sum(1 for pattern in fallback_patterns if pattern in text_lower)
+
+        # If 2+ patterns match, likely fallback content
+        return pattern_count >= 2
+
     def _get_animals_with_fallback(self, filters: AnimalFilterRequest) -> List[AnimalWithImages]:
         """
         Get animals with recent_with_fallback curation logic.

@@ -32,10 +32,16 @@ NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
 ### 1. Run Critical Tests
 
 ```bash
-# Backend critical tests
-pytest tests/integration/ tests/security/ tests/resilience/ tests/data_consistency/ -v
+# ALWAYS activate virtual environment first
+source venv/bin/activate
 
-# Frontend tests
+# Backend critical tests (99+ test files)
+python -m pytest tests/integration/ tests/security/ tests/resilience/ tests/data_consistency/ -v
+
+# Fast development feedback (recommended)
+python -m pytest tests/ -m "not slow" -v  # Speed-optimized test suite
+
+# Frontend tests (384+ test files)
 cd frontend && npm test
 
 # All tests must pass before deployment
@@ -44,11 +50,20 @@ cd frontend && npm test
 ### 2. Security Verification
 
 ```bash
+# ALWAYS activate virtual environment first
+source venv/bin/activate
+
 # Run security-specific tests
-pytest tests/security/ -v
+python -m pytest tests/security/ -v
+
+# Verify database isolation is active
+python -c "from tests.conftest import isolate_database_writes; print('DB isolation configured')"
 
 # Verify no sensitive data in environment
 echo $CLOUDINARY_API_SECRET  # Should not be visible in logs
+
+# Code quality verification (<750 flake8 violations)
+flake8 --exclude=venv . | wc -l  # Should be <750
 ```
 
 ### 3. Database Setup
@@ -63,22 +78,52 @@ psql rescue_dogs_production < database/schema.sql
 # Apply production-ready migrations
 psql rescue_dogs_production -f database/migrations/001_add_duplicate_stale_detection.sql
 psql rescue_dogs_production -f database/migrations/002_add_detailed_metrics.sql
+psql rescue_dogs_production -f database/migrations/003_add_missing_fields.sql
+psql rescue_dogs_production -f database/migrations/004_add_organization_enhanced_fields.sql
 
-# Verify tables and new columns created
+# Verify modern schema with availability confidence and session tracking
 psql rescue_dogs_production -c "\dt"
-psql rescue_dogs_production -c "\d animals"
-psql rescue_dogs_production -c "\d scrape_logs"
+psql rescue_dogs_production -c "\d animals"  # Should include availability_confidence, consecutive_scrapes_missing
+psql rescue_dogs_production -c "\d scrape_logs"  # Should include detailed_metrics JSONB column
+psql rescue_dogs_production -c "\d organizations"  # Should include enhanced metadata fields
 ```
 
 ### 4. Image Processing Test
 
 ```bash
+# ALWAYS activate virtual environment first
+source venv/bin/activate
+
 # Test Cloudinary integration
 python -c "
 from utils.cloudinary_service import CloudinaryService
 service = CloudinaryService()
 print('Cloudinary configured:', service.cloudinary_service is not None)
 "
+
+# Test modern BaseScraper architecture
+python -c "
+from scrapers.base_scraper import BaseScraper
+print('BaseScraper modern patterns available')
+"
+```
+
+### 5. Modern Architecture Verification
+
+```bash
+# ALWAYS activate virtual environment first  
+source venv/bin/activate
+
+# Verify service injection patterns
+python -c "
+from services.session_manager import SessionManager
+from services.metrics_collector import MetricsCollector
+print('Service injection ready')
+"
+
+# Test Next.js 15 compatibility (frontend)
+cd frontend
+npm run build  # Should succeed with Next.js 15 patterns
 ```
 ## CORS Configuration
 
@@ -139,11 +184,14 @@ curl https://your-api-domain.com/health
 # Test default filtering (should show only available + high/medium confidence)
 curl "https://your-api-domain.com/api/animals?limit=5"
 
-# Verify response includes availability fields
-curl "https://your-api-domain.com/api/animals?limit=1" | jq '.[] | {name, status, availability_confidence, last_seen_at}'
+# Verify response includes modern availability fields
+curl "https://your-api-domain.com/api/animals?limit=1" | jq '.[] | {name, status, availability_confidence, consecutive_scrapes_missing, last_seen_at}'
 
-# Test override parameters
+# Test override parameters (admin functionality)
 curl "https://your-api-domain.com/api/animals?status=all&availability_confidence=all&limit=5"
+
+# Verify 8 organizations are configured
+curl "https://your-api-domain.com/api/organizations" | jq 'length'  # Should return 8
 ```
 
 ### 3. Image Processing Test
@@ -155,13 +203,15 @@ curl "https://your-api-domain.com/api/animals?limit=1"
 
 ### 4. Frontend Functionality
 
-- [ ] Dogs page loads with images
-- [ ] Filters work correctly
-- [ ] Individual dog pages display properly
-- [ ] Error states show user-friendly messages
-- [ ] Images load with proper fallbacks
-- [ ] Only available animals with good confidence shown by default
-- [ ] Admin can override filters to see all animals
+- [ ] Dogs page loads with images (Cloudinary optimization)
+- [ ] Filters work correctly with availability confidence
+- [ ] Individual dog pages display properly (Next.js 15 compatibility)
+- [ ] Error states show user-friendly messages with sanitized content
+- [ ] Images load with proper fallbacks to original URLs
+- [ ] Only available animals with high/medium confidence shown by default
+- [ ] Admin can override filters to see all animals and confidence levels
+- [ ] Organization pages display all 8 configured organizations
+- [ ] Search functionality works with modern filtering
 
 ### 5. Error Handling Test
 
@@ -179,12 +229,14 @@ Set up weekly scraping with cron jobs for reliable data updates:
 
 ```bash
 # Add to crontab (crontab -e)
-# Run all scrapers every Monday at 2 AM
-0 2 * * 1 cd /path/to/rescue-dog-aggregator && python management/config_commands.py run-all >> /var/log/scraper.log 2>&1
+# CRITICAL: Always activate virtual environment in cron jobs
+# Run all scrapers every Monday at 2 AM (8 organizations)
+0 2 * * 1 cd /path/to/rescue-dog-aggregator && source venv/bin/activate && python management/config_commands.py run-all >> /var/log/scraper.log 2>&1
 
-# Or run individual scrapers at different times
-0 2 * * 1 cd /path/to/rescue-dog-aggregator && python management/config_commands.py run pets-in-turkey >> /var/log/scraper.log 2>&1
-0 3 * * 1 cd /path/to/rescue-dog-aggregator && python management/config_commands.py run other-org >> /var/log/scraper.log 2>&1
+# Or run individual scrapers at different times (current organizations)
+0 2 * * 1 cd /path/to/rescue-dog-aggregator && source venv/bin/activate && python management/config_commands.py run pets-in-turkey >> /var/log/scraper.log 2>&1
+0 3 * * 1 cd /path/to/rescue-dog-aggregator && source venv/bin/activate && python management/config_commands.py run rean >> /var/log/scraper.log 2>&1
+0 4 * * 1 cd /path/to/rescue-dog-aggregator && source venv/bin/activate && python management/config_commands.py run tierschutzverein-europa >> /var/log/scraper.log 2>&1
 ```
 
 ### Health Monitoring

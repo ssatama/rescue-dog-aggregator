@@ -68,7 +68,7 @@ describe("Dynamic Sitemap Route", () => {
 
     expect(response.body).toContain('<?xml version="1.0" encoding="UTF-8"?>');
     expect(response.body).toContain(
-      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">',
     );
 
     // Should include homepage
@@ -218,6 +218,7 @@ describe("Dynamic Sitemap Route", () => {
 
     // Should include changefreq
     expect(response.body).toContain("<changefreq>daily</changefreq>");
+    expect(response.body).toContain("<changefreq>monthly</changefreq>");
     expect(response.body).toContain("<changefreq>weekly</changefreq>");
   });
 });

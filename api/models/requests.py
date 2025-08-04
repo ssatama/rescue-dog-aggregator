@@ -73,6 +73,9 @@ class AnimalFilterRequest(BaseModel):
     # Sorting
     sort: Optional[str] = Field(default="newest", description="Sort order: 'newest', 'oldest', 'name-asc', 'name-desc'")
 
+    # SEO/Sitemap filtering
+    sitemap_quality_filter: bool = Field(default=False, description="Filter for sitemap generation: only include animals with meaningful descriptions")
+
     @field_validator("curation_type")
     @classmethod
     def validate_curation_type(cls, v):

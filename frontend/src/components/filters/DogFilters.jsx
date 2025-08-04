@@ -145,11 +145,17 @@ export default function DogFilters({
               variant="outline"
               onClick={onMobileFilterClick}
               data-testid="mobile-filter-button"
-              aria-label={showSortFilter ? "Open filter and sort options" : "Open filter options"}
+              aria-label={
+                showSortFilter
+                  ? "Open filter and sort options"
+                  : "Open filter options"
+              }
               className="w-full h-12 justify-center gap-3 border-gray-300 hover:border-orange-600 hover:bg-orange-50 text-gray-700 hover:text-orange-600"
             >
               <Icon name="filter" size="default" />
-              <span className="font-medium">{showSortFilter ? "Filter & Sort" : "Filter"}</span>
+              <span className="font-medium">
+                {showSortFilter ? "Filter & Sort" : "Filter"}
+              </span>
               {hasActiveFilters && (
                 <Badge
                   variant="secondary"

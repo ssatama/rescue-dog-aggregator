@@ -147,37 +147,48 @@ python management/config_commands.py run org-id  # Run specific scraper
 
 ## BaseScraper Foundation
 
-### Recent Architectural Refactoring
+### Modern Architectural Patterns (2024 Refactor)
 
-**BaseScraper has been completely refactored with modern design patterns:**
+**BaseScraper has been completely rewritten with modern design patterns for improved maintainability, testability, and reliability:**
 
-#### 🏗️ **Null Object Pattern**
-- **Services default to null objects** instead of None
-- **Eliminates conditional checks** throughout the codebase
-- **Automatic fallback**: `metrics_collector` defaults to `NullMetricsCollector()`
-- **Cleaner code**: No more `if service:` checks needed
+#### 🏗️ **Null Object Pattern Implementation**
+- **Eliminates conditional checks**: Services default to fully-functional null objects instead of None
+- **Zero conditional logic**: No more `if service:` checks throughout the codebase
+- **Automatic fallback**: `metrics_collector` defaults to `NullMetricsCollector()` with no-op methods
+- **Consistent interface**: Null objects implement same interface as real services
+- **Example**: `NullMetricsCollector` provides all metrics methods but performs no operations
 
 #### 🔄 **Context Manager Pattern**
-- **Automatic resource management** with `with scraper:` syntax
-- **Database connections** automatically opened/closed
-- **Exception-safe cleanup** ensures resources are freed
-- **Backward compatible** with existing manual connection handling
+- **Resource safety**: `with MyScraper() as scraper:` automatically manages database connections
+- **Exception safety**: Guaranteed resource cleanup even when exceptions occur
+- **Backward compatibility**: Existing `scraper.run()` calls continue to work
+- **Clean patterns**: Encourages proper resource management practices
+- **Database pooling**: Automatic connection acquisition and release
 
-#### 📋 **Template Method Pattern**
-- **`run()` method decomposed** into focused phases:
-  - `_setup_scrape()` - Initialize logging and sessions
-  - `_collect_and_time_data()` - Data collection with timing
-  - `_process_animals_data()` - Database operations
-  - `_finalize_scrape()` - Stale data detection
-  - `_log_completion_metrics()` - Comprehensive metrics
-- **Separation of concerns** - each phase has single responsibility
-- **Extensible** - phases can be overridden for custom behavior
+#### 📋 **Template Method Pattern** 
+- **Focused phases**: `run()` method decomposed into single-responsibility phases:
+  - `_setup_scrape()` → Initialize logging, sessions, and metrics
+  - `_collect_and_time_data()` → Execute data collection with timing
+  - `_process_animals_data()` → Database CRUD operations with availability tracking
+  - `_finalize_scrape()` → Stale data detection and status updates
+  - `_log_completion_metrics()` → Comprehensive metrics reporting
+- **Extensibility**: Individual phases can be overridden for custom behavior
+- **Consistent execution**: All scrapers follow same execution pattern
+- **Error isolation**: Phase-level error handling prevents cascading failures
 
 #### 💉 **Enhanced Dependency Injection**
-- **Constructor-level service injection** for clean architecture
-- **Testing-friendly** with mock service support
-- **Null object defaults** prevent conditional logic
-- **Backward compatible** with existing usage patterns
+- **Constructor injection**: Clean service injection at initialization
+- **Testing support**: Easy mock service substitution for unit tests
+- **Service composition**: Mix and match real and null services as needed
+- **Configuration-driven**: Services can be configured via YAML
+- **Interface segregation**: Services implement focused, cohesive interfaces
+
+#### 🔧 **Configuration-Driven Architecture**
+- **YAML-based configuration**: Organizations defined in `configs/organizations/`
+- **Zero-code deployment**: Add new organizations without code changes
+- **Schema validation**: JSON schemas ensure configuration integrity
+- **Dynamic loading**: Runtime configuration loading and validation
+- **Environment-aware**: Different settings for development, testing, and production
 
 #### 🎯 **Modern Usage Examples**
 

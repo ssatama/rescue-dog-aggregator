@@ -144,7 +144,7 @@ const generateDogPages = (dogs) => {
   return dogs.map((dog) => {
     const entry = {
       url: `${baseUrl}/dogs/${dog.slug || `unknown-dog-${dog.id}`}`,
-      changefreq: "daily",
+      changefreq: "monthly", // Dog info rarely changes unless rescues update
       priority: 0.8,
     };
 
@@ -191,7 +191,58 @@ const generateOrganizationPages = (organizations) => {
 };
 
 /**
- * Convert sitemap entries to XML format
+ * Get European locales for hreflang tags
+ * @returns {Array<string>} Array of European locale codes
+ */
+const getEuropeanLocales = () => [
+  "en-GB",
+  "en-IE",
+  "en-DE",
+  "en-FR",
+  "en-IT",
+  "en-ES",
+  "en-NL",
+  "en-BE",
+  "en-AT",
+  "en-PT",
+  "en-SE",
+  "en-DK",
+  "en-FI",
+  "en-NO",
+  "en-CH",
+  "en-PL",
+  "en-CZ",
+  "en-HU",
+  "en-SK",
+  "en-SI",
+  "en-HR",
+  "en-RO",
+  "en-BG",
+  "en-GR",
+  "en-CY",
+  "en-MT",
+  "en-LU",
+  "en-EE",
+  "en-LV",
+  "en-LT",
+];
+
+/**
+ * Generate hreflang alternate URLs for European markets
+ * @param {string} baseUrl - Base URL without locale
+ * @returns {Array<Object>} Array of hreflang alternate entries
+ */
+const generateHreflangAlternates = (baseUrl) => {
+  const locales = getEuropeanLocales();
+  return locales.map((locale) => ({
+    rel: "alternate",
+    hreflang: locale,
+    href: `${getBaseUrl()}/${locale}${baseUrl.replace(getBaseUrl(), "")}`,
+  }));
+};
+
+/**
+ * Convert sitemap entries to XML format with European hreflang support
  * @param {Array<Object>} entries - Array of validated sitemap entries
  * @returns {string} XML sitemap content
  */
@@ -205,7 +256,7 @@ const entriesToXml = (entries) => {
 
   const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>';
   const urlsetOpen =
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">';
   const urlsetClose = "</urlset>";
 
   const urlElements = limitedEntries.map((entry) => {
@@ -223,6 +274,12 @@ const entriesToXml = (entries) => {
     if (entry.priority !== undefined) {
       urlXml += `    <priority>${entry.priority}</priority>\n`;
     }
+
+    // Add hreflang alternates for European markets
+    const hreflangAlternates = generateHreflangAlternates(entry.url);
+    hreflangAlternates.forEach((alternate) => {
+      urlXml += `    <xhtml:link rel="${alternate.rel}" hreflang="${alternate.hreflang}" href="${escapeXml(alternate.href)}" />\n`;
+    });
 
     urlXml += "  </url>";
     return urlXml;
@@ -303,7 +360,7 @@ export const generateSitemap = async () => {
       const dogs = await getAllAnimals();
       allEntries.push(...generateDogPages(dogs));
     } catch (error) {
-      if (process.env.NODE_ENV !== 'production') {
+      if (process.env.NODE_ENV !== "production") {
         console.warn("Failed to fetch dogs for sitemap:", error.message);
       }
     }
@@ -312,7 +369,7 @@ export const generateSitemap = async () => {
       const organizations = await getAllOrganizations();
       allEntries.push(...generateOrganizationPages(organizations));
     } catch (error) {
-      if (process.env.NODE_ENV !== 'production') {
+      if (process.env.NODE_ENV !== "production") {
         console.warn(
           "Failed to fetch organizations for sitemap:",
           error.message,
@@ -323,7 +380,7 @@ export const generateSitemap = async () => {
     // Convert to XML
     return entriesToXml(allEntries);
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== "production") {
       console.error("Error generating sitemap:", error);
     }
 

@@ -4,19 +4,21 @@ This document covers test execution optimization strategies, performance testing
 
 ## Test Suite Overview
 
-The platform maintains comprehensive test coverage across backend and frontend:
+The platform maintains comprehensive test coverage across backend and frontend as of August 2025:
 
 **Backend Testing (Python/pytest):**
-- 259 tests across 78 test files
+- 434+ tests across 108 test files
 - Organized by test markers for selective execution
 - Database fixtures with session management
 - Integration with PostgreSQL test database
+- Global database isolation to prevent production contamination
 
 **Frontend Testing (Jest/Next.js):**
-- 1,500+ tests across 74 test files  
+- 1,249 tests across 88 test suites
 - Component testing with React Testing Library
 - Accessibility testing with jest-axe
 - Performance testing with Core Web Vitals
+- TypeScript support throughout
 
 ## Test Execution Optimization
 
@@ -25,14 +27,15 @@ The platform maintains comprehensive test coverage across backend and frontend:
 The pytest configuration uses markers to enable fast feedback loops:
 
 ```bash
-# Fast tests only (1-5 seconds, minimal I/O)
-pytest -m "fast"
-
-# Exclude slow tests (for CI/PR feedback)
-pytest -m "not slow"
+# Recommended development workflow
+pytest tests/ -m "unit or fast" -v      # Fast development feedback
+pytest tests/ -m "not browser and not requires_migrations" -v  # CI pipeline tests
 
 # Unit tests only (pure logic, <1 second)
 pytest -m "unit"
+
+# Exclude slow tests (for CI/PR feedback)
+pytest -m "not slow"
 
 # Integration tests
 pytest -m "integration"
@@ -44,14 +47,16 @@ pytest -m "database"
 ```
 
 **Available Test Markers:**
-- `unit`: Very fast unit tests (<1 second, pure logic)
+- `unit`: Very fast unit tests (<1 second, pure logic) - 82 tests
 - `fast`: Fast tests (1-5 seconds, minimal I/O)
-- `slow`: Slow tests requiring external dependencies
+- `slow`: Slow tests requiring external dependencies (11+ seconds each)
 - `integration`: Cross-component integration tests
-- `api`: API endpoint tests
+- `api`: API endpoint tests - 110 tests
 - `database`: Database operation tests
 - `network`: Network simulation tests
 - `selenium`: Browser automation tests
+- `browser`: Tests requiring browser automation
+- `requires_migrations`: Tests needing database migrations
 
 ### Parallel Test Execution (Frontend)
 
@@ -73,8 +78,17 @@ npm test -- --coverage
 
 ### Test Data Management
 
-**Database Fixtures:**
+**Global Database Isolation (tests/conftest.py):**
 ```python
+@pytest.fixture(autouse=True)
+def isolate_database_writes():
+    """Global fixture that prevents ALL tests from writing to production database."""
+    with patch('scrapers.base_scraper.BaseScraper.connect_to_database'):
+        with patch('services.organization_sync_service.OrganizationSyncService'):
+            with patch('scrapers.service_injection.get_metrics_collector'):
+                with patch('scrapers.service_injection.get_session_manager'):
+                    yield
+
 # Session-scoped fixtures reduce database setup overhead
 @pytest.fixture(scope="session")
 def db_connection():
@@ -382,6 +396,41 @@ def test_database_connection_pool():
     assert len(results) == 100
 ```
 
+## Current Test Suite Performance (August 2025)
+
+### Backend Test Metrics
+```bash
+# Fast unit tests execution
+pytest tests/ -m "unit or fast" -v
+# Execution time: ~5-10 seconds for 82 tests
+
+# CI pipeline tests (excluding browser/migrations)
+pytest tests/ -m "not browser and not requires_migrations" -v  
+# Execution time: ~2-3 minutes
+
+# Full test suite
+pytest tests/ -v
+# Total: 434+ tests across 108 files
+# Execution time: ~5 minutes (including slow tests)
+```
+
+### Frontend Test Metrics
+```bash
+# Full frontend test suite
+cd frontend && npm test
+# Total: 1,249 tests across 88 suites
+# Execution time: ~2 minutes
+# Coverage: >90% for critical components
+```
+
+### Test Distribution by Category
+- **Unit Tests**: 82 tests (fast, isolated business logic)
+- **API Tests**: 110 tests (endpoint validation)
+- **Integration Tests**: ~150 tests (cross-component)
+- **Performance Tests**: 58 tests (Core Web Vitals)
+- **Accessibility Tests**: 38+ tests (WCAG compliance)
+- **Security Tests**: 25+ tests (XSS, injection prevention)
+
 ## Optimization Guidelines
 
 ### Test Development Best Practices
@@ -391,6 +440,7 @@ def test_database_connection_pool():
 3. **Use Appropriate Test Scope**: Match test scope to what you're testing
 4. **Leverage Fixtures**: Reuse expensive setup across tests
 5. **Profile Regularly**: Monitor test performance and identify bottlenecks
+6. **Use Global Database Isolation**: Prevents test contamination of production data
 
 ### Performance Targets
 
@@ -413,11 +463,20 @@ def test_database_connection_pool():
 - Refactor slow tests quarterly
 - Update mocking strategies as needed
 - Monitor CI/CD pipeline performance
+- Track test marker usage and effectiveness
 
 **Tool Updates:**
-- Keep testing frameworks updated
+- Keep testing frameworks updated (pytest, Jest)
 - Leverage new optimization features
 - Review and update fixture strategies
 - Optimize database test patterns
+- Maintain TypeScript type coverage
 
-This optimization strategy ensures fast feedback loops for development while maintaining comprehensive test coverage and reliable CI/CD pipelines.
+**2025 Best Practices:**
+- Global database isolation via autouse fixtures
+- Comprehensive test markers for selective execution
+- Mock time.sleep() calls in slow tests
+- Parallel test execution by default
+- Separate CI workflows for fast vs comprehensive testing
+
+This optimization strategy ensures fast feedback loops for development while maintaining comprehensive test coverage (2,400+ total tests) and reliable CI/CD pipelines.

@@ -1,36 +1,79 @@
 # Backend Architecture
 
-This document outlines the architecture of the Rescue Dog Aggregator backend API. The backend is built using Python with the [FastAPI](https://fastapi.tiangolo.com/) framework.
+This document outlines the architecture of the Rescue Dog Aggregator backend API. The backend is built using Python with the [FastAPI](https://fastapi.tiangolo.com/) framework and follows modern architectural patterns for scalability and maintainability.
 
 ## Architecture Overview
 
-The backend follows a layered architecture pattern, promoting a clean separation of concerns. This design makes the application easier to develop, test, and maintain.
+The backend follows a **layered architecture pattern** with **dependency injection** and **service-oriented design**, promoting clean separation of concerns and testability. This design makes the application easier to develop, test, and maintain.
 
-The primary layers are:
+### Core Architectural Layers
 
-- **Routes (Presentation Layer):** Handles HTTP requests and responses
-- **Services (Business Logic Layer):** Contains the core application logic
-- **Database (Data Access Layer):** Manages all communication with the database
+- **Routes (Presentation Layer):** Handles HTTP requests, responses, and API contracts
+- **Services (Business Logic Layer):** Contains domain logic and orchestrates data operations
+- **Database Layer (Data Access):** Manages all database communications with connection pooling
+- **Models (Data Transfer Objects):** Pydantic models for validation and serialization
+- **Dependencies:** Dependency injection for cross-cutting concerns
+
+### Modern Design Patterns
+
+- **Dependency Injection:** FastAPI's built-in DI system for database connections and services
+- **Repository Pattern:** Clean data access abstractions in the database layer
+- **Service Layer Pattern:** Business logic encapsulation and orchestration
+- **Exception Handling:** Centralized error handling with custom exceptions
+- **Security Middleware:** Built-in security headers and CORS configuration
 
 ### Request Lifecycle
 
-1. An HTTP request is received by `main.py` and routed to the appropriate endpoint in the `routes/` directory
-2. The route function calls a dependency (from `dependencies.py`) to get a database connection and/or other resources
-3. The route function calls the relevant method in the `services/` layer, passing any necessary data
-4. The service executes the business logic, interacting with the `database/` layer to fetch or persist data
-5. The result is returned up the chain, serialized into JSON by Pydantic models (`models/`), and sent as an HTTP response
+1. **Request Reception:** HTTP request received by `main.py` with security middleware processing
+2. **Route Matching:** FastAPI routes the request to appropriate endpoint in `routes/` directory
+3. **Dependency Injection:** Route dependencies provide database connections and services via `dependencies.py`
+4. **Business Logic:** Route delegates to `services/` layer for domain logic execution
+5. **Data Access:** Services interact with database layer for data operations
+6. **Response Serialization:** Results validated and serialized via Pydantic models in `models/`
+7. **Response Delivery:** JSON response sent with appropriate security headers
+
+### Enhanced Error Handling Flow
+
+- **Exception Boundaries:** Custom exception classes in `exceptions.py` for different error types
+- **Centralized Handling:** Global exception handlers map domain errors to HTTP status codes
+- **Structured Logging:** Comprehensive error logging with context and trace information
+- **Client-Friendly Responses:** Consistent error response format across all endpoints
 
 ## API Design
 
-The API is designed following RESTful principles. Resources like `animals` and `organizations` are exposed via dedicated routers.
+The API follows **RESTful principles** with **domain-driven design**, organizing endpoints by business domain for maintainability and discoverability.
+
+### API Structure
 
 - **Directory:** `api/routes/`
-- **Key Files:**
-  - `animals.py`: Endpoints related to animal data (e.g., `GET /animals`, `GET /animals/{id}`)
-  - `organizations.py`: Endpoints for rescue organizations
-  - `monitoring.py`: Health checks and operational endpoints (e.g., `GET /health`)
+- **Domain-Driven Organization:**
+  - `animals.py`: Animal data endpoints with advanced filtering, searching, and statistics
+  - `organizations.py`: Rescue organization management and discovery
+  - `monitoring.py`: Health checks, metrics, and operational monitoring
 
-This structure keeps endpoint definitions organized by domain, making them easy to locate and manage.
+### Key Endpoints
+
+#### Animals API
+- `POST /api/animals` - Advanced search and filtering with pagination
+- `GET /api/animals/{id}` - Individual animal details with images
+- `GET /api/animals/statistics` - Aggregate statistics and metrics
+- `GET /api/animals/meta/*` - Metadata endpoints for filter options
+
+#### Organizations API  
+- `GET /api/organizations` - List all rescue organizations
+- `GET /api/organizations/{id}` - Organization details and associated animals
+
+#### Monitoring API
+- `GET /health` - Application health status
+- `GET /api/health` - Detailed health checks with database connectivity
+
+### API Features
+
+- **Advanced Filtering:** Multi-criteria search with boolean combinations
+- **Pagination:** Offset-based pagination with configurable limits
+- **Metadata Endpoints:** Dynamic filter options based on actual data
+- **Error Handling:** Consistent error responses with proper HTTP status codes
+- **Security Headers:** CORS configuration and security middleware
 
 ## Database Layer
 

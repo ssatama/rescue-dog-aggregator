@@ -6,7 +6,7 @@
 
 ```jsx
 // Always functional components with TypeScript
-export default function DogCard({ dog }: { dog: Dog }) {
+export default function DogCard({ dog }: { dog: Animal }) {
   // Hooks first
   const [favorited, setFavorited] = useState(false);
 
@@ -33,7 +33,7 @@ export default function DogCard({ dog }: { dog: Dog }) {
 #### API Calls
 
 ```typescript
-const { data, error, isLoading } = useSWR<Dog[]>("/api/v1/dogs", fetcher);
+const { data, error, isLoading } = useSWR<Animal[]>("/api/animals", fetcher);
 ```
 
 #### Responsive Design

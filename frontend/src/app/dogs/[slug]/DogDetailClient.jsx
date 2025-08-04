@@ -42,11 +42,12 @@ export default function DogDetailClient({ params = {} }) {
 
   // Development monitoring only
   useEffect(() => {
-    process.env.NODE_ENV !== 'production' && console.log("[DogDetail] Component mounted:", {
-      dogSlug,
-      pathname,
-      documentReady: document.readyState === "complete",
-    });
+    process.env.NODE_ENV !== "production" &&
+      console.log("[DogDetail] Component mounted:", {
+        dogSlug,
+        pathname,
+        documentReady: document.readyState === "complete",
+      });
   }, []);
 
   // Enhanced fetchDogData with comprehensive error handling and retry logic
@@ -58,17 +59,19 @@ export default function DogDetailClient({ params = {} }) {
       const maxRetries = 3;
 
       // Development logging only
-      process.env.NODE_ENV !== 'production' && console.log("[DogDetail] API call:", {
-        dogSlug,
-        retryCount,
-      });
+      process.env.NODE_ENV !== "production" &&
+        console.log("[DogDetail] API call:", {
+          dogSlug,
+          retryCount,
+        });
 
       try {
         setLoading(true);
         setError(false);
 
         // Minimal production logging for API calls
-        process.env.NODE_ENV !== 'production' && console.log("[DogDetail] Making API request...");
+        process.env.NODE_ENV !== "production" &&
+          console.log("[DogDetail] Making API request...");
 
         // Create timeout promise for hanging requests detection
         const timeoutMs = 10000; // 10 second timeout
@@ -85,20 +88,22 @@ export default function DogDetailClient({ params = {} }) {
         ]);
 
         // Production: Only log API success for monitoring
-        process.env.NODE_ENV !== 'production' && console.log("[DogDetail] API request successful:", {
-          dogName: data?.name,
-          responseTime: `${Date.now() - fetchStartTime}ms`,
-        });
+        process.env.NODE_ENV !== "production" &&
+          console.log("[DogDetail] API request successful:", {
+            dogName: data?.name,
+            responseTime: `${Date.now() - fetchStartTime}ms`,
+          });
 
         // Only update state if component is still mounted
         if (mountedRef.current) {
           setDog(data);
 
           // Development logging for state updates
-          process.env.NODE_ENV !== 'production' && console.log("[DogDetail] Dog state set:", {
-            dogName: data?.name,
-            hasImageUrl: !!data?.primary_image_url,
-          });
+          process.env.NODE_ENV !== "production" &&
+            console.log("[DogDetail] Dog state set:", {
+              dogName: data?.name,
+              hasImageUrl: !!data?.primary_image_url,
+            });
         }
       } catch (err) {
         const errorInfo = {
@@ -116,14 +121,15 @@ export default function DogDetailClient({ params = {} }) {
         reportError("Error fetching dog data", errorInfo);
 
         // Development logging for errors
-        process.env.NODE_ENV !== 'production' && console.log("[DogDetail] API ERROR:", errorInfo);
+        process.env.NODE_ENV !== "production" &&
+          console.log("[DogDetail] API ERROR:", errorInfo);
 
         // Retry logic for certain types of errors
         if (
           retryCount < maxRetries &&
           (err.name === "AbortError" || err.message.includes("fetch"))
         ) {
-          if (process.env.NODE_ENV !== 'production') {
+          if (process.env.NODE_ENV !== "production") {
             console.log("[DogDetail] Retrying API call...", {
               retryCount: retryCount + 1,
             });
@@ -392,7 +398,7 @@ export default function DogDetailClient({ params = {} }) {
                     <div className="w-full" data-testid="hero-image-container">
                       {(() => {
                         // Development logging only
-                        if (process.env.NODE_ENV !== 'production') {
+                        if (process.env.NODE_ENV !== "production") {
                           console.log(
                             "[DogDetail] Navigation: rendering hero section",
                             {
@@ -419,7 +425,7 @@ export default function DogDetailClient({ params = {} }) {
                         }
 
                         // DIAGNOSTIC: Log image URL being passed to component
-                        if (process.env.NODE_ENV !== 'production') {
+                        if (process.env.NODE_ENV !== "production") {
                           console.log(
                             "[DogDetailClient] About to render HeroImageWithBlurredBackground:",
                             {

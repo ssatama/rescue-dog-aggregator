@@ -4,9 +4,9 @@ Get up and running with the Rescue Dog Aggregator in under 5 minutes.
 
 ## 📋 Prerequisites
 
-- **Python 3.9+** (3.9.6 recommended for optimal compatibility)
-- **PostgreSQL 13+** (14+ recommended for enhanced JSON performance)
-- **Node.js 18+** (required for Next.js 15 App Router features)
+- **Python 3.9+** (Python 3.13 compatible, 3.9.6+ recommended)
+- **PostgreSQL 13+** (14+ recommended for enhanced JSON performance)  
+- **Node.js 18+** (required for Next.js 15.3.0+ App Router features)
 - **Cloudflare R2** account (for production image optimization and CDN)
 
 ## 🚀 30-Second Setup
@@ -79,7 +79,7 @@ open http://localhost:3000
 ### Test Suite Validation
 
 ```bash
-# Backend tests (259 tests, ~3 seconds)
+# Backend tests (fast subset - ~3 seconds)
 source venv/bin/activate
 pytest tests/ -m "not slow" -v
 

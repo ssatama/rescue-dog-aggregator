@@ -74,7 +74,7 @@ export function useAdvancedImage(
   );
 
   // DIAGNOSTIC: Log the URL transformation
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== "production") {
     console.log("[useAdvancedImage] URL transformation:", {
       originalSrc: src,
       optimizedSrc,
@@ -121,7 +121,7 @@ export function useAdvancedImage(
 
   // Effect 1: Reset state and trigger loading when src changes.
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== "production") {
       console.log("[useAdvancedImage] Reset effect triggered:", {
         src,
         isReady,
@@ -140,7 +140,7 @@ export function useAdvancedImage(
 
     // Start loading only if we have a valid src and the document is ready.
     if (src && isReady && hydrated) {
-      if (process.env.NODE_ENV !== 'production') {
+      if (process.env.NODE_ENV !== "production") {
         console.log("[useAdvancedImage] Starting load for:", src);
       }
       setIsLoading(true);
@@ -151,7 +151,7 @@ export function useAdvancedImage(
 
   // Effect 2: Perform the image loading side-effect.
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== "production") {
       console.log("[useAdvancedImage] Loading effect:", {
         isLoading,
         optimizedSrc,
@@ -167,7 +167,7 @@ export function useAdvancedImage(
     imageLoaderRef.current = img;
     loadStartTimeRef.current = Date.now();
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== "production") {
       console.log(
         "[useAdvancedImage] Creating image loader for:",
         optimizedSrc,
@@ -177,7 +177,7 @@ export function useAdvancedImage(
     const timeoutDuration = (networkStrategy as any).timeout || 10000;
     timeoutRef.current = setTimeout(() => {
       if (!isCancelled) {
-        if (process.env.NODE_ENV !== 'production') {
+        if (process.env.NODE_ENV !== "production") {
           console.log("[useAdvancedImage] Image load timeout");
         }
         setHasError(true);
@@ -188,7 +188,7 @@ export function useAdvancedImage(
 
     img.onload = () => {
       if (!isCancelled) {
-        if (process.env.NODE_ENV !== 'production') {
+        if (process.env.NODE_ENV !== "production") {
           console.log("[useAdvancedImage] Image loaded successfully");
         }
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -207,7 +207,7 @@ export function useAdvancedImage(
 
     img.onerror = () => {
       if (!isCancelled) {
-        if (process.env.NODE_ENV !== 'production') {
+        if (process.env.NODE_ENV !== "production") {
           console.log("[useAdvancedImage] Image load error");
         }
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -216,7 +216,7 @@ export function useAdvancedImage(
         setIsLoading(false);
         // handleImageError expects an event object, but we don't have one here
         // Just log the error for monitoring
-        if (process.env.NODE_ENV !== 'production') {
+        if (process.env.NODE_ENV !== "production") {
           console.error(
             "[useAdvancedImage] Image failed to load:",
             optimizedSrc,
@@ -245,7 +245,7 @@ export function useAdvancedImage(
   // Manual retry function
   const handleRetry = useCallback(() => {
     if (optimizedSrc) {
-      if (process.env.NODE_ENV !== 'production') {
+      if (process.env.NODE_ENV !== "production") {
         console.log("[useAdvancedImage] Retry requested");
       }
       // Reset state to trigger a new loading attempt

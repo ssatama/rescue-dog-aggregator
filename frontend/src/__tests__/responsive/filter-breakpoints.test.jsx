@@ -117,13 +117,13 @@ describe("Responsive Filter Breakpoints", () => {
         );
 
         if (expectMobile) {
-          // Mobile: should show mobile button, hide desktop filters  
+          // Mobile: should show mobile button, hide desktop filters
           expect(mobileFilterButton).toBeInTheDocument();
           // Desktop filters should have lg:hidden class (hidden on mobile/tablet)
           expect(desktopFilters).toHaveClass("hidden", "lg:block");
         } else {
           // Desktop: should hide mobile button, show desktop filters
-          const mobileButtonContainer = mobileFilterButton?.closest('div');
+          const mobileButtonContainer = mobileFilterButton?.closest("div");
           expect(mobileButtonContainer).toHaveClass("lg:hidden");
           // Desktop filters should be visible (lg:block)
           expect(desktopFilters).toHaveClass("lg:block");
@@ -156,7 +156,7 @@ describe("Responsive Filter Breakpoints", () => {
           expect(desktopFilters).toHaveClass("hidden", "lg:block");
         } else {
           expect(desktopFilters).toHaveClass("lg:block");
-          const mobileButtonContainer = mobileFilterButton?.closest('div');
+          const mobileButtonContainer = mobileFilterButton?.closest("div");
           expect(mobileButtonContainer).toHaveClass("lg:hidden");
         }
 
@@ -210,7 +210,7 @@ describe("Responsive Filter Breakpoints", () => {
           expect(mobileFilterButton).toBeInTheDocument();
           expect(desktopFilters).toHaveClass("hidden", "lg:block");
         } else {
-          const mobileButtonContainer = mobileFilterButton?.closest('div');
+          const mobileButtonContainer = mobileFilterButton?.closest("div");
           expect(mobileButtonContainer).toHaveClass("lg:hidden");
           expect(desktopFilters).toHaveClass("lg:block");
         }

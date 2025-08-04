@@ -1,10 +1,10 @@
 # Rescue Dog Aggregator Documentation
 
-Welcome to the documentation for the Rescue Dog Aggregator - an open-source platform that aggregates rescue dog listings from multiple organizations.
+Welcome to the documentation for the Rescue Dog Aggregator - an open-source platform that aggregates rescue dog listings from multiple organizations. Built with modern design patterns, TypeScript throughout, and comprehensive testing (2,400+ tests).
 
 ## 📚 Documentation Structure
 
-This documentation is organized into logical categories for easy navigation. Each section contains detailed guides, examples, and reference materials.
+This documentation is organized into logical categories for easy navigation. Each section contains detailed guides, examples, and reference materials updated for August 2025.
 
 ### 🚀 Getting Started
 Start here if you're new to the project or setting up a development environment.
@@ -14,17 +14,18 @@ Start here if you're new to the project or setting up a development environment.
 - **[Configuration Guide](getting-started/configuration.md)** - Environment and application configuration
 
 ### 🏗️ Architecture
-Deep dive into the technical architecture and system design.
+Deep dive into the technical architecture and modern design patterns (2024-2025).
 
-- **[Project Overview](architecture/project-overview.md)** - High-level system architecture and design principles
-- **[Frontend Architecture](architecture/frontend-architecture.md)** - Next.js frontend structure and patterns
-- **[Scraper Design](architecture/scraper-design.md)** - Web scraping engine architecture
-- **[Data Standardization](architecture/data-standardization.md)** - Automated data normalization system
+- **[Project Overview](architecture/project-overview.md)** - High-level system architecture with Next.js 15.3.0
+- **[Backend Architecture](architecture/backend.md)** - FastAPI backend with modern patterns
+- **[Frontend Architecture](architecture/frontend-architecture.md)** - Next.js 15.3.0 with App Router and TypeScript
+- **[Scraper Design](architecture/scraper-design.md)** - Modern scraper patterns: Null Object, Context Manager, Template Method
+- **[README](architecture/README.md)** - Architecture overview and highlights
 
 *[Browse all architecture docs →](architecture/)*
 
 ### 🛠️ Development
-Essential resources for developers contributing to the project.
+Essential resources for developers contributing to the project with TDD-first approach.
 
 - **[Contributing Guide](development/contributing.md)** - How to contribute to the project
 - **[Testing Guide](development/testing.md)** - Comprehensive testing strategies and examples
@@ -32,32 +33,41 @@ Essential resources for developers contributing to the project.
 
 *[Browse all development docs →](development/)*
 
+### 🧪 Testing
+Comprehensive testing documentation for our 2,400+ test suite.
+
+- **[Test Optimization](testing/optimization.md)** - Test execution strategies and performance (434+ backend, 1,249 frontend)
+- **[Performance Testing](testing/performance.md)** - Core Web Vitals, API benchmarks, Cloudflare R2 optimization
+- **[Security Testing](testing/security.md)** - XSS prevention, SQL injection protection, DOMPurify integration
+
+*[Browse all testing docs →](testing/)*
+
 ### 🎯 Features
 Documentation for specific platform features and capabilities.
 
-- **[Related Dogs Feature](features/related-dogs.md)** - Dog recommendation system
-- **[CTA Optimization Guide](features/cta-optimization.md)** - Call-to-action optimization strategies
-- **[Performance Optimization](features/performance-optimization.md)** - Performance tuning and optimization
-- **[Test Optimization](features/test-optimization.md)** - Testing performance and optimization
+- **[CTA Optimization Guide](features/cta-optimization.md)** - MobileStickyBar, Toast notifications, ShareButton with TypeScript
+- **[Performance Optimization](features/performance-optimization.md)** - Cloudflare R2, Progressive Images, React.memo patterns
+- **[Data Standardization](features/data-standardization.md)** - Automated breed/size normalization system
 
 *[Browse all feature docs →](features/)*
 
 ### 🔧 Operations
-Production deployment, monitoring, and maintenance guides.
+Production deployment, monitoring, and maintenance guides for Railway deployment.
 
-- **[Production Deployment](operations/production-deployment.md)** - Production setup and deployment
+- **[Production Deployment](operations/production-deployment.md)** - Railway PostgreSQL deployment and setup
 - **[Weekly Scraping](operations/weekly-scraping.md)** - Automated scraping operations
 - **[Troubleshooting](operations/troubleshooting.md)** - Common issues and solutions
 
 *[Browse all operations docs →](operations/)*
 
-### 📖 API Reference
-Complete API documentation and examples.
+### 📖 API & Reference
+Complete API documentation and database schema reference.
 
 - **[API Reference](api/reference.md)** - Complete API endpoint documentation
 - **[API Examples](api/examples.md)** - Practical usage examples and code samples
+- **[Database Schema](reference/database-schema.md)** - PostgreSQL schema with 2025 updates, Railway deployment
 
-*[Browse all API docs →](api/)*
+*[Browse all API docs →](api/)* | *[Browse reference docs →](reference/)*
 
 ### 💡 Examples
 Practical examples and code samples for common tasks.
@@ -87,14 +97,15 @@ Practical examples and code samples for common tasks.
 
 ---
 
-## 📊 Project Stats
+## 📊 Project Stats (August 2025)
 
-- **🧪 Tests**: 500+ comprehensive test files (108 backend, 434 frontend)
-- **🚀 Performance**: 95+ Core Web Vitals score
-- **🔒 Security**: Input validation and XSS protection
+- **🧪 Tests**: 2,400+ comprehensive tests (434+ backend, 1,249 frontend) with global database isolation
+- **🚀 Performance**: 95+ Core Web Vitals score, Cloudflare R2 + Images API optimization
+- **🔒 Security**: 25+ security tests, XSS prevention, SQL injection protection, DOMPurify integration
+- **🏗️ Architecture**: Modern patterns (Null Object, Context Manager, Template Method), TypeScript throughout
 - **🌍 Organizations**: 8 rescue organizations across multiple countries
-- **🐕 Animals**: 1,500+ tracked rescue dogs
-- **⚡ Uptime**: High availability with error recovery mechanisms
+- **🐕 Animals**: 2,000+ tracked rescue dogs with standardized data
+- **⚡ Infrastructure**: Railway PostgreSQL deployment, automated migrations, comprehensive monitoring
 
 ---
 
@@ -121,7 +132,9 @@ We welcome contributions to both the codebase and documentation! Please read our
 - **🐛 Something broken?** → [Troubleshooting Guide](operations/troubleshooting.md)
 - **🔧 Setting up locally?** → [Installation Guide](getting-started/installation.md)
 - **📝 Need API help?** → [API Examples](api/examples.md)
-- **🧪 Writing tests?** → [Testing Guide](development/testing.md)
+- **🧪 Writing tests?** → [Test Optimization](testing/optimization.md) | [Testing Guide](development/testing.md)
+- **🏗️ Understanding architecture?** → [Modern Patterns](architecture/scraper-design.md) | [Backend](architecture/backend.md)
+- **📊 Database schema?** → [Database Schema](reference/database-schema.md)
 
 ### Contact & Support
 - **Documentation Issues**: Create an issue with the `documentation` label
@@ -143,4 +156,4 @@ This documentation follows strict quality standards:
 
 ---
 
-*Last updated: July 8, 2025 | Version: 1.0.0*
+*Last updated: August 4, 2025 | Version: 2.0.0 | Modern Architecture & Comprehensive Testing*

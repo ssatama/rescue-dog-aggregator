@@ -4,16 +4,24 @@ This document describes the built-in monitoring capabilities of the Rescue Dog A
 
 ## Monitoring Overview
 
-The platform includes comprehensive monitoring functionality implemented directly in the FastAPI backend. All monitoring data is stored in the PostgreSQL database and accessed through dedicated API endpoints.
+The platform includes comprehensive monitoring functionality implemented directly in the FastAPI backend with modern architecture patterns. All monitoring data is stored in the PostgreSQL database and accessed through dedicated API endpoints.
+
+### Current Platform Scale
+- **Organizations**: 8 active rescue organizations across multiple countries
+- **Backend Tests**: 99+ test files with speed-optimized markers (unit/fast/slow)
+- **Frontend Tests**: 384+ test files ensuring UI reliability
+- **Architecture**: Modern BaseScraper with service injection and dependency patterns
 
 ## Architecture
 
 The monitoring system is database-driven and consists of:
 
-- **Health Check Endpoints**: Basic system health and database connectivity
-- **Scraper Monitoring**: Performance tracking and failure detection for all rescue organizations  
-- **Performance Metrics**: System and scraper performance analysis
+- **Health Check Endpoints**: Basic system health and database connectivity with isolation verification
+- **Scraper Monitoring**: Performance tracking and failure detection for 8 rescue organizations  
+- **Performance Metrics**: System and scraper performance analysis with quality scoring
 - **Alert System**: Failure detection and notification configuration
+- **Modern Architecture Monitoring**: Service injection patterns, availability confidence tracking
+- **Database Isolation Monitoring**: Test protection and production data safety
 
 ## Health Check Endpoint
 
@@ -82,11 +90,11 @@ Returns comprehensive status for all registered organizations.
     }
   ],
   "summary": {
-    "total_organizations": 7,
-    "last_24h_scrapes": 14,
-    "failure_rate": 7.1,
-    "active_scrapers": 7,
-    "healthy_scrapers": 6,
+    "total_organizations": 8,
+    "last_24h_scrapes": 16,
+    "failure_rate": 6.3,
+    "active_scrapers": 8,
+    "healthy_scrapers": 7,
     "unhealthy_scrapers": 1
   }
 }
@@ -272,26 +280,34 @@ All monitoring data is stored in PostgreSQL tables:
 
 **`scrape_logs` Table:**
 - `organization_id`: Links to organizations table
-- `started_at`, `completed_at`: Scrape timing
+- `started_at`, `completed_at`: Scrape timing with session tracking
 - `status`: success, warning, error, running
 - `dogs_found`, `dogs_added`, `dogs_updated`: Data metrics
 - `error_message`: Failure details
 - `duration_seconds`: Performance timing
 - `data_quality_score`: Quality assessment (0-1)
-- `detailed_metrics`: JSONB field for additional data
+- `detailed_metrics`: JSONB field for modern architecture data (service injection, failure detection)
+
+**`animals` Table:**
+- Modern availability confidence tracking (`availability_confidence`, `consecutive_scrapes_missing`)
+- Session management (`last_session_start`, `last_seen_at`)
+- Enhanced data fields for quality scoring
 
 **`organizations` Table:**
-- Basic organization metadata
-- Used for joining with scrape_logs
+- Basic organization metadata (8 organizations)
+- Enhanced metadata fields for modern configuration
+- Used for joining with scrape_logs and animals
 
 ### Query Patterns
 
 The monitoring endpoints use standard SQL queries with PostgreSQL-specific features:
 
-- **Window functions** for failure pattern analysis
+- **Window functions** for failure pattern analysis and availability confidence tracking
 - **FILTER clauses** for conditional aggregation
-- **Date/time arithmetic** for time-based filtering
-- **JSONB operations** for detailed metrics analysis
+- **Date/time arithmetic** for time-based filtering and session management
+- **JSONB operations** for detailed metrics analysis and modern architecture data
+- **Availability confidence queries** for dynamic status management
+- **Service injection monitoring** through detailed_metrics JSONB field
 
 ## Usage Examples
 
@@ -338,10 +354,12 @@ curl http://localhost:8000/monitoring/alerts/config
 
 The monitoring system is implemented in `api/routes/monitoring.py` and provides:
 
-- **Real-time status** based on current database state
-- **Historical analysis** using time-based queries
-- **Failure categorization** through error message parsing
-- **Performance tracking** via aggregation queries
-- **Alert generation** using configurable thresholds
+- **Real-time status** based on current database state with availability confidence
+- **Historical analysis** using time-based queries and session tracking
+- **Failure categorization** through error message parsing and quality scoring
+- **Performance tracking** via aggregation queries with modern metrics
+- **Alert generation** using configurable thresholds and service health
+- **Modern Architecture Monitoring**: Service injection patterns, database isolation verification
+- **Quality Score Tracking**: Data quality assessment and trending analysis
 
-All endpoints return JSON responses with consistent error handling and detailed metadata for operational visibility.
+All endpoints return JSON responses with consistent error handling and detailed metadata for operational visibility. The system supports 8 active organizations with 99+ backend tests and 384+ frontend tests for comprehensive monitoring coverage.

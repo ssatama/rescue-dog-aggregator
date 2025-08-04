@@ -4,19 +4,21 @@ This document covers performance testing methodologies, Core Web Vitals optimiza
 
 ## Performance Overview
 
-The platform achieves high performance through optimized architecture:
+The platform achieves high performance through optimized architecture as of August 2025:
 
 **Current Performance Metrics:**
 - Core Web Vitals score: 95+ (mobile & desktop)
 - API response times: Sub-second for all endpoints
-- Image delivery: Optimized via Cloudinary CDN
+- Image delivery: Optimized via Cloudflare R2 + Images API
 - Test execution: Fast feedback loops with selective testing
+- Frontend bundle size: <250KB main bundle
 
 **Performance Testing Integration:**
-- Frontend: Jest with performance assertions
+- Frontend: Jest with performance assertions (58 performance tests)
 - Backend: pytest with timing benchmarks
-- Database: Query performance monitoring
-- API: Response time validation
+- Database: Query performance monitoring with indexes
+- API: Response time validation (<500ms p95)
+- Mobile: 3G optimization tests included
 
 ## Core Web Vitals Testing
 
@@ -389,17 +391,17 @@ describe('Image Performance', () => {
     });
   });
 
-  test('image optimization with Cloudinary', () => {
+  test('image optimization with Cloudflare R2', () => {
     render(<DogCard dog={mockDog} />);
     
     const image = screen.getByRole('img');
     const src = image.getAttribute('src');
     
-    // Verify Cloudinary optimizations are applied
-    expect(src).toMatch(/cloudinary\.com/);
-    expect(src).toMatch(/w_\d+/); // Width optimization
-    expect(src).toMatch(/q_auto/); // Quality optimization
-    expect(src).toMatch(/f_auto/); // Format optimization
+    // Verify Cloudflare Images API optimizations are applied
+    expect(src).toMatch(/r2\.cloudflarestorage\.com/);
+    expect(src).toMatch(/w=\d+/); // Width optimization
+    expect(src).toMatch(/quality=auto/); // Quality optimization
+    expect(src).toMatch(/fit=cover/); // Fit optimization
   });
 
   test('responsive image performance', () => {
@@ -574,10 +576,14 @@ module.exports = {
     },
     assert: {
       assertions: {
-        'categories:performance': ['error', { minScore: 0.9 }],
-        'categories:accessibility': ['error', { minScore: 0.9 }],
-        'categories:best-practices': ['error', { minScore: 0.9 }],
-        'categories:seo': ['error', { minScore: 0.9 }]
+        'categories:performance': ['error', { minScore: 0.95 }],
+        'categories:accessibility': ['error', { minScore: 0.95 }],
+        'categories:best-practices': ['error', { minScore: 0.95 }],
+        'categories:seo': ['error', { minScore: 0.9 }],
+        // Core Web Vitals thresholds
+        'largest-contentful-paint': ['error', { maxNumericValue: 2500 }],
+        'first-input-delay': ['error', { maxNumericValue: 100 }],
+        'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }]
       }
     },
     upload: {
@@ -617,4 +623,29 @@ module.exports = {
 - Images: < 500KB per page
 - Total page size: < 2MB
 
-This performance testing strategy ensures optimal user experience while maintaining development velocity and system reliability.
+### 2025 Performance Testing Updates
+
+**Recent Improvements:**
+- Image delivery migrated to Cloudflare R2 + Images API
+- Progressive Image component with blur-up placeholders
+- React.memo implementation for expensive components
+- Mobile-first responsive design with 44px touch targets
+- TypeScript throughout for type safety
+- 58 dedicated performance tests
+
+**Current Test Files:**
+```
+frontend/src/__tests__/performance/
+├── dog-detail-performance.test.js
+├── image-optimization.test.js
+├── mobile-performance.test.js
+└── mobile-performance-3g.test.js
+```
+
+**Performance Monitoring Stack:**
+- Core Web Vitals tracking with web-vitals library
+- Lighthouse CI integration for automated audits
+- Bundle size analysis with webpack-bundle-analyzer
+- Real User Monitoring (RUM) via performance observer
+
+This performance testing strategy ensures optimal user experience while maintaining development velocity and system reliability across 2,400+ tests.

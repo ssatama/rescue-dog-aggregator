@@ -256,7 +256,7 @@ getOptimizedImage.clearCache = () => {
  */
 function validateR2Config() {
   if (!R2_CUSTOM_DOMAIN) {
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== "production") {
       console.error("❌ NEXT_PUBLIC_R2_CUSTOM_DOMAIN is not configured!");
     }
     return false;
@@ -264,7 +264,7 @@ function validateR2Config() {
 
   // Validate domain format
   if (!R2_CUSTOM_DOMAIN.match(/^[a-zA-Z0-9.-]+$/)) {
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== "production") {
       console.error("❌ R2 custom domain contains invalid characters");
     }
     return false;
@@ -442,7 +442,7 @@ export function getDogSmallThumbnail(originalUrl) {
 export function handleImageError(event, originalUrl, context = "unknown") {
   // Defensive check for event and target
   if (!event || !event.target) {
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== "production") {
       console.error(
         "handleImageError called with invalid event object:",
         event,
@@ -541,7 +541,7 @@ function trackImageError(failedUrl, originalUrl, context) {
   }
 
   // Log error in development with more details
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== "production") {
     console.warn("Image loading error details:", {
       failedUrl,
       originalUrl,
@@ -668,7 +668,7 @@ function reportImageErrorBatch() {
 
   // In a real implementation, you would send this to your analytics/monitoring service
   // For now, just log aggregate stats in development only
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== "production") {
     console.warn("Image loading error rate:", {
       total: imageErrorStats.total,
       r2Failures: imageErrorStats.r2,

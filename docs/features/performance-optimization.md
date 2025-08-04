@@ -39,7 +39,7 @@ w=320,h=240,fit=cover,quality=70
 
 ### Progressive Image Component
 
-```javascript
+```typescript
 import ProgressiveImage from '../components/ui/ProgressiveImage';
 
 <ProgressiveImage
@@ -48,8 +48,16 @@ import ProgressiveImage from '../components/ui/ProgressiveImage';
   context="hero" // 'hero', 'card', 'thumbnail'
   priority={true} // For LCP optimization
   className="w-full h-full"
+  onLoad={(event) => console.log('Image loaded')}
 />
 ```
+
+**Key Features**:
+- **Blur-up Placeholder**: Better perceived performance with progressive loading
+- **Intersection Observer**: Efficient lazy loading implementation
+- **Error Handling**: Graceful fallbacks for failed image loads
+- **Core Web Vitals**: Optimized for LCP and CLS metrics
+- **TypeScript Support**: Full type safety with proper interfaces
 
 ## Component Performance
 
@@ -57,9 +65,17 @@ import ProgressiveImage from '../components/ui/ProgressiveImage';
 
 Critical components are memoized to prevent unnecessary re-renders:
 
-```javascript
+```typescript
 // RelatedDogsSection - prevents re-renders on parent updates
-const RelatedDogsSection = memo(function RelatedDogsSection({ organizationId, currentDogId, organization }) {
+const RelatedDogsSection = memo(function RelatedDogsSection({ 
+  organizationId, 
+  currentDogId, 
+  organization 
+}: {
+  organizationId: string;
+  currentDogId: string;
+  organization: { id: string; name: string };
+}) {
   // Component logic
 }, (prevProps, nextProps) => {
   return (
@@ -72,9 +88,9 @@ const RelatedDogsSection = memo(function RelatedDogsSection({ organizationId, cu
 
 ### Memory Leak Prevention
 
-```javascript
+```typescript
 // DogDetailClient with cleanup
-const mountedRef = useRef(true);
+const mountedRef = useRef<boolean>(true);
 
 useEffect(() => {
   return () => {
@@ -84,7 +100,17 @@ useEffect(() => {
 
 const fetchData = useCallback(async () => {
   if (!mountedRef.current) return; // Prevent state updates if unmounted
-  // Fetch logic
+  // Fetch logic with proper error handling
+  try {
+    const response = await fetch('/api/dogs');
+    if (!mountedRef.current) return; // Check again after async operation
+    const data = await response.json();
+    // Process data...
+  } catch (error) {
+    if (mountedRef.current) {
+      console.error('Fetch error:', error);
+    }
+  }
 }, []);
 ```
 

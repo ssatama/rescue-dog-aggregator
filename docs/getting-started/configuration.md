@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Rescue Dog Aggregator uses a YAML-based configuration system to manage rescue organizations. This approach provides flexibility, maintainability, and ease of deployment with automatic service region management.
+The Rescue Dog Aggregator uses a **YAML-based configuration system** to manage rescue organizations. This modern, configuration-driven architecture provides flexibility, maintainability, and ease of deployment with automatic service region management and database synchronization.
 
 ## Configuration Structure
 
@@ -92,8 +92,11 @@ python management/config_commands.py sync --dry-run
 # Run specific scraper
 python management/config_commands.py run <org-id>
 
-# Run all enabled scrapers
+# Run all enabled scrapers (production workflow)
 python management/config_commands.py run-all
+
+# Monitor scraper progress with enhanced logging
+python management/config_commands.py run <org-id> --verbose
 ```
 
 ## Service Regions Feature
@@ -157,11 +160,13 @@ curl "http://localhost:8000/api/animals?country=US&region=CA"
 - Be consistent within your system
 - Test location filtering after adding regions
 
-### 3. Rate Limiting
+### 3. Rate Limiting & Modern Scraper Architecture
 
 - Set appropriate `rate_limit_delay` to respect target websites
-- Start with 2-3 seconds and adjust based on website response
+- Start with 2-3 seconds and adjust based on website response  
 - Monitor for 429 (Too Many Requests) errors
+- **New**: Scrapers use modern patterns (Null Object, Context Manager, Template Method)
+- **Dependency Injection**: Clean service injection for testing/customization
 
 ### 4. Error Handling
 
@@ -225,7 +230,7 @@ python management/config_commands.py validate
 python management/config_commands.py sync
 ```
 
-### Step 5: Implement Scraper
+### Step 5: Implement Scraper (Modern Architecture)
 
 ```python
 # scrapers/new_org/__init__.py
@@ -236,23 +241,41 @@ from scrapers.base_scraper import BaseScraper
 
 class NewOrgScraper(BaseScraper):
     def collect_data(self):
-        """Implement data collection logic."""
-        # Your scraping implementation here
+        """Implement data collection logic using modern patterns."""
         dogs_data = []
-        return dogs_data
+        
+        # Modern context manager usage (automatic connection handling)
+        with self:
+            # Your scraping implementation here
+            # Services are automatically injected (database, metrics, session)
+            dogs_data = self._extract_dog_listings()
+            
+            # Template method pattern - phases handled automatically
+            return dogs_data
+    
+    def _extract_dog_listings(self):
+        """Extract dog listings from the website."""
+        # Implementation specific to this organization
+        return []
 ```
 
 ### Step 6: Test and Deploy
 
 ```bash
-# Test scraper
+# Test scraper with modern service injection
 python management/config_commands.py run new-org
 
-# Validate results
+# Validate results and service regions
 python management/config_commands.py show new-org
 
-# Test location filtering
+# Test location filtering API
 curl "http://localhost:8000/api/animals?country=US&region=CA"
+
+# Run comprehensive tests
+python -m pytest tests/ -m "not slow" -v
+
+# Verify no database isolation issues
+python -m pytest tests/ --tb=short
 ```
 
 ## Troubleshooting
@@ -276,8 +299,9 @@ curl "http://localhost:8000/api/animals?country=US&region=CA"
 
 **Database Sync Issues**
 - Check database connection
-- Verify config file permissions
+- Verify config file permissions  
 - Look for duplicate organization IDs
+- **Test Environment**: Ensure `TESTING=true` env var prevents production writes
 
 ### Debugging Commands
 

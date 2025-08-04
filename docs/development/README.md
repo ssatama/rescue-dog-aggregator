@@ -23,26 +23,36 @@ This section contains essential resources for developers contributing to the Res
 - **Type Safety**: Comprehensive type checking (TypeScript + Python)
 
 ### Quality Gates (Pre-Commit)
-- ✅ All 2,000+ tests passing
-- ✅ Code coverage thresholds maintained
-- ✅ Zero linting errors
-- ✅ No type errors
+- ✅ All backend tests passing (99+ test files)
+- ✅ All frontend tests passing (384+ test files)
+- ✅ Code coverage thresholds maintained (>93% backend, >90% frontend)
+- ✅ Zero linting errors (TypeScript + Python)
+- ✅ No type errors (Next.js 15 build successful)
 - ✅ Performance benchmarks met
 - ✅ Security checks passed
+- ✅ Database isolation enforced (global conftest.py protection)
 
 ## 🧪 Testing Strategy
 
-### Backend Testing (876 Tests)
-- **Unit Tests**: Pure logic validation
+### Modern Architecture Patterns
+- **BaseScraper Refactoring**: Null Object Pattern, Context Manager, Template Method
+- **Service Injection**: Clean dependency injection for metrics, session management
+- **Database Isolation**: Global test protection via conftest.py automation
+- **Configuration-Driven**: YAML-based organization management
+
+### Backend Testing (99+ Test Files)
+- **Unit Tests**: Pure logic validation with optimized markers
 - **Integration Tests**: Database and API testing
 - **Security Tests**: Input validation and injection prevention
 - **Performance Tests**: Load testing and optimization
+- **Test Markers**: Optimized for CI/CD with unit/fast/slow categories
 
-### Frontend Testing (1,249+ Tests)
+### Frontend Testing (384+ Test Files)
 - **Component Tests**: UI behavior validation
 - **Accessibility Tests**: WCAG 2.1 AA compliance
 - **Performance Tests**: Core Web Vitals optimization
 - **Cross-Browser Tests**: Modern browser compatibility
+- **Next.js 15 Compatibility**: Environment-aware testing patterns
 
 ## 🔄 Development Workflow
 
@@ -66,12 +76,17 @@ cd frontend
 npm install
 
 # 3. Run tests to verify setup
-pytest tests/ -v              # Backend tests
-npm test                      # Frontend tests
+source venv/bin/activate                              # Activate virtual environment
+python -m pytest tests/ -m "not slow" -v           # Fast backend tests (recommended)
+npm test                                             # Frontend tests
 
 # 4. Start development servers
-python run_api.py             # Backend API
-npm run dev                   # Frontend (separate terminal)
+source venv/bin/activate && python run_api.py      # Backend API
+cd frontend && npm run dev                          # Frontend (separate terminal)
+
+# 5. Configuration management
+python management/config_commands.py list          # List organizations
+python management/config_commands.py sync          # Sync configs to database
 ```
 
 ---

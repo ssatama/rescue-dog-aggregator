@@ -140,7 +140,7 @@ export const useReducedMotion = () => {
       };
     } catch (error) {
       // Fallback if matchMedia fails - only log in development
-      if (process.env.NODE_ENV !== 'production') {
+      if (process.env.NODE_ENV !== "production") {
         console.warn("matchMedia not supported, animations will be enabled");
       }
     }

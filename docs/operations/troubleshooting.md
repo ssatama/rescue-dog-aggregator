@@ -57,23 +57,24 @@ curl http://localhost:3000/about          # Should return HTML
 ### Backend Test Infrastructure Failures
 
 **Error**: Multiple pytest failures in configuration and filesystem validation tests
-**Impact**: 7 out of 7 backend validation tests failing, preventing development workflow
+**Impact**: Backend validation tests failing, preventing development workflow
 **Root Cause**: Schema detection patterns, path handling inconsistencies, requirements file validation
 
 **SYSTEMATIC SOLUTION** (Proven Fix):
 ```bash
-# 1. Apply comprehensive test infrastructure fixes
+# 1. ALWAYS activate virtual environment first
 source venv/bin/activate
 
-# 2. Verify all 7 previously failing tests now pass
+# 2. Apply comprehensive test infrastructure fixes and verify tests pass
 python -m pytest tests/config/test_configuration_validation.py -v
 python -m pytest tests/filesystem/test_file_integrity.py -v
 
-# 3. Run speed-optimized complete test suite
-python -m pytest tests/ -m "not slow" -v  # 217 tests in ~45s
+# 3. Run speed-optimized complete test suite (99+ backend test files)
+python -m pytest tests/ -m "not slow" -v  # Speed-optimized suite
 
-# 4. Verify test performance improvements
-python -m pytest tests/ -m "unit" -v      # 60+ tests in ~1s
+# 4. Verify test performance improvements with markers
+python -m pytest tests/ -m "unit" -v      # Unit tests for rapid feedback
+python -m pytest tests/ -m "fast" -v      # Fast integration tests
 ```
 
 **Key Fixes Applied**:
@@ -86,9 +87,13 @@ python -m pytest tests/ -m "unit" -v      # 60+ tests in ~1s
 
 **Prevention**: Use the new speed-optimized testing workflow for development:
 ```bash
+# ALWAYS activate virtual environment first
+source venv/bin/activate
+
 # Fast development cycle (recommended)
-python -m pytest tests/ -m "unit" -v                 # Core logic validation (~1s)
-python -m pytest tests/ -m "not slow" -v             # Complete fast suite (~45s)
+python -m pytest tests/ -m "unit" -v                 # Core logic validation
+python -m pytest tests/ -m "not slow" -v             # Complete fast suite (99+ tests)
+python -m pytest tests/ -m "fast" -v                 # Fast integration tests
 ```
 
 ### Next.js 15 TypeScript Build Failures
@@ -100,13 +105,13 @@ python -m pytest tests/ -m "not slow" -v             # Complete fast suite (~45s
 **IMMEDIATE SOLUTION** (Proven Fix):
 ```bash
 # 1. Apply environment-aware component pattern to dynamic routes
-# Files to update: src/app/dogs/[id]/page.jsx, src/app/organizations/[id]/page.jsx
+# Files: src/app/dogs/[id]/page.jsx, src/app/organizations/[id]/page.jsx
 
-# 2. Test the fix
+# 2. Test the fix (384+ frontend test files)
 cd frontend
 npm test && npm run build
 
-# 3. Verify no TypeScript errors
+# 3. Verify no TypeScript errors and Next.js 15 compatibility
 npm run lint
 ```
 
@@ -267,19 +272,22 @@ python -m pytest tests/ -m "not slow" -v
 ### System Health Check
 
 ```bash
-# Backend health check (activate virtual environment first)
+# Backend health check (ALWAYS activate virtual environment first)
 source venv/bin/activate
 
 # Test database connectivity
 psql -h localhost -d rescue_dogs -c "SELECT COUNT(*) FROM animals WHERE status='available';"
 
-# Configuration validation
+# Verify database isolation is active
+python -c "from tests.conftest import isolate_database_writes; print('DB isolation active')"
+
+# Configuration validation (8 organizations)
 python management/config_commands.py validate
 
-# Test backend functionality
+# Test backend functionality (99+ test files)
 python -m pytest tests/ -m "not slow" --tb=no -q
 
-# Frontend health check
+# Frontend health check (384+ test files)
 cd frontend
 npm test && npm run build
 ```
@@ -293,6 +301,9 @@ npm test && npm run build
 
 **Diagnosis**:
 ```bash
+# ALWAYS activate virtual environment first
+source venv/bin/activate
+
 # Check if unified extraction is being used
 python management/config_commands.py run rean --verbose
 
@@ -754,14 +765,17 @@ python -m management.config_commands list
 
 **Diagnosis**:
 ```bash
-# Activate virtual environment first (REQUIRED)
+# ALWAYS activate virtual environment first (REQUIRED)
 source venv/bin/activate
 
-# Validate specific config (use actual org names: pets-in-turkey, tierschutzverein-europa, rean)
+# Validate specific config (8 organizations available)
 python management/config_commands.py validate pets-in-turkey
 
-# Validate all configs
+# Validate all configs (8 organizations)
 python management/config_commands.py validate
+
+# List all configured organizations
+python management/config_commands.py list  # Should show 8 organizations
 
 # Check schema format
 cat configs/schemas/organization.schema.json
@@ -968,11 +982,14 @@ source venv/bin/activate
 
 # Database and backend check
 psql -h localhost -d rescue_dogs -c "SELECT COUNT(*) FROM animals;"
-python management/config_commands.py validate
-python -m pytest tests/ -m "not slow" --tb=no -q
+python management/config_commands.py validate  # 8 organizations
+python -m pytest tests/ -m "not slow" --tb=no -q  # 99+ tests
 
-# Frontend check
+# Frontend check (384+ test files)
 cd frontend && npm test && npm run build
+
+# Verify database isolation is working
+python -c "from tests.conftest import isolate_database_writes; print('DB isolation active')"
 
 # Database service restart (if needed)
 systemctl restart postgresql  # Linux
@@ -982,7 +999,7 @@ systemctl restart postgresql  # Linux
 python management/emergency_operations.py --reset-stale-data
 python management/emergency_operations.py --fix-duplicates
 
-# Complete health check
+# Complete health check with modern architecture
 source venv/bin/activate && python -m pytest tests/ -m "not slow" && cd frontend && npm test && npm run build
 ```
 

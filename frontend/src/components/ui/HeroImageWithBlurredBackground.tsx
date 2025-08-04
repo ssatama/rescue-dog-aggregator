@@ -43,7 +43,7 @@ const HeroImageWithBlurredBackground = memo(
 
     // DIAGNOSTIC: Log state changes in development
     React.useEffect(() => {
-      if (process.env.NODE_ENV !== 'production') {
+      if (process.env.NODE_ENV !== "production") {
         console.log("[HeroImageWithBlurredBackground] State update:", {
           imageLoaded,
           hasError,

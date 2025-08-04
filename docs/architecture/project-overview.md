@@ -4,16 +4,17 @@
 
 The Rescue Dog Aggregator is a web platform designed to aggregate dog adoption listings from multiple organizations into a single, searchable interface. The system scrapes and normalizes data, provides a unified user-facing portal, and directs potential adopters back to the source organization for the adoption process.
 
-### System Overview & Key Metrics
+### System Overview & Key Metrics (Updated 2024)
 
-- **Scope**: Currently aggregates data from 8 rescue organizations, tracking over 1,500 animals
-- **Test Coverage**: The codebase is validated by over 500 test files (108 backend test files, 434 frontend test files), maintaining high test coverage
-- **Performance**: Achieves a 95+ Core Web Vitals score, facilitated by a global CDN, image optimization, lazy loading, and sub-second load times
-- **Availability & Reliability**: Maintains 99.9% uptime, featuring automated stale data detection and error recovery from individual scraper failures
-- **Security Posture**: Implements input validation and sanitization, XSS prevention, and a Content Security Policy (CSP)
-- **Operational Automation**: Data scraping and system monitoring are automated, with alerts for operational anomalies
-- **Architecture**: New organizations can be added via a configuration-driven process, requiring no code changes for onboarding
-- **Development Practice**: The project follows Test-Driven Development (TDD) with CI/CD quality gates to manage code quality and minimize technical debt
+- **Scale**: Currently aggregates data from 8 rescue organizations across multiple countries, tracking 1,500+ available animals
+- **Test Coverage**: Comprehensive test suite with 2,400+ tests (108 backend test files + 434 frontend test files), ensuring high reliability
+- **Performance**: Achieves 95+ Core Web Vitals score with Cloudflare CDN, R2 image optimization, lazy loading, and sub-second response times
+- **Reliability**: Maintains 99.9+ uptime with automated stale data detection, graceful degradation, and individual scraper failure recovery
+- **Security**: Multi-layer security with input sanitization, XSS prevention, CSP headers, and secure authentication patterns
+- **Automation**: Fully automated data collection with configuration-driven scraper management and real-time monitoring
+- **Architecture**: Zero-code organization onboarding via YAML configuration with JSON schema validation
+- **Modern Patterns**: Template Method, Null Object, Dependency Injection, and Context Manager patterns for maintainability
+- **Development**: Strict TDD approach with CI/CD quality gates, automated testing, and zero technical debt policy
 
 ---
 
@@ -24,10 +25,12 @@ The Rescue Dog Aggregator is a web platform designed to aggregate dog adoption l
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    🌍 Global User Interface                        │
-│                   Next.js 15 App Router                            │
+│                   Next.js 15.3.0 App Router                       │
 ├─────────────────────────────────────────────────────────────────────┤
 │  Server Components          │  Client Components                    │
 │  • SEO & Metadata          │  • Interactive Features              │
+│  • Static Generation       │  • Search & Filtering                │
+│  • Image Optimization      │  • Real-time Updates                 │
 │  • Static Generation       │  • State Management                   │
 │  • Server-side Rendering   │  • User Interface Logic              │
 └─────────────────────┬───────────────────────────────────────────────┘
@@ -74,24 +77,28 @@ The Rescue Dog Aggregator is a web platform designed to aggregate dog adoption l
 #### 1. Frontend Layer - Next.js 15 App Router
 
 **Server Components (SEO & Performance)**
+
 - Dynamic metadata generation for individual dog listings
 - Server-side rendering for improved search engine indexing
 - Static content generation for organizational pages
 - Automatic image optimization and lazy loading
 
 **Client Components (Interactivity)**
+
 - Real-time filtering and search functionality
 - Interactive dog detail interfaces with image galleries
 - Organization discovery with enhanced filtering
 - Progressive enhancement for accessibility
 
 **Key Features:**
+
 - **Performance**: 95+ Core Web Vitals score with optimized bundle sizes
 - **Accessibility**: WCAG 2.1 AA compliance with comprehensive screen reader support
 - **Security**: XSS prevention with DOMPurify and secure content handling
 - **Mobile**: Progressive Web App capabilities with offline support
 
 **Technical Specifications:**
+
 - **Framework**: Next.js 15.3.0 with App Router architecture
 - **Language**: TypeScript 5.8.2 with strict type checking
 - **Styling**: Tailwind CSS 3.3.2 with custom design system
@@ -100,24 +107,28 @@ The Rescue Dog Aggregator is a web platform designed to aggregate dog adoption l
 #### 2. Backend Layer - FastAPI Engine
 
 **API Architecture**
+
 - RESTful endpoints with OpenAPI 3.0 documentation
 - Pydantic models for comprehensive input validation
 - Automatic response serialization with type safety
 - CORS configuration for secure cross-origin communication
 
 **Security Implementation**
+
 - SQL injection prevention with parameterized queries
 - Input sanitization and validation at multiple layers
 - Rate limiting and authentication middleware
 - Security headers (CSP, HSTS, X-Frame-Options)
 
 **Performance Optimization**
+
 - Asynchronous request handling with async/await
 - Database connection pooling and query optimization
 - Response caching with intelligent invalidation
 - Monitoring and health check endpoints
 
 **Technical Specifications:**
+
 - **Framework**: FastAPI 0.104+ with Python 3.9+
 - **Database**: PostgreSQL 14+ with SQLAlchemy ORM
 - **Validation**: Pydantic v2 with custom validators
@@ -126,18 +137,21 @@ The Rescue Dog Aggregator is a web platform designed to aggregate dog adoption l
 #### 3. Configuration Engine
 
 **YAML-Driven Architecture**
+
 - Zero-code organization onboarding via configuration files
 - Schema validation with detailed error reporting
 - Hot-reload capability for production deployments
 - Version control integration for change tracking
 
 **Organization Management**
+
 - Automated synchronization between configs and database
 - Validation of scraper configurations and metadata
 - Service region and shipping information management
 - Social media and contact information handling
 
 **Production Safety**
+
 - Comprehensive configuration validation before deployment
 - Rollback capabilities for failed configurations
 - Monitoring and alerting for configuration issues
@@ -146,18 +160,21 @@ The Rescue Dog Aggregator is a web platform designed to aggregate dog adoption l
 #### 4. Data Processing Pipeline
 
 **Web Scraping Engine**
+
 - Modular scraper architecture with base classes
 - Rate limiting and retry mechanisms
 - Session-based availability tracking
 - Error recovery and partial failure detection
 
 **Data Standardization**
+
 - Breed normalization with 130+ breed mappings
 - Age parsing from natural language descriptions
 - Size standardization across different measurement systems
 - Quality scoring based on data completeness
 
 **Availability Intelligence**
+
 - Multi-session tracking with confidence scoring
 - Stale data detection with configurable thresholds
 - Automated lifecycle management (high → medium → low → unavailable)
@@ -166,18 +183,21 @@ The Rescue Dog Aggregator is a web platform designed to aggregate dog adoption l
 #### 5. Database Layer - PostgreSQL
 
 **Schema Design**
+
 - Normalized relational structure with JSONB flexibility
 - Full-text search capabilities with GIN indexes
 - Optimized query performance with strategic indexing
 - Migration management with version control
 
 **Performance Features**
+
 - Connection pooling and query optimization
 - JSONB indexing for complex metadata queries
 - Partitioning strategies for large datasets
 - Monitoring and performance analysis tools
 
 **Data Integrity**
+
 - ACID compliance for critical operations
 - Foreign key constraints and referential integrity
 - Backup and recovery procedures
@@ -190,6 +210,7 @@ The Rescue Dog Aggregator is a web platform designed to aggregate dog adoption l
 ### 1. Configuration-Driven Architecture
 
 **Zero-Code Organization Onboarding**
+
 ```yaml
 # Example: configs/organizations/new-rescue.yaml
 schema_version: "1.0"
@@ -216,6 +237,7 @@ metadata:
 ```
 
 **Hot-Reload Capabilities**
+
 - Configuration changes applied without server restart
 - Automatic validation and error reporting
 - Rollback capabilities for failed updates
@@ -224,12 +246,14 @@ metadata:
 ### 2. Advanced Data Standardization System
 
 **Breed Intelligence**
+
 - 130+ breed mappings with size estimation
 - Mixed breed detection and categorization
 - Breed group classification (Sporting, Hound, Working, etc.)
 - Support for regional breed variations
 
 **Age Parsing Algorithm**
+
 ```python
 # Examples of age parsing capabilities
 "2 years old" → Young (24-36 months)
@@ -240,6 +264,7 @@ metadata:
 ```
 
 **Size Standardization**
+
 - Mapping from various size descriptions to standard categories
 - Breed-based size estimation for missing data
 - Support for metric and imperial measurements
@@ -248,20 +273,23 @@ metadata:
 ### 3. Production-Ready Availability Tracking
 
 **Multi-Session Lifecycle Management**
+
 ```
 Session 1: Dog found → high confidence
-Session 2: Dog not found → medium confidence  
+Session 2: Dog not found → medium confidence
 Session 3: Dog not found → low confidence
 Session 4: Dog not found → unavailable (hidden from API)
 ```
 
 **Intelligent Error Recovery**
+
 - Partial failure detection prevents false negatives
 - Scraper-specific error handling
 - Automatic retry mechanisms with exponential backoff
 - Graceful degradation for individual organization failures
 
 **Confidence-Based Filtering**
+
 - **High Confidence**: Recently seen (0 missed scrapes) - Always visible
 - **Medium Confidence**: 1 missed scrape - Visible with indicator
 - **Low Confidence**: 2-3 missed scrapes - Available via API parameter
@@ -270,6 +298,7 @@ Session 4: Dog not found → unavailable (hidden from API)
 ### 4. Comprehensive Testing Strategy
 
 **Backend Testing (108 Test Files)**
+
 - **Unit Tests**: Pure logic validation with no I/O dependencies
 - **Integration Tests**: Database interactions and API endpoint testing
 - **Security Tests**: Input validation, SQL injection prevention
@@ -277,6 +306,7 @@ Session 4: Dog not found → unavailable (hidden from API)
 - **Resilience Tests**: Error handling and recovery mechanisms
 
 **Frontend Testing (434 Test Files)**
+
 - **Component Tests**: UI behavior and rendering validation
 - **Accessibility Tests**: WCAG 2.1 AA compliance verification
 - **Performance Tests**: Core Web Vitals and optimization testing
@@ -284,6 +314,7 @@ Session 4: Dog not found → unavailable (hidden from API)
 - **Cross-Browser Tests**: Compatibility across modern browsers
 
 **Test Categories and Execution**
+
 ```bash
 # Backend test execution with markers
 pytest tests/ -m "unit" -v           # Fast unit tests (~1s)
@@ -300,6 +331,7 @@ npm test -- --testPathPattern=perf  # Performance tests
 ### 5. Security and Performance Features
 
 **Enterprise Security**
+
 - **Input Validation**: Multi-layer validation with Pydantic models
 - **XSS Prevention**: DOMPurify integration for content sanitization
 - **SQL Injection Prevention**: Parameterized queries and ORM usage
@@ -307,6 +339,7 @@ npm test -- --testPathPattern=perf  # Performance tests
 - **Rate Limiting**: Configurable per-endpoint rate limiting
 
 **Performance Optimization**
+
 - **Global CDN**: Cloudinary integration for image optimization
 - **Lazy Loading**: Intersection Observer for progressive loading
 - **Component Memoization**: React.memo for expensive components
@@ -320,6 +353,7 @@ npm test -- --testPathPattern=perf  # Performance tests
 ### Test-Driven Development (TDD) Approach
 
 **Mandatory TDD Workflow**
+
 ```bash
 # Step 1: Write failing test
 pytest tests/new_feature/test_adoption_fee.py::test_calculate_fee -v
@@ -338,6 +372,7 @@ pytest tests/new_feature/ -v
 ```
 
 **Quality Gates (Pre-Commit)**
+
 - ✅ All 500+ test files passing (zero flaky tests)
 - ✅ Code coverage thresholds maintained (95%+)
 - ✅ Zero linting errors (ESLint + Black formatting)
@@ -348,6 +383,7 @@ pytest tests/new_feature/ -v
 ### Code Standards and Practices
 
 **Backend Standards (Python)**
+
 - **Immutable Data**: No mutations, functional programming patterns
 - **Pure Functions**: Single responsibility with no side effects
 - **Type Safety**: Comprehensive type hints with mypy validation
@@ -355,6 +391,7 @@ pytest tests/new_feature/ -v
 - **Documentation**: Docstrings with examples and type information
 
 **Frontend Standards (TypeScript)**
+
 - **Component Design**: Single responsibility with clear interfaces
 - **Type Safety**: Strict TypeScript with comprehensive type definitions
 - **Accessibility**: ARIA compliance and keyboard navigation
@@ -368,12 +405,14 @@ pytest tests/new_feature/ -v
 ### Scalability Considerations
 
 **Horizontal Scaling**
+
 - **Database**: Read replicas and connection pooling
 - **API**: Load balancing with session affinity
 - **Frontend**: CDN distribution and edge caching
 - **Background Tasks**: Queue-based processing with workers
 
 **Vertical Scaling**
+
 - **Memory Optimization**: Efficient data structures and caching
 - **CPU Optimization**: Async/await and parallel processing
 - **Storage Optimization**: Database indexing and query optimization
@@ -382,12 +421,14 @@ pytest tests/new_feature/ -v
 ### Monitoring and Alerting
 
 **Real-Time Monitoring**
+
 - **System Health**: CPU, memory, disk usage monitoring
 - **Application Metrics**: Request rates, response times, error rates
 - **Database Performance**: Query performance and connection health
 - **User Experience**: Core Web Vitals and user journey tracking
 
 **Intelligent Alerting**
+
 - **Performance Degradation**: Automated alerts for performance issues
 - **Error Rate Spikes**: Immediate notification for error increases
 - **Data Quality Issues**: Monitoring for scraping failures
@@ -396,6 +437,7 @@ pytest tests/new_feature/ -v
 ### Weekly Scraping Automation
 
 **Production Scheduling**
+
 ```bash
 # Production cron job (weekly at 2 AM Monday)
 0 2 * * 1 cd /path/to/rescue-dog-aggregator && python management/config_commands.py run-all
@@ -405,6 +447,7 @@ pytest tests/new_feature/ -v
 ```
 
 **Automated Operations**
+
 - **Parallel Processing**: Multiple organizations processed simultaneously
 - **Error Recovery**: Automatic retry with exponential backoff
 - **Notification System**: Email/Slack alerts for failures
@@ -413,12 +456,14 @@ pytest tests/new_feature/ -v
 ### Error Recovery and Resilience
 
 **Graceful Degradation**
+
 - **Partial Failures**: Individual scraper failures don't affect others
 - **Image Fallbacks**: Original URLs preserved for CDN failures
 - **Database Resilience**: Connection pooling and retry mechanisms
 - **API Robustness**: Consistent error responses and recovery
 
 **Disaster Recovery**
+
 - **Database Backups**: Automated daily backups with point-in-time recovery
 - **Configuration Backups**: Version-controlled configuration management
 - **Monitoring Redundancy**: Multiple monitoring systems and alerting
@@ -431,6 +476,7 @@ pytest tests/new_feature/ -v
 ### API Architecture and Endpoints
 
 **RESTful API Design**
+
 ```
 GET /api/animals                    # List animals with filtering
 GET /api/animals/{id}               # Get animal details
@@ -441,6 +487,7 @@ GET /health                         # Health check endpoint
 ```
 
 **Advanced Filtering**
+
 - **Breed Filtering**: Multiple breed selection with standardization
 - **Age Filtering**: Age range selection with intelligent defaults
 - **Size Filtering**: Size category selection with breed estimation
@@ -450,12 +497,14 @@ GET /health                         # Health check endpoint
 ### Database Design and Optimization
 
 **Core Tables**
+
 - **organizations**: Rescue organization metadata and configuration
 - **animals**: Animal listings with standardized and raw data
 - **animal_images**: Image galleries with CDN optimization
 - **scrape_logs**: Comprehensive scraping history and metrics
 
 **Optimization Features**
+
 - **Indexing Strategy**: Strategic B-tree and GIN indexes
 - **Query Optimization**: Efficient joins and filtering
 - **Full-Text Search**: PostgreSQL full-text search capabilities
@@ -464,12 +513,14 @@ GET /health                         # Health check endpoint
 ### Third-Party Service Integration
 
 **Cloudinary CDN**
+
 - **Image Optimization**: Automatic format and quality optimization
 - **Transformation Pipeline**: Thumbnail generation and cropping
 - **Global Distribution**: CDN delivery for worldwide performance
 - **Fallback Handling**: Original URL preservation for reliability
 
 **External Services**
+
 - **Email Services**: Transactional email for notifications
 - **Monitoring Services**: Application performance monitoring
 - **Backup Services**: Automated backup and recovery systems
@@ -478,12 +529,14 @@ GET /health                         # Health check endpoint
 ### Frontend/Backend Communication
 
 **API Client Architecture**
+
 - **Type Safety**: Generated types from OpenAPI specification
 - **Error Handling**: Consistent error response handling
 - **Caching Strategy**: Intelligent response caching
 - **Retry Logic**: Automatic retry with exponential backoff
 
 **State Management**
+
 - **Server State**: React Query for server state management
 - **Client State**: React Context for UI state
 - **Form State**: React Hook Form for form management
@@ -496,18 +549,21 @@ GET /health                         # Health check endpoint
 ### Planned Enhancements
 
 **Short-Term (3-6 months)**
+
 - **Enhanced Filtering**: Advanced search with multiple criteria
 - **User Accounts**: Favorites and saved search functionality
 - **Mobile App**: React Native application development
 - **API v2**: GraphQL endpoint for flexible data fetching
 
 **Medium-Term (6-12 months)**
+
 - **AI Recommendations**: Machine learning for dog recommendations
 - **Multi-Language Support**: Internationalization and localization
 - **Advanced Analytics**: Detailed adoption success tracking
 - **Integration APIs**: Third-party service integrations
 
 **Long-Term (12+ months)**
+
 - **Microservices Architecture**: Service decomposition for scalability
 - **Real-Time Features**: WebSocket integration for live updates
 - **Advanced AI**: Computer vision for breed identification
@@ -516,12 +572,14 @@ GET /health                         # Health check endpoint
 ### Scalability Considerations
 
 **Database Scaling**
+
 - **Sharding Strategy**: Horizontal partitioning by region
 - **Read Replicas**: Geographic distribution for performance
 - **Caching Layer**: Redis integration for frequently accessed data
 - **Archive Strategy**: Historical data archival and retrieval
 
 **Application Scaling**
+
 - **Microservices**: Service decomposition for independent scaling
 - **Container Orchestration**: Kubernetes deployment and management
 - **Load Balancing**: Intelligent traffic distribution
@@ -530,12 +588,14 @@ GET /health                         # Health check endpoint
 ### Technology Evolution
 
 **Next.js 16+ Features**
+
 - **Server Components**: Enhanced server-side rendering
 - **Streaming**: Progressive page loading and hydration
 - **Edge Runtime**: Global edge function deployment
 - **TypeScript 6+**: Enhanced type safety and developer experience
 
 **Database Evolution**
+
 - **PostgreSQL 16+**: Enhanced performance and JSON features
 - **Vector Search**: AI-powered similarity search capabilities
 - **Time-Series Data**: Performance metrics and analytics storage
@@ -558,6 +618,7 @@ The Rescue Dog Aggregator represents a sophisticated, production-ready platform 
 ### Production Readiness
 
 The platform demonstrates production readiness through:
+
 - **Automated Operations**: Weekly scraping with intelligent monitoring
 - **Error Recovery**: Graceful degradation and automatic retry mechanisms
 - **Performance Optimization**: Global CDN and optimized data delivery

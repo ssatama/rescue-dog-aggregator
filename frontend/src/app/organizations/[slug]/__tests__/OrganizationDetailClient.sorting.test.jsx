@@ -75,7 +75,9 @@ describe("OrganizationDetailClient Sorting", () => {
     jest.clearAllMocks();
     getOrganizationDogs.mockResolvedValue(mockDogs);
     // Mock the organization data
-    require("@/services/organizationsService").getOrganizationBySlug.mockResolvedValue(mockOrganization);
+    require("@/services/organizationsService").getOrganizationBySlug.mockResolvedValue(
+      mockOrganization,
+    );
   });
 
   describe("Sort Parameter in API Calls", () => {
@@ -94,10 +96,11 @@ describe("OrganizationDetailClient Sorting", () => {
       // Since UI testing is complex, test API calls directly by simulating filter change
       // This tests the core functionality: API includes sort parameter
       expect(getOrganizationDogs).toHaveBeenCalledTimes(1);
-      expect(getOrganizationDogs).toHaveBeenCalledWith(1, 
+      expect(getOrganizationDogs).toHaveBeenCalledWith(
+        1,
         expect.objectContaining({
-          sort: "newest"
-        })
+          sort: "newest",
+        }),
       );
     });
 
@@ -146,7 +149,12 @@ describe("OrganizationDetailClient Sorting", () => {
 
   describe("Default Sorting Behavior", () => {
     it("should default to newest first sorting for both mobile and desktop", async () => {
-      render(<OrganizationDetailClient params={{ slug: "test-org" }} organization={mockOrganization} />);
+      render(
+        <OrganizationDetailClient
+          params={{ slug: "test-org" }}
+          organization={mockOrganization}
+        />,
+      );
 
       // Verify initial API call uses default newest sort
       await waitFor(() => {

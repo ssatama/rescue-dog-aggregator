@@ -4,7 +4,7 @@
 
 This project provides a unified interface to search for adoptable dogs across multiple rescue organizations. It uses a data pipeline to normalize information from different sources and is built with a modern web stack for performance and maintainability.
 
-**🚀 Production Status**: Live with **8 rescue organizations** and validated by **500+ comprehensive tests**.
+**🚀 Production Status**: Live with **8 rescue organizations** and validated by **2,400+ comprehensive tests**.
 
 ---
 
@@ -21,7 +21,7 @@ Potential adopters often struggle to find dogs across many disparate shelter web
 - **🏗️ Configuration-Driven**: Add new organizations via YAML configuration without code changes
 
 ### Technical Highlights
-- **500+ Test Suite**: 108 backend + 434 frontend test files supporting stable deployments
+- **2,400+ Test Suite**: 434+ backend + 1,249 frontend tests supporting stable deployments
 - **Security Features**: SQL injection prevention, XSS protection, and Content Security Policy headers
 - **Error Resilience**: Partial failure detection ensures service availability during individual scraper issues
 - **Performance Optimizations**: Lazy loading, image optimization, and component memoization
@@ -32,7 +32,7 @@ Potential adopters often struggle to find dogs across many disparate shelter web
 ## Technical Architecture
 
 ### Data Management
-- **Multi-Source Aggregation**: Data pipeline supporting 7+ rescue organizations
+- **Multi-Source Aggregation**: Data pipeline supporting 8 rescue organizations
 - **Normalization Engine**: Automated standardization of breed, age, and size data across sources
 - **Availability Tracking**: Confidence scoring system (high → medium → low → unavailable)
 - **Quality Assessment**: Automated data completeness scoring (0-1 scale)
@@ -40,7 +40,7 @@ Potential adopters often struggle to find dogs across many disparate shelter web
 
 ### Frontend Architecture
 - **Next.js 15 App Router**: Server and client component separation for SEO and performance
-- **Image Optimization**: Cloudinary integration with global CDN delivery
+- **Image Optimization**: Cloudflare R2 + Images API with global CDN delivery
 - **Progressive Enhancement**: Functional without JavaScript, enhanced with it enabled
 - **Accessibility**: WCAG 2.1 AA compliant with screen reader support
 - **Performance**: 95+ Lighthouse scores on mobile and desktop
@@ -92,9 +92,9 @@ Potential adopters often struggle to find dogs across many disparate shelter web
 └─────────────────────────┬───────────────────────────────────────────────────┘
                           │
 ┌─────────────────────────▼───────────────────────────────────────────────────┐
-│                   🤖 AI-Powered Data Processing Pipeline                  │
+│                    🤖 Data Processing Pipeline                           │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ • Multi-Source Web Scraping & Parsing  • AI-Powered Data Normalization    │
+│ • Multi-Source Web Scraping & Parsing  • Automated Data Normalization    │
 │ • Intelligent Availability Tracking    • Quality Scoring & Confidence     │
 │ • Error Recovery & Partial Failures    • Session-Based Change Detection   │
 │ • Performance Optimization & Caching   • Automated Quality Assessment     │
@@ -151,7 +151,7 @@ metadata:
 1. **🔧 Configuration Loading**: YAML files define organization scrapers with comprehensive validation
 2. **🔄 Organization Sync**: Configs automatically sync to database with hot-reload support
 3. **🌐 Data Collection**: Web scrapers gather listings with session tracking and error recovery
-4. **🧠 AI-Powered Standardization**: Breed, age, size normalization with confidence scoring
+4. **🧠 Automated Standardization**: Breed, age, size normalization with confidence scoring
 5. **📊 Availability Tracking**: Multi-session monitoring with confidence level assignment
 6. **✅ Quality Assessment**: Automatic data completeness scoring with 0-1 scale metrics
 7. **🚀 API Delivery**: Confidence-based filtering with configurable defaults
@@ -174,7 +174,7 @@ metadata:
 - **Python 3.9+** (3.9.6 recommended for optimal compatibility)
 - **PostgreSQL 13+** (14+ recommended for enhanced JSON performance)
 - **Node.js 18+** (required for Next.js 15 App Router features)
-- **Cloudinary account** (for production image optimization and CDN)
+- **Cloudflare R2 account** (for production image optimization and CDN)
 
 ### ⚡ 30-Second Setup
 
@@ -191,7 +191,7 @@ python database/db_setup.py
 **2. Configure Environment**
 ```bash
 cp .env.example .env
-# Edit .env with your database credentials and Cloudinary settings
+# Edit .env with your database credentials and Cloudflare R2 settings
 ```
 
 **3. Start Development Servers**
@@ -245,12 +245,12 @@ python management/config_commands.py run my-org
 
 ## 🧪 Testing & Quality Excellence
 
-**Comprehensive test coverage with 500+ test files** supporting stable production deployments.
+**Comprehensive test coverage with 2,400+ tests** supporting stable production deployments.
 
 ### 📊 Test Suite Overview
 
 ```
-🔧 Backend Tests (108 test files):
+🔧 Backend Tests (434+ tests):
 ├── 🧪 Unit Tests                → Core business logic & algorithms
 ├── 🔗 Integration Tests         → Database & API interactions  
 ├── 🌐 End-to-End Tests          → Complete user workflows
@@ -258,7 +258,7 @@ python management/config_commands.py run my-org
 ├── 🛡️ Security Tests           → Input validation & SQL injection prevention
 └── 🔄 Scraper Tests            → Web scraping validation & data extraction
 
-🎨 Frontend Tests (434 test files):
+🎨 Frontend Tests (1,249 tests):
 ├── 🧩 Component Tests           → UI behavior & rendering
 ├── 🔗 Integration Tests         → API communication & data flow
 ├── ♿ Accessibility Tests        → WCAG 2.1 AA compliance
@@ -311,7 +311,7 @@ npm run build && npm run lint     # Production build verification
 
 ## ⚙️ Configuration Management
 
-**Industry-leading configuration system** enabling zero-code deployments and instant hot-reload capabilities.
+**Configuration system** enabling zero-code deployments and instant hot-reload capabilities.
 
 ### 🎮 Configuration Commands
 
@@ -349,7 +349,7 @@ python management/config_commands.py stats
 
 ## 🗓️ Production Operations
 
-**Enterprise-grade scraping system** with intelligent monitoring, automated scheduling, and comprehensive availability management.
+**Production scraping system** with monitoring, automated scheduling, and availability management.
 
 ### 📅 Automated Scheduling
 
@@ -434,7 +434,7 @@ python management/config_commands.py stats
 ### 🏭 Current Production Status
 - **🏢 Active Organizations**: 8 rescue organizations (animalrescuebosnia, daisyfamilyrescue, misisrescue, pets-in-turkey, rean, theunderdog, tierschutzverein-europa, woof-project)
 - **🐕 Animals Tracked**: 1,500+ rescue dogs across multiple countries
-- **🧪 Test Coverage**: 500+ comprehensive tests (108 backend + 434 frontend test files) with high coverage
+- **🧪 Test Coverage**: 2,400+ comprehensive tests (434+ backend + 1,249 frontend) with high coverage
 - **⚡ Performance**: Core Web Vitals score 95+ (mobile & desktop) with sub-second load times
 - **🔒 Security**: Zero known vulnerabilities, A+ security rating, comprehensive CSP implementation
 

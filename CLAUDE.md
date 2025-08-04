@@ -9,7 +9,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Backend: Python/FastAPI/PostgreSQL
 - Frontend: Next.js 15/React/TypeScript
 - Testing: pytest (backend), Jest (frontend)
-- Current: 108 backend test files, 434 frontend test files, 8 organizations
+- Current: 434+ backend tests, 1,249 frontend tests, 8 organizations
 
 ## CRITICAL: Planning-First Workflow
 
@@ -79,7 +79,7 @@ python management/config_commands.py run pets-turkey
 **BaseScraper now implements modern design patterns:**
 
 - **Null Object Pattern**: Services default to null objects (no conditional checks)
-- **Context Manager**: Use `with scraper:` for automatic connection handling  
+- **Context Manager**: Use `with scraper:` for automatic connection handling
 - **Template Method**: `run()` decomposed into focused phases
 - **Dependency Injection**: Clean service injection at constructor level
 
@@ -105,7 +105,7 @@ scrapers/     # Web scrapers (see scrapers/CLAUDE.md)
 services/     # Extracted services (metrics, session, database, null objects)
 frontend/     # Next.js app (see frontend/CLAUDE.md)
 tests/        # Backend tests
-configs/      # Organization YAMLs (7 orgs)
+configs/      # Organization YAMLs (8 orgs)
 ```
 
 ## Quality Gates (Required for ANY commit)

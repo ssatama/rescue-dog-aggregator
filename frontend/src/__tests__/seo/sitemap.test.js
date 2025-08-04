@@ -147,7 +147,7 @@ describe("Dynamic Sitemap Generation", () => {
 
       expect(sitemap).toContain('<?xml version="1.0" encoding="UTF-8"?>');
       expect(sitemap).toContain(
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">',
       );
       expect(sitemap).toContain("</urlset>");
     });
@@ -192,8 +192,8 @@ describe("Dynamic Sitemap Generation", () => {
       expect(sitemap).toContain("<lastmod>2024-01-15T10:00:00+00:00</lastmod>");
       expect(sitemap).toContain("<lastmod>2024-01-16T11:00:00+00:00</lastmod>");
 
-      // Dog pages should have high priority and daily updates
-      expect(sitemap).toContain("<changefreq>daily</changefreq>");
+      // Dog pages should have high priority and monthly updates
+      expect(sitemap).toContain("<changefreq>monthly</changefreq>");
       expect(sitemap).toContain("<priority>0.8</priority>");
     });
 
@@ -260,7 +260,7 @@ describe("Dynamic Sitemap Generation", () => {
         true,
       );
       expect(sitemap).toContain(
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">',
       );
       expect(sitemap.endsWith("</urlset>")).toBe(true);
 

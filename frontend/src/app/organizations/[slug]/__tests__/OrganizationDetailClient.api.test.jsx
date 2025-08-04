@@ -1,7 +1,10 @@
 import React from "react";
 import { render, waitFor } from "@testing-library/react";
 import OrganizationDetailClient from "../OrganizationDetailClient";
-import { getOrganizationDogs, getOrganizationBySlug } from "@/services/organizationsService";
+import {
+  getOrganizationDogs,
+  getOrganizationBySlug,
+} from "@/services/organizationsService";
 
 // Mock Next.js router
 const mockPush = jest.fn();
@@ -75,7 +78,7 @@ describe("OrganizationDetailClient API Integration", () => {
       jest.doMock("next/navigation", () => ({
         useRouter: () => ({ push: mockPush }),
         useSearchParams: () => ({
-          get: jest.fn((param) => param === "sort" ? "name-asc" : null),
+          get: jest.fn((param) => (param === "sort" ? "name-asc" : null)),
           toString: jest.fn(() => "sort=name-asc"),
         }),
         useParams: () => ({
@@ -89,10 +92,11 @@ describe("OrganizationDetailClient API Integration", () => {
 
       // Wait for API call to be made with sort parameter
       await waitFor(() => {
-        expect(getOrganizationDogs).toHaveBeenCalledWith(1, 
+        expect(getOrganizationDogs).toHaveBeenCalledWith(
+          1,
           expect.objectContaining({
-            sort: expect.stringMatching(/newest|name-asc|name-desc/)
-          })
+            sort: expect.stringMatching(/newest|name-asc|name-desc/),
+          }),
         );
       });
     });

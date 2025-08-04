@@ -242,7 +242,12 @@ export async function getAnimalsByCuration(curationType, limit = 4) {
  */
 export async function getAllAnimals(params = {}) {
   logger.log("Fetching all animals for sitemap");
-  return getAnimals({ ...params, limit: 10000 }); // Request maximum limit for sitemap
+  // Enable quality filtering for sitemap to only include dogs with meaningful descriptions
+  return getAnimals({
+    ...params,
+    limit: 10000, // Request maximum limit for sitemap
+    sitemap_quality_filter: true, // Only include dogs with quality descriptions for SEO
+  });
 }
 
 /**

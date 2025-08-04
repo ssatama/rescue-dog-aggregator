@@ -9,14 +9,17 @@ This document defines the optimized pytest marker strategy for the Rescue Dog Ag
 ### Optimized CI/CD Commands
 
 ```bash
+# ALWAYS activate virtual environment first
+source venv/bin/activate
+
 # Fast development feedback (recommended for development)
-pytest tests/ -m "unit or fast" -v
+python -m pytest tests/ -m "unit or fast" -v
 
 # Standard CI pipeline (excludes heavy resources)
-pytest tests/ -m "not browser and not requires_migrations" -v
+python -m pytest tests/ -m "not browser and not requires_migrations" -v
 
 # Full test suite (for final validation)
-pytest tests/ -v
+python -m pytest tests/ -v
 ```
 
 ### Performance Tiers
@@ -116,10 +119,15 @@ def test_emergency_recovery():
 ## CI/CD Strategy
 
 ### Development Workflow
-1. **Local development**: Run `pytest -m "unit"` for instant feedback
-2. **Pre-commit**: Run `pytest -m "unit or fast"` for quick validation
+1. **Local development**: Run `source venv/bin/activate && python -m pytest -m "unit"` for instant feedback
+2. **Pre-commit**: Run `python -m pytest -m "unit or fast"` for quick validation
 3. **Pull request**: Run full CI excluding heavy resources
 4. **Merge/Deploy**: Run complete test suite
+
+### Database Isolation (Automatic)
+- All tests automatically protected by global `conftest.py`
+- No "Test Organization" records in production database
+- Zero configuration required - protection is built-in
 
 ### Pipeline Optimization
 - **Fast feedback loop**: Focus on `unit` and `fast` markers
@@ -144,20 +152,24 @@ def test_emergency_recovery():
 
 3. **Validate with timing**:
    ```bash
-   pytest tests/your_test.py -v --durations=0
+   source venv/bin/activate
+   python -m pytest tests/your_test.py -v --durations=0
    ```
 
 ### Marker Validation Commands
 ```bash
+# ALWAYS activate virtual environment first
+source venv/bin/activate
+
 # Check for untagged tests
 find tests/ -name "test_*.py" -exec grep -L "@pytest.mark" {} \;
 
 # Validate marker usage
-pytest --markers
+python -m pytest --markers
 
 # Test performance tiers
-pytest -m "unit" --durations=5
-pytest -m "fast" --durations=10
+python -m pytest -m "unit" --durations=5
+python -m pytest -m "fast" --durations=10
 ```
 
 ## Best Practices

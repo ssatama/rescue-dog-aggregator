@@ -61,7 +61,7 @@ class MyOrganizationScraper(BaseScraper):
         """Extract individual dog data from DOM element."""
         return {
             'name': self._safe_extract(element, 'h3'),
-            'age': self._normalize_age(self._safe_extract(element, '.age')),
+            'age_text': self._safe_extract(element, '.age'),
             'external_id': self._generate_external_id(element)
         }
 ```
@@ -97,7 +97,7 @@ def _extract_dog(self, element):
     """Extract dog data using safe extraction patterns."""
     return {
         'name': self._safe_extract(element, 'h3'),
-        'age': self._normalize_age(self._safe_extract(element, '.age')),
+        'age_text': self._safe_extract(element, '.age'),
         'external_id': self._generate_external_id(element)
     }
 ```
@@ -105,7 +105,7 @@ def _extract_dog(self, element):
 ### Required Fields
 
 - name, organization_id, external_id (mandatory)
-- age_years, sex, size (standardized values)
+- age_text, age_min_months, age_max_months, sex, size (standardized values)
 - image_urls[] (validated URLs only)
 
 ## Best Practices & Common Issues
@@ -120,7 +120,7 @@ def _extract_dog(self, element):
 ### ⚠️ **Common Issues & Solutions**
 
 - **Missing organization_id** → Use `self.organization_id` (automatically set)
-- **Age formats** → Normalize to years (float) using standardization utils
+- **Age formats** → Normalize to age_text, age_min_months, age_max_months using standardization utils
 - **External IDs** → Must be unique and stable across scrapes
 - **Rate limiting** → Use `self.respect_rate_limit()` between requests
 - **Database connections** → Use context manager or let `run()` handle automatically
