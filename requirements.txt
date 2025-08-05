@@ -43,6 +43,8 @@ colorama==0.4.6
     # via -r requirements.in
 fastapi==0.116.1
     # via -r requirements.in
+greenlet==3.2.3
+    # via sqlalchemy
 h11==0.16.0
     # via
     #   httpcore
@@ -145,7 +147,7 @@ sqlalchemy==2.0.41
     # via
     #   -r requirements.in
     #   alembic
-starlette==0.47.1
+starlette==0.47.2
     # via fastapi
 trio==0.30.0
     # via
