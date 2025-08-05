@@ -105,6 +105,39 @@ class TestAnimalsAPI:
         assert isinstance(data, list)  # Ensure it's still a list
         assert len(data) <= 5
 
+    def test_get_animals_with_sitemap_quality_filter(self, client: TestClient):
+        """Test that sitemap quality filter returns fewer animals with quality descriptions."""
+        # Get total animals without filter
+        response_all = client.get("/api/animals?limit=1000")
+        assert response_all.status_code == 200
+        all_animals = response_all.json()
+
+        # Get animals with sitemap quality filter
+        response_quality = client.get("/api/animals?limit=1000&sitemap_quality_filter=true")
+        assert response_quality.status_code == 200
+        quality_animals = response_quality.json()
+
+        # Quality filtered results should be fewer or equal to total
+        # Based on SEO docs, should be ~206 quality animals out of 891 total
+        assert len(quality_animals) <= len(all_animals)
+
+        # If we have quality animals, verify they have meaningful descriptions
+        if quality_animals:
+            for animal in quality_animals[:5]:  # Check first 5 animals
+                if "properties" in animal and animal["properties"]:
+                    # Parse properties JSON if it's a string
+                    props = animal["properties"]
+                    if isinstance(props, str):
+                        import json
+
+                        props = json.loads(props)
+
+                    # Check for description quality if present
+                    if "description" in props and props["description"]:
+                        description = props["description"]
+                        # Quality descriptions should be >200 chars
+                        assert len(description.strip()) >= 200, f"Animal {animal['id']} has short description: {len(description)} chars"
+
     def test_get_animal_by_id(self, client: TestClient):  # Add client fixture
         """Test GET /api/animals/{id} or /api/dogs/{id} endpoint."""
         response = client.get("/api/animals?limit=1")  # Get just one animal to test

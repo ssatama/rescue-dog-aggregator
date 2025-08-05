@@ -42,6 +42,11 @@ async def get_animals(
     """Get all animals with filtering, pagination, and location support."""
     try:
         animal_service = AnimalService(cursor)
+
+        # Use specialized sitemap filtering when requested for SEO optimization
+        if filters.sitemap_quality_filter:
+            return animal_service.get_animals_for_sitemap(filters)
+
         return animal_service.get_animals(filters)
 
     except ValidationError as ve:
