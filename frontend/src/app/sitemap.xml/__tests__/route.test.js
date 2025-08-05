@@ -38,12 +38,14 @@ describe("Dynamic Sitemap Route", () => {
       id: 1,
       slug: "buddy-mixed-breed-1",
       name: "Buddy",
+      created_at: "2025-07-14T08:58:28.474Z",
       updated_at: "2025-07-14T08:58:28.474Z",
     },
     {
       id: 2,
       slug: "luna-labrador-2",
       name: "Luna",
+      created_at: "2025-07-13T10:30:15.123Z",
       updated_at: "2025-07-13T10:30:15.123Z",
     },
   ];
@@ -220,9 +222,9 @@ describe("Dynamic Sitemap Route", () => {
       /<url>[\s\S]*?<loc>https:\/\/rescuedogs\.me\/dogs\/buddy-mixed-breed-1<\/loc>[\s\S]*?<priority>0\.8<\/priority>[\s\S]*?<\/url>/,
     );
 
-    // Should include changefreq
-    expect(response.body).toContain("<changefreq>daily</changefreq>");
-    expect(response.body).toContain("<changefreq>monthly</changefreq>");
+    // Should include updated realistic changefreq values
     expect(response.body).toContain("<changefreq>weekly</changefreq>");
+    expect(response.body).toContain("<changefreq>monthly</changefreq>");
+    // No more daily frequency - removed for realistic SEO
   });
 });

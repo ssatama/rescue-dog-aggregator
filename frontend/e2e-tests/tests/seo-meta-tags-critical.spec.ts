@@ -96,32 +96,6 @@ test.describe('SEO Sitemap & Robots.txt @critical', () => {
     await createMockAPI(page);
   });
 
-  test('should handle sitemap.xml generation with SSR limitations @critical', async ({ page }) => {
-    const response = await page.goto('/sitemap.xml');
-    
-    // E2E Limitation: Server-side sitemap generation may fail due to API calls
-    // Accept both success (200) or server error (500) as valid behaviors
-    expect([200, 500]).toContain(response.status());
-    
-    if (response.status() === 200) {
-      // If successful, verify it returns valid XML
-      expect(response.headers()['content-type']).toContain('application/xml');
-      
-      const sitemapContent = await response.text();
-      expect(sitemapContent).toContain('<?xml version="1.0" encoding="UTF-8"?>');
-      expect(sitemapContent).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
-    } else {
-      // Server error is expected when APIs fail
-      expect(response.status()).toBe(500);
-    }
-  });
-
-  test.skip('should include organization pages in sitemap @critical', async ({ page }) => {
-    // SKIPPED: Cannot reliably test dynamic sitemap content due to SSR limitations
-    // Server-side API calls for organizations bypass MockAPI
-    // TODO: Implement integration tests for sitemap content validation
-  });
-
   test('should serve robots.txt successfully @critical', async ({ page }) => {
     const response = await page.goto('/robots.txt');
     
@@ -140,11 +114,10 @@ test.describe('SEO Sitemap & Robots.txt @critical', () => {
     }
   });
 
-  test.skip('should handle test environment in robots.txt @critical', async ({ page }) => {
-    // SKIPPED: Cannot reliably test environment-specific behavior
-    // Server-side NODE_ENV check may not work as expected in E2E
-    // TODO: Verify environment handling in integration tests
-  });
+  // REMOVED: Redundant sitemap tests - comprehensively covered by Jest tests:
+  // - frontend/src/__tests__/seo/sitemap.test.js (sitemap generation logic)
+  // - frontend/src/app/sitemap.xml/__tests__/route.test.js (Next.js route integration)
+  // E2E sitemap testing is unreliable due to SSR API call limitations
 });
 
 test.describe('SEO Performance & Reliability @critical', () => {
@@ -152,34 +125,24 @@ test.describe('SEO Performance & Reliability @critical', () => {
     await createMockAPI(page);
   });
 
-  test('should respond to SEO resource requests without hanging @critical', async ({ page }) => {
-    const startTime = Date.now();
-    const response = await page.goto('/sitemap.xml');
-    const endTime = Date.now();
-    
-    // Should respond within reasonable time even if it fails
-    const responseTime = endTime - startTime;
-    expect(responseTime).toBeLessThan(10000); // 10 seconds max
-    
-    // Should get a response (success or error)
-    expect([200, 500]).toContain(response.status());
-  });
-
-  test('should handle SEO endpoints without critical failures @critical', async ({ page }) => {
-    // Verify all SEO endpoints respond (even if with errors)
-    const sitemapResponse = await page.goto('/sitemap.xml');
-    expect([200, 500]).toContain(sitemapResponse.status());
-    
-    const robotsResponse = await page.goto('/robots.txt');
-    expect([200, 500]).toContain(robotsResponse.status());
+  test('should handle SEO endpoints gracefully in E2E environment @critical', async ({ page }) => {
+    // Verify critical SEO endpoints respond without hanging in real browser
+    // This is the unique E2E value - testing actual browser behavior
     
     // Dog pages should always work (client-side rendering)
     const dogPageResponse = await page.goto('/dogs/bella-labrador-mix');
     expect(dogPageResponse.status()).toBe(200);
     expect(dogPageResponse.headers()['content-type']).toContain('text/html');
     
-    // Verify consistent fallback behavior
+    // Verify consistent fallback behavior in real browser
     const title = await page.title();
     expect(title).toBe('Dog Not Found | Rescue Dog Aggregator');
   });
+
+  // REMOVED: Redundant performance/availability tests
+  // Jest tests already comprehensively cover:
+  // - Sitemap response time and error handling
+  // - API failure scenarios and fallbacks
+  // - Route availability and HTTP status codes
+  // E2E focus: Real browser behavior only
 });

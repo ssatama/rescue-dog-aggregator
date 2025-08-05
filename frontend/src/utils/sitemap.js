@@ -97,23 +97,18 @@ const generateStaticPages = () => {
   const staticPages = [
     {
       url: `${baseUrl}/`,
-      changefreq: "daily",
+      changefreq: "weekly",
       priority: 1.0,
     },
     {
       url: `${baseUrl}/dogs`,
-      changefreq: "hourly",
+      changefreq: "weekly",
       priority: 0.9,
     },
     {
       url: `${baseUrl}/organizations`,
-      changefreq: "daily",
+      changefreq: "monthly",
       priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/search`,
-      changefreq: "daily",
-      priority: 0.8,
     },
     {
       url: `${baseUrl}/about`,
@@ -148,8 +143,14 @@ const generateDogPages = (dogs) => {
       priority: 0.8,
     };
 
-    // Add lastmod if available
-    if (dog.updated_at) {
+    // Add lastmod using created_at (when dog was first posted) instead of updated_at
+    if (dog.created_at) {
+      const formattedDate = formatDateForSitemap(dog.created_at);
+      if (formattedDate) {
+        entry.lastmod = formattedDate;
+      }
+    } else if (dog.updated_at) {
+      // Fallback to updated_at if created_at is not available
       const formattedDate = formatDateForSitemap(dog.updated_at);
       if (formattedDate) {
         entry.lastmod = formattedDate;
@@ -174,7 +175,7 @@ const generateOrganizationPages = (organizations) => {
   return organizations.map((org) => {
     const entry = {
       url: `${baseUrl}/organizations/${org.slug || `unknown-org-${org.id}`}`,
-      changefreq: "weekly",
+      changefreq: "monthly", // Organizations rarely change
       priority: 0.7,
     };
 

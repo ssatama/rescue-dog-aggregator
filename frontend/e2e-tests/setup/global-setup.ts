@@ -1,7 +1,6 @@
 import { chromium, FullConfig } from 'playwright/test';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
-import { ServerLifecycleManager } from './server-lifecycle';
 
 async function globalSetup(config: FullConfig) {
   console.log('🚀 Starting E2E test global setup...');
@@ -28,18 +27,8 @@ async function globalSetup(config: FullConfig) {
   
   // Server lifecycle management - ONLY when running locally
   if (!process.env.CI) {
-    const serverManager = new ServerLifecycleManager();
-    
-    console.log('🔧 Managing server lifecycle for local E2E tests...');
-    const serversReady = await serverManager.startAllServers();
-    
-    if (!serversReady) {
-      console.error('❌ Failed to start required servers for E2E tests');
-      process.exit(1);
-    }
-    
-    // Store server manager for cleanup in teardown
-    (globalThis as any).__serverManager = serverManager;
+    console.log('⚠️  Local server management disabled (server-lifecycle module missing)');
+    console.log('💡 Please ensure Next.js dev server is running manually on port 3000');
   } else {
     console.log('⏭️  Using CI server management (not starting local servers)');
   }

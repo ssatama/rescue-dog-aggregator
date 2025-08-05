@@ -11,6 +11,13 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Testing: pytest (backend), Jest (frontend)
 - Current: 434+ backend tests, 1,249 frontend tests, 8 organizations
 
+## MCP Tools for Claude Code
+
+- Utilize the available MCP servers and tools
+- Use zen tools for planning, debugging, test generation, code reviews and peer feedback
+- Always use Serena MCP tools when possible, they are very powerful
+- Combine MCP tool use for optimal results. Prefer Serena tools as a first step always.
+
 ## CRITICAL: Planning-First Workflow
 
 **ALWAYS follow this 3-phase approach:**
@@ -84,6 +91,7 @@ python management/config_commands.py run pets-turkey
 - **Dependency Injection**: Clean service injection at constructor level
 
 **Example Usage:**
+
 ```python
 # Modern pattern with context manager
 with MyScraper(config_id="org-name") as scraper:
@@ -122,16 +130,19 @@ configs/      # Organization YAMLs (8 orgs)
 **CRITICAL**: All Python tests are automatically protected from writing to production database.
 
 ### Global Protection
+
 - `tests/conftest.py` contains `isolate_database_writes()` fixture that runs for ALL tests
 - Automatically mocks organization sync service and scraper service injection
 - Prevents any test from creating real database connections or data
 
 ### Previous Issue Fixed
+
 - Tests were contaminating production database with "Test Organization" records
 - Root cause: `test_config_integration.py` created real scraper instances
 - Solution: Comprehensive global mocking prevents all database writes during testing
 
 ### Implementation
+
 ```python
 @pytest.fixture(autouse=True)
 def isolate_database_writes():

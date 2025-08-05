@@ -36,6 +36,7 @@ describe("Dynamic Sitemap Generation", () => {
       id: 1,
       slug: "buddy-mixed-breed-1",
       name: "Buddy",
+      created_at: "2024-01-15T10:00:00Z",
       updated_at: "2024-01-15T10:00:00Z",
       organization: { name: "Happy Paws" },
     },
@@ -43,6 +44,7 @@ describe("Dynamic Sitemap Generation", () => {
       id: 2,
       slug: "luna-labrador-retriever-2",
       name: "Luna",
+      created_at: "2024-01-16T11:00:00Z",
       updated_at: "2024-01-16T11:00:00Z",
       organization: { name: "City Shelter" },
     },
@@ -171,11 +173,21 @@ describe("Dynamic Sitemap Generation", () => {
       expect(sitemap).toContain(
         "<loc>https://rescuedogs.me/organizations</loc>",
       );
-      expect(sitemap).toContain("<loc>https://rescuedogs.me/search</loc>");
+      // /search route should NOT be in sitemap (doesn't exist)
 
       // Informational pages should have medium priority
       expect(sitemap).toContain("<loc>https://rescuedogs.me/about</loc>");
       expect(sitemap).toContain("<loc>https://rescuedogs.me/contact</loc>");
+    });
+
+    test("should NOT include /search route (non-existent page)", async () => {
+      getAllAnimalsForSitemap.mockResolvedValue([]);
+      getAllOrganizations.mockResolvedValue([]);
+
+      const sitemap = await generateSitemap();
+
+      // /search route should not be in sitemap as it doesn't exist in app structure
+      expect(sitemap).not.toContain("<loc>https://rescuedogs.me/search</loc>");
     });
 
     test("should include all dog pages with dynamic content", async () => {
@@ -219,8 +231,8 @@ describe("Dynamic Sitemap Generation", () => {
       expect(sitemap).toContain("<lastmod>2024-01-10T09:00:00+00:00</lastmod>");
       expect(sitemap).toContain("<lastmod>2024-01-12T14:00:00+00:00</lastmod>");
 
-      // Organization pages should have medium-high priority and weekly updates
-      expect(sitemap).toContain("<changefreq>weekly</changefreq>");
+      // Organization pages should have medium-high priority and monthly updates
+      expect(sitemap).toContain("<changefreq>monthly</changefreq>");
       expect(sitemap).toContain("<priority>0.7</priority>");
     });
 
@@ -371,13 +383,15 @@ describe("Dynamic Sitemap Generation", () => {
         {
           id: 1,
           name: "Buddy",
-          updated_at: "2025-07-14T08:58:28.426257", // Real API format
+          created_at: "2025-07-14T08:58:28.426257", // Real API format - should use created_at
+          updated_at: "2025-07-15T10:00:00.000000", // Different from created_at
           organization: { name: "Happy Paws" },
         },
         {
           id: 2,
           name: "Luna",
-          updated_at: "2025-07-11T20:13:59.641485", // Real API format
+          created_at: "2025-07-11T20:13:59.641485", // Real API format - should use created_at
+          updated_at: "2025-07-12T12:00:00.000000", // Different from created_at
           organization: { name: "City Shelter" },
         },
       ];
@@ -387,13 +401,15 @@ describe("Dynamic Sitemap Generation", () => {
 
       const sitemap = await generateSitemap();
 
-      // Should contain properly formatted lastmod dates
+      // Should contain properly formatted lastmod dates using created_at (not updated_at)
       expect(sitemap).toContain("<lastmod>2025-07-14T08:58:28+00:00</lastmod>");
       expect(sitemap).toContain("<lastmod>2025-07-11T20:13:59+00:00</lastmod>");
 
-      // Should not contain the raw API date format
+      // Should not contain the raw API date format or updated_at dates
       expect(sitemap).not.toContain("2025-07-14T08:58:28.426257");
       expect(sitemap).not.toContain("2025-07-11T20:13:59.641485");
+      expect(sitemap).not.toContain("2025-07-15T10:00:00+00:00"); // updated_at should not be used
+      expect(sitemap).not.toContain("2025-07-12T12:00:00+00:00"); // updated_at should not be used
     });
   });
 

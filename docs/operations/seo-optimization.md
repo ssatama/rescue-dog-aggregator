@@ -70,20 +70,23 @@ def _has_quality_description(self, description: Optional[str]) -> bool:
 ### 2. Crawl Budget Optimization
 
 #### Sitemap Configuration Changes
-- **Dogs Pages**: `changefreq="monthly"` (was daily)
-- **Rationale**: Dog information rarely changes unless rescues update listings
-- **Impact**: Reduced from 891 to ~206 high-quality pages in sitemap
+- **Homepage & Dogs Listing**: `changefreq="weekly"` (was daily/hourly) - aligned with weekly scraping schedule
+- **Organizations**: `changefreq="monthly"` (was daily) - organizations rarely change
+- **Dog Details**: `changefreq="monthly"` - dog information rarely changes once posted
+- **Search Route**: Removed completely (non-existent page)
+- **Timestamps**: Now use `created_at` for dogs (actual posting date) instead of `updated_at`
+- **Impact**: Realistic frequencies + accurate timestamps + removal of non-existent routes
 
 #### Page Priorities
 ```javascript
-// Static pages (high priority, frequent updates)
-homepage: { changefreq: "daily", priority: 1.0 }
-dogsListing: { changefreq: "hourly", priority: 0.9 }
-organizations: { changefreq: "daily", priority: 0.9 }
+// Static pages (aligned with weekly scraping schedule)
+homepage: { changefreq: "weekly", priority: 1.0 }
+dogsListing: { changefreq: "weekly", priority: 0.9 }
+organizations: { changefreq: "monthly", priority: 0.9 }
 
-// Dynamic pages (moderate priority, infrequent updates) 
+// Dynamic pages (realistic update frequencies) 
 dogDetails: { changefreq: "monthly", priority: 0.8 }
-orgDetails: { changefreq: "weekly", priority: 0.7 }
+orgDetails: { changefreq: "monthly", priority: 0.7 }
 
 // Static info pages (low priority, rare updates)
 about: { changefreq: "monthly", priority: 0.6 }
