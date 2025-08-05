@@ -68,14 +68,14 @@ describe("Dynamic Sitemap Generation", () => {
   describe("formatSitemapEntry", () => {
     test("should format basic sitemap entry with required fields", () => {
       const entry = formatSitemapEntry({
-        url: "https://rescuedogs.me/dogs/1",
+        url: "https://www.rescuedogs.me/dogs/1",
         lastmod: "2024-01-15T10:00:00Z",
         changefreq: "daily",
         priority: 0.8,
       });
 
       expect(entry).toEqual({
-        url: "https://rescuedogs.me/dogs/1",
+        url: "https://www.rescuedogs.me/dogs/1",
         lastmod: "2024-01-15T10:00:00Z",
         changefreq: "daily",
         priority: 0.8,
@@ -84,10 +84,10 @@ describe("Dynamic Sitemap Generation", () => {
 
     test("should handle entry with minimal data", () => {
       const entry = formatSitemapEntry({
-        url: "https://rescuedogs.me/about",
+        url: "https://www.rescuedogs.me/about",
       });
 
-      expect(entry.url).toBe("https://rescuedogs.me/about");
+      expect(entry.url).toBe("https://www.rescuedogs.me/about");
       expect(entry.lastmod).toBeUndefined();
       expect(entry.changefreq).toBeUndefined();
       expect(entry.priority).toBeUndefined();
@@ -102,14 +102,14 @@ describe("Dynamic Sitemap Generation", () => {
     test("should validate priority range", () => {
       expect(() =>
         formatSitemapEntry({
-          url: "https://rescuedogs.me/test",
+          url: "https://www.rescuedogs.me/test",
           priority: 1.5,
         }),
       ).toThrow();
 
       expect(() =>
         formatSitemapEntry({
-          url: "https://rescuedogs.me/test",
+          url: "https://www.rescuedogs.me/test",
           priority: -0.1,
         }),
       ).toThrow();
@@ -129,7 +129,7 @@ describe("Dynamic Sitemap Generation", () => {
       validFreqs.forEach((freq) => {
         expect(() =>
           formatSitemapEntry({
-            url: "https://rescuedogs.me/test",
+            url: "https://www.rescuedogs.me/test",
             changefreq: freq,
           }),
         ).not.toThrow();
@@ -137,7 +137,7 @@ describe("Dynamic Sitemap Generation", () => {
 
       expect(() =>
         formatSitemapEntry({
-          url: "https://rescuedogs.me/test",
+          url: "https://www.rescuedogs.me/test",
           changefreq: "invalid",
         }),
       ).toThrow();
@@ -165,19 +165,19 @@ describe("Dynamic Sitemap Generation", () => {
       const sitemap = await generateSitemap();
 
       // Homepage should have highest priority
-      expect(sitemap).toContain("<loc>https://rescuedogs.me/</loc>");
+      expect(sitemap).toContain("<loc>https://www.rescuedogs.me/</loc>");
       expect(sitemap).toContain("<priority>1</priority>");
 
       // Main sections should have high priority
-      expect(sitemap).toContain("<loc>https://rescuedogs.me/dogs</loc>");
+      expect(sitemap).toContain("<loc>https://www.rescuedogs.me/dogs</loc>");
       expect(sitemap).toContain(
-        "<loc>https://rescuedogs.me/organizations</loc>",
+        "<loc>https://www.rescuedogs.me/organizations</loc>",
       );
       // /search route should NOT be in sitemap (doesn't exist)
 
       // Informational pages should have medium priority
-      expect(sitemap).toContain("<loc>https://rescuedogs.me/about</loc>");
-      expect(sitemap).toContain("<loc>https://rescuedogs.me/contact</loc>");
+      expect(sitemap).toContain("<loc>https://www.rescuedogs.me/about</loc>");
+      expect(sitemap).toContain("<loc>https://www.rescuedogs.me/contact</loc>");
     });
 
     test("should NOT include /search route (non-existent page)", async () => {
@@ -187,7 +187,9 @@ describe("Dynamic Sitemap Generation", () => {
       const sitemap = await generateSitemap();
 
       // /search route should not be in sitemap as it doesn't exist in app structure
-      expect(sitemap).not.toContain("<loc>https://rescuedogs.me/search</loc>");
+      expect(sitemap).not.toContain(
+        "<loc>https://www.rescuedogs.me/search</loc>",
+      );
     });
 
     test("should include all dog pages with dynamic content", async () => {
@@ -198,10 +200,10 @@ describe("Dynamic Sitemap Generation", () => {
 
       // Should include individual dog pages
       expect(sitemap).toContain(
-        "<loc>https://rescuedogs.me/dogs/buddy-mixed-breed-1</loc>",
+        "<loc>https://www.rescuedogs.me/dogs/buddy-mixed-breed-1</loc>",
       );
       expect(sitemap).toContain(
-        "<loc>https://rescuedogs.me/dogs/luna-labrador-retriever-2</loc>",
+        "<loc>https://www.rescuedogs.me/dogs/luna-labrador-retriever-2</loc>",
       );
 
       // Should include lastmod dates from dog data (formatted for XML sitemap)
@@ -221,10 +223,10 @@ describe("Dynamic Sitemap Generation", () => {
 
       // Should include individual organization pages
       expect(sitemap).toContain(
-        "<loc>https://rescuedogs.me/organizations/happy-paws-rescue-1</loc>",
+        "<loc>https://www.rescuedogs.me/organizations/happy-paws-rescue-1</loc>",
       );
       expect(sitemap).toContain(
-        "<loc>https://rescuedogs.me/organizations/city-animal-shelter-2</loc>",
+        "<loc>https://www.rescuedogs.me/organizations/city-animal-shelter-2</loc>",
       );
 
       // Should include lastmod dates from organization data (formatted for XML sitemap)
@@ -243,10 +245,10 @@ describe("Dynamic Sitemap Generation", () => {
       const sitemap = await generateSitemap();
 
       // Should still include static pages
-      expect(sitemap).toContain("<loc>https://rescuedogs.me/</loc>");
-      expect(sitemap).toContain("<loc>https://rescuedogs.me/dogs</loc>");
+      expect(sitemap).toContain("<loc>https://www.rescuedogs.me/</loc>");
+      expect(sitemap).toContain("<loc>https://www.rescuedogs.me/dogs</loc>");
       expect(sitemap).toContain(
-        "<loc>https://rescuedogs.me/organizations</loc>",
+        "<loc>https://www.rescuedogs.me/organizations</loc>",
       );
 
       // Should be valid XML
@@ -261,7 +263,7 @@ describe("Dynamic Sitemap Generation", () => {
       const sitemap = await generateSitemap();
 
       // Should still generate sitemap with static pages only
-      expect(sitemap).toContain("<loc>https://rescuedogs.me/</loc>");
+      expect(sitemap).toContain("<loc>https://www.rescuedogs.me/</loc>");
       expect(sitemap).toContain("</urlset>");
     });
 
@@ -321,7 +323,7 @@ describe("Dynamic Sitemap Generation", () => {
 
       // Should properly encode URLs and handle special characters
       expect(sitemap).toContain(
-        "<loc>https://rescuedogs.me/dogs/unknown-dog-1</loc>",
+        "<loc>https://www.rescuedogs.me/dogs/unknown-dog-1</loc>",
       );
       expect(sitemap).not.toContain("&"); // Should not contain unescaped ampersands
     });

@@ -78,28 +78,30 @@ describe("Dynamic Sitemap Route", () => {
     );
 
     // Should include homepage
-    expect(response.body).toContain("<loc>https://rescuedogs.me/</loc>");
+    expect(response.body).toContain("<loc>https://www.rescuedogs.me/</loc>");
 
     // Should include dog pages
     expect(response.body).toContain(
-      "<loc>https://rescuedogs.me/dogs/buddy-mixed-breed-1</loc>",
+      "<loc>https://www.rescuedogs.me/dogs/buddy-mixed-breed-1</loc>",
     );
     expect(response.body).toContain(
-      "<loc>https://rescuedogs.me/dogs/luna-labrador-2</loc>",
+      "<loc>https://www.rescuedogs.me/dogs/luna-labrador-2</loc>",
     );
 
     // Should include organization pages
     expect(response.body).toContain(
-      "<loc>https://rescuedogs.me/organizations/happy-paws-rescue-1</loc>",
+      "<loc>https://www.rescuedogs.me/organizations/happy-paws-rescue-1</loc>",
     );
     expect(response.body).toContain(
-      "<loc>https://rescuedogs.me/organizations/city-shelter-2</loc>",
+      "<loc>https://www.rescuedogs.me/organizations/city-shelter-2</loc>",
     );
 
     // Should include static pages
-    expect(response.body).toContain("<loc>https://rescuedogs.me/dogs</loc>");
     expect(response.body).toContain(
-      "<loc>https://rescuedogs.me/organizations</loc>",
+      "<loc>https://www.rescuedogs.me/dogs</loc>",
+    );
+    expect(response.body).toContain(
+      "<loc>https://www.rescuedogs.me/organizations</loc>",
     );
 
     expect(response.body).toContain("</urlset>");
@@ -146,7 +148,7 @@ describe("Dynamic Sitemap Route", () => {
 
     // Should still return valid XML with static pages
     expect(response.body).toContain('<?xml version="1.0" encoding="UTF-8"?>');
-    expect(response.body).toContain("<loc>https://rescuedogs.me/</loc>");
+    expect(response.body).toContain("<loc>https://www.rescuedogs.me/</loc>");
     expect(response.status).toBe(200);
   });
 
@@ -174,10 +176,12 @@ describe("Dynamic Sitemap Route", () => {
     const response = await GET();
 
     // Should still include static pages
-    expect(response.body).toContain("<loc>https://rescuedogs.me/</loc>");
-    expect(response.body).toContain("<loc>https://rescuedogs.me/dogs</loc>");
+    expect(response.body).toContain("<loc>https://www.rescuedogs.me/</loc>");
     expect(response.body).toContain(
-      "<loc>https://rescuedogs.me/organizations</loc>",
+      "<loc>https://www.rescuedogs.me/dogs</loc>",
+    );
+    expect(response.body).toContain(
+      "<loc>https://www.rescuedogs.me/organizations</loc>",
     );
   });
 
@@ -195,13 +199,13 @@ describe("Dynamic Sitemap Route", () => {
     const response = await GET();
 
     expect(response.body).toContain(
-      "<loc>https://rescuedogs.me/dogs/valid-dog-1</loc>",
+      "<loc>https://www.rescuedogs.me/dogs/valid-dog-1</loc>",
     );
     expect(response.body).not.toContain(
-      "<loc>https://rescuedogs.me/dogs/null</loc>",
+      "<loc>https://www.rescuedogs.me/dogs/null</loc>",
     );
     expect(response.body).not.toContain(
-      "<loc>https://rescuedogs.me/dogs/</loc>",
+      "<loc>https://www.rescuedogs.me/dogs/</loc>",
     );
   });
 
@@ -214,12 +218,12 @@ describe("Dynamic Sitemap Route", () => {
 
     // Homepage should have highest priority
     expect(response.body).toMatch(
-      /<url>[\s\S]*?<loc>https:\/\/rescuedogs\.me\/<\/loc>[\s\S]*?<priority>1<\/priority>[\s\S]*?<\/url>/,
+      /<url>[\s\S]*?<loc>https:\/\/www\.rescuedogs\.me\/<\/loc>[\s\S]*?<priority>1<\/priority>[\s\S]*?<\/url>/,
     );
 
     // Dog pages should have appropriate priority
     expect(response.body).toMatch(
-      /<url>[\s\S]*?<loc>https:\/\/rescuedogs\.me\/dogs\/buddy-mixed-breed-1<\/loc>[\s\S]*?<priority>0\.8<\/priority>[\s\S]*?<\/url>/,
+      /<url>[\s\S]*?<loc>https:\/\/www\.rescuedogs\.me\/dogs\/buddy-mixed-breed-1<\/loc>[\s\S]*?<priority>0\.8<\/priority>[\s\S]*?<\/url>/,
     );
 
     // Should include updated realistic changefreq values

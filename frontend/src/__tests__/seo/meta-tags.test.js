@@ -52,7 +52,7 @@ describe("SEO Meta Tags", () => {
 
       // Check canonical URL
       expect(metadata.alternates.canonical).toBe(
-        "https://rescuedogs.me/dogs/buddy-labrador-retriever-1",
+        "https://www.rescuedogs.me/dogs/buddy-labrador-retriever-1",
       );
 
       // Check OpenGraph
@@ -66,7 +66,7 @@ describe("SEO Meta Tags", () => {
       expect(metadata.openGraph.type).toBe("article");
       expect(metadata.openGraph.siteName).toBe("Rescue Dog Aggregator");
       expect(metadata.openGraph.url).toBe(
-        "https://rescuedogs.me/dogs/buddy-labrador-retriever-1",
+        "https://www.rescuedogs.me/dogs/buddy-labrador-retriever-1",
       );
 
       // Check Twitter
@@ -152,7 +152,7 @@ describe("SEO Meta Tags", () => {
 
       // Check canonical URL
       expect(metadata.alternates.canonical).toBe(
-        "https://rescuedogs.me/organizations/happy-paws-rescue-1",
+        "https://www.rescuedogs.me/organizations/happy-paws-rescue-1",
       );
 
       // Check OpenGraph
@@ -165,7 +165,7 @@ describe("SEO Meta Tags", () => {
       expect(metadata.openGraph.type).toBe("website");
       expect(metadata.openGraph.siteName).toBe("Rescue Dog Aggregator");
       expect(metadata.openGraph.url).toBe(
-        "https://rescuedogs.me/organizations/happy-paws-rescue-1",
+        "https://www.rescuedogs.me/organizations/happy-paws-rescue-1",
       );
 
       // Check Twitter

@@ -8,7 +8,8 @@
  * @returns {Response} robots.txt response with proper headers
  */
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://rescuedogs.me";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me";
   const isProduction = process.env.NODE_ENV === "production";
 
   const robots = `User-agent: *

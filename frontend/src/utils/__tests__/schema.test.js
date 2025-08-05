@@ -207,19 +207,19 @@ describe("Schema.org Breadcrumb Markup", () => {
           "@type": "ListItem",
           position: 1,
           name: "Home",
-          item: "https://rescuedogs.me/",
+          item: "https://www.rescuedogs.me/",
         },
         {
           "@type": "ListItem",
           position: 2,
           name: "Dogs",
-          item: "https://rescuedogs.me/dogs",
+          item: "https://www.rescuedogs.me/dogs",
         },
         {
           "@type": "ListItem",
           position: 3,
           name: "Buddy",
-          item: "https://rescuedogs.me/dogs/1",
+          item: "https://www.rescuedogs.me/dogs/1",
         },
       ],
     });

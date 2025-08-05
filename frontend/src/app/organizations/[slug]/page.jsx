@@ -46,7 +46,7 @@ export async function generateMetadata(props) {
       title,
       description,
       alternates: {
-        canonical: `${process.env.NEXT_PUBLIC_SITE_URL || "https://rescuedogs.me"}/organizations/${resolvedParams.slug}`,
+        canonical: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me"}/organizations/${resolvedParams.slug}`,
       },
       openGraph: {
         title: `${organization.name} - Dog Rescue Organization`,
@@ -54,7 +54,7 @@ export async function generateMetadata(props) {
         type: openGraphType,
         siteName: "Rescue Dog Aggregator",
         // Enhanced metadata for better social sharing
-        url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://rescuedogs.me"}/organizations/${resolvedParams.slug}`,
+        url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me"}/organizations/${resolvedParams.slug}`,
         ...(organization.logo_url && { images: [organization.logo_url] }),
       },
       twitter: {

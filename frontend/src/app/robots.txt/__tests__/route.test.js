@@ -20,7 +20,7 @@ describe("Dynamic Robots.txt Route", () => {
 
   test("should generate robots.txt for production environment", async () => {
     process.env.NODE_ENV = "production";
-    process.env.NEXT_PUBLIC_SITE_URL = "https://rescuedogs.me";
+    process.env.NEXT_PUBLIC_SITE_URL = "https://www.rescuedogs.me";
 
     const { GET } = await import("../route");
     const response = await GET();
@@ -30,7 +30,7 @@ describe("Dynamic Robots.txt Route", () => {
     expect(response.body).toContain("Allow: /dogs/");
     expect(response.body).toContain("Allow: /organizations/");
     expect(response.body).toContain(
-      "Sitemap: https://rescuedogs.me/sitemap.xml",
+      "Sitemap: https://www.rescuedogs.me/sitemap.xml",
     );
 
     // Should include AI crawler directives
@@ -92,7 +92,7 @@ describe("Dynamic Robots.txt Route", () => {
     // Should default to production-like behavior with default URL
     expect(response.body).toContain("User-agent: *");
     expect(response.body).toContain(
-      "Sitemap: https://rescuedogs.me/sitemap.xml",
+      "Sitemap: https://www.rescuedogs.me/sitemap.xml",
     );
     expect(response.status).toBe(200);
   });

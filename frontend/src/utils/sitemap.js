@@ -11,7 +11,7 @@ import { getAllOrganizations } from "../services/organizationsService";
  * @returns {string} Base URL for sitemap URLs
  */
 const getBaseUrl = () =>
-  process.env.NEXT_PUBLIC_SITE_URL || "https://rescuedogs.me";
+  process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me";
 
 // Sitemap limits per Google standards
 const MAX_URLS_PER_SITEMAP = 50000;

@@ -91,7 +91,7 @@ describe("Structured Data Integration", () => {
 
       expect(metadata.alternates).toBeDefined();
       expect(metadata.alternates.canonical).toBe(
-        "https://rescuedogs.me/dogs/buddy-labrador-retriever-1",
+        "https://www.rescuedogs.me/dogs/buddy-labrador-retriever-1",
       );
     });
 
@@ -103,7 +103,7 @@ describe("Structured Data Integration", () => {
       });
 
       expect(metadata.openGraph.url).toBe(
-        "https://rescuedogs.me/dogs/buddy-labrador-retriever-1",
+        "https://www.rescuedogs.me/dogs/buddy-labrador-retriever-1",
       );
     });
 
@@ -213,7 +213,7 @@ describe("Structured Data Integration", () => {
 
       expect(metadata.alternates).toBeDefined();
       expect(metadata.alternates.canonical).toBe(
-        "https://rescuedogs.me/organizations/happy-paws-rescue-1",
+        "https://www.rescuedogs.me/organizations/happy-paws-rescue-1",
       );
     });
 

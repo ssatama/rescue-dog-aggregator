@@ -52,14 +52,14 @@ export async function generateMetadata(props) {
       title,
       description,
       alternates: {
-        canonical: `${process.env.NEXT_PUBLIC_SITE_URL || "https://rescuedogs.me"}/dogs/${resolvedParams.slug}`,
+        canonical: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me"}/dogs/${resolvedParams.slug}`,
       },
       openGraph: {
         title: `${dog.name} - Available for Adoption`,
         description: `Meet ${dog.name}, a ${dog.standardized_breed || dog.breed || "lovely dog"} looking for a forever home.${dog.description || dog.properties?.description ? ` ${dog.description || dog.properties.description}` : ""}`,
         type: "article",
         siteName: "Rescue Dog Aggregator",
-        url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://rescuedogs.me"}/dogs/${resolvedParams.slug}`,
+        url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me"}/dogs/${resolvedParams.slug}`,
       },
       twitter: {
         card: "summary_large_image",

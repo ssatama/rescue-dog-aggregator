@@ -91,7 +91,7 @@ describe("Breadcrumbs Component", () => {
       "@type": "ListItem",
       position: 1,
       name: "Home",
-      item: "https://rescuedogs.me/",
+      item: "https://www.rescuedogs.me/",
     });
 
     // Check second item
@@ -99,7 +99,7 @@ describe("Breadcrumbs Component", () => {
       "@type": "ListItem",
       position: 2,
       name: "Dogs",
-      item: "https://rescuedogs.me/dogs",
+      item: "https://www.rescuedogs.me/dogs",
     });
 
     // Check current page (no item URL)

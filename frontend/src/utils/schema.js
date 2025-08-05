@@ -4,7 +4,8 @@
  */
 
 // Base URL for canonical URLs - should be from environment variable
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://rescuedogs.me";
+const BASE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me";
 
 /**
  * Generate Schema.org Pet markup for dog detail pages
