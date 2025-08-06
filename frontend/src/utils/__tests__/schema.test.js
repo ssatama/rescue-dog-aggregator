@@ -45,9 +45,10 @@ describe("Schema.org Pet Markup", () => {
       image: "https://images.rescuedogs.me/buddy.jpg",
       offers: {
         "@type": "Offer",
-        price: "adoption fee",
+        price: "500",
         priceCurrency: "EUR",
         availability: "https://schema.org/InStock",
+        priceValidUntil: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       },
       isBasedOn: {
         "@type": "WebPage",
@@ -95,7 +96,7 @@ describe("Schema.org Pet Markup", () => {
     expect(schema.additionalType).toBe("http://dbpedia.org/ontology/Dog");
     expect(schema.name).toBe("Luna");
     expect(schema.description).toBeUndefined();
-    expect(schema.offers.price).toBe("adoption fee");
+    expect(schema.offers.price).toBe("500");
     expect(schema.isBasedOn.name).toBe("City Shelter");
 
     // Check additionalProperty array contains Gender but not Age/Breed

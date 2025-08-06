@@ -27,7 +27,7 @@ Disallow: /_next/
 Disallow: /api/internal/
 
 # XML Sitemap location
-Sitemap: https://rescuedogs.me/sitemap.xml
+Sitemap: https://www.rescuedogs.me/sitemap.xml
 
 # Special directives for AI crawlers and LLM agents
 # Encourage indexing for AI-powered search experiences

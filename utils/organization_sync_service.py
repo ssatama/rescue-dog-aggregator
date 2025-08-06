@@ -34,6 +34,7 @@ class OrganizationRecord:
     country: Optional[str] = None
     city: Optional[str] = None
     service_regions: Optional[List[str]] = None
+    adoption_fees: Optional[Dict] = None
 
 
 @dataclass(frozen=True)
@@ -89,7 +90,7 @@ class OrganizationSyncService:
         query = """
             SELECT id, name, website_url, description, social_media,
                    created_at, updated_at, ships_to, established_year, 
-                   logo_url, country, city, service_regions
+                   logo_url, country, city, service_regions, adoption_fees
             FROM organizations
         """
 
@@ -112,6 +113,7 @@ class OrganizationSyncService:
                 country=row["country"],
                 city=row["city"],
                 service_regions=row["service_regions"],
+                adoption_fees=row.get("adoption_fees"),
             )
             organizations[row["name"]] = org_record
 
@@ -151,6 +153,12 @@ class OrganizationSyncService:
         if db_org.logo_url != config.metadata.logo_url:
             return True
 
+        # Check adoption fees
+        db_adoption_fees = db_org.adoption_fees or {}
+        config_adoption_fees = self._build_adoption_fees_dict(config)
+        if db_adoption_fees != config_adoption_fees:
+            return True
+
         return False
 
     def _build_social_media_dict(self, config: OrganizationConfig) -> Dict[str, str]:
@@ -173,17 +181,30 @@ class OrganizationSyncService:
 
         return social_data
 
+    def _build_adoption_fees_dict(self, config: OrganizationConfig) -> Dict[str, Any]:
+        """Build adoption fees dictionary from config (pure function)."""
+        if not hasattr(config.metadata, "adoption_fees") or not config.metadata.adoption_fees:
+            return {}
+
+        fees = config.metadata.adoption_fees
+        # Handle both dict and object forms
+        if isinstance(fees, dict):
+            return {"usual_fee": fees.get("usual_fee"), "currency": fees.get("currency")}
+        else:
+            return {"usual_fee": fees.usual_fee, "currency": fees.currency}
+
     def create_organization(self, config: OrganizationConfig) -> int:
         """Create new organization from config."""
         social_media = self._build_social_media_dict(config)
+        adoption_fees = self._build_adoption_fees_dict(config)
 
         query = """
             INSERT INTO organizations (
                 name, config_id, website_url, description, social_media,
                 created_at, updated_at,
-                ships_to, established_year, logo_url, country, city, service_regions
+                ships_to, established_year, logo_url, country, city, service_regions, adoption_fees
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) RETURNING id
         """
 
@@ -201,6 +222,7 @@ class OrganizationSyncService:
             config.metadata.location.country,
             config.metadata.location.city,
             psycopg2.extras.Json(config.metadata.service_regions),
+            psycopg2.extras.Json(adoption_fees),
         )
 
         result = execute_command(query, params)
@@ -219,13 +241,14 @@ class OrganizationSyncService:
     def update_organization(self, org_id: int, config: OrganizationConfig) -> None:
         """Update existing organization from config."""
         social_media = self._build_social_media_dict(config)
+        adoption_fees = self._build_adoption_fees_dict(config)
 
         query = """
             UPDATE organizations SET
                 name = %s, config_id = %s, website_url = %s, description = %s, social_media = %s,
                 updated_at = %s, ships_to = %s,
                 established_year = %s, logo_url = %s, country = %s, city = %s,
-                service_regions = %s
+                service_regions = %s, adoption_fees = %s
             WHERE id = %s
         """
 
@@ -242,6 +265,7 @@ class OrganizationSyncService:
             config.metadata.location.country,
             config.metadata.location.city,
             psycopg2.extras.Json(config.metadata.service_regions),
+            psycopg2.extras.Json(adoption_fees),
             org_id,
         )
 

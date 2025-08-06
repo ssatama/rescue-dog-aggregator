@@ -2,7 +2,7 @@
 
 Revision ID: 7fed20e4b664
 Revises:
-Create Date: 1754483310.5008287
+Create Date: 1754502214.6323895
 
 """
 
@@ -45,6 +45,9 @@ CREATE TABLE IF NOT EXISTS organizations (
     new_this_week INTEGER DEFAULT 0,
     recent_dogs JSONB DEFAULT '[]',
     established_year INTEGER,
+    
+    -- Adoption fees structure (added for dynamic pricing)
+    adoption_fees JSONB DEFAULT '{}',
     
     -- SEO-friendly URL slug
     slug VARCHAR(255) UNIQUE

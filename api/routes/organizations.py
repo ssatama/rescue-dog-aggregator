@@ -29,7 +29,7 @@ def get_organizations(filters: OrganizationFilterRequest = Depends(), cursor: Re
             SELECT
                 o.id, o.slug, o.name, o.website_url, o.description, o.country, o.city,
                 o.logo_url, o.social_media, o.active, o.created_at, o.updated_at,
-                o.ships_to, o.established_year, o.service_regions,
+                o.ships_to, o.established_year, o.service_regions, o.adoption_fees,
                 -- Dog statistics
                 COUNT(DISTINCT a.id) as total_dogs,
                 COUNT(DISTINCT a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '7 days') as new_this_week
@@ -60,7 +60,7 @@ def get_organizations(filters: OrganizationFilterRequest = Depends(), cursor: Re
         query += """
             GROUP BY o.id, o.slug, o.name, o.website_url, o.description, o.country, o.city,
                      o.logo_url, o.social_media, o.active, o.created_at, o.updated_at,
-                     o.ships_to, o.established_year, o.service_regions
+                     o.ships_to, o.established_year, o.service_regions, o.adoption_fees
             ORDER BY o.name
             LIMIT %s OFFSET %s
         """
@@ -79,6 +79,7 @@ def get_organizations(filters: OrganizationFilterRequest = Depends(), cursor: Re
             parse_json_field(org_dict, "social_media")
             parse_json_field(org_dict, "ships_to", [])
             parse_json_field(org_dict, "service_regions", [])
+            parse_json_field(org_dict, "adoption_fees", {})
 
             # Update the original dict
             org.update(org_dict)
@@ -117,7 +118,7 @@ def get_organization_by_slug(organization_slug: str, cursor: RealDictCursor = De
             SELECT
                 o.id, o.slug, o.name, o.website_url, o.description, o.country, o.city,
                 o.logo_url, o.social_media, o.active, o.created_at, o.updated_at,
-                o.ships_to, o.established_year, o.service_regions,
+                o.ships_to, o.established_year, o.service_regions, o.adoption_fees,
                 -- Dog statistics
                 COUNT(DISTINCT a.id) as total_dogs,
                 COUNT(DISTINCT a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '7 days') as new_this_week
@@ -126,7 +127,7 @@ def get_organization_by_slug(organization_slug: str, cursor: RealDictCursor = De
             WHERE o.slug = %s AND o.active = true
             GROUP BY o.id, o.slug, o.name, o.website_url, o.description, o.country, o.city,
                      o.logo_url, o.social_media, o.active, o.created_at, o.updated_at,
-                     o.ships_to, o.established_year, o.service_regions
+                     o.ships_to, o.established_year, o.service_regions, o.adoption_fees
         """,
             (organization_slug,),
         )
@@ -141,6 +142,7 @@ def get_organization_by_slug(organization_slug: str, cursor: RealDictCursor = De
         parse_json_field(org_dict, "social_media")
         parse_json_field(org_dict, "ships_to", [])
         parse_json_field(org_dict, "service_regions", [])
+        parse_json_field(org_dict, "adoption_fees", {})
 
         return org_dict
     except HTTPException:

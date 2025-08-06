@@ -66,3 +66,6 @@ metadata:
     instagram: "https://www.instagram.com/underdoginternational/"
   established_year: 2019
   logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-theunderdog.png"
+  adoption_fees:
+    usual_fee: 500
+    currency: "GBP"

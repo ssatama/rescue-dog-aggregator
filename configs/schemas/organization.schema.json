@@ -203,6 +203,24 @@
           "type": "string",
           "maxLength": 1000,
           "description": "Brief description of the organization"
+        },
+        "adoption_fees": {
+          "type": "object",
+          "properties": {
+            "usual_fee": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Standard adoption fee amount"
+            },
+            "currency": {
+              "type": "string",
+              "pattern": "^[A-Z]{3}$",
+              "description": "ISO 4217 currency code (e.g., EUR, USD, GBP)"
+            }
+          },
+          "required": ["usual_fee", "currency"],
+          "additionalProperties": false,
+          "description": "Adoption fee information"
         }
       },
       "required": ["website_url"],

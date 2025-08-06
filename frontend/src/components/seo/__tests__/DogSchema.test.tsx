@@ -56,12 +56,13 @@ describe("DogSchema Component", () => {
     expect(schemaData.description).toBeDefined();
     expect(schemaData.image).toBe("https://images.rescuedogs.me/buddy.jpg");
 
-    // Check offers
+    // Check offers (fallback to 500 EUR since no adoption_fees in mock data)
     expect(schemaData.offers).toEqual({
       "@type": "Offer",
-      price: "adoption fee",
+      price: "500",
       priceCurrency: "EUR",
       availability: "https://schema.org/InStock",
+      priceValidUntil: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
     });
 
     // Check source attribution

@@ -95,13 +95,35 @@ export const generatePetSchema = (dog) => {
     schema.image = dog.primary_image_url;
   }
 
-  // Add adoption offer information
-  schema.offers = {
-    "@type": "Offer",
-    price: "adoption fee",
-    priceCurrency: "EUR",
-    availability: "https://schema.org/InStock",
-  };
+  // Add adoption offer information with dynamic pricing
+  const hasValidFees =
+    dog.organization?.adoption_fees &&
+    dog.organization.adoption_fees.usual_fee != null &&
+    dog.organization.adoption_fees.usual_fee > 0 &&
+    dog.organization.adoption_fees.currency;
+
+  if (hasValidFees) {
+    schema.offers = {
+      "@type": "Offer",
+      price: dog.organization.adoption_fees.usual_fee.toString(),
+      priceCurrency: dog.organization.adoption_fees.currency,
+      availability: "https://schema.org/InStock",
+      priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0], // Valid for 1 year
+    };
+  } else {
+    // Fallback if no fee data available or invalid data
+    schema.offers = {
+      "@type": "Offer",
+      price: "500",
+      priceCurrency: "EUR",
+      availability: "https://schema.org/InStock",
+      priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0],
+    };
+  }
 
   // Add source attribution
   if (dog.organization) {

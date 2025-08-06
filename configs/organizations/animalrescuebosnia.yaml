@@ -26,3 +26,6 @@ metadata:
     instagram: "https://www.instagram.com/animalrescuebosnia/"
   established_year: 2019
   logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-animalrescuebosnia.png"
+  adoption_fees:
+    usual_fee: 450
+    currency: "EUR"

@@ -48,7 +48,7 @@ class Location(BaseModel):
 class OrganizationMetadata(BaseModel):
     """Metadata for an organization."""
 
-    model_config = ConfigDict(str_strip_whitespace=True)
+    model_config = ConfigDict(str_strip_whitespace=True, extra="allow")
 
     website_url: Optional[str] = None
     description: Optional[str] = None

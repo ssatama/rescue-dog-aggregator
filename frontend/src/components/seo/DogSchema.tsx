@@ -13,6 +13,10 @@ interface Organization {
   website_url?: string;
   city?: string;
   country?: string;
+  adoption_fees?: {
+    usual_fee: number;
+    currency: string;
+  };
 }
 
 interface DogData {

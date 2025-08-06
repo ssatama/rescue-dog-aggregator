@@ -174,8 +174,17 @@ def execute_transaction(commands: list) -> list:
             try:
                 for command, params in commands:
                     cursor.execute(command, params)
-                    result = cursor.fetchone()
-                    results.append(result)
+
+                    # Only try to fetch results for commands that return data
+                    # DELETE/UPDATE operations don't return results unless they use RETURNING clause
+                    command_upper = command.strip().upper()
+                    if command_upper.startswith("SELECT") or "RETURNING" in command_upper:
+                        result = cursor.fetchone()
+                        results.append(result)
+                    else:
+                        # INSERT without RETURNING, DELETE, UPDATE without RETURNING don't return data
+                        results.append(None)
+
                 conn.commit()
             except Exception:
                 conn.rollback()

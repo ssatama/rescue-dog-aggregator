@@ -1,7 +1,7 @@
 # api/models/organization.py
 
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
@@ -30,6 +30,9 @@ class Organization(BaseModel):
     service_regions: List[str] = Field(default_factory=list)
     total_dogs: Optional[int] = None
     new_this_week: Optional[int] = None
+
+    # Adoption fees for dynamic pricing
+    adoption_fees: Dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("name")
     @classmethod

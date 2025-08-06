@@ -87,7 +87,7 @@ def sync_organizations_to_railway(chunk_size: int = 1000) -> bool:
                 with local_conn.cursor() as cursor:
                     cursor.execute(
                         """
-                        SELECT id, name, website_url, description, country, city, logo_url, active, created_at, updated_at, social_media, config_id, last_config_sync, established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs, slug
+                        SELECT id, name, website_url, description, country, city, logo_url, active, created_at, updated_at, social_media, config_id, last_config_sync, established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs, slug, adoption_fees
                         FROM organizations
                         ORDER BY id
                     """
@@ -468,11 +468,11 @@ def _process_organizations_chunk(session, organizations_chunk):
         INSERT INTO organizations 
         (id, name, website_url, description, country, city, logo_url, active,
          created_at, updated_at, social_media, config_id, last_config_sync, 
-         established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs, slug)
+         established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs, slug, adoption_fees)
         VALUES 
         (:id, :name, :website_url, :description, :country, :city, :logo_url, :active,
          :created_at, :updated_at, :social_media, :config_id, :last_config_sync,
-         :established_year, :ships_to, :service_regions, :total_dogs, :new_this_week, :recent_dogs, :slug)
+         :established_year, :ships_to, :service_regions, :total_dogs, :new_this_week, :recent_dogs, :slug, :adoption_fees)
         ON CONFLICT (config_id) DO UPDATE SET
             name = EXCLUDED.name,
             website_url = EXCLUDED.website_url,
@@ -490,7 +490,8 @@ def _process_organizations_chunk(session, organizations_chunk):
             total_dogs = EXCLUDED.total_dogs,
             new_this_week = EXCLUDED.new_this_week,
             recent_dogs = EXCLUDED.recent_dogs,
-            slug = EXCLUDED.slug
+            slug = EXCLUDED.slug,
+            adoption_fees = EXCLUDED.adoption_fees
     """
     )
 
@@ -511,7 +512,7 @@ def _process_organizations_chunk(session, organizations_chunk):
         return value
 
     for org in organizations_chunk:
-        # Map all 20 columns: id, name, website_url, description, country, city, logo_url, active, created_at, updated_at, social_media, config_id, last_config_sync, established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs, slug
+        # Map all 21 columns: id, name, website_url, description, country, city, logo_url, active, created_at, updated_at, social_media, config_id, last_config_sync, established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs, slug, adoption_fees
         session.execute(
             insert_sql,
             {
@@ -535,6 +536,7 @@ def _process_organizations_chunk(session, organizations_chunk):
                 "new_this_week": org[17],
                 "recent_dogs": safe_json_serialize(org[18]),
                 "slug": org[19],
+                "adoption_fees": safe_json_serialize(org[20]),
             },
         )
 
@@ -549,7 +551,7 @@ def _sync_organizations_to_railway_in_transaction(session, chunk_size: int = 100
             with local_conn.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT id, name, website_url, description, country, city, logo_url, active, created_at, updated_at, social_media, config_id, last_config_sync, established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs, slug
+                    SELECT id, name, website_url, description, country, city, logo_url, active, created_at, updated_at, social_media, config_id, last_config_sync, established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs, slug, adoption_fees
                     FROM organizations
                     ORDER BY id
                 """

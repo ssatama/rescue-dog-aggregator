@@ -60,3 +60,6 @@ metadata:
     instagram: "https://www.instagram.com/woofprojecteu/"
   established_year: 2020
   logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-woof-project.jpeg"
+  adoption_fees:
+    usual_fee: 500
+    currency: "USD"

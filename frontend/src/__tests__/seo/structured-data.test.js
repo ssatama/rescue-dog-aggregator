@@ -66,8 +66,9 @@ describe("Structured Data Integration", () => {
         offers: {
           "@type": "Offer",
           availability: "https://schema.org/InStock",
-          price: "adoption fee",
+          price: "500",
           priceCurrency: "EUR",
+          priceValidUntil: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
         },
         additionalProperty: [
           {

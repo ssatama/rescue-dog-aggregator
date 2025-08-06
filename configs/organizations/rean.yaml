@@ -24,3 +24,6 @@ metadata:
     instagram: "https://www.instagram.com/rean_rescue/"
   established_year: 2010
   logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-rean.jpg"
+  adoption_fees:
+    usual_fee: 425
+    currency: "GBP"

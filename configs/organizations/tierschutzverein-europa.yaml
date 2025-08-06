@@ -24,3 +24,6 @@ metadata:
     instagram: "https://www.instagram.com/tierschutzverein_europa"
   established_year: 2006
   logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-tierschutzverein-europa.jpg"
+  adoption_fees:
+    usual_fee: 450
+    currency: "EUR"

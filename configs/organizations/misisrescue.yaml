@@ -63,3 +63,6 @@ metadata:
     instagram: "https://www.instagram.com/misisrescue/"
   established_year: 2021
   logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-misisrescue.jpeg"
+  adoption_fees:
+    usual_fee: 550
+    currency: "EUR"

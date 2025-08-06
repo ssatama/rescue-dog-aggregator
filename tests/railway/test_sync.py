@@ -55,7 +55,7 @@ class TestRailwayDataSyncEssential:
     def test_sync_organizations_to_railway_success(self):
         """Test organization sync works with minimal data."""
         mock_orgs = [
-            # All 20 columns: id, name, website_url, description, country, city, logo_url, active, created_at, updated_at, social_media, config_id, last_config_sync, established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs, slug
+            # All 21 columns: id, name, website_url, description, country, city, logo_url, active, created_at, updated_at, social_media, config_id, last_config_sync, established_year, ships_to, service_regions, total_dogs, new_this_week, recent_dogs, slug, adoption_fees
             (
                 1,
                 "Test Org",
@@ -77,6 +77,7 @@ class TestRailwayDataSyncEssential:
                 5,
                 "{}",
                 "test-org-slug",
+                {"usual_fee": 500, "currency": "EUR"},  # adoption_fees as 21st column
             ),
         ]
 

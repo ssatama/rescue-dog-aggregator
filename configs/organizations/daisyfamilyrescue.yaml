@@ -29,3 +29,6 @@ metadata:
     instagram: "https://www.instagram.com/daisyfamilyrescue/"
   established_year: 2020
   logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/logo_daisyfamilyrescue_26e6c1c5.jpg"
+  adoption_fees:
+    usual_fee: 580
+    currency: "EUR"

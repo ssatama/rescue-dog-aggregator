@@ -55,3 +55,6 @@ metadata:
     instagram: "https://www.instagram.com/petsinturkey/"
   established_year: 2018
   logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-pets-in-turkey.jpg"
+  adoption_fees:
+    usual_fee: 550
+    currency: "USD"

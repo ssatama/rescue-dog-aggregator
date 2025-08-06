@@ -326,6 +326,8 @@ class TestOrganizationSyncService:
         mock_config.metadata.social_media.youtube = None
         mock_config.metadata.social_media.linkedin = None
         mock_config.metadata.logo_url = None
+        # Ensure adoption_fees attribute doesn't exist to return empty dict
+        mock_config.metadata.adoption_fees = None
 
         # Should update if website URL changed
         assert self.sync_service.should_update_organization(db_org, mock_config) is True
@@ -340,6 +342,7 @@ class TestOrganizationSyncService:
             ships_to=["US", "CA"],
             social_media={"website": "https://new.com"},  # Expected social media dict
             logo_url=None,
+            adoption_fees={},  # Empty dict to match _build_adoption_fees_dict return
         )
 
         assert self.sync_service.should_update_organization(db_org_matching, mock_config) is False
