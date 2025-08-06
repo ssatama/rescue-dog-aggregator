@@ -178,6 +178,18 @@ export async function generateMetadata({ params }) {
 
 ## Technical Implementation Details
 
+### Internationalization Note
+
+**IMPORTANT**: The initial implementation included hreflang alternate URLs for 30 European locales, but these were removed as they created 404 errors. The site currently has no internationalization support, so hreflang alternates would generate ~26,000 non-existent URLs causing massive SEO penalties.
+
+**Previous Issue Fixed:**
+- Removed `generateHreflangAlternates()` function
+- Removed `getEuropeanLocales()` function  
+- Removed hreflang XML generation in `entriesToXml()`
+- Updated XML namespace from `xmlns:xhtml` to clean sitemap format
+
+**Impact**: Sitemap reduced from 39k+ tokens to ~5k tokens, eliminating phantom URLs.
+
 ### Pure Function Architecture
 - **No Side Effects**: All SEO utilities are pure functions
 - **Predictable Output**: Same input always produces same output

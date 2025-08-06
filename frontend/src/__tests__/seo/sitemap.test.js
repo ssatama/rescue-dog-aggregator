@@ -153,7 +153,7 @@ describe("Dynamic Sitemap Generation", () => {
 
       expect(sitemap).toContain('<?xml version="1.0" encoding="UTF-8"?>');
       expect(sitemap).toContain(
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
       );
       expect(sitemap).toContain("</urlset>");
     });
@@ -380,7 +380,7 @@ describe("Dynamic Sitemap Generation", () => {
         true,
       );
       expect(sitemap).toContain(
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
       );
       expect(sitemap.endsWith("</urlset>")).toBe(true);
 

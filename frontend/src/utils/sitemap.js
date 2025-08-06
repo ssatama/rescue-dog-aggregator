@@ -237,38 +237,7 @@ const generateOrganizationPages = (organizations) => {
  * Get European locales for hreflang tags
  * @returns {Array<string>} Array of European locale codes
  */
-const getEuropeanLocales = () => [
-  "en-GB",
-  "en-IE",
-  "en-DE",
-  "en-FR",
-  "en-IT",
-  "en-ES",
-  "en-NL",
-  "en-BE",
-  "en-AT",
-  "en-PT",
-  "en-SE",
-  "en-DK",
-  "en-FI",
-  "en-NO",
-  "en-CH",
-  "en-PL",
-  "en-CZ",
-  "en-HU",
-  "en-SK",
-  "en-SI",
-  "en-HR",
-  "en-RO",
-  "en-BG",
-  "en-GR",
-  "en-CY",
-  "en-MT",
-  "en-LU",
-  "en-EE",
-  "en-LV",
-  "en-LT",
-];
+// getEuropeanLocales function removed - no longer needed without hreflang
 
 /**
  * Generate hreflang alternate URLs for European markets
@@ -299,7 +268,7 @@ const entriesToXml = (entries) => {
 
   const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>';
   const urlsetOpen =
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">';
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
   const urlsetClose = "</urlset>";
 
   const urlElements = limitedEntries.map((entry) => {
@@ -318,11 +287,8 @@ const entriesToXml = (entries) => {
       urlXml += `    <priority>${entry.priority}</priority>\n`;
     }
 
-    // Add hreflang alternates for European markets
-    const hreflangAlternates = generateHreflangAlternates(entry.url);
-    hreflangAlternates.forEach((alternate) => {
-      urlXml += `    <xhtml:link rel="${alternate.rel}" hreflang="${alternate.hreflang}" href="${escapeXml(alternate.href)}" />\n`;
-    });
+    // Note: hreflang alternates removed as site doesn't support internationalization
+    // Adding non-existent locale URLs would create 404 errors for search crawlers
 
     urlXml += "  </url>";
     return urlXml;
