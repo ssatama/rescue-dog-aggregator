@@ -32,37 +32,50 @@ describe("Schema.org Pet Markup", () => {
     },
   };
 
-  test("should generate valid Pet schema with complete data", () => {
+  test("should generate valid Product schema with Dog additionalType", () => {
     const schema = generatePetSchema(mockDog);
 
     expect(schema).toEqual({
       "@context": "https://schema.org",
-      "@type": "Pet",
-      name: "Buddy",
-      animal: "Dog",
-      breed: "Labrador Retriever",
-      gender: "Male",
-      age: "Adult",
+      "@type": "Product",
+      additionalType: "http://dbpedia.org/ontology/Dog",
+      name: "Buddy - Labrador Retriever",
       description:
         "Friendly dog looking for a loving home. Very active and loves playing fetch.",
       image: "https://images.rescuedogs.me/buddy.jpg",
-      location: {
-        "@type": "Place",
-        name: "Happy Paws Rescue",
-        address: {
-          "@type": "PostalAddress",
-          addressLocality: "San Francisco",
-          addressCountry: "USA",
-        },
-      },
       offers: {
         "@type": "Offer",
+        price: "adoption fee",
+        priceCurrency: "EUR",
         availability: "https://schema.org/InStock",
-        price: "0",
-        priceCurrency: "USD",
-        description:
-          "Pet adoption - no purchase price, adoption fees may apply",
       },
+      isBasedOn: {
+        "@type": "WebPage",
+        url: "https://happypaws.org",
+        name: "Happy Paws Rescue",
+      },
+      additionalProperty: [
+        {
+          "@type": "PropertyValue",
+          name: "Age",
+          value: "Adult",
+        },
+        {
+          "@type": "PropertyValue",
+          name: "Breed",
+          value: "Labrador Retriever",
+        },
+        {
+          "@type": "PropertyValue",
+          name: "Gender",
+          value: "Male",
+        },
+        {
+          "@type": "PropertyValue",
+          name: "Location",
+          value: "San Francisco, USA",
+        },
+      ],
     });
   });
 
@@ -78,13 +91,27 @@ describe("Schema.org Pet Markup", () => {
 
     const schema = generatePetSchema(incompleteDog);
 
-    expect(schema["@type"]).toBe("Pet");
+    expect(schema["@type"]).toBe("Product");
+    expect(schema.additionalType).toBe("http://dbpedia.org/ontology/Dog");
     expect(schema.name).toBe("Luna");
-    expect(schema.gender).toBe("Female");
-    expect(schema.breed).toBeUndefined();
-    expect(schema.age).toBeUndefined();
     expect(schema.description).toBeUndefined();
-    expect(schema.location.name).toBe("City Shelter");
+    expect(schema.offers.price).toBe("adoption fee");
+    expect(schema.isBasedOn.name).toBe("City Shelter");
+
+    // Check additionalProperty array contains Gender but not Age/Breed
+    const genderProperty = schema.additionalProperty.find(
+      (prop) => prop.name === "Gender",
+    );
+    const ageProperty = schema.additionalProperty.find(
+      (prop) => prop.name === "Age",
+    );
+    const breedProperty = schema.additionalProperty.find(
+      (prop) => prop.name === "Breed",
+    );
+
+    expect(genderProperty.value).toBe("Female");
+    expect(ageProperty).toBeUndefined();
+    expect(breedProperty).toBeUndefined();
   });
 
   test("should sanitize and format gender correctly", () => {
@@ -99,7 +126,15 @@ describe("Schema.org Pet Markup", () => {
     testCases.forEach(({ input, expected }) => {
       const dog = { ...mockDog, sex: input };
       const schema = generatePetSchema(dog);
-      expect(schema.gender).toBe(expected);
+      const genderProperty = schema.additionalProperty.find(
+        (prop) => prop.name === "Gender",
+      );
+
+      if (expected) {
+        expect(genderProperty.value).toBe(expected);
+      } else {
+        expect(genderProperty).toBeUndefined();
+      }
     });
   });
 
@@ -244,8 +279,12 @@ describe("Schema.org Breadcrumb Markup", () => {
 
 describe("Schema Validation Utilities", () => {
   test("should validate required Pet schema fields", () => {
-    const validPet = { name: "Buddy", animal: "Dog" };
-    const invalidPet = { animal: "Dog" }; // Missing name
+    const validPet = {
+      name: "Buddy",
+      "@type": "Product",
+      additionalType: "http://dbpedia.org/ontology/Dog",
+    };
+    const invalidPet = { "@type": "Product" }; // Missing name and additionalType
 
     expect(validateSchemaData("Pet", validPet)).toBe(true);
     expect(validateSchemaData("Pet", invalidPet)).toBe(false);

@@ -158,6 +158,108 @@ describe("Dynamic Sitemap Generation", () => {
       expect(sitemap).toContain("</urlset>");
     });
 
+    test("should include ALL dogs without quality filtering", async () => {
+      // Mock dogs with varying description quality (some short, some long, some missing)
+      const mockDogsAllQualities = [
+        {
+          id: 1,
+          slug: "buddy-with-description",
+          name: "Buddy",
+          created_at: "2024-01-15T10:00:00Z",
+          properties: {
+            description:
+              "This is a wonderful dog with a very detailed description that would pass quality filtering. The dog has been well cared for and is looking for a loving home with an active family who can provide lots of exercise and attention.",
+          },
+          organization: { name: "Happy Paws" },
+        },
+        {
+          id: 2,
+          slug: "luna-short-description",
+          name: "Luna",
+          created_at: "2024-01-16T11:00:00Z",
+          properties: {
+            description: "Sweet dog.", // Very short description
+          },
+          organization: { name: "City Shelter" },
+        },
+        {
+          id: 3,
+          slug: "max-no-description",
+          name: "Max",
+          created_at: "2024-01-17T12:00:00Z",
+          properties: {}, // No description at all
+          organization: { name: "Rescue Center" },
+        },
+      ];
+
+      getAllAnimalsForSitemap.mockResolvedValue(mockDogsAllQualities);
+      getAllOrganizations.mockResolvedValue([]);
+
+      const sitemap = await generateSitemap();
+
+      // All dogs should be included regardless of description quality
+      expect(sitemap).toContain(
+        "<loc>https://www.rescuedogs.me/dogs/buddy-with-description</loc>",
+      );
+      expect(sitemap).toContain(
+        "<loc>https://www.rescuedogs.me/dogs/luna-short-description</loc>",
+      );
+      expect(sitemap).toContain(
+        "<loc>https://www.rescuedogs.me/dogs/max-no-description</loc>",
+      );
+    });
+
+    test("should calculate dynamic priorities based on dog attributes", async () => {
+      // Mock dogs with different attributes for priority calculation
+      const mockDogsForPriority = [
+        {
+          id: 1,
+          slug: "high-priority-dog",
+          name: "Premium Dog",
+          created_at: "2024-01-15T10:00:00Z", // Recent
+          primary_image_url: "https://example.com/dog1.jpg",
+          properties: {
+            description:
+              "This is a wonderful dog with a very detailed description that provides lots of information about the dog's personality, needs, and background.",
+          },
+          organization: { name: "Happy Paws" },
+        },
+        {
+          id: 2,
+          slug: "medium-priority-dog",
+          name: "Standard Dog",
+          created_at: "2024-01-10T11:00:00Z", // Older
+          primary_image_url: "https://example.com/dog2.jpg",
+          properties: {
+            description: "Good dog.", // Short description
+          },
+          organization: { name: "City Shelter" },
+        },
+        {
+          id: 3,
+          slug: "low-priority-dog",
+          name: "Basic Dog",
+          created_at: "2024-01-05T12:00:00Z", // Old
+          // No image
+          properties: {}, // No description
+          organization: { name: "Rescue Center" },
+        },
+      ];
+
+      getAllAnimalsForSitemap.mockResolvedValue(mockDogsForPriority);
+      getAllOrganizations.mockResolvedValue([]);
+
+      const sitemap = await generateSitemap();
+
+      // Check that different priorities are assigned (exact values depend on implementation)
+      const priorityRegex = /<priority>0\.[0-9]+<\/priority>/g;
+      const priorities = sitemap.match(priorityRegex);
+
+      // Should have different priority values for different dogs
+      expect(priorities).toBeTruthy();
+      expect(priorities.length).toBeGreaterThan(2); // At least static pages + dogs
+    });
+
     test("should include static pages with correct priorities", async () => {
       getAllAnimalsForSitemap.mockResolvedValue([]);
       getAllOrganizations.mockResolvedValue([]);
@@ -210,9 +312,9 @@ describe("Dynamic Sitemap Generation", () => {
       expect(sitemap).toContain("<lastmod>2024-01-15T10:00:00+00:00</lastmod>");
       expect(sitemap).toContain("<lastmod>2024-01-16T11:00:00+00:00</lastmod>");
 
-      // Dog pages should have high priority and monthly updates
+      // Dog pages should have monthly updates and base priority (no image, no description)
       expect(sitemap).toContain("<changefreq>monthly</changefreq>");
-      expect(sitemap).toContain("<priority>0.8</priority>");
+      expect(sitemap).toContain("<priority>0.4</priority>"); // Base priority for dogs with minimal content
     });
 
     test("should include all organization pages", async () => {

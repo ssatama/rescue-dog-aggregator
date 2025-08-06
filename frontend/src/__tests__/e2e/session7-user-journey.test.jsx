@@ -224,7 +224,9 @@ describe("Session 7: End-to-End User Journey Tests", () => {
       // 2. SCREEN READER SUPPORT - Check ARIA landmarks
       const mains = screen.getAllByRole("main");
       expect(mains.length).toBeGreaterThan(0);
-      expect(screen.getByRole("navigation")).toBeInTheDocument();
+      expect(
+        screen.getByRole("navigation", { name: /main navigation/i }),
+      ).toBeInTheDocument();
       const complementary = screen.getAllByRole("complementary");
       expect(complementary.length).toBeGreaterThan(0);
 
@@ -439,7 +441,9 @@ describe("Session 7: End-to-End User Journey Tests", () => {
       // 5. Accessibility - ARIA landmarks
       const mains = screen.getAllByRole("main");
       expect(mains.length).toBeGreaterThan(0);
-      expect(screen.getByRole("navigation")).toBeInTheDocument();
+      expect(
+        screen.getByRole("navigation", { name: /main navigation/i }),
+      ).toBeInTheDocument();
 
       // 6. User interaction flow
       const sizeButton = screen.getByTestId("size-button-Large");

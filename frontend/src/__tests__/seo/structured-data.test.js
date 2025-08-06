@@ -54,31 +54,43 @@ describe("Structured Data Integration", () => {
 
       expect(structuredData).toEqual({
         "@context": "https://schema.org",
-        "@type": "Pet",
-        name: "Buddy",
-        animal: "Dog",
-        breed: "Labrador Retriever",
-        gender: "Male",
-        age: "Adult",
+        "@type": "Product",
+        additionalType: "http://dbpedia.org/ontology/Dog",
+        name: "Buddy - Labrador Retriever",
         description: "Friendly dog looking for a loving home.",
         image: "https://images.rescuedogs.me/buddy.jpg",
-        location: {
-          "@type": "Place",
+        isBasedOn: {
+          "@type": "WebPage",
           name: "Happy Paws Rescue",
-          address: {
-            "@type": "PostalAddress",
-            addressLocality: "San Francisco",
-            addressCountry: "USA",
-          },
         },
         offers: {
           "@type": "Offer",
           availability: "https://schema.org/InStock",
-          price: "0",
-          priceCurrency: "USD",
-          description:
-            "Pet adoption - no purchase price, adoption fees may apply",
+          price: "adoption fee",
+          priceCurrency: "EUR",
         },
+        additionalProperty: [
+          {
+            "@type": "PropertyValue",
+            name: "Age",
+            value: "Adult",
+          },
+          {
+            "@type": "PropertyValue",
+            name: "Breed",
+            value: "Labrador Retriever",
+          },
+          {
+            "@type": "PropertyValue",
+            name: "Gender",
+            value: "Male",
+          },
+          {
+            "@type": "PropertyValue",
+            name: "Location",
+            value: "San Francisco, USA",
+          },
+        ],
       });
     });
 
@@ -144,10 +156,26 @@ describe("Structured Data Integration", () => {
       expect(metadata.other).toBeDefined();
 
       const structuredData = JSON.parse(metadata.other["script:ld+json"]);
-      expect(structuredData["@type"]).toBe("Pet");
+      expect(structuredData["@type"]).toBe("Product");
+      expect(structuredData.additionalType).toBe(
+        "http://dbpedia.org/ontology/Dog",
+      );
       expect(structuredData.name).toBe("Luna");
-      expect(structuredData.breed).toBeUndefined();
-      expect(structuredData.age).toBeUndefined();
+
+      // Check that additionalProperty may or may not exist for minimal data
+      const properties = structuredData.additionalProperty || [];
+
+      if (structuredData.additionalProperty) {
+        expect(Array.isArray(structuredData.additionalProperty)).toBe(true);
+      }
+
+      // Should not have Breed property for minimal dog data
+      const breedProperty = properties.find((prop) => prop.name === "Breed");
+      expect(breedProperty).toBeUndefined();
+
+      // Should not have Age property for minimal dog data
+      const ageProperty = properties.find((prop) => prop.name === "Age");
+      expect(ageProperty).toBeUndefined();
     });
   });
 

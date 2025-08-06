@@ -3,6 +3,10 @@ import {
   getAllAnimals,
 } from "../../../services/animalsService";
 import { generatePetSchema, generateJsonLdScript } from "../../../utils/schema";
+import {
+  generateSEODescription,
+  generateFallbackDescription,
+} from "../../../utils/descriptionQuality";
 import DogDetailClient from "./DogDetailClient";
 
 /**
@@ -28,25 +32,49 @@ export async function generateMetadata(props) {
 
     const title = `${dog.name} - ${dog.standardized_breed || dog.breed || "Dog"} Available for Adoption | Rescue Dog Aggregator`;
 
-    let description = `Meet ${dog.name}, a ${dog.standardized_breed || dog.breed || "lovely dog"} looking for a forever home.`;
+    // Use quality-first description generation - NO boilerplate for SEO
+    const seoDescription = generateSEODescription(dog);
 
-    if (dog.description || dog.properties?.description) {
-      description += ` ${dog.description || dog.properties.description}`;
-    } else {
-      description += " Available for adoption now.";
-    }
-
-    if (dog.organization) {
-      description += ` Available for adoption from ${dog.organization.name}`;
-      if (dog.organization.city || dog.organization.country) {
-        description += ` in ${[dog.organization.city, dog.organization.country].filter(Boolean).join(", ")}.`;
-      } else {
-        description += ".";
-      }
-    }
+    // Fallback only for dogs without quality descriptions (avoid poor SEO)
+    const description = seoDescription || generateFallbackDescription(dog);
 
     // Generate Pet schema for structured data
     const petSchema = generatePetSchema(dog);
+
+    // Helper function to truncate description for different platforms
+    const truncateDescription = (text, maxLength) => {
+      if (!text || text.length <= maxLength) return text;
+      return text.substring(0, maxLength - 3) + "...";
+    };
+
+    // Helper function to truncate titles for social sharing
+    const truncateTitle = (title, maxLength) => {
+      if (!title || title.length <= maxLength) return title;
+      return title.substring(0, maxLength - 3) + "...";
+    };
+
+    // Generate quality-first social sharing descriptions
+    const socialDescription =
+      seoDescription || generateFallbackDescription(dog);
+
+    const openGraphDescription = truncateDescription(socialDescription, 300);
+    const twitterDescription = truncateDescription(socialDescription, 200);
+
+    // Generate optimized titles for social sharing
+    const baseTitle = `${dog.name} - Available for Adoption`;
+    const openGraphTitle = truncateTitle(baseTitle, 95);
+    const twitterTitle = truncateTitle(baseTitle, 65);
+
+    // Determine appropriate Twitter card type and fallback image
+    const hasImage = Boolean(dog.primary_image_url);
+    const twitterCard = hasImage ? "summary_large_image" : "summary";
+    const fallbackImage = {
+      url: "https://www.rescuedogs.me/images/default-dog-social.jpg",
+      alt: "Rescue Dog Aggregator - Find your perfect rescue dog",
+      width: 1200,
+      height: 630,
+      type: "image/jpeg",
+    };
 
     const metadata = {
       title,
@@ -55,22 +83,50 @@ export async function generateMetadata(props) {
         canonical: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me"}/dogs/${resolvedParams.slug}`,
       },
       openGraph: {
-        title: `${dog.name} - Available for Adoption`,
-        description: `Meet ${dog.name}, a ${dog.standardized_breed || dog.breed || "lovely dog"} looking for a forever home.${dog.description || dog.properties?.description ? ` ${dog.description || dog.properties.description}` : ""}`,
+        title: openGraphTitle,
+        description: openGraphDescription,
         type: "article",
+        locale: "en_US",
         siteName: "Rescue Dog Aggregator",
         url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me"}/dogs/${resolvedParams.slug}`,
+        // Article-specific metadata for dog listings (always include for better categorization)
+        article: {
+          ...(dog.created_at && { publishedTime: dog.created_at }),
+          section: "Pet Adoption",
+          tag: [
+            "rescue dogs",
+            "pet adoption",
+            ...(dog.standardized_breed ? [dog.standardized_breed] : []),
+            ...(dog.organization?.city ? [dog.organization.city] : []),
+          ].filter(Boolean),
+        },
       },
       twitter: {
-        card: "summary_large_image",
-        title: `${dog.name} - Available for Adoption`,
-        description: `Meet ${dog.name}, a ${dog.standardized_breed || dog.breed || "lovely dog"} looking for a forever home.`,
+        card: twitterCard,
+        site: "@rescuedogsme",
+        creator: "@rescuedogsme",
+        title: twitterTitle,
+        description: twitterDescription,
       },
     };
 
+    // Enhanced image handling with fallbacks
     if (dog.primary_image_url) {
-      metadata.openGraph.images = [dog.primary_image_url];
-      metadata.twitter.images = [dog.primary_image_url];
+      // Enhanced image metadata for better social sharing
+      const imageMetadata = {
+        url: dog.primary_image_url,
+        alt: `Photo of ${dog.name}, a ${dog.standardized_breed || dog.breed || "dog"} available for adoption`,
+        width: 1200,
+        height: 630,
+        type: "image/jpeg",
+      };
+
+      metadata.openGraph.images = [imageMetadata];
+      metadata.twitter.images = [imageMetadata];
+    } else {
+      // Use fallback images when no primary image is available
+      metadata.openGraph.images = [fallbackImage];
+      metadata.twitter.images = [fallbackImage];
     }
 
     // Add structured data as JSON-LD in the head

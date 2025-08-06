@@ -29,7 +29,8 @@ describe("SEO Meta Tags", () => {
         name: "Buddy",
         standardized_breed: "Labrador Retriever",
         primary_image_url: "https://example.com/buddy.jpg",
-        description: "A friendly dog looking for a loving home.",
+        description:
+          "A friendly dog looking for a loving home with lots of space to run and play. This beautiful and energetic dog loves to fetch, go on long walks, and spend time with families. Would be perfect for an active household with children who can provide the attention and exercise this wonderful companion deserves.",
         organization: {
           name: "Happy Paws Rescue",
           city: "San Francisco",
@@ -46,8 +47,9 @@ describe("SEO Meta Tags", () => {
       expect(metadata.title).toBe(
         "Buddy - Labrador Retriever Available for Adoption | Rescue Dog Aggregator",
       );
+      // Quality-first implementation: uses actual description + organization context
       expect(metadata.description).toBe(
-        "Meet Buddy, a Labrador Retriever looking for a forever home. A friendly dog looking for a loving home. Available for adoption from Happy Paws Rescue in San Francisco, USA.",
+        "A friendly dog looking for a loving home with lots of space to run and play. This beautiful and energetic dog loves to fetch, go on long walks, and spend time with families. Would be perfect for an active household with children who can provide the attention and exercise this wonderful companion deserves. Available from Happy Paws Rescue in San Francisco, USA.",
       );
 
       // Check canonical URL
@@ -58,10 +60,16 @@ describe("SEO Meta Tags", () => {
       // Check OpenGraph
       expect(metadata.openGraph.title).toBe("Buddy - Available for Adoption");
       expect(metadata.openGraph.description).toBe(
-        "Meet Buddy, a Labrador Retriever looking for a forever home. A friendly dog looking for a loving home.",
+        "A friendly dog looking for a loving home with lots of space to run and play. This beautiful and energetic dog loves to fetch, go on long walks, and spend time with families. Would be perfect for an active household with children who can provide the attention and exercise this wonderful companion ...",
       );
       expect(metadata.openGraph.images).toEqual([
-        "https://example.com/buddy.jpg",
+        {
+          url: "https://example.com/buddy.jpg",
+          alt: "Photo of Buddy, a Labrador Retriever available for adoption",
+          width: 1200,
+          height: 630,
+          type: "image/jpeg",
+        },
       ]);
       expect(metadata.openGraph.type).toBe("article");
       expect(metadata.openGraph.siteName).toBe("Rescue Dog Aggregator");
@@ -73,17 +81,26 @@ describe("SEO Meta Tags", () => {
       expect(metadata.twitter.card).toBe("summary_large_image");
       expect(metadata.twitter.title).toBe("Buddy - Available for Adoption");
       expect(metadata.twitter.description).toBe(
-        "Meet Buddy, a Labrador Retriever looking for a forever home.",
+        "A friendly dog looking for a loving home with lots of space to run and play. This beautiful and energetic dog loves to fetch, go on long walks, and spend time with families. Would be perfect for an...",
       );
       expect(metadata.twitter.images).toEqual([
-        "https://example.com/buddy.jpg",
+        {
+          url: "https://example.com/buddy.jpg",
+          alt: "Photo of Buddy, a Labrador Retriever available for adoption",
+          width: 1200,
+          height: 630,
+          type: "image/jpeg",
+        },
       ]);
 
       // Check structured data
       expect(metadata.other["script:ld+json"]).toBeDefined();
       const structuredData = JSON.parse(metadata.other["script:ld+json"]);
-      expect(structuredData["@type"]).toBe("Pet");
-      expect(structuredData.name).toBe("Buddy");
+      expect(structuredData["@type"]).toBe("Product");
+      expect(structuredData.additionalType).toBe(
+        "http://dbpedia.org/ontology/Dog",
+      );
+      expect(structuredData.name).toBe("Buddy - Labrador Retriever");
     });
 
     test("should generate meta tags for dog without description", async () => {
@@ -104,10 +121,10 @@ describe("SEO Meta Tags", () => {
         params: { slug: "luna-poodle-2" },
       });
 
-      expect(metadata.description).toContain(
-        "Meet Luna, a Poodle looking for a forever home",
+      // Quality-first: dog without quality description uses fallback
+      expect(metadata.description).toBe(
+        "Luna is a Poodle available for adoption from Pet Rescue Center.",
       );
-      expect(metadata.description).toContain("Available for adoption now");
     });
 
     test("should handle API errors gracefully", async () => {

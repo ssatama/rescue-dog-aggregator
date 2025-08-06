@@ -60,50 +60,100 @@ export const generatePetSchema = (dog) => {
     return location;
   };
 
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "Pet",
-    name: dog.name,
-    animal: "Dog",
+  // Build location string for additionalProperty
+  const buildLocationString = () => {
+    if (!dog.organization) return undefined;
+
+    const locationParts = [
+      dog.organization.city,
+      dog.organization.country,
+    ].filter(Boolean);
+
+    return locationParts.length > 0 ? locationParts.join(", ") : undefined;
   };
 
-  // Add optional fields only if they exist
-  if (dog.standardized_breed || dog.breed) {
-    schema.breed = dog.standardized_breed || dog.breed;
-  }
+  // Build name with breed if available
+  const buildName = () => {
+    const breed = dog.standardized_breed || dog.breed;
+    return breed ? `${dog.name} - ${breed}` : dog.name;
+  };
 
-  if (dog.sex) {
-    const gender = formatGender(dog.sex);
-    if (gender) {
-      schema.gender = gender;
-    }
-  }
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    additionalType: "http://dbpedia.org/ontology/Dog",
+    name: buildName(),
+  };
 
-  if (dog.age_text) {
-    schema.age = dog.age_text;
-  }
-
+  // Add description if available
   if (description) {
     schema.description = description;
   }
 
+  // Add image if available
   if (dog.primary_image_url) {
     schema.image = dog.primary_image_url;
-  }
-
-  const location = buildLocation();
-  if (location) {
-    schema.location = location;
   }
 
   // Add adoption offer information
   schema.offers = {
     "@type": "Offer",
+    price: "adoption fee",
+    priceCurrency: "EUR",
     availability: "https://schema.org/InStock",
-    price: "0",
-    priceCurrency: "USD",
-    description: "Pet adoption - no purchase price, adoption fees may apply",
   };
+
+  // Add source attribution
+  if (dog.organization) {
+    schema.isBasedOn = {
+      "@type": "WebPage",
+      url: dog.organization.website_url,
+      name: dog.organization.name,
+    };
+  }
+
+  // Build additionalProperty array
+  const additionalProperty = [];
+
+  if (dog.age_text) {
+    additionalProperty.push({
+      "@type": "PropertyValue",
+      name: "Age",
+      value: dog.age_text,
+    });
+  }
+
+  if (dog.standardized_breed || dog.breed) {
+    additionalProperty.push({
+      "@type": "PropertyValue",
+      name: "Breed",
+      value: dog.standardized_breed || dog.breed,
+    });
+  }
+
+  if (dog.sex) {
+    const gender = formatGender(dog.sex);
+    if (gender) {
+      additionalProperty.push({
+        "@type": "PropertyValue",
+        name: "Gender",
+        value: gender,
+      });
+    }
+  }
+
+  const locationString = buildLocationString();
+  if (locationString) {
+    additionalProperty.push({
+      "@type": "PropertyValue",
+      name: "Location",
+      value: locationString,
+    });
+  }
+
+  if (additionalProperty.length > 0) {
+    schema.additionalProperty = additionalProperty;
+  }
 
   return schema;
 };
@@ -229,7 +279,11 @@ export const validateSchemaData = (schemaType, data) => {
 
   switch (schemaType) {
     case "Pet":
-      return !!(data.name && data.animal);
+      return !!(
+        data.name &&
+        data["@type"] === "Product" &&
+        data.additionalType
+      );
 
     case "Organization":
       return !!(data.name && data["@type"]);

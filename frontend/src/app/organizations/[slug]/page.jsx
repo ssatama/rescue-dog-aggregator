@@ -52,13 +52,25 @@ export async function generateMetadata(props) {
         title: `${organization.name} - Dog Rescue Organization`,
         description: `Learn about ${organization.name} and their available dogs for adoption.${organization.description ? ` ${organization.description}` : ""}`,
         type: openGraphType,
+        locale: "en_US",
         siteName: "Rescue Dog Aggregator",
-        // Enhanced metadata for better social sharing
         url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me"}/organizations/${resolvedParams.slug}`,
-        ...(organization.logo_url && { images: [organization.logo_url] }),
+        // Enhanced image metadata for organization logo
+        ...(organization.logo_url && {
+          images: [
+            {
+              url: organization.logo_url,
+              alt: `${organization.name} logo`,
+              width: 400,
+              height: 400,
+              type: "image/png",
+            },
+          ],
+        }),
       },
       twitter: {
         card: "summary",
+        site: "@rescuedogsme",
         title: `${organization.name} - Dog Rescue Organization`,
         description: `Learn about ${organization.name} and their available dogs for adoption.`,
       },

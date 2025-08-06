@@ -221,8 +221,8 @@ describe("Session 7: Comprehensive Integration Tests", () => {
       const mains = screen.getAllByRole("main");
       expect(mains.length).toBeGreaterThan(0);
 
-      // Should have navigation
-      const nav = screen.getByRole("navigation");
+      // Should have navigation - check for main navigation by aria-label
+      const nav = screen.getByRole("navigation", { name: /main navigation/i });
       expect(nav).toBeInTheDocument();
 
       // Should have complementary areas (filters)

@@ -26,6 +26,8 @@ import MobileFilterDrawer from "../../components/filters/MobileFilterDrawer";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { reportError } from "../../utils/logger";
 import { Badge } from "@/components/ui/badge";
+import Breadcrumbs from "../../components/ui/Breadcrumbs";
+import { BreadcrumbSchema } from "../../components/seo";
 
 // Helper function to map UI size to standardized size
 const mapUiSizeToStandardized = (uiSize) => {
@@ -498,16 +500,23 @@ export default function DogsPageClient() {
     );
   };
 
+  const breadcrumbItems = [{ name: "Home", url: "/" }, { name: "Find Dogs" }];
+
   return (
     <div
       data-testid="dogs-page-gradient-wrapper"
       className="min-h-screen bg-gradient-to-br from-[#FFF5E6] to-[#FFE4CC] dark:bg-gradient-to-br dark:from-gray-900 dark:to-gray-800"
     >
       <Layout>
+        {/* SEO: Breadcrumb structured data */}
+        <BreadcrumbSchema items={breadcrumbItems} />
+
         <div
           data-testid="dogs-page-container"
           className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
         >
+          {/* Breadcrumb Navigation */}
+          <Breadcrumbs items={breadcrumbItems} />
           <h1 className="text-title text-gray-900 dark:text-gray-100 mb-6">
             Find Your New Best Friend
           </h1>

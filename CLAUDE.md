@@ -15,8 +15,9 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 
 - Utilize the available MCP servers and tools
 - Use zen tools for planning, debugging, test generation, code reviews and peer feedback
-- Always use Serena MCP tools when possible, they are very powerful
-- Combine MCP tool use for optimal results. Prefer Serena tools as a first step always.
+- Combine subagents you have available with the MCP tools as well
+- Always use Serena MCP tools when possible, they are very powerful, Switch serena modes as appropriate using the switch mode command.
+- Combine MCP tool use with subagent use for optimal results. Prefer Serena tools as a first step always.
 
 ## CRITICAL: Planning-First Workflow
 
@@ -155,6 +156,7 @@ def isolate_database_writes():
 2. Review tests for patterns
 3. Ask for clarification
 4. Break into smaller steps
+5. Use subagents and MCP tools to help you
 
 ## References
 

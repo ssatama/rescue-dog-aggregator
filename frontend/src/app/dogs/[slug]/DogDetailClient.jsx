@@ -30,6 +30,8 @@ import { sanitizeText, sanitizeHtml } from "../../../utils/security";
 import DogDetailSkeleton from "../../../components/ui/DogDetailSkeleton";
 import DogDetailErrorBoundary from "../../../components/error/DogDetailErrorBoundary";
 import { ScrollAnimationWrapper } from "../../../hooks/useScrollAnimation";
+import { DogSchema, BreadcrumbSchema } from "../../../components/seo";
+import Breadcrumbs from "../../../components/ui/Breadcrumbs";
 
 export default function DogDetailClient({ params = {} }) {
   const urlParams = useParams();
@@ -306,71 +308,26 @@ export default function DogDetailClient({ params = {} }) {
     );
   }
 
+  const breadcrumbItems = [
+    { name: "Home", url: "/" },
+    { name: "Find Dogs", url: "/dogs" },
+    { name: dog.name },
+  ];
+
   return (
     <ToastProvider>
       <DogDetailErrorBoundary dogSlug={dogSlug}>
+        {/* SEO: Schema.org structured data for search engines */}
+        <DogSchema dog={dog} />
+        <BreadcrumbSchema items={breadcrumbItems} />
         <Layout>
           <div
             data-testid="dog-detail-container"
             className="max-w-4xl mx-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-8"
           >
-            {/* Enhanced Breadcrumb Navigation */}
+            {/* Breadcrumb Navigation using reusable component */}
             <ScrollAnimationWrapper>
-              <nav aria-label="Breadcrumb" className="mb-6">
-                <div className="bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-4 py-3 border border-gray-200/50 dark:border-gray-700/50">
-                  <ol className="flex items-center space-x-1 text-sm">
-                    <li>
-                      <Link
-                        href="/"
-                        className="text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors duration-200 font-medium px-2 py-1 rounded hover:bg-white/50 dark:hover:bg-gray-700/50"
-                      >
-                        Home
-                      </Link>
-                    </li>
-                    <li className="flex items-center text-gray-400">
-                      <svg
-                        className="w-4 h-4 mx-1"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                        aria-hidden="true"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </li>
-                    <li>
-                      <Link
-                        href="/dogs"
-                        className="text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors duration-200 font-medium px-2 py-1 rounded hover:bg-white/50 dark:hover:bg-gray-700/50"
-                      >
-                        Find Dogs
-                      </Link>
-                    </li>
-                    <li className="flex items-center text-gray-400">
-                      <svg
-                        className="w-4 h-4 mx-1"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                        aria-hidden="true"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </li>
-                    <li>
-                      <span className="text-gray-900 dark:text-gray-100 font-bold px-2 py-1 bg-white/60 dark:bg-gray-800/60 rounded shadow-sm">
-                        {sanitizeText(dog?.name || "Loading...")}
-                      </span>
-                    </li>
-                  </ol>
-                </div>
-              </nav>
+              <Breadcrumbs items={breadcrumbItems} />
             </ScrollAnimationWrapper>
 
             <ScrollAnimationWrapper delay={100}>

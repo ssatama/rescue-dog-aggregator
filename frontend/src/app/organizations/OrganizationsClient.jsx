@@ -7,6 +7,8 @@ import OrganizationCardSkeleton from "../../components/ui/OrganizationCardSkelet
 import EmptyState from "../../components/ui/EmptyState";
 import { getEnhancedOrganizations } from "../../services/organizationsService";
 import { reportError, logger } from "../../utils/logger";
+import Breadcrumbs from "../../components/ui/Breadcrumbs";
+import { BreadcrumbSchema } from "../../components/seo";
 
 export default function OrganizationsClient() {
   const [organizations, setOrganizations] = useState([]);
@@ -45,9 +47,20 @@ export default function OrganizationsClient() {
     fetchOrganizations();
   }, []);
 
+  const breadcrumbItems = [
+    { name: "Home", url: "/" },
+    { name: "Organizations" },
+  ];
+
   return (
     <Layout>
+      {/* SEO: Breadcrumb structured data */}
+      <BreadcrumbSchema items={breadcrumbItems} />
+
       <div className="max-w-7xl mx-auto">
+        {/* Breadcrumb Navigation */}
+        <Breadcrumbs items={breadcrumbItems} />
+
         <h1 className="text-title text-gray-900 mb-4">Rescue Organizations</h1>
         <p className="text-body text-gray-600 mb-8">
           These organizations work tirelessly to rescue and rehome dogs. By

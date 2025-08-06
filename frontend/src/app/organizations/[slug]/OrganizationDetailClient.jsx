@@ -16,6 +16,8 @@ import {
   getOrganizationDogs,
 } from "../../../services/organizationsService";
 import { reportError } from "../../../utils/logger";
+import { OrganizationSchema, BreadcrumbSchema } from "../../../components/seo";
+import Breadcrumbs from "../../../components/ui/Breadcrumbs";
 
 export default function OrganizationDetailClient({ params = {} }) {
   const urlParams = useParams();
@@ -255,12 +257,28 @@ export default function OrganizationDetailClient({ params = {} }) {
     );
   }
 
+  const breadcrumbItems = [
+    { name: "Home", url: "/" },
+    { name: "Organizations", url: "/organizations" },
+    { name: organization.name },
+  ];
+
   return (
     <Layout>
+      {/* SEO: Schema.org structured data for search engines */}
+      {organization && (
+        <>
+          <OrganizationSchema organization={organization} />
+          <BreadcrumbSchema items={breadcrumbItems} />
+        </>
+      )}
+
       {/* New OrganizationHero Component */}
       <OrganizationHero organization={organization} />
 
       <div className="max-w-7xl mx-auto p-4">
+        {/* Breadcrumb Navigation */}
+        <Breadcrumbs items={breadcrumbItems} />
         {/* Contact Information (if available in properties) */}
         {organization.properties && (
           <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 mb-8">

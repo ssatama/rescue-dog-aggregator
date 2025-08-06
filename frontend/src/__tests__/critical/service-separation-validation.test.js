@@ -98,7 +98,7 @@ describe("Service Layer Separation - Critical Validation", () => {
       // Critical assertion: sitemap should be subset of all animals
       expect(sitemapAnimals.length).toBeLessThanOrEqual(allAnimals.length);
       expect(allAnimals.length).toBe(3); // All mock animals
-      expect(sitemapAnimals.length).toBe(1); // Only Buddy has >200 char description
+      expect(sitemapAnimals.length).toBe(3); // Phase 2A: No quality filtering, returns all animals
 
       console.log(`getAllAnimals returned ${allAnimals.length} animals`);
       console.log(
@@ -122,10 +122,10 @@ describe("Service Layer Separation - Critical Validation", () => {
         return description.length < 200;
       });
 
-      // Critical: sitemap should have fewer (or zero) short description animals
-      expect(shortDescInSitemap.length).toBeLessThan(shortDescAnimals.length);
+      // Phase 2A: sitemap now contains same animals as getAllAnimals (no filtering)
+      expect(shortDescInSitemap.length).toBe(shortDescAnimals.length);
       expect(shortDescAnimals.length).toBe(2); // Max and Luna
-      expect(shortDescInSitemap.length).toBe(0); // None in sitemap
+      expect(shortDescInSitemap.length).toBe(2); // Same as getAllAnimals (no filtering)
 
       console.log(
         `Found ${shortDescAnimals.length} animals with short descriptions in getAllAnimals`,
@@ -155,7 +155,7 @@ describe("Service Layer Separation - Critical Validation", () => {
       // Should work with no parameters (sitemap has no filter parameters)
       const sitemapAnimals = await getAllAnimalsForSitemap();
       expect(Array.isArray(sitemapAnimals)).toBe(true);
-      expect(sitemapAnimals.length).toBe(1); // Only high-quality descriptions
+      expect(sitemapAnimals.length).toBe(3); // Phase 2A: No quality filtering, returns all animals
     });
 
     test("CRITICAL: Functions call API with correct parameters", async () => {
@@ -184,6 +184,13 @@ describe("Service Layer Separation - Critical Validation", () => {
           limit: 10000,
           animal_type: "dog",
           status: "available",
+          // Phase 2A: No longer sends sitemap_quality_filter parameter
+        }),
+      );
+      // Verify sitemap_quality_filter is NOT sent
+      expect(get).toHaveBeenCalledWith(
+        "/api/animals",
+        expect.not.objectContaining({
           sitemap_quality_filter: true,
         }),
       );
@@ -238,8 +245,8 @@ describe("Service Layer Separation - Critical Validation", () => {
             return sum + desc.length;
           }, 0) / sitemapAnimals.length;
 
-        // Sitemap should have higher average description length (better quality)
-        expect(avgSitemapDescLength).toBeGreaterThan(avgAllDescLength);
+        // Phase 2A: Both functions return same data, so average lengths should be equal
+        expect(avgSitemapDescLength).toBe(avgAllDescLength);
 
         console.log(
           `Average description length - All: ${avgAllDescLength.toFixed(1)}, Sitemap: ${avgSitemapDescLength.toFixed(1)}`,
@@ -261,14 +268,15 @@ describe("Service Layer Separation - Critical Validation", () => {
         return placeholderPatterns.some((pattern) => pattern.test(description));
       });
 
-      // Sitemap should have minimal placeholder content
+      // Calculate placeholder percentage for sitemap
       const placeholderPercentage =
         sitemapAnimals.length > 0
           ? (placeholderAnimals.length / sitemapAnimals.length) * 100
           : 0;
 
-      // With our mock data, sitemap should have no placeholder content
-      expect(placeholderPercentage).toBe(0);
+      // Phase 2A: Sitemap now includes same animals as getAllAnimals, so should have same placeholder percentage
+      // With our mock data: Max (short desc) and Luna (empty desc) = 2 out of 3 = 66.7%
+      expect(placeholderPercentage).toBeCloseTo(66.7, 1);
 
       if (placeholderAnimals.length > 0) {
         console.log(

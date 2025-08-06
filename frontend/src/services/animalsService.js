@@ -255,11 +255,12 @@ export async function getAllAnimals(params = {}) {
  */
 export async function getAllAnimalsForSitemap(params = {}) {
   logger.log("Fetching all animals for sitemap");
-  // Enable quality filtering for sitemap to only include dogs with meaningful descriptions
+  // PHASE 2A: Remove quality filtering to include all available dogs (877 instead of 263)
+  // Priority calculation will be handled in frontend sitemap generation
   return getAnimals({
     ...params,
     limit: 10000, // Request maximum limit for sitemap
-    sitemap_quality_filter: true, // Only include dogs with quality descriptions for SEO
+    // sitemap_quality_filter: true, // REMOVED - now includes all dogs
   });
 }
 

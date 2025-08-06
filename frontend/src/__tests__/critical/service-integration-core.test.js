@@ -99,27 +99,29 @@ describe("Core Service Integration - Critical Validation", () => {
     expect(shortDescAnimals.length).toBe(2); // Max and Luna
   });
 
-  test("CRITICAL: getAllAnimalsForSitemap applies quality filtering", async () => {
+  test("CRITICAL: getAllAnimalsForSitemap includes all animals (Phase 2A)", async () => {
     const sitemapAnimals = await getAllAnimalsForSitemap({});
 
     expect(Array.isArray(sitemapAnimals)).toBe(true);
-    expect(sitemapAnimals.length).toBe(1); // Only Buddy has >200 char description
+    expect(sitemapAnimals.length).toBe(3); // Phase 2A: No quality filtering, includes all animals
 
-    // Should NOT include animals with short descriptions
-    const shortDescAnimals = sitemapAnimals.filter((animal) => {
-      const desc = animal?.properties?.description || "";
-      return desc.length < 200;
-    });
-    expect(shortDescAnimals.length).toBe(0); // None in sitemap
+    // Should include ALL animals - quality-based priority calculation happens in sitemap generation
+    expect(sitemapAnimals).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "Buddy" }),
+        expect.objectContaining({ name: "Max" }),
+        expect.objectContaining({ name: "Luna" }),
+      ]),
+    );
   });
 
   test("CRITICAL: Service separation prevents page generation bugs", async () => {
     const allAnimals = await getAllAnimals({});
     const sitemapAnimals = await getAllAnimalsForSitemap({});
 
-    // Critical assertion: sitemap should be subset of all animals
+    // Phase 2A: Both functions now return the same animals (no quality filtering in sitemap)
     expect(sitemapAnimals.length).toBeLessThanOrEqual(allAnimals.length);
-    expect(allAnimals.length).toBeGreaterThan(sitemapAnimals.length);
+    expect(allAnimals.length).toBe(sitemapAnimals.length); // Both return all 3 animals
 
     // All sitemap animals should exist in all animals
     sitemapAnimals.forEach((sitemapAnimal) => {
@@ -156,6 +158,13 @@ describe("Core Service Integration - Critical Validation", () => {
         limit: 10000,
         animal_type: "dog",
         status: "available",
+        // Phase 2A: No longer sends sitemap_quality_filter parameter
+      }),
+    );
+    // Verify sitemap_quality_filter is NOT sent
+    expect(get).toHaveBeenCalledWith(
+      "/api/animals",
+      expect.not.objectContaining({
         sitemap_quality_filter: true,
       }),
     );

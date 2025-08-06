@@ -100,8 +100,8 @@ describe("Session 7: Accessibility Audit", () => {
       const mains = screen.getAllByRole("main");
       expect(mains.length).toBeGreaterThan(0);
 
-      // Navigation landmark
-      const nav = screen.getByRole("navigation");
+      // Navigation landmark - check for main navigation by aria-label
+      const nav = screen.getByRole("navigation", { name: /main navigation/i });
       expect(nav).toBeInTheDocument();
 
       // Complementary landmark for filters

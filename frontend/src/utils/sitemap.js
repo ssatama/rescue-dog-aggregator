@@ -12,6 +12,48 @@ import { getAllOrganizations } from "../services/organizationsService";
  */
 const getBaseUrl = () =>
   process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me";
+/**
+ * Calculate dynamic priority for dog pages based on content quality attributes
+ * Higher priority for dogs with better content (images, descriptions, recent listings)
+ * @param {Object} dog - Dog data object
+ * @returns {number} Priority value between 0.4 and 0.9
+ */
+const calculateDogPriority = (dog) => {
+  let priority = 0.4; // Base priority for all dogs
+
+  // +0.2 for having a primary image
+  if (dog.primary_image_url) {
+    priority += 0.2;
+  }
+
+  // +0.1 to +0.3 for description quality
+  if (dog.properties && dog.properties.description) {
+    const description = dog.properties.description;
+    const descLength = description.length;
+
+    if (descLength > 200) {
+      priority += 0.3; // Long, detailed description
+    } else if (descLength > 50) {
+      priority += 0.2; // Medium description
+    } else if (descLength > 0) {
+      priority += 0.1; // Short but present description
+    }
+  }
+
+  // +0.1 for recent listings (last 30 days)
+  if (dog.created_at) {
+    const createdDate = new Date(dog.created_at);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    if (createdDate > thirtyDaysAgo) {
+      priority += 0.1;
+    }
+  }
+
+  // Ensure priority doesn't exceed maximum
+  return Math.min(priority, 0.9);
+};
 
 // Sitemap limits per Google standards
 const MAX_URLS_PER_SITEMAP = 50000;
@@ -140,7 +182,7 @@ const generateDogPages = (dogs) => {
     const entry = {
       url: `${baseUrl}/dogs/${dog.slug || `unknown-dog-${dog.id}`}`,
       changefreq: "monthly", // Dog info rarely changes unless rescues update
-      priority: 0.8,
+      priority: calculateDogPriority(dog), // PHASE 2A: Dynamic priority calculation
     };
 
     // Add lastmod using created_at (when dog was first posted) instead of updated_at
