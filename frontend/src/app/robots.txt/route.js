@@ -31,6 +31,7 @@ Allow: /api/v1/search
 Allow: /images/
 Allow: /icons/
 Allow: /_next/static/
+Allow: /_next/image
 
 # Disallow admin and internal pages
 Disallow: /admin/

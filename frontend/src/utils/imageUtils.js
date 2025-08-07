@@ -47,6 +47,97 @@ function getOriginalOrTransformed(originalUrl, transformedUrl) {
 // Memoization cache for performance optimization
 const imageUrlCache = new Map();
 
+// URL Registry for consistent preload/usage coordination
+// Stores URLs with consistent cache-busting parameters across session
+class ImageUrlRegistry {
+  constructor() {
+    this.registry = new Map();
+    this.sessionTimestamp = Date.now(); // Single timestamp per session
+  }
+
+  generateKey(originalUrl, context) {
+    return `${originalUrl}:${context}`;
+  }
+
+  registerUrl(originalUrl, context, bustCache = false) {
+    const key = this.generateKey(originalUrl, context);
+
+    if (this.registry.has(key)) {
+      return this.registry.get(key);
+    }
+
+    // Generate the base optimized URL
+    let baseUrl;
+    switch (context) {
+      case "hero":
+        baseUrl = getDetailHeroImage(originalUrl);
+        break;
+      case "catalog":
+        baseUrl = getCatalogCardImage(originalUrl);
+        break;
+      case "thumbnail":
+        baseUrl = getThumbnailImage(originalUrl);
+        break;
+      default:
+        baseUrl = getOptimizedImage(originalUrl, context);
+    }
+
+    // Apply consistent cache-busting if requested
+    const finalUrl = bustCache ? this.addSessionCacheBusting(baseUrl) : baseUrl;
+
+    // Store in registry for consistent retrieval
+    this.registry.set(key, finalUrl);
+    return finalUrl;
+  }
+
+  addSessionCacheBusting(url) {
+    if (!url || typeof url !== "string") return url;
+
+    try {
+      const urlObj = new URL(url);
+      // Use session timestamp for consistency across calls
+      urlObj.searchParams.set("cb", this.sessionTimestamp.toString());
+      return urlObj.toString();
+    } catch {
+      // If URL parsing fails, use simpler approach
+      const separator = url.includes("?") ? "&" : "?";
+      return `${url}${separator}cb=${this.sessionTimestamp}`;
+    }
+  }
+
+  getUrl(originalUrl, context) {
+    const key = this.generateKey(originalUrl, context);
+    return this.registry.get(key);
+  }
+
+  clearRegistry() {
+    this.registry.clear();
+    this.sessionTimestamp = Date.now();
+  }
+}
+
+// Global registry instance
+const urlRegistry = new ImageUrlRegistry();
+
+/**
+ * Unified image URL generation for consistent preload/usage coordination
+ * @param {string} originalUrl - The original image URL
+ * @param {string} context - Image context (hero, catalog, thumbnail)
+ * @param {boolean} bustCache - Whether to apply cache-busting
+ * @returns {string} Consistent URL that can be used for both preload and usage
+ */
+export function getUnifiedImageUrl(
+  originalUrl,
+  context = "catalog",
+  bustCache = false,
+) {
+  if (!originalUrl) {
+    return PLACEHOLDER_IMAGE;
+  }
+
+  return urlRegistry.registerUrl(originalUrl, context, bustCache);
+}
+
 /**
  * Validate image URL for security
  * @param {string} url - Image URL to validate
@@ -148,8 +239,72 @@ export function createTransformationParams(
  * @param {string} params - Transformation parameters
  * @returns {string} Secure Cloudflare URL
  */
+/**
+ * Check if a URL already contains CDN transformation parameters
+ * @param {string} url - URL to check
+ * @returns {boolean} True if URL contains /cdn-cgi/image/ transformation
+ */
+export function hasExistingTransformation(url) {
+  if (!url || typeof url !== "string") {
+    return false;
+  }
+
+  return url.includes("/cdn-cgi/image/");
+}
+
+/**
+ * Extract the original image path from a transformed URL
+ * @param {string} url - Transformed URL with /cdn-cgi/image/ parameters
+ * @returns {string} Original URL without transformations
+ */
+export function extractOriginalPath(url) {
+  if (!url || typeof url !== "string") {
+    return url;
+  }
+
+  // If not an R2 URL or doesn't have transformation, return as-is
+  if (!isR2Url(url) || !hasExistingTransformation(url)) {
+    return url;
+  }
+
+  // Handle multiple transformations by iteratively removing them
+  let currentUrl = url;
+
+  // Keep extracting until no more transformations
+  while (hasExistingTransformation(currentUrl)) {
+    // Extract the part after the transformation parameters
+    // Pattern: https://domain.com/cdn-cgi/image/w=X,h=Y,fit=Z/path/to/image.jpg
+    const cdnPattern = /\/cdn-cgi\/image\/[^/]+\//;
+    const match = currentUrl.match(cdnPattern);
+
+    if (match) {
+      // Replace the cdn-cgi transformation part with just the domain
+      const domain = currentUrl.substring(
+        0,
+        currentUrl.indexOf("/cdn-cgi/image/"),
+      );
+      const imagePath = currentUrl.substring(
+        currentUrl.indexOf(match[0]) + match[0].length,
+      );
+      currentUrl = `${domain}/${imagePath}`;
+    } else {
+      // If pattern doesn't match but hasExistingTransformation returned true,
+      // there might be a malformed URL - break to prevent infinite loop
+      break;
+    }
+  }
+
+  return currentUrl;
+}
+
 export function buildSecureCloudflareUrl(imageUrl, params) {
   if (!imageUrl || !isR2Url(imageUrl)) {
+    return imageUrl;
+  }
+
+  // Check if URL already has transformations - prevent double transformation
+  if (hasExistingTransformation(imageUrl)) {
+    // Return the existing transformed URL as-is to prevent double transformations
     return imageUrl;
   }
 
@@ -738,14 +893,9 @@ export function getDetailHeroImageWithPosition(originalUrl, bustCache = false) {
     return { src: PLACEHOLDER_IMAGE, position: "center center" };
   }
 
-  // Use standard hero image generation
-  let src = getDetailHeroImage(originalUrl);
+  // Use unified URL generation for consistent preload/usage coordination
+  const src = getUnifiedImageUrl(originalUrl, "hero", bustCache);
   const position = getSmartObjectPosition(originalUrl, "hero");
-
-  // Add cache-busting for navigation if requested
-  if (bustCache) {
-    src = addCacheBusting(src, "hero");
-  }
 
   // Preload hero image for better LCP scores only on fast connections
   if (
@@ -787,19 +937,10 @@ export function preloadImages(imageUrls, context = "card") {
       link.rel = "preload";
       link.as = "image";
 
-      // Choose appropriate optimization based on context and device
-      switch (context) {
-        case "hero":
-          link.href = getDetailHeroImage(url);
-          break;
-        case "thumbnail":
-          link.href = getThumbnailImage(url);
-          break;
-        default:
-          link.href = isMobile
-            ? getMobileOptimizedImage(url)
-            : getCatalogCardImage(url);
-      }
+      // Use unified URL generation for consistent preload/usage coordination
+      // For hero context, apply cache-busting to match component usage
+      const shouldBustCache = context === "hero";
+      link.href = getUnifiedImageUrl(url, context, shouldBustCache);
 
       // Add responsive image attributes for better performance
       if (context === "hero") {

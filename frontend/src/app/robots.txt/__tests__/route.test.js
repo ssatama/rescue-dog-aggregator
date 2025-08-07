@@ -130,4 +130,76 @@ describe("Dynamic Robots.txt Route", () => {
     expect(response.body).toMatch(/User-agent: ChatGPT-User[\s\S]*?Allow: \//);
     expect(response.body).toMatch(/User-agent: CCBot[\s\S]*?Allow: \//);
   });
+
+  test("should allow Next.js Image Optimization API for Google Rich Results", async () => {
+    process.env.NODE_ENV = "production";
+
+    const { GET } = await import("../route");
+    const response = await GET();
+
+    // Should allow Next.js Image Optimization API
+    expect(response.body).toContain("Allow: /_next/image");
+
+    // Ensure proper order: static assets first, then image optimization
+    expect(response.body).toContain("Allow: /_next/static/");
+
+    // Should still disallow general _next/ directory
+    expect(response.body).toContain("Disallow: /_next/");
+
+    // Verify the specific pattern that Google Rich Results needs
+    const lines = response.body.split("\n");
+    const staticIndex = lines.findIndex((line) =>
+      line.includes("Allow: /_next/static/"),
+    );
+    const imageIndex = lines.findIndex((line) =>
+      line.includes("Allow: /_next/image"),
+    );
+    const disallowIndex = lines.findIndex((line) =>
+      line.includes("Disallow: /_next/"),
+    );
+
+    // Image optimization should be allowed before general _next/ is disallowed
+    expect(staticIndex).toBeGreaterThan(-1);
+    expect(imageIndex).toBeGreaterThan(-1);
+    expect(disallowIndex).toBeGreaterThan(-1);
+    expect(imageIndex).toBeGreaterThan(staticIndex);
+    expect(imageIndex).toBeLessThan(disallowIndex);
+  });
+
+  test("should allow Google Rich Results flag image optimization URLs", async () => {
+    process.env.NODE_ENV = "production";
+
+    const { GET } = await import("../route");
+    const response = await GET();
+
+    // Verify that the robots.txt would allow the specific pattern Google Rich Results uses
+    // Example: /_next/image?url=https%3A%2F%2Fflagcdn.com%2F20x15%2Fch.png&w=48&q=75
+    expect(response.body).toContain("Allow: /_next/image");
+
+    // Parse the robots.txt to simulate how search engines would interpret it
+    const lines = response.body
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line);
+
+    // Find all Allow and Disallow rules for _next paths
+    const nextRules = lines.filter(
+      (line) =>
+        line.startsWith("Allow: /_next/") ||
+        line.startsWith("Disallow: /_next/"),
+    );
+
+    // Should have both specific allows and general disallow
+    expect(nextRules).toContain("Allow: /_next/static/");
+    expect(nextRules).toContain("Allow: /_next/image");
+    expect(nextRules).toContain("Disallow: /_next/");
+
+    // Verify order - specific allows should come before general disallow
+    const staticIndex = nextRules.indexOf("Allow: /_next/static/");
+    const imageIndex = nextRules.indexOf("Allow: /_next/image");
+    const disallowIndex = nextRules.indexOf("Disallow: /_next/");
+
+    expect(staticIndex).toBeLessThan(disallowIndex);
+    expect(imageIndex).toBeLessThan(disallowIndex);
+  });
 });

@@ -19,6 +19,11 @@ import {
   buildSecureCloudflareUrl,
   validateImageUrl,
   createTransformationParams,
+  // Double CDN transformation prevention utilities (TDD)
+  hasExistingTransformation,
+  extractOriginalPath,
+  // Unified URL generation for preload/usage consistency
+  getUnifiedImageUrl,
 } from "../imageUtils";
 
 // Use REAL environment configuration instead of mocking
@@ -457,6 +462,116 @@ describe("New Consolidated Image Functions", () => {
     });
   });
 
+  // =====================================================
+  // DOUBLE CDN TRANSFORMATION DETECTION TESTS (TDD - RED PHASE)
+  // =====================================================
+
+  describe("hasExistingTransformation", () => {
+    it("should detect existing CDN transformations in URLs", () => {
+      const transformedUrl = `https://${realR2Domain}/cdn-cgi/image/w=400,h=300,fit=cover/animals/test-org/sample.jpg`;
+      expect(hasExistingTransformation(transformedUrl)).toBe(true);
+    });
+
+    it("should return false for non-transformed R2 URLs", () => {
+      expect(hasExistingTransformation(r2Url)).toBe(false);
+    });
+
+    it("should return false for external URLs", () => {
+      expect(hasExistingTransformation(externalUrl)).toBe(false);
+    });
+
+    it("should handle null/undefined URLs gracefully", () => {
+      expect(hasExistingTransformation(null)).toBe(false);
+      expect(hasExistingTransformation(undefined)).toBe(false);
+      expect(hasExistingTransformation("")).toBe(false);
+    });
+  });
+
+  describe("extractOriginalPath", () => {
+    it("should extract original path from transformed URLs", () => {
+      const transformedUrl = `https://${realR2Domain}/cdn-cgi/image/w=400,h=300,fit=cover/animals/test-org/sample.jpg`;
+      const expectedOriginal = `https://${realR2Domain}/animals/test-org/sample.jpg`;
+      expect(extractOriginalPath(transformedUrl)).toBe(expectedOriginal);
+    });
+
+    it("should return original URL if no transformation exists", () => {
+      expect(extractOriginalPath(r2Url)).toBe(r2Url);
+    });
+
+    it("should handle complex transformation parameters", () => {
+      const complexTransform = `https://${realR2Domain}/cdn-cgi/image/w=800,h=600,fit=contain,quality=auto,blur=5/rescue_dogs/pets_in_turkey/melon_3889e35e.jpg`;
+      const expectedOriginal = `https://${realR2Domain}/rescue_dogs/pets_in_turkey/melon_3889e35e.jpg`;
+      expect(extractOriginalPath(complexTransform)).toBe(expectedOriginal);
+    });
+
+    it("should handle nested path structures", () => {
+      const nestedTransform = `https://${realR2Domain}/cdn-cgi/image/w=200,h=200,fit=cover,quality=60/animals/org-name/subfolder/deep/image.jpg`;
+      const expectedOriginal = `https://${realR2Domain}/animals/org-name/subfolder/deep/image.jpg`;
+      expect(extractOriginalPath(nestedTransform)).toBe(expectedOriginal);
+    });
+
+    it("should handle external URLs without transformation", () => {
+      expect(extractOriginalPath(externalUrl)).toBe(externalUrl);
+    });
+
+    it("should handle null/undefined URLs gracefully", () => {
+      expect(extractOriginalPath(null)).toBe(null);
+      expect(extractOriginalPath(undefined)).toBe(undefined);
+      expect(extractOriginalPath("")).toBe("");
+    });
+  });
+
+  describe("buildSecureCloudflareUrl - Double Transformation Prevention", () => {
+    it("should NOT apply transformations to already-transformed URLs", () => {
+      const alreadyTransformed = `https://${realR2Domain}/cdn-cgi/image/w=200,h=200,fit=cover/animals/test-org/sample.jpg`;
+      const newParams = "w=400,h=300,fit=contain,quality=auto";
+
+      const result = buildSecureCloudflareUrl(alreadyTransformed, newParams);
+
+      // Should return the original transformed URL, not double-transform
+      expect(result).toBe(alreadyTransformed);
+
+      // Verify no double /cdn-cgi/image/ in result
+      const matches = (result.match(/\/cdn-cgi\/image\//g) || []).length;
+      expect(matches).toBe(1);
+    });
+
+    it("should handle the problematic double transformation case", () => {
+      // This is the exact problematic case from the issue description
+      const singleTransformed = `https://${realR2Domain}/cdn-cgi/image/w=800,h=600,fit=contain,quality=auto/rescue_dogs/pets_in_turkey/melon_3889e35e.jpg`;
+      const additionalParams = "w=800,h=600,fit=contain,quality=auto";
+
+      const result = buildSecureCloudflareUrl(
+        singleTransformed,
+        additionalParams,
+      );
+
+      // Should not create the double transformation
+      const expectedBad = `https://${realR2Domain}/cdn-cgi/image/w=800,h=600,fit=contain,quality=auto/cdn-cgi/image/w=800,h=600,fit=contain,quality=auto/rescue_dogs/pets_in_turkey/melon_3889e35e.jpg`;
+      expect(result).not.toBe(expectedBad);
+
+      // Should return the original single transformation
+      expect(result).toBe(singleTransformed);
+
+      // Verify only one /cdn-cgi/image/ exists
+      const matches = (result.match(/\/cdn-cgi\/image\//g) || []).length;
+      expect(matches).toBe(1);
+    });
+
+    it("should still work normally for non-transformed URLs", () => {
+      const params = "w=400,h=300,fit=cover,quality=auto";
+      const result = buildSecureCloudflareUrl(r2Url, params);
+
+      expect(result).toContain(`https://${realR2Domain}/cdn-cgi/image/`);
+      expect(result).toContain("w=400,h=300,fit=cover,quality=auto");
+      expect(result).toContain("animals/test-org/sample.jpg");
+
+      // Verify exactly one /cdn-cgi/image/ exists
+      const matches = (result.match(/\/cdn-cgi\/image\//g) || []).length;
+      expect(matches).toBe(1);
+    });
+  });
+
   describe("getOptimizedImage", () => {
     it("should return optimized R2 URL with catalog preset by default", () => {
       const result = getOptimizedImage(r2Url);
@@ -600,6 +715,124 @@ describe("Performance and Caching Tests", () => {
       const params2 = result2.match(/\/cdn-cgi\/image\/([^\/]+)\//)?.[1];
 
       expect(params1).toBe(params2); // Same preset should generate identical parameters
+    });
+  });
+});
+
+// NEW TESTS: URL Consistency for Preload vs Usage
+describe("Image Preload URL Consistency", () => {
+  beforeEach(() => {
+    // Clear any existing preload registry before each test
+    if (global.document) {
+      // Remove existing preload links
+      const preloadLinks = document.querySelectorAll(
+        'link[rel="preload"][as="image"]',
+      );
+      preloadLinks.forEach((link) => link.remove());
+    }
+  });
+
+  describe("URL consistency between preload and usage", () => {
+    it("should generate identical URLs when preloading and using hero images", () => {
+      // Test that preload and usage generate the same URL through unified system
+
+      const originalUrl = r2Url;
+
+      // Simulate preload (should use getUnifiedImageUrl with cache-busting for hero)
+      const preloadUrl = getUnifiedImageUrl(originalUrl, "hero", true);
+
+      // Simulate usage (uses getDetailHeroImageWithPosition with cache-busting)
+      const { src: usageUrl } = getDetailHeroImageWithPosition(
+        originalUrl,
+        true,
+      );
+
+      // Should generate identical URLs through unified system
+      expect(preloadUrl).toBe(usageUrl);
+    });
+
+    it("should maintain URL consistency across multiple calls with same cache-busting session", () => {
+      // FAILING TEST: Multiple calls to getDetailHeroImageWithPosition with bustCache=true
+      // should return the same URL within the same session
+
+      const originalUrl = r2Url;
+
+      const { src: firstCall } = getDetailHeroImageWithPosition(
+        originalUrl,
+        true,
+      );
+      const { src: secondCall } = getDetailHeroImageWithPosition(
+        originalUrl,
+        true,
+      );
+
+      // Should be identical but will fail because Date.now() creates different timestamps
+      expect(firstCall).toBe(secondCall);
+    });
+
+    it("should preload the exact URL that will be used by components", () => {
+      // Test that preloaded URLs match what components actually request
+
+      const originalUrl = r2Url;
+
+      // Mock document.createElement to capture preload URLs
+      const capturedPreloadUrls = [];
+      const originalCreateElement = document.createElement;
+      document.createElement = jest.fn((tagName) => {
+        if (tagName === "link") {
+          const link = originalCreateElement.call(document, tagName);
+          // Override href property setter to capture the value
+          Object.defineProperty(link, "href", {
+            set: function (value) {
+              capturedPreloadUrls.push(value);
+              this._href = value;
+            },
+            get: function () {
+              return this._href;
+            },
+          });
+          return link;
+        }
+        return originalCreateElement.call(document, tagName);
+      });
+
+      // Preload the image
+      preloadImages([originalUrl], "hero");
+
+      // Get the URL that would actually be used
+      const { src: actualUsageUrl } = getDetailHeroImageWithPosition(
+        originalUrl,
+        true,
+      );
+
+      // Cleanup mock
+      document.createElement = originalCreateElement;
+
+      // The preloaded URL should match the actual usage URL
+      expect(capturedPreloadUrls).toContain(actualUsageUrl);
+    });
+  });
+
+  describe("URL registry functionality", () => {
+    it("should store and retrieve URLs from a session-based registry", () => {
+      // FAILING TEST: Need a URL registry that can store preloaded URLs
+      // and return them consistently for usage
+
+      const originalUrl = r2Url;
+      const context = "hero";
+
+      // This function doesn't exist yet - will fail
+      expect(() => {
+        const { getUnifiedImageUrl } = require("../imageUtils");
+
+        // First call should register the URL
+        const firstUrl = getUnifiedImageUrl(originalUrl, context, true);
+
+        // Second call should return the same URL from registry
+        const secondUrl = getUnifiedImageUrl(originalUrl, context, true);
+
+        expect(firstUrl).toBe(secondUrl);
+      }).not.toThrow();
     });
   });
 });
