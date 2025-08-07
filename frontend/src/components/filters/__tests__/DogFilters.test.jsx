@@ -540,3 +540,65 @@ describe("DogFilters Component", () => {
     });
   });
 });
+
+describe("Mobile Filter Button Contrast Tests", () => {
+  test("should have proper contrast colors for mobile filter button in light mode", () => {
+    const mockOnFiltersChange = jest.fn();
+    const mockOnMobileFilterClick = jest.fn();
+
+    render(
+      <DogFilters
+        filters={{ age: "All", breed: "", shipsTo: "All", sort: "newest" }}
+        onFiltersChange={mockOnFiltersChange}
+        onMobileFilterClick={mockOnMobileFilterClick}
+        availableBreeds={[]}
+        availableShipsTo={[]}
+        totalCount={10}
+        hasActiveFilters={false}
+      />,
+    );
+
+    const mobileFilterButton = screen.getByTestId("mobile-filter-button");
+
+    // This test will FAIL because current implementation needs better contrast for mobile visibility
+    // The 'Filter' text needs to stand out clearly on both light and dark backgrounds
+    expect(mobileFilterButton).toHaveClass("text-gray-900"); // Enhanced contrast - was text-gray-800
+    expect(mobileFilterButton).toHaveClass("dark:text-gray-100"); // Dark mode variant needed
+    expect(mobileFilterButton).toHaveClass("border-gray-400"); // Currently has border-gray-300
+
+    // Verify hover states maintain good contrast
+    expect(mobileFilterButton).toHaveClass("hover:text-orange-600");
+    expect(mobileFilterButton).toHaveClass("hover:border-orange-600");
+  });
+
+  test("should maintain proper contrast with active filters badge", () => {
+    const mockOnFiltersChange = jest.fn();
+    const mockOnMobileFilterClick = jest.fn();
+
+    render(
+      <DogFilters
+        filters={{
+          age: "Puppy",
+          breed: "Labrador",
+          shipsTo: "US",
+          sort: "newest",
+        }}
+        onFiltersChange={mockOnFiltersChange}
+        onMobileFilterClick={mockOnMobileFilterClick}
+        availableBreeds={["Labrador"]}
+        availableShipsTo={["US"]}
+        totalCount={5}
+        hasActiveFilters={true}
+      />,
+    );
+
+    const mobileFilterButton = screen.getByTestId("mobile-filter-button");
+    const badge = screen.getByTestId("mobile-active-filters-badge");
+
+    // Verify button still has proper contrast with badge present
+    expect(mobileFilterButton).toHaveClass("text-gray-900"); // Enhanced contrast - was text-gray-800
+    expect(mobileFilterButton).toHaveClass("dark:text-gray-100"); // Dark mode variant needed
+    expect(badge).toHaveClass("bg-orange-600");
+    expect(badge).toHaveClass("text-white");
+  });
+});

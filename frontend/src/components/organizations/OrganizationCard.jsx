@@ -100,7 +100,7 @@ const OrganizationCard = memo(
 
     return (
       <Card
-        className="flex flex-col overflow-hidden cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2"
+        className="flex flex-col overflow-hidden cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 content-fade-in"
         onClick={() => (window.location.href = `/organizations/${slug}`)}
         role="button"
         tabIndex={0}

@@ -9,15 +9,15 @@ describe("LoadingSkeleton", () => {
 
       const imageContainer = screen.getByTestId("skeleton-image");
       expect(imageContainer).toHaveClass("aspect-[4/3]");
-      expect(imageContainer).toHaveClass("bg-gray-200");
+      expect(imageContainer).toHaveClass("skeleton-element");
     });
 
-    test("should have shimmer animation overlay", () => {
+    test("should have skeleton elements with proper classes", () => {
       render(<DogCardSkeleton />);
 
-      const shimmer = screen.getByTestId("skeleton-shimmer");
-      expect(shimmer).toHaveClass("skeleton-shimmer");
-      expect(shimmer).toHaveClass("absolute", "inset-0");
+      const imageContainer = screen.getByTestId("skeleton-image");
+      expect(imageContainer).toHaveClass("skeleton-element");
+      expect(imageContainer).toHaveClass("aspect-[4/3]");
     });
 
     test("should match real DogCard structure", () => {
@@ -30,18 +30,24 @@ describe("LoadingSkeleton", () => {
       expect(screen.getByTestId("skeleton-content")).toBeInTheDocument();
 
       // Title skeleton
-      expect(screen.getByTestId("skeleton-title")).toHaveClass("h-6", "w-3/4");
+      expect(screen.getByTestId("skeleton-title")).toHaveClass(
+        "h-6",
+        "w-3/4",
+        "skeleton-element",
+      );
 
       // Description skeleton
       expect(screen.getByTestId("skeleton-description")).toHaveClass(
         "h-4",
         "w-1/2",
+        "skeleton-element",
       );
 
       // Button skeleton
       expect(screen.getByTestId("skeleton-button")).toHaveClass(
         "h-10",
         "w-full",
+        "skeleton-element",
       );
     });
 
@@ -61,11 +67,11 @@ describe("LoadingSkeleton", () => {
       expect(skeleton).toHaveClass("shadow-blue-sm");
     });
 
-    test("should have animate-pulse class for loading animation", () => {
+    test("should use unified skeleton system classes", () => {
       render(<DogCardSkeleton />);
 
       const skeleton = screen.getByTestId("dog-card-skeleton");
-      expect(skeleton).toHaveClass("animate-pulse");
+      expect(skeleton).toHaveClass("skeleton-container");
     });
 
     test("should have proper spacing and padding matching real card", () => {
@@ -108,16 +114,21 @@ describe("LoadingSkeleton", () => {
         const iconPlaceholder = block.querySelector(
           '[data-testid="stat-icon-skeleton"]',
         );
-        expect(iconPlaceholder).toHaveClass("w-16", "h-16", "rounded-full");
+        expect(iconPlaceholder).toHaveClass(
+          "w-16",
+          "h-16",
+          "rounded-full",
+          "skeleton-element",
+        );
       });
     });
 
-    test("should have animate-pulse on each stat block", () => {
+    test("should use skeleton-container for each stat block", () => {
       render(<TrustStatsSkeleton />);
 
       const statBlocks = screen.getAllByTestId("stat-skeleton");
       statBlocks.forEach((block) => {
-        expect(block).toHaveClass("animate-pulse");
+        expect(block).toHaveClass("skeleton-container");
       });
     });
   });

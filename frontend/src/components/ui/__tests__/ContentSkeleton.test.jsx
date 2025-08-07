@@ -82,21 +82,54 @@ describe("ContentSkeleton", () => {
   });
 
   describe("Skeleton Styling Integration", () => {
-    it("uses SkeletonPulse for each line", () => {
+    it("uses SkeletonPulse for each line with new skeleton system", () => {
       render(<ContentSkeleton lines={3} />);
 
       const container = screen.getByRole("status");
-      const skeletonLines = container.querySelectorAll('[class*="bg-muted"]');
+      const skeletonLines = container.querySelectorAll(
+        '[class*="skeleton-element"]',
+      );
 
       // Each line should have skeleton styling
       expect(skeletonLines.length).toBeGreaterThan(0);
 
       skeletonLines.forEach((line) => {
-        expect(line).toHaveClass("bg-muted");
-        expect(line).toHaveClass("animate-pulse");
+        expect(line).toHaveClass("skeleton-element");
+        expect(line).not.toHaveClass("bg-muted");
+        expect(line).not.toHaveClass("animate-pulse");
         expect(line).toHaveClass("rounded");
         // Child skeletons should not have role attribute
         expect(line).not.toHaveAttribute("role");
+      });
+    });
+
+    it("applies intensity prop to all skeleton lines", () => {
+      render(<ContentSkeleton lines={3} intensity="subtle" />);
+
+      const container = screen.getByRole("status");
+      const skeletonLines = container.querySelectorAll(
+        '[class*="skeleton-element"]',
+      );
+
+      // Each line should have subtle intensity
+      skeletonLines.forEach((line) => {
+        expect(line).toHaveClass("skeleton-element");
+        expect(line).toHaveClass("skeleton-subtle");
+      });
+    });
+
+    it("uses normal intensity by default", () => {
+      render(<ContentSkeleton lines={2} />);
+
+      const container = screen.getByRole("status");
+      const skeletonLines = container.querySelectorAll(
+        '[class*="skeleton-element"]',
+      );
+
+      // Each line should have normal intensity (no subtle class)
+      skeletonLines.forEach((line) => {
+        expect(line).toHaveClass("skeleton-element");
+        expect(line).not.toHaveClass("skeleton-subtle");
       });
     });
   });

@@ -7,6 +7,8 @@ export interface ContentSkeletonProps {
   lines?: number;
   /** CSS class for line height (default: 'h-4') */
   lineHeight?: string;
+  /** Intensity of the shimmer animation */
+  intensity?: "subtle" | "normal";
   /** Additional CSS classes for container */
   className?: string;
   /** Custom aria-label for accessibility */
@@ -26,6 +28,7 @@ const ContentSkeleton = React.memo<ContentSkeletonProps>(
   function ContentSkeleton({
     lines = 3,
     lineHeight = "h-4",
+    intensity = "normal",
     className = "",
     "aria-label": ariaLabel = "Loading content",
     ...props
@@ -52,6 +55,7 @@ const ContentSkeleton = React.memo<ContentSkeletonProps>(
           <SkeletonPulse
             key={i}
             standalone={false}
+            intensity={intensity}
             className={cn(lineHeight, widthClass)}
           />,
         );

@@ -10,7 +10,7 @@ describe("DogCardSkeleton", () => {
 
       const skeleton = screen.getByTestId("dog-card-skeleton");
       expect(skeleton).toBeInTheDocument();
-      expect(skeleton).toHaveClass("animate-shimmer-premium");
+      expect(skeleton).toHaveClass("skeleton-container");
     });
 
     it("has correct card structure matching DogCard", () => {
@@ -36,7 +36,7 @@ describe("DogCardSkeleton", () => {
       render(<DogCardSkeleton />);
 
       const skeleton = screen.getByTestId("dog-card-skeleton");
-      expect(skeleton).toHaveClass("animate-shimmer-premium");
+      expect(skeleton).toHaveClass("skeleton-container");
     });
 
     it("uses enhanced skeleton classes for shimmer elements", () => {
@@ -47,9 +47,9 @@ describe("DogCardSkeleton", () => {
       const nameSkeleton = screen.getByTestId("skeleton-name");
       const buttonSkeleton = screen.getByTestId("skeleton-button");
 
-      expect(imageSkeleton).toHaveClass("skeleton");
-      expect(nameSkeleton).toHaveClass("skeleton");
-      expect(buttonSkeleton).toHaveClass("skeleton");
+      expect(imageSkeleton).toHaveClass("skeleton-element");
+      expect(nameSkeleton).toHaveClass("skeleton-element");
+      expect(buttonSkeleton).toHaveClass("skeleton-element");
     });
 
     it("matches DogCard aspect ratio (4:3)", () => {
@@ -143,11 +143,7 @@ describe("DogCardSkeleton", () => {
       render(<DogCardSkeleton />);
 
       const skeleton = screen.getByTestId("dog-card-skeleton");
-      expect(skeleton).toHaveClass(
-        "shadow-sm",
-        "bg-card",
-        "animate-shimmer-premium",
-      );
+      expect(skeleton).toHaveClass("skeleton-container");
     });
   });
 
@@ -188,7 +184,7 @@ describe("DogCardSkeleton", () => {
       const skeleton = screen.getByTestId("dog-card-skeleton");
 
       // Should have premium shimmer animation instead of basic pulse
-      expect(skeleton).toHaveClass("animate-shimmer-premium");
+      expect(skeleton).toHaveClass("skeleton-container");
       expect(skeleton).not.toHaveClass("animate-pulse");
     });
 
@@ -200,7 +196,7 @@ describe("DogCardSkeleton", () => {
       // Should match DogCard image container classes
       expect(skeletonImage).toHaveClass("w-full");
       expect(skeletonImage).toHaveClass("aspect-[4/3]");
-      expect(skeletonImage).toHaveClass("skeleton");
+      expect(skeletonImage).toHaveClass("skeleton-element");
       expect(skeletonImage).toHaveClass("relative");
     });
 
@@ -210,7 +206,7 @@ describe("DogCardSkeleton", () => {
       const skeleton = screen.getByTestId("dog-card-skeleton");
 
       // Should have the premium shimmer animation which has proper timing
-      expect(skeleton).toHaveClass("animate-shimmer-premium");
+      expect(skeleton).toHaveClass("skeleton-container");
 
       // Verify the structure allows for proper shimmer effect
       expect(skeleton).toHaveClass("overflow-hidden");
@@ -232,7 +228,7 @@ describe("DogCardSkeleton", () => {
 
       // Even with reduced motion, the classes should be present
       // The CSS handles disabling animations via media queries
-      expect(skeleton).toHaveClass("animate-shimmer-premium");
+      expect(skeleton).toHaveClass("skeleton-container");
     });
 
     it("skeleton dimensions exactly match enhanced DogCard layout", () => {
@@ -261,7 +257,7 @@ describe("DogCardSkeleton", () => {
       const skeleton = screen.getByTestId("dog-card-skeleton");
 
       // Should have enhanced shimmer with premium effect
-      expect(skeleton).toHaveClass("animate-shimmer-premium");
+      expect(skeleton).toHaveClass("skeleton-container");
       expect(skeleton).not.toHaveClass("animate-shimmer-warm");
     });
 
@@ -273,9 +269,9 @@ describe("DogCardSkeleton", () => {
       const nameSkeleton = screen.getByTestId("skeleton-name");
       const buttonSkeleton = screen.getByTestId("skeleton-button");
 
-      expect(imageSkeleton).toHaveClass("skeleton");
-      expect(nameSkeleton).toHaveClass("skeleton");
-      expect(buttonSkeleton).toHaveClass("skeleton");
+      expect(imageSkeleton).toHaveClass("skeleton-element");
+      expect(nameSkeleton).toHaveClass("skeleton-element");
+      expect(buttonSkeleton).toHaveClass("skeleton-element");
     });
 
     it("supports staggered animation delay prop", () => {

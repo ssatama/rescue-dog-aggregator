@@ -232,7 +232,7 @@ describe("Loading Transitions", () => {
     test("should use performant shimmer animations", () => {
       getAnimalsByCuration.mockImplementation(() => new Promise(() => {}));
 
-      render(
+      const { container } = render(
         <DogSection
           title="Test Section"
           subtitle="Test subtitle"
@@ -241,12 +241,12 @@ describe("Loading Transitions", () => {
         />,
       );
 
-      // Check for shimmer effects in skeleton elements
-      const shimmerElements = screen.getAllByTestId("skeleton-shimmer");
-      expect(shimmerElements.length).toBeGreaterThan(0);
+      // Check for skeleton elements with unified skeleton system
+      const skeletonElements = container.querySelectorAll(".skeleton-element");
+      expect(skeletonElements.length).toBeGreaterThan(0);
 
-      shimmerElements.forEach((shimmer) => {
-        expect(shimmer).toHaveClass("skeleton-shimmer");
+      skeletonElements.forEach((skeleton) => {
+        expect(skeleton).toHaveClass("skeleton-element");
       });
     });
   });

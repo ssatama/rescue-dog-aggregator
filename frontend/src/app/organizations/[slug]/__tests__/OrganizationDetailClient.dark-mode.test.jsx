@@ -231,6 +231,58 @@ describe("OrganizationDetailClient Dark Mode", () => {
     });
   });
 
+  describe("Load More Button Dark Mode", () => {
+    test("load more button has dark mode gradient styling", async () => {
+      // Mock more dogs available so Load More button shows
+      const mockManyDogs = Array.from({ length: 20 }, (_, i) => ({
+        id: i + 1,
+        name: `Dog ${i + 1}`,
+        breed: "Mixed",
+      }));
+
+      getOrganizationDogs.mockResolvedValue(mockManyDogs);
+
+      render(<OrganizationDetailClient params={{ id: "test-org-1" }} />);
+
+      await waitFor(() => {
+        const loadMoreButton = screen.getByTestId("load-more-button");
+
+        // Should have dark mode gradient variants
+        expect(loadMoreButton).toHaveClass("from-orange-500");
+        expect(loadMoreButton).toHaveClass("to-orange-600");
+        expect(loadMoreButton).toHaveClass("dark:from-orange-400");
+        expect(loadMoreButton).toHaveClass("dark:to-orange-500");
+        expect(loadMoreButton).toHaveClass("hover:from-orange-600");
+        expect(loadMoreButton).toHaveClass("hover:to-orange-700");
+        expect(loadMoreButton).toHaveClass("dark:hover:from-orange-500");
+        expect(loadMoreButton).toHaveClass("dark:hover:to-orange-600");
+      });
+    });
+
+    test("load more button maintains accessibility in dark mode", async () => {
+      const mockManyDogs = Array.from({ length: 20 }, (_, i) => ({
+        id: i + 1,
+        name: `Dog ${i + 1}`,
+        breed: "Mixed",
+      }));
+
+      getOrganizationDogs.mockResolvedValue(mockManyDogs);
+
+      render(<OrganizationDetailClient params={{ id: "test-org-1" }} />);
+
+      await waitFor(() => {
+        const loadMoreButton = screen.getByTestId("load-more-button");
+
+        // Should maintain white text in both light and dark modes
+        expect(loadMoreButton).toHaveClass("text-white");
+        expect(loadMoreButton).toHaveAttribute(
+          "data-testid",
+          "load-more-button",
+        );
+      });
+    });
+  });
+
   describe("Dogs Section Dark Mode", () => {
     test("dogs section heading has dark mode text color", async () => {
       render(<OrganizationDetailClient params={{ id: "test-org-1" }} />);

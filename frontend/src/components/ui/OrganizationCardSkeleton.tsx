@@ -8,14 +8,14 @@ import {
 
 /**
  * Skeleton loading component that matches the exact structure and dimensions of OrganizationCard
- * Uses animate-pulse for smooth loading animation with gray-200 skeleton elements
+ * Uses the modern skeleton system with static container and shimmer elements
  */
 const OrganizationCardSkeleton = React.memo(
   function OrganizationCardSkeleton() {
     return (
       <Card
         data-testid="organization-card-skeleton"
-        className="overflow-hidden h-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 animate-pulse"
+        className="overflow-hidden h-full skeleton-container"
         role="status"
         aria-label="Loading organization information"
       >
@@ -26,7 +26,7 @@ const OrganizationCardSkeleton = React.memo(
             <div className="flex-shrink-0">
               <div
                 data-testid="skeleton-logo"
-                className="w-16 h-16 rounded-lg bg-gray-200 dark:bg-gray-700"
+                className="w-16 h-16 rounded-lg skeleton-element"
               />
             </div>
 
@@ -34,11 +34,11 @@ const OrganizationCardSkeleton = React.memo(
             <div className="flex-grow min-w-0 space-y-2">
               <div
                 data-testid="skeleton-org-name"
-                className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4"
+                className="h-5 skeleton-element rounded w-3/4"
               />
               <div
                 data-testid="skeleton-org-location"
-                className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"
+                className="h-4 skeleton-element skeleton-subtle rounded w-1/2"
               />
             </div>
           </div>
@@ -58,8 +58,8 @@ const OrganizationCardSkeleton = React.memo(
               data-testid="skeleton-based-in"
               className="flex items-center gap-2"
             >
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16" />
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24" />
+              <div className="h-4 skeleton-element skeleton-subtle rounded w-16" />
+              <div className="h-4 skeleton-element skeleton-subtle rounded w-24" />
             </div>
 
             {/* Dogs in */}
@@ -67,10 +67,10 @@ const OrganizationCardSkeleton = React.memo(
               data-testid="skeleton-dogs-in"
               className="flex items-center gap-2"
             >
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-14" />
+              <div className="h-4 skeleton-element skeleton-subtle rounded w-14" />
               <div className="flex gap-1">
-                <div className="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded" />
-                <div className="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded" />
+                <div className="w-4 h-4 skeleton-element skeleton-subtle rounded" />
+                <div className="w-4 h-4 skeleton-element skeleton-subtle rounded" />
               </div>
             </div>
 
@@ -79,11 +79,11 @@ const OrganizationCardSkeleton = React.memo(
               data-testid="skeleton-ships-to"
               className="flex items-center gap-2"
             >
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16" />
+              <div className="h-4 skeleton-element skeleton-subtle rounded w-16" />
               <div className="flex gap-1">
-                <div className="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded" />
-                <div className="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded" />
-                <div className="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded" />
+                <div className="w-4 h-4 skeleton-element skeleton-subtle rounded" />
+                <div className="w-4 h-4 skeleton-element skeleton-subtle rounded" />
+                <div className="w-4 h-4 skeleton-element skeleton-subtle rounded" />
               </div>
             </div>
           </div>
@@ -93,15 +93,15 @@ const OrganizationCardSkeleton = React.memo(
             <div className="flex items-center space-x-2">
               <div
                 data-testid="skeleton-dog-count"
-                className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-12"
+                className="h-8 skeleton-element rounded w-12"
               />
               <div
                 data-testid="skeleton-dog-label"
-                className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-8"
+                className="h-4 skeleton-element skeleton-subtle rounded w-8"
               />
               <div
                 data-testid="skeleton-new-badge"
-                className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-16"
+                className="h-5 skeleton-element skeleton-subtle rounded w-16"
               />
             </div>
           </div>
@@ -113,7 +113,7 @@ const OrganizationCardSkeleton = React.memo(
                 <div key={index} className="flex-shrink-0">
                   <div
                     data-testid="skeleton-dog-thumbnail"
-                    className="w-12 h-12 rounded-lg bg-gray-200 dark:bg-gray-700"
+                    className="w-12 h-12 rounded-lg skeleton-element skeleton-subtle"
                   />
                 </div>
               ))}
@@ -122,7 +122,7 @@ const OrganizationCardSkeleton = React.memo(
             {/* Preview text skeleton */}
             <div
               data-testid="skeleton-preview-text"
-              className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full"
+              className="h-3 skeleton-element skeleton-subtle rounded w-full"
             />
           </div>
 
@@ -133,7 +133,7 @@ const OrganizationCardSkeleton = React.memo(
                 <div
                   key={index}
                   data-testid="skeleton-social-icon"
-                  className="w-6 h-6 bg-gray-200 dark:bg-gray-700 rounded"
+                  className="w-6 h-6 skeleton-element skeleton-subtle rounded"
                 />
               ))}
             </div>
@@ -148,11 +148,11 @@ const OrganizationCardSkeleton = React.memo(
           >
             <div
               data-testid="skeleton-website-button"
-              className="h-8 bg-gray-200 dark:bg-gray-700 rounded flex-1"
+              className="h-8 skeleton-element skeleton-subtle rounded flex-1"
             />
             <div
               data-testid="skeleton-view-dogs-button"
-              className="h-8 bg-gray-200 dark:bg-gray-700 rounded flex-1"
+              className="h-8 skeleton-element skeleton-subtle rounded flex-1"
             />
           </div>
         </CardFooter>

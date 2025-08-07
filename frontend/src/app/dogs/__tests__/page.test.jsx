@@ -381,9 +381,10 @@ describe("DogsPage Component", () => {
       });
       expect(mobileFilterButton).toBeInTheDocument();
       expect(mobileFilterButton).toHaveClass(
-        "border-2",
-        "border-orange-200",
-        "hover:border-orange-300",
+        "border-gray-400",
+        "hover:border-orange-600",
+        "text-gray-900",
+        "dark:text-gray-100",
       );
     });
 
@@ -670,7 +671,7 @@ describe("DogsPage Component", () => {
         const dogsGrid = screen.getByTestId("dogs-grid");
         expect(dogsGrid).toBeInTheDocument();
         // Grid should have fade animation classes
-        expect(dogsGrid).toHaveClass("animate-in", "fade-in");
+        expect(dogsGrid).toHaveClass("content-fade-in");
       });
 
       await waitFor(() => {
@@ -814,6 +815,103 @@ describe("DogsPage Component", () => {
 
       // Verify minimum height for touch targets
       expect(loadMoreButton).toHaveClass("mobile-touch-target");
+    });
+  });
+
+  describe("Mobile Filter Button Contrast", () => {
+    test("should have proper contrast colors matching DogFilters component", async () => {
+      const mockAnimalsData = {
+        data: [
+          {
+            id: 1,
+            name: "Test Dog",
+            age: "Young",
+            breeds: ["Labrador"],
+            imageUrl: "https://example.com/dog.jpg",
+            organizations: { name: "Test Org", slug: "test-org" },
+            slug: "test-dog-123",
+          },
+        ],
+        total: 1,
+        pagination: { hasMore: false, totalPages: 1, currentPage: 1 },
+      };
+
+      getAnimals.mockResolvedValue(mockAnimalsData);
+
+      render(<DogsPage />);
+
+      // Wait for component to fully load
+      await waitFor(() => screen.getByTestId("dogs-page-container"));
+
+      const mobileFilterButton = screen.getByTestId("mobile-filter-button");
+
+      // Test will FAIL - current implementation uses default Button styling without explicit text contrast
+      // Should match DogFilters component: text-gray-900 dark:text-gray-100 for proper contrast
+      expect(mobileFilterButton).toHaveClass("text-gray-900");
+      expect(mobileFilterButton).toHaveClass("dark:text-gray-100");
+      expect(mobileFilterButton).toHaveClass("border-gray-400");
+
+      // Verify hover states for consistent behavior
+      expect(mobileFilterButton).toHaveClass("hover:text-orange-600");
+      expect(mobileFilterButton).toHaveClass("hover:border-orange-600");
+    });
+
+    test("should maintain consistent styling with DogFilters component across all states", async () => {
+      const mockAnimalsData = {
+        data: [],
+        total: 0,
+        pagination: { hasMore: false, totalPages: 0, currentPage: 1 },
+      };
+
+      getAnimals.mockResolvedValue(mockAnimalsData);
+
+      render(<DogsPage />);
+
+      await waitFor(() => screen.getByTestId("dogs-page-container"));
+
+      const mobileFilterButton = screen.getByTestId("mobile-filter-button");
+
+      // Should have same base styling as DogFilters component
+      expect(mobileFilterButton).toHaveClass("text-gray-900"); // Enhanced contrast - will fail
+      expect(mobileFilterButton).toHaveClass("dark:text-gray-100"); // Dark mode support - will fail
+      expect(mobileFilterButton).toHaveClass("border-gray-400"); // Better border contrast - will fail
+
+      // Should maintain consistent Button structure
+      expect(mobileFilterButton).toHaveClass("w-full");
+      expect(mobileFilterButton).toHaveClass("justify-center");
+    });
+  });
+
+  describe("Cross-Page Styling Consistency", () => {
+    test("mobile filter button styling should exactly match DogFilters component", async () => {
+      const mockAnimalsData = {
+        data: [],
+        total: 0,
+        pagination: { hasMore: false, totalPages: 0, currentPage: 1 },
+      };
+
+      getAnimals.mockResolvedValue(mockAnimalsData);
+
+      render(<DogsPage />);
+
+      await waitFor(() => screen.getByTestId("dogs-page-container"));
+
+      const mobileFilterButton = screen.getByTestId("mobile-filter-button");
+
+      // Verify exact same styling as DogFilters component
+      expect(mobileFilterButton).toHaveClass("text-gray-900");
+      expect(mobileFilterButton).toHaveClass("dark:text-gray-100");
+      expect(mobileFilterButton).toHaveClass("border-gray-400");
+      expect(mobileFilterButton).toHaveClass("hover:text-orange-600");
+      expect(mobileFilterButton).toHaveClass("hover:border-orange-600");
+      expect(mobileFilterButton).toHaveClass("hover:bg-orange-50");
+
+      // Verify consistent structure
+      expect(mobileFilterButton).toHaveClass("w-full");
+      expect(mobileFilterButton).toHaveClass("justify-center");
+
+      // Both should have the same filter text
+      expect(mobileFilterButton).toHaveTextContent("Filter");
     });
   });
 });

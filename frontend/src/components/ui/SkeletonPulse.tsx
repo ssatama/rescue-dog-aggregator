@@ -6,20 +6,23 @@ export interface SkeletonPulseProps {
   className?: string;
   /** Whether this is a standalone skeleton (adds ARIA attributes) */
   standalone?: boolean;
+  /** Intensity of the shimmer animation */
+  intensity?: "subtle" | "normal";
   /** Additional props forwarded to the div element */
   [key: string]: any;
 }
 
 /**
- * SkeletonPulse - Base skeleton loading component with consistent orange-tinted shimmer
+ * SkeletonPulse - Base skeleton loading component with consistent shimmer animation
  *
  * Provides a standardized skeleton element that can be used for any loading placeholder.
- * Uses the existing .skeleton class for orange-tinted shimmer animation and maintains
- * accessibility standards.
+ * Uses the .skeleton-element class for improved shimmer animation and supports intensity
+ * variations. Maintains accessibility standards and backward compatibility.
  */
 const SkeletonPulse = React.memo<SkeletonPulseProps>(function SkeletonPulse({
   className = "",
   standalone = true,
+  intensity = "normal",
   ...props
 }) {
   const ariaProps = standalone
@@ -30,10 +33,12 @@ const SkeletonPulse = React.memo<SkeletonPulseProps>(function SkeletonPulse({
       }
     : {};
 
+  const intensityClass = intensity === "subtle" ? "skeleton-subtle" : "";
+
   return (
     <div
       {...ariaProps}
-      className={cn("bg-muted animate-pulse rounded", className)}
+      className={cn("skeleton-element rounded", intensityClass, className)}
       {...props}
     />
   );

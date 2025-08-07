@@ -114,7 +114,7 @@ describe("DogsGrid Component", () => {
       render(<DogsGrid dogs={[]} loading={true} skeletonCount={1} />);
 
       const skeleton = screen.getByTestId("dog-card-skeleton");
-      expect(skeleton).toHaveClass("animate-shimmer-premium");
+      expect(skeleton).toHaveClass("skeleton-container");
       expect(skeleton).toHaveClass("bg-card");
       expect(skeleton).toHaveClass("shadow-sm");
     });
@@ -204,12 +204,12 @@ describe("DogsGrid Component", () => {
         <DogsGrid dogs={[]} loading={true} loadingType="initial" />,
       );
 
-      let gridContainer = screen.getByTestId("dogs-grid");
+      let gridContainer = screen.getByTestId("dogs-grid-skeleton");
       expect(gridContainer).toHaveClass("duration-300");
 
       // Test filter loading type
       rerender(<DogsGrid dogs={[]} loading={true} loadingType="filter" />);
-      gridContainer = screen.getByTestId("dogs-grid");
+      gridContainer = screen.getByTestId("dogs-grid-skeleton");
       expect(gridContainer).toHaveClass("duration-200");
     });
 
@@ -229,19 +229,15 @@ describe("DogsGrid Component", () => {
     });
 
     test("applies staggered animation delays to dog cards", () => {
-      render(<DogsGrid dogs={mockDogs} />);
+      render(<DogsGrid dogs={mockDogs} className="content-fade-in" />);
 
       // Each dog card should receive appropriate animation delay
       const gridContainer = screen.getByTestId("dogs-grid");
-      expect(gridContainer).toHaveClass(
-        "animate-in",
-        "fade-in",
-        "duration-500",
-      );
+      expect(gridContainer).toHaveClass("content-fade-in");
     });
 
     test("applies staggered animation system correctly", () => {
-      render(<DogsGrid dogs={mockDogs} />);
+      render(<DogsGrid dogs={mockDogs} className="animate-fade-in" />);
 
       // Check that all dog cards are rendered (validates the staggered animation logic)
       expect(screen.getByTestId("dog-card-1")).toBeInTheDocument();
@@ -250,11 +246,7 @@ describe("DogsGrid Component", () => {
 
       // Verify grid has proper animation classes
       const gridContainer = screen.getByTestId("dogs-grid");
-      expect(gridContainer).toHaveClass(
-        "animate-in",
-        "fade-in",
-        "duration-500",
-      );
+      expect(gridContainer).toHaveClass("animate-fade-in");
     });
 
     test("handles many dogs with staggered animations", () => {
@@ -265,7 +257,7 @@ describe("DogsGrid Component", () => {
         organization: { name: `Org ${i + 1}` },
       }));
 
-      render(<DogsGrid dogs={manyDogs} />);
+      render(<DogsGrid dogs={manyDogs} className="content-fade-in" />);
 
       // Verify all dogs are rendered
       expect(screen.getByTestId("dog-card-1")).toBeInTheDocument();
@@ -273,11 +265,7 @@ describe("DogsGrid Component", () => {
 
       // Verify grid animation classes
       const gridContainer = screen.getByTestId("dogs-grid");
-      expect(gridContainer).toHaveClass(
-        "animate-in",
-        "fade-in",
-        "duration-500",
-      );
+      expect(gridContainer).toHaveClass("content-fade-in");
     });
 
     test("skeletons with filter loading have staggered animation delays", () => {

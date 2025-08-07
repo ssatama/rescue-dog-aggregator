@@ -10,7 +10,7 @@ describe("OrganizationCardSkeleton", () => {
 
       const skeleton = screen.getByTestId("organization-card-skeleton");
       expect(skeleton).toBeInTheDocument();
-      expect(skeleton).toHaveClass("animate-pulse");
+      expect(skeleton).toHaveClass("skeleton-container");
     });
 
     it("has correct card structure matching OrganizationCard", () => {
@@ -160,43 +160,83 @@ describe("OrganizationCardSkeleton", () => {
   });
 
   describe("Animation and Styling", () => {
-    it("has pulse animation applied", () => {
+    it("has static skeleton-container without animate-pulse", () => {
       render(<OrganizationCardSkeleton />);
 
       const skeleton = screen.getByTestId("organization-card-skeleton");
-      expect(skeleton).toHaveClass("animate-pulse");
+      expect(skeleton).toHaveClass("skeleton-container");
+      expect(skeleton).not.toHaveClass("animate-pulse");
     });
 
-    it("uses gray-200 color for skeleton elements with dark mode support", () => {
+    it("uses skeleton-element class for prominent elements", () => {
       render(<OrganizationCardSkeleton />);
 
-      // Check specific skeleton elements that should have bg-gray-200 and dark:bg-gray-700
+      // Check specific skeleton elements that should have skeleton-element
       const logoSkeleton = screen.getByTestId("skeleton-logo");
       const nameSkeleton = screen.getByTestId("skeleton-org-name");
       const dogCountSkeleton = screen.getByTestId("skeleton-dog-count");
 
-      expect(logoSkeleton).toHaveClass("bg-gray-200");
-      expect(logoSkeleton).toHaveClass("dark:bg-gray-700");
-      expect(nameSkeleton).toHaveClass("bg-gray-200");
-      expect(nameSkeleton).toHaveClass("dark:bg-gray-700");
-      expect(dogCountSkeleton).toHaveClass("bg-gray-200");
-      expect(dogCountSkeleton).toHaveClass("dark:bg-gray-700");
+      expect(logoSkeleton).toHaveClass("skeleton-element");
+      expect(nameSkeleton).toHaveClass("skeleton-element");
+      expect(dogCountSkeleton).toHaveClass("skeleton-element");
+    });
+
+    it("uses skeleton-subtle intensity for less prominent elements", () => {
+      render(<OrganizationCardSkeleton />);
+
+      // Check elements that should have subtle intensity
+      const locationSkeleton = screen.getByTestId("skeleton-org-location");
+      const previewTextSkeleton = screen.getByTestId("skeleton-preview-text");
+      const socialIcons = screen.getAllByTestId("skeleton-social-icon");
+      const dogThumbnails = screen.getAllByTestId("skeleton-dog-thumbnail");
+      const dogLabelSkeleton = screen.getByTestId("skeleton-dog-label");
+      const newBadgeSkeleton = screen.getByTestId("skeleton-new-badge");
+      const websiteButtonSkeleton = screen.getByTestId(
+        "skeleton-website-button",
+      );
+      const viewDogsButtonSkeleton = screen.getByTestId(
+        "skeleton-view-dogs-button",
+      );
+
+      expect(locationSkeleton).toHaveClass(
+        "skeleton-element",
+        "skeleton-subtle",
+      );
+      expect(previewTextSkeleton).toHaveClass(
+        "skeleton-element",
+        "skeleton-subtle",
+      );
+      expect(dogLabelSkeleton).toHaveClass(
+        "skeleton-element",
+        "skeleton-subtle",
+      );
+      expect(newBadgeSkeleton).toHaveClass(
+        "skeleton-element",
+        "skeleton-subtle",
+      );
+      expect(websiteButtonSkeleton).toHaveClass(
+        "skeleton-element",
+        "skeleton-subtle",
+      );
+      expect(viewDogsButtonSkeleton).toHaveClass(
+        "skeleton-element",
+        "skeleton-subtle",
+      );
+
+      socialIcons.forEach((icon) => {
+        expect(icon).toHaveClass("skeleton-element", "skeleton-subtle");
+      });
+
+      dogThumbnails.forEach((thumbnail) => {
+        expect(thumbnail).toHaveClass("skeleton-element", "skeleton-subtle");
+      });
     });
 
     it("matches OrganizationCard styling with dark mode support", () => {
       render(<OrganizationCardSkeleton />);
 
       const skeleton = screen.getByTestId("organization-card-skeleton");
-      expect(skeleton).toHaveClass(
-        "overflow-hidden",
-        "h-full",
-        "border",
-        "border-gray-200",
-        "dark:border-gray-700",
-        "bg-white",
-        "dark:bg-gray-800",
-        "animate-pulse",
-      );
+      expect(skeleton).toHaveClass("skeleton-container");
     });
   });
 

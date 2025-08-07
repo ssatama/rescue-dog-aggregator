@@ -30,17 +30,17 @@ describe("DogDetailSkeleton", () => {
     expect(screen.getByTestId("cta-skeleton")).toBeInTheDocument();
   });
 
-  it("should apply animate-pulse classes for loading animation", () => {
+  it("should use new unified skeleton system classes", () => {
     render(<DogDetailSkeleton />);
 
     const skeletonElements = screen.getAllByRole("generic");
-    const animatedElements = skeletonElements.filter(
+    const newSkeletonElements = skeletonElements.filter(
       (el) =>
-        el.className.includes("animate-pulse") ||
-        el.className.includes("bg-muted"),
+        el.className.includes("skeleton-element") ||
+        el.className.includes("skeleton-container"),
     );
 
-    expect(animatedElements.length).toBeGreaterThan(0);
+    expect(newSkeletonElements.length).toBeGreaterThan(0);
   });
 
   it("should have proper responsive grid layout for info cards", () => {
@@ -74,12 +74,11 @@ describe("HeroImageSkeleton", () => {
     expect(cameraIcon).toBeInTheDocument();
   });
 
-  it("should have shimmer animation effect", () => {
+  it("should have unified skeleton animation effect", () => {
     render(<HeroImageSkeleton />);
 
     const heroSkeleton = screen.getByTestId("hero-image-skeleton");
-    const shimmerElement = heroSkeleton.querySelector(".animate-shimmer");
-    expect(shimmerElement).toBeInTheDocument();
+    expect(heroSkeleton).toHaveClass("skeleton-element");
   });
 });
 
@@ -107,8 +106,8 @@ describe("AboutSectionSkeleton", () => {
     const aboutSection = screen.getByTestId("about-section-skeleton");
     expect(aboutSection).toBeInTheDocument();
 
-    // Should have multiple skeleton lines for content
-    const skeletonLines = aboutSection.querySelectorAll(".bg-muted");
+    // Should have multiple skeleton lines for content using new skeleton system
+    const skeletonLines = aboutSection.querySelectorAll(".skeleton-element");
     expect(skeletonLines.length).toBeGreaterThan(3);
   });
 
@@ -116,7 +115,7 @@ describe("AboutSectionSkeleton", () => {
     render(<AboutSectionSkeleton />);
 
     const aboutSection = screen.getByTestId("about-section-skeleton");
-    const lines = aboutSection.querySelectorAll(".bg-muted");
+    const lines = aboutSection.querySelectorAll(".skeleton-element");
 
     // Check that skeleton lines exist - AboutSectionSkeleton has 5 lines (title + 4 content)
     expect(lines.length).toBeGreaterThan(3);
@@ -139,8 +138,8 @@ describe("OrganizationSkeleton", () => {
 
     const orgSkeleton = screen.getByTestId("organization-skeleton");
 
-    // Should have skeleton elements for different parts
-    const skeletonBoxes = orgSkeleton.querySelectorAll(".bg-muted");
+    // Should have skeleton elements for different parts using new skeleton system
+    const skeletonBoxes = orgSkeleton.querySelectorAll(".skeleton-element");
     expect(skeletonBoxes.length).toBeGreaterThan(2);
   });
 });
@@ -168,7 +167,7 @@ describe("RelatedDogsSkeleton", () => {
     const relatedDogs = screen.getByTestId("related-dogs-skeleton");
     const linkContainer = relatedDogs.querySelector(".text-center");
     expect(linkContainer).toBeInTheDocument();
-    const linkSkeleton = linkContainer.querySelector(".bg-muted");
+    const linkSkeleton = linkContainer.querySelector(".skeleton-element");
     expect(linkSkeleton).toBeInTheDocument();
   });
 });
@@ -190,7 +189,7 @@ describe("CTASkeleton", () => {
     const ctaSkeleton = screen.getByTestId("cta-skeleton");
     const textContainer = ctaSkeleton.querySelector(".text-center");
     expect(textContainer).toBeInTheDocument();
-    const textSkeleton = textContainer.querySelector(".bg-muted");
+    const textSkeleton = textContainer.querySelector(".skeleton-element");
     expect(textSkeleton).toBeInTheDocument();
   });
 });
@@ -230,7 +229,7 @@ describe("Performance", () => {
 
     const animatedElements = screen
       .getAllByRole("generic")
-      .filter((el) => el.className.includes("animate-pulse"));
+      .filter((el) => el.className.includes("skeleton-element"));
 
     expect(animatedElements.length).toBeGreaterThan(0);
 

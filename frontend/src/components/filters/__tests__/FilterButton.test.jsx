@@ -256,4 +256,42 @@ describe("FilterButton", () => {
       expect(button).toHaveClass("bg-white");
     });
   });
+
+  describe("Dark Mode Support", () => {
+    it("applies dark mode classes for inactive state", () => {
+      render(<FilterButton {...defaultProps} active={false} />);
+      const button = screen.getByRole("button");
+
+      // Should have dark mode variants
+      expect(button).toHaveClass("dark:bg-gray-800");
+      expect(button).toHaveClass("dark:border-gray-600");
+      expect(button).toHaveClass("dark:text-gray-100");
+    });
+
+    it("applies dark mode classes for active state", () => {
+      render(<FilterButton {...defaultProps} active={true} />);
+      const button = screen.getByRole("button");
+
+      // Should have dark mode variants for active state
+      expect(button).toHaveClass("dark:bg-gray-700");
+      expect(button).toHaveClass("dark:border-orange-500");
+      expect(button).toHaveClass("dark:text-orange-300");
+    });
+
+    it("includes dark mode hover states", () => {
+      render(<FilterButton {...defaultProps} active={false} />);
+      const button = screen.getByRole("button");
+
+      expect(button).toHaveClass("dark:hover:bg-gray-700");
+      expect(button).toHaveClass("dark:hover:border-gray-500");
+    });
+
+    it("applies dark mode badge styling when count is present", () => {
+      render(<FilterButton {...defaultProps} count={5} />);
+      const badge = screen.getByText("5");
+
+      expect(badge).toHaveClass("dark:bg-orange-900/30");
+      expect(badge).toHaveClass("dark:text-orange-400");
+    });
+  });
 });

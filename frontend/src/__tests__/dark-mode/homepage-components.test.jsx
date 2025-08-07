@@ -352,7 +352,7 @@ describe("Homepage Components - Dark Mode Support", () => {
 
       // Find loading elements (DogCardSkeleton components)
       const loadingElements = document.querySelectorAll(
-        '[class*="animate-pulse"]',
+        '[class*="skeleton-element"]',
       );
 
       // Should have loading elements in dark mode context

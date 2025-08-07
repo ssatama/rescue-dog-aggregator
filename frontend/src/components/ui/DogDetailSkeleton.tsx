@@ -18,6 +18,7 @@ const SkeletonLine: React.FC<SkeletonLineProps> = ({
 }) => (
   <SkeletonPulse
     standalone={false}
+    intensity="subtle"
     className={`${height} ${className}`}
     style={{ width }}
   />
@@ -32,13 +33,15 @@ const SkeletonCard: React.FC<SkeletonCardProps> = ({
   children,
   className = "",
 }) => (
-  <div className={`bg-gray-50 rounded-lg p-4 ${className}`}>{children}</div>
+  <div className={`skeleton-container rounded-lg p-4 ${className}`}>
+    {children}
+  </div>
 );
 
 export const DogDetailSkeleton: React.FC = () => {
   return (
     <div
-      className="max-w-4xl mx-auto p-4 animate-in fade-in duration-300"
+      className="max-w-4xl mx-auto p-4 animate-in fade-in duration-300 skeleton-container"
       data-testid="dog-detail-skeleton"
       role="status"
       aria-label="Loading dog details"
@@ -119,17 +122,12 @@ export const DogDetailSkeleton: React.FC = () => {
 // Hero Image Skeleton with progressive loading effect
 export const HeroImageSkeleton: React.FC = () => (
   <div
-    className="relative w-full aspect-[16/9] rounded-lg overflow-hidden bg-gray-200"
+    className="relative w-full aspect-[16/9] rounded-lg overflow-hidden skeleton-element"
     data-testid="hero-image-skeleton"
   >
-    {/* Animated shimmer effect */}
-    <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-pulse">
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-shimmer" />
-    </div>
-
     {/* Camera icon placeholder */}
     <div className="absolute inset-0 flex items-center justify-center">
-      <div className="w-16 h-16 bg-gray-300 rounded-lg flex items-center justify-center">
+      <div className="w-16 h-16 bg-gray-300 bg-opacity-50 rounded-lg flex items-center justify-center">
         <svg
           className="w-8 h-8 text-gray-400"
           fill="currentColor"
@@ -207,7 +205,11 @@ export const RelatedDogsSkeleton: React.FC = () => (
           key={index}
           className="bg-white rounded-lg shadow-md overflow-hidden"
         >
-          <SkeletonPulse standalone={false} className="aspect-[4/3] w-full" />
+          <SkeletonPulse
+            standalone={false}
+            intensity="subtle"
+            className="aspect-[4/3] w-full"
+          />
           <div className="p-4 space-y-2">
             <SkeletonLine width="80%" height="h-5" />
             <SkeletonLine width="60%" height="h-4" />

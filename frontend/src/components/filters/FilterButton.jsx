@@ -34,22 +34,21 @@ export default function FilterButton({
         min-h-[44px]
         ${
           active
-            ? "bg-orange-100 border-orange-400 text-orange-700"
-            : "bg-white border-orange-200 hover:bg-orange-50 hover:border-orange-300"
+            ? "bg-orange-100 border-orange-400 text-orange-700 dark:bg-gray-700 dark:border-orange-500 dark:text-orange-300"
+            : "bg-white border-orange-200 hover:bg-orange-50 hover:border-orange-300 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-700 dark:hover:border-gray-500"
         }
       `}
       aria-pressed={active}
       aria-label={ariaLabel}
     >
-      {children}
-      {count > 0 && (
-        <span
-          aria-hidden="true"
-          className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-xs bg-orange-200 text-orange-800 rounded-full"
-        >
-          {count}
-        </span>
-      )}
+      <span className="flex items-center">
+        {children}
+        {count > 0 && (
+          <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-xs bg-orange-200 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 rounded-full">
+            {count}
+          </span>
+        )}
+      </span>
     </button>
   );
 }

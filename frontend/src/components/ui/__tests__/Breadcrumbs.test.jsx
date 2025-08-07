@@ -160,3 +160,72 @@ describe("Breadcrumbs Component", () => {
     expect(screen.getByText("Buddy")).toBeInTheDocument();
   });
 });
+
+describe("Dark Mode Support Tests", () => {
+  test("should have dark mode text variants for all text elements", () => {
+    const items = [
+      { name: "Home", url: "/" },
+      { name: "Dogs", url: "/dogs" },
+      { name: "Labrador" },
+    ];
+
+    const { container } = render(<Breadcrumbs items={items} />);
+
+    // Test navigation container has dark mode variant
+    const nav = container.querySelector("nav ol");
+    // This will FAIL - currently only has text-gray-600 without dark: variant
+    expect(nav).toHaveClass("text-gray-600");
+    expect(nav).toHaveClass("dark:text-gray-400"); // Missing in current implementation
+
+    // Test separators have dark mode variant
+    const separators = container.querySelectorAll('span[aria-hidden="true"]');
+    separators.forEach((separator) => {
+      // This will FAIL - currently only has text-gray-400 without dark: variant
+      expect(separator).toHaveClass("text-gray-400");
+      expect(separator).toHaveClass("dark:text-gray-500"); // Missing in current implementation
+    });
+
+    // Test current page (non-link) has dark mode variant
+    const currentPage = container.querySelector("span.text-gray-900");
+    // This will FAIL - currently only has text-gray-900 without dark: variant
+    expect(currentPage).toHaveClass("text-gray-900");
+    expect(currentPage).toHaveClass("dark:text-gray-100"); // Missing in current implementation
+  });
+
+  test("should maintain readability for linked items in dark mode", () => {
+    const items = [
+      { name: "Home", url: "/" },
+      { name: "Dogs", url: "/dogs" },
+    ];
+
+    const { container } = render(<Breadcrumbs items={items} />);
+
+    const links = container.querySelectorAll("a");
+    links.forEach((link) => {
+      // Verify links have proper hover states for dark mode
+      expect(link).toHaveClass("hover:text-orange-600");
+      // Could also verify dark:hover:text-orange-400 for softer orange in dark mode
+    });
+  });
+
+  test("should handle all breadcrumb configurations with proper dark mode support", () => {
+    // Test with single item (no separators)
+    const { rerender, container } = render(
+      <Breadcrumbs items={[{ name: "Home" }]} />,
+    );
+    let currentPage = container.querySelector("span.font-medium");
+    expect(currentPage).toHaveClass("text-gray-900");
+    expect(currentPage).toHaveClass("dark:text-gray-100"); // Will fail
+
+    // Test with multiple items
+    rerender(
+      <Breadcrumbs
+        items={[{ name: "Home", url: "/" }, { name: "Current Page" }]}
+      />,
+    );
+
+    const separator = container.querySelector('span[aria-hidden="true"]');
+    expect(separator).toHaveClass("text-gray-400");
+    expect(separator).toHaveClass("dark:text-gray-500"); // Will fail
+  });
+});

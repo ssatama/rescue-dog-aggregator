@@ -9,9 +9,10 @@ describe("SkeletonPulse", () => {
 
       const skeleton = screen.getByTestId("skeleton");
       expect(skeleton).toBeInTheDocument();
-      expect(skeleton).toHaveClass("bg-muted");
-      expect(skeleton).toHaveClass("animate-pulse");
+      expect(skeleton).toHaveClass("skeleton-element");
       expect(skeleton).toHaveClass("rounded");
+      expect(skeleton).not.toHaveClass("bg-muted");
+      expect(skeleton).not.toHaveClass("animate-pulse");
     });
 
     it("applies custom className when provided", () => {
@@ -20,8 +21,8 @@ describe("SkeletonPulse", () => {
       const skeleton = screen.getByTestId("skeleton");
       expect(skeleton).toHaveClass("h-4");
       expect(skeleton).toHaveClass("w-3/4");
-      expect(skeleton).toHaveClass("bg-muted");
-      expect(skeleton).toHaveClass("animate-pulse");
+      expect(skeleton).toHaveClass("skeleton-element");
+      expect(skeleton).toHaveClass("rounded");
     });
 
     it("merges custom className with default classes", () => {
@@ -32,7 +33,7 @@ describe("SkeletonPulse", () => {
       const skeleton = screen.getByTestId("skeleton");
       expect(skeleton).toHaveClass("h-6");
       expect(skeleton).toHaveClass("bg-orange-100");
-      expect(skeleton).toHaveClass("animate-pulse");
+      expect(skeleton).toHaveClass("skeleton-element");
       expect(skeleton).toHaveClass("rounded");
     });
   });
@@ -103,14 +104,92 @@ describe("SkeletonPulse", () => {
     });
   });
 
-  describe("Orange Theme Integration", () => {
-    it("uses consistent skeleton styling with orange theme", () => {
+  describe("New Skeleton Animation System", () => {
+    it("uses skeleton-element class instead of animate-pulse", () => {
       render(<SkeletonPulse data-testid="skeleton" />);
 
       const skeleton = screen.getByTestId("skeleton");
-      // Should use the .skeleton class for orange-tinted shimmer
-      expect(skeleton).toHaveClass("animate-pulse");
-      expect(skeleton).toHaveClass("bg-muted");
+      expect(skeleton).toHaveClass("skeleton-element");
+      expect(skeleton).toHaveClass("rounded");
+      expect(skeleton).not.toHaveClass("animate-pulse");
+      expect(skeleton).not.toHaveClass("bg-muted");
+    });
+
+    it("supports intensity prop with normal as default", () => {
+      render(<SkeletonPulse data-testid="skeleton" />);
+
+      const skeleton = screen.getByTestId("skeleton");
+      expect(skeleton).toHaveClass("skeleton-element");
+    });
+
+    it("applies subtle intensity variation", () => {
+      render(<SkeletonPulse intensity="subtle" data-testid="skeleton" />);
+
+      const skeleton = screen.getByTestId("skeleton");
+      expect(skeleton).toHaveClass("skeleton-element");
+      expect(skeleton).toHaveClass("skeleton-subtle");
+    });
+
+    it("applies normal intensity (default)", () => {
+      render(<SkeletonPulse intensity="normal" data-testid="skeleton" />);
+
+      const skeleton = screen.getByTestId("skeleton");
+      expect(skeleton).toHaveClass("skeleton-element");
+      expect(skeleton).not.toHaveClass("skeleton-subtle");
+    });
+
+    it("merges intensity classes with custom className", () => {
+      render(
+        <SkeletonPulse
+          intensity="subtle"
+          className="h-6 w-32"
+          data-testid="skeleton"
+        />,
+      );
+
+      const skeleton = screen.getByTestId("skeleton");
+      expect(skeleton).toHaveClass("skeleton-element");
+      expect(skeleton).toHaveClass("skeleton-subtle");
+      expect(skeleton).toHaveClass("h-6");
+      expect(skeleton).toHaveClass("w-32");
+      expect(skeleton).toHaveClass("rounded");
+    });
+  });
+
+  describe("Backward Compatibility", () => {
+    it("maintains all existing props and behavior", () => {
+      render(
+        <SkeletonPulse
+          className="h-4 w-3/4"
+          data-testid="skeleton"
+          standalone={true}
+          id="legacy-skeleton"
+        />,
+      );
+
+      const skeleton = screen.getByTestId("skeleton");
+      expect(skeleton).toHaveClass("skeleton-element");
+      expect(skeleton).toHaveClass("h-4");
+      expect(skeleton).toHaveClass("w-3/4");
+      expect(skeleton).toHaveClass("rounded");
+      expect(skeleton).toHaveAttribute("id", "legacy-skeleton");
+      expect(skeleton).toHaveAttribute("role", "status");
+    });
+
+    it("works with existing ContentSkeleton usage patterns", () => {
+      render(
+        <SkeletonPulse
+          standalone={false}
+          className="h-4 w-2/3"
+          data-testid="content-skeleton-line"
+        />,
+      );
+
+      const skeleton = screen.getByTestId("content-skeleton-line");
+      expect(skeleton).toHaveClass("skeleton-element");
+      expect(skeleton).toHaveClass("h-4");
+      expect(skeleton).toHaveClass("w-2/3");
+      expect(skeleton).not.toHaveAttribute("role");
     });
   });
 });

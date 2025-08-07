@@ -24,30 +24,32 @@ describe("SkeletonPulse Component - Dark Mode Support", () => {
   });
 
   describe("Background Colors", () => {
-    test("should use semantic background token that adapts to dark mode", () => {
+    test("should use skeleton-element class that adapts to dark mode", () => {
       renderWithDarkTheme(
         <SkeletonPulse data-testid="skeleton" className="h-4 w-20" />,
       );
 
       const skeleton = screen.getByTestId("skeleton");
 
-      // Should use semantic background token instead of hard-coded gray
-      expect(skeleton).toHaveClass("bg-muted");
+      // Should use new skeleton-element class instead of bg-muted
+      expect(skeleton).toHaveClass("skeleton-element");
+      expect(skeleton).not.toHaveClass("bg-muted");
       expect(skeleton).not.toHaveClass("bg-gray-200");
 
       // Should be in dark mode context
       expect(document.documentElement).toHaveClass("dark");
     });
 
-    test("should maintain pulse animation in dark mode", () => {
+    test("should maintain shimmer animation in dark mode", () => {
       renderWithDarkTheme(
         <SkeletonPulse data-testid="skeleton" className="h-6 w-32" />,
       );
 
       const skeleton = screen.getByTestId("skeleton");
 
-      // Should have pulse animation
-      expect(skeleton).toHaveClass("animate-pulse");
+      // Should have skeleton-element class for shimmer animation
+      expect(skeleton).toHaveClass("skeleton-element");
+      expect(skeleton).not.toHaveClass("animate-pulse");
 
       // Should have rounded corners
       expect(skeleton).toHaveClass("rounded");
@@ -70,8 +72,9 @@ describe("SkeletonPulse Component - Dark Mode Support", () => {
       expect(skeleton).toHaveClass("custom-skeleton-class");
 
       // Should still have base skeleton classes
-      expect(skeleton).toHaveClass("bg-muted");
-      expect(skeleton).toHaveClass("animate-pulse");
+      expect(skeleton).toHaveClass("skeleton-element");
+      expect(skeleton).not.toHaveClass("bg-muted");
+      expect(skeleton).not.toHaveClass("animate-pulse");
     });
   });
 
@@ -106,24 +109,25 @@ describe("SkeletonPulse Component - Dark Mode Support", () => {
       expect(skeleton).not.toHaveAttribute("aria-busy");
 
       // Should still have proper styling
-      expect(skeleton).toHaveClass("bg-muted");
-      expect(skeleton).toHaveClass("animate-pulse");
+      expect(skeleton).toHaveClass("skeleton-element");
+      expect(skeleton).not.toHaveClass("bg-muted");
+      expect(skeleton).not.toHaveClass("animate-pulse");
     });
   });
 
   describe("Shimmer Animation", () => {
-    test("should use skeleton class for enhanced shimmer in dark mode", () => {
+    test("should use skeleton-element class for enhanced shimmer in dark mode", () => {
       renderWithDarkTheme(
-        <SkeletonPulse data-testid="skeleton" className="h-4 w-20 skeleton" />,
+        <SkeletonPulse data-testid="skeleton" className="h-4 w-20" />,
       );
 
       const skeleton = screen.getByTestId("skeleton");
 
       // Should have enhanced skeleton shimmer class (defined in globals.css)
-      expect(skeleton).toHaveClass("skeleton");
+      expect(skeleton).toHaveClass("skeleton-element");
 
-      // Should also have standard animate-pulse as fallback
-      expect(skeleton).toHaveClass("animate-pulse");
+      // Should not have old animate-pulse class
+      expect(skeleton).not.toHaveClass("animate-pulse");
 
       // Should be in dark mode context
       expect(document.documentElement).toHaveClass("dark");
@@ -145,8 +149,9 @@ describe("SkeletonPulse Component - Dark Mode Support", () => {
         const skeleton = screen.getByTestId(testId);
 
         // Should have base skeleton styling
-        expect(skeleton).toHaveClass("bg-muted");
-        expect(skeleton).toHaveClass("animate-pulse");
+        expect(skeleton).toHaveClass("skeleton-element");
+        expect(skeleton).not.toHaveClass("bg-muted");
+        expect(skeleton).not.toHaveClass("animate-pulse");
         expect(skeleton).toHaveClass("rounded");
 
         // Should have size classes
@@ -169,15 +174,16 @@ describe("SkeletonPulse Component - Dark Mode Support", () => {
       );
 
       const container = screen.getByTestId("text-skeleton-container");
-      const skeletons = container.querySelectorAll(".bg-muted");
+      const skeletons = container.querySelectorAll(".skeleton-element");
 
       // Should have 3 skeleton elements
       expect(skeletons).toHaveLength(3);
 
-      // All should use semantic background
+      // All should use new skeleton-element class
       skeletons.forEach((skeleton) => {
-        expect(skeleton).toHaveClass("bg-muted");
-        expect(skeleton).toHaveClass("animate-pulse");
+        expect(skeleton).toHaveClass("skeleton-element");
+        expect(skeleton).not.toHaveClass("bg-muted");
+        expect(skeleton).not.toHaveClass("animate-pulse");
       });
     });
 
@@ -197,8 +203,9 @@ describe("SkeletonPulse Component - Dark Mode Support", () => {
       expect(skeleton).toHaveClass("rounded-lg");
 
       // Should have base skeleton styling
-      expect(skeleton).toHaveClass("bg-muted");
-      expect(skeleton).toHaveClass("animate-pulse");
+      expect(skeleton).toHaveClass("skeleton-element");
+      expect(skeleton).not.toHaveClass("bg-muted");
+      expect(skeleton).not.toHaveClass("animate-pulse");
     });
   });
 });

@@ -63,9 +63,7 @@ describe("Session 10: Screen Reader Optimization", () => {
       expect(statusContainer).toHaveAttribute("aria-label", "Loading article");
 
       // Should have multiple skeleton lines (ContentSkeleton creates SkeletonPulse elements)
-      const skeletonElements = container.querySelectorAll(
-        ".bg-muted.animate-pulse",
-      );
+      const skeletonElements = container.querySelectorAll(".skeleton-element");
       expect(skeletonElements.length).toBe(3);
     });
   });

@@ -561,7 +561,7 @@ export default function DogsPageClient() {
                 <Button
                   data-testid="mobile-filter-button"
                   variant="outline"
-                  className="w-full justify-center mobile-touch-target bg-white/90 backdrop-blur border-2 border-orange-200 hover:border-orange-300 animate-button-hover enhanced-focus-button"
+                  className="w-full h-12 justify-center gap-3 mobile-touch-target border-gray-400 hover:border-orange-600 hover:bg-orange-50 text-gray-900 dark:text-gray-100 hover:text-orange-600 enhanced-focus-button"
                   onClick={() => setIsSheetOpen(true)}
                 >
                   <Filter className="mr-2 h-5 w-5 text-orange-600" />
@@ -640,7 +640,11 @@ export default function DogsPageClient() {
               )}
 
               {!loading && dogs && dogs.length > 0 && (
-                <DogsGrid dogs={dogs} loading={false} className="mb-8" />
+                <DogsGrid
+                  dogs={dogs}
+                  loading={false}
+                  className="mb-8 content-fade-in"
+                />
               )}
 
               {!loading && !error && dogs && dogs.length === 0 && (

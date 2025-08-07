@@ -209,45 +209,32 @@
     );
   }
 
-  /* Skeleton element shimmer class for coordinated animation */
+  /* DEPRECATED: Skeleton element - use .skeleton-element instead */
   .skeleton {
     background: linear-gradient(
       90deg,
-      rgba(229, 231, 235, 1) 0%,
-      rgba(251, 146, 60, 0.1) 50%,
-      rgba(229, 231, 235, 1) 100%
+      hsl(var(--background)) 0%,
+      rgba(229, 231, 235, 0.4) 50%,
+      hsl(var(--background)) 100%
     );
     background-size: 200% 100%;
-    animation: shimmer 1.8s infinite ease-in-out;
+    animation: skeleton-shimmer 2s ease-in-out infinite;
+    will-change: background-position;
   }
 
-  /* Dark mode variant for skeleton */
+  /* DEPRECATED: Dark mode variant - use .skeleton-element instead */
   .dark .skeleton {
     background: linear-gradient(
       90deg,
-      rgba(55, 65, 81, 1) 0%,
-      rgba(147, 51, 234, 0.1) 50%,
-      rgba(55, 65, 81, 1) 100%
+      hsl(var(--background)) 0%,
+      rgba(75, 85, 99, 0.4) 50%,
+      hsl(var(--background)) 100%
     );
   }
 
-  /* Enhanced shimmer animation for premium loading skeleton feel */
-  @keyframes skeleton-shimmer {
-    0% {
-      transform: translateX(-100%);
-      opacity: 0;
-    }
-    50% {
-      opacity: 1;
-    }
-    100% {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-  }
-
+  /* DEPRECATED: Use .skeleton-element instead */
   .skeleton-shimmer {
-    animation: skeleton-shimmer 2s infinite ease-in-out;
+    animation: skeleton-shimmer 2s ease-in-out infinite;
   }
 
   /* Dot pattern background for Trust Section */
@@ -1328,6 +1315,116 @@
   }
 
   /* ==================================================
+     UNIFIED SKELETON ANIMATION SYSTEM
+     ================================================== */
+
+  /* Keyframe for subtle shimmer animation */
+  @keyframes skeleton-shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  /* Main skeleton element with shimmer gradient */
+  .skeleton-element {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--background)) 0%,
+      rgba(229, 231, 235, 0.4) 50%,
+      hsl(var(--background)) 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 2s ease-in-out infinite;
+    will-change: background-position;
+  }
+
+  /* Subtle intensity variant for skeleton element */
+  .skeleton-element.skeleton-subtle {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--background)) 0%,
+      rgba(229, 231, 235, 0.2) 50%,
+      hsl(var(--background)) 100%
+    );
+  }
+
+  /* Dark mode variant for skeleton element */
+  .dark .skeleton-element {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--background)) 0%,
+      rgba(75, 85, 99, 0.4) 50%,
+      hsl(var(--background)) 100%
+    );
+  }
+
+  /* Dark mode subtle intensity variant */
+  .dark .skeleton-element.skeleton-subtle {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--background)) 0%,
+      rgba(75, 85, 99, 0.2) 50%,
+      hsl(var(--background)) 100%
+    );
+  }
+
+  /* Static container for skeleton cards */
+  .skeleton-container {
+    background-color: hsl(var(--card));
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  /* Dark mode variant for skeleton container */
+  .dark .skeleton-container {
+    background-color: hsl(var(--card));
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-element,
+    .skeleton-element.skeleton-subtle {
+      animation: none !important;
+      background: #e5e7eb !important;
+    }
+
+    .dark .skeleton-element,
+    .dark .skeleton-element.skeleton-subtle {
+      animation: none !important;
+      background: #4b5563 !important;
+    }
+
+    .skeleton,
+    .animate-pulse,
+    .animate-shimmer,
+    .animate-shimmer-warm,
+    .animate-shimmer-premium {
+      animation: none !important;
+      background: #e5e7eb !important;
+    }
+
+    .dark .skeleton,
+    .dark .animate-pulse,
+    .dark .animate-shimmer,
+    .dark .animate-shimmer-warm,
+    .dark .animate-shimmer-premium {
+      animation: none !important;
+      background: #4b5563 !important;
+    }
+  }
+
+  /* Deprecated classes - maintain for backward compatibility but prevent conflicts */
+  .skeleton-element.animate-pulse,
+  .skeleton-element.animate-shimmer,
+  .skeleton-element.animate-shimmer-premium {
+    animation: skeleton-shimmer 2s ease-in-out infinite !important;
+  }
+
+  /* ==================================================
      VISUAL CONSISTENCY & THEME SYSTEM
      ================================================== */
 
@@ -1742,6 +1839,40 @@
 
   .nav-link-active {
     @apply text-orange-600 dark:text-orange-400 font-medium;
+  }
+
+  /* ==================================================
+     CONTENT FADE-IN TRANSITION SYSTEM
+     ================================================== */
+
+  /* Smooth fade-in transition for content loading */
+  .content-fade-in {
+    opacity: 0;
+    animation: content-fade-in 300ms ease-out forwards;
+    will-change: opacity;
+  }
+
+  @keyframes content-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Ensure no layout shift during transition */
+  .content-fade-in * {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .content-fade-in {
+      animation: none !important;
+      opacity: 1 !important;
+    }
   }
 
   @media print {
