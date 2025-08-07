@@ -64,17 +64,25 @@ export function useLazyImage(
     (originalSrc: string) => {
       if (!originalSrc || !enableProgressiveLoading) return {};
 
-      if (originalSrc.includes("res.cloudinary.com")) {
+      if (originalSrc.includes("images.rescuedogs.me")) {
+        // For R2 images, use Cloudflare Images transformations for progressive loading
         return {
-          lowQuality: originalSrc.replace("/upload/", "/upload/q_20,f_auto/"),
-          blurPlaceholder: originalSrc.replace(
-            "/upload/",
-            "/upload/w_50,q_auto,e_blur:300,f_auto/",
-          ),
+          lowQuality: originalSrc.includes("/cdn-cgi/image/")
+            ? originalSrc.replace(
+                /\/cdn-cgi\/image\/[^/]+\//,
+                "/cdn-cgi/image/w=50,q=20,f=auto/",
+              )
+            : `https://images.rescuedogs.me/cdn-cgi/image/w=50,q=20,f=auto/${originalSrc.replace("https://images.rescuedogs.me/", "")}`,
+          blurPlaceholder: originalSrc.includes("/cdn-cgi/image/")
+            ? originalSrc.replace(
+                /\/cdn-cgi\/image\/[^/]+\//,
+                "/cdn-cgi/image/w=50,q=20,blur=300,f=auto/",
+              )
+            : `https://images.rescuedogs.me/cdn-cgi/image/w=50,q=20,blur=300,f=auto/${originalSrc.replace("https://images.rescuedogs.me/", "")}`,
         };
       }
 
-      // For non-Cloudinary URLs, we can only do basic progressive loading
+      // For external URLs (non-R2), we can only do basic progressive loading
       return {
         lowQuality: originalSrc,
         blurPlaceholder: undefined,

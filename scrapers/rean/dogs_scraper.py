@@ -329,18 +329,18 @@ class REANScraper(BaseScraper):
 
     def _clean_wsimg_url(self, wsimg_url: str) -> str:
         """
-        Clean wsimg.com URLs to remove problematic transformations for Cloudinary.
+        Clean wsimg.com URLs to remove problematic transformations for R2.
 
         Args:
             wsimg_url: Original wsimg.com URL with transformations
 
         Returns:
-            Cleaned URL that Cloudinary can process
+            Cleaned URL that R2 can process
         """
         if not wsimg_url or "wsimg.com" not in wsimg_url:
             return wsimg_url
 
-        # Remove transformation parameters that cause issues with Cloudinary
+        # Remove transformation parameters that cause issues with R2
         # Example: .../image.jpg/:/cr=t:12.5%25,l:0%25,w:100%25,h:75%25/rs=w:600,h:600,cg:true
         # We want: .../image.jpg
 
@@ -808,7 +808,7 @@ class REANScraper(BaseScraper):
                 actual_src = data_src if data_src else img_src
 
                 if actual_src and self._is_valid_rean_image(actual_src):
-                    # Clean the URL for Cloudinary compatibility
+                    # Clean the URL for R2 compatibility
                     cleaned_url = self._clean_wsimg_url(actual_src)
                     self.logger.debug(f"Found valid image for {dog_name}: {cleaned_url[:50]}...")
                     return cleaned_url
@@ -1609,7 +1609,7 @@ class REANScraper(BaseScraper):
         if dog_data.get("primary_image_url"):
             standardized_data["primary_image_url"] = dog_data["primary_image_url"]
             # Set original_image_url to the same value for proper comparison in base_scraper
-            # This prevents unnecessary re-uploads to Cloudinary when images haven't
+            # This prevents unnecessary re-uploads to R2 when images haven't
             # changed
             standardized_data["original_image_url"] = dog_data["primary_image_url"]
 

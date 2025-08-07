@@ -2,45 +2,56 @@
 
 ## 🎯 Overview
 
-The Rescue Dog Aggregator API provides modern, enterprise-grade RESTful access to aggregated rescue dog data from multiple organizations. Built with a service layer architecture, the API delivers exceptional performance, security, and reliability through advanced query optimization, connection pooling, and comprehensive input validation.
+The Rescue Dog Aggregator API provides modern, enterprise-grade RESTful access to aggregated rescue dog data from multiple organizations. Built with FastAPI and a clean service layer architecture, the API delivers exceptional performance, security, and reliability through advanced query optimization, connection pooling, and comprehensive input validation.
 
 **Base URL**: `http://localhost:8000` (development) | `https://api.rescuedogs.me` (production)
 
-**API Version**: 0.2.0 (Slug-based URLs with Enhanced Metadata)
+**API Version**: 0.1.0 (Current Implementation)
+
+**Framework**: FastAPI with Pydantic v2 validation
 
 ## 🏗️ Architecture Overview
 
-### Service Layer Implementation
+### FastAPI Implementation
 The API implements a clean three-layer architecture:
-- **Route Layer**: HTTP request handling and validation
-- **Service Layer**: Business logic and data processing  
-- **Database Layer**: Optimized data access with connection pooling
+- **Route Layer**: FastAPI route handlers with dependency injection
+- **Service Layer**: Business logic encapsulated in service classes
+- **Database Layer**: PostgreSQL with connection pooling and parameterized queries
 
-### Performance Optimizations
-- **Connection Pooling**: Thread-safe PostgreSQL connection management
-- **Batch Query Execution**: Eliminates N+1 query problems  
-- **Query Builder**: Dynamic parameterized queries
-- **Response Caching**: Intelligent caching with invalidation
+### Performance & Security Features
+- **Connection Pooling**: Thread-safe PostgreSQL connection management via dependency injection
+- **Parameterized Queries**: SQL injection prevention through psycopg2 parameterized queries
+- **Input Validation**: Comprehensive Pydantic v2 models with custom validators
+- **Error Handling**: Standardized exception handling with structured error responses
+- **Security Headers**: Automatic security headers via middleware
 
 ### Key Features
-- **SEO-Friendly URLs**: Slug-based URLs for better search engine optimization
-- **Legacy Support**: Automatic 301 redirects from ID-based to slug-based URLs
-- **Meta Endpoints**: Dynamic metadata for building responsive UIs
-- **Real-time Counts**: Dynamic filter counts for enhanced user experience
+- **SEO-Friendly URLs**: Slug-based URLs with automatic 301 redirects from legacy ID URLs
+- **Meta Endpoints**: Dynamic metadata for building responsive filter UIs
+- **Real-time Counts**: Dynamic filter counts based on current filter context
+- **CORS Security**: Environment-based CORS configuration with origin validation
+- **Admin Authentication**: Simple API key authentication for monitoring endpoints
 
-## 🔐 Authentication
+## 🔐 Authentication & Security
 
 ### Public Endpoints
 Most endpoints are publicly accessible without authentication.
 
 ### Admin Endpoints
-Monitoring and administrative endpoints require authentication via the `X-Admin-Key` header:
+Monitoring and administrative endpoints require authentication via the `X-API-Key` header:
 
 ```bash
-curl -H "X-Admin-Key: your-admin-key" https://api.rescuedogs.me/monitoring/scrapers
+curl -H "X-API-Key: your-admin-key" http://localhost:8000/monitoring/scrapers
 ```
 
 Protected endpoints are marked with 🔒 in this documentation.
+
+### Security Features
+- **CORS Configuration**: Environment-specific CORS policy with validated origins
+- **Security Headers**: Automatic security headers (X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy)
+- **Input Sanitization**: Comprehensive input validation via Pydantic models
+- **SQL Injection Prevention**: All queries use parameterized statements
+- **Safe Error Handling**: No sensitive information leaked in error responses
 
 ## 📄 Response Format
 
@@ -86,68 +97,97 @@ For backwards compatibility, ID-based URLs automatically redirect (301) to slug 
 - `/api/animals/id/{id}` → `/api/animals/{slug}`
 - `/api/organizations/id/{id}` → `/api/organizations/{slug}`
 
-## Endpoints
+## 📍 Endpoints
+
+### Root Endpoint
+
+#### GET /
+Welcome message and API information.
+
+**Returns**:
+```json
+{
+  "message": "Welcome to the Rescue Dog Aggregator API",
+  "version": "0.1.0",
+  "documentation": "/docs",
+  "environment": "development"
+}
+```
 
 ### Animals API
 
 #### GET /api/animals/
 
-Get all animals with advanced filtering, pagination, and location support. **Optimized with batch querying and connection pooling for superior performance.**
+Get all animals with comprehensive filtering, pagination, and location support. Uses optimized service layer with connection pooling and parameterized queries.
 
-**Performance Improvements:**
-- 25% faster response times through connection pooling
-- 5x faster image loading through batch queries
-- Eliminated N+1 query problems with intelligent batching
-- Advanced query builder with parameterized queries
+**Query Parameters** (via AnimalFilterRequest model):
 
-**Query Parameters (Enhanced):**
+| Parameter | Type | Default | Validation | Description |
+|-----------|------|---------|------------|-------------|
+| `limit` | integer | 20 | 1-10000 | Number of results to return |
+| `offset` | integer | 0 | ≥0 | Number of results to skip |
+| `search` | string | null | - | Search in animal names and descriptions |
+| `animal_type` | string | "dog" | - | Type of animal to filter by |
+| `status` | string | "available" | AnimalStatus enum or "all" | Animal availability status |
+| `breed` | string | null | - | Filter by exact breed name |
+| `standardized_breed` | string | null | - | Filter by standardized breed |
+| `breed_group` | string | null | - | Filter by breed group |
+| `sex` | string | null | - | Filter by sex (male, female) |
+| `size` | string | null | - | Filter by size |
+| `standardized_size` | enum | null | StandardizedSize enum | Filter by standardized size (Tiny, Small, Medium, Large) |
+| `age_category` | string | null | - | Filter by age category |
+| `location_country` | string | null | - | Filter by country where animal is located |
+| `available_to_country` | string | null | - | Filter by adoption destination country |
+| `available_to_region` | string | null | - | Filter by adoption destination region |
+| `organization_id` | integer | null | - | Filter by specific organization ID |
+| `availability_confidence` | string | "high,medium" | Comma-separated values | Filter by availability confidence levels |
+| `curation_type` | string | "random" | "recent", "recent_with_fallback", "diverse", "random" | Curation algorithm |
+| `sort` | string | "newest" | "newest", "oldest", "name-asc", "name-desc" | Sort order |
+| `sitemap_quality_filter` | boolean | false | - | Filter for sitemap generation (SEO optimization) |
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `limit` | integer | 20 | Number of results to return (1-100) |
-| `offset` | integer | 0 | Number of results to skip |
-| `search` | string | null | Search in animal names and descriptions |
-| `breed` | string | null | Filter by exact breed name |
-| `standardized_breed` | string | null | Filter by standardized breed |
-| `breed_group` | string | null | Filter by breed group |
-| `sex` | string | null | Filter by sex (male, female) |
-| `size` | string | null | Filter by size |
-| `standardized_size` | string | null | Filter by standardized size (small, medium, large) |
-| `age_category` | string | null | Filter by age category |
-| `animal_type` | string | "dog" | Filter by animal type |
-| `good_with_cats` | boolean | null | Filter by cat compatibility |
-| `good_with_dogs` | boolean | null | Filter by dog compatibility |
-| `good_with_kids` | boolean | null | Filter by child compatibility |
-| `special_needs` | boolean | null | Filter by special needs status |
-| `status` | string | "available" | Filter by availability status |
-| `location_country` | string | null | Filter by country where animal is located |
-| `available_to_country` | string | null | Filter by adoption destination country |
-| `available_to_region` | string | null | Filter by adoption destination region |
-| `organization` | string | null | Filter by organization ID or slug |
-| `availability_status` | string | "available" | Filter by availability (available, adopted, removed) |
-| `availability_confidence` | string | "high,medium" | Comma-separated confidence levels |
-| `curation_type` | string | "random" | Curation algorithm: "recent", "diverse", "random" |
-| `sort` | string | "newest" | Sort order: "newest", "oldest", "name_asc", "name_desc" |
+**Example Request**:
+```bash
+GET /api/animals/?limit=10&standardized_size=Medium&location_country=TR&sort=newest
+```
 
-**Returns**: Array of AnimalWithImages objects including organization data.
+**Returns**: Array of AnimalWithImages objects with embedded organization and image data.
 
 #### GET /api/animals/random
 
-Get random animals from the database. Useful for homepage displays or discovery features.
+Get random available dogs for featured sections or discovery.
 
 **Query Parameters:**
-- `limit` (integer, default: 12): Number of random animals to return
+| Parameter | Type | Default | Validation | Description |
+|-----------|------|---------|------------|-------------|
+| `limit` | integer | 3 | 1-10 | Number of random animals to return |
+| `status` | string | "available" | - | Animal status filter |
 
-**Returns**: Array of AnimalWithImages objects.
+**Example Request**:
+```bash
+GET /api/animals/random?limit=5
+```
+
+**Returns**: Array of Animal objects (without images).
 
 #### GET /api/animals/{animal_slug}
 
-Get a specific animal by slug. **SEO-friendly URL format.**
+Get a specific animal by slug with automatic legacy ID redirect support. **SEO-friendly URL format.**
 
 **Path Parameters:**
-- `animal_slug` (string): Animal slug identifier
+- `animal_slug` (string): Animal slug identifier or numeric ID (for legacy support)
+
+**Legacy Support**: Numeric IDs automatically redirect (301) to slug-based URLs.
+
+**Example Request**:
+```bash
+GET /api/animals/bella-golden-retriever-123
+```
 
 **Returns**: Single AnimalWithImages object with embedded organization and image data.
+
+**Error Responses**:
+- `404 Not Found`: Animal not found
+- `301 Moved Permanently`: Legacy ID redirected to slug URL
 
 #### GET /api/animals/id/{animal_id}
 
@@ -160,20 +200,27 @@ Legacy endpoint that redirects to slug-based URL.
 
 #### GET /api/animals/statistics
 
-Get aggregated statistics about animals in the system.
+Get aggregated statistics about animals in the system via AnimalService.
 
-**Returns**: Statistics object with totals by status, confidence level, and organization breakdown.
+**Returns**: Statistics object with comprehensive metrics including animal counts by status, organization breakdown, and trends.
 
 ### Animals Metadata API
 
-These endpoints provide metadata for building dynamic filter UIs.
+These endpoints provide metadata for building dynamic filter UIs and are essential for frontend applications.
 
 #### GET /api/animals/meta/breeds
 
-Get distinct breeds with optional filtering by breed group.
+Get distinct standardized breeds with optional filtering by breed group.
 
 **Query Parameters:**
-- `breed_group` (string, optional): Filter breeds by breed group
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `breed_group` | string (optional) | Filter breeds by breed group |
+
+**Example Request**:
+```bash
+GET /api/animals/meta/breeds?breed_group=Working Dogs
+```
 
 **Returns**: Array of breed strings.
 
@@ -181,60 +228,85 @@ Get distinct breeds with optional filtering by breed group.
 
 Get all distinct breed groups in the system.
 
-**Returns**: Array of breed group strings.
+**Example Request**:
+```bash
+GET /api/animals/meta/breed_groups
+```
+
+**Returns**: Array of breed group strings (e.g., ["Working Dogs", "Sporting Dogs", "Herding Dogs"]).
 
 #### GET /api/animals/meta/location_countries
 
-Get all distinct countries where animals are currently located.
+Get all distinct countries where active organizations are located.
 
-**Returns**: Array of country codes.
+**Example Request**:
+```bash
+GET /api/animals/meta/location_countries
+```
+
+**Returns**: Array of country strings, alphabetically sorted.
 
 #### GET /api/animals/meta/available_countries
 
-Get all countries that organizations ship to.
+Get all distinct countries organizations can adopt to (from service_regions).
 
-**Returns**: Array of country codes.
+**Example Request**:
+```bash
+GET /api/animals/meta/available_countries
+```
+
+**Returns**: Array of country strings where adoptions are available.
 
 #### GET /api/animals/meta/available_regions
 
-Get available regions for a specific country.
+Get available regions within a specific country for adoptions.
 
 **Query Parameters:**
-- `country` (string, required): Country code to get regions for
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `country` | string | Yes | Country to get regions for |
 
-**Returns**: Array of region strings.
+**Example Request**:
+```bash
+GET /api/animals/meta/available_regions?country=Turkey
+```
+
+**Returns**: Array of region strings within the specified country.
 
 #### GET /api/animals/meta/filter_counts
 
-Get real-time counts for each filter option based on current filters. Essential for building dynamic filter UIs that show users how many results each filter option would return.
+Get real-time counts for each filter option based on current filter context. Essential for building dynamic filter UIs that prevent dead-end filtering scenarios.
 
-**Request Body:**
-```json
-{
-  "breed_group": "Herding Dogs",
-  "location_country": "TR",
-  // ... any other filters
-}
+**Query Parameters** (via AnimalFilterCountRequest model):
+All the same filtering parameters as the main animals endpoint to provide context for counting.
+
+**Example Request**:
+```bash
+GET /api/animals/meta/filter_counts?location_country=TR&standardized_size=Medium
 ```
 
-**Returns:**
+**Returns** (FilterCountsResponse model):
 ```json
 {
-  "breeds": {
-    "German Shepherd": 15,
-    "Border Collie": 8
-  },
-  "ages": {
-    "puppy": 5,
-    "young": 12,
-    "adult": 6
-  },
-  "sizes": {
-    "small": 3,
-    "medium": 15,
-    "large": 5
-  },
-  // ... counts for all filter categories
+  "size_options": [
+    {"value": "Small", "label": "Small", "count": 15},
+    {"value": "Medium", "label": "Medium", "count": 23},
+    {"value": "Large", "label": "Large", "count": 8}
+  ],
+  "age_options": [
+    {"value": "puppy", "label": "Puppy", "count": 12},
+    {"value": "young", "label": "Young", "count": 20},
+    {"value": "adult", "label": "Adult", "count": 14}
+  ],
+  "sex_options": [
+    {"value": "male", "label": "Male", "count": 22},
+    {"value": "female", "label": "Female", "count": 24}
+  ],
+  "breed_options": [...],
+  "organization_options": [...],
+  "location_country_options": [...],
+  "available_country_options": [...],
+  "available_region_options": [...]
 }
 ```
 
@@ -242,18 +314,46 @@ Get real-time counts for each filter option based on current filters. Essential 
 
 #### GET /api/organizations/
 
-Get all active rescue organizations.
+Get all organizations with optional filtering, pagination, and aggregate statistics.
 
-**Returns**: Array of Organization objects with statistics and service information.
+**Query Parameters** (via OrganizationFilterRequest model):
+| Parameter | Type | Default | Validation | Description |
+|-----------|------|---------|------------|-------------|
+| `limit` | integer | 20 | 1-10000 | Number of results to return |
+| `offset` | integer | 0 | ≥0 | Number of results to skip |
+| `search` | string | null | - | Search in organization names |
+| `country` | string | null | - | Filter by country |
+| `active_only` | boolean | true | - | Only return active organizations |
+
+**Example Request**:
+```bash
+GET /api/organizations/?country=Turkey&search=rescue&limit=10
+```
+
+**Returns**: Array of Organization objects with aggregate statistics including:
+- Total dogs available
+- New dogs added this week
+- Parsed JSON fields (social_media, ships_to, service_regions, adoption_fees)
 
 #### GET /api/organizations/{organization_slug}
 
-Get a specific organization by slug. **SEO-friendly URL format.**
+Get a specific organization by slug with automatic legacy ID redirect support. **SEO-friendly URL format.**
 
 **Path Parameters:**
-- `organization_slug` (string): Organization slug identifier
+- `organization_slug` (string): Organization slug identifier or numeric ID (for legacy support)
 
-**Returns**: Single Organization object with enhanced statistics.
+**Legacy Support**: Numeric IDs automatically redirect (301) to slug-based URLs.
+
+**Example Request**:
+```bash
+GET /api/organizations/pets-turkey
+```
+
+**Returns**: Single Organization object with enhanced statistics and parsed JSON fields.
+
+**Error Responses**:
+- `404 Not Found`: Organization not found
+- `301 Moved Permanently`: Legacy ID redirected to slug URL
 
 #### GET /api/organizations/id/{organization_id}
 
@@ -266,285 +366,481 @@ Legacy endpoint that redirects to slug-based URL.
 
 #### GET /api/organizations/{organization_id}/recent-dogs
 
-Get recently added dogs from a specific organization. Useful for organization detail pages.
+Get recently added dogs from a specific organization with thumbnail URLs. Useful for organization preview cards.
 
 **Path Parameters:**
 - `organization_id` (integer): Organization ID
 
 **Query Parameters:**
-- `limit` (integer, default: 6): Number of dogs to return
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | integer | 3 | Number of recent dogs to return |
 
-**Returns**: Array of AnimalWithImages objects.
+**Example Request**:
+```bash
+GET /api/organizations/123/recent-dogs?limit=5
+```
+
+**Returns**: Array of objects with `id`, `name`, `primary_image_url`, and `thumbnail_url`.
 
 #### GET /api/organizations/{organization_id}/statistics
 
-Get detailed statistics for a specific organization.
+Get comprehensive statistics for a specific organization.
 
 **Path Parameters:**
 - `organization_id` (integer): Organization ID
 
-**Returns**: Organization statistics object including adoption rates and trends.
+**Example Request**:
+```bash
+GET /api/organizations/123/statistics
+```
+
+**Returns**: Statistics object including:
+```json
+{
+  "total_dogs": 45,
+  "new_this_week": 3,
+  "new_this_month": 12
+}
+```
 
 ### Health & Monitoring API
 
 #### GET /health
 
-Basic health check endpoint.
+Basic health check endpoint for load balancers and monitoring systems.
 
-**Returns**: Health status object.
+**Returns** (HealthStatus model):
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-01-15T10:30:00Z",
+  "version": "1.0.0",
+  "database": {
+    "status": "connected",
+    "response_time_ms": 25.3
+  }
+}
+```
 
-#### GET /health/detailed
-
-Detailed health check with component status.
-
-**Returns**: Comprehensive health status including database, scraper, and service health.
+**Status Values**: `healthy`, `degraded`, `unhealthy`
 
 ### Monitoring API 🔒
 
-All monitoring endpoints require admin authentication.
+All monitoring endpoints require admin authentication via `X-API-Key` header.
 
 #### GET /monitoring/scrapers 🔒
 
-Get status of all scrapers with performance metrics.
+Get comprehensive status of all scrapers with performance metrics and failure analysis.
 
-**Query Parameters:**
-- `status` (string): Filter by status (active, failing, inactive)
-- `days` (integer, default: 7): Number of days for metrics
+**Query Parameters** (via MonitoringFilterRequest model):
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `organization_id` | integer | null | Filter by specific organization |
+| `time_range_hours` | integer | 24 | Time range for metrics (1-168 hours) |
+| `status_filter` | string | null | Filter by scraper status |
+| `include_details` | boolean | false | Include detailed metrics |
 
-**Returns**: Array of scraper status objects with detailed metrics.
+**Example Request**:
+```bash
+curl -H "X-API-Key: your-key" "http://localhost:8000/monitoring/scrapers?time_range_hours=48"
+```
+
+**Returns**: Comprehensive scraper monitoring data including:
+- Individual scraper status and performance metrics
+- Failure detection and consecutive failure tracking
+- Summary statistics across all scrapers
+- Performance metrics (success rates, average duration, data quality scores)
 
 #### GET /monitoring/scrapers/{organization_id} 🔒
 
-Get detailed status for a specific scraper.
+Get detailed information about a specific scraper with comprehensive metrics and failure analysis.
 
 **Path Parameters:**
 - `organization_id` (integer): Organization ID
 
-**Returns**: Detailed scraper status with run history and error logs.
+**Example Request**:
+```bash
+curl -H "X-API-Key: your-key" "http://localhost:8000/monitoring/scrapers/123"
+```
+
+**Returns**: Detailed scraper analysis including:
+- Recent scrape history (last 10 runs)
+- Performance metrics (last 30 days)
+- Failure pattern analysis
+- Data quality trends
 
 #### GET /monitoring/performance 🔒
 
-Get API performance metrics.
+Get system and scraper performance metrics.
 
-**Returns**: Performance metrics including response times, error rates, and throughput.
+**Example Request**:
+```bash
+curl -H "X-API-Key: your-key" "http://localhost:8000/monitoring/performance"
+```
 
-#### GET /monitoring/alerts/config 🔒
-
-Get current alerting configuration.
-
-**Returns**: Alert configuration including thresholds and notification settings.
-
-#### GET /monitoring/alerts/active 🔒
-
-Get currently active alerts.
-
-**Returns**: Array of active alerts with severity and details.
+**Returns**: Performance metrics including:
+- Scraper performance (duration, quality, success rates)
+- Database connection pool status
+- System resource utilization
+- Animals processed per hour
 
 #### GET /monitoring/failures 🔒
 
-Get failure detection summary across all scrapers.
+Get failure detection metrics and recent failure analysis with categorized failure types.
 
-**Returns**: Failure summary with patterns and recommendations.
+**Example Request**:
+```bash
+curl -H "X-API-Key: your-key" "http://localhost:8000/monitoring/failures"
+```
 
-## Data Models
+**Returns**: Failure analysis including:
+- Categorized failure counts (catastrophic, partial, database errors)
+- Recent failure history with context
+- Failure rate calculations
+- Alert thresholds and configuration
 
-### AnimalWithImages Model
+#### GET /monitoring/alerts/config 🔒
 
-```typescript
-interface AnimalWithImages {
-  id: number;
-  slug: string;
-  name: string;
-  animal_type: string;
-  breed?: string;
-  standardized_breed?: string;
-  breed_group?: string;
-  age_text?: string;
-  age_min_months?: number;
-  age_max_months?: number;
-  age_category?: string;
-  sex?: string;
-  size?: string;
-  standardized_size?: string;
-  status: string;
-  primary_image_url?: string;
-  adoption_url: string;
-  organization_id: number;
-  external_id?: string;
-  language: string;
-  properties: {
-    good_with_cats?: boolean;
-    good_with_dogs?: boolean;
-    good_with_kids?: boolean;
-    special_needs?: boolean;
-    [key: string]: any;
-  };
-  created_at: string;
-  updated_at: string;
-  last_scraped_at?: string;
-  availability_confidence: 'high' | 'medium' | 'low';
-  last_seen_at?: string;
-  consecutive_scrapes_missing: number;
-  organization: Organization;
-  images: AnimalImage[];
+Get current alerting configuration and thresholds.
+
+**Returns**: Alert configuration including:
+- Failure detection thresholds
+- Notification settings
+- Monitoring intervals
+
+#### GET /monitoring/alerts/active 🔒
+
+Get currently active alerts requiring attention.
+
+**Returns**: Active alerts including:
+- Consecutive failure alerts
+- Organizations with no recent scrapes
+- Alert summary by severity level
+
+## 📊 Data Models
+
+### Core Models
+
+#### AnimalWithImages Model
+Based on the Pydantic AnimalWithImages class extending Animal:
+
+```json
+{
+  "id": 123,
+  "slug": "bella-golden-retriever-123",
+  "name": "Bella",
+  "animal_type": "dog",
+  "breed": "Golden Retriever",
+  "standardized_breed": "Golden Retriever",
+  "breed_group": "Sporting Dogs",
+  "age_text": "2 years",
+  "age_min_months": 24,
+  "age_max_months": 24,
+  "sex": "female",
+  "size": "Large",
+  "standardized_size": "Large",
+  "status": "available",
+  "primary_image_url": "https://example.com/image.jpg",
+  "adoption_url": "https://organization.com/adopt/bella",
+  "organization_id": 5,
+  "external_id": "org-123",
+  "language": "en",
+  "properties": {
+    "good_with_cats": true,
+    "good_with_dogs": true,
+    "special_needs": false
+  },
+  "created_at": "2025-01-15T10:30:00Z",
+  "updated_at": "2025-01-15T12:00:00Z",
+  "last_scraped_at": "2025-01-15T12:00:00Z",
+  "availability_confidence": "high",
+  "last_seen_at": "2025-01-15T12:00:00Z",
+  "consecutive_scrapes_missing": 0,
+  "images": [...],
+  "organization": {...}
 }
 ```
 
-### Organization Model
+#### Organization Model
+Based on the Pydantic Organization class:
 
-```typescript
-interface Organization {
-  id: number;
-  slug: string;
-  name: string;
-  website_url: string;
-  description?: string;
-  country?: string;
-  city?: string;
-  logo_url?: string;
-  social_media: {
-    facebook?: string;
-    instagram?: string;
-    twitter?: string;
-  };
-  active: boolean;
-  created_at: string;
-  updated_at: string;
-  ships_to: string[];
-  established_year?: number;
-  service_regions: ServiceRegion[];
-  total_dogs: number;
-  new_this_week: number;
-  adoption_rate?: number;
-  average_time_to_adoption?: number;
+```json
+{
+  "id": 5,
+  "slug": "golden-retriever-rescue",
+  "name": "Golden Retriever Rescue",
+  "website_url": "https://goldenrescue.org",
+  "description": "Dedicated to rescuing Golden Retrievers",
+  "country": "Turkey",
+  "city": "Istanbul",
+  "logo_url": "https://example.com/logo.png",
+  "active": true,
+  "created_at": "2024-01-01T00:00:00Z",
+  "updated_at": "2025-01-15T10:00:00Z",
+  "social_media": {
+    "facebook": "https://facebook.com/goldenrescue",
+    "instagram": "@goldenrescue"
+  },
+  "ships_to": ["Turkey", "Germany", "Netherlands"],
+  "established_year": 2018,
+  "service_regions": ["Istanbul", "Ankara", "Izmir"],
+  "total_dogs": 45,
+  "new_this_week": 3,
+  "adoption_fees": {
+    "domestic": 200,
+    "international": 500,
+    "currency": "EUR"
+  }
 }
 ```
 
-### ServiceRegion Model
+#### AnimalImage Model
+Based on the Pydantic AnimalImage class:
 
-```typescript
-interface ServiceRegion {
-  country_code: string;
-  country_name: string;
-  regions?: string[];
-  shipping_info?: string;
-}
-```
-
-### AnimalImage Model
-
-```typescript
-interface AnimalImage {
-  id: number;
-  image_url: string;
-  is_primary: boolean;
-  cloudinary_id?: string;
-  width?: number;
-  height?: number;
+```json
+{
+  "id": 456,
+  "image_url": "https://r2.example.com/image.jpg",
+  "is_primary": true
 }
 ```
 
 ### Request Models
 
 #### AnimalFilterRequest
+Comprehensive filtering model with validation:
 
-```typescript
-interface AnimalFilterRequest {
-  search?: string;
-  breed?: string;
-  breed_group?: string;
-  age_category?: string;
-  sex?: string;
-  size?: string;
-  standardized_size?: string;
-  good_with_cats?: boolean;
-  good_with_dogs?: boolean;
-  good_with_kids?: boolean;
-  special_needs?: boolean;
-  location_country?: string;
-  available_to_country?: string;
-  available_to_region?: string;
-  organization?: string;
-  availability_status?: string;
-  availability_confidence?: string;
-  curation_type?: 'recent' | 'diverse' | 'random';
-  sort?: 'newest' | 'oldest' | 'name_asc' | 'name_desc';
-  limit?: number;
-  offset?: number;
+```json
+{
+  "limit": 20,
+  "offset": 0,
+  "search": "golden retriever",
+  "animal_type": "dog",
+  "status": "available",
+  "breed": "Golden Retriever",
+  "standardized_breed": "Golden Retriever",
+  "breed_group": "Sporting Dogs",
+  "sex": "female",
+  "size": "Large",
+  "standardized_size": "Large",
+  "age_category": "adult",
+  "location_country": "Turkey",
+  "available_to_country": "Germany",
+  "available_to_region": "Berlin",
+  "organization_id": 5,
+  "availability_confidence": "high,medium",
+  "curation_type": "random",
+  "sort": "newest",
+  "sitemap_quality_filter": false
 }
 ```
 
-## Usage Examples
+#### OrganizationFilterRequest
+Organization filtering with pagination:
 
-For comprehensive examples and practical usage patterns, see the [API Examples](examples.md) document.
+```json
+{
+  "limit": 20,
+  "offset": 0,
+  "search": "rescue",
+  "country": "Turkey",
+  "active_only": true
+}
+```
 
-## Rate Limiting
+### Response Models
 
-Currently, there are no rate limits enforced on the API. However, please be respectful with your requests to ensure service availability for all users.
+#### FilterCountsResponse
+Dynamic filter counts for UI building:
 
-## Error Codes (Enhanced)
+```json
+{
+  "size_options": [
+    {"value": "Small", "label": "Small", "count": 15},
+    {"value": "Medium", "label": "Medium", "count": 23},
+    {"value": "Large", "label": "Large", "count": 8}
+  ],
+  "age_options": [
+    {"value": "puppy", "label": "Puppy", "count": 12},
+    {"value": "young", "label": "Young", "count": 20}
+  ],
+  "sex_options": [
+    {"value": "male", "label": "Male", "count": 22},
+    {"value": "female", "label": "Female", "count": 24}
+  ],
+  "breed_options": [...],
+  "organization_options": [...],
+  "location_country_options": [...],
+  "available_country_options": [...],
+  "available_region_options": [...]
+}
+```
 
-| Status Code | Meaning | Error Code | Description |
-|-------------|---------|------------|-------------|
-| 200 | Success | - | Request completed successfully |
-| 301 | Moved Permanently | - | Resource moved to slug-based URL |
-| 400 | Bad Request | `BAD_REQUEST` | Invalid request format or parameters |
-| 401 | Unauthorized | `UNAUTHORIZED` | Missing or invalid admin key |
-| 404 | Not Found | `NOT_FOUND` | Resource does not exist |
-| 422 | Unprocessable Entity | `VALIDATION_ERROR` | Input validation failed |
-| 500 | Internal Server Error | `INTERNAL_ERROR` | Server error with safe messaging |
+#### FilterOption
+Individual filter option with count:
+
+```json
+{
+  "value": "Medium",
+  "label": "Medium",
+  "count": 23
+}
+```
+
+### Enums
+
+#### AnimalStatus
+```json
+["available", "adopted", "pending", "unavailable"]
+```
+
+#### AvailabilityConfidence
+```json
+["high", "medium", "low"]
+```
+
+#### StandardizedSize
+```json
+["Tiny", "Small", "Medium", "Large"]
+```
+
+## 🔄 Usage Examples
+
+### Basic Animal Search
+```bash
+# Get available medium-sized dogs in Turkey
+GET /api/animals/?standardized_size=Medium&location_country=Turkey&status=available&limit=10
+
+# Search for Golden Retrievers
+GET /api/animals/?search=golden retriever&breed_group=Sporting Dogs
+
+# Get recent dogs with fallback curation
+GET /api/animals/?curation_type=recent_with_fallback&limit=20&sort=newest
+```
+
+### Meta Endpoints for Dynamic UIs
+```bash
+# Get filter counts based on current context
+GET /api/animals/meta/filter_counts?location_country=Turkey&standardized_size=Medium
+
+# Get available breeds for a specific breed group
+GET /api/animals/meta/breeds?breed_group=Working Dogs
+
+# Get regions for adoption in a specific country
+GET /api/animals/meta/available_regions?country=Germany
+```
+
+### Organization Queries
+```bash
+# Find rescue organizations in Turkey
+GET /api/organizations/?country=Turkey&active_only=true
+
+# Get recent dogs from a specific organization
+GET /api/organizations/123/recent-dogs?limit=5
+
+# Get organization statistics
+GET /api/organizations/123/statistics
+```
+
+### Individual Resources
+```bash
+# Get specific animal by slug (SEO-friendly)
+GET /api/animals/bella-golden-retriever-123
+
+# Legacy ID redirect (301) to slug URL
+GET /api/animals/id/123
+
+# Get specific organization by slug
+GET /api/organizations/pets-turkey
+```
+
+## 📊 Rate Limiting & Pagination
+
+**Rate Limiting**: Currently no rate limits are enforced, but please be respectful with request frequency.
+
+**Pagination**: All list endpoints support `limit` and `offset` parameters:
+- Default `limit`: 20 items
+- Maximum `limit`: 10,000 items  
+- `offset`: 0-based pagination offset
+
+## ❌ Error Handling
+
+### HTTP Status Codes
+
+| Status | Error Code | Description |
+|--------|------------|-------------|
+| 200 | - | Success |
+| 301 | - | Moved Permanently (legacy ID → slug redirect) |
+| 400 | `BAD_REQUEST` | Invalid request parameters |
+| 401 | `AUTHENTICATION_ERROR` | Missing/invalid X-API-Key |
+| 404 | `NOT_FOUND` | Resource not found |
+| 422 | `VALIDATION_ERROR` | Pydantic validation failed |
+| 500 | `INTERNAL_ERROR` | Database or system error |
 
 ### Error Response Format
-All error responses include:
-- **Specific error codes** for programmatic handling
-- **Detailed error messages** with field-level validation errors
-- **Timestamps** for debugging and monitoring
-- **Safe error messaging** with no sensitive information exposure
 
-### Common Error Scenarios
-- **Invalid enum values**: Standardized size/status validation
-- **Missing required params**: Meta endpoints requiring country parameter
-- **Invalid slug format**: Malformed slug in URL
-- **Type coercion failures**: Automatic type conversion with validation
-- **Range validation**: Limit/offset bounds checking
-- **SQL injection attempts**: Blocked by parameterized queries
-- **Database connection issues**: Handled gracefully with connection pooling
+```json
+{
+  "detail": "Validation error: Invalid standardized_size value",
+  "status_code": 422,
+  "error_code": "VALIDATION_ERROR"
+}
+```
 
-## CORS Support
+### Common Validation Errors
+- **Invalid Enums**: `standardized_size` must be "Tiny", "Small", "Medium", or "Large"
+- **Range Validation**: `limit` must be between 1-10000
+- **Missing Required**: `country` parameter required for available regions
+- **Type Conversion**: Invalid integer values for IDs or pagination
 
-The API supports Cross-Origin Resource Sharing (CORS) for the following origins:
-- `http://localhost:3000` (development frontend)
-- `http://127.0.0.1:3000` (alternative development)
-- `https://rescuedogs.me` (production frontend)
-- `https://www.rescuedogs.me` (production frontend with www)
+### Database Error Handling
+- Connection pooling prevents most connection issues
+- All queries use parameterized statements (SQL injection protection)
+- Database errors return generic messages without sensitive information
 
-## API Versioning
+## 🌐 CORS Configuration
 
-The current API version is 0.2.0. Future versions will be backwards compatible and new versions will be announced with migration guides.
+### Development Origins
+- `http://localhost:3000`
+- `http://127.0.0.1:3000`  
+- `http://localhost:3001`
+- Dynamic local network IP (automatically detected)
 
-## Support
+### Production Origins
+- Configured via `ALLOWED_ORIGINS` environment variable
+- HTTPS-only origins recommended
+- Comma-separated list validation
 
-For API support or questions, please:
-1. Check this documentation first
-2. Review the [troubleshooting guide](../operations/troubleshooting.md)
-3. Submit an issue on the project repository
+### CORS Settings
+- **Methods**: GET, POST, PUT, DELETE, OPTIONS (production) | * (development)
+- **Headers**: Standard headers (production) | * (development)
+- **Credentials**: Configurable via `CORS_ALLOW_CREDENTIALS`
+- **Max Age**: 1 hour (production) | 24 hours (development)
 
-## Changelog
+## 🔧 API Versioning & Support
 
-### v0.2.0 (Current - Slug-based URLs & Enhanced Metadata)
-- **SEO-Friendly URLs**: Slug-based URLs with automatic redirects from legacy IDs
-- **Meta Endpoints**: Comprehensive metadata endpoints for dynamic UIs
-- **Enhanced Filtering**: Multi-value filters, location-based filtering
-- **Real-time Counts**: Dynamic filter counts for better UX
-- **Admin Authentication**: Protected monitoring endpoints
-- **Organization Enhancements**: Recent dogs, statistics, service regions
-- **Performance**: Further query optimizations
+**Current Version**: 0.1.0
 
-### v0.1.0 (Post-Refactoring)
-- **Major Architecture Refactoring**: Complete service layer implementation
-- **Performance Optimizations**: Connection pooling, batch queries, 25-33% faster responses
-- **Security Enhancements**: Input validation, URL sanitization, SQL injection prevention
-- **Error Handling**: Standardized exceptions with detailed error codes
-- **Query Optimization**: Eliminated N+1 problems with intelligent batching
-- **Type Safety**: Enhanced Pydantic v2 validation with custom validators
-- **Documentation**: Updated API documentation reflecting new architecture
+**Versioning Strategy**: Backward-compatible changes within minor versions. Breaking changes will increment major version with migration guides.
+
+**Interactive Documentation**: Available at `/docs` (Swagger UI) and `/redoc` (ReDoc)
+
+**Support Channels**:
+1. Interactive API documentation at `/docs`
+2. This comprehensive reference documentation
+3. Project repository issues for bugs/feature requests
+
+## 📋 Changelog
+
+### v0.1.0 (Current Implementation)
+- **FastAPI Framework**: Modern async Python framework with Pydantic v2
+- **Service Layer Architecture**: Clean separation of concerns with dependency injection
+- **SEO-Friendly URLs**: Slug-based URLs with automatic legacy ID redirects
+- **Comprehensive Filtering**: Advanced filtering with real-time filter counts
+- **Meta Endpoints**: Dynamic metadata for responsive UI development
+- **Security Features**: CORS configuration, security headers, input validation
+- **Admin Monitoring**: Protected endpoints for scraper and system monitoring
+- **Error Handling**: Standardized exceptions with structured error responses
+- **Connection Pooling**: Optimized database access with connection management
+- **Input Validation**: Comprehensive Pydantic models with custom validators

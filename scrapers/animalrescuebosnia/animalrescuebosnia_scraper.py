@@ -257,7 +257,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
                 "external_id": external_id,
                 "adoption_url": url,
                 "primary_image_url": hero_image_url,
-                "original_image_url": hero_image_url,  # Same as primary for Cloudinary comparison
+                "original_image_url": hero_image_url,  # Same as primary for R2 comparison
                 "animal_type": "dog",
                 "status": "available",
                 # Raw fields for standardization by BaseScraper
@@ -381,7 +381,7 @@ class AnimalRescueBosniaScraper(BaseScraper):
         """Collect all animal data from Animal Rescue Bosnia.
 
         This method integrates with BaseScraper which handles:
-        - Image upload to Cloudinary
+        - Image upload to R2
         - Age/breed/size standardization
         - Database operations
 

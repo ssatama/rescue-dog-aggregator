@@ -317,11 +317,11 @@ class OrganizationSyncService:
             logo_urls = self.logo_service.upload_organization_logo(config.id, config.metadata.logo_url, force_upload=False)
 
             if logo_urls and "original" in logo_urls:
-                cloudinary_url = logo_urls["original"]
+                r2_url = logo_urls["original"]
 
                 # Update logo URL in database
                 query = "UPDATE organizations SET logo_url = %s WHERE id = %s"
-                execute_command(query, (cloudinary_url, org_id))
+                execute_command(query, (r2_url, org_id))
 
                 logger.info(f"Updated logo for organization {org_id}")
 

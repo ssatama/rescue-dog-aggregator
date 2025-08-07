@@ -28,9 +28,6 @@ class TestExecuteTransactionBug:
             mock_get_conn.return_value.__enter__.return_value = mock_conn
             mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
 
-            # Mock INSERT command returns data (but DELETE should not call fetchone)
-            mock_cursor.fetchone.return_value = {"id": 1}
-
             # Commands that don't return data (DELETE and INSERT without RETURNING)
             commands = [
                 ("DELETE FROM service_regions WHERE organization_id = %s", (1,)),
@@ -40,11 +37,11 @@ class TestExecuteTransactionBug:
             # This should work now that bug is fixed
             results = execute_transaction(commands)
 
-            # Should return None for DELETE, and result for INSERT
-            assert results == [None, {"id": 1}]
+            # Should return None for both DELETE and INSERT without RETURNING
+            assert results == [None, None]
 
-            # fetchone should only be called once (for INSERT, not DELETE)
-            assert mock_cursor.fetchone.call_count == 1
+            # fetchone should not be called at all for these commands
+            assert mock_cursor.fetchone.call_count == 0
 
     def test_execute_transaction_should_handle_mixed_commands_correctly(self):
         """Test that execute_transaction should handle commands that return/don't return data.
@@ -64,7 +61,6 @@ class TestExecuteTransactionBug:
             # Mock responses for commands that DO return data
             # Only INSERT with RETURNING and SELECT will call fetchone()
             mock_cursor.fetchone.side_effect = [
-                None,  # INSERT without RETURNING - will be called but returns None
                 {"id": 1, "name": "test"},  # INSERT with RETURNING - should return data
                 {"count": 5},  # SELECT - should return data
             ]
@@ -83,16 +79,16 @@ class TestExecuteTransactionBug:
             # Should only return results for commands that actually return data
             expected_results = [
                 None,  # DELETE - no fetchone() called
-                None,  # INSERT without RETURNING - fetchone() called but returns None
+                None,  # INSERT without RETURNING - no fetchone() called
                 {"id": 1, "name": "test"},  # INSERT with RETURNING - fetchone() called
                 {"count": 5},  # SELECT - fetchone() called
             ]
 
             assert results == expected_results
 
-            # fetchone should only be called 3 times (INSERT, INSERT with RETURNING, SELECT)
-            # NOT called for DELETE
-            assert mock_cursor.fetchone.call_count == 3
+            # fetchone should only be called 2 times (INSERT with RETURNING, SELECT)
+            # NOT called for DELETE or INSERT without RETURNING
+            assert mock_cursor.fetchone.call_count == 2
 
 
 @pytest.mark.integration

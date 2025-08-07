@@ -207,13 +207,8 @@ def get_organization_recent_dogs(
         dogs_with_thumbnails = []
         for dog in recent_dogs:
             dog_data = dict(dog)
-            # Use Cloudinary transformations for thumbnails if available
-            if dog_data.get("primary_image_url") and "cloudinary.com" in dog_data["primary_image_url"]:
-                # Generate thumbnail URL (96x96 for card previews)
-                thumbnail_url = dog_data["primary_image_url"].replace("/upload/", "/upload/w_96,h_96,c_fill,g_auto/")
-                dog_data["thumbnail_url"] = thumbnail_url
-            else:
-                dog_data["thumbnail_url"] = dog_data["primary_image_url"]
+            # Use raw R2 URL for thumbnails - transformations handled by frontend
+            dog_data["thumbnail_url"] = dog_data["primary_image_url"]
 
             dogs_with_thumbnails.append(dog_data)
 

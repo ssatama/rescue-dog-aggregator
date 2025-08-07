@@ -71,7 +71,7 @@ describe("Session 10: Image Optimization Verification", () => {
       const images = screen.getAllByAltText("Progressive test image");
       const mainImage = images.find((img) => img.src === cloudinaryUrl);
       expect(mainImage).toBeInTheDocument();
-      expect(mainImage).toHaveClass("transition-opacity", "duration-300");
+      expect(mainImage).toHaveClass("transition-opacity", "duration-200");
     });
 
     test("LazyImage handles error states with proper fallback", () => {

@@ -20,8 +20,9 @@ Allow: /api/v1/search
 Allow: /images/
 Allow: /icons/
 Allow: /_next/static/
+Allow: /_next/image
 
-# Disallow admin and internal pages
+# Disallow admin and internal pages  
 Disallow: /admin/
 Disallow: /_next/
 Disallow: /api/internal/
@@ -53,8 +54,3 @@ Allow: /api/v1/
 
 # Crawl-delay for respectful crawling
 Crawl-delay: 1
-
-# Cache directives for better performance
-# Allow caching of static assets for 1 hour
-User-agent: *
-Cache-Control: public, max-age=3600

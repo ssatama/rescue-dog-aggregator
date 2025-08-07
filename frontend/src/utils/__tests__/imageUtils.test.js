@@ -221,6 +221,10 @@ describe("R2 URL Detection", () => {
       expect(isR2Url(null)).toBe(false);
       expect(isR2Url("")).toBe(false);
     });
+
+    it("should accept images.rescuedogs.me as R2 URL", () => {
+      expect(isR2Url("https://images.rescuedogs.me/test.jpg")).toBe(true);
+    });
   });
 });
 

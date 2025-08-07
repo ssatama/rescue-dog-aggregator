@@ -4,7 +4,7 @@ ImageProcessingService - Extracted from BaseScraper for Single Responsibility.
 Handles all image processing operations including:
 - Primary image processing and validation
 - Multiple image upload and management
-- Cloudinary integration and error handling
+- R2 integration and error handling
 - Image URL validation and processing
 
 Following CLAUDE.md principles:
@@ -40,7 +40,7 @@ class ImageProcessingService:
             animal_data: Animal data dictionary (will not be mutated)
             existing_animal: Existing animal data tuple if updating
             database_connection: Database connection for checking existing images
-            organization_name: Organization name for Cloudinary organization
+            organization_name: Organization name for R2 folder organization
 
         Returns:
             Updated animal data dictionary with processed image URLs
@@ -65,13 +65,13 @@ class ImageProcessingService:
         return processed_data
 
     def save_animal_images(self, animal_id: int, image_urls: List[str], database_connection, organization_name: str = "unknown") -> Tuple[int, int]:
-        """Save multiple animal images with Cloudinary upload.
+        """Save multiple animal images with R2 upload.
 
         Args:
             animal_id: ID of the animal
             image_urls: List of image URLs to process
             database_connection: Database connection for operations
-            organization_name: Organization name for Cloudinary organization
+            organization_name: Organization name for R2 folder organization
 
         Returns:
             Tuple of (success_count, failure_count)
@@ -239,7 +239,7 @@ class ImageProcessingService:
         return cursor.fetchall()
 
     def _get_animal_name(self, cursor, animal_id: int) -> str:
-        """Get animal name for Cloudinary organization (pure function)."""
+        """Get animal name for R2 folder organization (pure function)."""
         cursor.execute("SELECT name FROM animals WHERE id = %s", (animal_id,))
         result = cursor.fetchone()
         return result[0] if result else "unknown"
@@ -248,10 +248,10 @@ class ImageProcessingService:
         """Create map of existing image URLs (pure function)."""
         existing_urls_map = {}
         for img in existing_images:
-            img_id, cloudinary_url, original_url, is_primary = img
+            img_id, r2_url, original_url, is_primary = img
             existing_urls_map[original_url] = {
                 "id": img_id,
-                "cloudinary_url": cloudinary_url,
+                "r2_url": r2_url,
                 "is_primary": is_primary,
             }
         return existing_urls_map

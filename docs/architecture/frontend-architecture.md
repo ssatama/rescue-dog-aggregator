@@ -6,43 +6,44 @@
 - [Technology Stack](#technology-stack)
 - [Architecture Patterns](#architecture-patterns)
 - [Component Library & Design System](#component-library--design-system)
-- [Security Implementation](#security-implementation)
-- [Performance Optimization](#performance-optimization)
-- [Accessibility Features](#accessibility-features)
 - [State Management](#state-management)
 - [Routing & Navigation](#routing--navigation)
+- [Performance Optimization](#performance-optimization)
+- [Security Implementation](#security-implementation)
+- [Accessibility Features](#accessibility-features)
 - [Testing Strategy](#testing-strategy)
+- [Mobile Experience](#mobile-experience)
+- [SEO & Metadata](#seo--metadata)
 - [Development Workflow](#development-workflow)
 - [Build & Deployment](#build--deployment)
 - [Error Handling](#error-handling)
 - [Performance Monitoring](#performance-monitoring)
 - [Advanced Features](#advanced-features)
-- [Mobile Experience](#mobile-experience)
-- [SEO & Metadata](#seo--metadata)
 - [Code Quality & Standards](#code-quality--standards)
 - [Future Considerations](#future-considerations)
 
 ## Overview
 
-The Rescue Dog Aggregator frontend is a modern web application built with **Next.js 15** and the **App Router** architecture. It implements React patterns with a focus on **performance**, **security**, **accessibility**, and **maintainability**. The architecture follows a **test-driven development (TDD)** approach.
+The Rescue Dog Aggregator frontend is a modern web application built with **Next.js 15** and the **App Router** architecture. It implements React 18 patterns with a focus on **performance**, **security**, **accessibility**, and **maintainability**. The architecture follows a **test-driven development (TDD)** approach with comprehensive test coverage.
 
-### Key Metrics (Updated 2024)
-- **Framework**: Next.js 15.3.0 with App Router architecture
-- **Test Coverage**: 2,400+ comprehensive tests across unit, integration, and E2E
-- **Component Count**: 45+ reusable components with design system
-- **Performance**: Core Web Vitals optimized with bundle analysis
+### Key Metrics (Current State - 2025)
+- **Framework**: Next.js 15.0.3 with App Router architecture
+- **Test Coverage**: 2,598 comprehensive tests (2,586 passing, 12 skipped) across 201 test suites
+- **Component Count**: 50+ reusable components with shadcn/ui design system
+- **Organizations**: 8 active rescue organizations integrated
+- **Performance**: Core Web Vitals optimized with Cloudflare Images CDN
 - **Accessibility**: WCAG 2.1 AA compliant with automated testing
 - **Security**: XSS prevention, content sanitization, and secure headers
 - **Build Optimization**: Advanced webpack configuration with code splitting
 
 ## Technology Stack
 
-### Core Technologies (Current Stack)
-- **Framework**: Next.js 15.3.0 with App Router and React 18.2.0
-- **Language**: TypeScript/JavaScript (mixed codebase with gradual migration)
-- **Styling**: Tailwind CSS 3.3.2 with custom design system and CSS variables
+### Core Technologies
+- **Framework**: Next.js 15.0.3 with App Router and React 18.3.1
+- **Language**: TypeScript/JavaScript (mixed codebase with gradual TypeScript migration)
+- **Styling**: Tailwind CSS 3.4.17 with custom warm color palette and CSS variables
 - **Component Library**: shadcn/ui with Radix UI primitives for accessibility
-- **State Management**: React hooks with local state and Context API
+- **State Management**: React hooks with Context API (no localStorage/sessionStorage for app state)
 - **Animation**: Framer Motion 12.18.1 for sophisticated animations and transitions
 - **Icons**: Heroicons 2.2.0 + Lucide React 0.487.0 for comprehensive icon coverage
 
@@ -51,100 +52,182 @@ The Rescue Dog Aggregator frontend is a modern web application built with **Next
 - **E2E Testing**: Playwright 1.54.1 with multi-browser support
 - **Build System**: Next.js optimized bundling with webpack customizations
 - **Code Quality**: ESLint 9.28.0 with Next.js config + Prettier 3.6.2
-- **Image Optimization**: Cloudflare R2 + Images with security validation and performance optimization
+- **Image Optimization**: Cloudflare R2 + Cloudflare Images with security validation
 - **Accessibility**: jest-axe 10.0.0 for automated accessibility testing
 - **Analytics**: Vercel Analytics 1.5.0 + Speed Insights 1.2.0 for performance monitoring
 
 ### UI Framework
-- **Base**: Tailwind CSS with custom color scheme
-- **Components**: shadcn/ui components with Radix UI
-- **Variants**: class-variance-authority for component variants
-- **Utilities**: clsx and tailwind-merge for conditional classes
-- **Animations**: tailwindcss-animate for smooth transitions
+- **Base**: Tailwind CSS with mobile-first responsive design
+- **Components**: shadcn/ui components with Radix UI primitives
+- **Variants**: class-variance-authority (cva) for component variants
+- **Utilities**: clsx 2.1.1 and tailwind-merge 2.7.0 for conditional classes
+- **Animations**: tailwindcss-animate 1.0.7 for smooth transitions
 
 ## Architecture Patterns
 
+### Next.js 15 App Router Architecture
+
+The application leverages the App Router's powerful features for optimal performance and developer experience.
+
+#### Directory Structure
+```
+src/app/
+├── layout.js                          # Root layout with global metadata
+├── page.jsx                           # Homepage (server component)
+├── HomeClient.jsx                     # Homepage client component
+├── globals.css                        # Global styles with Tailwind
+├── dogs/
+│   ├── page.jsx                      # Dogs listing (server component)
+│   ├── DogsPageClient.jsx            # Dogs listing client component
+│   └── [slug]/                       # Dynamic dog routes (slug-based)
+│       ├── page.jsx                  # Dog detail (server component with metadata)
+│       └── DogDetailClient.jsx       # Dog detail client component
+├── organizations/
+│   ├── page.jsx                      # Organizations listing
+│   ├── OrganizationsClient.jsx       # Organizations client component
+│   └── [slug]/                       # Dynamic organization routes (slug-based)
+│       ├── page.jsx                  # Organization detail (server component)
+│       └── OrganizationDetailClient.jsx # Organization detail client
+├── about/
+│   └── page.jsx                      # About page
+├── api/                               # API routes (minimal usage)
+├── sitemap.xml/
+│   └── route.js                      # Dynamic sitemap generation
+└── robots.txt/
+    └── route.js                      # Dynamic robots.txt generation
+```
+
 ### Server/Client Component Separation
 
-The application uses **Server Components** for SEO and metadata generation, while **Client Components** handle interactivity and user state.
+The application uses a clear separation between Server Components (for SEO and data fetching) and Client Components (for interactivity).
 
-#### Server Components (SEO Optimized)
+#### Server Components (SEO & Metadata)
 
-**Purpose**: Generate dynamic metadata, improve SEO, and handle server-side rendering.
+Server components handle metadata generation, SEO optimization, and initial data fetching.
 
-**Key Files**:
-- `src/app/dogs/[id]/page.jsx` - Dog detail metadata generation
-- `src/app/organizations/[id]/page.jsx` - Organization metadata generation
-- `src/app/layout.js` - Root layout with global metadata
-
-**Implementation Pattern**:
+**Example: Dog Detail Page (Slug-based routing)**
 ```javascript
-// Server Component for SEO metadata
+// src/app/dogs/[slug]/page.jsx
+import { getAnimalBySlug, getAllAnimals } from '@/services/animalsService';
+import { generatePetSchema } from '@/utils/schema';
+import DogDetailClient from './DogDetailClient';
+
+// Static generation for popular dogs
+export async function generateStaticParams() {
+  const dogs = await getAllAnimals();
+  return dogs.slice(0, 50).map(dog => ({
+    slug: dog.slug
+  }));
+}
+
+// Dynamic metadata generation for SEO
 export async function generateMetadata({ params }) {
-  const dog = await fetchDogById(params.id);
+  const { slug } = await params;
+  const dog = await getAnimalBySlug(slug);
   
   return {
-    title: `${dog.name} - Available for Adoption`,
-    description: `Meet ${dog.name}, a ${dog.age_text} old dog looking for a loving home.`,
+    title: `${dog.name} - ${dog.standardized_breed} Available for Adoption`,
+    description: generateSEODescription(dog),
     openGraph: {
-      title: `${dog.name} - Rescue Dog`,
+      title: `${dog.name} - Available for Adoption`,
       description: dog.description,
-      images: [{ url: dog.primary_image_url }],
+      images: [{
+        url: dog.primary_image_url,
+        width: 800,
+        height: 600,
+        alt: `Photo of ${dog.name}`
+      }],
+      type: 'article',
+      article: {
+        publishedTime: dog.created_at,
+        section: 'Pet Adoption',
+        tags: ['rescue dogs', dog.standardized_breed, dog.organization.city]
+      }
     },
     twitter: {
-      card: 'summary_large_image',
-      title: `${dog.name} - Rescue Dog`,
-      description: dog.description,
+      card: dog.primary_image_url ? 'summary_large_image' : 'summary',
+      title: `${dog.name} - Available for Adoption`,
+      description: truncateDescription(dog.description, 200)
     },
+    alternates: {
+      canonical: `https://www.rescuedogs.me/dogs/${slug}`
+    }
   };
 }
 
-export default function DogPage({ params }) {
-  // Server component renders client component with initial data
-  return <DogDetailClient dogId={params.id} />;
+export default async function DogPage({ params }) {
+  const { slug } = await params;
+  const dog = await getAnimalBySlug(slug);
+  
+  // Server component passes data to client component
+  return <DogDetailClient dog={dog} />;
 }
 ```
 
-#### Client Components (Interactive)
+#### Client Components (Interactivity)
 
-**Purpose**: Handle user interactions, form state, and dynamic UI updates.
+Client components handle user interactions, state management, and dynamic UI updates.
 
-**Key Files**:
-- `src/app/dogs/[id]/DogDetailClient.jsx` - Dog detail UI and state
-- `src/app/organizations/[id]/OrganizationDetailClient.jsx` - Organization UI
-- `src/components/dogs/FilterControls.jsx` - Search and filtering
-- `src/components/home/HeroSection.jsx` - Animated hero section
-- `src/app/HomeClient.jsx` - Homepage client interactions
-
-**Implementation Pattern**:
+**Example: Dog Detail Client Component**
 ```javascript
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ErrorBoundary } from '@/components/error/ErrorBoundary';
-import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
+import { HeroImageWithBlurredBackground } from '@/components/ui/HeroImageWithBlurredBackground';
+import { RelatedDogsSection } from '@/components/dogs/RelatedDogsSection';
+import { MobileStickyBar } from '@/components/ui/MobileStickyBar';
+import { DogDescription } from '@/components/dogs/DogDescription';
+import { ShareButton } from '@/components/ui/ShareButton';
+import { useShare } from '@/hooks/useShare';
 
-export default function DogDetailClient({ dogId }) {
-  const [dog, setDog] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    fetchDogDetails(dogId)
-      .then(setDog)
-      .catch(setError)
-      .finally(() => setLoading(false));
-  }, [dogId]);
-
-  if (loading) return <LoadingSkeleton />;
-  if (error) return <ErrorBoundary error={error} />;
-  if (!dog) return <EmptyState message="Dog not found" />;
-
+export default function DogDetailClient({ dog }) {
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const { share, canShare } = useShare();
+  
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      {/* Interactive UI components */}
-      <HeroImageWithBlurredBackground dog={dog} />
-      <RelatedDogsSection organizationId={dog.organization_id} currentDogId={dog.id} />
+    <div className="min-h-screen bg-background">
+      {/* Hero section with blurred background */}
+      <HeroImageWithBlurredBackground
+        src={dog.primary_image_url}
+        alt={`Photo of ${dog.name}`}
+        onLoad={() => setIsImageLoaded(true)}
+      />
+      
+      {/* Main content */}
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Dog information */}
+          <div className="lg:col-span-2">
+            <h1 className="text-3xl font-bold mb-4">{dog.name}</h1>
+            <DogDescription dog={dog} />
+          </div>
+          
+          {/* Action buttons */}
+          <div className="space-y-4">
+            <Button 
+              className="w-full bg-orange-600 hover:bg-orange-700"
+              onClick={() => window.open(dog.adoption_url, '_blank')}
+            >
+              Contact Organization
+            </Button>
+            {canShare && (
+              <ShareButton
+                title={`Check out ${dog.name} for adoption!`}
+                text={dog.description}
+                url={window.location.href}
+              />
+            )}
+          </div>
+        </div>
+        
+        {/* Related dogs from same organization */}
+        <RelatedDogsSection 
+          organizationId={dog.organization_id}
+          currentDogId={dog.id}
+        />
+      </div>
+      
+      {/* Mobile sticky action bar */}
       <MobileStickyBar dog={dog} />
     </div>
   );
@@ -154,172 +237,478 @@ export default function DogDetailClient({ dogId }) {
 ### Component Architecture Patterns
 
 #### Compound Components Pattern
+Components are designed as composable units for flexibility:
+
 ```javascript
 // Filter system with compound components
 <DogFilters onFiltersChange={handleFiltersChange}>
-  <DogFilters.Search />
-  <DogFilters.Breed />
-  <DogFilters.Age />
-  <DogFilters.Size />
-  <DogFilters.Location />
+  <DogFilters.Search placeholder="Search by name or breed..." />
+  <DogFilters.BreedSelect options={breeds} />
+  <DogFilters.AgeRange min={0} max={15} />
+  <DogFilters.SizeFilter sizes={['small', 'medium', 'large']} />
+  <DogFilters.LocationFilter countries={countries} />
 </DogFilters>
 ```
 
-#### Render Props Pattern
-```javascript
-// Error boundary with render props
-<ErrorBoundary fallback={({ error, retry }) => (
-  <div className="text-center p-8">
-    <h3>Something went wrong</h3>
-    <button onClick={retry}>Try again</button>
-  </div>
-)}>
-  <DogsList />
-</ErrorBoundary>
-```
+#### Custom Hooks Pattern
+Business logic is extracted into reusable hooks:
 
-#### Hook-based State Management
 ```javascript
-// Custom hooks for complex state
-const useDogFilters = () => {
-  const [filters, setFilters] = useState(initialFilters);
-  const [filteredDogs, setFilteredDogs] = useState([]);
+// src/hooks/useFilteredDogs.js
+export function useFilteredDogs(initialDogs = []) {
+  const [dogs, setDogs] = useState(initialDogs);
+  const [filters, setFilters] = useState({});
+  const [loading, setLoading] = useState(false);
+  
+  const filteredDogs = useMemo(() => {
+    if (!Object.keys(filters).length) return dogs;
+    
+    return dogs.filter(dog => {
+      if (filters.breed && dog.breed !== filters.breed) return false;
+      if (filters.age && !matchesAgeRange(dog.age, filters.age)) return false;
+      if (filters.size && dog.size !== filters.size) return false;
+      if (filters.location && !dog.location.includes(filters.location)) return false;
+      return true;
+    });
+  }, [dogs, filters]);
   
   const updateFilter = useCallback((key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   }, []);
   
-  return { filters, filteredDogs, updateFilter };
-};
+  return { 
+    dogs: filteredDogs, 
+    filters, 
+    updateFilter, 
+    loading,
+    totalCount: dogs.length,
+    filteredCount: filteredDogs.length
+  };
+}
 ```
 
 ## Component Library & Design System
 
 ### Design Tokens
 
-**Color System**: Custom warm color palette with dark mode support
+The application uses a warm, inviting color palette with comprehensive theming support.
+
+**Color System with Dark Mode Support**
 ```css
 :root {
-  /* Light mode - warm palette */
-  --background: 31 100% 98%; /* #FDFBF7 warm off-white */
-  --foreground: 222.2 84% 4.9%;
-  --card: 31 100% 99%;
-  --primary: 221 83% 53%;
-  --orange-600: 234 88% 47%; /* Primary orange */
-  --orange-700: 221 83% 41%; /* Darker orange */
+  /* Light mode - warm, inviting palette */
+  --background: 31 100% 98%;        /* #FDFBF7 warm off-white */
+  --foreground: 222.2 84% 4.9%;     /* Dark text */
+  --card: 31 100% 99%;               /* Slightly warmer card background */
+  --primary: 221 83% 53%;            /* Primary blue */
+  --orange-600: 25 95% 53%;          /* Primary orange for CTAs */
+  --orange-700: 21 90% 48%;          /* Darker orange for hover */
   
-  /* Shadows with blue tint for premium feel */
+  /* Blue-tinted shadows for depth */
+  --shadow-blue-sm: 0 1px 3px rgba(59, 130, 246, 0.1);
   --shadow-blue-md: 0 4px 6px rgba(59, 130, 246, 0.07);
   --shadow-blue-lg: 0 10px 15px rgba(59, 130, 246, 0.1);
+  
+  /* Responsive typography with clamp() */
+  --font-size-hero: clamp(2.25rem, 4vw + 1rem, 3.75rem);
+  --font-size-title: clamp(2rem, 3vw + 1rem, 3rem);
+  --font-size-body: 1rem;
+  
+  /* Animation tokens */
+  --animation-duration-fast: 150ms;
+  --animation-duration-normal: 300ms;
+  --animation-easing: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dark {
-  /* Dark mode variants */
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-}
-```
-
-**Typography Scale**: Responsive typography with custom font loading
-```css
-.text-hero {
-  font-size: clamp(2rem, 4vw, 3.5rem);
-  line-height: 1.1;
-  font-weight: 700;
-}
-
-.text-body {
-  font-size: clamp(1rem, 2vw, 1.125rem);
-  line-height: 1.6;
+  --background: 222.2 84% 4.9%;      /* Dark background */
+  --foreground: 210 40% 98%;         /* Light text */
+  --card: 222.2 84% 8%;              /* Dark card background */
+  /* ... dark mode overrides */
 }
 ```
 
 ### Component Categories
 
-#### Base Components (shadcn/ui)
-- **Button**: `src/components/ui/button.tsx` - Primary, secondary, outline variants
-- **Card**: `src/components/ui/card.tsx` - Content containers with shadows
-- **Input**: `src/components/ui/input.tsx` - Form inputs with validation states
-- **Badge**: `src/components/ui/badge.tsx` - Status indicators and tags
-- **Alert**: `src/components/ui/alert.tsx` - Notification and message display
-
-#### Layout Components
-- **Header**: `src/components/layout/Header.jsx` - Navigation with theme toggle
-- **Footer**: `src/components/layout/Footer.jsx` - Site footer with links
-- **Layout**: `src/components/layout/Layout.jsx` - Main layout wrapper
+#### Core UI Components (shadcn/ui)
+- **Button**: `button.tsx` - Multiple variants (default, outline, ghost, destructive)
+- **Card**: `card.tsx` - Content containers with consistent styling
+- **Input**: `input.tsx` - Form inputs with validation states
+- **Badge**: `badge.tsx` - Status indicators and tags
+- **Sheet**: `sheet.tsx` - Mobile-friendly drawer components
+- **Alert**: `alert.tsx` - Notification and message display
+- **Select**: `select.tsx` - Accessible dropdown menus
+- **Toast**: `Toast.tsx` - Non-blocking notifications
 
 #### Specialized Components
-- **AnimatedCounter**: `src/components/ui/AnimatedCounter.jsx` - Scroll-triggered counters
-- **LazyImage**: `src/components/ui/LazyImage.jsx` - Optimized image loading
-- **ThemeToggle**: `src/components/ui/ThemeToggle.jsx` - Dark/light mode switcher
-- **CountryFlag**: `src/components/ui/CountryFlag.jsx` - SVG country flags
+- **LazyImage**: `LazyImage.tsx` - Progressive image loading with IntersectionObserver
+- **AnimatedCounter**: `AnimatedCounter.tsx` - Scroll-triggered number animations
+- **CountryFlag**: `CountryFlag.tsx` - SVG country flags with error boundaries
+- **ThemeToggle**: `ThemeToggle.tsx` - Dark/light mode switcher
+- **ShareButton**: `ShareButton.tsx` - Native Web Share API integration
+- **HeroImageWithBlurredBackground**: Background blur effect for hero images
+- **MobileStickyBar**: `MobileStickyBar.tsx` - Mobile-specific action bar
+- **ProgressiveImage**: `ProgressiveImage.tsx` - Multi-stage image loading
 
-#### Business Logic Components
-- **DogCard**: `src/components/dogs/DogCard.jsx` - Dog display cards
-- **FilterControls**: `src/components/dogs/FilterControls.jsx` - Search and filtering
-- **RelatedDogsSection**: `src/components/dogs/RelatedDogsSection.jsx` - Related dogs display
-- **HeroSection**: `src/components/home/HeroSection.jsx` - Animated hero section
+#### Business Components
+- **DogCard**: `DogCard.jsx` - Responsive dog display cards
+- **OrganizationCard**: `OrganizationCard.jsx` - Organization display with statistics
+- **FilterControls**: `FilterControls.jsx` - Advanced search and filtering
+- **RelatedDogsSection**: `RelatedDogsSection.jsx` - Related dogs carousel
+- **HeroSection**: `HeroSection.jsx` - Homepage hero with animated statistics
+- **TrustSection**: `TrustSection.jsx` - Trust indicators and social proof
+- **DogDescription**: `DogDescription.jsx` - Rich text dog descriptions
 
 ### Component Patterns
 
-#### Variant-based Components
+#### Lazy Loading with Progressive Enhancement
 ```javascript
-// Using class-variance-authority for variants
-const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-md text-sm font-medium",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border border-input bg-background hover:bg-accent",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
-      size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-);
+// src/components/ui/LazyImage.tsx
+import { useLazyImage } from '@/hooks/useLazyImage';
+
+export function LazyImage({ 
+  src, 
+  alt, 
+  priority = false,
+  sizes,
+  className 
+}: LazyImageProps) {
+  const {
+    isLoaded,
+    isInView,
+    hasError,
+    imgRef,
+    handlers
+  } = useLazyImage(src, { priority });
+  
+  return (
+    <div ref={imgRef} className={cn("relative overflow-hidden", className)}>
+      {/* Blur placeholder */}
+      {!isLoaded && (
+        <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+      )}
+      
+      {/* Main image */}
+      {isInView && (
+        <img
+          src={src}
+          alt={alt}
+          sizes={sizes}
+          loading={priority ? "eager" : "lazy"}
+          className={cn(
+            "transition-opacity duration-300",
+            isLoaded ? "opacity-100" : "opacity-0"
+          )}
+          {...handlers}
+        />
+      )}
+      
+      {/* Error state */}
+      {hasError && (
+        <div className="flex items-center justify-center h-full bg-gray-100">
+          <span className="text-gray-500">Image unavailable</span>
+        </div>
+      )}
+    </div>
+  );
+}
 ```
 
-#### Responsive Component Design
+## State Management
+
+### React Hooks & Context API
+
+The application uses React's built-in state management without external libraries.
+
+#### Theme Management (Safe localStorage Usage)
+The only use of localStorage is for theme persistence, handled safely with SSR compatibility:
+
 ```javascript
-// Mobile-first responsive components
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-  <div className="p-4 md:p-6 lg:p-8">
-    <h3 className="text-lg md:text-xl lg:text-2xl font-semibold">
-      {dog.name}
-    </h3>
-  </div>
-</div>
+// src/components/providers/ThemeProvider.jsx
+'use client';
+
+export function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState('light');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    // Safe localStorage access after mount
+    const savedTheme = localStorage.getItem('theme');
+    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches 
+      ? 'dark' 
+      : 'light';
+    const initialTheme = savedTheme || systemTheme;
+    setTheme(initialTheme);
+    document.documentElement.classList.toggle('dark', initialTheme === 'dark');
+  }, []);
+
+  // Prevent hydration mismatch
+  if (!mounted) return null;
+
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+```
+
+#### Application State Management
+All application state is managed through React hooks and props - no localStorage/sessionStorage:
+
+```javascript
+// Filter state managed in memory
+export function DogsPageClient() {
+  const [filters, setFilters] = useState({
+    breed: '',
+    age: '',
+    size: '',
+    location: ''
+  });
+  const [dogs, setDogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // URL parameters for shareable filters
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  
+  // Sync filters with URL
+  useEffect(() => {
+    const urlFilters = {
+      breed: searchParams.get('breed') || '',
+      age: searchParams.get('age') || '',
+      size: searchParams.get('size') || '',
+      location: searchParams.get('location') || ''
+    };
+    setFilters(urlFilters);
+  }, [searchParams]);
+  
+  // Update URL when filters change
+  const updateFilters = (newFilters) => {
+    setFilters(newFilters);
+    const params = new URLSearchParams();
+    Object.entries(newFilters).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+    });
+    router.push(`/dogs?${params.toString()}`);
+  };
+  
+  return (
+    <DogFilters filters={filters} onFiltersChange={updateFilters}>
+      <DogsGrid dogs={dogs} loading={loading} />
+    </DogFilters>
+  );
+}
+```
+
+## Routing & Navigation
+
+### Slug-based Dynamic Routing
+
+The application uses SEO-friendly slug-based routing for both dogs and organizations:
+
+```
+/dogs/bella-labrador-mix-turkey         # Individual dog page
+/organizations/pets-in-turkey            # Organization page
+```
+
+#### Static Generation with ISR
+```javascript
+// src/app/dogs/[slug]/page.jsx
+export const revalidate = 3600; // Revalidate every hour
+
+export async function generateStaticParams() {
+  // Pre-generate popular dog pages at build time
+  const dogs = await getAllAnimals();
+  return dogs
+    .slice(0, 50)
+    .map(dog => ({ slug: dog.slug }));
+}
+```
+
+#### Organization Routing
+```javascript
+// src/app/organizations/[slug]/page.jsx
+export async function generateStaticParams() {
+  const orgs = await getOrganizations();
+  return orgs.map(org => ({ slug: org.slug }));
+}
+
+export default async function OrganizationPage({ params }) {
+  const { slug } = await params;
+  const org = await getOrganizationBySlug(slug);
+  const dogs = await getDogsByOrganization(org.id);
+  
+  return <OrganizationDetailClient organization={org} dogs={dogs} />;
+}
+```
+
+### Navigation Components
+
+#### Responsive Header with Navigation
+```javascript
+// src/components/layout/Header.jsx
+export default function Header() {
+  const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  const navigation = [
+    { name: 'Home', href: '/' },
+    { name: 'Find Dogs', href: '/dogs' },
+    { name: 'Organizations', href: '/organizations' },
+    { name: 'About', href: '/about' }
+  ];
+  
+  return (
+    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Desktop navigation */}
+        <div className="hidden md:flex items-center justify-between h-16">
+          <Link href="/" className="font-bold text-xl">
+            Rescue Dogs
+          </Link>
+          
+          <div className="flex items-center gap-8">
+            {navigation.map(item => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "transition-colors",
+                  pathname === item.href 
+                    ? "text-primary" 
+                    : "text-muted-foreground hover:text-primary"
+                )}
+              >
+                {item.name}
+              </Link>
+            ))}
+            <ThemeToggle />
+          </div>
+        </div>
+        
+        {/* Mobile navigation */}
+        <MobileNav 
+          navigation={navigation}
+          isOpen={mobileMenuOpen}
+          onToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+        />
+      </nav>
+    </header>
+  );
+}
+```
+
+## Performance Optimization
+
+### Image Optimization with Cloudflare Images
+
+The application uses Cloudflare R2 and Cloudflare Images for optimized image delivery:
+
+```javascript
+// src/utils/imageUtils.js
+const R2_CUSTOM_DOMAIN = 'images.rescuedogs.me';
+
+export function getOptimizedImage(url, preset = 'catalog', options = {}) {
+  if (!url || !isR2Url(url)) return url;
+  
+  const presets = {
+    catalog: { width: 400, height: 300, fit: 'cover', quality: 'auto' },
+    hero: { width: 800, height: 600, fit: 'contain', quality: 'auto' },
+    thumbnail: { width: 200, height: 200, fit: 'cover', quality: 60 },
+    mobile: { width: 320, height: 240, fit: 'cover', quality: 70 }
+  };
+  
+  const config = { ...presets[preset], ...options };
+  
+  // Network-aware quality adjustment
+  if (navigator.connection?.effectiveType === '2g') {
+    config.quality = Math.min(config.quality, 60);
+  }
+  
+  const params = `w=${config.width},h=${config.height},fit=${config.fit},quality=${config.quality}`;
+  const imagePath = url.replace(`https://${R2_CUSTOM_DOMAIN}/`, '');
+  
+  return `https://${R2_CUSTOM_DOMAIN}/cdn-cgi/image/${params}/${imagePath}`;
+}
+```
+
+### Component-level Optimizations
+
+#### React.memo for Expensive Components
+```javascript
+const DogCard = memo(function DogCard({ dog, onClick }) {
+  return (
+    <Card 
+      className="cursor-pointer hover:shadow-lg transition-shadow"
+      onClick={() => onClick(dog.slug)}
+    >
+      <LazyImage 
+        src={getOptimizedImage(dog.primary_image_url, 'catalog')}
+        alt={`Photo of ${dog.name}`}
+        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+      />
+      <CardContent>
+        <h3 className="font-semibold text-lg">{dog.name}</h3>
+        <p className="text-muted-foreground">{dog.breed}</p>
+        <Badge>{dog.age_text}</Badge>
+      </CardContent>
+    </Card>
+  );
+}, (prevProps, nextProps) => {
+  return prevProps.dog.id === nextProps.dog.id;
+});
+```
+
+#### Virtual Scrolling for Large Lists
+```javascript
+// Using intersection observer for infinite scroll
+export function DogsGrid({ initialDogs }) {
+  const [dogs, setDogs] = useState(initialDogs);
+  const [page, setPage] = useState(1);
+  const loadMoreRef = useRef(null);
+  
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          loadMoreDogs();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+    
+    return () => observer.disconnect();
+  }, [page]);
+  
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {dogs.map(dog => (
+        <DogCard key={dog.id} dog={dog} />
+      ))}
+      <div ref={loadMoreRef} className="h-10" />
+    </div>
+  );
+}
 ```
 
 ## Security Implementation
 
 ### XSS Prevention
 
-**Comprehensive content sanitization** protects against cross-site scripting attacks.
-
-**Key File**: `src/utils/security.js`
+All user-generated content is sanitized before rendering:
 
 ```javascript
+// src/utils/security.js
 import DOMPurify from 'dompurify';
 
 export function sanitizeText(text) {
   if (!text || typeof text !== 'string') return '';
-  
-  // Remove HTML tags and dangerous content
   return DOMPurify.sanitize(text, { 
     ALLOWED_TAGS: [],
     ALLOWED_ATTR: [] 
@@ -328,14 +717,13 @@ export function sanitizeText(text) {
 
 export function sanitizeHtml(html) {
   if (!html || typeof html !== 'string') return '';
-  
-  // Allow safe HTML tags only
   return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h1', 'h2', 'h3'],
-    ALLOWED_ATTR: ['href', 'target', 'rel']
+    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li'],
+    ALLOWED_ATTR: []
   });
 }
 
+// URL validation for external links
 export function isValidUrl(url) {
   try {
     const urlObj = new URL(url);
@@ -344,48 +732,13 @@ export function isValidUrl(url) {
     return false;
   }
 }
-
-export function sanitizeClassName(className) {
-  if (!className || typeof className !== 'string') return '';
-  
-  // Only allow alphanumeric, hyphens, underscores, and spaces
-  return className.replace(/[^a-zA-Z0-9\-_\s]/g, '');
-}
-```
-
-**Usage Pattern**:
-```javascript
-import { sanitizeText, sanitizeHtml } from '@/utils/security';
-
-// Sanitize all user-generated content
-const safeName = sanitizeText(dog.name);
-const safeDescription = sanitizeHtml(dog.description);
-const safeBreed = sanitizeText(dog.breed);
 ```
 
 ### Content Security Policy
 
-**Next.js configuration** for secure resource loading:
 ```javascript
 // next.config.js
-const nextConfig = {
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'images.rescuedogs.me',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https', 
-        hostname: 'flagcdn.com',
-        port: '',
-        pathname: '/**',
-      }
-    ],
-  },
-  // Additional security headers
+module.exports = {
   async headers() {
     return [
       {
@@ -403,652 +756,117 @@ const nextConfig = {
             key: 'X-XSS-Protection',
             value: '1; mode=block',
           },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
         ],
       },
     ];
   },
-};
-```
-
-### Development Security
-
-- **No console statements in production** - All logging uses development-only logger
-- **Secure external resource handling** - URL validation for all external links
-- **Environment-based configurations** - Different security levels for dev/prod
-- **Input validation** - All user inputs sanitized before processing
-
-## Performance Optimization
-
-### Image Optimization
-
-**Cloudflare R2 + Images Integration** with advanced security and performance:
-
-```javascript
-// src/utils/imageUtils.js - Updated for Cloudflare Images v2.0
-export function createTransformationParams(preset = 'catalog', options = {}, isSlowConnection = false) {
-  const presets = {
-    catalog: { width: 400, height: 300, fit: 'cover', quality: 'auto' },
-    hero: { width: 800, height: 600, fit: 'contain', quality: 'auto' },
-    thumbnail: { width: 200, height: 200, fit: 'cover', quality: 60 },
-    mobile: { width: 320, height: 240, fit: 'cover', quality: 70 }
-  };
-  
-  const config = presets[preset] || presets.catalog;
-  const finalConfig = { ...config, ...options };
-  
-  // Network-aware quality adjustment
-  if (isSlowConnection && finalConfig.quality === 'auto') {
-    finalConfig.quality = 60;
-  }
-  
-  return `w=${finalConfig.width},h=${finalConfig.height},fit=${finalConfig.fit},quality=${finalConfig.quality}`;
-}
-
-export function buildSecureCloudflareUrl(imageUrl, params) {
-  if (!imageUrl || !isR2Url(imageUrl)) {
-    return imageUrl;
-  }
-  
-  // Comprehensive security validation
-  if (!validateImageUrl(imageUrl)) {
-    throw new Error('Invalid image path - security validation failed');
-  }
-  
-  // Parameter sanitization for injection prevention
-  if (params) {
-    const allowedParams = /^[wh]=\d+|fit=(cover|contain|crop|scale-down|fill|pad)|quality=(auto|\d+)$/;
-    const paramsList = params.split(',');
-    
-    for (const param of paramsList) {
-      if (!allowedParams.test(param.trim())) {
-        throw new Error('Invalid transformation parameters');
-      }
-    }
-  }
-  
-  if (!params) return imageUrl;
-  
-  const imagePath = imageUrl.replace(`https://${R2_CUSTOM_DOMAIN}/`, '');
-  return `https://${R2_CUSTOM_DOMAIN}/cdn-cgi/image/${params}/${imagePath}`;
-}
-
-export function getOptimizedImage(url, preset = 'catalog', options = {}, isSlowConnection = false) {
-  if (!url) return '/placeholder_dog.svg';
-  if (!isR2Url(url)) return url;
-  
-  // Memoization for performance
-  const cacheKey = `${url}:${preset}:${JSON.stringify(options)}:${isSlowConnection}`;
-  if (imageUrlCache.has(cacheKey)) {
-    return imageUrlCache.get(cacheKey);
-  }
-  
-  try {
-    const params = createTransformationParams(preset, options, isSlowConnection);
-    const result = buildSecureCloudflareUrl(url, params);
-    
-    // Cache with size management
-    imageUrlCache.set(cacheKey, result);
-    if (imageUrlCache.size > 1000) {
-      const firstKey = imageUrlCache.keys().next().value;
-      imageUrlCache.delete(firstKey);
-    }
-    
-    return result;
-  } catch (error) {
-    logger.warn('Failed to create optimized image URL', { url, error: error.message });
-    return url;
-  }
-}
-```
-
-**Security Features**:
-- **Path traversal prevention** - Validates URLs before processing
-- **Parameter injection protection** - Sanitizes transformation parameters
-- **R2 domain validation** - Only processes trusted domain images
-- **Error boundary fallbacks** - Graceful handling of transformation failures
-
-**LazyImage Component** with IntersectionObserver:
-
-```javascript
-// src/components/ui/LazyImage.jsx
-import { useState, useRef, useEffect } from 'react';
-
-export default function LazyImage({ src, alt, className, ...props }) {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
-  const [hasError, setHasError] = useState(false);
-  const imgRef = useRef(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsInView(true);
-          observer.disconnect();
-        }
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.rescuedogs.me',
       },
-      { threshold: 0.1, rootMargin: '50px' }
-    );
-
-    if (imgRef.current) {
-      observer.observe(imgRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div ref={imgRef} className={className}>
-      {isInView && (
-        <img
-          src={src}
-          alt={alt}
-          onLoad={() => setIsLoaded(true)}
-          onError={() => setHasError(true)}
-          className={`transition-opacity duration-300 ${
-            isLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-          {...props}
-        />
-      )}
-      {hasError && (
-        <div className="bg-gray-100 flex items-center justify-center">
-          <span className="text-gray-500">Image unavailable</span>
-        </div>
-      )}
-    </div>
-  );
-}
-```
-
-### Component Optimization
-
-**Strategic React.memo** for expensive components:
-
-```javascript
-import React, { memo } from 'react';
-
-const DogCard = memo(function DogCard({ dog, onClick }) {
-  return (
-    <div onClick={() => onClick(dog.id)} className="dog-card">
-      <LazyImage src={dog.primary_image_url} alt={dog.name} />
-      <h3>{dog.name}</h3>
-      <p>{dog.age_text}</p>
-    </div>
-  );
-});
-
-// Only re-render when dog data changes
-export default DogCard;
-```
-
-**Custom hooks** for performance optimization:
-
-```javascript
-// src/hooks/useFilteredDogs.js
-import { useMemo } from 'react';
-
-export function useFilteredDogs(dogs, filters) {
-  return useMemo(() => {
-    if (!dogs || !filters) return dogs;
-    
-    return dogs.filter(dog => {
-      if (filters.breed && !dog.breed.includes(filters.breed)) return false;
-      if (filters.age && !matchesAgeRange(dog.age, filters.age)) return false;
-      if (filters.size && dog.size !== filters.size) return false;
-      return true;
-    });
-  }, [dogs, filters]);
-}
-```
-
-### Bundle Optimization
-
-**Code splitting** and lazy loading:
-
-```javascript
-// Dynamic imports for heavy components
-const HeavyComponent = dynamic(() => import('./HeavyComponent'), {
-  loading: () => <LoadingSkeleton />,
-  ssr: false
-});
-
-// Route-based code splitting (automatic with App Router)
-export default function DogsPage() {
-  return <DogsPageClient />;
-}
-```
-
-**Tree shaking** configuration:
-```javascript
-// package.json
-{
-  "sideEffects": false,
-  "exports": {
-    ".": {
-      "import": "./dist/index.esm.js",
-      "require": "./dist/index.cjs.js"
-    }
-  }
-}
+      {
+        protocol: 'https',
+        hostname: 'flagcdn.com',
+      },
+    ],
+  },
+};
 ```
 
 ## Accessibility Features
 
-### ARIA Compliance
+### WCAG 2.1 AA Compliance
 
-**Comprehensive accessibility implementation** ensures the application works for all users.
+The application implements comprehensive accessibility features:
 
-**Key Features**:
-- **Semantic HTML structure** with proper landmark roles
-- **ARIA labels** for all interactive elements
-- **Screen reader optimization** with descriptive content
-- **Keyboard navigation** support
-- **Focus management** and visual indicators
-
-**Implementation Example**:
+#### Semantic HTML & ARIA
 ```javascript
 <main role="main" aria-label="Dog listings">
   <section aria-label="Search and filters">
     <input
       type="search"
-      aria-label="Search for dogs by name, breed, or location"
+      aria-label="Search for dogs"
       aria-describedby="search-help"
-      onKeyDown={handleKeyDown}
+      aria-invalid={errors.search ? "true" : "false"}
+      aria-errormessage="search-error"
     />
-    <div id="search-help" className="sr-only">
-      Enter keywords to find available rescue dogs
-    </div>
+    <span id="search-help" className="sr-only">
+      Enter keywords to find rescue dogs
+    </span>
   </section>
-
-  <section aria-label="Dog results" aria-live="polite">
+  
+  <section 
+    aria-label="Search results"
+    aria-live="polite"
+    aria-busy={loading}
+  >
+    <h2 className="sr-only">Available dogs</h2>
     {dogs.map(dog => (
-      <article 
-        key={dog.id} 
-        aria-label={`${dog.name}, ${dog.age_text} old`}
-        tabIndex={0}
-        onKeyDown={handleCardKeyDown}
+      <article
+        key={dog.id}
+        aria-label={`${dog.name}, ${dog.breed}`}
       >
-        <img 
-          src={dog.image} 
-          alt={`Photo of ${dog.name}, a ${dog.breed} available for adoption`}
-        />
-        <h3>{dog.name}</h3>
-        <button 
-          aria-label={`View details for ${dog.name}`}
-          onClick={() => viewDog(dog.id)}
-        >
-          Learn More
-        </button>
+        {/* Dog card content */}
       </article>
     ))}
   </section>
 </main>
 ```
 
-### Keyboard Navigation
-
-**Full keyboard accessibility** with logical tab order:
-
+#### Keyboard Navigation
 ```javascript
-// Focus management utilities
-export function trapFocus(element) {
-  const focusableElements = element.querySelectorAll(
-    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-  );
-  
-  const firstElement = focusableElements[0];
-  const lastElement = focusableElements[focusableElements.length - 1];
-  
-  element.addEventListener('keydown', (e) => {
-    if (e.key === 'Tab') {
-      if (e.shiftKey) {
-        if (document.activeElement === firstElement) {
-          lastElement.focus();
-          e.preventDefault();
-        }
-      } else {
-        if (document.activeElement === lastElement) {
-          firstElement.focus();
-          e.preventDefault();
-        }
-      }
+// Focus management and keyboard interactions
+export function DogCard({ dog, onSelect }) {
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onSelect(dog);
     }
-  });
-}
-
-// Keyboard event handlers
-function handleKeyPress(event) {
-  if (event.key === 'Enter' || event.key === ' ') {
-    event.preventDefault();
-    handleAction();
-  }
-}
-```
-
-**CSS Focus Indicators**:
-```css
-/* High-contrast focus indicators */
-.focus-visible:focus {
-  @apply outline-2 outline-blue-500 outline-offset-2;
-}
-
-/* Skip links for keyboard users */
-.skip-link {
-  @apply absolute left-0 top-0 -translate-y-full z-50;
-  @apply focus:translate-y-0;
-  @apply bg-blue-600 text-white p-2 rounded;
-}
-```
-
-### Screen Reader Support
-
-**Optimized content** for assistive technologies:
-
-```javascript
-// Screen reader announcements
-export function announceToScreenReader(message) {
-  const announcement = document.createElement('div');
-  announcement.setAttribute('aria-live', 'polite');
-  announcement.setAttribute('aria-atomic', 'true');
-  announcement.className = 'sr-only';
-  announcement.textContent = message;
-  
-  document.body.appendChild(announcement);
-  
-  setTimeout(() => {
-    document.body.removeChild(announcement);
-  }, 1000);
-}
-
-// Usage in components
-const handleFilterChange = (newFilters) => {
-  setFilters(newFilters);
-  announceToScreenReader(`Filters updated. Showing ${filteredDogs.length} dogs.`);
-};
-```
-
-## State Management
-
-### Hook-based State Management
-
-**React hooks** for component-level state management:
-
-```javascript
-// Complex state with useReducer
-const initialState = {
-  dogs: [],
-  filters: {},
-  loading: false,
-  error: null,
-  pagination: { page: 1, limit: 20 }
-};
-
-function dogsReducer(state, action) {
-  switch (action.type) {
-    case 'FETCH_START':
-      return { ...state, loading: true, error: null };
-    case 'FETCH_SUCCESS':
-      return { 
-        ...state, 
-        loading: false, 
-        dogs: action.payload,
-        pagination: { ...state.pagination, ...action.pagination }
-      };
-    case 'FETCH_ERROR':
-      return { ...state, loading: false, error: action.payload };
-    case 'UPDATE_FILTERS':
-      return { ...state, filters: { ...state.filters, ...action.payload } };
-    default:
-      return state;
-  }
-}
-
-export function useDogs() {
-  const [state, dispatch] = useReducer(dogsReducer, initialState);
-  
-  const fetchDogs = useCallback(async (filters) => {
-    dispatch({ type: 'FETCH_START' });
-    try {
-      const response = await getAnimals(filters);
-      dispatch({ type: 'FETCH_SUCCESS', payload: response.dogs });
-    } catch (error) {
-      dispatch({ type: 'FETCH_ERROR', payload: error.message });
-    }
-  }, []);
-  
-  return { ...state, fetchDogs };
-}
-```
-
-### Context for Global State
-
-**Theme and global state management**:
-
-```javascript
-// src/components/providers/ThemeProvider.jsx
-import { createContext, useContext, useEffect, useState } from 'react';
-
-const ThemeContext = createContext();
-
-export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState('light');
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      setTheme(savedTheme);
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setTheme('dark');
-    }
-  }, []);
-
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem('theme', theme);
-      document.documentElement.classList.toggle('dark', theme === 'dark');
-    }
-  }, [theme, mounted]);
-
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
-
+  
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, mounted }}>
-      {children}
-    </ThemeContext.Provider>
+    <div
+      role="button"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      onClick={() => onSelect(dog)}
+      className="focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+    >
+      {/* Card content */}
+    </div>
   );
 }
-
-export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within ThemeProvider');
-  }
-  return context;
-}
 ```
 
-### Local Storage Management
-
-**Safe localStorage** with SSR compatibility:
-
+#### Skip Links
 ```javascript
-// src/utils/storage.js
-export class SafeStorage {
-  static isAvailable() {
-    try {
-      return typeof window !== 'undefined' && 'localStorage' in window;
-    } catch {
-      return false;
-    }
-  }
-
-  static getItem(key, defaultValue = null) {
-    if (!this.isAvailable()) return defaultValue;
-    
-    try {
-      const item = localStorage.getItem(key);
-      return item ? JSON.parse(item) : defaultValue;
-    } catch {
-      return defaultValue;
-    }
-  }
-
-  static setItem(key, value) {
-    if (!this.isAvailable()) return false;
-    
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  static removeItem(key) {
-    if (!this.isAvailable()) return false;
-    
-    try {
-      localStorage.removeItem(key);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-}
-```
-
-## Routing & Navigation
-
-### App Router Structure
-
-**Next.js 15 App Router** with nested layouts:
-
-```
-src/app/
-├── layout.js                 # Root layout
-├── page.jsx                  # Homepage
-├── dogs/
-│   ├── layout.js            # Dogs section layout
-│   ├── page.jsx             # Dogs listing page
-│   └── [id]/
-│       ├── page.jsx         # Individual dog page
-│       └── loading.jsx      # Loading UI
-├── organizations/
-│   ├── page.jsx             # Organizations listing
-│   └── [id]/
-│       └── page.jsx         # Organization detail
-└── about/
-    └── page.jsx             # About page
-```
-
-**Dynamic routing** with type-safe parameters:
-
-```javascript
-// src/app/dogs/[id]/page.jsx
-import { notFound } from 'next/navigation';
-
-export async function generateStaticParams() {
-  const dogs = await getPopularDogs();
-  return dogs.map(dog => ({ id: dog.id.toString() }));
-}
-
-export default async function DogPage({ params }) {
-  const dog = await getDogById(params.id);
-  
-  if (!dog) {
-    notFound();
-  }
-  
-  return <DogDetailClient dog={dog} />;
-}
-```
-
-### Navigation Components
-
-**Responsive navigation** with mobile support:
-
-```javascript
-// src/components/layout/Header.jsx
-import { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-
-export default function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const pathname = usePathname();
-
-  const navigation = [
-    { name: 'Home', href: '/' },
-    { name: 'Find Dogs', href: '/dogs' },
-    { name: 'Organizations', href: '/organizations' },
-    { name: 'About', href: '/about' },
-  ];
-
+// src/app/layout.js
+export default function RootLayout({ children }) {
   return (
-    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <Link href="/" className="text-xl font-bold text-primary">
-            Rescue Dogs
-          </Link>
-          
-          <div className="hidden md:flex space-x-8">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`text-sm font-medium transition-colors ${
-                  pathname === item.href
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:text-primary'
-                }`}
-              >
-                {item.name}
-              </Link>
-            ))}
-          </div>
-          
-          <ThemeToggle />
-        </div>
-      </nav>
-    </header>
+    <html lang="en" suppressHydrationWarning>
+      <body>
+        <a 
+          href="#main-content" 
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary text-primary-foreground px-4 py-2 rounded"
+        >
+          Skip to main content
+        </a>
+        <ThemeProvider>
+          <Header />
+          <main id="main-content">
+            {children}
+          </main>
+          <Footer />
+        </ThemeProvider>
+      </body>
+    </html>
   );
-}
-```
-
-### Programmatic Navigation
-
-**Type-safe navigation** with Next.js hooks:
-
-```javascript
-import { useRouter, useSearchParams } from 'next/navigation';
-
-export function useNavigationHelpers() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const navigateToDog = (dogId) => {
-    router.push(`/dogs/${dogId}`);
-  };
-
-  const updateSearchParams = (params) => {
-    const current = new URLSearchParams(searchParams);
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) {
-        current.set(key, value);
-      } else {
-        current.delete(key);
-      }
-    });
-    router.push(`${pathname}?${current.toString()}`);
-  };
-
-  return { navigateToDog, updateSearchParams };
 }
 ```
 
@@ -1056,907 +874,216 @@ export function useNavigationHelpers() {
 
 ### Comprehensive Test Suite
 
-**Test Coverage**: 2,427 total tests (2,419 passing, 8 skipped)
+**Current Coverage**: 2,598 tests across 201 test suites
+- Unit Tests: Component logic and utilities
+- Integration Tests: User workflows and API interactions
+- E2E Tests: Critical user journeys
+- Accessibility Tests: WCAG compliance
+- Performance Tests: Bundle size and render performance
+- Visual Regression: Dark mode and responsive design
 
-**Test Structure**:
+#### Test Organization
 ```
 src/__tests__/
-├── accessibility/           # ARIA compliance, keyboard navigation
-├── build/                  # Production build validation
+├── accessibility/           # WCAG compliance, keyboard nav, screen readers
+├── bug-fixes/              # Regression tests for fixed bugs
+├── critical/               # Critical functionality tests
 ├── cross-browser/          # Browser compatibility
-├── dark-mode/             # Dark mode functionality
-├── error-handling/        # Error boundary testing
-├── integration/           # Full workflow testing
-├── performance/           # Optimization verification
-├── security/              # XSS prevention, sanitization
-├── seo/                   # Metadata validation
-└── responsive/            # Mobile responsiveness
+├── cta/                    # Call-to-action optimization
+├── dark-mode/              # Dark mode visual consistency
+├── e2e/                    # End-to-end user journeys
+├── error-handling/         # Error boundaries and fallbacks
+├── integration/            # API and service integration
+├── mobile/                 # Mobile-specific functionality
+├── performance/            # Performance benchmarks
+├── regression/             # Regression prevention
+├── responsive/             # Responsive design breakpoints
+├── routing/                # Navigation and routing
+├── security/               # XSS prevention, sanitization
+├── seo/                    # Metadata and structured data
+└── visual-consistency/     # Theme and styling consistency
 ```
 
-### Test Categories
+#### Example Test Patterns
 
-#### Component Tests
+**Component Testing**
 ```javascript
 // src/components/dogs/__tests__/DogCard.test.jsx
 import { render, screen, fireEvent } from '@testing-library/react';
 import DogCard from '../DogCard';
 
-describe('DogCard Component', () => {
+describe('DogCard', () => {
   const mockDog = {
     id: 1,
-    name: 'Buddy',
-    breed: 'Golden Retriever',
+    slug: 'bella-labrador-mix',
+    name: 'Bella',
+    breed: 'Labrador Mix',
     age_text: '3 years',
-    primary_image_url: 'https://example.com/image.jpg'
+    primary_image_url: 'https://images.rescuedogs.me/bella.jpg'
   };
 
   it('renders dog information correctly', () => {
     render(<DogCard dog={mockDog} />);
     
-    expect(screen.getByText('Buddy')).toBeInTheDocument();
-    expect(screen.getByText('Golden Retriever')).toBeInTheDocument();
+    expect(screen.getByText('Bella')).toBeInTheDocument();
+    expect(screen.getByText('Labrador Mix')).toBeInTheDocument();
     expect(screen.getByText('3 years')).toBeInTheDocument();
   });
 
-  it('handles image loading states', () => {
+  it('handles keyboard navigation', () => {
+    const onSelect = jest.fn();
+    render(<DogCard dog={mockDog} onSelect={onSelect} />);
+    
+    const card = screen.getByRole('button');
+    fireEvent.keyDown(card, { key: 'Enter' });
+    
+    expect(onSelect).toHaveBeenCalledWith(mockDog);
+  });
+
+  it('applies hover effects on mouse interaction', () => {
     render(<DogCard dog={mockDog} />);
     
-    const image = screen.getByAltText('Photo of Buddy');
-    expect(image).toHaveAttribute('src', mockDog.primary_image_url);
-  });
-
-  it('supports keyboard navigation', () => {
-    const onClick = jest.fn();
-    render(<DogCard dog={mockDog} onClick={onClick} />);
+    const card = screen.getByRole('button');
+    fireEvent.mouseEnter(card);
     
-    const card = screen.getByRole('article');
-    fireEvent.keyDown(card, { key: 'Enter' });
-    expect(onClick).toHaveBeenCalledWith(mockDog.id);
+    expect(card).toHaveClass('hover:shadow-lg');
   });
 });
 ```
 
-#### Integration Tests
+**Accessibility Testing**
 ```javascript
-// src/__tests__/integration/dog-search-flow.test.js
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import DogsPage from '../../app/dogs/page';
-
-describe('Dog Search Flow', () => {
-  it('completes full search and filter workflow', async () => {
-    const user = userEvent.setup();
-    render(<DogsPage />);
-    
-    // Search for dogs
-    const searchInput = screen.getByLabelText(/search for dogs/i);
-    await user.type(searchInput, 'Golden Retriever');
-    
-    // Apply filters
-    const breedFilter = screen.getByLabelText(/breed/i);
-    await user.selectOptions(breedFilter, 'Golden Retriever');
-    
-    // Wait for results
-    await waitFor(() => {
-      expect(screen.getByText(/golden retriever/i)).toBeInTheDocument();
-    });
-    
-    // Click on a dog card
-    const dogCard = screen.getByRole('article');
-    await user.click(dogCard);
-    
-    // Verify navigation
-    await waitFor(() => {
-      expect(window.location.pathname).toMatch(/\/dogs\/\d+/);
-    });
-  });
-});
-```
-
-#### Accessibility Tests
-```javascript
-// src/__tests__/accessibility/a11y.test.jsx
+// src/__tests__/accessibility/wcag-compliance.test.js
 import { render } from '@testing-library/react';
 import { axe, toHaveNoViolations } from 'jest-axe';
-import DogsPage from '../../app/dogs/page';
+import DogsPage from '@/app/dogs/page';
 
 expect.extend(toHaveNoViolations);
 
-describe('Accessibility', () => {
-  it('has no accessibility violations', async () => {
+describe('WCAG Compliance', () => {
+  it('has no accessibility violations on dogs page', async () => {
     const { container } = render(<DogsPage />);
     const results = await axe(container);
     expect(results).toHaveNoViolations();
   });
 
-  it('supports keyboard navigation', () => {
+  it('maintains proper heading hierarchy', () => {
     render(<DogsPage />);
     
-    // Test tab navigation
-    const firstButton = screen.getByRole('button', { name: /search/i });
-    firstButton.focus();
+    const headings = screen.getAllByRole('heading');
+    const levels = headings.map(h => parseInt(h.tagName[1]));
     
-    fireEvent.keyDown(firstButton, { key: 'Tab' });
-    expect(document.activeElement).not.toBe(firstButton);
+    // Ensure no skipped heading levels
+    for (let i = 1; i < levels.length; i++) {
+      expect(levels[i] - levels[i-1]).toBeLessThanOrEqual(1);
+    }
   });
 });
 ```
 
-#### Performance Tests
+**Performance Testing**
 ```javascript
 // src/__tests__/performance/optimization.test.js
-import { render, screen } from '@testing-library/react';
-import { performance } from 'perf_hooks';
-import LazyImage from '../../components/ui/LazyImage';
-
 describe('Performance Optimization', () => {
   it('lazy loads images efficiently', () => {
-    const mockIntersectionObserver = jest.fn();
+    const mockObserver = jest.fn();
     global.IntersectionObserver = jest.fn(() => ({
-      observe: mockIntersectionObserver,
+      observe: mockObserver,
       disconnect: jest.fn()
     }));
-
+    
     render(<LazyImage src="test.jpg" alt="Test" />);
-    expect(mockIntersectionObserver).toHaveBeenCalled();
+    expect(mockObserver).toHaveBeenCalled();
   });
 
-  it('renders large dog lists without performance degradation', () => {
-    const start = performance.now();
+  it('renders large lists without performance degradation', () => {
     const largeDogList = Array(1000).fill(null).map((_, i) => ({
       id: i,
       name: `Dog ${i}`,
       breed: 'Mixed',
       age_text: '2 years'
     }));
-
-    render(<DogsGrid dogs={largeDogList} />);
     
+    const start = performance.now();
+    render(<DogsGrid dogs={largeDogList} />);
     const end = performance.now();
+    
     expect(end - start).toBeLessThan(100); // Should render in under 100ms
   });
 });
 ```
 
-### Test Configuration
-
-**Jest Configuration**:
-```javascript
-// jest.config.js
-module.exports = {
-  testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  moduleNameMapping: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-  },
-  collectCoverageFrom: [
-    'src/**/*.{js,jsx,ts,tsx}',
-    '!src/**/*.d.ts',
-    '!src/__tests__/**/*',
-  ],
-  coverageReporters: ['text', 'lcov', 'html'],
-  testMatch: [
-    '<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}',
-    '<rootDir>/src/**/*.{test,spec}.{js,jsx,ts,tsx}',
-  ],
-};
-```
-
-## Development Workflow
-
-### Code Quality Standards
-
-**Pre-commit workflow**:
-```bash
-# Frontend verification workflow
-npm test                 # Run all tests (2,427 tests)
-npm run build           # Verify production build
-npm run lint            # ESLint validation
-npm run type-check      # TypeScript validation
-```
-
-**ESLint Configuration**:
-```javascript
-// eslint.config.mjs
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals"),
-  {
-    rules: {
-      "no-unused-vars": "warn",
-      "no-console": "warn",
-      "react/prop-types": "off",
-      "react/react-in-jsx-scope": "off",
-    },
-  },
-];
-
-export default eslintConfig;
-```
-
-### Component Development Pattern
-
-**TDD Approach**:
-1. **Write tests first** - Define expected behavior
-2. **Implement component** - Meet test requirements
-3. **Add error handling** - Graceful failure modes
-4. **Optimize performance** - Memoization and lazy loading
-5. **Validate accessibility** - ARIA compliance and keyboard support
-
-**Example Development Flow**:
-```javascript
-// 1. Write test first
-describe('NewComponent', () => {
-  it('renders with required props', () => {
-    render(<NewComponent title="Test" />);
-    expect(screen.getByText('Test')).toBeInTheDocument();
-  });
-});
-
-// 2. Implement component
-export default function NewComponent({ title }) {
-  return <h1>{title}</h1>;
-}
-
-// 3. Add error handling
-export default function NewComponent({ title }) {
-  if (!title) return null;
-  return <h1>{sanitizeText(title)}</h1>;
-}
-
-// 4. Optimize performance
-const NewComponent = memo(function NewComponent({ title }) {
-  if (!title) return null;
-  return <h1>{sanitizeText(title)}</h1>;
-});
-
-// 5. Add accessibility
-export default function NewComponent({ title, level = 1 }) {
-  if (!title) return null;
-  
-  const Tag = `h${level}`;
-  return (
-    <Tag 
-      role="heading" 
-      aria-level={level}
-      className="focus:outline-2 focus:outline-blue-500"
-    >
-      {sanitizeText(title)}
-    </Tag>
-  );
-}
-```
-
-### File Organization
-
-**Project Structure**:
-```
-src/
-├── app/                    # Next.js App Router pages
-│   ├── layout.js          # Root layout
-│   ├── page.jsx           # Homepage
-│   ├── dogs/              # Dogs section
-│   │   ├── page.jsx       # Dogs listing
-│   │   └── [id]/          # Dynamic dog pages
-│   └── organizations/      # Organizations section
-├── components/            # Reusable UI components
-│   ├── dogs/             # Dog-specific components
-│   ├── error/            # Error boundaries
-│   ├── home/             # Homepage components
-│   ├── layout/           # Layout components
-│   ├── organizations/    # Organization components
-│   ├── providers/        # Context providers
-│   └── ui/               # Base UI components
-├── hooks/                # Custom React hooks
-├── services/             # API communication
-├── utils/                # Utility functions
-├── types/                # TypeScript definitions
-└── __tests__/            # Test suites
-```
-
-## Build & Deployment
-
-### Production Build
-
-**Next.js Build Configuration**:
-```javascript
-// next.config.js
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  output: 'standalone',
-  poweredByHeader: false,
-  generateEtags: false,
-  
-  images: {
-    formats: ['image/avif', 'image/webp'],
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-        port: '',
-        pathname: '/**',
-      },
-    ],
-  },
-  
-  experimental: {
-    optimizeCss: true,
-    optimizePackageImports: ['lucide-react', '@heroicons/react'],
-  },
-  
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
-  },
-};
-
-module.exports = nextConfig;
-```
-
-**Build Optimization**:
-```bash
-# Production build with optimization
-npm run build
-
-# Build output analysis
-npm run analyze
-
-# Static export (if needed)
-npm run export
-```
-
-### Environment Configuration
-
-**Environment Variables**:
-```bash
-# .env.local
-NEXT_PUBLIC_API_URL=https://api.rescuedogs.com
-NEXT_PUBLIC_R2_CUSTOM_DOMAIN=images.rescuedogs.me
-NEXT_PUBLIC_ENVIRONMENT=production
-
-# Build-time variables
-ANALYZE=true
-BUNDLE_ANALYZE=true
-```
-
-### Deployment Checklist
-
-**Pre-deployment Verification**:
-- [ ] All tests pass (1,897 tests)
-- [ ] Build succeeds without warnings
-- [ ] Bundle size analysis reviewed
-- [ ] Accessibility audit complete
-- [ ] Performance metrics validated
-- [ ] Security headers configured
-- [ ] SEO metadata verified
-
-## Error Handling
-
-### Error Boundary Implementation
-
-**Global Error Boundary**:
-```javascript
-// src/components/error/ErrorBoundary.jsx
-'use client';
-
-import React from 'react';
-import { Button } from '@/components/ui/button';
-
-export class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error, errorInfo) {
-    // Log error to monitoring service
-    console.error('Error boundary caught:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="error-boundary p-8 text-center">
-          <h2 className="text-2xl font-bold mb-4">Something went wrong</h2>
-          <p className="text-muted-foreground mb-6">
-            We're sorry, but something unexpected happened.
-          </p>
-          <Button 
-            onClick={() => this.setState({ hasError: false, error: null })}
-            className="mr-4"
-          >
-            Try Again
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={() => window.location.reload()}
-          >
-            Reload Page
-          </Button>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
-```
-
-**Component-specific Error Boundaries**:
-```javascript
-// src/components/error/DogCardErrorBoundary.jsx
-export function DogCardErrorBoundary({ children }) {
-  return (
-    <ErrorBoundary
-      fallback={({ error, retry }) => (
-        <div className="dog-card-error p-4 border border-red-200 rounded">
-          <p className="text-sm text-red-600 mb-2">
-            Unable to load dog information
-          </p>
-          <Button size="sm" onClick={retry}>
-            Retry
-          </Button>
-        </div>
-      )}
-    >
-      {children}
-    </ErrorBoundary>
-  );
-}
-```
-
-### API Error Handling
-
-**Service-level Error Handling**:
-```javascript
-// src/services/animalsService.js
-import { reportError } from '@/utils/logger';
-
-export async function getAnimals(filters = {}) {
-  try {
-    const response = await fetch('/api/animals', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(filters),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    reportError('Failed to fetch animals', {
-      error: error.message,
-      filters,
-      timestamp: new Date().toISOString(),
-    });
-    
-    throw new Error('Unable to load dogs. Please try again.');
-  }
-}
-```
-
-**Error State Management**:
-```javascript
-// Custom hook for error handling
-export function useErrorHandler() {
-  const [error, setError] = useState(null);
-  const [isRetrying, setIsRetrying] = useState(false);
-
-  const handleError = useCallback((error, context = {}) => {
-    setError({
-      message: error.message,
-      timestamp: new Date().toISOString(),
-      context,
-    });
-  }, []);
-
-  const retry = useCallback(async (retryFn) => {
-    setIsRetrying(true);
-    try {
-      await retryFn();
-      setError(null);
-    } catch (error) {
-      handleError(error, { retry: true });
-    } finally {
-      setIsRetrying(false);
-    }
-  }, [handleError]);
-
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
-
-  return { error, isRetrying, handleError, retry, clearError };
-}
-```
-
-## Performance Monitoring
-
-### Core Web Vitals
-
-**Performance Metrics Tracking**:
-```javascript
-// src/utils/performance.js
-export function trackWebVitals(metric) {
-  const { name, value, id } = metric;
-  
-  // Track Core Web Vitals
-  switch (name) {
-    case 'LCP': // Largest Contentful Paint
-      console.log('LCP:', value);
-      break;
-    case 'FID': // First Input Delay
-      console.log('FID:', value);
-      break;
-    case 'CLS': // Cumulative Layout Shift
-      console.log('CLS:', value);
-      break;
-    case 'TTFB': // Time to First Byte
-      console.log('TTFB:', value);
-      break;
-  }
-}
-
-// Usage in _app.js or layout.js
-export function reportWebVitals(metric) {
-  trackWebVitals(metric);
-}
-```
-
-**Performance Monitoring Component**:
-```javascript
-// src/components/PerformanceMonitor.jsx
-import { useEffect } from 'react';
-
-export function PerformanceMonitor() {
-  useEffect(() => {
-    // Monitor long tasks
-    if ('PerformanceObserver' in window) {
-      const observer = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-          if (entry.duration > 50) {
-            console.warn('Long task detected:', entry.duration);
-          }
-        }
-      });
-      
-      observer.observe({ entryTypes: ['longtask'] });
-      
-      return () => observer.disconnect();
-    }
-  }, []);
-
-  return null;
-}
-```
-
-### Bundle Analysis
-
-**Webpack Bundle Analyzer**:
-```bash
-# Analyze bundle size
-npm run analyze
-
-# Generate bundle report
-npm run build -- --analyze
-```
-
-**Performance Budget**:
-```javascript
-// next.config.js
-module.exports = {
-  experimental: {
-    bundlePagesRouterDependencies: true,
-  },
-  
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-      };
-    }
-    
-    return config;
-  },
-};
-```
-
-## Advanced Features
-
-### Animated Statistics (Hero Section)
-
-**HeroSection Component** with real-time data:
-```javascript
-// src/components/home/HeroSection.jsx
-export default function HeroSection() {
-  const [statistics, setStatistics] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Real-time statistics from API
-  const fetchStatistics = async () => {
-    try {
-      const stats = await getStatistics();
-      setStatistics(stats);
-    } catch (err) {
-      setError("Unable to load statistics");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <section className="hero-gradient relative overflow-hidden py-12 md:py-20">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex flex-col lg:flex-row items-center gap-12">
-          {/* Hero Content */}
-          <div className="flex-1 text-center lg:text-left">
-            <h1 className="text-hero font-bold text-foreground mb-6">
-              Helping rescue dogs find loving homes
-            </h1>
-            <p className="text-body text-muted-foreground mb-8">
-              Browse available dogs from trusted organizations across multiple countries.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/dogs">
-                <Button size="lg" className="bg-orange-600 hover:bg-orange-700">
-                  Find Your New Best Friend
-                </Button>
-              </Link>
-              <Button variant="outline" size="lg">
-                About Our Mission
-              </Button>
-            </div>
-          </div>
-
-          {/* Animated Statistics */}
-          <div className="flex-1 max-w-lg">
-            {statistics && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <StatCard
-                  value={statistics.total_dogs}
-                  label="Dogs need homes"
-                />
-                <StatCard
-                  value={statistics.total_organizations}
-                  label="Rescue organizations"
-                />
-                <StatCard
-                  value={statistics.countries.length}
-                  label="Countries"
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function StatCard({ value, label }) {
-  return (
-    <div className="bg-card/80 backdrop-blur-sm rounded-lg p-6 text-center">
-      <div className="text-3xl font-bold text-orange-600 mb-2">
-        <AnimatedCounter value={value} label={label} />
-      </div>
-      <div className="text-sm text-muted-foreground">{label}</div>
-    </div>
-  );
-}
-```
-
-**AnimatedCounter Component**:
-```javascript
-// src/components/ui/AnimatedCounter.jsx
-export default function AnimatedCounter({ value, duration = 2000, label }) {
-  const [displayValue, setDisplayValue] = useState(0);
-  const [hasAnimated, setHasAnimated] = useState(false);
-  const elementRef = useRef(null);
-
-  const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !hasAnimated) {
-          startAnimation();
-        }
-      },
-      { threshold: 0.1, rootMargin: '50px' }
-    );
-
-    if (elementRef.current) {
-      observer.observe(elementRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [hasAnimated]);
-
-  const startAnimation = () => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setDisplayValue(value);
-      return;
-    }
-
-    const startTime = Date.now();
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const easedProgress = easeOutCubic(progress);
-      
-      setDisplayValue(Math.round(value * easedProgress));
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        setHasAnimated(true);
-      }
-    };
-
-    requestAnimationFrame(animate);
-  };
-
-  return (
-    <span
-      ref={elementRef}
-      role="status"
-      aria-live="polite"
-      aria-label={`${label}: ${displayValue}`}
-    >
-      {displayValue.toLocaleString()}
-    </span>
-  );
-}
-```
-
-### Related Dogs Feature
-
-**RelatedDogsSection Component**:
-```javascript
-// src/components/dogs/RelatedDogsSection.jsx
-export default function RelatedDogsSection({ organizationId, currentDogId }) {
-  const [relatedDogs, setRelatedDogs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    const fetchRelatedDogs = async () => {
-      try {
-        const dogs = await getRelatedDogs(organizationId, currentDogId);
-        setRelatedDogs(dogs.slice(0, 3));
-      } catch (err) {
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (organizationId && currentDogId) {
-      fetchRelatedDogs();
-    }
-  }, [organizationId, currentDogId]);
-
-  if (loading) return <RelatedDogsLoadingSkeleton />;
-  if (error) return <RelatedDogsErrorState />;
-  if (!relatedDogs.length) return null;
-
-  return (
-    <section className="py-12">
-      <h2 className="text-2xl font-bold mb-6">
-        More dogs from this organization
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {relatedDogs.map(dog => (
-          <RelatedDogsCard key={dog.id} dog={dog} />
-        ))}
-      </div>
-    </section>
-  );
-}
-```
-
-### Theme System
-
-**Dark/Light Mode Implementation**:
-```javascript
-// src/components/providers/ThemeProvider.jsx
-export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState('light');
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    const saved = localStorage.getItem('theme');
-    if (saved) {
-      setTheme(saved);
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setTheme('dark');
-    }
-  }, []);
-
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem('theme', theme);
-      document.documentElement.classList.toggle('dark', theme === 'dark');
-    }
-  }, [theme, mounted]);
-
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
-  };
-
-  return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, mounted }}>
-      {children}
-    </ThemeContext.Provider>
-  );
-}
-```
-
 ## Mobile Experience
 
-### Responsive Design
+### Mobile-First Responsive Design
 
-**Mobile-first approach** with Tailwind CSS:
+The application is built with a mobile-first approach using Tailwind CSS:
+
+#### Responsive Breakpoints
 ```javascript
-// Mobile-optimized components
-<div className="p-4 md:p-6 lg:p-8">
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-    <div className="text-sm md:text-base lg:text-lg">
-      Content scales with viewport
-    </div>
-  </div>
-</div>
+// src/constants/breakpoints.ts
+export const BREAKPOINTS = {
+  sm: 640,   // Small devices
+  md: 768,   // Tablets
+  lg: 1024,  // Desktop
+  xl: 1280,  // Large desktop
+  '2xl': 1536 // Extra large
+};
 ```
 
-**Touch-friendly interactions**:
-```css
-/* Touch targets minimum 44px */
-.touch-target {
-  @apply min-h-[44px] min-w-[44px] touch-manipulation;
-}
+#### Mobile-Optimized Components
 
-/* Smooth scrolling on mobile */
-.mobile-scroll {
-  @apply overscroll-contain scroll-smooth;
-}
-```
-
-### Mobile Components
-
-**MobileStickyBar Component**:
+**Mobile Filter Drawer**
 ```javascript
-// src/components/ui/MobileStickyBar.jsx
-export default function MobileStickyBar({ dog }) {
-  const [isFavorited, setIsFavorited] = useState(false);
-
+// src/components/filters/MobileFilterDrawer.jsx
+export function MobileFilterDrawer({ filters, onFiltersChange, isOpen, onClose }) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 md:hidden">
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent side="bottom" className="h-[80vh] rounded-t-xl">
+        <SheetHeader>
+          <SheetTitle>Filter Dogs</SheetTitle>
+        </SheetHeader>
+        
+        <div className="overflow-y-auto py-4 space-y-6">
+          <FilterSection 
+            title="Breed"
+            value={filters.breed}
+            onChange={(value) => onFiltersChange({ ...filters, breed: value })}
+            options={breeds}
+          />
+          {/* More filter sections */}
+        </div>
+        
+        <div className="sticky bottom-0 bg-background p-4 border-t">
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Cancel
+            </Button>
+            <Button onClick={onClose} className="flex-1 bg-orange-600">
+              Apply Filters
+            </Button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+```
+
+**Mobile Sticky Bar**
+```javascript
+// src/components/ui/MobileStickyBar.tsx
+export function MobileStickyBar({ dog }) {
+  return (
+    <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 md:hidden z-40">
       <div className="flex gap-3 max-w-md mx-auto">
         <Button
           variant="outline"
           className="flex-1"
-          onClick={() => setIsFavorited(!isFavorited)}
+          onClick={() => handleFavorite(dog)}
         >
-          {isFavorited ? 'Favorited' : 'Favorite'}
+          <Heart className="w-4 h-4 mr-2" />
+          Save
         </Button>
         <Button
           className="flex-1 bg-orange-600 hover:bg-orange-700"
@@ -1970,35 +1097,25 @@ export default function MobileStickyBar({ dog }) {
 }
 ```
 
-**Mobile Filter Sheet**:
-```javascript
-// src/components/filters/MobileFilterBottomSheet.jsx
-export default function MobileFilterBottomSheet({ filters, onFiltersChange, onClose }) {
-  return (
-    <Sheet open={true} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>Filter Dogs</SheetTitle>
-        </SheetHeader>
-        
-        <div className="space-y-6 py-4">
-          <FilterSection title="Breed" filter="breed" />
-          <FilterSection title="Age" filter="age" />
-          <FilterSection title="Size" filter="size" />
-          <FilterSection title="Location" filter="location" />
-        </div>
-        
-        <div className="flex gap-3 pt-4">
-          <Button variant="outline" onClick={onClose} className="flex-1">
-            Cancel
-          </Button>
-          <Button onClick={onClose} className="flex-1">
-            Apply Filters
-          </Button>
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
+#### Touch-Optimized Interactions
+```css
+/* Touch target minimum 44px for accessibility */
+.touch-target {
+  @apply min-h-[44px] min-w-[44px] touch-manipulation;
+}
+
+/* Smooth scrolling with momentum */
+.mobile-scroll {
+  @apply overflow-y-auto overscroll-contain 
+         [-webkit-overflow-scrolling:touch]
+         [scroll-behavior:smooth];
+}
+
+/* Disable hover effects on touch devices */
+@media (hover: none) {
+  .hover\:shadow-lg:hover {
+    box-shadow: none;
+  }
 }
 ```
 
@@ -2006,84 +1123,591 @@ export default function MobileFilterBottomSheet({ filters, onFiltersChange, onCl
 
 ### Dynamic Metadata Generation
 
-**Page-level SEO**:
-```javascript
-// src/app/dogs/[id]/page.jsx
-export async function generateMetadata({ params }) {
-  const dog = await getDogById(params.id);
-  
-  if (!dog) {
-    return {
-      title: 'Dog Not Found',
-      description: 'The requested dog profile could not be found.',
-    };
-  }
+Each page generates optimized metadata for search engines and social sharing:
 
+```javascript
+// src/app/dogs/[slug]/page.jsx
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const dog = await getAnimalBySlug(slug);
+  
+  // Quality-focused description generation
+  const description = generateSEODescription(dog);
+  
   return {
     title: `${dog.name} - ${dog.breed} Available for Adoption`,
-    description: `Meet ${dog.name}, a ${dog.age_text} ${dog.breed} looking for a loving home. ${dog.description?.substring(0, 150)}...`,
-    keywords: `dog adoption, ${dog.breed}, rescue dog, ${dog.name}, pet adoption`,
+    description,
+    keywords: [
+      'dog adoption',
+      dog.breed,
+      'rescue dog',
+      dog.organization.city,
+      'pet adoption'
+    ].join(', '),
     
     openGraph: {
-      title: `${dog.name} - Rescue Dog Available for Adoption`,
-      description: `Meet ${dog.name}, a ${dog.age_text} ${dog.breed} looking for a loving home.`,
-      images: [
-        {
-          url: dog.primary_image_url,
-          width: 800,
-          height: 600,
-          alt: `Photo of ${dog.name}, a ${dog.breed} available for adoption`,
-        },
-      ],
+      title: `${dog.name} - Available for Adoption`,
+      description: truncateDescription(description, 300),
+      images: [{
+        url: dog.primary_image_url,
+        width: 1200,
+        height: 630,
+        alt: `Photo of ${dog.name}, a ${dog.breed}`
+      }],
       type: 'article',
-      siteName: 'Rescue Dog Aggregator',
+      article: {
+        publishedTime: dog.created_at,
+        section: 'Pet Adoption',
+        tags: ['rescue dogs', dog.breed, dog.organization.name]
+      }
     },
     
     twitter: {
       card: 'summary_large_image',
-      title: `${dog.name} - Rescue Dog Available for Adoption`,
-      description: `Meet ${dog.name}, a ${dog.age_text} ${dog.breed} looking for a loving home.`,
-      images: [dog.primary_image_url],
+      title: `${dog.name} - Available for Adoption`,
+      description: truncateDescription(description, 200),
+      images: [dog.primary_image_url]
     },
     
     alternates: {
-      canonical: `/dogs/${dog.id}`,
-    },
+      canonical: `https://www.rescuedogs.me/dogs/${slug}`
+    }
   };
 }
 ```
 
-**Structured Data**:
+### Structured Data (JSON-LD)
+
 ```javascript
-// src/components/StructuredData.jsx
-export function DogStructuredData({ dog }) {
-  const structuredData = {
+// src/utils/schema.js
+export function generatePetSchema(dog) {
+  return {
     "@context": "https://schema.org",
     "@type": "Animal",
     "name": dog.name,
     "species": "Dog",
-    "breed": dog.breed,
+    "breed": dog.standardized_breed || dog.breed,
     "age": dog.age_text,
     "description": dog.description,
     "image": dog.primary_image_url,
+    "availableForAdoption": true,
     "location": {
       "@type": "Place",
-      "name": dog.location
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": dog.organization.country,
+        "addressLocality": dog.organization.city
+      }
     },
-    "availableForAdoption": true,
     "provider": {
-      "@type": "Organization",
-      "name": dog.organization,
-      "url": dog.adoption_url
+      "@type": "AnimalShelter",
+      "name": dog.organization.name,
+      "url": dog.organization.website
     }
   };
+}
+```
 
+### Dynamic Sitemap Generation
+
+```javascript
+// src/app/sitemap.xml/route.js
+export async function GET() {
+  const dogs = await getAllAnimalsForSitemap();
+  const organizations = await getOrganizations();
+  
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+      <url>
+        <loc>https://www.rescuedogs.me</loc>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+      </url>
+      ${dogs.map(dog => `
+        <url>
+          <loc>https://www.rescuedogs.me/dogs/${dog.slug}</loc>
+          <lastmod>${dog.updated_at}</lastmod>
+          <changefreq>weekly</changefreq>
+          <priority>0.8</priority>
+        </url>
+      `).join('')}
+      ${organizations.map(org => `
+        <url>
+          <loc>https://www.rescuedogs.me/organizations/${org.slug}</loc>
+          <changefreq>weekly</changefreq>
+          <priority>0.7</priority>
+        </url>
+      `).join('')}
+    </urlset>`;
+  
+  return new Response(sitemap, {
+    headers: {
+      'Content-Type': 'application/xml',
+      'Cache-Control': 'public, max-age=3600, s-maxage=3600'
+    }
+  });
+}
+```
+
+## Development Workflow
+
+### Test-Driven Development (TDD)
+
+The project strictly follows TDD principles:
+
+1. **Write failing test first**
+```javascript
+// Write test before implementation
+describe('NewFeature', () => {
+  it('should handle user interaction', () => {
+    render(<NewFeature />);
+    const button = screen.getByRole('button');
+    fireEvent.click(button);
+    expect(screen.getByText('Success')).toBeInTheDocument();
+  });
+});
+```
+
+2. **Implement minimal code to pass**
+```javascript
+export function NewFeature() {
+  const [clicked, setClicked] = useState(false);
+  
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-    />
+    <div>
+      <button onClick={() => setClicked(true)}>
+        Click me
+      </button>
+      {clicked && <p>Success</p>}
+    </div>
   );
+}
+```
+
+3. **Refactor and optimize**
+```javascript
+// Add error handling, accessibility, performance
+export const NewFeature = memo(function NewFeature() {
+  const [clicked, setClicked] = useState(false);
+  
+  const handleClick = useCallback(() => {
+    setClicked(true);
+  }, []);
+  
+  return (
+    <div>
+      <button 
+        onClick={handleClick}
+        aria-pressed={clicked}
+      >
+        Click me
+      </button>
+      {clicked && (
+        <p role="status" aria-live="polite">
+          Success
+        </p>
+      )}
+    </div>
+  );
+});
+```
+
+### Code Quality Standards
+
+#### Pre-commit Checks
+```bash
+# Required checks before any commit
+npm test                    # Run all 2,598 tests
+npm run build              # Verify production build
+npm run lint               # ESLint validation
+npm run type-check         # TypeScript checking
+npm run check:duplicates   # Prevent duplicate files
+```
+
+#### Component Development Checklist
+- [ ] Test written and passing
+- [ ] Component is accessible (ARIA, keyboard nav)
+- [ ] Responsive design implemented
+- [ ] Dark mode supported
+- [ ] Error states handled
+- [ ] Loading states implemented
+- [ ] Performance optimized (memo, lazy loading)
+- [ ] TypeScript types defined
+- [ ] Documentation updated
+
+## Build & Deployment
+
+### Production Build Configuration
+
+```javascript
+// next.config.js
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: 'standalone',
+  poweredByHeader: false,
+  
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.rescuedogs.me',
+      },
+    ],
+  },
+  
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ['lucide-react', '@heroicons/react'],
+  },
+  
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+};
+```
+
+### Environment Configuration
+
+```bash
+# .env.local
+NEXT_PUBLIC_API_URL=https://api.rescuedogs.me
+NEXT_PUBLIC_SITE_URL=https://www.rescuedogs.me
+NEXT_PUBLIC_R2_CUSTOM_DOMAIN=images.rescuedogs.me
+NEXT_PUBLIC_ENVIRONMENT=production
+```
+
+### Deployment Process
+
+```bash
+# Build and analyze
+npm run build
+npm run analyze  # Check bundle size
+
+# Production deployment (Vercel)
+vercel --prod
+
+# Docker deployment
+docker build -t rescue-dogs-frontend .
+docker run -p 3000:3000 rescue-dogs-frontend
+```
+
+## Error Handling
+
+### Error Boundaries
+
+Multiple levels of error boundaries provide graceful fallbacks:
+
+```javascript
+// src/components/error/ErrorBoundary.jsx
+'use client';
+
+export class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    // Log to monitoring service
+    if (process.env.NODE_ENV === 'production') {
+      logErrorToService(error, errorInfo);
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-[400px] flex items-center justify-center">
+          <Card className="max-w-md w-full">
+            <CardContent className="text-center py-8">
+              <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">
+                Something went wrong
+              </h2>
+              <p className="text-muted-foreground mb-6">
+                We're sorry, but we encountered an error loading this content.
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Button 
+                  variant="outline"
+                  onClick={() => this.setState({ hasError: false })}
+                >
+                  Try Again
+                </Button>
+                <Button onClick={() => window.location.href = '/'}>
+                  Go Home
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+```
+
+### API Error Handling
+
+```javascript
+// src/services/animalsService.js
+export async function getAnimals(filters = {}) {
+  try {
+    const response = await fetch(`${API_URL}/api/animals`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(filters),
+      signal: AbortSignal.timeout(10000), // 10s timeout
+    });
+
+    if (!response.ok) {
+      throw new ApiError(
+        `Failed to fetch animals: ${response.status}`,
+        response.status
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout - please try again');
+    }
+    
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    
+    throw new Error('Unable to load dogs. Please check your connection.');
+  }
+}
+```
+
+## Performance Monitoring
+
+### Core Web Vitals Tracking
+
+```javascript
+// src/app/layout.js
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} font-inter`}>
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
+        <Analytics />
+        <SpeedInsights />
+      </body>
+    </html>
+  );
+}
+```
+
+### Custom Performance Monitoring
+
+```javascript
+// src/utils/performance.js
+export function measurePerformance(metricName, fn) {
+  const start = performance.now();
+  const result = fn();
+  const duration = performance.now() - start;
+  
+  // Log to analytics
+  if (window.gtag) {
+    window.gtag('event', 'timing_complete', {
+      name: metricName,
+      value: Math.round(duration),
+      event_category: 'Performance',
+    });
+  }
+  
+  return result;
+}
+
+// Usage
+const dogs = measurePerformance('fetch_dogs', () => {
+  return fetchDogs(filters);
+});
+```
+
+## Advanced Features
+
+### Animated Statistics
+
+The homepage features scroll-triggered animated counters:
+
+```javascript
+// src/components/ui/AnimatedCounter.tsx
+export function AnimatedCounter({ value, duration = 2000, label }) {
+  const [displayValue, setDisplayValue] = useState(0);
+  const [isInView, setIsInView] = useState(false);
+  const elementRef = useRef(null);
+  
+  useEffect(() => {
+    if (!isInView) return;
+    
+    // Respect reduced motion preference
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setDisplayValue(value);
+      return;
+    }
+    
+    // Easing function for smooth animation
+    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+    
+    let startTime;
+    const animate = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      
+      setDisplayValue(Math.round(value * easeOutCubic(progress)));
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    
+    requestAnimationFrame(animate);
+  }, [isInView, value, duration]);
+  
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    
+    if (elementRef.current) {
+      observer.observe(elementRef.current);
+    }
+    
+    return () => observer.disconnect();
+  }, []);
+  
+  return (
+    <span 
+      ref={elementRef}
+      role="status"
+      aria-live="polite"
+      aria-label={`${label}: ${value}`}
+    >
+      {displayValue.toLocaleString()}
+    </span>
+  );
+}
+```
+
+### Progressive Image Loading
+
+Multi-stage image loading for optimal user experience:
+
+```javascript
+// src/hooks/useLazyImage.ts
+export function useLazyImage(src: string, options: UseLazyImageOptions = {}) {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isInView, setIsInView] = useState(options.priority || false);
+  const [hasError, setHasError] = useState(false);
+  const imgRef = useRef<HTMLDivElement>(null);
+  
+  // Generate progressive URLs
+  const progressiveUrls = useMemo(() => {
+    if (!options.enableProgressiveLoading) return {};
+    
+    return {
+      lowQuality: getOptimizedImage(src, 'thumbnail', { quality: 20 }),
+      blurPlaceholder: getOptimizedImage(src, 'thumbnail', { quality: 10, blur: 20 })
+    };
+  }, [src, options.enableProgressiveLoading]);
+  
+  useEffect(() => {
+    if (options.priority) return;
+    
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      { 
+        rootMargin: '50px',
+        threshold: 0.01 
+      }
+    );
+    
+    if (imgRef.current) {
+      observer.observe(imgRef.current);
+    }
+    
+    return () => observer.disconnect();
+  }, [options.priority]);
+  
+  return {
+    isLoaded,
+    isInView,
+    hasError,
+    imgRef,
+    progressiveUrls,
+    handlers: {
+      onLoad: () => setIsLoaded(true),
+      onError: () => setHasError(true)
+    }
+  };
+}
+```
+
+### Share Functionality
+
+Native Web Share API integration:
+
+```javascript
+// src/hooks/useShare.ts
+export function useShare() {
+  const [canShare, setCanShare] = useState(false);
+  
+  useEffect(() => {
+    setCanShare(
+      typeof navigator !== 'undefined' && 
+      'share' in navigator &&
+      // Check if we're on HTTPS (required for Web Share API)
+      window.location.protocol === 'https:'
+    );
+  }, []);
+  
+  const share = async ({ title, text, url }) => {
+    if (!canShare) {
+      // Fallback to copying to clipboard
+      await navigator.clipboard.writeText(url);
+      toast.success('Link copied to clipboard!');
+      return;
+    }
+    
+    try {
+      await navigator.share({ title, text, url });
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        // User didn't cancel, actual error
+        console.error('Share failed:', error);
+        toast.error('Unable to share');
+      }
+    }
+  };
+  
+  return { share, canShare };
 }
 ```
 
@@ -2091,163 +1715,134 @@ export function DogStructuredData({ dog }) {
 
 ### TypeScript Integration
 
-**Type Definitions**:
+The codebase uses TypeScript for type safety with gradual migration:
+
 ```typescript
 // src/types/dog.ts
 export interface Dog {
   id: number;
+  slug: string;
   name: string;
   breed: string;
   standardized_breed?: string;
   age_text: string;
+  age_years?: number;
   description?: string;
   primary_image_url: string;
   adoption_url: string;
-  organization: string;
-  organization_id: number;
-  status: 'available' | 'pending' | 'adopted';
-  location?: string;
   size?: 'small' | 'medium' | 'large';
+  good_with_children?: boolean;
+  good_with_dogs?: boolean;
+  good_with_cats?: boolean;
+  organization_id: number;
+  organization: Organization;
   created_at: string;
   updated_at: string;
+}
+
+export interface Organization {
+  id: number;
+  slug: string;
+  name: string;
+  website: string;
+  city: string;
+  country: string;
+  adoption_fee?: AdoptionFee;
+  social_media?: SocialMedia;
 }
 
 export interface DogFilters {
   breed?: string;
   age?: string;
-  size?: string;
+  size?: 'small' | 'medium' | 'large';
   location?: string;
   search?: string;
+  organization?: string;
 }
 ```
 
-**Component Props Types**:
+### Component Prop Types
+
 ```typescript
 // src/components/dogs/DogCard.tsx
 interface DogCardProps {
   dog: Dog;
-  onClick?: (dogId: number) => void;
-  showFavoriteButton?: boolean;
+  onSelect?: (dog: Dog) => void;
+  priority?: boolean;
   className?: string;
+  showOrganization?: boolean;
 }
 
-export default function DogCard({ 
+export const DogCard = memo<DogCardProps>(({ 
   dog, 
-  onClick, 
-  showFavoriteButton = true,
-  className = ''
-}: DogCardProps) {
+  onSelect,
+  priority = false,
+  className,
+  showOrganization = true
+}) => {
   // Component implementation
-}
+});
 ```
 
 ### Code Style Guidelines
 
-**Naming Conventions**:
 - **Components**: PascalCase (`DogCard`, `FilterControls`)
-- **Hooks**: camelCase with `use` prefix (`useDogFilters`, `useTheme`)
-- **Utilities**: camelCase (`sanitizeText`, `getOptimizedImageUrl`)
-- **Constants**: UPPER_SNAKE_CASE (`API_BASE_URL`, `DEFAULT_FILTERS`)
-
-**File Structure**:
-```
-ComponentName/
-├── ComponentName.jsx        # Main component
-├── ComponentName.test.jsx   # Tests
-├── ComponentName.stories.jsx # Storybook stories (if using)
-├── index.js                 # Export barrel
-└── README.md               # Component documentation
-```
-
-**Import Organization**:
-```javascript
-// 1. React imports
-import React, { useState, useEffect } from 'react';
-
-// 2. Third-party imports
-import { clsx } from 'clsx';
-import { motion } from 'framer-motion';
-
-// 3. Internal imports (absolute paths)
-import { Button } from '@/components/ui/button';
-import { sanitizeText } from '@/utils/security';
-
-// 4. Relative imports
-import './ComponentName.css';
-```
+- **Hooks**: camelCase with `use` prefix (`useFilteredDogs`, `useLazyImage`)
+- **Utilities**: camelCase (`sanitizeText`, `getOptimizedImage`)
+- **Constants**: UPPER_SNAKE_CASE (`API_BASE_URL`, `BREAKPOINTS`)
+- **File naming**: kebab-case for files, PascalCase for components
 
 ## Future Considerations
 
 ### Planned Enhancements
 
-**Progressive Web App (PWA)**:
-- Service Worker implementation
-- Offline functionality
-- Push notifications for new dogs
-- App-like experience on mobile
+1. **Progressive Web App (PWA)**
+   - Service worker for offline functionality
+   - Push notifications for new dogs
+   - Installable app experience
 
-**Advanced Features**:
-- Real-time updates with WebSockets
-- Advanced search with Elasticsearch
-- Machine learning for dog matching
-- Video content support
+2. **Advanced Search**
+   - AI-powered dog matching
+   - Visual similarity search
+   - Breed recommendations
 
-**Performance Optimizations**:
-- Server-side rendering improvements
-- Edge caching strategies
-- Image format optimization (AVIF/WebP)
-- Code splitting enhancements
+3. **User Features**
+   - Favorite dogs (with account)
+   - Search alerts
+   - Application tracking
 
-### Scalability Patterns
+4. **Performance**
+   - Edge caching with Cloudflare Workers
+   - Streaming SSR
+   - React Server Components optimization
 
-**Micro-frontend Architecture**:
-```javascript
-// Module federation for team scaling
-const ModuleFederationPlugin = require("@module-federation/webpack");
+5. **Internationalization**
+   - Multi-language support
+   - Localized content
+   - Regional organization integration
 
-module.exports = {
-  plugins: [
-    new ModuleFederationPlugin({
-      name: "dogs_app",
-      filename: "remoteEntry.js",
-      exposes: {
-        "./DogCard": "./src/components/dogs/DogCard",
-        "./FilterControls": "./src/components/dogs/FilterControls",
-      },
-      shared: {
-        react: { singleton: true },
-        "react-dom": { singleton: true },
-      },
-    }),
-  ],
-};
-```
+### Technical Debt & Improvements
 
-**Component Library Extraction**:
-```javascript
-// Separate package for reusable components
-export { Button } from './components/Button';
-export { Card } from './components/Card';
-export { LazyImage } from './components/LazyImage';
-export { AnimatedCounter } from './components/AnimatedCounter';
-```
+1. **Complete TypeScript Migration**
+   - Convert remaining JavaScript files
+   - Strict type checking
+   - API type generation
 
-### Technology Evolution
+2. **Component Library**
+   - Storybook documentation
+   - Visual regression testing
+   - Component playground
 
-**Next.js 16+ Features**:
-- Enhanced App Router capabilities
-- Improved streaming and suspense
-- Better TypeScript integration
-- Advanced caching mechanisms
+3. **Testing Enhancements**
+   - Visual regression with Percy
+   - Performance regression tests
+   - Mutation testing
 
-**React 19+ Features**:
-- Concurrent features
-- Automatic batching improvements
-- Enhanced server components
-- Better hydration patterns
+4. **Architecture Evolution**
+   - Micro-frontends for scaling
+   - GraphQL API integration
+   - Real-time updates with WebSockets
 
 ---
 
-This comprehensive frontend architecture provides a solid foundation for a modern, accessible, secure, and performant web application. The architecture emphasizes maintainability through comprehensive testing (2,427 tests), accessibility compliance, and clean code patterns while delivering an exceptional user experience across all devices and user needs.
-
-The implementation demonstrates advanced React patterns, modern Next.js capabilities, and industry best practices for building scalable web applications. The extensive test coverage ensures reliability, while the focus on accessibility and performance makes the application usable by everyone.
+This comprehensive frontend architecture documentation reflects the current state of the Rescue Dog Aggregator application, built with Next.js 15's App Router, React 18, and modern web technologies. The architecture emphasizes performance, accessibility, security, and maintainability through comprehensive testing (2,598 tests), clean code patterns, and industry best practices. The mobile-first, responsive design ensures an optimal experience across all devices while maintaining WCAG 2.1 AA compliance for accessibility.

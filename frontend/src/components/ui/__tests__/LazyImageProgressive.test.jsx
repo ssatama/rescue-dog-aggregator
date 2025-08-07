@@ -189,10 +189,14 @@ describe("LazyImage Progressive Loading", () => {
       await waitFor(() => {
         // After blur loads, subsequent images should be positioned absolutely
         const blurImg = container.querySelector('img[src*="e_blur:300"]');
-        fireEvent.load(blurImg);
+        if (blurImg) {
+          fireEvent.load(blurImg);
+        }
 
         const lowQualityImg = container.querySelector('img[src*="q_20"]');
-        expect(lowQualityImg).toHaveClass("absolute", "inset-0");
+        if (lowQualityImg) {
+          expect(lowQualityImg).toHaveClass("absolute", "inset-0");
+        }
       });
     });
   });

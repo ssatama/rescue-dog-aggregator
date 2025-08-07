@@ -227,10 +227,7 @@ else:
     CORS_ALLOW_HEADERS = ["*"]
     CORS_MAX_AGE = 86400  # Cache preflight for 24 hours
 
-# === Cloudinary Configuration ===
-CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME", "")
-CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY", "")
-CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET", "")
+# === Cloudinary Configuration (REMOVED - Using R2 instead) ===
 
 # Log CORS configuration on startup (but not sensitive data)
 logger.info(f"[config.py] Environment: {ENVIRONMENT}")

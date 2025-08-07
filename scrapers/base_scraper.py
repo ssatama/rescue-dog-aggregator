@@ -268,7 +268,7 @@ class BaseScraper(ABC):
             return "en"
 
     def save_animal(self, animal_data):
-        """Save or update animal data in the database with Cloudinary image upload."""
+        """Save or update animal data in the database with R2 image upload."""
         try:
             # Check if animal already exists by external_id and organization FIRST
             existing_animal = self.get_existing_animal(animal_data.get("external_id"), animal_data.get("organization_id"))
