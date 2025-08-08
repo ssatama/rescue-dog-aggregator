@@ -13,6 +13,7 @@ from utils.config_models import OrganizationConfig, OrganizationMetadata
 from utils.organization_sync_service import OrganizationRecord, OrganizationSyncService
 
 
+@pytest.mark.unit
 class TestOrganizationSyncAdoptionFees:
     """Test suite for adoption_fees in OrganizationSyncService."""
 

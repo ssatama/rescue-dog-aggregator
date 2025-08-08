@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 # Import routes
-from api.routes import animals, monitoring, organizations
+from api.routes import animals, llm, monitoring, organizations
 
 # Import CORS configuration
 from config import (
@@ -71,6 +71,9 @@ app.include_router(organizations.router, prefix="/api/organizations", tags=["org
 
 # Include monitoring routes (no prefix for health check compatibility)
 app.include_router(monitoring.router, tags=["monitoring"])
+
+# Include LLM routes
+app.include_router(llm.router, tags=["llm"])
 
 
 @app.get("/", tags=["root"])

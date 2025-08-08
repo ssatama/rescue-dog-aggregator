@@ -9,6 +9,7 @@ This module provides consistent error handling patterns across all endpoints.
 import logging
 from typing import Any, Dict, Optional
 
+import httpx
 import psycopg2
 from fastapi import HTTPException, status
 from pydantic import ValidationError
@@ -54,6 +55,29 @@ class AuthenticationError(APIException):
         super().__init__(status_code=status.HTTP_401_UNAUTHORIZED, detail=detail, error_code="AUTHENTICATION_ERROR")
 
 
+class LLMServiceError(APIException):
+    """LLM service-related errors."""
+
+    def __init__(self, detail: str = "LLM service error", original_error: Optional[Exception] = None):
+        super().__init__(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=detail, error_code="LLM_SERVICE_ERROR")
+        self.original_error = original_error
+
+
+class RateLimitError(APIException):
+    """Rate limiting errors."""
+
+    def __init__(self, detail: str = "Rate limit exceeded"):
+        super().__init__(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=detail, error_code="RATE_LIMIT_ERROR")
+
+
+class InvalidInputError(APIException):
+    """Invalid input errors."""
+
+    def __init__(self, detail: str, field: Optional[str] = None):
+        super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail=detail, error_code="INVALID_INPUT")
+        self.field = field
+
+
 def handle_database_error(error: Exception, operation: str) -> None:
     """
     Handle database errors with proper logging and exception raising.
@@ -84,6 +108,59 @@ def handle_validation_error(error: Exception, context: str) -> None:
     else:
         logger.exception(f"Unexpected validation error in {context}: {error}")
         raise ValidationError(f"Validation failed in {context}")
+
+
+def handle_llm_error(error: Exception, operation: str) -> None:
+    """
+    Handle LLM service errors with proper logging and secure error responses.
+
+    This function ensures no internal details are exposed to clients while
+    providing detailed logging for debugging.
+
+    Args:
+        error: The LLM service error that occurred
+        operation: Description of the operation that failed
+    """
+    # Log full error details for debugging (server-side only)
+    logger.error(f"LLM service error during {operation}: {type(error).__name__}: {error}")
+
+    # Categorize errors and provide safe client responses
+    if isinstance(error, httpx.HTTPStatusError):
+        if error.response.status_code == 401:
+            logger.error(f"LLM API authentication failed for {operation}")
+            raise LLMServiceError("LLM service authentication failed")
+        elif error.response.status_code == 429:
+            logger.warning(f"LLM API rate limit exceeded for {operation}")
+            raise RateLimitError("LLM service rate limit exceeded, please try again later")
+        elif error.response.status_code == 413:
+            raise InvalidInputError("Input text is too long for processing")
+        elif 400 <= error.response.status_code < 500:
+            logger.error(f"LLM API client error {error.response.status_code} for {operation}")
+            raise InvalidInputError("Invalid request for LLM processing")
+        else:
+            logger.error(f"LLM API server error {error.response.status_code} for {operation}")
+            raise LLMServiceError("LLM service temporarily unavailable")
+
+    elif isinstance(error, httpx.TimeoutException):
+        logger.warning(f"LLM API timeout for {operation}")
+        raise LLMServiceError("LLM service request timeout, please try again")
+
+    elif isinstance(error, httpx.ConnectError):
+        logger.error(f"LLM API connection error for {operation}")
+        raise LLMServiceError("LLM service temporarily unavailable")
+
+    elif isinstance(error, (ValueError, KeyError, TypeError)) and "json" in str(error).lower():
+        logger.error(f"LLM API response parsing error for {operation}: {error}")
+        raise LLMServiceError("LLM service response format error")
+
+    elif isinstance(error, ValueError) and any(keyword in str(error).lower() for keyword in ["empty", "invalid", "missing"]):
+        logger.warning(f"Invalid input for LLM {operation}: {error}")
+        raise InvalidInputError(f"Invalid input for {operation}")
+
+    else:
+        # Generic error - log full details but return sanitized message
+        logger.exception(f"Unexpected error during LLM {operation}")
+        raise LLMServiceError(f"LLM service error during {operation}")
 
 
 def safe_execute(operation_name: str):
@@ -117,5 +194,7 @@ STANDARD_RESPONSES = {
     401: {"description": "Unauthorized - Authentication required"},
     404: {"description": "Not Found - Resource does not exist"},
     422: {"description": "Unprocessable Entity - Validation error"},
+    429: {"description": "Too Many Requests - Rate limit exceeded"},
     500: {"description": "Internal Server Error - Database or system error"},
+    503: {"description": "Service Unavailable - External service error"},
 }

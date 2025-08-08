@@ -16,6 +16,7 @@ from api.models.requests import AnimalFilterRequest
 from api.services.animal_service import AnimalService
 
 
+@pytest.mark.unit
 class TestAnimalDescriptionFiltering:
     """Test description quality filtering for sitemap generation."""
 

@@ -199,12 +199,8 @@ class OrganizationConfig(BaseModel):
         if not self.scraper.config:
             return {}
 
-        # Use model_dump instead of deprecated dict()
-        try:
-            config_dict = self.scraper.config.model_dump(exclude_none=True)
-        except AttributeError:
-            # Fallback for older Pydantic versions
-            config_dict = self.scraper.config.dict(exclude_none=True)
+        # Use model_dump (Pydantic v2)
+        config_dict = self.scraper.config.model_dump(exclude_none=True)
 
         return config_dict or {}
 

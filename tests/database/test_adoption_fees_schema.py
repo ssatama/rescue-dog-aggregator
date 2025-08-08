@@ -12,6 +12,8 @@ import pytest
 from utils.db_connection import execute_command, execute_query
 
 
+@pytest.mark.database
+@pytest.mark.integration
 class TestAdoptionFeesSchema:
     """Test suite for adoption_fees column in organizations table."""
 

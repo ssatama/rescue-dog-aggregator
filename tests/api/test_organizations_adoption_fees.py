@@ -11,6 +11,8 @@ from fastapi.testclient import TestClient
 from api.main import app
 
 
+@pytest.mark.api
+@pytest.mark.integration
 class TestOrganizationsAdoptionFeesAPI:
     """Test suite for adoption fees in organizations API endpoints."""
 

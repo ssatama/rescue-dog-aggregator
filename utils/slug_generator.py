@@ -5,6 +5,7 @@ Follows CLAUDE.md principles: pure functions, immutable data, early returns.
 
 import logging
 import re
+import time
 from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
@@ -136,8 +137,6 @@ def ensure_unique_slug(base_slug: str, connection, exclude_id: Optional[int] = N
             counter += 1
 
         # Fallback: append timestamp if all else fails
-        import time
-
         timestamp_suffix = str(int(time.time()))[-6:]  # Last 6 digits of timestamp
         return f"{base_slug}-{timestamp_suffix}"
 

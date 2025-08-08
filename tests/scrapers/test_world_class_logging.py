@@ -14,6 +14,7 @@ from scrapers.base_scraper import BaseScraper
 from services.progress_tracker import LoggingLevel, ProgressTracker
 
 
+@pytest.mark.unit
 class TestWorldClassLogging:
     """Test suite for world-class centralized logging system."""
 

@@ -6,6 +6,7 @@ Provides visibility into scraper performance, failure detection, and system heal
 
 import logging
 import time
+import traceback
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
@@ -539,8 +540,6 @@ async def get_failure_detection_metrics(db_conn=Depends(get_database_connection)
         }
 
     except Exception as e:
-        import traceback
-
         logger.error(f"Error getting failure metrics: {e}")
         logger.error(f"Full traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -1,3 +1,4 @@
+import hashlib
 import re
 import time
 from typing import Any, Dict, List, Optional
@@ -1569,8 +1570,6 @@ class REANScraper(BaseScraper):
 
         # Create more stable external ID using name + breed + age + page type for
         # uniqueness
-        import hashlib
-
         name_slug = name.lower().replace(" ", "-")
         breed = dog_data.get("breed", "unknown")
         age = dog_data.get("age_text", "unknown")

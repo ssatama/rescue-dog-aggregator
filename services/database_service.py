@@ -16,6 +16,7 @@ Following CLAUDE.md principles:
 
 import json
 import logging
+import time
 from datetime import datetime
 from typing import Any, Dict, Optional, Tuple
 
@@ -190,8 +191,6 @@ class DatabaseService:
         except Exception as e:
             self.logger.error(f"Failed to generate temp slug for animal: {e}")
             # Use a fallback slug based on external_id or timestamp
-            import time
-
             fallback_slug = f"animal-{animal_data.get('external_id', str(int(time.time())))}-temp"
             animal_slug = fallback_slug[:250]  # Ensure it fits in database
 

@@ -2,6 +2,7 @@ import json
 import logging
 import time
 from contextlib import contextmanager
+from datetime import date, datetime
 from enum import Enum
 from typing import Dict
 
@@ -64,8 +65,6 @@ def get_railway_data_count(table_name: str) -> int:
     try:
         with railway_session() as session:
             # Use SQLAlchemy's identifier() for safe table name handling
-            from sqlalchemy import text
-
             # Build query with validated table name - still using text() but with validation
             query = text(f"SELECT COUNT(*) FROM {table_name}")
             result = session.execute(query)
@@ -500,8 +499,6 @@ def _process_organizations_chunk(session, organizations_chunk):
         if value is None:
             return None
         if isinstance(value, (dict, list)):
-            import json
-            from datetime import date, datetime
 
             def json_serializer(obj):
                 if isinstance(obj, (datetime, date)):

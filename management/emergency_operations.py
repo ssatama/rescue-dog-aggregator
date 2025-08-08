@@ -10,6 +10,7 @@ import json
 import logging
 import os
 import sys
+import traceback
 from typing import Any, Dict, Optional
 
 from management.emergency.emergency_cli import EmergencyCLI
@@ -196,8 +197,6 @@ def main():
 
     except Exception as e:
         print(f"❌ Error executing command: {e}")
-        import traceback
-
         traceback.print_exc()
 
 

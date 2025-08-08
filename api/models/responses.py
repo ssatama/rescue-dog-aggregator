@@ -8,7 +8,7 @@ This module contains Pydantic models for API response structures.
 
 from typing import List
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class FilterOption(BaseModel):
@@ -41,9 +41,7 @@ class FilterCountsResponse(BaseModel):
     available_country_options: List[FilterOption] = Field(default_factory=list, description="Available adoption country options with counts")
     available_region_options: List[FilterOption] = Field(default_factory=list, description="Available adoption region options with counts")
 
-    class Config:
-        """Pydantic configuration."""
-
-        json_encoders = {
-            # Add custom encoders if needed
-        }
+    model_config = ConfigDict(
+        # Add custom encoders if needed in the future
+        # json_encoders can be replaced with custom serializers in v2
+    )

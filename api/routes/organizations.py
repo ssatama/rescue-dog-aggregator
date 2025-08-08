@@ -4,6 +4,7 @@ from typing import List
 
 import psycopg2
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import RedirectResponse
 from psycopg2.extras import RealDictCursor
 from pydantic import ValidationError
 
@@ -108,8 +109,6 @@ def get_organization_by_slug(organization_slug: str, cursor: RealDictCursor = De
             cursor.execute("SELECT slug FROM organizations WHERE id = %s AND active = true", (organization_id,))
             result = cursor.fetchone()
             if result:
-                from fastapi.responses import RedirectResponse
-
                 return RedirectResponse(url=f"/api/organizations/{result['slug']}", status_code=301)
 
         # Lookup by slug
@@ -168,8 +167,6 @@ def get_organization_by_id_legacy(organization_id: int, cursor: RealDictCursor =
             raise HTTPException(status_code=404, detail="Organization not found")
 
         # 301 redirect to new slug URL
-        from fastapi.responses import RedirectResponse
-
         return RedirectResponse(url=f"/api/organizations/{result['slug']}", status_code=301)
 
     except HTTPException:

@@ -13,6 +13,8 @@ anyio==4.9.0
     #   httpx
     #   starlette
     #   watchfiles
+asyncpg==0.30.0
+    # via -r requirements.in
 attrs==25.3.0
     # via
     #   jsonschema

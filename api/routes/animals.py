@@ -3,6 +3,7 @@ from typing import List, Optional
 
 import psycopg2
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import RedirectResponse
 from psycopg2.extras import RealDictCursor
 from pydantic import ValidationError
 
@@ -287,8 +288,6 @@ async def get_animal_by_slug(animal_slug: str, cursor: RealDictCursor = Depends(
             animal = animal_service.get_animal_by_id(animal_id)
             if animal and hasattr(animal, "slug"):
                 # 301 redirect to new slug URL
-                from fastapi.responses import RedirectResponse
-
                 return RedirectResponse(url=f"/api/animals/{animal.slug}", status_code=301)
 
         # Lookup by slug
@@ -325,8 +324,6 @@ async def get_animal_by_id_legacy(animal_id: int, cursor: RealDictCursor = Depen
             raise HTTPException(status_code=404, detail="Animal not found")
 
         # 301 redirect to new slug URL
-        from fastapi.responses import RedirectResponse
-
         return RedirectResponse(url=f"/api/animals/{animal.slug}", status_code=301)
 
     except HTTPException:

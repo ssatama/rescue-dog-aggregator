@@ -198,3 +198,5 @@ requirements.txt
 requirements-dev.txt
 
 .gemini/
+.mypy_cache/
+.serena/

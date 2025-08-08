@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from api.models.organization import Organization
 
 
+@pytest.mark.unit
 class TestOrganizationModelAdoptionFees:
     """Test suite for adoption_fees field in Organization model."""
 

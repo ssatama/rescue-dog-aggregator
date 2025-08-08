@@ -1,5 +1,6 @@
 # scrapers/base_scraper.py
 
+import asyncio
 import logging
 import os
 import sys
@@ -31,7 +32,16 @@ logger = logging.getLogger(__name__)
 class BaseScraper(ABC):
     """Base scraper class that all organization-specific scrapers will inherit from."""
 
-    def __init__(self, organization_id: Optional[int] = None, config_id: Optional[str] = None, database_service=None, image_processing_service=None, session_manager=None, metrics_collector=None):
+    def __init__(
+        self,
+        organization_id: Optional[int] = None,
+        config_id: Optional[str] = None,
+        database_service=None,
+        image_processing_service=None,
+        session_manager=None,
+        metrics_collector=None,
+        llm_data_service=None,
+    ):
         """Initialize the scraper with organization ID or config and optional service injection."""
         # Handle both legacy and config-based initialization
         if config_id:
@@ -105,6 +115,11 @@ class BaseScraper(ABC):
         self.image_processing_service = image_processing_service
         self.session_manager = session_manager
         self.metrics_collector = metrics_collector or NullMetricsCollector()
+
+        # Import here to avoid circular dependency
+        from services.null_objects import NullLLMDataService
+
+        self.llm_data_service = llm_data_service or NullLLMDataService()
 
         # Track animals for filtering stats
         self.total_animals_before_filter = 0
@@ -465,6 +480,10 @@ class BaseScraper(ABC):
 
             # Save animal
             animal_id, action = self.save_animal(animal_data)
+
+            # Enrich with LLM if enabled and animal was saved
+            if animal_id and self.llm_data_service and hasattr(self.llm_data_service, "clean_description"):
+                asyncio.run(self._enrich_animal_with_llm(animal_id, animal_data))
 
             # Update progress tracking (only count animals toward progress percentage)
             progress_tracker.update(items_processed=1, operation_type="animal_save")
@@ -992,3 +1011,70 @@ class BaseScraper(ABC):
         """
         self.metrics_collector.log_detailed_metrics(metrics)
         return True
+
+    async def _enrich_animal_with_llm(self, animal_id: int, animal_data: Dict[str, Any]):
+        """Enrich animal data using LLM service.
+
+        Args:
+            animal_id: Database ID of the animal
+            animal_data: Original animal data
+        """
+        try:
+            # Only process if we have a description
+            description = animal_data.get("description", "").strip()
+            if not description:
+                return
+
+            # Get organization config for LLM prompts if available
+            org_config = None
+            if self.org_config:
+                org_config = {"organization_name": self.org_config.name, "prompt_style": self.org_config.get_scraper_config_dict().get("llm_prompt_style", "friendly")}
+
+            # Clean the description
+            enriched_description = await self.llm_data_service.clean_description(description, organization_config=org_config)
+
+            # Update the database with enriched description
+            if enriched_description and enriched_description != description:
+                self._update_llm_enrichment(animal_id, {"enriched_description": enriched_description, "llm_processed_at": datetime.now(), "llm_model_used": "openrouter/auto"})
+                self.logger.debug(f"Enriched description for animal {animal_id}")
+
+        except Exception as e:
+            self.logger.warning(f"Failed to enrich animal {animal_id} with LLM: {e}")
+
+    def _update_llm_enrichment(self, animal_id: int, enrichment_data: Dict[str, Any]):
+        """Update animal with LLM enrichment data.
+
+        Args:
+            animal_id: Database ID of the animal
+            enrichment_data: Data to update (enriched_description, llm_processed_at, etc)
+        """
+        if not self.conn:
+            return
+
+        try:
+            cursor = self.conn.cursor()
+
+            # Build update query
+            update_fields = []
+            values = []
+
+            for field, value in enrichment_data.items():
+                update_fields.append(f"{field} = %s")
+                values.append(value)
+
+            values.append(animal_id)  # For WHERE clause
+
+            query = f"""
+                UPDATE animals 
+                SET {', '.join(update_fields)}, updated_at = CURRENT_TIMESTAMP
+                WHERE id = %s
+            """
+
+            cursor.execute(query, values)
+            self.conn.commit()
+            cursor.close()
+
+        except Exception as e:
+            self.logger.error(f"Failed to update LLM enrichment for animal {animal_id}: {e}")
+            if self.conn:
+                self.conn.rollback()

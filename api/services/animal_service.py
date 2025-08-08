@@ -8,6 +8,7 @@ abstracting away database details and providing a clean API for routes.
 """
 
 import logging
+import re
 from typing import Any, Dict, List, Optional
 
 from psycopg2.extras import RealDictCursor
@@ -144,8 +145,6 @@ class AnimalService:
         Returns:
             Plain text with HTML tags removed
         """
-        import re
-
         return re.sub(r"<[^>]+>", "", text)
 
     def _is_fallback_content(self, text: str) -> bool:

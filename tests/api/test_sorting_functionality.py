@@ -14,6 +14,8 @@ from fastapi.testclient import TestClient
 from api.main import app
 
 
+@pytest.mark.api
+@pytest.mark.integration
 class TestSortingFunctionality:
     """Test suite for animals API sorting functionality."""
 

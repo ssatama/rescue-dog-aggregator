@@ -92,8 +92,6 @@ def normalize_name(name: Optional[str]) -> str:
     if not name:
         return ""
 
-    import re
-
     # Remove emojis and special unicode symbols
     # This regex matches most emoji ranges
     emoji_pattern = re.compile(
@@ -171,8 +169,6 @@ def extract_age_from_text(text: Optional[str]) -> Optional[float]:
     if not text:
         return None
 
-    import re
-
     text = text.lower()
 
     # Pattern 1: "4 y old", "roughly 3 y old"
@@ -215,8 +211,6 @@ def extract_sex_from_text(text: Optional[str]) -> Optional[str]:
     """
     if not text:
         return None
-
-    import re
 
     text = text.lower()
 
@@ -271,8 +265,6 @@ def extract_breed_from_text(text: Optional[str]) -> Optional[str]:
     """
     if not text:
         return None
-
-    import re
 
     text = text.lower()
 
