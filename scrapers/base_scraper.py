@@ -112,14 +112,15 @@ class BaseScraper(ABC):
 
         # Initialize services (dependency injection)
         self.database_service = database_service
-        self.image_processing_service = image_processing_service
         self.session_manager = session_manager
         self.metrics_collector = metrics_collector or NullMetricsCollector()
 
         # Import here to avoid circular dependency
+        from services.image_processing_service import ImageProcessingService
         from services.null_objects import NullLLMDataService
 
         self.llm_data_service = llm_data_service or NullLLMDataService()
+        self.image_processing_service = image_processing_service or ImageProcessingService()
 
         # Track animals for filtering stats
         self.total_animals_before_filter = 0

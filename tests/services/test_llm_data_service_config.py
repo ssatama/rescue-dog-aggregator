@@ -49,25 +49,25 @@ class TestOpenRouterLLMDataServiceConfig:
         config.api_key = "test-api-key"
         config.base_url = "https://test.openrouter.ai/api/v1"
         config.timeout_seconds = 45.0
-        
+
         # Create nested mock objects for proper attribute access
         config.cache = Mock()
         config.cache.enabled = True
         config.cache.max_size = 1500
-        
+
         config.models = Mock()
         config.models.default_model = "anthropic/claude-3-haiku"
-        
+
         config.retry = Mock()
         config.retry.max_attempts = 4
         config.retry.strategy = Mock()
         config.retry.strategy.value = "exponential"
         config.retry.base_delay = 2.0
         config.retry.max_delay = 120.0
-        
+
         config.batch = Mock()
         config.batch.default_size = 8
-        
+
         return config
 
     def test_service_initialization_with_config(self, mock_config):
@@ -88,15 +88,15 @@ class TestOpenRouterLLMDataServiceConfig:
             mock_config.api_key = "default-key"
             mock_config.base_url = "https://openrouter.ai/api/v1"
             mock_config.timeout_seconds = 30.0
-            
+
             # Create nested mock objects for proper attribute access
             mock_config.cache = Mock()
             mock_config.cache.enabled = True
             mock_config.cache.max_size = 1000
-            
+
             mock_config.retry = Mock()
             mock_config.retry.max_attempts = 3
-            
+
             mock_get_config.return_value = mock_config
 
             service = OpenRouterLLMDataService()
@@ -133,18 +133,18 @@ class TestRetryConfiguration:
             mock_config.api_key = "test-key"
             mock_config.base_url = "https://test.api"
             mock_config.timeout_seconds = 30.0
-            
+
             # Create nested mock objects for proper attribute access
             mock_config.cache = Mock()
             mock_config.cache.enabled = False
-            
+
             mock_config.retry = Mock()
             mock_config.retry.max_attempts = 5
             mock_config.retry.strategy = Mock()
             mock_config.retry.strategy.value = "exponential"
             mock_config.retry.base_delay = 1.5
             mock_config.retry.max_delay = 90.0
-            
+
             mock_get_config.return_value = mock_config
 
             service = OpenRouterLLMDataService()
@@ -168,7 +168,7 @@ class TestRetryConfiguration:
             # Create nested mock objects for proper attribute access
             mock_config.cache = Mock()
             mock_config.cache.enabled = False
-            
+
             mock_config.retry = Mock()
             mock_config.retry.max_attempts = 3
             mock_config.retry.strategy = Mock()
@@ -192,7 +192,7 @@ class TestRetryConfiguration:
             # Create nested mock objects for proper attribute access
             mock_config.cache = Mock()
             mock_config.cache.enabled = False
-            
+
             mock_config.retry = Mock()
             mock_config.retry.max_attempts = 2
             mock_config.retry.strategy = Mock()
@@ -221,10 +221,10 @@ class TestBatchProcessingConfiguration:
             # Create nested mock objects for proper attribute access
             mock_config.cache = Mock()
             mock_config.cache.enabled = False
-            
+
             mock_config.batch = Mock()
             mock_config.batch.default_size = 7
-            
+
             mock_config.retry = Mock()
             mock_config.retry.max_attempts = 3
             mock_config.retry.strategy = Mock()
@@ -269,11 +269,11 @@ class TestTemperatureConfiguration:
             # Create nested mock objects for proper attribute access
             mock_config.cache = Mock()
             mock_config.cache.enabled = False
-            
+
             mock_config.models = Mock()
             mock_config.models.default_model = "test-model"
             mock_config.models.temperature_ranges = {"description_cleaning": (0.1, 0.3), "dog_profiler": (0.8, 1.0), "translation": (0.0, 0.2)}
-            
+
             mock_config.retry = Mock()
             mock_config.retry.max_attempts = 3
             mock_config.retry.strategy = Mock()
@@ -344,10 +344,10 @@ class TestModelConfiguration:
             # Create nested mock objects for proper attribute access
             mock_config.cache = Mock()
             mock_config.cache.enabled = False
-            
+
             mock_config.models = Mock()
             mock_config.models.default_model = "anthropic/claude-3-sonnet"
-            
+
             mock_config.retry = Mock()
             mock_config.retry.max_attempts = 3
             mock_config.retry.strategy = Mock()

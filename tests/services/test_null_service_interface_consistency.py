@@ -37,25 +37,25 @@ class TestInterfaceConsistency:
         config.api_key = "test-key"
         config.base_url = "https://openrouter.ai/api/v1"
         config.timeout_seconds = 30
-        
+
         # Create nested mock objects for proper attribute access
         config.cache = Mock()
         config.cache.enabled = False
         config.cache.max_size = 100
-        
+
         config.retry = Mock()
         config.retry.max_attempts = 3
         config.retry.strategy = Mock()
         config.retry.strategy.value = "exponential"
         config.retry.base_delay = 1
         config.retry.max_delay = 60
-        
+
         config.batch = Mock()
         config.batch.default_size = 10
-        
+
         config.models = Mock()
         config.models.default_model = "test-model"
-        
+
         return config
 
     @pytest.fixture

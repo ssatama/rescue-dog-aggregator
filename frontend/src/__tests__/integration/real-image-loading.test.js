@@ -82,9 +82,11 @@ describe("Real Image Loading Integration", () => {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       expect(apiUrl).toBeDefined();
       // Accept both test and development API URLs
-      expect(["http://localhost:8000", "http://localhost:3000", "http://192.168.2.46:8000"]).toContain(
-        apiUrl,
-      );
+      expect([
+        "http://localhost:8000",
+        "http://localhost:3000",
+        "http://192.168.2.46:8000",
+      ]).toContain(apiUrl);
     });
   });
 

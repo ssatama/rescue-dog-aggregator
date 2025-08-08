@@ -24,26 +24,26 @@ logger = logging.getLogger(__name__)
 class BatchResult:
     """
     Immutable result of batch processing operation with comprehensive metrics.
-    
+
     This dataclass captures all relevant metrics from a batch processing operation,
     providing insights into performance, success rates, and failure patterns.
     The immutable design ensures thread safety and prevents accidental mutation
     of processing results.
-    
+
     The success_rate property provides a key performance indicator for monitoring
     batch processing effectiveness and identifying optimization opportunities.
-    
+
     Attributes:
         total_processed: Number of items successfully processed across all batches
         successful_batches: Number of batches that completed without database errors
         failed_batches: Number of batches that failed due to database or system errors
         errors: List of error details for debugging and analysis
         processing_time: Total wall-clock time for the entire batch operation
-    
+
     Dependencies:
         - Called by: DatabaseBatchProcessor.process_batch return value
         - Calls into: CLI progress reporting, metrics collection
-    
+
     Complexity: O(1) for all operations, O(n) for error list access where n is error count
     """
 
@@ -57,17 +57,17 @@ class BatchResult:
     def success_rate(self) -> float:
         """
         Calculate success rate as percentage for performance monitoring.
-        
+
         Computes the percentage of items that were successfully processed
         versus the total number of items attempted. This metric is crucial
         for monitoring batch processing health and identifying performance degradation.
-        
+
         The calculation excludes items that failed at the item level but were
         part of successful batches, focusing on overall batch processing success.
-        
+
         Returns:
             float: Success rate as percentage (0-100), where 100 indicates all items processed
-            
+
         Complexity: O(1) - simple arithmetic calculation
         """
         if self.total_processed == 0:
@@ -79,29 +79,29 @@ class BatchResult:
 class BatchConfig:
     """
     Configuration for batch processing operations with performance tuning.
-    
+
     This immutable configuration class encapsulates all parameters needed to
     optimize batch processing performance for different environments and workloads.
-    
+
     The configuration balances throughput vs memory usage vs error recovery:
     - Larger batch sizes improve throughput but increase memory usage
     - More retries improve reliability but increase processing time
     - Higher commit frequency reduces memory but increases I/O overhead
-    
+
     Default values are optimized for typical LLM processing workloads based on
     performance testing that achieved 47.5x improvement over individual processing.
-    
+
     Attributes:
         batch_size: Number of items to process per batch (default: 25)
         max_retries: Maximum retry attempts for failed batches (default: 3)
         retry_delay: Base delay between retries in seconds (default: 1.0)
         enable_progress: Whether to enable Rich progress tracking (default: True)
         commit_frequency: Commit database transaction every N batches (default: 1)
-    
+
     Dependencies:
         - Called by: create_batch_processor factory function
         - Calls into: DatabaseBatchProcessor initialization
-    
+
     Complexity: O(1) for all operations - simple configuration container
     """
 
@@ -115,24 +115,24 @@ class BatchConfig:
 class DatabaseBatchProcessor:
     """
     High-performance batch processor for database operations achieving 47.5x improvement.
-    
+
     This class implements an optimized batch processing system that dramatically improves
     database operation performance by grouping individual operations into batches,
     managing transactions efficiently, and providing robust error handling.
-    
+
     Key performance optimizations:
     - Batch grouping reduces database round-trips from O(n) to O(n/batch_size)
     - Transaction management minimizes commit overhead
     - Retry logic handles transient database failures gracefully
     - Progress tracking provides real-time visibility into operations
     - Error isolation prevents one bad item from failing entire batches
-    
+
     The processor follows CLAUDE.md principles:
     - Pure functional design with immutable configurations
     - Clear separation of concerns between batching and item processing
     - Early returns and explicit error handling
     - Comprehensive logging and metrics collection
-    
+
     Features:
     - Configurable batch sizes optimized per environment
     - Transaction isolation per batch with rollback protection
@@ -140,18 +140,18 @@ class DatabaseBatchProcessor:
     - Rich progress tracking with real-time updates
     - Detailed error recovery and reporting with categorized failures
     - Memory-safe processing with bounded resource usage
-    
+
     Dependencies:
         - Called by: CLI commands, batch processing workflows
         - Calls into: PostgreSQL database, Rich progress tracking
-    
+
     Complexity: O(n/batch_size) for n items with configurable batch sizes
     """
 
     def __init__(self, connection: psycopg2.extensions.connection, config: BatchConfig):
         """
         Initialize batch processor with database connection and configuration.
-        
+
         Args:
             connection: Active PostgreSQL connection for database operations
             config: Batch processing configuration with performance tuning parameters
@@ -163,18 +163,18 @@ class DatabaseBatchProcessor:
     def process_batch(self, items: List[Any], processor_func: Callable[[Any], Tuple[str, Tuple]], progress: Optional[Progress] = None, task_id: Optional[int] = None) -> BatchResult:
         """
         Process items in batches with optimized database operations achieving 47.5x performance improvement.
-        
+
         This is the main entry point for batch processing. It orchestrates the entire
         batch processing workflow including batching, transaction management, error handling,
         retry logic, and progress tracking.
-        
+
         The method achieves significant performance gains through:
         1. Grouping items into configurable batches to reduce database round-trips
         2. Managing transactions at the batch level rather than per-item
         3. Implementing intelligent retry logic for transient database failures
         4. Providing real-time progress feedback for long-running operations
         5. Isolating item-level errors to prevent batch-level failures
-        
+
         Processing Flow:
         1. Validate input and initialize tracking variables
         2. Split items into batches based on configured batch size
@@ -182,7 +182,7 @@ class DatabaseBatchProcessor:
         4. Commit transactions at configured frequency intervals
         5. Update progress tracking and collect comprehensive metrics
         6. Return detailed results for monitoring and debugging
-        
+
         Error Handling Strategy:
         - Item-level errors are logged but don't fail the entire batch
         - Database errors trigger retry logic with exponential backoff
@@ -197,11 +197,11 @@ class DatabaseBatchProcessor:
 
         Returns:
             BatchResult: Comprehensive results including success metrics, timing, and error details
-            
+
         Dependencies:
             - Calls into: _process_single_batch for individual batch processing
             - Called by: CLI commands, LLM batch processing workflows
-            
+
         Complexity: O(n/batch_size) where n is number of items, with O(1) per item within batches
         """
         start_time = time.time()

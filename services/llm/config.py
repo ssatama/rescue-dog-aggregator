@@ -37,24 +37,24 @@ class RetryStrategy(str, Enum):
 class LLMModelConfig(BaseModel):
     """
     Configuration for specific LLM models.
-    
+
     This class defines model-specific settings including which model to use,
     temperature ranges for different processing types, and token limits.
-    
+
     The temperature ranges are optimized for different use cases:
     - Description cleaning: Low creativity (0.2-0.4) for consistent, clean output
     - Dog profiler: High creativity (0.7-0.9) for engaging, personalized content
     - Translation: Very low creativity (0.1-0.3) for accurate translations
-    
+
     Attributes:
         default_model: The default LLM model identifier (uses OpenRouter's auto-selection)
         temperature_ranges: Processing-type specific temperature ranges for optimal results
         max_tokens: Optional token limit per request to control costs and response length
-    
+
     Dependencies:
         - Called by: LLMConfig, OpenRouterLLMDataService
         - Calls into: Pydantic BaseModel validation
-    
+
     Complexity: O(1) for all operations - simple configuration data structure
     """
 
@@ -66,22 +66,22 @@ class LLMModelConfig(BaseModel):
 class CacheConfig(BaseModel):
     """
     Cache configuration settings for LRU cache implementation.
-    
+
     Controls the behavior of the LRU (Least Recently Used) cache that prevents
     memory leaks in the LLM service by maintaining bounded cache sizes.
-    
+
     The cache dramatically improves performance by avoiding redundant LLM API calls
     for identical requests. Cache keys are SHA256 hashes of content + processing type.
-    
+
     Attributes:
         enabled: Whether caching is active (disable for testing/debugging)
         max_size: Maximum number of cached responses (hard limit: 10,000)
         ttl_seconds: Time-to-live for cache entries (not actively enforced in LRU)
-    
+
     Dependencies:
         - Called by: LLMConfig, LLMConfigLoader._load_cache_config
         - Calls into: services.llm_data_service.LRUCache
-    
+
     Complexity: O(1) for validation, O(log n) for cache operations
     """
 
@@ -94,19 +94,19 @@ class CacheConfig(BaseModel):
     def validate_cache_size(cls, v):
         """
         Validate cache size doesn't exceed memory safety limits.
-        
+
         Prevents excessive memory usage by limiting cache to 10,000 entries.
         Each cache entry contains ~1-5KB of LLM response data.
-        
+
         Args:
             v: The max_size value to validate
-            
+
         Returns:
             int: The validated cache size
-            
+
         Raises:
             ValueError: If cache size exceeds 10,000 entries
-            
+
         Complexity: O(1) - simple bounds check
         """
         if v > 10000:
@@ -117,25 +117,25 @@ class CacheConfig(BaseModel):
 class RetryConfig(BaseModel):
     """
     Retry configuration settings for API resilience.
-    
+
     Configures the retry mechanism used by the OpenRouter LLM service to handle
     transient failures, rate limiting, and server errors gracefully.
-    
+
     The retry system uses the Tenacity library with configurable backoff strategies:
     - EXPONENTIAL: Doubles delay between attempts (recommended for production)
     - LINEAR: Adds base_delay to each attempt (predictable timing)
     - FIXED: Uses same delay for all attempts (simple but less effective)
-    
+
     Attributes:
         max_attempts: Total number of API call attempts (1-10 range)
         strategy: Backoff algorithm to use between retry attempts
         base_delay: Initial delay before first retry (seconds)
         max_delay: Maximum delay between attempts to prevent infinite waiting
-    
+
     Dependencies:
         - Called by: LLMConfig, OpenRouterLLMDataService._create_retry_decorator
         - Calls into: tenacity retry decorators
-    
+
     Complexity: O(n) where n is max_attempts for full retry sequence
     """
 
@@ -149,20 +149,20 @@ class RetryConfig(BaseModel):
     def validate_max_delay(cls, v, info):
         """
         Validate max_delay is not less than base_delay.
-        
+
         Ensures the retry configuration is logically consistent by preventing
         cases where maximum delay is less than the base delay.
-        
+
         Args:
             v: The max_delay value to validate
             info: Pydantic validation context containing other field values
-            
+
         Returns:
             float: The validated max_delay value
-            
+
         Raises:
             ValueError: If max_delay < base_delay
-            
+
         Complexity: O(1) - simple comparison
         """
         if hasattr(info, "data") and "base_delay" in info.data and v < info.data["base_delay"]:
@@ -173,23 +173,23 @@ class RetryConfig(BaseModel):
 class BatchConfig(BaseModel):
     """
     Batch processing configuration for high-performance LLM operations.
-    
+
     Controls the batch processing system that achieved 47.5x performance improvement
     over individual API calls by grouping operations and using async concurrency.
-    
+
     The batch processor groups animals into configurable batches, processes them
     concurrently with the LLM API, then commits results to database in batches.
     This dramatically reduces both API latency and database connection overhead.
-    
+
     Attributes:
         default_size: Standard batch size for CLI commands (optimized per environment)
         max_size: Upper limit for batch size to prevent memory/timeout issues
         concurrent_requests: Number of simultaneous API requests (controls API load)
-    
+
     Dependencies:
         - Called by: LLMConfig, management.batch_processor.DatabaseBatchProcessor
         - Calls into: asyncio.gather for concurrent processing
-    
+
     Complexity: O(n/batch_size) for processing n items, with concurrent API calls
     """
 
@@ -202,20 +202,20 @@ class BatchConfig(BaseModel):
     def validate_batch_sizes(cls, v, info):
         """
         Validate max_size is not less than default_size.
-        
+
         Ensures batch configuration is logically consistent by preventing
         cases where the maximum batch size is smaller than the default size.
-        
+
         Args:
             v: The max_size value to validate
             info: Pydantic validation context containing other field values
-            
+
         Returns:
             int: The validated max_size value
-            
+
         Raises:
             ValueError: If max_size < default_size
-            
+
         Complexity: O(1) - simple comparison
         """
         if hasattr(info, "data") and "default_size" in info.data and v < info.data["default_size"]:
@@ -226,11 +226,11 @@ class BatchConfig(BaseModel):
 class LLMConfig(BaseModel):
     """
     Complete LLM service configuration aggregating all subsystem settings.
-    
+
     This is the root configuration class that combines all LLM-related settings
     into a single, validated configuration object. It provides environment-aware
     defaults and comprehensive validation of all configuration parameters.
-    
+
     The configuration is built through dependency injection of specialized
     config objects, each handling a specific aspect of the LLM service:
     - Model settings (temperatures, token limits)
@@ -238,10 +238,10 @@ class LLMConfig(BaseModel):
     - Retry policies (API resilience)
     - Batch processing (performance optimization)
     - Feature flags (functionality toggles)
-    
+
     Environment-specific defaults ensure optimal behavior across development,
     staging, and production environments without requiring manual configuration.
-    
+
     Attributes:
         environment: Deployment environment affecting default values
         api_key: OpenRouter API key (required for service operation)
@@ -252,11 +252,11 @@ class LLMConfig(BaseModel):
         retry: Retry policy for handling API failures
         batch: Batch processing configuration for high throughput
         features: Feature flags for enabling/disabling functionality
-    
+
     Dependencies:
         - Called by: get_llm_config(), OpenRouterLLMDataService.__init__
         - Calls into: All configuration sub-classes for validation
-    
+
     Complexity: O(1) for access, O(n) for complete validation of all sub-configs
     """
 
@@ -287,23 +287,23 @@ class LLMConfig(BaseModel):
 class LLMConfigLoader:
     """
     Load and validate LLM configuration from environment variables.
-    
+
     This factory class handles the complex logic of loading configuration from
     environment variables with appropriate defaults for different deployment
     environments. It provides environment-specific optimizations:
-    
+
     - Development: Smaller batches, shorter cache TTL for fast iteration
     - Staging: Balanced settings for integration testing
     - Production: Larger batches, aggressive retries, longer cache for performance
     - Testing: Minimal settings, caching disabled for test isolation
-    
+
     All methods are static to enable pure functional configuration loading
     without maintaining state or side effects.
-    
+
     Dependencies:
         - Called by: get_llm_config() via LLMConfigLoader.load_config()
         - Calls into: os.getenv for environment variable access
-    
+
     Complexity: O(1) for all operations - simple environment variable reads
     """
 
@@ -311,16 +311,16 @@ class LLMConfigLoader:
     def _get_environment() -> Environment:
         """
         Determine current deployment environment from ENVIRONMENT variable.
-        
+
         Reads the ENVIRONMENT variable and maps it to a validated Environment enum.
         Defaults to DEVELOPMENT if not set or invalid, ensuring safe fallback.
-        
+
         Returns:
             Environment: The validated deployment environment
-            
+
         Environment Variables:
             ENVIRONMENT: Deployment environment (development/staging/production/testing)
-            
+
         Complexity: O(1) - simple environment variable read and enum lookup
         """
         env_str = os.getenv("ENVIRONMENT", "development").lower()
@@ -330,18 +330,18 @@ class LLMConfigLoader:
     def _load_model_config() -> LLMModelConfig:
         """
         Load model-specific configuration from environment variables.
-        
+
         Constructs LLMModelConfig with environment overrides for model selection
         and token limits. Uses OpenRouter's AUTO model selection by default
         for optimal performance without manual model management.
-        
+
         Returns:
             LLMModelConfig: Validated model configuration
-            
+
         Environment Variables:
             LLM_DEFAULT_MODEL: Override default model (default: "openrouter/auto")
             LLM_MAX_TOKENS: Maximum tokens per request (default: unlimited)
-            
+
         Complexity: O(1) - simple environment variable reads and construction
         """
         return LLMModelConfig(default_model=os.getenv("LLM_DEFAULT_MODEL", "openrouter/auto"), max_tokens=int(os.getenv("LLM_MAX_TOKENS", "0")) or None)
@@ -350,28 +350,28 @@ class LLMConfigLoader:
     def _load_cache_config(environment: Environment) -> CacheConfig:
         """
         Load cache configuration with environment-specific optimizations.
-        
+
         Creates CacheConfig with settings optimized for each deployment environment:
-        
+
         - Development: Medium cache (500 entries, 30min TTL) for development efficiency
         - Staging: Standard cache (1000 entries, 1hr TTL) for integration testing
         - Production: Large cache (2000 entries, 2hr TTL) for maximum performance
         - Testing: Disabled cache (100 entries, 5min TTL) for test isolation
-        
+
         The cache dramatically improves performance by avoiding redundant API calls
         for identical LLM requests, which is especially valuable for batch processing.
-        
+
         Args:
             environment: The deployment environment affecting cache settings
-            
+
         Returns:
             CacheConfig: Environment-optimized cache configuration
-            
+
         Environment Variables:
             LLM_CACHE_ENABLED: Override cache enable/disable
             LLM_CACHE_MAX_SIZE: Override maximum cache entries
             LLM_CACHE_TTL_SECONDS: Override cache time-to-live
-            
+
         Complexity: O(1) - dictionary lookup and simple construction
         """
         # Environment-specific defaults
@@ -394,27 +394,27 @@ class LLMConfigLoader:
     def _load_retry_config(environment: Environment) -> RetryConfig:
         """
         Load retry configuration with environment-specific resilience settings.
-        
+
         Creates RetryConfig optimized for different environments:
-        
+
         - Production: More aggressive retries (5 attempts) for maximum uptime
         - Other environments: Standard retries (3 attempts) for faster failure detection
-        
+
         Uses exponential backoff by default to handle rate limiting gracefully
         while avoiding overwhelming the OpenRouter API with rapid successive calls.
-        
+
         Args:
             environment: The deployment environment affecting retry behavior
-            
+
         Returns:
             RetryConfig: Environment-optimized retry configuration
-            
+
         Environment Variables:
             LLM_RETRY_MAX_ATTEMPTS: Override maximum retry attempts
             LLM_RETRY_STRATEGY: Override retry strategy (exponential/linear/fixed)
             LLM_RETRY_BASE_DELAY: Override initial delay in seconds
             LLM_RETRY_MAX_DELAY: Override maximum delay in seconds
-            
+
         Complexity: O(1) - simple conditional and construction
         """
         # More aggressive retries in production
@@ -431,28 +431,28 @@ class LLMConfigLoader:
     def _load_batch_config(environment: Environment) -> BatchConfig:
         """
         Load batch processing configuration optimized per environment.
-        
+
         Creates BatchConfig with settings that balance throughput vs resource usage:
-        
+
         - Development: Small batches (3/10/5) for fast iteration and debugging
         - Staging: Medium batches (5/20/8) for realistic integration testing
         - Production: Large batches (10/25/15) for maximum throughput efficiency
         - Testing: Minimal batches (2/5/3) for precise test control
-        
+
         These settings achieved 47.5x performance improvement over individual processing
         by optimizing the balance between API concurrency and memory usage.
-        
+
         Args:
             environment: The deployment environment affecting batch sizing
-            
+
         Returns:
             BatchConfig: Environment-optimized batch processing configuration
-            
+
         Environment Variables:
             LLM_BATCH_DEFAULT_SIZE: Override default batch size
             LLM_BATCH_MAX_SIZE: Override maximum batch size
             LLM_BATCH_CONCURRENT: Override concurrent request limit
-            
+
         Complexity: O(1) - dictionary lookup and simple construction
         """
         # Smaller batches in development for faster feedback
@@ -475,29 +475,29 @@ class LLMConfigLoader:
     def _load_features(environment: Environment) -> Dict[str, bool]:
         """
         Load feature flags for enabling/disabling LLM functionality.
-        
+
         Creates a dictionary of feature flags that can be toggled via environment
         variables. All features are enabled by default but can be disabled
         for debugging, cost control, or partial deployments.
-        
+
         Feature flags available:
         - description_cleaning_enabled: Animal description enhancement
         - dog_profiler_enabled: Dog personality profiles for matching
         - translation_enabled: Multi-language description translation
         - metrics_collection_enabled: Performance and usage metrics
-        
+
         Args:
             environment: The deployment environment (currently unused but reserved)
-            
+
         Returns:
             Dict[str, bool]: Feature flag settings
-            
+
         Environment Variables:
             LLM_FEATURE_DESCRIPTION_CLEANING: Enable description cleaning (default: true)
             LLM_FEATURE_DOG_PROFILER: Enable dog profiler generation (default: true)
             LLM_FEATURE_TRANSLATION: Enable translation services (default: true)
             LLM_FEATURE_METRICS: Enable metrics collection (default: true)
-            
+
         Complexity: O(1) - simple environment variable reads and dictionary construction
         """
         return {
@@ -511,30 +511,30 @@ class LLMConfigLoader:
     def load_config(cls) -> LLMConfig:
         """
         Load complete LLM configuration from environment variables.
-        
+
         This is the main entry point for configuration loading. It orchestrates
         the loading of all configuration subsystems and combines them into a
         single, validated LLMConfig instance.
-        
+
         The loading process:
         1. Determines deployment environment
         2. Loads environment-specific configurations for each subsystem
         3. Applies environment variable overrides
         4. Validates all settings through Pydantic models
         5. Returns the complete configuration
-        
+
         Returns:
             LLMConfig: Complete, validated LLM service configuration
-            
+
         Environment Variables:
             OPENROUTER_API_KEY: Required API key for OpenRouter service
             LLM_BASE_URL: Override API base URL (default: OpenRouter v1)
             LLM_TIMEOUT_SECONDS: Override request timeout (default: 30.0)
-            
+
         Raises:
             ValidationError: If any configuration values are invalid
             ValueError: If required environment variables are missing
-            
+
         Complexity: O(1) - aggregates results from all other loader methods
         """
         environment = cls._get_environment()
@@ -558,21 +558,21 @@ class LLMConfigLoader:
 def get_llm_config() -> LLMConfig:
     """
     Get cached LLM configuration instance with singleton pattern.
-    
+
     This function provides a cached singleton instance of the LLM configuration
     to avoid repeated environment variable parsing and validation. The LRU cache
     ensures configuration is loaded only once per application lifecycle.
-    
+
     The caching is critical for performance since configuration loading involves
     multiple environment variable reads and Pydantic validation operations.
-    
+
     Returns:
         LLMConfig: Cached, complete LLM service configuration
-        
+
     Dependencies:
         - Called by: OpenRouterLLMDataService, management commands, API endpoints
         - Calls into: LLMConfigLoader.load_config()
-        
+
     Complexity: O(1) after first call due to LRU caching, O(n) for first call
     """
     return LLMConfigLoader.load_config()
@@ -581,26 +581,26 @@ def get_llm_config() -> LLMConfig:
 def get_model_temperature(processing_type: str, model_config: LLMModelConfig) -> float:
     """
     Get appropriate temperature for specific LLM processing type.
-    
+
     Calculates the optimal temperature setting for different processing types
     by using the middle of the configured temperature range. This ensures
     consistent, appropriate creativity levels for each use case:
-    
+
     - Description cleaning: Low temperature (0.3) for consistent output
     - Dog profiler: High temperature (0.8) for creative, engaging content
     - Translation: Very low temperature (0.2) for accurate translations
-    
+
     Args:
         processing_type: The type of LLM processing (e.g., "description_cleaning")
         model_config: Model configuration containing temperature ranges
-        
+
     Returns:
         float: Optimal temperature value for the processing type
-        
+
     Dependencies:
         - Called by: OpenRouterLLMDataService methods
         - Calls into: Dictionary lookup on model_config.temperature_ranges
-        
+
     Complexity: O(1) - simple dictionary lookup and arithmetic
     """
     temp_range = model_config.temperature_ranges.get(processing_type, (0.3, 0.7))
@@ -611,22 +611,22 @@ def get_model_temperature(processing_type: str, model_config: LLMModelConfig) ->
 def validate_config() -> bool:
     """
     Validate current configuration and return True if valid.
-    
+
     Performs comprehensive validation of the LLM configuration by:
     1. Loading the configuration (triggers environment variable validation)
     2. Checking required fields (API key presence)
     3. Validating all sub-configuration objects through Pydantic
-    
+
     This function is used for health checks and startup validation to ensure
     the LLM service can operate correctly before processing requests.
-    
+
     Returns:
         bool: True if configuration is valid and service can operate
-        
+
     Dependencies:
         - Called by: Health check endpoints, startup validation
         - Calls into: get_llm_config(), Pydantic model_dump() methods
-        
+
     Complexity: O(1) - simple validation calls with early returns
     """
     try:

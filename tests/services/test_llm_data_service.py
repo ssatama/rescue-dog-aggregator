@@ -103,7 +103,7 @@ class TestOpenRouterLLMService:
     async def test_successful_api_call(self, service, mock_httpx_client):
         """Test successful API call to OpenRouter."""
         from unittest.mock import Mock
-        
+
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.raise_for_status.return_value = None
@@ -123,12 +123,10 @@ class TestOpenRouterLLMService:
     async def test_client_error_raises_exception(self, service, mock_httpx_client):
         """Test that 4xx errors raise appropriate exceptions."""
         from unittest.mock import Mock
-        
+
         mock_response = Mock()
         mock_response.status_code = 401
-        mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-            "Invalid API key", request=Mock(), response=Mock(status_code=401, json=lambda: {"error": {"message": "Invalid API key"}})
-        )
+        mock_response.raise_for_status.side_effect = httpx.HTTPStatusError("Invalid API key", request=Mock(), response=Mock(status_code=401, json=lambda: {"error": {"message": "Invalid API key"}}))
         mock_httpx_client.post.return_value = mock_response
 
         with pytest.raises(ValueError) as exc_info:
@@ -141,26 +139,22 @@ class TestOpenRouterLLMService:
     async def test_server_error_triggers_retry(self, service, mock_httpx_client):
         """Test that 5xx errors trigger retry logic."""
         from unittest.mock import Mock
-        
+
         # Create failing responses
         error_response_1 = Mock()
         error_response_1.status_code = 503
-        error_response_1.raise_for_status.side_effect = httpx.HTTPStatusError(
-            "Service unavailable", request=Mock(), response=Mock(status_code=503)
-        )
-        
+        error_response_1.raise_for_status.side_effect = httpx.HTTPStatusError("Service unavailable", request=Mock(), response=Mock(status_code=503))
+
         error_response_2 = Mock()
         error_response_2.status_code = 500
-        error_response_2.raise_for_status.side_effect = httpx.HTTPStatusError(
-            "Internal error", request=Mock(), response=Mock(status_code=500)
-        )
-        
+        error_response_2.raise_for_status.side_effect = httpx.HTTPStatusError("Internal error", request=Mock(), response=Mock(status_code=500))
+
         # Create success response
         success_response = Mock()
         success_response.status_code = 200
         success_response.raise_for_status.return_value = None
         success_response.json.return_value = {"id": "test-id", "model": "openrouter/auto", "choices": [{"message": {"content": "Success after retries"}}]}
-        
+
         # First two calls fail, third succeeds
         mock_httpx_client.post.side_effect = [error_response_1, error_response_2, success_response]
 
@@ -247,11 +241,12 @@ class TestOpenRouterLLMService:
     async def test_caching_prevents_duplicate_calls(self, mock_httpx_client):
         """Test that caching prevents duplicate API calls for same content."""
         from unittest.mock import Mock, patch
+
         from services.llm.config import get_llm_config
-        
+
         # Clear config cache and ensure caching is enabled for this test
         get_llm_config.cache_clear()
-        
+
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.raise_for_status.return_value = None

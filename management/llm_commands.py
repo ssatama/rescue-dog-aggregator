@@ -11,6 +11,7 @@ Following CLAUDE.md principles:
 import asyncio
 import json
 import logging
+import os
 import sys
 from typing import Optional, Tuple
 
@@ -78,7 +79,8 @@ def enrich_descriptions(organization: Optional[str], limit: Optional[int], dry_r
     query += " ORDER BY a.created_at DESC"
 
     if limit:
-        query += f" LIMIT {limit}"
+        query += " LIMIT %s"
+        params.append(limit)
 
     cursor.execute(query, params)
     animals = cursor.fetchall()
@@ -231,7 +233,8 @@ def generate_profiles(organization: Optional[str], limit: Optional[int], batch_s
     query += " ORDER BY a.created_at DESC"
 
     if limit:
-        query += f" LIMIT {limit}"
+        query += " LIMIT %s"
+        params.append(limit)
 
     cursor.execute(query, params)
     animals = cursor.fetchall()
@@ -363,7 +366,8 @@ def translate(target_language: str, organization: Optional[str], limit: Optional
     query += " ORDER BY a.created_at DESC"
 
     if limit:
-        query += f" LIMIT {limit}"
+        query += " LIMIT %s"
+        params.append(limit)
 
     cursor.execute(query, params)
     animals = cursor.fetchall()

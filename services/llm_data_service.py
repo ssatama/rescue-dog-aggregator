@@ -142,19 +142,25 @@ class LLMDataService(ABC):
 class OpenRouterLLMDataService(LLMDataService):
     """OpenRouter implementation of LLM Data Service."""
 
-    def __init__(self, config: Optional[Any] = None, api_key: Optional[str] = None, 
-                 base_url: Optional[str] = None, timeout: Optional[float] = None, 
-                 max_retries: Optional[int] = None, cache_enabled: Optional[bool] = None, 
-                 max_cache_size: Optional[int] = None):
+    def __init__(
+        self,
+        config: Optional[Any] = None,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        timeout: Optional[float] = None,
+        max_retries: Optional[int] = None,
+        cache_enabled: Optional[bool] = None,
+        max_cache_size: Optional[int] = None,
+    ):
         """Initialize OpenRouter LLM service with configuration or individual parameters."""
         if config is None:
             config = get_llm_config()
-        
+
         # Override config with individual parameters if provided
         if api_key is not None:
             config.api_key = api_key
         if base_url is not None:
-            config.base_url = base_url  
+            config.base_url = base_url
         if timeout is not None:
             config.timeout_seconds = timeout
         if max_retries is not None:

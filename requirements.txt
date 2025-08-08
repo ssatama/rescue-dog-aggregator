@@ -149,6 +149,8 @@ sqlalchemy==2.0.41
     #   alembic
 starlette==0.47.1
     # via fastapi
+tenacity==9.0.0
+    # via -r requirements.in
 trio==0.30.0
     # via
     #   selenium

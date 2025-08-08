@@ -58,15 +58,15 @@ class TestOpenRouterServiceInit:
     def test_service_initializes_with_defaults(self):
         """Service should initialize with sensible defaults."""
         from services.llm.config import get_llm_config
-        
+
         # Clear config cache to ensure clean state
         get_llm_config.cache_clear()
-        
+
         service = OpenRouterLLMDataService(api_key="test-key")
         assert service.api_key == "test-key"
         assert service.base_url == "https://openrouter.ai/api/v1"
         assert service.timeout == 30.0
-        # Development environment defaults to 3 retries (production gets 5) 
+        # Development environment defaults to 3 retries (production gets 5)
         assert service.max_retries == 3
 
     def test_service_initializes_with_custom_params(self):
