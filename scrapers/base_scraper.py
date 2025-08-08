@@ -120,7 +120,7 @@ class BaseScraper(ABC):
         from services.null_objects import NullLLMDataService
 
         self.llm_data_service = llm_data_service or NullLLMDataService()
-        self.image_processing_service = image_processing_service or ImageProcessingService()
+        self.image_processing_service = image_processing_service
 
         # Track animals for filtering stats
         self.total_animals_before_filter = 0
