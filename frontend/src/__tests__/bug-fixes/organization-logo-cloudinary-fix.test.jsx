@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import { R2_CUSTOM_DOMAIN } from "../../constants/imageConfig";
 
 // Mock organization data with R2 logo URL scenarios
 const mockOrganizations = [
@@ -75,7 +76,7 @@ describe("Organization Logo R2 Migration", () => {
 
     it("should have valid R2 paths", () => {
       const r2Orgs = mockOrganizations.filter((org) =>
-        org.logo_url.includes("images.rescuedogs.me"),
+        org.logo_url.includes(R2_CUSTOM_DOMAIN),
       );
 
       r2Orgs.forEach((org) => {

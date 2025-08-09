@@ -5,9 +5,6 @@ import {
   getCatalogCardImage,
   getDetailHeroImage,
   getThumbnailImage,
-  getDogThumbnail,
-  getDogDetailImage,
-  getDogSmallThumbnail,
   getSmartObjectPosition,
   getCatalogCardImageWithPosition,
   getDetailHeroImageWithPosition,
@@ -187,32 +184,6 @@ describe("Smart Object Positioning", () => {
   });
 });
 
-describe("Legacy Function Compatibility", () => {
-  describe("getDogThumbnail (legacy)", () => {
-    it("should still work for backward compatibility using Cloudflare format", () => {
-      const result = getDogThumbnail(r2Url);
-      expect(result).toContain("/cdn-cgi/image/");
-      expect(result).toContain("w=300,h=300,fit=cover,quality=auto");
-    });
-  });
-
-  describe("getDogDetailImage (legacy)", () => {
-    it("should still work for backward compatibility using Cloudflare format", () => {
-      const result = getDogDetailImage(r2Url);
-      expect(result).toContain("/cdn-cgi/image/");
-      expect(result).toContain("w=800,h=600,fit=contain");
-    });
-  });
-
-  describe("getDogSmallThumbnail (legacy)", () => {
-    it("should still work for backward compatibility using Cloudflare format", () => {
-      const result = getDogSmallThumbnail(r2Url);
-      expect(result).toContain("/cdn-cgi/image/");
-      expect(result).toContain("w=150,h=150,fit=contain");
-    });
-  });
-});
-
 describe("R2 URL Detection", () => {
   describe("isR2Url", () => {
     it("should detect R2 URLs correctly", () => {
@@ -271,6 +242,163 @@ describe("Error Handling", () => {
     it("should clear onerror to prevent infinite loops", () => {
       handleImageError(mockEvent, externalUrl);
       expect(mockEvent.target.onerror).toBeNull();
+    });
+  });
+
+  // NEW: Tests for unified error handling patterns (TDD - GREEN PHASE)
+  describe("Unified Error Handling (FIXED)", () => {
+    describe("buildSecureCloudflareUrl consistent fallback behavior", () => {
+      it("should return fallbacks for invalid URLs instead of throwing", () => {
+        const maliciousUrl = `https://${realR2Domain}/../secret/file.jpg`;
+        const params = "w=400,h=300,fit=cover,quality=auto";
+
+        // Should not throw - returns fallback instead
+        const result = buildSecureCloudflareUrl(maliciousUrl, params);
+        expect(typeof result).toBe("string");
+        expect(result).toBe(maliciousUrl); // Returns original URL as fallback
+      });
+
+      it("should return fallbacks for malicious parameters instead of throwing", () => {
+        const maliciousParams =
+          "w=400,h=300,fit=cover,quality=auto;DROP TABLE users;";
+
+        // Should not throw - returns original URL as fallback
+        const result = buildSecureCloudflareUrl(r2Url, maliciousParams);
+        expect(result).toBe(r2Url); // Returns original URL as fallback
+      });
+
+      it("should handle same errors consistently across all code paths", () => {
+        const maliciousUrl = `https://${realR2Domain}/../secret/file.jpg`;
+
+        // Direct call now returns fallback (consistent behavior)
+        const result1 = buildSecureCloudflareUrl(
+          maliciousUrl,
+          "w=400,h=300,fit=cover",
+        );
+        const result2 = getOptimizedImage(maliciousUrl, "catalog");
+
+        // Both should return same type (string) and same fallback pattern
+        expect(typeof result1).toBe("string");
+        expect(typeof result2).toBe("string");
+        expect(result1).toBe(maliciousUrl); // Both return original URL as fallback
+        expect(result2).toBe(maliciousUrl);
+      });
+    });
+
+    describe("Consistent validation and fallback patterns", () => {
+      it("should use consistent fallback patterns across all validation functions", () => {
+        const maliciousUrl = `https://${realR2Domain}/../secret/file.jpg`;
+
+        // validateImageUrl still returns boolean (for internal use)
+        const isValid = validateImageUrl(maliciousUrl);
+        expect(isValid).toBe(false);
+
+        // But functions using validation now consistently return string fallbacks
+        const result1 = buildSecureCloudflareUrl(
+          maliciousUrl,
+          "w=400,h=300,fit=cover",
+        );
+        const result2 = getOptimizedImage(maliciousUrl, "catalog");
+
+        // Both return consistent fallbacks
+        expect(typeof result1).toBe("string");
+        expect(typeof result2).toBe("string");
+        expect(result1).toBe(result2); // Same fallback behavior
+      });
+    });
+
+    describe("Consistent error logging", () => {
+      it("should log security violations without throwing", () => {
+        // Mock logger to capture calls
+        const logSpy = jest.spyOn(require("../logger").logger, "warn");
+
+        const maliciousUrl = `https://${realR2Domain}/../secret/file.jpg`;
+
+        // Should log security violation and return fallback
+        const result = buildSecureCloudflareUrl(
+          maliciousUrl,
+          "w=400,h=300,fit=cover",
+        );
+
+        expect(logSpy).toHaveBeenCalled(); // Should log security error
+        expect(typeof result).toBe("string"); // Should return fallback
+        expect(result).toBe(maliciousUrl); // Original URL as fallback
+
+        logSpy.mockRestore();
+      });
+
+      it("should log parameter violations without throwing", () => {
+        const logSpy = jest.spyOn(require("../logger").logger, "warn");
+
+        const maliciousParams = "w=400,h=300,script=alert(1)";
+
+        const result = buildSecureCloudflareUrl(r2Url, maliciousParams);
+
+        expect(logSpy).toHaveBeenCalled(); // Should log parameter error
+        expect(result).toBe(r2Url); // Should return original URL
+
+        logSpy.mockRestore();
+      });
+    });
+
+    describe("Consistent null/undefined handling", () => {
+      it("should handle null/undefined URLs consistently across all functions", () => {
+        const testCases = [null, undefined, "", "not-a-url"];
+
+        testCases.forEach((invalidUrl) => {
+          // All functions should handle invalid URLs consistently
+          const result1 = buildSecureCloudflareUrl(
+            invalidUrl,
+            "w=400,h=300,fit=cover",
+          );
+          const result2 = getOptimizedImage(invalidUrl, "catalog");
+          const result3 = getCatalogCardImage(invalidUrl);
+
+          // All should return valid strings
+          expect(typeof result1).toBe("string");
+          expect(typeof result2).toBe("string");
+          expect(typeof result3).toBe("string");
+
+          // For null/undefined, should return placeholder
+          if (invalidUrl === null || invalidUrl === undefined) {
+            expect(result1).toBe("/placeholder_dog.svg");
+            expect(result2).toBe("/placeholder_dog.svg");
+            expect(result3).toBe("/placeholder_dog.svg");
+          }
+
+          // For invalid strings, should return original or fallback appropriately
+          if (invalidUrl === "" || invalidUrl === "not-a-url") {
+            if (invalidUrl === "") {
+              expect(result1).toBe("/placeholder_dog.svg"); // Empty string -> placeholder
+            } else {
+              expect(result1).toBe(invalidUrl); // Invalid URL -> return as-is (non-R2)
+            }
+          }
+        });
+      });
+    });
+
+    describe("Consistent parameter sanitization", () => {
+      it("should handle malicious parameters consistently without throwing", () => {
+        const maliciousParams = [
+          "w=400;rm -rf /",
+          "w=400&h=300&evil=script",
+          "w=400,h=300,script=alert(1)",
+          "w=400,h=300,redirect=evil.com",
+          "",
+          null,
+          undefined,
+        ];
+
+        maliciousParams.forEach((params) => {
+          // All parameter processing should return safe fallbacks, never throw
+          const result = buildSecureCloudflareUrl(r2Url, params);
+          expect(typeof result).toBe("string");
+          // Should return original URL for unsafe parameters
+          expect(result.includes(realR2Domain)).toBe(true);
+          expect(result).toBe(r2Url); // Original URL fallback for all malicious params
+        });
+      });
     });
   });
 });
@@ -432,22 +560,22 @@ describe("New Consolidated Image Functions", () => {
       expect(result).toContain("animals/test-org/sample.jpg");
     });
 
-    it("should reject invalid URLs for security", () => {
+    it("should return fallbacks for invalid URLs for security", () => {
       const params = "w=400,h=300,fit=cover,quality=auto";
       const maliciousUrl = `https://${realR2Domain}/../secret/file.jpg`;
 
-      expect(() => buildSecureCloudflareUrl(maliciousUrl, params)).toThrow(
-        "Invalid image path",
-      );
+      // Should return original URL as fallback instead of throwing
+      const result = buildSecureCloudflareUrl(maliciousUrl, params);
+      expect(result).toBe(maliciousUrl);
     });
 
-    it("should sanitize transformation parameters", () => {
+    it("should return fallbacks for invalid transformation parameters", () => {
       const maliciousParams =
         "w=400,h=300,fit=cover,quality=auto;DROP TABLE users;";
 
-      expect(() => buildSecureCloudflareUrl(r2Url, maliciousParams)).toThrow(
-        "Invalid transformation parameters",
-      );
+      // Should return original URL as fallback instead of throwing
+      const result = buildSecureCloudflareUrl(r2Url, maliciousParams);
+      expect(result).toBe(r2Url);
     });
 
     it("should handle missing parameters gracefully", () => {
@@ -615,6 +743,257 @@ describe("New Consolidated Image Functions", () => {
   });
 });
 
+// =====================================================
+// MEMORY LEAK TESTS (TDD - RED PHASE)
+// These tests demonstrate the memory leak issues that need fixing
+// =====================================================
+
+describe("Memory Leak Prevention Tests (TDD - Failing Tests)", () => {
+  describe("imageUrlCache Memory Leak Prevention", () => {
+    beforeEach(() => {
+      // Clear cache before each test
+      getOptimizedImage.clearCache?.();
+    });
+
+    it("should prevent imageUrlCache from growing beyond 1000 items", () => {
+      // This test will FAIL initially - demonstrates unbounded cache growth
+      const baseUrl = `https://${realR2Domain}/animals/test-org/image`;
+
+      // Generate 1500 unique cache keys to force cache overflow
+      for (let i = 0; i < 1500; i++) {
+        const uniqueUrl = `${baseUrl}_${i}.jpg`;
+        getOptimizedImage(uniqueUrl, "catalog", {}, false);
+      }
+
+      // The cache should not exceed 1000 items (LRU eviction should occur)
+      // This will initially fail because current implementation doesn't properly limit size
+      const cacheStats = getOptimizedImage.getCacheStats?.();
+      expect(cacheStats?.size).toBeLessThanOrEqual(1000);
+    });
+
+    it("should implement LRU eviction policy (least recently used items removed first)", () => {
+      // Clear cache
+      getOptimizedImage.clearCache?.();
+
+      const baseUrl = `https://${realR2Domain}/animals/test-org/image`;
+      const firstUrl = `${baseUrl}_first.jpg`;
+      const secondUrl = `${baseUrl}_second.jpg`;
+
+      // Add the first two items
+      getOptimizedImage(firstUrl, "catalog");
+      getOptimizedImage(secondUrl, "catalog");
+
+      // Fill cache to capacity (add 998 more to reach 1000 total)
+      for (let i = 1; i <= 998; i++) {
+        getOptimizedImage(`${baseUrl}_${i}.jpg`, "catalog");
+      }
+
+      // Access first item again to mark it as recently used
+      const firstResultAgain = getOptimizedImage(firstUrl, "catalog");
+      // Now cache order should be: secondUrl (oldest), items 1-998, firstUrl (newest)
+
+      // Add one more item to trigger eviction (should evict secondUrl which is oldest)
+      getOptimizedImage(`${baseUrl}_new.jpg`, "catalog");
+
+      const cacheStats = getOptimizedImage.getCacheStats?.();
+
+      // Cache should be at max size
+      expect(cacheStats?.size).toBe(1000);
+
+      // First item should still be cached (was recently accessed)
+      const firstUrlCacheKey = `${firstUrl}:catalog:{}:false`;
+      expect(cacheStats?.has(firstUrlCacheKey)).toBe(true);
+
+      // Second item should have been evicted (was least recently used)
+      const secondUrlCacheKey = `${secondUrl}:catalog:{}:false`;
+      expect(cacheStats?.has(secondUrlCacheKey)).toBe(false);
+
+      // New item should be cached
+      const newUrlCacheKey = `${baseUrl}_new.jpg:catalog:{}:false`;
+      expect(cacheStats?.has(newUrlCacheKey)).toBe(true);
+    });
+
+    it("should provide cache hit/miss statistics for monitoring", () => {
+      // This test will FAIL initially - cache metrics don't exist yet
+      getOptimizedImage.clearCache?.();
+
+      const testUrl = `https://${realR2Domain}/animals/test-org/cache_test.jpg`;
+
+      // First call should be a cache miss
+      getOptimizedImage(testUrl, "catalog");
+
+      // Second call should be a cache hit
+      getOptimizedImage(testUrl, "catalog");
+
+      const stats = getOptimizedImage.getCacheStats?.();
+      expect(stats?.hits).toBe(1);
+      expect(stats?.misses).toBe(1);
+      expect(stats?.hitRate).toBeCloseTo(0.5); // 50% hit rate
+    });
+  });
+
+  describe("Performance Tracking Arrays Memory Leak Prevention", () => {
+    beforeEach(() => {
+      // Reset stats before each test using existing functions
+      require("../imageUtils").resetImageLoadStats();
+    });
+
+    it("should prevent loadTimes array from growing beyond 100 items", () => {
+      const { trackImageLoad, getImageLoadStats } = require("../imageUtils");
+
+      // Add 150 load time measurements
+      for (let i = 0; i < 150; i++) {
+        trackImageLoad(`test_url_${i}`, i * 10, "catalog", 0);
+      }
+
+      const stats = getImageLoadStats();
+
+      // LoadTimes array should be capped at 100 items (rolling window)
+      // This will initially FAIL because current implementation doesn't limit array size properly
+      expect(stats.loadTimes.length).toBeLessThanOrEqual(100);
+
+      // Should keep only the most recent 100 measurements
+      // The oldest measurements should be removed
+      const oldestLoadTime = stats.loadTimes[0];
+      const newestLoadTime = stats.loadTimes[stats.loadTimes.length - 1];
+
+      // Newest load time should be from recent measurements (140-149 range)
+      expect(newestLoadTime).toBeGreaterThan(1400);
+
+      // Oldest load time should not be from the very first measurements (0-49 range)
+      expect(oldestLoadTime).toBeGreaterThan(490);
+    });
+
+    it("should prevent networkConditions array from growing beyond 50 items", async () => {
+      const { trackImageLoad, getImageLoadStats } = require("../imageUtils");
+
+      // Mock navigator.connection for network condition tracking
+      const originalConnection = navigator.connection;
+      Object.defineProperty(navigator, "connection", {
+        writable: true,
+        value: {
+          effectiveType: "4g",
+          downlink: 10,
+          saveData: false,
+        },
+      });
+
+      // Add 80 measurements with network conditions, with small delays to create different timestamps
+      for (let i = 0; i < 80; i++) {
+        trackImageLoad(`test_url_${i}`, i * 10, "catalog", 0);
+        // Add tiny delay every 10 iterations to ensure different timestamps
+        if (i % 10 === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 1));
+        }
+      }
+
+      const stats = getImageLoadStats();
+
+      // NetworkConditions array should be capped at 50 items (rolling window)
+      expect(stats.networkConditions.length).toBeLessThanOrEqual(50);
+
+      // Should keep only the most recent 50 measurements
+      if (stats.networkConditions.length > 1) {
+        const oldestTimestamp = stats.networkConditions[0].timestamp;
+        const newestTimestamp =
+          stats.networkConditions[stats.networkConditions.length - 1].timestamp;
+
+        // Newest timestamp should be greater than or equal to oldest (allowing for same timestamps)
+        expect(newestTimestamp).toBeGreaterThanOrEqual(oldestTimestamp);
+      }
+
+      // Restore original navigator.connection
+      Object.defineProperty(navigator, "connection", {
+        writable: true,
+        value: originalConnection,
+      });
+    });
+
+    it("should maintain performance metrics accuracy despite array size limits", () => {
+      const { trackImageLoad, getImageLoadStats } = require("../imageUtils");
+
+      // Add measurements that would exceed array limits
+      for (let i = 0; i < 200; i++) {
+        // Load times: 0ms, 100ms, 200ms, etc.
+        trackImageLoad(`test_url_${i}`, i * 100, "catalog", 0);
+      }
+
+      const stats = getImageLoadStats();
+
+      // Total count should still track all measurements
+      expect(stats.total).toBe(200);
+
+      // Average should be calculated correctly from the rolling window
+      // Even though we only keep last 100 measurements for rolling average
+      expect(stats.averageLoadTime).toBeGreaterThan(0);
+
+      // LoadTimes array should be limited but stats.total should be cumulative
+      expect(stats.loadTimes.length).toBeLessThanOrEqual(100);
+      expect(stats.total).toBe(200);
+    });
+
+    it("should provide memory usage monitoring for performance arrays", () => {
+      const { trackImageLoad, getImageLoadStats } = require("../imageUtils");
+
+      // This test will initially FAIL - memory monitoring doesn't exist yet
+
+      // Add some measurements
+      for (let i = 0; i < 25; i++) {
+        trackImageLoad(`test_url_${i}`, i * 50, "catalog", 0);
+      }
+
+      const stats = getImageLoadStats();
+
+      // Should provide memory usage information
+      expect(stats.memoryUsage?.loadTimesArraySize).toBeDefined();
+      expect(stats.memoryUsage?.networkConditionsArraySize).toBeDefined();
+      expect(stats.memoryUsage?.loadTimesArraySize).toBe(
+        stats.loadTimes.length,
+      );
+    });
+  });
+
+  describe("Long-running Session Memory Stability", () => {
+    it("should maintain stable memory usage in long-running sessions", () => {
+      // Simulate a long-running session with mixed operations
+      const { trackImageLoad, getImageLoadStats } = require("../imageUtils");
+
+      getOptimizedImage.clearCache?.();
+      require("../imageUtils").resetImageLoadStats();
+
+      const baseUrl = `https://${realR2Domain}/animals/test-org/session`;
+
+      // Simulate continuous usage over time
+      for (let cycle = 0; cycle < 10; cycle++) {
+        // Each cycle processes 200 images and 100 load measurements
+        for (let i = 0; i < 200; i++) {
+          const imageUrl = `${baseUrl}_cycle${cycle}_img${i}.jpg`;
+          getOptimizedImage(imageUrl, "catalog");
+
+          if (i % 2 === 0) {
+            // Track every other image load
+            trackImageLoad(imageUrl, Math.random() * 1000, "catalog", 0);
+          }
+        }
+      }
+
+      // After 10 cycles (2000 images, 1000 load measurements):
+      const cacheStats = getOptimizedImage.getCacheStats?.();
+      const loadStats = getImageLoadStats();
+
+      // Cache should be bounded
+      expect(cacheStats?.size).toBeLessThanOrEqual(1000);
+
+      // Performance arrays should be bounded
+      expect(loadStats.loadTimes.length).toBeLessThanOrEqual(100);
+      expect(loadStats.networkConditions.length).toBeLessThanOrEqual(50);
+
+      // But cumulative stats should reflect all activity
+      expect(loadStats.total).toBe(1000); // Total load measurements
+    });
+  });
+});
+
 describe("Updated Legacy Functions (Cloudflare Format)", () => {
   describe("getDetailHeroImage - Updated Format", () => {
     it("should use proper Cloudflare format instead of old Cloudinary format", () => {
@@ -668,7 +1047,7 @@ describe("Security Tests", () => {
   });
 
   describe("Parameter Injection Prevention", () => {
-    it("should reject malicious transformation parameters", () => {
+    it("should return fallbacks for malicious transformation parameters", () => {
       const maliciousParams = [
         "w=400,h=300,fit=cover;DROP TABLE users;",
         "w=400&h=300&rm -rf /",
@@ -677,7 +1056,9 @@ describe("Security Tests", () => {
       ];
 
       maliciousParams.forEach((params) => {
-        expect(() => buildSecureCloudflareUrl(r2Url, params)).toThrow();
+        // Should return original URL as fallback instead of throwing
+        const result = buildSecureCloudflareUrl(r2Url, params);
+        expect(result).toBe(r2Url);
       });
     });
   });

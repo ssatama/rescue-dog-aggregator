@@ -44,8 +44,70 @@ function getOriginalOrTransformed(originalUrl, transformedUrl) {
   return USE_R2_IMAGES ? transformedUrl : originalUrl;
 }
 
-// Memoization cache for performance optimization
-const imageUrlCache = new Map();
+// LRU Cache Implementation for Image URL Memoization
+// Prevents unbounded memory growth while maintaining performance
+class LRUCache {
+  constructor(maxSize = 1000) {
+    this.maxSize = maxSize;
+    this.cache = new Map();
+    this.hits = 0;
+    this.misses = 0;
+  }
+
+  get(key) {
+    if (this.cache.has(key)) {
+      // Move to end (most recently used)
+      const value = this.cache.get(key);
+      this.cache.delete(key);
+      this.cache.set(key, value);
+      this.hits++;
+      return value;
+    }
+    this.misses++;
+    return undefined;
+  }
+
+  set(key, value) {
+    if (this.cache.has(key)) {
+      // Update existing key (move to end)
+      this.cache.delete(key);
+    } else if (this.cache.size >= this.maxSize) {
+      // Remove least recently used (first item)
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
+    }
+    this.cache.set(key, value);
+  }
+
+  has(key) {
+    return this.cache.has(key);
+  }
+
+  clear() {
+    this.cache.clear();
+    this.hits = 0;
+    this.misses = 0;
+  }
+
+  get size() {
+    return this.cache.size;
+  }
+
+  getStats() {
+    const totalRequests = this.hits + this.misses;
+    return {
+      size: this.size,
+      maxSize: this.maxSize,
+      hits: this.hits,
+      misses: this.misses,
+      hitRate: totalRequests > 0 ? this.hits / totalRequests : 0,
+      has: (key) => this.has(key),
+    };
+  }
+}
+
+// Memoization cache for performance optimization with LRU eviction
+const imageUrlCache = new LRUCache(1000);
 
 // URL Registry for consistent preload/usage coordination
 // Stores URLs with consistent cache-busting parameters across session
@@ -298,7 +360,13 @@ export function extractOriginalPath(url) {
 }
 
 export function buildSecureCloudflareUrl(imageUrl, params) {
-  if (!imageUrl || !isR2Url(imageUrl)) {
+  // Handle null/undefined/empty URLs gracefully
+  if (!imageUrl || typeof imageUrl !== "string") {
+    return PLACEHOLDER_IMAGE;
+  }
+
+  // Handle non-R2 URLs by returning original
+  if (!isR2Url(imageUrl)) {
     return imageUrl;
   }
 
@@ -308,13 +376,17 @@ export function buildSecureCloudflareUrl(imageUrl, params) {
     return imageUrl;
   }
 
-  // Validate URL for security
+  // Validate URL for security - return original URL as fallback for invalid URLs
   if (!validateImageUrl(imageUrl)) {
-    throw new Error("Invalid image path");
+    logger.warn("Invalid image URL provided, returning original URL", {
+      url: imageUrl,
+      context: "buildSecureCloudflareUrl",
+    });
+    return imageUrl;
   }
 
-  // Validate parameters for security - strict validation
-  if (params) {
+  // Validate parameters for security - return original URL for invalid parameters
+  if (params && typeof params === "string") {
     // Allow only specific Cloudflare parameters
     const allowedParams =
       /^[wh]=\d+|fit=(cover|contain|crop|scale-down|fill|pad)|quality=(auto|\d+)$/;
@@ -322,7 +394,16 @@ export function buildSecureCloudflareUrl(imageUrl, params) {
 
     for (const param of paramsList) {
       if (!allowedParams.test(param.trim())) {
-        throw new Error("Invalid transformation parameters");
+        logger.warn(
+          "Invalid transformation parameters, returning original URL",
+          {
+            url: imageUrl,
+            params,
+            invalidParam: param,
+            context: "buildSecureCloudflareUrl",
+          },
+        );
+        return imageUrl;
       }
     }
 
@@ -333,16 +414,32 @@ export function buildSecureCloudflareUrl(imageUrl, params) {
       params.includes("script") ||
       params.includes("redirect")
     ) {
-      throw new Error("Invalid transformation parameters");
+      logger.warn("Dangerous parameters detected, returning original URL", {
+        url: imageUrl,
+        params,
+        context: "buildSecureCloudflareUrl",
+      });
+      return imageUrl;
     }
   }
 
-  if (!params) {
+  // Handle missing, null, or non-string parameters
+  if (!params || typeof params !== "string" || params.trim() === "") {
     return imageUrl;
   }
 
-  const imagePath = imageUrl.replace(`https://${R2_CUSTOM_DOMAIN}/`, "");
-  return `https://${R2_CUSTOM_DOMAIN}/cdn-cgi/image/${params}/${imagePath}`;
+  try {
+    const imagePath = imageUrl.replace(`https://${R2_CUSTOM_DOMAIN}/`, "");
+    return `https://${R2_CUSTOM_DOMAIN}/cdn-cgi/image/${params}/${imagePath}`;
+  } catch (error) {
+    logger.warn("Failed to build Cloudflare URL, returning original", {
+      url: imageUrl,
+      params,
+      error: error.message,
+      context: "buildSecureCloudflareUrl",
+    });
+    return imageUrl;
+  }
 }
 
 /**
@@ -370,8 +467,10 @@ export function getOptimizedImage(
   // Create cache key
   const cacheKey = `${url}:${preset}:${JSON.stringify(options)}:${isSlowConnection}`;
 
-  if (imageUrlCache.has(cacheKey)) {
-    return imageUrlCache.get(cacheKey);
+  // Check cache first (with LRU update)
+  const cachedResult = imageUrlCache.get(cacheKey);
+  if (cachedResult !== undefined) {
+    return cachedResult;
   }
 
   try {
@@ -382,14 +481,8 @@ export function getOptimizedImage(
     );
     const result = buildSecureCloudflareUrl(url, params);
 
-    // Cache result immediately
+    // Cache result with automatic LRU eviction
     imageUrlCache.set(cacheKey, result);
-
-    // Prevent cache from growing too large
-    if (imageUrlCache.size > 1000) {
-      const firstKey = imageUrlCache.keys().next().value;
-      imageUrlCache.delete(firstKey);
-    }
 
     return result;
   } catch (error) {
@@ -401,9 +494,13 @@ export function getOptimizedImage(
   }
 }
 
-// Add cache clearing method for testing
+// Add cache management methods for testing and monitoring
 getOptimizedImage.clearCache = () => {
   imageUrlCache.clear();
+};
+
+getOptimizedImage.getCacheStats = () => {
+  return imageUrlCache.getStats();
 };
 
 /**
@@ -505,22 +602,6 @@ export function getCatalogCardImage(originalUrl) {
 }
 
 /**
- * Get optimized image URL for dog cards (square thumbnails) - LEGACY - use getCatalogCardImage for new implementations
- */
-export function getDogThumbnail(originalUrl) {
-  if (!originalUrl) {
-    return PLACEHOLDER_IMAGE;
-  }
-
-  return getOptimizedImage(
-    originalUrl,
-    "catalog",
-    { width: 300, height: 300 },
-    isSlowConnection(),
-  );
-}
-
-/**
  * Get optimized image URL for dog detail hero images with responsive breakpoints
  * Optimized for mobile-first loading with progressive enhancement
  */
@@ -553,17 +634,6 @@ export function getDetailHeroImageAdaptive(originalUrl) {
 }
 
 /**
- * Get optimized image URL for dog detail pages - LEGACY - use getDetailHeroImage for new implementations
- */
-export function getDogDetailImage(originalUrl) {
-  if (!originalUrl) {
-    return PLACEHOLDER_IMAGE;
-  }
-
-  return getOptimizedImage(originalUrl, "hero", {}, isSlowConnection());
-}
-
-/**
  * Get optimized image URL for gallery thumbnails with performance optimization
  * Optimized for fast loading and bandwidth efficiency
  */
@@ -573,22 +643,6 @@ export function getThumbnailImage(originalUrl) {
   }
 
   return getOptimizedImage(originalUrl, "thumbnail", {}, isSlowConnection());
-}
-
-/**
- * Get image URL for smaller thumbnails (like in additional images) - LEGACY - use getThumbnailImage for new implementations
- */
-export function getDogSmallThumbnail(originalUrl) {
-  if (!originalUrl) {
-    return PLACEHOLDER_IMAGE;
-  }
-
-  return getOptimizedImage(
-    originalUrl,
-    "thumbnail",
-    { width: 150, height: 150, fit: "contain" },
-    isSlowConnection(),
-  );
 }
 
 /**
@@ -745,22 +799,26 @@ export function trackImageLoad(
     imageLoadStats.catalogImages++;
   }
 
-  // Track load times
+  // Track load times with rolling window (max 100 items)
   if (loadTime > 0) {
     imageLoadStats.loadTimes.push(loadTime);
 
-    // Update rolling average (keep last 100 measurements)
-    if (imageLoadStats.loadTimes.length > 100) {
-      imageLoadStats.loadTimes.shift();
+    // Enforce rolling window size limit - prevent memory leak
+    const MAX_LOAD_TIMES = 100;
+    if (imageLoadStats.loadTimes.length > MAX_LOAD_TIMES) {
+      // Remove oldest measurements to maintain rolling window
+      const itemsToRemove = imageLoadStats.loadTimes.length - MAX_LOAD_TIMES;
+      imageLoadStats.loadTimes.splice(0, itemsToRemove);
     }
 
+    // Update rolling average from current window
     const sum = imageLoadStats.loadTimes.reduce((a, b) => a + b, 0);
     imageLoadStats.averageLoadTime = Math.round(
       sum / imageLoadStats.loadTimes.length,
     );
   }
 
-  // Track network conditions
+  // Track network conditions with rolling window (max 50 items)
   if (typeof navigator !== "undefined" && navigator.connection) {
     const networkInfo = {
       effectiveType: navigator.connection.effectiveType,
@@ -771,9 +829,13 @@ export function trackImageLoad(
 
     imageLoadStats.networkConditions.push(networkInfo);
 
-    // Keep only last 50 network samples
-    if (imageLoadStats.networkConditions.length > 50) {
-      imageLoadStats.networkConditions.shift();
+    // Enforce rolling window size limit - prevent memory leak
+    const MAX_NETWORK_CONDITIONS = 50;
+    if (imageLoadStats.networkConditions.length > MAX_NETWORK_CONDITIONS) {
+      // Remove oldest measurements to maintain rolling window
+      const itemsToRemove =
+        imageLoadStats.networkConditions.length - MAX_NETWORK_CONDITIONS;
+      imageLoadStats.networkConditions.splice(0, itemsToRemove);
     }
   }
 }
@@ -785,6 +847,12 @@ export function getImageLoadStats() {
   return {
     ...imageLoadStats,
     errorStats: { ...imageErrorStats },
+    memoryUsage: {
+      loadTimesArraySize: imageLoadStats.loadTimes.length,
+      networkConditionsArraySize: imageLoadStats.networkConditions.length,
+      maxLoadTimes: 100,
+      maxNetworkConditions: 50,
+    },
   };
 }
 

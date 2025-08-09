@@ -5,12 +5,45 @@
 
 import { renderHook } from "@testing-library/react";
 import { useLazyImage } from "../useLazyImage";
+import { R2_CUSTOM_DOMAIN } from "../../constants/imageConfig";
 
 // Use real R2 domain for testing
 const realR2Domain =
   process.env.NEXT_PUBLIC_R2_CUSTOM_DOMAIN || "images.rescuedogs.me";
 
 describe("useLazyImage Hook", () => {
+  describe("Configuration Integration", () => {
+    it("should use R2_CUSTOM_DOMAIN from centralized config", () => {
+      // Verify that the imported constant matches the expected domain
+      expect(R2_CUSTOM_DOMAIN).toBe(realR2Domain);
+      expect(typeof R2_CUSTOM_DOMAIN).toBe("string");
+      expect(R2_CUSTOM_DOMAIN.length).toBeGreaterThan(0);
+    });
+
+    it("should properly detect R2 URLs using centralized configuration", () => {
+      const r2Url = `https://${R2_CUSTOM_DOMAIN}/rescue_dogs/test.jpg`;
+      const externalUrl = "https://example.com/test.jpg";
+
+      const { result: r2Result } = renderHook(() =>
+        useLazyImage(r2Url, { enableProgressiveLoading: true }),
+      );
+
+      const { result: externalResult } = renderHook(() =>
+        useLazyImage(externalUrl, { enableProgressiveLoading: true }),
+      );
+
+      // R2 URL should generate progressive URLs
+      expect(Object.keys(r2Result.current.progressiveUrls)).toHaveLength(2);
+
+      // External URL should not generate transformation URLs
+      expect(externalResult.current.progressiveUrls.lowQuality).toBe(
+        externalUrl,
+      );
+      expect(
+        externalResult.current.progressiveUrls.blurPlaceholder,
+      ).toBeUndefined();
+    });
+  });
   describe("Progressive Loading URL Generation", () => {
     it("should not create double transformations for already-transformed URLs", () => {
       const alreadyTransformed = `https://${realR2Domain}/cdn-cgi/image/w=800,h=600,fit=contain,quality=auto/rescue_dogs/pets_in_turkey/melon_3889e35e.jpg`;

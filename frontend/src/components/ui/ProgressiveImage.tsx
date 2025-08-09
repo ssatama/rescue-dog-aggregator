@@ -17,6 +17,7 @@ import {
   getThumbnailImage,
   handleImageError,
 } from "../../utils/imageUtils";
+import { R2_CUSTOM_DOMAIN } from "../../constants/imageConfig";
 
 type ImageContext = "hero" | "card" | "thumbnail";
 
@@ -106,10 +107,10 @@ const ProgressiveImage = memo(function ProgressiveImage({
     if (!src) return "/placeholder_dog.svg";
 
     // For R2 images, create a tiny blurred version using Cloudflare Images
-    if (src.includes("images.rescuedogs.me")) {
+    if (src.includes(R2_CUSTOM_DOMAIN)) {
       // Extract the path from the R2 URL
-      const imagePath = src.replace("https://images.rescuedogs.me/", "");
-      return `https://images.rescuedogs.me/cdn-cgi/image/w_20,h_20,q_10,f_auto,blur_300/${imagePath}`;
+      const imagePath = src.replace(`https://${R2_CUSTOM_DOMAIN}/`, "");
+      return `https://${R2_CUSTOM_DOMAIN}/cdn-cgi/image/w_20,h_20,q_10,f_auto,blur_300/${imagePath}`;
     }
 
     return "/placeholder_dog.svg";

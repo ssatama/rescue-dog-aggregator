@@ -316,7 +316,7 @@ class BaseScraper(ABC):
             return None, "error"
 
     def save_animal_images(self, animal_id, image_urls):
-        """Save animal images with Cloudinary upload, only uploading changed images.
+        """Save animal images with R2 upload, only uploading changed images.
 
         Returns:
             Tuple of (success_count, failure_count) for tracking upload results

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { R2_CUSTOM_DOMAIN } from "../constants/imageConfig";
 
 export interface UseLazyImageOptions {
   /** Whether this image should load immediately (high priority) */
@@ -64,7 +65,7 @@ export function useLazyImage(
     (originalSrc: string) => {
       if (!originalSrc || !enableProgressiveLoading) return {};
 
-      if (originalSrc.includes("images.rescuedogs.me")) {
+      if (originalSrc.includes(R2_CUSTOM_DOMAIN)) {
         // For R2 images, use Cloudflare Images transformations for progressive loading
         return {
           lowQuality: originalSrc.includes("/cdn-cgi/image/")
@@ -72,13 +73,13 @@ export function useLazyImage(
                 /\/cdn-cgi\/image\/[^/]+\//,
                 "/cdn-cgi/image/w=50,q=20,f=auto/",
               )
-            : `https://images.rescuedogs.me/cdn-cgi/image/w=50,q=20,f=auto/${originalSrc.replace("https://images.rescuedogs.me/", "")}`,
+            : `https://${R2_CUSTOM_DOMAIN}/cdn-cgi/image/w=50,q=20,f=auto/${originalSrc.replace(`https://${R2_CUSTOM_DOMAIN}/`, "")}`,
           blurPlaceholder: originalSrc.includes("/cdn-cgi/image/")
             ? originalSrc.replace(
                 /\/cdn-cgi\/image\/[^/]+\//,
                 "/cdn-cgi/image/w=50,q=20,blur=300,f=auto/",
               )
-            : `https://images.rescuedogs.me/cdn-cgi/image/w=50,q=20,blur=300,f=auto/${originalSrc.replace("https://images.rescuedogs.me/", "")}`,
+            : `https://${R2_CUSTOM_DOMAIN}/cdn-cgi/image/w=50,q=20,blur=300,f=auto/${originalSrc.replace(`https://${R2_CUSTOM_DOMAIN}/`, "")}`,
         };
       }
 
