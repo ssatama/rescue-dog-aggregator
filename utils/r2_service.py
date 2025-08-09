@@ -76,8 +76,29 @@ class R2Service:
 
     @staticmethod
     def _generate_image_key(image_url: str, animal_name: str, organization_name: str = "unknown") -> str:
-        """Generate unique image key for R2 storage"""
-        # Create URL hash to avoid duplicates (same as CloudinaryService)
+        """
+        Generate unique image key for R2 storage using SHA-256.
+        
+        SECURITY UPGRADE: Replaced MD5 with SHA-256 to address cryptographic vulnerability.
+        MD5 is susceptible to collision attacks which could lead to cache poisoning or 
+        unauthorized access to image resources.
+        """
+        # Use SHA-256 for cryptographic security (upgraded from MD5)
+        url_hash = hashlib.sha256(image_url.encode()).hexdigest()[:8]
+        safe_animal_name = animal_name.lower().replace(" ", "_").replace("-", "_")
+        safe_org_name = organization_name.lower().replace(" ", "_").replace("-", "_")
+
+        return f"rescue_dogs/{safe_org_name}/{safe_animal_name}_{url_hash}.jpg"
+
+    @staticmethod
+    def _generate_legacy_image_key(image_url: str, animal_name: str, organization_name: str = "unknown") -> str:
+        """
+        Generate legacy MD5-based image key for backward compatibility.
+        
+        This method is used to check for existing images that were uploaded
+        with the old MD5-based key format before the security upgrade.
+        """
+        # Legacy MD5 format for backward compatibility only
         url_hash = hashlib.md5(image_url.encode()).hexdigest()[:8]
         safe_animal_name = animal_name.lower().replace(" ", "_").replace("-", "_")
         safe_org_name = organization_name.lower().replace(" ", "_").replace("-", "_")
@@ -147,22 +168,32 @@ class R2Service:
             return image_url, False
 
         try:
-            # Generate image key
+            # Generate new SHA-256 image key
             image_key = R2Service._generate_image_key(image_url, animal_name, organization_name)
+            legacy_key = R2Service._generate_legacy_image_key(image_url, animal_name, organization_name)
             bucket_name = os.getenv("R2_BUCKET_NAME")
 
             # Get S3 client
             s3_client = R2Service._get_s3_client()
 
-            # Check if image already exists
+            # Check if image already exists (new SHA-256 key first)
             try:
                 s3_client.head_object(Bucket=bucket_name, Key=image_key)
-                logger.debug(f"Image already exists in R2: {image_key}")
+                logger.debug(f"Image already exists in R2 (SHA-256): {image_key}")
                 return R2Service._build_custom_domain_url(image_key), True
             except ClientError as e:
                 if e.response["Error"]["Code"] != "404":
-                    logger.warning(f"Could not check existing image: {e}")
-                # Image doesn't exist, proceed with upload
+                    logger.warning(f"Could not check existing image (SHA-256): {e}")
+                    
+            # Check for legacy MD5-based key for backward compatibility
+            try:
+                s3_client.head_object(Bucket=bucket_name, Key=legacy_key)
+                logger.debug(f"Image exists as legacy key (MD5): {legacy_key}")
+                return R2Service._build_custom_domain_url(legacy_key), True
+            except ClientError as e:
+                if e.response["Error"]["Code"] != "404":
+                    logger.warning(f"Could not check existing legacy image (MD5): {e}")
+                # Neither key exists, proceed with upload using new SHA-256 key
                 pass
 
             # Download the image

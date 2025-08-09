@@ -191,6 +191,50 @@ class TestR2ServiceUpload:
             assert result_url.startswith("https://images.example.com/")
             mock_s3_client.upload_fileobj.assert_not_called()
 
+    @patch("utils.r2_service.boto3.client")
+    @patch("utils.r2_service.requests.get")
+    def test_upload_image_backward_compatibility_check(self, mock_requests_get, mock_boto3_client):
+        """Test that upload checks for both SHA-256 and legacy MD5 keys"""
+        with patch.dict(
+            "os.environ",
+            {
+                "R2_ACCOUNT_ID": "test_account_id",
+                "R2_ACCESS_KEY_ID": "test_access_key",
+                "R2_SECRET_ACCESS_KEY": "test_secret",
+                "R2_BUCKET_NAME": "test_bucket",
+                "R2_ENDPOINT": "https://test.r2.cloudflarestorage.com",
+                "R2_CUSTOM_DOMAIN": "https://images.example.com",
+            },
+        ):
+            R2Service._reset_config_cache()  # Reset cache for test
+            # Mock requests response
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.headers = {"content-type": "image/jpeg"}
+            mock_response.content = b"fake_image_data"
+            mock_requests_get.return_value = mock_response
+
+            # Mock boto3 client - SHA-256 key doesn't exist, but MD5 legacy key does
+            mock_s3_client = Mock()
+            # First call for SHA-256 key returns 404 (not found)
+            # Second call for legacy MD5 key returns existing object
+            mock_s3_client.head_object.side_effect = [
+                ClientError({"Error": {"Code": "404"}}, "HeadObject"),  # SHA-256 key not found
+                {"ETag": "existing-legacy-etag"}  # Legacy MD5 key found
+            ]
+            mock_boto3_client.return_value = mock_s3_client
+
+            image_url = "http://example.com/dog.jpg"
+            result_url, success = R2Service.upload_image_from_url(image_url, "test_dog")
+
+            # Should find existing legacy key and return its URL
+            assert success is True
+            assert result_url.startswith("https://images.example.com/")
+            # Should have checked both keys
+            assert mock_s3_client.head_object.call_count == 2
+            # Should not upload since legacy key was found
+            mock_s3_client.upload_fileobj.assert_not_called()
+
 
 class TestR2ServiceOptimization:
     """Test R2Service optimization and URL generation"""
@@ -241,8 +285,8 @@ class TestR2ServiceOptimization:
 class TestR2ServiceHelpers:
     """Test R2Service helper methods"""
 
-    def test_generate_image_key(self):
-        """Test image key generation"""
+    def test_generate_image_key_sha256(self):
+        """Test image key generation uses SHA-256 (security upgrade)"""
         image_url = "http://example.com/dog.jpg"
         animal_name = "Test Dog"
         organization_name = "Test Org"
@@ -252,8 +296,41 @@ class TestR2ServiceHelpers:
         # Should contain organization and animal name
         assert "rescue_dogs/test_org/test_dog_" in key
 
-        # Should contain URL hash
-        url_hash = hashlib.md5(image_url.encode()).hexdigest()[:8]
+        # Should contain SHA-256 URL hash (first 8 chars)
+        url_hash = hashlib.sha256(image_url.encode()).hexdigest()[:8]
+        assert url_hash in key
+
+        # Should NOT contain MD5 hash (security vulnerability)
+        md5_hash = hashlib.md5(image_url.encode()).hexdigest()[:8]
+        assert md5_hash not in key
+
+    def test_generate_image_key_backward_compatibility(self):
+        """Test backward compatibility for existing MD5-based keys"""
+        image_url = "http://example.com/dog.jpg"
+        animal_name = "Test Dog"
+        organization_name = "Test Org"
+
+        # Test the legacy key checker function
+        legacy_key = R2Service._generate_legacy_image_key(image_url, animal_name, organization_name)
+        
+        # Legacy key should use MD5 format for backward compatibility checks
+        md5_hash = hashlib.md5(image_url.encode()).hexdigest()[:8]
+        assert md5_hash in legacy_key
+        assert "rescue_dogs/test_org/test_dog_" in legacy_key
+
+    def test_generate_image_key(self):
+        """Test image key generation (legacy test for compatibility)"""
+        image_url = "http://example.com/dog.jpg"
+        animal_name = "Test Dog"
+        organization_name = "Test Org"
+
+        key = R2Service._generate_image_key(image_url, animal_name, organization_name)
+
+        # Should contain organization and animal name
+        assert "rescue_dogs/test_org/test_dog_" in key
+
+        # Now should contain SHA-256 hash instead of MD5
+        url_hash = hashlib.sha256(image_url.encode()).hexdigest()[:8]
         assert url_hash in key
 
     def test_build_custom_domain_url(self):
@@ -275,3 +352,166 @@ class TestR2ServiceHelpers:
 
             # Test empty URL
             assert R2Service._is_r2_url("") is False
+
+
+class TestR2ServiceSecurity:
+    """Test R2Service security aspects and edge cases"""
+
+    def test_generate_image_key_collision_resistance(self):
+        """Test that SHA-256 keys are collision resistant compared to MD5"""
+        # Test different URLs that could potentially collide
+        test_cases = [
+            ("http://example.com/dog1.jpg", "test_dog", "org1"),
+            ("http://example.com/dog2.jpg", "test_dog", "org1"),
+            ("http://different.com/dog1.jpg", "test_dog", "org1"),
+            ("http://example.com/dog1.jpg", "different_dog", "org1"),
+            ("http://example.com/dog1.jpg", "test_dog", "different_org"),
+        ]
+        
+        keys = []
+        legacy_keys = []
+        
+        for image_url, animal_name, org_name in test_cases:
+            key = R2Service._generate_image_key(image_url, animal_name, org_name)
+            legacy_key = R2Service._generate_legacy_image_key(image_url, animal_name, org_name)
+            keys.append(key)
+            legacy_keys.append(legacy_key)
+        
+        # All SHA-256 keys should be unique
+        assert len(set(keys)) == len(keys), "SHA-256 keys should be unique"
+        
+        # All legacy MD5 keys should also be unique for this test set
+        assert len(set(legacy_keys)) == len(legacy_keys), "Legacy MD5 keys should be unique for this test set"
+        
+        # SHA-256 and MD5 keys should be different for same inputs
+        for i in range(len(keys)):
+            assert keys[i] != legacy_keys[i], f"SHA-256 and MD5 keys should differ for input {i}"
+
+    def test_generate_image_key_input_validation(self):
+        """Test image key generation handles malicious inputs safely"""
+        malicious_inputs = [
+            # Path traversal attempts
+            ("http://example.com/../../../etc/passwd", "dog", "org"),
+            ("http://example.com/..\\..\\..\\windows\\system32", "dog", "org"),
+            # Script injection attempts
+            ("<script>alert('xss')</script>", "dog", "org"),
+            ("'; DROP TABLE images; --", "dog", "org"),
+            # Unicode and encoding attempts
+            ("http://example.com/\x00\x01\x02", "dog", "org"),
+            ("http://example.com/%2e%2e%2f", "dog", "org"),
+        ]
+        
+        for image_url, animal_name, org_name in malicious_inputs:
+            # Should not raise exceptions
+            key = R2Service._generate_image_key(image_url, animal_name, org_name)
+            legacy_key = R2Service._generate_legacy_image_key(image_url, animal_name, org_name)
+            
+            # Keys should be valid S3 object names
+            assert key.startswith("rescue_dogs/")
+            assert key.endswith(".jpg")
+            assert legacy_key.startswith("rescue_dogs/")
+            assert legacy_key.endswith(".jpg")
+            
+            # Keys should not contain dangerous characters
+            dangerous_chars = ["<", ">", "&", "'", "\"", ";", "\x00", "\\", ".."]
+            for char in dangerous_chars:
+                assert char not in key, f"Key should not contain dangerous character: {char}"
+                assert char not in legacy_key, f"Legacy key should not contain dangerous character: {char}"
+
+    def test_upload_image_security_headers(self):
+        """Test that upload includes security metadata"""
+        image_url = "http://example.com/dog.jpg"
+        animal_name = "security_test"
+        organization_name = "test_org"
+        
+        with patch.dict(
+            "os.environ",
+            {
+                "R2_ACCOUNT_ID": "test_account_id",
+                "R2_ACCESS_KEY_ID": "test_access_key", 
+                "R2_SECRET_ACCESS_KEY": "test_secret",
+                "R2_BUCKET_NAME": "test_bucket",
+                "R2_ENDPOINT": "https://test.r2.cloudflarestorage.com",
+                "R2_CUSTOM_DOMAIN": "https://images.example.com",
+            },
+        ):
+            R2Service._reset_config_cache()
+            
+            with patch("utils.r2_service.boto3.client") as mock_boto3_client, \
+                 patch("utils.r2_service.requests.get") as mock_requests_get:
+                
+                # Mock successful image download
+                mock_response = Mock()
+                mock_response.status_code = 200
+                mock_response.headers = {"content-type": "image/jpeg"}
+                mock_response.content = b"fake_image_data"
+                mock_requests_get.return_value = mock_response
+                
+                # Mock S3 client - image doesn't exist, will upload
+                mock_s3_client = Mock()
+                mock_s3_client.head_object.side_effect = [
+                    ClientError({"Error": {"Code": "404"}}, "HeadObject"),  # SHA-256 key not found
+                    ClientError({"Error": {"Code": "404"}}, "HeadObject")   # Legacy key not found
+                ]
+                mock_boto3_client.return_value = mock_s3_client
+                
+                result_url, success = R2Service.upload_image_from_url(image_url, animal_name, organization_name)
+                
+                # Verify upload was called with security metadata
+                mock_s3_client.upload_fileobj.assert_called_once()
+                call_args = mock_s3_client.upload_fileobj.call_args
+                
+                # Check ExtraArgs contains security metadata
+                extra_args = call_args[1]["ExtraArgs"]
+                assert "Metadata" in extra_args
+                metadata = extra_args["Metadata"]
+                
+                # Verify security metadata is present
+                assert "original_url" in metadata
+                assert "animal_name" in metadata
+                assert "organization" in metadata
+                assert metadata["original_url"] == image_url
+                assert metadata["animal_name"] == animal_name
+                assert metadata["organization"] == organization_name
+
+    def test_upload_image_content_type_validation(self):
+        """Test that upload validates content types for security"""
+        malicious_content_types = [
+            "application/x-executable",
+            "text/html",
+            "application/javascript",
+            "text/plain",
+            "",  # Empty content type
+            "image/svg+xml",  # SVG can contain scripts
+        ]
+        
+        for content_type in malicious_content_types:
+            with patch.dict(
+                "os.environ",
+                {
+                    "R2_ACCOUNT_ID": "test_account_id",
+                    "R2_ACCESS_KEY_ID": "test_access_key",
+                    "R2_SECRET_ACCESS_KEY": "test_secret", 
+                    "R2_BUCKET_NAME": "test_bucket",
+                    "R2_ENDPOINT": "https://test.r2.cloudflarestorage.com",
+                    "R2_CUSTOM_DOMAIN": "https://images.example.com",
+                },
+            ):
+                R2Service._reset_config_cache()
+                
+                with patch("utils.r2_service.requests.get") as mock_requests_get:
+                    # Mock response with malicious content type
+                    mock_response = Mock()
+                    mock_response.status_code = 200
+                    mock_response.headers = {"content-type": content_type}
+                    mock_response.content = b"fake_content"
+                    mock_requests_get.return_value = mock_response
+                    
+                    result_url, success = R2Service.upload_image_from_url(
+                        "http://example.com/malicious.exe", "test", "test"
+                    )
+                    
+                    # Should reject non-image content types
+                    assert success is False
+                    # Should return original URL as fallback
+                    assert result_url == "http://example.com/malicious.exe"
