@@ -41,6 +41,12 @@ class AnimalService:
             List of animals with their images
         """
         try:
+            # Apply server-side limit enforcement (max 1000 for security)
+            original_limit = filters.limit
+            if filters.limit > 1000:
+                filters.limit = 1000
+                logger.info(f"Capped limit from {original_limit} to 1000 for security")
+
             # Handle recent_with_fallback curation type specially
             if filters.curation_type == "recent_with_fallback":
                 return self._get_animals_with_fallback(filters)

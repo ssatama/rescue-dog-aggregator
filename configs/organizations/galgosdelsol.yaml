@@ -1,0 +1,44 @@
+schema_version: "1.0"
+id: "galgosdelsol"
+name: "Galgos del Sol"
+enabled: true
+scraper:
+  class_name: "GalgosDelSolScraper"
+  module: "scrapers.galgosdelsol.galgosdelsol_scraper"
+  config:
+    rate_limit_delay: 2.5
+    max_retries: 3
+    timeout: 240
+    batch_size: 6
+    skip_existing_animals: false
+metadata:
+  website_url: "https://galgosdelsol.org/"
+  description: |
+    Founded in 2007 by Tina Solera in Murcia, Spain, Galgos del Sol is a licensed Spanish charity dedicated to rescuing, rehabilitating, and rehoming Spanish galgos (traditional hunting dogs). What started as one woman's mission to help mistreated galgos has grown into a comprehensive rescue operation housing 200+ dogs at their purpose-built facility. The center features multiple kennel blocks with indoor/outdoor access, exercise areas, a fully equipped veterinary clinic with operating suite, quarantine facilities, and specialized areas for puppies and rehabilitation. GDS works with international partners like GIN UK and relies on both local and international volunteers to provide the best possible care while dogs await adoption into forever homes.
+  location:
+    country: "ES" # Organization's base country
+    city: "Murcia" # Organization's base city
+  service_regions: ["ES"]
+  ships_to: [
+      "BE", # Belgium
+      "NL", # Netherlands
+      "LU", # Luxembourg
+      "DE", # Germany
+      "CZ", # Czech Republic
+      "DK", # Denmark
+      "SE", # Sweden
+      "FI", # Finland
+      "CA", # Canada (Quebec)
+      "ES", # Spain
+      "GB", # United Kingdom
+      "US", # United States
+    ] # Countries they ship to
+  social_media:
+    website: "https://galgosdelsol.org/"
+    facebook: "https://www.facebook.com/people/Galgos-del-Sol/100064388930918/"
+    instagram: "https://www.instagram.com/galgosdelsol/"
+  established_year: 2007
+  logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-galgosdelsol.png"
+  adoption_fees:
+    usual_fee: 650
+    currency: "USD"
