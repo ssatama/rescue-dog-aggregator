@@ -52,6 +52,7 @@ class SecureScraperLoader:
         "scrapers.theunderdog.theunderdog_scraper",
         "scrapers.tierschutzverein_europa.dogs_scraper",
         "scrapers.woof_project.dogs_scraper",
+        "scrapers.galgosdelsol.galgosdelsol_scraper",
         # Add new modules here as needed
     }
 

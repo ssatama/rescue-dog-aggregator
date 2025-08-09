@@ -178,6 +178,8 @@ BREED_MAPPING = {
     "hound mix": BreedInfo("Hound Mix", "Mixed", "Medium"),
     "mixed breed": BreedInfo("Mixed Breed", "Mixed", "Medium"),
     "mixed": BreedInfo("Mixed Breed", "Mixed", "Medium"),
+    "other dog": BreedInfo("Mixed Breed", "Mixed", "Medium"),
+    "puppy/teen": BreedInfo("Mixed Breed", "Mixed", "Medium"),
     "unknown": BreedInfo("Unknown", "Unknown", None),
 }
 

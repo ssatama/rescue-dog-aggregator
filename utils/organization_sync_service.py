@@ -13,6 +13,7 @@ import psycopg2.extras
 from utils.config_models import OrganizationConfig
 from utils.db_connection import execute_command, execute_query, execute_transaction
 from utils.r2_logo_uploader import R2OrganizationLogoUploader as OrganizationLogoUploader
+from utils.slug_generator import generate_unique_organization_slug
 
 logger = logging.getLogger(__name__)
 
@@ -198,13 +199,16 @@ class OrganizationSyncService:
         social_media = self._build_social_media_dict(config)
         adoption_fees = self._build_adoption_fees_dict(config)
 
+        # Generate slug for the organization
+        slug = generate_unique_organization_slug(config.name, config.id)
+
         query = """
             INSERT INTO organizations (
                 name, config_id, website_url, description, social_media,
                 created_at, updated_at,
-                ships_to, established_year, logo_url, country, city, service_regions, adoption_fees
+                ships_to, established_year, logo_url, country, city, service_regions, adoption_fees, slug
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
             ) RETURNING id
         """
 
@@ -223,6 +227,7 @@ class OrganizationSyncService:
             config.metadata.location.city,
             psycopg2.extras.Json(config.metadata.service_regions),
             psycopg2.extras.Json(adoption_fees),
+            slug,  # Add slug parameter
         )
 
         result = execute_command(query, params)
@@ -243,12 +248,16 @@ class OrganizationSyncService:
         social_media = self._build_social_media_dict(config)
         adoption_fees = self._build_adoption_fees_dict(config)
 
+        # Generate slug for organizations that don't have one yet (respecting existing slugs)
+        slug = generate_unique_organization_slug(config.name, config.id)
+
         query = """
             UPDATE organizations SET
                 name = %s, config_id = %s, website_url = %s, description = %s, social_media = %s,
                 updated_at = %s, ships_to = %s,
                 established_year = %s, logo_url = %s, country = %s, city = %s,
-                service_regions = %s, adoption_fees = %s
+                service_regions = %s, adoption_fees = %s,
+                slug = COALESCE(slug, %s)
             WHERE id = %s
         """
 
@@ -266,6 +275,7 @@ class OrganizationSyncService:
             config.metadata.location.city,
             psycopg2.extras.Json(config.metadata.service_regions),
             psycopg2.extras.Json(adoption_fees),
+            slug,  # Only set if slug is currently NULL
             org_id,
         )
 

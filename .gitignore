@@ -200,3 +200,5 @@ requirements-dev.txt
 .gemini/
 .mypy_cache/
 .serena/
+run-zen-mcp.sh
+.mcp.json
