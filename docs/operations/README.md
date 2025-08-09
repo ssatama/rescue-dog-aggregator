@@ -27,7 +27,7 @@ This section contains guides for production deployment, monitoring, maintenance,
 ### System Requirements
 - **Infrastructure**: Linux server with 16GB RAM, 4+ CPU cores
 - **Database**: PostgreSQL 14+ with automated backups and session isolation
-- **CDN**: Cloudinary for image optimization and delivery
+- **CDN**: R2 + Cloudflare Images for image optimization and delivery
 - **Browser Automation**: Selenium WebDriver for advanced scraping
 - **Monitoring**: Application performance monitoring with health checks
 

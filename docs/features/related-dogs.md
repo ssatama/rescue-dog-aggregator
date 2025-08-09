@@ -378,7 +378,7 @@ test('should render section title with organization name', async () => {
 
 **LazyImage Integration**:
 - Uses `IntersectionObserver` for viewport-based loading
-- Cloudinary optimization with `getThumbnailImage()`
+- R2 + Cloudflare Images optimization with `getThumbnailImage()`
 - Fallback placeholder for loading states
 - Error handling with `handleImageError()`
 
@@ -538,7 +538,7 @@ onKeyDown={handleKeyDown}
 
 2. **Images Not Loading**:
    - Check `primary_image_url` validity
-   - Verify Cloudinary configuration
+   - Verify R2 and Cloudflare Images configuration
    - Test LazyImage component isolation
    - Review network connectivity
 

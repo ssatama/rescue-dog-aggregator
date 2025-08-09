@@ -78,9 +78,9 @@ class R2Service:
     def _generate_image_key(image_url: str, animal_name: str, organization_name: str = "unknown") -> str:
         """
         Generate unique image key for R2 storage using SHA-256.
-        
+
         SECURITY UPGRADE: Replaced MD5 with SHA-256 to address cryptographic vulnerability.
-        MD5 is susceptible to collision attacks which could lead to cache poisoning or 
+        MD5 is susceptible to collision attacks which could lead to cache poisoning or
         unauthorized access to image resources.
         """
         # Use SHA-256 for cryptographic security (upgraded from MD5)
@@ -94,7 +94,7 @@ class R2Service:
     def _generate_legacy_image_key(image_url: str, animal_name: str, organization_name: str = "unknown") -> str:
         """
         Generate legacy MD5-based image key for backward compatibility.
-        
+
         This method is used to check for existing images that were uploaded
         with the old MD5-based key format before the security upgrade.
         """
@@ -184,7 +184,7 @@ class R2Service:
             except ClientError as e:
                 if e.response["Error"]["Code"] != "404":
                     logger.warning(f"Could not check existing image (SHA-256): {e}")
-                    
+
             # Check for legacy MD5-based key for backward compatibility
             try:
                 s3_client.head_object(Bucket=bucket_name, Key=legacy_key)

@@ -373,7 +373,7 @@ All backend tests are automatically protected by a global `isolate_database_writ
 
 **Performance Optimization**
 
-- **Global CDN**: Cloudinary integration for image optimization
+- **Global CDN**: R2 + Cloudflare Images integration for image optimization
 - **Lazy Loading**: Intersection Observer for progressive loading
 - **Component Memoization**: React.memo for expensive components
 - **Bundle Optimization**: Code splitting and tree shaking
@@ -600,7 +600,7 @@ pytest tests/new_feature/ -v
 - **Current Load**: 8 organizations, 1,500+ animal listings
 - **Database Design**: Normalized schema with JSONB flexibility
 - **Connection Management**: PostgreSQL connection pooling
-- **Image Processing**: Cloudinary CDN with global distribution
+- **Image Processing**: R2 + Cloudflare Images CDN with global distribution
 
 ### Performance Optimization Strategies
 
@@ -775,11 +775,12 @@ GET /health                         # Health check endpoint
 
 ### Third-Party Service Integration
 
-**Cloudinary CDN**
+**R2 + Cloudflare Images CDN**
 
-- **Image Optimization**: Automatic format and quality optimization
-- **Transformation Pipeline**: Thumbnail generation and cropping
+- **Image Optimization**: Automatic format and quality optimization via Cloudflare Images
+- **Storage**: Cost-effective R2 object storage with custom domain integration
 - **Global Distribution**: CDN delivery for worldwide performance
+- **Transformation Pipeline**: On-the-fly image processing and optimization
 - **Fallback Handling**: Original URL preservation for reliability
 
 **External Services**

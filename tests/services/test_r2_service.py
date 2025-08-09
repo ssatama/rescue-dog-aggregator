@@ -218,10 +218,7 @@ class TestR2ServiceUpload:
             mock_s3_client = Mock()
             # First call for SHA-256 key returns 404 (not found)
             # Second call for legacy MD5 key returns existing object
-            mock_s3_client.head_object.side_effect = [
-                ClientError({"Error": {"Code": "404"}}, "HeadObject"),  # SHA-256 key not found
-                {"ETag": "existing-legacy-etag"}  # Legacy MD5 key found
-            ]
+            mock_s3_client.head_object.side_effect = [ClientError({"Error": {"Code": "404"}}, "HeadObject"), {"ETag": "existing-legacy-etag"}]  # SHA-256 key not found  # Legacy MD5 key found
             mock_boto3_client.return_value = mock_s3_client
 
             image_url = "http://example.com/dog.jpg"
@@ -312,7 +309,7 @@ class TestR2ServiceHelpers:
 
         # Test the legacy key checker function
         legacy_key = R2Service._generate_legacy_image_key(image_url, animal_name, organization_name)
-        
+
         # Legacy key should use MD5 format for backward compatibility checks
         md5_hash = hashlib.md5(image_url.encode()).hexdigest()[:8]
         assert md5_hash in legacy_key
@@ -367,22 +364,22 @@ class TestR2ServiceSecurity:
             ("http://example.com/dog1.jpg", "different_dog", "org1"),
             ("http://example.com/dog1.jpg", "test_dog", "different_org"),
         ]
-        
+
         keys = []
         legacy_keys = []
-        
+
         for image_url, animal_name, org_name in test_cases:
             key = R2Service._generate_image_key(image_url, animal_name, org_name)
             legacy_key = R2Service._generate_legacy_image_key(image_url, animal_name, org_name)
             keys.append(key)
             legacy_keys.append(legacy_key)
-        
+
         # All SHA-256 keys should be unique
         assert len(set(keys)) == len(keys), "SHA-256 keys should be unique"
-        
+
         # All legacy MD5 keys should also be unique for this test set
         assert len(set(legacy_keys)) == len(legacy_keys), "Legacy MD5 keys should be unique for this test set"
-        
+
         # SHA-256 and MD5 keys should be different for same inputs
         for i in range(len(keys)):
             assert keys[i] != legacy_keys[i], f"SHA-256 and MD5 keys should differ for input {i}"
@@ -400,20 +397,20 @@ class TestR2ServiceSecurity:
             ("http://example.com/\x00\x01\x02", "dog", "org"),
             ("http://example.com/%2e%2e%2f", "dog", "org"),
         ]
-        
+
         for image_url, animal_name, org_name in malicious_inputs:
             # Should not raise exceptions
             key = R2Service._generate_image_key(image_url, animal_name, org_name)
             legacy_key = R2Service._generate_legacy_image_key(image_url, animal_name, org_name)
-            
+
             # Keys should be valid S3 object names
             assert key.startswith("rescue_dogs/")
             assert key.endswith(".jpg")
             assert legacy_key.startswith("rescue_dogs/")
             assert legacy_key.endswith(".jpg")
-            
+
             # Keys should not contain dangerous characters
-            dangerous_chars = ["<", ">", "&", "'", "\"", ";", "\x00", "\\", ".."]
+            dangerous_chars = ["<", ">", "&", "'", '"', ";", "\x00", "\\", ".."]
             for char in dangerous_chars:
                 assert char not in key, f"Key should not contain dangerous character: {char}"
                 assert char not in legacy_key, f"Legacy key should not contain dangerous character: {char}"
@@ -423,12 +420,12 @@ class TestR2ServiceSecurity:
         image_url = "http://example.com/dog.jpg"
         animal_name = "security_test"
         organization_name = "test_org"
-        
+
         with patch.dict(
             "os.environ",
             {
                 "R2_ACCOUNT_ID": "test_account_id",
-                "R2_ACCESS_KEY_ID": "test_access_key", 
+                "R2_ACCESS_KEY_ID": "test_access_key",
                 "R2_SECRET_ACCESS_KEY": "test_secret",
                 "R2_BUCKET_NAME": "test_bucket",
                 "R2_ENDPOINT": "https://test.r2.cloudflarestorage.com",
@@ -436,36 +433,35 @@ class TestR2ServiceSecurity:
             },
         ):
             R2Service._reset_config_cache()
-            
-            with patch("utils.r2_service.boto3.client") as mock_boto3_client, \
-                 patch("utils.r2_service.requests.get") as mock_requests_get:
-                
+
+            with patch("utils.r2_service.boto3.client") as mock_boto3_client, patch("utils.r2_service.requests.get") as mock_requests_get:
+
                 # Mock successful image download
                 mock_response = Mock()
                 mock_response.status_code = 200
                 mock_response.headers = {"content-type": "image/jpeg"}
                 mock_response.content = b"fake_image_data"
                 mock_requests_get.return_value = mock_response
-                
+
                 # Mock S3 client - image doesn't exist, will upload
                 mock_s3_client = Mock()
                 mock_s3_client.head_object.side_effect = [
                     ClientError({"Error": {"Code": "404"}}, "HeadObject"),  # SHA-256 key not found
-                    ClientError({"Error": {"Code": "404"}}, "HeadObject")   # Legacy key not found
+                    ClientError({"Error": {"Code": "404"}}, "HeadObject"),  # Legacy key not found
                 ]
                 mock_boto3_client.return_value = mock_s3_client
-                
+
                 result_url, success = R2Service.upload_image_from_url(image_url, animal_name, organization_name)
-                
+
                 # Verify upload was called with security metadata
                 mock_s3_client.upload_fileobj.assert_called_once()
                 call_args = mock_s3_client.upload_fileobj.call_args
-                
+
                 # Check ExtraArgs contains security metadata
                 extra_args = call_args[1]["ExtraArgs"]
                 assert "Metadata" in extra_args
                 metadata = extra_args["Metadata"]
-                
+
                 # Verify security metadata is present
                 assert "original_url" in metadata
                 assert "animal_name" in metadata
@@ -484,21 +480,21 @@ class TestR2ServiceSecurity:
             "",  # Empty content type
             "image/svg+xml",  # SVG can contain scripts
         ]
-        
+
         for content_type in malicious_content_types:
             with patch.dict(
                 "os.environ",
                 {
                     "R2_ACCOUNT_ID": "test_account_id",
                     "R2_ACCESS_KEY_ID": "test_access_key",
-                    "R2_SECRET_ACCESS_KEY": "test_secret", 
+                    "R2_SECRET_ACCESS_KEY": "test_secret",
                     "R2_BUCKET_NAME": "test_bucket",
                     "R2_ENDPOINT": "https://test.r2.cloudflarestorage.com",
                     "R2_CUSTOM_DOMAIN": "https://images.example.com",
                 },
             ):
                 R2Service._reset_config_cache()
-                
+
                 with patch("utils.r2_service.requests.get") as mock_requests_get:
                     # Mock response with malicious content type
                     mock_response = Mock()
@@ -506,11 +502,9 @@ class TestR2ServiceSecurity:
                     mock_response.headers = {"content-type": content_type}
                     mock_response.content = b"fake_content"
                     mock_requests_get.return_value = mock_response
-                    
-                    result_url, success = R2Service.upload_image_from_url(
-                        "http://example.com/malicious.exe", "test", "test"
-                    )
-                    
+
+                    result_url, success = R2Service.upload_image_from_url("http://example.com/malicious.exe", "test", "test")
+
                     # Should reject non-image content types
                     assert success is False
                     # Should return original URL as fallback

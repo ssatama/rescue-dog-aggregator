@@ -128,17 +128,17 @@ npm run lint
 
 **Diagnostic Steps**:
 ```bash
-# 1. Check environment configuration
+# 1. Check R2 configuration
 cd frontend
-cat .env.local | grep CLOUDINARY_CLOUD_NAME
-# Should show: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=dy8y3boog
+cat .env.local | grep NEXT_PUBLIC_CLOUDFLARE
+# Should show R2 and Cloudflare Images environment variables
 
 # 2. Test backend API returns images
 curl http://localhost:8000/api/animals?limit=1 | jq '.[0].primary_image_url'
-# Should return Cloudinary URL with dy8y3boog
+# Should return R2 custom domain URL
 
-# 3. Test Cloudinary connectivity
-curl -I "https://res.cloudinary.com/dy8y3boog/image/upload/sample.jpg"
+# 3. Test R2 connectivity
+curl -I "https://pub-a5b26b74806c4f53b0d26c52c3bd9db3.r2.dev/sample.jpg"
 # Should return HTTP 200
 
 # 4. Enable debug logging
@@ -149,11 +149,13 @@ curl -I "https://res.cloudinary.com/dy8y3boog/image/upload/sample.jpg"
 
 **Common Fixes**:
 
-1. **Cloud Name Mismatch** (Most Common):
+1. **R2 Configuration Mismatch** (Most Common):
    ```bash
-   # Fix typo in .env.local
-   echo "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=dy8y3boog" > frontend/.env.local
-   cd frontend && npm run dev
+   # Check R2 configuration in .env.local
+   cd frontend
+   grep -E "CLOUDFLARE|R2" .env.local
+   # Should show proper R2 and Cloudflare Images configuration
+   npm run dev
    ```
 
 2. **Environment Variables Not Loaded**:
@@ -164,20 +166,19 @@ curl -I "https://res.cloudinary.com/dy8y3boog/image/upload/sample.jpg"
    npm run dev
    ```
 
-3. **Cloudinary Service Issues**:
+3. **R2 Service Issues**:
    ```bash
    # Test service connectivity
-   curl -I "https://res.cloudinary.com/dy8y3boog/image/upload/sample.jpg"
+   curl -I "https://pub-a5b26b74806c4f53b0d26c52c3bd9db3.r2.dev/sample.jpg"
    
-   # If fails, temporarily disable Cloudinary
-   # Edit frontend/src/utils/imageUtils.js:
-   # const USE_CLOUDINARY = false;
+   # If fails, check R2 and Cloudflare Images configuration
+   # Verify R2_CUSTOM_DOMAIN and CLOUDFLARE_IMAGES_DELIVERY_URL settings
    ```
 
 4. **CORS Issues** (Production):
    ```bash
    # Check browser network tab for CORS errors
-   # Verify Cloudinary CORS settings allow your domain
+   # Verify R2 CORS settings and custom domain configuration
    ```
 
 ### Image Loading Performance Issues
@@ -234,7 +235,7 @@ console.log(getImageErrorStats());
 ```
 
 **Health Checks**:
-- Monitor Cloudinary service uptime
+- Monitor R2 and Cloudflare Images service uptime
 - Track image load success rates
 - Alert on high 404 rates from image URLs
 
@@ -582,7 +583,7 @@ npm test -- src/__tests__/security/content-sanitization.test.js
 cd frontend
 npm test -- src/__tests__/performance/optimization.test.jsx
 
-# Verify Cloudinary optimization
+# Verify R2 optimization
 grep "getOptimizedImageUrl" src/utils/imageUtils.js
 ```
 
@@ -594,7 +595,7 @@ grep "getOptimizedImageUrl" src/utils/imageUtils.js
    <LazyImage src={dog.image} alt={dog.name} />
    ```
 
-2. **Optimize Cloudinary transforms**:
+2. **Optimize Cloudflare Images transforms**:
    ```javascript
    // In imageUtils.js
    const thumbnailUrl = getOptimizedImageUrl(originalUrl, {

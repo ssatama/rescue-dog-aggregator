@@ -117,7 +117,7 @@ The translated data provides all fields needed for frontend display:
 | **Height** | 53cm | Detail page |
 | **Location** | Munich | Detail page → Translated |
 | **Character** | people-oriented, cuddly, loving, curious | Detail page → Translated |
-| **Image** | Cloudinary URL | BaseScraper processing |
+| **Image** | R2 Custom Domain URL | BaseScraper processing |
 
 ## Data Quality Metrics
 
@@ -158,4 +158,4 @@ Common issues and how they're handled:
 - **Reserved Section Filtering**: Dogs "Wir sind bereits reserviert" are automatically skipped  
 - **German Character Handling**: Proper handling of umlauts (ä, ö, ü, ß) in translations
 - **Multi-step Enhancement**: Basic listing data + detail page data + translation for complete profile
-- **Cloudinary Integration**: All images uploaded and optimized via BaseScraper
+- **R2 Integration**: All images uploaded and optimized via BaseScraper with R2 + Cloudflare Images

@@ -25,7 +25,7 @@ This scraper extracts dog information from [Daisy Family Rescue e.V.](https://da
 - ✅ **Data Validation** - Quality checks before database insertion
 - ✅ **Error Handling** - Graceful fallbacks and comprehensive logging
 - ✅ **Rate Limiting** - Respectful scraping with configurable delays
-- ✅ **Image Processing** - Cloudinary integration via BaseScraper
+- ✅ **Image Processing** - R2 + Cloudflare Images integration via BaseScraper
 
 ## Scraping Strategy
 

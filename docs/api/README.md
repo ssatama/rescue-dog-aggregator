@@ -122,7 +122,7 @@ curl "https://api.rescuedogs.me/api/animals?breed=labrador&size=large"
 - **Query Builder**: Dynamic, parameterized queries preventing SQL injection
 - **Service Layer Caching**: In-memory caching of frequently accessed data
 - **Response Caching**: Intelligent caching with invalidation
-- **CDN Integration**: Global image delivery via Cloudinary
+- **CDN Integration**: Global image delivery via R2 + Cloudflare Images
 
 ### Security Enhancements
 - **Input Validation**: Comprehensive Pydantic v2 validation with custom validators

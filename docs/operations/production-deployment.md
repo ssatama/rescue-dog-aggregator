@@ -12,10 +12,13 @@ DB_NAME=rescue_dogs_production
 DB_USER=your-db-user
 DB_PASSWORD=your-db-password
 
-# Cloudinary (Required for image processing)
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
+# R2 and Cloudflare Images (Required for image processing)
+R2_ACCOUNT_ID=your-r2-account-id
+R2_ACCESS_KEY_ID=your-access-key-id
+R2_SECRET_ACCESS_KEY=your-secret-access-key
+R2_BUCKET_NAME=your-bucket-name
+R2_CUSTOM_DOMAIN=your-custom-domain.com
+CLOUDFLARE_IMAGES_DELIVERY_URL=https://imagedelivery.net/your-account-hash
 
 # Security
 TESTING=false  # Critical: Must be false in production
@@ -24,7 +27,8 @@ TESTING=false  # Critical: Must be false in production
 **Frontend:**
 ```bash
 NEXT_PUBLIC_API_URL=https://your-api-domain.com
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
+NEXT_PUBLIC_R2_CUSTOM_DOMAIN=your-custom-domain.com
+NEXT_PUBLIC_CLOUDFLARE_IMAGES_DELIVERY_URL=https://imagedelivery.net/your-account-hash
 ```
 
 ## Pre-Deployment Checklist
@@ -94,11 +98,11 @@ psql rescue_dogs_production -c "\d organizations"  # Should include enhanced met
 # ALWAYS activate virtual environment first
 source venv/bin/activate
 
-# Test Cloudinary integration
+# Test R2 integration
 python -c "
-from utils.cloudinary_service import CloudinaryService
-service = CloudinaryService()
-print('Cloudinary configured:', service.cloudinary_service is not None)
+from utils.r2_service import R2Service
+service = R2Service()
+print('R2 configured:', service._s3_client is not None)
 "
 
 # Test modern BaseScraper architecture
@@ -198,12 +202,12 @@ curl "https://your-api-domain.com/api/organizations" | jq 'length'  # Should ret
 
 ```bash
 curl "https://your-api-domain.com/api/animals?limit=1"
-# Verify primary_image_url contains Cloudinary URLs
+# Verify primary_image_url contains R2 custom domain URLs
 ```
 
 ### 4. Frontend Functionality
 
-- [ ] Dogs page loads with images (Cloudinary optimization)
+- [ ] Dogs page loads with images (R2 + Cloudflare Images optimization)
 - [ ] Filters work correctly with availability confidence
 - [ ] Individual dog pages display properly (Next.js 15 compatibility)
 - [ ] Error states show user-friendly messages with sanitized content
@@ -298,7 +302,7 @@ Monitor for these key events:
 - **Partial failures**: Monitor `detailed_metrics->'potential_failure_detected'`
 - **Data quality drops**: Track `data_quality_score < 0.5`
 - **Availability confidence issues**: Monitor animals stuck in `low` confidence
-- **Image upload failures**: Check Cloudinary integration
+- **Image upload failures**: Check R2 and Cloudflare Images integration
 - **Database connection errors**: Monitor connection pool
 - **API response time degradation**: Performance monitoring
 
@@ -348,8 +352,8 @@ HAVING COUNT(CASE WHEN a.status = 'unavailable' THEN 1 END) > 5
 ### Common Issues
 
 **Images not loading:**
-1. Check Cloudinary credentials
-2. Verify CORS settings
+1. Check R2 and Cloudflare Images credentials
+2. Verify R2 CORS settings and custom domain configuration
 3. Test fallback to original URLs
 
 **API errors:**
@@ -359,7 +363,7 @@ HAVING COUNT(CASE WHEN a.status = 'unavailable' THEN 1 END) > 5
 
 **Performance issues:**
 1. Monitor database query performance (especially availability filtering queries)
-2. Check Cloudinary bandwidth usage
+2. Check R2 and Cloudflare Images bandwidth usage
 3. Verify frontend bundle size
 4. Review scraper duration trends in `detailed_metrics`
 
