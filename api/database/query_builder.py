@@ -156,35 +156,6 @@ class BatchQueryExecutor:
     def __init__(self, cursor: RealDictCursor):
         self.cursor = cursor
 
-    def fetch_animals_with_images(self, animal_ids: List[int]) -> Dict[int, List[Dict[str, Any]]]:
-        """
-        Fetch images for multiple animals in a single query.
-
-        This prevents the N+1 problem where we'd query images for each animal separately.
-        """
-        if not animal_ids:
-            return {}
-
-        query = QueryBuilder()
-        query.select("animal_id", "id", "image_url", "is_primary")
-        query.from_table("animal_images")
-        query.where_in("animal_id", animal_ids)
-        query.order_by("animal_id")
-        query.order_by("is_primary", "DESC")
-        query.order_by("id")
-
-        results = query.execute(self.cursor)
-
-        # Group by animal_id
-        images_by_animal = {}
-        for row in results:
-            animal_id = row["animal_id"]
-            if animal_id not in images_by_animal:
-                images_by_animal[animal_id] = []
-            images_by_animal[animal_id].append(row)
-
-        return images_by_animal
-
     def fetch_organization_data(self, organization_ids: List[int]) -> Dict[int, Dict[str, Any]]:
         """
         Fetch organization data for multiple organizations in a single query.

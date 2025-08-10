@@ -328,7 +328,9 @@ class DatabaseError(APIException):
 **Safe Execution Decorator:**
 ```python
 @safe_execute("fetch animal images")
-def fetch_animal_images(cursor: RealDictCursor, animal_id: int):
+def fetch_animal_primary_image(cursor: RealDictCursor, animal_id: int):
+    # NOTE: Multi-image functionality (animal_images table) was removed
+    # Now only primary_image_url is stored directly on animals table
     # Automatic exception handling and logging
     cursor.execute(query, params)
     return cursor.fetchall()

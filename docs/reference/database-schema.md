@@ -120,7 +120,7 @@ Main table storing animal (primarily dog) listings with availability tracking.
 }
 ```
 
-### animal_images
+### ~~animal_images~~ (REMOVED)
 Supports multiple images per animal with primary image designation.
 
 | Column | Type | Description |
@@ -180,7 +180,7 @@ The schema implements the following key relationships:
 organizations (1) ──── (many) animals
 organizations (1) ──── (many) service_regions  
 organizations (1) ──── (many) scrape_logs
-animals (1) ──── (many) animal_images
+~~animals (1) ──── (many) animal_images~~ (REMOVED: Multi-image support eliminated)
 ```
 
 **Key Constraints:**

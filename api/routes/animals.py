@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 from api.dependencies import get_db_cursor
 from api.exceptions import APIException, handle_database_error, handle_validation_error, safe_execute
-from api.models.dog import Animal, AnimalImage, AnimalWithImages
+from api.models.dog import Animal
 from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
 from api.models.responses import FilterCountsResponse
 from api.services import AnimalService
@@ -20,22 +20,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["animals"])
 
 
-@safe_execute("fetch animal images")
-def fetch_animal_images(cursor: RealDictCursor, animal_id: int) -> List[AnimalImage]:
-    """Fetch images for a specific animal."""
-    cursor.execute(
-        """
-        SELECT id, image_url, is_primary
-        FROM animal_images
-        WHERE animal_id = %s
-        ORDER BY is_primary DESC, id ASC
-        """,
-        (animal_id,),
-    )
-    return cursor.fetchall()
-
-
-@router.get("/", response_model=List[AnimalWithImages])
+@router.get("/", response_model=List[Animal])
 async def get_animals(
     filters: AnimalFilterRequest = Depends(),
     cursor: RealDictCursor = Depends(get_db_cursor),
@@ -276,7 +261,7 @@ async def get_random_animals(
 
 
 # --- Single Animal Detail (New Slug-Based Route) ---
-@router.get("/{animal_slug}", response_model=AnimalWithImages)
+@router.get("/{animal_slug}", response_model=Animal)
 async def get_animal_by_slug(animal_slug: str, cursor: RealDictCursor = Depends(get_db_cursor)):
     """Get a specific animal by slug, with legacy ID redirect support."""
     try:
@@ -313,7 +298,7 @@ async def get_animal_by_slug(animal_slug: str, cursor: RealDictCursor = Depends(
 
 
 # --- Legacy ID Route (Explicit Redirect) ---
-@router.get("/id/{animal_id}", response_model=AnimalWithImages)
+@router.get("/id/{animal_id}", response_model=Animal)
 async def get_animal_by_id_legacy(animal_id: int, cursor: RealDictCursor = Depends(get_db_cursor)):
     """Legacy endpoint - redirects to slug URL."""
     try:

@@ -22,7 +22,7 @@ This guide provides complete instructions for deploying the Rescue Dog Aggregato
 
 3. **Data Synchronization** (`services/railway/sync.py`)
    - Full data sync from local to Railway database (all 5 tables)
-   - Batch processing for large datasets (organizations, animals, animal_images, scrape_logs, service_regions)
+   - Batch processing for large datasets (organizations, animals, scrape_logs, service_regions)
    - Schema validation with automatic column order verification
    - Independent transaction processing for each table
    - Bulk ID mapping to prevent N+1 query performance issues
@@ -365,7 +365,7 @@ The system syncs the following tables from local to Railway:
    - Primary image URLs
    - Availability tracking
 
-3. **animal_images** (200+ records typically)
+3. **~~animal_images~~ (REMOVED)** - Multi-image functionality removed in favor of single primary_image_url
    - Additional animal photos with explicit ID preservation
    - Primary/secondary image flags
    - Original image URLs
@@ -389,16 +389,16 @@ The system syncs the following tables from local to Railway:
 - **Transaction Isolation**: Each table syncs in independent transactions for partial success capability
 - **Bulk Operations**: Organization ID mapping built in bulk to prevent N+1 query performance issues
 - **Validation**: Automatic record count comparison post-sync
-- **Dependencies**: Organizations synced before animals, then animal_images, scrape_logs, and service_regions
+- **Dependencies**: Organizations synced before animals, then scrape_logs, and service_regions
 - **Safety**: All operations support dry-run mode
 
 ### Recent Critical Fixes (2025-07-14)
 
 **Issue Resolved**: Primary key violations on repeated sync runs
-- **Problem**: `animal_images` and `scrape_logs` tables used plain INSERT statements without conflict handling, causing primary key violations when data already existed in Railway
+- **Problem**: `scrape_logs` tables used plain INSERT statements without conflict handling, causing primary key violations when data already existed in Railway (animal_images table was removed in refactoring)
 - **Solution**: Added `ON CONFLICT (id) DO UPDATE SET...` clauses to make all INSERT statements idempotent
 - **Impact**: Sync now works perfectly even when run 100+ times per day, always syncing latest local database state to Railway
-- **Tables Fixed**: animal_images, scrape_logs (organizations, animals, service_regions already had proper UPSERT)
+- **Tables Fixed**: scrape_logs (organizations, animals, service_regions already had proper UPSERT; animal_images table was removed)
 - **Verification**: Manual row-by-row testing confirmed 100% data integrity and schema match
 
 ## Troubleshooting
@@ -444,7 +444,7 @@ The system syncs the following tables from local to Railway:
 
 **Previous Issue (RESOLVED 2025-07-14)**: Primary key violations
 ```bash
-❌ duplicate key value violates unique constraint "animal_images_pkey"
+❌ ~~duplicate key value violates unique constraint "animal_images_pkey"~~ (RESOLVED: animal_images table removed)
 ❌ duplicate key value violates unique constraint "scrape_logs_pkey"
 ```
 **Fix Applied**: Added ON CONFLICT DO UPDATE clauses for 100% idempotency. Sync now works perfectly on repeated runs.

@@ -8,7 +8,12 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
-from utils.standardization import apply_standardization, normalize_breed_case, parse_age_text, standardize_age
+from utils.standardization import (
+    apply_standardization,
+    normalize_breed_case,
+    parse_age_text,
+    standardize_age,
+)
 
 
 class GalgosDelSolScraper(BaseScraper):
@@ -18,7 +23,13 @@ class GalgosDelSolScraper(BaseScraper):
     The scraper extracts available dogs from 4 listing pages and filters out reserved dogs.
     """
 
-    def __init__(self, config_id: str = "galgosdelsol", metrics_collector=None, session_manager=None, database_service=None):
+    def __init__(
+        self,
+        config_id: str = "galgosdelsol",
+        metrics_collector=None,
+        session_manager=None,
+        database_service=None,
+    ):
         """Initialize Galgos del Sol scraper.
 
         Args:
@@ -27,7 +38,12 @@ class GalgosDelSolScraper(BaseScraper):
             session_manager: Optional session manager service
             database_service: Optional database service
         """
-        super().__init__(config_id=config_id, metrics_collector=metrics_collector, session_manager=session_manager, database_service=database_service)
+        super().__init__(
+            config_id=config_id,
+            metrics_collector=metrics_collector,
+            session_manager=session_manager,
+            database_service=database_service,
+        )
 
         self.base_url = "https://galgosdelsol.org"
         self.listing_urls = [
@@ -115,7 +131,11 @@ class GalgosDelSolScraper(BaseScraper):
             self.logger.debug(f"Scraping detail page: {url}")
 
             # Fetch the detail page
-            response = requests.get(url, timeout=30, headers={"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"})
+            response = requests.get(
+                url,
+                timeout=30,
+                headers={"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"},
+            )
             response.raise_for_status()
 
             soup = BeautifulSoup(response.content, "html.parser")
@@ -281,7 +301,18 @@ class GalgosDelSolScraper(BaseScraper):
         breed = breed.strip()
 
         # Convert age categories to Mixed Breed
-        age_categories = ["puppy/teen", "puppy", "teen", "teenager", "young", "senior", "adult", "juvenile", "baby", "old"]
+        age_categories = [
+            "puppy/teen",
+            "puppy",
+            "teen",
+            "teenager",
+            "young",
+            "senior",
+            "adult",
+            "juvenile",
+            "baby",
+            "old",
+        ]
 
         # Convert generic/unknown categories to Mixed Breed
         generic_categories = ["other dog", "other", "mixed", "unknown dog", "dog", "mutt"]
@@ -312,7 +343,14 @@ class GalgosDelSolScraper(BaseScraper):
         page_text = soup.get_text().lower()
 
         # Only check for explicit reserved status, not words that might appear in descriptions
-        reserved_indicators = ["dog is reserved", "currently reserved", "reserved for adoption", "adoption pending", "not available for adoption", "no longer available"]
+        reserved_indicators = [
+            "dog is reserved",
+            "currently reserved",
+            "reserved for adoption",
+            "adoption pending",
+            "not available for adoption",
+            "no longer available",
+        ]
 
         for indicator in reserved_indicators:
             if indicator in page_text:
@@ -329,7 +367,7 @@ class GalgosDelSolScraper(BaseScraper):
         Returns:
             Dictionary with extracted properties
         """
-        properties = {}
+        properties: Dict[str, Any] = {}
 
         # Find the main content area with dog information
         main_content = soup.find("article") or soup.find("main")
@@ -338,7 +376,10 @@ class GalgosDelSolScraper(BaseScraper):
 
         # Extract structured data from the property section
         # Look for strong tags followed by text (Gender:, Breed:, etc.)
-        strong_tags = main_content.find_all("strong")
+        if hasattr(main_content, "find_all"):
+            strong_tags = main_content.find_all("strong")
+        else:
+            strong_tags = soup.find_all("strong")
 
         for strong_tag in strong_tags:
             try:
@@ -449,7 +490,10 @@ class GalgosDelSolScraper(BaseScraper):
             return ""
 
         # Look for paragraph tags that contain the description
-        paragraphs = main_content.find_all("p")
+        if hasattr(main_content, "find_all"):
+            paragraphs = main_content.find_all("p")
+        else:
+            paragraphs = soup.find_all("p")
 
         # Filter and score paragraphs
         valid_paragraphs = []
@@ -496,7 +540,7 @@ class GalgosDelSolScraper(BaseScraper):
             return None
 
         # Try to find the main figure or image
-        figure = main_content.find("figure")
+        figure = main_content.find("figure") if hasattr(main_content, "find") else None
         if figure:
             img = figure.find("img")
             if img:
@@ -513,7 +557,7 @@ class GalgosDelSolScraper(BaseScraper):
                     return self._clean_image_url(src)
 
         # Fallback: look for any img tag in the main content
-        img = main_content.find("img")
+        img = main_content.find("img") if hasattr(main_content, "find") else None
         if img:
             # First check for srcset (responsive images)
             srcset = img.get("srcset")
@@ -688,7 +732,11 @@ class GalgosDelSolScraper(BaseScraper):
         """
         try:
             # Fetch the listing page
-            response = requests.get(url, timeout=30, headers={"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"})
+            response = requests.get(
+                url,
+                timeout=30,
+                headers={"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"},
+            )
             response.raise_for_status()
 
             soup = BeautifulSoup(response.content, "html.parser")
@@ -700,7 +748,11 @@ class GalgosDelSolScraper(BaseScraper):
                 return []
 
             # Find all adoptable dog links using regular <a> tags
-            dog_links = main_content.find_all("a", href=lambda x: x and "/adoptable-dogs/" in x)
+            # Check if main_content has find_all method (is a Tag or BeautifulSoup object)
+            if hasattr(main_content, "find_all"):
+                dog_links = main_content.find_all("a", href=lambda x: x and "/adoptable-dogs/" in x)
+            else:
+                dog_links = soup.find_all("a", href=lambda x: x and "/adoptable-dogs/" in x)
 
             self.logger.debug(f"Found {len(dog_links)} dog links")
 

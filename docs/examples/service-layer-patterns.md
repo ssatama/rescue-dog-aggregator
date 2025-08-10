@@ -88,13 +88,12 @@ class AnimalService(BaseService):
             
             # Batch load images to prevent N+1 queries
             animal_ids = [animal['id'] for animal in animals_data]
-            images_map = self._batch_load_animal_images(animal_ids)
+            # animal_images functionality removed - now using single primary_image_url
             
             # Combine animals with their images
             animals_with_images = []
             for animal_data in animals_data:
-                animal_images = images_map.get(animal_data['id'], [])
-                animal_data['images'] = animal_images
+                # Multi-image support removed - using primary_image_url only
                 animals_with_images.append(AnimalWithImages(**animal_data))
             
             self._log_operation("get_animals_completed", count=len(animals_with_images))
@@ -135,7 +134,7 @@ class AnimalService(BaseService):
                 return None
             
             # Load images for this animal
-            images = self._get_animal_images(animal_data['id'])
+            # animal_images table removed - using primary_image_url field instead
             animal_data['images'] = images
             
             # Structure organization data
@@ -242,38 +241,34 @@ class AnimalService(BaseService):
         return True
     
     # Private helper methods
-    def _batch_load_animal_images(self, animal_ids: List[int]) -> Dict[int, List[AnimalImage]]:
-        """Batch load images for multiple animals to prevent N+1 queries."""
-        if not animal_ids:
-            return {}
+    def _load_primary_images(self, animal_ids: List[int]) -> Dict[int, str]:
+        """Load primary images for multiple animals (replaces multi-image functionality)."""
+        images_map = {}
         
-        # Single query to get all images for all animals
-        placeholders = ','.join(['%s'] * len(animal_ids))
-        query = f"""
-            SELECT animal_id, id, image_url, is_primary
-            FROM animal_images
-            WHERE animal_id IN ({placeholders})
-            ORDER BY animal_id, is_primary DESC, id ASC
+        # Query animals table for primary_image_url
+        query = """
+            SELECT id, primary_image_url 
+            FROM animals
+            WHERE id = ANY(%s) AND primary_image_url IS NOT NULL
         """
         
-        self.cursor.execute(query, animal_ids)
-        images_data = self.cursor.fetchall()
-        
-        # Group images by animal_id
-        images_map = {}
-        for image_data in images_data:
-            animal_id = image_data['animal_id']
-            if animal_id not in images_map:
-                images_map[animal_id] = []
-            images_map[animal_id].append(AnimalImage(**image_data))
+        self.cursor.execute(query, (animal_ids,))
+        for animal_id, primary_image_url in self.cursor.fetchall():
+            images_map[animal_id] = primary_image_url
         
         return images_map
     
-    def _get_animal_images(self, animal_id: int) -> List[AnimalImage]:
-        """Get images for a single animal."""
-        self.cursor.execute("""
-            SELECT id, image_url, is_primary
-            FROM animal_images
+    def _get_primary_image(self, animal_id: int) -> Optional[str]:
+        """Get primary image for a single animal (replaces multi-image functionality)."""
+        query = """
+            SELECT primary_image_url 
+            FROM animals
+            WHERE id = %s AND primary_image_url IS NOT NULL
+        """
+        
+        self.cursor.execute(query, (animal_id,))
+        result = self.cursor.fetchone()
+        return result[0] if result else None
             WHERE animal_id = %s
             ORDER BY is_primary DESC, id ASC
         """, (animal_id,))

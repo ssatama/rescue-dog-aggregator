@@ -222,7 +222,7 @@ def status():
         click.echo("\nData Summary:")
         click.echo("-" * 20)
 
-        tables = ["organizations", "animals", "animal_images", "scrape_logs", "service_regions"]
+        tables = ["organizations", "animals", "scrape_logs", "service_regions"]
         mismatches = []
 
         for table in tables:

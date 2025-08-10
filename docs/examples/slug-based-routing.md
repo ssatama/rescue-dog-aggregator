@@ -99,7 +99,7 @@ class AnimalService:
                 return None
             
             # Batch load images to prevent N+1 queries
-            images = self._get_animal_images(animal_data['id'])
+            # animal_images table removed - now using single primary_image_url
             animal_data['images'] = images
             
             return AnimalWithImages(**animal_data)

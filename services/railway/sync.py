@@ -29,13 +29,12 @@ SAFETY_THRESHOLDS: Dict[str, int] = {
     "animals": 50,  # Must have at least 50 animals
     "scrape_logs": 10,  # Must have at least 10 logs
     "service_regions": 1,  # Must have at least 1 region
-    "animal_images": 0,  # Can be legitimately empty
 }
 
 
 def get_local_data_count(table_name: str) -> int:
     """Get count of records in local database table."""
-    valid_tables = ["organizations", "animals", "animal_images", "scrape_logs", "service_regions"]
+    valid_tables = ["organizations", "animals", "scrape_logs", "service_regions"]
 
     if table_name not in valid_tables:
         logger.error(f"Invalid table name: {table_name}")
@@ -56,7 +55,7 @@ def get_local_data_count(table_name: str) -> int:
 def get_railway_data_count(table_name: str) -> int:
     """Get count of records in Railway database table."""
     # Validate table name against whitelist to prevent SQL injection
-    valid_tables = ["organizations", "animals", "animal_images", "scrape_logs", "service_regions"]
+    valid_tables = ["organizations", "animals", "scrape_logs", "service_regions"]
 
     if table_name not in valid_tables:
         logger.error(f"Invalid table name: {table_name}")
@@ -230,7 +229,7 @@ def sync_animals_to_railway(batch_size: int = 100) -> bool:
 def _validate_table_schemas() -> bool:
     """Validate that local and Railway table schemas match exactly by column name and data type."""
     try:
-        tables_to_validate = ["organizations", "animals", "animal_images", "scrape_logs", "service_regions"]
+        tables_to_validate = ["organizations", "animals", "scrape_logs", "service_regions"]
 
         for table in tables_to_validate:
             # Get local schema
@@ -365,7 +364,7 @@ def sync_all_data_to_railway() -> bool:
 
         # Phase 4: Sync dependent tables independently
         success_count = 0
-        total_tables = 4
+        total_tables = 3
 
         logger.info("Syncing animals...")
         if _sync_animals_independently(org_id_mapping):
@@ -373,13 +372,6 @@ def sync_all_data_to_railway() -> bool:
             logger.info("✅ Animals synced successfully")
         else:
             logger.error("❌ Animals sync failed")
-
-        logger.info("Syncing animal_images...")
-        if _sync_animal_images_independently(org_id_mapping):
-            success_count += 1
-            logger.info("✅ Animal images synced successfully")
-        else:
-            logger.error("❌ Animal images sync failed")
 
         logger.info("Syncing scrape_logs...")
         if _sync_scrape_logs_independently(org_id_mapping):
@@ -426,16 +418,6 @@ def _sync_animals_independently(org_id_mapping: dict) -> bool:
             return _sync_animals_with_mapping(session, org_id_mapping)
     except Exception as e:
         logger.error(f"Failed to sync animals independently: {e}")
-        return False
-
-
-def _sync_animal_images_independently(org_id_mapping: dict) -> bool:
-    """Sync animal_images to Railway in independent transaction."""
-    try:
-        with railway_session() as session:
-            return _sync_animal_images_with_mapping(session, org_id_mapping)
-    except Exception as e:
-        logger.error(f"Failed to sync animal_images independently: {e}")
         return False
 
 
@@ -816,102 +798,6 @@ def _sync_animals_to_railway_in_transaction(session, batch_size: int = 100) -> b
         return False
 
 
-def _sync_animal_images_with_mapping(session, org_id_mapping: dict, batch_size: int = 100) -> bool:
-    """Sync animal_images to Railway using pre-built organization ID mapping."""
-    try:
-        # Build animal ID mapping using the organization mapping
-        animal_id_mapping = {}
-
-        # Get all animals from Railway that we just synced
-        result = session.execute(text("SELECT id, external_id, organization_id FROM animals"))
-        railway_animals = {(row[1], row[2]): row[0] for row in result.fetchall()}  # (external_id, org_id) -> animal_id
-
-        # Map local animal IDs to Railway animal IDs
-        with get_pooled_connection() as local_conn:
-            with local_conn.cursor() as cursor:
-                cursor.execute("SELECT id, external_id, organization_id FROM animals")
-                for local_row in cursor.fetchall():
-                    local_animal_id = local_row[0]
-                    external_id = local_row[1]
-                    local_org_id = local_row[2]
-
-                    railway_org_id = org_id_mapping.get(local_org_id)
-                    if railway_org_id:
-                        railway_animal_id = railway_animals.get((external_id, railway_org_id))
-                        if railway_animal_id:
-                            animal_id_mapping[local_animal_id] = railway_animal_id
-
-        logger.info(f"Built animal ID mapping for {len(animal_id_mapping)} animals")
-
-        # Get animal_images from local database
-        with get_pooled_connection() as local_conn:
-            with local_conn.cursor() as cursor:
-                cursor.execute(
-                    """
-                    SELECT id, animal_id, image_url, is_primary, created_at, original_image_url
-                    FROM animal_images
-                    ORDER BY id
-                    """
-                )
-                images = cursor.fetchall()
-
-        if not images:
-            logger.info("No animal_images to sync")
-            return True
-
-        # Process in batches
-        total_synced = 0
-        insert_sql = text(
-            """
-            INSERT INTO animal_images 
-            (id, animal_id, image_url, is_primary, created_at, original_image_url)
-            VALUES 
-            (:id, :animal_id, :image_url, :is_primary, :created_at, :original_image_url)
-            ON CONFLICT (id) DO UPDATE SET
-                animal_id = EXCLUDED.animal_id,
-                image_url = EXCLUDED.image_url,
-                is_primary = EXCLUDED.is_primary,
-                original_image_url = EXCLUDED.original_image_url
-            """
-        )
-
-        for i in range(0, len(images), batch_size):
-            batch = images[i : i + batch_size]
-
-            batch_params = []
-            for image in batch:
-                local_animal_id = image[1]
-                railway_animal_id = animal_id_mapping.get(local_animal_id)
-
-                if railway_animal_id is None:
-                    logger.warning(f"Skipping image - no Railway animal found for local animal ID {local_animal_id}")
-                    continue
-
-                batch_params.append(
-                    {
-                        "id": image[0],
-                        "animal_id": railway_animal_id,
-                        "image_url": image[2],
-                        "is_primary": image[3],
-                        "created_at": image[4],
-                        "original_image_url": image[5],
-                    }
-                )
-
-            if batch_params:
-                session.execute(insert_sql, batch_params)
-                total_synced += len(batch_params)
-
-            logger.info(f"Synced batch: {total_synced}/{len(images)} animal_images")
-
-        logger.info(f"Successfully synced {total_synced} animal_images to Railway")
-        return True
-
-    except Exception as e:
-        logger.error(f"Failed to sync animal_images with mapping: {e}")
-        return False
-
-
 def _sync_scrape_logs_with_mapping(session, org_id_mapping: dict, batch_size: int = 100) -> bool:
     """Sync scrape_logs to Railway using pre-built organization ID mapping."""
     try:
@@ -1074,130 +960,6 @@ def _sync_service_regions_with_mapping(session, org_id_mapping: dict, batch_size
 
     except Exception as e:
         logger.error(f"Failed to sync service_regions with mapping: {e}")
-        return False
-
-
-def _sync_animal_images_to_railway_in_transaction(session, batch_size: int = 100) -> bool:
-    """Sync animal_images to Railway within an existing transaction."""
-    try:
-        # First, create a mapping of local animal IDs to Railway animal IDs
-        animal_id_mapping = {}
-
-        # Get local animal ID to external_id + org_id mapping
-        with get_pooled_connection() as local_conn:
-            with local_conn.cursor() as cursor:
-                cursor.execute("SELECT id, external_id, organization_id FROM animals")
-                local_animals = cursor.fetchall()
-
-        # Get org ID mapping first (we need this to look up animals)
-        org_id_mapping = {}
-        with get_pooled_connection() as local_conn:
-            with local_conn.cursor() as cursor:
-                cursor.execute("SELECT id, config_id FROM organizations WHERE config_id IS NOT NULL")
-                for row in cursor.fetchall():
-                    local_org_id = row[0]
-                    config_id = row[1]
-                    result = session.execute(text("SELECT id FROM organizations WHERE config_id = :config_id"), {"config_id": config_id})
-                    railway_row = result.fetchone()
-                    if railway_row:
-                        org_id_mapping[local_org_id] = railway_row[0]
-
-        # Build a bulk query to map all animals at once
-        bulk_animal_params = []
-        for local_id, external_id, local_org_id in local_animals:
-            railway_org_id = org_id_mapping.get(local_org_id)
-            if railway_org_id:
-                bulk_animal_params.append({"local_id": local_id, "external_id": external_id, "org_id": railway_org_id})
-
-        # Execute bulk query for animal mapping
-        if bulk_animal_params:
-            # Create a temporary table approach or use CASE statements for bulk lookup
-            external_ids = [p["external_id"] for p in bulk_animal_params]
-            org_ids = [p["org_id"] for p in bulk_animal_params]
-
-            # Get all Railway animals in one query
-            placeholders = ", ".join([f"(:ext_{i}, :org_{i})" for i in range(len(bulk_animal_params))])
-            params = {}
-            for i, p in enumerate(bulk_animal_params):
-                params[f"ext_{i}"] = p["external_id"]
-                params[f"org_{i}"] = p["org_id"]
-
-            result = session.execute(text(f"SELECT id, external_id, organization_id FROM animals WHERE (external_id, organization_id) IN ({placeholders})"), params)
-
-            # Build reverse mapping from Railway results
-            railway_animals = {(row[1], row[2]): row[0] for row in result.fetchall()}
-
-            # Now map local IDs to Railway IDs
-            for local_id, external_id, local_org_id in local_animals:
-                railway_org_id = org_id_mapping.get(local_org_id)
-                if railway_org_id:
-                    railway_animal_id = railway_animals.get((external_id, railway_org_id))
-                    if railway_animal_id:
-                        animal_id_mapping[local_id] = railway_animal_id
-
-        logger.info(f"Created animal ID mapping for {len(animal_id_mapping)} animals")
-
-        # Get animal_images from local database
-        with get_pooled_connection() as local_conn:
-            with local_conn.cursor() as cursor:
-                cursor.execute(
-                    """
-                    SELECT id, animal_id, image_url, is_primary, created_at, original_image_url
-                    FROM animal_images
-                    ORDER BY id
-                    """
-                )
-                images = cursor.fetchall()
-
-        if not images:
-            logger.info("No animal_images to sync")
-            return True
-
-        # Process in batches
-        total_synced = 0
-        insert_sql = text(
-            """
-            INSERT INTO animal_images 
-            (id, animal_id, image_url, is_primary, created_at, original_image_url)
-            VALUES 
-            (:id, :animal_id, :image_url, :is_primary, :created_at, :original_image_url)
-            """
-        )
-
-        for i in range(0, len(images), batch_size):
-            batch = images[i : i + batch_size]
-
-            batch_params = []
-            for image in batch:
-                local_animal_id = image[1]
-                railway_animal_id = animal_id_mapping.get(local_animal_id)
-
-                if railway_animal_id is None:
-                    logger.warning(f"Skipping image - no Railway animal found for local animal ID {local_animal_id}")
-                    continue
-
-                batch_params.append(
-                    {
-                        "id": image[0],
-                        "animal_id": railway_animal_id,
-                        "image_url": image[2],
-                        "is_primary": image[3],
-                        "created_at": image[4],
-                        "original_image_url": image[5],
-                    }
-                )
-
-            if batch_params:
-                session.execute(insert_sql, batch_params)
-                total_synced += len(batch_params)
-
-            logger.info(f"Prepared batch: {total_synced}/{len(images)} animal_images for Railway sync")
-
-        logger.info(f"Successfully prepared {total_synced} animal_images for Railway sync")
-        return True
-
-    except Exception as e:
-        logger.error(f"Failed to sync animal_images to Railway in transaction: {e}")
         return False
 
 
@@ -1383,14 +1145,14 @@ def _sync_service_regions_to_railway_in_transaction(session, batch_size: int = 1
 def _validate_sync_integrity_in_transaction(session) -> bool:
     """Validate sync integrity within an existing transaction."""
     try:
-        tables_to_check = ["organizations", "animals", "animal_images", "scrape_logs", "service_regions"]
+        tables_to_check = ["organizations", "animals", "scrape_logs", "service_regions"]
 
         for table in tables_to_check:
             local_count = get_local_data_count(table)
 
             # Get Railway count using the existing session
             # Validate table name against whitelist to prevent SQL injection
-            valid_tables = ["organizations", "animals", "animal_images", "scrape_logs", "service_regions"]
+            valid_tables = ["organizations", "animals", "scrape_logs", "service_regions"]
 
             if table not in valid_tables:
                 logger.error(f"Invalid table name: {table}")
@@ -1422,7 +1184,7 @@ def _validate_sync_integrity_in_transaction(session) -> bool:
 def validate_sync_by_mode(mode: SyncMode, table: str, local_count: int, railway_count: int) -> bool:
     """Validate sync counts based on the specified mode."""
     # Validate table name first
-    valid_tables = ["organizations", "animals", "animal_images", "scrape_logs", "service_regions"]
+    valid_tables = ["organizations", "animals", "scrape_logs", "service_regions"]
     if table not in valid_tables:
         logger.error(f"validate_sync_by_mode: Invalid table name: {table}")
         return False
@@ -1445,7 +1207,7 @@ def validate_sync_by_mode(mode: SyncMode, table: str, local_count: int, railway_
 def validate_sync_integrity() -> bool:
     """Validate that sync was successful by comparing record counts."""
     try:
-        tables_to_check = ["organizations", "animals", "animal_images", "scrape_logs", "service_regions"]
+        tables_to_check = ["organizations", "animals", "scrape_logs", "service_regions"]
 
         for table in tables_to_check:
             local_count = get_local_data_count(table)
@@ -1574,7 +1336,7 @@ class RailwayDataSyncer:
     def _validate_sync_mode(self, mode: SyncMode) -> bool:
         """Validate sync operation based on the specified mode."""
         try:
-            tables = ["organizations", "animals", "animal_images", "scrape_logs", "service_regions"]
+            tables = ["organizations", "animals", "scrape_logs", "service_regions"]
 
             for table in tables:
                 local_count = get_local_data_count(table)
@@ -1594,7 +1356,7 @@ class RailwayDataSyncer:
     def _clear_railway_tables(self) -> bool:
         """Clear all Railway tables for rebuild mode."""
         try:
-            tables = ["animal_images", "animals", "scrape_logs", "service_regions", "organizations"]  # Order matters for FK constraints
+            tables = ["animals", "scrape_logs", "service_regions", "organizations"]  # Order matters for FK constraints
 
             with railway_session() as session:
                 for table in tables:

@@ -30,7 +30,8 @@ class TestImageProcessingServiceInterface:
 
             assert hasattr(ImageProcessingService, "__init__")
             assert hasattr(ImageProcessingService, "process_primary_image")
-            assert hasattr(ImageProcessingService, "save_animal_images")
+            # save_animal_images method removed in refactoring
+            assert not hasattr(ImageProcessingService, "save_animal_images")
             assert hasattr(ImageProcessingService, "upload_image_to_r2")
             assert hasattr(ImageProcessingService, "validate_image_url")
         except ImportError:
@@ -41,9 +42,12 @@ class TestImageProcessingServiceInterface:
         # Will implement after creating service
         pytest.skip("ImageProcessingService not yet implemented")
 
-    def test_save_animal_images_signature(self):
-        """Test save_animal_images method signature and return type."""
-        pytest.skip("ImageProcessingService not yet implemented")
+    def test_save_animal_images_removed(self):
+        """Test that save_animal_images method has been removed."""
+        from services.image_processing_service import ImageProcessingService
+
+        service = ImageProcessingService()
+        assert not hasattr(service, "save_animal_images")
 
     def test_upload_image_to_r2_signature(self):
         """Test upload_image_to_r2 method signature and return type."""
@@ -95,13 +99,14 @@ class TestImageProcessingServiceImplementation:
         """Test processing primary image for existing animal with changed image."""
         pytest.skip("ImageProcessingService not yet implemented")
 
-    def test_save_animal_images_success(self, mock_r2_service, mock_database_connection):
-        """Test successful saving of multiple animal images."""
-        pytest.skip("ImageProcessingService not yet implemented")
+    def test_save_animal_images_removed_from_service(self, mock_r2_service, mock_database_connection):
+        """Test that save_animal_images method no longer exists in service."""
+        from services.image_processing_service import ImageProcessingService
 
-    def test_save_animal_images_partial_failure(self, mock_r2_service, mock_database_connection):
-        """Test saving animal images with some upload failures."""
-        pytest.skip("ImageProcessingService not yet implemented")
+        service = ImageProcessingService()
+        assert not hasattr(service, "save_animal_images")
+
+    # test_save_animal_images_partial_failure removed - functionality no longer exists
 
     def test_upload_image_to_r2_success(self, mock_r2_service):
         """Test successful image upload to R2."""

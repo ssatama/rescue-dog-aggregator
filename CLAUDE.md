@@ -15,7 +15,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 
 - Utilize the available MCP servers and tools
 - Use zen tools for planning, debugging, test generation, code reviews and peer feedback
-  Use the following models for zen:
+- Use the following models for zen:
   -DO NOT USE openrouter/google/gemini-2.0-flash-thinking-exp:free
   -default: openai/gpt-5 - codereviews etc
   -think/hard tasks: anthropic/claude-opus-4.1
@@ -67,8 +67,8 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 ```bash
 # Backend (ALWAYS activate venv first)
 source venv/bin/activate
-pytest tests/ -m "unit or fast" -v      # Fast development feedback (RECOMMENDED)
-pytest tests/ -m "not browser and not requires_migrations" -v  # CI pipeline
+source venv/bin/activate && pytest tests/ -m "unit or fast" -v      # Fast development feedback (RECOMMENDED)
+pytest tests/ -m "not browser and not requires_migrations" -v  # CI pipeline - MUST PASS before push
 pytest tests/ -v                        # All tests
 
 # Frontend

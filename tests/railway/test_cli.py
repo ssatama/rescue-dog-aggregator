@@ -129,7 +129,7 @@ class TestRailwayCliCommands:
             with patch("management.railway_commands.get_railway_data_count") as mock_railway:
                 with patch("management.railway_commands.check_railway_connection") as mock_check:
                     mock_check.return_value = True
-                    # Mock all tables: organizations, animals, animal_images, scrape_logs, service_regions
+                    # Mock all tables: organizations, animals, scrape_logs, service_regions
                     mock_local.side_effect = [7, 850, 100, 50, 5]
                     mock_railway.side_effect = [7, 850, 100, 50, 5]
 
@@ -154,7 +154,7 @@ class TestRailwayCliCommands:
             with patch("management.railway_commands.get_railway_data_count") as mock_railway:
                 with patch("management.railway_commands.check_railway_connection") as mock_check:
                     mock_check.return_value = True
-                    # Mock all tables: organizations, animals, animal_images, scrape_logs, service_regions
+                    # Mock all tables: organizations, animals, scrape_logs, service_regions
                     mock_local.side_effect = [7, 850, 100, 50, 5]
                     mock_railway.side_effect = [7, 800, 100, 50, 5]  # Different animal count
 
@@ -300,7 +300,7 @@ class TestRailwayCliIntegration:
                         # Test status
                         with patch("management.railway_commands.get_local_data_count") as mock_local:
                             with patch("management.railway_commands.get_railway_data_count") as mock_railway:
-                                # Mock all tables: organizations, animals, animal_images, scrape_logs, service_regions
+                                # Mock all tables: organizations, animals, scrape_logs, service_regions
                                 mock_local.side_effect = [5, 100, 20, 10, 2]
                                 mock_railway.side_effect = [5, 100, 20, 10, 2]
 

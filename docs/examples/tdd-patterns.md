@@ -180,7 +180,7 @@ class AnimalService:
         
         self.cursor.execute("""
             SELECT animal_id, image_url, is_primary
-            FROM animal_images
+            FROM animals  -- animal_images table removed, using primary_image_url
             WHERE animal_id = ANY(%s)
             ORDER BY animal_id, is_primary DESC, id ASC
         """, (animal_ids,))
@@ -921,7 +921,7 @@ async def get_animals(
         # Image loading logic also in route
         for animal in animals:
             cursor.execute("""
-                SELECT image_url, is_primary FROM animal_images 
+                SELECT primary_image_url FROM animals  -- animal_images table removed
                 WHERE animal_id = %s ORDER BY is_primary DESC
             """, (animal['id'],))
             animal['images'] = cursor.fetchall()

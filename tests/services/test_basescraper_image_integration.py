@@ -40,7 +40,7 @@ class TestBaseScraperWithImageProcessingService:
         # Create mock image processing service
         mock_image_service = Mock(spec=ImageProcessingService)
         mock_image_service.process_primary_image.return_value = {"name": "Test Dog", "primary_image_url": "https://cloudinary.com/test.jpg", "original_image_url": "https://example.com/test.jpg"}
-        mock_image_service.save_animal_images.return_value = (3, 0)  # 3 success, 0 failures
+        # save_animal_images method removed in refactoring
 
         # Create scraper with injected service
         scraper = mock_scraper_with_service(organization_id=1, image_processing_service=mock_image_service)
@@ -72,21 +72,12 @@ class TestBaseScraperWithImageProcessingService:
             "CLOUDINARY_API_SECRET": "",
         },
     )
-    def test_basescraper_save_animal_images_uses_service(self, mock_scraper_with_service):
-        """Test that save_animal_images uses injected ImageProcessingService."""
-        mock_image_service = Mock(spec=ImageProcessingService)
-        mock_image_service.save_animal_images.return_value = (2, 1)  # 2 success, 1 failure
+    def test_basescraper_save_animal_images_removed(self, mock_scraper_with_service):
+        """Test that save_animal_images method has been removed from BaseScraper."""
+        scraper = mock_scraper_with_service(organization_id=1)
 
-        scraper = mock_scraper_with_service(organization_id=1, image_processing_service=mock_image_service)
-        scraper.conn = Mock()
-
-        image_urls = ["https://example.com/image1.jpg", "https://example.com/image2.jpg", "https://example.com/image3.jpg"]
-
-        result = scraper.save_animal_images(123, image_urls)
-
-        # Verify service was called with correct parameters
-        mock_image_service.save_animal_images.assert_called_once_with(123, image_urls, scraper.conn, "Organization ID 1")
-        assert result == (2, 1)
+        # save_animal_images method no longer exists
+        assert not hasattr(scraper, "save_animal_images")
 
     @patch.dict(
         "os.environ",
@@ -97,28 +88,25 @@ class TestBaseScraperWithImageProcessingService:
         },
     )
     def test_basescraper_falls_back_to_legacy_without_service(self, mock_scraper_with_service):
-        """Test that BaseScraper returns appropriate defaults without ImageProcessingService."""
+        """Test that BaseScraper works properly without ImageProcessingService injection."""
         # Create scraper without service injection
         scraper = mock_scraper_with_service(organization_id=1)
 
-        # Verify no image processing service
+        # Verify no image processing service is injected (defaults to None)
         assert scraper.image_processing_service is None
 
-        # Mock database and Cloudinary for legacy mode
+        # Verify scraper still works normally without the service
+        # save_animal_images method has been removed - this test just verifies graceful operation
+        animal_data = {"name": "Test Dog", "external_id": "test-123"}
+
+        # Mock database operations
         scraper.conn = Mock()
-        scraper.cloudinary_service = Mock()
-        scraper.cloudinary_service.upload_image_from_url.return_value = ("https://cloudinary.com/legacy.jpg", True)
+        scraper.get_existing_animal = Mock(return_value=None)
+        scraper.create_animal = Mock(return_value=(123, "added"))
 
-        # Mock save_animal_images legacy behavior
-        mock_cursor = Mock()
-        scraper.conn.cursor.return_value = mock_cursor
-        mock_cursor.fetchall.return_value = []  # No existing images
-        mock_cursor.fetchone.return_value = ("Test Dog",)  # Animal name
-
-        result = scraper.save_animal_images(123, ["https://example.com/legacy.jpg"])
-
-        # Should return (0, 1) indicating 0 successes and 1 failure (service unavailable)
-        assert result == (0, 1)
+        # Should work fine without image service
+        result = scraper.save_animal(animal_data)
+        assert result == (123, "added")
 
     @patch.dict(
         "os.environ",
@@ -137,7 +125,7 @@ class TestBaseScraperWithImageProcessingService:
         # Verify service is stored
         assert scraper.image_processing_service == mock_image_service
 
-        # Test without service
+        # Test without service - should default to None
         scraper_no_service = mock_scraper_with_service(organization_id=1)
         assert scraper_no_service.image_processing_service is None
 
@@ -150,12 +138,21 @@ class TestBaseScraperWithImageProcessingService:
         },
     )
     def test_basescraper_logs_service_usage(self, mock_scraper_with_service, caplog):
-        """Test that BaseScraper logs when ImageProcessingService is not available."""
+        """Test that BaseScraper properly logs when ImageProcessingService is unavailable."""
         # Create scraper without service injection
         scraper = mock_scraper_with_service(organization_id=1)
 
-        # Call save_animal_images to trigger service unavailable logging
-        result = scraper.save_animal_images(123, ["https://example.com/image.jpg"])
+        # Verify no service is injected
+        assert scraper.image_processing_service is None
+
+        # Mock database operations and trigger the image processing flow
+        animal_data = {"name": "Test Dog", "external_id": "test-123", "primary_image_url": "https://example.com/test.jpg"}
+        scraper.conn = Mock()
+        scraper.get_existing_animal = Mock(return_value=None)
+        scraper.create_animal = Mock(return_value=(123, "added"))
+
+        # This should trigger the service unavailable logging
+        scraper.save_animal(animal_data)
 
         # Check that service unavailable message was logged
-        assert "No ImageProcessingService available" in caplog.text
+        assert "ImageProcessingService" in caplog.text

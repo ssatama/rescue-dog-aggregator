@@ -390,9 +390,9 @@ class ImageProcessingService:
                             database_connection=None, organization_name: str = "unknown") -> Dict[str, Any]:
         """Process primary image for an animal, handling uploads and URL management."""
         
-    def save_animal_images(self, animal_id: int, image_urls: List[str], database_connection, 
-                          organization_name: str = "unknown") -> Tuple[int, int]:
-        """Save multiple animal images with R2 upload."""
+    # save_animal_images method REMOVED in refactoring
+    # Multi-image functionality eliminated in favor of single primary_image_url
+    # Images now processed through ImageProcessingService.process_primary_image()
 ```
 
 #### **Key Features:**
@@ -924,9 +924,8 @@ class ImageProcessingService:
                             database_connection=None, organization_name: str = "unknown") -> Dict[str, Any]:
         """Process primary image for an animal, handling uploads and URL management."""
         
-    def save_animal_images(self, animal_id: int, image_urls: List[str], database_connection,
-                          organization_name: str = "unknown") -> Tuple[int, int]:
-        """Save multiple animal images with R2 upload."""
+    # save_animal_images method REMOVED in refactoring
+    # Multi-image functionality eliminated in favor of single primary_image_url
 ```
 
 **Features:**
@@ -1570,7 +1569,7 @@ class TestTheUnderdogScraperWithServices:
         """Mock image processing service for testing."""
         mock_service = Mock()
         mock_service.process_primary_image.return_value = {"primary_image_url": "https://r2.example.com/image.jpg"}
-        mock_service.save_animal_images.return_value = (2, 0)  # 2 success, 0 failures
+        # save_animal_images method removed in refactoring
         return mock_service
     
     @pytest.fixture

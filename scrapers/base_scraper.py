@@ -315,22 +315,6 @@ class BaseScraper(ABC):
             self.logger.error(f"Error in save_animal: {e}")
             return None, "error"
 
-    def save_animal_images(self, animal_id, image_urls):
-        """Save animal images with R2 upload, only uploading changed images.
-
-        Returns:
-            Tuple of (success_count, failure_count) for tracking upload results
-        """
-        if not image_urls:
-            return 0, 0
-
-        # Use ImageProcessingService if available
-        if self.image_processing_service:
-            return self.image_processing_service.save_animal_images(animal_id, image_urls, self.conn, self.organization_name)
-
-        self._log_service_unavailable("ImageProcessingService", "image processing disabled")
-        return 0, len(image_urls)
-
     def run(self):
         """Run the scraper to collect and save animal data."""
         try:
@@ -492,16 +476,6 @@ class BaseScraper(ABC):
             if animal_id:
                 # Mark animal as seen in current session for confidence tracking
                 self.mark_animal_as_seen(animal_id)
-
-                # Save animal images if provided
-                image_urls = animal_data.get("image_urls", [])
-                if image_urls and len(image_urls) > 0:
-                    success_count, failure_count = self.save_animal_images(animal_id, image_urls)
-                    processing_stats["images_uploaded"] += success_count
-                    processing_stats["images_failed"] += failure_count
-
-                    # Track image operations for statistics (don't add to progress count)
-                    progress_tracker.track_operation(operation_type="image_upload", count=len(image_urls))
 
                 # Update counts
                 if action == "added":

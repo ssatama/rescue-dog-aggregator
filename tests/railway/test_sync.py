@@ -132,7 +132,6 @@ class TestSyncModeValidation:
         assert SAFETY_THRESHOLDS["animals"] >= 10
         assert SAFETY_THRESHOLDS["scrape_logs"] >= 1
         assert SAFETY_THRESHOLDS["service_regions"] >= 0
-        assert SAFETY_THRESHOLDS["animal_images"] >= 0
 
     def test_validate_sync_by_mode_incremental(self):
         """Test incremental mode validation."""

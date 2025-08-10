@@ -763,7 +763,7 @@ GET /health                         # Health check endpoint
 
 - **organizations**: Rescue organization metadata and configuration
 - **animals**: Animal listings with standardized and raw data
-- **animal_images**: Image galleries with CDN optimization
+- **~~animal_images~~**: *(REMOVED)* - Multi-image functionality removed; now using single `primary_image_url` field on animals table
 - **scrape_logs**: Comprehensive scraping history and metrics
 
 **Optimization Features**

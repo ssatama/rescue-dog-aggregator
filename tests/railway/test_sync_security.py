@@ -59,7 +59,7 @@ class TestRailwaySyncSecurity:
         This test will PASS once we fix the vulnerability.
         """
         # Test with valid table names
-        valid_tables = ["organizations", "animals", "animal_images"]
+        valid_tables = ["organizations", "animals"]
 
         with patch("services.railway.sync.railway_session") as mock_session:
             mock_result = MagicMock()

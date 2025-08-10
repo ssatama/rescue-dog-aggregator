@@ -15,7 +15,7 @@ from psycopg2.extras import RealDictCursor
 
 from api.database import create_batch_executor
 from api.exceptions import APIException
-from api.models.dog import AnimalWithImages
+from api.models.dog import Animal
 from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
 from api.models.responses import FilterCountsResponse, FilterOption
 from api.utils.json_parser import build_organization_object, parse_json_field
@@ -30,7 +30,7 @@ class AnimalService:
         self.cursor = cursor
         self.batch_executor = create_batch_executor(cursor)
 
-    def get_animals(self, filters: AnimalFilterRequest) -> List[AnimalWithImages]:
+    def get_animals(self, filters: AnimalFilterRequest) -> List[Animal]:
         """
         Get animals with filtering and pagination.
 
@@ -66,7 +66,7 @@ class AnimalService:
             logger.error(f"Error in get_animals: {e}")
             raise APIException(status_code=500, detail="Failed to fetch animals", error_code="INTERNAL_ERROR")
 
-    def get_animals_for_sitemap(self, filters: AnimalFilterRequest) -> List[AnimalWithImages]:
+    def get_animals_for_sitemap(self, filters: AnimalFilterRequest) -> List[Animal]:
         """
         Get animals filtered for sitemap generation with meaningful descriptions.
 
@@ -94,7 +94,7 @@ class AnimalService:
             logger.error(f"Error in get_animals_for_sitemap: {e}")
             raise APIException(status_code=500, detail="Failed to fetch animals for sitemap", error_code="INTERNAL_ERROR")
 
-    def _filter_by_description_quality(self, animals: List[AnimalWithImages]) -> List[AnimalWithImages]:
+    def _filter_by_description_quality(self, animals: List[Animal]) -> List[Animal]:
         """
         Filter animals by description quality for sitemap inclusion.
 
@@ -181,7 +181,7 @@ class AnimalService:
         # If 2+ patterns match, likely fallback content
         return pattern_count >= 2
 
-    def _get_animals_with_fallback(self, filters: AnimalFilterRequest) -> List[AnimalWithImages]:
+    def _get_animals_with_fallback(self, filters: AnimalFilterRequest) -> List[Animal]:
         """
         Get animals with recent_with_fallback curation logic.
 
@@ -219,24 +219,18 @@ class AnimalService:
         logger.info(f"Found {len(fallback_rows)} animals in fallback")
         return self._build_animals_response(fallback_rows)
 
-    def _build_animals_response(self, animal_rows) -> List[AnimalWithImages]:
+    def _build_animals_response(self, animal_rows) -> List[Animal]:
         """
-        Build AnimalWithImages response from database rows.
+        Build Animal response from database rows.
 
         Args:
             animal_rows: Database query results
 
         Returns:
-            List of animals with their images
+            List of animals
         """
-        # Extract animal IDs for batch operations
-        animal_ids = [row["id"] for row in animal_rows]
-
-        # Use batch executor to fetch images for all animals in one query
-        images_by_animal = self.batch_executor.fetch_animals_with_images(animal_ids)
-
-        # Build response with batch-fetched data
-        animals_with_images = []
+        # Build response without images
+        animals = []
         for row in animal_rows:
             # Convert row to dictionary for manipulation
             row_dict = dict(row)
@@ -251,14 +245,11 @@ class AnimalService:
             clean = {k: v for k, v in row_dict.items() if not k.startswith("org_")}
             clean["organization"] = organization
 
-            # Get images from batch query results
-            animal_id = clean["id"]
-            images = images_by_animal.get(animal_id, [])
-            animals_with_images.append(AnimalWithImages(**clean, images=images))
+            animals.append(Animal(**clean))
 
-        return animals_with_images
+        return animals
 
-    def get_animal_by_id(self, animal_id: int) -> Optional[AnimalWithImages]:
+    def get_animal_by_id(self, animal_id: int) -> Optional[Animal]:
         """
         Get a specific animal by ID.
 
@@ -266,7 +257,7 @@ class AnimalService:
             animal_id: ID of the animal to fetch
 
         Returns:
-            Animal with images or None if not found
+            Animal or None if not found
         """
         try:
             query = """
@@ -308,10 +299,6 @@ class AnimalService:
             if not animal_dict:
                 return None
 
-            # Fetch images using batch executor
-            images_by_animal = self.batch_executor.fetch_animals_with_images([animal_id])
-            animal_images = images_by_animal.get(animal_id, [])
-
             # Process the animal data
             clean_dict = dict(animal_dict)
 
@@ -336,13 +323,13 @@ class AnimalService:
             final_dict["organization"] = organization_data
 
             # Create and return the model
-            return AnimalWithImages(**final_dict, images=animal_images)
+            return Animal(**final_dict)
 
         except Exception as e:
             logger.error(f"Error in get_animal_by_id({animal_id}): {e}")
             raise APIException(status_code=500, detail=f"Failed to fetch animal {animal_id}", error_code="INTERNAL_ERROR")
 
-    def get_animal_by_slug(self, slug: str) -> Optional[AnimalWithImages]:
+    def get_animal_by_slug(self, slug: str) -> Optional[Animal]:
         """
         Get a specific animal by slug.
 
@@ -350,7 +337,7 @@ class AnimalService:
             slug: Slug of the animal to fetch
 
         Returns:
-            Animal with images or None if not found
+            Animal or None if not found
         """
         try:
             query = """
@@ -391,10 +378,8 @@ class AnimalService:
             if not animal_dict:
                 return None
 
-            # Fetch images using batch executor
+            # Process the animal data without images
             animal_id = animal_dict["id"]
-            images_by_animal = self.batch_executor.fetch_animals_with_images([animal_id])
-            animal_images = images_by_animal.get(animal_id, [])
 
             # Process the animal data
             clean_dict = dict(animal_dict)
@@ -419,7 +404,7 @@ class AnimalService:
             final_dict["organization"] = organization_data
 
             # Create and return the model
-            return AnimalWithImages(**final_dict, images=animal_images)
+            return Animal(**final_dict)
 
         except Exception as e:
             logger.error(f"Error in get_animal_by_slug({slug}): {e}")

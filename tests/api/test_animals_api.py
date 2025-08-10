@@ -485,14 +485,13 @@ class TestAnimalsAPI:
         assert isinstance(data.get("name"), str) and data["name"]
         assert data["animal_type"] == "dog"
         assert data["status"] == "available"
-        # images key should be present and a list of AnimalImage objects
-        assert isinstance(data.get("images"), list)
-        for img in data["images"]:
-            assert isinstance(img, dict)
-            assert "id" in img and isinstance(img["id"], int)
-            assert "image_url" in img and isinstance(img["image_url"], str)
-            assert img["image_url"].startswith("http")
-            assert "is_primary" in img and isinstance(img["is_primary"], bool)
+        # images key removed in refactoring - now using primary_image_url only
+        assert "images" not in data  # Multi-image support removed
+        # Should have primary_image_url instead
+        if data.get("primary_image_url"):
+            assert isinstance(data["primary_image_url"], str)
+            assert data["primary_image_url"].startswith("http")
+            # Old multi-image structure removed
 
     def test_get_animal_by_invalid_id_detailed(self, client: TestClient):
         """Test GET /api/animals/{id} with invalid ID - consolidated from test_animals_detail.py."""

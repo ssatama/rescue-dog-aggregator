@@ -39,20 +39,11 @@ export interface ApiDogResponse {
 }
 
 /**
- * Images array structure from backend AnimalWithImages endpoint
+ * NOTE: Multi-image functionality removed in favor of single primary_image_url
+ * The ApiImageResponse and ApiDogWithImagesResponse interfaces have been removed
+ * as the backend no longer supports multiple images per animal.
+ * All image data is now accessed via the primary_image_url field in ApiDogResponse.
  */
-export interface ApiImageResponse {
-  id: number;
-  image_url: string;
-  is_primary: boolean;
-}
-
-/**
- * Extended dog response when fetching with images
- */
-export interface ApiDogWithImagesResponse extends ApiDogResponse {
-  images: ApiImageResponse[];
-}
 
 /**
  * Organization data structure as returned by the backend API

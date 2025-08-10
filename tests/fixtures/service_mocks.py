@@ -72,11 +72,11 @@ def create_mock_image_processing_service(success_mode: bool = True) -> Mock:
     if success_mode:
         # Configure successful operations
         mock_service.process_primary_image.return_value = {"primary_image_url": "https://cloudinary.com/processed.jpg", "original_image_url": "https://original.com/image.jpg"}
-        mock_service.save_animal_images.return_value = (3, 0)  # 3 success, 0 failures
+        # save_animal_images method removed in refactoring
     else:
         # Configure error scenarios
         mock_service.process_primary_image.return_value = {"primary_image_url": "https://original.com/image.jpg", "original_image_url": "https://original.com/image.jpg"}
-        mock_service.save_animal_images.return_value = (0, 3)  # 0 success, 3 failures
+        # save_animal_images method removed in refactoring
 
     return mock_service
 
@@ -328,7 +328,7 @@ def configure_image_processing_service_for_success(mock_service: Mock, image_cou
         mock_service: Mock ImageProcessingService instance
         image_count: Number of images to simulate as successfully processed
     """
-    mock_service.save_animal_images.return_value = (image_count, 0)
+    # save_animal_images method removed in refactoring
     mock_service.process_primary_image.return_value = {"primary_image_url": "https://cloudinary.com/processed.jpg", "original_image_url": "https://original.com/image.jpg"}
 
 
@@ -339,5 +339,5 @@ def configure_image_processing_service_for_failure(mock_service: Mock, image_cou
         mock_service: Mock ImageProcessingService instance
         image_count: Number of images to simulate as failed
     """
-    mock_service.save_animal_images.return_value = (0, image_count)
+    # save_animal_images method removed in refactoring
     mock_service.process_primary_image.return_value = {"primary_image_url": "https://original.com/image.jpg", "original_image_url": "https://original.com/image.jpg"}

@@ -35,14 +35,6 @@ class StandardizedSize(str, Enum):
     LARGE = "Large"
 
 
-class AnimalImage(BaseModel):
-    """Schema for an animal image."""
-
-    id: int
-    image_url: str
-    is_primary: bool = False
-
-
 class AnimalBase(BaseModel):
     """Base schema with common animal attributes."""
 
@@ -101,13 +93,7 @@ class Animal(AnimalBase):
     availability_confidence: Optional[AvailabilityConfidence] = AvailabilityConfidence.HIGH
     last_seen_at: Optional[datetime] = None
     consecutive_scrapes_missing: Optional[int] = 0
-
-
-class AnimalWithImages(Animal):
-    """Animal with its associated images."""
-
-    images: List[AnimalImage] = []
-    organization: Optional[Organization] = None  # ← add this!
+    organization: Optional[Organization] = None
 
 
 class AnimalFilter(BaseModel):

@@ -1,9 +1,8 @@
 """
 ImageProcessingService - Extracted from BaseScraper for Single Responsibility.
 
-Handles all image processing operations including:
+Handles primary image processing operations including:
 - Primary image processing and validation
-- Multiple image upload and management
 - R2 integration and error handling
 - Image URL validation and processing
 
@@ -63,60 +62,6 @@ class ImageProcessingService:
             processed_data = self._upload_primary_image(processed_data, original_url, organization_name)
 
         return processed_data
-
-    def save_animal_images(self, animal_id: int, image_urls: List[str], database_connection, organization_name: str = "unknown") -> Tuple[int, int]:
-        """Save multiple animal images with R2 upload.
-
-        Args:
-            animal_id: ID of the animal
-            image_urls: List of image URLs to process
-            database_connection: Database connection for operations
-            organization_name: Organization name for R2 folder organization
-
-        Returns:
-            Tuple of (success_count, failure_count)
-        """
-        if not image_urls:
-            return 0, 0
-
-        upload_success_count = 0
-        upload_failure_count = 0
-
-        try:
-            cursor = database_connection.cursor()
-
-            # Get existing images and animal name
-            existing_images = self._get_existing_images(cursor, animal_id)
-            animal_name = self._get_animal_name(cursor, animal_id)
-
-            # Create map of existing URLs
-            existing_urls_map = self._create_existing_urls_map(existing_images)
-
-            # Process each image URL
-            images_to_keep = set()
-            for i, image_url in enumerate(image_urls):
-                if image_url in existing_urls_map:
-                    success_count, failure_count = self._handle_existing_image(cursor, image_url, existing_urls_map, i, animal_id, images_to_keep)
-                    upload_success_count += success_count
-                    upload_failure_count += failure_count
-                else:
-                    success_count, failure_count = self._handle_new_image(cursor, image_url, i, animal_id, animal_name, organization_name)
-                    upload_success_count += success_count
-                    upload_failure_count += failure_count
-
-            # Clean up removed images
-            self._cleanup_removed_images(cursor, existing_images, images_to_keep, animal_id)
-
-            database_connection.commit()
-            cursor.close()
-
-            return upload_success_count, upload_failure_count
-
-        except Exception as e:
-            self.logger.error(f"Error saving animal images: {e}")
-            if database_connection:
-                database_connection.rollback()
-            return 0, upload_failure_count or len(image_urls)
 
     def upload_image_to_r2(self, image_url: str, animal_name: str, organization_name: str = "unknown") -> Tuple[Optional[str], bool]:
         """Upload image to R2 service.
@@ -224,81 +169,3 @@ class ImageProcessingService:
             processed_data["original_image_url"] = original_url
 
         return processed_data
-
-    def _get_existing_images(self, cursor, animal_id: int) -> List[Tuple]:
-        """Get existing images for animal (pure function)."""
-        cursor.execute(
-            """
-            SELECT id, image_url, original_image_url, is_primary
-            FROM animal_images
-            WHERE animal_id = %s
-            ORDER BY is_primary DESC, id ASC
-            """,
-            (animal_id,),
-        )
-        return cursor.fetchall()
-
-    def _get_animal_name(self, cursor, animal_id: int) -> str:
-        """Get animal name for R2 folder organization (pure function)."""
-        cursor.execute("SELECT name FROM animals WHERE id = %s", (animal_id,))
-        result = cursor.fetchone()
-        return result[0] if result else "unknown"
-
-    def _create_existing_urls_map(self, existing_images: List[Tuple]) -> Dict[str, Dict[str, Any]]:
-        """Create map of existing image URLs (pure function)."""
-        existing_urls_map = {}
-        for img in existing_images:
-            img_id, r2_url, original_url, is_primary = img
-            existing_urls_map[original_url] = {
-                "id": img_id,
-                "r2_url": r2_url,
-                "is_primary": is_primary,
-            }
-        return existing_urls_map
-
-    def _handle_existing_image(self, cursor, image_url: str, existing_urls_map: Dict, index: int, animal_id: int, images_to_keep: set) -> Tuple[int, int]:
-        """Handle existing image processing (pure function)."""
-        existing_img = existing_urls_map[image_url]
-        images_to_keep.add(existing_img["id"])
-
-        # Update is_primary flag if needed
-        expected_is_primary = index == 0
-        if existing_img["is_primary"] != expected_is_primary:
-            cursor.execute(
-                "UPDATE animal_images SET is_primary = %s WHERE id = %s",
-                (expected_is_primary, existing_img["id"]),
-            )
-
-        self.logger.info(f"🔄 Keeping existing image {index+1} for animal {animal_id} (unchanged)")
-        return 0, 0  # No upload attempted
-
-    def _handle_new_image(self, cursor, image_url: str, index: int, animal_id: int, animal_name: str, organization_name: str) -> Tuple[int, int]:
-        """Handle new image upload and database insertion."""
-        self.logger.info(f"📤 Uploading new additional image {index+1} for animal {animal_id}")
-
-        r2_url, success = self.r2_service.upload_image_from_url(image_url, animal_name, organization_name)
-
-        # Use R2 URL if successful, otherwise fallback to original
-        final_url = r2_url if success else image_url
-
-        cursor.execute(
-            """
-            INSERT INTO animal_images (animal_id, image_url, original_image_url, is_primary)
-            VALUES (%s, %s, %s, %s)
-            """,
-            (animal_id, final_url, image_url, index == 0),
-        )
-
-        if success:
-            self.logger.info(f"✅ Uploaded new additional image {index+1} for animal {animal_id}")
-            return 1, 0
-        else:
-            self.logger.warning(f"❌ Failed to upload additional image {index+1} for animal {animal_id}, using original")
-            return 0, 1
-
-    def _cleanup_removed_images(self, cursor, existing_images: List[Tuple], images_to_keep: set, animal_id: int) -> None:
-        """Clean up images that are no longer needed."""
-        for img in existing_images:
-            if img[0] not in images_to_keep:  # img[0] is the id
-                cursor.execute("DELETE FROM animal_images WHERE id = %s", (img[0],))
-                self.logger.info(f"🗑️ Removed obsolete image for animal {animal_id}")

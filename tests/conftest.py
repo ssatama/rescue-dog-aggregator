@@ -101,7 +101,7 @@ def _clear_test_tables_robust(cursor, conn, max_retries=3):
     # Define deletion order respecting foreign key constraints
     # Must delete child tables before parent tables
     deletion_order = [
-        "animal_images",  # References animals(id)
+        # "animal_images",  # Table removed in migration 005
         "animals",  # References organizations(id)
         "scrape_logs",  # References organizations(id)
         "organizations",  # Parent table - delete last
@@ -131,7 +131,7 @@ def _clear_test_tables_robust(cursor, conn, max_retries=3):
                 try:
                     print("[conftest robust_cleanup] Using CASCADE deletion as fallback")
                     cursor.execute("DELETE FROM organizations CASCADE;")
-                    cursor.execute("DELETE FROM animal_images;")  # Clean up any remaining
+                    # animal_images table removed in migration 005 - no longer exists
                     conn.commit()
                     print("[conftest robust_cleanup] CASCADE deletion successful")
                     return

@@ -231,30 +231,10 @@ class TestBaseScraper:
             "CLOUDINARY_API_SECRET": "",
         },
     )
-    def test_save_animal_images(self, mock_scraper):
-        """Test saving animal images via ImageProcessingService."""
-        # Test data
-        animal_id = 1
-        image_urls = [
-            "http://example.com/image1.jpg",
-            "http://example.com/image2.jpg",
-            "http://example.com/image3.jpg",
-        ]
-
-        # Mock ImageProcessingService
-        mock_image_service = Mock()
-        mock_image_service.save_animal_images.return_value = (3, 0)  # 3 success, 0 failures
-        mock_scraper.image_processing_service = mock_image_service
-        mock_scraper.organization_name = "Test Org"
-
-        # Execute method
-        result = mock_scraper.save_animal_images(animal_id, image_urls)
-
-        # Verify ImageProcessingService was called
-        mock_image_service.save_animal_images.assert_called_once_with(animal_id, image_urls, mock_scraper.conn, "Test Org")
-
-        # Verify result - save_animal_images returns (success_count, failure_count)
-        assert result == (3, 0)  # 3 images uploaded successfully, 0 failures
+    def test_save_animal_images_removed(self, mock_scraper):
+        """Test that save_animal_images method has been removed."""
+        # save_animal_images method no longer exists after refactoring
+        assert not hasattr(mock_scraper, "save_animal_images")  # 3 images uploaded successfully, 0 failures
 
 
 @pytest.mark.slow
@@ -1116,7 +1096,7 @@ class TestBaseScraperProgressIntegration:
         # Mock save_animal to avoid actual database operations
         scraper.save_animal = Mock(return_value=(1, "added"))
         scraper.mark_animal_as_seen = Mock(return_value=True)
-        scraper.save_animal_images = Mock(return_value=(1, 0))
+        # save_animal_images method removed in refactoring
 
         # Run the scraper
         with scraper:
@@ -1139,7 +1119,7 @@ class TestBaseScraperProgressIntegration:
 
         scraper.save_animal = Mock(side_effect=mock_save_with_delay)
         scraper.mark_animal_as_seen = Mock(return_value=True)
-        scraper.save_animal_images = Mock(return_value=(2, 0))
+        # save_animal_images method removed in refactoring
 
         # Run the scraper
         with scraper:
@@ -1158,7 +1138,7 @@ class TestBaseScraperProgressIntegration:
         # Mock services
         scraper.save_animal = Mock(return_value=(1, "added"))
         scraper.mark_animal_as_seen = Mock(return_value=True)
-        scraper.save_animal_images = Mock(return_value=(2, 0))
+        # save_animal_images method removed in refactoring
 
         # Run the scraper
         with scraper:

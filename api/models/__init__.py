@@ -8,7 +8,7 @@ All models follow modern Pydantic v2 patterns with comprehensive validation,
 type safety, and security features.
 """
 
-from .dog import Animal, AnimalBase, AnimalFilter, AnimalImage, AnimalStatus, AnimalWithImages, AvailabilityConfidence, PaginationParams, StandardizedSize
+from .dog import Animal, AnimalBase, AnimalFilter, AnimalStatus, AvailabilityConfidence, PaginationParams, StandardizedSize
 from .organization import Organization
 
 __all__ = [
@@ -16,8 +16,6 @@ __all__ = [
     "Animal",
     "AnimalBase",
     "AnimalFilter",
-    "AnimalImage",
-    "AnimalWithImages",
     "PaginationParams",
     # Enums
     "AnimalStatus",

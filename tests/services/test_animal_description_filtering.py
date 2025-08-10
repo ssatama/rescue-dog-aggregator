@@ -11,7 +11,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from api.models.dog import AnimalWithImages
+from api.models.dog import Animal
 from api.models.requests import AnimalFilterRequest
 from api.services.animal_service import AnimalService
 
@@ -30,7 +30,7 @@ class TestAnimalDescriptionFiltering:
         """Should include animals with descriptions longer than 200 characters."""
         # Arrange: Create mock animal with long description
         long_description = "This is a wonderful dog with an amazing personality. " * 5  # >200 chars
-        mock_animal = AnimalWithImages(
+        mock_animal = Animal(
             id=1,
             name="Test Dog",
             slug="test-dog",
@@ -59,7 +59,7 @@ class TestAnimalDescriptionFiltering:
     def test_exclude_animals_with_no_description(self):
         """Should exclude animals with no description property."""
         # Arrange: Create mock animal with no description
-        mock_animal = AnimalWithImages(
+        mock_animal = Animal(
             id=1,
             name="Test Dog",
             slug="test-dog-no-desc",
@@ -87,7 +87,7 @@ class TestAnimalDescriptionFiltering:
     def test_exclude_animals_with_null_description(self):
         """Should exclude animals with null description."""
         # Arrange: Create mock animal with null description
-        mock_animal = AnimalWithImages(
+        mock_animal = Animal(
             id=1,
             name="Test Dog",
             slug="test-dog-null",
@@ -116,7 +116,7 @@ class TestAnimalDescriptionFiltering:
         """Should exclude animals with descriptions shorter than 200 characters."""
         # Arrange: Create mock animal with short description
         short_description = "Ready to fly"  # 12 chars
-        mock_animal = AnimalWithImages(
+        mock_animal = Animal(
             id=1,
             name="Test Dog",
             slug="test-dog-short",
@@ -147,7 +147,7 @@ class TestAnimalDescriptionFiltering:
         fallback_description = (
             "This dog is looking for a loving forever home. Contact the rescue organization to learn more about this wonderful dog's personality, needs, and how you can provide the perfect home."
         )
-        mock_animal = AnimalWithImages(
+        mock_animal = Animal(
             id=1,
             name="Test Dog",
             slug="test-dog-fallback",
@@ -178,7 +178,7 @@ class TestAnimalDescriptionFiltering:
         good_description = "Meet Bella, a wonderful Labrador mix with a fantastic personality. She loves playing fetch, going on long walks, and cuddling with her favorite humans. Bella is house-trained, great with children, and has been living happily with other dogs in her foster home. She's looking for an active family who can give her the exercise and attention she craves. Bella knows basic commands and is eager to learn more. Her ideal home would have a secure yard where she can run and play safely."
 
         mock_animals = [
-            AnimalWithImages(
+            Animal(
                 id=1,
                 name="Good Dog",
                 slug="good-dog",
@@ -191,7 +191,7 @@ class TestAnimalDescriptionFiltering:
                 status="available",
                 images=[],
             ),
-            AnimalWithImages(
+            Animal(
                 id=2,
                 name="No Description Dog",
                 slug="no-desc-dog",
@@ -204,7 +204,7 @@ class TestAnimalDescriptionFiltering:
                 status="available",
                 images=[],
             ),
-            AnimalWithImages(
+            Animal(
                 id=3,
                 name="Short Description Dog",
                 slug="short-desc-dog",
