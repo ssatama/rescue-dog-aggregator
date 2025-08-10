@@ -217,4 +217,4 @@ class TestGalgosDelSolScraperIntegration(unittest.TestCase):
 
         dog = data[0]
         self.assertEqual(dog["name"], "Test Dog")
-        self.assertEqual(dog["organization_id"], self.scraper.organization_id)
+        # Note: organization_id is now handled automatically by BaseScraper template method

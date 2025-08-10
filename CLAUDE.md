@@ -15,13 +15,6 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 
 - Utilize the available MCP servers and tools
 - Use zen tools for planning, debugging, test generation, code reviews and peer feedback
-- Use the following models for zen:
-  -DO NOT USE openrouter/google/gemini-2.0-flash-thinking-exp:free
-  -default: openai/gpt-5 - codereviews etc
-  -think/hard tasks: anthropic/claude-opus-4.1
-  -light tasks : gemini-2.5-flash-lite
-  -long context tasks: gemini-2.5-pro
-
 - Combine subagents you have available with the MCP tools as well
 - Always use Serena MCP tools when possible, they are very powerful, Switch serena modes as appropriate using the switch mode command.
 - Combine MCP tool use with subagent use for optimal results. Prefer Serena tools as a first step always.

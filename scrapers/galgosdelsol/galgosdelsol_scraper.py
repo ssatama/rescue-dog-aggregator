@@ -90,8 +90,6 @@ class GalgosDelSolScraper(BaseScraper):
                         if detail_data:
                             animal.update(detail_data)
 
-                    # Add organization_id for compatibility with E2E tests
-                    animal["organization_id"] = self.organization_id
                     all_dogs_data.append(animal)
 
                 self.logger.debug(f"Collected {len(animals)} animals from {listing_url} ({len([a for a in animals if a['adoption_url'] not in seen_urls or a['adoption_url'] == adoption_url])} new)")

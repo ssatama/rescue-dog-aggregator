@@ -15,6 +15,7 @@ class AnimalStatus(str, Enum):
     AVAILABLE = "available"
     ADOPTED = "adopted"
     PENDING = "pending"
+    RESERVED = "reserved"
     UNAVAILABLE = "unavailable"
 
 

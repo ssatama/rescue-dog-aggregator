@@ -1,0 +1,39 @@
+schema_version: "1.0"
+id: "santerpawsbulgarianrescue"
+name: "Santer Paws Bulgarian Rescue"
+enabled: true
+scraper:
+  class_name: "SanterPawsBulgarianRescueScraper"
+  module: "scrapers.santerpawsbulgarianrescue.santerpawsbulgarianrescue_scraper"
+  config:
+    rate_limit_delay: 2.5
+    max_retries: 3
+    timeout: 240
+    batch_size: 6
+    skip_existing_animals: false
+metadata:
+  website_url: "https://santerpawsbulgarianrescue.com/"
+  description: |
+    We rescue, rehome, and neuter dogs from our village and those around us, with many finding forever homes in the U.K. This is all accomplished through the gift of donations, and on the ground support here in Bulgaria, and as well as remotely by our volunteers.
+
+    After working for many years in the civil service, Owners Justine and Pete retired to Northern Bulgaria – a great country with very friendly people. Alongside the help of all our wonderful volunteers, we work together to alleviate as much of the suffering of animals as we can in our area.
+
+    Having lived in Bulgaria for over 7 years, we have tried to support and help as many distressed animals as possible. Sadly, this comes at a cost and we need help and support from others to find homes, foster, and finance this.
+    After 5 years of hard work, we achieved official charity status in 2020.
+  location:
+    country: "BG" # Organization's base country
+    city: "Pleven" # Organization's base city
+  service_regions: ["BG"]
+  ships_to: [
+      "UK", # United Kingdom
+    ] # Countries they ship to
+  social_media:
+    website: "https://santerpawsbulgarianrescue.com/"
+    facebook: "https://www.facebook.com/SanterpawsBulgarianRescue"
+    instagram: "https://www.instagram.com/santerpaws_bulgarian_rescue/"
+    twitter: "https://x.com/Santerpaws20"
+  established_year: 2007
+  logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-santerpawsbulgarianrescue.png"
+  adoption_fees:
+    usual_fee: 500
+    currency: "GBP"

@@ -30,7 +30,7 @@ metadata:
       "FI", # Finland
       "CA", # Canada (Quebec)
       "ES", # Spain
-      "GB", # United Kingdom
+      "UK", # United Kingdom
       "US", # United States
     ] # Countries they ship to
   social_media:
