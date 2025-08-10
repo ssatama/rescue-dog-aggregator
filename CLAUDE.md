@@ -73,6 +73,10 @@ npm run build                          # Verify build
 python management/config_commands.py list
 python management/config_commands.py sync
 python management/config_commands.py run pets-turkey
+
+# Data Quality Monitoring
+PYTHONPATH=. python monitoring/data_quality_monitor.py --mode=overall --all        # All organizations
+PYTHONPATH=. python monitoring/data_quality_monitor.py --mode=detailed --org-id=26 # Specific org (26 = gold standard)
 ```
 
 ### Common Tasks
