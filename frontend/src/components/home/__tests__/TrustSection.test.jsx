@@ -1,4 +1,4 @@
-import { render, screen, waitFor, act } from "@testing-library/react";
+import { render, screen, waitFor, act, fireEvent } from "@testing-library/react";
 import TrustSection from "../TrustSection";
 
 // Mock the statistics service
@@ -322,6 +322,48 @@ describe("TrustSection", () => {
         // Should show remaining count
         expect(screen.getByText("+ 7 more organizations")).toBeInTheDocument();
       });
+    });
+
+    test("should navigate to organizations page when clicking more organizations button", async () => {
+      // Mock useRouter
+      const mockPush = jest.fn();
+      const useRouter = jest.spyOn(require("next/navigation"), "useRouter");
+      useRouter.mockReturnValue({
+        push: mockPush,
+        pathname: "/",
+        query: {},
+        asPath: "/",
+      });
+
+      // Mock more organizations
+      const manyOrgsStats = {
+        ...mockStatistics,
+        organizations: Array.from({ length: 9 }, (_, i) => ({
+          id: i + 1,
+          name: `Organization ${i + 1}`,
+          dog_count: 50 - i,
+        })),
+      };
+
+      require("../../../services/animalsService").getStatistics.mockResolvedValue(
+        manyOrgsStats,
+      );
+
+      await act(async () => {
+        render(<TrustSection />);
+      });
+
+      await waitFor(() => {
+        const moreButton = screen.getByText("+ 1 more organization");
+        expect(moreButton).toBeInTheDocument();
+      });
+
+      // Click the button
+      const moreButton = screen.getByText("+ 1 more organization");
+      fireEvent.click(moreButton);
+
+      // Should navigate to organizations page
+      expect(mockPush).toHaveBeenCalledWith("/organizations");
     });
   });
 });

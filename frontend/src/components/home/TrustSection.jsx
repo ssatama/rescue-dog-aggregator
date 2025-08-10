@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getStatistics } from "../../services/animalsService";
 import OrganizationLink from "../ui/OrganizationLink";
 import OrganizationCard from "../organizations/OrganizationCard";
@@ -14,10 +15,10 @@ import { Button } from "@/components/ui/button";
  * Shows total dogs, organizations, countries with expandable organization list
  */
 export default function TrustSection() {
+  const router = useRouter();
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showAllOrganizations, setShowAllOrganizations] = useState(false);
 
   useEffect(() => {
     const fetchStatistics = async () => {
@@ -219,13 +220,11 @@ export default function TrustSection() {
           {remainingCount > 0 && (
             <Button
               variant="ghost"
-              onClick={() => setShowAllOrganizations(!showAllOrganizations)}
+              onClick={() => router.push("/organizations")}
               className="text-orange-600 hover:text-orange-800 hover:bg-orange-50 dark:hover:bg-orange-950/30"
               data-testid="trust-section-show-more"
             >
-              {showAllOrganizations
-                ? "Show less"
-                : `+ ${remainingCount} more organizations`}
+              {`+ ${remainingCount} more organization${remainingCount === 1 ? "" : "s"}`}
             </Button>
           )}
         </div>
