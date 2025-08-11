@@ -34,6 +34,7 @@ class StandardizedSize(str, Enum):
     SMALL = "Small"
     MEDIUM = "Medium"
     LARGE = "Large"
+    XLARGE = "XLarge"
 
 
 class AnimalBase(BaseModel):

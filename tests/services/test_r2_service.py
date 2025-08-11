@@ -194,7 +194,7 @@ class TestR2ServiceUpload:
     @patch("utils.r2_service.boto3.client")
     @patch("utils.r2_service.requests.get")
     def test_upload_image_backward_compatibility_check(self, mock_requests_get, mock_boto3_client):
-        """Test that upload checks for both SHA-256 and legacy MD5 keys"""
+        """Test that upload checks SHA-256 key only (legacy MD5 check removed for performance)"""
         with patch.dict(
             "os.environ",
             {
@@ -214,23 +214,22 @@ class TestR2ServiceUpload:
             mock_response.content = b"fake_image_data"
             mock_requests_get.return_value = mock_response
 
-            # Mock boto3 client - SHA-256 key doesn't exist, but MD5 legacy key does
+            # Mock boto3 client - SHA-256 key doesn't exist (will upload new image)
             mock_s3_client = Mock()
-            # First call for SHA-256 key returns 404 (not found)
-            # Second call for legacy MD5 key returns existing object
-            mock_s3_client.head_object.side_effect = [ClientError({"Error": {"Code": "404"}}, "HeadObject"), {"ETag": "existing-legacy-etag"}]  # SHA-256 key not found  # Legacy MD5 key found
+            # SHA-256 key returns 404 (not found) - no legacy check anymore
+            mock_s3_client.head_object.side_effect = ClientError({"Error": {"Code": "404"}}, "HeadObject")
             mock_boto3_client.return_value = mock_s3_client
 
             image_url = "http://example.com/dog.jpg"
             result_url, success = R2Service.upload_image_from_url(image_url, "test_dog")
 
-            # Should find existing legacy key and return its URL
+            # Should upload new image since no existing key was found
             assert success is True
             assert result_url.startswith("https://images.example.com/")
-            # Should have checked both keys
-            assert mock_s3_client.head_object.call_count == 2
-            # Should not upload since legacy key was found
-            mock_s3_client.upload_fileobj.assert_not_called()
+            # Should have checked only SHA-256 key (legacy MD5 check removed for performance)
+            assert mock_s3_client.head_object.call_count == 1
+            # Should upload since no existing key was found
+            mock_s3_client.upload_fileobj.assert_called_once()
 
 
 class TestR2ServiceOptimization:

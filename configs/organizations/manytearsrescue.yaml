@@ -1,0 +1,33 @@
+schema_version: "1.0"
+id: "manytearsrescue"
+name: "Many Tears Animal Rescue"
+enabled: true
+scraper:
+  class_name: "ManyTearsRescueScraper"
+  module: "scrapers.manytearsrescue.manytearsrescue_scraper"
+  config:
+    rate_limit_delay: 1.5
+    max_retries: 3
+    timeout: 240
+    batch_size: 6
+    skip_existing_animals: false
+metadata:
+  website_url: "https://www.manytearsrescue.org/"
+  description: |
+    Many Tears Animal Rescue is a Registered Charity (no.1192227) based in Llanelli, Carmarthenshire. It was founded in 2004 by Sylvia and Bill Van Atta, with the aim of providing a safe haven for dogs that were facing uncertain futures. Both Sylvia and Bill have a long history of animal rescue. Sylvia has set up and worked in rescues in both the UK and USA. They have witnessed many sad situations and shed many tears over dogs in terrible situations and hence the name Many Tears Animal Rescue. At Many Tears we take in animals from difficult situations, rehabilitate them both physically and emotionally, and find them loving forever homes.
+  location:
+    country: "UK" # Organization's base country
+    city: "Llanelli" # Organization's base city
+  service_regions: ["UK"]
+  ships_to: [
+      "UK", # United Kingdom
+    ] # Countries they ship to
+  social_media:
+    website: "https://www.manytearsrescue.org/"
+    facebook: "https://www.facebook.com/manytearsrescue"
+    instagram: "https://www.instagram.com/manytearsrescue/"
+  established_year: 2007
+  logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/manytearslogo.png"
+  adoption_fees:
+    usual_fee: 350
+    currency: "GBP"
