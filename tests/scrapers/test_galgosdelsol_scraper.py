@@ -413,7 +413,10 @@ class TestGalgosDelSolScraperArchitectureModernization(unittest.TestCase):
     def test_base_url_comes_from_config_not_hardcoded(self):
         """Test that base_url is loaded from org_config.metadata.website_url, not hardcoded."""
         # Should use config value from galgosdelsol.yaml: website_url: "https://galgosdelsol.org/"
-        expected_base_url = "https://galgosdelsol.org"  # Note: trailing slash should be removed
+        config_website_url = getattr(self.scraper.org_config.metadata, "website_url", None)
+        self.assertIsNotNone(config_website_url, "Config should have website_url")
+        
+        expected_base_url = str(config_website_url).rstrip("/")
         self.assertEqual(self.scraper.base_url, expected_base_url)
 
         # Verify it's using config, not hardcoded - base_url should match config

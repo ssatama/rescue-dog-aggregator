@@ -45,14 +45,18 @@ class GalgosDelSolScraper(BaseScraper):
             database_service=database_service,
         )
 
-        self.base_url = "https://galgosdelsol.org"
+        # Use config-driven base URL and organization name
+        website_url = getattr(self.org_config.metadata, "website_url", "https://galgosdelsol.org")
+        self.base_url = str(website_url).rstrip("/") if website_url else "https://galgosdelsol.org"
+        
+        # These are the specific scraping endpoints - keep as hardcoded scraping targets
         self.listing_urls = [
             "https://galgosdelsol.org/adoptables/galgos/",
             "https://galgosdelsol.org/adoptables/podencos/",
             "https://galgosdelsol.org/adoptables/pups-teens/",
             "https://galgosdelsol.org/adoptables/other-dogs/",
         ]
-        self.organization_name = "Galgos del Sol"
+        self.organization_name = self.org_config.name
 
         # Initialize persistent session for efficiency
         self.session = requests.Session()
