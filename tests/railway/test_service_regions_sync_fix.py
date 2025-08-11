@@ -18,8 +18,8 @@ from services.railway.sync import _sync_service_regions_with_mapping
 class TestServiceRegionsSyncConflictResolution:
     """Test service_regions sync uses consistent conflict resolution strategy."""
 
-    def test_service_regions_uses_id_conflict_resolution_not_composite_key(self):
-        """Test that service_regions sync uses ON CONFLICT (id) like other tables (TDD - SHOULD FAIL INITIALLY)."""
+    def test_service_regions_uses_composite_key_conflict_resolution(self):
+        """Test that service_regions sync uses ON CONFLICT (organization_id, country) to match the database constraint."""
         mock_session = MagicMock()
         mock_org_id_mapping = {1: 101, 2: 102}  # local_id -> railway_id
 
@@ -44,15 +44,19 @@ class TestServiceRegionsSyncConflictResolution:
             # Get the SQL statement that was executed
             executed_sql = mock_session.execute.call_args[0][0].text
 
-            # CRITICAL TEST: Should use ON CONFLICT (id) not (organization_id, country)
-            assert "ON CONFLICT (id)" in executed_sql, f"Expected 'ON CONFLICT (id)' but got: {executed_sql}"
-            assert "ON CONFLICT (organization_id, country)" not in executed_sql, f"Found problematic 'ON CONFLICT (organization_id, country)' in: {executed_sql}"
+            # CRITICAL TEST: Should use ON CONFLICT (organization_id, country) to match database constraint
+            assert "ON CONFLICT (organization_id, country)" in executed_sql, f"Expected 'ON CONFLICT (organization_id, country)' but got: {executed_sql}"
+            assert "ON CONFLICT (id) DO UPDATE SET" not in executed_sql, f"Should not use 'ON CONFLICT (id)' - found in: {executed_sql}"
 
-            # Verify all fields are in the UPDATE SET clause for completeness
-            update_set_section = executed_sql.split("ON CONFLICT (id) DO UPDATE SET")[1]
+            # Verify UPDATE SET clause doesn't try to update the constraint columns
+            update_set_section = executed_sql.split("ON CONFLICT (organization_id, country) DO UPDATE SET")[1]
+
+            # These should NOT be updated (they're part of the constraint)
+            assert "organization_id = EXCLUDED.organization_id" not in update_set_section, "Should not update organization_id in conflict"
+            assert "country = EXCLUDED.country" not in update_set_section, "Should not update country in conflict"
+
+            # These SHOULD be updated
             required_updates = [
-                "organization_id = EXCLUDED.organization_id",
-                "country = EXCLUDED.country",
                 "active = EXCLUDED.active",
                 "notes = EXCLUDED.notes",
                 "updated_at = EXCLUDED.updated_at",
@@ -62,8 +66,8 @@ class TestServiceRegionsSyncConflictResolution:
             for required_update in required_updates:
                 assert required_update in update_set_section, f"Missing '{required_update}' in UPDATE SET clause: {update_set_section}"
 
-    def test_service_regions_sync_preserves_all_field_updates(self):
-        """Test that service_regions conflict resolution updates ALL synced fields (TDD - SHOULD FAIL INITIALLY)."""
+    def test_service_regions_sync_preserves_appropriate_field_updates(self):
+        """Test that service_regions conflict resolution updates only non-constraint fields."""
         mock_session = MagicMock()
         mock_org_id_mapping = {3: 103}
 
@@ -79,18 +83,21 @@ class TestServiceRegionsSyncConflictResolution:
 
             assert result is True
 
-            # Verify the SQL includes comprehensive field updates
+            # Verify the SQL includes appropriate field updates
             executed_sql = mock_session.execute.call_args[0][0].text
 
-            # Should NOT only update 3 fields like the current broken implementation
-            broken_partial_update = "active = EXCLUDED.active,\n                notes = EXCLUDED.notes,\n                updated_at = EXCLUDED.updated_at"
-            assert broken_partial_update not in executed_sql, "Found old partial UPDATE SET clause - should update ALL fields"
+            # Should update these fields
+            assert "active = EXCLUDED.active" in executed_sql, "Should update active field"
+            assert "notes = EXCLUDED.notes" in executed_sql, "Should update notes field"
+            assert "updated_at = EXCLUDED.updated_at" in executed_sql, "Should update updated_at field"
+            assert "region = EXCLUDED.region" in executed_sql, "Should update region field"
 
-            # Should include created_at in UPDATE (missing in current implementation)
-            assert "created_at = EXCLUDED.created_at" in executed_sql, "Missing created_at in UPDATE SET clause"
+            # Should NOT update constraint fields
+            assert "organization_id = EXCLUDED.organization_id" not in executed_sql, "Should NOT update organization_id (part of constraint)"
+            assert "country = EXCLUDED.country" not in executed_sql, "Should NOT update country (part of constraint)"
 
-    def test_service_regions_transaction_function_also_uses_id_conflict(self):
-        """Test that the transaction version also uses ON CONFLICT (id) (TDD - SHOULD FAIL INITIALLY)."""
+    def test_service_regions_transaction_function_also_uses_composite_key_conflict(self):
+        """Test that the transaction version also uses ON CONFLICT (organization_id, country)."""
         from services.railway.sync import _sync_service_regions_to_railway_in_transaction
 
         mock_session = MagicMock()
@@ -127,6 +134,6 @@ class TestServiceRegionsSyncConflictResolution:
 
             assert service_regions_call is not None, "No service_regions INSERT found in execute calls"
 
-            # CRITICAL TEST: Transaction version should also use ON CONFLICT (id)
-            assert "ON CONFLICT (id)" in service_regions_call, f"Transaction version should use 'ON CONFLICT (id)': {service_regions_call}"
-            assert "ON CONFLICT (organization_id, country)" not in service_regions_call, f"Found problematic composite key conflict in transaction version: {service_regions_call}"
+            # CRITICAL TEST: Transaction version should also use ON CONFLICT (organization_id, country)
+            assert "ON CONFLICT (organization_id, country)" in service_regions_call, f"Transaction version should use 'ON CONFLICT (organization_id, country)': {service_regions_call}"
+            assert "ON CONFLICT (id) DO UPDATE SET" not in service_regions_call, f"Should not use 'ON CONFLICT (id)' in transaction version: {service_regions_call}"

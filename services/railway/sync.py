@@ -917,12 +917,9 @@ def _sync_service_regions_with_mapping(session, org_id_mapping: dict, batch_size
             (id, organization_id, country, active, notes, created_at, updated_at, region)
             VALUES 
             (:id, :organization_id, :country, :active, :notes, :created_at, :updated_at, :region)
-            ON CONFLICT (id) DO UPDATE SET
-                organization_id = EXCLUDED.organization_id,
-                country = EXCLUDED.country,
+            ON CONFLICT (organization_id, country) DO UPDATE SET
                 active = EXCLUDED.active,
                 notes = EXCLUDED.notes,
-                created_at = EXCLUDED.created_at,
                 updated_at = EXCLUDED.updated_at,
                 region = EXCLUDED.region
             """
@@ -1100,12 +1097,9 @@ def _sync_service_regions_to_railway_in_transaction(session, batch_size: int = 1
             (id, organization_id, country, active, notes, created_at, updated_at, region)
             VALUES 
             (:id, :organization_id, :country, :active, :notes, :created_at, :updated_at, :region)
-            ON CONFLICT (id) DO UPDATE SET
-                organization_id = EXCLUDED.organization_id,
-                country = EXCLUDED.country,
+            ON CONFLICT (organization_id, country) DO UPDATE SET
                 active = EXCLUDED.active,
                 notes = EXCLUDED.notes,
-                created_at = EXCLUDED.created_at,
                 updated_at = EXCLUDED.updated_at,
                 region = EXCLUDED.region
             """
