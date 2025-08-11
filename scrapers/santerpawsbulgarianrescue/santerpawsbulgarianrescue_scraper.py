@@ -49,47 +49,195 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
         self.listing_url = "https://santerpawsbulgarianrescue.com/adopt/"
         self.organization_name = "Santer Paws Bulgarian Rescue"
 
-    def collect_data(self) -> List[Dict[str, Any]]:
-        """Collect all available dog data from the listing page.
+        # Log configuration values for debugging
+        self.logger.info(
+            f"Initialized with config: rate_limit_delay={self.rate_limit_delay}, "
+            f"batch_size={self.batch_size}, skip_existing_animals={self.skip_existing_animals}, "
+            f"max_retries={self.max_retries}, timeout={self.timeout}"
+        )
 
-        This method is called by BaseScraper.run() and must return
-        a list of dictionaries containing dog data for database storage.
+    def _get_filtered_animals(self) -> List[Dict[str, Any]]:
+        """Get list of animals and apply skip_existing_animals filtering.
 
         Returns:
-            List of dog data dictionaries (deduplicated by adoption_url)
+            List of filtered animals ready for detail scraping
+        """
+        # Get list of available dogs from all listing pages
+        animals = self.get_animal_list()
+
+        if not animals:
+            self.logger.warning("No animals found to process")
+            return []
+
+        # Extract URLs and apply skip_existing_animals filtering
+        all_urls = [animal["adoption_url"] for animal in animals]
+
+        # Apply skip_existing_animals filtering via BaseScraper
+        if self.skip_existing_animals:
+            filtered_urls = self._filter_existing_urls(all_urls)
+            skipped_count = len(all_urls) - len(filtered_urls)
+
+            # Set filtering stats with final counts
+            self.set_filtering_stats(len(all_urls), skipped_count)
+
+            # Create filtered animals list
+            url_to_animal = {animal["adoption_url"]: animal for animal in animals}
+            animals = [url_to_animal[url] for url in filtered_urls if url in url_to_animal]
+
+            self.logger.info(f"Skip existing animals enabled: {skipped_count} skipped, {len(animals)} to process")
+        else:
+            # Set filtering stats for no filtering case
+            self.set_filtering_stats(len(all_urls), 0)
+            self.logger.info(f"Processing all {len(animals)} animals")
+
+        if not animals:
+            self.logger.info("All animals are existing - no new animals to process")
+
+        return animals
+
+    def _process_animals_parallel(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Process animals in parallel batches for efficient detail scraping.
+
+        Uses ThreadPoolExecutor to process animals in batches based on batch_size config.
+        Each batch runs concurrently to improve performance while respecting rate limits.
+
+        Args:
+            animals: List of animals to process
+
+        Returns:
+            List of processed animals with detailed data
         """
         all_dogs_data = []
         seen_urls = set()  # Track URLs to prevent duplicates
 
-        try:
-            # Get list of available dogs
-            animals = self.get_animal_list()
+        # Single-threaded fallback for small batches or when batch_size=1
+        if len(animals) <= self.batch_size or self.batch_size == 1:
+            self.logger.info(f"Using single-threaded processing for {len(animals)} animals")
 
             for animal in animals:
                 adoption_url = animal["adoption_url"]
 
-                # Skip duplicates (shouldn't happen with single page, but safety check)
+                # Skip duplicates (shouldn't happen but safety check)
                 if adoption_url in seen_urls:
                     self.logger.debug(f"Skipping duplicate dog: {animal['name']} ({adoption_url})")
                     continue
-
                 seen_urls.add(adoption_url)
 
+                # Rate limiting for respectful scraping
+                time.sleep(self.rate_limit_delay)
+
                 # Scrape detail page for additional information
-                # Add rate limiting for slow site
-                time.sleep(3)  # Be respectful to slow site
-                detail_data = self._scrape_animal_details(adoption_url)
-                if detail_data:
-                    animal.update(detail_data)
+                try:
+                    detail_data = self._scrape_animal_details(adoption_url)
+                    if detail_data:
+                        animal.update(detail_data)
+                except Exception as e:
+                    self.logger.error(f"Error scraping details for {animal['name']}: {e}")
+                    # Continue processing even if detail scraping fails
 
                 all_dogs_data.append(animal)
 
+            return all_dogs_data
+
+        # Parallel processing for larger batches
+        import concurrent.futures
+        from threading import Lock
+
+        self.logger.info(f"Starting parallel detail scraping for {len(animals)} animals using batch_size={self.batch_size}")
+
+        # Thread-safe collections
+        results_lock = Lock()
+
+        def process_animal_batch(animal_batch):
+            """Process a batch of animals in parallel"""
+            batch_results = []
+
+            try:
+                for animal in animal_batch:
+                    adoption_url = animal["adoption_url"]
+
+                    # Skip duplicates (thread-safe check)
+                    with results_lock:
+                        if adoption_url in seen_urls:
+                            self.logger.debug(f"Skipping duplicate dog: {animal['name']} ({adoption_url})")
+                            continue
+                        seen_urls.add(adoption_url)
+
+                    # Rate limiting for respectful scraping
+                    time.sleep(self.rate_limit_delay)
+
+                    # Scrape detail page for additional information
+                    try:
+                        detail_data = self._scrape_animal_details(adoption_url)
+                        if detail_data:
+                            # Merge detail data with listing data (detail data takes precedence)
+                            animal.update(detail_data)
+                    except Exception as e:
+                        # Log error but continue processing (animal will be added without detail data)
+                        pass
+
+                    batch_results.append(animal)
+
+            except Exception as e:
+                self.logger.error(f"Error in batch processing: {e}")
+
+            return batch_results
+
+        # Split animals into batches based on batch_size
+        batches = []
+        for i in range(0, len(animals), self.batch_size):
+            batch = animals[i : i + self.batch_size]
+            batches.append(batch)
+
+        self.logger.info(f"Split {len(animals)} animals into {len(batches)} batches of size {self.batch_size}")
+
+        # Process batches with controlled concurrency
+        # Limit concurrent threads to prevent overwhelming the target server
+        max_workers = min(3, len(batches))  # Max 3 concurrent batches
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all batches
+            future_to_batch = {executor.submit(process_animal_batch, batch): i for i, batch in enumerate(batches)}
+
+            # Collect results as they complete
+            for future in concurrent.futures.as_completed(future_to_batch):
+                batch_index = future_to_batch[future]
+                try:
+                    batch_results = future.result(timeout=300)  # 5 minute timeout per batch
+                    all_dogs_data.extend(batch_results)
+                    self.logger.info(f"Completed batch {batch_index + 1}/{len(batches)}: {len(batch_results)} animals processed")
+                except Exception as e:
+                    self.logger.error(f"Batch {batch_index + 1} failed: {e}")
+                    continue
+
+        return all_dogs_data
+
+    def collect_data(self) -> List[Dict[str, Any]]:
+        """Collect all available dog data from the listing page.
+
+        This method implements the BaseScraper template method pattern.
+        It extracts dogs from the listing page, applies filtering based on
+        skip_existing_animals, and then processes them in parallel batches
+        for efficient detail scraping.
+
+        Returns:
+            List of dog data dictionaries for database storage
+        """
+        try:
+            # Phase 1: Get and filter animals
+            animals = self._get_filtered_animals()
+            if not animals:
+                return []
+
+            # Phase 2: Process animals in parallel batches for detail scraping
+            all_dogs_data = self._process_animals_parallel(animals)
+
             self.logger.info(f"Total unique dogs collected: {len(all_dogs_data)}")
+            return all_dogs_data
 
         except Exception as e:
             self.logger.error(f"Error collecting data: {e}")
-
-        return all_dogs_data
+            return []
 
     def get_animal_list(self) -> List[Dict[str, Any]]:
         """Fetch list of available dogs using WP Grid Builder AJAX endpoint.
