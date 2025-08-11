@@ -174,7 +174,8 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                             animal.update(detail_data)
                     except Exception as e:
                         # Log error but continue processing (animal will be added without detail data)
-                        pass
+                        self.logger.error(f"Error scraping details for {animal.get('name', 'unknown')}: {e}")
+                        # Continue processing - animal will be added with listing data only
 
                     batch_results.append(animal)
 
