@@ -193,6 +193,131 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
         for animal in animals:
             self.assertEqual(animal["status"], "available")
 
+    def test_config_properties_loaded(self):
+        """Test that configuration properties are loaded correctly from config file."""
+        # Test that scraper has access to all config properties from BaseScraper
+        self.assertEqual(self.scraper.rate_limit_delay, 2.5)  # From config file
+        self.assertEqual(self.scraper.batch_size, 6)  # From config file
+        self.assertEqual(self.scraper.skip_existing_animals, False)  # From config file
+        self.assertEqual(self.scraper.max_retries, 3)  # From config file
+        self.assertEqual(self.scraper.timeout, 240)  # From config file
+
+    @patch("time.sleep")
+    def test_rate_limiting_uses_config_delay(self, mock_sleep):
+        """Test that rate limiting uses config-defined delay, not hardcoded value."""
+        # Mock the animal list to have one animal
+        with patch.object(self.scraper, "get_animal_list") as mock_get_list, patch.object(self.scraper, "_scrape_animal_details") as mock_scrape_details:
+
+            mock_get_list.return_value = [
+                {
+                    "name": "Test Dog",
+                    "external_id": "test-dog",
+                    "adoption_url": "https://santerpawsbulgarianrescue.com/adoption/test-dog/",
+                    "animal_type": "dog",
+                    "status": "available",
+                }
+            ]
+
+            mock_scrape_details.return_value = {"breed": "Mixed Breed"}
+
+            self.scraper.collect_data()
+
+            # Should use config rate_limit_delay (2.5) not hardcoded (3)
+            mock_sleep.assert_called_with(2.5)
+
+    def test_get_filtered_animals_basic(self):
+        """Test that _get_filtered_animals method returns same animals as get_animal_list when skip_existing_animals=False."""
+        with patch.object(self.scraper, "get_animal_list") as mock_get_list:
+            mock_animals = [
+                {
+                    "name": "Test Dog 1",
+                    "external_id": "test-dog-1",
+                    "adoption_url": "https://santerpawsbulgarianrescue.com/adoption/test-dog-1/",
+                    "animal_type": "dog",
+                    "status": "available",
+                },
+                {
+                    "name": "Test Dog 2",
+                    "external_id": "test-dog-2",
+                    "adoption_url": "https://santerpawsbulgarianrescue.com/adoption/test-dog-2/",
+                    "animal_type": "dog",
+                    "status": "available",
+                },
+            ]
+            mock_get_list.return_value = mock_animals
+
+            # With skip_existing_animals=False (default), should return all animals
+            result = self.scraper._get_filtered_animals()
+
+            self.assertEqual(len(result), 2)
+            self.assertEqual(result, mock_animals)
+
+    def test_url_filtering_with_skip_existing(self):
+        """Test URL filtering integration when skip_existing_animals=True."""
+        # Create scraper instance with skip_existing_animals=True
+        with patch("utils.config_loader.ConfigLoader.load_config") as mock_load_config:
+            # Mock config to have skip_existing_animals=True
+            mock_config = Mock()
+            mock_config.get_scraper_config_dict.return_value = {"rate_limit_delay": 2.5, "batch_size": 6, "skip_existing_animals": True, "max_retries": 3, "timeout": 240}
+            mock_config.name = "Santer Paws Bulgarian Rescue"
+            mock_load_config.return_value = mock_config
+
+            scraper = SanterPawsBulgarianRescueScraper(config_id="santerpawsbulgarianrescue")
+
+            with patch.object(scraper, "get_animal_list") as mock_get_list, patch.object(scraper, "_filter_existing_urls") as mock_filter_urls:
+
+                mock_animals = [
+                    {"name": "Existing Dog", "adoption_url": "https://santerpawsbulgarianrescue.com/adoption/existing/", "external_id": "existing"},
+                    {"name": "New Dog", "adoption_url": "https://santerpawsbulgarianrescue.com/adoption/new/", "external_id": "new"},
+                ]
+                mock_get_list.return_value = mock_animals
+
+                # Mock that only "new" URL should be processed (existing one filtered out)
+                mock_filter_urls.return_value = ["https://santerpawsbulgarianrescue.com/adoption/new/"]
+
+                result = scraper._get_filtered_animals()
+
+                # Should only return the new dog
+                self.assertEqual(len(result), 1)
+                self.assertEqual(result[0]["name"], "New Dog")
+
+                # Verify _filter_existing_urls was called with correct URLs
+                expected_urls = ["https://santerpawsbulgarianrescue.com/adoption/existing/", "https://santerpawsbulgarianrescue.com/adoption/new/"]
+                mock_filter_urls.assert_called_once_with(expected_urls)
+
+    def test_filtering_stats_tracked(self):
+        """Test that filtering statistics are properly tracked and logged."""
+        # Create scraper instance with skip_existing_animals=True
+        with patch("utils.config_loader.ConfigLoader.load_config") as mock_load_config:
+            mock_config = Mock()
+            mock_config.get_scraper_config_dict.return_value = {"rate_limit_delay": 2.5, "batch_size": 6, "skip_existing_animals": True, "max_retries": 3, "timeout": 240}
+            mock_config.name = "Santer Paws Bulgarian Rescue"
+            mock_load_config.return_value = mock_config
+
+            scraper = SanterPawsBulgarianRescueScraper(config_id="santerpawsbulgarianrescue")
+
+            with (
+                patch.object(scraper, "get_animal_list") as mock_get_list,
+                patch.object(scraper, "_filter_existing_urls") as mock_filter_urls,
+                patch.object(scraper, "set_filtering_stats") as mock_set_stats,
+            ):
+
+                # Mock 3 animals total
+                mock_animals = [
+                    {"adoption_url": "https://site.com/1/", "name": "Dog1"},
+                    {"adoption_url": "https://site.com/2/", "name": "Dog2"},
+                    {"adoption_url": "https://site.com/3/", "name": "Dog3"},
+                ]
+                mock_get_list.return_value = mock_animals
+
+                # Mock that 2 are filtered out, 1 remains
+                mock_filter_urls.return_value = ["https://site.com/3/"]
+
+                result = scraper._get_filtered_animals()
+
+                # Verify set_filtering_stats was called with correct counts
+                mock_set_stats.assert_called_once_with(3, 2)  # total=3, skipped=2
+
     def test_collect_data_deduplicates_by_url(self):
         """Test that collect_data removes duplicate dogs by URL."""
         with patch.object(self.scraper, "get_animal_list") as mock_get_list:
@@ -227,3 +352,169 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
             self.assertEqual(len(result), 2)
             urls = [dog["adoption_url"] for dog in result]
             self.assertEqual(len(urls), len(set(urls)))  # All URLs should be unique
+
+    def test_process_animals_parallel_single_threaded_fallback(self):
+        """Test that _process_animals_parallel uses single-threaded processing for small batches."""
+        # Test with batch_size=6, animals=3 (should use single-threaded)
+        with patch.object(self.scraper, "_scrape_animal_details") as mock_scrape_details:
+            mock_animals = [
+                {"name": "Dog1", "adoption_url": "https://santerpawsbulgarianrescue.com/adoption/dog1/", "external_id": "dog1"},
+                {"name": "Dog2", "adoption_url": "https://santerpawsbulgarianrescue.com/adoption/dog2/", "external_id": "dog2"},
+            ]
+
+            mock_scrape_details.return_value = {"breed": "Mixed Breed", "size": "Medium"}
+
+            result = self.scraper._process_animals_parallel(mock_animals)
+
+            # Should process all animals
+            self.assertEqual(len(result), 2)
+            self.assertEqual(result[0]["name"], "Dog1")
+            self.assertEqual(result[1]["name"], "Dog2")
+
+            # Should call _scrape_animal_details for each animal
+            self.assertEqual(mock_scrape_details.call_count, 2)
+
+    def test_process_animals_parallel_batch_processing(self):
+        """Test that _process_animals_parallel correctly splits into batches for parallel processing."""
+        # Create scraper with batch_size=2 to force parallel processing
+        with patch("utils.config_loader.ConfigLoader.load_config") as mock_load_config:
+            mock_config = Mock()
+            mock_config.get_scraper_config_dict.return_value = {
+                "rate_limit_delay": 0.1,  # Short delay for testing
+                "batch_size": 2,  # Force parallel processing
+                "skip_existing_animals": False,
+                "max_retries": 3,
+                "timeout": 240,
+            }
+            mock_config.name = "Santer Paws Bulgarian Rescue"
+            mock_load_config.return_value = mock_config
+
+            scraper = SanterPawsBulgarianRescueScraper(config_id="santerpawsbulgarianrescue")
+
+            with patch.object(scraper, "_scrape_animal_details") as mock_scrape_details:
+                # Create 5 animals to trigger parallel processing (more than batch_size=2)
+                mock_animals = [{"name": f"Dog{i}", "adoption_url": f"https://site.com/dog{i}/", "external_id": f"dog{i}"} for i in range(1, 6)]
+
+                mock_scrape_details.return_value = {"breed": "Mixed Breed", "size": "Medium"}
+
+                result = scraper._process_animals_parallel(mock_animals)
+
+                # Should process all 5 animals
+                self.assertEqual(len(result), 5)
+
+                # Should call _scrape_animal_details for each animal
+                self.assertEqual(mock_scrape_details.call_count, 5)
+
+    def test_process_animals_parallel_respects_rate_limiting(self):
+        """Test that parallel processing respects rate limiting configuration."""
+        import time
+
+        # Test with rate_limit_delay from config (2.5 seconds)
+        with patch("time.sleep") as mock_sleep:
+            with patch.object(self.scraper, "_scrape_animal_details") as mock_scrape_details:
+                mock_animals = [{"name": "Dog1", "adoption_url": "https://site.com/dog1/", "external_id": "dog1"}]
+
+                mock_scrape_details.return_value = {"breed": "Mixed Breed"}
+
+                result = self.scraper._process_animals_parallel(mock_animals)
+
+                # Should have called sleep with rate_limit_delay (2.5 from config)
+                mock_sleep.assert_called_with(2.5)
+                self.assertEqual(len(result), 1)
+
+    def test_process_animals_parallel_handles_errors(self):
+        """Test that parallel processing handles errors gracefully and continues processing."""
+        with patch.object(self.scraper, "_scrape_animal_details") as mock_scrape_details:
+            mock_animals = [{"name": "GoodDog", "adoption_url": "https://site.com/good/", "external_id": "good"}, {"name": "BadDog", "adoption_url": "https://site.com/bad/", "external_id": "bad"}]
+
+            # Make second call raise exception
+            mock_scrape_details.side_effect = [{"breed": "Mixed Breed"}, Exception("Network error")]  # First call succeeds  # Second call fails
+
+            result = self.scraper._process_animals_parallel(mock_animals)
+
+            # Should still return both animals (error doesn't stop processing)
+            self.assertEqual(len(result), 2)
+            self.assertEqual(result[0]["name"], "GoodDog")
+            self.assertEqual(result[1]["name"], "BadDog")
+
+    def test_collect_data_integration_with_parallel_processing(self):
+        """Test full collect_data integration with parallel processing and filtering."""
+        # Create scraper with batch_size=2 to trigger parallel processing
+        with patch("utils.config_loader.ConfigLoader.load_config") as mock_load_config:
+            mock_config = Mock()
+            mock_config.get_scraper_config_dict.return_value = {
+                "rate_limit_delay": 0.1,  # Short delay for testing
+                "batch_size": 2,  # Force parallel processing
+                "skip_existing_animals": True,
+                "max_retries": 3,
+                "timeout": 240,
+            }
+            mock_config.name = "Santer Paws Bulgarian Rescue"
+            mock_load_config.return_value = mock_config
+
+            scraper = SanterPawsBulgarianRescueScraper(config_id="santerpawsbulgarianrescue")
+
+            with (
+                patch.object(scraper, "get_animal_list") as mock_get_list,
+                patch.object(scraper, "_filter_existing_urls") as mock_filter_urls,
+                patch.object(scraper, "_scrape_animal_details") as mock_scrape_details,
+            ):
+
+                # Mock 4 animals from listing
+                mock_animals = [{"name": f"Dog{i}", "adoption_url": f"https://site.com/dog{i}/", "external_id": f"dog{i}"} for i in range(1, 5)]  # 4 animals total
+                mock_get_list.return_value = mock_animals
+
+                # Mock that 2 are filtered out (skip existing), 2 remain
+                mock_filter_urls.return_value = ["https://site.com/dog3/", "https://site.com/dog4/"]
+
+                # Mock detail scraping
+                mock_scrape_details.return_value = {"breed": "Mixed Breed", "size": "Medium"}
+
+                result = scraper.collect_data()
+
+                # Should return only the 2 non-existing animals
+                self.assertEqual(len(result), 2)
+
+                # Should have called filtering
+                mock_filter_urls.assert_called_once()
+
+                # Should have called detail scraping for remaining animals
+                self.assertEqual(mock_scrape_details.call_count, 2)
+
+    def test_collect_data_integration_single_threaded_with_skip_disabled(self):
+        """Test collect_data integration with skip_existing_animals=False and single-threaded processing."""
+        # Use default scraper (batch_size=6, skip_existing_animals=False)
+        with patch.object(self.scraper, "get_animal_list") as mock_get_list, patch.object(self.scraper, "_scrape_animal_details") as mock_scrape_details:
+
+            # Mock 3 animals (less than batch_size=6, so single-threaded)
+            mock_animals = [{"name": f"Dog{i}", "adoption_url": f"https://site.com/dog{i}/", "external_id": f"dog{i}"} for i in range(1, 4)]
+            mock_get_list.return_value = mock_animals
+            mock_scrape_details.return_value = {"breed": "Mixed Breed", "size": "Medium"}
+
+            result = self.scraper.collect_data()
+
+            # Should process all animals (no filtering)
+            self.assertEqual(len(result), 3)
+
+            # Should call detail scraping for each animal
+            self.assertEqual(mock_scrape_details.call_count, 3)
+
+    def test_collect_data_handles_empty_animal_list(self):
+        """Test that collect_data handles empty animal list gracefully."""
+        with patch.object(self.scraper, "get_animal_list") as mock_get_list:
+            mock_get_list.return_value = []
+
+            result = self.scraper.collect_data()
+
+            # Should return empty list
+            self.assertEqual(len(result), 0)
+
+    def test_collect_data_error_handling(self):
+        """Test that collect_data handles exceptions gracefully."""
+        with patch.object(self.scraper, "_get_filtered_animals") as mock_get_filtered:
+            mock_get_filtered.side_effect = Exception("Network error")
+
+            result = self.scraper.collect_data()
+
+            # Should return empty list on error
+            self.assertEqual(len(result), 0)

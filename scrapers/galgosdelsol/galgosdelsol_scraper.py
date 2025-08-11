@@ -45,32 +45,38 @@ class GalgosDelSolScraper(BaseScraper):
             database_service=database_service,
         )
 
-        self.base_url = "https://galgosdelsol.org"
+        # Use config-driven base URL and organization name
+        website_url = getattr(self.org_config.metadata, "website_url", "https://galgosdelsol.org")
+        self.base_url = str(website_url).rstrip("/") if website_url else "https://galgosdelsol.org"
+        
+        # These are the specific scraping endpoints - keep as hardcoded scraping targets
         self.listing_urls = [
             "https://galgosdelsol.org/adoptables/galgos/",
             "https://galgosdelsol.org/adoptables/podencos/",
             "https://galgosdelsol.org/adoptables/pups-teens/",
             "https://galgosdelsol.org/adoptables/other-dogs/",
         ]
-        self.organization_name = "Galgos del Sol"
+        self.organization_name = self.org_config.name
 
-    def collect_data(self) -> List[Dict[str, Any]]:
-        """Collect all available dog data from all listing pages.
+        # Initialize persistent session for efficiency
+        self.session = requests.Session()
+        self.session.headers.update({"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"})
 
-        This method is called by BaseScraper.run() and must return
-        a list of dictionaries containing dog data for database storage.
+    def _get_filtered_animals(self) -> List[Dict[str, Any]]:
+        """Get list of animals and apply skip_existing_animals filtering.
 
         Returns:
-            List of dog data dictionaries (deduplicated by adoption_url)
+            List of filtered animals ready for detail scraping
         """
+        # Get list of available dogs from all listing pages
         all_dogs_data = []
         seen_urls = set()  # Track URLs to prevent duplicates
 
-        # Scrape each listing page
+        # Scrape each listing page to collect all animals
         for listing_url in self.listing_urls:
             try:
                 # Respect rate limiting between requests
-                time.sleep(2.5)
+                time.sleep(self.rate_limit_delay)
 
                 animals = self._scrape_listing_page(listing_url)
 
@@ -83,23 +89,122 @@ class GalgosDelSolScraper(BaseScraper):
                         continue
 
                     seen_urls.add(adoption_url)
-
-                    # Scrape detail page if method exists (for future implementation)
-                    if hasattr(self, "_scrape_detail_page"):
-                        detail_data = self._scrape_detail_page(animal["adoption_url"])
-                        if detail_data:
-                            animal.update(detail_data)
-
                     all_dogs_data.append(animal)
 
-                self.logger.debug(f"Collected {len(animals)} animals from {listing_url} ({len([a for a in animals if a['adoption_url'] not in seen_urls or a['adoption_url'] == adoption_url])} new)")
+                self.logger.debug(f"Collected {len(animals)} animals from {listing_url}")
 
             except Exception as e:
                 self.logger.error(f"Error collecting data from {listing_url}: {e}")
                 continue
 
-        self.logger.info(f"Total unique dogs collected: {len(all_dogs_data)}")
-        return all_dogs_data
+        if not all_dogs_data:
+            self.logger.warning("No animals found to process")
+            return []
+
+        # Extract URLs and apply skip_existing_animals filtering
+        all_urls = [animal["adoption_url"] for animal in all_dogs_data]
+
+        # Set filtering stats before filtering
+        self.set_filtering_stats(len(all_urls), 0)  # Initial stats
+
+        # Apply skip_existing_animals filtering via BaseScraper
+        if self.skip_existing_animals:
+            filtered_urls = self._filter_existing_urls(all_urls)
+            skipped_count = len(all_urls) - len(filtered_urls)
+
+            # Update filtering stats
+            self.set_filtering_stats(len(all_urls), skipped_count)
+
+            # Create filtered animals list
+            url_to_animal = {animal["adoption_url"]: animal for animal in all_dogs_data}
+            filtered_animals = [url_to_animal[url] for url in filtered_urls if url in url_to_animal]
+
+            self.logger.info(f"Skip existing animals enabled: {skipped_count} skipped, {len(filtered_animals)} to process")
+            return filtered_animals
+        else:
+            self.logger.info(f"Processing all {len(all_dogs_data)} animals")
+            return all_dogs_data
+
+    def _process_animals_in_batches(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Process animals in batches respecting the configured batch_size.
+
+        Args:
+            animals: List of animals to process
+
+        Returns:
+            List of processed animals with detailed data
+        """
+        all_processed_data = []
+
+        self.logger.info(f"Starting detail scraping for {len(animals)} animals using batch_size={self.batch_size}")
+
+        # Split animals into batches based on batch_size
+        batches = []
+        for i in range(0, len(animals), self.batch_size):
+            batch = animals[i : i + self.batch_size]
+            batches.append(batch)
+
+        self.logger.info(f"Split {len(animals)} animals into {len(batches)} batches of size {self.batch_size}")
+
+        # Process each batch
+        for batch_index, batch in enumerate(batches):
+            try:
+                self.logger.info(f"Processing batch {batch_index + 1}/{len(batches)}: {len(batch)} animals")
+
+                for animal in batch:
+                    try:
+                        # Respect rate limiting between requests
+                        time.sleep(self.rate_limit_delay)
+
+                        # Scrape detail page if method exists
+                        if hasattr(self, "_scrape_detail_page"):
+                            detail_data = self._scrape_detail_page(animal["adoption_url"])
+                            if detail_data:
+                                animal.update(detail_data)
+
+                        all_processed_data.append(animal)
+
+                    except Exception as e:
+                        self.logger.error(f"Error processing {animal.get('name', 'unknown')}: {e}")
+                        # Continue with basic data even if detail scraping fails
+                        all_processed_data.append(animal)
+                        continue
+
+                self.logger.info(f"Completed batch {batch_index + 1}/{len(batches)}: {len(batch)} animals processed")
+
+            except Exception as e:
+                self.logger.error(f"Error in batch {batch_index + 1}: {e}")
+                # Add the batch animals with basic data to avoid losing them
+                all_processed_data.extend(batch)
+                continue
+
+        return all_processed_data
+
+    def collect_data(self) -> List[Dict[str, Any]]:
+        """Collect all available dog data from all listing pages.
+
+        This method implements the BaseScraper template method pattern.
+        It uses the modern _get_filtered_animals() method to apply skip_existing_animals
+        filtering, then enriches each animal with detailed data from detail pages.
+
+        Returns:
+            List of dog data dictionaries for database storage
+        """
+        try:
+            # Phase 1: Get and filter animals using modern pattern
+            animals = self._get_filtered_animals()
+            if not animals:
+                return []
+
+            # Phase 2: Process animals in batches with detail data
+            all_dogs_data = self._process_animals_in_batches(animals)
+
+            self.logger.info(f"Total unique dogs collected: {len(all_dogs_data)}")
+            return all_dogs_data
+
+        except Exception as e:
+            self.logger.error(f"Error collecting data from Galgos del Sol: {e}")
+            return []
 
     def _scrape_detail_page(self, url: str) -> Dict[str, Any]:
         """Scrape detailed information from a dog's detail page.
@@ -128,12 +233,8 @@ class GalgosDelSolScraper(BaseScraper):
         try:
             self.logger.debug(f"Scraping detail page: {url}")
 
-            # Fetch the detail page
-            response = requests.get(
-                url,
-                timeout=30,
-                headers={"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"},
-            )
+            # Fetch the detail page using persistent session
+            response = self.session.get(url, timeout=30)
             response.raise_for_status()
 
             soup = BeautifulSoup(response.content, "html.parser")
@@ -729,12 +830,8 @@ class GalgosDelSolScraper(BaseScraper):
             List of dictionaries containing animal data
         """
         try:
-            # Fetch the listing page
-            response = requests.get(
-                url,
-                timeout=30,
-                headers={"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"},
-            )
+            # Fetch the listing page using persistent session
+            response = self.session.get(url, timeout=30)
             response.raise_for_status()
 
             soup = BeautifulSoup(response.content, "html.parser")
