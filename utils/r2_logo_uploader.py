@@ -55,6 +55,11 @@ class R2OrganizationLogoUploader:
             logger.info(f"Skipping R2 upload for GIF logo for {org_id}, using original URL")
             return {"original": logo_url}
 
+        # Skip R2 URLs - they are already uploaded and accessible
+        if R2Service._is_r2_url(logo_url):
+            logger.info(f"Detected R2 URL for {org_id}, skipping re-upload: {logo_url}")
+            return {"original": logo_url}
+
         # Check R2 configuration
         if not R2Service.is_configured():
             if force_upload:

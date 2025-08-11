@@ -6,6 +6,8 @@ Replacement for CloudinaryService with interface parity
 import hashlib
 import logging
 import os
+import threading
+import time
 from io import BytesIO
 from typing import Dict, Optional, Tuple
 
@@ -29,12 +31,29 @@ class R2Service:
     _config_valid = False
     _s3_client = None
 
+    # Global rate limiting for all R2 uploads (1 image per second max)
+    _last_upload_time = 0
+    _upload_lock = threading.Lock()
+    RATE_LIMIT_SECONDS = 1.0
+
     @classmethod
     def _reset_config_cache(cls):
         """Reset configuration cache for testing purposes."""
         cls._config_checked = False
         cls._config_valid = False
         cls._s3_client = None
+
+    @classmethod
+    def _enforce_rate_limit(cls):
+        """Enforce global rate limit of 1 upload per second across all scrapers."""
+        with cls._upload_lock:
+            current_time = time.time()
+            time_since_last = current_time - cls._last_upload_time
+            if time_since_last < cls.RATE_LIMIT_SECONDS:
+                sleep_time = cls.RATE_LIMIT_SECONDS - time_since_last
+                logger.debug(f"Rate limiting: sleeping {sleep_time:.2f}s before upload")
+                time.sleep(sleep_time)
+            cls._last_upload_time = time.time()
 
     @classmethod
     def _check_configuration(cls):
@@ -60,12 +79,18 @@ class R2Service:
     def _get_s3_client(cls):
         """Get or create S3 client for R2"""
         if cls._s3_client is None:
+            from botocore.config import Config
+
+            # Configure timeouts to prevent hanging
+            config = Config(connect_timeout=15, read_timeout=30, retries={"max_attempts": 2})  # 15 seconds to establish connection  # 30 seconds to read response  # Only 2 attempts to fail fast
+
             cls._s3_client = boto3.client(
                 "s3",
                 endpoint_url=os.getenv("R2_ENDPOINT"),
                 aws_access_key_id=os.getenv("R2_ACCESS_KEY_ID"),
                 aws_secret_access_key=os.getenv("R2_SECRET_ACCESS_KEY"),
                 region_name="auto",  # R2 uses 'auto' region
+                config=config,
             )
         return cls._s3_client
 
@@ -185,20 +210,21 @@ class R2Service:
                 if e.response["Error"]["Code"] != "404":
                     logger.warning(f"Could not check existing image (SHA-256): {e}")
 
-            # Check for legacy MD5-based key for backward compatibility
-            try:
-                s3_client.head_object(Bucket=bucket_name, Key=legacy_key)
-                logger.debug(f"Image exists as legacy key (MD5): {legacy_key}")
-                return R2Service._build_custom_domain_url(legacy_key), True
-            except ClientError as e:
-                if e.response["Error"]["Code"] != "404":
-                    logger.warning(f"Could not check existing legacy image (MD5): {e}")
-                # Neither key exists, proceed with upload using new SHA-256 key
-                pass
+            # PERFORMANCE FIX: Commented out legacy MD5 check to reduce R2 API calls by 50%
+            # Legacy compatibility disabled for performance - only check SHA-256 keys
+            # try:
+            #     s3_client.head_object(Bucket=bucket_name, Key=legacy_key)
+            #     logger.debug(f"Image exists as legacy key (MD5): {legacy_key}")
+            #     return R2Service._build_custom_domain_url(legacy_key), True
+            # except ClientError as e:
+            #     if e.response["Error"]["Code"] != "404":
+            #         logger.warning(f"Could not check existing legacy image (MD5): {e}")
+            # SHA-256 key doesn't exist, proceed with upload
+            pass
 
-            # Download the image
+            # Download the image with shorter timeout to prevent hanging
             headers = {"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"}
-            response = requests.get(image_url, timeout=30, headers=headers)
+            response = requests.get(image_url, timeout=(10, 20), headers=headers)  # (connect, read) timeouts
             response.raise_for_status()
 
             if response.status_code != 200:
@@ -210,6 +236,9 @@ class R2Service:
             if not any(img_type in content_type for img_type in ["image/jpeg", "image/jpg", "image/png", "image/webp"]):
                 logger.warning(f"Invalid content type for image {image_url}: {content_type}")
                 return image_url, False
+
+            # Enforce global rate limiting before upload
+            R2Service._enforce_rate_limit()
 
             # Upload to R2
             image_data = BytesIO(response.content)

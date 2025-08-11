@@ -417,7 +417,7 @@ class BaseScraper(ABC):
         phase_duration = (datetime.now() - phase_start).total_seconds()
         self.metrics_collector.track_phase_timing("data_collection", phase_duration)
 
-        # World-class discovery completion message
+        # discovery completion message
         # Use the same logic as _get_correct_animals_found_count to avoid misleading warnings
         # when skip_existing_animals causes filtering
         actual_animals_found = self._get_correct_animals_found_count(animals_data)
@@ -1040,7 +1040,7 @@ class BaseScraper(ABC):
             values.append(animal_id)  # For WHERE clause
 
             query = f"""
-                UPDATE animals 
+                UPDATE animals
                 SET {', '.join(update_fields)}, updated_at = CURRENT_TIMESTAMP
                 WHERE id = %s
             """
