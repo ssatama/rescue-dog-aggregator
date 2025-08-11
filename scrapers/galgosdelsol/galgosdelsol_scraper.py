@@ -48,7 +48,7 @@ class GalgosDelSolScraper(BaseScraper):
         # Use config-driven base URL and organization name
         website_url = getattr(self.org_config.metadata, "website_url", "https://galgosdelsol.org")
         self.base_url = str(website_url).rstrip("/") if website_url else "https://galgosdelsol.org"
-        
+
         # These are the specific scraping endpoints - keep as hardcoded scraping targets
         self.listing_urls = [
             "https://galgosdelsol.org/adoptables/galgos/",

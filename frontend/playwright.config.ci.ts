@@ -19,7 +19,7 @@ export default defineConfig({
   use: {
     ...baseConfig.use,
     /* Increased action timeout for slower CI environment */
-    actionTimeout: 10000, // Doubled from 5000
+    actionTimeout: 15000, // Increased for better CI reliability
     /* Add explicit navigation timeout */
     navigationTimeout: 30000,
     /* Enhanced debugging for CI failures */

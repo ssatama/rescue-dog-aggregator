@@ -415,7 +415,7 @@ class TestGalgosDelSolScraperArchitectureModernization(unittest.TestCase):
         # Should use config value from galgosdelsol.yaml: website_url: "https://galgosdelsol.org/"
         config_website_url = getattr(self.scraper.org_config.metadata, "website_url", None)
         self.assertIsNotNone(config_website_url, "Config should have website_url")
-        
+
         expected_base_url = str(config_website_url).rstrip("/")
         self.assertEqual(self.scraper.base_url, expected_base_url)
 

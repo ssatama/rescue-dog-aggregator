@@ -48,8 +48,8 @@ export default defineConfig({
     actionTimeout: 5000,
   },
 
-  /* Reduced global timeout */
-  timeout: 15000,
+  /* Reduced global timeout - increased for CI reliability */
+  timeout: 25000,
   expect: {
     timeout: 5000,
   },

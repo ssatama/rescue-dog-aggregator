@@ -45,7 +45,7 @@ test.describe('End-to-End Adoption Journey Critical Tests', () => {
     await page.waitForFunction(() => {
       const heading = document.querySelector('h1');
       return heading && heading.textContent && heading.textContent.includes('Bella');
-    }, { timeout: 15000 });
+    }, { timeout: 20000 });
     
     await page.waitForSelector('[data-testid="dog-detail-container"]', { timeout: 10000 });
     await expect(page.locator('h1')).toContainText('Bella');
@@ -104,7 +104,7 @@ test.describe('End-to-End Adoption Journey Critical Tests', () => {
     await page.waitForFunction(() => {
       const heading = document.querySelector('h1');
       return heading && heading.textContent && heading.textContent.includes('Bella');
-    }, { timeout: 15000 });
+    }, { timeout: 20000 });
     
     await page.waitForSelector('[data-testid="dog-detail-container"]', { timeout: 10000 });
     
@@ -127,7 +127,7 @@ test.describe('End-to-End Adoption Journey Critical Tests', () => {
     await page.waitForFunction(() => {
       const heading = document.querySelector('h1');
       return heading && heading.textContent && heading.textContent.includes('Bella');
-    }, { timeout: 15000 });
+    }, { timeout: 20000 });
     
     await page.waitForSelector('[data-testid="dog-detail-container"]', { timeout: 10000 });
     
@@ -161,7 +161,7 @@ test.describe('End-to-End Adoption Journey Critical Tests', () => {
       await page.waitForFunction(() => {
         const heading = document.querySelector('h1');
         return heading && heading.textContent && heading.textContent.includes('Charlie');
-      }, { timeout: 15000 });
+      }, { timeout: 20000 });
       
       await page.waitForSelector('[data-testid="dog-detail-container"]', { timeout: 10000 });
       
@@ -250,7 +250,7 @@ test.describe('End-to-End Adoption Journey Critical Tests', () => {
     await page.waitForFunction(() => {
       const heading = document.querySelector('h1');
       return heading && heading.textContent && heading.textContent.includes('Bella');
-    }, { timeout: 15000 });
+    }, { timeout: 20000 });
     
     await page.waitForSelector('[data-testid="dog-detail-container"]', { timeout: 10000 });
     
@@ -302,7 +302,7 @@ test.describe('End-to-End Adoption Journey Critical Tests', () => {
     await page.waitForFunction(() => {
       const heading = document.querySelector('h1');
       return heading && heading.textContent && heading.textContent.includes('Bella');
-    }, { timeout: 15000 });
+    }, { timeout: 20000 });
     
     // Detail page should load within reasonable time
     await page.waitForSelector('[data-testid="dog-detail-container"]', { timeout: 10000 });

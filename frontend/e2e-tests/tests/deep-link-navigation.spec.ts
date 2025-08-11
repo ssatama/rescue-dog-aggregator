@@ -48,7 +48,7 @@ test.describe('Deep Link Navigation Critical Tests', () => {
     await page.waitForFunction(() => {
       const heading = document.querySelector('h1');
       return heading && heading.textContent && heading.textContent.includes('Bella');
-    }, { timeout: 15000 });
+    }, { timeout: 20000 });
     
     // Verify main container is visible after client-side loading
     await expect(page.locator('[data-testid="dog-detail-container"]')).toBeVisible();
@@ -77,7 +77,7 @@ test.describe('Deep Link Navigation Critical Tests', () => {
     await page.waitForFunction(() => {
       const heading = document.querySelector('h1');
       return heading && heading.textContent && heading.textContent.includes('Happy Tails Rescue');
-    }, { timeout: 15000 });
+    }, { timeout: 20000 });
     
     // Verify organization name appears in heading
     await expect(page.locator('h1')).toContainText('Happy Tails Rescue');

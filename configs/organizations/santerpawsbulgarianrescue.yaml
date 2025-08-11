@@ -10,7 +10,7 @@ scraper:
     max_retries: 3
     timeout: 240
     batch_size: 6
-    skip_existing_animals: false
+    skip_existing_animals: true
 metadata:
   website_url: "https://santerpawsbulgarianrescue.com/"
   description: |
