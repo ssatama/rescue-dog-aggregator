@@ -9,7 +9,7 @@ scraper:
     rate_limit_delay: 1.5
     max_retries: 3
     timeout: 240
-    batch_size: 6
+    batch_size: 4
     skip_existing_animals: true
 metadata:
   website_url: "https://www.manytearsrescue.org/"

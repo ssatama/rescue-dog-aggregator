@@ -9,6 +9,11 @@ from datetime import datetime
 from functools import lru_cache
 from typing import Dict, Optional
 
+# Maximum dog age in months (30 years) - covers all recorded lifespans + buffer
+# Based on 2024 research: longest verified dog lived 29 years (Bluey)
+# This prevents None values that break filters and API endpoints
+MAX_DOG_AGE_MONTHS = 360
+
 # Pre-compiled regex patterns for performance
 _COMPILED_PATTERNS = {
     "years": re.compile(r"(?<!-)\b(\d+(?:[.,]\d+)?)\s*(?:years?|y(?:rs?)?(?:\/o)?|yo|jahr)"),
@@ -17,6 +22,7 @@ _COMPILED_PATTERNS = {
     "birth_date": re.compile(r"(?:born\s*)?(\d{1,2})[/-](\d{4})", re.IGNORECASE),
     "birth_year": re.compile(r"(?:born\s*)?(\d{4})(?:\s|$)", re.IGNORECASE),
     "range": re.compile(r"(\d+)\s*-\s*(\d+)\s*(years?|months?)"),
+    "senior_plus": re.compile(r"(\d+)\s*\+\s*years?", re.IGNORECASE),
 }
 
 
@@ -306,6 +312,17 @@ def parse_age_text(age_text: str) -> AgeInfo:
     descriptive_info = _parse_descriptive_age(age_text)
     if descriptive_info:
         return descriptive_info
+
+    # Senior plus years pattern (e.g., "8 + years")
+    senior_plus_match = _COMPILED_PATTERNS["senior_plus"].search(age_text)
+    if senior_plus_match:
+        try:
+            years = int(senior_plus_match.group(1))
+            if years >= 8:  # Senior dogs 8+ years
+                min_months = years * 12
+                return AgeInfo("Senior", min_months, MAX_DOG_AGE_MONTHS)
+        except (ValueError, TypeError):
+            pass
 
     # Range patterns
     range_info = _parse_age_range(age_text)

@@ -29,6 +29,8 @@ botocore==1.39.4
     # via
     #   boto3
     #   s3transfer
+build==1.3.0
+    # via pip-tools
 certifi==2025.7.9
     # via
     #   httpcore
@@ -40,6 +42,7 @@ charset-normalizer==3.4.2
 click==8.2.1
     # via
     #   -r requirements.in
+    #   pip-tools
     #   uvicorn
 colorama==0.4.6
     # via -r requirements.in
@@ -85,8 +88,12 @@ outcome==1.3.0.post0
     #   trio
     #   trio-websocket
 packaging==25.0
-    # via webdriver-manager
+    # via
+    #   build
+    #   webdriver-manager
 pillow==11.3.0
+    # via -r requirements.in
+pip-tools==7.5.0
     # via -r requirements.in
 psycopg2-binary==2.9.10
     # via -r requirements.in
@@ -98,6 +105,10 @@ pydantic-core==2.33.2
     # via pydantic
 pygments==2.19.2
     # via rich
+pyproject-hooks==1.2.0
+    # via
+    #   build
+    #   pip-tools
 pysocks==1.7.1
     # via urllib3
 python-dateutil==2.9.0.post0
@@ -186,5 +197,11 @@ websocket-client==1.8.0
     # via selenium
 websockets==15.0.1
     # via uvicorn
+wheel==0.45.1
+    # via pip-tools
 wsproto==1.2.0
     # via trio-websocket
+
+# The following packages are considered to be unsafe in a requirements file:
+# pip
+# setuptools

@@ -11,6 +11,11 @@ This module provides functions to standardize dog data including:
 import re
 from typing import Dict, Optional, Tuple
 
+# Maximum dog age in months (30 years) - covers all recorded lifespans + buffer
+# Based on 2024 research: longest verified dog lived 29 years (Bluey)
+# This prevents None values that break filters and API endpoints
+MAX_DOG_AGE_MONTHS = 360
+
 # Define breed mapping dictionary - comprehensive list covering common breeds
 # Format: "Original breed pattern": ("Standardized breed", "Breed group",
 # "Size estimate")
@@ -200,7 +205,7 @@ def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optiona
     Parse age text into a standardized age category and month range.
 
     Args:
-        age_text: Text description of age (e.g., "2 years", "6 months", "Young")
+        age_text: Text description of age (e.g., "2 years", "6 months", "Young", "6 - 12 months")
 
     Returns:
         Tuple of (age_category, min_months, max_months)
@@ -209,6 +214,54 @@ def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optiona
         return None, None, None
 
     age_text = str(age_text).lower().strip()
+
+    # Handle Dogs Trust specific patterns first
+    # Pattern: "Under X months" -> 0 to X months
+    under_match = re.search(r"under\s+(\d+)\s*(?:months?|mo)", age_text)
+    if under_match:
+        max_months = int(under_match.group(1))
+        if max_months <= 12:
+            return "Puppy", 0, max_months
+        else:
+            return "Young", 0, max_months
+
+    # Pattern: "X + years" -> X years minimum, capped at max lifespan (for senior dogs)
+    plus_years_match = re.search(r"(\d+)\s*\+\s*years?", age_text)
+    if plus_years_match:
+        min_years = int(plus_years_match.group(1))
+        min_months = min_years * 12
+        # Determine category based on minimum age
+        if min_months >= 96:  # 8+ years
+            return "Senior", min_months, MAX_DOG_AGE_MONTHS  # Capped max instead of open-ended
+        elif min_months >= 60:  # 5+ years
+            return "Adult", min_months, MAX_DOG_AGE_MONTHS
+        else:
+            return "Young", min_months, MAX_DOG_AGE_MONTHS
+
+    # Pattern: "X - Y months/years" -> X to Y range
+    range_match = re.search(r"(\d+)\s*-\s*(\d+)\s*(months?|years?|mo|yr)", age_text)
+    if range_match:
+        min_val = int(range_match.group(1))
+        max_val = int(range_match.group(2))
+        unit = range_match.group(3).lower()
+
+        # Convert to months if needed
+        if "year" in unit or "yr" in unit:
+            min_months = min_val * 12
+            max_months = max_val * 12
+        else:
+            min_months = min_val
+            max_months = max_val
+
+        # Determine category based on range
+        if max_months <= 12:
+            return "Puppy", min_months, max_months
+        elif max_months <= 36:
+            return "Young", min_months, max_months
+        elif max_months <= 96:
+            return "Adult", min_months, max_months
+        else:
+            return "Senior", min_months, max_months
 
     # Check for years pattern (e.g., "2 years", "2.5 y/o") - no negative numbers
     years_match = re.search(r"(?<!-)\b(\d+(?:[.,]\d+)?)\s*(?:years?|y(?:rs?)?(?:\/o)?|yo|jahr)", age_text)
@@ -606,8 +659,24 @@ def normalize_breed_case(breed: str) -> str:
     if breed_lower in case_mappings:
         return case_mappings[breed_lower]
 
-    # General title case for other breeds
-    return " ".join(word.capitalize() for word in breed.split())
+    # General title case for other breeds - handle parenthetical content properly
+    words = breed.split()
+    normalized_words = []
+    for word in words:
+        if "(" in word and ")" in word:
+            # Handle parenthetical content like "(labrador)" -> "(Labrador)"
+            parts = word.split("(")
+            if len(parts) == 2:
+                prefix = parts[0]
+                paren_content = parts[1].rstrip(")")
+                suffix = ")" if word.endswith(")") else ""
+                normalized_word = prefix + "(" + paren_content.capitalize() + suffix
+                normalized_words.append(normalized_word)
+            else:
+                normalized_words.append(word.capitalize())
+        else:
+            normalized_words.append(word.capitalize())
+    return " ".join(normalized_words)
 
 
 if __name__ == "__main__":

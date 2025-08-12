@@ -302,6 +302,7 @@ class DatabaseService:
             # Apply standardization to new data
             new_breed_info = standardize_breed(animal_data.get("breed", ""))
             new_age_info = parse_age_text(animal_data.get("age_text", ""))
+            # parse_age_text returns AgeInfo object with attributes
             new_age_min_months = new_age_info.min_months
             new_age_max_months = new_age_info.max_months
 

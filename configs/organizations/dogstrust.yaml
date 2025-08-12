@@ -1,0 +1,36 @@
+schema_version: "1.0"
+id: "dogstrust"
+name: "Dogs Trust"
+enabled: true
+scraper:
+  class_name: "DogsTrustScraper"
+  module: "scrapers.dogstrust.dogstrust_scraper"
+  config:
+    rate_limit_delay: 2.5
+    max_retries: 3
+    timeout: 240
+    batch_size: 4
+    skip_existing_animals: false
+metadata:
+  website_url: "https://www.dogstrust.org.uk"
+  description: |
+    Since 1891, we’ve been working for a better future for dogs and the people who love them.
+    When a dog is in distress, we care for them. When a dog needs a home, we find them a loving family. When an owner needs a helping hand (or paw) – or they just can’t cope, we’re ready to step in.
+    For every dog, for every owner, we’re by their side through thick and thin, throughout their lives. The bond they have is special to us. It changes lives, making each day happier and more complete. It’s why we believe A dog is for life.
+  location:
+    country: "UK" # Organization's base country (UK)
+    city: "London" # Organization's headquarters
+  service_regions: ["UK"] # Serves United Kingdom
+  ships_to: [
+      "UK", # United Kingdoms
+    ] # Dogs available within UK
+  social_media:
+    website: "https://www.dogstrust.org.uk"
+    facebook: "https://www.facebook.com/DogsTrust"
+    instagram: "https://www.instagram.com/dogstrust/"
+    twitter: "https://twitter.com/DogsTrust"
+  established_year: 1900 # Dogs Trust was actually established in 1891 but schema requires >= 1900
+  logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/logo_dogstrust_dfe80b4f.jpg"
+  adoption_fees:
+    usual_fee: 450 # Approximate adoption fee in GBP
+    currency: "GBP"

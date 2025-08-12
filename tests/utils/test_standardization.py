@@ -189,6 +189,34 @@ class TestAgeStandardization:
         assert result["age_category"] == "Senior"
         assert result["age_min_months"] >= 90  # Around 8 years old
 
+    def test_senior_plus_years_format(self):
+        """Test parsing of 'X + years' pattern used by Dogs Trust for senior dogs."""
+        from utils.standardization import MAX_DOG_AGE_MONTHS
+
+        # Test "8 + years" pattern - now uses finite max instead of None
+        result = standardize_age("8 + years")
+        assert result["age_category"] == "Senior"
+        assert result["age_min_months"] == 96  # 8 years = 96 months
+        assert result["age_max_months"] == MAX_DOG_AGE_MONTHS  # Finite max for system compatibility
+
+        # Test with different spacing
+        result = standardize_age("8+ years")
+        assert result["age_category"] == "Senior"
+        assert result["age_min_months"] == 96
+        assert result["age_max_months"] == MAX_DOG_AGE_MONTHS
+
+        # Test with uppercase
+        result = standardize_age("8 + Years")
+        assert result["age_category"] == "Senior"
+        assert result["age_min_months"] == 96
+        assert result["age_max_months"] == MAX_DOG_AGE_MONTHS
+
+        # Test different senior age (10+ years)
+        result = standardize_age("10 + years")
+        assert result["age_category"] == "Senior"
+        assert result["age_min_months"] == 120  # 10 years = 120 months
+        assert result["age_max_months"] == MAX_DOG_AGE_MONTHS
+
     def test_german_unknown_age(self):
         """Test parsing of German 'Unbekannt' (Unknown)."""
         result = standardize_age("Unbekannt")

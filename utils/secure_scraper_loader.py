@@ -55,6 +55,7 @@ class SecureScraperLoader:
         "scrapers.galgosdelsol.galgosdelsol_scraper",
         "scrapers.santerpawsbulgarianrescue.santerpawsbulgarianrescue_scraper",
         "scrapers.manytearsrescue.manytearsrescue_scraper",
+        "scrapers.dogstrust.dogstrust_scraper",
         # Add new modules here as needed
     }
 

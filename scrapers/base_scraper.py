@@ -12,18 +12,19 @@ from typing import Any, Dict, List, Optional
 import psycopg2
 from langdetect import detect
 
-# Add the project root directory to Python path BEFORE any local imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 # Import config
 from config import DB_CONFIG, enable_world_class_scraper_logging
 
-# Import null object services
+# Import services and utilities
 from services.null_objects import NullMetricsCollector
 from services.progress_tracker import ProgressTracker
 from utils.config_loader import ConfigLoader
+from utils.config_models import OrganizationConfig
 from utils.organization_sync_service import create_default_sync_service
 from utils.r2_service import R2Service
+
+# Add the project root directory to Python path BEFORE any local imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Set up module-level logger
 logger = logging.getLogger(__name__)
@@ -31,6 +32,9 @@ logger = logging.getLogger(__name__)
 
 class BaseScraper(ABC):
     """Base scraper class that all organization-specific scrapers will inherit from."""
+
+    # Type annotations for instance variables
+    org_config: Optional[OrganizationConfig]
 
     def __init__(
         self,
@@ -232,7 +236,14 @@ class BaseScraper(ABC):
 
         # Use injected DatabaseService if available
         if self.database_service:
-            return self.database_service.complete_scrape_log(self.scrape_log_id, status, animals_found, animals_added, animals_updated, error_message)
+            return self.database_service.complete_scrape_log(
+                self.scrape_log_id,
+                status,
+                animals_found,
+                animals_added,
+                animals_updated,
+                error_message,
+            )
 
         self.logger.info(f"Scrape completed with status: {status}, animals: {animals_found}")
         return True
@@ -259,7 +270,15 @@ class BaseScraper(ABC):
         # Use injected DatabaseService if available
         if self.database_service:
             return self.database_service.complete_scrape_log(
-                self.scrape_log_id, status, animals_found, animals_added, animals_updated, error_message, detailed_metrics, duration_seconds, data_quality_score
+                self.scrape_log_id,
+                status,
+                animals_found,
+                animals_added,
+                animals_updated,
+                error_message,
+                detailed_metrics,
+                duration_seconds,
+                data_quality_score,
             )
 
         self.logger.info(f"Scrape completed with status: {status}, animals: {animals_found}")
@@ -348,7 +367,11 @@ class BaseScraper(ABC):
             # Initialize comprehensive progress tracker for consistent logging
             # Always create progress_tracker to ensure consistent terminal output across all scrapers
             # Use discovery count (not filtered count) to ensure proper verbosity level for completion summary
-            self.progress_tracker = ProgressTracker(total_items=max(self.animals_found, 1), logger=logging.getLogger("scraper"), config=self._get_logging_config())  # Use central scraper logger
+            self.progress_tracker = ProgressTracker(
+                total_items=max(self.animals_found, 1),
+                logger=logging.getLogger("scraper"),
+                config=self._get_logging_config(),
+            )  # Use central scraper logger
 
             # Track discovery phase stats
             # Use correct animals found count to show actual discovery metrics
@@ -356,7 +379,10 @@ class BaseScraper(ABC):
             self.progress_tracker.track_discovery_stats(dogs_found=correct_animals_found, pages_processed=1, extraction_failures=0)  # Single page scrape
 
             # Track filtering phase stats
-            self.progress_tracker.track_filtering_stats(dogs_skipped=self.total_animals_skipped, new_dogs=len(animals_data) - self.total_animals_skipped)
+            self.progress_tracker.track_filtering_stats(
+                dogs_skipped=self.total_animals_skipped,
+                new_dogs=len(animals_data) - self.total_animals_skipped,
+            )
 
             # Log discovery completion
             self.progress_tracker.log_phase_complete("Discovery", 0.0, f"{correct_animals_found} dogs found")  # Will be updated with actual timing
@@ -452,7 +478,13 @@ class BaseScraper(ABC):
         """Database operations phase: Process and save animal data with progress tracking."""
         phase_start = datetime.now()
 
-        processing_stats = {"animals_added": 0, "animals_updated": 0, "animals_unchanged": 0, "images_uploaded": 0, "images_failed": 0}
+        processing_stats = {
+            "animals_added": 0,
+            "animals_updated": 0,
+            "animals_unchanged": 0,
+            "images_uploaded": 0,
+            "images_failed": 0,
+        }
 
         # Initialize progress tracker for world-class logging
         progress_tracker = ProgressTracker(total_items=len(animals_data), logger=self.logger, config=self._get_logging_config())
@@ -506,7 +538,12 @@ class BaseScraper(ABC):
 
         return processing_stats
 
-    def _log_batch_summary(self, progress_tracker: ProgressTracker, processing_stats: Dict[str, int], processed_count: int):
+    def _log_batch_summary(
+        self,
+        progress_tracker: ProgressTracker,
+        processing_stats: Dict[str, int],
+        processed_count: int,
+    ):
         """Log batch summary with processing statistics.
 
         Args:
@@ -603,10 +640,16 @@ class BaseScraper(ABC):
         if hasattr(self, "progress_tracker") and self.progress_tracker:
             # Update final stats
             self.progress_tracker.track_processing_stats(
-                dogs_added=processing_stats["animals_added"], dogs_updated=processing_stats["animals_updated"], dogs_unchanged=processing_stats["animals_unchanged"], processing_failures=0
+                dogs_added=processing_stats["animals_added"],
+                dogs_updated=processing_stats["animals_updated"],
+                dogs_unchanged=processing_stats["animals_unchanged"],
+                processing_failures=0,
             )
 
-            self.progress_tracker.track_image_stats(images_uploaded=processing_stats["images_uploaded"], images_failed=processing_stats["images_failed"])
+            self.progress_tracker.track_image_stats(
+                images_uploaded=processing_stats["images_uploaded"],
+                images_failed=processing_stats["images_failed"],
+            )
 
             self.progress_tracker.track_quality_stats(data_quality_score=quality_score, completion_rate=100.0)
 
@@ -922,7 +965,12 @@ class BaseScraper(ABC):
         # Use injected SessionManager if available
         if self.session_manager:
             return self.session_manager.detect_partial_failure(
-                animals_found, threshold_percentage, absolute_minimum, minimum_historical_scrapes, self.total_animals_before_filter, self.total_animals_skipped
+                animals_found,
+                threshold_percentage,
+                absolute_minimum,
+                minimum_historical_scrapes,
+                self.total_animals_before_filter,
+                self.total_animals_skipped,
             )
 
         self._log_service_unavailable("SessionManager", "partial failure detection disabled")
@@ -1003,14 +1051,24 @@ class BaseScraper(ABC):
             # Get organization config for LLM prompts if available
             org_config = None
             if self.org_config:
-                org_config = {"organization_name": self.org_config.name, "prompt_style": self.org_config.get_scraper_config_dict().get("llm_prompt_style", "friendly")}
+                org_config = {
+                    "organization_name": self.org_config.name,
+                    "prompt_style": self.org_config.get_scraper_config_dict().get("llm_prompt_style", "friendly"),
+                }
 
             # Clean the description
             enriched_description = await self.llm_data_service.clean_description(description, organization_config=org_config)
 
             # Update the database with enriched description
             if enriched_description and enriched_description != description:
-                self._update_llm_enrichment(animal_id, {"enriched_description": enriched_description, "llm_processed_at": datetime.now(), "llm_model_used": "openrouter/auto"})
+                self._update_llm_enrichment(
+                    animal_id,
+                    {
+                        "enriched_description": enriched_description,
+                        "llm_processed_at": datetime.now(),
+                        "llm_model_used": "openrouter/auto",
+                    },
+                )
                 self.logger.debug(f"Enriched description for animal {animal_id}")
 
         except Exception as e:

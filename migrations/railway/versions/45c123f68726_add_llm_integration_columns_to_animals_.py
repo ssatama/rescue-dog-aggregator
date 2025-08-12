@@ -1,17 +1,16 @@
 """Initial Railway schema
 
 Revision ID: 45c123f68726
-Revises:
-Create Date: 1754916446.3012123
+Revises: 
+Create Date: 1755006558.0893328
 
 """
-
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "45c123f68726"
+revision = '45c123f68726'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -20,8 +19,7 @@ depends_on = None
 def upgrade() -> None:
     """Create initial schema from database/schema.sql"""
     # Execute the schema creation SQL
-    op.execute(
-        """
+    op.execute("""
 -- Source Organizations
 CREATE TABLE IF NOT EXISTS organizations (
     id SERIAL PRIMARY KEY,
@@ -182,8 +180,7 @@ CREATE INDEX IF NOT EXISTS idx_scrape_logs_quality_score ON scrape_logs(data_qua
 CREATE UNIQUE INDEX IF NOT EXISTS idx_organizations_slug ON organizations(slug);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_animals_slug ON animals(slug);
 
-    """
-    )
+    """)
 
 
 def downgrade() -> None:

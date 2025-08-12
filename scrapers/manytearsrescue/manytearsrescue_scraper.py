@@ -2,10 +2,10 @@
 
 import re
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union, cast
 from urllib.parse import urljoin
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -329,10 +329,12 @@ class ManyTearsRescueScraper(BaseScraper):
         page_numbers = []
 
         for link in page_links:
-            href = link.get("href", "")
-            match = re.search(r"page=(\d+)", href)
-            if match:
-                page_numbers.append(int(match.group(1)))
+            if isinstance(link, Tag):
+                href = link.get("href", "")
+                href_str = str(href) if href else ""
+                match = re.search(r"page=(\d+)", href_str)
+                if match:
+                    page_numbers.append(int(match.group(1)))
 
         # Return highest page number found, default to 1
         return max(page_numbers) if page_numbers else 1
@@ -563,12 +565,16 @@ class ManyTearsRescueScraper(BaseScraper):
         # Look for images in main content, excluding icons and small images
         images = soup.find_all("img")
         for img in images:
-            src = img.get("src", "")
-            if "animal_images" in src and not src.endswith(".svg"):
+            if isinstance(img, Tag):
+                src = img.get("src", "")
+                src_str = str(src) if src else ""
+            else:
+                continue
+            if "animal_images" in src_str and not src_str.endswith(".svg"):
                 # Make URL absolute if needed
-                if src.startswith("/"):
-                    return f"{self.base_url}{src}"
-                return src
+                if src_str.startswith("/"):
+                    return f"{self.base_url}{src_str}"
+                return src_str
         return ""
 
     def _extract_description(self, soup: BeautifulSoup) -> str:
@@ -630,6 +636,8 @@ class ManyTearsRescueScraper(BaseScraper):
         info_lists = soup.find_all("ul")
 
         for ul in info_lists:
+            if not isinstance(ul, Tag):
+                continue
             items = ul.find_all("li")
             if len(items) >= 4:  # Should have at least status, age, sex, breed
                 list_texts = [item.get_text(strip=True) for item in items]
@@ -702,14 +710,18 @@ class ManyTearsRescueScraper(BaseScraper):
         requirement_lists = soup.find_all("ul")
 
         for ul in requirement_lists:
+            if not isinstance(ul, Tag):
+                continue
             items = ul.find_all("li")
             if len(items) == 6:  # The requirements list has exactly 6 items
                 for li in items:
+                    if not isinstance(li, Tag):
+                        continue
                     img = li.find("img")
                     p = li.find("p")
 
                     if img and p:
-                        alt_text = img.get("alt", "")
+                        alt_text = img.get("alt", "") if hasattr(img, "get") else ""
                         requirement_text = p.get_text(strip=True)
 
                         # Map alt text to property keys
@@ -813,7 +825,7 @@ class ManyTearsRescueScraper(BaseScraper):
         Returns:
             Dictionary mapping dates to full diary entry content
         """
-        diary_entries = {}
+        diary_entries: Dict[str, str] = {}
 
         # Find diary heading first
         diary_heading = None
@@ -832,7 +844,7 @@ class ManyTearsRescueScraper(BaseScraper):
 
         # If no driver available, fall back to basic extraction
         if not driver:
-            buttons = ul.find_all("button")
+            buttons = ul.find_all("button") if isinstance(ul, Tag) else []
             for button in buttons:
                 button_text = button.get_text(strip=True)
                 if button_text:
@@ -905,12 +917,22 @@ class ManyTearsRescueScraper(BaseScraper):
 
         except Exception as e:
             self.logger.warning(f"Error during WebDriver diary extraction: {e}")
-            # Fallback to basic extraction without clicking
-            buttons = ul.find_all("button")
-            for button in buttons:
-                button_text = button.get_text(strip=True)
-                if button_text:
-                    diary_entries[button_text] = "Fallback: WebDriver extraction failed"
+            # Fallback to basic extraction without clicking - re-parse with BeautifulSoup
+            if driver:
+                soup_fallback = BeautifulSoup(driver.page_source, "html.parser")
+                diary_heading_fallback = None
+                for h2 in soup_fallback.find_all("h2"):
+                    if "diary" in h2.get_text(strip=True).lower():
+                        diary_heading_fallback = h2
+                        break
+                if diary_heading_fallback:
+                    ul_fallback = diary_heading_fallback.find_next("ul")
+                    if ul_fallback and hasattr(ul_fallback, "find_all"):
+                        buttons = ul_fallback.find_all("button")
+                        for button in buttons:
+                            button_text = button.get_text(strip=True)
+                            if button_text:
+                                diary_entries[button_text] = "Fallback: WebDriver extraction failed"
 
         return diary_entries
 
