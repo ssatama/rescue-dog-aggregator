@@ -10,10 +10,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import ResponsiveDogImage from "../ui/ResponsiveDogImage";
-import {
-  getCatalogCardImageWithPosition,
-  handleImageError,
-} from "../../utils/imageUtils";
 import { sanitizeText } from "../../utils/security";
 import { useFadeInAnimation, useHoverAnimation } from "../../utils/animations";
 import { formatShipsToList } from "../../utils/countries";
@@ -47,9 +43,6 @@ const DogCard = React.memo(function DogCard({
   const name = sanitizeText(dog?.name || "Unknown Dog");
   const breed = formatBreed(dog);
   const breedGroup = sanitizeText(dog?.breed_group);
-  const originalImageUrl = dog?.primary_image_url;
-  const { src: optimizedImageUrl, position: objectPosition } =
-    getCatalogCardImageWithPosition(originalImageUrl);
 
   const id = dog?.id || "0";
   const slug = dog?.slug || `unknown-dog-${id}`;
