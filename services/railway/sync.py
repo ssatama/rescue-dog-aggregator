@@ -4,15 +4,23 @@ import time
 from contextlib import contextmanager
 from datetime import date, datetime
 from enum import Enum
-from typing import Dict
+from typing import Any, Dict
 
 from sqlalchemy import text
 
-from api.database import get_pooled_connection
+from api.database import get_connection_pool, get_pooled_connection, initialize_pool
 
 from .connection import check_railway_connection, railway_session
 
 logger = logging.getLogger(__name__)
+
+
+def ensure_pool_initialized():
+    """Ensure connection pool is initialized before use."""
+    pool = get_connection_pool()
+    if not pool._initialized:
+        logger.info("Initializing connection pool for railway sync...")
+        initialize_pool(max_retries=3)
 
 
 class SyncMode(Enum):
@@ -41,6 +49,9 @@ def get_local_data_count(table_name: str) -> int:
         return 0
 
     try:
+        # Ensure pool is initialized
+        ensure_pool_initialized()
+
         with get_pooled_connection() as conn:
             with conn.cursor() as cursor:
                 # Table name already validated against whitelist above
@@ -77,6 +88,9 @@ def get_railway_data_count(table_name: str) -> int:
 def sync_organizations_to_railway(chunk_size: int = 1000) -> bool:
     """Sync all organizations from local database to Railway using chunked processing."""
     try:
+        # Ensure pool is initialized
+        ensure_pool_initialized()
+
         # Use chunked processing to prevent memory exhaustion
         organizations_processed = 0
 
@@ -118,6 +132,9 @@ def sync_organizations_to_railway(chunk_size: int = 1000) -> bool:
 def sync_animals_to_railway(batch_size: int = 100) -> bool:
     """Sync all animals from local database to Railway in batches with memory safety warnings."""
     try:
+        # Ensure pool is initialized
+        ensure_pool_initialized()
+
         # Get animals from local database
         animals = []
         with get_pooled_connection() as local_conn:
@@ -234,6 +251,9 @@ def _validate_table_schemas() -> bool:
         for table in tables_to_validate:
             # Get local schema
             local_schema = {}
+            # Ensure pool is initialized
+            ensure_pool_initialized()
+
             with get_pooled_connection() as local_conn:
                 with local_conn.cursor() as cursor:
                     cursor.execute(
@@ -302,6 +322,9 @@ def _build_organization_id_mapping(session) -> dict:
     try:
         # Get local organization mappings
         local_org_mapping = {}
+        # Ensure pool is initialized
+        ensure_pool_initialized()
+
         with get_pooled_connection() as local_conn:
             with local_conn.cursor() as cursor:
                 cursor.execute("SELECT id, config_id FROM organizations WHERE config_id IS NOT NULL")
@@ -526,6 +549,9 @@ def _sync_organizations_to_railway_in_transaction(session, chunk_size: int = 100
         # Use chunked processing to prevent memory exhaustion
         organizations_processed = 0
 
+        # Ensure pool is initialized
+        ensure_pool_initialized()
+
         with get_pooled_connection() as local_conn:
             with local_conn.cursor() as cursor:
                 cursor.execute(
@@ -563,131 +589,8 @@ def _sync_organizations_to_railway_in_transaction(session, chunk_size: int = 100
 def _sync_animals_with_mapping(session, org_id_mapping: dict, batch_size: int = 100) -> bool:
     """Sync animals to Railway using pre-built organization ID mapping."""
     try:
-        # Get animals from local database
-        animals = []
-        with get_pooled_connection() as local_conn:
-            with local_conn.cursor() as cursor:
-                cursor.execute(
-                    """
-                    SELECT id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, source_last_updated, breed_group, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, last_session_id, active, slug
-                    FROM animals
-                    ORDER BY id
-                """
-                )
-                animals = cursor.fetchall()
-
-        if not animals:
-            logger.info("No animals to sync")
-            return True
-
-        # Process in batches using the provided mapping
-        total_synced = 0
-        insert_sql = text(
-            """
-            INSERT INTO animals 
-            (id, name, organization_id, animal_type, external_id, primary_image_url, adoption_url, status, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, language, properties, created_at, updated_at, last_scraped_at, source_last_updated, breed_group, original_image_url, last_seen_at, consecutive_scrapes_missing, availability_confidence, last_session_id, active, slug)
-            VALUES 
-            (:id, :name, :organization_id, :animal_type, :external_id, :primary_image_url, :adoption_url, :status, :breed, :standardized_breed, :age_text, :age_min_months, :age_max_months, :sex, :size, :standardized_size, :language, :properties, :created_at, :updated_at, :last_scraped_at, :source_last_updated, :breed_group, :original_image_url, :last_seen_at, :consecutive_scrapes_missing, :availability_confidence, :last_session_id, :active, :slug)
-            ON CONFLICT (external_id, organization_id) DO UPDATE SET
-                name = EXCLUDED.name,
-                animal_type = EXCLUDED.animal_type,
-                size = EXCLUDED.size,
-                age_text = EXCLUDED.age_text,
-                sex = EXCLUDED.sex,
-                breed = EXCLUDED.breed,
-                primary_image_url = EXCLUDED.primary_image_url,
-                updated_at = EXCLUDED.updated_at,
-                availability_confidence = EXCLUDED.availability_confidence,
-                last_seen_at = EXCLUDED.last_seen_at,
-                consecutive_scrapes_missing = EXCLUDED.consecutive_scrapes_missing,
-                status = EXCLUDED.status,
-                properties = EXCLUDED.properties,
-                adoption_url = EXCLUDED.adoption_url,
-                slug = EXCLUDED.slug
-        """
-        )
-
-        for i in range(0, len(animals), batch_size):
-            batch = animals[i : i + batch_size]
-
-            batch_params = []
-            for animal in batch:
-                local_org_id = animal[2]
-                railway_org_id = org_id_mapping.get(local_org_id)
-
-                if railway_org_id is None:
-                    logger.warning(f"Skipping animal {animal[1]} - no Railway organization found for local org ID {local_org_id}")
-                    continue
-
-                batch_params.append(
-                    {
-                        "id": animal[0],
-                        "name": animal[1],
-                        "organization_id": railway_org_id,  # Use pre-built mapping
-                        "animal_type": animal[3],
-                        "external_id": animal[4],
-                        "primary_image_url": animal[5],
-                        "adoption_url": animal[6],
-                        "status": animal[7],
-                        "breed": animal[8],
-                        "standardized_breed": animal[9],
-                        "age_text": animal[10],
-                        "age_min_months": animal[11],
-                        "age_max_months": animal[12],
-                        "sex": animal[13],
-                        "size": animal[14],
-                        "standardized_size": animal[15],
-                        "language": animal[16],
-                        "properties": json.dumps(animal[17]) if animal[17] is not None else None,
-                        "created_at": animal[18],
-                        "updated_at": animal[19],
-                        "last_scraped_at": animal[20],
-                        "source_last_updated": animal[21],
-                        "breed_group": animal[22],
-                        "original_image_url": animal[23],
-                        "last_seen_at": animal[24],
-                        "consecutive_scrapes_missing": animal[25],
-                        "availability_confidence": animal[26],
-                        "last_session_id": animal[27],
-                        "active": animal[28],
-                        "slug": animal[29],
-                    }
-                )
-
-            if batch_params:
-                session.execute(insert_sql, batch_params)
-                total_synced += len(batch_params)
-
-            logger.info(f"Synced batch: {total_synced}/{len(animals)} animals")
-
-        logger.info(f"Successfully synced {total_synced} animals to Railway")
-        return True
-
-    except Exception as e:
-        logger.error(f"Failed to sync animals with mapping: {e}")
-        return False
-
-
-def _sync_animals_to_railway_in_transaction(session, batch_size: int = 100) -> bool:
-    """Sync animals to Railway within an existing transaction."""
-    try:
-        # First, create a mapping of local organization IDs to Railway organization IDs using config_id
-        org_id_mapping = {}
-
-        # Get local organization ID to config_id mapping
-        with get_pooled_connection() as local_conn:
-            with local_conn.cursor() as cursor:
-                cursor.execute("SELECT id, config_id FROM organizations WHERE config_id IS NOT NULL")
-                local_org_mapping = {row[0]: row[1] for row in cursor.fetchall()}
-
-        # Get Railway config_id to ID mapping
-        for local_id, config_id in local_org_mapping.items():
-            result = session.execute(text("SELECT id FROM organizations WHERE config_id = :config_id"), {"config_id": config_id})
-            railway_row = result.fetchone()
-            if railway_row:
-                org_id_mapping[local_id] = railway_row[0]
-
-        logger.info(f"Created organization ID mapping for {len(org_id_mapping)} organizations")
+        # Ensure pool is initialized
+        ensure_pool_initialized()
 
         # Get animals from local database
         animals = []
@@ -802,6 +705,9 @@ def _sync_scrape_logs_with_mapping(session, org_id_mapping: dict, batch_size: in
     """Sync scrape_logs to Railway using pre-built organization ID mapping."""
     try:
         # Get scrape_logs from local database
+        # Ensure pool is initialized
+        ensure_pool_initialized()
+
         with get_pooled_connection() as local_conn:
             with local_conn.cursor() as cursor:
                 cursor.execute(
@@ -894,6 +800,9 @@ def _sync_service_regions_with_mapping(session, org_id_mapping: dict, batch_size
     """Sync service_regions to Railway using pre-built organization ID mapping."""
     try:
         # Get service_regions from local database
+        # Ensure pool is initialized
+        ensure_pool_initialized()
+
         with get_pooled_connection() as local_conn:
             with local_conn.cursor() as cursor:
                 cursor.execute(
@@ -969,6 +878,9 @@ def _sync_scrape_logs_to_railway_in_transaction(session, batch_size: int = 100) 
     try:
         # Create organization ID mapping
         org_id_mapping = {}
+        # Ensure pool is initialized
+        ensure_pool_initialized()
+
         with get_pooled_connection() as local_conn:
             with local_conn.cursor() as cursor:
                 cursor.execute("SELECT id, config_id FROM organizations WHERE config_id IS NOT NULL")
@@ -981,6 +893,9 @@ def _sync_scrape_logs_to_railway_in_transaction(session, batch_size: int = 100) 
                         org_id_mapping[local_id] = railway_row[0]
 
         # Get scrape_logs from local database
+        # Ensure pool is initialized
+        ensure_pool_initialized()
+
         with get_pooled_connection() as local_conn:
             with local_conn.cursor() as cursor:
                 cursor.execute(
@@ -1062,6 +977,9 @@ def _sync_service_regions_to_railway_in_transaction(session, batch_size: int = 1
     try:
         # Create organization ID mapping
         org_id_mapping = {}
+        # Ensure pool is initialized
+        ensure_pool_initialized()
+
         with get_pooled_connection() as local_conn:
             with local_conn.cursor() as cursor:
                 cursor.execute("SELECT id, config_id FROM organizations WHERE config_id IS NOT NULL")
@@ -1074,6 +992,9 @@ def _sync_service_regions_to_railway_in_transaction(session, batch_size: int = 1
                         org_id_mapping[local_id] = railway_row[0]
 
         # Get service_regions from local database
+        # Ensure pool is initialized
+        ensure_pool_initialized()
+
         with get_pooled_connection() as local_conn:
             with local_conn.cursor() as cursor:
                 cursor.execute(

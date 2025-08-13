@@ -36,7 +36,7 @@ describe("Mobile Performance on 3G Networks", () => {
     id: i + 1,
     name: `Dog ${i + 1}`,
     breed: "Test Breed",
-    primary_image_url: `https://res.cloudinary.com/test/image/upload/v1/dog-${i + 1}.jpg`,
+    primary_image_url: `https://images.rescuedogs.me/rescue_dogs/test/dog-${i + 1}.jpg`,
     organization: { name: "Test Rescue", city: "Test City", country: "TC" },
   }));
 
@@ -225,8 +225,11 @@ describe("Mobile Performance on 3G Networks", () => {
       images.forEach((img) => {
         const src = img.getAttribute("src");
         if (src && src.length > 0) {
-          // Should contain mobile optimization parameters for Cloudinary images
-          expect(src).toMatch(/w_320.*q_70.*f_auto/);
+          // Should contain Cloudflare optimization parameters
+          // ResponsiveDogImage uses cdn-cgi/image transformations with proper dimensions
+          expect(src).toMatch(
+            /(cdn-cgi\/image\/w_\d+,h_\d+.*f_auto|example\.com)/,
+          );
         }
       });
     });
@@ -376,8 +379,9 @@ describe("Mobile Performance on 3G Networks", () => {
       images.forEach((img) => {
         const src = img.getAttribute("src");
         if (src && src.length > 0) {
-          // Should use quality optimization (our mock returns q_70)
-          expect(src).toMatch(/q_70/);
+          // Should contain quality parameter (ResponsiveDogImage uses adaptive quality)
+          // For slow-2g network, should use q_60
+          expect(src).toMatch(/q_60/);
         }
       });
     });

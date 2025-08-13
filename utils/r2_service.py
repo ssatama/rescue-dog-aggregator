@@ -307,11 +307,14 @@ class R2Service:
                     params.append(f"h_{transformation_options['height']}")
                 if "fit" in transformation_options:
                     # Map fit options to Cloudflare Images format
-                    fit_mapping = {"fill": "c_fill", "fit": "c_fit", "crop": "c_crop", "scale": "c_scale"}
+                    fit_mapping = {"fill": "c_fill", "fit": "c_fit", "crop": "c_crop", "scale": "c_scale", "cover": "c_cover"}
                     cloudflare_fit = fit_mapping.get(transformation_options["fit"], "c_fill")
                     params.append(cloudflare_fit)
                 if "quality" in transformation_options:
                     params.append(f"q_{transformation_options['quality']}")
+                if "gravity" in transformation_options:
+                    # Add gravity parameter for smart cropping
+                    params.append(f"g_{transformation_options['gravity']}")
 
                 # Add format optimization
                 params.append("f_auto")

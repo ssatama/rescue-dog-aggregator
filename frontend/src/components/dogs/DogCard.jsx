@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import LazyImage from "../ui/LazyImage";
+import ResponsiveDogImage from "../ui/ResponsiveDogImage";
 import {
   getCatalogCardImageWithPosition,
   handleImageError,
@@ -104,15 +104,11 @@ const DogCard = React.memo(function DogCard({
             data-testid="image-container"
             className="aspect-[4/3] relative overflow-hidden bg-muted dark:bg-muted/50"
           >
-            <LazyImage
-              src={optimizedImageUrl}
-              alt={name.replace(/&[^;]+;/g, "")}
-              className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
-              style={{ objectPosition }}
-              enableProgressiveLoading={true}
+            <ResponsiveDogImage
+              dog={dog}
+              className="w-full h-full"
               priority={priority}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              onError={(e) => handleImageError(e, originalImageUrl)}
             />
 
             {/* NEW Badge for recent dogs */}

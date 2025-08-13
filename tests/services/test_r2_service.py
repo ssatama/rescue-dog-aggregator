@@ -258,6 +258,74 @@ class TestR2ServiceOptimization:
             assert "/cdn-cgi/image/" in optimized_url
             assert "w_400,h_300" in optimized_url
 
+    def test_get_optimized_url_with_gravity(self):
+        """Test URL optimization with gravity parameter for smart cropping"""
+        with patch.dict(
+            "os.environ",
+            {
+                "R2_ACCOUNT_ID": "test_account_id",
+                "R2_ACCESS_KEY_ID": "test_access_key",
+                "R2_SECRET_ACCESS_KEY": "test_secret",
+                "R2_BUCKET_NAME": "test_bucket",
+                "R2_ENDPOINT": "https://test.r2.cloudflarestorage.com",
+                "R2_CUSTOM_DOMAIN": "https://images.example.com",
+            },
+        ):
+            R2Service._reset_config_cache()
+            r2_url = "https://images.example.com/rescue_dogs/org/dog_abc123.jpg"
+
+            # Test with gravity=auto for smart cropping
+            transformation_options = {"width": 400, "height": 400, "fit": "cover", "gravity": "auto"}
+            optimized_url = R2Service.get_optimized_url(r2_url, transformation_options)
+            assert "/cdn-cgi/image/" in optimized_url
+            assert "w_400,h_400" in optimized_url
+            assert "c_cover" in optimized_url
+            assert "g_auto" in optimized_url
+
+    def test_get_optimized_url_with_face_gravity(self):
+        """Test URL optimization with face gravity for focusing on faces"""
+        with patch.dict(
+            "os.environ",
+            {
+                "R2_ACCOUNT_ID": "test_account_id",
+                "R2_ACCESS_KEY_ID": "test_access_key",
+                "R2_SECRET_ACCESS_KEY": "test_secret",
+                "R2_BUCKET_NAME": "test_bucket",
+                "R2_ENDPOINT": "https://test.r2.cloudflarestorage.com",
+                "R2_CUSTOM_DOMAIN": "https://images.example.com",
+            },
+        ):
+            R2Service._reset_config_cache()
+            r2_url = "https://images.example.com/rescue_dogs/org/dog_abc123.jpg"
+
+            # Test with gravity=face for face detection
+            transformation_options = {"width": 300, "height": 300, "fit": "cover", "gravity": "face"}
+            optimized_url = R2Service.get_optimized_url(r2_url, transformation_options)
+            assert "/cdn-cgi/image/" in optimized_url
+            assert "g_face" in optimized_url
+
+    def test_get_optimized_url_with_north_gravity(self):
+        """Test URL optimization with north gravity for top-focused cropping"""
+        with patch.dict(
+            "os.environ",
+            {
+                "R2_ACCOUNT_ID": "test_account_id",
+                "R2_ACCESS_KEY_ID": "test_access_key",
+                "R2_SECRET_ACCESS_KEY": "test_secret",
+                "R2_BUCKET_NAME": "test_bucket",
+                "R2_ENDPOINT": "https://test.r2.cloudflarestorage.com",
+                "R2_CUSTOM_DOMAIN": "https://images.example.com",
+            },
+        ):
+            R2Service._reset_config_cache()
+            r2_url = "https://images.example.com/rescue_dogs/org/dog_abc123.jpg"
+
+            # Test with gravity=north for top bias
+            transformation_options = {"width": 400, "height": 300, "fit": "cover", "gravity": "north"}
+            optimized_url = R2Service.get_optimized_url(r2_url, transformation_options)
+            assert "/cdn-cgi/image/" in optimized_url
+            assert "g_north" in optimized_url
+
     def test_get_optimized_url_with_non_r2_url(self):
         """Test URL optimization for non-R2 URLs"""
         external_url = "http://example.com/dog.jpg"
