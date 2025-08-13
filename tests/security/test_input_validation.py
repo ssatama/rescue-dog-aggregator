@@ -2,15 +2,9 @@ import os
 import sys
 
 import pytest
-from fastapi.testclient import TestClient
-
-from api.main import app  # Fixed import path
 
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-
-
-client = TestClient(app)
 
 
 @pytest.mark.slow
@@ -19,7 +13,7 @@ client = TestClient(app)
 class TestSecurity:
     """Test security aspects of the application."""
 
-    def test_sql_injection_prevention(self):
+    def test_sql_injection_prevention(self, client):
         """Test that SQL injection attempts are prevented."""
         malicious_inputs = [
             "'; DROP TABLE animals; --",
@@ -51,7 +45,7 @@ class TestSecurity:
                 data = response.json()
                 assert isinstance(data, list), "Response should be a list of animals"
 
-    def test_parameter_limits(self):
+    def test_parameter_limits(self, client):
         """Test that API parameters have reasonable limits."""
         # Test very large limit
         response = client.get("/api/animals?limit=10000")
@@ -70,13 +64,13 @@ class TestSecurity:
         response = client.get("/api/animals?offset=-1")
         assert response.status_code == 422, "Should reject negative offset"
 
-    def test_cors_headers(self):
+    def test_cors_headers(self, client):
         """Test CORS configuration is reasonable."""
         response = client.options("/api/animals")
         # Should handle OPTIONS request without crashing
         assert response.status_code in [200, 405], "Should handle OPTIONS request"
 
-    def test_no_sensitive_data_exposure(self):
+    def test_no_sensitive_data_exposure(self, client):
         """Test that sensitive data is not exposed in API responses."""
         response = client.get("/api/animals?limit=1")
 
@@ -99,7 +93,7 @@ class TestSecurity:
                 for field in sensitive_fields:
                     assert field not in animal, f"Should not expose {field} in API response"
 
-    def test_input_length_limits(self):
+    def test_input_length_limits(self, client):
         """Test that extremely long inputs are handled properly."""
         # Very long search string
         long_string = "a" * 10000
@@ -118,7 +112,7 @@ class TestSecurity:
             414,
         ], "Should handle very long breed strings"
 
-    def test_special_characters_handling(self):
+    def test_special_characters_handling(self, client):
         """Test handling of special characters in parameters."""
         special_chars = [
             "%",

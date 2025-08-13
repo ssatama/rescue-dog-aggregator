@@ -240,10 +240,16 @@ class R2Service:
             # Enforce global rate limiting before upload
             R2Service._enforce_rate_limit()
 
-            # Upload to R2
+            # Upload to R2 - sanitize metadata to ASCII only
+            import unicodedata
+
+            # Remove accents and non-ASCII characters from metadata
+            safe_animal_name = unicodedata.normalize("NFKD", animal_name).encode("ascii", "ignore").decode("ascii")
+            safe_org_name = unicodedata.normalize("NFKD", organization_name).encode("ascii", "ignore").decode("ascii")
+
             image_data = BytesIO(response.content)
             s3_client.upload_fileobj(
-                image_data, bucket_name, image_key, ExtraArgs={"ContentType": content_type, "Metadata": {"original_url": image_url, "animal_name": animal_name, "organization": organization_name}}
+                image_data, bucket_name, image_key, ExtraArgs={"ContentType": content_type, "Metadata": {"original_url": image_url, "animal_name": safe_animal_name, "organization": safe_org_name}}
             )
 
             logger.info(f"Successfully uploaded image to R2: {image_key}")

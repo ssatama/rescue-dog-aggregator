@@ -11,10 +11,7 @@ from api.main import app
 @pytest.mark.database
 @pytest.mark.api
 class TestAnimalsAPI:
-    @pytest.fixture
-    def client(self):
-        """Create test client."""
-        return TestClient(app)
+    # Use the client fixture from conftest.py instead of creating our own
 
     # Sample animal data (useful for potential future tests or reference)
     sample_animal = {

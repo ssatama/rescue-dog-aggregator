@@ -45,11 +45,7 @@ export default function DogDetailClient({ params = {} }) {
   // Development monitoring only
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") {
-      console.log("[DogDetail] Component mounted:", {
-        dogSlug,
-        pathname,
-        timestamp: Date.now(),
-      });
+      console.log("DogDetailClient: Component mounted");
     }
   }, []);
 
@@ -63,10 +59,9 @@ export default function DogDetailClient({ params = {} }) {
 
       // Development logging only
       if (process.env.NODE_ENV !== "production") {
-        console.log("[DogDetail] API call:", {
-          dogSlug,
-          retryCount,
-        });
+        console.log(
+          `Fetching dog data for slug: ${dogSlug}, retry: ${retryCount}`,
+        );
       }
 
       try {
@@ -75,7 +70,7 @@ export default function DogDetailClient({ params = {} }) {
 
         // Minimal production logging for API calls
         if (process.env.NODE_ENV !== "production") {
-          console.log("[DogDetail] Making API request...");
+          console.log(`Starting API call for ${dogSlug}`);
         }
 
         // Create timeout promise for hanging requests detection
@@ -94,7 +89,7 @@ export default function DogDetailClient({ params = {} }) {
 
         // Production: Only log API success for monitoring
         if (process.env.NODE_ENV !== "production") {
-          console.log("[DogDetail] API request successful:", {
+          console.log("API fetch successful", {
             dogName: data?.name,
             responseTime: `${Date.now() - fetchStartTime}ms`,
           });
@@ -106,7 +101,7 @@ export default function DogDetailClient({ params = {} }) {
 
           // Development logging for state updates
           if (process.env.NODE_ENV !== "production") {
-            console.log("[DogDetail] Dog state set:", {
+            console.log("Dog state updated", {
               dogName: data?.name,
               hasImageUrl: !!data?.primary_image_url,
             });
@@ -129,7 +124,7 @@ export default function DogDetailClient({ params = {} }) {
 
         // Development logging for errors
         if (process.env.NODE_ENV !== "production") {
-          console.log("[DogDetail] API ERROR:", errorInfo);
+          console.error("Error fetching dog data:", errorInfo);
         }
 
         // Retry logic for certain types of errors
@@ -138,7 +133,7 @@ export default function DogDetailClient({ params = {} }) {
           (err.name === "AbortError" || err.message.includes("fetch"))
         ) {
           if (process.env.NODE_ENV !== "production") {
-            console.log("[DogDetail] Retrying API call...", {
+            console.log("Retrying fetch due to network error", {
               retryCount: retryCount + 1,
             });
           }

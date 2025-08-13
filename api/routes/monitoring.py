@@ -633,6 +633,37 @@ async def get_performance_metrics(db_conn=Depends(get_database_connection)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/health/database/pool")
+async def get_pool_health():
+    """
+    Get database connection pool health status.
+
+    Returns detailed pool status including initialization state,
+    connection counts, and any errors.
+    """
+    from api.database import get_connection_pool
+
+    try:
+        pool = get_connection_pool()
+        pool_status = pool.get_pool_status()
+
+        # Determine health level
+        if pool_status.get("status") == "active":
+            health = "healthy"
+        elif pool_status.get("status") == "not_initialized":
+            if pool_status.get("initialization_error"):
+                health = "unhealthy"
+            else:
+                health = "initializing"
+        else:
+            health = "degraded"
+
+        return {"status": health, "pool": pool_status, "timestamp": datetime.now()}
+    except Exception as e:
+        logger.error(f"Error checking pool health: {e}")
+        return {"status": "error", "pool": {"status": "error", "error": str(e)}, "timestamp": datetime.now()}
+
+
 @router.get("/monitoring/alerts/config", dependencies=[Depends(verify_admin_key)])
 async def get_alerting_configuration():
     """

@@ -66,7 +66,7 @@ class TestManyTearsRescueDetailExtraction:
                     "name": "Otaya",
                     "age_text": "10 years",
                     "sex": "Female",
-                    "breed": "Cambrian Shepherd Dog",
+                    "breed": "Shepherd",  # Standardized from "Cambrian Shepherd Dog"
                     "location": "Many Tears, Llanelli, Carmarthenshire",
                     "description_contains": ["rescued from a home in heartbreaking conditions", "beautiful, gentle soul", "soft sparkle in her eye", "Cambrian Shepherd", "quiet, affectionate nature"],
                     "requirements": {
@@ -104,7 +104,7 @@ class TestManyTearsRescueDetailExtraction:
                     "name": "Oreo",
                     "age_text": "1 year",
                     "sex": "Male",
-                    "breed": "Australian Shepherd Cross",
+                    "breed": "Mixed Breed",  # Standardized from "Australian Shepherd Cross"
                     "location": "In Foster: Llanelli, Carmarthenshire",
                     "description_contains": [
                         "Australian Shepherd/Doodle cross",

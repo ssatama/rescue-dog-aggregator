@@ -9,14 +9,13 @@ from fastapi.testclient import TestClient
 
 from api.main import app
 
-client = TestClient(app)
-
 
 @pytest.mark.slow
 @pytest.mark.database
 @pytest.mark.api
 class TestOrganizationRecentDogsIntegration:
-    """Integration tests for the untested recent-dogs endpoint."""
+    # Use the client fixture from conftest.py instead of creating our own
+    # Docstring moved above
 
     def get_first_org_id(self, client):
         """Helper to get first available organization ID."""
@@ -79,7 +78,8 @@ class TestOrganizationRecentDogsIntegration:
 @pytest.mark.database
 @pytest.mark.api
 class TestOrganizationStatisticsIntegration:
-    """Integration tests for the untested statistics endpoint."""
+    # Use the client fixture from conftest.py instead of creating our own
+    # Docstring moved above
 
     def get_first_org_id(self, client):
         """Helper to get first available organization ID."""
@@ -147,7 +147,8 @@ class TestOrganizationStatisticsIntegration:
 @pytest.mark.database
 @pytest.mark.api
 class TestOrganizationJSONParsingIntegration:
-    """Integration tests for JSON field parsing in organizations."""
+    # Use the client fixture from conftest.py instead of creating our own
+    # Docstring moved above
 
     def test_organizations_list_json_parsing(self, client):
         """Test JSON field parsing in organizations list."""

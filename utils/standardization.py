@@ -8,6 +8,7 @@ This module provides functions to standardize dog data including:
 - Size estimation based on breed
 """
 
+import os
 import re
 from typing import Dict, Optional, Tuple
 
@@ -160,44 +161,10 @@ def standardize_breed(breed_text: str) -> Tuple[str, str, Optional[str]]:
     Returns:
         Tuple of (standardized_breed, breed_group, size_estimate)
     """
-    if not breed_text or not isinstance(breed_text, (str, type(None))):
-        return "Unknown", "Unknown", None
+    # Always use enhanced standardization (migration completed)
+    from utils.enhanced_breed_standardization import enhanced_standardizer
 
-    # Clean the breed text
-    clean_text = str(breed_text).strip().lower()
-
-    if not clean_text:
-        return "Unknown", "Unknown", None
-
-    # First try an exact match
-    for original, standardized in BREED_MAPPING.items():
-        if original == clean_text:
-            return standardized
-
-    # Next try a "contains" approach for partial matches
-    for original, standardized in BREED_MAPPING.items():
-        if original in clean_text:
-            # If we find a mix indicator, adjust the standardized breed name
-            if any(mix_word in clean_text for mix_word in ["mix", "cross", "mixed"]) and " Mix" not in standardized[0]:
-                return f"{standardized[0]} Mix", "Mixed", standardized[2]
-            return standardized
-
-    # Handle mix breeds not explicitly in our mapping
-    if any(mix_word in clean_text for mix_word in ["mix", "cross", "mixed"]):
-        # Try to extract the primary breed from the mix
-        for breed_indicator in BREED_INDICATORS:
-            if breed_indicator in clean_text:
-                # Find the appropriate standardized breed
-                for original, standardized in BREED_MAPPING.items():
-                    if breed_indicator == original:
-                        return f"{standardized[0]} Mix", "Mixed", standardized[2]
-
-        # If we can't determine a primary breed, just return "Mixed Breed"
-        return "Mixed Breed", "Mixed", None
-
-    # If no match found, use the original with Unknown group
-    capitalized_breed = " ".join(word.capitalize() for word in clean_text.split())
-    return capitalized_breed, "Unknown", None
+    return enhanced_standardizer.standardize_breed_enhanced(breed_text)
 
 
 def parse_age_text(age_text: str) -> Tuple[Optional[str], Optional[int], Optional[int]]:
@@ -640,43 +607,10 @@ def normalize_breed_case(breed: str) -> str:
     Returns:
         Breed text with consistent capitalization
     """
-    if not breed:
-        return breed
+    # Always use enhanced version (migration completed)
+    from utils.enhanced_breed_standardization import normalize_breed_case_v2
 
-    # Special case mappings for consistent capitalization
-    case_mappings = {
-        "mixed breed": "Mixed Breed",
-        "terrier mix": "Terrier Mix",
-        "labrador mix": "Labrador Mix",
-        "german shepherd mix": "German Shepherd Mix",
-        "podenco mix": "Podenco Mix",
-        "hound mix": "Hound Mix",
-        "spaniel mix": "Spaniel Mix",
-        "retriever mix": "Retriever Mix",
-    }
-
-    breed_lower = breed.lower()
-    if breed_lower in case_mappings:
-        return case_mappings[breed_lower]
-
-    # General title case for other breeds - handle parenthetical content properly
-    words = breed.split()
-    normalized_words = []
-    for word in words:
-        if "(" in word and ")" in word:
-            # Handle parenthetical content like "(labrador)" -> "(Labrador)"
-            parts = word.split("(")
-            if len(parts) == 2:
-                prefix = parts[0]
-                paren_content = parts[1].rstrip(")")
-                suffix = ")" if word.endswith(")") else ""
-                normalized_word = prefix + "(" + paren_content.capitalize() + suffix
-                normalized_words.append(normalized_word)
-            else:
-                normalized_words.append(word.capitalize())
-        else:
-            normalized_words.append(word.capitalize())
-    return " ".join(normalized_words)
+    return normalize_breed_case_v2(breed, use_enhanced=True)
 
 
 if __name__ == "__main__":

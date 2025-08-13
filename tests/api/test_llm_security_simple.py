@@ -20,10 +20,7 @@ from api.main import app
 class TestLLMSecurityBasics:
     """Test basic security patterns in LLM routes without complex mocking."""
 
-    @pytest.fixture
-    def client(self):
-        """Create test client."""
-        return TestClient(app)
+    # Use the client fixture from conftest.py instead of creating our own
 
     def test_input_validation_secure_messages(self, client):
         """Test that input validation provides secure, user-friendly messages."""

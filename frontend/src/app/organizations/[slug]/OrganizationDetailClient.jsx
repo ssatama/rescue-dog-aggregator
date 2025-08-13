@@ -44,7 +44,7 @@ export default function OrganizationDetailClient({ params = {} }) {
       age: searchParams?.get("age") || defaultFilters.age,
       breed: searchParams?.get("breed") || defaultFilters.breed,
       sex: searchParams?.get("sex") || "Any",
-      sort: searchParams?.get("sort") || defaultFilters.sort,
+      sort: searchParams?.get("sort") || "newest", // Default back to "newest" - PostgreSQL issue resolved
     };
   });
 
@@ -80,7 +80,7 @@ export default function OrganizationDetailClient({ params = {} }) {
       age: defaultFilters.age,
       breed: defaultFilters.breed,
       sex: "Any",
-      sort: defaultFilters.sort,
+      sort: "newest", // Default back to "newest" - PostgreSQL issue resolved
     });
   };
 
@@ -355,7 +355,7 @@ export default function OrganizationDetailClient({ params = {} }) {
               availableBreeds={availableBreeds}
               hasActiveFilters={hasActiveFilters}
               showShipsToFilter={false}
-              showSortFilter={false}
+              showSortFilter={true}
               onMobileFilterClick={handleMobileFilterOpen}
             />
           )}
@@ -369,7 +369,7 @@ export default function OrganizationDetailClient({ params = {} }) {
               emptyStateVariant={
                 hasActiveFilters ? "noDogsFiltered" : "noDogsOrganization"
               }
-              onClearFilters={() => setFilters(getDefaultFilters())}
+              onClearFilters={handleClearAllFilters}
               onBrowseOrganizations={() =>
                 (window.location.href = "/organizations")
               }
@@ -411,7 +411,7 @@ export default function OrganizationDetailClient({ params = {} }) {
         filterConfig={{
           showAge: true,
           showBreed: true,
-          showSort: false, // No sorting UI on mobile
+          showSort: true, // Enable sorting UI on mobile
           showSize: false, // No size filter for organization pages
           showSex: true, // Include sex filter for organization pages
           showShipsTo: false, // No ships-to for organization pages

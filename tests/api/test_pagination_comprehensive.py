@@ -3,14 +3,14 @@ from fastapi.testclient import TestClient
 
 from api.main import app
 
-client = TestClient(app)
-
 
 @pytest.mark.slow
 @pytest.mark.database
 @pytest.mark.api
 class TestPaginationComprehensive:
     """Test comprehensive pagination handling."""
+
+    # Use the client fixture from conftest.py instead of creating our own
 
     def test_animals_pagination_basic(self, client):
         """Test basic animals pagination."""

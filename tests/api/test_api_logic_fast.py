@@ -15,10 +15,7 @@ from api.main import app
 class TestAPILogicFast:
     """Fast unit tests for API logic without database operations."""
 
-    @pytest.fixture
-    def client(self):
-        """Create test client."""
-        return TestClient(app)
+    # Use the client fixture from conftest.py instead of creating our own
 
     @pytest.mark.unit
     def test_api_response_structure_validation(self):

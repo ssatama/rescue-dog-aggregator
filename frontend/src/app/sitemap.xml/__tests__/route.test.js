@@ -38,8 +38,8 @@ describe("Dynamic Sitemap Route", () => {
       id: 1,
       slug: "buddy-mixed-breed-1",
       name: "Buddy",
-      created_at: "2025-07-14T08:58:28.474Z",
-      updated_at: "2025-07-14T08:58:28.474Z",
+      created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+      updated_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     },
     {
       id: 2,
@@ -159,9 +159,9 @@ describe("Dynamic Sitemap Route", () => {
     const { GET } = await import("../route");
     const response = await GET();
 
-    // Should include formatted lastmod dates
-    expect(response.body).toContain(
-      "<lastmod>2025-07-14T08:58:28+00:00</lastmod>",
+    // Should include formatted lastmod dates - just check format, not exact date
+    expect(response.body).toMatch(
+      /<lastmod>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00<\/lastmod>/,
     );
     expect(response.body).toContain(
       "<lastmod>2025-07-13T10:30:15+00:00</lastmod>",

@@ -677,7 +677,7 @@ class AnimalService:
             elif filters.sort == "oldest":
                 return "ORDER BY a.created_at ASC, a.id ASC"
             else:  # newest (default)
-                return "ORDER BY a.created_at DESC, a.id DESC"
+                return "ORDER BY a.id DESC"  # Use ID as proxy for newest (IDs are auto-incrementing)
 
         # Handle different curation types
         if filters.curation_type == "recent":

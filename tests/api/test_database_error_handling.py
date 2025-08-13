@@ -4,17 +4,16 @@ import psycopg2
 import pytest
 from fastapi.testclient import TestClient
 
-from api.dependencies import get_db_cursor
+from api.dependencies import get_db_cursor, get_pooled_db_cursor
 from api.main import app
-
-client = TestClient(app)
 
 
 @pytest.mark.slow
 @pytest.mark.database
 @pytest.mark.api
 class TestDatabaseErrorHandling:
-    """Test database error handling with integration tests."""
+    # Use the client fixture from conftest.py instead of creating our own
+    # Docstring moved above
 
     def test_animal_detail_not_found(self, client):
         """Test animal detail endpoint handles not found gracefully."""
@@ -60,9 +59,10 @@ class TestDatabaseErrorHandling:
 
 
 class TestDatabaseQueryErrors:
-    """Test database query error handling in animals endpoints."""
+    # Use the client fixture from conftest.py instead of creating our own
+    # Docstring moved above
 
-    def test_get_animals_database_query_error(self):
+    def test_get_animals_database_query_error(self, client):
         """Test animals endpoint handles database query errors gracefully."""
 
         def mock_db_cursor_query_error():
@@ -71,7 +71,7 @@ class TestDatabaseQueryErrors:
             yield mock_cursor
 
         with patch.object(app, "dependency_overrides", {}):
-            app.dependency_overrides[get_db_cursor] = mock_db_cursor_query_error
+            app.dependency_overrides[get_pooled_db_cursor] = mock_db_cursor_query_error
 
             try:
                 response = client.get("/api/animals")
@@ -81,7 +81,7 @@ class TestDatabaseQueryErrors:
             finally:
                 app.dependency_overrides.clear()
 
-    def test_get_animal_detail_database_query_error(self):
+    def test_get_animal_detail_database_query_error(self, client):
         """Test animal detail endpoint handles database query errors gracefully."""
 
         def mock_db_cursor_query_error():
@@ -90,7 +90,7 @@ class TestDatabaseQueryErrors:
             yield mock_cursor
 
         with patch.object(app, "dependency_overrides", {}):
-            app.dependency_overrides[get_db_cursor] = mock_db_cursor_query_error
+            app.dependency_overrides[get_pooled_db_cursor] = mock_db_cursor_query_error
 
             try:
                 response = client.get("/api/animals/1")
@@ -99,7 +99,7 @@ class TestDatabaseQueryErrors:
             finally:
                 app.dependency_overrides.clear()
 
-    def test_get_animals_statistics_database_query_error(self):
+    def test_get_animals_statistics_database_query_error(self, client):
         """Test animals statistics endpoint handles database query errors gracefully."""
 
         def mock_db_cursor_query_error():
@@ -108,7 +108,7 @@ class TestDatabaseQueryErrors:
             yield mock_cursor
 
         with patch.object(app, "dependency_overrides", {}):
-            app.dependency_overrides[get_db_cursor] = mock_db_cursor_query_error
+            app.dependency_overrides[get_pooled_db_cursor] = mock_db_cursor_query_error
 
             try:
                 response = client.get("/api/animals/statistics")
@@ -117,7 +117,7 @@ class TestDatabaseQueryErrors:
             finally:
                 app.dependency_overrides.clear()
 
-    def test_get_animals_random_database_query_error(self):
+    def test_get_animals_random_database_query_error(self, client):
         """Test random animals endpoint handles database query errors gracefully."""
 
         def mock_db_cursor_query_error():
@@ -126,7 +126,7 @@ class TestDatabaseQueryErrors:
             yield mock_cursor
 
         with patch.object(app, "dependency_overrides", {}):
-            app.dependency_overrides[get_db_cursor] = mock_db_cursor_query_error
+            app.dependency_overrides[get_pooled_db_cursor] = mock_db_cursor_query_error
 
             try:
                 response = client.get("/api/animals/random")
@@ -135,7 +135,7 @@ class TestDatabaseQueryErrors:
             finally:
                 app.dependency_overrides.clear()
 
-    def test_get_distinct_breeds_database_query_error(self):
+    def test_get_distinct_breeds_database_query_error(self, client):
         """Test distinct breeds endpoint handles database query errors gracefully."""
 
         def mock_db_cursor_query_error():
@@ -144,7 +144,7 @@ class TestDatabaseQueryErrors:
             yield mock_cursor
 
         with patch.object(app, "dependency_overrides", {}):
-            app.dependency_overrides[get_db_cursor] = mock_db_cursor_query_error
+            app.dependency_overrides[get_pooled_db_cursor] = mock_db_cursor_query_error
 
             try:
                 response = client.get("/api/animals/meta/breeds")
@@ -153,7 +153,7 @@ class TestDatabaseQueryErrors:
             finally:
                 app.dependency_overrides.clear()
 
-    def test_get_distinct_breed_groups_database_query_error(self):
+    def test_get_distinct_breed_groups_database_query_error(self, client):
         """Test distinct breed groups endpoint handles database query errors gracefully."""
 
         def mock_db_cursor_query_error():
@@ -162,7 +162,7 @@ class TestDatabaseQueryErrors:
             yield mock_cursor
 
         with patch.object(app, "dependency_overrides", {}):
-            app.dependency_overrides[get_db_cursor] = mock_db_cursor_query_error
+            app.dependency_overrides[get_pooled_db_cursor] = mock_db_cursor_query_error
 
             try:
                 response = client.get("/api/animals/meta/breed_groups")

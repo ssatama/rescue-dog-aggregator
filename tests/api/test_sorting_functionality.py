@@ -19,10 +19,7 @@ from api.main import app
 class TestSortingFunctionality:
     """Test suite for animals API sorting functionality."""
 
-    @pytest.fixture
-    def client(self):
-        """Create test client."""
-        return TestClient(app)
+    # Use the client fixture from conftest.py instead of creating our own
 
     def test_animals_default_sort_newest(self, client):
         """Test that animals default to newest sort when no sort parameter provided."""

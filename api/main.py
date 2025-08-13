@@ -1,9 +1,13 @@
 # api/main.py
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+
+# Import database initialization
+from api.database import initialize_pool
 
 # Import routes
 from api.routes import animals, llm, monitoring, organizations
@@ -18,11 +22,48 @@ from config import (
     ENVIRONMENT,
 )
 
-# Create FastAPI app
+# Configure logging
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Manage application lifecycle - startup and shutdown.
+    Initialize the connection pool on startup with retry logic.
+    """
+    # Startup
+    logger.info("Starting application - initializing database connection pool")
+    try:
+        # Initialize the connection pool with retries
+        initialize_pool(max_retries=3)
+        logger.info("Database connection pool initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize database connection pool: {e}")
+        # Allow the app to start but log the error prominently
+        # The pool will return proper error messages when accessed
+        logger.warning("Application starting without database connection pool - database operations will fail")
+
+    yield
+
+    # Shutdown
+    logger.info("Shutting down application - closing database connections")
+    try:
+        from api.database import get_connection_pool
+
+        pool = get_connection_pool()
+        pool.close_all()
+        logger.info("Database connections closed successfully")
+    except Exception as e:
+        logger.error(f"Error during shutdown: {e}")
+
+
+# Create FastAPI app with lifespan handler
 app = FastAPI(
     title="Rescue Dog Aggregator API",
     description="API for accessing rescue dog data from various organizations",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 

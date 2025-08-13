@@ -18,7 +18,7 @@ from psycopg2.extras import RealDictCursor
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
-from api.dependencies import get_db_cursor  # Import the original dependency
+from api.dependencies import get_db_cursor, get_pooled_db_cursor  # Import the original dependencies
 from api.main import app
 
 # Import database pool to initialize it
@@ -47,31 +47,85 @@ def initialize_database_pool():
     """
     print("\n[conftest] Initializing database connection pool for test session...")
 
-    # Create test database configuration
+    # Initialize the new api.database connection pool
+    # First, we need to ensure the test database config is used
+    import config
+
+    original_db_config = config.DB_CONFIG.copy()
+
+    # Override with test database configuration
+    config.DB_CONFIG.update(
+        {
+            "host": TEST_DB_HOST,
+            "user": TEST_DB_USER,
+            "database": TEST_DB_NAME,
+            "password": TEST_DB_PASSWORD,
+        }
+    )
+
+    # Initialize the api.database pool
+    from api.database import get_connection_pool, initialize_pool
+
+    try:
+        initialize_pool(max_retries=3)
+        print("[conftest] API database connection pool initialized successfully.")
+    except Exception as e:
+        print(f"[conftest] Warning: Could not initialize API pool: {e}")
+
+    # Also initialize the utils.db_connection pool for backward compatibility
     test_db_config = DatabaseConfig(host=TEST_DB_HOST, user=TEST_DB_USER, database=TEST_DB_NAME, password=TEST_DB_PASSWORD, port=5432)
+    from utils.db_connection import initialize_database_pool as init_utils_pool
 
-    # Initialize the pool
-    from utils.db_connection import initialize_database_pool
-
-    pool = initialize_database_pool(test_db_config)
-    print("[conftest] Database connection pool initialized successfully.")
+    utils_pool = init_utils_pool(test_db_config)
+    print("[conftest] Utils database connection pool initialized successfully.")
 
     yield
 
-    # Cleanup: Close the pool after all tests
-    print("[conftest] Closing database connection pool...")
-    pool.close_all_connections()
-    print("[conftest] Database connection pool closed.")
+    # Cleanup: Close utils pool only - api pool managed per module
+    print("[conftest] Closing utils database connection pool...")
+
+    # Close utils pool
+    if utils_pool:
+        utils_pool.close_all_connections()
+
+    # Note: We don't close api.database pool here anymore since it's managed
+    # at the module level by the client fixture
+
+    # Restore original config
+    config.DB_CONFIG.update(original_db_config)
+    print("[conftest] Database connection pools cleanup completed.")
 
 
 # ---
 
 
-# --- Dependency Override Function ---
-# This function provides connections/cursors for BOTH setup and request
+# --- Dependency Override Functions ---
+# These functions provide connections/cursors for BOTH setup and request
 # handling
 def override_get_db_cursor():
     """Dependency override that connects to the TEST database."""
+    test_db_params = {
+        "host": TEST_DB_HOST,
+        "user": TEST_DB_USER,
+        "password": TEST_DB_PASSWORD,
+        "database": TEST_DB_NAME,
+    }
+    conn = psycopg2.connect(**test_db_params)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        yield cursor
+        conn.commit()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def override_get_pooled_db_cursor():
+    """Dependency override for pooled cursor that connects to the TEST database.
+
+    This override ensures test isolation by not using the connection pool
+    and instead creating fresh connections for each test.
+    """
     test_db_params = {
         "host": TEST_DB_HOST,
         "user": TEST_DB_USER,
@@ -257,11 +311,26 @@ def client():
     """Pytest fixture to create a TestClient for the API with DB dependency override."""
     print("\n[conftest client] Creating TestClient with dependency override...")
 
+    # Re-initialize the API pool if needed at module level
+    from api.database import get_connection_pool, initialize_pool
+
+    pool = get_connection_pool()
+
+    # Check if pool needs re-initialization
+    if not pool._initialized or pool._pool is None:
+        print("[conftest client] Re-initializing API pool for new module...")
+        try:
+            initialize_pool(max_retries=3)
+            print("[conftest client] API pool re-initialized successfully")
+        except Exception as e:
+            print(f"[conftest client] Warning: Could not re-initialize API pool: {e}")
+
     # Clear any existing overrides first
     app.dependency_overrides.clear()
 
-    # Set our override
+    # Set our overrides for both cursor types
     app.dependency_overrides[get_db_cursor] = override_get_db_cursor
+    app.dependency_overrides[get_pooled_db_cursor] = override_get_pooled_db_cursor
 
     with TestClient(app) as test_client:
         print("[conftest client] TestClient created.")

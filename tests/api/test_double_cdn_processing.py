@@ -14,9 +14,7 @@ from api.main import app
 class TestDoubleCDNProcessing:
     """Test preventing double CDN transformations."""
 
-    @pytest.fixture
-    def client(self):
-        return TestClient(app)
+    # Use the client fixture from conftest.py instead of creating our own
 
     @pytest.mark.unit
     def test_api_returns_raw_r2_urls_without_cloudinary_processing(self, client):

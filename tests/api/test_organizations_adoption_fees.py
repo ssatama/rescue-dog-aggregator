@@ -16,10 +16,7 @@ from api.main import app
 class TestOrganizationsAdoptionFeesAPI:
     """Test suite for adoption fees in organizations API endpoints."""
 
-    @pytest.fixture
-    def client(self):
-        """Create test client for API requests."""
-        return TestClient(app)
+    # Use the client fixture from conftest.py instead of creating our own
 
     def test_get_organizations_includes_adoption_fees_field(self, client):
         """

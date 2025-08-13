@@ -30,10 +30,6 @@ def get_db_cursor() -> Generator[RealDictCursor, None, None]:
     conn = None
     cursor = None
     try:
-        # --- ADDED DEBUG LOGGING ---
-        logger.info(f"[dependencies.py get_db_cursor] Using DB_CONFIG: database={DB_CONFIG.get('database')}, user={DB_CONFIG.get('user')}, host={DB_CONFIG.get('host')}")
-        # --- END DEBUG LOGGING ---
-
         # Build connection parameters (using the imported DB_CONFIG)
         conn_params = {
             "host": DB_CONFIG["host"],
@@ -42,12 +38,6 @@ def get_db_cursor() -> Generator[RealDictCursor, None, None]:
         }
         if DB_CONFIG["password"]:
             conn_params["password"] = DB_CONFIG["password"]
-
-        # --- ADDED DEBUG LOGGING ---
-        logger.info(
-            f"[dependencies.py get_db_cursor] Attempting psycopg2.connect with params: database={conn_params.get('database')}, user={conn_params.get('user')}, host={conn_params.get('host')}, password={'******' if conn_params.get('password') else 'None'}"
-        )
-        # --- END DEBUG LOGGING ---
 
         conn = psycopg2.connect(**conn_params)
         # Changed level to debug
@@ -94,8 +84,6 @@ def get_database_connection() -> Generator[psycopg2.extensions.connection, None,
     """
     conn = None
     try:
-        logger.info(f"[dependencies.py get_database_connection] Using DB_CONFIG: database={DB_CONFIG.get('database')}, user={DB_CONFIG.get('user')}, host={DB_CONFIG.get('host')}")
-
         # Build connection parameters
         conn_params = {
             "host": DB_CONFIG["host"],
@@ -143,9 +131,33 @@ def get_pooled_db_cursor() -> Generator[RealDictCursor, None, None]:
     This is an optimized version of get_db_cursor that uses connection pooling
     for better performance under high load.
     """
+    from api.models.errors import create_connection_error, create_pool_not_initialized_error
+
     try:
         with get_pooled_cursor() as cursor:
             yield cursor
+    except HTTPException:
+        # Let HTTPExceptions from routes bubble up without modification
+        raise
+    except RuntimeError as e:
+        error_msg = str(e)
+        logger.error(f"Pool error in dependency: {error_msg}")
+
+        # Handle specific pool errors with structured responses
+        if "not initialized" in error_msg.lower():
+            error_response = create_pool_not_initialized_error()
+            raise HTTPException(status_code=503, detail=error_response.error.model_dump())
+        elif "pool may be exhausted" in error_msg.lower():
+            from api.models.errors import ErrorCode
+
+            error_response = create_connection_error(detail="Connection pool exhausted - too many concurrent requests", code=ErrorCode.POOL_EXHAUSTED)
+            raise HTTPException(status_code=503, detail=error_response.error.model_dump())
+        else:
+            error_response = create_connection_error(detail=error_msg)
+            raise HTTPException(status_code=500, detail=error_response.error.model_dump())
     except Exception as e:
-        logger.error(f"Error with pooled cursor dependency: {e}")
-        raise HTTPException(status_code=500, detail=f"Database connection pool error: {str(e)}")
+        logger.error(f"Unexpected error with pooled cursor: {e}")
+        from api.models.errors import ErrorCode, ErrorDetail, ErrorResponse, ErrorType
+
+        error_response = ErrorResponse(error=ErrorDetail(type=ErrorType.INTERNAL_ERROR, code=ErrorCode.UNKNOWN_ERROR, message="An unexpected error occurred", detail=str(e)))
+        raise HTTPException(status_code=500, detail=error_response.error.model_dump())

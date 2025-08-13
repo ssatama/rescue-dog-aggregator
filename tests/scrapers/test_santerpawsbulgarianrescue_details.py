@@ -125,7 +125,7 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
         self.assertEqual(result.get("age_text"), "20/04/2023")
         self.assertEqual(result.get("size"), "Medium")
         self.assertEqual(result.get("sex"), "Female")
-        self.assertEqual(result.get("breed"), "Mixed")
+        self.assertEqual(result.get("breed"), "Mixed Breed")
 
     @patch("requests.get")
     def test_scrape_animal_details_detects_reserved_status(self, mock_get):

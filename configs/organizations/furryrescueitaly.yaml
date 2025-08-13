@@ -1,0 +1,34 @@
+schema_version: "1.0"
+id: "furryrescueitaly"
+name: "Furry Rescue Italy"
+enabled: true
+scraper:
+  class_name: "FurryRescueItalyScraper"
+  module: "scrapers.furryrescueitaly.furryrescueitaly_scraper"
+  config:
+    rate_limit_delay: 2.5
+    max_retries: 3
+    timeout: 240
+    batch_size: 4
+    skip_existing_animals: false
+metadata:
+  website_url: "https://furryrescueitaly.com/"
+  description: |
+    Furry Rescue Italy is an animal charity based in Italy.
+    We rescue abused, abandoned, unwanted dogs and rehome them in Italy and abroad.
+    We are a team of volunteers operating all across Europe and UK, working hard and trying our best to save as many dogs as we can.
+    Most of the dogs looking for a home are in foster or in a shelter in Italy, and we organise health check, vaccinations, microchip, neutering (depending on dog’s age) and transport.
+  location:
+    country: "IT" # Organization's base country
+    city: "" # Organization's headquarters
+  service_regions: ["IT"]
+  ships_to: ["UK", "CH", "AT", "DE", "IT"]
+  social_media:
+    website: "https://furryrescueitaly.com/"
+    facebook: " https://www.facebook.com/FurryRescueItaly/"
+    instagram: " https://www.instagram.com/furryrescue_italy/"
+  established_year: 2018
+  logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/logo_furryrescueitaly_f323a29e.jpg"
+  adoption_fees:
+    usual_fee: 450 # Approximate adoption fee
+    currency: "EUR"

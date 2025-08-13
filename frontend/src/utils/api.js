@@ -1,6 +1,7 @@
 // src/utils/api.js
 
 import { logger, reportError } from "./logger";
+import { parseApiError, formatErrorMessage, withRetry } from "./errorHandler";
 
 // Base API URL - configurable based on environment
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -36,10 +37,23 @@ export async function fetchApi(endpoint, options = {}) {
       const errorData = await response.json().catch(() => null);
       const error = new Error(
         errorData?.detail ||
+          errorData?.message ||
           `API error: ${response.status} ${response.statusText}`,
       );
       error.status = response.status;
       error.data = errorData;
+
+      // Parse and log the error with context
+      const parsedError = parseApiError(error);
+      const errorMessage = formatErrorMessage(parsedError);
+
+      logger.error(`[API Error] ${errorMessage}`, {
+        endpoint,
+        status: response.status,
+        code: parsedError.code,
+        correlationId: parsedError.correlationId,
+      });
+
       throw error;
     }
 
@@ -47,7 +61,16 @@ export async function fetchApi(endpoint, options = {}) {
     const data = await response.json();
     return data;
   } catch (error) {
-    reportError("API request failed", { endpoint, error: error.message });
+    // If it's not already processed, parse it
+    if (!error.status) {
+      const parsedError = parseApiError(error);
+      const errorMessage = formatErrorMessage(parsedError);
+      reportError(errorMessage, {
+        endpoint,
+        code: parsedError.code,
+        retryable: parsedError.retryable,
+      });
+    }
     throw error;
   }
 }
@@ -59,6 +82,26 @@ export async function fetchApi(endpoint, options = {}) {
  * @returns {Promise} - Resolved promise with response data
  */
 export function get(endpoint, params = {}) {
+  // Smart trailing slash normalization based on endpoint pattern
+  // Collection endpoints (ending with resource name) need trailing slash: /api/organizations/
+  // Item endpoints (with parameter) should NOT have trailing slash: /api/organizations/slug
+  let normalizedEndpoint = endpoint;
+
+  // Count the number of path segments to determine if it's a collection or item endpoint
+  const pathSegments = endpoint
+    .split("/")
+    .filter((segment) => segment.length > 0);
+  const lastSegment = pathSegments[pathSegments.length - 1];
+
+  // If endpoint has exactly 2 segments (/api/organizations), it's a collection - needs trailing slash
+  if (pathSegments.length === 2 && !endpoint.endsWith("/")) {
+    normalizedEndpoint = `${endpoint}/`;
+  }
+  // If endpoint has 3+ segments (/api/organizations/slug), it's an item - remove trailing slash
+  else if (pathSegments.length >= 3 && endpoint.endsWith("/")) {
+    normalizedEndpoint = endpoint.slice(0, -1);
+  }
+
   // Build query string from params
   const queryString = Object.keys(params)
     .filter((key) => params[key] !== undefined && params[key] !== null)
@@ -67,9 +110,11 @@ export function get(endpoint, params = {}) {
     )
     .join("&");
 
-  const url = queryString ? `${endpoint}?${queryString}` : endpoint;
+  const url = queryString
+    ? `${normalizedEndpoint}?${queryString}`
+    : normalizedEndpoint;
 
-  logger.log(`[api.js get] Calling fetchApi with relative URL: ${url}`);
+  logger.log(`[api.js get] Calling fetchApi with smart-normalized URL: ${url}`);
 
   return fetchApi(url);
 }

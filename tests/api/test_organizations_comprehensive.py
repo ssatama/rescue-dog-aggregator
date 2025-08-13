@@ -13,16 +13,15 @@ from fastapi.testclient import TestClient
 from api.dependencies import get_db_cursor
 from api.main import app
 
-client = TestClient(app)
-
 
 @pytest.mark.slow
 @pytest.mark.database
 @pytest.mark.api
 class TestOrganizationsJSONParsing:
-    """Test JSON field parsing edge cases for organizations."""
+    # Use the client fixture from conftest.py instead of creating our own
+    # Docstring moved above
 
-    def test_organizations_social_media_invalid_json(self):
+    def test_organizations_social_media_invalid_json(self, client):
         """Test organizations endpoint handles invalid social_media JSON gracefully."""
 
         def mock_db_cursor_invalid_social_media():
@@ -65,7 +64,7 @@ class TestOrganizationsJSONParsing:
             finally:
                 app.dependency_overrides.clear()
 
-    def test_organizations_ships_to_invalid_json(self):
+    def test_organizations_ships_to_invalid_json(self, client):
         """Test organizations endpoint handles invalid ships_to JSON gracefully."""
 
         def mock_db_cursor_invalid_ships_to():
@@ -108,7 +107,7 @@ class TestOrganizationsJSONParsing:
             finally:
                 app.dependency_overrides.clear()
 
-    def test_organizations_service_regions_invalid_json(self):
+    def test_organizations_service_regions_invalid_json(self, client):
         """Test organizations endpoint handles invalid service_regions JSON gracefully."""
 
         def mock_db_cursor_invalid_service_regions():
@@ -151,7 +150,7 @@ class TestOrganizationsJSONParsing:
             finally:
                 app.dependency_overrides.clear()
 
-    def test_organizations_all_json_fields_valid(self):
+    def test_organizations_all_json_fields_valid(self, client):
         """Test organizations endpoint with valid JSON in all fields."""
 
         def mock_db_cursor_valid_json():
@@ -203,9 +202,10 @@ class TestOrganizationsJSONParsing:
 @pytest.mark.database
 @pytest.mark.api
 class TestOrganizationsDatabaseErrors:
-    """Test database error handling in organizations endpoints."""
+    # Use the client fixture from conftest.py instead of creating our own
+    # Docstring moved above
 
-    def test_get_organizations_database_error(self):
+    def test_get_organizations_database_error(self, client):
         """Test organizations endpoint handles database query errors gracefully."""
 
         def mock_db_cursor_query_error():
@@ -224,7 +224,7 @@ class TestOrganizationsDatabaseErrors:
             finally:
                 app.dependency_overrides.clear()
 
-    def test_get_organization_detail_database_error(self):
+    def test_get_organization_detail_database_error(self, client):
         """Test organization detail endpoint handles database query errors gracefully."""
 
         def mock_db_cursor_query_error():
@@ -243,7 +243,7 @@ class TestOrganizationsDatabaseErrors:
             finally:
                 app.dependency_overrides.clear()
 
-    def test_get_organization_recent_dogs_database_error(self):
+    def test_get_organization_recent_dogs_database_error(self, client):
         """Test organization recent dogs endpoint handles database query errors gracefully."""
 
         def mock_db_cursor_query_error():
@@ -262,7 +262,7 @@ class TestOrganizationsDatabaseErrors:
             finally:
                 app.dependency_overrides.clear()
 
-    def test_get_organization_statistics_database_error(self):
+    def test_get_organization_statistics_database_error(self, client):
         """Test organization statistics endpoint handles database query errors gracefully."""
 
         def mock_db_cursor_query_error():
@@ -286,9 +286,10 @@ class TestOrganizationsDatabaseErrors:
 @pytest.mark.database
 @pytest.mark.api
 class TestOrganizationRecentDogsEndpoint:
-    """Test the completely untested recent dogs endpoint."""
+    # Use the client fixture from conftest.py instead of creating our own
+    # Docstring moved above
 
-    def test_organization_recent_dogs_success(self):
+    def test_organization_recent_dogs_success(self, client):
         """Test successful retrieval of organization recent dogs."""
 
         def mock_db_cursor_recent_dogs():
@@ -326,7 +327,7 @@ class TestOrganizationRecentDogsEndpoint:
             finally:
                 app.dependency_overrides.clear()
 
-    def test_organization_recent_dogs_with_limit(self):
+    def test_organization_recent_dogs_with_limit(self, client):
         """Test recent dogs endpoint with limit parameter."""
 
         def mock_db_cursor_recent_dogs_limit():
@@ -349,7 +350,7 @@ class TestOrganizationRecentDogsEndpoint:
             finally:
                 app.dependency_overrides.clear()
 
-    def test_organization_recent_dogs_no_dogs(self):
+    def test_organization_recent_dogs_no_dogs(self, client):
         """Test recent dogs endpoint when organization has no recent dogs."""
 
         def mock_db_cursor_no_recent_dogs():
@@ -370,7 +371,7 @@ class TestOrganizationRecentDogsEndpoint:
             finally:
                 app.dependency_overrides.clear()
 
-    def test_organization_recent_dogs_invalid_limit(self):
+    def test_organization_recent_dogs_invalid_limit(self, client):
         """Test recent dogs endpoint with invalid limit values."""
         # Test negative limit - should cause database error
         response = client.get("/api/organizations/1/recent-dogs?limit=-1")
@@ -394,9 +395,10 @@ class TestOrganizationRecentDogsEndpoint:
 @pytest.mark.database
 @pytest.mark.api
 class TestOrganizationStatisticsEndpoint:
-    """Test the completely untested statistics endpoint."""
+    # Use the client fixture from conftest.py instead of creating our own
+    # Docstring moved above
 
-    def test_organization_statistics_success(self):
+    def test_organization_statistics_success(self, client):
         """Test successful retrieval of organization statistics."""
 
         def mock_db_cursor_statistics():
@@ -422,7 +424,7 @@ class TestOrganizationStatisticsEndpoint:
             finally:
                 app.dependency_overrides.clear()
 
-    def test_organization_statistics_no_data(self):
+    def test_organization_statistics_no_data(self, client):
         """Test statistics endpoint when organization has no data."""
 
         def mock_db_cursor_no_statistics():
@@ -448,7 +450,7 @@ class TestOrganizationStatisticsEndpoint:
             finally:
                 app.dependency_overrides.clear()
 
-    def test_organization_statistics_nonexistent_org(self):
+    def test_organization_statistics_nonexistent_org(self, client):
         """Test statistics endpoint for nonexistent organization."""
 
         def mock_db_cursor_no_org():
@@ -474,9 +476,10 @@ class TestOrganizationStatisticsEndpoint:
 @pytest.mark.database
 @pytest.mark.api
 class TestOrganizationDetailEdgeCases:
-    """Test organization detail endpoint edge cases."""
+    # Use the client fixture from conftest.py instead of creating our own
+    # Docstring moved above
 
-    def test_organization_detail_json_parsing_all_fields(self):
+    def test_organization_detail_json_parsing_all_fields(self, client):
         """Test organization detail with JSON parsing for all fields."""
 
         def mock_db_cursor_detail_json():
@@ -518,7 +521,7 @@ class TestOrganizationDetailEdgeCases:
             finally:
                 app.dependency_overrides.clear()
 
-    def test_organization_detail_mixed_json_validity(self):
+    def test_organization_detail_mixed_json_validity(self, client):
         """Test organization detail with mix of valid and invalid JSON."""
 
         def mock_db_cursor_mixed_json():

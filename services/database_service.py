@@ -173,9 +173,16 @@ class DatabaseService:
 
         # Apply standardization
         breed_info = standardize_breed(animal_data.get("breed", ""))
-        age_info = parse_age_text(animal_data.get("age_text", ""))
-        age_months_min = age_info.min_months
-        age_months_max = age_info.max_months
+
+        # Use pre-calculated age values if available (from scraper standardization)
+        # Otherwise fall back to parsing age_text
+        if "age_min_months" in animal_data and "age_max_months" in animal_data:
+            age_months_min = animal_data.get("age_min_months")
+            age_months_max = animal_data.get("age_max_months")
+        else:
+            age_info = parse_age_text(animal_data.get("age_text", ""))
+            age_months_min = age_info.min_months
+            age_months_max = age_info.max_months
 
         # Use size estimate if no size provided
         final_size = animal_data.get("size") or animal_data.get("standardized_size")

@@ -48,6 +48,7 @@ class SecureScraperLoader:
         "scrapers.daisy_family_rescue.dogs_scraper",
         "scrapers.misis_rescue.scraper",
         "scrapers.pets_in_turkey.dogs_scraper",
+        "scrapers.pets_in_turkey.petsinturkey_scraper",
         "scrapers.rean.dogs_scraper",
         "scrapers.theunderdog.theunderdog_scraper",
         "scrapers.tierschutzverein_europa.dogs_scraper",
@@ -56,6 +57,7 @@ class SecureScraperLoader:
         "scrapers.santerpawsbulgarianrescue.santerpawsbulgarianrescue_scraper",
         "scrapers.manytearsrescue.manytearsrescue_scraper",
         "scrapers.dogstrust.dogstrust_scraper",
+        "scrapers.furryrescueitaly.furryrescueitaly_scraper",
         # Add new modules here as needed
     }
 

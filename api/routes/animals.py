@@ -7,7 +7,7 @@ from fastapi.responses import RedirectResponse
 from psycopg2.extras import RealDictCursor
 from pydantic import ValidationError
 
-from api.dependencies import get_db_cursor
+from api.dependencies import get_db_cursor, get_pooled_db_cursor
 from api.exceptions import APIException, handle_database_error, handle_validation_error, safe_execute
 from api.models.dog import Animal
 from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
@@ -23,7 +23,7 @@ router = APIRouter(tags=["animals"])
 @router.get("/", response_model=List[Animal])
 async def get_animals(
     filters: AnimalFilterRequest = Depends(),
-    cursor: RealDictCursor = Depends(get_db_cursor),
+    cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ):
     """Get all animals with filtering, pagination, and location support."""
     try:
@@ -51,7 +51,7 @@ async def get_animals(
 @router.get("/meta/breeds", response_model=List[str])
 async def get_distinct_breeds(
     breed_group: Optional[str] = Query(None),
-    cursor: RealDictCursor = Depends(get_db_cursor),
+    cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ):
     """Get distinct standardized breeds, optionally filtered by breed group."""
     try:
@@ -65,7 +65,7 @@ async def get_distinct_breeds(
 
 
 @router.get("/meta/breed_groups", response_model=List[str])
-async def get_distinct_breed_groups(cursor: RealDictCursor = Depends(get_db_cursor)):
+async def get_distinct_breed_groups(cursor: RealDictCursor = Depends(get_pooled_db_cursor)):
     """Get distinct breed groups."""
     try:
         animal_service = AnimalService(cursor)
@@ -84,7 +84,7 @@ async def get_distinct_breed_groups(cursor: RealDictCursor = Depends(get_db_curs
     summary="Get Distinct Location Countries",
 )
 async def get_distinct_location_countries(
-    cursor: RealDictCursor = Depends(get_db_cursor),
+    cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ):
     """Get a distinct list of countries where organizations are located."""
     try:
@@ -119,7 +119,7 @@ async def get_distinct_location_countries(
     summary="Get Distinct Available-To Countries",
 )
 async def get_distinct_available_countries(
-    cursor: RealDictCursor = Depends(get_db_cursor),
+    cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ):
     """Get a distinct list of countries organizations can adopt to (from service_regions)."""
     try:
@@ -155,7 +155,7 @@ async def get_distinct_available_countries(
 )
 async def get_distinct_available_regions(
     country: str = Query(..., description="Country to get regions for"),  # Make country required
-    cursor: RealDictCursor = Depends(get_db_cursor),
+    cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ):
     """Get a distinct list of regions within a specific country organizations can adopt to."""
     try:
@@ -186,7 +186,7 @@ async def get_distinct_available_regions(
 @router.get("/meta/filter_counts", response_model=FilterCountsResponse)
 async def get_filter_counts(
     filters: AnimalFilterCountRequest = Depends(),
-    cursor: RealDictCursor = Depends(get_db_cursor),
+    cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ):
     """
     Get dynamic counts for each filter option based on current filter context.
@@ -214,7 +214,7 @@ async def get_filter_counts(
 # --- Statistics Endpoint ---
 @router.get("/statistics", summary="Get aggregated statistics")
 async def get_statistics(
-    cursor: RealDictCursor = Depends(get_db_cursor),
+    cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ):
     """Get aggregated statistics about available dogs and organizations."""
     try:
@@ -237,7 +237,7 @@ async def get_random_animals(
     limit: int = Query(3, ge=1, le=10, description="Number of random animals to return"),
     # Removed animal_type query parameter as we always want dogs
     status: Optional[str] = Query("available", description="Animal status"),
-    cursor: RealDictCursor = Depends(get_db_cursor),
+    cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ):
     """Get random available dogs for featured section."""
     try:
@@ -262,7 +262,7 @@ async def get_random_animals(
 
 # --- Single Animal Detail (New Slug-Based Route) ---
 @router.get("/{animal_slug}", response_model=Animal)
-async def get_animal_by_slug(animal_slug: str, cursor: RealDictCursor = Depends(get_db_cursor)):
+async def get_animal_by_slug(animal_slug: str, cursor: RealDictCursor = Depends(get_pooled_db_cursor)):
     """Get a specific animal by slug, with legacy ID redirect support."""
     try:
         animal_service = AnimalService(cursor)
@@ -299,7 +299,7 @@ async def get_animal_by_slug(animal_slug: str, cursor: RealDictCursor = Depends(
 
 # --- Legacy ID Route (Explicit Redirect) ---
 @router.get("/id/{animal_id}", response_model=Animal)
-async def get_animal_by_id_legacy(animal_id: int, cursor: RealDictCursor = Depends(get_db_cursor)):
+async def get_animal_by_id_legacy(animal_id: int, cursor: RealDictCursor = Depends(get_pooled_db_cursor)):
     """Legacy endpoint - redirects to slug URL."""
     try:
         animal_service = AnimalService(cursor)
