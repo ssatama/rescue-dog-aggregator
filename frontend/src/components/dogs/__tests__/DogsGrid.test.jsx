@@ -11,6 +11,22 @@ jest.mock("../DogCard", () => {
   };
 });
 
+// Mock ProgressiveDogCard component
+jest.mock("../ProgressiveDogCard", () => {
+  return function MockProgressiveDogCard({ dog }) {
+    return (
+      <div data-testid={`dog-card-${dog.id}`}>Mock DogCard: {dog.name}</div>
+    );
+  };
+});
+
+// Mock DogCardErrorBoundary component
+jest.mock("../DogCardErrorBoundary", () => {
+  return function MockDogCardErrorBoundary({ children }) {
+    return children;
+  };
+});
+
 describe("DogsGrid Component", () => {
   const mockDogs = [
     {

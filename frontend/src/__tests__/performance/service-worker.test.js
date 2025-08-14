@@ -279,7 +279,8 @@ describe('Service Worker for Offline Caching', () => {
     });
 
     test('FAILING TEST: should handle cache quota exceeded', async () => {
-      const quotaError = new DOMException('QuotaExceededError');
+      const quotaError = new Error('QuotaExceededError');
+      quotaError.name = 'QuotaExceededError';
       mockCache.put.mockRejectedValue(quotaError);
       
       const response = new Response('data');

@@ -96,7 +96,7 @@ describe("API Optimization Tests", () => {
     });
 
     test("FAILING TEST: should make parallel API calls instead of sequential", async () => {
-      // This test will fail initially - we need to implement batching
+      // The implementation uses useParallelMetadata which makes parallel calls
       const callTimes = [];
       
       getStandardizedBreeds.mockImplementation(() => {
@@ -128,12 +128,12 @@ describe("API Optimization Tests", () => {
       });
 
       // Check that calls were made in parallel (within 100ms of each other)
-      const firstCallTime = callTimes[0].time;
+      const firstCallTime = callTimes[0]?.time || Date.now();
       const parallelCalls = callTimes.filter(call => 
         Math.abs(call.time - firstCallTime) < 100
       );
 
-      // This should fail initially since current implementation is sequential
+      // With useParallelMetadata, calls should be parallel
       expect(parallelCalls.length).toBeGreaterThanOrEqual(3);
     });
   });
@@ -157,8 +157,7 @@ describe("API Optimization Tests", () => {
         });
       });
 
-      // These should fail initially - we need to implement caching
-      // Each API should only be called once due to caching
+      // With useParallelMetadata's cache, APIs should be called only once
       expect(getStandardizedBreeds).toHaveBeenCalledTimes(1);
       expect(getLocationCountries).toHaveBeenCalledTimes(1);
       expect(getAvailableCountries).toHaveBeenCalledTimes(1);
@@ -167,7 +166,6 @@ describe("API Optimization Tests", () => {
 
     test("FAILING TEST: should provide cache expiration mechanism", async () => {
       // Mock Date.now to control cache expiration
-      const originalDateNow = Date.now;
       let mockTime = 1000000000000; // Fixed timestamp
       
       jest.spyOn(Date, 'now').mockImplementation(() => mockTime);
@@ -192,7 +190,7 @@ describe("API Optimization Tests", () => {
         });
       });
 
-      // This should fail initially - we need cache expiration
+      // With cache expiration, APIs should be called twice
       expect(getStandardizedBreeds).toHaveBeenCalledTimes(2);
       
       Date.now.mockRestore();
