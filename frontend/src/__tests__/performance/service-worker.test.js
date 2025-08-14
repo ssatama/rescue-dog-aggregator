@@ -48,21 +48,27 @@ describe('Service Worker for Offline Caching', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    delete global.navigator;
   });
 
   describe('Phase 3: Service Worker Implementation', () => {
     test('FAILING TEST: should register service worker', async () => {
       // Mock navigator.serviceWorker
-      global.navigator = {
-        serviceWorker: {
-          register: jest.fn().mockResolvedValue({
-            installing: null,
-            waiting: null,
-            active: { state: 'activated' }
-          }),
-          ready: Promise.resolve()
-        }
+      const mockRegistration = {
+        installing: null,
+        waiting: null,
+        active: { state: 'activated' }
       };
+      
+      Object.defineProperty(global, 'navigator', {
+        value: {
+          serviceWorker: {
+            register: jest.fn().mockResolvedValue(mockRegistration),
+            ready: Promise.resolve()
+          }
+        },
+        writable: true
+      });
 
       // Attempt to register service worker
       const registration = await navigator.serviceWorker.register('/sw.js');
@@ -101,8 +107,13 @@ describe('Service Worker for Offline Caching', () => {
     });
 
     test('FAILING TEST: should use cache-first strategy for static assets', async () => {
-      const cachedResponse = new Response('cached data');
-      mockCache.match.mockResolvedValue(cachedResponse);
+      const cachedResponse = {
+        ok: true,
+        status: 200,
+        text: jest.fn().mockResolvedValue('cached data'),
+        json: jest.fn().mockResolvedValue({})
+      };
+      global.caches.match.mockResolvedValue(cachedResponse);
 
       mockEvent.request.url = 'https://rescuedogs.me/_next/static/css/app.css';
 
@@ -122,7 +133,18 @@ describe('Service Worker for Offline Caching', () => {
     });
 
     test('FAILING TEST: should use network-first strategy for API calls', async () => {
-      const networkResponse = new Response('fresh data');
+      const networkResponse = {
+        ok: true,
+        status: 200,
+        text: jest.fn().mockResolvedValue('fresh data'),
+        json: jest.fn().mockResolvedValue({}),
+        clone: jest.fn().mockReturnValue({
+          ok: true,
+          status: 200,
+          text: jest.fn().mockResolvedValue('fresh data'),
+          json: jest.fn().mockResolvedValue({})
+        })
+      };
       global.fetch = jest.fn().mockResolvedValue(networkResponse);
       
       mockEvent.request.url = 'https://api.rescuedogs.me/api/animals';
@@ -151,8 +173,13 @@ describe('Service Worker for Offline Caching', () => {
     });
 
     test('FAILING TEST: should fall back to cache when offline', async () => {
-      const cachedResponse = new Response('cached data');
-      mockCache.match.mockResolvedValue(cachedResponse);
+      const cachedResponse = {
+        ok: true,
+        status: 200,
+        text: jest.fn().mockResolvedValue('cached data'),
+        json: jest.fn().mockResolvedValue({})
+      };
+      global.caches.match.mockResolvedValue(cachedResponse);
       
       // Simulate network failure
       global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
@@ -179,10 +206,26 @@ describe('Service Worker for Offline Caching', () => {
     });
 
     test('FAILING TEST: should update cache in background', async () => {
-      const cachedResponse = new Response('old data');
-      const freshResponse = new Response('fresh data');
+      const cachedResponse = {
+        ok: true,
+        status: 200,
+        text: jest.fn().mockResolvedValue('old data'),
+        json: jest.fn().mockResolvedValue({})
+      };
+      const freshResponse = {
+        ok: true,
+        status: 200,
+        text: jest.fn().mockResolvedValue('fresh data'),
+        json: jest.fn().mockResolvedValue({}),
+        clone: jest.fn().mockReturnValue({
+          ok: true,
+          status: 200,
+          text: jest.fn().mockResolvedValue('fresh data'),
+          json: jest.fn().mockResolvedValue({})
+        })
+      };
       
-      mockCache.match.mockResolvedValue(cachedResponse);
+      global.caches.match.mockResolvedValue(cachedResponse);
       global.fetch = jest.fn().mockResolvedValue(freshResponse);
 
       // Stale-while-revalidate strategy

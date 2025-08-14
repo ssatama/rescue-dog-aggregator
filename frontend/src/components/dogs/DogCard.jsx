@@ -76,7 +76,7 @@ const DogCard = React.memo(function DogCard({
   return (
     <Card
       ref={cardRef}
-      data-testid="dog-card"
+      data-testid={dog?.id ? `dog-card-${dog.id}` : "dog-card"}
       data-breed={breed}
       data-size={standardizedSize}
       data-age={ageCategory}

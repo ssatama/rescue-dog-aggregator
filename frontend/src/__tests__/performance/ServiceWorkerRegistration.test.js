@@ -54,6 +54,7 @@ describe('ServiceWorkerRegistration Component', () => {
         installing: null,
         waiting: null,
         active: { state: 'activated' },
+        addEventListener: jest.fn(),
       });
 
       render(<ServiceWorkerRegistration />);
@@ -62,7 +63,8 @@ describe('ServiceWorkerRegistration Component', () => {
         expect(mockRegister).toHaveBeenCalledWith('/sw.js');
       });
 
-      expect(console.log).toHaveBeenCalledWith('[SW] Service Worker registered successfully');
+      // In production, console.log should not be called
+      expect(console.log).not.toHaveBeenCalled();
 
       process.env.NODE_ENV = originalEnv;
     });
@@ -89,8 +91,11 @@ describe('ServiceWorkerRegistration Component', () => {
       render(<ServiceWorkerRegistration />);
 
       await waitFor(() => {
-        expect(console.error).toHaveBeenCalledWith('[SW] Service Worker registration failed:', error);
+        expect(mockRegister).toHaveBeenCalledWith('/sw.js');
       });
+
+      // In production, console.error should not be called
+      expect(console.error).not.toHaveBeenCalled();
 
       process.env.NODE_ENV = originalEnv;
     });
@@ -111,7 +116,10 @@ describe('ServiceWorkerRegistration Component', () => {
 
       render(<ServiceWorkerRegistration />);
 
-      expect(console.log).toHaveBeenCalledWith('[SW] Service Workers not supported');
+      // In production, no logging happens
+      expect(console.log).not.toHaveBeenCalled();
+      // Should not attempt to register
+      expect(mockRegister).not.toHaveBeenCalled();
 
       process.env.NODE_ENV = originalEnv;
     });

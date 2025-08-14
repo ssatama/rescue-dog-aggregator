@@ -59,7 +59,8 @@ export default function useProgressiveLoading(options = {}) {
         observerRef.current.disconnect();
       }
     };
-  }, [handleIntersection, rootMargin, threshold]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rootMargin, threshold]); // Exclude handleIntersection to prevent recreation
 
   return {
     ref,

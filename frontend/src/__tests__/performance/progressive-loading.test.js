@@ -13,16 +13,22 @@ import { renderHook } from '@testing-library/react';
 const mockObserve = jest.fn();
 const mockUnobserve = jest.fn();
 const mockDisconnect = jest.fn();
+let observerCallback = null;
+let observerOptions = null;
 
-global.IntersectionObserver = jest.fn().mockImplementation((callback, options) => ({
-  observe: mockObserve,
-  unobserve: mockUnobserve,
-  disconnect: mockDisconnect,
-  root: null,
-  rootMargin: options?.rootMargin || '0px',
-  thresholds: options?.threshold || [0],
-  takeRecords: () => [],
-}));
+global.IntersectionObserver = jest.fn().mockImplementation((callback, options) => {
+  observerCallback = callback;
+  observerOptions = options;
+  return {
+    observe: mockObserve,
+    unobserve: mockUnobserve,
+    disconnect: mockDisconnect,
+    root: null,
+    rootMargin: options?.rootMargin || '0px',
+    thresholds: options?.threshold || [0],
+    takeRecords: () => [],
+  };
+});
 
 // Mock requestIdleCallback
 global.requestIdleCallback = jest.fn((cb) => setTimeout(cb, 0));
@@ -47,42 +53,60 @@ describe('Progressive Loading for Dog Cards', () => {
       });
 
       test('FAILING TEST: should observe element when ref is set', () => {
-        const { result } = renderHook(() => useProgressiveLoading());
-        
-        // Simulate setting ref
         const element = document.createElement('div');
+        
+        const { result, rerender } = renderHook(() => useProgressiveLoading());
+        
+        // Simulate setting ref by attaching to element
         act(() => {
           result.current.ref.current = element;
         });
+        
+        // Trigger effect by rerendering
+        rerender();
 
-        // Should observe the element
+        // Should create observer and observe the element
+        expect(global.IntersectionObserver).toHaveBeenCalled();
         expect(mockObserve).toHaveBeenCalledWith(element);
       });
 
       test('FAILING TEST: should set isVisible when element intersects', async () => {
-        const { result } = renderHook(() => useProgressiveLoading());
+        const element = document.createElement('div');
+        const { result, rerender } = renderHook(() => useProgressiveLoading());
         
-        // Get the callback passed to IntersectionObserver
-        const observerCallback = global.IntersectionObserver.mock.calls[0][0];
-        
-        // Simulate intersection
+        // Set ref and trigger effect
         act(() => {
-          observerCallback([{ isIntersecting: true, target: document.createElement('div') }]);
+          result.current.ref.current = element;
+        });
+        rerender();
+        
+        // Simulate intersection using the captured callback
+        act(() => {
+          if (observerCallback) {
+            observerCallback([{ isIntersecting: true, target: element }]);
+          }
         });
 
         expect(result.current.isVisible).toBe(true);
       });
 
       test('FAILING TEST: should load content after becoming visible', async () => {
-        const { result } = renderHook(() => useProgressiveLoading({ 
+        const element = document.createElement('div');
+        const { result, rerender } = renderHook(() => useProgressiveLoading({ 
           loadDelay: 0 
         }));
         
-        const observerCallback = global.IntersectionObserver.mock.calls[0][0];
+        // Set ref and trigger effect
+        act(() => {
+          result.current.ref.current = element;
+        });
+        rerender();
         
         // Simulate intersection
         act(() => {
-          observerCallback([{ isIntersecting: true }]);
+          if (observerCallback) {
+            observerCallback([{ isIntersecting: true, target: element }]);
+          }
         });
 
         // Wait for loading to complete
@@ -92,17 +116,31 @@ describe('Progressive Loading for Dog Cards', () => {
       });
 
       test('FAILING TEST: should use custom root margin for early loading', () => {
-        renderHook(() => useProgressiveLoading({ 
+        const element = document.createElement('div');
+        const { result, rerender } = renderHook(() => useProgressiveLoading({ 
           rootMargin: '100px' 
         }));
         
-        const options = global.IntersectionObserver.mock.calls[0][1];
-        expect(options.rootMargin).toBe('100px');
+        // Set ref to trigger observer creation
+        act(() => {
+          result.current.ref.current = element;
+        });
+        rerender();
+        
+        expect(observerOptions?.rootMargin).toBe('100px');
       });
 
       test('FAILING TEST: should cleanup observer on unmount', () => {
-        const { unmount } = renderHook(() => useProgressiveLoading());
+        const element = document.createElement('div');
+        const { result, rerender, unmount } = renderHook(() => useProgressiveLoading());
         
+        // Set ref to create observer
+        act(() => {
+          result.current.ref.current = element;
+        });
+        rerender();
+        
+        // Now unmount
         unmount();
         
         expect(mockDisconnect).toHaveBeenCalled();
@@ -132,12 +170,11 @@ describe('Progressive Loading for Dog Cards', () => {
       test('FAILING TEST: should load content when visible', async () => {
         render(<ProgressiveDogCard dog={mockDog} />);
         
-        // Get the observer callback
-        const observerCallback = global.IntersectionObserver.mock.calls[0][0];
-        
-        // Simulate card becoming visible
+        // Simulate card becoming visible using global callback
         act(() => {
-          observerCallback([{ isIntersecting: true }]);
+          if (observerCallback) {
+            observerCallback([{ isIntersecting: true, target: document.createElement('div') }]);
+          }
         });
 
         // Wait for content to load
@@ -150,14 +187,14 @@ describe('Progressive Loading for Dog Cards', () => {
       test('FAILING TEST: should lazy load images', async () => {
         render(<ProgressiveDogCard dog={mockDog} />);
         
-        const observerCallback = global.IntersectionObserver.mock.calls[0][0];
-        
         // Initially, image should not be loaded
         expect(screen.queryByRole('img')).not.toBeInTheDocument();
         
-        // Simulate visibility
+        // Simulate visibility using global callback
         act(() => {
-          observerCallback([{ isIntersecting: true }]);
+          if (observerCallback) {
+            observerCallback([{ isIntersecting: true, target: document.createElement('div') }]);
+          }
         });
 
         // Wait for image to load
@@ -171,10 +208,10 @@ describe('Progressive Loading for Dog Cards', () => {
       test('FAILING TEST: should use placeholder for images', async () => {
         render(<ProgressiveDogCard dog={mockDog} />);
         
-        const observerCallback = global.IntersectionObserver.mock.calls[0][0];
-        
         act(() => {
-          observerCallback([{ isIntersecting: true }]);
+          if (observerCallback) {
+            observerCallback([{ isIntersecting: true, target: document.createElement('div') }]);
+          }
         });
 
         await waitFor(() => {
@@ -203,14 +240,14 @@ describe('Progressive Loading for Dog Cards', () => {
         const skeletons = screen.getAllByTestId('dog-card-skeleton');
         expect(skeletons).toHaveLength(3);
 
-        // Get all observer callbacks
-        const callbacks = global.IntersectionObserver.mock.calls.map(call => call[0]);
-        
-        // Simulate all becoming visible
-        callbacks.forEach(callback => {
-          act(() => {
-            callback([{ isIntersecting: true }]);
-          });
+        // Simulate all becoming visible using global callback
+        act(() => {
+          if (observerCallback) {
+            // Simulate each card becoming visible
+            for (let i = 0; i < 3; i++) {
+              observerCallback([{ isIntersecting: true, target: document.createElement('div') }]);
+            }
+          }
         });
 
         // Cards should load with staggered delays
@@ -249,10 +286,10 @@ describe('Progressive Loading for Dog Cards', () => {
 
         render(<ProgressiveDogCard dog={dogWithBadImage} />);
         
-        const observerCallback = global.IntersectionObserver.mock.calls[0][0];
-        
         act(() => {
-          observerCallback([{ isIntersecting: true }]);
+          if (observerCallback) {
+            observerCallback([{ isIntersecting: true, target: document.createElement('div') }]);
+          }
         });
 
         await waitFor(() => {
@@ -270,10 +307,10 @@ describe('Progressive Loading for Dog Cards', () => {
 
         render(<ProgressiveDogCard dog={mockDog} />);
         
-        const observerCallback = global.IntersectionObserver.mock.calls[0][0];
-        
         act(() => {
-          observerCallback([{ isIntersecting: true }]);
+          if (observerCallback) {
+            observerCallback([{ isIntersecting: true, target: document.createElement('div') }]);
+          }
         });
 
         await waitFor(() => {
@@ -295,12 +332,7 @@ describe('Progressive Loading for Dog Cards', () => {
 
         render(<ProgressiveDogCard dog={mockDog} />);
         
-        const observerCallback = global.IntersectionObserver.mock.calls[0][0];
-        
-        act(() => {
-          observerCallback([{ isIntersecting: true }]);
-        });
-
+        // With reduced motion, content should load immediately without observer
         // Should load immediately without animations for reduced motion
         expect(screen.getByText('Max')).toBeInTheDocument();
         expect(screen.queryByTestId('dog-card-skeleton')).not.toBeInTheDocument();

@@ -67,9 +67,7 @@ export default function ProgressiveDogCard({ dog, index = 0, priority = false })
   return (
     <div ref={ref} className="progressive-dog-card">
       {!shouldRender ? (
-        <div data-testid="dog-card-skeleton">
-          <DogCardSkeleton />
-        </div>
+        <DogCardSkeleton />
       ) : (
         <DogCard 
           dog={dog}
