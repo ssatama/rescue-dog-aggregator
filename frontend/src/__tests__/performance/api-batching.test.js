@@ -3,7 +3,7 @@
  * Testing the core functionality without complex component dependencies
  */
 
-import { 
+import {
   getStandardizedBreeds,
   getLocationCountries,
   getAvailableCountries,
@@ -22,33 +22,33 @@ describe("API Batching Performance Tests", () => {
   describe("TDD: Sequential vs Parallel API Calls", () => {
     test("FAILING TEST: should demonstrate current sequential behavior", async () => {
       const callTimes = [];
-      
+
       // Mock implementations that track call times
       getStandardizedBreeds.mockImplementation(() => {
-        callTimes.push({ api: 'breeds', time: Date.now() });
-        return new Promise(resolve => 
-          setTimeout(() => resolve(['Labrador', 'Poodle']), 100)
+        callTimes.push({ api: "breeds", time: Date.now() });
+        return new Promise((resolve) =>
+          setTimeout(() => resolve(["Labrador", "Poodle"]), 100),
         );
       });
-      
+
       getLocationCountries.mockImplementation(() => {
-        callTimes.push({ api: 'locations', time: Date.now() });
-        return new Promise(resolve => 
-          setTimeout(() => resolve(['Turkey', 'USA']), 100)
+        callTimes.push({ api: "locations", time: Date.now() });
+        return new Promise((resolve) =>
+          setTimeout(() => resolve(["Turkey", "USA"]), 100),
         );
       });
-      
+
       getAvailableCountries.mockImplementation(() => {
-        callTimes.push({ api: 'available', time: Date.now() });
-        return new Promise(resolve => 
-          setTimeout(() => resolve(['Germany', 'UK']), 100)
+        callTimes.push({ api: "available", time: Date.now() });
+        return new Promise((resolve) =>
+          setTimeout(() => resolve(["Germany", "UK"]), 100),
         );
       });
-      
+
       getOrganizations.mockImplementation(() => {
-        callTimes.push({ api: 'orgs', time: Date.now() });
-        return new Promise(resolve => 
-          setTimeout(() => resolve([{ id: 1, name: 'Test Org' }]), 100)
+        callTimes.push({ api: "orgs", time: Date.now() });
+        return new Promise((resolve) =>
+          setTimeout(() => resolve([{ id: 1, name: "Test Org" }]), 100),
         );
       });
 
@@ -66,39 +66,39 @@ describe("API Batching Performance Tests", () => {
 
       // Calls should be sequential (each starts after previous completes)
       for (let i = 1; i < callTimes.length; i++) {
-        expect(callTimes[i].time - callTimes[i-1].time).toBeGreaterThan(90);
+        expect(callTimes[i].time - callTimes[i - 1].time).toBeGreaterThan(90);
       }
     });
 
     test("PASSING TEST: parallel calls should be faster", async () => {
       // Same mock setup
       const callTimes = [];
-      
+
       getStandardizedBreeds.mockImplementation(() => {
-        callTimes.push({ api: 'breeds', time: Date.now() });
-        return new Promise(resolve => 
-          setTimeout(() => resolve(['Labrador', 'Poodle']), 100)
+        callTimes.push({ api: "breeds", time: Date.now() });
+        return new Promise((resolve) =>
+          setTimeout(() => resolve(["Labrador", "Poodle"]), 100),
         );
       });
-      
+
       getLocationCountries.mockImplementation(() => {
-        callTimes.push({ api: 'locations', time: Date.now() });
-        return new Promise(resolve => 
-          setTimeout(() => resolve(['Turkey', 'USA']), 100)
+        callTimes.push({ api: "locations", time: Date.now() });
+        return new Promise((resolve) =>
+          setTimeout(() => resolve(["Turkey", "USA"]), 100),
         );
       });
-      
+
       getAvailableCountries.mockImplementation(() => {
-        callTimes.push({ api: 'available', time: Date.now() });
-        return new Promise(resolve => 
-          setTimeout(() => resolve(['Germany', 'UK']), 100)
+        callTimes.push({ api: "available", time: Date.now() });
+        return new Promise((resolve) =>
+          setTimeout(() => resolve(["Germany", "UK"]), 100),
         );
       });
-      
+
       getOrganizations.mockImplementation(() => {
-        callTimes.push({ api: 'orgs', time: Date.now() });
-        return new Promise(resolve => 
-          setTimeout(() => resolve([{ id: 1, name: 'Test Org' }]), 100)
+        callTimes.push({ api: "orgs", time: Date.now() });
+        return new Promise((resolve) =>
+          setTimeout(() => resolve([{ id: 1, name: "Test Org" }]), 100),
         );
       });
 
@@ -108,7 +108,7 @@ describe("API Batching Performance Tests", () => {
         getStandardizedBreeds(),
         getLocationCountries(),
         getAvailableCountries(),
-        getOrganizations()
+        getOrganizations(),
       ]);
       const endTime = Date.now();
 
@@ -118,7 +118,7 @@ describe("API Batching Performance Tests", () => {
 
       // All calls should start nearly simultaneously
       const firstCallTime = callTimes[0].time;
-      callTimes.forEach(call => {
+      callTimes.forEach((call) => {
         expect(Math.abs(call.time - firstCallTime)).toBeLessThan(50);
       });
     });
@@ -136,39 +136,39 @@ describe("API Batching Performance Tests", () => {
     const getCacheKey = (key, params = {}) => {
       return `${key}-${JSON.stringify(params)}`;
     };
-    
+
     const getFromCache = (cacheKey) => {
       const cached = mockCache.get(cacheKey);
       const timeout = mockCacheTimeout.get(cacheKey);
-      
+
       if (cached && timeout && Date.now() < timeout) {
         return cached;
       }
-      
+
       if (cached) {
         mockCache.delete(cacheKey);
         mockCacheTimeout.delete(cacheKey);
       }
-      
+
       return null;
     };
-    
+
     const setCache = (cacheKey, data, duration = 5 * 60 * 1000) => {
       mockCache.set(cacheKey, data);
       mockCacheTimeout.set(cacheKey, Date.now() + duration);
     };
 
     test("FAILING TEST: cache should prevent duplicate API calls", async () => {
-      const mockData = ['Labrador', 'Poodle'];
-      
+      const mockData = ["Labrador", "Poodle"];
+
       getStandardizedBreeds
         .mockResolvedValueOnce(mockData)
         .mockResolvedValueOnce(mockData);
 
       // First call
-      const cacheKey = getCacheKey('breeds');
+      const cacheKey = getCacheKey("breeds");
       let cachedData = getFromCache(cacheKey);
-      
+
       let result1;
       if (!cachedData) {
         result1 = await getStandardizedBreeds();
@@ -189,27 +189,27 @@ describe("API Batching Performance Tests", () => {
 
       expect(result1).toEqual(mockData);
       expect(result2).toEqual(mockData);
-      
+
       // Should only call API once due to caching
       // This will fail initially without cache implementation
       expect(getStandardizedBreeds).toHaveBeenCalledTimes(1);
     });
 
     test("FAILING TEST: cache should expire after timeout", async () => {
-      const mockData = ['Labrador', 'Poodle'];
-      
+      const mockData = ["Labrador", "Poodle"];
+
       // Mock Date.now for cache expiration testing
       const originalDateNow = Date.now;
       let mockTime = 1000000000000;
-      
-      jest.spyOn(Date, 'now').mockImplementation(() => mockTime);
+
+      jest.spyOn(Date, "now").mockImplementation(() => mockTime);
 
       getStandardizedBreeds
         .mockResolvedValueOnce(mockData)
         .mockResolvedValueOnce(mockData);
 
       // First call
-      const cacheKey = getCacheKey('breeds');
+      const cacheKey = getCacheKey("breeds");
       const result1 = await getStandardizedBreeds();
       setCache(cacheKey, result1);
 
@@ -221,13 +221,13 @@ describe("API Batching Performance Tests", () => {
       expect(cachedData).toBeNull(); // Cache should be expired
 
       const result2 = await getStandardizedBreeds();
-      
+
       expect(result1).toEqual(mockData);
       expect(result2).toEqual(mockData);
-      
+
       // Should call API twice due to cache expiration
       expect(getStandardizedBreeds).toHaveBeenCalledTimes(2);
-      
+
       Date.now.mockRestore();
     });
   });
@@ -238,7 +238,7 @@ describe("API Batching Performance Tests", () => {
       const loadingStates = {
         metadata: true,
         dogs: false,
-        filterCounts: false
+        filterCounts: false,
       };
 
       // Simulate metadata loading completion
@@ -251,10 +251,10 @@ describe("API Batching Performance Tests", () => {
     test("should allow non-blocking loading patterns", async () => {
       // Test that we can start UI rendering before metadata completes
       const uiRenderTime = Date.now();
-      
+
       // Simulate slow metadata loading
-      const metadataPromise = new Promise(resolve => 
-        setTimeout(() => resolve(['data']), 500)
+      const metadataPromise = new Promise((resolve) =>
+        setTimeout(() => resolve(["data"]), 500),
       );
 
       // UI should render immediately
@@ -263,7 +263,7 @@ describe("API Batching Performance Tests", () => {
 
       // Metadata can complete later
       const result = await metadataPromise;
-      expect(result).toEqual(['data']);
+      expect(result).toEqual(["data"]);
     });
   });
 });

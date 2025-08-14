@@ -2,9 +2,9 @@
  * Hook for debounced search input
  * Phase 2 Implementation for Performance Optimization
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 
-export function useDebouncedSearch(initialValue = '', delay = 300) {
+export function useDebouncedSearch(initialValue = "", delay = 300) {
   const [searchValue, setSearchValue] = useState(initialValue);
   const [debouncedValue, setDebouncedValue] = useState(initialValue);
 
@@ -23,8 +23,8 @@ export function useDebouncedSearch(initialValue = '', delay = 300) {
   }, []);
 
   const clearSearch = useCallback(() => {
-    setSearchValue('');
-    setDebouncedValue('');
+    setSearchValue("");
+    setDebouncedValue("");
   }, []);
 
   return {
@@ -32,6 +32,6 @@ export function useDebouncedSearch(initialValue = '', delay = 300) {
     debouncedValue,
     handleSearchChange,
     clearSearch,
-    setSearchValue
+    setSearchValue,
   };
 }

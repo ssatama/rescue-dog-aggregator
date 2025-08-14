@@ -48,17 +48,18 @@ jest.mock("../../hooks/useParallelMetadata", () => ({
   useParallelMetadata: () => {
     const [breeds, setBreeds] = require("react").useState([]);
     const [countries, setCountries] = require("react").useState([]);
-    const [availableCountries, setAvailableCountries] = require("react").useState([]);
+    const [availableCountries, setAvailableCountries] =
+      require("react").useState([]);
     const [organizations, setOrganizations] = require("react").useState([]);
     const [isLoading, setIsLoading] = require("react").useState(true);
-    
+
     require("react").useEffect(() => {
       const loadData = async () => {
         setIsLoading(true);
-        
+
         // Check cache first
         const now = Date.now();
-        if (metadataCache && cacheTime && (now - cacheTime < CACHE_DURATION)) {
+        if (metadataCache && cacheTime && now - cacheTime < CACHE_DURATION) {
           setBreeds(metadataCache.breeds || []);
           setCountries(metadataCache.countries || []);
           setAvailableCountries(metadataCache.availableCountries || []);
@@ -66,39 +67,40 @@ jest.mock("../../hooks/useParallelMetadata", () => ({
           setIsLoading(false);
           return;
         }
-        
+
         const services = require("../../services/animalsService");
         const orgService = require("../../services/organizationsService");
-        
+
         // Make parallel calls
         const promises = [
           services.getStandardizedBreeds(),
           services.getLocationCountries(),
           services.getAvailableCountries(),
-          orgService.getOrganizations()
+          orgService.getOrganizations(),
         ];
-        
-        const [breedsData, countriesData, availableData, orgsData] = await Promise.all(promises);
-        
+
+        const [breedsData, countriesData, availableData, orgsData] =
+          await Promise.all(promises);
+
         // Cache the data
         metadataCache = {
           breeds: breedsData,
           countries: countriesData,
           availableCountries: availableData,
-          organizations: orgsData
+          organizations: orgsData,
         };
         cacheTime = Date.now();
-        
+
         setBreeds(breedsData || []);
         setCountries(countriesData || []);
         setAvailableCountries(availableData || []);
         setOrganizations(orgsData || []);
         setIsLoading(false);
       };
-      
+
       loadData();
     }, []);
-    
+
     // Return structure that DogsPageClient expects
     return {
       metadata: {
@@ -110,7 +112,7 @@ jest.mock("../../hooks/useParallelMetadata", () => ({
       metadataLoading: isLoading,
       metadataError: null,
     };
-  }
+  },
 }));
 
 const {
@@ -120,7 +122,9 @@ const {
   getAnimals,
   getFilterCounts,
 } = require("../../services/animalsService");
-const { getOrganizations: getOrgsService } = require("../../services/organizationsService");
+const {
+  getOrganizations: getOrgsService,
+} = require("../../services/organizationsService");
 
 describe("API Optimization Tests", () => {
   const mockBreeds = ["Labrador", "Golden Retriever", "Poodle"];
@@ -133,17 +137,17 @@ describe("API Optimization Tests", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Clear cache
     metadataCache = null;
     cacheTime = null;
-    
+
     // Setup default mock implementations
     getStandardizedBreeds.mockResolvedValue(mockBreeds);
     getLocationCountries.mockResolvedValue(mockLocationCountries);
     getAvailableCountries.mockResolvedValue(mockAvailableCountries);
     getOrgsService.mockResolvedValue(mockOrganizations);
-    
+
     // Mock other required services
     getAnimals.mockResolvedValue([]);
     getFilterCounts.mockResolvedValue({});
@@ -152,7 +156,7 @@ describe("API Optimization Tests", () => {
   describe("TDD: API Batching Tests", () => {
     test.skip("should batch metadata API calls for improved performance", async () => {
       const startTime = performance.now();
-      
+
       await act(async () => {
         render(<DogsPageClient />);
       });
@@ -177,24 +181,24 @@ describe("API Optimization Tests", () => {
     test("should make parallel API calls instead of sequential", async () => {
       // The implementation uses useParallelMetadata which makes parallel calls
       const callTimes = [];
-      
+
       getStandardizedBreeds.mockImplementation(() => {
-        callTimes.push({ api: 'breeds', time: Date.now() });
+        callTimes.push({ api: "breeds", time: Date.now() });
         return Promise.resolve(mockBreeds);
       });
-      
+
       getLocationCountries.mockImplementation(() => {
-        callTimes.push({ api: 'locations', time: Date.now() });
+        callTimes.push({ api: "locations", time: Date.now() });
         return Promise.resolve(mockLocationCountries);
       });
-      
+
       getAvailableCountries.mockImplementation(() => {
-        callTimes.push({ api: 'availableCountries', time: Date.now() });
+        callTimes.push({ api: "availableCountries", time: Date.now() });
         return Promise.resolve(mockAvailableCountries);
       });
-      
+
       getOrgsService.mockImplementation(() => {
-        callTimes.push({ api: 'organizations', time: Date.now() });
+        callTimes.push({ api: "organizations", time: Date.now() });
         return Promise.resolve(mockOrganizations);
       });
 
@@ -208,8 +212,8 @@ describe("API Optimization Tests", () => {
 
       // Check that calls were made in parallel (within 100ms of each other)
       const firstCallTime = callTimes[0]?.time || Date.now();
-      const parallelCalls = callTimes.filter(call => 
-        Math.abs(call.time - firstCallTime) < 100
+      const parallelCalls = callTimes.filter(
+        (call) => Math.abs(call.time - firstCallTime) < 100,
       );
 
       // With useParallelMetadata, calls should be parallel
@@ -222,10 +226,13 @@ describe("API Optimization Tests", () => {
       // Skipping - cache implementation needs refactoring
       // First render
       const { unmount } = render(<DogsPageClient />);
-      
-      await waitFor(() => {
-        expect(screen.getByTestId("dogs-page-container")).toBeInTheDocument();
-      }, { timeout: 2000 });
+
+      await waitFor(
+        () => {
+          expect(screen.getByTestId("dogs-page-container")).toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
 
       // Verify first set of API calls
       expect(getStandardizedBreeds).toHaveBeenCalledTimes(1);
@@ -237,10 +244,13 @@ describe("API Optimization Tests", () => {
 
       // Second render - should use cached data
       render(<DogsPageClient />);
-      
-      await waitFor(() => {
-        expect(screen.getByTestId("dogs-page-container")).toBeInTheDocument();
-      }, { timeout: 2000 });
+
+      await waitFor(
+        () => {
+          expect(screen.getByTestId("dogs-page-container")).toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
 
       // With useParallelMetadata's cache, APIs should still be called only once
       expect(getStandardizedBreeds).toHaveBeenCalledTimes(1);
@@ -252,15 +262,18 @@ describe("API Optimization Tests", () => {
     test.skip("FAILING TEST: should provide cache expiration mechanism", async () => {
       // Mock Date.now to control cache expiration
       let mockTime = 1000000000000; // Fixed timestamp
-      
-      jest.spyOn(Date, 'now').mockImplementation(() => mockTime);
+
+      jest.spyOn(Date, "now").mockImplementation(() => mockTime);
 
       // First render
       const { unmount } = render(<DogsPageClient />);
-      
-      await waitFor(() => {
-        expect(screen.getByTestId("dogs-page-container")).toBeInTheDocument();
-      }, { timeout: 2000 });
+
+      await waitFor(
+        () => {
+          expect(screen.getByTestId("dogs-page-container")).toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
 
       // Verify first set of API calls
       expect(getStandardizedBreeds).toHaveBeenCalledTimes(1);
@@ -272,14 +285,17 @@ describe("API Optimization Tests", () => {
 
       // Second render - should refetch due to expired cache
       render(<DogsPageClient />);
-      
-      await waitFor(() => {
-        expect(screen.getByTestId("dogs-page-container")).toBeInTheDocument();
-      }, { timeout: 2000 });
+
+      await waitFor(
+        () => {
+          expect(screen.getByTestId("dogs-page-container")).toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
 
       // With cache expiration, APIs should be called twice
       expect(getStandardizedBreeds).toHaveBeenCalledTimes(2);
-      
+
       Date.now.mockRestore();
     });
   });
@@ -287,8 +303,9 @@ describe("API Optimization Tests", () => {
   describe("TDD: Loading State Optimization Tests", () => {
     test.skip("FAILING TEST: should show metadata loading state separately from dogs loading", async () => {
       // Delay metadata loading
-      getStandardizedBreeds.mockImplementation(() => 
-        new Promise(resolve => setTimeout(() => resolve(mockBreeds), 500))
+      getStandardizedBreeds.mockImplementation(
+        () =>
+          new Promise((resolve) => setTimeout(() => resolve(mockBreeds), 500)),
       );
 
       await act(async () => {
@@ -303,17 +320,21 @@ describe("API Optimization Tests", () => {
 
     test.skip("should not block rendering while metadata loads", async () => {
       // Simulate slow metadata loading
-      getStandardizedBreeds.mockImplementation(() => 
-        new Promise(resolve => setTimeout(() => resolve(mockBreeds), 1000))
+      getStandardizedBreeds.mockImplementation(
+        () =>
+          new Promise((resolve) => setTimeout(() => resolve(mockBreeds), 1000)),
       );
 
       render(<DogsPageClient />);
 
       // Page structure should render immediately
-      await waitFor(() => {
-        expect(screen.getByTestId("dogs-page-container")).toBeInTheDocument();
-      }, { timeout: 100 }); // Short timeout to verify immediate rendering
-      
+      await waitFor(
+        () => {
+          expect(screen.getByTestId("dogs-page-container")).toBeInTheDocument();
+        },
+        { timeout: 100 },
+      ); // Short timeout to verify immediate rendering
+
       expect(screen.getByTestId("mobile-filter-button")).toBeInTheDocument();
     });
   });

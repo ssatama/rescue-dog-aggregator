@@ -2,12 +2,12 @@
  * TDD Test Suite for Service Worker Registration Component
  * Tests the registration and update handling of the service worker
  */
-import React from 'react';
-import { render, waitFor, act } from '@testing-library/react';
-import ServiceWorkerRegistration from '../../components/ServiceWorkerRegistration';
-import '@testing-library/jest-dom';
+import React from "react";
+import { render, waitFor, act } from "@testing-library/react";
+import ServiceWorkerRegistration from "../../components/ServiceWorkerRegistration";
+import "@testing-library/jest-dom";
 
-describe('ServiceWorkerRegistration Component', () => {
+describe("ServiceWorkerRegistration Component", () => {
   let originalNavigator;
   let mockRegister;
   let mockServiceWorker;
@@ -24,7 +24,7 @@ describe('ServiceWorkerRegistration Component', () => {
     };
 
     // Mock navigator with service worker
-    Object.defineProperty(global, 'navigator', {
+    Object.defineProperty(global, "navigator", {
       value: {
         ...originalNavigator,
         serviceWorker: mockServiceWorker,
@@ -33,8 +33,8 @@ describe('ServiceWorkerRegistration Component', () => {
     });
 
     // Mock console methods
-    jest.spyOn(console, 'log').mockImplementation();
-    jest.spyOn(console, 'error').mockImplementation();
+    jest.spyOn(console, "log").mockImplementation();
+    jest.spyOn(console, "error").mockImplementation();
   });
 
   afterEach(() => {
@@ -44,23 +44,23 @@ describe('ServiceWorkerRegistration Component', () => {
     jest.restoreAllMocks();
   });
 
-  describe('Service Worker Registration', () => {
-    test('should register service worker on mount in production', async () => {
+  describe("Service Worker Registration", () => {
+    test("should register service worker on mount in production", async () => {
       // Mock production environment
       const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'production';
+      process.env.NODE_ENV = "production";
 
       mockRegister.mockResolvedValue({
         installing: null,
         waiting: null,
-        active: { state: 'activated' },
+        active: { state: "activated" },
         addEventListener: jest.fn(),
       });
 
       render(<ServiceWorkerRegistration />);
 
       await waitFor(() => {
-        expect(mockRegister).toHaveBeenCalledWith('/sw.js');
+        expect(mockRegister).toHaveBeenCalledWith("/sw.js");
       });
 
       // In production, console.log should not be called
@@ -69,10 +69,10 @@ describe('ServiceWorkerRegistration Component', () => {
       process.env.NODE_ENV = originalEnv;
     });
 
-    test('should not register service worker in development', () => {
+    test("should not register service worker in development", () => {
       // Mock development environment
       const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'development';
+      process.env.NODE_ENV = "development";
 
       render(<ServiceWorkerRegistration />);
 
@@ -81,17 +81,17 @@ describe('ServiceWorkerRegistration Component', () => {
       process.env.NODE_ENV = originalEnv;
     });
 
-    test('should handle registration errors gracefully', async () => {
+    test("should handle registration errors gracefully", async () => {
       const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'production';
+      process.env.NODE_ENV = "production";
 
-      const error = new Error('Registration failed');
+      const error = new Error("Registration failed");
       mockRegister.mockRejectedValue(error);
 
       render(<ServiceWorkerRegistration />);
 
       await waitFor(() => {
-        expect(mockRegister).toHaveBeenCalledWith('/sw.js');
+        expect(mockRegister).toHaveBeenCalledWith("/sw.js");
       });
 
       // In production, console.error should not be called
@@ -100,9 +100,9 @@ describe('ServiceWorkerRegistration Component', () => {
       process.env.NODE_ENV = originalEnv;
     });
 
-    test('should handle browsers without service worker support', () => {
+    test("should handle browsers without service worker support", () => {
       // Remove service worker from navigator
-      Object.defineProperty(global, 'navigator', {
+      Object.defineProperty(global, "navigator", {
         value: {
           ...originalNavigator,
           serviceWorker: undefined,
@@ -112,7 +112,7 @@ describe('ServiceWorkerRegistration Component', () => {
 
       // Mock production environment
       const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'production';
+      process.env.NODE_ENV = "production";
 
       render(<ServiceWorkerRegistration />);
 
@@ -124,15 +124,15 @@ describe('ServiceWorkerRegistration Component', () => {
       process.env.NODE_ENV = originalEnv;
     });
 
-    test('should handle service worker updates', async () => {
+    test("should handle service worker updates", async () => {
       const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'production';
+      process.env.NODE_ENV = "production";
 
       const mockUpdate = jest.fn();
       const registration = {
         installing: null,
         waiting: { postMessage: jest.fn() },
-        active: { state: 'activated' },
+        active: { state: "activated" },
         update: mockUpdate,
         addEventListener: jest.fn(),
       };
@@ -142,25 +142,28 @@ describe('ServiceWorkerRegistration Component', () => {
       render(<ServiceWorkerRegistration />);
 
       await waitFor(() => {
-        expect(mockRegister).toHaveBeenCalledWith('/sw.js');
+        expect(mockRegister).toHaveBeenCalledWith("/sw.js");
       });
 
       // Should listen for updates
-      expect(registration.addEventListener).toHaveBeenCalledWith('updatefound', expect.any(Function));
+      expect(registration.addEventListener).toHaveBeenCalledWith(
+        "updatefound",
+        expect.any(Function),
+      );
 
       process.env.NODE_ENV = originalEnv;
     });
 
-    test('should skip waiting when new service worker is available', async () => {
+    test("should skip waiting when new service worker is available", async () => {
       const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'production';
+      process.env.NODE_ENV = "production";
 
       const mockPostMessage = jest.fn();
       const registration = {
         installing: null,
-        waiting: { 
+        waiting: {
           postMessage: mockPostMessage,
-          state: 'installed'
+          state: "installed",
         },
         active: null,
         addEventListener: jest.fn(),
@@ -171,21 +174,21 @@ describe('ServiceWorkerRegistration Component', () => {
       render(<ServiceWorkerRegistration />);
 
       await waitFor(() => {
-        expect(mockRegister).toHaveBeenCalledWith('/sw.js');
+        expect(mockRegister).toHaveBeenCalledWith("/sw.js");
       });
 
       // Should send skip waiting message to waiting worker
-      expect(mockPostMessage).toHaveBeenCalledWith({ action: 'skipWaiting' });
+      expect(mockPostMessage).toHaveBeenCalledWith({ action: "skipWaiting" });
 
       process.env.NODE_ENV = originalEnv;
     });
 
-    test('should reload page when service worker controller changes', async () => {
+    test("should reload page when service worker controller changes", async () => {
       const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'production';
+      process.env.NODE_ENV = "production";
 
       const mockReload = jest.fn();
-      Object.defineProperty(window, 'location', {
+      Object.defineProperty(window, "location", {
         value: { reload: mockReload },
         writable: true,
       });
@@ -193,7 +196,7 @@ describe('ServiceWorkerRegistration Component', () => {
       const registration = {
         installing: null,
         waiting: null,
-        active: { state: 'activated' },
+        active: { state: "activated" },
         addEventListener: jest.fn(),
       };
 
@@ -205,14 +208,18 @@ describe('ServiceWorkerRegistration Component', () => {
       render(<ServiceWorkerRegistration />);
 
       await waitFor(() => {
-        expect(mockRegister).toHaveBeenCalledWith('/sw.js');
+        expect(mockRegister).toHaveBeenCalledWith("/sw.js");
       });
 
       // Should listen for controller changes
-      expect(mockServiceWorker.addEventListener).toHaveBeenCalledWith('controllerchange', expect.any(Function));
+      expect(mockServiceWorker.addEventListener).toHaveBeenCalledWith(
+        "controllerchange",
+        expect.any(Function),
+      );
 
       // Simulate controller change
-      const controllerChangeHandler = mockServiceWorker.addEventListener.mock.calls[0][1];
+      const controllerChangeHandler =
+        mockServiceWorker.addEventListener.mock.calls[0][1];
       controllerChangeHandler();
 
       expect(mockReload).toHaveBeenCalled();
@@ -220,12 +227,12 @@ describe('ServiceWorkerRegistration Component', () => {
       process.env.NODE_ENV = originalEnv;
     });
 
-    test.skip('should check for updates periodically', async () => {
-      // Skipping: The setInterval is called inside an async function which makes it 
+    test.skip("should check for updates periodically", async () => {
+      // Skipping: The setInterval is called inside an async function which makes it
       // difficult to test reliably with fake timers. The functionality is simple enough
       // (setInterval calling registration.update()) that it can be verified manually.
       const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'production';
+      process.env.NODE_ENV = "production";
 
       jest.useFakeTimers();
 
@@ -233,7 +240,7 @@ describe('ServiceWorkerRegistration Component', () => {
       const registration = {
         installing: null,
         waiting: null,
-        active: { state: 'activated' },
+        active: { state: "activated" },
         update: mockUpdate,
         addEventListener: jest.fn(),
       };
@@ -244,7 +251,7 @@ describe('ServiceWorkerRegistration Component', () => {
 
       // Wait for registration to complete
       await waitFor(() => {
-        expect(mockRegister).toHaveBeenCalledWith('/sw.js');
+        expect(mockRegister).toHaveBeenCalledWith("/sw.js");
       });
 
       // Flush pending microtasks to ensure registration promise resolves
@@ -267,9 +274,9 @@ describe('ServiceWorkerRegistration Component', () => {
       process.env.NODE_ENV = originalEnv;
     });
 
-    test('should not render any visible UI', () => {
+    test("should not render any visible UI", () => {
       const { container } = render(<ServiceWorkerRegistration />);
-      
+
       // Component should not render anything visible
       expect(container.firstChild).toBeNull();
     });

@@ -187,7 +187,7 @@ describe("DogsPage Component", () => {
     await waitFor(() => {
       expect(screen.getByText("Dog Page 2-1")).toBeInTheDocument();
     });
-    
+
     expect(screen.getByText("Dog Page 2-10")).toBeInTheDocument();
 
     expect(getAnimals).toHaveBeenCalledTimes(2);

@@ -32,7 +32,6 @@ import { Badge } from "@/components/ui/badge";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
 import { BreadcrumbSchema } from "../../components/seo";
 
-
 export default function DogsPageClient() {
   const searchParams = useSearchParams();
 
@@ -45,7 +44,7 @@ export default function DogsPageClient() {
     clearFilter,
     activeFilterCount,
     resetTrigger,
-    apiParams
+    apiParams,
   } = useFilterState();
 
   // Use debounced search for better performance
@@ -54,7 +53,7 @@ export default function DogsPageClient() {
     debouncedValue: debouncedSearchQuery,
     handleSearchChange,
     clearSearch,
-    setSearchValue
+    setSearchValue,
   } = useDebouncedSearch(filters.searchQuery);
 
   const [dogs, setDogs] = useState([]);
@@ -65,12 +64,8 @@ export default function DogsPageClient() {
   const [loadingMore, setLoadingMore] = useState(false);
 
   // Use parallel metadata hook for optimized API calls
-  const { 
-    metadata, 
-    metadataLoading, 
-    metadataError 
-  } = useParallelMetadata();
-  
+  const { metadata, metadataLoading, metadataError } = useParallelMetadata();
+
   const [availableRegions, setAvailableRegions] = useState(["Any region"]);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [filterCounts, setFilterCounts] = useState(null);
@@ -91,9 +86,14 @@ export default function DogsPageClient() {
   // Fetch Available Regions
   useEffect(() => {
     const fetchRegions = async () => {
-      if (filters.availableCountryFilter && filters.availableCountryFilter !== "Any country") {
+      if (
+        filters.availableCountryFilter &&
+        filters.availableCountryFilter !== "Any country"
+      ) {
         try {
-          const regions = await getAvailableRegions(filters.availableCountryFilter);
+          const regions = await getAvailableRegions(
+            filters.availableCountryFilter,
+          );
           setAvailableRegions(["Any region", ...regions]);
         } catch (err) {
           reportError(err, {
@@ -104,7 +104,7 @@ export default function DogsPageClient() {
       } else {
         setAvailableRegions(["Any region"]);
       }
-      updateFilter('availableRegionFilter', "Any region");
+      updateFilter("availableRegionFilter", "Any region");
     };
     fetchRegions();
   }, [filters.availableCountryFilter, updateFilter]);
@@ -121,9 +121,9 @@ export default function DogsPageClient() {
       );
 
       if (organizationExists) {
-        updateFilter('organizationFilter', organizationIdParam);
+        updateFilter("organizationFilter", organizationIdParam);
       } else {
-        updateFilter('organizationFilter', "any");
+        updateFilter("organizationFilter", "any");
       }
     }
   }, [searchParams, metadata.organizations, updateFilter]);
@@ -175,11 +175,7 @@ export default function DogsPageClient() {
         });
       }
     },
-    [
-      apiParams,
-      debouncedSearchQuery,
-      resetTrigger,
-    ],
+    [apiParams, debouncedSearchQuery, resetTrigger],
   );
 
   // Fetch Filter Counts
@@ -201,11 +197,7 @@ export default function DogsPageClient() {
         setFilterCounts(null);
       });
     }
-  }, [
-    apiParams,
-    debouncedSearchQuery,
-    resetTrigger,
-  ]);
+  }, [apiParams, debouncedSearchQuery, resetTrigger]);
 
   // Trigger Fetch on Filter/Search/Reset Change
   useEffect(() => {
@@ -224,7 +216,7 @@ export default function DogsPageClient() {
 
   // Handle search change with debouncing
   useEffect(() => {
-    updateFilter('searchQuery', searchValue);
+    updateFilter("searchQuery", searchValue);
   }, [searchValue, updateFilter]);
 
   // Reset Filters wrapper - combines hook reset with local state
@@ -238,7 +230,7 @@ export default function DogsPageClient() {
 
   // Clear Individual Filter wrapper
   const handleClearFilter = (filterType) => {
-    if (filterType === 'search') {
+    if (filterType === "search") {
       clearSearch(); // From useDebouncedSearch hook
     }
     clearFilter(filterType); // From useFilterState hook
@@ -257,7 +249,10 @@ export default function DogsPageClient() {
     if (searchValue)
       activeFilters.push({ type: "search", label: `Search: "${searchValue}"` });
     if (filters.standardizedBreedFilter !== "Any breed")
-      activeFilters.push({ type: "breed", label: filters.standardizedBreedFilter });
+      activeFilters.push({
+        type: "breed",
+        label: filters.standardizedBreedFilter,
+      });
 
     if (filters.organizationFilter !== "any") {
       const sel = metadata.organizations.find(
@@ -269,7 +264,8 @@ export default function DogsPageClient() {
       });
     }
 
-    if (filters.sexFilter !== "Any") activeFilters.push({ type: "sex", label: filters.sexFilter });
+    if (filters.sexFilter !== "Any")
+      activeFilters.push({ type: "sex", label: filters.sexFilter });
     if (filters.sizeFilter !== "Any size")
       activeFilters.push({ type: "size", label: filters.sizeFilter });
     if (filters.ageCategoryFilter !== "Any age")
@@ -356,28 +352,40 @@ export default function DogsPageClient() {
               handleSearchChange={handleSearchChange}
               clearSearch={clearSearch}
               organizationFilter={filters.organizationFilter}
-              setOrganizationFilter={(value) => updateFilter('organizationFilter', value)}
+              setOrganizationFilter={(value) =>
+                updateFilter("organizationFilter", value)
+              }
               organizations={metadata.organizations}
               standardizedBreedFilter={filters.standardizedBreedFilter}
-              setStandardizedBreedFilter={(value) => updateFilter('standardizedBreedFilter', value)}
+              setStandardizedBreedFilter={(value) =>
+                updateFilter("standardizedBreedFilter", value)
+              }
               standardizedBreeds={metadata.standardizedBreeds}
               sexFilter={filters.sexFilter}
-              setSexFilter={(value) => updateFilter('sexFilter', value)}
+              setSexFilter={(value) => updateFilter("sexFilter", value)}
               sexOptions={sexOptions}
               sizeFilter={filters.sizeFilter}
-              setSizeFilter={(value) => updateFilter('sizeFilter', value)}
+              setSizeFilter={(value) => updateFilter("sizeFilter", value)}
               sizeOptions={sizeOptions}
               ageCategoryFilter={filters.ageCategoryFilter}
-              setAgeCategoryFilter={(value) => updateFilter('ageCategoryFilter', value)}
+              setAgeCategoryFilter={(value) =>
+                updateFilter("ageCategoryFilter", value)
+              }
               ageOptions={ageOptions}
               locationCountryFilter={filters.locationCountryFilter}
-              setLocationCountryFilter={(value) => updateFilter('locationCountryFilter', value)}
+              setLocationCountryFilter={(value) =>
+                updateFilter("locationCountryFilter", value)
+              }
               locationCountries={metadata.locationCountries}
               availableCountryFilter={filters.availableCountryFilter}
-              setAvailableCountryFilter={(value) => updateFilter('availableCountryFilter', value)}
+              setAvailableCountryFilter={(value) =>
+                updateFilter("availableCountryFilter", value)
+              }
               availableCountries={metadata.availableCountries}
               availableRegionFilter={filters.availableRegionFilter}
-              setAvailableRegionFilter={(value) => updateFilter('availableRegionFilter', value)}
+              setAvailableRegionFilter={(value) =>
+                updateFilter("availableRegionFilter", value)
+              }
               availableRegions={availableRegions}
               resetFilters={handleResetFilters}
               filterCounts={filterCounts}
@@ -412,25 +420,33 @@ export default function DogsPageClient() {
                 clearSearch={clearSearch}
                 // Organization
                 organizationFilter={filters.organizationFilter}
-                setOrganizationFilter={(value) => updateFilter('organizationFilter', value)}
+                setOrganizationFilter={(value) =>
+                  updateFilter("organizationFilter", value)
+                }
                 organizations={metadata.organizations}
                 // Breed
                 standardizedBreedFilter={filters.standardizedBreedFilter}
-                setStandardizedBreedFilter={(value) => updateFilter('standardizedBreedFilter', value)}
+                setStandardizedBreedFilter={(value) =>
+                  updateFilter("standardizedBreedFilter", value)
+                }
                 standardizedBreeds={metadata.standardizedBreeds}
                 // Pet Details
                 sexFilter={filters.sexFilter}
-                setSexFilter={(value) => updateFilter('sexFilter', value)}
+                setSexFilter={(value) => updateFilter("sexFilter", value)}
                 sexOptions={sexOptions}
                 sizeFilter={filters.sizeFilter}
-                setSizeFilter={(value) => updateFilter('sizeFilter', value)}
+                setSizeFilter={(value) => updateFilter("sizeFilter", value)}
                 sizeOptions={sizeOptions}
                 ageCategoryFilter={filters.ageCategoryFilter}
-                setAgeCategoryFilter={(value) => updateFilter('ageCategoryFilter', value)}
+                setAgeCategoryFilter={(value) =>
+                  updateFilter("ageCategoryFilter", value)
+                }
                 ageOptions={ageOptions}
                 // Location
                 availableCountryFilter={filters.availableCountryFilter}
-                setAvailableCountryFilter={(value) => updateFilter('availableCountryFilter', value)}
+                setAvailableCountryFilter={(value) =>
+                  updateFilter("availableCountryFilter", value)
+                }
                 availableCountries={metadata.availableCountries}
                 // Filter management
                 resetFilters={handleResetFilters}
@@ -440,7 +456,7 @@ export default function DogsPageClient() {
 
               {/* Metadata Loading Indicator */}
               {metadataLoading && (
-                <div 
+                <div
                   data-testid="metadata-loading"
                   className="mb-4 flex items-center gap-2 text-sm text-gray-600"
                 >
