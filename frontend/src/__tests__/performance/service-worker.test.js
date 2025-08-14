@@ -281,10 +281,14 @@ describe('Service Worker for Offline Caching', () => {
     test('FAILING TEST: should handle cache quota exceeded', async () => {
       const quotaError = new Error('QuotaExceededError');
       quotaError.name = 'QuotaExceededError';
-      mockCache.put.mockRejectedValue(quotaError);
+      mockCache.put.mockRejectedValueOnce(quotaError);
       
       const response = new Response('data');
+      response.clone = jest.fn().mockReturnValue(new Response('data'));
       global.fetch = jest.fn().mockResolvedValue(response);
+      
+      // Set up caches.keys to return some cache names
+      global.caches.keys.mockResolvedValue(['dynamic-cache-1', 'dynamic-cache-2', 'static-cache']);
 
       const fetchHandler = async (event) => {
         const response = await fetch(event.request);
@@ -310,8 +314,10 @@ describe('Service Worker for Offline Caching', () => {
       const result = await fetchHandler(mockEvent);
       
       expect(result).toBe(response);
-      expect(mockCache.put).toHaveBeenCalled();
+      expect(mockCache.put).toHaveBeenCalledWith(mockEvent.request, expect.any(Response));
       expect(global.caches.keys).toHaveBeenCalled();
+      expect(global.caches.delete).toHaveBeenCalledWith('dynamic-cache-1');
+      expect(global.caches.delete).toHaveBeenCalledWith('dynamic-cache-2');
     });
   });
 });

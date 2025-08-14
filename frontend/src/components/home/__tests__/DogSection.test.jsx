@@ -473,9 +473,9 @@ describe("DogSection", () => {
         () => {
           expect(getAnimalsByCuration).toHaveBeenCalledTimes(2);
           expect(screen.getByTestId("dog-grid")).toBeInTheDocument();
-          expect(screen.getAllByTestId("dog-card")).toHaveLength(
-            mockDogs.length,
-          );
+          // Dog cards now have dynamic testids like "dog-card-1", "dog-card-2", etc.
+          const dogCards = screen.getAllByTestId(/^dog-card-/);
+          expect(dogCards).toHaveLength(mockDogs.length);
         },
         { timeout: 5000 },
       );

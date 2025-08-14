@@ -243,6 +243,9 @@ describe('ServiceWorkerRegistration Component', () => {
         expect(mockRegister).toHaveBeenCalledWith('/sw.js');
       });
 
+      // Wait a tick for the async registration to complete and setInterval to be set up
+      await Promise.resolve();
+
       // Fast-forward 1 hour
       jest.advanceTimersByTime(60 * 60 * 1000);
 

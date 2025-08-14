@@ -152,14 +152,14 @@ describe("DogsPage Component", () => {
   test('loads more dogs when "Load More" button is clicked', async () => {
     const user = userEvent.setup();
     const initialDogs = Array.from({ length: 20 }, (_, i) =>
-      createMockDog(i + 1, `Dog Page 1-1-${i + 1}`),
+      createMockDog(i + 1, `Dog Page 1-${i + 1}`),
     );
     const moreDogs = Array.from({ length: 10 }, (_, i) =>
       createMockDog(i + 21, `Dog Page 2-${i + 1}`),
     );
 
-    getAnimals.mockResolvedValueOnce([...initialDogs]);
-    getAnimals.mockResolvedValueOnce([...moreDogs]);
+    getAnimals.mockResolvedValueOnce(initialDogs);
+    getAnimals.mockResolvedValueOnce(moreDogs);
 
     render(<DogsPage />);
 
@@ -168,22 +168,27 @@ describe("DogsPage Component", () => {
       expect(getAnimals).toHaveBeenCalled();
     });
 
+    // Wait for first dog to be rendered
+    await waitFor(() => {
+      expect(screen.getByText("Dog Page 1-1")).toBeInTheDocument();
+    });
+
+    // Check if we have a Load More button (only shows when there are 20 items)
     const loadMoreButton = await screen.findByRole("button", {
       name: /Load More Dogs/i,
     });
 
-    // check first and last initial cards
-    await waitFor(() => {
-      expect(screen.getByText("Dog Page 1-1-1")).toBeInTheDocument();
-    });
-    expect(screen.getByText("Dog Page 1-1-20")).toBeInTheDocument();
+    // Check last initial card is also rendered
+    expect(screen.getByText("Dog Page 1-20")).toBeInTheDocument();
 
     await user.click(loadMoreButton);
 
+    // Wait for new dogs to be loaded
     await waitFor(() => {
       expect(screen.getByText("Dog Page 2-1")).toBeInTheDocument();
-      expect(screen.getByText("Dog Page 2-10")).toBeInTheDocument();
     });
+    
+    expect(screen.getByText("Dog Page 2-10")).toBeInTheDocument();
 
     expect(getAnimals).toHaveBeenCalledTimes(2);
     expect(getAnimals).toHaveBeenNthCalledWith(
