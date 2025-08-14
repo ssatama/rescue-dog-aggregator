@@ -1,5 +1,6 @@
 import React from "react";
 import DogCard from "./DogCard";
+import ProgressiveDogCard from "./ProgressiveDogCard";
 import DogCardErrorBoundary from "../error/DogCardErrorBoundary";
 import DogCardSkeleton from "../ui/DogCardSkeleton";
 import EmptyState from "../ui/EmptyState";
@@ -72,15 +73,12 @@ const DogsGrid = React.memo(function DogsGrid({
           return null;
         }
 
-        // Calculate staggered animation delay with 300ms maximum
-        const animationDelay = Math.min(index * 50, 300);
-
         return (
           <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
-            <DogCard
+            <ProgressiveDogCard
               dog={dog}
+              index={index}
               priority={index < 4} // Prioritize loading for first 4 images
-              animationDelay={animationDelay} // Stagger animations with max limit
             />
           </DogCardErrorBoundary>
         );

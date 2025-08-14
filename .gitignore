@@ -202,3 +202,5 @@ requirements-dev.txt
 .serena/
 run-zen-mcp.sh
 .mcp.json
+reports/
+migrations/railway/versions/

@@ -27,6 +27,7 @@ const DogCard = React.memo(function DogCard({
   dog,
   priority = false,
   animationDelay = 0,
+  imageProps = {},
 }) {
   // Animation hooks
   const { ref: cardRef, isVisible } = useFadeInAnimation({
@@ -102,6 +103,7 @@ const DogCard = React.memo(function DogCard({
               className="w-full h-full"
               priority={priority}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              {...imageProps}
             />
 
             {/* NEW Badge for recent dogs */}

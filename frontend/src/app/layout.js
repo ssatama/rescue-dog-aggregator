@@ -3,6 +3,7 @@ import "./globals.css";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Analytics, SpeedInsights } from "@/components/analytics";
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 
 // Use Inter variable font with all required weights
 const inter = Inter({
@@ -68,6 +69,7 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-inter`}>
         <ThemeProvider>{children}</ThemeProvider>
+        <ServiceWorkerRegistration />
         <Analytics />
         <SpeedInsights />
       </body>
