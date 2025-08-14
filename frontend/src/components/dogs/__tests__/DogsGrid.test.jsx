@@ -21,7 +21,7 @@ jest.mock("../ProgressiveDogCard", () => {
 });
 
 // Mock DogCardErrorBoundary component
-jest.mock("../DogCardErrorBoundary", () => {
+jest.mock("../../error/DogCardErrorBoundary", () => {
   return function MockDogCardErrorBoundary({ children }) {
     return children;
   };

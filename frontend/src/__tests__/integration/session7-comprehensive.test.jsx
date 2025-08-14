@@ -106,7 +106,7 @@ describe("Session 7: Comprehensive Integration Tests", () => {
       await screen.findByText("Dog 1");
 
       // Check that elements have animation classes
-      const dogCards = screen.getAllByTestId("dog-card");
+      const dogCards = screen.getAllByTestId(/^dog-card-/);
       expect(dogCards[0]).toHaveClass("transition-shadow");
     });
   });
@@ -178,7 +178,7 @@ describe("Session 7: Comprehensive Integration Tests", () => {
 
       await screen.findByText("Dog 1");
 
-      const dogCards = screen.getAllByTestId("dog-card");
+      const dogCards = screen.getAllByTestId(/^dog-card-/);
       expect(dogCards[0]).toHaveClass("will-change-transform");
     });
 

@@ -20,7 +20,7 @@ describe("Session 10: Visual Consistency Validation", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      const card = screen.getByTestId("dog-card");
+      const card = screen.getByTestId("dog-card-1");
       // Should have consistent animation timing
       expect(card.className).toMatch(/duration-\d+/);
     });
@@ -93,7 +93,7 @@ describe("Session 10: Visual Consistency Validation", () => {
       };
 
       const { rerender } = render(<DogCard dog={mockDog} />);
-      const dogCard = screen.getByTestId("dog-card");
+      const dogCard = screen.getByTestId("dog-card-1");
       // Check that links within the card have focus ring classes
       const links = dogCard.querySelectorAll("a");
       const hasOrangeFocusRing = Array.from(links).some((link) =>
@@ -197,7 +197,7 @@ describe("Session 10: Visual Consistency Validation", () => {
       const mockOrg = { id: 1, name: "Shadow Test Org", total_dogs: 1 };
 
       const { rerender } = render(<DogCard dog={mockDog} />);
-      const dogCard = screen.getByTestId("dog-card");
+      const dogCard = screen.getByTestId("dog-card-1");
       expect(dogCard).toHaveClass("shadow-sm");
       expect(dogCard.className).toMatch(/hover:shadow-md/);
 

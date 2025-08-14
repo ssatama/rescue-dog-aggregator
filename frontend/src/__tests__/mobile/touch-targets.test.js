@@ -213,7 +213,7 @@ describe("Mobile Touch Targets Validation", () => {
     test("dog card should be tappable with adequate size", () => {
       render(<DogCard dog={mockDog} />);
 
-      const dogCard = screen.getByTestId("dog-card");
+      const dogCard = screen.getByTestId("dog-card-1");
       expect(validateTouchTarget(dogCard)).toBe(true);
     });
 

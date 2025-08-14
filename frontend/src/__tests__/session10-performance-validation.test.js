@@ -114,7 +114,7 @@ describe("Session 10: Performance Optimization Validation", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      const card = screen.getByTestId("dog-card");
+      const card = screen.getByTestId("dog-card-1");
       expect(card).toHaveClass("group"); // Enables hover animations
 
       // Verify the card has transition classes for smooth animations
@@ -187,7 +187,7 @@ describe("Session 10: Performance Optimization Validation", () => {
         render(<DogCard dog={mockDog} />);
       }).not.toThrow();
 
-      const dogCard = screen.getByTestId("dog-card");
+      const dogCard = screen.getByTestId("dog-card-1");
       expect(dogCard).toBeInTheDocument();
     });
   });

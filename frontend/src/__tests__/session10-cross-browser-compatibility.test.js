@@ -49,7 +49,7 @@ describe("Session 10: Cross-Browser Compatibility", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      const card = screen.getByTestId("dog-card");
+      const card = screen.getByTestId("dog-card-1");
       expect(card).toHaveClass("flex", "flex-col"); // Flexbox support
 
       const cardContent = screen.getByTestId("card-content");
@@ -136,7 +136,7 @@ describe("Session 10: Cross-Browser Compatibility", () => {
       const { container } = render(<DogCard dog={mockDog} />);
 
       // Test keyboard event handling (works in all browsers)
-      const card = screen.getByTestId("dog-card");
+      const card = screen.getByTestId("dog-card-1");
       fireEvent.keyDown(card, { key: "Enter" });
 
       // Should not crash
@@ -266,7 +266,7 @@ describe("Session 10: Cross-Browser Compatibility", () => {
       render(<DogCard dog={mockDog} />);
 
       // Component should render without issues even with reduced motion
-      const card = screen.getByTestId("dog-card");
+      const card = screen.getByTestId("dog-card-1");
       expect(card).toBeInTheDocument();
     });
 
@@ -279,7 +279,7 @@ describe("Session 10: Cross-Browser Compatibility", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      const card = screen.getByTestId("dog-card");
+      const card = screen.getByTestId("dog-card-1");
       // Should use transform for GPU acceleration
       expect(card.className).toMatch(/transition|transform|animate/);
     });
@@ -449,7 +449,7 @@ describe("Session 10: Cross-Browser Compatibility", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      const card = screen.getByTestId("dog-card");
+      const card = screen.getByTestId("dog-card-1");
       // Should use flexbox as fallback for grid layouts
       expect(card).toHaveClass("flex", "flex-col");
     });

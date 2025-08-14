@@ -189,7 +189,7 @@ describe("DogCard Component - Dark Mode Support", () => {
       const dog = getMockDog();
       renderWithDarkTheme(<DogCard dog={dog} />);
 
-      const dogCard = screen.getByTestId("dog-card");
+      const dogCard = screen.getByTestId("dog-card-1");
 
       // Should be in dark mode context
       expect(document.documentElement).toHaveClass("dark");
@@ -278,7 +278,7 @@ describe("DogCard Component - Dark Mode Support", () => {
       expect(document.documentElement).toHaveClass("dark");
 
       // All major elements should be present and properly styled
-      expect(screen.getByTestId("dog-card")).toBeInTheDocument();
+      expect(screen.getByTestId("dog-card-1")).toBeInTheDocument();
       expect(screen.getByTestId("image-container")).toBeInTheDocument();
       expect(screen.getByTestId("card-content")).toBeInTheDocument();
       expect(screen.getByTestId("card-footer")).toBeInTheDocument();

@@ -163,12 +163,19 @@ describe("DogsPage Component", () => {
 
     render(<DogsPage />);
 
+    // Wait for initial dogs to render
+    await waitFor(() => {
+      expect(getAnimals).toHaveBeenCalled();
+    });
+
     const loadMoreButton = await screen.findByRole("button", {
       name: /Load More Dogs/i,
     });
 
     // check first and last initial cards
-    expect(screen.getByText("Dog Page 1-1-1")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Dog Page 1-1-1")).toBeInTheDocument();
+    });
     expect(screen.getByText("Dog Page 1-1-20")).toBeInTheDocument();
 
     await user.click(loadMoreButton);

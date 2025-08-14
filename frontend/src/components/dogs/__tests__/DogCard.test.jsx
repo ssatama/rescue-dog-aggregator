@@ -97,7 +97,7 @@ describe("DogCard Component", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      const card = screen.getByTestId("dog-card");
+      const card = screen.getByTestId("dog-card-1");
       // Check for new animation system classes
       expect(card).toHaveClass("shadow-sm");
       expect(card).toHaveClass("will-change-transform");
@@ -115,7 +115,7 @@ describe("DogCard Component", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      const card = screen.getByTestId("dog-card");
+      const card = screen.getByTestId("dog-card-1");
       // Test that the new animation classes are present
       expect(card).toHaveClass("shadow-sm");
       expect(card).toHaveClass("will-change-transform");
@@ -268,7 +268,7 @@ describe("DogCard Component", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      const card = screen.getByTestId("dog-card");
+      const card = screen.getByTestId("dog-card-1");
       expect(card).toHaveClass("flex");
       expect(card).toHaveClass("flex-col");
       expect(card).toHaveClass("h-full");
@@ -338,7 +338,7 @@ describe("DogCard Component", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      const card = screen.getByTestId("dog-card");
+      const card = screen.getByTestId("dog-card-1");
       const ctaLink = screen.getByText("Meet Buddy →").closest("a");
 
       // Focus should work normally
@@ -527,7 +527,7 @@ describe("DogCard Component", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      const card = screen.getByTestId("dog-card");
+      const card = screen.getByTestId("dog-card-1");
 
       // Card should have enhanced animation classes
       expect(card).toHaveClass("shadow-sm");
@@ -550,7 +550,7 @@ describe("DogCard Component", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      const card = screen.getByTestId("dog-card");
+      const card = screen.getByTestId("dog-card-1");
 
       // Simulate hover by checking CSS classes that would trigger the hover state
       expect(card).toHaveClass("shadow-sm");
@@ -571,7 +571,7 @@ describe("DogCard Component", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      const card = screen.getByTestId("dog-card");
+      const card = screen.getByTestId("dog-card-1");
 
       // Card should use the unified shadow hierarchy (shadow-sm to shadow-md)
       expect(card).toHaveClass("shadow-sm");
@@ -624,7 +624,7 @@ describe("DogCard Component", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      const card = screen.getByTestId("dog-card");
+      const card = screen.getByTestId("dog-card-1");
 
       // Even with reduced motion, the classes should be present
       // The CSS handles disabling animations via media queries
@@ -643,7 +643,7 @@ describe("DogCard Component", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      const card = screen.getByTestId("dog-card");
+      const card = screen.getByTestId("dog-card-1");
 
       // Will-change property should be set to prevent layout shift
       expect(card).toHaveClass("will-change-transform");
@@ -738,7 +738,7 @@ describe("DogCard Component", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      const card = screen.getByTestId("dog-card");
+      const card = screen.getByTestId("dog-card-1");
       expect(card).toHaveClass("shadow-sm");
       expect(card).toHaveClass("hover:shadow-md");
       expect(card).toHaveClass("transition-shadow");

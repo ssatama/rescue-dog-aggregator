@@ -118,7 +118,7 @@ describe("DogCard Dark Mode", () => {
 
     render(<DogCard dog={mockDog} />);
 
-    const card = screen.getByTestId("dog-card");
+    const card = screen.getByTestId("dog-card-1");
     expect(card).toBeInTheDocument();
 
     // Should use CSS variables for background
@@ -214,7 +214,7 @@ describe("DogCard Dark Mode", () => {
     }
 
     // Verify the component still renders correctly overall
-    expect(screen.getByTestId("dog-card")).toBeInTheDocument();
+    expect(screen.getByTestId("dog-card-1")).toBeInTheDocument();
   });
 
   test("ships to section displays correctly in dark mode when present", () => {
@@ -238,7 +238,7 @@ describe("DogCard Dark Mode", () => {
     }
 
     // Verify the component still renders correctly overall
-    expect(screen.getByTestId("dog-card")).toBeInTheDocument();
+    expect(screen.getByTestId("dog-card-1")).toBeInTheDocument();
   });
 
   test("new badge maintains proper styling in dark mode", () => {
@@ -254,7 +254,7 @@ describe("DogCard Dark Mode", () => {
 
     // The NEW badge should appear for recent dogs
     // This tests the component structure even if the badge isn't shown for this mock
-    const card = screen.getByTestId("dog-card");
+    const card = screen.getByTestId("dog-card-1");
     expect(card).toBeInTheDocument();
   });
 });

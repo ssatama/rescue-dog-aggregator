@@ -215,7 +215,7 @@ describe("Mobile Responsiveness - Dark Mode", () => {
     test("DogCard maintains dark styling in mobile layout", () => {
       render(<DogCard dog={mockDog} />);
 
-      const dogCard = screen.getByTestId("dog-card");
+      const dogCard = screen.getByTestId("dog-card-1");
 
       // Should have dark mode background
       expect(dogCard).toHaveClass("bg-card");
@@ -345,7 +345,7 @@ describe("Mobile Responsiveness - Dark Mode", () => {
 
         render(<DogCard dog={mockDog} />);
 
-        const dogCard = screen.getByTestId("dog-card");
+        const dogCard = screen.getByTestId("dog-card-1");
 
         // CSS variables should work consistently
         expect(dogCard).toHaveClass("bg-card");
