@@ -37,18 +37,39 @@ jest.mock('../../services/organizationsService', () => ({
 }));
 
 // Mock components
-jest.mock('../../components/layout/Layout', () => ({ children }) => <div>{children}</div>);
-jest.mock('../../components/dogs/DogCard', () => () => <div>DogCard</div>);
-jest.mock('../../components/dogs/DogsGrid', () => ({ dogs, loading }) => 
-  <div data-testid="dogs-grid">{loading ? 'Loading...' : `Dogs: ${dogs.length}`}</div>
-);
-jest.mock('../../components/filters/DesktopFilters', () => (props) => 
-  <div data-testid="desktop-filters">Desktop Filters</div>
-);
-jest.mock('../../components/filters/MobileFilterDrawer', () => (props) => 
-  <div data-testid="mobile-drawer">Mobile Drawer</div>
-);
-jest.mock('../../components/ui/Breadcrumbs', () => () => <div>Breadcrumbs</div>);
+jest.mock('../../components/layout/Layout', () => {
+  const Layout = ({ children }) => <div>{children}</div>;
+  Layout.displayName = 'Layout';
+  return Layout;
+});
+jest.mock('../../components/dogs/DogCard', () => {
+  const DogCard = () => <div>DogCard</div>;
+  DogCard.displayName = 'DogCard';
+  return DogCard;
+});
+jest.mock('../../components/dogs/DogsGrid', () => {
+  const DogsGrid = ({ dogs, loading }) => 
+    <div data-testid="dogs-grid">{loading ? 'Loading...' : `Dogs: ${dogs.length}`}</div>;
+  DogsGrid.displayName = 'DogsGrid';
+  return DogsGrid;
+});
+jest.mock('../../components/filters/DesktopFilters', () => {
+  const DesktopFilters = (props) => 
+    <div data-testid="desktop-filters">Desktop Filters</div>;
+  DesktopFilters.displayName = 'DesktopFilters';
+  return DesktopFilters;
+});
+jest.mock('../../components/filters/MobileFilterDrawer', () => {
+  const MobileFilterDrawer = (props) => 
+    <div data-testid="mobile-drawer">Mobile Drawer</div>;
+  MobileFilterDrawer.displayName = 'MobileFilterDrawer';
+  return MobileFilterDrawer;
+});
+jest.mock('../../components/ui/Breadcrumbs', () => {
+  const Breadcrumbs = () => <div>Breadcrumbs</div>;
+  Breadcrumbs.displayName = 'Breadcrumbs';
+  return Breadcrumbs;
+});
 jest.mock('../../components/seo', () => ({
   BreadcrumbSchema: () => null,
 }));
