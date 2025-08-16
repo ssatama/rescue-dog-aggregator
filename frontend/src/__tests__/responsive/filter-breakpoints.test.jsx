@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent } from "../../test-utils";
 import { useRouter, useSearchParams } from "next/navigation";
 import DogsPageClient from "../../app/dogs/DogsPageClient";
 import OrganizationDetailClient from "../../app/organizations/[slug]/OrganizationDetailClient";

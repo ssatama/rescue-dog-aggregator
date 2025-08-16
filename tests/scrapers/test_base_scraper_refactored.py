@@ -15,6 +15,8 @@ class TestScraper(BaseScraper):
         return []
 
 
+@pytest.mark.unit
+@pytest.mark.fast
 class TestBaseScraperRefactored:
     """Test BaseScraper after removing multi-image functionality."""
 

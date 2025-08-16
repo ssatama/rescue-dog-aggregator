@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { reportError } from "../utils/logger";
 import { validateUrl, sanitizeText } from "../utils/security";
-import { useToast } from "../components/ui/Toast";
+import { useToast } from "../contexts/ToastContext";
 
 export interface UseShareOptions {
   /** URL to share */
@@ -61,7 +61,7 @@ export function useShare(options: UseShareOptions = {}): UseShareReturn {
           text: safeText,
           url: safeUrl,
         });
-        showToast("Share successful!", "success");
+        showToast("success", "Share successful!");
       } catch (err) {
         if (err instanceof Error && err.name !== "AbortError") {
           reportError("Error sharing", {
@@ -69,7 +69,7 @@ export function useShare(options: UseShareOptions = {}): UseShareReturn {
             url: safeUrl,
             title: safeTitle,
           });
-          showToast("Share failed. Please try again.", "error");
+          showToast("error", "Share failed. Please try again.");
         }
       }
     }
@@ -79,12 +79,12 @@ export function useShare(options: UseShareOptions = {}): UseShareReturn {
     try {
       await navigator.clipboard.writeText(safeUrl);
       setCopied(true);
-      showToast("Link copied to clipboard!", "success");
+      showToast("success", "Link copied to clipboard!");
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
       reportError("Failed to copy link", { error: errorMessage, url: safeUrl });
-      showToast("Failed to copy link. Please try again.", "error");
+      showToast("error", "Failed to copy link. Please try again.");
     }
   }, [safeUrl, showToast]);
 
@@ -107,7 +107,7 @@ export function useShare(options: UseShareOptions = {}): UseShareReturn {
 
       try {
         window.open(urls[platform], "_blank", "width=600,height=400");
-        showToast(`Opening share on ${platformNames[platform]}...`, "info");
+        showToast("success", `Opening share on ${platformNames[platform]}...`);
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Unknown error";
@@ -115,7 +115,7 @@ export function useShare(options: UseShareOptions = {}): UseShareReturn {
           error: errorMessage,
           platform,
         });
-        showToast("Failed to open share dialog. Please try again.", "error");
+        showToast("error", "Failed to open share dialog. Please try again.");
       }
     },
     [safeUrl, safeText, showToast],

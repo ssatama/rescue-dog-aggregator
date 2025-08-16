@@ -424,7 +424,7 @@ export default function MobileFilterDrawer({
               damping: 25,
               stiffness: 300,
             }}
-            className="fixed top-0 left-0 bottom-0 w-80 bg-white dark:bg-gray-900 shadow-2xl z-50 overflow-hidden lg:hidden will-change-transform gpu-accelerated"
+            className="fixed top-0 left-0 bottom-0 w-80 bg-white dark:bg-gray-900 shadow-2xl z-50 overflow-hidden lg:hidden will-change-transform gpu-accelerated flex flex-col"
             data-testid="mobile-filter-drawer"
             role="dialog"
             aria-label="Filter options"
@@ -467,10 +467,10 @@ export default function MobileFilterDrawer({
 
             {/* Content */}
             <div
-              className="overflow-y-auto"
-              style={{ height: "calc(100vh - 140px)" }}
+              className="overflow-y-auto flex-1"
+              style={{ maxHeight: "calc(100vh - 140px)" }}
             >
-              <div className="p-4 space-y-6">
+              <div className="p-4 space-y-6 pb-8">
                 {/* Persistent Search Bar */}
                 {filterConfig.showSearch && (
                   <div>
@@ -932,7 +932,7 @@ export default function MobileFilterDrawer({
 
             {/* Footer with Clear All Button */}
             {activeFilterCount > 0 && (
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 mt-auto">
                 <button
                   data-testid="clear-all-filters"
                   className="w-full text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950/30 font-medium py-2 px-4 rounded-lg transition-colors duration-200 interactive-enhanced enhanced-focus-button focus:ring-2 focus:ring-orange-600"

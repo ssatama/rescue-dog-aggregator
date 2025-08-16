@@ -3,7 +3,7 @@
  */
 
 import React from "react";
-import { render, screen, act, waitFor } from "@testing-library/react";
+import { render, screen, act, waitFor } from "../../test-utils";
 import DogDetailClient from "../../app/dogs/[slug]/DogDetailClient";
 import { getAnimalBySlug } from "../../services/animalsService";
 

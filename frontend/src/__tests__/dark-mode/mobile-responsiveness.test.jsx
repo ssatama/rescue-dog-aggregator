@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "../../test-utils";
 import "@testing-library/jest-dom";
 
 // Test components for mobile responsiveness
@@ -222,7 +222,7 @@ describe("Mobile Responsiveness - Dark Mode", () => {
       expect(dogCard).toHaveClass("text-card-foreground");
 
       // Button should have mobile-friendly dark styling
-      const button = screen.getByRole("button");
+      const button = screen.getByRole("button", { name: /Meet Buddy/i });
       expect(button).toHaveClass("dark:from-orange-500");
       expect(button).toHaveClass("dark:to-orange-600");
     });
@@ -379,7 +379,7 @@ describe("Mobile Responsiveness - Dark Mode", () => {
     test("buttons have adequate touch targets on mobile in dark mode", () => {
       render(<DogCard dog={mockDog} />);
 
-      const button = screen.getByRole("button");
+      const button = screen.getByRole("button", { name: /Meet Buddy/i });
 
       // Should have mobile touch target class
       expect(button).toHaveClass("mobile-touch-target");

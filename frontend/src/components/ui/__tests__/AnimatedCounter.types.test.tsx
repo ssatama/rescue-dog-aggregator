@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "../../../test-utils";
 import AnimatedCounter from "../AnimatedCounter";
 
 // TypeScript-specific test to verify proper prop typing

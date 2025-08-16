@@ -1,6 +1,6 @@
 // Tests for RelatedDogsSection component with lazy loading support
 import React from "react";
-import { render, screen, waitFor, act } from "@testing-library/react";
+import { render, screen, waitFor, act } from "../../../test-utils";
 import RelatedDogsSection from "../RelatedDogsSection";
 import { getRelatedDogs } from "../../../services/relatedDogsService";
 

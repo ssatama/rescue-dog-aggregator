@@ -10,13 +10,7 @@
  */
 
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-  act,
-} from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "../../test-utils";
 import { useRouter, useSearchParams } from "next/navigation";
 import DogsPageClient from "../../app/dogs/DogsPageClient";
 

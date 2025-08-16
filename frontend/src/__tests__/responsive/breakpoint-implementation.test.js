@@ -5,7 +5,7 @@
  */
 
 import React from "react";
-import { render } from "@testing-library/react";
+import { render } from "../../test-utils";
 import { useRouter, useSearchParams } from "next/navigation";
 import DesktopFilters from "../../components/filters/DesktopFilters";
 import DogFilters from "../../components/filters/DogFilters";

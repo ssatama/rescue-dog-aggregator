@@ -1,7 +1,7 @@
 // frontend/src/components/home/__tests__/HeroSection.test.jsx
 
 import React from "react";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "../../../test-utils";
 import HeroSection from "../HeroSection";
 import { getStatistics } from "../../../services/animalsService";
 

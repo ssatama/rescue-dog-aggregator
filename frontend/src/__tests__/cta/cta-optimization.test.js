@@ -10,9 +10,9 @@
  */
 
 import React from "react";
-import { render, screen, waitFor, act } from "@testing-library/react";
+import { render, screen, waitFor, act } from "../../test-utils";
 import "@testing-library/jest-dom";
-import { ToastProvider } from "../../components/ui/Toast";
+import { ToastProvider } from "../../contexts/ToastContext";
 import MobileStickyBar from "../../components/ui/MobileStickyBar";
 import ShareButton from "../../components/ui/ShareButton";
 

@@ -3,7 +3,7 @@
  * Tests the replacement of 9 separate useState calls with consolidated state management
  */
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "../../test-utils";
 import { useFilterState } from "../../hooks/useFilterState";
 import "@testing-library/jest-dom";
 

@@ -7,6 +7,7 @@ import pytest
 from services.railway.sync import RailwayDataSyncer
 
 
+@pytest.mark.unit
 class TestRailwaySyncRefactored:
     """Test Railway sync service after removing animal_images functionality."""
 

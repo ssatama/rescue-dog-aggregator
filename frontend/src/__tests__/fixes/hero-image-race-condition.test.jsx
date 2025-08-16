@@ -7,7 +7,7 @@
  */
 
 import React from "react";
-import { render, screen, act, waitFor } from "@testing-library/react";
+import { render, screen, act, waitFor } from "../../test-utils";
 import HeroImageWithBlurredBackground from "../../components/ui/HeroImageWithBlurredBackground";
 
 // Mock the imageUtils to simulate race condition

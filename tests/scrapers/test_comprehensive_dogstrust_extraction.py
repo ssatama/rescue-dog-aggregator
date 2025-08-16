@@ -7,6 +7,8 @@ import pytest
 from scrapers.dogstrust.dogstrust_scraper import DogsTrustScraper
 
 
+@pytest.mark.slow
+@pytest.mark.browser
 class TestComprehensiveDogsTrustExtraction:
     """Test comprehensive data extraction following Many Tears Rescue pattern."""
 

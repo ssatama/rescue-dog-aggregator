@@ -13,6 +13,7 @@ module.exports = {
   			'shimmer': 'shimmer 2s infinite linear',
   			'fade-in': 'fadeIn 0.3s ease-in-out',
   			'slide-up': 'slideUp 0.3s ease-out',
+  			'slide-down': 'slideDown 0.3s ease-in',
   		},
   		keyframes: {
   			shimmer: {
@@ -26,6 +27,10 @@ module.exports = {
   			slideUp: {
   				'0%': { transform: 'translateY(20px)', opacity: '0' },
   				'100%': { transform: 'translateY(0)', opacity: '1' },
+  			},
+  			slideDown: {
+  				'0%': { transform: 'translateY(0)', opacity: '1' },
+  				'100%': { transform: 'translateY(20px)', opacity: '0' },
   			},
   		},
   		fontFamily: {

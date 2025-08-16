@@ -8,6 +8,7 @@ const createJestConfig = nextJest({
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironment: 'jsdom',
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   moduleNameMapper: {
     // Handle module aliases
     '^@/(.*)$': '<rootDir>/src/$1',
@@ -16,7 +17,7 @@ const customJestConfig = {
     '\\.(jpg|jpeg|png|gif|svg)$': '<rootDir>/src/__mocks__/fileMock.js'
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(@vercel/analytics|@vercel/speed-insights)/)'
+    'node_modules/(?!(@vercel/analytics|@vercel/speed-insights|react-error-boundary)/)'
   ],
   testPathIgnorePatterns: [
     '<rootDir>/node_modules/',

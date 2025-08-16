@@ -3,16 +3,12 @@
  * Tests for Chrome/Edge, Firefox, Safari, and mobile browsers
  */
 
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, renderWithProviders } from "../test-utils";
 import userEvent from "@testing-library/user-event";
 import DogCard from "../components/dogs/DogCard";
 import LazyImage from "../components/ui/LazyImage";
 import { Button } from "../components/ui/button";
 import MobileStickyBar from "../components/ui/MobileStickyBar";
-import {
-  renderWithProviders,
-  withoutIntersectionObserver,
-} from "../test-utils";
 
 // Mock intersection observer for browser compatibility
 global.IntersectionObserver = class IntersectionObserver {
@@ -110,21 +106,18 @@ describe("Session 10: Cross-Browser Compatibility", () => {
   });
 
   describe("JavaScript Feature Detection", () => {
-    test(
-      "Components gracefully handle missing modern JS features",
-      withoutIntersectionObserver(() => {
-        // Test without IntersectionObserver (older browsers)
-        expect(() => {
-          render(
-            <LazyImage
-              src="https://example.com/test.jpg"
-              alt="Feature detection test"
-              priority={false}
-            />,
-          );
-        }).not.toThrow();
-      }),
-    );
+    test("Components gracefully handle missing modern JS features", () => {
+      // Test without IntersectionObserver (older browsers)
+      expect(() => {
+        render(
+          <LazyImage
+            src="https://example.com/test.jpg"
+            alt="Feature detection test"
+            priority={false}
+          />,
+        );
+      }).not.toThrow();
+    });
 
     test("Components handle older event API gracefully", () => {
       const mockDog = {

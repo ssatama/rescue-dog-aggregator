@@ -126,6 +126,125 @@ const PAGES = [
         }
       }
     ]
+  },
+  { 
+    name: 'favorites-empty', 
+    url: 'http://localhost:3000/favorites',
+    skipLazyLoading: true, // Empty state doesn't need scrolling
+    requiresSetup: true,
+    setup: async (page) => {
+      // Clear localStorage to ensure empty state
+      console.log(`    🧹 Clearing favorites for empty state...`);
+      await page.goto('http://localhost:3000', { 
+        waitUntil: 'domcontentloaded',
+        timeout: 30000
+      });
+      
+      // Clear the correct localStorage key
+      await page.evaluate(() => {
+        localStorage.removeItem('rescue-dogs-favorites');
+        localStorage.clear();
+      });
+      
+      // Now navigate to favorites page which should be empty
+      await page.goto('http://localhost:3000/favorites', { 
+        waitUntil: 'domcontentloaded',
+        timeout: 30000
+      });
+    }
+  },
+  {
+    name: 'favorites-with-dogs',
+    url: 'http://localhost:3000/favorites',
+    requiresSetup: true,
+    setup: async (page) => {
+      // First clear any existing favorites
+      console.log(`    🧹 Clearing existing favorites...`);
+      await page.goto('http://localhost:3000', { 
+        waitUntil: 'domcontentloaded',
+        timeout: 30000
+      });
+      
+      await page.evaluate(() => {
+        localStorage.removeItem('rescue-dogs-favorites');
+      });
+      
+      // Navigate to dogs page and add some favorites
+      console.log(`    🔧 Setting up favorites...`);
+      await page.goto('http://localhost:3000/dogs', { 
+        waitUntil: 'domcontentloaded',
+        timeout: 30000
+      });
+      
+      await page.waitForLoadState('networkidle', { timeout: 15000 });
+      
+      // Wait for dogs grid
+      try {
+        await page.waitForSelector('[data-testid="dogs-grid"]', { 
+          state: 'visible',
+          timeout: 10000 
+        });
+        
+        // Wait a bit for React to fully render
+        await page.waitForTimeout(1000);
+        
+        // Try to find and click favorite buttons (Heart icons)
+        const favoriteButtons = await page.locator('button[aria-label*="Add to favorites"], button[aria-label*="Remove from favorites"]').all();
+        
+        if (favoriteButtons.length === 0) {
+          console.log(`    ⚠️  No favorite buttons found, trying alternative selectors...`);
+          // Try finding buttons with Heart icon
+          const heartButtons = await page.locator('button:has(svg)').all();
+          
+          for (let i = 0; i < Math.min(3, heartButtons.length); i++) {
+            try {
+              const ariaLabel = await heartButtons[i].getAttribute('aria-label');
+              if (ariaLabel && ariaLabel.toLowerCase().includes('favorite')) {
+                await heartButtons[i].click();
+                await page.waitForTimeout(300);
+                console.log(`    ✅ Clicked favorite button ${i + 1}`);
+              }
+            } catch (e) {
+              // Silent continue
+            }
+          }
+        } else {
+          const numToAdd = Math.min(3, favoriteButtons.length);
+          console.log(`    📌 Found ${favoriteButtons.length} favorite buttons, clicking ${numToAdd}`);
+          
+          for (let i = 0; i < numToAdd; i++) {
+            try {
+              // Check if button is already favorited
+              const ariaLabel = await favoriteButtons[i].getAttribute('aria-label');
+              if (ariaLabel && ariaLabel.includes('Add to favorites')) {
+                await favoriteButtons[i].click();
+                await page.waitForTimeout(500); // Wait for state update
+                console.log(`    ✅ Added dog ${i + 1} to favorites`);
+              }
+            } catch (e) {
+              console.log(`    ⚠️  Could not click favorite button ${i + 1}`);
+            }
+          }
+        }
+        
+        // Verify favorites were saved
+        const savedFavorites = await page.evaluate(() => {
+          const stored = localStorage.getItem('rescue-dogs-favorites');
+          return stored ? JSON.parse(stored) : [];
+        });
+        
+        console.log(`    📦 ${savedFavorites.length} dogs saved to favorites`);
+        
+      } catch (error) {
+        console.log(`    ⚠️  Could not add favorites: ${error.message}`);
+      }
+      
+      // Now navigate to favorites page
+      await page.goto('http://localhost:3000/favorites', { 
+        waitUntil: 'domcontentloaded',
+        timeout: 30000
+      });
+    }
   }
 ];
 
@@ -262,6 +381,31 @@ async function waitForPageReady(page, pageConfig) {
       await page.waitForSelector('main', { 
         state: 'visible',
         timeout: 10000 
+      });
+    } else if (pathname === '/favorites') {
+      // Favorites page: wait for content (empty or with dogs)
+      console.log(`    💝 Waiting for favorites page content...`);
+      await page.waitForSelector('h1', { 
+        state: 'visible',
+        timeout: 15000 
+      });
+      
+      // Wait for either empty state or dogs grid
+      await Promise.race([
+        // Empty state
+        page.waitForSelector('text="Start Building Your Collection"', { 
+          state: 'visible',
+          timeout: 5000 
+        }),
+        // Dogs grid
+        page.waitForSelector('[data-testid="dogs-grid"]', { 
+          state: 'visible',
+          timeout: 5000 
+        }),
+        // Just wait if neither appears
+        page.waitForTimeout(2000)
+      ]).catch(() => {
+        console.log(`    ⚠️  Favorites content check timeout, continuing...`);
       });
     }
     
@@ -446,13 +590,20 @@ async function captureScreenshots() {
         console.log(`  📄 Capturing ${pageConfig.name}...`);
         
         try {
+          // Run setup if required (e.g., for favorites with dogs)
+          if (pageConfig.requiresSetup && pageConfig.setup) {
+            await pageConfig.setup(page);
+          }
+          
           // Enhanced page loading and readiness detection
           await waitForPageReady(page, pageConfig);
           
-          // Trigger all lazy loading
-          console.log(`    📜 Starting lazy loading...`);
-          await triggerLazyLoading(page);
-          console.log(`    📜 Lazy loading finished`);
+          // Trigger lazy loading unless skipped
+          if (!pageConfig.skipLazyLoading) {
+            console.log(`    📜 Starting lazy loading...`);
+            await triggerLazyLoading(page);
+            console.log(`    📜 Lazy loading finished`);
+          }
           
           // Calculate accurate page height
           console.log(`    📏 Calculating page height...`);

@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "../../test-utils";
 import "@testing-library/jest-dom";
 import TrustSection from "../../components/home/TrustSection";
 

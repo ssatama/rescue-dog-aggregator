@@ -29,6 +29,8 @@ export interface ShareButtonProps {
   size?: "default" | "sm" | "lg" | "icon";
   /** Additional CSS classes */
   className?: string;
+  /** Custom button text */
+  children?: React.ReactNode;
 }
 
 export default function ShareButton({
@@ -38,6 +40,7 @@ export default function ShareButton({
   variant = "outline",
   size = "default",
   className = "",
+  children = "Share",
 }: ShareButtonProps) {
   const {
     copied,
@@ -68,7 +71,7 @@ export default function ShareButton({
         data-share-mode="native"
       >
         <Icon name="share" size="small" className="mr-2" />
-        Share
+        {children}
       </Button>
     );
   }
@@ -85,7 +88,7 @@ export default function ShareButton({
           data-share-mode="dropdown"
         >
           <Icon name="share" size="small" className="mr-2" />
-          Share
+          {children}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

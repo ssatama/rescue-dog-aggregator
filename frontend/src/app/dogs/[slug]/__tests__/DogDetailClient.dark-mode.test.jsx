@@ -2,7 +2,7 @@
 // TDD Phase 1: RED - Tests for DogDetailClient dark mode functionality
 
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "../../../../test-utils";
 import "@testing-library/jest-dom";
 import DogDetailClient from "../DogDetailClient";
 import { getAnimalBySlug } from "../../../../services/animalsService";

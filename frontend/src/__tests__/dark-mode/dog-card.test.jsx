@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "../../test-utils";
 import "@testing-library/jest-dom";
 import DogCard from "../../components/dogs/DogCard";
 
@@ -192,7 +192,7 @@ describe("DogCard Dark Mode", () => {
 
     render(<DogCard dog={mockDog} />);
 
-    const button = screen.getByRole("button");
+    const button = screen.getByRole("button", { name: /Meet Buddy/i });
     expect(button).toHaveClass("dark:from-orange-500");
     expect(button).toHaveClass("dark:to-orange-600");
     expect(button).toHaveClass("dark:hover:from-orange-600");

@@ -1,6 +1,6 @@
 // TDD Red Phase: Failing tests for URL parameter handling in dogs page
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "../../../test-utils";
 import { useSearchParams } from "next/navigation";
 import DogsPage from "../page";
 

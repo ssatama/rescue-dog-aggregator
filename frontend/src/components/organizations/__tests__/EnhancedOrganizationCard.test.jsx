@@ -1,7 +1,7 @@
 // src/components/organizations/__tests__/EnhancedOrganizationCard.test.jsx
 
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent } from "../../../test-utils";
 import "@testing-library/jest-dom";
 import OrganizationCard from "../OrganizationCard";
 

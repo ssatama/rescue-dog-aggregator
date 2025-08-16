@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent } from "../../../test-utils";
 import { usePathname } from "next/navigation";
 import Header from "../Header";
 import { ThemeProvider } from "../../providers/ThemeProvider";
@@ -36,9 +36,12 @@ describe("Header Theme Toggle Integration", () => {
     expect(themeToggles).toHaveLength(2); // Desktop and mobile
 
     // Desktop toggle should be in the hidden md:flex container
-    const desktopToggle = themeToggles.find((toggle) =>
-      toggle.classList.contains("ml-2"),
+    const desktopToggle = themeToggles.find(
+      (toggle) =>
+        toggle.closest(".md\\:flex") ||
+        toggle.parentElement?.classList.contains("md:flex"),
     );
+    expect(desktopToggle).toBeDefined();
     expect(desktopToggle).toBeInTheDocument();
   });
 

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useFadeInAnimation } from "../../utils/animations";
 import { Icon } from "../ui/Icon";
 import { ThemeToggle } from "../ui/ThemeToggle";
+import { FavoriteBadge } from "../favorites/FavoriteBadge";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -14,7 +15,7 @@ export default function Header() {
   // Helper function to determine link classes
   const getLinkClasses = (href) => {
     const isActive = pathname === href;
-    return `px-3 py-2 rounded-md text-small font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 ${
+    return `px-3 py-2 rounded-md text-small font-medium transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-600/50 ${
       isActive
         ? "text-orange-600 dark:text-orange-400 font-semibold" // Active styles
         : "text-foreground hover:text-orange-600 dark:hover:text-orange-400" // Default styles
@@ -22,12 +23,21 @@ export default function Header() {
   };
 
   // Helper function to create navigation link with underline indicator
-  const renderNavLink = (href, label, testId) => {
+  const renderNavLink = (href, label, testId, showBadge = false) => {
     const isActive = pathname === href;
     return (
       <div className="relative">
         <Link href={href} className={getLinkClasses(href)}>
-          {label}
+          <span className="flex items-center gap-1">
+            {showBadge && (
+              <>
+                <span className="heart-icon text-red-500">❤️</span>
+                {label}
+                <FavoriteBadge />
+              </>
+            )}
+            {!showBadge && label}
+          </span>
         </Link>
         {isActive && (
           <div
@@ -76,17 +86,18 @@ export default function Header() {
             </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex gap-2 items-center">
+            <div className="hidden md:flex gap-6 items-center">
               {" "}
-              {/* Consistent spacing for better visual rhythm */}
+              {/* Increased spacing for better visual separation */}
               {renderNavLink("/dogs", "Find Dogs", "dogs")}
+              {renderNavLink("/favorites", "Favorites", "favorites", true)}
               {renderNavLink(
                 "/organizations",
                 "Organizations",
                 "organizations",
               )}
               {renderNavLink("/about", "About", "about")}
-              <ThemeToggle className="ml-2" />
+              <ThemeToggle className="ml-4" />
             </div>
 
             {/* Mobile menu button and theme toggle */}
@@ -133,6 +144,25 @@ export default function Header() {
                 {pathname === "/dogs" && (
                   <div
                     data-testid="nav-underline-dogs"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"
+                  />
+                )}
+              </div>
+              <div className="relative" data-mobile-menu>
+                <Link
+                  href="/favorites"
+                  className={`block ${getLinkClasses("/favorites")}`}
+                  onClick={handleMobileLinkClick}
+                >
+                  <span className="flex items-center gap-1">
+                    <span className="heart-icon text-red-500">❤️</span>
+                    Favorites
+                    <FavoriteBadge />
+                  </span>
+                </Link>
+                {pathname === "/favorites" && (
+                  <div
+                    data-testid="nav-underline-favorites"
                     className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"
                   />
                 )}

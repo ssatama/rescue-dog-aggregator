@@ -1,4 +1,4 @@
-import { render, screen, waitFor, act } from "@testing-library/react";
+import { render, screen, waitFor, act } from "../../test-utils";
 import DogSection from "../../components/home/DogSection";
 import HeroSection from "../../components/home/HeroSection";
 

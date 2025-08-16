@@ -2,7 +2,7 @@
 // TDD Phase 1: RED - Tests for OrganizationHero dark mode functionality
 
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "../../../test-utils";
 import "@testing-library/jest-dom";
 import OrganizationHero from "../OrganizationHero";
 

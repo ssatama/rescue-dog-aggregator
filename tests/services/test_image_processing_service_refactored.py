@@ -8,6 +8,8 @@ from services.image_processing_service import ImageProcessingService
 from utils.r2_service import R2Service
 
 
+@pytest.mark.unit
+@pytest.mark.fast
 class TestImageProcessingServiceRefactored:
     """Test ImageProcessingService after removing multi-image functionality."""
 

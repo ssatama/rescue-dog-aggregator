@@ -3,7 +3,7 @@
  * Verifies spacing consistency, animation timing, and vertical rhythm
  */
 
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "../test-utils";
 import DogCard from "../components/dogs/DogCard";
 import OrganizationCard from "../components/organizations/OrganizationCard";
 import RelatedDogsCard from "../components/dogs/RelatedDogsCard";

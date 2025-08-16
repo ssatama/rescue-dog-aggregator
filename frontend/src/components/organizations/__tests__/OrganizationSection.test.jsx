@@ -1,7 +1,11 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render as rtlRender, screen } from "@testing-library/react";
+import { render as customRender } from "../../../test-utils";
 import "@testing-library/jest-dom";
 import OrganizationSection from "../OrganizationSection";
+
+// Use custom render for most tests, but rtlRender for null checks
+const render = customRender;
 
 // Mock Next.js Link component
 jest.mock("next/link", () => {
@@ -53,7 +57,7 @@ describe("OrganizationSection", () => {
     });
 
     test("does not render when organization is null", () => {
-      const { container } = render(
+      const { container } = rtlRender(
         <OrganizationSection organization={null} organizationId={1} />,
       );
 
@@ -61,7 +65,9 @@ describe("OrganizationSection", () => {
     });
 
     test("does not render when organization is undefined", () => {
-      const { container } = render(<OrganizationSection organizationId={1} />);
+      const { container } = rtlRender(
+        <OrganizationSection organizationId={1} />,
+      );
 
       expect(container.firstChild).toBeNull();
     });

@@ -6,6 +6,7 @@ import pytest
 from config import DB_CONFIG
 
 
+@pytest.mark.requires_migrations
 class TestAnimalImagesTableRemoved:
     """Test that animal_images table has been removed from the database."""
 

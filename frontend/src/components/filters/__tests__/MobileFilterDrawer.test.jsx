@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "../../../test-utils";
 import "@testing-library/jest-dom";
 import MobileFilterDrawer from "../MobileFilterDrawer";
 

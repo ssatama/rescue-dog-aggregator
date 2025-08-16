@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "../../test-utils";
 import DesktopFilters from "../../components/filters/DesktopFilters";
 import MobileFilterBottomSheet from "../../components/filters/MobileFilterBottomSheet";
 

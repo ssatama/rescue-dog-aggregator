@@ -3,7 +3,7 @@
  * Verifies bundle optimization, lazy loading, and animation performance
  */
 
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act } from "../test-utils";
 import React, { Suspense } from "react";
 import DogCard from "../components/dogs/DogCard";
 import LazyImage from "../components/ui/LazyImage";

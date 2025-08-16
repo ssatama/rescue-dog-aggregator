@@ -3,7 +3,7 @@
  * Focus on preventing double CDN transformations in progressive loading URLs
  */
 
-import { renderHook } from "@testing-library/react";
+import { renderHook } from "../../test-utils";
 import { useLazyImage } from "../useLazyImage";
 import { R2_CUSTOM_DOMAIN } from "../../constants/imageConfig";
 

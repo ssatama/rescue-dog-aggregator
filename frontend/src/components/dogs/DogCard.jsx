@@ -10,6 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import ResponsiveDogImage from "../ui/ResponsiveDogImage";
+import { FavoriteButton } from "../favorites/FavoriteButton";
 import { sanitizeText } from "../../utils/security";
 import { useFadeInAnimation, useHoverAnimation } from "../../utils/animations";
 import { formatShipsToList } from "../../utils/countries";
@@ -28,6 +29,7 @@ const DogCard = React.memo(function DogCard({
   priority = false,
   animationDelay = 0,
   imageProps = {},
+  compact = false,
 }) {
   // Animation hooks
   const { ref: cardRef, isVisible } = useFadeInAnimation({
@@ -73,6 +75,69 @@ const DogCard = React.memo(function DogCard({
 
   const standardizedSize = getStandardizedSize(dog);
 
+  // Compact mobile list view for better space utilization
+  if (compact) {
+    return (
+      <Card
+        ref={cardRef}
+        data-testid={dog?.id ? `dog-card-${dog.id}` : "dog-card"}
+        className={`overflow-hidden flex flex-row md:flex-col h-auto md:h-full group ${
+          isVisible ? "animate-page-enter" : "opacity-0 translate-y-5"
+        }`}
+        {...hoverProps}
+      >
+        {/* Compact mobile image */}
+        <Link
+          href={`/dogs/${slug}`}
+          className="block w-32 md:w-full flex-shrink-0"
+        >
+          <div className="aspect-[4/3] relative overflow-hidden bg-muted dark:bg-muted/50">
+            <ResponsiveDogImage
+              dog={dog}
+              className="w-full h-full"
+              priority={priority}
+              sizes="128px"
+              {...imageProps}
+            />
+            {showNewBadge && (
+              <Badge className="absolute top-1 left-1 z-10 bg-green-500 text-white border-0 text-xs px-1 py-0.5">
+                NEW
+              </Badge>
+            )}
+          </div>
+        </Link>
+
+        {/* Compact content */}
+        <div className="flex-1 p-3 flex flex-col justify-between">
+          <div>
+            <Link href={`/dogs/${slug}`}>
+              <h3 className="font-bold text-base mb-1">{name}</h3>
+            </Link>
+            <p className="text-xs text-muted-foreground">
+              {ageCategory} • {gender.text} • {breed}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              📍 {organizationName}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            <Link href={`/dogs/${slug}`} className="flex-1">
+              <Button size="sm" className="w-full h-8 text-xs">
+                View Details
+              </Button>
+            </Link>
+            <FavoriteButton
+              dogId={dog?.id}
+              dogName={name}
+              className="h-8 w-8"
+            />
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // Standard card layout
   return (
     <Card
       ref={cardRef}
@@ -126,6 +191,15 @@ const DogCard = React.memo(function DogCard({
                 {status.charAt(0).toUpperCase() + status.slice(1)}
               </Badge>
             )}
+
+            {/* Favorite Button */}
+            <div className="absolute top-2 right-2 z-20">
+              <FavoriteButton
+                dogId={dog?.id}
+                dogName={name}
+                className="bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 shadow-md"
+              />
+            </div>
           </div>
         </Link>
       </CardHeader>

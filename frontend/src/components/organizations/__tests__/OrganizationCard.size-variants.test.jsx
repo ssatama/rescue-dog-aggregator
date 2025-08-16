@@ -2,7 +2,7 @@
 // TDD Phase 1: RED - Tests for size variant functionality
 
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "../../../test-utils";
 import "@testing-library/jest-dom";
 import OrganizationCard from "../OrganizationCard";
 
@@ -493,7 +493,8 @@ describe("OrganizationCard Size Variants", () => {
         </div>,
       );
 
-      const grid = container.firstChild;
+      // The grid is inside the test wrapper
+      const grid = container.querySelector(".grid");
       expect(grid).toHaveClass("grid", "grid-cols-1", "md:grid-cols-3");
     });
 

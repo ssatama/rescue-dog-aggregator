@@ -3,7 +3,7 @@
  * Tests for enhanced ARIA labels, roles, and screen reader compatibility
  */
 
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "../test-utils";
 
 // Import components to test
 import { DogDetailSkeleton } from "../components/ui/DogDetailSkeleton";

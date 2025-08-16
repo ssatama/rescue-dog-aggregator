@@ -8,6 +8,8 @@ from bs4 import BeautifulSoup
 from scrapers.pets_in_turkey.petsinturkey_scraper import PetsInTurkeyScraper
 
 
+@pytest.mark.unit
+@pytest.mark.fast
 class TestPetsInTurkeyScraper:
     """Test suite for modernized Pets in Turkey scraper."""
 

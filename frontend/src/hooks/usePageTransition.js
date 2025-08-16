@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 /**
  * Custom hook for page transition animations
@@ -45,16 +45,22 @@ export function usePageTransition(delay = 0, duration = 300) {
  * @param {number} delay - Delay before transition starts
  * @param {number} duration - Animation duration in ms
  * @param {string} className - Additional CSS classes
+ * @param {object} props - Additional props to pass to the wrapper div
  */
 export function PageTransition({
   children,
   delay = 0,
   duration = 300,
   className = "",
+  ...props
 }) {
   const { className: transitionClass } = usePageTransition(delay, duration);
 
-  return <div className={`${transitionClass} ${className}`}>{children}</div>;
+  return (
+    <div className={`${transitionClass} ${className}`.trim()} {...props}>
+      {children}
+    </div>
+  );
 }
 
 export default usePageTransition;

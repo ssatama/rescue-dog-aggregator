@@ -3,7 +3,7 @@
  * Tests essential functionality only - E2E tests cover interaction behavior
  */
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "../../test-utils";
 import "@testing-library/jest-dom";
 import { useScrollAnimation, useReducedMotion } from "../useScrollAnimation";
 

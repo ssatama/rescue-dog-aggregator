@@ -5,7 +5,7 @@ import {
   waitFor,
   within,
   fireEvent,
-} from "@testing-library/react";
+} from "../../../test-utils";
 import userEvent from "@testing-library/user-event";
 import DogsPage from "../page";
 import { getAnimals } from "../../../services/animalsService";

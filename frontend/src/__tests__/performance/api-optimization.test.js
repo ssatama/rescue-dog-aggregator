@@ -1,4 +1,4 @@
-import { render, screen, waitFor, act } from "@testing-library/react";
+import { render, screen, waitFor, act } from "../../test-utils";
 import DogsPageClient from "../../app/dogs/DogsPageClient";
 
 // Mock all the required services
