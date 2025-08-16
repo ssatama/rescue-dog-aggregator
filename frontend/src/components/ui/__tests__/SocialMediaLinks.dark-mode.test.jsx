@@ -2,9 +2,13 @@
 // TDD Phase 1: RED - Tests for SocialMediaLinks dark mode functionality
 
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render as rtlRender, screen } from "@testing-library/react";
+import { render as customRender } from "../../../test-utils";
 import "@testing-library/jest-dom";
 import SocialMediaLinks from "../SocialMediaLinks";
+
+// Use custom render for most tests, but rtlRender for null checks
+const render = customRender;
 
 // Mock the Icon component
 jest.mock("../Icon", () => ({
@@ -144,12 +148,12 @@ describe("SocialMediaLinks Dark Mode", () => {
     });
 
     test("empty social media returns null in dark mode", () => {
-      const { container } = render(<SocialMediaLinks socialMedia={{}} />);
+      const { container } = rtlRender(<SocialMediaLinks socialMedia={{}} />);
       expect(container.firstChild).toBeNull();
     });
 
     test("undefined social media returns null in dark mode", () => {
-      const { container } = render(<SocialMediaLinks />);
+      const { container } = rtlRender(<SocialMediaLinks />);
       expect(container.firstChild).toBeNull();
     });
   });

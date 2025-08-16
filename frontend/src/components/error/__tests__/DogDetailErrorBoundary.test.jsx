@@ -3,7 +3,7 @@
  * Ensures graceful error handling with retry functionality
  */
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "../../../test-utils";
 import "@testing-library/jest-dom";
 import DogDetailErrorBoundary from "../DogDetailErrorBoundary";
 

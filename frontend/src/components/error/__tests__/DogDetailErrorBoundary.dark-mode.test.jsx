@@ -2,7 +2,7 @@
 // TDD Phase 1: RED - Tests for DogDetailErrorBoundary dark mode functionality
 
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent } from "../../../test-utils";
 import "@testing-library/jest-dom";
 import DogDetailErrorBoundary from "../DogDetailErrorBoundary";
 

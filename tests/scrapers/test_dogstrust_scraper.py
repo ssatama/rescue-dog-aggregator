@@ -13,6 +13,8 @@ import requests
 from scrapers.dogstrust.dogstrust_scraper import DogsTrustScraper
 
 
+@pytest.mark.slow
+@pytest.mark.browser
 class TestDogsTrustScraper:
     """Test cases for DogsTrustScraper basic functionality."""
 

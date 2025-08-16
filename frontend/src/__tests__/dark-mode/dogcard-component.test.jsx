@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "../../test-utils";
 import { ThemeProvider } from "../../components/providers/ThemeProvider";
 import DogCard from "../../components/dogs/DogCard";
 

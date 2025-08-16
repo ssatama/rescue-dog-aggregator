@@ -3,6 +3,8 @@
 import pytest
 
 
+@pytest.mark.unit
+@pytest.mark.management
 class TestRailwayCommandsRefactored:
     """Test Railway commands after removing animal_images table references."""
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "../../../test-utils";
 import FlagErrorBoundary from "../FlagErrorBoundary";
 
 // Component that always throws an error

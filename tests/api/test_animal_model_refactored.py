@@ -4,6 +4,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 
+@pytest.mark.unit
+@pytest.mark.api
 class TestAnimalModelRefactored:
     """Test the refactored Animal model without images."""
 

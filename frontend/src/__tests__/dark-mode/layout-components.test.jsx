@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent } from "../../test-utils";
 import { ThemeProvider } from "../../components/providers/ThemeProvider";
 import Layout from "../../components/layout/Layout";
 import Header from "../../components/layout/Header";

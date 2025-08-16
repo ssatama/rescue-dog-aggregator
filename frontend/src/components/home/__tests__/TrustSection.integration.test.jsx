@@ -2,7 +2,7 @@
 // TDD Phase 2: RED - Tests for homepage OrganizationCard integration
 
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "../../../test-utils";
 import "@testing-library/jest-dom";
 import TrustSection from "../TrustSection";
 import { getStatistics } from "../../../services/animalsService";

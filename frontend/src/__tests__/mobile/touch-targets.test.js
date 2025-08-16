@@ -1,4 +1,4 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act } from "../../test-utils";
 import DogSection from "../../components/home/DogSection";
 import HeroSection from "../../components/home/HeroSection";
 import DogCard from "../../components/dogs/DogCard";

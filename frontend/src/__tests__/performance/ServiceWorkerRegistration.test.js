@@ -3,7 +3,7 @@
  * Tests the registration and update handling of the service worker
  */
 import React from "react";
-import { render, waitFor, act } from "@testing-library/react";
+import { render, waitFor, act } from "../../test-utils";
 import ServiceWorkerRegistration from "../../components/ServiceWorkerRegistration";
 import "@testing-library/jest-dom";
 
@@ -278,7 +278,10 @@ describe("ServiceWorkerRegistration Component", () => {
       const { container } = render(<ServiceWorkerRegistration />);
 
       // Component should not render anything visible
-      expect(container.firstChild).toBeNull();
+      // The test-utils wrapper adds a div, so check if it has no meaningful content
+      const wrapper = container.firstChild;
+      expect(wrapper).toBeTruthy(); // Wrapper div exists
+      expect(wrapper.children.length).toBe(0); // But has no children
     });
   });
 });

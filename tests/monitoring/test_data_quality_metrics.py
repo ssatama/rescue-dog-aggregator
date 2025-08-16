@@ -7,6 +7,8 @@ import pytest
 from monitoring.quality.metrics import DataQualityMetrics, QualityAssessment, QualityScore
 
 
+@pytest.mark.unit
+@pytest.mark.fast
 class TestDataQualityMetrics:
     """Test suite for DataQualityMetrics class."""
 

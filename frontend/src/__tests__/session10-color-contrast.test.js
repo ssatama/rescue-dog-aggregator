@@ -3,7 +3,7 @@
  * Tests for 4.5:1 ratio for normal text, 3:1 for large text, 3:1 for focus indicators
  */
 
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "../test-utils";
 
 // Color contrast checker function
 const getContrastRatio = (background, foreground) => {

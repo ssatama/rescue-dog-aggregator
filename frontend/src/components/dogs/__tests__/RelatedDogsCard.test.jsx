@@ -1,6 +1,6 @@
 // TDD Red Phase: Failing tests for RelatedDogsCard component
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent } from "../../../test-utils";
 import { useRouter } from "next/navigation";
 import RelatedDogsCard from "../RelatedDogsCard";
 

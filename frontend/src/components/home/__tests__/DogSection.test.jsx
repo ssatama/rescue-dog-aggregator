@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  render,
-  screen,
-  waitFor,
-  fireEvent,
-  act,
-} from "@testing-library/react";
+import { render, screen, waitFor, fireEvent, act } from "../../../test-utils";
 import { jest } from "@jest/globals";
 import { flushSync } from "react-dom";
 

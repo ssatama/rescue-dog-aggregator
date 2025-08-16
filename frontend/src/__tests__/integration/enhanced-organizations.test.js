@@ -1,7 +1,7 @@
 // src/__tests__/integration/enhanced-organizations.test.js
 
 import React from "react";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "../../test-utils";
 import "@testing-library/jest-dom";
 import OrganizationsClient from "../../app/organizations/OrganizationsClient";
 import * as organizationsService from "../../services/organizationsService";

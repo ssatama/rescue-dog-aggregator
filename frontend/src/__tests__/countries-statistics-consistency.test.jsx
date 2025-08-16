@@ -1,6 +1,6 @@
 // Test to verify countries statistics consistency between HeroSection and TrustSection
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "../test-utils";
 import HeroSection from "../components/home/HeroSection";
 import TrustSection from "../components/home/TrustSection";
 

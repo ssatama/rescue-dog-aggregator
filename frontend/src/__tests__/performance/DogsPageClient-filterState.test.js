@@ -3,7 +3,7 @@
  * Tests the actual integration of useFilterState hook in DogsPageClient
  */
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "../../test-utils";
 import { useSearchParams } from "next/navigation";
 import DogsPageClient from "../../app/dogs/DogsPageClient";
 import "@testing-library/jest-dom";

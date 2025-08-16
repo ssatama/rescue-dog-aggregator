@@ -9,11 +9,11 @@
  * - Accessibility standards (WCAG 2.1 AA)
  */
 
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import { act } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "../../test-utils";
+import { act } from "../../test-utils";
 import DogDetailClient from "../../app/dogs/[slug]/DogDetailClient";
 import MobileStickyBar from "../../components/ui/MobileStickyBar";
-import { ToastProvider } from "../../components/ui/Toast";
+import { ToastProvider } from "../../contexts/ToastContext";
 
 // Mock Next.js navigation
 jest.mock("next/navigation", () => ({

@@ -3,7 +3,7 @@
  * Comprehensive tests for WCAG 2.1 AA compliance
  */
 
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent } from "../test-utils";
 import userEvent from "@testing-library/user-event";
 import { axe, toHaveNoViolations } from "jest-axe";
 
@@ -11,7 +11,7 @@ import { axe, toHaveNoViolations } from "jest-axe";
 import Loading from "../components/ui/Loading";
 import FilterButton from "../components/filters/FilterButton";
 import LazyImage from "../components/ui/LazyImage";
-import { Toast } from "../components/ui/Toast";
+import Toast from "../components/ui/Toast";
 import DogCard from "../components/dogs/DogCard";
 import OrganizationCard from "../components/organizations/OrganizationCard";
 

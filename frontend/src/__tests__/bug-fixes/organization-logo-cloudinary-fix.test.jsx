@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "../../test-utils";
 import { R2_CUSTOM_DOMAIN } from "../../constants/imageConfig";
 
 // Mock organization data with R2 logo URL scenarios
@@ -222,8 +222,8 @@ describe("Organization Logo R2 Migration", () => {
   describe("Error Prevention", () => {
     it("should not have any 404-prone local file paths", () => {
       const problematicUrls = [
-        "/Users/samposatama/Documents/rescue-dog-aggregator/org_logos/pit.jpg",
-        "/Users/samposatama/Documents/rescue-dog-aggregator/org_logos/tierverschutz.jpg",
+        "/org_logos/pit.jpg",
+        "/org_logos/tierverschutz.jpg",
         "org_logos/pit.jpg",
         "./org_logos/pit.jpg",
         "../org_logos/pit.jpg",
@@ -269,8 +269,8 @@ describe("Organization Logo R2 Migration", () => {
     it("should not reference outdated local paths from config files", () => {
       // Ensure we are not using the old YAML config local paths
       const oldConfigPaths = [
-        "/Users/samposatama/Documents/rescue-dog-aggregator/org_logos/pit.jpg",
-        "/Users/samposatama/Documents/rescue-dog-aggregator/org_logos/tierverschutz.jpg",
+        "/org_logos/pit.jpg",
+        "/org_logos/tierverschutz.jpg",
       ];
 
       mockOrganizations.forEach((org) => {

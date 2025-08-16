@@ -3,17 +3,11 @@
  * Tests lazy loading and intersection observer for dog cards
  */
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-  act,
-} from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "../../test-utils";
 import "@testing-library/jest-dom";
 import ProgressiveDogCard from "../../components/dogs/ProgressiveDogCard";
 import useProgressiveLoading from "../../hooks/useProgressiveLoading";
-import { renderHook } from "@testing-library/react";
+import { renderHook } from "../../test-utils";
 
 // Mock IntersectionObserver
 const mockObserve = jest.fn();

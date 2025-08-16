@@ -4,7 +4,7 @@
  * This test verifies that successful organization loading no longer
  * generates console errors by using logger.info instead of reportError
  */
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "../../test-utils";
 import "@testing-library/jest-dom";
 import OrganizationsClient from "../../app/organizations/OrganizationsClient";
 import { getEnhancedOrganizations } from "../../services/organizationsService";

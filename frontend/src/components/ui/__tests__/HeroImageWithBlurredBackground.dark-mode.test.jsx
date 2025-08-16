@@ -2,7 +2,7 @@
 // TDD Phase 1: RED - Tests for HeroImageWithBlurredBackground dark mode functionality
 
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "../../../test-utils";
 import "@testing-library/jest-dom";
 import HeroImageWithBlurredBackground from "../HeroImageWithBlurredBackground";
 

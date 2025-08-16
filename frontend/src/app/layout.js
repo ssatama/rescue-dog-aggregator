@@ -2,6 +2,8 @@
 import "./globals.css";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { ToastProvider } from "@/contexts/ToastContext";
+import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { Analytics, SpeedInsights } from "@/components/analytics";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 
@@ -68,7 +70,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-inter`}>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <FavoritesProvider>{children}</FavoritesProvider>
+          </ToastProvider>
+        </ThemeProvider>
         <ServiceWorkerRegistration />
         <Analytics />
         <SpeedInsights />

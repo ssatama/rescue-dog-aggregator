@@ -14,6 +14,7 @@ import {
 import { Badge } from "../../../components/ui/badge";
 import ShareButton from "../../../components/ui/ShareButton";
 import SocialMediaLinks from "../../../components/ui/SocialMediaLinks";
+import { FavoriteButton } from "../../../components/favorites/FavoriteButton";
 import {
   getDetailHeroImageWithPosition,
   getThumbnailImage,
@@ -22,7 +23,7 @@ import {
 import HeroImageWithBlurredBackground from "../../../components/ui/HeroImageWithBlurredBackground";
 import OrganizationCard from "../../../components/organizations/OrganizationCard";
 import MobileStickyBar from "../../../components/ui/MobileStickyBar";
-import { ToastProvider } from "../../../components/ui/Toast";
+import { ToastProvider } from "../../../contexts/ToastContext";
 import RelatedDogsSection from "../../../components/dogs/RelatedDogsSection";
 import DogDescription from "../../../components/dogs/DogDescription";
 import { reportError } from "../../../utils/logger";
@@ -434,6 +435,15 @@ export default function DogDetailClient({ params = {} }) {
                             className="flex items-center space-x-3 sm:ml-6"
                             data-testid="action-bar"
                           >
+                            {/* Favorite Button */}
+                            <div className="flex items-center">
+                              <FavoriteButton
+                                dogId={dog.id}
+                                dogName={dog.name}
+                                className="p-3 rounded-full hover:bg-gray-100 transition-all duration-200 hover:scale-110 hover:shadow-md focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                              />
+                            </div>
+
                             {/* Share Button with enhanced styling */}
                             <div className="flex items-center">
                               <ShareButton

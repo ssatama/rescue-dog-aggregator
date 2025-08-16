@@ -10,8 +10,8 @@
  * - Polyfill requirements
  */
 
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import { act } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "../../test-utils";
+import { act } from "../../test-utils";
 import DogDetailClient from "../../app/dogs/[slug]/DogDetailClient";
 
 // Mock Next.js navigation

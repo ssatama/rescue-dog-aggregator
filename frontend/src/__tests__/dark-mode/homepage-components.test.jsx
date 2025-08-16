@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "../../test-utils";
 import { ThemeProvider } from "../../components/providers/ThemeProvider";
 import HeroSection from "../../components/home/HeroSection";
 import TrustSection from "../../components/home/TrustSection";

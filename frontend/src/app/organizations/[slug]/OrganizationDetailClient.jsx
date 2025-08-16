@@ -355,7 +355,7 @@ export default function OrganizationDetailClient({ params = {} }) {
               availableBreeds={availableBreeds}
               hasActiveFilters={hasActiveFilters}
               showShipsToFilter={false}
-              showSortFilter={true}
+              showSortFilter={false}
               onMobileFilterClick={handleMobileFilterOpen}
             />
           )}

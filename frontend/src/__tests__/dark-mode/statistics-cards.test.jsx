@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "../../test-utils";
 import "@testing-library/jest-dom";
 import HeroSection from "../../components/home/HeroSection";
 

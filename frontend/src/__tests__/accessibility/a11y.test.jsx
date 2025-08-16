@@ -2,7 +2,7 @@
  * Accessibility tests for the application
  */
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "../../test-utils";
 import { axe, toHaveNoViolations } from "jest-axe";
 import DogCard from "../../components/dogs/DogCard";
 import Header from "../../components/layout/Header";

@@ -2,7 +2,7 @@
 // TDD Phase 3: RED - Tests for dog detail OrganizationCard integration
 
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "../../../../test-utils";
 import "@testing-library/jest-dom";
 import DogDetailClient from "../DogDetailClient";
 import { getAnimalBySlug } from "../../../../services/animalsService";

@@ -10,7 +10,7 @@
  */
 
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "../../test-utils";
 import "@testing-library/jest-dom";
 import DogDetailClient from "../../app/dogs/[slug]/DogDetailClient";
 

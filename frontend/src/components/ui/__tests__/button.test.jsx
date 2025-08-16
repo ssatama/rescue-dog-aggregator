@@ -1,7 +1,7 @@
 // frontend/src/components/ui/__tests__/button.test.jsx
 
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "../../../test-utils";
 import { Button } from "../button";
 
 describe("Button Component", () => {

@@ -19,7 +19,6 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Combine subagents you have available with the MCP tools as well
 - Use Serena MCP tools when possible, they are very powerful, Switch serena modes as appropriate using the switch mode command.
 
-
 ## CRITICAL: Planning-First Workflow
 
 **ALWAYS follow this 3-phase approach:**
@@ -51,7 +50,6 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 
 - Skip tests or write code without tests
 - Delete/modify tests to make them pass
-- Use localStorage/sessionStorage in frontend
 - Mutate state or data structures
 - Create files >200 lines
 - Commit directly to main
@@ -140,12 +138,6 @@ configs/      # Organization YAMLs (8 orgs)
 - `tests/conftest.py` contains `isolate_database_writes()` fixture that runs for ALL tests
 - Automatically mocks organization sync service and scraper service injection
 - Prevents any test from creating real database connections or data
-
-### Previous Issue Fixed
-
-- Tests were contaminating production database with "Test Organization" records
-- Root cause: `test_config_integration.py` created real scraper instances
-- Solution: Comprehensive global mocking prevents all database writes during testing
 
 ### Implementation
 

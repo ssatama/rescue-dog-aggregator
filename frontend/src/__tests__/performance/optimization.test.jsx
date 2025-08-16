@@ -2,7 +2,7 @@
  * Performance optimization tests
  */
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "../../test-utils";
 import DogCard from "../../components/dogs/DogCard";
 import { LazyImage } from "../../components/ui/LazyImage";
 

@@ -7,6 +7,8 @@ import pytest
 from scrapers.furryrescueitaly.furryrescueitaly_scraper import FurryRescueItalyScraper
 
 
+@pytest.mark.unit
+@pytest.mark.fast
 class TestFurryRescueItalyProblematicDogs:
     """Test scraper handling of problematic dogs with malformed data."""
 
