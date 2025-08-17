@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import OptimizedImage from "../ui/OptimizedImage";
 import { FavoriteButton } from "../favorites/FavoriteButton";
+import ShareButton from "../ui/ShareButton";
 import { sanitizeText } from "../../utils/security";
 import { formatShipsToList } from "../../utils/countries";
 import {
@@ -104,7 +105,16 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
                 {name}
               </CardTitle>
             </Link>
-            <FavoriteButton dogId={dog.id} dogName={dog.name} compact />
+            <div className="flex items-center gap-1">
+              <ShareButton
+                url={`${typeof window !== "undefined" ? window.location.origin : ""}/dogs/${slug}`}
+                title={`Meet ${name}`}
+                text={`Check out ${name} from ${organizationName} - Looking for a loving home!`}
+                variant="ghost"
+                compact
+              />
+              <FavoriteButton dogId={dog.id} dogName={dog.name} compact />
+            </div>
           </div>
 
           {/* Mobile-optimized info */}
@@ -207,7 +217,16 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
               {name}
             </h3>
           </Link>
-          <FavoriteButton dogId={dog.id} dogName={dog.name} />
+          <div className="flex items-center gap-1">
+            <ShareButton
+              url={`${typeof window !== "undefined" ? window.location.origin : ""}/dogs/${slug}`}
+              title={`Meet ${name}`}
+              text={`Check out ${name} from ${organizationName} - Looking for a loving home!`}
+              variant="ghost"
+              compact
+            />
+            <FavoriteButton dogId={dog.id} dogName={dog.name} />
+          </div>
         </div>
       </CardHeader>
 

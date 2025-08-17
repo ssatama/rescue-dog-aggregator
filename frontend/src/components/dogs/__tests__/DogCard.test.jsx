@@ -2,6 +2,23 @@ import React from "react";
 import { render, screen, fireEvent, within } from "../../../test-utils";
 import DogCard from "../DogCardOptimized";
 
+// Mock ShareButton to avoid complex dropdown testing
+jest.mock("../../ui/ShareButton", () => {
+  return function MockShareButton({ url, title, text, compact }) {
+    return (
+      <button 
+        data-testid="share-button"
+        data-url={url}
+        data-title={title}
+        data-text={text}
+        data-compact={compact}
+      >
+        Share
+      </button>
+    );
+  };
+});
+
 describe("DogCard Component", () => {
   test("renders dog card with correct information", () => {
     const mockDog = {
@@ -85,6 +102,52 @@ describe("DogCard Component", () => {
     expect(screen.queryByText("Unknown")).not.toBeInTheDocument();
     // Should still have the meet button
     expect(screen.getByText("Meet Luna →")).toBeInTheDocument();
+  });
+
+  // Test for ShareButton presence
+  test("renders share button next to favorite button", () => {
+    const mockDog = {
+      id: 1,
+      slug: "buddy-labrador-retriever-1",
+      name: "Buddy",
+      standardized_breed: "Labrador Retriever",
+      organization: {
+        name: "Test Organization",
+        city: "Test City",
+        country: "TC",
+      },
+    };
+
+    render(<DogCard dog={mockDog} />);
+
+    // Check that share button is present
+    const shareButton = screen.getByTestId("share-button");
+    expect(shareButton).toBeInTheDocument();
+    
+    // Verify share button has correct props
+    expect(shareButton).toHaveAttribute("data-compact", "true");
+    expect(shareButton).toHaveAttribute("data-url");
+    expect(shareButton.getAttribute("data-url")).toContain("/dogs/buddy-labrador-retriever-1");
+    expect(shareButton).toHaveAttribute("data-title", "Meet Buddy");
+    expect(shareButton.getAttribute("data-text")).toContain("Check out Buddy from Test Organization");
+  });
+
+  test("renders share button in compact view", () => {
+    const mockDog = {
+      id: 1,
+      slug: "buddy-labrador-retriever-1",
+      name: "Buddy",
+      organization: {
+        name: "Test Organization",
+      },
+    };
+
+    render(<DogCard dog={mockDog} compact />);
+
+    // Check that share button is present in compact view
+    const shareButton = screen.getByTestId("share-button");
+    expect(shareButton).toBeInTheDocument();
+    expect(shareButton).toHaveAttribute("data-compact", "true");
   });
 
   // NEW TESTS FOR ENHANCED FEATURES

@@ -31,6 +31,8 @@ export interface ShareButtonProps {
   className?: string;
   /** Custom button text */
   children?: React.ReactNode;
+  /** Compact mode for cards (icon only) */
+  compact?: boolean;
 }
 
 export default function ShareButton({
@@ -41,6 +43,7 @@ export default function ShareButton({
   size = "default",
   className = "",
   children = "Share",
+  compact = false,
 }: ShareButtonProps) {
   const {
     copied,
@@ -59,19 +62,30 @@ export default function ShareButton({
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
+  // Determine button size and content based on compact mode
+  const buttonSize = compact ? "icon" : size;
+  const buttonContent = compact ? (
+    <Icon name="share" size="small" />
+  ) : (
+    <>
+      <Icon name="share" size="small" className="mr-2" />
+      {children}
+    </>
+  );
+
   // Mobile: Use native share if available, otherwise show dropdown
   if (hasNativeShare) {
     return (
       <Button
         variant={variant}
-        size={size}
+        size={buttonSize}
         onClick={handleNativeShare}
         className={className}
         data-testid="share-button"
         data-share-mode="native"
+        aria-label={compact ? "Share" : undefined}
       >
-        <Icon name="share" size="small" className="mr-2" />
-        {children}
+        {buttonContent}
       </Button>
     );
   }
@@ -82,13 +96,13 @@ export default function ShareButton({
       <DropdownMenuTrigger asChild>
         <Button
           variant={variant}
-          size={size}
+          size={buttonSize}
           className={className}
           data-testid="share-button"
           data-share-mode="dropdown"
+          aria-label={compact ? "Share" : undefined}
         >
-          <Icon name="share" size="small" className="mr-2" />
-          {children}
+          {buttonContent}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
