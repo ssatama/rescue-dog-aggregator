@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { initPerformanceMonitoring } from '@/utils/performanceMonitor';
-import { usePathname } from 'next/navigation';
+import { useEffect } from "react";
+import { initPerformanceMonitoring } from "@/utils/performanceMonitor";
+import { usePathname } from "next/navigation";
 
 export default function PerformanceMonitor() {
   const pathname = usePathname();

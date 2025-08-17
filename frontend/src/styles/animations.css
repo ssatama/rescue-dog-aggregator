@@ -14,7 +14,9 @@
 
 /* Card hover effect - GPU accelerated */
 .dog-card {
-  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  transition:
+    transform 0.2s ease-out,
+    box-shadow 0.2s ease-out;
   will-change: transform;
   backface-visibility: hidden;
   -webkit-font-smoothing: antialiased;
@@ -30,12 +32,12 @@
   .dog-card {
     transition: none;
   }
-  
+
   .dog-card:hover {
     transform: none;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
-  
+
   .animate-fadeInUp {
     animation: none;
     opacity: 1;
@@ -48,10 +50,18 @@
   opacity: 0;
 }
 
-.animate-delay-100 { animation-delay: 0.1s; }
-.animate-delay-200 { animation-delay: 0.2s; }
-.animate-delay-300 { animation-delay: 0.3s; }
-.animate-delay-400 { animation-delay: 0.4s; }
+.animate-delay-100 {
+  animation-delay: 0.1s;
+}
+.animate-delay-200 {
+  animation-delay: 0.2s;
+}
+.animate-delay-300 {
+  animation-delay: 0.3s;
+}
+.animate-delay-400 {
+  animation-delay: 0.4s;
+}
 
 /* Image hover effect */
 .dog-card-image {
@@ -67,7 +77,7 @@
   .dog-card-image {
     transition: none;
   }
-  
+
   .dog-card:hover .dog-card-image {
     transform: none;
   }

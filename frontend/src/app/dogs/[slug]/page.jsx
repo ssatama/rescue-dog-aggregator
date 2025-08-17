@@ -33,7 +33,7 @@ export async function generateMetadata(props) {
     const { params } = props;
     const resolvedParams =
       params && typeof params.then === "function" ? await params : params || {};
-    
+
     let dog;
     if (getAnimalBySlug) {
       // Use mocked service in Jest tests
@@ -46,7 +46,7 @@ export async function generateMetadata(props) {
         breed: "Mixed",
         created_at: new Date().toISOString(),
         primary_image_url: null,
-        organization: { city: "City", country: "Country" }
+        organization: { city: "City", country: "Country" },
       };
     }
 
@@ -233,9 +233,7 @@ export async function generateStaticParams() {
     // Generate static params for all animals (used in tests)
     if (getAllAnimals) {
       const dogs = await getAllAnimals();
-      return dogs
-        .filter(dog => dog?.slug)
-        .map(dog => ({ slug: dog.slug }));
+      return dogs.filter((dog) => dog?.slug).map((dog) => ({ slug: dog.slug }));
     }
 
     return [];

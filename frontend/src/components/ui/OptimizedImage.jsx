@@ -136,10 +136,7 @@ const OptimizedImage = React.memo(
           media={MEDIA_QUERIES.tablet}
           srcSet={`${optimizedUrls.tabletWebP1x} 1x, ${optimizedUrls.tabletWebP2x} 2x`}
         />
-        <source
-          type="image/webp"
-          srcSet={optimizedUrls.desktopWebP}
-        />
+        <source type="image/webp" srcSet={optimizedUrls.desktopWebP} />
 
         {/* Fallback sources for browsers that don't support WebP */}
         <source
@@ -158,8 +155,10 @@ const OptimizedImage = React.memo(
           loading={priority ? undefined : "lazy"}
           fetchPriority={priority ? "high" : undefined}
           sizes={sizes}
-          data-testid={src === placeholderImage ? "image-placeholder" : "optimized-image"}
-          className={`w-full h-full ${objectFit === 'cover' ? 'object-cover' : `object-${objectFit}`}`}
+          data-testid={
+            src === placeholderImage ? "image-placeholder" : "optimized-image"
+          }
+          className={`w-full h-full ${objectFit === "cover" ? "object-cover" : `object-${objectFit}`}`}
           style={{
             objectPosition,
           }}
@@ -175,7 +174,13 @@ OptimizedImage.propTypes = {
   className: PropTypes.string,
   priority: PropTypes.bool,
   sizes: PropTypes.string,
-  objectFit: PropTypes.oneOf(['cover', 'contain', 'fill', 'none', 'scale-down']),
+  objectFit: PropTypes.oneOf([
+    "cover",
+    "contain",
+    "fill",
+    "none",
+    "scale-down",
+  ]),
   objectPosition: PropTypes.string,
 };
 

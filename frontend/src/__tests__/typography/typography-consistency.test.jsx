@@ -13,19 +13,15 @@ jest.mock("next/link", () => {
     const linkProps = {
       href,
       className,
-      ...props
+      ...props,
     };
-    
+
     // Only add prefetch if it's a string value
-    if (typeof prefetch === 'string') {
+    if (typeof prefetch === "string") {
       linkProps.prefetch = prefetch;
     }
-    
-    return (
-      <a {...linkProps}>
-        {children}
-      </a>
-    );
+
+    return <a {...linkProps}>{children}</a>;
   };
 });
 

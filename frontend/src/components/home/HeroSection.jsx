@@ -15,7 +15,10 @@ import { reportError } from "../../utils/logger";
  * @param {Object} props.initialStatistics - Pre-fetched statistics data from SSR
  * @param {boolean} props.priority - Whether this section should load with priority
  */
-export default function HeroSection({ initialStatistics = null, priority = false }) {
+export default function HeroSection({
+  initialStatistics = null,
+  priority = false,
+}) {
   const [statistics, setStatistics] = useState(initialStatistics);
   const [loading, setLoading] = useState(!initialStatistics);
   const [error, setError] = useState(null);

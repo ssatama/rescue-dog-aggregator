@@ -7,11 +7,11 @@ import { getRelatedDogs } from "../../../services/relatedDogsService";
 // Mock the relatedDogsService
 jest.mock("../../../services/relatedDogsService");
 
-// Mock RelatedDogsCard component
-jest.mock("../RelatedDogsCard", () => {
-  return function MockRelatedDogsCard({ dog }) {
+// Mock DogCardOptimized component
+jest.mock("../DogCardOptimized", () => {
+  return function MockDogCardOptimized({ dog }) {
     return (
-      <div data-testid={`related-dog-card-${dog.id}`}>
+      <div data-testid={`dog-card-${dog.id}`}>
         <span>{dog.name}</span>
       </div>
     );
@@ -159,8 +159,8 @@ describe("RelatedDogsSection", () => {
       // Assert
       await waitFor(() => {
         expect(screen.getByTestId("related-dogs-grid")).toBeInTheDocument();
-        expect(screen.getByTestId("related-dog-card-124")).toBeInTheDocument();
-        expect(screen.getByTestId("related-dog-card-125")).toBeInTheDocument();
+        expect(screen.getByTestId("dog-card-124")).toBeInTheDocument();
+        expect(screen.getByTestId("dog-card-125")).toBeInTheDocument();
       });
     });
 
@@ -187,7 +187,7 @@ describe("RelatedDogsSection", () => {
 
       // Assert
       await waitFor(() => {
-        const cards = screen.getAllByTestId(/related-dog-card-/);
+        const cards = screen.getAllByTestId(/dog-card-\d+/);
         expect(cards).toHaveLength(3);
       });
     });

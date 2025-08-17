@@ -57,10 +57,10 @@ describe("OrganizationsPage Performance", () => {
     const { container } = render(result);
 
     expect(getEnhancedOrganizationsSSR).toHaveBeenCalledTimes(1);
-    
+
     const clientComponent = screen.getByTestId("organizations-client");
     expect(clientComponent).toBeInTheDocument();
-    
+
     const dataCount = screen.getByTestId("initial-data-count");
     expect(dataCount).toHaveTextContent("2");
   });
@@ -71,12 +71,12 @@ describe("OrganizationsPage Performance", () => {
     const beforeTime = Date.now();
     const result = await OrganizationsPage();
     const afterTime = Date.now();
-    
+
     const { container } = render(result);
-    
+
     const timestamp = screen.getByTestId("data-timestamp");
     const timestampValue = parseInt(timestamp.textContent);
-    
+
     expect(timestampValue).toBeGreaterThanOrEqual(beforeTime);
     expect(timestampValue).toBeLessThanOrEqual(afterTime);
   });
@@ -86,7 +86,7 @@ describe("OrganizationsPage Performance", () => {
 
     const result = await OrganizationsPage();
     const { container } = render(result);
-    
+
     const dataCount = screen.getByTestId("initial-data-count");
     expect(dataCount).toHaveTextContent("0");
   });
@@ -98,7 +98,7 @@ describe("OrganizationsPage Performance", () => {
 
     const result = await OrganizationsPage({ searchParams: {} });
     const { container } = render(result);
-    
+
     const dataCount = screen.getByTestId("initial-data-count");
     expect(dataCount).toHaveTextContent("0");
   });
@@ -120,10 +120,10 @@ describe("OrganizationsPage Performance", () => {
 
       const result = await OrganizationsPage();
       const { container } = render(result);
-      
+
       const clientComponent = screen.getByTestId("organizations-client");
       const initialHeight = clientComponent.offsetHeight;
-      
+
       await waitFor(() => {
         expect(clientComponent.offsetHeight).toBe(initialHeight);
       });
@@ -136,11 +136,13 @@ describe("OrganizationsPage Performance", () => {
           "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
         },
       };
-      
-      getEnhancedOrganizationsSSR.mockResolvedValue(mockOrganizationsWithHeaders.data);
+
+      getEnhancedOrganizationsSSR.mockResolvedValue(
+        mockOrganizationsWithHeaders.data,
+      );
 
       const result = await OrganizationsPage();
-      
+
       expect(getEnhancedOrganizationsSSR).toHaveBeenCalled();
     });
   });

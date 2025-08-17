@@ -8,12 +8,14 @@ interface FavoriteButtonProps {
   dogId: number;
   dogName?: string;
   className?: string;
+  compact?: boolean;
 }
 
 export function FavoriteButton({
   dogId,
   dogName,
   className = "",
+  compact = false,
 }: FavoriteButtonProps) {
   const { isFavorited, toggleFavorite } = useFavorites();
   const [isLoading, setIsLoading] = useState(false);

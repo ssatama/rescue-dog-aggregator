@@ -19,7 +19,7 @@
 "use client";
 import React, { useState, useEffect, useCallback, memo } from "react";
 import Link from "next/link";
-import RelatedDogsCard from "./RelatedDogsCard";
+import DogCardOptimized from "./DogCardOptimized";
 import { getRelatedDogs } from "../../services/relatedDogsService";
 import { sanitizeText } from "../../utils/security";
 import { reportError } from "../../utils/logger";
@@ -169,8 +169,14 @@ const RelatedDogsSection = memo(
               data-testid="related-dogs-grid"
               className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6"
             >
-              {limitedRelatedDogs.map((dog) => (
-                <RelatedDogsCard key={dog.id} dog={dog} />
+              {limitedRelatedDogs.map((dog, index) => (
+                <DogCardOptimized 
+                  key={dog.id} 
+                  dog={dog}
+                  priority={false}
+                  animationDelay={index}
+                  compact={false}
+                />
               ))}
             </div>
 

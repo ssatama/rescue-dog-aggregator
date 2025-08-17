@@ -62,9 +62,7 @@ export default function Header() {
         Skip to main content
       </a>
 
-      <header
-        className="bg-background border-b border-border shadow-orange-md dark:shadow-purple-md sticky top-0 z-50 animate-fadeInUp"
-      >
+      <header className="bg-background border-b border-border shadow-orange-md dark:shadow-purple-md sticky top-0 z-50 animate-fadeInUp">
         <nav
           className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4"
           aria-label="Main navigation"

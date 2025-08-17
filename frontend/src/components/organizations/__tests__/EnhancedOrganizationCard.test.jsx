@@ -129,7 +129,7 @@ describe("EnhancedOrganizationCard", () => {
       const logoImage = screen.getAllByTestId("lazy-image")[0]; // First image is the logo
       expect(logoImage).toHaveAttribute("src", "https://example.com/logo.jpg");
       expect(logoImage).toHaveAttribute("alt", "Pets in Turkey logo");
-      const logoContainer = logoImage.closest('.w-16');
+      const logoContainer = logoImage.closest(".w-16");
       expect(logoContainer).toHaveClass("w-16", "h-16");
     });
 
@@ -377,7 +377,7 @@ describe("EnhancedOrganizationCard", () => {
       render(<OrganizationCard organization={mockOrganization} />);
 
       const logoImage = screen.getAllByTestId("lazy-image")[0]; // First image is the logo
-      const logoContainer = logoImage.closest('.w-16');
+      const logoContainer = logoImage.closest(".w-16");
       expect(logoContainer).toHaveClass("w-16", "h-16"); // w-16 h-16 = 64px
     });
   });

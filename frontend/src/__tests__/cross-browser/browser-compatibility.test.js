@@ -71,7 +71,9 @@ describe("Cross-Browser Compatibility Tests", () => {
   describe("Modern Browser Features", () => {
     test("intersection observer works or has fallback", async () => {
       // Test with IntersectionObserver support - use LazyImage which actually uses it
-      const { unmount } = render(<LazyImage src="https://example.com/test.jpg" alt="Test" />);
+      const { unmount } = render(
+        <LazyImage src="https://example.com/test.jpg" alt="Test" />,
+      );
 
       await waitFor(() => {
         // Check if image or placeholder is rendered

@@ -1,5 +1,8 @@
 import { Suspense } from "react";
-import { getAnimals, getAllMetadata } from "../../services/serverAnimalsService";
+import {
+  getAnimals,
+  getAllMetadata,
+} from "../../services/serverAnimalsService";
 import DogsPageClientSimplified from "./DogsPageClientSimplified";
 import DogCardSkeletonOptimized from "../../components/ui/DogCardSkeletonOptimized";
 import "../../styles/animations.css";
@@ -10,12 +13,14 @@ export const revalidate = 300;
 // Generate metadata for SEO
 export async function generateMetadata() {
   return {
-    title: 'Find Your New Best Friend | Rescue Dog Aggregator',
-    description: 'Browse hundreds of rescue dogs looking for their forever homes. Filter by size, age, location, and more.',
+    title: "Find Your New Best Friend | Rescue Dog Aggregator",
+    description:
+      "Browse hundreds of rescue dogs looking for their forever homes. Filter by size, age, location, and more.",
     openGraph: {
-      title: 'Find Rescue Dogs',
-      description: 'Browse hundreds of rescue dogs looking for their forever homes.',
-      images: ['/og-dogs.jpg'],
+      title: "Find Rescue Dogs",
+      description:
+        "Browse hundreds of rescue dogs looking for their forever homes.",
+      images: ["/og-dogs.jpg"],
     },
   };
 }
@@ -24,7 +29,7 @@ export async function generateMetadata() {
 export default async function DogsPageOptimized(props) {
   // Await searchParams in Next.js 15
   const searchParams = await props.searchParams;
-  
+
   // Parse search params for initial filtering
   const params = {
     limit: 20,

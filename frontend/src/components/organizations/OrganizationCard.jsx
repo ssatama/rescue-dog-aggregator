@@ -232,7 +232,9 @@ const OrganizationCard = memo(
               <div className="flex space-x-2 mb-2">
                 {recentDogs.slice(0, 3).map((dog, index) => (
                   <div key={dog.id || index} className="flex-shrink-0">
-                    <div className={`${styles.dogThumbnail} rounded-lg overflow-hidden`}>
+                    <div
+                      className={`${styles.dogThumbnail} rounded-lg overflow-hidden`}
+                    >
                       <OptimizedImage
                         src={dog.thumbnail_url || dog.primary_image_url}
                         alt={dog.name || "Dog preview"}

@@ -18,11 +18,11 @@ describe("DogCard Component", () => {
       size: "Large",
       primary_image_url: "https://example.com/image.jpg",
       status: "available",
-      organization: { 
+      organization: {
         name: "Test Organization",
-        city: 'Test City', 
-        country: 'TC' 
-      }
+        city: "Test City",
+        country: "TC",
+      },
     };
 
     render(<DogCard dog={mockDog} />);
@@ -33,9 +33,8 @@ describe("DogCard Component", () => {
     // Check that it uses standardized breed
     expect(screen.getByText("Labrador Retriever")).toBeInTheDocument();
 
-    // Check that breed group is displayed
-    // *** FIX: Look for "Test Group" instead of "Sporting Group" since mockDog has breed_group: "Test Group" ***
-    expect(screen.getByText("Test Group")).toBeInTheDocument();
+    // Breed group should NOT be displayed anymore (fixed per requirement)
+    expect(screen.queryByText("Test Group")).not.toBeInTheDocument();
 
     // Check that size is displayed (Assuming size is also rendered, if not, remove this)
     // expect(screen.getByText('Large')).toBeInTheDocument(); // Uncomment if size is displayed
@@ -493,8 +492,7 @@ describe("DogCard Component", () => {
 
       // Image might be in placeholder state
       const imageElement =
-        screen.queryByAltText("Buddy") ||
-        screen.getByTestId("optimized-image");
+        screen.queryByAltText("Buddy") || screen.getByTestId("optimized-image");
       expect(imageElement).toBeInTheDocument();
       expect(imageElement.className).toContain("object-cover");
     });
@@ -512,8 +510,7 @@ describe("DogCard Component", () => {
 
       // Image might be in placeholder state
       const imageElement =
-        screen.queryByAltText("Buddy") ||
-        screen.getByTestId("optimized-image");
+        screen.queryByAltText("Buddy") || screen.getByTestId("optimized-image");
       expect(imageElement.className).toContain("object-cover");
     });
   });
@@ -598,8 +595,7 @@ describe("DogCard Component", () => {
 
       // Check placeholder or loaded image
       const imageElement =
-        screen.queryByAltText("Buddy") ||
-        screen.getByTestId("optimized-image");
+        screen.queryByAltText("Buddy") || screen.getByTestId("optimized-image");
 
       // Image should have correct hover scale effect - OptimizedImage generates base classes
       expect(imageElement.className).toContain("w-full");
@@ -780,8 +776,7 @@ describe("DogCard Component", () => {
       render(<DogCard dog={mockDog} />);
 
       const imageElement =
-        screen.queryByAltText("Buddy") ||
-        screen.getByTestId("optimized-image");
+        screen.queryByAltText("Buddy") || screen.getByTestId("optimized-image");
       expect(imageElement).toHaveClass("w-full");
       expect(imageElement).toHaveClass("h-full");
       expect(imageElement).toHaveClass("object-cover");

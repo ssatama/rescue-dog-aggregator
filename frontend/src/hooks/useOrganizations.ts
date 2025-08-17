@@ -1,5 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getOrganizations, getEnhancedOrganizations } from '@/services/organizationsService';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  getOrganizations,
+  getEnhancedOrganizations,
+} from "@/services/organizationsService";
 
 export interface Organization {
   id: number;
@@ -25,11 +28,12 @@ export interface Organization {
 
 // Query keys factory for better organization
 export const organizationKeys = {
-  all: ['organizations'] as const,
-  lists: () => [...organizationKeys.all, 'list'] as const,
-  list: (filters?: Record<string, any>) => [...organizationKeys.lists(), filters] as const,
-  enhanced: () => [...organizationKeys.all, 'enhanced'] as const,
-  details: () => [...organizationKeys.all, 'detail'] as const,
+  all: ["organizations"] as const,
+  lists: () => [...organizationKeys.all, "list"] as const,
+  list: (filters?: Record<string, any>) =>
+    [...organizationKeys.lists(), filters] as const,
+  enhanced: () => [...organizationKeys.all, "enhanced"] as const,
+  details: () => [...organizationKeys.all, "detail"] as const,
   detail: (id: number | string) => [...organizationKeys.details(), id] as const,
 };
 
@@ -62,14 +66,16 @@ export function useOrganizations(filters?: Record<string, any>) {
 // Hook for prefetching organizations (useful for hover prefetch)
 export function usePrefetchOrganization() {
   const queryClient = useQueryClient();
-  
+
   return (organizationSlug: string) => {
     queryClient.prefetchQuery({
       queryKey: organizationKeys.detail(organizationSlug),
       queryFn: async () => {
         // This would fetch organization detail
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/organizations/${organizationSlug}`);
-        if (!response.ok) throw new Error('Failed to fetch organization');
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/organizations/${organizationSlug}`,
+        );
+        if (!response.ok) throw new Error("Failed to fetch organization");
         return response.json();
       },
       staleTime: 5 * 60 * 1000,
@@ -80,7 +86,7 @@ export function usePrefetchOrganization() {
 // Hook for invalidating organization queries (useful after mutations)
 export function useInvalidateOrganizations() {
   const queryClient = useQueryClient();
-  
+
   return () => {
     queryClient.invalidateQueries({ queryKey: organizationKeys.all });
   };

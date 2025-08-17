@@ -81,7 +81,9 @@ describe("DogsPage URL Parameter Handling", () => {
       });
 
       // Act
-      render(<DogsPageClientSimplified initialData={[]} metadata={mockMetadata} />);
+      render(
+        <DogsPageClientSimplified initialData={[]} metadata={mockMetadata} />,
+      );
 
       // Assert
       await waitFor(() => {
@@ -98,7 +100,9 @@ describe("DogsPage URL Parameter Handling", () => {
       });
 
       // Act
-      render(<DogsPageClientSimplified initialData={[]} metadata={mockMetadata} />);
+      render(
+        <DogsPageClientSimplified initialData={[]} metadata={mockMetadata} />,
+      );
 
       // Assert
       await waitFor(() => {
@@ -113,7 +117,9 @@ describe("DogsPage URL Parameter Handling", () => {
       mockSearchParams.get.mockReturnValue(null);
 
       // Act
-      render(<DogsPageClientSimplified initialData={[]} metadata={mockMetadata} />);
+      render(
+        <DogsPageClientSimplified initialData={[]} metadata={mockMetadata} />,
+      );
 
       // Assert
       await waitFor(() => {
@@ -130,7 +136,9 @@ describe("DogsPage URL Parameter Handling", () => {
       });
 
       // Act
-      render(<DogsPageClientSimplified initialData={[]} metadata={mockMetadata} />);
+      render(
+        <DogsPageClientSimplified initialData={[]} metadata={mockMetadata} />,
+      );
 
       // Assert
       await waitFor(() => {
@@ -148,7 +156,9 @@ describe("DogsPage URL Parameter Handling", () => {
       });
 
       // Act
-      render(<DogsPageClientSimplified initialData={[]} metadata={mockMetadata} />);
+      render(
+        <DogsPageClientSimplified initialData={[]} metadata={mockMetadata} />,
+      );
 
       // Assert
       await waitFor(() => {
@@ -162,7 +172,9 @@ describe("DogsPage URL Parameter Handling", () => {
       mockSearchParams.get.mockReturnValue(null);
 
       // Act
-      render(<DogsPageClientSimplified initialData={[]} metadata={mockMetadata} />);
+      render(
+        <DogsPageClientSimplified initialData={[]} metadata={mockMetadata} />,
+      );
 
       // Assert
       expect(mockSearchParams.get).toHaveBeenCalledWith("organization_id");

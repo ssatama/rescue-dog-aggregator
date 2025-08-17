@@ -102,7 +102,7 @@ describe("OrganizationCard Size Variants", () => {
     test('defaults to size="large" when no size prop provided', () => {
       render(<OrganizationCard organization={mockOrganization} />);
       const logoImage = screen.getAllByTestId("lazy-image")[0];
-      const logoContainer = logoImage.closest('.w-16');
+      const logoContainer = logoImage.closest(".w-16");
       expect(logoContainer).toHaveClass("w-16", "h-16"); // 64px (large)
     });
   });
@@ -111,7 +111,7 @@ describe("OrganizationCard Size Variants", () => {
     test('renders 48px logo for size="small"', () => {
       render(<OrganizationCard organization={mockOrganization} size="small" />);
       const logoImage = screen.getAllByTestId("lazy-image")[0];
-      const logoContainer = logoImage.closest('.w-12');
+      const logoContainer = logoImage.closest(".w-12");
       expect(logoContainer).toHaveClass("w-12", "h-12"); // 48px
     });
 
@@ -120,14 +120,14 @@ describe("OrganizationCard Size Variants", () => {
         <OrganizationCard organization={mockOrganization} size="medium" />,
       );
       const logoImage = screen.getAllByTestId("lazy-image")[0];
-      const logoContainer = logoImage.closest('.w-14');
+      const logoContainer = logoImage.closest(".w-14");
       expect(logoContainer).toHaveClass("w-14", "h-14"); // 56px
     });
 
     test('renders 64px logo for size="large"', () => {
       render(<OrganizationCard organization={mockOrganization} size="large" />);
       const logoImage = screen.getAllByTestId("lazy-image")[0];
-      const logoContainer = logoImage.closest('.w-16');
+      const logoContainer = logoImage.closest(".w-16");
       expect(logoContainer).toHaveClass("w-16", "h-16"); // 64px
     });
 
@@ -337,7 +337,7 @@ describe("OrganizationCard Size Variants", () => {
       );
       let dogThumbnails = screen.getAllByTestId("lazy-image").slice(1); // Skip logo
       dogThumbnails.forEach((img) => {
-        const container = img.closest('.w-10');
+        const container = img.closest(".w-10");
         expect(container).toHaveClass("w-10", "h-10"); // 40px for small
       });
 
@@ -346,7 +346,7 @@ describe("OrganizationCard Size Variants", () => {
       );
       dogThumbnails = screen.getAllByTestId("lazy-image").slice(1);
       dogThumbnails.forEach((img) => {
-        const container = img.closest('.w-11');
+        const container = img.closest(".w-11");
         expect(container).toHaveClass("w-11", "h-11"); // 44px for medium
       });
 
@@ -355,7 +355,7 @@ describe("OrganizationCard Size Variants", () => {
       );
       dogThumbnails = screen.getAllByTestId("lazy-image").slice(1);
       dogThumbnails.forEach((img) => {
-        const container = img.closest('.w-12');
+        const container = img.closest(".w-12");
         expect(container).toHaveClass("w-12", "h-12"); // 48px for large
       });
     });

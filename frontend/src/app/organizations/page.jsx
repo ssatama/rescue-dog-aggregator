@@ -28,15 +28,15 @@ export const revalidate = 300;
 
 export default async function OrganizationsPage() {
   let organizations = [];
-  
+
   try {
     organizations = await getEnhancedOrganizationsSSR();
   } catch (error) {
     console.error("Failed to fetch organizations server-side:", error);
   }
-  
+
   return (
-    <OrganizationsClient 
+    <OrganizationsClient
       initialData={organizations}
       dataTimestamp={Date.now()}
     />

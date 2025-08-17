@@ -150,7 +150,7 @@ jest.mock("next/image", () => ({
 
 jest.mock("next/link", () => ({
   __esModule: true,
-  default: ({ children, href, ...props }) => (
+  default: ({ children, href, prefetch, ...props }) => (
     <a href={href} {...props}>
       {children}
     </a>
@@ -187,6 +187,14 @@ beforeEach(() => {
       typeof args[0] === "string" &&
       args[0].includes("Warning: An update to") &&
       args[0].includes("was not wrapped in act")
+    ) {
+      return;
+    }
+    // Suppress fetchPriority warning in tests - jsdom doesn't support this attribute yet
+    // but it works fine in real browsers
+    if (
+      typeof args[0] === "string" &&
+      args[0].includes("React does not recognize the `fetchPriority` prop")
     ) {
       return;
     }

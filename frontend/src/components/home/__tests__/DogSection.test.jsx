@@ -583,29 +583,29 @@ describe("DogSection", () => {
       // Should not show loading state (element exists but should be hidden)
       const loadingElement = screen.getByTestId("dog-section-loading");
       expect(loadingElement).toHaveClass("opacity-0");
-      
+
       // Should show dog grid immediately
       expect(screen.getByTestId("dog-grid")).toBeInTheDocument();
-      
+
       // Should render dog cards
       expect(screen.getByTestId("dog-card-1")).toBeInTheDocument();
       expect(screen.getByTestId("dog-card-2")).toBeInTheDocument();
-      
+
       // First dog should have priority loading
       const firstCard = screen.getByTestId("dog-card-1");
       expect(firstCard).toHaveAttribute("data-priority", "true");
-      
+
       // Second dog should not have priority
       const secondCard = screen.getByTestId("dog-card-2");
       expect(secondCard).toHaveAttribute("data-priority", "false");
-      
+
       // Should not call API when initial data is provided
       expect(getAnimalsByCuration).not.toHaveBeenCalled();
     });
 
     test("falls back to API fetch when no initial dogs provided", async () => {
       getAnimalsByCuration.mockResolvedValue(mockDogs);
-      
+
       render(
         <DogSection
           title="Just Added"
@@ -618,10 +618,10 @@ describe("DogSection", () => {
       // Should show loading state initially (visible)
       const loadingElement = screen.getByTestId("dog-section-loading");
       expect(loadingElement).toHaveClass("opacity-100");
-      
+
       // Should call API
       expect(getAnimalsByCuration).toHaveBeenCalledWith("recent", 4);
-      
+
       // Wait for dogs to load
       await waitFor(() => {
         expect(screen.getByTestId("dog-grid")).toBeInTheDocument();

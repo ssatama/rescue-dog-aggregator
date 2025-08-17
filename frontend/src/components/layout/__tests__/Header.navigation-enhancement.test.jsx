@@ -7,7 +7,6 @@ jest.mock("next/navigation", () => ({
   usePathname: jest.fn(),
 }));
 
-
 describe("Header Navigation Enhancement - Orange Theme", () => {
   beforeEach(() => {
     usePathname.mockReturnValue("/");

@@ -1,8 +1,10 @@
-import { useEffect, useRef } from 'react';
-import { measureComponentPerformance } from '@/utils/performanceMonitor';
+import { useEffect, useRef } from "react";
+import { measureComponentPerformance } from "@/utils/performanceMonitor";
 
 export function useComponentPerformance(componentName: string) {
-  const measureRef = useRef<ReturnType<typeof measureComponentPerformance> | undefined>(undefined);
+  const measureRef = useRef<
+    ReturnType<typeof measureComponentPerformance> | undefined
+  >(undefined);
   const hasStarted = useRef(false);
 
   useEffect(() => {

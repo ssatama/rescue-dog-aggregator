@@ -1,5 +1,6 @@
 # api/routes/organizations.py
 
+import json
 from typing import List
 
 import psycopg2
@@ -92,6 +93,115 @@ def get_organizations(filters: OrganizationFilterRequest = Depends(), cursor: Re
         handle_database_error(db_err, "get_organizations")
     except Exception as e:
         raise APIException(status_code=500, detail="Failed to fetch organizations", error_code="INTERNAL_ERROR")
+
+
+@router.get("/enhanced", response_model=List[dict])
+def get_enhanced_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
+    """
+    Get all organizations with statistics and recent dogs in a single optimized query.
+
+    This endpoint is designed for SSR and reduces N+1 queries by using a CTE
+    to fetch all data in one database round trip.
+    """
+    try:
+        # Use CTE to fetch organizations with statistics and recent dogs in one query
+        cursor.execute(
+            """
+            WITH org_stats AS (
+                SELECT 
+                    o.id,
+                    o.name,
+                    o.description,
+                    o.logo_url,
+                    o.website_url,
+                    o.country,
+                    o.city,
+                    o.social_media::jsonb as social_media,
+                    o.service_regions::jsonb as service_regions,
+                    o.ships_to::jsonb as ships_to,
+                    o.adoption_fees::jsonb as adoption_fees,
+                    o.slug,
+                    o.active as is_active,
+                    o.created_at,
+                    o.updated_at,
+                    COUNT(DISTINCT a.id) as total_dogs,
+                    COUNT(DISTINCT a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '7 days') as new_this_week,
+                    COUNT(DISTINCT a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '30 days') as new_this_month
+                FROM organizations o
+                LEFT JOIN animals a ON o.id = a.organization_id AND a.status = 'available'
+                WHERE o.active = true
+                GROUP BY o.id
+            ),
+            recent_dogs AS (
+                SELECT DISTINCT ON (a.organization_id, a.id)
+                    a.organization_id,
+                    a.id as dog_id,
+                    a.name as dog_name,
+                    a.primary_image_url as image_url,
+                    a.adoption_url as external_link,
+                    a.age_min_months,
+                    a.age_max_months,
+                    a.standardized_size,
+                    a.standardized_breed,
+                    a.created_at as dog_created_at,
+                    ROW_NUMBER() OVER (PARTITION BY a.organization_id ORDER BY a.created_at DESC) as rn
+                FROM animals a
+                WHERE a.status = 'available'
+                    AND a.organization_id IN (SELECT id FROM org_stats)
+            )
+            SELECT 
+                os.*,
+                COALESCE(
+                    json_agg(
+                        json_build_object(
+                            'id', rd.dog_id,
+                            'name', rd.dog_name,
+                            'image_url', rd.image_url,
+                            'external_link', rd.external_link,
+                            'age_min_months', rd.age_min_months,
+                            'age_max_months', rd.age_max_months,
+                            'standardized_size', rd.standardized_size,
+                            'standardized_breed', rd.standardized_breed
+                        ) ORDER BY rd.dog_created_at DESC
+                    ) FILTER (WHERE rd.dog_id IS NOT NULL AND rd.rn <= 3),
+                    '[]'::json
+                ) as recent_dogs
+            FROM org_stats os
+            LEFT JOIN recent_dogs rd ON os.id = rd.organization_id AND rd.rn <= 3
+            GROUP BY 
+                os.id, os.name, os.description, os.logo_url, os.website_url,
+                os.country, os.city, os.social_media, os.service_regions,
+                os.ships_to, os.adoption_fees, os.slug, os.is_active,
+                os.created_at, os.updated_at, os.total_dogs, os.new_this_week,
+                os.new_this_month
+            ORDER BY os.total_dogs DESC, os.name
+            """
+        )
+
+        organizations = cursor.fetchall()
+
+        # Convert to list of dicts and ensure JSON fields are properly parsed
+        result = []
+        for org in organizations:
+            org_dict = dict(org)
+            # Ensure JSON fields are parsed
+            if org_dict.get("social_media") and isinstance(org_dict["social_media"], str):
+                org_dict["social_media"] = json.loads(org_dict["social_media"])
+            if org_dict.get("service_regions") and isinstance(org_dict["service_regions"], str):
+                org_dict["service_regions"] = json.loads(org_dict["service_regions"])
+            if org_dict.get("ships_to") and isinstance(org_dict["ships_to"], str):
+                org_dict["ships_to"] = json.loads(org_dict["ships_to"])
+            if org_dict.get("recent_dogs") and isinstance(org_dict["recent_dogs"], str):
+                org_dict["recent_dogs"] = json.loads(org_dict["recent_dogs"])
+
+            result.append(org_dict)
+
+        return result
+
+    except psycopg2.Error as db_err:
+        handle_database_error(db_err, "get_enhanced_organizations")
+    except Exception as e:
+        raise APIException(status_code=500, detail="Failed to fetch enhanced organizations data", error_code="INTERNAL_ERROR")
 
 
 @router.get("/{organization_slug}", response_model=Organization)

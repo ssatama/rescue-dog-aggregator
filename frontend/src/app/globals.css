@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* Import performance-optimized animations */
-@import '../styles/animations.css';
+@import "../styles/animations.css";
 
 @layer base {
   :root {

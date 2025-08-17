@@ -288,7 +288,10 @@ const DogSection = React.memo(function DogSection({
                   >
                     {dogs.map((dog, index) => (
                       <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
-                        <DogCardOptimized dog={dog} priority={priority && index === 0} />
+                        <DogCardOptimized
+                          dog={dog}
+                          priority={priority && index === 0}
+                        />
                       </DogCardErrorBoundary>
                     ))}
                   </MobileCarousel>
@@ -300,7 +303,10 @@ const DogSection = React.memo(function DogSection({
                 >
                   {dogs.map((dog, index) => (
                     <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
-                      <DogCardOptimized dog={dog} priority={priority && index === 0} />
+                      <DogCardOptimized
+                        dog={dog}
+                        priority={priority && index === 0}
+                      />
                     </DogCardErrorBoundary>
                   ))}
                 </div>

@@ -1,41 +1,44 @@
-import { onCLS, onFCP, onLCP, onTTFB, onINP, Metric } from 'web-vitals';
-import { logger } from './logger';
+import { onCLS, onFCP, onLCP, onTTFB, onINP, Metric } from "web-vitals";
+import { logger } from "./logger";
 
 interface PerformanceData {
   metric: string;
   value: number;
-  rating: 'good' | 'needs-improvement' | 'poor';
+  rating: "good" | "needs-improvement" | "poor";
   delta?: number;
   navigationType?: string;
   url: string;
   timestamp: number;
-  deviceType: 'mobile' | 'tablet' | 'desktop';
+  deviceType: "mobile" | "tablet" | "desktop";
   connectionType?: string;
 }
 
 // Thresholds based on Google's Core Web Vitals
 const THRESHOLDS: Record<string, { good: number; poor: number }> = {
-  FCP: { good: 1800, poor: 3000 },    // First Contentful Paint
-  LCP: { good: 2500, poor: 4000 },    // Largest Contentful Paint
-  CLS: { good: 0.1, poor: 0.25 },     // Cumulative Layout Shift
-  TTFB: { good: 800, poor: 1800 },    // Time to First Byte
-  INP: { good: 200, poor: 500 },      // Interaction to Next Paint
+  FCP: { good: 1800, poor: 3000 }, // First Contentful Paint
+  LCP: { good: 2500, poor: 4000 }, // Largest Contentful Paint
+  CLS: { good: 0.1, poor: 0.25 }, // Cumulative Layout Shift
+  TTFB: { good: 800, poor: 1800 }, // Time to First Byte
+  INP: { good: 200, poor: 500 }, // Interaction to Next Paint
 };
 
-function getRating(metric: string, value: number): 'good' | 'needs-improvement' | 'poor' {
+function getRating(
+  metric: string,
+  value: number,
+): "good" | "needs-improvement" | "poor" {
   const threshold = THRESHOLDS[metric];
-  if (!threshold) return 'needs-improvement';
-  
-  if (value <= threshold.good) return 'good';
-  if (value > threshold.poor) return 'poor';
-  return 'needs-improvement';
+  if (!threshold) return "needs-improvement";
+
+  if (value <= threshold.good) return "good";
+  if (value > threshold.poor) return "poor";
+  return "needs-improvement";
 }
 
-function getDeviceType(): 'mobile' | 'tablet' | 'desktop' {
+function getDeviceType(): "mobile" | "tablet" | "desktop" {
   const width = window.innerWidth;
-  if (width < 768) return 'mobile';
-  if (width < 1024) return 'tablet';
-  return 'desktop';
+  if (width < 768) return "mobile";
+  if (width < 1024) return "tablet";
+  return "desktop";
 }
 
 function getConnectionType(): string | undefined {
@@ -45,15 +48,18 @@ function getConnectionType(): string | undefined {
 
 function sendToAnalytics(data: PerformanceData) {
   // Log locally for development
-  if (process.env.NODE_ENV === 'development') {
-    const emoji = data.rating === 'good' ? '✅' : data.rating === 'poor' ? '❌' : '⚠️';
-    console.log(`${emoji} ${data.metric}: ${data.value.toFixed(2)}ms (${data.rating})`);
+  if (process.env.NODE_ENV === "development") {
+    const emoji =
+      data.rating === "good" ? "✅" : data.rating === "poor" ? "❌" : "⚠️";
+    console.log(
+      `${emoji} ${data.metric}: ${data.value.toFixed(2)}ms (${data.rating})`,
+    );
   }
 
   // Send to analytics service
-  if (typeof window !== 'undefined' && window.gtag) {
-    window.gtag('event', 'web_vitals', {
-      event_category: 'Performance',
+  if (typeof window !== "undefined" && window.gtag) {
+    window.gtag("event", "web_vitals", {
+      event_category: "Performance",
       event_label: data.metric,
       value: Math.round(data.value),
       metric_rating: data.rating,
@@ -66,16 +72,16 @@ function sendToAnalytics(data: PerformanceData) {
   // Send to custom analytics endpoint
   if (process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT) {
     fetch(process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
-    }).catch(err => {
-      logger.error('Failed to send performance metrics', err);
+    }).catch((err) => {
+      logger.error("Failed to send performance metrics", err);
     });
   }
 
   // Log to application logger
-  logger.info('Performance metric captured', data);
+  logger.info("Performance metric captured", data);
 }
 
 function handleMetric(metric: Metric) {
@@ -96,34 +102,35 @@ function handleMetric(metric: Metric) {
 
 // Initialize performance monitoring
 export function initPerformanceMonitoring() {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
 
   // Core Web Vitals
-  onFCP(handleMetric);  // First Contentful Paint
-  onLCP(handleMetric);  // Largest Contentful Paint
-  onCLS(handleMetric);  // Cumulative Layout Shift
+  onFCP(handleMetric); // First Contentful Paint
+  onLCP(handleMetric); // Largest Contentful Paint
+  onCLS(handleMetric); // Cumulative Layout Shift
   onTTFB(handleMetric); // Time to First Byte
-  onINP(handleMetric);  // Interaction to Next Paint
+  onINP(handleMetric); // Interaction to Next Paint
 
   // Custom performance marks
   if (window.performance && window.performance.mark) {
     // Mark when React hydration completes
-    if (document.readyState === 'complete') {
-      window.performance.mark('react-hydration-complete');
+    if (document.readyState === "complete") {
+      window.performance.mark("react-hydration-complete");
     } else {
-      window.addEventListener('load', () => {
-        window.performance.mark('react-hydration-complete');
+      window.addEventListener("load", () => {
+        window.performance.mark("react-hydration-complete");
       });
     }
   }
 
   // Monitor long tasks
-  if ('PerformanceObserver' in window) {
+  if ("PerformanceObserver" in window) {
     try {
       const observer = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
-          if (entry.duration > 50) { // Tasks longer than 50ms
-            logger.warn('Long task detected', {
+          if (entry.duration > 50) {
+            // Tasks longer than 50ms
+            logger.warn("Long task detected", {
               duration: entry.duration,
               startTime: entry.startTime,
               name: entry.name,
@@ -131,7 +138,7 @@ export function initPerformanceMonitoring() {
           }
         }
       });
-      observer.observe({ entryTypes: ['longtask'] });
+      observer.observe({ entryTypes: ["longtask"] });
     } catch (e) {
       // PerformanceObserver not supported
     }
@@ -139,14 +146,14 @@ export function initPerformanceMonitoring() {
 
   // Monitor resource loading
   if (window.performance && window.performance.getEntriesByType) {
-    window.addEventListener('load', () => {
-      const resources = window.performance.getEntriesByType('resource');
-      const slowResources = resources.filter(r => r.duration > 1000);
-      
+    window.addEventListener("load", () => {
+      const resources = window.performance.getEntriesByType("resource");
+      const slowResources = resources.filter((r) => r.duration > 1000);
+
       if (slowResources.length > 0) {
-        logger.warn('Slow resources detected', {
+        logger.warn("Slow resources detected", {
           count: slowResources.length,
-          resources: slowResources.map(r => ({
+          resources: slowResources.map((r) => ({
             name: r.name,
             duration: Math.round(r.duration),
             type: (r as any).initiatorType,
@@ -158,7 +165,11 @@ export function initPerformanceMonitoring() {
 }
 
 // Export individual metric functions for manual tracking
-export function trackCustomMetric(name: string, value: number, metadata?: Record<string, any>) {
+export function trackCustomMetric(
+  name: string,
+  value: number,
+  metadata?: Record<string, any>,
+) {
   const data: PerformanceData = {
     metric: name,
     value,
@@ -186,10 +197,14 @@ export function measureComponentPerformance(componentName: string) {
       }
     },
     end: () => {
-      if (window.performance && window.performance.mark && window.performance.measure) {
+      if (
+        window.performance &&
+        window.performance.mark &&
+        window.performance.measure
+      ) {
         window.performance.mark(endMark);
         window.performance.measure(measureName, startMark, endMark);
-        
+
         const entries = window.performance.getEntriesByName(measureName);
         if (entries.length > 0) {
           const duration = entries[entries.length - 1].duration;
@@ -203,9 +218,10 @@ export function measureComponentPerformance(componentName: string) {
 // Utility to track API call performance
 export function trackAPIPerformance(endpoint: string, startTime: number) {
   const duration = Date.now() - startTime;
-  trackCustomMetric('api-call-duration', duration, {
+  trackCustomMetric("api-call-duration", duration, {
     endpoint,
-    rating: duration < 200 ? 'good' : duration < 1000 ? 'needs-improvement' : 'poor',
+    rating:
+      duration < 200 ? "good" : duration < 1000 ? "needs-improvement" : "poor",
   });
 }
 

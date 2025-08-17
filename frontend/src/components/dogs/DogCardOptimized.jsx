@@ -63,9 +63,9 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
   const standardizedSize = getStandardizedSize(dog);
 
   // Calculate animation delay class (only for non-virtualized items)
-  const animationClass = !isVirtualized 
+  const animationClass = !isVirtualized
     ? `animate-fadeInUp animate-delay-${Math.min(animationDelay * 100, 400)}`
-    : '';
+    : "";
 
   // Compact mobile list view for better space utilization
   if (compact) {
@@ -78,9 +78,12 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
         <Link
           href={`/dogs/${slug}`}
           className="block w-32 md:w-full flex-shrink-0"
-          prefetch={priority ? true : undefined}
+          prefetch={priority ? true : false}
         >
-          <div className="aspect-[4/3] relative overflow-hidden bg-muted dark:bg-muted/50" data-testid="image-container">
+          <div
+            className="aspect-[4/3] relative overflow-hidden bg-muted dark:bg-muted/50"
+            data-testid="image-container"
+          >
             <OptimizedImage
               src={dog.primary_image_url || dog.main_image}
               alt={dog.name}
@@ -101,7 +104,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
                 {name}
               </CardTitle>
             </Link>
-            <FavoriteButton dog={dog} compact />
+            <FavoriteButton dogId={dog.id} dogName={dog.name} compact />
           </div>
 
           {/* Mobile-optimized info */}
@@ -153,22 +156,29 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
       className={`rounded-lg bg-card text-card-foreground shadow-sm dark:shadow-lg dark:shadow-purple-500/5 will-change-transform dog-card content-fade-in group transition-all duration-300 hover:shadow-xl overflow-hidden flex flex-col h-full ${animationClass}`}
     >
       {/* Image container */}
-      <Link href={`/dogs/${slug}`} className="block" prefetch={priority ? true : undefined}>
-        <div className="aspect-[4/3] relative overflow-hidden bg-muted dark:bg-muted/50" data-testid="image-container">
+      <Link
+        href={`/dogs/${slug}`}
+        className="block"
+        prefetch={priority ? true : undefined}
+      >
+        <div
+          className="aspect-[4/3] relative overflow-hidden bg-muted dark:bg-muted/50"
+          data-testid="image-container"
+        >
           {showNewBadge && (
-            <Badge 
-              className="absolute top-2 left-2 z-10 bg-green-500 text-white" 
+            <Badge
+              className="absolute top-2 left-2 z-10 bg-green-500 text-white"
               data-testid="new-badge"
               aria-label="Recently added dog"
             >
               NEW
             </Badge>
           )}
-          
+
           {/* Status badge for accessibility - positioned to avoid overlap with NEW badge */}
           {status && status !== "available" && (
-            <Badge 
-              className={`absolute top-2 z-10 ${showNewBadge ? 'right-2' : 'left-2'}`}
+            <Badge
+              className={`absolute top-2 z-10 ${showNewBadge ? "right-2" : "left-2"}`}
               variant={status === "adopted" ? "secondary" : "outline"}
             >
               {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -190,42 +200,59 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <Link href={`/dogs/${slug}`} prefetch={priority ? true : undefined}>
-            <h3 className="text-card-title hover:underline truncate" data-testid="dog-name">{name}</h3>
+            <h3
+              className="text-card-title hover:underline truncate"
+              data-testid="dog-name"
+            >
+              {name}
+            </h3>
           </Link>
-          <FavoriteButton dog={dog} />
+          <FavoriteButton dogId={dog.id} dogName={dog.name} />
         </div>
       </CardHeader>
 
       <CardContent className="space-y-2 pb-3" data-testid="card-content">
         {/* Age and Gender */}
-        <div 
+        <div
           className="flex items-center gap-2 text-sm text-muted-foreground"
           data-testid="age-gender-row"
         >
           {formattedAge && ageCategory !== "Unknown" && (
             <>
               <span data-testid="age-category">🎂 {ageCategory}</span>
-              <span className="text-xs" data-testid="formatted-age">• {formattedAge}</span>
+              <span className="text-xs" data-testid="formatted-age">
+                • {formattedAge}
+              </span>
             </>
           )}
-          <span data-testid="gender-display">{genderData.icon} {genderData.text}</span>
+          <span data-testid="gender-display">
+            {genderData.icon} {genderData.text}
+          </span>
         </div>
 
-        {/* Breed and Size */}
-        <div className="space-y-1">
-          <p className="text-sm font-medium truncate" data-testid="dog-breed">{breed}</p>
-          {breedGroup && (
-            <p className="text-xs text-muted-foreground">{breedGroup}</p>
-          )}
-        </div>
+        {/* Breed */}
+        {breed && breed !== "Unknown" && breed !== "Unknown Breed" && (
+          <div className="space-y-1">
+            <p className="text-sm font-medium truncate" data-testid="dog-breed">
+              {breed}
+            </p>
+          </div>
+        )}
 
         {/* Organization */}
-        <p className="text-sm text-muted-foreground" data-testid="location-display">{organizationName}</p>
+        <p
+          className="text-sm text-muted-foreground"
+          data-testid="location-display"
+        >
+          {organizationName}
+        </p>
 
         {/* Ships to countries */}
         {shipsToCountries && shipsToCountries.length > 0 && (
           <div className="pt-2" data-testid="ships-to-display">
-            <div className="text-xs text-muted-foreground mb-1">Adoptable to:</div>
+            <div className="text-xs text-muted-foreground mb-1">
+              Adoptable to:
+            </div>
             <div className="text-xs">{formatShipsToList(shipsToCountries)}</div>
           </div>
         )}
@@ -233,7 +260,11 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
 
       {/* Call to action */}
       <CardFooter className="pt-0" data-testid="card-footer">
-        <Button asChild variant="outline" className="w-full animate-button-hover">
+        <Button
+          asChild
+          variant="outline"
+          className="w-full animate-button-hover"
+        >
           <Link href={`/dogs/${slug}`} prefetch={priority ? true : undefined}>
             Meet {name} →
           </Link>

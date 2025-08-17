@@ -1,15 +1,15 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 
-const DogCardSkeletonOptimized = React.memo(function DogCardSkeletonOptimized({ 
+const DogCardSkeletonOptimized = React.memo(function DogCardSkeletonOptimized({
   compact = false,
-  priority = false 
+  priority = false,
 }) {
   const baseClasses = "animate-pulse bg-muted/50 skeleton-element";
-  
+
   if (compact) {
     return (
-      <Card 
+      <Card
         className="rounded-lg bg-card text-card-foreground shadow-sm dark:shadow-lg dark:shadow-purple-500/5 hover:shadow-md transition-shadow duration-200 will-change-transform overflow-hidden flex flex-row md:flex-col h-auto md:h-full"
         data-testid="dog-card-skeleton"
         role="status"
@@ -31,7 +31,7 @@ const DogCardSkeletonOptimized = React.memo(function DogCardSkeletonOptimized({
   }
 
   return (
-    <Card 
+    <Card
       className="rounded-lg bg-card text-card-foreground shadow-sm dark:shadow-lg dark:shadow-purple-500/5 hover:shadow-md transition-shadow duration-200 will-change-transform overflow-hidden h-full"
       data-testid="dog-card-skeleton"
       role="status"

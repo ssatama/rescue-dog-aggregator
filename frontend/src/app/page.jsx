@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { Suspense } from 'react';
+import { Suspense } from "react";
 import Layout from "../components/layout/Layout";
 import HeroSection from "../components/home/HeroSection";
 import DogSection from "../components/home/DogSection";

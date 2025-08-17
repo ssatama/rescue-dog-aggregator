@@ -62,7 +62,6 @@ export async function getOrganizationRecentDogs(idOrSlug, limit = 3) {
   return get(`/api/organizations/${idOrSlug}/recent-dogs`, { limit });
 }
 
-
 /**
  * Fetch enhanced organizations data with statistics and recent dogs
  * This is an optimized version that fetches all needed data in fewer API calls
@@ -72,7 +71,7 @@ export async function getEnhancedOrganizations() {
   try {
     // Fetch enhanced organizations data directly from the enhanced endpoint
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    
+
     const response = await fetch(`${apiUrl}/api/organizations/enhanced`, {
       headers: {
         "Content-Type": "application/json",
@@ -89,11 +88,11 @@ export async function getEnhancedOrganizations() {
     // Map the data to ensure consistent field names
     const enhancedOrganizations = orgsArray.map((org) => ({
       ...org,
-      recent_dogs: (org.recent_dogs || []).map(dog => ({
+      recent_dogs: (org.recent_dogs || []).map((dog) => ({
         ...dog,
         // Map image_url to the expected fields
         thumbnail_url: dog.thumbnail_url || dog.image_url,
-        primary_image_url: dog.primary_image_url || dog.image_url
+        primary_image_url: dog.primary_image_url || dog.image_url,
       })),
       total_dogs: org.total_dogs || 0,
       new_this_week: org.new_this_week || 0,
@@ -116,10 +115,10 @@ export async function getEnhancedOrganizations() {
 
 export async function getEnhancedOrganizationsSSR() {
   const startTime = Date.now();
-  
+
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    
+
     const response = await fetch(`${apiUrl}/api/organizations/enhanced`, {
       next: { revalidate: 300 },
       headers: {
@@ -132,21 +131,21 @@ export async function getEnhancedOrganizationsSSR() {
     }
 
     const organizations = await response.json();
-    
+
     // Track API performance
-    if (typeof window !== 'undefined') {
-      trackAPIPerformance('/api/organizations/enhanced', startTime);
+    if (typeof window !== "undefined") {
+      trackAPIPerformance("/api/organizations/enhanced", startTime);
     }
-    
+
     const orgsArray = Array.isArray(organizations) ? organizations : [];
-    
+
     const enhancedOrganizations = orgsArray.map((org) => ({
       ...org,
-      recent_dogs: (org.recent_dogs || []).map(dog => ({
+      recent_dogs: (org.recent_dogs || []).map((dog) => ({
         ...dog,
         // Map image_url to the expected fields
         thumbnail_url: dog.thumbnail_url || dog.image_url,
-        primary_image_url: dog.primary_image_url || dog.image_url
+        primary_image_url: dog.primary_image_url || dog.image_url,
       })),
       total_dogs: org.total_dogs || 0,
       new_this_week: org.new_this_week || 0,

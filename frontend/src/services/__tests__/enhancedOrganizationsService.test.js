@@ -154,7 +154,7 @@ describe("Enhanced Organizations Service", () => {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       expect(result).toHaveLength(2);
@@ -169,12 +169,14 @@ describe("Enhanced Organizations Service", () => {
     });
 
     test("handles organizations with zero dogs", async () => {
-      const orgsWithZeroDogs = [{ 
-        id: 1, 
-        name: "New Org", 
-        total_dogs: 0,
-        recent_dogs: [] 
-      }];
+      const orgsWithZeroDogs = [
+        {
+          id: 1,
+          name: "New Org",
+          total_dogs: 0,
+          recent_dogs: [],
+        },
+      ];
 
       // Mock fetch response
       fetch.mockResolvedValueOnce({
@@ -234,7 +236,7 @@ describe("Enhanced Organizations Service", () => {
 
     test("handles complete failure of main organizations call", async () => {
       const mainError = new Error("Failed to fetch organizations: 500");
-      
+
       // Mock fetch to return a failed response
       fetch.mockResolvedValueOnce({
         ok: false,

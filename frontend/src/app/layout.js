@@ -18,6 +18,11 @@ const inter = Inter({
 });
 
 export const metadata = {
+  metadataBase: new URL(
+    process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
+  ),
   title: "Rescue Dog Aggregator - Find Your Perfect Rescue Dog",
   description:
     "Find your perfect rescue dog from multiple organizations, all in one place. Browse available dogs for adoption and connect with rescue organizations.",
