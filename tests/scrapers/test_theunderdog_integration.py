@@ -117,7 +117,7 @@ class TestTheUnderdogIntegration:
 
         # Test Vicky's data
         vicky = next(r for r in results if r["name"] == "Vicky")
-        assert vicky["external_id"] == "vicky"
+        assert vicky["external_id"] == "tud-vicky"
         assert vicky["adoption_url"] == "https://www.theunderdog.org/adopt/vicky"
         assert vicky["primary_image_url"] == "https://images.squarespace-cdn.com/vicky-hero.jpg"
         assert vicky["animal_type"] == "dog"
@@ -135,7 +135,7 @@ class TestTheUnderdogIntegration:
 
         # Test Luna's data
         luna = next(r for r in results if r["name"] == "Luna")
-        assert luna["external_id"] == "luna"
+        assert luna["external_id"] == "tud-luna"
         assert luna["adoption_url"] == "https://www.theunderdog.org/adopt/luna"
         assert luna["primary_image_url"] == "https://images.squarespace-cdn.com/luna-hero.jpg"
 

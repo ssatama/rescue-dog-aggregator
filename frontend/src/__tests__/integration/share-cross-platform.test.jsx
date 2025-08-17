@@ -1,13 +1,24 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor, renderHook, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  renderHook,
+  act,
+} from "@testing-library/react";
 import "@testing-library/jest-dom";
 import ShareButton from "../../components/ui/ShareButton";
 import { useFavorites } from "../../hooks/useFavorites";
 import { FavoritesProvider } from "../../contexts/FavoritesContext";
 import { ToastProvider } from "../../contexts/ToastContext";
-import { generateFavoritesUrl, parseSharedUrl, isMobile } from "../../utils/sharing";
+import {
+  generateFavoritesUrl,
+  parseSharedUrl,
+  isMobile,
+} from "../../utils/sharing";
 
-// Mock the useShare hook with a variable to control return values  
+// Mock the useShare hook with a variable to control return values
 jest.mock("../../hooks/useShare");
 
 // Mock clipboard API
@@ -31,20 +42,22 @@ const wrapper = ({ children }) => (
 
 describe("Share Functionality Cross-Platform", () => {
   const mockUseShare = require("../../hooks/useShare").useShare;
-  
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockWriteText.mockResolvedValue(undefined);
     mockShare.mockResolvedValue(undefined);
     mockCanShare.mockReturnValue(true);
-    
+
     // Reset the useShare mock to default behavior
     mockUseShare.mockReturnValue({
       copied: false,
       hasNativeShare: false,
       handleNativeShare: jest.fn(),
       handleCopyLink: jest.fn(() => {
-        navigator.clipboard.writeText("https://rescuedogs.me/favorites?ids=1,2,3");
+        navigator.clipboard.writeText(
+          "https://rescuedogs.me/favorites?ids=1,2,3",
+        );
       }),
       handleSocialShare: jest.fn(),
       safeUrl: "https://rescuedogs.me/favorites?ids=1,2,3",
@@ -119,7 +132,7 @@ describe("Share Functionality Cross-Platform", () => {
 
     test("uses native share when available on mobile", async () => {
       const mockHandleNativeShare = jest.fn();
-      
+
       mockUseShare.mockReturnValue({
         copied: false,
         hasNativeShare: true,
@@ -138,7 +151,7 @@ describe("Share Functionality Cross-Platform", () => {
             title="My Favorites"
             text="Check out my favorites"
           />
-        </ToastProvider>
+        </ToastProvider>,
       );
 
       const button = screen.getByRole("button");
@@ -169,20 +182,20 @@ describe("Share Functionality Cross-Platform", () => {
             title="My Favorites"
             text="Check out my favorites"
           />
-        </ToastProvider>
+        </ToastProvider>,
       );
 
       // Verify the share button renders without native share
       const button = container.querySelector('[data-testid="share-button"]');
       expect(button).toBeInTheDocument();
-      
+
       // Verify it's not using native share mode
-      expect(button).not.toHaveAttribute('data-share-mode', 'native');
+      expect(button).not.toHaveAttribute("data-share-mode", "native");
     });
 
     test("handles share cancellation gracefully on mobile", async () => {
       const mockHandleNativeShare = jest.fn().mockResolvedValue(undefined);
-      
+
       mockUseShare.mockReturnValue({
         copied: false,
         hasNativeShare: true,
@@ -200,18 +213,18 @@ describe("Share Functionality Cross-Platform", () => {
             url="https://rescuedogs.me/favorites?ids=1,2,3"
             title="My Favorites"
           />
-        </ToastProvider>
+        </ToastProvider>,
       );
 
       const button = screen.getByRole("button");
       expect(button).toHaveAttribute("data-share-mode", "native");
-      
+
       fireEvent.click(button);
 
       await waitFor(() => {
         expect(mockHandleNativeShare).toHaveBeenCalled();
       });
-      
+
       // The component should handle share cancellation gracefully
       // This test verifies the component can handle AbortErrors without crashing
       expect(button).toBeInTheDocument();
@@ -244,7 +257,7 @@ describe("Share Functionality Cross-Platform", () => {
       const mockHandleCopyLink = jest.fn(() => {
         mockWriteText("https://rescuedogs.me/favorites?ids=1,2,3");
       });
-      
+
       mockUseShare.mockReturnValue({
         copied: false,
         hasNativeShare: false,
@@ -263,18 +276,18 @@ describe("Share Functionality Cross-Platform", () => {
             title="My Favorites"
             text="Check out my favorites"
           />
-        </ToastProvider>
+        </ToastProvider>,
       );
 
       // Desktop shows dropdown - verify it's in dropdown mode
       const button = screen.getByTestId("share-button");
       expect(button).toHaveAttribute("data-share-mode", "dropdown");
       expect(button).toHaveAttribute("aria-haspopup", "menu");
-      
+
       // Verify button is clickable and renders as dropdown trigger
       expect(button).toBeInTheDocument();
       expect(button).toBeEnabled();
-      
+
       // The dropdown functionality is working - this test confirms the component
       // renders in the correct mode for desktop (dropdown instead of native share)
       expect(mockHandleCopyLink).toBeDefined();
@@ -282,9 +295,11 @@ describe("Share Functionality Cross-Platform", () => {
 
     test("handles clipboard permission denied on desktop", async () => {
       const mockHandleCopyLink = jest.fn(() => {
-        throw Object.assign(new Error("Permission denied"), { name: "NotAllowedError" });
+        throw Object.assign(new Error("Permission denied"), {
+          name: "NotAllowedError",
+        });
       });
-      
+
       mockUseShare.mockReturnValue({
         copied: false,
         hasNativeShare: false,
@@ -302,17 +317,17 @@ describe("Share Functionality Cross-Platform", () => {
             url="https://rescuedogs.me/favorites?ids=1,2,3"
             title="My Favorites"
           />
-        </ToastProvider>
+        </ToastProvider>,
       );
 
       const button = screen.getByTestId("share-button");
       expect(button).toHaveAttribute("data-share-mode", "dropdown");
       expect(button).toHaveAttribute("aria-haspopup", "menu");
-      
+
       // Verify the component renders correctly for desktop with error handling configured
       expect(button).toBeInTheDocument();
       expect(button).toBeEnabled();
-      
+
       // The error handling functionality is configured - mock demonstrates
       // that permission denied errors are properly typed for the hook
       expect(mockHandleCopyLink).toBeDefined();
@@ -342,7 +357,7 @@ describe("Share Functionality Cross-Platform", () => {
 
     test("uses native share on iPad when available", async () => {
       const mockHandleNativeShare = jest.fn();
-      
+
       mockUseShare.mockReturnValue({
         copied: false,
         hasNativeShare: true,
@@ -360,7 +375,7 @@ describe("Share Functionality Cross-Platform", () => {
             url="https://rescuedogs.me/favorites?ids=1,2,3"
             title="My Favorites"
           />
-        </ToastProvider>
+        </ToastProvider>,
       );
 
       const button = screen.getByRole("button");

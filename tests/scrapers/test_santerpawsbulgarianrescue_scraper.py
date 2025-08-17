@@ -42,10 +42,10 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
     def test_extract_external_id_from_url(self):
         """Test external ID extraction from URLs."""
         test_cases = [
-            ("https://santerpawsbulgarianrescue.com/adoption/pepper/", "pepper"),
-            ("https://santerpawsbulgarianrescue.com/adoption/daisy/", "daisy"),
-            ("https://santerpawsbulgarianrescue.com/adoption/summer-breeze/", "summer-breeze"),
-            ("https://santerpawsbulgarianrescue.com/adoption/ruby-red/", "ruby-red"),
+            ("https://santerpawsbulgarianrescue.com/adoption/pepper/", "spbr-pepper"),
+            ("https://santerpawsbulgarianrescue.com/adoption/daisy/", "spbr-daisy"),
+            ("https://santerpawsbulgarianrescue.com/adoption/summer-breeze/", "spbr-summer-breeze"),
+            ("https://santerpawsbulgarianrescue.com/adoption/ruby-red/", "spbr-ruby-red"),
         ]
 
         for url, expected_id in test_cases:
@@ -123,19 +123,19 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
 
         # Check first dog
         self.assertEqual(animals[0]["name"], "Pepper")
-        self.assertEqual(animals[0]["external_id"], "pepper")
+        self.assertEqual(animals[0]["external_id"], "spbr-pepper")
         self.assertEqual(animals[0]["adoption_url"], "https://santerpawsbulgarianrescue.com/adoption/pepper/")
         self.assertEqual(animals[0]["animal_type"], "dog")
         self.assertEqual(animals[0]["status"], "available")
 
         # Check second dog
         self.assertEqual(animals[1]["name"], "Daisy")
-        self.assertEqual(animals[1]["external_id"], "daisy")
+        self.assertEqual(animals[1]["external_id"], "spbr-daisy")
         self.assertEqual(animals[1]["adoption_url"], "https://santerpawsbulgarianrescue.com/adoption/daisy/")
 
         # Check third dog with hyphenated name
         self.assertEqual(animals[2]["name"], "Summer Breeze")
-        self.assertEqual(animals[2]["external_id"], "summer-breeze")
+        self.assertEqual(animals[2]["external_id"], "spbr-summer-breeze")
         self.assertEqual(animals[2]["adoption_url"], "https://santerpawsbulgarianrescue.com/adoption/summer-breeze/")
 
     @patch("requests.post")
@@ -333,7 +333,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
             mock_get_list.return_value = [
                 {
                     "name": "Pepper",
-                    "external_id": "pepper",
+                    "external_id": "spbr-pepper",
                     "adoption_url": "https://santerpawsbulgarianrescue.com/adoption/pepper/",
                     "animal_type": "dog",
                     "status": "available",
@@ -347,7 +347,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
                 },
                 {
                     "name": "Pepper",  # Duplicate
-                    "external_id": "pepper",
+                    "external_id": "spbr-pepper",
                     "adoption_url": "https://santerpawsbulgarianrescue.com/adoption/pepper/",
                     "animal_type": "dog",
                     "status": "available",

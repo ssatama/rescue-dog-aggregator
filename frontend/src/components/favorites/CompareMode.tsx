@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import {
   X,
   Check,
@@ -169,11 +170,13 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
 
               {/* Dog image */}
               {imageUrl && (
-                <div className="aspect-[4/3] overflow-hidden">
-                  <img
+                <div className="aspect-[4/3] overflow-hidden relative">
+                  <Image
                     src={imageUrl}
                     alt={dog.name}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 50vw, 33vw"
                   />
                 </div>
               )}
@@ -206,11 +209,15 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
             return (
               <div key={dogId} className="relative">
                 {imageUrl ? (
-                  <img
-                    src={imageUrl}
-                    alt={dog.name}
-                    className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-sm"
-                  />
+                  <div className="w-8 h-8 relative rounded-full overflow-hidden border-2 border-white dark:border-gray-800 shadow-sm">
+                    <Image
+                      src={imageUrl}
+                      alt={dog.name}
+                      fill
+                      className="object-cover"
+                      sizes="32px"
+                    />
+                  </div>
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 border-2 border-white dark:border-gray-800 shadow-sm flex items-center justify-center">
                     <DogIcon size={16} className="text-gray-500" />
@@ -351,11 +358,15 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
                   return (
                     <div key={dog.id} className="p-3 text-center">
                       {imageUrl ? (
-                        <img
-                          src={imageUrl}
-                          alt={dog.name}
-                          className="w-12 h-12 rounded-full object-cover mx-auto mb-1"
-                        />
+                        <div className="w-12 h-12 relative rounded-full overflow-hidden mx-auto mb-1">
+                          <Image
+                            src={imageUrl}
+                            alt={dog.name}
+                            fill
+                            className="object-cover"
+                            sizes="48px"
+                          />
+                        </div>
                       ) : (
                         <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 mx-auto mb-1 flex items-center justify-center">
                           <DogIcon size={20} className="text-gray-500" />
@@ -618,11 +629,15 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
               >
                 <div className="flex p-4">
                   {imageUrl && (
-                    <img
-                      src={imageUrl}
-                      alt={dog.name}
-                      className="w-24 h-24 rounded-lg object-cover mr-4"
-                    />
+                    <div className="w-24 h-24 relative rounded-lg overflow-hidden mr-4 flex-shrink-0">
+                      <Image
+                        src={imageUrl}
+                        alt={dog.name}
+                        fill
+                        className="object-cover"
+                        sizes="96px"
+                      />
+                    </div>
                   )}
                   <div className="flex-1">
                     <div className="flex justify-between items-start mb-2">

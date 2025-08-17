@@ -147,8 +147,9 @@ class AnimalRescueBosniaScraper(BaseScraper):
                 # World-class logging: Location filtering handled by centralized system
                 return None
 
-            # Extract external ID from name
-            external_id = name.lower().replace(" ", "-")
+            # Extract external ID from name with organization prefix
+            slug = name.lower().replace(" ", "-")
+            external_id = f"arb-{slug}"
 
             # Extract hero image (first significant image, not in gallery)
             hero_image_url = None

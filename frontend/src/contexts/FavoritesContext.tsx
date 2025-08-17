@@ -92,7 +92,12 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
           // Truncate to limit and show warning
           const truncated = parsed.slice(0, MAX_FAVORITES);
           setFavorites(truncated);
-          saveToLocalStorage(truncated);
+          // Save truncated data back to localStorage
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(truncated));
+          } catch (saveError) {
+            // Silently handle storage error
+          }
           setToastMessage({
             type: "error",
             message: `Favorites list truncated to ${MAX_FAVORITES} items due to limit`,
@@ -120,7 +125,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         message: "Favorites data was corrupted and has been reset",
       });
     }
-  }, []);
+  }, []); // This only runs on mount, no dependencies needed
 
   // Listen for storage events to sync across tabs/windows
   useEffect(() => {

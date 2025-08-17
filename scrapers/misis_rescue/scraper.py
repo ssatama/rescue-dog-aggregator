@@ -652,13 +652,13 @@ class MisisRescueScraper(BaseScraper):
         return False
 
     def _generate_external_id(self, url: str) -> str:
-        """Generate external ID from dog detail page URL.
+        """Generate external ID from dog detail page URL with organization prefix.
 
         Args:
             url: Dog detail page URL
 
         Returns:
-            External ID string
+            External ID with 'mar-' prefix to prevent collisions
         """
         try:
             # Extract from URL pattern: /post/dog-name
@@ -666,7 +666,8 @@ class MisisRescueScraper(BaseScraper):
             path_parts = parsed.path.strip("/").split("/")
 
             if len(path_parts) >= 2 and path_parts[0] == "post":
-                return path_parts[1]
+                slug = path_parts[1]
+                return f"mar-{slug}"
 
         except Exception:
             pass

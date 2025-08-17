@@ -82,7 +82,7 @@ class TestWoofProjectScraperOptimized:
             # Test essential data extraction
             assert result is not None
             assert result["name"] == "Special-Name"
-            assert result["external_id"] == "special-name"
+            assert result["external_id"] == "wp-special-name"
             assert "German Shepherd" in result["breed"]
             assert "3 years" in result["age_text"]
             assert result["size"] == "Large"
@@ -165,10 +165,10 @@ class TestWoofProjectScraperOptimized:
     def test_external_id_generation(self, scraper):
         """Test external ID generation from various URL formats."""
         test_cases = [
-            ("https://woofproject.eu/adoption/buddy/", "buddy"),
-            ("https://woofproject.eu/adoption/luna", "luna"),
-            ("/adoption/max-zeus/", "max-zeus"),
-            ("https://woofproject.eu/adoption/special-name/", "special-name"),
+            ("https://woofproject.eu/adoption/buddy/", "wp-buddy"),
+            ("https://woofproject.eu/adoption/luna", "wp-luna"),
+            ("/adoption/max-zeus/", "wp-max-zeus"),
+            ("https://woofproject.eu/adoption/special-name/", "wp-special-name"),
         ]
 
         for url, expected_id in test_cases:
@@ -217,7 +217,7 @@ class TestWoofProjectScraperOptimized:
                 if result is not None:
                     assert isinstance(result["name"], str)
                     assert len(result["name"]) > 0
-                    assert result["external_id"] == case_name
+                    assert result["external_id"] == f"wp-{case_name}"
                     assert result["animal_type"] == "dog"
                     assert result["status"] == "available"
 
@@ -247,7 +247,7 @@ class TestWoofProjectScraperOptimized:
             # Verify standardization is applied
             assert result is not None
             assert result["name"] == "Lisbon"  # Standardized from "LISBON"
-            assert result["external_id"] == "lisbon"
+            assert result["external_id"] == "wp-lisbon"
             assert result["breed"] == "Hound Pointer Cross"
             assert result["standardized_breed"] is not None
             assert result["size"] == "Medium"

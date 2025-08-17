@@ -929,13 +929,14 @@ class GalgosDelSolScraper(BaseScraper):
         return not name_lower.startswith("reserved")
 
     def _extract_external_id(self, url: str) -> str:
-        """Extract external ID from adoption URL.
+        """Extract external ID from adoption URL with organization prefix.
 
         Args:
             url: Full adoption URL
 
         Returns:
-            External ID extracted from URL path
+            External ID with 'gds-' prefix to prevent collisions
         """
         # Extract the last part of the URL path, removing trailing slash
-        return url.rstrip("/").split("/")[-1]
+        slug = url.rstrip("/").split("/")[-1]
+        return f"gds-{slug}"
