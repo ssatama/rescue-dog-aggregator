@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import performance-optimized animations */
+@import '../styles/animations.css';
+
 @layer base {
   :root {
     /* Updated warm color scheme */

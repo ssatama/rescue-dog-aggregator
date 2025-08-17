@@ -1,26 +1,44 @@
 import OrganizationsClient from "./OrganizationsClient";
+import { getEnhancedOrganizationsSSR } from "../../services/organizationsService";
 
 export const metadata = {
-  title: "Rescue Organizations - Rescue Dog Aggregator",
+  title: "Rescue Organizations | Find Dog Rescue Centers",
   description:
-    "Browse rescue organizations from across Europe. See where dogs are located, shipping information, available dogs count, and recent additions. Support organizations saving animals worldwide.",
+    "Browse trusted dog rescue organizations across Europe. Find rescue centers by location, available dogs, and adoption regions.",
   keywords:
-    "rescue organizations, dog adoption, animal rescue, Europe, shipping dogs, pet adoption",
+    "dog rescue organizations, rescue centers, dog adoption centers, animal shelters Europe, rescue dogs",
   openGraph: {
-    title: "Rescue Organizations - Find Your Perfect Match",
+    title: "Rescue Organizations | Find Dog Rescue Centers",
     description:
-      "Browse rescue organizations from across Europe. See where dogs are located, shipping information, available dogs count, and recent additions.",
+      "Browse trusted dog rescue organizations across Europe. Find rescue centers by location, available dogs, and adoption regions.",
     type: "website",
-    siteName: "Rescue Dog Aggregator",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Rescue Organizations - Enhanced Listings",
-    description:
-      "Discover rescue organizations with detailed geographic information, dog statistics, and recent additions.",
+    url: "https://www.rescuedogs.me/organizations",
+    images: [
+      {
+        url: "https://www.rescuedogs.me/og-organizations.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Rescue Organizations",
+      },
+    ],
   },
 };
 
-export default function OrganizationsPage() {
-  return <OrganizationsClient />;
+export const revalidate = 300;
+
+export default async function OrganizationsPage() {
+  let organizations = [];
+  
+  try {
+    organizations = await getEnhancedOrganizationsSSR();
+  } catch (error) {
+    console.error("Failed to fetch organizations server-side:", error);
+  }
+  
+  return (
+    <OrganizationsClient 
+      initialData={organizations}
+      dataTimestamp={Date.now()}
+    />
+  );
 }

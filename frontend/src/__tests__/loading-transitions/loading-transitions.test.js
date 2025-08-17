@@ -27,8 +27,8 @@ jest.mock("next/link", () => {
 });
 
 // Mock DogCard component
-jest.mock("../../components/dogs/DogCard", () => {
-  return function MockDogCard({ dog, priority }) {
+jest.mock("../../components/dogs/DogCardOptimized", () => {
+  return function MockDogCardOptimized({ dog, priority }) {
     return (
       <div data-testid={`dog-card-${dog.id}`} data-priority={priority}>
         <h3>{dog.name}</h3>
@@ -225,7 +225,7 @@ describe("Loading Transitions", () => {
       skeletons.forEach((skeleton) => {
         expect(skeleton).toHaveClass("h-full"); // Match DogCard height
         expect(skeleton).toHaveClass("rounded-lg"); // Match DogCard styling
-        expect(skeleton).toHaveClass("shadow-blue-sm"); // Match DogCard shadow
+        expect(skeleton).toHaveClass("shadow-sm"); // Match DogCard shadow
       });
     });
 

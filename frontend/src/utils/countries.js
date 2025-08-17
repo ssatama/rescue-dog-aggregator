@@ -200,7 +200,7 @@ export function formatServiceRegions(
   }
 
   return (
-    <span className="inline-flex items-center gap-1 flex-wrap">
+    <span className="inline-flex items-center gap-1 flex-wrap" data-testid="ships-to-flags">
       {visibleRegions.map((countryCode, index) => (
         <span key={countryCode} className="inline-flex items-center gap-1">
           <CountryFlag

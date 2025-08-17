@@ -6,6 +6,8 @@ import { ToastProvider } from "@/contexts/ToastContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { Analytics, SpeedInsights } from "@/components/analytics";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import QueryProvider from "@/providers/QueryProvider";
+import PerformanceMonitor from "@/components/PerformanceMonitor";
 
 // Use Inter variable font with all required weights
 const inter = Inter({
@@ -70,12 +72,15 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-inter`}>
-        <ThemeProvider>
-          <ToastProvider>
-            <FavoritesProvider>{children}</FavoritesProvider>
-          </ToastProvider>
-        </ThemeProvider>
+        <QueryProvider>
+          <ThemeProvider>
+            <ToastProvider>
+              <FavoritesProvider>{children}</FavoritesProvider>
+            </ToastProvider>
+          </ThemeProvider>
+        </QueryProvider>
         <ServiceWorkerRegistration />
+        <PerformanceMonitor />
         <Analytics />
         <SpeedInsights />
       </body>

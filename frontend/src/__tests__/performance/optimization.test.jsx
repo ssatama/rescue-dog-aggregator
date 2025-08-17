@@ -3,7 +3,7 @@
  */
 import React from "react";
 import { render, screen, waitFor } from "../../test-utils";
-import DogCard from "../../components/dogs/DogCard";
+import DogCard from "../../components/dogs/DogCardOptimized";
 import { LazyImage } from "../../components/ui/LazyImage";
 
 // Mock intersection observer for lazy loading tests
@@ -63,9 +63,9 @@ describe("Performance Optimizations", () => {
     test("should use optimized image URLs", () => {
       render(<DogCard dog={mockDog} />);
 
-      // Check placeholder exists (lazy loading is working)
-      const placeholder = screen.getByTestId("image-placeholder");
-      expect(placeholder).toBeInTheDocument();
+      // Check that optimized image is used (not placeholder since we have a real URL)
+      const optimizedImage = screen.getByTestId("optimized-image");
+      expect(optimizedImage).toBeInTheDocument();
 
       // Verify optimization would be applied (via imageUtils)
       expect(mockDog.primary_image_url).toBe("https://example.com/buddy.jpg");

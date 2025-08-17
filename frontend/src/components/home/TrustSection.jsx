@@ -13,32 +13,37 @@ import { Button } from "@/components/ui/button";
 /**
  * Trust section displaying platform statistics and organization links
  * Shows total dogs, organizations, countries with expandable organization list
+ * @param {Object} props - Component props
+ * @param {Object} props.initialStatistics - Pre-fetched statistics data from SSR
  */
-export default function TrustSection() {
+export default function TrustSection({ initialStatistics = null }) {
   const router = useRouter();
-  const [statistics, setStatistics] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [statistics, setStatistics] = useState(initialStatistics);
+  const [loading, setLoading] = useState(!initialStatistics);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchStatistics = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getStatistics();
-        setStatistics(data);
-      } catch (err) {
-        reportError("Error fetching trust section statistics", {
-          error: err.message,
-        });
-        setError("Unable to load statistics. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
+    // Only fetch if we don't have initial data
+    if (!initialStatistics) {
+      const fetchStatistics = async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          const data = await getStatistics();
+          setStatistics(data);
+        } catch (err) {
+          reportError("Error fetching trust section statistics", {
+            error: err.message,
+          });
+          setError("Unable to load statistics. Please try again later.");
+        } finally {
+          setLoading(false);
+        }
+      };
 
-    fetchStatistics();
-  }, []);
+      fetchStatistics();
+    }
+  }, [initialStatistics]);
 
   if (loading) {
     return (

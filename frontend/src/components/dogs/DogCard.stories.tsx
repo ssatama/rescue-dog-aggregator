@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs";
-import DogCard from "./DogCard";
+import DogCard from "./DogCardOptimized";
 
 const meta: Meta<typeof DogCard> = {
   title: "Components/Dogs/DogCard",

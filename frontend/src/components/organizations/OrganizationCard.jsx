@@ -8,7 +8,7 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import SocialMediaLinks from "../ui/SocialMediaLinks";
-import LazyImage from "../ui/LazyImage";
+import OptimizedImage from "../ui/OptimizedImage";
 import { handleImageError } from "../../utils/imageUtils";
 import {
   formatBasedIn,
@@ -100,7 +100,7 @@ const OrganizationCard = memo(
 
     return (
       <Card
-        className="flex flex-col overflow-hidden cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 content-fade-in"
+        className="group flex flex-col overflow-hidden cursor-pointer transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 content-fade-in"
         onClick={() => (window.location.href = `/organizations/${slug}`)}
         role="button"
         tabIndex={0}
@@ -118,24 +118,15 @@ const OrganizationCard = memo(
             {/* 1. Organization Logo (64px with fallback to initials) */}
             <div className="flex-shrink-0">
               {logoUrl ? (
-                <LazyImage
-                  src={logoUrl}
-                  alt={`${name} logo`}
-                  className={`${styles.logo} rounded-lg object-cover`}
-                  sizes="(max-width: 640px) 64px, (max-width: 1024px) 56px, 64px"
-                  onError={(e) => handleImageError(e, logoUrl)}
-                  placeholder={
-                    <div
-                      className={`${styles.logo} rounded-lg bg-orange-100 dark:bg-orange-950/30 flex items-center justify-center animate-pulse`}
-                    >
-                      <span
-                        className={`${styles.initialsText} font-bold text-orange-600`}
-                      >
-                        {getInitials(name)}
-                      </span>
-                    </div>
-                  }
-                />
+                <div className={`${styles.logo} rounded-lg overflow-hidden`}>
+                  <OptimizedImage
+                    src={logoUrl}
+                    alt={`${name} logo`}
+                    className="w-full h-full"
+                    sizes="(max-width: 640px) 64px, (max-width: 1024px) 56px, 64px"
+                    objectFit="cover"
+                  />
+                </div>
               ) : (
                 <div
                   className={`${styles.logo} rounded-lg bg-orange-100 dark:bg-orange-950/30 flex items-center justify-center`}
@@ -241,18 +232,15 @@ const OrganizationCard = memo(
               <div className="flex space-x-2 mb-2">
                 {recentDogs.slice(0, 3).map((dog, index) => (
                   <div key={dog.id || index} className="flex-shrink-0">
-                    <LazyImage
-                      src={dog.thumbnail_url || dog.primary_image_url}
-                      alt={dog.name || "Dog preview"}
-                      className={`${styles.dogThumbnail} rounded-lg object-cover`}
-                      sizes="(max-width: 640px) 40px, (max-width: 1024px) 44px, 48px"
-                      onError={(e) => handleImageError(e, dog.thumbnail_url)}
-                      placeholder={
-                        <div
-                          className={`${styles.dogThumbnail} rounded-lg bg-muted animate-pulse`}
-                        />
-                      }
-                    />
+                    <div className={`${styles.dogThumbnail} rounded-lg overflow-hidden`}>
+                      <OptimizedImage
+                        src={dog.thumbnail_url || dog.primary_image_url}
+                        alt={dog.name || "Dog preview"}
+                        className="w-full h-full"
+                        sizes="(max-width: 640px) 40px, (max-width: 1024px) 44px, 48px"
+                        objectFit="cover"
+                      />
+                    </div>
                   </div>
                 ))}
               </div>

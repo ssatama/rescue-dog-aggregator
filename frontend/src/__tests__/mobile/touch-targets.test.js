@@ -1,7 +1,7 @@
 import { render, screen, act } from "../../test-utils";
 import DogSection from "../../components/home/DogSection";
 import HeroSection from "../../components/home/HeroSection";
-import DogCard from "../../components/dogs/DogCard";
+import DogCard from "../../components/dogs/DogCardOptimized";
 
 // Mock services and utilities
 jest.mock("../../services/animalsService", () => ({

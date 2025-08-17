@@ -1,51 +1,50 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Layout from "../../components/layout/Layout";
 import OrganizationCard from "../../components/organizations/OrganizationCard";
 import OrganizationCardSkeleton from "../../components/ui/OrganizationCardSkeleton";
 import EmptyState from "../../components/ui/EmptyState";
-import { getEnhancedOrganizations } from "../../services/organizationsService";
+import { useEnhancedOrganizations, usePrefetchOrganization } from "../../hooks/useOrganizations";
 import { reportError, logger } from "../../utils/logger";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
 import { BreadcrumbSchema } from "../../components/seo";
+import { useEffect } from "react";
 
-export default function OrganizationsClient() {
-  const [organizations, setOrganizations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [enhancementLoading, setEnhancementLoading] = useState(false);
-  const [error, setError] = useState(null);
+export default function OrganizationsClient({ initialData = [], dataTimestamp }) {
+  // Use React Query hook with SSR initial data
+  const { 
+    data: organizations = initialData, 
+    isLoading, 
+    error, 
+    refetch 
+  } = useEnhancedOrganizations(initialData);
+  
+  // Prefetch hook for hover optimization
+  const prefetchOrganization = usePrefetchOrganization();
 
-  const fetchOrganizations = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Fetch enhanced organizations data with statistics and recent dogs
-      const data = await getEnhancedOrganizations();
-      setOrganizations(data);
-
-      logger.info("Organizations loaded successfully", {
-        count: data.length,
-        withStats: data.filter((org) => org.total_dogs !== undefined).length,
-        withRecentDogs: data.filter(
+  // Log successful data loads
+  useEffect(() => {
+    if (organizations && organizations.length > 0 && !isLoading) {
+      logger.info("Organizations loaded via React Query", {
+        count: organizations.length,
+        withStats: organizations.filter((org) => org.total_dogs !== undefined).length,
+        withRecentDogs: organizations.filter(
           (org) => org.recent_dogs && org.recent_dogs.length > 0,
         ).length,
+        source: initialData.length ? 'SSR' : 'client-fetch'
       });
-    } catch (err) {
-      reportError("Error fetching enhanced organizations", {
-        error: err.message,
-        stack: err.stack,
-      });
-      setError(err);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [organizations, isLoading, initialData.length]);
 
+  // Log errors
   useEffect(() => {
-    fetchOrganizations();
-  }, []);
+    if (error) {
+      reportError("Error fetching enhanced organizations", {
+        error: error.message,
+        stack: error.stack,
+      });
+    }
+  }, [error]);
 
   const breadcrumbItems = [
     { name: "Home", url: "/" },
@@ -75,7 +74,7 @@ export default function OrganizationsClient() {
               There was an error loading organizations. Please try again later.
             </p>
             <button
-              onClick={fetchOrganizations}
+              onClick={() => refetch()}
               className="mt-2 text-small font-medium text-red-700 underline"
             >
               Retry
@@ -84,7 +83,7 @@ export default function OrganizationsClient() {
         )}
 
         {/* Loading state */}
-        {loading ? (
+        {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in duration-300">
             {Array.from({ length: 6 }, (_, index) => (
               <OrganizationCardSkeleton key={`skeleton-${index}`} />
@@ -93,13 +92,18 @@ export default function OrganizationsClient() {
         ) : organizations.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 content-fade-in">
             {organizations.map((org) => (
-              <OrganizationCard key={org.id} organization={org} />
+              <div 
+                key={org.id}
+                onMouseEnter={() => prefetchOrganization(org.slug)}
+              >
+                <OrganizationCard organization={org} />
+              </div>
             ))}
           </div>
         ) : (
           <EmptyState
             variant="noOrganizations"
-            onRefresh={fetchOrganizations}
+            onRefresh={() => refetch()}
           />
         )}
       </div>

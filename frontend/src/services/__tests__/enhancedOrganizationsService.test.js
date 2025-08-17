@@ -10,9 +10,13 @@ import * as api from "../../utils/api";
 // Mock the API utility
 jest.mock("../../utils/api");
 
+// Mock fetch for getEnhancedOrganizations since it uses fetch directly
+global.fetch = jest.fn();
+
 describe("Enhanced Organizations Service", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    fetch.mockClear();
   });
 
   describe("getOrganizationStatistics", () => {
@@ -124,26 +128,34 @@ describe("Enhanced Organizations Service", () => {
     ];
 
     test("fetches enhanced organizations data successfully", async () => {
-      // Mock the main organizations call
-      api.get.mockImplementation((url) => {
-        if (url === "/api/organizations") {
-          return Promise.resolve(mockOrganizations);
-        }
-        if (url.includes("/recent-dogs")) {
-          return Promise.resolve(mockRecentDogs);
-        }
-        return Promise.reject(new Error("Unknown URL"));
+      // Mock enhanced organizations with recent dogs already included
+      const enhancedOrgs = [
+        {
+          ...mockOrganizations[0],
+          recent_dogs: mockRecentDogs,
+        },
+        {
+          ...mockOrganizations[1],
+          recent_dogs: mockRecentDogs,
+        },
+      ];
+
+      // Mock fetch for the enhanced endpoint
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(enhancedOrgs),
       });
 
       const result = await getEnhancedOrganizations();
 
-      expect(api.get).toHaveBeenCalledWith("/api/organizations");
-      expect(api.get).toHaveBeenCalledWith("/api/organizations/1/recent-dogs", {
-        limit: 3,
-      });
-      expect(api.get).toHaveBeenCalledWith("/api/organizations/2/recent-dogs", {
-        limit: 3,
-      });
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/organizations/enhanced"),
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       expect(result).toHaveLength(2);
       expect(result[0]).toMatchObject({
@@ -157,42 +169,50 @@ describe("Enhanced Organizations Service", () => {
     });
 
     test("handles organizations with zero dogs", async () => {
-      const orgsWithZeroDogs = [{ id: 1, name: "New Org", total_dogs: 0 }];
+      const orgsWithZeroDogs = [{ 
+        id: 1, 
+        name: "New Org", 
+        total_dogs: 0,
+        recent_dogs: [] 
+      }];
 
-      api.get.mockImplementation((url) => {
-        if (url === "/api/organizations") {
-          return Promise.resolve(orgsWithZeroDogs);
-        }
-        return Promise.reject(
-          new Error("Should not call recent dogs for zero-dog orgs"),
-        );
+      // Mock fetch response
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(orgsWithZeroDogs),
       });
 
       const result = await getEnhancedOrganizations();
 
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({
-        ...orgsWithZeroDogs[0],
+        id: 1,
+        name: "New Org",
+        total_dogs: 0,
         recent_dogs: [],
       });
 
-      // Should not call recent dogs API for organizations with 0 dogs
-      expect(api.get).toHaveBeenCalledTimes(1);
-      expect(api.get).toHaveBeenCalledWith("/api/organizations");
+      // Should call the enhanced endpoint
+      expect(fetch).toHaveBeenCalledTimes(1);
     });
 
     test("handles partial failures gracefully", async () => {
-      api.get.mockImplementation((url) => {
-        if (url === "/api/organizations") {
-          return Promise.resolve(mockOrganizations);
-        }
-        if (url === "/api/organizations/1/recent-dogs") {
-          return Promise.resolve(mockRecentDogs);
-        }
-        if (url === "/api/organizations/2/recent-dogs") {
-          return Promise.reject(new Error("Recent dogs fetch failed"));
-        }
-        return Promise.reject(new Error("Unknown URL"));
+      // Mock organizations where one has recent dogs and one doesn't
+      const partialEnhancedOrgs = [
+        {
+          ...mockOrganizations[0],
+          recent_dogs: mockRecentDogs,
+        },
+        {
+          ...mockOrganizations[1],
+          recent_dogs: [], // No recent dogs for this org
+        },
+      ];
+
+      // Mock fetch response
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(partialEnhancedOrgs),
       });
 
       const result = await getEnhancedOrganizations();
@@ -205,7 +225,7 @@ describe("Enhanced Organizations Service", () => {
         recent_dogs: mockRecentDogs,
       });
 
-      // Second organization should have empty recent dogs due to error
+      // Second organization should have empty recent dogs
       expect(result[1]).toMatchObject({
         ...mockOrganizations[1],
         recent_dogs: [],
@@ -213,73 +233,64 @@ describe("Enhanced Organizations Service", () => {
     });
 
     test("handles complete failure of main organizations call", async () => {
-      const mainError = new Error("Organizations API failed");
-      api.get.mockRejectedValueOnce(mainError);
+      const mainError = new Error("Failed to fetch organizations: 500");
+      
+      // Mock fetch to return a failed response
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+      });
 
       await expect(getEnhancedOrganizations()).rejects.toThrow(
-        "Organizations API failed",
+        "Failed to fetch organizations: 500",
       );
     });
 
     test("handles empty organizations list", async () => {
-      api.get.mockResolvedValueOnce([]);
+      // Mock fetch to return empty array
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve([]),
+      });
 
       const result = await getEnhancedOrganizations();
 
       expect(result).toEqual([]);
-      expect(api.get).toHaveBeenCalledTimes(1);
+      expect(fetch).toHaveBeenCalledTimes(1);
     });
 
     test("includes proper error handling and logging", async () => {
       const originalNodeEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = "development";
 
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
       const errorSpy = jest.spyOn(console, "error").mockImplementation();
 
-      api.get.mockImplementation((url) => {
-        if (url === "/api/organizations") {
-          return Promise.resolve(mockOrganizations);
-        }
-        if (url.includes("/recent-dogs")) {
-          return Promise.reject(new Error("Recent dogs API down"));
-        }
-        return Promise.reject(new Error("Unknown URL"));
-      });
+      // Mock fetch to throw an error
+      fetch.mockRejectedValueOnce(new Error("Network error"));
 
-      const result = await getEnhancedOrganizations();
+      await expect(getEnhancedOrganizations()).rejects.toThrow("Network error");
 
-      expect(result).toHaveLength(2);
-      expect(result[0].recent_dogs).toEqual([]);
-      expect(result[1].recent_dogs).toEqual([]);
-
-      // Should have logged warnings for failed recent dogs calls
-      expect(consoleSpy).toHaveBeenCalledTimes(2);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Failed to fetch recent dogs for organization"),
+      // Should have logged error
+      expect(errorSpy).toHaveBeenCalledWith(
+        "Failed to fetch enhanced organizations:",
         expect.any(Error),
       );
 
-      consoleSpy.mockRestore();
       errorSpy.mockRestore();
       process.env.NODE_ENV = originalNodeEnv;
     });
 
     test("maintains organization order from API", async () => {
       const orderedOrgs = [
-        { id: 3, name: "Alpha Rescue", total_dogs: 5 },
-        { id: 1, name: "Beta Rescue", total_dogs: 10 },
-        { id: 2, name: "Gamma Rescue", total_dogs: 15 },
+        { id: 3, name: "Alpha Rescue", total_dogs: 5, recent_dogs: [] },
+        { id: 1, name: "Beta Rescue", total_dogs: 10, recent_dogs: [] },
+        { id: 2, name: "Gamma Rescue", total_dogs: 15, recent_dogs: [] },
       ];
 
-      api.get.mockImplementation((url) => {
-        if (url === "/api/organizations") {
-          return Promise.resolve(orderedOrgs);
-        }
-        if (url.includes("/recent-dogs")) {
-          return Promise.resolve([]);
-        }
-        return Promise.reject(new Error("Unknown URL"));
+      // Mock fetch response
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(orderedOrgs),
       });
 
       const result = await getEnhancedOrganizations();
@@ -315,24 +326,18 @@ describe("Enhanced Organizations Service", () => {
         id: i + 1,
         name: `Org ${i + 1}`,
         total_dogs: 5,
+        recent_dogs: [{ id: i + 1, name: `Dog ${i + 1}` }],
       }));
 
-      let callCount = 0;
-      api.get.mockImplementation((url) => {
-        if (url === "/api/organizations") {
-          return Promise.resolve(orgs);
-        }
-        if (url.includes("/recent-dogs")) {
-          callCount++;
-          return Promise.resolve([{ id: callCount, name: `Dog ${callCount}` }]);
-        }
-        return Promise.reject(new Error("Unknown URL"));
+      // Mock fetch response with all organizations and their recent dogs
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(orgs),
       });
 
       const result = await getEnhancedOrganizations();
 
       expect(result).toHaveLength(10);
-      expect(callCount).toBe(10); // Should have made 10 concurrent calls
 
       // Each organization should have unique recent dogs
       result.forEach((org, index) => {

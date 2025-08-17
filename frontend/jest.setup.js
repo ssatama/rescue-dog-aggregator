@@ -4,6 +4,12 @@ require("@testing-library/jest-dom");
 // Do NOT hardcode any secrets or cloud names here
 require("dotenv").config({ path: ".env.local" });
 
+// Mock React cache function for server components in tests
+jest.mock('react', () => ({
+  ...jest.requireActual('react'),
+  cache: (fn) => fn, // Simple pass-through for tests since cache is RSC-only
+}));
+
 // Polyfill for TextEncoder/TextDecoder for Node.js environment
 if (typeof global.TextEncoder === 'undefined') {
   const { TextEncoder, TextDecoder } = require('util');

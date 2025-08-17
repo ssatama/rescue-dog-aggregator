@@ -40,9 +40,9 @@ jest.mock("next/link", () => {
   };
 });
 
-// Mock DogCard component
-jest.mock("../../dogs/DogCard", () => {
-  return function MockDogCard({ dog, priority }) {
+// Mock DogCardOptimized component
+jest.mock("../../dogs/DogCardOptimized", () => {
+  return function MockDogCardOptimized({ dog, priority }) {
     return (
       <div data-testid={`dog-card-${dog.id}`} data-priority={priority}>
         <h3>{dog.name}</h3>
@@ -71,6 +71,7 @@ const mockDogs = [
     id: "1",
     name: "Luna",
     breed: "Mixed",
+    gender: "Female",
     primary_image_url: "https://example.com/luna.jpg",
     organization: { name: "Pets in Turkey", city: "Izmir", country: "Turkey" },
     created_at: "2025-06-15T10:00:00Z", // Recent dog
@@ -79,6 +80,7 @@ const mockDogs = [
     id: "2",
     name: "Max",
     breed: "German Shepherd",
+    gender: "Male",
     primary_image_url: "https://example.com/max.jpg",
     organization: { name: "Berlin Rescue", city: "Berlin", country: "Germany" },
     created_at: "2025-06-10T10:00:00Z",
@@ -87,6 +89,7 @@ const mockDogs = [
     id: "3",
     name: "Bella",
     breed: "Golden Retriever",
+    gender: "Female",
     primary_image_url: "https://example.com/bella.jpg",
     organization: { name: "Happy Tails", city: "Munich", country: "Germany" },
     created_at: "2025-06-12T10:00:00Z",
@@ -95,6 +98,7 @@ const mockDogs = [
     id: "4",
     name: "Rocky",
     breed: "Beagle",
+    gender: "Male",
     primary_image_url: "https://example.com/rocky.jpg",
     organization: { name: "Tierschutz EU", city: "Vienna", country: "Austria" },
     created_at: "2025-06-14T10:00:00Z",
@@ -560,6 +564,68 @@ describe("DogSection", () => {
       const viewAllLink = screen.getByText("View all").closest("a");
       expect(viewAllLink).toHaveAttribute("aria-label", "View all just added");
       expect(viewAllLink).toHaveAttribute("href", "/dogs");
+    });
+  });
+
+  describe("Server-Side Rendering Support", () => {
+    test("renders with initial dogs data without loading state", () => {
+      render(
+        <DogSection
+          title="Just Added"
+          subtitle="New dogs looking for homes"
+          curationType="recent"
+          viewAllHref="/dogs?curation=recent"
+          initialDogs={mockDogs}
+          priority={true}
+        />,
+      );
+
+      // Should not show loading state (element exists but should be hidden)
+      const loadingElement = screen.getByTestId("dog-section-loading");
+      expect(loadingElement).toHaveClass("opacity-0");
+      
+      // Should show dog grid immediately
+      expect(screen.getByTestId("dog-grid")).toBeInTheDocument();
+      
+      // Should render dog cards
+      expect(screen.getByTestId("dog-card-1")).toBeInTheDocument();
+      expect(screen.getByTestId("dog-card-2")).toBeInTheDocument();
+      
+      // First dog should have priority loading
+      const firstCard = screen.getByTestId("dog-card-1");
+      expect(firstCard).toHaveAttribute("data-priority", "true");
+      
+      // Second dog should not have priority
+      const secondCard = screen.getByTestId("dog-card-2");
+      expect(secondCard).toHaveAttribute("data-priority", "false");
+      
+      // Should not call API when initial data is provided
+      expect(getAnimalsByCuration).not.toHaveBeenCalled();
+    });
+
+    test("falls back to API fetch when no initial dogs provided", async () => {
+      getAnimalsByCuration.mockResolvedValue(mockDogs);
+      
+      render(
+        <DogSection
+          title="Just Added"
+          subtitle="New dogs looking for homes"
+          curationType="recent"
+          viewAllHref="/dogs?curation=recent"
+        />,
+      );
+
+      // Should show loading state initially (visible)
+      const loadingElement = screen.getByTestId("dog-section-loading");
+      expect(loadingElement).toHaveClass("opacity-100");
+      
+      // Should call API
+      expect(getAnimalsByCuration).toHaveBeenCalledWith("recent", 4);
+      
+      // Wait for dogs to load
+      await waitFor(() => {
+        expect(screen.getByTestId("dog-grid")).toBeInTheDocument();
+      });
     });
   });
 });

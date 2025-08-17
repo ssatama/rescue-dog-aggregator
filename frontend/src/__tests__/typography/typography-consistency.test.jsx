@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen } from "../../test-utils";
-import DogCard from "../../components/dogs/DogCard";
+import DogCard from "../../components/dogs/DogCardOptimized";
 import OrganizationCard from "../../components/organizations/OrganizationCard";
 import RelatedDogsCard from "../../components/dogs/RelatedDogsCard";
 import TrustSection from "../../components/home/TrustSection";
@@ -8,9 +8,21 @@ import RelatedDogsSection from "../../components/dogs/RelatedDogsSection";
 
 // Mock Next.js components
 jest.mock("next/link", () => {
-  return function MockLink({ children, href, className, ...props }) {
+  return function MockLink({ children, href, className, prefetch, ...props }) {
+    // Handle prefetch prop properly to avoid React warnings
+    const linkProps = {
+      href,
+      className,
+      ...props
+    };
+    
+    // Only add prefetch if it's a string value
+    if (typeof prefetch === 'string') {
+      linkProps.prefetch = prefetch;
+    }
+    
     return (
-      <a href={href} className={className} {...props}>
+      <a {...linkProps}>
         {children}
       </a>
     );
@@ -273,7 +285,7 @@ describe("Typography Consistency Tests", () => {
 
       render(<DogCard dog={mockDog} />);
 
-      // Dog name should be h3 in card context
+      // Dog name should be h3 with text-card-title class in DogCardOptimized (changed for accessibility)
       const dogName = screen.getByText("Test Dog");
       expect(dogName.tagName).toBe("H3");
     });

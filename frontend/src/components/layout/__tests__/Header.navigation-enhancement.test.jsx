@@ -7,10 +7,6 @@ jest.mock("next/navigation", () => ({
   usePathname: jest.fn(),
 }));
 
-// Mock animation hook
-jest.mock("../../../utils/animations", () => ({
-  useFadeInAnimation: () => ({ ref: jest.fn(), isVisible: true }),
-}));
 
 describe("Header Navigation Enhancement - Orange Theme", () => {
   beforeEach(() => {

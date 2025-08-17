@@ -2,7 +2,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { useFadeInAnimation } from "../../utils/animations";
 import { Icon } from "../ui/Icon";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import { FavoriteBadge } from "../favorites/FavoriteBadge";
@@ -10,7 +9,6 @@ import { FavoriteBadge } from "../favorites/FavoriteBadge";
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-  const { ref: headerRef, isVisible } = useFadeInAnimation({ delay: 100 });
 
   // Helper function to determine link classes
   const getLinkClasses = (href) => {
@@ -65,10 +63,7 @@ export default function Header() {
       </a>
 
       <header
-        ref={headerRef}
-        className={`bg-background border-b border-border shadow-orange-md dark:shadow-purple-md sticky top-0 z-50 transition-all duration-300 ${
-          isVisible ? "animate-fade-in" : "opacity-0"
-        }`}
+        className="bg-background border-b border-border shadow-orange-md dark:shadow-purple-md sticky top-0 z-50 animate-fadeInUp"
       >
         <nav
           className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4"

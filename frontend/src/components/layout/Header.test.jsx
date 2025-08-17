@@ -14,9 +14,6 @@ jest.mock("../favorites/FavoriteBadge", () => ({
 }));
 
 // Mock other dependencies
-jest.mock("../../utils/animations", () => ({
-  useFadeInAnimation: () => ({ ref: null, isVisible: true }),
-}));
 
 jest.mock("../ui/Icon", () => ({
   Icon: ({ name }) => <span>{name}</span>,

@@ -16,9 +16,9 @@ jest.mock("next/link", () => {
   };
 });
 
-// Mock LazyImage component
-jest.mock("../../ui/LazyImage", () => {
-  return function MockedLazyImage({
+// Mock OptimizedImage component
+jest.mock("../../ui/OptimizedImage", () => {
+  return function MockedOptimizedImage({
     src,
     alt,
     className,
@@ -129,7 +129,8 @@ describe("EnhancedOrganizationCard", () => {
       const logoImage = screen.getAllByTestId("lazy-image")[0]; // First image is the logo
       expect(logoImage).toHaveAttribute("src", "https://example.com/logo.jpg");
       expect(logoImage).toHaveAttribute("alt", "Pets in Turkey logo");
-      expect(logoImage).toHaveClass("w-16", "h-16", "rounded-lg");
+      const logoContainer = logoImage.closest('.w-16');
+      expect(logoContainer).toHaveClass("w-16", "h-16");
     });
 
     test("renders initials when no logo_url provided", () => {
@@ -355,7 +356,7 @@ describe("EnhancedOrganizationCard", () => {
         (button) => button.getAttribute("tabindex") === "0",
       );
       expect(mainCard).toHaveClass(
-        "hover:shadow-lg",
+        "hover:shadow-xl",
         "hover:-translate-y-1",
         "transition-all",
       );
@@ -376,7 +377,8 @@ describe("EnhancedOrganizationCard", () => {
       render(<OrganizationCard organization={mockOrganization} />);
 
       const logoImage = screen.getAllByTestId("lazy-image")[0]; // First image is the logo
-      expect(logoImage).toHaveClass("w-16", "h-16"); // w-16 h-16 = 64px
+      const logoContainer = logoImage.closest('.w-16');
+      expect(logoContainer).toHaveClass("w-16", "h-16"); // w-16 h-16 = 64px
     });
   });
 

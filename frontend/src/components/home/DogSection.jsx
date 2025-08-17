@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useCallback, Suspense } from "react";
 import Link from "next/link";
-import DogCard from "../dogs/DogCard";
+import DogCardOptimized from "../dogs/DogCardOptimized";
 import DogCardErrorBoundary from "../error/DogCardErrorBoundary";
 import Loading from "../ui/Loading";
-import { DogCardSkeleton } from "../ui/LoadingSkeleton";
+import DogCardSkeletonOptimized from "../ui/DogCardSkeletonOptimized";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getAnimalsByCuration } from "../../services/animalsService";
@@ -21,9 +21,11 @@ const DogSection = React.memo(function DogSection({
   subtitle,
   curationType,
   viewAllHref,
+  initialDogs = null,
+  priority = false,
 }) {
-  const [dogs, setDogs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [dogs, setDogs] = useState(initialDogs || []);
+  const [loading, setLoading] = useState(!initialDogs);
   const [error, setError] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -152,8 +154,11 @@ const DogSection = React.memo(function DogSection({
   }, []);
 
   useEffect(() => {
-    fetchDogs();
-  }, [curationType, fetchDogs]);
+    // Only fetch if we don't have initial data
+    if (!initialDogs) {
+      fetchDogs();
+    }
+  }, [curationType, fetchDogs, initialDogs]);
 
   // Handle slide change
   const handleSlideChange = (slideIndex) => {
@@ -170,7 +175,7 @@ const DogSection = React.memo(function DogSection({
       className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
     >
       {[1, 2, 3, 4].map((i) => (
-        <DogCardSkeleton key={i} />
+        <DogCardSkeletonOptimized key={i} priority={i < 4} />
       ))}
     </div>
   );
@@ -183,7 +188,7 @@ const DogSection = React.memo(function DogSection({
       <div className="flex space-x-4 overflow-x-auto">
         {[1, 2].map((i) => (
           <div key={i} className="flex-shrink-0 w-80">
-            <DogCardSkeleton />
+            <DogCardSkeletonOptimized priority={true} />
           </div>
         ))}
       </div>
@@ -283,7 +288,7 @@ const DogSection = React.memo(function DogSection({
                   >
                     {dogs.map((dog, index) => (
                       <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
-                        <DogCard dog={dog} priority={index === 0} />
+                        <DogCardOptimized dog={dog} priority={priority && index === 0} />
                       </DogCardErrorBoundary>
                     ))}
                   </MobileCarousel>
@@ -295,7 +300,7 @@ const DogSection = React.memo(function DogSection({
                 >
                   {dogs.map((dog, index) => (
                     <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
-                      <DogCard dog={dog} priority={index === 0} />
+                      <DogCardOptimized dog={dog} priority={priority && index === 0} />
                     </DogCardErrorBoundary>
                   ))}
                 </div>

@@ -1,8 +1,7 @@
 import React from "react";
-import DogCard from "./DogCard";
-import ProgressiveDogCard from "./ProgressiveDogCard";
+import DogCardOptimized from "./DogCardOptimized";
 import DogCardErrorBoundary from "../error/DogCardErrorBoundary";
-import DogCardSkeleton from "../ui/DogCardSkeleton";
+import DogCardSkeletonOptimized from "../ui/DogCardSkeletonOptimized";
 import EmptyState from "../ui/EmptyState";
 
 /**
@@ -38,9 +37,9 @@ const DogsGrid = React.memo(function DogsGrid({
         {...props}
       >
         {Array.from({ length: adjustedSkeletonCount }, (_, index) => (
-          <DogCardSkeleton
+          <DogCardSkeletonOptimized
             key={`skeleton-${index}`}
-            animationDelay={index * 50}
+            priority={index < 4}
           />
         ))}
       </div>
@@ -75,9 +74,9 @@ const DogsGrid = React.memo(function DogsGrid({
 
         return (
           <DogCardErrorBoundary key={dog.id} dogId={dog.id}>
-            <ProgressiveDogCard
+            <DogCardOptimized
               dog={dog}
-              index={index}
+              animationDelay={index}
               priority={index < 4} // Prioritize loading for first 4 images
             />
           </DogCardErrorBoundary>

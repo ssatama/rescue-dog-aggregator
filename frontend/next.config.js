@@ -12,6 +12,9 @@ const nextConfig = {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
   } : {},
   
+  // External packages for server components
+  serverExternalPackages: ['react-window', 'react-virtualized-auto-sizer'],
+  
   // Experimental optimizations for better performance
   experimental: {
     optimizePackageImports: [

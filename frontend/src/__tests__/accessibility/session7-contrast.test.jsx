@@ -2,7 +2,7 @@ import React from "react";
 import { render } from "../../test-utils";
 import "@testing-library/jest-dom";
 import { axe, toHaveNoViolations } from "jest-axe";
-import DogCard from "../../components/dogs/DogCard";
+import DogCard from "../../components/dogs/DogCardOptimized";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 

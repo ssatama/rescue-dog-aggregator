@@ -11,10 +11,13 @@ import { reportError } from "../../utils/logger";
 
 /**
  * Hero section with animated statistics and call-to-action buttons
+ * @param {Object} props - Component props
+ * @param {Object} props.initialStatistics - Pre-fetched statistics data from SSR
+ * @param {boolean} props.priority - Whether this section should load with priority
  */
-export default function HeroSection() {
-  const [statistics, setStatistics] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function HeroSection({ initialStatistics = null, priority = false }) {
+  const [statistics, setStatistics] = useState(initialStatistics);
+  const [loading, setLoading] = useState(!initialStatistics);
   const [error, setError] = useState(null);
 
   const fetchStatistics = async () => {
@@ -32,8 +35,11 @@ export default function HeroSection() {
   };
 
   useEffect(() => {
-    fetchStatistics();
-  }, []);
+    // Only fetch if we don't have initial data
+    if (!initialStatistics) {
+      fetchStatistics();
+    }
+  }, [initialStatistics]);
 
   return (
     <section

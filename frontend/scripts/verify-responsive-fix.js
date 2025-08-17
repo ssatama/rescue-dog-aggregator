@@ -16,7 +16,7 @@ const filesToCheck = [
     description: 'Desktop filters should be hidden lg:block'
   },
   {
-    path: 'src/app/dogs/DogsPageClient.jsx',
+    path: 'src/app/dogs/DogsPageClientOptimized.jsx',
     pattern: 'lg:hidden',
     line: 551,
     description: 'Mobile filter button should be lg:hidden'

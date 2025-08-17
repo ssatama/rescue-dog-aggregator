@@ -1,7 +1,7 @@
 "use client";
 import React, { memo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import LazyImage from "../ui/LazyImage";
+import OptimizedImage from "../ui/OptimizedImage";
 import { getThumbnailImage, handleImageError } from "../../utils/imageUtils";
 import { sanitizeText } from "../../utils/security";
 
@@ -60,12 +60,13 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
         className="aspect-[4/3] w-full overflow-hidden rounded-t-lg bg-gray-200"
       >
         {dog.primary_image_url ? (
-          <LazyImage
+          <OptimizedImage
             src={getThumbnailImage(dog.primary_image_url)}
             alt={dog.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            onError={(e) => handleImageError(e, dog.primary_image_url)}
+            objectFit="cover"
+            objectPosition="center 30%"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-100">

@@ -40,8 +40,8 @@ jest.mock("../../../components/layout/Layout", () => {
   };
 });
 
-jest.mock("../../../components/dogs/DogCard", () => {
-  return function DogCard({ dog }: { dog: any }) {
+jest.mock("../../../components/dogs/DogCardOptimized", () => {
+  return function DogCardOptimized({ dog }: { dog: any }) {
     return <div data-testid="dog-card">{dog.name}</div>;
   };
 });

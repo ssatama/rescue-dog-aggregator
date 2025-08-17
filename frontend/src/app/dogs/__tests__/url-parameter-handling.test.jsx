@@ -2,11 +2,20 @@
 import React from "react";
 import { render, screen, waitFor } from "../../../test-utils";
 import { useSearchParams } from "next/navigation";
-import DogsPage from "../page";
+import DogsPageClientSimplified from "../DogsPageClientSimplified";
 
 // Mock Next.js navigation
 jest.mock("next/navigation", () => ({
   useSearchParams: jest.fn(),
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    refresh: jest.fn(),
+    prefetch: jest.fn(),
+  })),
+  usePathname: jest.fn(() => "/dogs"),
 }));
 
 // Mock the services
@@ -50,6 +59,14 @@ describe("DogsPage URL Parameter Handling", () => {
     get: jest.fn(),
   };
 
+  const mockMetadata = {
+    organizations: [
+      { id: null, name: "Any organization" },
+      { id: 123, name: "REAN (Rescuing European Animals in Need)" },
+      { id: 456, name: "Pets in Turkey" },
+    ],
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     useSearchParams.mockReturnValue(mockSearchParams);
@@ -64,7 +81,7 @@ describe("DogsPage URL Parameter Handling", () => {
       });
 
       // Act
-      render(<DogsPage />);
+      render(<DogsPageClientSimplified initialData={[]} metadata={mockMetadata} />);
 
       // Assert
       await waitFor(() => {
@@ -81,7 +98,7 @@ describe("DogsPage URL Parameter Handling", () => {
       });
 
       // Act
-      render(<DogsPage />);
+      render(<DogsPageClientSimplified initialData={[]} metadata={mockMetadata} />);
 
       // Assert
       await waitFor(() => {
@@ -96,7 +113,7 @@ describe("DogsPage URL Parameter Handling", () => {
       mockSearchParams.get.mockReturnValue(null);
 
       // Act
-      render(<DogsPage />);
+      render(<DogsPageClientSimplified initialData={[]} metadata={mockMetadata} />);
 
       // Assert
       await waitFor(() => {
@@ -113,7 +130,7 @@ describe("DogsPage URL Parameter Handling", () => {
       });
 
       // Act
-      render(<DogsPage />);
+      render(<DogsPageClientSimplified initialData={[]} metadata={mockMetadata} />);
 
       // Assert
       await waitFor(() => {
@@ -131,7 +148,7 @@ describe("DogsPage URL Parameter Handling", () => {
       });
 
       // Act
-      render(<DogsPage />);
+      render(<DogsPageClientSimplified initialData={[]} metadata={mockMetadata} />);
 
       // Assert
       await waitFor(() => {
@@ -145,7 +162,7 @@ describe("DogsPage URL Parameter Handling", () => {
       mockSearchParams.get.mockReturnValue(null);
 
       // Act
-      render(<DogsPage />);
+      render(<DogsPageClientSimplified initialData={[]} metadata={mockMetadata} />);
 
       // Assert
       expect(mockSearchParams.get).toHaveBeenCalledWith("organization_id");
