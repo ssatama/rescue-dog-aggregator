@@ -883,16 +883,17 @@ class WoofProjectScraper(BaseScraper):
             return None
 
     def _generate_external_id(self, url: str) -> str:
-        """Generate external ID from URL.
+        """Generate external ID from URL with organization prefix.
 
         Args:
             url: Dog detail page URL
 
         Returns:
-            External ID extracted from URL
+            External ID with 'wp-' prefix to prevent collisions
         """
-        # Extract the last part of the URL path
-        return url.rstrip("/").split("/")[-1]
+        # Extract the last part of the URL path and add org prefix
+        slug = url.rstrip("/").split("/")[-1]
+        return f"wp-{slug}"
 
     def _extract_name_from_detail(self, soup: BeautifulSoup) -> Optional[str]:
         """Extract dog name from detail page.

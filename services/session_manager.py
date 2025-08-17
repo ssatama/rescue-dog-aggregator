@@ -699,15 +699,17 @@ class SessionManager:
 
         # Zero animals is catastrophic only if we didn't find any before filtering either
         if animals_found == 0:
-            if self.skip_existing_animals:
-                self.logger.error(
-                    f"Catastrophic failure detected: Zero animals found BEFORE filtering for organization_id {self.organization_id}. "
-                    f"This indicates complete scraper failure or website unavailability."
+            # If we found animals before filtering but zero after, that's normal for skip_existing_animals
+            if self.skip_existing_animals and total_animals_before_filter > 0:
+                self.logger.info(
+                    f"Zero animals to process after skip_existing_animals filtering "
+                    f"({total_animals_before_filter} found before filtering, {total_animals_skipped} skipped). "
+                    f"This is normal behavior, not a failure."
                 )
-            else:
-                self.logger.error(
-                    f"Catastrophic failure detected: Zero animals found for organization_id {self.organization_id}. " f"This indicates complete scraper failure or website unavailability."
-                )
+                return False
+
+            # Zero animals with no skip filtering or zero before filtering = catastrophic
+            self.logger.error(f"Catastrophic failure detected: Zero animals found for organization_id {self.organization_id}. " f"This indicates complete scraper failure or website unavailability.")
             return True
 
         # Check against absolute minimum threshold

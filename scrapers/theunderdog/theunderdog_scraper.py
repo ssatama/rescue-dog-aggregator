@@ -674,16 +674,17 @@ class TheUnderdogScraper(BaseScraper):
         return None
 
     def _generate_external_id(self, url: str) -> str:
-        """Generate external ID from URL.
+        """Generate external ID from URL with organization prefix.
 
         Args:
             url: Dog detail page URL
 
         Returns:
-            External ID extracted from URL
+            External ID with 'tud-' prefix to prevent collisions
         """
-        # Extract the last part of the URL path
-        return url.rstrip("/").split("/")[-1]
+        # Extract the last part of the URL path and add org prefix
+        slug = url.rstrip("/").split("/")[-1]
+        return f"tud-{slug}"
 
     def _extract_age_fallback(self, description: str) -> Optional[str]:
         """Extract age from description as fallback.

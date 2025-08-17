@@ -362,17 +362,18 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
             return ""
 
     def _extract_external_id(self, url: str) -> str:
-        """Extract external ID from adoption URL.
+        """Extract external ID from adoption URL with organization prefix.
 
         Args:
             url: Full adoption URL
 
         Returns:
-            External ID (the slug from the URL)
+            External ID with 'spbr-' prefix to prevent collisions
         """
         # Extract the last part of the URL path, removing trailing slash
         # This will be the slug: pepper, daisy, summer-breeze, etc.
-        return url.rstrip("/").split("/")[-1]
+        slug = url.rstrip("/").split("/")[-1]
+        return f"spbr-{slug}"
 
     def _clean_dog_name(self, name: str) -> str:
         """Clean dog name by normalizing case and handling formatting.

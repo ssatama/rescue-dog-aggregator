@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Layout from "../../components/layout/Layout";
 import { useFavorites } from "../../hooks/useFavorites";
@@ -44,11 +44,9 @@ function FavoritesPageContent() {
     if (typeof window !== "undefined") {
       const urlParams = new URLSearchParams(window.location.search);
       // Check for any sharing parameters (new or old format)
-      const hasSharedParams = 
-        urlParams.has("shared") || 
-        urlParams.has("ids") || 
-        urlParams.has("c");
-      
+      const hasSharedParams =
+        urlParams.has("shared") || urlParams.has("ids") || urlParams.has("c");
+
       if (hasSharedParams) {
         loadFromUrl(window.location.href);
       }
@@ -116,13 +114,16 @@ function FavoritesPageContent() {
     }
   };
 
-  const handleFilter = (filtered, isUserInitiated = false) => {
-    setFilteredDogs(filtered);
-    // Only show toast if user actively changed filters
-    if (isUserInitiated) {
-      showToast("success", `Filtered to ${filtered.length} dogs`);
-    }
-  };
+  const handleFilter = useCallback(
+    (filtered, isUserInitiated = false) => {
+      setFilteredDogs(filtered);
+      // Only show toast if user actively changed filters
+      if (isUserInitiated) {
+        showToast("success", `Filtered to ${filtered.length} dogs`);
+      }
+    },
+    [showToast],
+  );
 
   // Smart insights based on filtered dogs
   const showInsights = filteredDogs.length >= 2;

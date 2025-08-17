@@ -247,7 +247,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
       onFilter(filteredDogs, true); // Pass true for user-initiated changes
     }
     prevFilteredDogsRef.current = filteredDogs;
-  }, [filteredDogs, isMobile]); // Removed onFilter from dependencies
+  }, [filteredDogs, isMobile, onFilter]);
 
   // Handle escape key for mobile bottom sheet
   useEffect(() => {

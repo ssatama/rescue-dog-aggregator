@@ -67,6 +67,10 @@ class FurryRescueItalyScraper(BaseScraper):
         Returns:
             List of dictionaries containing dog information
         """
+        self.logger.info(f"get_animal_list: Starting with max_pages_to_scrape={max_pages_to_scrape}")
+        self.logger.info(f"get_animal_list: Base URL: {self.base_url}")
+        self.logger.info(f"get_animal_list: Listing URL: {self.listing_url}")
+
         all_dogs = []
         current_page = 1
         max_pages_detected = None
@@ -103,6 +107,7 @@ class FurryRescueItalyScraper(BaseScraper):
                 # Extract dogs from current page
                 page_dogs = self._extract_dogs_from_page(soup)
 
+                self.logger.info(f"Page {current_page}: _extract_dogs_from_page returned {len(page_dogs)} dogs")
                 if not page_dogs:
                     self.logger.info(f"No dogs found on page {current_page}, stopping pagination")
                     break
@@ -140,71 +145,102 @@ class FurryRescueItalyScraper(BaseScraper):
         """
         dogs = []
 
-        # Find all headings that might contain dog names
-        headings = soup.find_all(["h4", "h5", "h6"])
+        # Look for the specific structure: h6 with class="adoption-header"
+        headings = soup.find_all("h6", class_="adoption-header")
+        self.logger.debug(f"_extract_dogs_from_page: Found {len(headings)} adoption-header headings")
 
         for heading in headings:
             text = heading.get_text(strip=True)
 
-            # Check if text is uppercase (dog names) and not reserved
-            if text and text.isupper() and len(text) > 2:
-                # Filter out reserved dogs
-                if "RESERVED" in text or "(RESERVED)" in text:
-                    self.logger.debug(f"Skipping reserved dog: {text}")
-                    continue
+            # Check if we have a valid dog name (usually uppercase)
+            if not text or len(text) < 2:
+                continue
 
-                # Find the parent container
+            # Filter out reserved dogs
+            if "RESERVED" in text.upper() or "(RESERVED)" in text.upper():
+                self.logger.debug(f"Skipping reserved dog: {text}")
+                continue
+
+            # Find the parent container that holds all the dog information
+            # Looking for the closest div that contains the whole card
+            parent = heading.find_parent("div", class_="adopt-card")
+            if not parent:
+                parent = heading.find_parent("div", id=lambda x: x and x.startswith("post-"))
+            if not parent:
                 parent = heading.find_parent("article")
-                if not parent:
-                    parent = heading.find_parent("div", class_="fusion-portfolio-post")
-                if not parent:
-                    parent = heading.parent
 
-                if not parent:
-                    continue
+            if not parent:
+                self.logger.debug(f"Could not find parent container for {text}")
+                continue
 
-                # Convert UPPERCASE names to Title Case
-                name = text.title() if text.isupper() else text
-                dog_data = {"name": name}
+            # Convert UPPERCASE names to Title Case for better presentation
+            name = text.title() if text.isupper() else text
+            dog_data = {"name": name}
 
-                # Find the adoption link
+            # Find the adoption link - should be in a btn class
+            link = parent.find("a", class_="btn")
+            if not link:
+                # Fallback to any link with /adoption/ in href
                 link = parent.find("a", href=lambda x: x and "/adoption/" in x)
-                if link:
-                    href = link.get("href", "")
-                    if not href.startswith("http"):
-                        href = urljoin(self.base_url, href)
-                    dog_data["adoption_url"] = href
-                else:
-                    # Skip dogs without adoption links
-                    continue
 
-                # Extract basic info from list items
-                info_items = parent.find_all("li")
-                for item in info_items:
-                    item_text = item.get_text(strip=True)
+            if link:
+                href = link.get("href", "")
+                if not href.startswith("http"):
+                    href = urljoin(self.base_url, href)
+                dog_data["adoption_url"] = href
 
-                    # Extract born date
-                    if "Born" in item_text or "born" in item_text:
-                        born_text = item_text.split(":", 1)[-1].strip() if ":" in item_text else item_text.replace("Born", "").replace("born", "").strip()
+                # CRITICAL FIX: Generate external_id to prevent duplicates
+                dog_data["external_id"] = self._generate_external_id(name, href)
+            else:
+                # Skip dogs without adoption links
+                self.logger.debug(f"No adoption link found for {text}")
+                continue
+
+            # Extract basic info from list items within the same card
+            info_items = parent.find_all("li")
+            for item in info_items:
+                item_text = item.get_text(strip=True)
+
+                # More flexible parsing for Born/Born: format
+                if "Born" in item_text:
+                    # Handle both "Born:" and "Born" formats
+                    if ":" in item_text:
+                        born_text = item_text.split(":", 1)[1].strip()
+                    else:
+                        # Extract text after "Born"
+                        born_text = item_text.replace("Born", "").strip()
+                    if born_text:
                         dog_data["born"] = born_text
 
-                    # Extract weight
-                    elif "Weight" in item_text or "weight" in item_text:
-                        weight_text = item_text.split(":", 1)[-1].strip() if ":" in item_text else item_text.replace("Weight", "").replace("weight", "").strip()
+                # More flexible parsing for Weight/weight format
+                elif "Weight" in item_text or "weight" in item_text:
+                    # Handle both "Weight:" and "weight" formats
+                    if ":" in item_text:
+                        weight_text = item_text.split(":", 1)[1].strip()
+                    else:
+                        # Extract text after "Weight" or "weight"
+                        weight_text = item_text.replace("Weight", "").replace("weight", "").strip()
+                    if weight_text:
                         dog_data["weight"] = weight_text
 
-                    # Extract location
-                    elif "Location" in item_text:
-                        location_text = item_text.split(":", 1)[-1].strip() if ":" in item_text else item_text.replace("Location", "").strip()
+                # Extract location
+                elif "Location" in item_text:
+                    if ":" in item_text:
+                        location_text = item_text.split(":", 1)[1].strip()
+                    else:
+                        location_text = item_text.replace("Location", "").strip()
+                    if location_text:
                         dog_data["location"] = location_text
 
-                # Add required fields for BaseScraper
-                dog_data["animal_type"] = "dog"
-                dog_data["status"] = "available"
-                dog_data["organization_id"] = self.org_config.id
+            # Add required fields for BaseScraper
+            dog_data["animal_type"] = "dog"
+            dog_data["status"] = "available"
+            dog_data["organization_id"] = self.org_config.id
 
-                dogs.append(dog_data)
+            dogs.append(dog_data)
+            self.logger.debug(f"Extracted dog: {name} with URL: {dog_data.get('adoption_url', 'N/A')}")
 
+        self.logger.info(f"_extract_dogs_from_page: Returning {len(dogs)} dogs")
         return dogs
 
     def _detect_max_pages(self, soup: BeautifulSoup) -> Optional[int]:
@@ -331,7 +367,6 @@ class FurryRescueItalyScraper(BaseScraper):
 
     def _extract_properties(self, soup: BeautifulSoup) -> Dict[str, Any]:
         """Extract properties from bullet point div elements."""
-        import re
 
         properties = {}
 
@@ -673,8 +708,12 @@ class FurryRescueItalyScraper(BaseScraper):
         Returns:
             List of animal dictionaries with all available data
         """
+        self.logger.info("collect_data: Starting data collection")
+
         # Get all animals from listing pages
+        self.logger.info("collect_data: Calling get_animal_list()")
         animals = self.get_animal_list()
+        self.logger.info(f"collect_data: get_animal_list() returned {len(animals)} animals")
 
         if not animals:
             self.logger.warning("No animals found to process")
@@ -686,11 +725,17 @@ class FurryRescueItalyScraper(BaseScraper):
             filtered_urls = self._filter_existing_urls(all_urls)
             skipped_count = len(all_urls) - len(filtered_urls)
 
+            # Set filtering stats for failure detection
+            self.set_filtering_stats(len(all_urls), skipped_count)
+
             # Filter animals list
             url_to_animal = {animal["adoption_url"]: animal for animal in animals}
             animals = [url_to_animal[url] for url in filtered_urls if url in url_to_animal]
 
             self.logger.info(f"Skip existing animals enabled: {skipped_count} skipped, {len(animals)} to process")
+        else:
+            # No filtering applied
+            self.set_filtering_stats(len(animals), 0)
 
         # For small sites (<=10 animals), process sequentially
         # For larger sites, use simple parallel processing
@@ -996,3 +1041,30 @@ class FurryRescueItalyScraper(BaseScraper):
 
         # Update animal properties
         animal["properties"] = properties
+
+    def _generate_external_id(self, name: str, adoption_url: str) -> str:
+        """Generate unique external_id to prevent duplicate animals.
+
+        Args:
+            name: Animal name
+            adoption_url: Animal's adoption page URL
+
+        Returns:
+            Unique external_id string
+        """
+        import re
+
+        # Create name slug (lowercase, alphanumeric only)
+        name_clean = re.sub(r"[^a-zA-Z0-9]", "", name.lower())
+
+        # Extract URL slug if available
+        url_slug = adoption_url.rstrip("/").split("/")[-1]
+        url_clean = re.sub(r"[^a-zA-Z0-9]", "", url_slug.lower())
+
+        # Combine organization prefix + name + url slug for uniqueness
+        if url_clean and url_clean != name_clean:
+            external_id = f"fri-{name_clean}-{url_clean}"
+        else:
+            external_id = f"fri-{name_clean}"
+
+        return external_id[:100]  # Ensure it doesn't exceed database limits

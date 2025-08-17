@@ -1025,4 +1025,88 @@ describe("DogCard Component", () => {
       expect(cardFooter).toHaveClass("pt-0"); // No top padding
     });
   });
+
+  describe("Adoption Availability Feature", () => {
+    test("displays single shipping country", () => {
+      const mockDog = {
+        id: 1,
+        name: "Lucky",
+        status: "available",
+        primary_image_url: "https://example.com/lucky.jpg",
+        organization: {
+          name: "REAN",
+          ships_to: ["UK"],
+        },
+      };
+
+      render(<DogCard dog={mockDog} />);
+
+      const shipsToElement = screen.getByTestId("ships-to-display");
+      expect(shipsToElement).toBeInTheDocument();
+      expect(shipsToElement).toHaveTextContent("Adoptable to:");
+      expect(shipsToElement).toHaveTextContent("United Kingdom");
+    });
+
+    test('displays multiple shipping countries with "more" indicator', () => {
+      const mockDog = {
+        id: 2,
+        name: "Max",
+        status: "available",
+        primary_image_url: "https://example.com/max.jpg",
+        organization: {
+          name: "Berlin Rescue",
+          ships_to: ["DE", "NL", "BE", "FR", "IT", "ES"],
+        },
+      };
+
+      render(<DogCard dog={mockDog} />);
+
+      const shipsToElement = screen.getByTestId("ships-to-display");
+      expect(shipsToElement).toBeInTheDocument();
+      expect(shipsToElement).toHaveTextContent("Adoptable to:");
+
+      // Should show first 3 countries
+      expect(shipsToElement).toHaveTextContent("Germany");
+      expect(shipsToElement).toHaveTextContent("Netherlands");
+      expect(shipsToElement).toHaveTextContent("Belgium");
+
+      // Should show overflow indicator
+      expect(shipsToElement).toHaveTextContent("+3 more");
+    });
+
+    test("does not display ships-to when information is missing", () => {
+      const mockDog = {
+        id: 3,
+        name: "Bella",
+        status: "available",
+        primary_image_url: "https://example.com/bella.jpg",
+        organization: {
+          name: "Local Shelter",
+          // No ships_to field
+        },
+      };
+
+      render(<DogCard dog={mockDog} />);
+
+      const shipsToElement = screen.queryByTestId("ships-to-display");
+      expect(shipsToElement).not.toBeInTheDocument();
+    });
+
+    test("displays adoptable text with correct styling", () => {
+      const mockDog = {
+        id: 1,
+        name: "Lucky",
+        status: "available",
+        organization: {
+          name: "REAN",
+          ships_to: ["GB", "IE"],
+        },
+      };
+
+      render(<DogCard dog={mockDog} />);
+
+      const shipsToElement = screen.getByTestId("ships-to-display");
+      expect(shipsToElement).toHaveTextContent("Adoptable to:");
+    });
+  });
 });

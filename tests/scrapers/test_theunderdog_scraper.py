@@ -331,7 +331,7 @@ class TestTheUnderdogDetailScraping:
         assert expected_desc in result["description"]
 
         # Check external ID is generated
-        assert result["external_id"] == "vicky"
+        assert result["external_id"] == "tud-vicky"
 
     def test_scrape_animal_details_reserved_dog(self, scraper, detail_html_reserved):
         """Test that reserved dogs are skipped."""
@@ -410,6 +410,6 @@ class TestTheUnderdogDetailScraping:
 
     def test_generate_external_id_from_url(self, scraper):
         """Test external ID generation from URL."""
-        assert scraper._generate_external_id("https://theunderdog.org/adopt/vicky") == "vicky"
-        assert scraper._generate_external_id("https://theunderdog.org/adopt/buddy-the-dog") == "buddy-the-dog"
-        assert scraper._generate_external_id("/adopt/max") == "max"
+        assert scraper._generate_external_id("https://theunderdog.org/adopt/vicky") == "tud-vicky"
+        assert scraper._generate_external_id("https://theunderdog.org/adopt/buddy-the-dog") == "tud-buddy-the-dog"
+        assert scraper._generate_external_id("/adopt/max") == "tud-max"

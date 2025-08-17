@@ -155,13 +155,132 @@ def isolate_database_writes():
 4. Break into smaller steps
 5. Use subagents and MCP tools to help you
 
+## Quick Reference - Common Tasks
+
+### Add New API Endpoint
+```
+TASK: Add /api/v1/[endpoint] that [functionality]
+
+PHASE 1 - RESEARCH:
+- Read api/routes/ structure
+- Check existing endpoint patterns
+- Review database models
+
+PHASE 2 - PLAN:
+□ Write failing test for endpoint
+□ Create route handler
+□ Add database query
+□ Handle errors
+□ Update API documentation
+
+PHASE 3 - EXECUTE:
+[Implement with TDD...]
+```
+
+### Add New Scraper
+```
+TASK: Add scraper for [Organization]
+
+PHASE 1 - RESEARCH:
+- Analyze target website structure
+- Identify data patterns
+- Check existing scraper implementations
+
+PHASE 2 - PLAN:
+□ Create YAML config
+□ Write extraction tests
+□ Implement scraper class
+□ Test with real data
+□ Add to documentation
+
+PHASE 3 - EXECUTE:
+[Implement step by step...]
+```
+
+### Fix Failing Test
+```
+TASK: Fix failing test [test name]
+
+PHASE 1 - RESEARCH:
+- Read the failing test
+- Understand expected behavior
+- Check related code
+
+PHASE 2 - PLAN:
+□ Identify root cause
+□ Plan fix approach
+□ Consider edge cases
+□ Verify no side effects
+
+PHASE 3 - EXECUTE:
+[Fix properly...]
+```
+
+## Emergency Commands
+
+```bash
+# When nothing works
+source venv/bin/activate
+touch utils/__init__.py management/__init__.py
+pip install -r requirements.txt
+
+# Frontend issues
+cd frontend && rm -rf node_modules .next
+npm install && npm run build
+
+# Database issues
+psql -d rescue_dogs -c "SELECT COUNT(*) FROM animals;"
+python management/emergency_operations.py --reset-stale-data
+
+# Module not found (Python)
+touch utils/__init__.py
+source venv/bin/activate
+pip install -e .
+
+# Cannot find module (JS)
+cd frontend
+rm -rf node_modules package-lock.json
+npm install
+
+# Single test execution
+pytest tests/path/to/test.py::test_name -v
+npm test -- --testNamePattern="test name"
+```
+
+## Test Commands Summary
+
+```bash
+# Backend Testing Levels
+pytest tests/scrapers/test_specific.py::test_name -v  # One test
+pytest tests/ -m "unit" -v                            # Fast unit tests
+pytest tests/ -m "not slow" -v                        # Dev tests
+pytest tests/ -v                                      # All tests
+
+# Frontend Testing
+npm test DogCard                                      # One component
+npm test -- --testNamePattern="renders correctly"     # Pattern match
+npm test                                              # All tests
+```
+
+## Common Patterns
+
+```python
+# Scraper patterns
+AGE_PATTERN = r'(\d+)\s*(year|month|week)s?\s*old'
+WEIGHT_PATTERN = r'(\d+\.?\d*)\s*(kg|lb|pound)'
+ID_PATTERN = r'[A-Z0-9]{6,12}'
+
+# Validation patterns
+EMAIL_PATTERN = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+URL_PATTERN = r'^https?://[^\s<>"{}|\\^`\[\]]+$'
+```
+
 ## References
 
-- Architecture: `docs/architecture/`
-- Development: `docs/development/workflow.md`
-- Testing: `docs/development/testing.md`
-- Code examples: `docs/examples/`
-- API reference: `docs/api/reference.md`
-- Getting started: `docs/getting-started/installation.md`
-- Configuration: `docs/getting-started/configuration.md`
-- Operations: `docs/operations/troubleshooting.md`
+- Architecture: `docs/technical/architecture.md`
+- Testing Guide: `docs/guides/testing.md`
+- Installation: `docs/guides/installation.md`
+- Deployment: `docs/guides/deployment.md`
+- API Reference: `docs/technical/api-reference.md`
+- Troubleshooting: `docs/troubleshooting.md`
+- Contributing: `CONTRIBUTING.md`

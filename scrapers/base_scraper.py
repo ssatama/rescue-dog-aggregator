@@ -302,9 +302,59 @@ class BaseScraper(ABC):
             self.logger.warning(f"Language detection error: {e}. Defaulting to English.")
             return "en"
 
+    def validate_external_id(self, external_id):
+        """Validate that external_id follows organization prefix pattern.
+
+        Args:
+            external_id: The external_id to validate
+
+        Raises:
+            ValueError: If external_id doesn't follow the required pattern
+        """
+        if not external_id:
+            return  # Some scrapers may not have external_id yet
+
+        # Known organization prefixes (collision-safe patterns)
+        known_prefixes = [
+            "arb-",  # Animal Rescue Bosnia
+            "spbr-",  # Santer Paws Bulgarian Rescue
+            "gds-",  # Galgos del Sol
+            "mar-",  # MISIs Animal Rescue
+            "tud-",  # The Underdog
+            "wp-",  # Woof Project
+            "fri-",  # Furry Rescue Italy
+            "pit-",  # Pets in Turkey
+            "rean-",  # REAN
+            "hund-",  # Daisy Family Rescue
+            "dt-",  # Dogs Trust
+            "mtr-",  # Many Tears Rescue (uses numeric but may change)
+            "tve-",  # Tierschutzverein Europa
+        ]
+
+        # Check if external_id starts with any known prefix or is numeric
+        has_prefix = any(external_id.startswith(prefix) for prefix in known_prefixes)
+        is_numeric = external_id.isdigit()
+
+        # Special case: Tierschutzverein Europa uses slug format like "yara-in-rumaenien-tierheim"
+        # This is their established pattern and is acceptable
+        is_tierschutzverein_pattern = (
+            self.org_config and self.org_config.id == "tierschutzverein-europa" and "-" in external_id and len(external_id) > 10  # Their IDs are typically longer descriptive slugs
+        )
+
+        if not has_prefix and not is_numeric and not is_tierschutzverein_pattern:
+            self.logger.warning(
+                f"External ID '{external_id}' does not follow organization prefix pattern. "
+                f"This may cause collisions with other organizations. "
+                f"Consider using a prefix like 'org-' to ensure uniqueness."
+            )
+
     def save_animal(self, animal_data):
         """Save or update animal data in the database with R2 image upload."""
         try:
+            # Validate external_id pattern to prevent collisions
+            if animal_data.get("external_id"):
+                self.validate_external_id(animal_data["external_id"])
+
             # Check if animal already exists by external_id and organization FIRST
             existing_animal = self.get_existing_animal(animal_data.get("external_id"), animal_data.get("organization_id"))
 
