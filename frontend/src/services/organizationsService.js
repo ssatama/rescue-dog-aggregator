@@ -169,7 +169,9 @@ export async function getEnhancedOrganizationsSSR() {
       ships_to: org.ships_to || org.shipsTo || [],
     }));
 
-    console.log(`SSR: Successfully loaded ${enhancedOrganizations.length} organizations`);
+    console.log(
+      `SSR: Successfully loaded ${enhancedOrganizations.length} organizations`,
+    );
     return enhancedOrganizations;
   } catch (error) {
     console.error("Failed to fetch enhanced organizations (SSR):", {

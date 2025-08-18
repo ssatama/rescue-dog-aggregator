@@ -134,7 +134,7 @@ class TestBreedTranslation:
     def test_translate_breed_handles_complex_descriptions(self):
         """Test handling of complex breed descriptions from the database."""
         complex_breeds = {
-            "Mischling (Podenco oder Mastin, wurde mit zwei Müttern gefunden)": "Mixed Breed (Podenco or Mastin, found with two mothers)",
+            "Mischling (Podenco oder Mastin, wurde mit zwei Müttern gefunden)": "Mixed Breed (Podenco or Spanish Mastiff, found with two mothers)",
             '"Mini" Border Collie Mischling': '"Mini" Border Collie Mix',
             "Mix Husky und Schäferhund": "Husky and German Shepherd Mix",
             "Mischling (evtl. Bretone Epagneul-Pointer-Mischling)": "Mixed Breed (possibly Brittany Spaniel-Pointer Mix)",

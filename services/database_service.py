@@ -22,7 +22,8 @@ from typing import Any, Dict, Optional, Tuple
 
 import psycopg2
 
-from utils.optimized_standardization import parse_age_text, standardize_breed, standardize_size_value
+from utils.optimized_standardization import parse_age_text, standardize_size_value
+from utils.standardization import standardize_breed
 from utils.slug_generator import generate_unique_animal_slug
 
 
@@ -172,7 +173,7 @@ class DatabaseService:
         language = self._detect_language(description_text)
 
         # Apply standardization
-        breed_info = standardize_breed(animal_data.get("breed", ""))
+        standardized_breed, breed_group, size_estimate = standardize_breed(animal_data.get("breed", ""))
 
         # Use pre-calculated age values if available (from scraper standardization)
         # Otherwise fall back to parsing age_text
@@ -186,12 +187,12 @@ class DatabaseService:
 
         # Use size estimate if no size provided
         final_size = animal_data.get("size") or animal_data.get("standardized_size")
-        final_standardized_size = animal_data.get("standardized_size") or breed_info.size_estimate or standardize_size_value(animal_data.get("size"))
+        final_standardized_size = animal_data.get("standardized_size") or size_estimate or standardize_size_value(animal_data.get("size"))
 
         # Generate temporary unique slug for animal (Phase 1: before ID is available)
         try:
             temp_slug = generate_unique_animal_slug(
-                name=animal_data.get("name"), breed=animal_data.get("breed"), standardized_breed=breed_info.standardized_name, animal_id=None, connection=conn  # ID not available during creation
+                name=animal_data.get("name"), breed=animal_data.get("breed"), standardized_breed=standardized_breed, animal_id=None, connection=conn  # ID not available during creation
             )
             # Add temp suffix to distinguish from final slug
             animal_slug = f"{temp_slug}-temp"
@@ -229,8 +230,8 @@ class DatabaseService:
                 animal_data.get("adoption_url"),
                 animal_data.get("status", "available"),
                 animal_data.get("breed"),
-                breed_info.standardized_name,
-                breed_info.breed_group,
+                standardized_breed,
+                breed_group,
                 animal_data.get("age_text"),
                 age_months_min,
                 age_months_max,
@@ -254,7 +255,7 @@ class DatabaseService:
         # Phase 2: Generate final slug with animal ID and update
         try:
             final_slug = generate_unique_animal_slug(
-                name=animal_data.get("name"), breed=animal_data.get("breed"), standardized_breed=breed_info.standardized_name, animal_id=animal_id, connection=conn  # ID now available
+                name=animal_data.get("name"), breed=animal_data.get("breed"), standardized_breed=standardized_breed, animal_id=animal_id, connection=conn  # ID now available
             )
 
             # Update the animal with the final slug containing ID
@@ -307,14 +308,14 @@ class DatabaseService:
                 return None, "error"
 
             # Apply standardization to new data
-            new_breed_info = standardize_breed(animal_data.get("breed", ""))
+            new_standardized_breed, new_breed_group, new_size_estimate = standardize_breed(animal_data.get("breed", ""))
             new_age_info = parse_age_text(animal_data.get("age_text", ""))
             # parse_age_text returns AgeInfo object with attributes
             new_age_min_months = new_age_info.min_months
             new_age_max_months = new_age_info.max_months
 
             # Use size estimate if no size provided
-            new_final_standardized_size = animal_data.get("standardized_size") or new_breed_info.size_estimate or standardize_size_value(animal_data.get("size"))
+            new_final_standardized_size = animal_data.get("standardized_size") or new_size_estimate or standardize_size_value(animal_data.get("size"))
 
             # Check for changes (simplified comparison)
             current_properties_json = current_data[10] if current_data[10] else "{}"
@@ -323,7 +324,7 @@ class DatabaseService:
             has_changes = self._detect_animal_changes(
                 current_data,
                 animal_data,
-                new_breed_info.standardized_name,
+                new_standardized_breed,
                 new_age_min_months,
                 new_age_max_months,
                 new_final_standardized_size,
@@ -354,8 +355,8 @@ class DatabaseService:
                 (
                     animal_data.get("name"),
                     animal_data.get("breed"),
-                    new_breed_info.standardized_name,
-                    new_breed_info.breed_group,
+                    new_standardized_breed,
+                    new_breed_group,
                     animal_data.get("age_text"),
                     new_age_min_months,
                     new_age_max_months,

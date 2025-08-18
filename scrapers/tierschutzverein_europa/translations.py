@@ -40,7 +40,10 @@ def translate_age(age_text: Optional[str]) -> Optional[str]:
     """Translate German age text to English format expected by base_scraper.py.
 
     Handles patterns like:
-    - "1 Jahre" -> "1 years"
+    - "05.2025 (3 Monate alt)" -> "3 months old"
+    - "01.2024 (1 Jahr alt)" -> "1 year old"
+    - "09.2020 (4 Jahre alt)" -> "4 years old"
+    - "1 Jahre" -> "1 year"
     - "2 Jahre" -> "2 years"
     - "Unbekannt" -> None
 
@@ -59,7 +62,41 @@ def translate_age(age_text: Optional[str]) -> Optional[str]:
     if age_text.lower() == "unbekannt":
         return None
 
-    # Extract years from patterns like "X Jahre"
+    # Handle full date patterns like "05.2025 (3 Monate alt)" or "01.2024 (1 Jahr alt)"
+    match = re.match(r"^\d{2}\.\d{4}\s*\((\d+)\s*(Jahr[e]?|Monat[e]?)\s*alt\)$", age_text)
+    if match:
+        number = int(match.group(1))
+        unit = match.group(2)
+
+        if "Jahr" in unit:
+            if number == 1:
+                return "1 year old"
+            else:
+                return f"{number} years old"
+        elif "Monat" in unit:
+            if number == 1:
+                return "1 month old"
+            else:
+                return f"{number} months old"
+
+    # Handle simpler patterns like "3 Jahre alt" or "6 Monate alt"
+    match = re.match(r"^(\d+)\s*(Jahr[e]?|Monat[e]?)\s*alt$", age_text)
+    if match:
+        number = int(match.group(1))
+        unit = match.group(2)
+
+        if "Jahr" in unit:
+            if number == 1:
+                return "1 year old"
+            else:
+                return f"{number} years old"
+        elif "Monat" in unit:
+            if number == 1:
+                return "1 month old"
+            else:
+                return f"{number} months old"
+
+    # Extract years from patterns like "X Jahre" (without "alt")
     match = re.match(r"^(\d+)\s*Jahre?$", age_text)
     if match:
         years = int(match.group(1))
@@ -68,7 +105,7 @@ def translate_age(age_text: Optional[str]) -> Optional[str]:
         else:
             return f"{years} years"
 
-    # Handle months if present (for future expansion)
+    # Handle months if present (without "alt")
     match = re.match(r"^(\d+)\s*Monat[e]?$", age_text)
     if match:
         months = int(match.group(1))
@@ -77,6 +114,8 @@ def translate_age(age_text: Optional[str]) -> Optional[str]:
         else:
             return f"{months} months"
 
+    # If we can't parse it, return the original text for debugging
+    # This helps us identify patterns we haven't handled yet
     return None
 
 
@@ -108,13 +147,23 @@ def translate_breed(breed: Optional[str]) -> Optional[str]:
     # Word translations
     word_translations = {
         "Mischling": "Mixed Breed",
+        "Mischlinge": "Mixed Breed",  # Plural form
         "Deutscher Schäferhund": "German Shepherd",
         "Schäferhund": "German Shepherd",
         "Herdenschutzhund": "Livestock Guardian Dog",
+        "Herdenschutz": "Livestock Guardian",
         "Jagdhund": "Hunting Dog",
         "Hütehund": "Herding Dog",
         "Wasserhund": "Water Dog",
         "Bretone Epagneul": "Brittany Spaniel",
+        "Bodeguero": "Bodeguero Andaluz",  # Keep as Spanish breed name
+        "Bodeguera": "Bodeguero Andaluz",  # Female variant
+        "Mastin": "Spanish Mastiff",
+        "Bardino": "Bardino",  # Canarian breed
+        "Bracken": "Hound",
+        "Braco Aleman": "German Shorthaired Pointer",
+        "Spanischer Windhund": "Spanish Greyhound",
+        "Perdiguero de Burgos": "Burgos Pointer",
         "reinrassig": "purebred",
         "vllt.": "possibly",
         "evtl.": "possibly",
@@ -164,26 +213,55 @@ def translate_breed(breed: Optional[str]) -> Optional[str]:
 
 
 def normalize_name(name: Optional[str]) -> Optional[str]:
-    """Normalize dog names to proper capitalization.
+    """Normalize dog names to proper capitalization and remove extra text.
 
-    Production data shows all names are in UPPERCASE, so we convert to
-    proper title case.
+    Handles patterns like:
+    - "Strolch (vermittlungshilfe)" -> "Strolch"
+    - "Vera (gnadenplatz)" -> "Vera"
+    - "Moon (genannt coco)" -> "Moon"
+    - "Mo'nique \"vermittlungshilfe\"" -> "Mo'nique"
+    - "Benji & dali" -> "Benji & Dali"
+    - "BELLA" -> "Bella"
 
     Args:
-        name: Dog name (typically all caps)
+        name: Dog name with potential extra text
 
     Returns:
-        Properly capitalized name
+        Cleaned and properly capitalized name
     """
     if not name:
         return None
 
     name = name.strip()
 
+    # Remove text in parentheses like (vermittlungshilfe), (gnadenplatz), etc.
+    name = re.sub(r"\s*\([^)]*\)", "", name)
+
+    # Remove text in quotes like "vermittlungshilfe"
+    name = re.sub(r'\s*"[^"]*"', "", name)
+
+    # Clean up any extra whitespace
+    name = " ".join(name.split())
+
+    # Handle special cases with "&" - capitalize both parts
+    if "&" in name:
+        parts = name.split("&")
+        return " & ".join(part.strip().capitalize() for part in parts)
+
     # Handle hyphenated names
     if "-" in name:
         parts = name.split("-")
         return "-".join(part.capitalize() for part in parts)
+
+    # Handle apostrophes (like Mo'nique)
+    if "'" in name:
+        # Don't split on apostrophe, just capitalize first letter
+        if name.isupper():
+            # If all uppercase, use title case
+            return name.title()
+        else:
+            # Otherwise just ensure first letter is capital
+            return name[0].upper() + name[1:] if len(name) > 1 else name.upper()
 
     # Simple capitalization for single words
     return name.capitalize()

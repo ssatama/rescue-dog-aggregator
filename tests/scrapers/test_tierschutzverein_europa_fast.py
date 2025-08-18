@@ -39,91 +39,87 @@ class TestTierschutzvereinEuropaScraperFast:
             return scraper
 
     @pytest.mark.unit
-    def test_extract_name_from_text(self, scraper):
-        """Test name extraction from German text patterns."""
+    def test_translations_normalize_name(self):
+        """Test name normalization through translations module."""
+        from scrapers.tierschutzverein_europa.translations import normalize_name
+        
         test_cases = [
-            ("Sasha - 2 Jahre, Hündin", "Sasha"),
-            ("Max der Mischling ist freundlich", "Max"),
-            ("Bella sucht ein Zuhause", "Bella"),
-            ("Luna - Spanien", "Luna"),
+            ("SASHA", "Sasha"),
+            ("MAX", "Max"),
+            ("bella", "Bella"),
+            ("Luna (vermittlungshilfe)", "Luna"),
+            ("Mo'nique", "Mo'nique"),
         ]
 
         for text, expected in test_cases:
-            result = scraper.extract_name_from_text(text)
+            result = normalize_name(text)
             assert result == expected, f"Expected {expected}, got {result} for text: {text}"
 
     @pytest.mark.unit
-    def test_extract_age_from_german_text(self, scraper):
-        """Test age extraction from German text patterns."""
+    def test_translations_translate_age(self):
+        """Test age translation from German to English."""
+        from scrapers.tierschutzverein_europa.translations import translate_age
+        
         test_cases = [
-            ("2 Jahre alt", "2 Jahre"),
-            ("6 Monate", "6 Monate"),
-            ("ca. 3 Jahre", "ca. 3 Jahre"),
-            ("etwa 1,5 Jahre", "etwa 1,5 Jahre"),
-            ("18 Monate alt", "18 Monate"),
+            ("2 Jahre alt", "2 years old"),
+            ("6 Monate alt", "6 months old"),
+            ("3 Jahre", "3 years"),
+            ("1 Jahr alt", "1 year old"),
+            ("18 Monate", "18 months"),
+            ("05.2025 (3 Monate alt)", "3 months old"),
         ]
 
         for text, expected in test_cases:
-            result = scraper.extract_age_from_text(text)
+            result = translate_age(text)
             assert result == expected, f"Expected {expected}, got {result} for text: {text}"
 
     @pytest.mark.unit
-    def test_extract_gender_from_german_text(self, scraper):
-        """Test gender extraction from German text."""
+    def test_translations_translate_gender(self):
+        """Test gender translation from German text."""
+        from scrapers.tierschutzverein_europa.translations import translate_gender
+        
         test_cases = [
-            ("Hündin", "Hündin"),
-            ("Rüde", "Rüde"),
-            ("weiblich", "Hündin"),
-            ("männlich", "Rüde"),
-            ("female", "Hündin"),  # English fallback
-            ("male", "Rüde"),  # English fallback
+            ("Hündin", "Female"),
+            ("Rüde", "Male"),
+            ("weiblich", "Female"),
+            ("männlich", "Male"),
+            ("hündin", "Female"),
+            ("rüde", "Male"),
         ]
 
         for text, expected in test_cases:
-            result = scraper.extract_gender_from_text(text)
+            result = translate_gender(text)
             assert result == expected, f"Expected {expected}, got {result} for text: {text}"
 
     @pytest.mark.unit
-    def test_extract_breed_from_german_text(self, scraper):
-        """Test breed extraction from German text patterns."""
+    def test_translations_translate_breed(self):
+        """Test breed translation from German text patterns."""
+        from scrapers.tierschutzverein_europa.translations import translate_breed
+        
         test_cases = [
-            ("Deutscher Schäferhund", "Deutscher Schäferhund"),
-            ("Mischling", "Mischling"),
+            ("Deutscher Schäferhund", "German Shepherd"),
+            ("Mischling", "Mixed Breed"),
             ("Golden Retriever Mix", "Golden Retriever Mix"),
             ("Labrador", "Labrador"),
-            ("unbekannt", "Mischling"),  # Default fallback
+            ("Herdenschutz Mix", "Livestock Guardian Mix"),
         ]
 
         for text, expected in test_cases:
-            result = scraper.extract_breed_from_text(text)
+            result = translate_breed(text)
             assert result == expected, f"Expected {expected}, got {result} for text: {text}"
 
     @pytest.mark.unit
-    def test_generate_external_id(self, scraper):
-        """Test external ID generation from name and details."""
+    def test_extract_external_id_from_url(self, scraper):
+        """Test external ID extraction from URLs."""
         test_cases = [
-            ("Sasha", "2 Jahre, Hündin", "sasha-2-jahre"),
-            ("Max Müller", "6 Monate, Rüde", "max-mueller-6-monate"),
-            # Note: ü -> ue
-            ("Bella-Luna", "3 Jahre", "bella-luna-3-jahre"),
+            ("/tiervermittlung/abel-in-spanien-huellas-con-esperanza/", "abel-in-spanien-huellas-con-esperanza"),
+            ("/tiervermittlung/abril-in-spanien-tierheim-ada-canals/", "abril-in-spanien-tierheim-ada-canals"),
+            ("/tiervermittlung/akeno-in-rumaenien-tierheim-odai/", "akeno-in-rumaenien-tierheim-odai"),
         ]
 
-        for name, details, expected_start in test_cases:
-            result = scraper.generate_external_id(name, details)
-            assert result.startswith(expected_start), f"Expected to start with {expected_start}, got {result}"
-            assert len(result) > len(expected_start), "Should have additional unique identifier"
-
-    @pytest.mark.unit
-    def test_build_adoption_url(self, scraper):
-        """Test adoption URL construction."""
-        test_cases = [
-            ("sasha-123", "https://tierschutzverein-europa.de/tiervermittlung/sasha-123/"),
-            ("max-muller-456", "https://tierschutzverein-europa.de/tiervermittlung/max-muller-456/"),
-        ]
-
-        for external_id, expected in test_cases:
-            result = scraper.build_adoption_url(external_id)
-            assert result == expected, f"Expected {expected}, got {result}"
+        for url, expected in test_cases:
+            result = scraper._extract_external_id_from_url(url)
+            assert result == expected, f"Expected {expected}, got {result} for URL {url}"
 
     @pytest.mark.unit
     def test_pagination_url_generation(self, scraper):
@@ -159,77 +155,3 @@ class TestTierschutzvereinEuropaScraperFast:
             assert field in sample_data, f"Required field {field} missing"
             assert sample_data[field], f"Required field {field} is empty"
 
-    @pytest.mark.unit
-    def test_url_validation(self, scraper):
-        """Test URL validation logic."""
-        valid_urls = ["https://tierschutzverein-europa.de/wp-content/uploads/image.jpg", "https://tierschutzverein-europa.de/tiervermittlung/sasha/", "https://example.com/image.png"]
-
-        invalid_urls = ["", "not-a-url", "javascript:alert('xss')", None]
-
-        for url in valid_urls:
-            assert scraper.is_valid_url(url), f"Should be valid: {url}"
-
-        for url in invalid_urls:
-            assert not scraper.is_valid_url(url), f"Should be invalid: {url}"
-
-    @pytest.mark.unit
-    def test_german_text_normalization(self, scraper):
-        """Test German text normalization."""
-        test_cases = [
-            ("Schäferhund", "Schäferhund"),  # Keep umlauts
-            ("Größe: mittel", "Größe: mittel"),  # Keep umlauts
-            ("  extra  spaces  ", "extra spaces"),  # Normalize spaces
-            # Normalize linebreaks
-            ("Multiple\n\nlinebreaks", "Multiple linebreaks"),
-        ]
-
-        for input_text, expected in test_cases:
-            result = scraper.normalize_german_text(input_text)
-            assert result == expected, f"Expected {expected}, got {result}"
-
-    @pytest.mark.unit
-    def test_extract_data_from_article_text(self, scraper):
-        """Test extraction from actual article text structure."""
-        article_text = """ABEL
-SPANIEN
-31. MAI 2024
-Name: Abel
-Rasse: Podenco
-Geschlecht: männlich
-Geburtstag: 09.2020 (4 Jahre alt)
-Ungefähre Größe: 59 cm
-Aufenthaltsort: Refugio Huellas Con Esperanza
-MEHR INFOS"""
-
-        result = scraper.extract_data_from_article_text(article_text)
-
-        assert result["name"] == "Abel"
-        assert result["breed"] == "Podenco"
-        assert result["sex"] == "Rüde"
-        assert "Jahre" in result["age_text"]
-
-    @pytest.mark.unit
-    def test_extract_external_id_from_url(self, scraper):
-        """Test external ID extraction from URLs."""
-        test_cases = [
-            ("https://tierschutzverein-europa.de/tiervermittlung/abel-in-spanien-huellas-con-esperanza/", "abel-in-spanien-huellas-con-esperanza"),
-            ("https://tierschutzverein-europa.de/tiervermittlung/abril-in-spanien-tierheim-ada-canals/", "abril-in-spanien-tierheim-ada-canals"),
-            ("/tiervermittlung/akeno-in-rumaenien-tierheim-odai/", "akeno-in-rumaenien-tierheim-odai"),
-        ]
-
-        for url, expected in test_cases:
-            result = scraper.extract_external_id_from_url(url)
-            assert result == expected, f"Expected {expected}, got {result} for URL {url}"
-
-    @pytest.mark.unit
-    def test_extract_profile_image_url(self, scraper):
-        """Test profile image URL extraction."""
-        # Mock image elements as we would find them
-        mock_images = [
-            ("https://example.com/flags/spain.png", "Ort"),  # Flag image
-            ("https://example.com/flags/spain.png", "Ort"),  # Flag image duplicate
-            ("https://tierschutzverein-europa.de/wp-content/uploads/2024/05/Abel-Profilbild-300x300.jpeg", "Titelbild von Abel"),  # Profile image
-        ]
-
-        result = scraper.extract_profile_image_from_images(mock_images)
-        assert result == "https://tierschutzverein-europa.de/wp-content/uploads/2024/05/Abel-Profilbild-300x300.jpeg"

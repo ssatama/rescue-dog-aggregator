@@ -53,7 +53,7 @@ export function useEnhancedOrganizations(initialData?: Organization[]) {
     // Enable retries with exponential backoff for production resilience
     retry: (failureCount, error) => {
       // Don't retry for 4xx errors (client errors)
-      if (error?.message?.includes('4')) {
+      if (error?.message?.includes("4")) {
         return false;
       }
       // Retry up to 2 times for 5xx errors (server errors)
