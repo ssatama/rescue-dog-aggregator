@@ -84,7 +84,9 @@ describe("DogFilters Component", () => {
 
       // For Radix Select components, the value is shown via SelectValue span
       expect(screen.getByText("Puppy")).toBeInTheDocument();
-      expect(screen.getByDisplayValue("golden")).toBeInTheDocument(); // Text input
+      // Breed is now a SearchTypeahead, check for input value
+      const breedInput = screen.getByTestId("breed-filter");
+      expect(breedInput).toHaveValue("golden");
       expect(screen.getByText("Germany (DE)")).toBeInTheDocument();
       expect(screen.getByText("Name A-Z")).toBeInTheDocument();
     });
@@ -181,7 +183,7 @@ describe("DogFilters Component", () => {
       });
     });
 
-    test("debounces breed input changes", async () => {
+    test("calls onFiltersChange immediately on each character typed", async () => {
       const user = userEvent.setup();
       const onFiltersChange = jest.fn();
       render(
@@ -191,19 +193,24 @@ describe("DogFilters Component", () => {
       const breedInput = screen.getByTestId("breed-filter");
       await user.type(breedInput, "gol");
 
-      // Should not call onChange for each character immediately
-      expect(onFiltersChange).not.toHaveBeenCalled();
+      // Should call onChange for each character typed
+      await waitFor(() => {
+        expect(onFiltersChange).toHaveBeenCalledTimes(3);
+      });
 
-      // Wait for debounce
-      await waitFor(
-        () => {
-          expect(onFiltersChange).toHaveBeenCalledWith({
-            ...defaultProps.filters,
-            breed: "gol",
-          });
-        },
-        { timeout: 1000 },
-      );
+      // Verify the calls were made with progressive values
+      expect(onFiltersChange).toHaveBeenNthCalledWith(1, {
+        ...defaultProps.filters,
+        breed: "g",
+      });
+      expect(onFiltersChange).toHaveBeenNthCalledWith(2, {
+        ...defaultProps.filters,
+        breed: "go",
+      });
+      expect(onFiltersChange).toHaveBeenNthCalledWith(3, {
+        ...defaultProps.filters,
+        breed: "gol",
+      });
     });
   });
 

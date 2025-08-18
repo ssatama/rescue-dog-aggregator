@@ -59,7 +59,7 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
         data-testid="related-dog-image-container"
         className="aspect-[4/3] w-full overflow-hidden rounded-t-lg bg-gray-200"
       >
-        {(dog.primary_image_url || dog.main_image) ? (
+        {dog.primary_image_url || dog.main_image ? (
           <OptimizedImage
             src={getThumbnailImage(dog.primary_image_url || dog.main_image)}
             alt={dog.name}

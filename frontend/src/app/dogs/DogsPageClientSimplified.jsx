@@ -55,17 +55,6 @@ export default function DogsPageClientSimplified({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // State management
-  const [dogs, setDogs] = useState(initialDogs);
-  const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState(null);
-  const [hasMore, setHasMore] = useState(initialDogs.length === ITEMS_PER_PAGE);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [filterCounts, setFilterCounts] = useState(null);
-  const [availableRegions, setAvailableRegions] = useState(["Any region"]);
-  const [page, setPage] = useState(1);
-
   // Validate organization_id parameter against available organizations
   const validateOrganizationId = (orgId) => {
     if (!orgId || orgId === "any") return "any";
@@ -94,6 +83,22 @@ export default function DogsPageClientSimplified({
       searchParams.get("available_country") || "Any country",
     availableRegionFilter: searchParams.get("available_region") || "Any region",
   };
+
+  // State management
+  const [dogs, setDogs] = useState(initialDogs);
+  const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState(null);
+  const [hasMore, setHasMore] = useState(initialDogs.length === ITEMS_PER_PAGE);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [filterCounts, setFilterCounts] = useState(null);
+  const [availableRegions, setAvailableRegions] = useState(["Any region"]);
+  const [page, setPage] = useState(1);
+
+  // Local breed input state for fallback handling
+  const [localBreedInput, setLocalBreedInput] = useState(
+    filters.breedFilter === "Any breed" ? "" : filters.breedFilter,
+  );
 
   // Update URL with filters (debounced)
   const updateURL = useDebouncedCallback((newFilters) => {
@@ -134,7 +139,8 @@ export default function DogsPageClientSimplified({
     if (filters.sexFilter !== "Any") params.sex = filters.sexFilter;
     if (filters.organizationFilter !== "any")
       params.organization_id = filters.organizationFilter;
-    if (filters.breedFilter !== "Any breed") params.breed = filters.breedFilter;
+    if (filters.breedFilter !== "Any breed")
+      params.standardized_breed = filters.breedFilter;
     if (filters.locationCountryFilter !== "Any country")
       params.location_country = filters.locationCountryFilter;
     if (filters.availableCountryFilter !== "Any country")
@@ -224,6 +230,15 @@ export default function DogsPageClientSimplified({
     }
   }, [page, hasMore, filters, loadingMore]);
 
+  // Sync local breed input with URL filter changes (e.g., browser back/forward)
+  useEffect(() => {
+    const urlBreed =
+      filters.breedFilter === "Any breed" ? "" : filters.breedFilter;
+    if (urlBreed !== localBreedInput) {
+      setLocalBreedInput(urlBreed);
+    }
+  }, [filters.breedFilter, localBreedInput]);
+
   // Load available regions when country changes
   useEffect(() => {
     if (
@@ -241,6 +256,40 @@ export default function DogsPageClientSimplified({
       setAvailableRegions(["Any region"]);
     }
   }, [filters.availableCountryFilter]);
+
+  // Local breed handlers to prevent heavy parent logic interference during typing
+  const handleBreedSuggestionSelect = useCallback(
+    (breed) => {
+      setLocalBreedInput(breed);
+      // Only trigger heavy parent logic when user actually selects a suggestion
+      handleFilterChange("breedFilter", breed);
+    },
+    [handleFilterChange],
+  );
+
+  const handleBreedSearch = useCallback(
+    (breed) => {
+      setLocalBreedInput(breed);
+      // Only trigger heavy parent logic when user performs explicit search (Enter key)
+      handleFilterChange("breedFilter", breed);
+    },
+    [handleFilterChange],
+  );
+
+  // Handler for real-time typing that updates filter immediately like Name filter
+  const handleBreedValueChange = useCallback(
+    (breed) => {
+      // Update both local state and actual filter, just like Name filter does
+      setLocalBreedInput(breed);
+      handleFilterChange("breedFilter", breed);
+    },
+    [handleFilterChange],
+  );
+
+  const handleBreedClear = useCallback(() => {
+    setLocalBreedInput("");
+    handleFilterChange("breedFilter", "Any breed");
+  }, [handleFilterChange]);
 
   const breadcrumbItems = [
     { label: "Home", href: "/" },
@@ -301,11 +350,12 @@ export default function DogsPageClientSimplified({
                   { id: null, name: "Any organization" },
                 ]
               }
-              // Breed
+              // Breed (using actual filter state like Name filter)
               standardizedBreedFilter={filters.breedFilter}
-              setStandardizedBreedFilter={(value) =>
-                handleFilterChange("breedFilter", value)
-              }
+              setStandardizedBreedFilter={handleBreedSuggestionSelect}
+              handleBreedSearch={handleBreedSearch}
+              handleBreedClear={handleBreedClear}
+              handleBreedValueChange={handleBreedValueChange}
               standardizedBreeds={metadata?.standardizedBreeds || ["Any breed"]}
               // Pet Details
               sexFilter={filters.sexFilter}
@@ -442,11 +492,12 @@ export default function DogsPageClientSimplified({
           organizations={
             metadata?.organizations || [{ id: null, name: "Any organization" }]
           }
-          // Breed
+          // Breed (using actual filter state like Name filter)
           standardizedBreedFilter={filters.breedFilter}
-          setStandardizedBreedFilter={(value) =>
-            handleFilterChange("breedFilter", value)
-          }
+          setStandardizedBreedFilter={handleBreedSuggestionSelect}
+          handleBreedSearch={handleBreedSearch}
+          handleBreedClear={handleBreedClear}
+          handleBreedValueChange={handleBreedValueChange}
           standardizedBreeds={metadata?.standardizedBreeds || ["Any breed"]}
           // Pet Details
           sexFilter={filters.sexFilter}

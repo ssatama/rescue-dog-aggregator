@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Select,
@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "../ui/Icon";
+import SearchTypeahead from "@/components/search/SearchTypeahead";
+import { getBreedSuggestions } from "@/services/animalsService";
 import {
   getAgeFilterOptions,
   getSortFilterOptions,
@@ -32,6 +34,12 @@ import { getCountryName } from "@/utils/countryHelpers";
  * @param {boolean} props.showShipsToFilter - Whether to show ships-to filter (default: true)
  * @param {boolean} props.showSortFilter - Whether to show sort filter (default: true)
  * @param {Function} props.onMobileFilterClick - Callback for mobile filter button click
+ * @param {Function} props.fetchBreedSuggestions - Custom breed suggestions function (optional)
+ * @param {Function} props.handleBreedValueChange - Handler for typing in breed field (no API calls)
+ * @param {Function} props.handleBreedSuggestionSelect - Handler for selecting a breed suggestion
+ * @param {Function} props.handleBreedSearch - Handler for explicit breed search (Enter key)
+ * @param {Function} props.handleBreedClear - Handler for clearing breed filter
+ * @param {boolean} props.useSimpleBreedDropdown - Use simple Select dropdown instead of SearchTypeahead (default: false)
  */
 export default function DogFilters({
   filters,
@@ -43,28 +51,15 @@ export default function DogFilters({
   showShipsToFilter = true,
   showSortFilter = true,
   onMobileFilterClick,
+  fetchBreedSuggestions,
+  handleBreedValueChange,
+  handleBreedSuggestionSelect,
+  handleBreedSearch,
+  handleBreedClear,
+  useSimpleBreedDropdown = false,
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [localBreedInput, setLocalBreedInput] = useState(filters?.breed || "");
-
-  // Debounced breed input handling
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (localBreedInput !== filters?.breed) {
-        handleFilterChange("breed", localBreedInput);
-      }
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [localBreedInput, filters?.breed]);
-
-  // Sync local breed input with external filter changes
-  useEffect(() => {
-    if (filters?.breed !== localBreedInput) {
-      setLocalBreedInput(filters?.breed || "");
-    }
-  }, [filters?.breed]);
 
   const handleFilterChange = useCallback(
     (filterType, value) => {
@@ -91,7 +86,6 @@ export default function DogFilters({
 
   const handleClearAll = useCallback(() => {
     const defaultFilters = getDefaultFilters();
-    setLocalBreedInput("");
     onFiltersChange?.(defaultFilters);
 
     // Clear URL params
@@ -227,19 +221,86 @@ export default function DogFilters({
 
           {/* Breed Filter */}
           <div className="flex-shrink-0 min-w-[200px]">
-            <label htmlFor="breed-filter" className="sr-only">
-              Search breeds
-            </label>
-            <Input
-              id="breed-filter"
-              data-testid="breed-filter"
-              type="text"
-              placeholder="Search breeds..."
-              value={localBreedInput}
-              onChange={(e) => setLocalBreedInput(e.target.value)}
-              className="w-full"
-              aria-label="Search breeds"
-            />
+            {useSimpleBreedDropdown ? (
+              <label htmlFor="breed-filter" className="sr-only">
+                Filter by breed
+              </label>
+            ) : null}
+            {useSimpleBreedDropdown ? (
+              <Select
+                value={filters?.breed || "Any breed"}
+                onValueChange={(value) =>
+                  handleFilterChange(
+                    "breed",
+                    value === "Any breed" ? "" : value,
+                  )
+                }
+              >
+                <SelectTrigger
+                  id="breed-filter"
+                  data-testid="breed-filter"
+                  className="w-full"
+                  aria-label="Filter by breed"
+                >
+                  <Icon name="heart" size="small" className="text-gray-500" />
+                  <SelectValue placeholder="Breed" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Any breed">Any breed</SelectItem>
+                  {availableBreeds
+                    .filter((breed) => breed && breed !== "Any breed")
+                    .map((breed) => (
+                      <SelectItem key={breed} value={breed}>
+                        {breed}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <SearchTypeahead
+                data-testid="breed-filter"
+                placeholder="Search breeds..."
+                value={filters?.breed || ""}
+                onValueChange={
+                  handleBreedValueChange ||
+                  ((value) => {
+                    handleFilterChange("breed", value);
+                  })
+                }
+                onSuggestionSelect={
+                  handleBreedSuggestionSelect
+                    ? handleBreedSuggestionSelect
+                    : (value) => {
+                        handleFilterChange("breed", value);
+                      }
+                }
+                onSearch={
+                  handleBreedSearch
+                    ? handleBreedSearch
+                    : (value) => {
+                        handleFilterChange("breed", value);
+                      }
+                }
+                onClear={
+                  handleBreedClear
+                    ? handleBreedClear
+                    : () => {
+                        handleFilterChange("breed", "");
+                      }
+                }
+                fetchSuggestions={fetchBreedSuggestions || getBreedSuggestions}
+                debounceMs={300}
+                maxSuggestions={8}
+                showHistory={true}
+                showClearButton={true}
+                showDidYouMean={true}
+                historyKey="breed-search-history"
+                className="w-full"
+                inputClassName="bg-white"
+                aria-label="Search breeds"
+                skipLocalFuzzySearch={true}
+              />
+            )}
           </div>
 
           {/* Ships To Filter - only show if enabled */}

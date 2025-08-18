@@ -36,7 +36,8 @@ export function useURLFilterState() {
     if (filters.sexFilter !== "Any") params.sex = filters.sexFilter;
     if (filters.organizationFilter !== "any")
       params.organization_id = filters.organizationFilter;
-    if (filters.breedFilter !== "Any breed") params.breed = filters.breedFilter;
+    if (filters.breedFilter !== "Any breed")
+      params.standardized_breed = filters.breedFilter;
     if (filters.locationCountryFilter !== "Any country")
       params.location_country = filters.locationCountryFilter;
     if (filters.availableCountryFilter !== "Any country")

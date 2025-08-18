@@ -182,6 +182,123 @@ async def get_distinct_available_regions(
 # --- END NEW ---
 
 
+# --- Search Suggestions Endpoints ---
+@router.get("/search/suggestions", response_model=List[str])
+async def get_search_suggestions(
+    q: str = Query(..., min_length=1, max_length=100, description="Search query"),
+    limit: int = Query(5, ge=1, le=10, description="Maximum number of suggestions"),
+    cursor: RealDictCursor = Depends(get_pooled_db_cursor),
+):
+    """Get search suggestions for animal names based on query."""
+    try:
+        # Search in animal names for partial matches
+        # Use LIKE patterns for efficient searching without requiring pg_trgm extension
+        # Fix: Include ORDER BY expressions in SELECT for DISTINCT compatibility
+        query = """
+            SELECT DISTINCT 
+                name,
+                CASE 
+                    WHEN LOWER(name) LIKE LOWER(%s) THEN 1
+                    WHEN LOWER(name) LIKE LOWER(%s) THEN 2
+                    ELSE 3
+                END as priority,
+                LENGTH(name) as name_length
+            FROM animals
+            WHERE 
+                animal_type = 'dog' 
+                AND status = 'available'
+                AND name IS NOT NULL
+                AND (
+                    LOWER(name) LIKE LOWER(%s) 
+                    OR LOWER(name) LIKE LOWER(%s)
+                )
+            ORDER BY priority, name_length, name
+            LIMIT %s
+        """
+
+        # Create search patterns for SQL LIKE queries
+        starts_with_pattern = f"{q}%"
+        contains_pattern = f"%{q}%"
+
+        params = [
+            starts_with_pattern,  # Order by - starts with (highest priority)
+            contains_pattern,  # Order by - contains (medium priority)
+            starts_with_pattern,  # Starts with query
+            contains_pattern,  # Contains query
+            limit,
+        ]
+
+        cursor.execute(query, params)
+        results = cursor.fetchall()
+        suggestions = [row["name"] for row in results if row["name"]]
+        return suggestions
+
+    except psycopg2.Error as db_err:
+        handle_database_error(db_err, "get_search_suggestions")
+    except Exception as e:
+        logger.exception(f"Unexpected error fetching search suggestions: {e}")
+        raise APIException(status_code=500, detail="Failed to fetch search suggestions", error_code="INTERNAL_ERROR")
+
+
+@router.get("/breeds/suggestions", response_model=List[str])
+async def get_breed_suggestions(
+    q: str = Query(..., min_length=1, max_length=100, description="Breed query"),
+    limit: int = Query(5, ge=1, le=10, description="Maximum number of suggestions"),
+    cursor: RealDictCursor = Depends(get_pooled_db_cursor),
+):
+    """Get breed suggestions with fuzzy matching support."""
+    try:
+        # Search standardized breeds with LIKE pattern matching
+        # Removed similarity() function to avoid requiring pg_trgm extension
+        # Fix: Include ORDER BY expressions in SELECT for DISTINCT compatibility
+        query = """
+            SELECT DISTINCT 
+                standardized_breed,
+                CASE 
+                    WHEN LOWER(standardized_breed) LIKE LOWER(%s) THEN 1
+                    WHEN LOWER(standardized_breed) LIKE LOWER(%s) THEN 2
+                    ELSE 3
+                END as priority,
+                LENGTH(standardized_breed) as breed_length
+            FROM animals
+            WHERE 
+                animal_type = 'dog' 
+                AND status = 'available'
+                AND standardized_breed IS NOT NULL
+                AND standardized_breed != ''
+                AND standardized_breed != 'Unknown'
+                AND (
+                    LOWER(standardized_breed) LIKE LOWER(%s)
+                    OR LOWER(standardized_breed) LIKE LOWER(%s)
+                )
+            ORDER BY priority, breed_length, standardized_breed
+            LIMIT %s
+        """
+
+        # Create search patterns
+        starts_with_pattern = f"{q}%"
+        contains_pattern = f"%{q}%"
+
+        params = [
+            starts_with_pattern,  # Order by - starts with (highest priority)
+            contains_pattern,  # Order by - contains (medium priority)
+            starts_with_pattern,  # Starts with query
+            contains_pattern,  # Contains query
+            limit,
+        ]
+
+        cursor.execute(query, params)
+        results = cursor.fetchall()
+        suggestions = [row["standardized_breed"] for row in results if row["standardized_breed"]]
+        return suggestions
+
+    except psycopg2.Error as db_err:
+        handle_database_error(db_err, "get_breed_suggestions")
+    except Exception as e:
+        logger.exception(f"Unexpected error fetching breed suggestions: {e}")
+        raise APIException(status_code=500, detail="Failed to fetch breed suggestions", error_code="INTERNAL_ERROR")
+
+
 # --- Filter Counts Meta Endpoint ---
 @router.get("/meta/filter_counts", response_model=FilterCountsResponse)
 async def get_filter_counts(

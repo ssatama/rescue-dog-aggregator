@@ -15,6 +15,7 @@ import {
   getOrganizationBySlug,
   getOrganizationDogs,
 } from "../../../services/organizationsService";
+import { getBreedSuggestions } from "../../../services/animalsService";
 import { reportError } from "../../../utils/logger";
 import { OrganizationSchema, BreadcrumbSchema } from "../../../components/seo";
 import Breadcrumbs from "../../../components/ui/Breadcrumbs";
@@ -112,7 +113,7 @@ export default function OrganizationDetailClient({ params = {} }) {
 
       // Add breed filter if selected
       if (filters.breed && filters.breed.trim() !== "") {
-        apiParams.standardized_breed = filters.breed;
+        apiParams.breed = filters.breed;
       }
 
       // Add sex filter if selected
@@ -173,7 +174,7 @@ export default function OrganizationDetailClient({ params = {} }) {
           apiParams.age_category = filters.age;
         }
         if (filters.breed && filters.breed.trim() !== "") {
-          apiParams.standardized_breed = filters.breed;
+          apiParams.breed = filters.breed;
         }
         if (filters.sex && filters.sex !== "Any") {
           apiParams.sex = filters.sex;
@@ -348,15 +349,16 @@ export default function OrganizationDetailClient({ params = {} }) {
           </div>
 
           {/* Filter System - only age, breed, sort for organization pages */}
-          {!loading && dogs.length > 0 && (
+          {!loading && (
             <DogFilters
               filters={filters}
               onFiltersChange={setFilters}
-              availableBreeds={availableBreeds}
+              availableBreeds={availableBreeds || []}
               hasActiveFilters={hasActiveFilters}
               showShipsToFilter={false}
               showSortFilter={false}
               onMobileFilterClick={handleMobileFilterOpen}
+              useSimpleBreedDropdown={true}
             />
           )}
 
@@ -428,7 +430,8 @@ export default function OrganizationDetailClient({ params = {} }) {
         setStandardizedBreedFilter={(breed) =>
           setFilters((prev) => ({ ...prev, breed }))
         }
-        standardizedBreeds={availableBreeds}
+        standardizedBreeds={availableBreeds || []}
+        useSimpleBreedDropdown={true}
         sexFilter={filters.sex || "Any"}
         setSexFilter={(sex) => setFilters((prev) => ({ ...prev, sex }))}
         sexOptions={["Any", "Male", "Female"]}

@@ -301,3 +301,59 @@ export async function getFilterCounts(params = {}) {
   logger.log("Cleaned filter count params for API:", cleanParams);
   return get("/api/animals/meta/filter_counts", cleanParams);
 }
+
+// --- Search Suggestions Endpoints ---
+
+/**
+ * Fetches search suggestions for animal names.
+ * @param {string} query - Search query string
+ * @param {number} limit - Maximum number of suggestions (default: 5)
+ * @returns {Promise<Array<string>>} - Promise resolving to array of name suggestions
+ */
+export async function getSearchSuggestions(query, limit = 5) {
+  if (!query || query.trim().length === 0) {
+    return [];
+  }
+
+  logger.log(`Fetching search suggestions for query: "${query}"`);
+
+  try {
+    const params = {
+      q: query.trim(),
+      limit: Math.min(Math.max(limit, 1), 10), // Ensure limit is between 1-10
+    };
+
+    const suggestions = await get("/api/animals/search/suggestions", params);
+    return Array.isArray(suggestions) ? suggestions : [];
+  } catch (error) {
+    logger.error("Error fetching search suggestions:", error);
+    return [];
+  }
+}
+
+/**
+ * Fetches breed suggestions with fuzzy matching.
+ * @param {string} query - Breed query string
+ * @param {number} limit - Maximum number of suggestions (default: 5)
+ * @returns {Promise<Array<string>>} - Promise resolving to array of breed suggestions
+ */
+export async function getBreedSuggestions(query, limit = 5) {
+  if (!query || query.trim().length === 0) {
+    return [];
+  }
+
+  logger.log(`Fetching breed suggestions for query: "${query}"`);
+
+  try {
+    const params = {
+      q: query.trim(),
+      limit: Math.min(Math.max(limit, 1), 10), // Ensure limit is between 1-10
+    };
+
+    const suggestions = await get("/api/animals/breeds/suggestions", params);
+    return Array.isArray(suggestions) ? suggestions : [];
+  } catch (error) {
+    logger.error("Error fetching breed suggestions:", error);
+    return [];
+  }
+}

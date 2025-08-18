@@ -6,7 +6,7 @@ import DogCard from "../DogCardOptimized";
 jest.mock("../../ui/ShareButton", () => {
   return function MockShareButton({ url, title, text, compact }) {
     return (
-      <button 
+      <button
         data-testid="share-button"
         data-url={url}
         data-title={title}
@@ -123,13 +123,17 @@ describe("DogCard Component", () => {
     // Check that share button is present
     const shareButton = screen.getByTestId("share-button");
     expect(shareButton).toBeInTheDocument();
-    
+
     // Verify share button has correct props
     expect(shareButton).toHaveAttribute("data-compact", "true");
     expect(shareButton).toHaveAttribute("data-url");
-    expect(shareButton.getAttribute("data-url")).toContain("/dogs/buddy-labrador-retriever-1");
+    expect(shareButton.getAttribute("data-url")).toContain(
+      "/dogs/buddy-labrador-retriever-1",
+    );
     expect(shareButton).toHaveAttribute("data-title", "Meet Buddy");
-    expect(shareButton.getAttribute("data-text")).toContain("Check out Buddy from Test Organization");
+    expect(shareButton.getAttribute("data-text")).toContain(
+      "Check out Buddy from Test Organization",
+    );
   });
 
   test("renders share button in compact view", () => {

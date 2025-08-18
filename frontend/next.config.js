@@ -12,6 +12,16 @@ const nextConfig = {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
   } : {},
   
+  // API proxy configuration for development
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://localhost:8000/api/:path*',
+      },
+    ];
+  },
+  
   // External packages for server components
   serverExternalPackages: ['react-window', 'react-virtualized-auto-sizer'],
   

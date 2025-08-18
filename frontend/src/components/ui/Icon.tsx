@@ -32,11 +32,15 @@ import {
   SortDesc,
   LocateFixed,
   Phone,
+  Clock,
+  HelpCircle,
+  AlertCircle,
 
   // System icons
   AlertTriangle,
   RefreshCw,
   Check,
+  Loader2,
 
   // Theme icons
   Sun,
@@ -76,11 +80,15 @@ const iconMap = {
   "sort-desc": SortDesc,
   "locate-fixed": LocateFixed,
   phone: Phone,
+  clock: Clock,
+  "help-circle": HelpCircle,
+  "alert-circle": AlertCircle,
 
   // System
   "alert-triangle": AlertTriangle,
   refresh: RefreshCw,
   check: Check,
+  loader: Loader2,
 
   // Theme
   sun: Sun,
