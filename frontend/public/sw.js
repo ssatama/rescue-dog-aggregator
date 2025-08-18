@@ -14,10 +14,10 @@ const STATIC_ASSETS = [
   '/',
   '/dogs',
   '/organizations',
-  '/manifest.json',
+  '/site.webmanifest',
   '/favicon.ico',
-  '/icon-192.png',
-  '/icon-512.png'
+  '/android-chrome-192x192.png',
+  '/android-chrome-512x512.png'
 ];
 
 // Install event - cache static assets

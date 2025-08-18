@@ -124,13 +124,26 @@ export async function getEnhancedOrganizationsSSR() {
       headers: {
         "Content-Type": "application/json",
       },
+      // Add timeout to prevent hanging requests in production
+      timeout: 10000, // 10 seconds
     });
 
     if (!response.ok) {
+      console.warn(`SSR fetch failed with status: ${response.status}`, {
+        url: `${apiUrl}/api/organizations/enhanced`,
+        status: response.status,
+        statusText: response.statusText,
+      });
       throw new Error(`Failed to fetch organizations: ${response.status}`);
     }
 
-    const organizations = await response.json();
+    let organizations;
+    try {
+      organizations = await response.json();
+    } catch (jsonError) {
+      console.error("SSR JSON parsing error:", jsonError);
+      throw new Error("Invalid JSON response from API");
+    }
 
     // Track API performance
     if (typeof window !== "undefined") {
@@ -156,9 +169,16 @@ export async function getEnhancedOrganizationsSSR() {
       ships_to: org.ships_to || org.shipsTo || [],
     }));
 
+    console.log(`SSR: Successfully loaded ${enhancedOrganizations.length} organizations`);
     return enhancedOrganizations;
   } catch (error) {
-    console.error("Failed to fetch enhanced organizations (SSR):", error);
+    console.error("Failed to fetch enhanced organizations (SSR):", {
+      error: error.message,
+      stack: error.stack,
+      apiUrl: process.env.NEXT_PUBLIC_API_URL,
+      timestamp: new Date().toISOString(),
+    });
+    // Return empty array to allow client-side fallback
     return [];
   }
 }
