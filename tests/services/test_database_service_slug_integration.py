@@ -31,7 +31,7 @@ class TestDatabaseServiceSlugIntegration:
 
         # Mock standardize_breed to return known defaults
         with patch("services.database_service.standardize_breed") as mock_standardize:
-            mock_standardize.return_value = MagicMock(standardized_name="Unknown", breed_group="Unknown", size_estimate=None)
+            mock_standardize.return_value = ("Unknown", "Unknown", None)
 
             with patch("services.database_service.generate_unique_animal_slug") as mock_slug_gen:
                 # Return different values for temp vs final slug
@@ -86,7 +86,7 @@ class TestDatabaseServiceSlugIntegration:
 
         # Mock standardize_breed to return specific standardized breed
         with patch("services.database_service.standardize_breed") as mock_standardize:
-            mock_standardize.return_value = MagicMock(standardized_name="German Shepherd Dog", breed_group="Herding", size_estimate="Large")
+            mock_standardize.return_value = ("German Shepherd Dog", "Herding", "Large")
 
             with patch("services.database_service.generate_unique_animal_slug") as mock_slug_gen:
                 mock_slug_gen.side_effect = ["max-german-shepherd-dog", "max-german-shepherd-dog-123"]
@@ -124,7 +124,7 @@ class TestDatabaseServiceSlugIntegration:
 
         # Mock standardize_breed to return standardized info
         with patch("services.database_service.standardize_breed") as mock_standardize:
-            mock_standardize.return_value = MagicMock(standardized_name="Labrador Retriever", breed_group="Sporting", size_estimate="Large")
+            mock_standardize.return_value = ("Labrador Retriever", "Sporting", "Large")
 
             animal_data = {"name": "Bella", "breed": "Lab Mix", "organization_id": 1, "external_id": "test-789"}
 
@@ -196,7 +196,7 @@ class TestDatabaseServiceSlugIntegration:
 
         # Mock standardize_breed for connection pool test
         with patch("services.database_service.standardize_breed") as mock_standardize:
-            mock_standardize.return_value = MagicMock(standardized_name="Golden Retriever", breed_group="Sporting", size_estimate="Large")
+            mock_standardize.return_value = ("Golden Retriever", "Sporting", "Large")
 
             with patch("services.database_service.generate_unique_animal_slug") as mock_slug_gen:
                 mock_slug_gen.side_effect = ["luna-golden-retriever", "luna-golden-retriever-123"]
@@ -240,10 +240,14 @@ class TestDatabaseServiceSlugIntegration:
 
         # Mock standardize_breed for update
         with patch("services.database_service.standardize_breed") as mock_standardize:
-            mock_standardize.return_value = MagicMock(standardized_name="New Standardized Breed", breed_group="Working", size_estimate="Large")
+            mock_standardize.return_value = ("New Standardized Breed", "Working", "Large")
 
             with patch("services.database_service.parse_age_text") as mock_parse_age:
-                mock_parse_age.return_value = MagicMock(min_months=12, max_months=24)
+                # Create a mock object with min_months and max_months attributes
+                mock_age_info = MagicMock()
+                mock_age_info.min_months = 12
+                mock_age_info.max_months = 24
+                mock_parse_age.return_value = mock_age_info
 
                 animal_id, action = db_service.update_animal(123, animal_data)
 
@@ -270,7 +274,7 @@ class TestDatabaseServiceSlugIntegration:
 
         # Mock standardize_breed for empty name test
         with patch("services.database_service.standardize_breed") as mock_standardize:
-            mock_standardize.return_value = MagicMock(standardized_name="Mixed Breed", breed_group="Unknown", size_estimate=None)
+            mock_standardize.return_value = ("Mixed Breed", "Unknown", None)
 
             with patch("services.database_service.generate_unique_animal_slug") as mock_slug_gen:
                 mock_slug_gen.side_effect = ["animal-mixed-breed", "animal-mixed-breed-123"]
