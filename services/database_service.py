@@ -23,8 +23,8 @@ from typing import Any, Dict, Optional, Tuple
 import psycopg2
 
 from utils.optimized_standardization import parse_age_text, standardize_size_value
-from utils.standardization import standardize_breed
 from utils.slug_generator import generate_unique_animal_slug
+from utils.standardization import standardize_breed
 
 
 class DatabaseService:

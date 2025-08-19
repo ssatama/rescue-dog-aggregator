@@ -42,7 +42,7 @@ class TestTierschutzvereinEuropaScraperFast:
     def test_translations_normalize_name(self):
         """Test name normalization through translations module."""
         from scrapers.tierschutzverein_europa.translations import normalize_name
-        
+
         test_cases = [
             ("SASHA", "Sasha"),
             ("MAX", "Max"),
@@ -59,7 +59,7 @@ class TestTierschutzvereinEuropaScraperFast:
     def test_translations_translate_age(self):
         """Test age translation from German to English."""
         from scrapers.tierschutzverein_europa.translations import translate_age
-        
+
         test_cases = [
             ("2 Jahre alt", "2 years old"),
             ("6 Monate alt", "6 months old"),
@@ -77,7 +77,7 @@ class TestTierschutzvereinEuropaScraperFast:
     def test_translations_translate_gender(self):
         """Test gender translation from German text."""
         from scrapers.tierschutzverein_europa.translations import translate_gender
-        
+
         test_cases = [
             ("Hündin", "Female"),
             ("Rüde", "Male"),
@@ -95,7 +95,7 @@ class TestTierschutzvereinEuropaScraperFast:
     def test_translations_translate_breed(self):
         """Test breed translation from German text patterns."""
         from scrapers.tierschutzverein_europa.translations import translate_breed
-        
+
         test_cases = [
             ("Deutscher Schäferhund", "German Shepherd"),
             ("Mischling", "Mixed Breed"),
@@ -154,4 +154,3 @@ class TestTierschutzvereinEuropaScraperFast:
         for field in required_fields:
             assert field in sample_data, f"Required field {field} missing"
             assert sample_data[field], f"Required field {field} is empty"
-
