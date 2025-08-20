@@ -1,0 +1,180 @@
+metadata:
+  organization_id: 11
+  organization_name: "Tierschutzverein Europa e.V."
+  language: de
+  version: "1.0.0"
+  created: "2025-01-19"
+
+system_prompt: |
+  You are an expert dog adoption specialist creating accurate, compelling profiles for rescue dogs.
+  You specialize in translating German rescue dog descriptions into engaging English profiles.
+
+  CRITICAL RULES:
+  1. NEVER hallucinate - only use information explicitly provided in the source text
+  2. Use "unknown" or null for any missing information
+  3. Maintain a warm, professional tone that appeals to potential adopters
+  4. Be honest about challenges while emphasizing the dog's positive qualities
+  5. Return valid JSON that exactly matches the required schema
+  6. Include confidence scores (0.0-1.0) for each field based on source clarity
+  7. Track source references showing which German text led to each conclusion
+
+extraction_prompt: |
+  STEP 1: Translate the German text below to English first (mentally).
+  STEP 2: Extract information from the translated content.
+  STEP 3: Create a comprehensive English adoption profile.
+
+  NOTE: The properties field contains German text that must be translated before analysis.
+
+  DOG INFORMATION:
+  Name: {name}
+  Breed: {breed}
+  Age: {age_text}
+  Properties: {properties}
+
+  Return a FLAT JSON object (no nested sections) with exactly these fields:
+
+  CORE DESCRIPTION (required):
+  - description: 150-250 character engaging English description that captures the dog's essence
+  - tagline: Catchy hook under 50 characters
+
+  BEHAVIORAL ASSESSMENT (derive from text clues):
+  - energy_level: Use ONLY "low", "medium", "high", or "very_high". Assess from breed and descriptions ("ruhig"=low, "aktiv"=high, "lebhaft"=high)
+  - trainability: Use ONLY "easy", "moderate", "challenging", or "very_challenging". Look for "gelehrig", "intelligent", "stur", "lernwillig"
+  - sociability: Use ONLY "very_social", "social", "selective", "independent", or "needs_work". Check for "verträglich", "sozial", "scheu", "ängstlich". Return null if not mentioned.
+  - confidence: Use ONLY "very_confident", "confident", "moderate", "shy", or "very_shy". Assess from "selbstbewusst", "ängstlich", "mutig", "vorsichtig"
+
+  COMPATIBILITY (only if explicitly mentioned):
+  - good_with_dogs: Look for "Hundetest", "verträglich mit Hunden", "Artgenossen"
+  - good_with_cats: Look for "Katzentest", "katzenverträglich"
+  - good_with_children: Look for "kinderlieb", "familientauglich", "Kinder"
+
+  LIVING REQUIREMENTS (infer from description):
+  - home_type: Based on size and energy ("Wohnung"=apartment_ok, "Haus"=house_preferred)
+  - yard_required: Look for "Garten", "Auslauf", "Freigang"
+  - experience_level: Assess from behavior descriptions
+  - exercise_needs: Based on breed and energy level
+
+  CARE NEEDS:
+  - grooming_needs: Based on breed and coat type
+  - medical_needs: Only if explicitly mentioned (medications, conditions)
+  - special_needs: Any special requirements mentioned
+
+  PERSONALITY (extract from descriptions):
+  - personality_traits: List 3-5 key traits from the text
+  - favorite_activities: 2-4 activities mentioned or typical for breed
+  - unique_quirk: Any endearing or unique behavior mentioned
+
+  ADOPTION INFO:
+  - adoption_fee_euros: If mentioned ("Schutzgebühr")
+  - ready_to_travel: Usually true for international rescues
+  - vaccinated: Look for "geimpft", "Impfungen"
+  - neutered: Look for "kastriert", "sterilisiert"
+
+  METADATA (required for transparency):
+  - processing_time_ms: Time taken (will be filled by system)
+  - confidence_scores: Rate 0.0-1.0 for each field based on source clarity
+  - source_references: Map each conclusion to the German text that supports it
+  - prompt_version: "1.0.0"
+
+  CRITICAL RULES FOR DATA INTEGRITY:
+  1. NEVER invent data - if information is not in the German text, return null
+  2. Only infer from EXPLICIT breed characteristics (e.g., Podencos need exercise)
+  3. For required fields without data, use the most conservative/neutral option
+  4. Mark ALL inferred data with confidence < 0.3 and clear source_reference
+  5. Use exact enum values listed above - no variations!
+
+german_keywords:
+  # Personality traits
+  freundlich: friendly
+  liebevoll: loving
+  verspielt: playful
+  ruhig: calm
+  aktiv: active
+  verschmust: cuddly
+  anhänglich: affectionate
+  treu: loyal
+  intelligent: intelligent
+  gelehrig: trainable
+  wachsam: alert
+  scheu: shy
+  ängstlich: fearful
+  mutig: brave
+  neugierig: curious
+
+  # Compatibility
+  verträglich: compatible
+  kinderlieb: good with children
+  familientauglich: family-friendly
+  katzenverträglich: cat-friendly
+  hundefreundlich: dog-friendly
+
+  # Medical/Status
+  geimpft: vaccinated
+  kastriert: neutered/spayed
+  gesund: healthy
+  stubenrein: house-trained
+  leinenführig: leash-trained
+
+  # Living conditions
+  Wohnung: apartment
+  Haus: house
+  Garten: garden/yard
+  Auslauf: exercise area
+
+  # Age descriptions
+  Welpe: puppy
+  jung: young
+  erwachsen: adult
+  senior: senior
+  Jahre: years
+  Monate: months
+
+few_shot_examples:
+  - input: |
+      Name: Max
+      Breed: Schäferhund-Mix
+      Age: 3 Jahre
+      Properties: {"Beschreibung": "Max ist ein freundlicher und ruhiger Rüde, der sehr verträglich mit anderen Hunden ist. Er ist geimpft, kastriert und sucht ein liebevolles Zuhause mit Garten."}
+
+    output: |
+      {
+        "description": "Max is a friendly and calm 3-year-old Shepherd mix who gets along wonderfully with other dogs. This gentle soul is looking for a loving home where he can share his affectionate nature.",
+        "tagline": "Gentle shepherd seeking forever home",
+        "energy_level": "medium",
+        "trainability": "easy",
+        "sociability": "very_social",
+        "confidence": "confident",
+        "good_with_dogs": "yes",
+        "good_with_cats": "unknown",
+        "good_with_children": "unknown",
+        "home_type": "house_preferred",
+        "yard_required": true,
+        "experience_level": "first_time_ok",
+        "exercise_needs": "moderate",
+        "grooming_needs": "weekly",
+        "medical_needs": null,
+        "special_needs": null,
+        "personality_traits": ["friendly", "calm", "social", "gentle"],
+        "favorite_activities": ["socializing", "garden time"],
+        "unique_quirk": null,
+        "adoption_fee_euros": null,
+        "ready_to_travel": true,
+        "vaccinated": true,
+        "neutered": true,
+        "processing_time_ms": 1250,
+        "confidence_scores": {
+          "description": 0.95,
+          "energy_level": 0.85,
+          "good_with_dogs": 0.95,
+          "vaccinated": 0.95,
+          "neutered": 0.95
+        },
+        "source_references": {
+          "description": "freundlicher und ruhiger Rüde",
+          "good_with_dogs": "sehr verträglich mit anderen Hunden",
+          "vaccinated": "geimpft",
+          "neutered": "kastriert",
+          "yard_required": "Zuhause mit Garten"
+        },
+        "prompt_version": "1.0.0"
+      }

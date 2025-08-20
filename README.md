@@ -4,7 +4,7 @@
 
 This project provides a unified interface to search for adoptable dogs across multiple rescue organizations. It uses a data pipeline to normalize information from different sources and is built with a modern web stack for performance and maintainability.
 
-**🚀 Production Status**: Live with **8 rescue organizations** and validated by **2,400+ comprehensive tests**.
+**🚀 Production Status**: Live at [www.rescuedogs.me](https://www.rescuedogs.me) with **13 rescue organizations** and comprehensive test coverage.
 
 ---
 
@@ -21,7 +21,7 @@ Potential adopters often struggle to find dogs across many disparate shelter web
 - **🏗️ Configuration-Driven**: Add new organizations via YAML configuration without code changes
 
 ### Technical Highlights
-- **2,400+ Test Suite**: 434+ backend + 1,249 frontend tests supporting stable deployments
+- **Comprehensive Test Suite**: 265+ backend test files + 516+ frontend test files supporting stable deployments
 - **Security Features**: SQL injection prevention, XSS protection, and Content Security Policy headers
 - **Error Resilience**: Partial failure detection ensures service availability during individual scraper issues
 - **Performance Optimizations**: Lazy loading, image optimization, and component memoization
@@ -32,7 +32,7 @@ Potential adopters often struggle to find dogs across many disparate shelter web
 ## Technical Architecture
 
 ### Data Management
-- **Multi-Source Aggregation**: Data pipeline supporting 8 rescue organizations
+- **Multi-Source Aggregation**: Data pipeline supporting 13 rescue organizations
 - **Normalization Engine**: Automated standardization of breed, age, and size data across sources
 - **Availability Tracking**: Confidence scoring system (high → medium → low → unavailable)
 - **Quality Assessment**: Automated data completeness scoring (0-1 scale)
@@ -171,7 +171,7 @@ metadata:
 ## 🚀 Quick Start Guide
 
 ### 📋 Prerequisites
-- **Python 3.9+** (3.9.6 recommended for optimal compatibility)
+- **Python 3.9+** (3.13+ recommended for optimal compatibility)
 - **PostgreSQL 13+** (14+ recommended for enhanced JSON performance)
 - **Node.js 18+** (required for Next.js 15 App Router features)
 - **Cloudflare R2 account** (for production image optimization and CDN)
@@ -190,8 +190,8 @@ python database/db_setup.py
 
 **2. Configure Environment**
 ```bash
-cp .env.example .env
-# Edit .env with your database credentials and Cloudflare R2 settings
+# Create .env file with your database credentials
+# See Installation Guide for complete environment variable reference
 ```
 
 **3. Start Development Servers**
@@ -239,7 +239,7 @@ python management/config_commands.py run my-org
 # Visit http://localhost:3000 to see your organization's dogs
 ```
 
-**For detailed setup instructions, see: [Installation Guide](docs/getting-started/installation.md)**
+**For detailed setup instructions, see: [Installation Guide](docs/guides/installation.md)**
 
 ---
 
@@ -305,7 +305,7 @@ npm run build && npm run lint     # Production build verification
 - **🛡️ Security Testing**: Comprehensive XSS prevention and CSP header validation
 - **🌐 Cross-Browser Testing**: Automated testing across Chrome, Firefox, Safari, Edge
 
-**For complete testing methodology, see: [Testing Guide](TESTING.md)**
+**For complete testing methodology, see: [Testing Guide](docs/guides/testing.md)**
 
 ---
 
@@ -343,7 +343,7 @@ python management/config_commands.py stats
 - **🎯 Selective Execution**: Run individual scrapers or groups with advanced filtering
 - **🔒 Safe Deployment**: Comprehensive validation prevents invalid configurations from being deployed
 
-**For complete configuration guide, see: [Configuration System Documentation](docs/getting-started/configuration.md)**
+**For complete configuration guide, see: [Configuration System Documentation](configs/README.md)**
 
 ---
 
@@ -387,54 +387,43 @@ python management/config_commands.py stats
 ## 📚 Complete Documentation Library
 
 ### 🚀 Getting Started
-- **[Installation Guide](docs/getting-started/installation.md)** - Complete setup for development and production environments
-- **[Quick Start Guide](docs/getting-started/quick-start.md)** - Get running in under 5 minutes with guided setup
-- **[Configuration Guide](docs/getting-started/configuration.md)** - YAML-based organization setup and management
-- **[Contributing Guide](docs/development/contributing.md)** - How to contribute code, documentation, and innovative ideas
+- **[Installation Guide](docs/guides/installation.md)** - Complete setup for development and production environments
+- **[Configuration Guide](configs/README.md)** - YAML-based organization setup and management
+- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute code, documentation, and innovative ideas
 
 ### 🏗️ Architecture & Development
-- **[System Architecture](docs/architecture/project-overview.md)** - High-level system design and comprehensive data flow
-- **[Frontend Architecture](docs/architecture/frontend-architecture.md)** - Next.js 15 App Router patterns and component architecture
-- **[Backend Architecture](docs/architecture/backend.md)** - FastAPI structure and comprehensive database design
-- **[Scraper Architecture](docs/architecture/scraper-design.md)** - Configuration-driven scraper system and best practices
-- **[Development Workflow](docs/development/workflow.md)** - TDD methodology and development best practices
+- **[System Architecture](docs/technical/architecture.md)** - High-level system design and comprehensive data flow
+- **[Frontend Documentation](frontend/README.md)** - Next.js 15 App Router patterns and component architecture
+- **[API Documentation](docs/technical/api-reference.md)** - FastAPI structure and comprehensive endpoint reference
+- **[Scraper Documentation](scrapers/README.md)** - Configuration-driven scraper system and best practices
 
 ### 🔧 API & Integration
-- **[API Reference](docs/api/reference.md)** - Complete REST API documentation with OpenAPI specification
-- **[API Examples](docs/api/examples.md)** - Practical usage examples and comprehensive code samples
+- **[API Reference](docs/technical/api-reference.md)** - Complete REST API documentation with OpenAPI specification
 
 ### 🧪 Testing & Quality Assurance
-- **[Testing Guide](TESTING.md)** - Comprehensive testing strategy covering all 1,800+ tests
-- **[Test Optimization](docs/testing/optimization.md)** - Performance and speed optimization techniques
-- **[Performance Guide](docs/testing/performance.md)** - Core Web Vitals and mobile optimization strategies
-- **[Security Testing](docs/testing/security.md)** - XSS prevention and comprehensive vulnerability assessment
+- **[Testing Guide](docs/guides/testing.md)** - Comprehensive testing strategy covering all 2,400+ tests
 
 ### 🚀 Production & Operations
-- **[Production Deployment](docs/operations/production-deployment.md)** - Docker containerization, monitoring, and scaling
-- **[Weekly Scraping Guide](docs/operations/weekly-scraping.md)** - Automated scheduling and comprehensive monitoring
-- **[Monitoring & Alerting](docs/operations/monitoring.md)** - System health and performance tracking
-- **[Troubleshooting Guide](docs/operations/troubleshooting.md)** - Common issues and comprehensive solutions
+- **[Deployment Guide](docs/guides/deployment.md)** - Docker containerization, monitoring, and scaling
+- **[Monitoring Documentation](monitoring/README.md)** - System health and performance tracking
+- **[Troubleshooting Guide](docs/troubleshooting.md)** - Common issues and comprehensive solutions
 
 ### 📱 Features & User Experience
-- **[CTA Optimization](docs/features/cta-optimization.md)** - Favorites, notifications, and mobile UX enhancement
-- **[Related Dogs System](docs/features/related-dogs.md)** - Cross-discovery and intelligent recommendation engine
-- **[Data Standardization](docs/architecture/data-standardization.md)** - Automated breed, age, and size normalization
-- **[Accessibility Guide](docs/features/accessibility.md)** - WCAG 2.1 AA compliance and screen reader optimization
+- **[Features Documentation](docs/features/README.md)** - Overview of platform features and capabilities
 
 ### 🔍 Reference & Management
 - **[Database Schema](docs/reference/database-schema.md)** - Complete database structure and relationships
-- **[Database Schema Guide](database/migration_history.md)** - Database setup and schema management
+- **[Migration History](database/migration_history.md)** - Database migration history and changes
 - **[Development Log](DEVELOPMENT_LOG.md)** - Feature timeline and architectural decision records
-- **[Frontend Documentation](frontend/README.md)** - Frontend-specific setup and component library
 
 ---
 
 ## 📈 Project Status & Metrics
 
 ### 🏭 Current Production Status
-- **🏢 Active Organizations**: 8 rescue organizations (animalrescuebosnia, daisyfamilyrescue, misisrescue, pets-in-turkey, rean, theunderdog, tierschutzverein-europa, woof-project)
+- **🏢 Active Organizations**: 13 rescue organizations (animalrescuebosnia, daisyfamilyrescue, dogstrust, furryrescueitaly, galgosdelsol, manytearsrescue, misisrescue, pets-in-turkey, rean, santerpawsbulgarianrescue, theunderdog, tierschutzverein-europa, woof-project)
 - **🐕 Animals Tracked**: 1,500+ rescue dogs across multiple countries
-- **🧪 Test Coverage**: 2,400+ comprehensive tests (434+ backend + 1,249 frontend) with high coverage
+- **🧪 Test Coverage**: Comprehensive test suite (265+ backend test files + 516+ frontend test files) with high coverage
 - **⚡ Performance**: Core Web Vitals score 95+ (mobile & desktop) with sub-second load times
 - **🔒 Security**: Zero known vulnerabilities, A+ security rating, comprehensive CSP implementation
 

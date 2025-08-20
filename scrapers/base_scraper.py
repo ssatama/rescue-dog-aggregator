@@ -123,7 +123,38 @@ class BaseScraper(ABC):
         from services.image_processing_service import ImageProcessingService
         from services.null_objects import NullLLMDataService
 
-        self.llm_data_service = llm_data_service or NullLLMDataService()
+        # Check if LLM profiling is enabled for this organization
+        enable_llm_profiling = False
+        llm_org_id = None
+        
+        if hasattr(self, 'org_config') and self.org_config:
+            scraper_config = self.org_config.get_scraper_config_dict()
+            enable_llm_profiling = scraper_config.get('enable_llm_profiling', False)
+            llm_org_id = scraper_config.get('llm_organization_id', self.organization_id)
+        
+        # Initialize LLM service based on configuration
+        if llm_data_service:
+            # Use injected service
+            self.llm_data_service = llm_data_service
+        elif enable_llm_profiling:
+            # Create enhanced profiler service for this organization
+            try:
+                from services.llm_profiler_service import LLMProfilerService
+                # Pass database service's connection pool if available
+                connection_pool = getattr(self.database_service, 'connection_pool', None)
+                self.llm_data_service = LLMProfilerService(
+                    organization_id=llm_org_id,
+                    connection_pool=connection_pool
+                )
+                self.logger.info(f"Initialized LLM profiler service for organization {llm_org_id} "
+                                f"with pool: {bool(connection_pool)}")
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize LLM profiler: {e}")
+                self.llm_data_service = NullLLMDataService()
+        else:
+            # Default to null service
+            self.llm_data_service = NullLLMDataService()
+        
         self.image_processing_service = image_processing_service
 
         # Track animals for filtering stats
@@ -1093,7 +1124,25 @@ class BaseScraper(ABC):
             animal_data: Original animal data
         """
         try:
-            # Only process if we have a description
+            # Check if LLM service has profile enrichment capability
+            if hasattr(self.llm_data_service, 'enrich_animal_with_profile'):
+                # Use enhanced profiling for organizations that support it
+                profile_data = await self.llm_data_service.enrich_animal_with_profile(animal_id, animal_data)
+                
+                if profile_data:
+                    # Update database with comprehensive profile
+                    self._update_llm_enrichment(
+                        animal_id,
+                        {
+                            "dog_profiler_data": profile_data,
+                            "llm_processed_at": datetime.now(),
+                            "llm_model_used": "openrouter/auto",
+                        },
+                    )
+                    self.logger.info(f"Enriched animal {animal_id} with comprehensive profile")
+                    return
+            
+            # Fall back to description cleaning for basic enrichment
             description = animal_data.get("description", "").strip()
             if not description:
                 return

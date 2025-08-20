@@ -1,0 +1,79 @@
+# LLM Organization Configuration Mapping
+# Maps organization IDs to their LLM profiling settings
+
+organizations:
+  11:
+    name: "Tierschutzverein Europa"
+    prompt_file: "tierschutzverein_europa.yaml"
+    source_language: "de"
+    target_language: "en"
+    model_preference: "google/gemini-2.5-flash"
+    enabled: true
+    
+  25:
+    name: "Many Tears Rescue"
+    prompt_file: "many_tears.yaml"
+    source_language: "en"
+    target_language: "en"
+    model_preference: "google/gemini-2.5-flash"
+    enabled: false  # Not yet configured - needs separate prompt development
+    
+  26:
+    name: "Dogs Trust"
+    prompt_file: "dogs_trust.yaml"
+    source_language: "en"
+    target_language: "en"
+    model_preference: "google/gemini-2.5-flash"
+    enabled: false  # Not yet configured - needs separate prompt development
+    
+  27:
+    name: "Animal Rescue Bosnia"
+    prompt_file: "animal_rescue_bosnia.yaml"
+    source_language: "en"
+    target_language: "en"
+    model_preference: "google/gemini-2.5-flash"
+    enabled: false  # Not yet configured - needs separate prompt development
+    
+  28:
+    name: "REAN"
+    prompt_file: "rean.yaml"
+    source_language: "en"
+    target_language: "en"
+    model_preference: "google/gemini-2.5-flash"
+    enabled: false  # Not yet configured - needs separate prompt development
+    
+  29:
+    name: "Furry Rescue Italy"
+    prompt_file: "furry_rescue_italy.yaml"
+    source_language: "it"
+    target_language: "en"
+    model_preference: "google/gemini-2.5-flash"
+    enabled: false  # Not yet configured - needs separate prompt development
+    
+  30:
+    name: "Santer Paws Bulgarian Rescue"
+    prompt_file: "santer_paws.yaml"
+    source_language: "en"
+    target_language: "en"
+    model_preference: "google/gemini-2.5-flash"
+    enabled: false  # Not yet configured
+    
+  31:
+    name: "Galgos del Sol"
+    prompt_file: "galgos_del_sol.yaml"
+    source_language: "es"
+    target_language: "en"
+    model_preference: "google/gemini-2.5-flash"
+    enabled: false  # Not yet configured
+
+# Model configuration
+models:
+  default: "google/gemini-2.5-flash"
+  fallback: "openai/gpt-3.5-turbo"
+  high_quality: "openai/gpt-4"
+  
+# Cost limits
+cost_limits:
+  daily_limit: 10.00  # USD
+  per_dog_limit: 0.05  # USD
+  alert_threshold: 0.80  # Alert at 80% of daily limit

@@ -14,21 +14,20 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 ## Architecture
 
-- **Framework**: Next.js 15.0.3 with App Router
-- **Language**: TypeScript 5.7.2
-- **Styling**: Tailwind CSS 3.4.14
+- **Framework**: Next.js 15.3.0 with App Router
+- **Language**: TypeScript 5.8.2
+- **Styling**: Tailwind CSS 3.3.2
 - **Components**: Radix UI primitives
-- **Data Fetching**: SWR
-- **Testing**: Jest + React Testing Library (1,249+ tests)
+- **Data Fetching**: SWR and React Query (@tanstack/react-query)
+- **Testing**: Jest + React Testing Library (516+ test files)
 
 ## Development Commands
 
 ```bash
 npm run dev           # Development server
-npm test             # Run tests
+npm test             # Run tests  
 npm run build        # Production build
 npm run lint         # ESLint
-npm run check:types  # TypeScript check
 ```
 
 ## Environment Variables

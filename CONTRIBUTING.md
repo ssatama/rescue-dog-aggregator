@@ -37,10 +37,9 @@ We are committed to providing a welcoming and inclusive environment for all cont
 
 Before contributing, ensure you have:
 
-1. **Development Environment**: Follow our [Installation Guide](../getting-started/installation.md)
-2. **Testing Setup**: Review [Testing Guide](testing.md)
-3. **Development Workflow**: Familiarize yourself with [Development Workflow](workflow.md)
-4. **Git Knowledge**: Basic familiarity with Git and GitHub workflows
+1. **Development Environment**: Follow our [Installation Guide](docs/guides/installation.md)
+2. **Testing Setup**: Review [Testing Guide](docs/guides/testing.md)
+3. **Git Knowledge**: Basic familiarity with Git and GitHub workflows
 
 ### Fork and Clone
 
