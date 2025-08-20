@@ -209,20 +209,21 @@ class DogProfilerService:
 
     async def get_unprofiled_dogs(self, organization_id: int, limit: int = 100) -> List[Dict[str, Any]]:
         """
-        Get dogs without profiles.
+        Get dogs without profiles (only high confidence available dogs).
 
         Args:
             organization_id: Organization ID
             limit: Maximum number of dogs
 
         Returns:
-            List of unprofiled dogs
+            List of unprofiled dogs with high availability confidence
         """
         query = """
             SELECT id, name, properties
             FROM animals
             WHERE organization_id = $1
               AND dog_profiler_data IS NULL
+              AND availability_confidence = 'high'
             ORDER BY id
             LIMIT $2
         """

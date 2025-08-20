@@ -169,7 +169,7 @@ class TestDogProfilerService:
 
     @pytest.mark.asyncio
     async def test_get_unprofiled_dogs(self, service, mock_pool):
-        """Test fetching unprofiled dogs."""
+        """Test fetching unprofiled dogs with high availability confidence."""
         # Setup
         mock_pool.fetch.return_value = [{"id": 1, "name": "Buddy", "properties": {}}, {"id": 2, "name": "Max", "properties": {}}]
 
@@ -182,6 +182,7 @@ class TestDogProfilerService:
         query = mock_pool.fetch.call_args[0][0]
         assert "dog_profiler_data IS NULL" in query
         assert "organization_id = $1" in query
+        assert "availability_confidence = 'high'" in query
 
     @pytest.mark.asyncio
     async def test_profile_with_retry(self, service, mock_llm_client):

@@ -55,12 +55,13 @@ def enrich_descriptions(organization: Optional[str], limit: Optional[int], dry_r
     conn = psycopg2.connect(**DB_CONFIG)
     cursor = conn.cursor()
 
-    # Build query
+    # Build query - only process dogs with high availability confidence
     query = """
         SELECT a.id, a.name, a.properties->>'description' as description, o.name as org_name
         FROM animals a
         JOIN organizations o ON a.organization_id = o.id
         WHERE a.status = 'available'
+        AND a.availability_confidence = 'high'
     """
 
     conditions = []
@@ -215,12 +216,13 @@ def generate_profiles(organization: Optional[str], limit: Optional[int], batch_s
     conn = psycopg2.connect(**DB_CONFIG)
     cursor = conn.cursor()
 
-    # Build query
+    # Build query - only process dogs with high availability confidence
     query = """
         SELECT a.id, a.name, a.breed, a.age_text, a.properties->>'description' as description, o.name as org_name
         FROM animals a
         JOIN organizations o ON a.organization_id = o.id
         WHERE a.status = 'available'
+        AND a.availability_confidence = 'high'
         AND a.dog_profiler_data IS NULL
     """
 
@@ -348,12 +350,13 @@ def translate(target_language: str, organization: Optional[str], limit: Optional
     conn = psycopg2.connect(**DB_CONFIG)
     cursor = conn.cursor()
 
-    # Build query
+    # Build query - only process dogs with high availability confidence
     query = """
         SELECT a.id, a.name, a.properties->>'description' as description, o.name as org_name
         FROM animals a
         JOIN organizations o ON a.organization_id = o.id
         WHERE a.status = 'available'
+        AND a.availability_confidence = 'high'
         AND a.properties->>'description' IS NOT NULL
     """
 
@@ -480,7 +483,7 @@ def stats():
     conn = psycopg2.connect(**DB_CONFIG)
     cursor = conn.cursor()
 
-    # Get overall stats
+    # Get overall stats (for high confidence available dogs)
     cursor.execute(
         """
         SELECT 
@@ -490,25 +493,26 @@ def stats():
             COUNT(translations) as with_translations
         FROM animals
         WHERE status = 'available'
+        AND availability_confidence = 'high'
     """
     )
 
     total, enriched, with_profiles, with_translations = cursor.fetchone()
 
     # Create table
-    table = Table(title="LLM Processing Statistics")
+    table = Table(title="LLM Processing Statistics (High Confidence Available Dogs)")
     table.add_column("Metric", style="cyan")
     table.add_column("Count", style="magenta")
     table.add_column("Percentage", style="green")
 
-    table.add_row("Total Available Animals", str(total), "100%")
+    table.add_row("Total High Confidence Dogs", str(total), "100%")
     table.add_row("Enriched Descriptions", str(enriched), f"{enriched/total*100:.1f}%")
     table.add_row("Dog Profiles", str(with_profiles), f"{with_profiles/total*100:.1f}%")
     table.add_row("With Translations", str(with_translations), f"{with_translations/total*100:.1f}%")
 
     console.print(table)
 
-    # Get per-organization stats
+    # Get per-organization stats (for high confidence available dogs)
     cursor.execute(
         """
         SELECT 
@@ -516,13 +520,15 @@ def stats():
             COUNT(a.id) as total,
             COUNT(a.enriched_description) as enriched
         FROM organizations o
-        LEFT JOIN animals a ON a.organization_id = o.id AND a.status = 'available'
+        LEFT JOIN animals a ON a.organization_id = o.id 
+            AND a.status = 'available'
+            AND a.availability_confidence = 'high'
         GROUP BY o.id, o.name
         ORDER BY total DESC
     """
     )
 
-    org_table = Table(title="Per-Organization Statistics")
+    org_table = Table(title="Per-Organization Statistics (High Confidence Dogs)")
     org_table.add_column("Organization", style="cyan")
     org_table.add_column("Total", style="magenta")
     org_table.add_column("Enriched", style="green")
