@@ -47,24 +47,24 @@ class DogProfileQualityRubric:
         # Description quality
         desc = profile_data.get("description", "")
         desc_score = 0.0
-        
+
         # Length check (be more lenient)
         desc_len = len(desc)
         if 150 <= desc_len <= 250:
             desc_score += 0.5
         elif 100 <= desc_len <= 400:  # Partial credit for reasonable length
             desc_score += 0.25
-        
+
         # Content quality - check for descriptive elements (more flexible)
         quality_indicators = [
             any(word in desc.lower() for word in ["personality", "temperament", "character", "nature"]),
             any(word in desc.lower() for word in ["need", "require", "looking for", "seek", "dream"]),
             any(word in desc.lower() for word in ["home", "family", "companion", "friend"]),
-            any(word in desc.lower() for word in ["love", "patient", "gentle", "friendly", "playful", "calm", "energetic"])
+            any(word in desc.lower() for word in ["love", "patient", "gentle", "friendly", "playful", "calm", "energetic"]),
         ]
         content_score = sum(quality_indicators) / 4.0 * 0.5
         desc_score += content_score
-        
+
         scores["description_quality"] = desc_score
 
         # Field completeness
@@ -138,18 +138,18 @@ class DogProfileQualityRubric:
     def calculate_quality_score(self, profile_data: Dict[str, Any], source_data: Optional[Dict[str, Any]] = None) -> float:
         """
         Calculate quality score for a dog profile.
-        
+
         This is the instance method expected by the test scripts.
-        
+
         Args:
             profile_data: The LLM-generated profile
             source_data: Optional original source data
-            
+
         Returns:
             Float score between 0.0 and 1.0
         """
         if source_data is None:
             source_data = {}
-        
+
         result = self.score_profile(profile_data, source_data)
         return result["total_score"]

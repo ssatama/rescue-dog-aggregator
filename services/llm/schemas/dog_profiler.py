@@ -27,7 +27,7 @@ class DogProfilerData(BaseModel):
     """
 
     # ===== CORE DESCRIPTION =====
-    description: str = Field(..., min_length=150, max_length=250, description="Engaging English description of the dog")
+    description: str = Field(..., min_length=150, max_length=400, description="Engaging English description of the dog")
     tagline: str = Field(..., max_length=50, description="Catchy hook for the dog's profile")
 
     # ===== BEHAVIORAL TRAITS =====
@@ -55,7 +55,7 @@ class DogProfilerData(BaseModel):
     # ===== PERSONALITY =====
     personality_traits: List[str] = Field(..., min_items=3, max_items=5, description="Key personality characteristics")
     favorite_activities: List[str] = Field(..., min_items=2, max_items=4, description="Things the dog enjoys doing")
-    unique_quirk: Optional[str] = Field(None, max_length=100, description="A unique or endearing trait")
+    unique_quirk: Optional[str] = Field(None, max_length=150, description="A unique or endearing trait")
 
     # ===== ADOPTION INFO =====
     adoption_fee_euros: Optional[int] = Field(None, ge=0, le=2000, description="Adoption fee in euros")
@@ -91,7 +91,7 @@ class DogProfilerData(BaseModel):
         if any(placeholder in v.lower() for placeholder in ["lorem ipsum", "todo", "tbd"]):
             raise ValueError("Description contains placeholder text")
 
-        # Check for minimum word count (roughly 25-40 words for 150-250 chars)
+        # Check for minimum word count (roughly 25-60 words for 150-400 chars)
         word_count = len(v.split())
         if word_count < 20:
             raise ValueError(f"Description too short: {word_count} words (minimum 20)")

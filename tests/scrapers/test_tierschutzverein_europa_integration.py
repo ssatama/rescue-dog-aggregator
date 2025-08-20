@@ -48,8 +48,7 @@ class TestTierschutzvereinEuropaIntegration:
         ]
 
         # Mock the extraction method to return our test data
-        with patch.object(scraper, "get_animal_list", return_value=german_dogs), \
-             patch.object(scraper, "_process_animals_parallel", return_value=german_dogs):
+        with patch.object(scraper, "get_animal_list", return_value=german_dogs), patch.object(scraper, "_process_animals_parallel", return_value=german_dogs):
             english_dogs = scraper.collect_data()
 
         # Verify we got the expected number of dogs
@@ -159,7 +158,7 @@ class TestTierschutzvereinEuropaIntegration:
 
         german_dog = [{"name": "TEST_DOG", "sex": "Rüde", "age_text": "4 Jahre", "breed": "Mischling", "external_id": "test-123", "adoption_url": "https://test.com/test-123"}]
 
-        # Mock the primary extraction method to fail so we test translation happens 
+        # Mock the primary extraction method to fail so we test translation happens
         # The scraper's collect_data calls: get_animal_list -> _process_animals_parallel -> _translate_and_normalize_dogs
         # We'll mock get_animal_list to succeed with our test dog and let translation happen
         with patch.object(scraper, "get_animal_list", return_value=german_dog):
@@ -219,8 +218,7 @@ class TestTierschutzvereinEuropaIntegration:
         german_dogs = [{"name": "BELLA", "sex": "Hündin", "age_text": "3 Jahre", "breed": "Deutscher Schäferhund", "external_id": "bella-123"}]
 
         # Apply translation (what scraper should do)
-        with patch.object(scraper, "get_animal_list", return_value=german_dogs), \
-             patch.object(scraper, "_process_animals_parallel", return_value=german_dogs):
+        with patch.object(scraper, "get_animal_list", return_value=german_dogs), patch.object(scraper, "_process_animals_parallel", return_value=german_dogs):
             english_dogs = scraper.collect_data()
 
         # Verify English output

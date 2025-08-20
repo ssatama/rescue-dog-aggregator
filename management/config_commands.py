@@ -4,7 +4,9 @@ import os
 import sys
 
 # Add the project root directory to Python path BEFORE imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from management.cli.config_cli import ConfigCLI  # noqa: E402
 from management.formatters.config_formatter import ConfigFormatter  # noqa: E402
@@ -72,6 +74,105 @@ class ConfigManager:
         """Validate all configuration files."""
         return self.cli.validate_configs()
 
+    def profile_dogs(self, org_id: int, limit: int = None, dry_run: bool = False):
+        """Run LLM profiling for dogs.
+
+        Args:
+            org_id: Organization ID to profile dogs for
+            limit: Maximum number of dogs to profile (None for all)
+            dry_run: Only show what would be profiled, don't save
+        """
+        import asyncio
+        import os
+        import sys
+
+        import psycopg2
+
+        # Ensure project root is in path for LLM imports
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
+
+        from config import DB_CONFIG
+        from services.llm.dog_profiler import DogProfilerPipeline
+        from services.llm.organization_config_loader import get_config_loader
+
+        # Check if organization has a prompt template configured
+        loader = get_config_loader()
+        org_config = loader.load_config(org_id)
+
+        if not org_config:
+            print(f"❌ No LLM configuration found for organization {org_id}")
+            print(f"   Available organizations: {loader.get_supported_organizations()}")
+            return
+
+        # Check if prompt template exists
+        from pathlib import Path
+
+        template_path = Path("prompts/organizations") / org_config.prompt_file
+        if not template_path.exists():
+            print(f"❌ Organization {org_id} ({org_config.organization_name}) is configured but prompt template not found: {org_config.prompt_file}")
+            print(f"   This organization needs a prompt template to be created before LLM profiling can be used.")
+            return
+
+        print(f"🤖 Starting LLM profiling for {org_config.organization_name} (ID: {org_id})")
+        print(f"   Source Language: {org_config.source_language}")
+        print(f"   Model: {org_config.model_preference}")
+
+        # Connect to database
+        conn = psycopg2.connect(**DB_CONFIG)
+        cursor = conn.cursor()
+
+        # Get unprofiled dogs
+        query = """
+            SELECT id, name, breed, age_text, properties
+            FROM animals 
+            WHERE organization_id = %s 
+            AND (dog_profiler_data IS NULL OR dog_profiler_data = '{}')
+            ORDER BY id DESC
+        """
+
+        if limit:
+            query += f" LIMIT {limit}"
+
+        cursor.execute(query, (org_id,))
+
+        dogs = []
+        for row in cursor.fetchall():
+            dogs.append({"id": row[0], "name": row[1], "breed": row[2], "age_text": row[3], "properties": row[4]})
+
+        if not dogs:
+            print("✅ No dogs need profiling")
+            cursor.close()
+            conn.close()
+            return
+
+        print(f"📊 Found {len(dogs)} dogs to profile")
+
+        # Initialize pipeline
+        pipeline = DogProfilerPipeline(organization_id=org_id, dry_run=dry_run)
+
+        # Process batch
+        print(f"🔄 Processing batch (dry_run={dry_run})...")
+        results = asyncio.run(pipeline.process_batch(dogs, batch_size=5))
+
+        print(f"✨ Processed {len(results)} dogs")
+
+        # Save results if not dry run
+        if results and not dry_run:
+            success = asyncio.run(pipeline.save_results(results))
+            print(f"💾 Save success: {success}")
+
+        # Show statistics
+        stats = pipeline.get_statistics()
+        print(f"\n📈 Statistics:")
+        print(f"  • Processed: {stats['processed']}")
+        print(f"  • Successful: {stats['successful']}")
+        print(f"  • Success rate: {stats['success_rate']:.1f}%")
+
+        cursor.close()
+        conn.close()
+
 
 def main():
     """Main CLI entry point."""
@@ -124,6 +225,12 @@ def main():
     # Validate command
     subparsers.add_parser("validate", help="Validate configuration files")
 
+    # Profile command
+    profile_parser = subparsers.add_parser("profile", help="Run LLM profiling for dogs")
+    profile_parser.add_argument("--org-id", type=int, default=11, help="Organization ID (default: 11)")
+    profile_parser.add_argument("--limit", type=int, help="Maximum number of dogs to profile")
+    profile_parser.add_argument("--dry-run", action="store_true", help="Don't save results to database")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -144,6 +251,8 @@ def main():
         manager.run_all_scrapers(sync_first=not args.no_sync)
     elif args.command == "validate":
         manager.validate_configs()
+    elif args.command == "profile":
+        manager.profile_dogs(args.org_id, limit=args.limit, dry_run=args.dry_run)
 
 
 if __name__ == "__main__":
