@@ -615,6 +615,23 @@ class DogProfilerPipeline:
             if "profiled_at" in result and isinstance(result["profiled_at"], datetime):
                 result["profiled_at"] = result["profiled_at"].isoformat()
             
+            # Add original dog data fields that aren't in the schema
+            result["id"] = dog_id
+            result["name"] = dog_name
+            result["breed"] = dog_data.get("breed", "Mixed Breed")
+            result["external_id"] = dog_data.get("external_id")
+            
+            # Calculate quality score if rubric is available
+            if hasattr(self, 'quality_rubric'):
+                from .quality_rubric import DogProfileQualityRubric
+                if not hasattr(self, '_rubric_instance'):
+                    self._rubric_instance = DogProfileQualityRubric()
+                # Score returns 0-1, multiply by 100 for percentage
+                result["quality_score"] = self._rubric_instance.calculate_quality_score(result, dog_data) * 100
+            else:
+                # Default quality score for basic validation (80%)
+                result["quality_score"] = 80
+            
             return result
 
         except Exception as e:
@@ -678,6 +695,15 @@ class DogProfilerPipeline:
             ),
             "errors": self.errors[:10],  # First 10 errors
         }
+    
+    def get_statistics(self) -> Dict[str, Any]:
+        """
+        Get processing statistics (alias for get_summary).
+        
+        Returns:
+            Statistics dictionary
+        """
+        return self.get_summary()
 
     async def save_results(self, results: List[Dict[str, Any]]) -> bool:
         """

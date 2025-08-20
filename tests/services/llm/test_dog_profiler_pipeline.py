@@ -95,20 +95,45 @@ class TestDogProfilerPipeline:
         assert pipeline_with_pool.connection_pool == mock_pool
 
     @pytest.mark.asyncio
-    async def test_process_single_dog(self, mock_llm_service, test_dog_data):
-        """Test processing a single dog profile."""
+    async def test_process_single_dog(self, test_dog_data):
+        """Test processing a single dog profile with mocked API."""
         pipeline = DogProfilerPipeline(
             organization_id=11,
-            llm_service=mock_llm_service,
             dry_run=True
         )
 
-        result = await pipeline.process_dog(test_dog_data)
-        
-        assert result is not None
-        assert "name" in result
-        assert "tagline" in result
-        assert "quality_score" in result
+        # Mock the _call_llm_api method directly since llm_service isn't used
+        with patch.object(pipeline, '_call_llm_api') as mock_api:
+            mock_api.return_value = {
+                "name": "Bingo",
+                "tagline": "Friendly companion",
+                "description": "Bingo is a wonderful dog looking for a loving home with caring people who will give him the attention he deserves. He's been through a lot in his life but remains incredibly gentle and loving. He would thrive in a home where he can get regular walks and plenty of affection. This amazing dog will bring so much joy to the right family.",
+                "energy_level": "medium",
+                "trainability": "easy",
+                "sociability": "social",
+                "confidence": "confident",
+                "home_type": "house_preferred",
+                "yard_required": True,
+                "experience_level": "first_time_ok",
+                "exercise_needs": "moderate",
+                "grooming_needs": "weekly",
+                "personality_traits": ["friendly", "loyal", "gentle"],
+                "favorite_activities": ["walks", "play"],
+                "ready_to_travel": True,
+                "vaccinated": True,
+                "neutered": True,
+                "processing_time_ms": 1000,
+                "confidence_scores": {"description": 0.9, "energy_level": 0.8, "trainability": 0.9},
+                "source_references": {"description": "source text", "personality_traits": "source text"},
+                "prompt_version": "1.0.0"
+            }
+            
+            result = await pipeline.process_dog(test_dog_data)
+            
+            assert result is not None
+            assert "name" in result
+            assert "tagline" in result
+            assert "quality_score" in result
 
     @pytest.mark.asyncio
     async def test_batch_processing(self, mock_llm_service):
@@ -131,20 +156,45 @@ class TestDogProfilerPipeline:
         assert all("quality_score" in r for r in results)
 
     @pytest.mark.asyncio
-    async def test_quality_scoring(self, mock_llm_service, test_dog_data):
+    async def test_quality_scoring(self, test_dog_data):
         """Test quality score calculation."""
         pipeline = DogProfilerPipeline(
             organization_id=11,
-            llm_service=mock_llm_service,
             dry_run=True
         )
 
-        result = await pipeline.process_dog(test_dog_data)
-        
-        assert "quality_score" in result
-        score = result["quality_score"]
-        assert 0 <= score <= 100
-        assert isinstance(score, (int, float))
+        # Mock the _call_llm_api method
+        with patch.object(pipeline, '_call_llm_api') as mock_api:
+            mock_api.return_value = {
+                "name": "Bingo",
+                "tagline": "Friendly companion",
+                "description": "Bingo is a wonderful dog looking for a loving home with caring people who will give him the attention he deserves. He's been through a lot in his life but remains incredibly gentle and loving. He would thrive in a home where he can get regular walks and plenty of affection. This amazing dog will bring so much joy to the right family.",
+                "energy_level": "medium",
+                "trainability": "easy",
+                "sociability": "social",
+                "confidence": "confident",
+                "home_type": "house_preferred",
+                "yard_required": True,
+                "experience_level": "first_time_ok",
+                "exercise_needs": "moderate",
+                "grooming_needs": "weekly",
+                "personality_traits": ["friendly", "loyal", "gentle"],
+                "favorite_activities": ["walks", "play"],
+                "ready_to_travel": True,
+                "vaccinated": True,
+                "neutered": True,
+                "processing_time_ms": 1000,
+                "confidence_scores": {"description": 0.9, "energy_level": 0.8, "trainability": 0.9},
+                "source_references": {"description": "source text", "personality_traits": "source text"},
+                "prompt_version": "1.0.0"
+            }
+            
+            result = await pipeline.process_dog(test_dog_data)
+            
+            assert "quality_score" in result
+            score = result["quality_score"]
+            assert 0 <= score <= 100
+            assert isinstance(score, (int, float))
 
     @pytest.mark.asyncio
     async def test_database_saving_with_pool(self, mock_connection_pool, mock_llm_service):
@@ -169,20 +219,19 @@ class TestDogProfilerPipeline:
     @pytest.mark.asyncio
     async def test_error_handling(self):
         """Test error handling in pipeline."""
-        # Mock service that raises errors
-        error_service = AsyncMock()
-        error_service.generate_structured_response.side_effect = Exception("API Error")
-
         pipeline = DogProfilerPipeline(
             organization_id=11,
-            llm_service=error_service,
             dry_run=True
         )
 
-        result = await pipeline.process_dog({"id": 1, "name": "Test"})
-        
-        # Should handle error gracefully
-        assert result is None or "error" in str(result).lower()
+        # Mock the _call_llm_api to raise an error
+        with patch.object(pipeline, '_call_llm_api') as mock_api:
+            mock_api.side_effect = Exception("API Error")
+            
+            result = await pipeline.process_dog({"id": 1, "name": "Test"})
+            
+            # Should handle error gracefully and return None
+            assert result is None
 
     @pytest.mark.asyncio
     async def test_retry_mechanism(self, mock_llm_service):
@@ -210,7 +259,11 @@ class TestDogProfilerPipeline:
         
         # Should load template for organization 11
         assert pipeline.prompt_template is not None
-        assert "tierschutzverein" in pipeline.prompt_template.lower()
+        # Check the system prompt or metadata contains organization name
+        system_prompt = pipeline.prompt_template.get("system_prompt", "")
+        org_name = pipeline.prompt_template.get("metadata", {}).get("organization_name", "")
+        combined_text = f"{system_prompt} {org_name}".lower()
+        assert "tierschutzverein" in combined_text
 
     @pytest.mark.asyncio
     async def test_statistics_tracking(self, mock_llm_service):
@@ -236,6 +289,42 @@ class TestDogProfilerPipeline:
 
 class TestDogProfilerIntegration:
     """Integration tests for DogProfilerPipeline with real components."""
+
+    @pytest.fixture
+    def mock_llm_service(self):
+        """Mock LLM service for testing."""
+        service = AsyncMock()
+        service.generate_structured_response.return_value = {
+            "name": "Bingo",
+            "tagline": "Friendly and playful companion",
+            "description": "A wonderful dog looking for a home",
+            "temperament": ["friendly", "playful", "gentle"],
+            "energy_level": "medium",
+            "size_preference": "medium",
+            "good_with_kids": True,
+            "good_with_pets": True,
+            "special_needs": None,
+            "house_trained": "unknown",
+            "health_status": "healthy",
+            "ideal_home": "Active family with yard",
+            "adoption_urgency": "normal",
+            "unique_traits": ["loves water", "knows basic commands"],
+            "estimated_monthly_cost": 100,
+            "breed_characteristics": ["intelligent", "loyal"],
+            "training_level": "basic",
+            "exercise_needs": "moderate"
+        }
+        return service
+
+    @pytest.fixture
+    def mock_connection_pool(self):
+        """Mock connection pool for testing."""
+        pool = MagicMock(spec=ConnectionPoolService)
+        conn_mock = MagicMock()
+        cursor_mock = MagicMock()
+        conn_mock.cursor.return_value = cursor_mock
+        pool.get_connection_context.return_value.__enter__.return_value = conn_mock
+        return pool
 
     @pytest.mark.skipif(
         not os.environ.get("OPENROUTER_API_KEY"),
@@ -264,29 +353,54 @@ class TestDogProfilerIntegration:
         assert "quality_score" in result
 
     @pytest.mark.asyncio
-    async def test_end_to_end_with_mocks(self, mock_llm_service, mock_connection_pool):
+    async def test_end_to_end_with_mocks(self, mock_connection_pool):
         """Test complete end-to-end flow with mocks."""
         pipeline = DogProfilerPipeline(
             organization_id=11,
-            llm_service=mock_llm_service,
             dry_run=False,
             connection_pool=mock_connection_pool
         )
 
-        # Process batch
-        test_dogs = [
-            {"id": i, "name": f"Dog{i}", "breed": "Mixed"}
-            for i in range(1, 6)
-        ]
+        # Mock the _call_llm_api method
+        with patch.object(pipeline, '_call_llm_api') as mock_api:
+            mock_api.return_value = {
+                "name": "TestDog",
+                "tagline": "Friendly companion",
+                "description": "TestDog is a wonderful dog looking for a loving home with caring people who will give him the attention he deserves. He's been through a lot in his life but remains incredibly gentle and loving. He would thrive in a home where he can get regular walks and plenty of affection. This amazing dog will bring so much joy to the right family.",
+                "energy_level": "medium",
+                "trainability": "easy",
+                "sociability": "social",
+                "confidence": "confident",
+                "home_type": "house_preferred",
+                "yard_required": True,
+                "experience_level": "first_time_ok",
+                "exercise_needs": "moderate",
+                "grooming_needs": "weekly",
+                "personality_traits": ["friendly", "loyal", "gentle"],
+                "favorite_activities": ["walks", "play"],
+                "ready_to_travel": True,
+                "vaccinated": True,
+                "neutered": True,
+                "processing_time_ms": 1000,
+                "confidence_scores": {"description": 0.9, "energy_level": 0.8, "trainability": 0.9},
+                "source_references": {"description": "source text", "personality_traits": "source text"},
+                "prompt_version": "1.0.0"
+            }
 
-        results = await pipeline.process_batch(test_dogs)
-        
-        # Save results
-        success = await pipeline.save_results(results)
-        
-        assert success is True
-        assert len(results) == 5
-        assert all("quality_score" in r for r in results)
+            # Process batch
+            test_dogs = [
+                {"id": i, "name": f"Dog{i}", "breed": "Mixed"}
+                for i in range(1, 6)
+            ]
+
+            results = await pipeline.process_batch(test_dogs)
+            
+            # Save results
+            success = await pipeline.save_results(results)
+            
+            assert success is True
+            assert len(results) == 5
+            assert all("quality_score" in r for r in results)
 
 
 if __name__ == "__main__":

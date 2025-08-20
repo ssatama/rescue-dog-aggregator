@@ -90,18 +90,27 @@ class TestDogProfilerDataSchema:
     
     def test_description_quality_validation(self, valid_profile_data):
         """Test description quality checks."""
-        # Placeholder text
-        valid_profile_data["description"] = "Lorem ipsum dolor sit amet " * 10
+        # Placeholder text - should fail
+        valid_profile_data["description"] = "Lorem ipsum dolor sit amet " * 6  # About 168 chars
+        valid_profile_data["description"] = valid_profile_data["description"][:200]  # Ensure proper length
         with pytest.raises(ValidationError) as exc_info:
             DogProfilerData(**valid_profile_data)
         assert "placeholder" in str(exc_info.value).lower()
         
-        # Too few words
-        valid_profile_data["description"] = "a " * 75  # 150 chars but only ~75 single-letter words
-        # Actually this would be 75 words, which is fine. Let's make it truly short:
-        valid_profile_data["description"] = "This dog is nice. " * 10  # Short sentences
-        valid_profile_data["description"] = valid_profile_data["description"][:150]
-        profile = DogProfilerData(**valid_profile_data)  # Should work as it has enough words
+        # Too few words - should fail (less than 20 words)
+        valid_profile_data["description"] = "Dog is nice. Very good. Likes play. Need home. Please adopt. Good boy. Sweet dog. Friendly pet. Happy animal. Loving companion. Great friend. Wonderful dog. Nice pet. Good friend. Best dog."
+        # This has exactly 30 words but let's make it shorter
+        valid_profile_data["description"] = "Dog is nice. Good boy. Needs home now please." * 2  # ~18 words
+        # Pad to meet minimum length requirement
+        valid_profile_data["description"] = valid_profile_data["description"].ljust(150, '.')
+        with pytest.raises(ValidationError) as exc_info:
+            DogProfilerData(**valid_profile_data)
+        assert "too short" in str(exc_info.value).lower() or "minimum 20" in str(exc_info.value).lower()
+        
+        # Valid description with enough words and proper length
+        valid_profile_data["description"] = "This wonderful dog is looking for a loving home. He is very friendly and loves to play with children. He enjoys long walks in the park and is well trained. Perfect family companion who will bring joy."
+        valid_profile_data["description"] = valid_profile_data["description"][:200]  # Ensure it's within bounds
+        profile = DogProfilerData(**valid_profile_data)
         assert profile.description
     
     def test_behavioral_traits_validation(self, valid_profile_data):

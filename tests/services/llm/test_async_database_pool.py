@@ -63,7 +63,13 @@ class TestAsyncDatabasePool:
         with patch('asyncpg.create_pool', new_callable=AsyncMock) as mock_create:
             mock_pool = AsyncMock()
             mock_connection = AsyncMock()
-            mock_pool.acquire.return_value.__aenter__.return_value = mock_connection
+            
+            # Create a proper async context manager mock - set directly, not as return_value
+            mock_acquire_ctx = AsyncMock()
+            mock_acquire_ctx.__aenter__ = AsyncMock(return_value=mock_connection)
+            mock_acquire_ctx.__aexit__ = AsyncMock(return_value=None)
+            mock_pool.acquire = Mock(return_value=mock_acquire_ctx)
+            
             mock_create.return_value = mock_pool
             
             pool = AsyncDatabasePool(pool_config)
@@ -84,7 +90,13 @@ class TestAsyncDatabasePool:
                 {"id": 1, "name": "Buddy"},
                 {"id": 2, "name": "Max"}
             ]
-            mock_pool.acquire.return_value.__aenter__.return_value = mock_connection
+            
+            # Create a proper async context manager mock - set directly, not as return_value
+            mock_acquire_ctx = AsyncMock()
+            mock_acquire_ctx.__aenter__ = AsyncMock(return_value=mock_connection)
+            mock_acquire_ctx.__aexit__ = AsyncMock(return_value=None)
+            mock_pool.acquire = Mock(return_value=mock_acquire_ctx)
+            
             mock_create.return_value = mock_pool
             
             pool = AsyncDatabasePool(pool_config)
@@ -103,7 +115,13 @@ class TestAsyncDatabasePool:
         with patch('asyncpg.create_pool', new_callable=AsyncMock) as mock_create:
             mock_pool = AsyncMock()
             mock_connection = AsyncMock()
-            mock_pool.acquire.return_value.__aenter__.return_value = mock_connection
+            
+            # Create a proper async context manager mock - set directly, not as return_value
+            mock_acquire_ctx = AsyncMock()
+            mock_acquire_ctx.__aenter__ = AsyncMock(return_value=mock_connection)
+            mock_acquire_ctx.__aexit__ = AsyncMock(return_value=None)
+            mock_pool.acquire = Mock(return_value=mock_acquire_ctx)
+            
             mock_create.return_value = mock_pool
             
             pool = AsyncDatabasePool(pool_config)
@@ -125,9 +143,19 @@ class TestAsyncDatabasePool:
         with patch('asyncpg.create_pool', new_callable=AsyncMock) as mock_create:
             mock_pool = AsyncMock()
             mock_connection = AsyncMock()
+            
+            # Create a proper async context manager for transaction
             mock_transaction = AsyncMock()
-            mock_connection.transaction.return_value = mock_transaction
-            mock_pool.acquire.return_value.__aenter__.return_value = mock_connection
+            mock_transaction.__aenter__ = AsyncMock(return_value=mock_transaction)
+            mock_transaction.__aexit__ = AsyncMock(return_value=None)
+            mock_connection.transaction = Mock(return_value=mock_transaction)
+            
+            # Create a proper async context manager mock - set directly, not as return_value
+            mock_acquire_ctx = AsyncMock()
+            mock_acquire_ctx.__aenter__ = AsyncMock(return_value=mock_connection)
+            mock_acquire_ctx.__aexit__ = AsyncMock(return_value=None)
+            mock_pool.acquire = Mock(return_value=mock_acquire_ctx)
+            
             mock_create.return_value = mock_pool
             
             pool = AsyncDatabasePool(pool_config)
@@ -169,16 +197,25 @@ class TestAsyncDatabasePool:
     @pytest.mark.asyncio
     async def test_pool_retry_on_connection_error(self, pool_config):
         """Test pool retries on connection errors."""
+        # Need to patch asyncpg.exceptions with the actual exception
+        import asyncpg.exceptions
+        
         with patch('asyncpg.create_pool', new_callable=AsyncMock) as mock_create:
             mock_pool = AsyncMock()
             mock_connection = AsyncMock()
             
-            # First call fails, second succeeds
+            # First call fails with the actual asyncpg exception, second succeeds
             mock_connection.fetch.side_effect = [
                 asyncpg.exceptions.ConnectionDoesNotExistError("Connection lost"),
                 [{"id": 1, "name": "Buddy"}]
             ]
-            mock_pool.acquire.return_value.__aenter__.return_value = mock_connection
+            
+            # Create a proper async context manager mock - set directly, not as return_value
+            mock_acquire_ctx = AsyncMock()
+            mock_acquire_ctx.__aenter__ = AsyncMock(return_value=mock_connection)
+            mock_acquire_ctx.__aexit__ = AsyncMock(return_value=None)
+            mock_pool.acquire = Mock(return_value=mock_acquire_ctx)
+            
             mock_create.return_value = mock_pool
             
             pool = AsyncDatabasePool(pool_config)
@@ -193,9 +230,8 @@ class TestAsyncDatabasePool:
         """Test pool metrics collection."""
         with patch('asyncpg.create_pool', new_callable=AsyncMock) as mock_create:
             mock_pool = AsyncMock()
-            mock_pool.get_size.return_value = 5
-            mock_pool.get_min_size.return_value = 2
-            mock_pool.get_max_size.return_value = 10
+            # Mock the _holders attribute that the implementation checks
+            mock_pool._holders = [1, 2, 3, 4, 5]  # 5 mock connections
             mock_create.return_value = mock_pool
             
             pool = AsyncDatabasePool(pool_config)
@@ -203,8 +239,8 @@ class TestAsyncDatabasePool:
             
             metrics = pool.get_metrics()
             assert metrics["current_connections"] == 5
-            assert metrics["min_connections"] == 2
-            assert metrics["max_connections"] == 10
+            assert metrics["min_connections"] == pool_config.min_connections
+            assert metrics["max_connections"] == pool_config.max_connections
             assert "queries_executed" in metrics
 
 
@@ -253,9 +289,3 @@ class TestPoolConfig:
                 max_connections=10
             )
 
-
-# Mock asyncpg for tests
-class asyncpg:
-    class exceptions:
-        class ConnectionDoesNotExistError(Exception):
-            pass

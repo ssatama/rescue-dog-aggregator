@@ -135,8 +135,9 @@ class TestOrganizationConfigLoader:
         """Test loading prompt template."""
         mock_yaml = yaml.dump(mock_prompt_data)
         
+        # Mock Path.exists() instead of os.path.exists()
         with patch("builtins.open", mock_open(read_data=mock_yaml)):
-            with patch("os.path.exists", return_value=True):
+            with patch.object(Path, 'exists', return_value=True):
                 template = loader.load_prompt_template("test.yaml")
                 
                 assert template.system_prompt == "You are an expert dog profiler"

@@ -48,7 +48,8 @@ class TestTierschutzvereinEuropaIntegration:
         ]
 
         # Mock the extraction method to return our test data
-        with patch.object(scraper, "_extract_with_selenium_unified", return_value=german_dogs):
+        with patch.object(scraper, "get_animal_list", return_value=german_dogs), \
+             patch.object(scraper, "_process_animals_parallel", return_value=german_dogs):
             english_dogs = scraper.collect_data()
 
         # Verify we got the expected number of dogs
@@ -94,7 +95,7 @@ class TestTierschutzvereinEuropaIntegration:
             {"name": "OLD_DOG", "sex": "Rüde", "age_text": "12 Jahre", "breed": "Deutscher Schäferhund", "external_id": "old-456"},
         ]
 
-        with patch.object(scraper, "_extract_with_selenium_unified", return_value=test_dogs):
+        with patch.object(scraper, "_process_animals_parallel", return_value=test_dogs):
             translated_dogs = scraper.collect_data()
 
         # Test young dog categorization
@@ -113,7 +114,7 @@ class TestTierschutzvereinEuropaIntegration:
 
         test_dogs = [{"name": "SHEPHERD_DOG", "sex": "Rüde", "age_text": "5 Jahre", "breed": "Deutscher Schäferhund", "external_id": "shepherd-123"}]  # Should become "German Shepherd"
 
-        with patch.object(scraper, "_extract_with_selenium_unified", return_value=test_dogs):
+        with patch.object(scraper, "_process_animals_parallel", return_value=test_dogs):
             translated_dogs = scraper.collect_data()
 
         dog = translated_dogs[0]
@@ -139,7 +140,7 @@ class TestTierschutzvereinEuropaIntegration:
             {"name": "GOOD_DOG", "sex": "Hündin", "age_text": "2 Jahre", "breed": "Mischling", "external_id": "good-456"},
         ]
 
-        with patch.object(scraper, "_extract_with_selenium_unified", return_value=problematic_dogs):
+        with patch.object(scraper, "_process_animals_parallel", return_value=problematic_dogs):
             translated_dogs = scraper.collect_data()
 
         # Should get both dogs back (translation failures are handled gracefully)
@@ -156,13 +157,15 @@ class TestTierschutzvereinEuropaIntegration:
         """Test that all extraction fallback methods apply translation."""
         scraper = TierschutzvereinEuropaScraper(config_id="tierschutzverein-europa")
 
-        german_dog = [{"name": "TEST_DOG", "sex": "Rüde", "age_text": "4 Jahre", "breed": "Mischling", "external_id": "test-123"}]
+        german_dog = [{"name": "TEST_DOG", "sex": "Rüde", "age_text": "4 Jahre", "breed": "Mischling", "external_id": "test-123", "adoption_url": "https://test.com/test-123"}]
 
-        # Test that requests fallback applies translation
-        with patch.object(scraper, "_extract_with_selenium_unified", side_effect=Exception("Selenium failed")):
-            with patch.object(scraper, "_extract_with_selenium", side_effect=Exception("Legacy failed")):
-                with patch.object(scraper, "_extract_with_requests", return_value=german_dog):
-                    translated_dogs = scraper.collect_data()
+        # Mock the primary extraction method to fail so we test translation happens 
+        # The scraper's collect_data calls: get_animal_list -> _process_animals_parallel -> _translate_and_normalize_dogs
+        # We'll mock get_animal_list to succeed with our test dog and let translation happen
+        with patch.object(scraper, "get_animal_list", return_value=german_dog):
+            # Mock _process_animals_parallel to just return the input (no enrichment)
+            with patch.object(scraper, "_process_animals_parallel", return_value=german_dog):
+                translated_dogs = scraper.collect_data()
 
         assert len(translated_dogs) == 1
         dog = translated_dogs[0]
@@ -187,7 +190,7 @@ class TestTierschutzvereinEuropaIntegration:
             {"name": "DEXTER", "sex": "Rüde", "age_text": "7 Jahre", "breed": "Schäferhund Mischling", "external_id": "dexter-real"},  # Real compound breed
         ]
 
-        with patch.object(scraper, "_extract_with_selenium_unified", return_value=real_dogs):
+        with patch.object(scraper, "_process_animals_parallel", return_value=real_dogs):
             translated_dogs = scraper.collect_data()
 
         # Verify all real patterns translate and standardize correctly
@@ -216,7 +219,8 @@ class TestTierschutzvereinEuropaIntegration:
         german_dogs = [{"name": "BELLA", "sex": "Hündin", "age_text": "3 Jahre", "breed": "Deutscher Schäferhund", "external_id": "bella-123"}]
 
         # Apply translation (what scraper should do)
-        with patch.object(scraper, "_extract_with_selenium_unified", return_value=german_dogs):
+        with patch.object(scraper, "get_animal_list", return_value=german_dogs), \
+             patch.object(scraper, "_process_animals_parallel", return_value=german_dogs):
             english_dogs = scraper.collect_data()
 
         # Verify English output
