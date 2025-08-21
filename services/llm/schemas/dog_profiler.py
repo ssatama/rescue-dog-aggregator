@@ -27,8 +27,8 @@ class DogProfilerData(BaseModel):
     """
 
     # ===== CORE DESCRIPTION =====
-    description: str = Field(..., min_length=150, max_length=400, description="Engaging English description of the dog")
-    tagline: str = Field(..., max_length=50, description="Catchy hook for the dog's profile")
+    description: str = Field(..., min_length=150, max_length=500, description="Engaging English description of the dog")
+    tagline: str = Field(..., max_length=150, description="Catchy hook for the dog's profile")
 
     # ===== BEHAVIORAL TRAITS =====
     energy_level: Literal["low", "medium", "high", "very_high"] = Field(..., description="Dog's typical energy level")
@@ -49,13 +49,13 @@ class DogProfilerData(BaseModel):
 
     # ===== CARE NEEDS =====
     grooming_needs: Literal["minimal", "weekly", "frequent", "professional"] = Field(..., description="Grooming requirements")
-    medical_needs: Optional[str] = Field(None, max_length=200, description="Any ongoing medical conditions or needs")
-    special_needs: Optional[str] = Field(None, max_length=200, description="Any special requirements or considerations")
+    medical_needs: Optional[str] = Field(None, max_length=250, description="Any ongoing medical conditions or needs")
+    special_needs: Optional[str] = Field(None, max_length=250, description="Any special requirements or considerations")
 
     # ===== PERSONALITY =====
     personality_traits: List[str] = Field(..., min_items=3, max_items=5, description="Key personality characteristics")
     favorite_activities: List[str] = Field(..., min_items=2, max_items=4, description="Things the dog enjoys doing")
-    unique_quirk: Optional[str] = Field(None, max_length=150, description="A unique or endearing trait")
+    unique_quirk: Optional[str] = Field(None, max_length=200, description="A unique or endearing trait")
 
     # ===== ADOPTION INFO =====
     adoption_fee_euros: Optional[int] = Field(None, ge=0, le=2000, description="Adoption fee in euros")
@@ -163,7 +163,12 @@ class DogProfilerData(BaseModel):
                 "profiler_version": "1.0.0",
                 "profiled_at": "2025-01-19T12:00:00Z",
                 "processing_time_ms": 1250,
-                "confidence_scores": {"description": 0.95, "energy_level": 0.88, "trainability": 0.92, "personality_traits": 0.90},
+                "confidence_scores": {
+                    "description": 0.95,
+                    "energy_level": 0.88,
+                    "trainability": 0.92,
+                    "personality_traits": 0.90,
+                },
                 "source_references": {
                     "description": "ruhiger Schäferhund-Mix, 3 Jahre alt, sehr lieb",
                     "personality_traits": "intelligent, gelehrig, anhänglich",

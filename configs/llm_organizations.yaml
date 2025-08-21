@@ -27,12 +27,12 @@ organizations:
     enabled: false  # Not yet configured - needs separate prompt development
     
   27:
-    name: "Animal Rescue Bosnia"
-    prompt_file: "animal_rescue_bosnia.yaml"
+    name: "Many Tears Animal Rescue"
+    prompt_file: "many_tears.yaml"
     source_language: "en"
     target_language: "en"
     model_preference: "google/gemini-2.5-flash"
-    enabled: false  # Not yet configured - needs separate prompt development
+    enabled: true  # Configured and ready for testing
     
   28:
     name: "REAN"
