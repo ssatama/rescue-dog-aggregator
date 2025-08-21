@@ -40,7 +40,7 @@ class TestBaseScraperBehavior:
         """Test that scraper successfully saves new animals to database."""
         # Setup
         scraper.database_service.get_existing_animal.return_value = None  # No existing animal
-        scraper.database_service.create_animal.return_value = 123
+        scraper.database_service.create_animal.return_value = (123, "create")
 
         animal_data = {
             "name": "New Dog",
@@ -52,7 +52,7 @@ class TestBaseScraperBehavior:
         result = scraper.save_animal(animal_data)
 
         # Assert behavior
-        assert result == 123
+        assert result == (123, "create")
         scraper.database_service.create_animal.assert_called()  # Verify save was attempted
 
     def test_scraper_handles_database_errors_gracefully(self, scraper):

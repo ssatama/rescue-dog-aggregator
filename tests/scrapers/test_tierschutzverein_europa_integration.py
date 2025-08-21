@@ -214,8 +214,8 @@ class TestTierschutzvereinEuropaIntegration:
 
         scraper = TierschutzvereinEuropaScraper(config_id="tierschutzverein-europa")
 
-        # Mock German data as if extracted
-        german_dogs = [{"name": "BELLA", "sex": "Hündin", "age_text": "3 Jahre", "breed": "Deutscher Schäferhund", "external_id": "bella-123"}]
+        # Mock German data as if extracted - must include adoption_url
+        german_dogs = [{"name": "BELLA", "sex": "Hündin", "age_text": "3 Jahre", "breed": "Deutscher Schäferhund", "external_id": "bella-123", "adoption_url": "https://tierschutzverein-europa.de/bella-123"}]
 
         # Apply translation (what scraper should do)
         with patch.object(scraper, "get_animal_list", return_value=german_dogs), patch.object(scraper, "_process_animals_parallel", return_value=german_dogs):
