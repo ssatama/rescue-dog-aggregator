@@ -10,7 +10,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from api.database import initialize_pool
 
 # Import routes
-from api.routes import animals, llm, monitoring, organizations
+from api.routes import animals, enhanced_animals, llm, monitoring, organizations
 
 # Import CORS configuration
 from config import (
@@ -123,6 +123,9 @@ logger.info(f"  Allowed methods: {CORS_ALLOW_METHODS}")
 
 # Include routers
 app.include_router(animals.router, prefix="/api/animals", tags=["animals"])
+
+# Enhanced animals API for LLM data
+app.include_router(enhanced_animals.router, tags=["enhanced"])
 
 app.include_router(organizations.router, prefix="/api/organizations", tags=["organizations"])
 

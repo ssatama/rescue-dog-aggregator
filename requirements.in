@@ -31,3 +31,6 @@ boto3
 python-dateutil>=2.8.2
 tenacity>=8.0.0
 pip-tools
+iniconfig
+cachetools
+pytest-benchmark

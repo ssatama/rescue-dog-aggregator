@@ -198,3 +198,56 @@ STANDARD_RESPONSES = {
     500: {"description": "Internal Server Error - Database or system error"},
     503: {"description": "Service Unavailable - External service error"},
 }
+
+
+# Enhanced Animals Exceptions
+class EnhancedAnimalError(Exception):
+    """Base exception for enhanced animal operations."""
+    
+    def __init__(
+        self,
+        message: str,
+        animal_id: Optional[int] = None,
+        operation: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None
+    ):
+        self.message = message
+        self.animal_id = animal_id
+        self.operation = operation
+        self.details = details or {}
+        super().__init__(self.message)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert exception to dictionary for API responses."""
+        return {
+            "error": self.__class__.__name__,
+            "message": self.message,
+            "animal_id": self.animal_id,
+            "operation": self.operation,
+            "details": self.details
+        }
+
+
+class CacheError(EnhancedAnimalError):
+    """Raised when cache operations fail."""
+    pass
+
+
+class DataNotEnrichedError(EnhancedAnimalError):
+    """Raised when animal has no enhanced data."""
+    pass
+
+
+class InvalidAttributeError(EnhancedAnimalError):
+    """Raised when invalid attributes are requested."""
+    pass
+
+
+class DatabaseRetryExhaustedError(EnhancedAnimalError):
+    """Raised when all database retry attempts fail."""
+    pass
+
+
+class DataNormalizationError(EnhancedAnimalError):
+    """Raised when LLM data cannot be normalized."""
+    pass
