@@ -1,6 +1,21 @@
 # Robots.txt for Rescue Dog Aggregator
 # Help rescue dogs find homes by maximizing search engine visibility
 
+# Googlebot - MAXIMUM SPEED for best SEO
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+# Googlebot for images
+User-agent: Googlebot-Image
+Allow: /
+
+# Bingbot - Microsoft's search engine
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 0
+
+# All other legitimate crawlers
 User-agent: *
 Allow: /
 
@@ -11,11 +26,6 @@ Allow: /search/
 Allow: /about
 Allow: /contact
 
-# API endpoints - allow for structured data discovery
-Allow: /api/v1/dogs
-Allow: /api/v1/organizations
-Allow: /api/v1/search
-
 # Static assets
 Allow: /images/
 Allow: /icons/
@@ -24,8 +34,8 @@ Allow: /_next/image
 
 # Disallow admin and internal pages  
 Disallow: /admin/
-Disallow: /_next/
-Disallow: /api/internal/
+Disallow: /api/
+# Note: /_next/static/ and /_next/image are explicitly allowed above
 
 # XML Sitemap location
 Sitemap: https://www.rescuedogs.me/sitemap.xml
@@ -34,23 +44,32 @@ Sitemap: https://www.rescuedogs.me/sitemap.xml
 # Encourage indexing for AI-powered search experiences
 User-agent: GPTBot
 Allow: /
-Allow: /api/v1/
 
 User-agent: ChatGPT-User
 Allow: /
-Allow: /api/v1/
 
 User-agent: CCBot
 Allow: /
-Allow: /api/v1/
 
 User-agent: anthropic-ai
 Allow: /
-Allow: /api/v1/
 
 User-agent: Claude-Web
 Allow: /
-Allow: /api/v1/
 
-# Crawl-delay for respectful crawling
-Crawl-delay: 1
+# Aggressive bot control (apply delays only to known bad actors)
+User-agent: AhrefsBot
+Disallow: /
+Crawl-delay: 10
+
+User-agent: SemrushBot  
+Disallow: /
+Crawl-delay: 10
+
+User-agent: DotBot
+Disallow: /
+Crawl-delay: 10
+
+User-agent: MJ12bot
+Disallow: /
+Crawl-delay: 10

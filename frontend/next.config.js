@@ -22,6 +22,47 @@ const nextConfig = {
     ];
   },
   
+  // Headers configuration for static assets and SEO
+  async headers() {
+    return [
+      {
+        source: '/robots.txt',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'text/plain',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600, s-maxage=3600',
+          },
+        ],
+      },
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'X-Robots-Tag',
+            value: 'all',
+          },
+        ],
+      },
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-Robots-Tag',
+            value: 'all',
+          },
+        ],
+      },
+    ];
+  },
+  
   // External packages for server components
   serverExternalPackages: ['react-window', 'react-virtualized-auto-sizer'],
   
