@@ -125,7 +125,7 @@ class BaseScraper(ABC):
         # Track animals for filtering stats
         self.total_animals_before_filter = 0
         self.total_animals_skipped = 0
-        
+
         # Track animals for LLM enrichment
         self.animals_for_llm_enrichment = []
 
@@ -133,7 +133,7 @@ class BaseScraper(ABC):
         self._completion_logged = False
 
     def _setup_logger(self):
-        """Set up a logger for the scraper with world-class centralized logging.
+        """Set up a logger for the scraper.
 
         Individual scrapers now use silent loggers while BaseScraper provides
         all progress updates through the ProgressTracker system.
@@ -367,23 +367,14 @@ class BaseScraper(ABC):
 
             if existing_animal:
                 animal_id, action = self.update_animal(existing_animal[0], animal_data)
-                # Check if this is a significant update that warrants re-profiling
-                if animal_id and self._is_significant_update(existing_animal, animal_data):
-                    self.animals_for_llm_enrichment.append({
-                        'id': animal_id,
-                        'data': animal_data,
-                        'action': 'update'
-                    })
+                # Don't enrich updates - only new animals get LLM profiling
+                # This avoids unnecessary API calls for unchanged data
                 return animal_id, action
             else:
                 animal_id, action = self.create_animal(animal_data)
                 # New animals always get profiled
                 if animal_id:
-                    self.animals_for_llm_enrichment.append({
-                        'id': animal_id,
-                        'data': animal_data,
-                        'action': 'create'
-                    })
+                    self.animals_for_llm_enrichment.append({"id": animal_id, "data": animal_data, "action": "create"})
                 return animal_id, action
         except AttributeError as e:
             # Handle missing methods in test environment
@@ -1101,11 +1092,11 @@ class BaseScraper(ABC):
 
     def _is_significant_update(self, existing_animal, new_data):
         """Determine if an update is significant enough to warrant re-profiling.
-        
+
         Args:
             existing_animal: Tuple from database with existing animal data
             new_data: New data being saved
-            
+
         Returns:
             bool: True if update is significant
         """
@@ -1113,89 +1104,88 @@ class BaseScraper(ABC):
         # we can't compare old values directly. For now, we'll consider
         # all updates as potentially significant to ensure LLM profiles
         # stay current. The LLM pipeline itself can handle deduplication.
-        
+
         # In the future, we could enhance get_existing_animal to return
         # more fields for proper change detection.
-        
+
         # For now, always return True to ensure updates get profiled
         # This is safer than missing important updates due to incomplete data
         return True
 
     def _post_process_llm_enrichment(self):
         """Post-process animals with LLM enrichment if enabled.
-        
+
         This method runs after all animals are saved and handles batch LLM profiling
         for organizations that have it enabled.
         """
         # Check if LLM profiling is enabled in config
-        if not hasattr(self, 'org_config') or not self.org_config:
+        if not hasattr(self, "org_config") or not self.org_config:
             return
-        
+
         scraper_config = self.org_config.get_scraper_config_dict()
-        if not scraper_config.get('enable_llm_profiling', False):
+        if not scraper_config.get("enable_llm_profiling", False):
             return
-        
+
         # Check if we have animals to enrich
         if not self.animals_for_llm_enrichment:
             self.logger.info("No animals need LLM enrichment")
             return
-        
+
         # Get LLM organization ID (might be different from scraper org ID)
-        llm_org_id = scraper_config.get('llm_organization_id', self.organization_id)
-        
+        llm_org_id = scraper_config.get("llm_organization_id", self.organization_id)
+
         try:
             import asyncio
+
             from services.llm.dog_profiler import DogProfilerPipeline
             from services.llm.organization_config_loader import get_config_loader
-            
+
             # Check if organization has LLM config
             loader = get_config_loader()
             org_config = loader.load_config(llm_org_id)
-            
+
             if not org_config:
                 self.logger.warning(f"No LLM configuration found for organization {llm_org_id}")
                 return
-            
+
             # Check if prompt template exists
             from pathlib import Path
+
             template_path = Path("prompts/organizations") / org_config.prompt_file
             if not template_path.exists():
                 self.logger.warning(f"Prompt template not found for organization {llm_org_id}: {org_config.prompt_file}")
                 return
-            
+
             self.logger.info(f"Starting LLM enrichment for {len(self.animals_for_llm_enrichment)} animals")
-            
+
             # Prepare data for pipeline
             dogs_to_profile = []
             for item in self.animals_for_llm_enrichment:
-                animal_data = item['data']
+                animal_data = item["data"]
                 dog_data = {
-                    'id': item['id'],
-                    'name': animal_data.get('name', 'Unknown'),
-                    'breed': animal_data.get('breed', 'Mixed Breed'),
-                    'age_text': animal_data.get('age_text', 'Unknown'),
-                    'properties': animal_data.get('properties', {})
+                    "id": item["id"],
+                    "name": animal_data.get("name", "Unknown"),
+                    "breed": animal_data.get("breed", "Mixed Breed"),
+                    "age_text": animal_data.get("age_text", "Unknown"),
+                    "properties": animal_data.get("properties", {}),
                 }
-                
+
                 # Add description if available
-                description = animal_data.get('description', '')
-                if not description and 'properties' in animal_data:
-                    description = animal_data['properties'].get('description', '')
+                description = animal_data.get("description", "")
+                if not description and "properties" in animal_data:
+                    description = animal_data["properties"].get("description", "")
                 if description:
-                    dog_data['properties']['description'] = description
-                
+                    dog_data["properties"]["description"] = description
+
                 dogs_to_profile.append(dog_data)
-            
+
             # Initialize pipeline
-            pipeline = DogProfilerPipeline(
-                organization_id=llm_org_id,
-                dry_run=False
-            )
-            
+            pipeline = DogProfilerPipeline(organization_id=llm_org_id, dry_run=False)
+
             # Process batch
             self.logger.info(f"Processing {len(dogs_to_profile)} dogs with LLM profiler...")
             results = asyncio.run(pipeline.process_batch(dogs_to_profile, batch_size=5))
-            
+
             if results:
                 # Save results
                 success = asyncio.run(pipeline.save_results(results))
@@ -1203,14 +1193,14 @@ class BaseScraper(ABC):
                     self.logger.info(f"Successfully enriched {len(results)} animals with LLM profiles")
                 else:
                     self.logger.warning("Failed to save some LLM enrichment results")
-            
+
             # Get statistics
             stats = pipeline.get_statistics()
             if stats:
-                self.logger.info(f"LLM enrichment stats - Success rate: {stats.get('success_rate', 0):.1f}%, "
-                               f"Processed: {stats.get('total_processed', 0)}, "
-                               f"Failed: {stats.get('total_failed', 0)}")
-        
+                self.logger.info(
+                    f"LLM enrichment stats - Success rate: {stats.get('success_rate', 0):.1f}%, " f"Processed: {stats.get('total_processed', 0)}, " f"Failed: {stats.get('total_failed', 0)}"
+                )
+
         except ImportError as e:
             self.logger.warning(f"LLM profiler modules not available: {e}")
         except Exception as e:
