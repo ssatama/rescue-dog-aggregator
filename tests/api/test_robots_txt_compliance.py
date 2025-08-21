@@ -22,25 +22,21 @@ class TestRobotsTxtCompliance:
 
         content = robots_txt_path.read_text()
 
-        # Should allow /_next/image specifically for Googlebot
+        # Should allow /_next/image and /_next/static/ for all crawlers
+        # We explicitly allow these critical paths rather than blocking /_next/
         lines = [line.strip() for line in content.split("\n") if line.strip()]
 
-        # Find Googlebot section
-        googlebot_section = False
         found_next_image_allow = False
-        found_general_next_disallow = False
+        found_next_static_allow = False
 
         for line in lines:
-            if line.startswith("User-agent:"):
-                googlebot_section = "Googlebot" in line or "*" in line
-            elif googlebot_section:
-                if line == "Allow: /_next/image":
-                    found_next_image_allow = True
-                elif line == "Disallow: /_next/":
-                    found_general_next_disallow = True
+            if line == "Allow: /_next/image":
+                found_next_image_allow = True
+            elif line == "Allow: /_next/static/":
+                found_next_static_allow = True
 
         assert found_next_image_allow, "robots.txt should contain 'Allow: /_next/image' for Google Rich Results"
-        assert found_general_next_disallow, "robots.txt should still disallow general /_next/ paths"
+        assert found_next_static_allow, "robots.txt should contain 'Allow: /_next/static/' for static assets"
 
     @pytest.mark.unit
     def test_robots_txt_security_maintained(self):
@@ -48,8 +44,9 @@ class TestRobotsTxtCompliance:
         robots_txt_path = Path(__file__).parent.parent.parent / "frontend" / "public" / "robots.txt"
         content = robots_txt_path.read_text()
 
-        # Should still block sensitive paths
-        assert "Disallow: /_next/" in content, "Should block general Next.js internal paths"
+        # Should block only truly sensitive paths (admin, api)
+        # We DON'T block /_next/ because we need /_next/image and /_next/static/ for proper SEO
+        assert "Disallow: /admin/" in content, "Should block admin paths"
         assert "Disallow: /api" in content or "Disallow: /api/" in content, "Should block API paths from crawling"
 
     @pytest.mark.integration

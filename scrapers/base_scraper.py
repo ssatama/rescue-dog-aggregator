@@ -1,6 +1,5 @@
 # scrapers/base_scraper.py
 
-import asyncio
 import logging
 import os
 import sys
@@ -44,7 +43,6 @@ class BaseScraper(ABC):
         image_processing_service=None,
         session_manager=None,
         metrics_collector=None,
-        llm_data_service=None,
     ):
         """Initialize the scraper with organization ID or config and optional service injection."""
         # Handle both legacy and config-based initialization
@@ -121,42 +119,15 @@ class BaseScraper(ABC):
 
         # Import here to avoid circular dependency
         from services.image_processing_service import ImageProcessingService
-        from services.null_objects import NullLLMDataService
-
-        # Check if LLM profiling is enabled for this organization
-        enable_llm_profiling = False
-        llm_org_id = None
-
-        if hasattr(self, "org_config") and self.org_config:
-            scraper_config = self.org_config.get_scraper_config_dict()
-            enable_llm_profiling = scraper_config.get("enable_llm_profiling", False)
-            llm_org_id = scraper_config.get("llm_organization_id", self.organization_id)
-
-        # Initialize LLM service based on configuration
-        if llm_data_service:
-            # Use injected service
-            self.llm_data_service = llm_data_service
-        elif enable_llm_profiling:
-            # Create enhanced profiler service for this organization
-            try:
-                from services.llm_profiler_service import LLMProfilerService
-
-                # Pass database service's connection pool if available
-                connection_pool = getattr(self.database_service, "connection_pool", None)
-                self.llm_data_service = LLMProfilerService(organization_id=llm_org_id, connection_pool=connection_pool)
-                self.logger.info(f"Initialized LLM profiler service for organization {llm_org_id} " f"with pool: {bool(connection_pool)}")
-            except Exception as e:
-                self.logger.warning(f"Failed to initialize LLM profiler: {e}")
-                self.llm_data_service = NullLLMDataService()
-        else:
-            # Default to null service
-            self.llm_data_service = NullLLMDataService()
 
         self.image_processing_service = image_processing_service
 
         # Track animals for filtering stats
         self.total_animals_before_filter = 0
         self.total_animals_skipped = 0
+        
+        # Track animals for LLM enrichment
+        self.animals_for_llm_enrichment = []
 
         # Track completion state to prevent duplicates
         self._completion_logged = False
@@ -395,9 +366,25 @@ class BaseScraper(ABC):
                     animal_data["original_image_url"] = animal_data["primary_image_url"]
 
             if existing_animal:
-                return self.update_animal(existing_animal[0], animal_data)
+                animal_id, action = self.update_animal(existing_animal[0], animal_data)
+                # Check if this is a significant update that warrants re-profiling
+                if animal_id and self._is_significant_update(existing_animal, animal_data):
+                    self.animals_for_llm_enrichment.append({
+                        'id': animal_id,
+                        'data': animal_data,
+                        'action': 'update'
+                    })
+                return animal_id, action
             else:
-                return self.create_animal(animal_data)
+                animal_id, action = self.create_animal(animal_data)
+                # New animals always get profiled
+                if animal_id:
+                    self.animals_for_llm_enrichment.append({
+                        'id': animal_id,
+                        'data': animal_data,
+                        'action': 'create'
+                    })
+                return animal_id, action
         except AttributeError as e:
             # Handle missing methods in test environment
             if "get_existing_animal" in str(e):
@@ -471,7 +458,10 @@ class BaseScraper(ABC):
             # Phase 4: Stale Data Detection
             self._finalize_scrape(animals_data, processing_stats)
 
-            # Phase 5: Metrics & Logging
+            # Phase 5: LLM Enrichment (if enabled)
+            self._post_process_llm_enrichment()
+
+            # Phase 6: Metrics & Logging
             self._log_completion_metrics(animals_data, processing_stats)
 
             return True
@@ -575,10 +565,6 @@ class BaseScraper(ABC):
 
             # Save animal
             animal_id, action = self.save_animal(animal_data)
-
-            # Enrich with LLM if enabled and animal was saved
-            if animal_id and self.llm_data_service and hasattr(self.llm_data_service, "clean_description"):
-                asyncio.run(self._enrich_animal_with_llm(animal_id, animal_data))
 
             # Update progress tracking (only count animals toward progress percentage)
             progress_tracker.update(items_processed=1, operation_type="animal_save")
@@ -1113,97 +1099,121 @@ class BaseScraper(ABC):
         self.metrics_collector.log_detailed_metrics(metrics)
         return True
 
-    async def _enrich_animal_with_llm(self, animal_id: int, animal_data: Dict[str, Any]):
-        """Enrich animal data using LLM service.
-
+    def _is_significant_update(self, existing_animal, new_data):
+        """Determine if an update is significant enough to warrant re-profiling.
+        
         Args:
-            animal_id: Database ID of the animal
-            animal_data: Original animal data
+            existing_animal: Tuple from database with existing animal data
+            new_data: New data being saved
+            
+        Returns:
+            bool: True if update is significant
         """
-        try:
-            # Check if LLM service has profile enrichment capability
-            if hasattr(self.llm_data_service, "enrich_animal_with_profile"):
-                # Use enhanced profiling for organizations that support it
-                profile_data = await self.llm_data_service.enrich_animal_with_profile(animal_id, animal_data)
+        # Since get_existing_animal only returns (id, name, updated_at),
+        # we can't compare old values directly. For now, we'll consider
+        # all updates as potentially significant to ensure LLM profiles
+        # stay current. The LLM pipeline itself can handle deduplication.
+        
+        # In the future, we could enhance get_existing_animal to return
+        # more fields for proper change detection.
+        
+        # For now, always return True to ensure updates get profiled
+        # This is safer than missing important updates due to incomplete data
+        return True
 
-                if profile_data:
-                    # Update database with comprehensive profile
-                    self._update_llm_enrichment(
-                        animal_id,
-                        {
-                            "dog_profiler_data": profile_data,
-                            "llm_processed_at": datetime.now(),
-                            "llm_model_used": "openrouter/auto",
-                        },
-                    )
-                    self.logger.info(f"Enriched animal {animal_id} with comprehensive profile")
-                    return
-
-            # Fall back to description cleaning for basic enrichment
-            description = animal_data.get("description", "").strip()
-            if not description:
-                return
-
-            # Get organization config for LLM prompts if available
-            org_config = None
-            if self.org_config:
-                org_config = {
-                    "organization_name": self.org_config.name,
-                    "prompt_style": self.org_config.get_scraper_config_dict().get("llm_prompt_style", "friendly"),
-                }
-
-            # Clean the description
-            enriched_description = await self.llm_data_service.clean_description(description, organization_config=org_config)
-
-            # Update the database with enriched description
-            if enriched_description and enriched_description != description:
-                self._update_llm_enrichment(
-                    animal_id,
-                    {
-                        "enriched_description": enriched_description,
-                        "llm_processed_at": datetime.now(),
-                        "llm_model_used": "openrouter/auto",
-                    },
-                )
-                self.logger.debug(f"Enriched description for animal {animal_id}")
-
-        except Exception as e:
-            self.logger.warning(f"Failed to enrich animal {animal_id} with LLM: {e}")
-
-    def _update_llm_enrichment(self, animal_id: int, enrichment_data: Dict[str, Any]):
-        """Update animal with LLM enrichment data.
-
-        Args:
-            animal_id: Database ID of the animal
-            enrichment_data: Data to update (enriched_description, llm_processed_at, etc)
+    def _post_process_llm_enrichment(self):
+        """Post-process animals with LLM enrichment if enabled.
+        
+        This method runs after all animals are saved and handles batch LLM profiling
+        for organizations that have it enabled.
         """
-        if not self.conn:
+        # Check if LLM profiling is enabled in config
+        if not hasattr(self, 'org_config') or not self.org_config:
             return
-
+        
+        scraper_config = self.org_config.get_scraper_config_dict()
+        if not scraper_config.get('enable_llm_profiling', False):
+            return
+        
+        # Check if we have animals to enrich
+        if not self.animals_for_llm_enrichment:
+            self.logger.info("No animals need LLM enrichment")
+            return
+        
+        # Get LLM organization ID (might be different from scraper org ID)
+        llm_org_id = scraper_config.get('llm_organization_id', self.organization_id)
+        
         try:
-            cursor = self.conn.cursor()
-
-            # Build update query
-            update_fields = []
-            values = []
-
-            for field, value in enrichment_data.items():
-                update_fields.append(f"{field} = %s")
-                values.append(value)
-
-            values.append(animal_id)  # For WHERE clause
-
-            query = f"""
-                UPDATE animals
-                SET {', '.join(update_fields)}, updated_at = CURRENT_TIMESTAMP
-                WHERE id = %s
-            """
-
-            cursor.execute(query, values)
-            self.conn.commit()
-            cursor.close()
-
+            import asyncio
+            from services.llm.dog_profiler import DogProfilerPipeline
+            from services.llm.organization_config_loader import get_config_loader
+            
+            # Check if organization has LLM config
+            loader = get_config_loader()
+            org_config = loader.load_config(llm_org_id)
+            
+            if not org_config:
+                self.logger.warning(f"No LLM configuration found for organization {llm_org_id}")
+                return
+            
+            # Check if prompt template exists
+            from pathlib import Path
+            template_path = Path("prompts/organizations") / org_config.prompt_file
+            if not template_path.exists():
+                self.logger.warning(f"Prompt template not found for organization {llm_org_id}: {org_config.prompt_file}")
+                return
+            
+            self.logger.info(f"Starting LLM enrichment for {len(self.animals_for_llm_enrichment)} animals")
+            
+            # Prepare data for pipeline
+            dogs_to_profile = []
+            for item in self.animals_for_llm_enrichment:
+                animal_data = item['data']
+                dog_data = {
+                    'id': item['id'],
+                    'name': animal_data.get('name', 'Unknown'),
+                    'breed': animal_data.get('breed', 'Mixed Breed'),
+                    'age_text': animal_data.get('age_text', 'Unknown'),
+                    'properties': animal_data.get('properties', {})
+                }
+                
+                # Add description if available
+                description = animal_data.get('description', '')
+                if not description and 'properties' in animal_data:
+                    description = animal_data['properties'].get('description', '')
+                if description:
+                    dog_data['properties']['description'] = description
+                
+                dogs_to_profile.append(dog_data)
+            
+            # Initialize pipeline
+            pipeline = DogProfilerPipeline(
+                organization_id=llm_org_id,
+                dry_run=False
+            )
+            
+            # Process batch
+            self.logger.info(f"Processing {len(dogs_to_profile)} dogs with LLM profiler...")
+            results = asyncio.run(pipeline.process_batch(dogs_to_profile, batch_size=5))
+            
+            if results:
+                # Save results
+                success = asyncio.run(pipeline.save_results(results))
+                if success:
+                    self.logger.info(f"Successfully enriched {len(results)} animals with LLM profiles")
+                else:
+                    self.logger.warning("Failed to save some LLM enrichment results")
+            
+            # Get statistics
+            stats = pipeline.get_statistics()
+            if stats:
+                self.logger.info(f"LLM enrichment stats - Success rate: {stats.get('success_rate', 0):.1f}%, "
+                               f"Processed: {stats.get('total_processed', 0)}, "
+                               f"Failed: {stats.get('total_failed', 0)}")
+        
+        except ImportError as e:
+            self.logger.warning(f"LLM profiler modules not available: {e}")
         except Exception as e:
-            self.logger.error(f"Failed to update LLM enrichment for animal {animal_id}: {e}")
-            if self.conn:
-                self.conn.rollback()
+            self.logger.error(f"Error during LLM enrichment post-processing: {e}")
+            # Don't fail the scrape if enrichment fails
+            pass
