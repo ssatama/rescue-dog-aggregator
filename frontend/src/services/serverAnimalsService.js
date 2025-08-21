@@ -357,12 +357,64 @@ export const getAllAnimals = cache(async (params = {}) => {
 });
 
 // Get single animal by slug
+// Get enhanced LLM content for dog detail pages
+export const getEnhancedDogContent = cache(async (animalId) => {
+  if (!animalId) return null;
+
+  try {
+    // Use query params as the API expects
+    const url = `${API_URL}/api/animals/enhanced/detail-content?animal_ids=${animalId}`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      next: {
+        revalidate: 300, // 5 minutes
+        tags: ["enhanced", `animal-enhanced-${animalId}`],
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(`Enhanced content not available for animal ${animalId}`);
+      return null;
+    }
+
+    const data = await response.json();
+
+    // API returns array, we need the first item
+    const enhanced = data?.[0] || null;
+
+    // Only return if has actual enhanced data
+    if (
+      enhanced?.has_enhanced_data &&
+      (enhanced.description || enhanced.tagline)
+    ) {
+      return {
+        description: enhanced.description,
+        tagline: enhanced.tagline,
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error(
+      `Error fetching enhanced content for animal ${animalId}:`,
+      error,
+    );
+    return null; // Graceful fallback
+  }
+});
+
+// Get single animal by slug
 export const getAnimalBySlug = cache(async (slug) => {
   if (!slug) {
     throw new Error("Slug is required");
   }
 
   try {
+    // First fetch the basic animal data
     const response = await fetch(`${API_URL}/api/animals/${slug}/`, {
       next: {
         revalidate: 300, // 5 minutes
@@ -380,7 +432,24 @@ export const getAnimalBySlug = cache(async (slug) => {
       throw new Error(`Failed to fetch animal: ${response.statusText}`);
     }
 
-    return response.json();
+    const animal = await response.json();
+
+    // Fetch enhanced content in parallel (non-blocking)
+    // This won't delay the page if enhanced content is slow or unavailable
+    try {
+      const enhanced = await getEnhancedDogContent(animal.id);
+      if (enhanced) {
+        // Merge enhanced data into animal object
+        animal.llm_description = enhanced.description;
+        animal.llm_tagline = enhanced.tagline;
+        animal.has_llm_data = true;
+      }
+    } catch (enhancedError) {
+      // Silently fail - enhanced content is optional
+      console.warn(`Enhanced content unavailable for ${slug}:`, enhancedError);
+    }
+
+    return animal;
   } catch (error) {
     console.error(`Error fetching animal ${slug}:`, error);
     throw error;

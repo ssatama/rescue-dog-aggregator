@@ -4,8 +4,9 @@ if (process.env.NODE_ENV === "test" && process.env.JEST_WORKER_ID) {
   // Use client service for Jest tests
   getAnimalBySlug = require("../../../services/animalsService").getAnimalBySlug;
 } else {
-  // Temporarily disable server-side data fetching
-  // getAnimalBySlug = require("../../../services/serverAnimalsService").getAnimalBySlug;
+  // Use server-side data fetching for production
+  getAnimalBySlug =
+    require("../../../services/serverAnimalsService").getAnimalBySlug;
 }
 import { generatePetSchema, generateJsonLdScript } from "../../../utils/schema";
 import {
@@ -50,7 +51,11 @@ export async function generateMetadata(props) {
       };
     }
 
-    const title = `${dog.name} - ${dog.standardized_breed || dog.breed || "Dog"} Available for Adoption | Rescue Dog Aggregator`;
+    // Use LLM tagline in title if available, otherwise standard format
+    const titleBase = dog.llm_tagline
+      ? `${dog.name}: ${dog.llm_tagline}`
+      : `${dog.name} - ${dog.standardized_breed || dog.breed || "Dog"} Available for Adoption`;
+    const title = `${titleBase} | Rescue Dog Aggregator`;
 
     // Use quality-first description generation - NO boilerplate for SEO
     const seoDescription = generateSEODescription(dog);
@@ -80,8 +85,10 @@ export async function generateMetadata(props) {
     const openGraphDescription = truncateDescription(socialDescription, 300);
     const twitterDescription = truncateDescription(socialDescription, 200);
 
-    // Generate optimized titles for social sharing
-    const baseTitle = `${dog.name} - Available for Adoption`;
+    // Generate optimized titles for social sharing - use LLM tagline if available
+    const baseTitle = dog.llm_tagline
+      ? `${dog.name}: ${dog.llm_tagline}`
+      : `${dog.name} - Available for Adoption`;
     const openGraphTitle = truncateTitle(baseTitle, 95);
     const twitterTitle = truncateTitle(baseTitle, 65);
 
@@ -192,17 +199,29 @@ function DogDetailPage(props) {
 async function DogDetailPageAsync(props) {
   // In Next.js 15, params is a Promise that needs to be awaited
   const { params } = props || {};
+  let resolvedParams = {};
 
   if (params) {
     try {
       // Await params Promise (required in Next.js 15)
-      await params;
+      resolvedParams = await params;
     } catch {
       // Ignore params errors - Client component handles this via useParams()
     }
   }
 
-  return <DogDetailClient />;
+  // Fetch dog data server-side with enhanced content
+  let initialDog = null;
+  if (getAnimalBySlug && resolvedParams.slug) {
+    try {
+      initialDog = await getAnimalBySlug(resolvedParams.slug);
+    } catch (error) {
+      console.error("[DogDetailPageAsync] Error fetching dog data:", error);
+      // Let client component handle the error
+    }
+  }
+
+  return <DogDetailClient initialDog={initialDog} />;
 }
 
 // Incremental Static Regeneration - revalidate every hour for fresh content

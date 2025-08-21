@@ -34,21 +34,14 @@ import { ScrollAnimationWrapper } from "../../../hooks/useScrollAnimation";
 import { DogSchema, BreadcrumbSchema } from "../../../components/seo";
 import Breadcrumbs from "../../../components/ui/Breadcrumbs";
 
-export default function DogDetailClient({ params = {} }) {
+export default function DogDetailClient({ params = {}, initialDog = null }) {
   const urlParams = useParams();
   const pathname = usePathname();
   const dogSlug = params?.slug || urlParams?.slug;
-  const [dog, setDog] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [dog, setDog] = useState(initialDog);
+  const [loading, setLoading] = useState(!initialDog);
   const [error, setError] = useState(false);
   const mountedRef = useRef(true); // Track component mount status for cleanup
-
-  // Development monitoring only
-  useEffect(() => {
-    if (process.env.NODE_ENV !== "production") {
-      console.log("DogDetailClient: Component mounted");
-    }
-  }, []);
 
   // Enhanced fetchDogData with comprehensive error handling and retry logic
   const fetchDogData = useCallback(
@@ -58,21 +51,9 @@ export default function DogDetailClient({ params = {} }) {
       const fetchStartTime = Date.now();
       const maxRetries = 3;
 
-      // Development logging only
-      if (process.env.NODE_ENV !== "production") {
-        console.log(
-          `Fetching dog data for slug: ${dogSlug}, retry: ${retryCount}`,
-        );
-      }
-
       try {
         setLoading(true);
         setError(false);
-
-        // Minimal production logging for API calls
-        if (process.env.NODE_ENV !== "production") {
-          console.log(`Starting API call for ${dogSlug}`);
-        }
 
         // Create timeout promise for hanging requests detection
         const timeoutMs = 10000; // 10 second timeout
@@ -88,25 +69,9 @@ export default function DogDetailClient({ params = {} }) {
           timeoutPromise,
         ]);
 
-        // Production: Only log API success for monitoring
-        if (process.env.NODE_ENV !== "production") {
-          console.log("API fetch successful", {
-            dogName: data?.name,
-            responseTime: `${Date.now() - fetchStartTime}ms`,
-          });
-        }
-
         // Only update state if component is still mounted
         if (mountedRef.current) {
           setDog(data);
-
-          // Development logging for state updates
-          if (process.env.NODE_ENV !== "production") {
-            console.log("Dog state updated", {
-              dogName: data?.name,
-              hasImageUrl: !!data?.primary_image_url,
-            });
-          }
         }
       } catch (err) {
         const errorInfo = {
@@ -123,22 +88,11 @@ export default function DogDetailClient({ params = {} }) {
         // Always report errors for monitoring
         reportError(err, errorInfo);
 
-        // Development logging for errors
-        if (process.env.NODE_ENV !== "production") {
-          console.error("Error fetching dog data:", errorInfo);
-        }
-
         // Retry logic for certain types of errors
         if (
           retryCount < maxRetries &&
           (err.name === "AbortError" || err.message.includes("fetch"))
         ) {
-          if (process.env.NODE_ENV !== "production") {
-            console.log("Retrying fetch due to network error", {
-              retryCount: retryCount + 1,
-            });
-          }
-
           // Exponential backoff delay
           setTimeout(
             () => {
@@ -165,6 +119,15 @@ export default function DogDetailClient({ params = {} }) {
   );
 
   useEffect(() => {
+    // If we have initialDog from server-side, use it
+    if (initialDog) {
+      setDog(initialDog);
+      setLoading(false);
+      setError(false);
+      return;
+    }
+
+    // Otherwise fetch client-side
     // Reset loading state for new navigation
     setLoading(true);
     setError(false);
@@ -201,7 +164,7 @@ export default function DogDetailClient({ params = {} }) {
     return () => {
       mountedRef.current = false;
     };
-  }, [dogSlug]); // Changed from fetchDogData to dogSlug to prevent unnecessary re-runs
+  }, [dogSlug, initialDog]); // Include initialDog in dependencies
 
   // Cleanup on unmount
   useEffect(() => {
@@ -462,10 +425,10 @@ export default function DogDetailClient({ params = {} }) {
                           </div>
                         </div>
 
-                        {/* Tagline with better spacing */}
+                        {/* Tagline with better spacing - use LLM tagline if available */}
                         <div className="">
                           <p className="text-xl text-gray-600 font-medium">
-                            Looking for a loving home
+                            {dog.llm_tagline || "Looking for a loving home"}
                           </p>
                         </div>
                       </div>
@@ -608,6 +571,7 @@ export default function DogDetailClient({ params = {} }) {
 
                         <DogDescription
                           description={
+                            dog?.llm_description ||
                             dog?.properties?.description ||
                             dog?.properties?.raw_description ||
                             ""

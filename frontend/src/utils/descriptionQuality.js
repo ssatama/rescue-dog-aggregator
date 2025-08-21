@@ -103,12 +103,21 @@ export const getQualityDescription = (dog) => {
 export const generateSEODescription = (dog) => {
   if (!dog) return null;
 
-  const qualityDescription = getQualityDescription(dog);
-  if (!qualityDescription) {
-    return null; // NO boilerplate fallback for SEO
+  // PRIORITY 1: Use LLM-generated description if available
+  let baseDescription = null;
+
+  if (dog.llm_description) {
+    baseDescription = dog.llm_description;
+  } else {
+    // PRIORITY 2: Fall back to quality description from existing content
+    const qualityDescription = getQualityDescription(dog);
+    if (!qualityDescription) {
+      return null; // NO boilerplate fallback for SEO
+    }
+    baseDescription = qualityDescription;
   }
 
-  let seoDescription = qualityDescription;
+  let seoDescription = baseDescription;
 
   // Add organization context if available (valuable for local SEO)
   if (dog.organization) {

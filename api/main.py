@@ -124,7 +124,7 @@ logger.info(f"  Allowed methods: {CORS_ALLOW_METHODS}")
 # Include routers
 app.include_router(animals.router, prefix="/api/animals", tags=["animals"])
 
-# Enhanced animals API for LLM data
+# Enhanced animals API for LLM data (router already has /api/animals prefix)
 app.include_router(enhanced_animals.router, tags=["enhanced"])
 
 app.include_router(organizations.router, prefix="/api/organizations", tags=["organizations"])

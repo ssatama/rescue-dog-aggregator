@@ -17,13 +17,18 @@ export const generatePetSchema = (dog) => {
     return null;
   }
 
-  // Build description by combining all available description sources
-  const descriptions = [dog.description, dog.properties?.description].filter(
-    Boolean,
-  );
-
-  const description =
-    descriptions.length > 0 ? descriptions.join(" ") : undefined;
+  // Build description - prioritize LLM description if available
+  let description;
+  if (dog.llm_description) {
+    // Use LLM-generated description as primary
+    description = dog.llm_description;
+  } else {
+    // Fall back to combining existing description sources
+    const descriptions = [dog.description, dog.properties?.description].filter(
+      Boolean,
+    );
+    description = descriptions.length > 0 ? descriptions.join(" ") : undefined;
+  }
 
   // Format gender with proper capitalization
   const formatGender = (sex) => {
@@ -72,8 +77,13 @@ export const generatePetSchema = (dog) => {
     return locationParts.length > 0 ? locationParts.join(", ") : undefined;
   };
 
-  // Build name with breed if available
+  // Build name with tagline or breed
   const buildName = () => {
+    if (dog.llm_tagline) {
+      // Use LLM tagline if available
+      return `${dog.name}: ${dog.llm_tagline}`;
+    }
+    // Fall back to breed
     const breed = dog.standardized_breed || dog.breed;
     return breed ? `${dog.name} - ${breed}` : dog.name;
   };
