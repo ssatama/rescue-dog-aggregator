@@ -50,7 +50,7 @@ class DogProfilerPipeline:
         dry_run: bool = False,
         retry_config: Optional[RetryConfig] = None,
         connection_pool: Optional["ConnectionPoolService"] = None,
-        ):
+    ):
         """
         Initialize the dog profiler pipeline.
 
