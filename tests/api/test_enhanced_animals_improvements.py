@@ -304,10 +304,24 @@ class TestMetricsEndpoint:
     
     @pytest.fixture
     def client(self):
-        """Create test client."""
+        """Create test client with mocked dependencies."""
         from fastapi.testclient import TestClient
         from api.main import app
-        return TestClient(app)
+        from api.dependencies import get_pooled_db_cursor
+        from unittest.mock import MagicMock
+        from psycopg2.extras import RealDictCursor
+        
+        # Create mock cursor
+        mock_cursor = MagicMock(spec=RealDictCursor)
+        mock_cursor.fetchone = MagicMock(return_value={'total_animals': 1000})
+        
+        app.dependency_overrides[get_pooled_db_cursor] = lambda: mock_cursor
+        client = TestClient(app)
+        
+        yield client
+        
+        # Clean up
+        app.dependency_overrides.clear()
     
     def test_metrics_endpoint_structure(self, client):
         """Test metrics endpoint returns correct structure."""
