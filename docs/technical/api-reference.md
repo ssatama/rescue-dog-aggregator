@@ -102,6 +102,33 @@ Retrieve a list of rescue organizations.
 GET /api/organizations/?country=Turkey&active_only=true
 ```
 
+### Enhanced Animals API (LLM-Powered)
+
+#### `GET /api/animals/{id}/enhanced`
+Get LLM-generated enhanced data for a single animal.
+
+**Response**: `EnhancedAnimalResponse` with description, tagline, personality traits, and completeness score.
+
+#### `POST /api/animals/enhanced/detail-content`
+Ultra-fast endpoint for dog detail pages (<50ms).
+
+**Query Parameters**:
+- `animal_ids`: List[int] (max 100)
+
+**Response**: List of descriptions + taglines only.
+
+#### `POST /api/animals/enhanced/bulk`
+Bulk fetch enhanced data for comparisons (max 100 animals).
+
+#### `POST /api/animals/enhanced/attributes`
+Get specific LLM attributes for filtering.
+
+#### `GET /api/animals/enhanced/stats`
+LLM data coverage statistics by organization.
+
+#### `GET /api/animals/enhanced/metrics`
+Service metrics: cache hit rates, response times, retry counts.
+
 ### Metadata & Analytics Endpoints
 
 #### `GET /api/animals/meta/breeds`
