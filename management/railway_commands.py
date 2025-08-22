@@ -151,9 +151,10 @@ def migrate(dry_run):
 @railway_cli.command()
 @click.option("--dry-run", is_flag=True, help="Show what would be synced without making changes")
 @click.option("--skip-validation", is_flag=True, help="Skip post-sync validation")
+@click.option("--skip-indexes", is_flag=True, help="Skip syncing database indexes")
 @click.option("--mode", type=click.Choice(["incremental", "rebuild", "force"]), default="incremental", help="Sync mode: incremental (default), rebuild, or force")
 @click.option("--confirm-destructive", is_flag=True, help="Required confirmation for destructive operations (rebuild/force modes)")
-def sync(dry_run, skip_validation, mode, confirm_destructive):
+def sync(dry_run, skip_validation, skip_indexes, mode, confirm_destructive):
     """Sync data from local database to Railway."""
     try:
         # Validate destructive mode confirmation
@@ -168,10 +169,11 @@ def sync(dry_run, skip_validation, mode, confirm_destructive):
 
         syncer = RailwayDataSyncer()
         validate_after = not skip_validation
+        sync_indexes = not skip_indexes
 
         if dry_run:
             click.echo("🔍 Running Railway sync dry run...")
-            success = syncer.perform_full_sync(dry_run=True, validate_after=validate_after, sync_mode=mode)
+            success = syncer.perform_full_sync(dry_run=True, validate_after=validate_after, sync_mode=mode, sync_indexes=sync_indexes)
             if success:
                 click.echo("✅ Railway sync dry run completed")
                 sys.exit(0)
@@ -180,7 +182,9 @@ def sync(dry_run, skip_validation, mode, confirm_destructive):
                 sys.exit(1)
         else:
             click.echo("🚀 Starting Railway data sync...")
-            success = syncer.perform_full_sync(dry_run=False, validate_after=validate_after, sync_mode=mode)
+            if sync_indexes:
+                click.echo("📊 Index synchronization enabled")
+            success = syncer.perform_full_sync(dry_run=False, validate_after=validate_after, sync_mode=mode, sync_indexes=sync_indexes)
             if success:
                 click.echo("✅ Railway data sync completed successfully")
                 sys.exit(0)

@@ -361,8 +361,12 @@ def _build_organization_id_mapping(session) -> dict:
         return {}
 
 
-def sync_all_data_to_railway() -> bool:
-    """Sync all data from local database to Railway with independent table transactions."""
+def sync_all_data_to_railway(sync_indexes: bool = True) -> bool:
+    """Sync all data from local database to Railway with independent table transactions.
+    
+    Args:
+        sync_indexes: Whether to sync database indexes (default: True)
+    """
     try:
         logger.info("Starting full data sync to Railway with independent transactions")
 
@@ -371,6 +375,15 @@ def sync_all_data_to_railway() -> bool:
         if not _validate_table_schemas():
             logger.error("Schema validation failed - aborting sync")
             return False
+        
+        # Phase 1.5: Sync indexes if requested
+        if sync_indexes:
+            logger.info("Syncing database indexes...")
+            from .index_sync import sync_all_table_indexes
+            if sync_all_table_indexes(dry_run=False):
+                logger.info("✅ Database indexes synced successfully")
+            else:
+                logger.warning("⚠️ Some indexes failed to sync, continuing with data sync")
 
         # Phase 2: Sync organizations (foundation table)
         logger.info("Syncing organizations...")
@@ -1158,8 +1171,16 @@ class RailwayDataSyncer:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
-    def perform_full_sync(self, dry_run: bool = False, validate_after: bool = True, max_retries: int = 3, sync_mode: str = "incremental") -> bool:
-        """Perform complete data synchronization to Railway with retry logic and transaction boundaries."""
+    def perform_full_sync(self, dry_run: bool = False, validate_after: bool = True, max_retries: int = 3, sync_mode: str = "incremental", sync_indexes: bool = True) -> bool:
+        """Perform complete data synchronization to Railway with retry logic and transaction boundaries.
+        
+        Args:
+            dry_run: If True, show what would be done without making changes
+            validate_after: If True, validate data integrity after sync
+            max_retries: Number of retry attempts for transient failures
+            sync_mode: Sync mode - incremental, rebuild, or force
+            sync_indexes: If True, sync database indexes along with data
+        """
         try:
             # Check Railway connection first
             if not check_railway_connection():
@@ -1167,7 +1188,7 @@ class RailwayDataSyncer:
                 return False
 
             if dry_run:
-                return self._perform_dry_run()
+                return self._perform_dry_run(sync_indexes=sync_indexes)
 
             # Convert string to SyncMode enum for validation
             try:
@@ -1194,7 +1215,7 @@ class RailwayDataSyncer:
             # Retry logic for transient failures
             for attempt in range(max_retries):
                 try:
-                    if not sync_all_data_to_railway():
+                    if not sync_all_data_to_railway(sync_indexes=sync_indexes):
                         if attempt < max_retries - 1:
                             wait_time = 2**attempt  # Exponential backoff
                             self.logger.warning(f"Data synchronization failed (attempt {attempt + 1}/{max_retries}), retrying in {wait_time}s...")
@@ -1230,7 +1251,7 @@ class RailwayDataSyncer:
             self.logger.error(f"Data sync operation failed: {e}")
             return False
 
-    def _perform_dry_run(self) -> bool:
+    def _perform_dry_run(self, sync_indexes: bool = True) -> bool:
         """Perform dry run to show what would be synced."""
         try:
             self.logger.info("Performing dry run - no data will be modified")
