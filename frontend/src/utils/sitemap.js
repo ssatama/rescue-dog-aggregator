@@ -79,7 +79,8 @@ const calculateDogPriority = (dog) => {
 
   // Ensure priority stays within valid range
   // Dogs with LLM content can reach 1.0 priority
-  return Math.min(priority, 1.0);
+  // Round to 1 decimal place to avoid floating point precision issues
+  return Math.min(Math.round(priority * 10) / 10, 1.0);
 };
 
 // Sitemap limits per Google standards
@@ -312,7 +313,9 @@ const entriesToXml = (entries) => {
     }
 
     if (entry.priority !== undefined) {
-      urlXml += `    <priority>${entry.priority}</priority>\n`;
+      // Format priority to avoid floating point precision issues (e.g., 0.9999999999)
+      const formattedPriority = entry.priority.toFixed(1);
+      urlXml += `    <priority>${formattedPriority}</priority>\n`;
     }
 
     // Note: hreflang alternates removed as site doesn't support internationalization

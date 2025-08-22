@@ -250,18 +250,42 @@ export async function getAllAnimals(params = {}) {
 
 /**
  * Fetches all animals with quality filtering for sitemap generation.
+ * Implements pagination to fetch all dogs (API has 1000 item limit per request)
  * @param {object} params - Optional filtering parameters
- * @returns {Promise<Array>} - Promise resolving to an array of animal objects with quality descriptions.
+ * @returns {Promise<Array>} - Promise resolving to an array of ALL animal objects.
  */
 export async function getAllAnimalsForSitemap(params = {}) {
-  logger.log("Fetching all animals for sitemap");
-  // PHASE 2A: Remove quality filtering to include all available dogs (877 instead of 263)
-  // Priority calculation will be handled in frontend sitemap generation
-  return getAnimals({
-    ...params,
-    limit: 10000, // Request maximum limit for sitemap
-    // sitemap_quality_filter: true, // REMOVED - now includes all dogs
-  });
+  logger.log("Fetching all animals for sitemap with pagination");
+  
+  const allAnimals = [];
+  const limit = 1000; // API max limit
+  let offset = 0;
+  let hasMore = true;
+  
+  // Fetch all pages until we get less than the limit
+  while (hasMore) {
+    try {
+      const batch = await getAnimals({
+        ...params,
+        limit,
+        offset,
+      });
+      
+      allAnimals.push(...batch);
+      
+      // If we got less than the limit, we've reached the end
+      hasMore = batch.length === limit;
+      offset += limit;
+      
+      logger.log(`Fetched ${batch.length} animals at offset ${offset - limit}, total so far: ${allAnimals.length}`);
+    } catch (error) {
+      logger.error(`Error fetching animals at offset ${offset}:`, error);
+      hasMore = false; // Stop on error to return what we have
+    }
+  }
+  
+  logger.log(`Sitemap fetch complete: ${allAnimals.length} total animals`);
+  return allAnimals;
 }
 
 /**

@@ -178,10 +178,12 @@ describe("Service Layer Separation - Critical Validation", () => {
       jest.clearAllMocks();
 
       await getAllAnimalsForSitemap({});
+      // Now uses pagination with 1000 limit instead of 10000
       expect(get).toHaveBeenCalledWith(
         "/api/animals",
         expect.objectContaining({
-          limit: 10000,
+          limit: 1000,
+          offset: 0,
           animal_type: "dog",
           status: "available",
           // Phase 2A: No longer sends sitemap_quality_filter parameter

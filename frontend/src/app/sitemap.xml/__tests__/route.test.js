@@ -218,7 +218,7 @@ describe("Dynamic Sitemap Route", () => {
 
     // Homepage should have highest priority
     expect(response.body).toMatch(
-      /<url>[\s\S]*?<loc>https:\/\/www\.rescuedogs\.me\/<\/loc>[\s\S]*?<priority>1<\/priority>[\s\S]*?<\/url>/,
+      /<url>[\s\S]*?<loc>https:\/\/www\.rescuedogs\.me\/<\/loc>[\s\S]*?<priority>1\.0<\/priority>[\s\S]*?<\/url>/,
     );
 
     // Dog pages should have appropriate priority (Phase 2A: dynamic calculation)

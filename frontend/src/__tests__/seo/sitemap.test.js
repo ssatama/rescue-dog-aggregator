@@ -268,7 +268,7 @@ describe("Dynamic Sitemap Generation", () => {
 
       // Homepage should have highest priority
       expect(sitemap).toContain("<loc>https://www.rescuedogs.me/</loc>");
-      expect(sitemap).toContain("<priority>1</priority>");
+      expect(sitemap).toContain("<priority>1.0</priority>");
 
       // Main sections should have high priority
       expect(sitemap).toContain("<loc>https://www.rescuedogs.me/dogs</loc>");
