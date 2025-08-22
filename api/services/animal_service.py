@@ -42,8 +42,9 @@ class AnimalService:
         """
         try:
             # Apply server-side limit enforcement (max 1000 for security)
+            # unless internal bypass is set (for sitemap/export)
             original_limit = filters.limit
-            if filters.limit > 1000:
+            if not getattr(filters, "internal_bypass_limit", False) and filters.limit > 1000:
                 filters.limit = 1000
                 logger.info(f"Capped limit from {original_limit} to 1000 for security")
 
@@ -66,6 +67,36 @@ class AnimalService:
             logger.error(f"Error in get_animals: {e}")
             raise APIException(status_code=500, detail="Failed to fetch animals", error_code="INTERNAL_ERROR")
 
+    def get_animals_without_limit_cap(self, filters: AnimalFilterRequest) -> List[Animal]:
+        """
+        Get animals without the 1000 limit cap - used internally for sitemap generation.
+
+        Args:
+            filters: Filter criteria for animals
+
+        Returns:
+            List of animals with their images
+        """
+        try:
+            # Handle recent_with_fallback curation type specially
+            if filters.curation_type == "recent_with_fallback":
+                return self._get_animals_with_fallback(filters)
+
+            # Build the query for other curation types
+            query, params = self._build_animals_query(filters)
+
+            # Execute query
+            logger.debug(f"Executing sitemap query: {query} with params: {params}")
+            self.cursor.execute(query, tuple(params))
+            animal_rows = self.cursor.fetchall()
+            logger.info(f"Found {len(animal_rows)} animals for sitemap.")
+
+            return self._build_animals_response(animal_rows)
+
+        except Exception as e:
+            logger.error(f"Error in get_animals_without_limit_cap: {e}")
+            raise APIException(status_code=500, detail="Failed to fetch animals for sitemap", error_code="INTERNAL_ERROR")
+
     def get_animals_for_sitemap(self, filters: AnimalFilterRequest) -> List[Animal]:
         """
         Get animals filtered for sitemap generation with meaningful descriptions.
@@ -81,8 +112,18 @@ class AnimalService:
             List of animals with meaningful descriptions for sitemap inclusion
         """
         try:
+            # Override limit for sitemap generation to include all dogs
+            # Sitemaps need to include all available dogs for proper SEO
+            original_limit = filters.limit
+            filters.limit = 50000  # Google sitemap limit per file
+            filters.internal_bypass_limit = True  # Bypass the 1000 limit cap
+
             # Get all animals matching base criteria
             animals = self.get_animals(filters)
+
+            # Restore original limit
+            filters.limit = original_limit
+            filters.internal_bypass_limit = False
 
             # Apply description quality filtering if requested
             if filters.sitemap_quality_filter:

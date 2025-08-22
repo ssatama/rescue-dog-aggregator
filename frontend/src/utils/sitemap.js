@@ -57,6 +57,7 @@ const calculateDogPriority = (dog) => {
 
 // Sitemap limits per Google standards
 const MAX_URLS_PER_SITEMAP = 50000;
+const MAX_SITEMAP_SIZE_MB = 50; // 50MB uncompressed
 
 /**
  * Format and validate a single sitemap entry
@@ -353,6 +354,70 @@ const escapeXml = (str) => {
 };
 
 /**
+ * Generate sitemap index for multiple sitemaps
+ * @param {Array<Object>} sitemaps - Array of sitemap metadata
+ * @returns {string} XML sitemap index content
+ */
+const generateSitemapIndex = (sitemaps) => {
+  const baseUrl = getBaseUrl();
+  const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>';
+  const indexOpen =
+    '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+  const indexClose = "</sitemapindex>";
+
+  const sitemapEntries = sitemaps.map((sitemap) => {
+    return `  <sitemap>
+    <loc>${escapeXml(`${baseUrl}/${sitemap.filename}`)}</loc>
+    <lastmod>${new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00")}</lastmod>
+  </sitemap>`;
+  });
+
+  return [xmlHeader, indexOpen, ...sitemapEntries, indexClose].join("\n");
+};
+
+/**
+ * Split entries into multiple sitemaps if needed
+ * @param {Array<Object>} entries - All sitemap entries
+ * @returns {Array<Object>} Array of sitemap chunks
+ */
+const splitIntoSitemaps = (entries) => {
+  const sitemaps = [];
+  let currentSitemap = [];
+  let currentSize = 0;
+
+  // Estimate 200 bytes per URL entry
+  const BYTES_PER_ENTRY = 200;
+  const MAX_SIZE_BYTES = MAX_SITEMAP_SIZE_MB * 1024 * 1024;
+
+  for (const entry of entries) {
+    const entrySize = BYTES_PER_ENTRY;
+
+    // Check if adding this entry would exceed limits
+    if (
+      currentSitemap.length >= MAX_URLS_PER_SITEMAP ||
+      currentSize + entrySize > MAX_SIZE_BYTES
+    ) {
+      // Start a new sitemap
+      if (currentSitemap.length > 0) {
+        sitemaps.push(currentSitemap);
+        currentSitemap = [];
+        currentSize = 0;
+      }
+    }
+
+    currentSitemap.push(entry);
+    currentSize += entrySize;
+  }
+
+  // Add the last sitemap if it has entries
+  if (currentSitemap.length > 0) {
+    sitemaps.push(currentSitemap);
+  }
+
+  return sitemaps;
+};
+
+/**
  * Generate complete XML sitemap with all content
  * @returns {Promise<string>} Complete XML sitemap content
  */
@@ -396,6 +461,84 @@ export const generateSitemap = async () => {
     // Fallback: return sitemap with static pages only
     const staticEntries = generateStaticPages();
     return entriesToXml(staticEntries);
+  }
+};
+
+/**
+ * Generate dog-specific sitemap
+ * @returns {Promise<string>} XML sitemap for dogs
+ */
+export const generateDogSitemap = async () => {
+  try {
+    const dogs = await getAllAnimalsForSitemap();
+    const dogEntries = generateDogPages(dogs);
+    return entriesToXml(dogEntries);
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("Error generating dog sitemap:", error);
+    }
+    return entriesToXml([]);
+  }
+};
+
+/**
+ * Generate organization-specific sitemap
+ * @returns {Promise<string>} XML sitemap for organizations
+ */
+export const generateOrganizationSitemap = async () => {
+  try {
+    const organizations = await getAllOrganizations();
+    const orgEntries = generateOrganizationPages(organizations);
+    return entriesToXml(orgEntries);
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("Error generating organization sitemap:", error);
+    }
+    return entriesToXml([]);
+  }
+};
+
+/**
+ * Generate image sitemap for better image SEO
+ * @returns {Promise<string>} XML image sitemap
+ */
+export const generateImageSitemap = async () => {
+  const baseUrl = getBaseUrl();
+  const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>';
+  const urlsetOpen =
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">';
+  const urlsetClose = "</urlset>";
+
+  try {
+    const dogs = await getAllAnimalsForSitemap();
+
+    // Filter dogs with images and create image entries
+    const imageEntries = dogs
+      .filter((dog) => dog.primary_image_url)
+      .slice(0, 1000) // Limit to 1000 most recent dogs with images
+      .map((dog) => {
+        const dogUrl = `${baseUrl}/dogs/${dog.slug || `unknown-dog-${dog.id}`}`;
+        const imageTitle = `${dog.name} - ${dog.breed || "Mixed Breed"} for Adoption`;
+        const imageCaption = dog.properties?.description
+          ? dog.properties.description.substring(0, 200)
+          : `Meet ${dog.name}, available for adoption`;
+
+        return `  <url>
+    <loc>${escapeXml(dogUrl)}</loc>
+    <image:image>
+      <image:loc>${escapeXml(dog.primary_image_url)}</image:loc>
+      <image:title>${escapeXml(imageTitle)}</image:title>
+      <image:caption>${escapeXml(imageCaption)}</image:caption>
+    </image:image>
+  </url>`;
+      });
+
+    return [xmlHeader, urlsetOpen, ...imageEntries, urlsetClose].join("\n");
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("Error generating image sitemap:", error);
+    }
+    return [xmlHeader, urlsetOpen, urlsetClose].join("\n");
   }
 };
 

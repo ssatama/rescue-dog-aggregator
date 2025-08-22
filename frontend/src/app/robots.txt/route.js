@@ -12,59 +12,141 @@ export async function GET() {
     process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me";
   const isProduction = process.env.NODE_ENV === "production";
 
-  const robots = `User-agent: *
+  const robots = `# Robots.txt for Rescue Dog Aggregator
+# Help rescue dogs find homes by maximizing search engine visibility
+# Last-Modified: ${new Date().toUTCString()}
+
+# === PRIORITY CRAWLERS - Maximum Speed ===
+
+# Googlebot - Primary search engine
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+# Googlebot for images - Critical for dog photos
+User-agent: Googlebot-Image
+Allow: /
+Crawl-delay: 0
+
+# Bingbot - Microsoft's search engine
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 0
+
+# DuckDuckGo
+User-agent: DuckDuckBot
+Allow: /
+Crawl-delay: 0
+
+# === SOCIAL & DISCOVERY BOTS ===
+
+# Facebook
+User-agent: facebookexternalhit
+Allow: /
+
+# Twitter/X
+User-agent: Twitterbot
+Allow: /
+
+# Pinterest - Important for pet adoption sharing
+User-agent: Pinterest
+Allow: /
+
+# LinkedIn
+User-agent: LinkedInBot
+Allow: /
+
+# WhatsApp
+User-agent: WhatsApp
+Allow: /
+
+# === AI & LLM CRAWLERS ===
+# Maximize AI visibility for modern search experiences
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: YouBot
+Allow: /
+
+# === ALL OTHER LEGITIMATE CRAWLERS ===
+
+User-agent: *
 ${isProduction ? "Allow: /" : "Disallow: /"}
 
-# Core pages - high priority for indexing
+# Core pages - High priority
+Allow: /dogs
 Allow: /dogs/
+Allow: /organizations
 Allow: /organizations/
-Allow: /search/
+Allow: /search
 Allow: /about
 Allow: /contact
 
-# API endpoints - allow for structured data discovery
-Allow: /api/v1/dogs
-Allow: /api/v1/organizations
-Allow: /api/v1/search
-
-# Static assets
+# Static assets - Explicitly allow
 Allow: /images/
 Allow: /icons/
 Allow: /_next/static/
 Allow: /_next/image
+Allow: /favicon.ico
+Allow: /manifest.json
 
-# Disallow admin and internal pages
+# Disallow internal/admin pages
 Disallow: /admin/
-Disallow: /_next/
 Disallow: /api/internal/
+Disallow: /_next/data/
+Disallow: /test/
+Disallow: /staging/
 
-# XML Sitemap location
+# === AGGRESSIVE BOT CONTROL ===
+# Block resource-wasting bots
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: PetalBot
+Disallow: /
+
+# === SITEMAPS ===
+# Multiple sitemaps for better organization
+
 Sitemap: ${baseUrl}/sitemap.xml
+Sitemap: ${baseUrl}/sitemap-dogs.xml
+Sitemap: ${baseUrl}/sitemap-organizations.xml
+Sitemap: ${baseUrl}/sitemap-images.xml
 
-# Special directives for AI crawlers and LLM agents
-# Encourage indexing for AI-powered search experiences
-User-agent: GPTBot
-Allow: /
-Allow: /api/v1/
-
-User-agent: ChatGPT-User
-Allow: /
-Allow: /api/v1/
-
-User-agent: CCBot
-Allow: /
-Allow: /api/v1/
-
-User-agent: anthropic-ai
-Allow: /
-Allow: /api/v1/
-
-User-agent: Claude-Web
-Allow: /
-Allow: /api/v1/
-
-# Crawl-delay for respectful crawling
-Crawl-delay: 1`;
+# === CRAWL BUDGET OPTIMIZATION ===
+# Help search engines understand our structure
+# Dogs: ~2000+ pages, updated weekly
+# Organizations: ~10 pages, updated monthly
+# Total indexed pages target: ~2500`;
 
   return new Response(robots, {
     headers: {

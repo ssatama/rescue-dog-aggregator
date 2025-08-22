@@ -25,6 +25,9 @@ class AnimalFilterRequest(BaseModel):
     limit: int = Field(default=20, ge=1, le=10000, description="Number of results to return")
     offset: int = Field(default=0, ge=0, description="Number of results to skip")
 
+    # Internal flags (not exposed to external API)
+    internal_bypass_limit: bool = Field(default=False, exclude=True)
+
     # Search and basic filters
     search: Optional[str] = Field(default=None, description="Search in animal names and descriptions")
     animal_type: str = Field(default="dog", description="Type of animal to filter by")
