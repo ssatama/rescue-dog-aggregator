@@ -11,6 +11,9 @@ scraper:
     timeout: 240
     batch_size: 4
     skip_existing_animals: true
+    enable_llm_profiling: true
+    llm_organization_id: 28
+
 metadata:
   website_url: "https://www.dogstrust.org.uk"
   description: |

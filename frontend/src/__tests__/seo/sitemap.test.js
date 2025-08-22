@@ -314,7 +314,7 @@ describe("Dynamic Sitemap Generation", () => {
 
       // Dog pages should have monthly updates and base priority (no image, no description)
       expect(sitemap).toContain("<changefreq>monthly</changefreq>");
-      expect(sitemap).toContain("<priority>0.4</priority>"); // Base priority for dogs with minimal content
+      expect(sitemap).toContain("<priority>0.3</priority>"); // Base priority for dogs with minimal content
     });
 
     test("should include all organization pages", async () => {

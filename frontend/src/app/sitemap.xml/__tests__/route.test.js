@@ -222,9 +222,9 @@ describe("Dynamic Sitemap Route", () => {
     );
 
     // Dog pages should have appropriate priority (Phase 2A: dynamic calculation)
-    // buddy-mixed-breed-1: base 0.4 + recent 0.1 = 0.5 (no image, no description)
+    // buddy-mixed-breed-1: base 0.3 + recent 0.1 = 0.4 (no image, no description)
     expect(response.body).toMatch(
-      /<url>[\s\S]*?<loc>https:\/\/www\.rescuedogs\.me\/dogs\/buddy-mixed-breed-1<\/loc>[\s\S]*?<priority>0\.5<\/priority>[\s\S]*?<\/url>/,
+      /<url>[\s\S]*?<loc>https:\/\/www\.rescuedogs\.me\/dogs\/buddy-mixed-breed-1<\/loc>[\s\S]*?<priority>0\.4<\/priority>[\s\S]*?<\/url>/,
     );
 
     // Should include updated realistic changefreq values

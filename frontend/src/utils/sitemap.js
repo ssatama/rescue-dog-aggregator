@@ -23,12 +23,12 @@ const calculateDogPriority = (dog) => {
 
   // Check for LLM-enhanced content (highest priority signal)
   // Dogs with LLM descriptions are our best content
-  const hasLLMDescription = 
+  const hasLLMDescription =
     dog.properties?.dog_profiler_data?.description ||
     dog.llm_description ||
     dog.dog_profiler_data?.description;
-    
-  const hasLLMTagline = 
+
+  const hasLLMTagline =
     dog.properties?.dog_profiler_data?.tagline ||
     dog.llm_tagline ||
     dog.dog_profiler_data?.tagline;
@@ -44,7 +44,7 @@ const calculateDogPriority = (dog) => {
       const descLength = description.length;
 
       // Check if it's not just boilerplate
-      const isBoilerplate = 
+      const isBoilerplate =
         description.includes("No description available") ||
         description.includes("Contact us for more information") ||
         description.length < 30;

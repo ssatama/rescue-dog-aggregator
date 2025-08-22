@@ -248,7 +248,7 @@ class AnimalService:
 
             # Parse JSON properties using utility function
             parse_json_field(row_dict, "properties")
-            
+
             # Parse dog_profiler_data if present (for LLM-enhanced descriptions)
             parse_json_field(row_dict, "dog_profiler_data")
 

@@ -105,10 +105,7 @@ describe("Static Robots.txt File", () => {
     for (const line of lines) {
       if (line.startsWith("User-agent:")) {
         currentUserAgent = line.split(":")[1].trim();
-      } else if (
-        line.startsWith("Crawl-delay:") &&
-        currentUserAgent === "*"
-      ) {
+      } else if (line.startsWith("Crawl-delay:") && currentUserAgent === "*") {
         hasGlobalCrawlDelay = true;
       }
     }
