@@ -95,6 +95,7 @@ class Animal(AnimalBase):
     availability_confidence: Optional[AvailabilityConfidence] = AvailabilityConfidence.HIGH
     last_seen_at: Optional[datetime] = None
     consecutive_scrapes_missing: Optional[int] = 0
+    dog_profiler_data: Optional[Dict[str, Any]] = Field(default_factory=dict)
     organization: Optional[Organization] = None
 
 

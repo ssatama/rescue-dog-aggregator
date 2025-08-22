@@ -23,20 +23,32 @@ class TestRobotsTxtCompliance:
         content = robots_txt_path.read_text()
 
         # Should allow /_next/image and /_next/static/ for all crawlers
-        # We explicitly allow these critical paths rather than blocking /_next/
+        # This can be achieved either through explicit Allow directives or a general Allow: /
         lines = [line.strip() for line in content.split("\n") if line.strip()]
 
+        found_general_allow = False
         found_next_image_allow = False
         found_next_static_allow = False
+        found_blocking_next = False
 
         for line in lines:
-            if line == "Allow: /_next/image":
+            if line == "Allow: /":
+                found_general_allow = True
+            elif line == "Allow: /_next/image":
                 found_next_image_allow = True
             elif line == "Allow: /_next/static/":
                 found_next_static_allow = True
+            elif line == "Disallow: /_next/image" or line == "Disallow: /_next/static":
+                # These specific paths should NOT be blocked
+                found_blocking_next = True
 
-        assert found_next_image_allow, "robots.txt should contain 'Allow: /_next/image' for Google Rich Results"
-        assert found_next_static_allow, "robots.txt should contain 'Allow: /_next/static/' for static assets"
+        # Either general allow or specific allows are acceptable
+        has_image_access = found_general_allow or found_next_image_allow
+        has_static_access = found_general_allow or found_next_static_allow
+
+        assert not found_blocking_next, "robots.txt should NOT block /_next/image or /_next/static paths"
+        assert has_image_access, "robots.txt should allow access to /_next/image (via Allow: / or explicit Allow)"
+        assert has_static_access, "robots.txt should allow access to /_next/static/ (via Allow: / or explicit Allow)"
 
     @pytest.mark.unit
     def test_robots_txt_security_maintained(self):

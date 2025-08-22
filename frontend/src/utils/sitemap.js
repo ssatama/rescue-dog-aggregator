@@ -14,30 +14,56 @@ const getBaseUrl = () =>
   process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me";
 /**
  * Calculate dynamic priority for dog pages based on content quality attributes
- * Higher priority for dogs with better content (images, descriptions, recent listings)
+ * Higher priority for dogs with better content (LLM descriptions, images, recent listings)
  * @param {Object} dog - Dog data object
- * @returns {number} Priority value between 0.4 and 0.9
+ * @returns {number} Priority value between 0.3 and 1.0
  */
 const calculateDogPriority = (dog) => {
-  let priority = 0.4; // Base priority for all dogs
+  let priority = 0.3; // Base priority for all dogs
+
+  // Check for LLM-enhanced content (highest priority signal)
+  // Dogs with LLM descriptions are our best content
+  const hasLLMDescription = 
+    dog.properties?.dog_profiler_data?.description ||
+    dog.llm_description ||
+    dog.dog_profiler_data?.description;
+    
+  const hasLLMTagline = 
+    dog.properties?.dog_profiler_data?.tagline ||
+    dog.llm_tagline ||
+    dog.dog_profiler_data?.tagline;
+
+  if (hasLLMDescription || hasLLMTagline) {
+    // +0.4 for having LLM-generated content (our highest quality content)
+    priority += 0.4;
+  } else {
+    // Fallback to checking regular description quality
+    // +0.1 to +0.3 for non-LLM description quality
+    if (dog.properties && dog.properties.description) {
+      const description = dog.properties.description;
+      const descLength = description.length;
+
+      // Check if it's not just boilerplate
+      const isBoilerplate = 
+        description.includes("No description available") ||
+        description.includes("Contact us for more information") ||
+        description.length < 30;
+
+      if (!isBoilerplate) {
+        if (descLength > 200) {
+          priority += 0.3; // Long, detailed description
+        } else if (descLength > 50) {
+          priority += 0.2; // Medium description
+        } else if (descLength > 0) {
+          priority += 0.1; // Short but present description
+        }
+      }
+    }
+  }
 
   // +0.2 for having a primary image
   if (dog.primary_image_url) {
     priority += 0.2;
-  }
-
-  // +0.1 to +0.3 for description quality
-  if (dog.properties && dog.properties.description) {
-    const description = dog.properties.description;
-    const descLength = description.length;
-
-    if (descLength > 200) {
-      priority += 0.3; // Long, detailed description
-    } else if (descLength > 50) {
-      priority += 0.2; // Medium description
-    } else if (descLength > 0) {
-      priority += 0.1; // Short but present description
-    }
   }
 
   // +0.1 for recent listings (last 30 days)
@@ -51,8 +77,9 @@ const calculateDogPriority = (dog) => {
     }
   }
 
-  // Ensure priority doesn't exceed maximum
-  return Math.min(priority, 0.9);
+  // Ensure priority stays within valid range
+  // Dogs with LLM content can reach 1.0 priority
+  return Math.min(priority, 1.0);
 };
 
 // Sitemap limits per Google standards

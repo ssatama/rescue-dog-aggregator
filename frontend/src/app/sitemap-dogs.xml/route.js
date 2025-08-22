@@ -20,7 +20,14 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("Error generating dog sitemap:", error);
+    // Enhanced error logging with context
+    console.error("Error generating dog sitemap:", {
+      message: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString(),
+      route: "/sitemap-dogs.xml",
+      type: "sitemap_generation_error",
+    });
 
     // Return empty sitemap on error
     const emptySitemap =

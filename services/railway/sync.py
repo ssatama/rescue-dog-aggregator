@@ -363,7 +363,7 @@ def _build_organization_id_mapping(session) -> dict:
 
 def sync_all_data_to_railway(sync_indexes: bool = True) -> bool:
     """Sync all data from local database to Railway with independent table transactions.
-    
+
     Args:
         sync_indexes: Whether to sync database indexes (default: True)
     """
@@ -375,11 +375,12 @@ def sync_all_data_to_railway(sync_indexes: bool = True) -> bool:
         if not _validate_table_schemas():
             logger.error("Schema validation failed - aborting sync")
             return False
-        
+
         # Phase 1.5: Sync indexes if requested
         if sync_indexes:
             logger.info("Syncing database indexes...")
             from .index_sync import sync_all_table_indexes
+
             if sync_all_table_indexes(dry_run=False):
                 logger.info("✅ Database indexes synced successfully")
             else:
@@ -1173,7 +1174,7 @@ class RailwayDataSyncer:
 
     def perform_full_sync(self, dry_run: bool = False, validate_after: bool = True, max_retries: int = 3, sync_mode: str = "incremental", sync_indexes: bool = True) -> bool:
         """Perform complete data synchronization to Railway with retry logic and transaction boundaries.
-        
+
         Args:
             dry_run: If True, show what would be done without making changes
             validate_after: If True, validate data integrity after sync

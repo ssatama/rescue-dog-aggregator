@@ -67,7 +67,6 @@ class AnimalService:
             logger.error(f"Error in get_animals: {e}")
             raise APIException(status_code=500, detail="Failed to fetch animals", error_code="INTERNAL_ERROR")
 
-
     def get_animals_for_sitemap(self, filters: AnimalFilterRequest) -> List[Animal]:
         """
         Get animals filtered for sitemap generation with meaningful descriptions.
@@ -249,6 +248,9 @@ class AnimalService:
 
             # Parse JSON properties using utility function
             parse_json_field(row_dict, "properties")
+            
+            # Parse dog_profiler_data if present (for LLM-enhanced descriptions)
+            parse_json_field(row_dict, "dog_profiler_data")
 
             # Build nested organization using utility function
             organization = build_organization_object(row_dict)
@@ -574,12 +576,14 @@ class AnimalService:
     def _build_animals_query(self, filters: AnimalFilterRequest) -> tuple[str, List[Any]]:
         """Build the animals query with filters."""
         # Base query selects distinct animals and joins with organizations
+        # Include dog_profiler_data for sitemap and other requests that need LLM content
         query_base = """
             SELECT DISTINCT a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
                    a.age_text, a.age_min_months, a.age_max_months, a.sex, a.size, a.standardized_size,
                    a.status, a.primary_image_url, a.adoption_url, a.organization_id, a.external_id,
                    a.language, a.properties, a.created_at, a.updated_at, a.last_scraped_at,
                    a.availability_confidence, a.last_seen_at, a.consecutive_scrapes_missing,
+                   a.dog_profiler_data,
                    o.name as org_name,
                    o.slug as org_slug,
                    o.city as org_city,

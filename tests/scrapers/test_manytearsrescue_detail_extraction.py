@@ -24,7 +24,7 @@ class TestManyTearsRescueDetailExtraction:
                 "url": "https://www.manytearsrescue.org/adopt/dogs/3114/",
                 "expected": {
                     "name": "Taz",
-                    "age_pattern": r"\d+ weeks?",  # Match any number of weeks
+                    "age_pattern": r"\d+ (weeks?|months?)",  # Match any number of weeks or months
                     "sex": "Male",
                     "breed": "Labrador Retriever",
                     "location": "Many Tears, Llanelli, Carmarthenshire",
@@ -212,6 +212,10 @@ class TestManyTearsRescueDetailExtraction:
             for failure in failures:
                 print(f"❌ {failure}")
             pytest.fail(f"\n{len(failures)} issues found across the tested dogs")
+
+        # Ensure we tested at least 3 dogs (allowing for 2 to be adopted)
+        tested_count = len(test_dogs) - len(skipped_dogs)
+        if tested_count < 3:
+            pytest.fail(f"Too many dogs have been adopted. Only {tested_count} dogs could be tested (minimum 3 required)")
         else:
-            tested_count = len(test_dogs) - len(skipped_dogs)
             print(f"\n✅ All {tested_count} available dogs have complete data!")

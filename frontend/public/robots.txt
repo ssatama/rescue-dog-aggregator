@@ -1,0 +1,90 @@
+# Robots.txt for Rescue Dog Aggregator
+
+# === SEARCH ENGINES - Full Access ===
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+# === SOCIAL MEDIA - Full Access for Link Previews ===
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: Pinterest
+Allow: /
+
+# === AI & LLM CRAWLERS - Full Access ===
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+# === ALL OTHER LEGITIMATE CRAWLERS ===
+# Allow everything by default, only block sensitive paths
+User-agent: *
+Allow: /
+
+# Explicitly allow Next.js image optimization and static assets
+Allow: /_next/image
+Allow: /_next/static/
+
+# Block only truly sensitive paths
+Disallow: /admin/
+Disallow: /api/internal/
+Disallow: /_next/data/
+Disallow: /.git/
+Disallow: /config/
+Disallow: /private/
+
+# === AGGRESSIVE BOTS - Block with Rate Limit ===
+User-agent: AhrefsBot
+Disallow: /
+Crawl-delay: 10
+
+User-agent: SemrushBot
+Disallow: /
+Crawl-delay: 10
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+# === SITEMAPS ===
+Sitemap: https://www.rescuedogs.me/sitemap.xml
+Sitemap: https://www.rescuedogs.me/sitemap-dogs.xml
+Sitemap: https://www.rescuedogs.me/sitemap-organizations.xml
+Sitemap: https://www.rescuedogs.me/sitemap-images.xml
