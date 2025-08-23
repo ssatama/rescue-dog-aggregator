@@ -256,12 +256,12 @@ export async function getAllAnimals(params = {}) {
  */
 export async function getAllAnimalsForSitemap(params = {}) {
   logger.log("Fetching all animals for sitemap with pagination");
-  
+
   const allAnimals = [];
   const limit = 1000; // API max limit
   let offset = 0;
   let hasMore = true;
-  
+
   // Fetch all pages until we get less than the limit
   while (hasMore) {
     try {
@@ -270,20 +270,22 @@ export async function getAllAnimalsForSitemap(params = {}) {
         limit,
         offset,
       });
-      
+
       allAnimals.push(...batch);
-      
+
       // If we got less than the limit, we've reached the end
       hasMore = batch.length === limit;
       offset += limit;
-      
-      logger.log(`Fetched ${batch.length} animals at offset ${offset - limit}, total so far: ${allAnimals.length}`);
+
+      logger.log(
+        `Fetched ${batch.length} animals at offset ${offset - limit}, total so far: ${allAnimals.length}`,
+      );
     } catch (error) {
       logger.error(`Error fetching animals at offset ${offset}:`, error);
       hasMore = false; // Stop on error to return what we have
     }
   }
-  
+
   logger.log(`Sitemap fetch complete: ${allAnimals.length} total animals`);
   return allAnimals;
 }
