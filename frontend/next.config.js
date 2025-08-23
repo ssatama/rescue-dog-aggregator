@@ -128,6 +128,15 @@ const nextConfig = {
         chunks: 'all',
         cacheGroups: {
           ...config.optimization.splitChunks.cacheGroups,
+          // CSS files should be in their own chunks - NEVER in JS chunks
+          styles: {
+            name: 'styles',
+            test: /\.css$/,
+            chunks: 'all',
+            enforce: true,
+            priority: 30, // Highest priority to prevent CSS in JS chunks
+            type: 'css/mini-extract', // Ensure CSS extraction
+          },
           // Separate vendor libraries for better caching
           vendor: {
             test: /[\\/]node_modules[\\/]/,
