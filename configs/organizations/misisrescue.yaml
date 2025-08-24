@@ -11,7 +11,9 @@ scraper:
     timeout: 240
     retry_backoff_factor: 2.0
     batch_size: 6
-    skip_existing_animals: false
+    skip_existing_animals: true
+    enable_llm_profiling: true
+    llm_organization_id: 13
 metadata:
   website_url: "https://www.misisrescue.com/"
   description: |

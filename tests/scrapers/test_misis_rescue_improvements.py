@@ -169,7 +169,7 @@ class TestNameNormalization:
     def test_special_characters(self):
         """Test handling of special/invisible characters."""
         assert normalize_name("‍Blacky‍") == "Blacky"  # Zero-width joiners
-        assert normalize_name("Luna{!}") == "Luna{!}"  # Keep some special chars
+        assert normalize_name("Luna{!}") == "Luna"  # Remove curly brace content
 
     def test_complex_names(self):
         """Test complex name patterns."""

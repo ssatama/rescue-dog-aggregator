@@ -6,11 +6,15 @@ This test captures the EXACT current behavior of the normalization logic
 to ensure no functionality is lost during refactoring.
 """
 
+import os
 from typing import Any, Dict
 
 import pytest
 
 from services.llm.dog_profiler import DogProfilerPipeline
+
+# Skip all tests in this module if OPENROUTER_API_KEY is not set
+pytestmark = pytest.mark.skipif(not os.environ.get("OPENROUTER_API_KEY"), reason="OPENROUTER_API_KEY not set - skipping LLM tests")
 
 
 class TestNormalizationRegression:

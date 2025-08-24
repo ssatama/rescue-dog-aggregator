@@ -34,6 +34,17 @@ class TestPromptBuilder:
 
     def test_load_prompt_template_success(self):
         """Test successful prompt template loading."""
+        from dataclasses import dataclass
+
+        @dataclass
+        class MockOrgConfig:
+            organization_id: int = 11
+            organization_name: str = "Test Org"
+            prompt_file: str = "test.yaml"
+            source_language: str = "en"
+            target_language: str = "en"
+            model_preference: str = "test-model"
+
         mock_template_content = """
         system_prompt: "Test system prompt"
         extraction_prompt: "Test prompt for {name}"
@@ -42,7 +53,8 @@ class TestPromptBuilder:
         """
 
         mock_file = mock_open(read_data=mock_template_content)
-        with patch("builtins.open", mock_file), patch("pathlib.Path.exists", return_value=True):
+        with patch("builtins.open", mock_file), patch("pathlib.Path.exists", return_value=True), patch("services.llm.organization_config_loader.get_config_loader") as mock_loader:
+            mock_loader.return_value.load_config.return_value = MockOrgConfig()
             builder = PromptBuilder.__new__(PromptBuilder)  # Create without __init__
             result = builder._load_prompt_template(11)
 
@@ -52,7 +64,19 @@ class TestPromptBuilder:
 
     def test_load_prompt_template_file_not_found(self):
         """Test prompt template loading with missing file."""
-        with patch("pathlib.Path.exists", return_value=False):
+        from dataclasses import dataclass
+
+        @dataclass
+        class MockOrgConfig:
+            organization_id: int = 11
+            organization_name: str = "Test Org"
+            prompt_file: str = "test.yaml"
+            source_language: str = "en"
+            target_language: str = "en"
+            model_preference: str = "test-model"
+
+        with patch("pathlib.Path.exists", return_value=False), patch("services.llm.organization_config_loader.get_config_loader") as mock_loader:
+            mock_loader.return_value.load_config.return_value = MockOrgConfig()
             builder = PromptBuilder.__new__(PromptBuilder)  # Create without __init__
             with pytest.raises(FileNotFoundError, match="Prompt template not found"):
                 builder._load_prompt_template(11)

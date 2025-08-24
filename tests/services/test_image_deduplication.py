@@ -1,5 +1,6 @@
 """Test image deduplication functionality in ImageProcessingService."""
 
+import logging
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -156,12 +157,12 @@ class TestImageDeduplication:
             {"name": "Dog3", "primary_image_url": "https://example.com/dog2.jpg"},  # New
         ]
 
-        with caplog.at_level("INFO"):
+        with caplog.at_level(logging.INFO, logger="services.image_processing_service"):
             result = image_service.batch_process_images(animals_data, "test_org", database_connection=mock_conn)
 
         # Check for deduplication statistics in logs
-        assert "♻️ Found 1 existing R2 images to reuse" in caplog.text
-        assert "📦 Batch processing 3 images: 2 unique, 2 reused, 1 to upload" in caplog.text
+        assert "Found 1 existing R2 images to reuse" in caplog.text
+        assert "Batch processing 3 images: 2 unique, 2 reused, 1 to upload" in caplog.text
 
     def test_deduplication_handles_empty_batch(self, image_service, mock_database_connection):
         """Test that empty batch is handled gracefully."""
@@ -191,7 +192,7 @@ class TestImageDeduplication:
             {"name": "Dog2", "primary_image_url": "https://example.com/dog2.jpg"},
         ]
 
-        with caplog.at_level("INFO"):
+        with caplog.at_level(logging.INFO, logger="services.image_processing_service"):
             result = image_service.batch_process_images(animals_data, "test_org", database_connection=mock_conn)
 
         # No uploads should occur
@@ -199,7 +200,7 @@ class TestImageDeduplication:
         image_service.r2_service.concurrent_upload_images_with_stats.assert_not_called()
 
         # Should log that no uploads are needed
-        assert "✨ All images already exist in R2, no uploads needed!" in caplog.text
+        assert "All images already exist in R2, no uploads needed!" in caplog.text
 
         # All animals should have reused URLs
         assert result[0]["primary_image_url"] == "https://images.rescuedogs.me/org/existing1.jpg"

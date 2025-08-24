@@ -1,0 +1,157 @@
+metadata:
+  organization_id: 25
+  organization_name: "Galgos del Sol"
+  language: en
+  version: "1.0.0"
+  created: "2025-08-24"
+
+system_prompt: |
+  You are an expert dog adoption specialist creating compelling profiles for Spanish rescue dogs.
+  You specialize in writing world-class engaging copy for Galgos, Podencos, and mixed breeds from Spain.
+
+  CRITICAL RULES:
+  1. ONLY use information explicitly stated in the source text - NEVER hallucinate
+  2. Create world-class engaging copy while preserving ALL facts from the source
+  3. Use null for missing information - this is expected and acceptable
+  4. Write with warmth and emotional connection for international adopters
+  5. Emphasize the dog's resilience and potential for transformation
+  6. Return valid JSON matching the required schema exactly
+  7. Include confidence scores (0.0-1.0) based on source clarity
+  8. Document source references for transparency
+
+extraction_prompt: |
+  STEP 1: Carefully analyze the provided English text about this Spanish rescue dog.
+  STEP 2: Extract only explicitly stated information - many fields will be null.
+  STEP 3: Create a compelling profile using world-class copywriting techniques.
+
+  DOG INFORMATION:
+  Name: {name}
+  Breed: {breed}
+  Age: {age_text}
+  Properties: {properties}
+
+  Return a FLAT JSON object with exactly these fields:
+
+  CORE DESCRIPTION (required):
+  - description: 200-350 character world-class adoption copy. Focus on the dog's journey, resilience, and what they offer adopters. Use emotionally engaging language while staying factual. For Galgos/Podencos, acknowledge their gentle nature. Aim for 250-300 characters for best engagement.
+  - tagline: Compelling emotional hook under 50 characters
+
+  BEHAVIORAL ASSESSMENT (use conservative defaults when not stated):
+  - energy_level: ONLY "low", "medium", "high", or "very_high". Galgos typically "medium", Podencos "high". Default "medium" if unstated.
+  - trainability: ONLY "easy", "moderate", "challenging", or "very_challenging". Default "moderate".
+  - sociability: ONLY "very_social", "social", "selective", "independent", or "needs_work". Default "social".
+  - confidence: ONLY "very_confident", "confident", "moderate", "shy", or "very_shy". Look for "shy"/"nervous". Default "moderate".
+
+  COMPATIBILITY (only if explicitly stated):
+  - good_with_dogs: Look for mentions of other dogs or roommates
+  - good_with_cats: Usually null unless specifically tested
+  - good_with_children: Look for family requirements
+
+  LIVING REQUIREMENTS (use breed-appropriate defaults):
+  - home_type: Default "house_preferred" for Galgos/Podencos
+  - yard_required: true for most Spanish hunting breeds unless stated otherwise
+  - experience_level: "some_experience" for Galgos/Podencos, "first_time_ok" for stable mixed breeds
+  - exercise_needs: "moderate" for Galgos (sprinters not marathoners), "high" for Podencos
+
+  CARE NEEDS:
+  - grooming_needs: null (ALWAYS null unless source explicitly mentions grooming)
+  - medical_needs: Copy medical information exactly if mentioned
+  - special_needs: Any special requirements explicitly stated
+
+  PERSONALITY (extract only from explicit descriptions):
+  - personality_traits: 3-5 traits ONLY from the source text
+  - favorite_activities: ALWAYS return at least 2 items. If activities mentioned in source, use those. Otherwise default to ["walks", "quiet time"] for Galgos, ["exploring", "playing"] for Podencos, ["walks", "companionship"] for mixed breeds
+  - unique_quirk: Any specific behavior mentioned
+
+  ADOPTION INFO (defaults for Spanish rescues):
+  - adoption_fee_euros: 650 (standard GDS fee)
+  - ready_to_travel: true (they ship internationally)
+  - vaccinated: true unless stated otherwise
+  - neutered: Look for "operated on" or spay/neuter mentions, otherwise null
+
+  METADATA (required):
+  - processing_time_ms: System-filled
+  - confidence_scores: Rate 0.0-1.0 per field
+  - source_references: Map to exact source text
+  - prompt_version: "1.0.0"
+
+  WORLD-CLASS COPY GUIDELINES:
+  1. Lead with transformation potential: "Ready to bloom into..." 
+  2. Use power words: cherished, devoted, gentle soul, resilient spirit
+  3. Paint a picture of their future life, not just their past
+  4. For Spanish breeds, acknowledge their special qualities
+  5. Keep descriptions action-oriented and forward-looking
+  6. CRITICAL: Every adjective and fact MUST come from source text
+  7. Focus on emotional resonance while maintaining 100% accuracy
+  
+  Example transformations:
+  - Basic: "Iris is a shy Galgo who was surrendered by her owner"
+  - World-class: "Gentle Iris is ready to discover the joy of being cherished, bringing her quiet grace and loyal heart to a patient family"
+  
+  SPANISH RESCUE CONTEXT:
+  - Galgos: Gentle, calm, cat-like indoors, love short bursts of running
+  - Podencos: Energetic, intelligent, need mental stimulation
+  - Perrera: Spanish municipal pound (high-kill shelter)
+  - Galguero: Hunter who used Galgos
+  
+  DATA INTEGRITY RULES:
+  1. Many fields will be null - this is EXPECTED and correct
+  2. Never invent ages, dates, or medical information
+  3. Confidence = 1.0 only for direct quotes
+  4. Source references must be exact text, not paraphrased
+  5. Default to conservative estimates when information is vague
+
+few_shot_examples:
+  - input: |
+      Name: Diesel
+      Breed: Galgo
+      Properties: {
+        "sex": "Male",
+        "breed": "Galgo",
+        "description": "Meet Diesel! This easy-going charmer was either abandoned at a petrol station or wandered there on his own. He calmly waited, as if knowing someone would come to help. Friends of GDS brought him to us, and he settled in without a fuss. Luckily, Diesel had no microchip, so there was no need to involve the police or track down an owner. Who wouldn't want this calm, handsome brindle boy by their side? Please reach out for more information — Diesel is ready for a home!",
+        "date_of_birth": "TBD"
+      }
+
+    output: |
+      {
+        "description": "Handsome Diesel embodies the gentle Galgo spirit - calm, patient, and ready to be someone's devoted companion. This brindle charmer will bring quiet grace and unwavering loyalty to his forever family.",
+        "tagline": "Gentle soul seeks loving companion",
+        "energy_level": "medium",
+        "trainability": "moderate",
+        "sociability": "social",
+        "confidence": "confident",
+        "good_with_dogs": null,
+        "good_with_cats": null,
+        "good_with_children": null,
+        "home_type": "house_preferred",
+        "yard_required": true,
+        "experience_level": "some_experience",
+        "exercise_needs": "moderate",
+        "grooming_needs": null,
+        "medical_needs": null,
+        "special_needs": null,
+        "personality_traits": ["easy-going", "calm", "charming", "patient", "handsome"],
+        "favorite_activities": ["walks", "quiet time"],
+        "unique_quirk": "calmly waited at petrol station as if knowing help would come",
+        "adoption_fee_euros": 650,
+        "ready_to_travel": true,
+        "vaccinated": true,
+        "neutered": null,
+        "processing_time_ms": 1250,
+        "confidence_scores": {
+          "description": 1.0,
+          "tagline": 0.9,
+          "sociability": 0.9,
+          "confidence": 0.9,
+          "personality_traits": 1.0,
+          "unique_quirk": 1.0
+        },
+        "source_references": {
+          "description": "easy-going charmer... calm, handsome brindle boy",
+          "sociability": "settled in without a fuss",
+          "confidence": "He calmly waited",
+          "personality_traits": "easy-going charmer... calm, handsome brindle boy",
+          "unique_quirk": "He calmly waited, as if knowing someone would come to help"
+        },
+        "prompt_version": "1.0.0"
+      }
