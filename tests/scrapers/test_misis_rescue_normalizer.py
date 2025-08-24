@@ -132,7 +132,7 @@ class TestMisisRescueNormalizer:
         assert normalize_size("35kg") == "Large"
 
         # Very small dogs
-        assert normalize_size("2-3kg") == "Small"
+        assert normalize_size("2-3kg") == "Tiny"
 
         # Test invalid input
         assert normalize_size("no weight info") is None
@@ -250,7 +250,7 @@ class TestMisisRescueNormalizer:
         assert extract_birth_date(leo_bullets[0]) == "March 2023"
         assert extract_breed(leo_bullets) == "Mixed Breed"
         assert extract_weight_kg(leo_bullets[2]) == 2.5
-        assert normalize_size(leo_bullets[2]) == "Small"
+        assert normalize_size(leo_bullets[2]) == "Tiny"
 
         # Test edge case with multiple weight mentions
         multi_weight_bullets = ["DOB: 2022", "weighs 18kg, previously 15kg", "Golden Retriever mix"]

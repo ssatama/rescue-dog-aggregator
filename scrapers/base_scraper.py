@@ -31,6 +31,11 @@ logger = logging.getLogger(__name__)
 
 class BaseScraper(ABC):
     """Base scraper class that all organization-specific scrapers will inherit from."""
+    
+    # Batch processing configuration constants
+    SMALL_BATCH_THRESHOLD = 3
+    CONCURRENT_UPLOAD_THRESHOLD = 10
+    MAX_R2_FAILURE_RATE = 50
 
     # Type annotations for instance variables
     org_config: Optional[OrganizationConfig]
@@ -358,7 +363,8 @@ class BaseScraper(ABC):
             existing_animal = self.get_existing_animal(animal_data.get("external_id"), animal_data.get("organization_id"))
 
             # Process primary image using ImageProcessingService if available
-            if animal_data.get("primary_image_url"):
+            # Skip if already processed (has original_image_url set from batch processing)
+            if animal_data.get("primary_image_url") and not animal_data.get("original_image_url"):
                 if self.image_processing_service:
                     animal_data = self.image_processing_service.process_primary_image(animal_data, existing_animal, self.conn, self.organization_name)
                 else:
@@ -547,6 +553,28 @@ class BaseScraper(ABC):
 
         # Initialize progress tracker for world-class logging
         progress_tracker = ProgressTracker(total_items=len(animals_data), logger=self.logger, config=self._get_logging_config())
+
+        # ALWAYS use batch image processing for ALL scrapers when ImageProcessingService is available
+        # This ensures consistent batch uploading behavior across all organizations
+        if self.image_processing_service and len(animals_data) > 0:
+            # Check R2 health before batch processing
+            health = self.r2_service.get_health_status()
+            if health.get("failure_rate", 0) < self.MAX_R2_FAILURE_RATE:  # Only batch process if failure rate is reasonable
+                self.logger.info(f"🚀 Using batch image processing for {len(animals_data)} animals")
+                try:
+                    # Always use batch processing for better performance and consistency
+                    # Use smaller batch size for small datasets, adaptive for larger ones
+                    batch_size = min(self.SMALL_BATCH_THRESHOLD, len(animals_data)) if len(animals_data) <= self.SMALL_BATCH_THRESHOLD else self.r2_service.get_adaptive_batch_size()
+                    animals_data = self.image_processing_service.batch_process_images(
+                        animals_data, self.organization_name, batch_size=batch_size, use_concurrent=len(animals_data) > self.CONCURRENT_UPLOAD_THRESHOLD, database_connection=self.conn
+                    )
+                    # Count images uploaded
+                    for animal in animals_data:
+                        if animal.get("original_image_url") and animal.get("primary_image_url"):
+                            if "images.rescuedogs.me" in animal["primary_image_url"]:
+                                processing_stats["images_uploaded"] += 1
+                except Exception as e:
+                    self.logger.warning(f"Batch image processing failed, falling back to individual: {e}")
 
         for i, animal_data in enumerate(animals_data):
             # Add organization_id and animal_type to the animal data
@@ -783,23 +811,30 @@ class BaseScraper(ABC):
         if not name or not isinstance(name, str):
             return True
 
-        name_lower = name.lower().strip()
+        # Normalize the name for checking - remove apostrophes and special chars
+        name_normalized = name.lower().strip()
+        # Replace various apostrophe types with empty string
+        name_normalized = name_normalized.replace("'", "").replace("'", "").replace("`", "")
 
-        # Common error patterns
+        # Common error patterns (normalized without apostrophes)
         error_patterns = [
             "this site cant be reached",
-            "site can't be reached",
+            "site cant be reached",
+            "site can t be reached",  # Handle spaces around t
             "connection failed",
             "page not found",
             "error 404",
             "error 500",
-            "dns_probe_finished_nxdomain",
+            "dns_probe_finished",
+            "err_name_not_resolved",
+            "err_connection",
             "timeout",
             "unavailable",
             "access denied",
+            "not found",
         ]
 
-        return any(pattern in name_lower for pattern in error_patterns)
+        return any(pattern in name_normalized for pattern in error_patterns)
 
     def _validate_animal_data(self, animal_data: Dict[str, Any]) -> bool:
         """Validate animal data dictionary for required fields and invalid names."""

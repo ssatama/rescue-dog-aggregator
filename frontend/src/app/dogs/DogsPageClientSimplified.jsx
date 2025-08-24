@@ -304,7 +304,10 @@ export default function DogsPageClientSimplified({
   return (
     <Layout>
       <BreadcrumbSchema items={breadcrumbItems} />
-      <div className="container mx-auto px-4 py-6 lg:py-8">
+      <div
+        data-testid="dogs-page-container"
+        className="container mx-auto px-4 py-6 lg:py-8"
+      >
         <Breadcrumbs items={breadcrumbItems} />
 
         <div className="mt-6 mb-8">
@@ -420,7 +423,10 @@ export default function DogsPageClientSimplified({
             ) : (
               <>
                 {/* Simple responsive grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div
+                  data-testid="dogs-grid"
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                >
                   {dogs.map((dog, index) => (
                     <DogCardErrorBoundary key={dog.id || index}>
                       <DogCardOptimized

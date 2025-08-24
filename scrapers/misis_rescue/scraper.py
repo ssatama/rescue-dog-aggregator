@@ -9,6 +9,7 @@ import time
 from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin, urlparse
 
+import requests
 from bs4 import BeautifulSoup, Tag
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
@@ -59,11 +60,11 @@ class MisisRescueScraper(BaseScraper):
         all_dogs = []
 
         try:
-            # World-class logging: Data collection initiation handled by centralized system
+            # logging: Data collection initiation handled by centralized system
 
             # Get all dog URLs from all pages (handles pagination)
             dogs_from_listing = self._get_all_dogs_from_listing()
-            # World-class logging: Listing extraction handled by centralized system
+            # logging: Listing extraction handled by centralized system
 
             # Convert to full URLs
             all_urls = []
@@ -74,15 +75,15 @@ class MisisRescueScraper(BaseScraper):
 
             # Debug: Show sample URLs being processed
             if all_urls:
-                # World-class logging: Sample URLs handled by centralized system
+                #  logging: Sample URLs handled by centralized system
                 for url in all_urls[:3]:
-                    # World-class logging: URL samples handled by centralized system
+                    # logging: URL samples handled by centralized system
                     pass
 
             # Filter existing URLs if skip is enabled
-            # World-class logging: Configuration status handled by centralized system
+            # logging: Configuration status handled by centralized system
             if self.skip_existing_animals:
-                # World-class logging: URL filtering handled by centralized system
+                #  logging: URL filtering handled by centralized system
                 pass
 
             urls_to_process = self._filter_existing_urls(all_urls)
@@ -92,10 +93,10 @@ class MisisRescueScraper(BaseScraper):
             self.set_filtering_stats(len(all_urls), total_skipped)
 
             if self.skip_existing_animals and len(urls_to_process) != len(all_urls):
-                # World-class logging: Skip existing stats handled by centralized system
+                #  logging: Skip existing stats handled by centralized system
                 pass
             else:
-                # World-class logging: Processing stats handled by centralized system
+                # class logging: Processing stats handled by centralized system
                 pass
 
             # Process URLs in batches with retry mechanism (MisisRescue-specific)
@@ -104,7 +105,7 @@ class MisisRescueScraper(BaseScraper):
             else:
                 all_dogs = []
 
-            # World-class logging: Collection results handled by centralized system
+            # class logging: Collection results handled by centralized system
             return all_dogs
 
         except Exception as e:
@@ -558,6 +559,30 @@ class MisisRescueScraper(BaseScraper):
                 # Give extra time for Wix to load dynamic content
                 time.sleep(3)
 
+                # CRITICAL: Check for error pages BEFORE processing
+                page_title = driver.title.lower() if driver.title else ""
+                page_source_lower = driver.page_source.lower()[:1000]  # Check first 1000 chars
+
+                # Check for various error indicators
+                error_indicators = [
+                    "this site can't be reached",
+                    "this site cant be reached",
+                    "site can't be reached",
+                    "dns_probe_finished",
+                    "err_name_not_resolved",
+                    "err_connection",
+                    "404",
+                    "500",
+                    "error",
+                    "not found",
+                    "unavailable",
+                ]
+
+                for indicator in error_indicators:
+                    if indicator in page_title or indicator in page_source_lower:
+                        self.logger.warning(f"Error page detected for {url}: '{driver.title}'")
+                        return None
+
                 # Scroll to trigger lazy loading of all content
                 self._scroll_detail_page_for_content(driver)
 
@@ -568,16 +593,33 @@ class MisisRescueScraper(BaseScraper):
                 time.sleep(2)
 
             except TimeoutException:
-                self.logger.warning(f"Timeout waiting for content on {url}, proceeding with what loaded")
+                self.logger.warning(f"Timeout waiting for content on {url}, may be an error page")
+                # Check again for error indicators after timeout
+                if driver.title:
+                    title_lower = driver.title.lower()
+                    if any(err in title_lower for err in ["can't be reached", "cant be reached", "not found", "error"]):
+                        self.logger.warning(f"Error page detected after timeout: '{driver.title}'")
+                        return None
 
             # Parse with BeautifulSoup and detail parser
             soup = BeautifulSoup(driver.page_source, "html.parser")
+
+            # Double-check the parsed content for error indicators
+            h1_text = soup.find("h1").get_text(strip=True).lower() if soup.find("h1") else ""
+            if any(err in h1_text for err in ["can't be reached", "cant be reached", "not found"]):
+                self.logger.warning(f"Error page h1 detected: '{h1_text}'")
+                return None
+
             dog_data = self.detail_parser.parse_detail_page(soup)
 
             # Add required fields for BaseScraper
             dog_data["external_id"] = self._generate_external_id(url)
             dog_data["adoption_url"] = url
             dog_data["organization_id"] = self.organization_id
+
+            # If size was calculated from weight, copy it to top level for database
+            if dog_data.get("properties", {}).get("standardized_size"):
+                dog_data["standardized_size"] = dog_data["properties"]["standardized_size"]
 
             # Extract the main image - try hero image first, then grid fallback
             main_image_url = self._extract_main_image(driver, soup)
@@ -595,6 +637,190 @@ class MisisRescueScraper(BaseScraper):
         finally:
             if driver:
                 driver.quit()
+
+    def _scrape_dog_detail_fast(self, url: str) -> Optional[Dict[str, Any]]:
+        """Fast scraping method using requests instead of Selenium.
+
+        This is MUCH faster than Selenium for static content.
+        Falls back to Selenium method if this fails.
+
+        Args:
+            url: Full URL to dog detail page
+
+        Returns:
+            Dog data dictionary or None if error
+        """
+        try:
+            # Use requests with a proper user agent
+            headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
+
+            self.logger.debug(f"Fast-loading detail page: {url}")
+            response = requests.get(url, headers=headers, timeout=10)
+
+            # Check for HTTP errors
+            if response.status_code != 200:
+                self.logger.warning(f"HTTP {response.status_code} for {url}, falling back to Selenium")
+                return self._scrape_dog_detail(url)
+
+            # Check for error pages in content
+            content_lower = response.text.lower()[:2000]
+            error_indicators = ["this site can't be reached", "this site cant be reached", "dns_probe_finished", "err_name_not_resolved", "404", "500", "not found"]
+
+            for indicator in error_indicators:
+                if indicator in content_lower:
+                    self.logger.warning(f"Error page detected (fast) for {url}")
+                    return None
+
+            # Parse with BeautifulSoup
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            # Check h1 for error indicators
+            h1_text = soup.find("h1").get_text(strip=True).lower() if soup.find("h1") else ""
+            if any(err in h1_text for err in ["can't be reached", "cant be reached", "not found"]):
+                self.logger.warning(f"Error page h1 detected (fast): '{h1_text}'")
+                return None
+
+            # Check if we got actual dog content (Wix sometimes requires JS)
+            # If no "Things you should know" section, fall back to Selenium
+            if "things you should know" not in response.text.lower():
+                self.logger.debug(f"No dog content found with requests for {url}, falling back to Selenium")
+                return self._scrape_dog_detail(url)
+
+            # Parse the page
+            dog_data = self.detail_parser.parse_detail_page(soup)
+
+            # Add required fields
+            dog_data["external_id"] = self._generate_external_id(url)
+            dog_data["adoption_url"] = url
+            dog_data["organization_id"] = self.organization_id
+
+            # If size was calculated from weight, copy it to top level for database
+            if dog_data.get("properties", {}).get("standardized_size"):
+                dog_data["standardized_size"] = dog_data["properties"]["standardized_size"]
+
+            # For images, we'll need to extract them differently since JS won't run
+            # Try to find image URLs in the static HTML
+            image_urls = self._extract_static_image_urls(soup)
+            if image_urls:
+                dog_data["image_urls"] = image_urls
+                dog_data["primary_image_url"] = image_urls[0]
+            else:
+                # If no images found, might need JS - fall back to Selenium
+                self.logger.debug(f"No images found with requests for {url}, falling back to Selenium")
+                return self._scrape_dog_detail(url)
+
+            self.logger.debug(f"Successfully scraped {url} with fast method")
+            return dog_data
+
+        except requests.RequestException as e:
+            self.logger.warning(f"Request failed for {url}: {e}, falling back to Selenium")
+            return self._scrape_dog_detail(url)
+        except Exception as e:
+            self.logger.error(f"Error in fast scraping {url}: {e}, falling back to Selenium")
+            return self._scrape_dog_detail(url)
+
+    def _extract_static_image_urls(self, soup: BeautifulSoup) -> List[str]:
+        """Extract image URLs from static HTML without JavaScript.
+
+        CRITICAL: This method now properly cleans Wix image URLs to get high-quality versions.
+
+        Args:
+            soup: BeautifulSoup object of the page
+
+        Returns:
+            List of high-quality image URLs
+        """
+        image_urls = []
+
+        # Look for Wix static images
+        for img in soup.find_all("img"):
+            if not isinstance(img, Tag):
+                continue
+
+            src = img.get("src")
+            if isinstance(src, str) and "wixstatic.com" in src:
+                # Filter for actual dog photos
+                if any(ext in src.lower() for ext in [".jpg", ".jpeg", ".png", ".webp"]):
+                    if not any(skip in src.lower() for skip in ["logo", "icon", "button"]):
+                        # CRITICAL FIX: Clean up Wix image URLs to get high quality versions
+                        cleaned_url = self._clean_wix_image_url(src)
+
+                        full_url = urljoin(self.base_url, cleaned_url)
+                        if full_url not in image_urls:
+                            image_urls.append(full_url)
+
+        return image_urls
+
+    def _clean_wix_image_url(self, url: str) -> str:
+        """Clean Wix image URL to get high-quality version.
+
+        Removes blur, low quality parameters and sets proper dimensions.
+
+        Args:
+            url: Original Wix image URL
+
+        Returns:
+            Cleaned high-quality image URL
+        """
+        # Remove blur parameters
+        url = url.replace(",blur_2", "").replace(",blur_30", "").replace(",blur", "")
+
+        # Replace low quality with high quality
+        url = url.replace(",q_30", ",q_90").replace(",q_80", ",q_90")
+        if ",q_" not in url and "/v1/fill/" in url:
+            # Add quality parameter if missing
+            url = url.replace("/v1/fill/", "/v1/fill/q_90,")
+
+        # Ensure reasonable dimensions (at least 800px wide for primary images)
+        if "w_" in url:
+            # Extract and update width
+            parts = url.split("/")
+            for i, part in enumerate(parts):
+                if "w_" in part:
+                    # Parse current dimensions
+                    params = part.split(",")
+                    new_params = []
+                    for param in params:
+                        if param.startswith("w_"):
+                            try:
+                                width = int(param.split("_")[1])
+                                # Ensure minimum width of 800px
+                                if width < 800:
+                                    new_params.append("w_800")
+                                else:
+                                    new_params.append(param)
+                            except (IndexError, ValueError):
+                                new_params.append("w_800")
+                        elif param.startswith("h_"):
+                            try:
+                                height = int(param.split("_")[1])
+                                # Ensure minimum height of 800px
+                                if height < 800:
+                                    new_params.append("h_800")
+                                else:
+                                    new_params.append(param)
+                            except (IndexError, ValueError):
+                                new_params.append("h_800")
+                        elif not param.startswith("blur") and not param.startswith("q_"):
+                            new_params.append(param)
+
+                    # Add quality if not present
+                    if not any(p.startswith("q_") for p in new_params):
+                        new_params.append("q_90")
+
+                    parts[i] = ",".join(new_params)
+                    break
+            url = "/".join(parts)
+
+        # Handle different Wix URL formats
+        if "/media/" in url and "~mv2" in url:
+            # Format: .../media/hash~mv2.jpg/v1/fill/w_X,h_Y.../image.jpg
+            # Ensure we have good quality parameters
+            if "/v1/fill/" in url and "w_" not in url:
+                # Add default high-quality dimensions
+                url = url.replace("/v1/fill/", "/v1/fill/w_800,h_800,q_90/")
+
+        return url
 
     def _extract_image_urls(self, soup: BeautifulSoup) -> List[str]:
         """Extract image URLs from dog detail page.
@@ -976,15 +1202,21 @@ class MisisRescueScraper(BaseScraper):
                 high_res_src = self._wait_for_high_res_image(driver, first_grid_img, initial_src)
 
                 if high_res_src and high_res_src != initial_src:
-                    self.logger.debug(f"High-res grid image loaded: {high_res_src}")
-                    return high_res_src
+                    # CRITICAL FIX: Clean the high-res image URL to ensure quality
+                    cleaned_url = self._clean_wix_image_url(high_res_src)
+                    self.logger.debug(f"High-res grid image loaded: {cleaned_url}")
+                    return cleaned_url
                 else:
-                    self.logger.debug("High-res image didn't load, using initial version")
-                    return initial_src
+                    # CRITICAL FIX: Clean the initial image URL to ensure quality
+                    cleaned_url = self._clean_wix_image_url(initial_src)
+                    self.logger.debug("High-res image didn't load, using cleaned initial version")
+                    return cleaned_url
 
             except Exception as e:
                 self.logger.error(f"Error clicking grid image: {e}")
-                return initial_src
+                # CRITICAL FIX: Clean the initial image URL even in error case
+                cleaned_url = self._clean_wix_image_url(initial_src)
+                return cleaned_url
 
         except TimeoutException:
             self.logger.debug("No image grid found on page")
@@ -1101,15 +1333,19 @@ class MisisRescueScraper(BaseScraper):
 
                         # Hero images are typically at least 400px wide
                         if width >= 400:
-                            self.logger.debug(f"Found hero image: {src}")
-                            return src
+                            # CRITICAL FIX: Clean the hero image URL to get high quality
+                            cleaned_url = self._clean_wix_image_url(src)
+                            self.logger.debug(f"Found hero image: {cleaned_url}")
+                            return cleaned_url
                     except (IndexError, ValueError):
                         # Continue if we can't parse the width
                         pass
                 else:
                     # Return any image we found if we can't determine size
-                    self.logger.debug(f"Found potential hero image: {src}")
-                    return src
+                    # CRITICAL FIX: Clean the hero image URL to get high quality
+                    cleaned_url = self._clean_wix_image_url(src)
+                    self.logger.debug(f"Found potential hero image: {cleaned_url}")
+                    return cleaned_url
 
         self.logger.warning("No hero image found on detail page")
         return None
@@ -1159,8 +1395,8 @@ class MisisRescueScraper(BaseScraper):
         results = []
 
         with ThreadPoolExecutor(max_workers=self.batch_size) as executor:
-            # Submit all tasks
-            future_to_url = {executor.submit(self._scrape_with_retry, self._scrape_dog_detail, url): url for url in urls}
+            # Submit all tasks - use fast method first
+            future_to_url = {executor.submit(self._scrape_with_retry, self._scrape_dog_detail_fast, url): url for url in urls}
 
             # Collect results as they complete
             for future in as_completed(future_to_url):

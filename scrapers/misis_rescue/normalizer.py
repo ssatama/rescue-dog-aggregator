@@ -22,8 +22,8 @@ def extract_birth_date(text: Optional[str]) -> Optional[str]:
 
     text = text.strip()
 
-    # Pattern 1: "rough estimate DOB 2021"
-    match = re.search(r"DOB\s+(\d{4})", text, re.IGNORECASE)
+    # Pattern 1: "rough estimate DOB 2021" or "DOB- 2023" or "DOB: 2021"
+    match = re.search(r"DOB[-:\s]+(\d{4})(?!\d)", text, re.IGNORECASE)
     if match:
         return match.group(1)
 
@@ -32,8 +32,8 @@ def extract_birth_date(text: Optional[str]) -> Optional[str]:
     if match:
         return match.group(1)
 
-    # Pattern 3: "DOB: April/May 2024"
-    match = re.search(r"DOB:\s*([A-Za-z]+/[A-Za-z]+\s+\d{4})", text, re.IGNORECASE)
+    # Pattern 3: "DOB: April/May 2024" or "DOB -April /May 2024"
+    match = re.search(r"DOB[-:\s]*([A-Za-z]+\s*/\s*[A-Za-z]+\s+\d{4})", text, re.IGNORECASE)
     if match:
         return match.group(1)
 
@@ -49,11 +49,6 @@ def extract_birth_date(text: Optional[str]) -> Optional[str]:
 
     # Pattern 6: "date of birth: 2020"
     match = re.search(r"date\s+of\s+birth:\s*(\d{4})", text, re.IGNORECASE)
-    if match:
-        return match.group(1)
-
-    # Pattern 7: "DOB 2019"
-    match = re.search(r"DOB\s+(\d{4})", text, re.IGNORECASE)
     if match:
         return match.group(1)
 
@@ -108,6 +103,9 @@ def normalize_name(name: Optional[str]) -> str:
         "\U0001fa70-\U0001faff"  # Symbols and Pictographs Extended-A
         "\U00002702-\U000027b0"  # Dingbats
         "\U000024c2-\U0001f251"
+        "\u200d"  # Zero-width joiner
+        "\u200c"  # Zero-width non-joiner
+        "\u200b"  # Zero-width space
         "]+",
         flags=re.UNICODE,
     )
@@ -135,13 +133,17 @@ def normalize_name(name: Optional[str]) -> str:
     # Clean up whitespace after gender removal
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
 
-    # Remove location suffixes
+    # Remove location suffixes - enhanced patterns
     location_patterns = [
-        r"\s+in\s+\w+\s*$",  # "in UK", "in Germany"
-        r"\s+from\s+\w+\s*$",  # "from Serbia"
+        r"\s+in\s+the\s+uk[!\s]*$",  # "in the UK!" (specific common pattern)
+        r"\s+in\s+the\s+\w+[!\s]*$",  # "in the [country]!"
+        r"\s+in\s+\w+[!\s]*$",  # "in UK", "in Germany" with optional !
+        r"\s+from\s+\w+[!\s]*$",  # "from Serbia"
         r"\s*-\s*\w+\s*$",  # "- UK"
         r"\s*\(\w+\)\s*$",  # "(Serbia)"
         r"^in\s+\w+\s*$",  # Just "in UK"
+        r"\s*{.*?}",  # Remove {!} or similar bracketed content
+        r"\s*\{.*?\}",  # Remove curly brace content
     ]
 
     for pattern in location_patterns:
@@ -339,9 +341,9 @@ def calculate_age_years(birth_date_text: Optional[str]) -> Optional[float]:
         return None
 
     # Import datetime here to avoid mocking issues
-    from datetime import datetime as dt
+    from datetime import datetime
 
-    current_date = dt.now()
+    current_date = datetime.now()
 
     # Handle year only format (e.g., "2021")
     if re.match(r"^\d{4}$", birth_date_text):
@@ -372,7 +374,7 @@ def calculate_age_years(birth_date_text: Optional[str]) -> Optional[float]:
 
         month_num = month_map.get(month_name.lower())
         if month_num:
-            birth_date = dt(birth_year, month_num, 1)
+            birth_date = datetime(birth_year, month_num, 1)
             age_days = (current_date - birth_date).days
             return round(age_days / 365.25, 1)
 
@@ -400,7 +402,7 @@ def calculate_age_years(birth_date_text: Optional[str]) -> Optional[float]:
         month1_num = month_map.get(month1_name.lower())
         if month1_num:
             # Use first month for calculation
-            birth_date = dt(birth_year, month1_num, 15)  # Mid-month
+            birth_date = datetime(birth_year, month1_num, 15)  # Mid-month
             age_days = (current_date - birth_date).days
             return round(age_days / 365.25, 1)
 
@@ -436,7 +438,7 @@ def extract_breed(bullets: Optional[List[str]]) -> Optional[str]:
             r"(husky)\s+mix",
             r"(posavac hound)\s+mix",  # Found in database
             r"(gun dog)\s+mix",  # Found in database
-            r"([a-z]{4,})\s+mix",  # Generic pattern
+            # Removed generic pattern that was matching "size mix" incorrectly
         ]
 
         for pattern in breed_patterns:
@@ -457,6 +459,8 @@ def extract_breed(bullets: Optional[List[str]]) -> Optional[str]:
     # Look for specific pure breeds
     breed_patterns = [
         r"✔️([\w\s]+)✔️",  # Pattern with checkmarks
+        r"\b(english pointer)\b",  # Add English Pointer support
+        r"\b(pointer)\b",  # Generic pointer
         r"\b(golden retriever)\b",
         r"\b(labrador|lab)\b",
         r"\b(german shepherd)\b",
@@ -474,6 +478,7 @@ def extract_breed(bullets: Optional[List[str]]) -> Optional[str]:
         r"\b(shepherd)\b",
         r"\b(posavac hound)\b",
         r"\b(gun dog)\b",
+        r"\b(hound)\b",  # Generic hound
     ]
 
     for pattern in breed_patterns:
@@ -482,6 +487,10 @@ def extract_breed(bullets: Optional[List[str]]) -> Optional[str]:
             breed = match.group(1)
             if breed.lower() == "lab":
                 return "Labrador"
+            elif breed.lower() == "english pointer":
+                return "English Pointer"
+            elif breed.lower() == "pointer":
+                return "Pointer"
             return breed.title()
 
     return None
@@ -526,7 +535,7 @@ def normalize_size(weight_text: Optional[str]) -> Optional[str]:
         weight_text: Text containing weight information
 
     Returns:
-        Size category: 'Small', 'Medium', 'Large', or None
+        Size category: 'Tiny', 'Small', 'Medium', 'Large', 'XLarge', or None
     """
     if not weight_text:
         return None
@@ -536,13 +545,17 @@ def normalize_size(weight_text: Optional[str]) -> Optional[str]:
     if not weight_kg:
         return None
 
-    # Size categories based on weight
-    if weight_kg <= 10:
+    # Size categories based on weight (aligned with rescue dog standards)
+    if weight_kg < 5:
+        return "Tiny"
+    elif weight_kg <= 10:
         return "Small"
     elif weight_kg <= 25:
         return "Medium"
-    else:
+    elif weight_kg <= 40:
         return "Large"
+    else:
+        return "XLarge"
 
 
 def extract_weight_kg(text: Optional[str]) -> Optional[float]:

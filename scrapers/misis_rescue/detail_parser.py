@@ -125,9 +125,13 @@ class MisisRescueDetailParser:
                     # Store weight in properties as text for BaseScraper to standardize
                     result["properties"]["weight"] = f"{weight_kg}kg"
 
-                    size = normalize_size(bullet)
+                    # Calculate size from weight using our improved normalizer
+                    # Pass the weight text, not the full bullet
+                    size = normalize_size(f"{weight_kg}kg")
                     if size:
                         result["size"] = size
+                        # ALSO store in properties for BaseScraper standardization to use
+                        result["properties"]["standardized_size"] = size
                     break
 
         # Enhanced fallback extraction from page text if bullet points didn't provide data
@@ -164,6 +168,8 @@ class MisisRescueDetailParser:
                     size = normalize_size(f"{page_weight}kg")
                     if size and not result.get("size"):
                         result["size"] = size
+                        # ALSO store in properties for BaseScraper standardization to use
+                        result["properties"]["standardized_size"] = size
 
         return result
 

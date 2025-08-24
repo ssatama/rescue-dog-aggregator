@@ -112,7 +112,7 @@ class TestMisisRescueDetailParser:
         assert result["breed"] == "Mixed Breed"
         # Weight is stored in properties now
         assert result["properties"]["weight"] == "2.5kg"  # Average of 2-3kg
-        assert result["size"] == "Small"
+        assert result["size"] == "Tiny"  # 2.5kg is < 5kg threshold for Tiny
         assert result["age_text"] is not None
         assert "month" in result["age_text"] or "year" in result["age_text"]  # Should be young based on March 2023
 

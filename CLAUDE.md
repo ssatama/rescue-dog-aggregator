@@ -9,7 +9,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Backend: Python/FastAPI/PostgreSQL
 - Frontend: Next.js 15/React/TypeScript
 - Testing: pytest (backend), Jest (frontend)
-- Current: 434+ backend tests, 1,249 frontend tests, 8 organizations
+- Current: 434+ backend tests, 1,249 frontend tests, 2200 dogs
 
 ## MCP Tools for Claude Code
 
@@ -53,6 +53,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Mutate state or data structures
 - Create files >200 lines
 - Commit directly to main
+- Act like a sycophant. Always be direct and fair.
 
 ## Essential Commands
 
@@ -158,6 +159,7 @@ def isolate_database_writes():
 ## Quick Reference - Common Tasks
 
 ### Add New API Endpoint
+
 ```
 TASK: Add /api/v1/[endpoint] that [functionality]
 
@@ -178,6 +180,7 @@ PHASE 3 - EXECUTE:
 ```
 
 ### Add New Scraper
+
 ```
 TASK: Add scraper for [Organization]
 
@@ -198,6 +201,7 @@ PHASE 3 - EXECUTE:
 ```
 
 ### Fix Failing Test
+
 ```
 TASK: Fix failing test [test name]
 

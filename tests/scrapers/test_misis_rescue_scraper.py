@@ -73,6 +73,7 @@ class TestMisisRescueScraper(ScraperTestBase):
         mock_driver_instance = Mock()
         mock_driver.return_value = mock_driver_instance
         mock_driver_instance.page_source = mock_html
+        mock_driver_instance.title = "Test Dog - MISIs Animal Rescue"
         dog_data = scraper._scrape_dog_detail("https://example.com/post/test-dog")
         assert dog_data["name"] == "Test Dog"
         assert dog_data["external_id"] == "mar-test-dog"

@@ -8,8 +8,9 @@ import logging
 import os
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import BytesIO
-from typing import Dict, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import boto3
 import requests
@@ -31,10 +32,20 @@ class R2Service:
     _config_valid = False
     _s3_client = None
 
-    # Global rate limiting for all R2 uploads (1 image per second max)
+    # Global rate limiting for all R2 uploads with exponential backoff
     _last_upload_time = 0
     _upload_lock = threading.Lock()
+    _state_lock = threading.Lock()  # Lock for protecting shared state access
     RATE_LIMIT_SECONDS = 1.0
+    _consecutive_failures = 0  # Track consecutive rate limit failures
+
+    # Circuit breaker and failure tracking
+    _failure_history = []  # List of (timestamp, error_type) tuples
+    _success_history = []  # List of timestamps
+    _circuit_breaker_open = False
+    _circuit_breaker_until = 0
+    _circuit_breaker_threshold = 5  # Open after 5 consecutive failures
+    _circuit_breaker_timeout = 60  # Seconds to wait before testing again
 
     @classmethod
     def _reset_config_cache(cls):
@@ -45,13 +56,30 @@ class R2Service:
 
     @classmethod
     def _enforce_rate_limit(cls):
-        """Enforce global rate limit of 1 upload per second across all scrapers."""
+        """Enforce rate limit with exponential backoff and jitter."""
+        import random
+
         with cls._upload_lock:
             current_time = time.time()
             time_since_last = current_time - cls._last_upload_time
-            if time_since_last < cls.RATE_LIMIT_SECONDS:
-                sleep_time = cls.RATE_LIMIT_SECONDS - time_since_last
-                logger.debug(f"Rate limiting: sleeping {sleep_time:.2f}s before upload")
+
+            # Calculate delay with exponential backoff based on consecutive failures
+            base_delay = cls.RATE_LIMIT_SECONDS
+            with cls._state_lock:
+                consecutive_failures = cls._consecutive_failures
+
+            if consecutive_failures > 0:
+                # Exponential backoff: 1s, 2s, 4s, 8s, 16s (max)
+                backoff_delay = min(base_delay * (2**consecutive_failures), 16.0)
+                # Add jitter to prevent synchronized retries
+                jitter = random.uniform(0, 0.5)
+                required_delay = backoff_delay + jitter
+            else:
+                required_delay = base_delay
+
+            if time_since_last < required_delay:
+                sleep_time = required_delay - time_since_last
+                logger.debug(f"Rate limiting: sleeping {sleep_time:.2f}s before upload (failures: {consecutive_failures})")
                 time.sleep(sleep_time)
             cls._last_upload_time = time.time()
 
@@ -81,8 +109,13 @@ class R2Service:
         if cls._s3_client is None:
             from botocore.config import Config
 
-            # Configure timeouts to prevent hanging
-            config = Config(connect_timeout=15, read_timeout=30, retries={"max_attempts": 2})  # 15 seconds to establish connection  # 30 seconds to read response  # Only 2 attempts to fail fast
+            # Configure timeouts and retries for better resilience
+            config = Config(
+                connect_timeout=10,  # 10 seconds to establish connection
+                read_timeout=30,  # 30 seconds to read response
+                max_pool_connections=5,  # Limit concurrent connections
+                retries={"max_attempts": 3, "mode": "adaptive"},  # Retry up to 3 times  # Use adaptive retry mode for better handling
+            )
 
             cls._s3_client = boto3.client(
                 "s3",
@@ -253,6 +286,9 @@ class R2Service:
             )
 
             logger.info(f"Successfully uploaded image to R2: {image_key}")
+            # Reset consecutive failures on success
+            with R2Service._state_lock:
+                R2Service._consecutive_failures = 0
             return R2Service._build_custom_domain_url(image_key), True
 
         except requests.exceptions.RequestException as e:
@@ -260,7 +296,15 @@ class R2Service:
             return image_url, False
 
         except ClientError as e:
-            logger.warning(f"R2 error uploading image {image_url}: {e}")
+            error_code = e.response.get("Error", {}).get("Code", "")
+            if error_code in ["SlowDown", "TooManyRequests", "RequestLimitExceeded"]:
+                # Increment failure counter for rate limiting errors
+                with R2Service._state_lock:
+                    R2Service._consecutive_failures = min(R2Service._consecutive_failures + 1, 5)  # Cap at 5
+                    failures = R2Service._consecutive_failures
+                logger.warning(f"R2 rate limit error uploading image {image_url}: {error_code} (failures: {failures})")
+            else:
+                logger.warning(f"R2 error uploading image {image_url}: {e}")
             return image_url, False
 
         except Exception as e:
@@ -340,3 +384,381 @@ class R2Service:
             "endpoint": os.getenv("R2_ENDPOINT", "Not set"),
             "custom_domain": os.getenv("R2_CUSTOM_DOMAIN", "Not set"),
         }
+
+    @classmethod
+    def batch_upload_images(cls, images: list, batch_size: int = 5, batch_delay: float = 3.0, adaptive_delay: bool = True, progress_callback: Optional[Callable] = None) -> list:
+        """Upload multiple images in batches with delays to avoid rate limiting.
+
+        Args:
+            images: List of tuples (image_url, animal_name, organization_name)
+            batch_size: Number of images to upload before pausing
+            batch_delay: Base delay in seconds between batches
+            adaptive_delay: Whether to increase delay based on failure rate
+            progress_callback: Optional callback(current, total, url, success)
+
+        Returns:
+            List of tuples (uploaded_url, success_bool)
+        """
+        if not images:
+            return []
+
+        results = []
+        total_images = len(images)
+        failures_in_batch = 0
+        
+        # Log batch upload start
+        logger.info(f"📦 Starting BATCH upload of {total_images} images (batch size: {batch_size})")
+
+        for i, (image_url, animal_name, org_name) in enumerate(images):
+            # Upload single image as part of batch
+            uploaded_url, success = cls.upload_image_from_url(image_url, animal_name, org_name)
+            results.append((uploaded_url, success))
+
+            # Track failures for adaptive delays
+            if not success:
+                failures_in_batch += 1
+
+            # Call progress callback if provided
+            if progress_callback:
+                progress_callback(i + 1, total_images, uploaded_url, success)
+
+            # Apply batch delay after completing a batch (but not after last image)
+            if (i + 1) % batch_size == 0 and (i + 1) < total_images:
+                delay = batch_delay
+
+                # Adaptive delay based on failure rate in batch
+                if adaptive_delay and failures_in_batch > 0:
+                    failure_rate = failures_in_batch / batch_size
+                    # Increase delay based on failure rate (up to 3x base delay)
+                    delay = batch_delay * (1 + min(failure_rate * 2, 2))
+                    logger.info(f"Batch completed with {failures_in_batch}/{batch_size} failures, using {delay:.1f}s delay")
+
+                logger.info(f"Batch of {batch_size} uploads completed, pausing {delay:.1f}s before next batch")
+                time.sleep(delay)
+                failures_in_batch = 0  # Reset for next batch
+
+        return results
+
+    @classmethod
+    def batch_upload_images_with_stats(cls, images: list, batch_size: int = 5, batch_delay: float = 3.0, adaptive_delay: bool = True) -> Tuple[list, Dict]:
+        """Upload multiple images and return statistics.
+
+        Args:
+            images: List of tuples (image_url, animal_name, organization_name)
+            batch_size: Number of images to upload before pausing
+            batch_delay: Base delay in seconds between batches
+            adaptive_delay: Whether to increase delay based on failure rate
+
+        Returns:
+            Tuple of (results_list, statistics_dict)
+        """
+        start_time = time.time()
+
+        results = cls.batch_upload_images(images, batch_size=batch_size, batch_delay=batch_delay, adaptive_delay=adaptive_delay)
+
+        total_time = time.time() - start_time
+        successful = sum(1 for _, success in results if success)
+        failed = len(results) - successful
+
+        stats = {
+            "total": len(results),
+            "successful": successful,
+            "failed": failed,
+            "success_rate": (successful / len(results) * 100) if results else 0,
+            "total_time": total_time,
+            "average_time": total_time / len(results) if results else 0,
+        }
+
+        logger.info(f"Batch upload completed: {successful}/{len(results)} successful " f"({stats['success_rate']:.1f}%), took {total_time:.1f}s total, " f"{stats['average_time']:.2f}s per image")
+
+        return results, stats
+
+    @classmethod
+    def concurrent_upload_images(
+        cls,
+        images: List[Tuple[str, str, str]],
+        max_workers: int = 3,
+        throttle_ms: int = 200,
+        max_concurrent_uploads: Optional[int] = None,
+        adaptive_throttle: bool = False,
+        progress_callback: Optional[Callable] = None,
+    ) -> List[Tuple[str, bool]]:
+        """Upload multiple images concurrently with throttling.
+
+        Args:
+            images: List of tuples (image_url, animal_name, organization_name)
+            max_workers: Maximum number of concurrent upload threads
+            throttle_ms: Milliseconds to wait between starting uploads
+            max_concurrent_uploads: Optional max simultaneous uploads (uses semaphore)
+            adaptive_throttle: Whether to increase throttle on failures
+            progress_callback: Optional callback(completed, total, url, success)
+
+        Returns:
+            List of tuples (uploaded_url, success_bool) in original order
+        """
+        if not images:
+            return []
+
+        results = [None] * len(images)  # Pre-allocate to maintain order
+        completed_count = 0
+        throttle_delay = throttle_ms / 1000.0
+        current_throttle = throttle_delay
+        semaphore = None
+
+        if max_concurrent_uploads:
+            semaphore = threading.Semaphore(max_concurrent_uploads)
+
+        def upload_with_index(index: int, image_data: Tuple[str, str, str]) -> Tuple[int, str, bool]:
+            """Upload single image and return index with result."""
+            nonlocal current_throttle
+            image_url, animal_name, org_name = image_data
+
+            try:
+                if semaphore:
+                    semaphore.acquire()
+
+                # Apply throttle delay before starting upload
+                if index > 0 and current_throttle > 0:
+                    time.sleep(current_throttle)
+
+                uploaded_url, success = cls.upload_image_from_url(image_url, animal_name, org_name)
+                return index, uploaded_url, success
+            except Exception as e:
+                logger.error(f"Exception in concurrent upload for {image_url}: {e}")
+                return index, image_url, False
+            finally:
+                if semaphore:
+                    semaphore.release()
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all tasks
+            futures = {executor.submit(upload_with_index, i, img_data): i for i, img_data in enumerate(images)}
+
+            # Process completed uploads
+            for future in as_completed(futures):
+                try:
+                    index, uploaded_url, success = future.result()
+                    results[index] = (uploaded_url, success)
+                    completed_count += 1
+
+                    # Adaptive throttling
+                    if adaptive_throttle:
+                        if not success:
+                            # Increase throttle on failure
+                            current_throttle = min(current_throttle * 1.5, 2.0)
+                        elif current_throttle > throttle_delay:
+                            # Slowly decrease throttle on success
+                            current_throttle = max(current_throttle * 0.9, throttle_delay)
+
+                    # Progress callback
+                    if progress_callback:
+                        progress_callback(completed_count, len(images), uploaded_url, success)
+
+                except Exception as e:
+                    index = futures[future]
+                    logger.error(f"Error processing future for index {index}: {e}")
+                    results[index] = (images[index][0], False)
+
+        return results
+
+    @classmethod
+    def concurrent_upload_images_with_stats(
+        cls, images: List[Tuple[str, str, str]], max_workers: int = 3, throttle_ms: int = 200, adaptive_throttle: bool = False
+    ) -> Tuple[List[Tuple[str, bool]], Dict]:
+        """Upload images concurrently and return statistics.
+
+        Args:
+            images: List of tuples (image_url, animal_name, organization_name)
+            max_workers: Maximum number of concurrent upload threads
+            throttle_ms: Milliseconds to wait between starting uploads
+            adaptive_throttle: Whether to increase throttle on failures
+
+        Returns:
+            Tuple of (results_list, statistics_dict)
+        """
+        start_time = time.time()
+
+        results = cls.concurrent_upload_images(images, max_workers=max_workers, throttle_ms=throttle_ms, adaptive_throttle=adaptive_throttle)
+
+        total_time = time.time() - start_time
+        successful = sum(1 for _, success in results if success)
+        failed = len(results) - successful
+
+        stats = {
+            "total": len(results),
+            "successful": successful,
+            "failed": failed,
+            "success_rate": (successful / len(results) * 100) if results else 0,
+            "total_time": total_time,
+            "average_time": total_time / len(results) if results else 0,
+            "max_concurrent": max_workers,
+        }
+
+        logger.info(
+            f"Concurrent upload completed: {successful}/{len(results)} successful "
+            f"({stats['success_rate']:.1f}%), took {total_time:.1f}s total "
+            f"({stats['average_time']:.2f}s avg), max {max_workers} concurrent"
+        )
+
+        return results, stats
+
+    # Circuit Breaker and Intelligent Fallback Methods
+
+    @classmethod
+    def track_upload_success(cls):
+        """Track a successful upload."""
+        with cls._state_lock:
+            cls._success_history.append(time.time())
+            # Clean old entries (keep last 5 minutes)
+            cutoff_time = time.time() - 300
+            cls._success_history = [t for t in cls._success_history if t > cutoff_time]
+
+            # Reset consecutive failures on success
+            if cls._consecutive_failures > 0:
+                cls._consecutive_failures = max(0, cls._consecutive_failures - 1)
+
+    @classmethod
+    def track_upload_failure(cls, error_type: str = "unknown"):
+        """Track a failed upload."""
+        with cls._state_lock:
+            cls._failure_history.append((time.time(), error_type))
+            # Clean old entries (keep last 5 minutes)
+            cutoff_time = time.time() - 300
+            cls._failure_history = [(t, e) for t, e in cls._failure_history if t > cutoff_time]
+
+            # Check if circuit breaker should open
+            recent_failures = len([f for f in cls._failure_history if f[0] > time.time() - 60])
+            if recent_failures >= cls._circuit_breaker_threshold:
+                cls._circuit_breaker_open = True
+                cls._circuit_breaker_until = time.time() + cls._circuit_breaker_timeout
+                logger.warning(f"Circuit breaker opened due to {recent_failures} failures in 60s")
+
+    @classmethod
+    def is_circuit_breaker_open(cls) -> bool:
+        """Check if circuit breaker is currently open."""
+        with cls._state_lock:
+            if cls._circuit_breaker_open:
+                if time.time() > cls._circuit_breaker_until:
+                    # Timeout expired, close circuit breaker
+                    cls._circuit_breaker_open = False
+                    logger.info("Circuit breaker closed after timeout")
+                    return False
+                return True
+            return False
+
+    @classmethod
+    def get_failure_rate(cls, window_minutes: int = 5) -> float:
+        """Calculate failure rate over specified window."""
+        with cls._state_lock:
+            cutoff_time = time.time() - (window_minutes * 60)
+            recent_failures = len([f for f in cls._failure_history if f[0] > cutoff_time])
+            recent_successes = len([t for t in cls._success_history if t > cutoff_time])
+
+            total_attempts = recent_failures + recent_successes
+            if total_attempts == 0:
+                return 0.0
+
+            return (recent_failures / total_attempts) * 100
+
+    @classmethod
+    def get_adaptive_batch_size(cls, base_size: int = 5) -> int:
+        """Calculate adaptive batch size based on failure rate."""
+        failure_rate = cls.get_failure_rate()
+
+        if failure_rate < 10:
+            return base_size * 2  # Double batch size for low failure rate
+        elif failure_rate < 30:
+            return base_size  # Normal batch size
+        elif failure_rate < 50:
+            return max(2, base_size // 2)  # Half batch size
+        else:
+            return 1  # Single uploads only for high failure rate
+
+    @classmethod
+    def categorize_error(cls, error_code: str) -> str:
+        """Categorize error type for better handling."""
+        rate_limit_errors = ["SlowDown", "TooManyRequests", "RequestLimitExceeded"]
+        network_errors = ["NetworkError", "Timeout", "ConnectionError"]
+        validation_errors = ["InvalidImage", "InvalidFormat", "ValidationError"]
+
+        if error_code in rate_limit_errors:
+            return "rate_limit"
+        elif error_code in network_errors:
+            return "network"
+        elif error_code in validation_errors:
+            return "validation"
+        else:
+            return "other"
+
+    @classmethod
+    def calculate_retry_delay(cls, attempt: int, base_delay: float = 1.0) -> float:
+        """Calculate retry delay with exponential backoff and jitter."""
+        import random
+
+        # Exponential backoff: 1s, 2s, 4s, 8s, 16s
+        delay = min(base_delay * (2**attempt), 16.0)
+        # Add jitter (±50%)
+        jitter = delay * random.uniform(-0.5, 0.5)
+        return max(0.1, delay + jitter)
+
+    @classmethod
+    def upload_image_with_circuit_breaker(cls, image_url: str, animal_name: str, organization_name: str = "unknown") -> Tuple[Optional[str], bool]:
+        """Upload image with circuit breaker protection."""
+        # Check circuit breaker
+        if cls.is_circuit_breaker_open():
+            logger.warning("Circuit breaker open, skipping R2 upload")
+            return image_url, False
+
+        # Attempt upload
+        uploaded_url, success = cls.upload_image_from_url(image_url, animal_name, organization_name)
+
+        # Track result
+        if success:
+            cls.track_upload_success()
+        else:
+            cls.track_upload_failure("upload_failed")
+
+        return uploaded_url, success
+
+    @classmethod
+    def upload_image_with_fallback(cls, image_url: str, animal_name: str, organization_name: str = "unknown", failure_threshold: float = 50.0) -> Tuple[Optional[str], bool]:
+        """Upload image with intelligent fallback based on failure rate."""
+        # Check failure rate
+        failure_rate = cls.get_failure_rate()
+
+        if failure_rate > failure_threshold:
+            logger.warning(f"Failure rate {failure_rate:.1f}% exceeds threshold, using fallback")
+            return image_url, False
+
+        # Use circuit breaker upload
+        return cls.upload_image_with_circuit_breaker(image_url, animal_name, organization_name)
+
+    @classmethod
+    def get_health_status(cls) -> Dict:
+        """Get comprehensive health status for monitoring."""
+        recent_errors = [(e, count) for e, count in cls._get_error_counts().items()][:5]
+
+        with cls._state_lock:
+            circuit_breaker_open = cls._circuit_breaker_open
+            consecutive_failures = cls._consecutive_failures
+            total_attempts = len(cls._failure_history) + len(cls._success_history)
+
+        return {
+            "failure_rate": cls.get_failure_rate(),
+            "circuit_breaker_open": circuit_breaker_open,
+            "consecutive_failures": consecutive_failures,
+            "total_attempts": total_attempts,
+            "recent_errors": recent_errors,
+            "adaptive_batch_size": cls.get_adaptive_batch_size(),
+            "configured": cls.is_configured(),
+        }
+
+    @classmethod
+    def _get_error_counts(cls) -> Dict[str, int]:
+        """Get count of recent errors by type."""
+        from collections import Counter
+
+        with cls._state_lock:
+            cutoff_time = time.time() - 300  # Last 5 minutes
+            recent_errors = [e for t, e in cls._failure_history if t > cutoff_time]
+        return dict(Counter(recent_errors))

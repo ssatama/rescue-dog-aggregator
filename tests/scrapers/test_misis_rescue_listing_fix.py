@@ -109,9 +109,14 @@ class TestMisisRescueListingFix:
             "primary_image_url": "https://example.com/image.jpg",
         }
 
-        with patch.object(scraper, "_get_all_dogs_from_listing") as mock_listing, patch.object(scraper, "_scrape_dog_detail") as mock_detail:
+        with (
+            patch.object(scraper, "_get_all_dogs_from_listing") as mock_listing,
+            patch.object(scraper, "_scrape_dog_detail_fast") as mock_detail_fast,
+            patch.object(scraper, "_scrape_dog_detail") as mock_detail,
+        ):
 
             mock_listing.return_value = mock_dogs_with_images
+            mock_detail_fast.return_value = mock_detail_data
             mock_detail.return_value = mock_detail_data
 
             dogs = scraper.collect_data()
