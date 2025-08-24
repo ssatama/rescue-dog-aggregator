@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 class BaseScraper(ABC):
     """Base scraper class that all organization-specific scrapers will inherit from."""
-    
+
     # Batch processing configuration constants
     SMALL_BATCH_THRESHOLD = 3
     CONCURRENT_UPLOAD_THRESHOLD = 10

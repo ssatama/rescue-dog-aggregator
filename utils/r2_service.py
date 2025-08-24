@@ -405,7 +405,7 @@ class R2Service:
         results = []
         total_images = len(images)
         failures_in_batch = 0
-        
+
         # Log batch upload start
         logger.info(f"📦 Starting BATCH upload of {total_images} images (batch size: {batch_size})")
 

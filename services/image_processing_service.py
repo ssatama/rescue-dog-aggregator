@@ -207,22 +207,22 @@ class ImageProcessingService:
 
     def _get_existing_image_mappings(self, original_urls: List[str], database_connection) -> Dict[str, str]:
         """Query database for existing original_url to primary_image_url mappings.
-        
+
         Args:
             original_urls: List of original image URLs to check
             database_connection: Database connection
-            
+
         Returns:
             Dictionary mapping original_url to primary_image_url for existing images
         """
         if not original_urls:
             return {}
-            
+
         # Validate database connection
-        if not database_connection or not hasattr(database_connection, 'cursor'):
+        if not database_connection or not hasattr(database_connection, "cursor"):
             self.logger.warning("Invalid database connection provided for deduplication")
             return {}
-            
+
         cursor = None
         try:
             cursor = database_connection.cursor()
@@ -234,16 +234,16 @@ class ImageProcessingService:
                 AND primary_image_url IS NOT NULL
                 AND primary_image_url LIKE '%images.rescuedogs.me%'
             """
-            
+
             cursor.execute(query, (original_urls,))
             results = cursor.fetchall()
-            
+
             # Build mapping dictionary
             mappings = {}
             for original_url, r2_url in results:
                 if original_url and r2_url:
                     mappings[original_url] = r2_url
-                    
+
             return mappings
         except Exception as e:
             self.logger.error(f"Error querying existing image mappings: {e}")
@@ -268,7 +268,7 @@ class ImageProcessingService:
         # Collect all original URLs for deduplication check
         all_original_urls = []
         animal_url_indices = {}  # Map original URL to list of animal indices
-        
+
         for i, animal in enumerate(animals_data):
             if animal.get("primary_image_url"):
                 original_url = animal["primary_image_url"]
@@ -292,7 +292,7 @@ class ImageProcessingService:
         # Separate images into reusable and new uploads
         images_to_upload = []
         reused_count = 0
-        
+
         for original_url in set(all_original_urls):  # Use set to avoid duplicate processing
             if original_url in existing_mappings:
                 # Reuse existing R2 URL for all animals with this original URL
@@ -329,7 +329,7 @@ class ImageProcessingService:
             for i, (uploaded_url, success) in enumerate(results):
                 if i < len(images_to_upload):
                     original_url = images_to_upload[i][0]
-                    
+
                     # Update all animals that use this original URL
                     if original_url in animal_url_indices:
                         for animal_idx in animal_url_indices[original_url]:
