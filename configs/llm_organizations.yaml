@@ -66,6 +66,14 @@ organizations:
     model_preference: "google/gemini-2.5-flash"
     enabled: true # Configured and ready for testing
 
+  14:
+    name: "The Underdog"
+    prompt_file: "theunderdog.yaml"
+    source_language: "en"
+    target_language: "en"
+    model_preference: "google/gemini-2.5-flash"
+    enabled: true # Configured and ready for testing
+
 # Model configuration
 models:
   default: "google/gemini-2.5-flash"
