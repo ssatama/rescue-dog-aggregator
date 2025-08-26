@@ -225,24 +225,47 @@ class ImageProcessingService:
 
         cursor = None
         try:
+            # Ensure connection is in a good state
+            if hasattr(database_connection, 'rollback'):
+                try:
+                    database_connection.rollback()
+                except Exception:
+                    pass  # Ignore if no transaction
+                    
             cursor = database_connection.cursor()
-            # Use parameterized query to prevent SQL injection
-            query = """
+            
+            # Use IN clause instead of ANY() to avoid psycopg2 issues  
+            # Build placeholders for parameterized query
+            placeholders = ','.join(['%s'] * len(original_urls))
+            
+            # Check if we've already uploaded these source URLs
+            # The original_urls parameter contains the source URLs (e.g., from the org's website)
+            # We need to check if we've already processed and uploaded these
+            query = f"""
                 SELECT DISTINCT original_image_url, primary_image_url 
                 FROM animals 
-                WHERE original_image_url = ANY(%s)
+                WHERE original_image_url IN ({placeholders})
                 AND primary_image_url IS NOT NULL
-                AND primary_image_url LIKE '%images.rescuedogs.me%'
+                AND primary_image_url LIKE '%%images.rescuedogs.me%%'
             """
+            
+            # Debug: Log what we're about to query
+            self.logger.debug(f"Querying for {len(original_urls)} URLs using IN clause")
 
-            cursor.execute(query, (original_urls,))
+            cursor.execute(query, tuple(original_urls))
             results = cursor.fetchall()
+            
+            # Debug: Log results
+            self.logger.debug(f"Query returned {len(results)} results")
 
             # Build mapping dictionary
             mappings = {}
-            for original_url, r2_url in results:
-                if original_url and r2_url:
-                    mappings[original_url] = r2_url
+            for row in results:
+                # Handle potential tuple unpacking issues
+                if row and len(row) >= 2:
+                    original_url, r2_url = row[0], row[1]
+                    if original_url and r2_url:
+                        mappings[original_url] = r2_url
 
             return mappings
         except Exception as e:
