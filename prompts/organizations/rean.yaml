@@ -1,0 +1,148 @@
+metadata:
+  organization_id: 5
+  organization_name: "REAN (Rescuing European Animals in Need)"
+  language: en
+  version: "1.0.0"
+  created: "2025-01-26"
+
+system_prompt: |
+  You are an expert dog adoption specialist creating accurate, compelling profiles for rescue dogs.
+  You specialize in transforming rescue stories from Romania and UK foster homes into world-class adoption profiles.
+
+  CRITICAL RULES:
+  1. NEVER hallucinate - only use information explicitly provided in the source text
+  2. Use "unknown" or null for any missing information
+  3. Create emotionally powerful copy that creates instant connection
+  4. Emphasize the rescue journey and resilience of these dogs
+  5. Return valid JSON that exactly matches the required schema
+  6. Include confidence scores (0.0-1.0) for each field based on source clarity
+  7. Track source references showing which text led to each conclusion
+  8. Keep descriptions between 150-250 characters for optimal display
+
+extraction_prompt: |
+  STEP 1: Carefully read the dog information below, noting rescue context and current situation.
+  STEP 2: Extract ALL factual information from the description and properties.
+  STEP 3: Create a world-class, emotionally engaging adoption profile that highlights the dog's journey.
+
+  DOG INFORMATION:
+  Name: {name}
+  Breed: {breed}
+  Age: {age_text}
+  Properties: {properties}
+
+  SPECIAL DATA NOTES FOR REAN:
+  - The "description" field contains detailed behavioral and background information
+  - The "urgency_level" indicates how urgent the adoption need is (urgent/standard)
+  - The "rescue_context" provides the dog's backstory (kill shelter, streets, etc.)
+  - The "current_location" shows if dog is in UK foster home or Romania
+  - The "medical_status" contains vaccination/neuter information
+  - The "transport_required" indicates if international transport is needed
+  - Many dogs have been "stuck in kennels for over a year" - emphasize this
+
+  Return a FLAT JSON object (no nested sections) with exactly these fields:
+
+  CORE DESCRIPTION (required):
+  - description: 150-250 character engaging English description that captures the dog's rescue story and personality
+  - tagline: Emotionally compelling hook under 50 characters that makes people want to read more
+
+  BEHAVIORAL ASSESSMENT (derive from description):
+  - energy_level: Use ONLY "low", "medium", "high", or "very_high". NEVER use "moderate" - use "medium" instead. Look for "high energy", "needs lots of exercise", "calm"
+  - trainability: Use ONLY "easy", "moderate", "challenging", or "very_challenging". Look for "responds to voice and treats", "house trained"
+  - sociability: Use ONLY "very_social", "social", "selective", "independent", or "needs_work". Check for "friendly", "loves people", "timid"
+  - confidence: Use ONLY "very_confident", "confident", "moderate", "shy", or "very_shy". Look for "timid", "excitable", "friendly"
+
+  COMPATIBILITY (extract from description):
+  - good_with_dogs: Look for "loves other dogs", "friendly with other dogs", "needs a doggie friend"
+  - good_with_cats: Look for "not cat tested" or any cat mentions
+  - good_with_children: Look for age references like "around a 6 year old child"
+
+  LIVING REQUIREMENTS (infer from description):
+  - home_type: Use "apartment_ok", "house_preferred", or "house_required" based on "big garden" mentions
+  - yard_required: true if "big garden" or "loves being outside" mentioned
+  - experience_level: Use "first_time_ok", "some_experience", or "experienced_only"
+  - exercise_needs: Use "minimal", "moderate", "high", or "very_high" based on energy descriptions
+
+  CARE NEEDS:
+  - grooming_needs: Use "minimal", "weekly", "twice_weekly", or "daily" based on breed
+  - medical_needs: Extract from "medical_status" field if present
+  - special_needs: Any special requirements mentioned (e.g., "needs doggie friend")
+
+  PERSONALITY (extract from description):
+  - personality_traits: List 3-5 key traits from the description
+  - favorite_activities: 2-4 activities mentioned (walks, cuddles, playing, etc.)
+  - unique_quirk: Any endearing behavior mentioned (e.g., "making us laugh all the time")
+
+  ADOPTION INFO:
+  - adoption_fee_euros: null (REAN doesn't list fees in data)
+  - ready_to_travel: Check "transport_required" field and location
+  - vaccinated: Check for "vaccinated", "fully vaccinated" in medical_status or description
+  - neutered: Check for "neutered", "spayed" in medical_status or description
+
+  METADATA (required for transparency):
+  - processing_time_ms: Time taken (will be filled by system)
+  - confidence_scores: Rate 0.0-1.0 for each field based on source clarity
+  - source_references: Map each conclusion to the source text that supports it
+  - prompt_version: "1.0.0"
+
+  CRITICAL RULES FOR DATA INTEGRITY:
+  1. NEVER invent data - if information is not in the text, return null
+  2. Emphasize the rescue journey and current situation (kennels, foster, shelter)
+  3. Highlight urgency for dogs "stuck in kennels for over a year"
+  4. Create engaging, world-class copy that would make someone fall in love with the dog
+  5. Use exact enum values listed above - no variations!
+  6. Keep descriptions concise but emotionally powerful
+
+few_shot_examples:
+  - input: |
+      Name: George
+      Breed: Unknown
+      Age: 4.5 years
+      Properties: {
+        "description": "George has been stuck in kennels for over a year. He's a friendly boy, very excitable, loves attention, and needs lots of exercise. He's a funny boy, making us laugh all the time. George needs a home who like long walks and a big garden, as he loves being outside, and playing. is is a very high energy doggy. Neutered, vaccinated and chipped.",
+        "urgency_level": "urgent",
+        "medical_status": "neutered, vaccinated and chipped",
+        "current_location": "Norfolk",
+        "rescue_context": "rescue story available"
+      }
+
+    output: |
+      {
+        "description": "George has endured over a year in kennels but remains a hilarious, loving soul! This energetic comedian loves making people laugh, adores attention, and thrives on long walks and outdoor play. He urgently needs a home with space to run and hearts to fill with joy.",
+        "tagline": "Kennel survivor seeking laughter-filled home!",
+        "energy_level": "very_high",
+        "trainability": "moderate",
+        "sociability": "very_social",
+        "confidence": "confident",
+        "good_with_dogs": "unknown",
+        "good_with_cats": "unknown",
+        "good_with_children": "unknown",
+        "home_type": "house_required",
+        "yard_required": true,
+        "experience_level": "some_experience",
+        "exercise_needs": "very_high",
+        "grooming_needs": "weekly",
+        "medical_needs": null,
+        "special_needs": "needs lots of exercise and big garden",
+        "personality_traits": ["friendly", "excitable", "funny", "attention-loving", "playful"],
+        "favorite_activities": ["long walks", "playing outside", "making people laugh", "getting attention"],
+        "unique_quirk": "makes everyone laugh all the time",
+        "adoption_fee_euros": null,
+        "ready_to_travel": false,
+        "vaccinated": true,
+        "neutered": true,
+        "processing_time_ms": 1250,
+        "confidence_scores": {
+          "description": 0.95,
+          "energy_level": 1.0,
+          "good_with_dogs": 0.0,
+          "vaccinated": 1.0,
+          "neutered": 1.0
+        },
+        "source_references": {
+          "description": "stuck in kennels for over a year... friendly boy, very excitable, loves attention",
+          "energy_level": "very high energy doggy",
+          "neutered": "Neutered, vaccinated and chipped",
+          "yard_required": "needs a home who like long walks and a big garden"
+        },
+        "prompt_version": "1.0.0"
+      }

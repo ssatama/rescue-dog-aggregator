@@ -66,6 +66,14 @@ organizations:
     model_preference: "google/gemini-2.5-flash"
     enabled: true # Configured and ready for testing
 
+  5:
+    name: "REAN (Rescuing European Animals in Need)"
+    prompt_file: "rean.yaml"
+    source_language: "en"
+    target_language: "en"
+    model_preference: "google/gemini-2.5-flash"
+    enabled: true # Configured and ready for testing
+
   15:
     name: "Animal Rescue Bosnia"
     prompt_file: "animalrescuebosnia.yaml"
