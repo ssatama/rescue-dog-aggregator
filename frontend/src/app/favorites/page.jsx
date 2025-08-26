@@ -125,12 +125,29 @@ function FavoritesPageContent() {
     [showToast],
   );
 
-  // Smart insights based on filtered dogs
+  // Enhanced insights using LLM data
   const showInsights = filteredDogs.length >= 2;
-  const insights = showInsights ? getSmartInsights(filteredDogs) : null;
+  const insights = showInsights ? getEnhancedInsights(filteredDogs) : null;
+  const hasLLMData = filteredDogs.some(dog => dog.dog_profiler_data);
 
-  // Helper function to get smart insights from filtered dogs
-  function getSmartInsights(dogList) {
+  // Helper function to get enhanced insights using new analyzer
+  function getEnhancedInsights(dogList) {
+    // Lazy load the analyzer to avoid bundle size impact on initial load
+    const analyzer = require('../../utils/dogProfilerAnalyzer');
+    const enhancedInsights = analyzer.getEnhancedInsights(dogList);
+
+    // Also calculate basic insights as fallback
+    const basicInsights = getBasicInsights(dogList);
+
+    return {
+      ...basicInsights,
+      ...enhancedInsights,
+      hasEnhancedData: dogList.some(d => d.dog_profiler_data)
+    };
+  }
+
+  // Basic insights function (existing logic)
+  function getBasicInsights(dogList) {
     if (!dogList || dogList.length === 0) return null;
 
     // Organization insights
@@ -255,6 +272,277 @@ function FavoritesPageContent() {
       </Layout>
     );
   }
+
+  // Empty state
+  if (count === 0) {
+    return (
+      <Layout>
+        <div className="min-h-[60vh] flex items-center justify-center px-4">
+          <div className="text-center max-w-md">
+            {/* Paw Icon */}
+            <div className="w-32 h-32 mx-auto mb-8 bg-yellow-100 dark:bg-yellow-900/20 rounded-full flex items-center justify-center">
+              <span className="text-6xl">🐾</span>
+            </div>
+
+            <h1 className="text-3xl font-bold mb-4">
+              Start Building Your Collection
+            </h1>
+
+            <p className="text-gray-600 dark:text-gray-400 mb-8">
+              Save dogs you&rsquo;re interested in to compare and share them.
+              Every dog deserves consideration - find the ones that speak to
+              your heart.
+            </p>
+
+            <Link href="/dogs">
+              <Button className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-3 text-lg">
+                Explore Dogs →
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div>
+        {/* Styled Header Section */}
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 py-12 mb-8">
+          <div className="container mx-auto px-4">
+            <h1 className="text-4xl font-bold text-center mb-4">
+              Your Favorite Dogs
+            </h1>
+            <p className="text-center text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+              You&rsquo;ve saved {count} potential companion
+              {count !== 1 ? "s" : ""}. Take your time to review and share with
+              family.
+            </p>
+
+            {/* Action Buttons - Mobile Optimized */}
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mt-8">
+              <ShareButton
+                url={getShareableUrl()}
+                title="My Favorite Rescue Dogs"
+                text={`Check out my collection of ${count} favorite rescue dogs!`}
+                variant="default"
+                className="bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                Share Favorites
+              </ShareButton>
+
+              {/* Compare Button - Only show when 2+ dogs */}
+              {count >= 2 && (
+                <Button
+                  variant="default"
+                  size="default"
+                  onClick={() => setShowCompareMode(true)}
+                  className="bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  Compare Dogs
+                </Button>
+              )}
+
+              <FilterPanel dogs={dogs} onFilter={handleFilter} />
+            </div>
+          </div>
+        </div>
+
+        {/* Enhanced Smart Insights - Mobile Optimized */}
+        {showInsights && insights && (
+          <div className="container mx-auto px-4 mb-8">
+            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg p-6 shadow-sm">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <span className="text-2xl">💡</span>
+                Your Favorites Insights
+                {insights.hasEnhancedData && (
+                  <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-1 rounded-full">
+                    AI Enhanced
+                  </span>
+                )}
+              </h2>
+
+              {/* Enhanced Personality Insights */}
+              {insights.personalityPattern && (
+                <div className="mb-4 p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                  <h3 className="font-medium mb-2 flex items-center gap-2">
+                    <span>🎭</span> Personality Pattern
+                  </h3>
+                  <p className="text-sm font-medium text-orange-600 dark:text-orange-400 mb-2">
+                    {insights.personalityPattern.personalityTheme}
+                  </p>
+                  {insights.personalityPattern.commonTraits.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {insights.personalityPattern.dominantTraits.slice(0, 5).map((trait, idx) => (
+                        <span 
+                          key={idx} 
+                          className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-full text-xs"
+                        >
+                          {trait}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Lifestyle Compatibility */}
+              {insights.lifestyleCompatibility && insights.lifestyleCompatibility.messages.length > 0 && (
+                <div className="mb-4 p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                  <h3 className="font-medium mb-2 flex items-center gap-2">
+                    <span>🏠</span> Lifestyle Match
+                  </h3>
+                  <div className="space-y-2">
+                    {insights.lifestyleCompatibility.messages.map((message, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <span className="text-green-500">✓</span>
+                        <span className="text-sm">{message}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Experience Requirements */}
+              {insights.experienceRequirements && (
+                <div className="mb-4 p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                  <h3 className="font-medium mb-2 flex items-center gap-2">
+                    <span>🎓</span> Experience Level
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {insights.experienceRequirements.recommendation}
+                  </p>
+                </div>
+              )}
+
+              {/* Hidden Gems */}
+              {insights.hiddenGems && insights.hiddenGems.uniqueQuirks.length > 0 && (
+                <div className="mb-4 p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                  <h3 className="font-medium mb-2 flex items-center gap-2">
+                    <span>✨</span> Special Traits
+                  </h3>
+                  <div className="space-y-1">
+                    {insights.hiddenGems.uniqueQuirks.map((item, idx) => (
+                      <p key={idx} className="text-sm">
+                        <span className="font-medium">{item.dogName}:</span> {item.quirk}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Care Complexity */}
+              {insights.careComplexity && (
+                <div className="mb-4 p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                  <h3 className="font-medium mb-2 flex items-center gap-2">
+                    <span>🩺</span> Care Requirements
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {insights.careComplexity.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Basic insights grid (fallback/additional) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                {/* Top Organization */}
+                {insights.topOrganization && (
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm">🏢</span>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        Most dogs from
+                      </div>
+                      <div className="font-medium">
+                        {insights.topOrganization}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Size Preference */}
+                {!insights.hasEnhancedData && (
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm">📏</span>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        Size preference
+                      </div>
+                      <div className="font-medium">{insights.sizePreference}</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Age Range */}
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm">📅</span>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      Age range
+                    </div>
+                    <div className="font-medium">{insights.ageRange}</div>
+                  </div>
+                </div>
+
+                {/* Energy Profile */}
+                {insights.energyProfile && (
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm">⚡</span>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        Energy level
+                      </div>
+                      <div className="font-medium">
+                        {insights.energyProfile.recommendation}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Dogs grid - use filtered dogs */}
+        <div className="container mx-auto px-4">
+          {filteredDogs.length === 0 && dogs.length > 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                No dogs match your filters
+              </p>
+              <Button variant="outline" onClick={() => setFilteredDogs(dogs)}>
+                Clear Filters
+              </Button>
+            </div>
+          ) : (
+            <DogsGrid
+              dogs={filteredDogs}
+              loading={false}
+              className="animate-in fade-in duration-200"
+            />
+          )}
+        </div>
+
+        {/* Compare Mode Modal - use filtered dogs */}
+        {showCompareMode && (
+          <CompareMode
+            dogs={filteredDogs}
+            onClose={() => setShowCompareMode(false)}
+          />
+        )}
+      </div>
+    </Layout>
+  );
+}
 
   // Empty state
   if (count === 0) {
