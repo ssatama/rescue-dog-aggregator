@@ -14,9 +14,9 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 ## MCP Tools for Claude Code
 
 - Utilize the available MCP servers and tools
-- Use zen tools with Grok 4 for planning, debugging, test generation, code reviews and peer feedback
-- Use consult7 to get familiar with a codebase or a certain part of it
-- Combine subagents you have available with the MCP tools as well
+- Use Postgres MCP to query the local dev database
+- Use zen toolsfor planning, debugging, test generation, code reviews and peer feedback
+- Use subagents in parallel from /agents to execute work efficiently
 - Use Serena MCP tools when possible, they are very powerful, Switch serena modes as appropriate using the switch mode command.
 
 ## CRITICAL: Planning-First Workflow

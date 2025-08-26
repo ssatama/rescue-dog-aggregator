@@ -10,6 +10,8 @@ scraper:
     max_retries: 3
     timeout: 30
     skip_existing_animals: true
+    enable_llm_profiling: true
+    llm_organization_id: 11
 metadata:
   website_url: "https://www.rean.org.uk"
   description: "UK charity rescuing dogs from Romanian shelters and streets, transporting to UK homes"
