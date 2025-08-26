@@ -353,3 +353,57 @@ Based on current UI analysis and LLM data availability:
 1. **Immediate**: Address critical performance issues found in code review
 2. **Short-term**: Complete Phase 5 testing and quality improvements
 3. **Final**: Merge to main with comprehensive documentation and test coverage
+
+---
+
+## 🚨 NON-NEGOTIABLE DEVELOPMENT REQUIREMENTS
+
+### **MANDATORY: Follow CLAUDE.md Standards**
+- **TDD (Test-Driven Development)**: Write failing tests FIRST, then implement code
+- **No code without tests**: Every function, component, and feature MUST have tests
+- **File size limit**: Components MUST be <200 lines (current CompareMode.tsx violates this)
+- **Test pipeline**: `pytest tests/ -m "not browser and not requires_migrations" -v` MUST pass
+
+### **MANDATORY: Visual Verification Protocol**
+- **Screenshot verification**: Use Playwright MCP `mcp__playwright__browser_take_screenshot` for EVERY UI change
+- **Full-page screenshots**: Capture complete page state before/after changes
+- **Mobile & desktop views**: Test responsive behavior at different breakpoints
+- **Browser testing**: Verify functionality across Chrome, Firefox, Safari
+
+### **MANDATORY: Git & Documentation Discipline**
+- **Commit after major changes**: NEVER leave significant work uncommitted
+- **KEEP WORKLOG UPDATED**: Document ALL changes, findings, and decisions immediately
+- **Descriptive commit messages**: Include impact, files changed, and context
+- **Branch hygiene**: Keep feature branch clean with logical commit progression
+
+### **MANDATORY: Code Quality Gates**
+```bash
+# MUST PASS before any commit:
+cd frontend && npm run build          # No build errors
+cd frontend && npm test              # All tests passing  
+cd frontend && npm run lint          # No linting errors
+cd .. && source venv/bin/activate && pytest tests/ -m "not browser" -v  # Backend tests
+```
+
+### **MANDATORY: Performance & Accessibility**
+- **Performance**: No render-blocking operations (fix mobile detection!)
+- **Accessibility**: All interactive elements MUST have proper ARIA labels
+- **TypeScript**: STRICT typing - no `any` types, proper interfaces
+- **Progressive enhancement**: Features MUST work without JavaScript/LLM data
+
+### **FAILURE CONDITIONS (Will trigger restart)**
+❌ Committing code without tests
+❌ Skipping visual verification screenshots  
+❌ Leaving worklog outdated after changes
+❌ Breaking build or existing functionality
+❌ Ignoring CLAUDE.md file size guidelines
+❌ Performance regressions (mobile detection issue MUST be fixed)
+
+### **SUCCESS CRITERIA for Phase 5 Completion**
+✅ All critical performance issues resolved
+✅ Component extraction completed (<200 lines per file)
+✅ Comprehensive test suite with >90% coverage
+✅ Visual verification screenshots for all UI states
+✅ Full accessibility audit passed
+✅ Build pipeline green with no warnings
+✅ WORKLOG.md completely up-to-date with all changes
