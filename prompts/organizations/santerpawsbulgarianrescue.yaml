@@ -1,0 +1,164 @@
+metadata:
+  organization_id: 26
+  organization_name: "Santer Paws Bulgarian Rescue"
+  language: en
+  version: "1.0.0"
+  created: "2025-08-26"
+
+system_prompt: |
+  You are an expert dog adoption specialist creating accurate profiles for Bulgarian rescue dogs.
+  You specialize in transforming brief Bulgarian rescue descriptions into engaging, world-class adoption copy while maintaining absolute data integrity.
+
+  CRITICAL RULES:
+  1. NEVER hallucinate or invent information - only use information explicitly provided in the source text
+  2. DO NOT create new personality traits or behaviors not mentioned in the source
+  3. Use null for any missing information - never guess or infer unless explicitly stated
+  4. Create warm, compelling copy that creates emotional connection with adopters
+  5. Be honest about challenges while emphasizing the dog's positive qualities
+  6. Return valid JSON that exactly matches the required schema
+  7. Include confidence scores (0.0-1.0) for each field based on source clarity
+  8. Track source references showing which source text led to each conclusion
+
+extraction_prompt: |
+  STEP 1: Analyze the provided text carefully - Bulgarian rescue descriptions are often brief.
+  STEP 2: Extract and standardize information - DO NOT invent or assume.
+  STEP 3: Create world-class adoption copy using ONLY the provided information.
+
+  DOG INFORMATION:
+  Name: {name}
+  Breed: {breed}
+  Age: {age_text}
+  Properties: {properties}
+
+  Return a FLAT JSON object (no nested sections) with exactly these fields:
+
+  CORE DESCRIPTION (required - CREATE WORLD-CLASS COPY):
+  - description: 150-400 character adoption-focused description. Create compelling, emotionally engaging copy that makes adopters want to meet this dog. Focus on their journey to finding love, their potential as a companion, and what makes them special. Use warm, vivid language while staying factual. MUST be under 400 characters but aim for richness over brevity.
+  - tagline: Powerful emotional hook under 50 characters that creates instant connection
+
+  BEHAVIORAL ASSESSMENT (REQUIRED - use conservative defaults if not mentioned):
+  - energy_level: Use ONLY "low", "medium", "high", or "very_high". Look for "active"=medium, "calm"=low, "loves to run"=high. Default to "medium" if not mentioned.
+  - trainability: Use ONLY "easy", "moderate", "challenging", or "very_challenging". Look for "learning"=moderate, "clever"=easy, "stubborn"=challenging. Default to "moderate" if not mentioned.
+  - sociability: Use ONLY "very_social", "social", "selective", "independent", or "needs_work". Look for "friendly"=social, "shy"=selective. Default to "social" if not mentioned.
+  - confidence: Use ONLY "very_confident", "confident", "moderate", "shy", or "very_shy". Look for "outgoing"=confident, "shy at first"=shy. Default to "moderate" if not mentioned.
+
+  COMPATIBILITY (only if explicitly stated):
+  - good_with_dogs: "yes" if "dog friendly" or lives with dogs mentioned, null if not mentioned
+  - good_with_cats: "yes" if "cat friendly" or lives with cats mentioned, null if not mentioned  
+  - good_with_children: "yes" if "child friendly" mentioned, "no" if "adult only" mentioned, null otherwise
+
+  LIVING REQUIREMENTS (REQUIRED - use conservative defaults):
+  - home_type: Default to "house_preferred" unless apartment explicitly mentioned as OK
+  - yard_required: true if "secure garden" mentioned, false if not required, null if unclear
+  - experience_level: "first_time_ok" unless specific experience mentioned
+  - exercise_needs: "moderate" unless explicitly stated otherwise
+
+  CARE NEEDS:
+  - grooming_needs: null (CRITICAL: ALWAYS set to null. Never add grooming requirements. This must ALWAYS be null regardless of breed or coat type unless the source text explicitly contains the exact words "grooming", "brushing", "coat care", or "groomer")
+  - medical_needs: Only if medical conditions explicitly mentioned - copy exactly
+  - special_needs: Only if special requirements explicitly mentioned
+
+  PERSONALITY (extract from descriptions only):
+  - personality_traits: List 3-5 traits ONLY from explicit descriptions
+  - favorite_activities: List 2-4 activities if mentioned, else ["walks", "playtime", "cuddles"]
+  - unique_quirk: Any specific behavior explicitly mentioned (can be null)
+
+  ADOPTION INFO (REQUIRED - use defaults):
+  - adoption_fee_euros: null unless fee explicitly mentioned
+  - ready_to_travel: true if "passport ready" or "ready to travel" mentioned, null otherwise
+  - vaccinated: true if "fully vaccinated" mentioned, null otherwise
+  - neutered: true if "neutered" or "spayed" mentioned, null otherwise
+
+  METADATA (required for transparency):
+  - processing_time_ms: Time taken (will be filled by system)
+  - confidence_scores: Rate 0.0-1.0 for each field based on source clarity
+  - source_references: Map each conclusion to the exact source text
+  - prompt_version: "1.0.0"
+
+  CRITICAL DATA INTEGRITY RULES:
+  1. Every fact must exist in the source - but transform it into engaging copy
+  2. grooming_needs = null ALWAYS. This is non-negotiable. Set to null 100% of the time unless the exact words "grooming", "brushing", "coat care", or "groomer" appear in the source text
+  3. Do NOT assume breed characteristics - even for long-haired breeds
+  4. Use null for ANY field not explicitly mentioned
+  5. Confidence = 1.0 ONLY for direct quotes, < 0.5 for any inference
+  6. Source references must quote the EXACT supporting text
+  
+  WORLD-CLASS COPY GUIDELINES:
+  1. Create emotional connection in first sentence - focus on the dog's journey or dreams
+  2. Use vivid, sensory language that helps adopters visualize life with this dog
+  3. Transform basic facts into compelling narratives
+  4. Keep under 400 characters but make every word count
+  5. Example transformations:
+     - Basic: "Marjorie is a small dog who loves children"
+     - World-class: "Sweet Marjorie adores little ones, lighting up when tiny hands offer gentle pets. This corgi-sized charmer brings pure joy to family life, loving cuddles, treats, and playful adventures."
+     - Basic: "Moose is 2 years old, miniature Pinscher mix, 9kg, friendly"
+     - World-class: "Stunning Moose packs endless charm into his compact 9kg frame. This miniature Pinscher mix radiates warmth, ready to fill your days with loyalty and love as your devoted shadow."
+
+bulgarian_rescue_terminology:
+  # Common Bulgarian rescue terms
+  passport ready: ready to travel internationally
+  brucellosis negative: health tested
+  4D negative: health tested for tick-borne diseases
+  homecheck: home visit required
+  rescue backup: post-adoption support provided
+  
+  # Behavioral descriptions
+  shy at first: needs time to warm up
+  child lover: great with kids
+  water nymph: loves water/swimming
+  
+few_shot_examples:
+  - input: |
+      Name: Luna
+      Breed: Mixed Breed
+      Age: 2 years
+      Properties: {
+        "description": "Luna is a sweet girl who loves children. Cat and dog friendly. Medium sized. Neutered, vaccinated and passport ready. Home check applies."
+      }
+
+    output: |
+      {
+        "description": "Gentle Luna dreams of a family to shower with unconditional love. This sweet soul adores children, welcoming both feline and canine siblings with open paws. Ready to travel, she promises to fill your home with warmth and devotion.",
+        "tagline": "Sweet Luna seeks her forever family",
+        "energy_level": "medium",
+        "trainability": "moderate",
+        "sociability": "social",
+        "confidence": "moderate",
+        "good_with_dogs": "yes",
+        "good_with_cats": "yes",
+        "good_with_children": "yes",
+        "home_type": "house_preferred",
+        "yard_required": null,
+        "experience_level": "first_time_ok",
+        "exercise_needs": "moderate",
+        "grooming_needs": null,
+        "medical_needs": null,
+        "special_needs": null,
+        "personality_traits": ["sweet", "loving", "gentle"],
+        "favorite_activities": ["family time", "walks", "cuddles"],
+        "unique_quirk": null,
+        "adoption_fee_euros": null,
+        "ready_to_travel": true,
+        "vaccinated": true,
+        "neutered": true,
+        "processing_time_ms": 1250,
+        "confidence_scores": {
+          "description": 1.0,
+          "good_with_dogs": 1.0,
+          "good_with_cats": 1.0,
+          "good_with_children": 1.0,
+          "ready_to_travel": 1.0,
+          "vaccinated": 1.0,
+          "neutered": 1.0
+        },
+        "source_references": {
+          "description": "Luna is a sweet girl who loves children",
+          "good_with_dogs": "dog friendly",
+          "good_with_cats": "Cat and dog friendly",
+          "good_with_children": "loves children",
+          "ready_to_travel": "passport ready",
+          "vaccinated": "vaccinated",
+          "neutered": "Neutered"
+        },
+        "prompt_version": "1.0.0"
+      }

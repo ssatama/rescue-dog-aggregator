@@ -11,6 +11,8 @@ scraper:
     timeout: 240
     batch_size: 6
     skip_existing_animals: true
+    enable_llm_profiling: true
+    llm_organization_id: 11
 metadata:
   website_url: "https://santerpawsbulgarianrescue.com/"
   description: |

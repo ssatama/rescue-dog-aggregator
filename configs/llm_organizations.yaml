@@ -44,11 +44,11 @@ organizations:
 
   26:
     name: "Santer Paws Bulgarian Rescue"
-    prompt_file: "santer_paws.yaml"
+    prompt_file: "santerpawsbulgarianrescue.yaml"
     source_language: "en"
     target_language: "en"
     model_preference: "google/gemini-2.5-flash"
-    enabled: false # Not yet configured
+    enabled: true # Configured and ready for testing
 
   25:
     name: "Galgos del Sol"
