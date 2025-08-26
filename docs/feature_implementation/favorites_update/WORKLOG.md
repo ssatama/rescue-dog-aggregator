@@ -140,10 +140,42 @@ Key Fields in dog_profiler_data:
 ## Design Decisions
 
 ### User Joy Considerations
-*To be documented in Phase 2*
+Based on current UI analysis and LLM data availability:
+
+**Current State Issues:**
+- Basic insights only show organization/size/age
+- Comparison mode is just a basic attribute table
+- No personality or behavioral insights
+- No use of rich LLM data (taglines, quirks, traits)
+- Mobile view is cramped and hard to scan
+
+**Enhanced Features to Build:**
+1. **Smart Personality Insights**
+   - Surface personality patterns across favorites
+   - Show trait commonalities ("You love gentle souls")
+   - Highlight unique quirks that make dogs special
+
+2. **Visual Comparison Enhancements**
+   - Add personality trait badges with colors
+   - Show confidence scores for data reliability
+   - Include taglines and unique quirks prominently
+   - Create compatibility grid for kids/cats/dogs
+
+3. **Lifestyle Match Scoring**
+   - Calculate apartment vs house suitability
+   - Show energy level compatibility
+   - Indicate care complexity clearly
+
+4. **Mobile-First Improvements**
+   - Swipeable comparison cards instead of table
+   - Expandable insight cards
+   - Better use of screen real estate
 
 ### Technical Decisions
-*To be documented during implementation*
+- Create new analyzer utility for LLM data processing
+- Use TypeScript interfaces for dog_profiler_data
+- Progressive enhancement: fallback for missing data
+- Memoize expensive calculations for performance
 
 ---
 
