@@ -16,12 +16,19 @@ import {
   Baby,
   Home,
   AlertCircle,
+  Sparkles,
+  Activity,
+  Zap,
+  Shield,
+  Star,
+  Brain,
 } from "lucide-react";
 import { Button } from "../ui/button";
 import {
   analyzeComparison,
   type Dog as AnalyzerDog,
 } from "../../utils/comparisonAnalyzer";
+import type { DogProfilerData } from "../../types/dogProfiler";
 
 interface Dog {
   id: number;
@@ -46,6 +53,7 @@ interface Dog {
   main_image?: string;
   primary_image_url?: string;
   adoption_url?: string;
+  dog_profiler_data?: DogProfilerData;
   properties?: {
     personality?: string;
     good_with?: string;
@@ -246,6 +254,11 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
 
   // Helper functions for extracting data from properties
   const getPersonalityTraits = (dog: Dog): string[] => {
+    // First check dog_profiler_data for personality traits
+    if (dog.dog_profiler_data?.personality_traits) {
+      return dog.dog_profiler_data.personality_traits;
+    }
+    // Fallback to properties
     if (!dog.properties?.personality) return [];
     // Split personality string by common delimiters
     return dog.properties.personality
@@ -254,46 +267,115 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
       .filter((trait) => trait.length > 0);
   };
 
-  const getCompatibility = (dog: Dog): string[] => {
-    const compatibility = [];
+  const getPersonalityTraitColor = (trait: string): string => {
+    const traitLower = trait.toLowerCase();
+    if (['friendly', 'affectionate', 'loving', 'gentle'].some(t => traitLower.includes(t))) {
+      return 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300';
+    }
+    if (['playful', 'energetic', 'active', 'lively'].some(t => traitLower.includes(t))) {
+      return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300';
+    }
+    if (['calm', 'relaxed', 'quiet', 'mellow'].some(t => traitLower.includes(t))) {
+      return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
+    }
+    if (['smart', 'intelligent', 'clever', 'trainable'].some(t => traitLower.includes(t))) {
+      return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300';
+    }
+    if (['loyal', 'devoted', 'protective'].some(t => traitLower.includes(t))) {
+      return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300';
+    }
+    if (['independent', 'confident', 'brave'].some(t => traitLower.includes(t))) {
+      return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300';
+    }
+    return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
+  };
 
-    // Check properties for good_with data
-    if (dog.properties?.good_with_list) {
-      if (dog.properties.good_with_list.includes("dogs"))
-        compatibility.push("Dogs");
-      if (dog.properties.good_with_list.includes("cats"))
-        compatibility.push("Cats");
-      if (dog.properties.good_with_list.includes("children"))
-        compatibility.push("Children");
-    } else if (dog.properties?.good_with) {
-      // Parse the good_with string
-      const goodWith = dog.properties.good_with.toLowerCase();
-      if (goodWith.includes("dog")) compatibility.push("Dogs");
-      if (goodWith.includes("cat")) compatibility.push("Cats");
-      if (goodWith.includes("child")) compatibility.push("Children");
+  const getEnergyLevelIcon = (level?: string) => {
+    switch (level) {
+      case 'low':
+        return <Activity className="w-4 h-4 text-gray-400" />;
+      case 'medium':
+        return <Activity className="w-4 h-4 text-orange-500" />;
+      case 'high':
+        return <Zap className="w-4 h-4 text-yellow-500" />;
+      case 'very_high':
+        return <Zap className="w-4 h-4 text-red-500" />;
+      default:
+        return null;
+    }
+  };
+
+  const getExperienceLevelIcon = (level?: string) => {
+    switch (level) {
+      case 'first_time_ok':
+        return <Shield className="w-4 h-4 text-green-500" />;
+      case 'some_experience':
+        return <Shield className="w-4 h-4 text-yellow-500" />;
+      case 'experienced_only':
+        return <Shield className="w-4 h-4 text-red-500" />;
+      default:
+        return null;
+    }
+  };
+
+  const formatEnergyLevel = (level?: string): string => {
+    if (!level) return 'Unknown';
+    return level.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const formatExperienceLevel = (level?: string): string => {
+    switch (level) {
+      case 'first_time_ok':
+        return 'Beginner Friendly';
+      case 'some_experience':
+        return 'Some Experience';
+      case 'experienced_only':
+        return 'Experienced Only';
+      default:
+        return 'Unknown';
+    }
+  };
+
+  const getCompatibility = (dog: Dog): { dogs?: string; cats?: string; children?: string } => {
+    const compatibility: { dogs?: string; cats?: string; children?: string } = {};
+
+    // First check dog_profiler_data for more detailed compatibility info
+    if (dog.dog_profiler_data) {
+      compatibility.dogs = dog.dog_profiler_data.good_with_dogs || 'unknown';
+      compatibility.cats = dog.dog_profiler_data.good_with_cats || 'unknown';
+      compatibility.children = dog.dog_profiler_data.good_with_children || 'unknown';
     } else {
-      // Check individual boolean fields
-      if (
-        dog.properties?.good_with_dogs === true ||
-        dog.properties?.good_with_dogs === "yes"
-      ) {
-        compatibility.push("Dogs");
-      }
-      if (
-        dog.properties?.good_with_cats === true ||
-        dog.properties?.good_with_cats === "yes"
-      ) {
-        compatibility.push("Cats");
-      }
-      if (
-        dog.properties?.good_with_children === true ||
-        dog.properties?.good_with_children === "yes"
-      ) {
-        compatibility.push("Children");
+      // Fallback to properties data
+      if (dog.properties?.good_with_list) {
+        compatibility.dogs = dog.properties.good_with_list.includes("dogs") ? 'yes' : 'no';
+        compatibility.cats = dog.properties.good_with_list.includes("cats") ? 'yes' : 'no';
+        compatibility.children = dog.properties.good_with_list.includes("children") ? 'yes' : 'no';
+      } else if (dog.properties?.good_with) {
+        const goodWith = dog.properties.good_with.toLowerCase();
+        compatibility.dogs = goodWith.includes("dog") ? 'yes' : 'unknown';
+        compatibility.cats = goodWith.includes("cat") ? 'yes' : 'unknown';
+        compatibility.children = goodWith.includes("child") ? 'yes' : 'unknown';
+      } else {
+        compatibility.dogs = (dog.properties?.good_with_dogs === true || dog.properties?.good_with_dogs === "yes") ? 'yes' : 'unknown';
+        compatibility.cats = (dog.properties?.good_with_cats === true || dog.properties?.good_with_cats === "yes") ? 'yes' : 'unknown';
+        compatibility.children = (dog.properties?.good_with_children === true || dog.properties?.good_with_children === "yes") ? 'yes' : 'unknown';
       }
     }
 
     return compatibility;
+  };
+
+  const getCompatibilityIcon = (status?: string) => {
+    switch (status) {
+      case 'yes':
+        return <Check className="w-4 h-4 text-green-600" />;
+      case 'no':
+        return <X className="w-4 h-4 text-red-600" />;
+      case 'maybe':
+        return <AlertCircle className="w-4 h-4 text-yellow-600" />;
+      default:
+        return <AlertCircle className="w-4 h-4 text-gray-400" />;
+    }
   };
 
   const getAgeDisplay = (dog: Dog): string => {
@@ -323,14 +405,14 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
     const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
     if (isMobile) {
-      // Mobile view - Table layout
+      // Mobile view - Enhanced card layout
       return (
         <>
           <div className="flex justify-between items-center mb-4">
             <div>
               <h2 className="text-xl font-bold">Compare Dogs</h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Side-by-side comparison of your favorites
+                Swipe to compare your favorites
               </p>
             </div>
             <button
@@ -342,250 +424,175 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
             </button>
           </div>
 
-          {/* Mobile Comparison Table */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden mb-4">
-            {/* Sticky header with dog photos */}
-            <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-              <div
-                className="grid"
-                style={{
-                  gridTemplateColumns: `100px repeat(${dogsToCompare.length}, 1fr)`,
-                }}
-              >
-                <div></div>
-                {dogsToCompare.map((dog) => {
-                  const imageUrl = dog.primary_image_url || dog.main_image;
-                  return (
-                    <div key={dog.id} className="p-3 text-center">
+          {/* Mobile Enhanced Comparison Cards */}
+          <div className="space-y-4 mb-4">
+            {dogsToCompare.map((dog, index) => {
+              const imageUrl = dog.primary_image_url || dog.main_image;
+              const compatibility = getCompatibility(dog);
+              const personalityTraits = getPersonalityTraits(dog);
+              const tagline = dog.dog_profiler_data?.tagline;
+              const uniqueQuirk = dog.dog_profiler_data?.unique_quirk;
+              const energyLevel = dog.dog_profiler_data?.energy_level;
+              const experienceLevel = dog.dog_profiler_data?.experience_level;
+              
+              return (
+                <div key={dog.id} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  {/* Dog Header */}
+                  <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <div className="flex items-start gap-3">
                       {imageUrl ? (
-                        <div className="w-12 h-12 relative rounded-full overflow-hidden mx-auto mb-1">
+                        <div className="w-16 h-16 relative rounded-lg overflow-hidden flex-shrink-0">
                           <Image
                             src={imageUrl}
                             alt={dog.name}
                             fill
                             className="object-cover"
-                            sizes="48px"
+                            sizes="64px"
                           />
                         </div>
                       ) : (
-                        <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 mx-auto mb-1 flex items-center justify-center">
-                          <DogIcon size={20} className="text-gray-500" />
+                        <div className="w-16 h-16 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                          <DogIcon size={24} className="text-gray-500" />
                         </div>
                       )}
-                      <h3 className="font-semibold text-sm">{dog.name}</h3>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
-                        {dog.standardized_breed || dog.breed || "Mixed Breed"}
+                      <div className="flex-1">
+                        <h3 className="font-bold text-lg">{dog.name}</h3>
+                        {tagline && (
+                          <p className="text-xs text-gray-600 dark:text-gray-400 italic mt-1">
+                            &ldquo;{tagline}&rdquo;
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2 mt-2 text-xs">
+                          <span className="text-gray-600 dark:text-gray-400">
+                            {dog.standardized_breed || dog.breed || "Mixed breed"}
+                          </span>
+                          <span className="text-gray-400">•</span>
+                          <span className="text-gray-600 dark:text-gray-400">
+                            {getAgeDisplay(dog)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  
+                  {/* Personality Traits */}
+                  {personalityTraits.length > 0 && (
+                    <div className="px-4 py-3">
+                      <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                        Personality
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {personalityTraits.slice(0, 5).map((trait, idx) => (
+                          <span
+                            key={idx}
+                            className={`px-2 py-1 rounded-full text-xs ${getPersonalityTraitColor(trait)}`}
+                          >
+                            {trait}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Key Attributes */}
+                  <div className="px-4 py-3 grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <span className="text-gray-600 dark:text-gray-400">Size:</span>
+                      <span className="ml-2 font-medium">
+                        {dog.standardized_size || dog.size || "Unknown"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600 dark:text-gray-400">Sex:</span>
+                      <span className="ml-2 font-medium">{dog.sex || "Unknown"}</span>
+                    </div>
+                    {energyLevel && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-600 dark:text-gray-400">Energy:</span>
+                        <span className="ml-2 font-medium flex items-center gap-1">
+                          {getEnergyLevelIcon(energyLevel)}
+                          {formatEnergyLevel(energyLevel)}
+                        </span>
+                      </div>
+                    )}
+                    {experienceLevel && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-600 dark:text-gray-400">Experience:</span>
+                        <span className="ml-2 font-medium flex items-center gap-1">
+                          {getExperienceLevelIcon(experienceLevel)}
+                          {formatExperienceLevel(experienceLevel)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Compatibility Matrix */}
+                  <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+                    <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                      Good with
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="flex items-center gap-1">
+                        <DogIcon size={14} className="text-gray-400" />
+                        <span className="text-xs">Dogs</span>
+                        {getCompatibilityIcon(compatibility.dogs)}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Cat size={14} className="text-gray-400" />
+                        <span className="text-xs">Cats</span>
+                        {getCompatibilityIcon(compatibility.cats)}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Baby size={14} className="text-gray-400" />
+                        <span className="text-xs">Kids</span>
+                        {getCompatibilityIcon(compatibility.children)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Unique Quirk */}
+                  {uniqueQuirk && (
+                    <div className="px-4 py-3 bg-orange-50 dark:bg-orange-900/10">
+                      <div className="flex items-center gap-1 text-xs font-medium text-orange-700 dark:text-orange-300 mb-1">
+                        <Sparkles size={12} />
+                        Unique Quirk
+                      </div>
+                      <p className="text-xs text-gray-700 dark:text-gray-300">
+                        {uniqueQuirk}
                       </p>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+                  )}
 
-            {/* Comparison rows */}
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {/* Age row */}
-              <div
-                className="grid"
-                style={{
-                  gridTemplateColumns: `100px repeat(${dogsToCompare.length}, 1fr)`,
-                }}
-              >
-                <div className="p-3 text-xs font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                  <Calendar size={14} />
-                  <span>Age</span>
-                </div>
-                {comparisonData.age?.values.map((value, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-3 text-sm text-center ${
-                      comparisonData.age.highlight[idx]
-                        ? "text-orange-600 dark:text-orange-400 font-semibold"
-                        : comparisonData.age.allSame
-                          ? "text-gray-400 dark:text-gray-500"
-                          : ""
-                    }`}
-                  >
-                    {value}
-                  </div>
-                ))}
-              </div>
-
-              {/* Sex row */}
-              <div
-                className="grid"
-                style={{
-                  gridTemplateColumns: `100px repeat(${dogsToCompare.length}, 1fr)`,
-                }}
-              >
-                <div className="p-3 text-xs font-medium text-gray-600 dark:text-gray-400">
-                  Sex
-                </div>
-                {comparisonData.sex?.values.map((value, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-3 text-sm text-center ${
-                      comparisonData.sex.highlight[idx]
-                        ? "text-orange-600 dark:text-orange-400 font-semibold"
-                        : comparisonData.sex.allSame
-                          ? "text-gray-400 dark:text-gray-500"
-                          : ""
-                    }`}
-                  >
-                    {value}
-                  </div>
-                ))}
-              </div>
-
-              {/* Size row */}
-              <div
-                className="grid"
-                style={{
-                  gridTemplateColumns: `100px repeat(${dogsToCompare.length}, 1fr)`,
-                }}
-              >
-                <div className="p-3 text-xs font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                  <Ruler size={14} />
-                  <span>Size</span>
-                </div>
-                {comparisonData.size?.values.map((value, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-3 text-sm text-center ${
-                      comparisonData.size.allSame
-                        ? "text-gray-400 dark:text-gray-500"
-                        : ""
-                    }`}
-                  >
-                    {value || "Unknown"}
-                  </div>
-                ))}
-              </div>
-
-              {/* Location row */}
-              <div
-                className="grid"
-                style={{
-                  gridTemplateColumns: `100px repeat(${dogsToCompare.length}, 1fr)`,
-                }}
-              >
-                <div className="p-3 text-xs font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                  <MapPin size={14} />
-                  <span>Location</span>
-                </div>
-                {dogsToCompare.map((dog, idx) => {
-                  const location =
-                    dog.location ||
-                    dog.properties?.location ||
-                    dog.organization?.country ||
-                    "Unknown";
-                  return (
-                    <div
-                      key={dog.id}
-                      className={`p-3 text-sm text-center ${
-                        comparisonData.location?.highlight[idx]
-                          ? "text-orange-600 dark:text-orange-400 font-semibold"
-                          : comparisonData.location?.allSame
-                            ? "text-gray-400 dark:text-gray-500"
-                            : ""
-                      }`}
-                    >
-                      {location}
+                  {/* Organization & CTA */}
+                  <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                        {dog.organization_name || dog.organization?.name}
+                      </div>
+                      {dog.adoption_url && (
+                        <a
+                          href={dog.adoption_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-medium text-orange-600 hover:text-orange-700"
+                        >
+                          Visit {dog.name} →
+                        </a>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-
-              {/* Good with section */}
-              <div
-                className="grid"
-                style={{
-                  gridTemplateColumns: `100px repeat(${dogsToCompare.length}, 1fr)`,
-                }}
-              >
-                <div className="p-3 text-xs font-medium text-gray-600 dark:text-gray-400">
-                  Good with
-                </div>
-                {dogsToCompare.map((dog, idx) => (
-                  <div
-                    key={dog.id}
-                    className="p-3 flex flex-col items-center gap-1"
-                  >
-                    {comparisonData.good_with_dogs?.values[idx] && (
-                      <span className="text-green-600 dark:text-green-400 text-xs">
-                        ✓ Dogs
-                      </span>
-                    )}
-                    {comparisonData.good_with_cats?.values[idx] && (
-                      <span className="text-green-600 dark:text-green-400 text-xs">
-                        ✓ Cats
-                      </span>
-                    )}
-                    {comparisonData.good_with_children?.values[idx] && (
-                      <span className="text-green-600 dark:text-green-400 text-xs">
-                        ✓ Kids
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Organization row */}
-              <div
-                className="grid"
-                style={{
-                  gridTemplateColumns: `100px repeat(${dogsToCompare.length}, 1fr)`,
-                }}
-              >
-                <div className="p-3 text-xs font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                  <Users size={14} />
-                  <span>Rescue</span>
-                </div>
-                {comparisonData.organization?.values.map((value, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3 text-xs text-center text-gray-600 dark:text-gray-400"
-                  >
-                    {value}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Individual descriptions */}
-          <div className="space-y-4 mb-6">
-            {dogsToCompare.map((dog) => {
-              const description =
-                dog.properties?.description || dog.description;
-              if (!description) return null;
-
-              return (
-                <div
-                  key={dog.id}
-                  className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4"
-                >
-                  <h4 className="font-semibold text-sm mb-2">{dog.name}</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {description}
-                  </p>
-                  <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
-                    <Users size={12} />
-                    <span>
-                      {dog.organization_name || dog.organization?.name}
-                    </span>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Footer */}
+          {/* Mobile Footer */}
           <div className="text-center text-sm text-gray-600 dark:text-gray-400">
-            Comparing {dogsToCompare.length} dogs from{" "}
+            Swipe through {dogsToCompare.length} dogs • {" "}
             {comparisonData.organization?.allSame
-              ? "1 organization"
-              : "multiple organizations"}
+              ? "Same organization"
+              : "Multiple organizations"}
           </div>
         </>
       );
@@ -610,7 +617,7 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
           </button>
         </div>
 
-        {/* Desktop Dog Cards */}
+        {/* Desktop Enhanced Dog Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           {dogsToCompare.map((dog) => {
             const imageUrl = dog.primary_image_url || dog.main_image;
@@ -620,7 +627,13 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
               dog.properties?.location ||
               dog.organization?.country ||
               "Unknown";
-            const description = dog.properties?.description || dog.description;
+            const description = dog.dog_profiler_data?.description || dog.properties?.description || dog.description;
+            const tagline = dog.dog_profiler_data?.tagline;
+            const uniqueQuirk = dog.dog_profiler_data?.unique_quirk;
+            const personalityTraits = getPersonalityTraits(dog);
+            const compatibility = getCompatibility(dog);
+            const energyLevel = dog.dog_profiler_data?.energy_level;
+            const experienceLevel = dog.dog_profiler_data?.experience_level;
 
             return (
               <div
@@ -644,6 +657,11 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
                       <h3 className="text-lg font-bold">{dog.name}</h3>
                       <Heart className="w-5 h-5 text-red-500 fill-current" />
                     </div>
+                    {tagline && (
+                      <p className="text-xs text-gray-600 dark:text-gray-400 italic mb-2">
+                        &ldquo;{tagline}&rdquo;
+                      </p>
+                    )}
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       {dog.standardized_breed || dog.breed || "Mixed Breed"}
                     </p>
@@ -665,40 +683,81 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
                 </div>
 
                 <div className="px-4 pb-4">
-                  <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">
-                    Location:
-                  </div>
-                  <p className="text-sm font-medium mb-3">{location}</p>
+                  {/* Personality Traits */}
+                  {personalityTraits.length > 0 && (
+                    <div className="mb-3">
+                      <div className="flex flex-wrap gap-1">
+                        {personalityTraits.slice(0, 5).map((trait, idx) => (
+                          <span
+                            key={idx}
+                            className={`px-2 py-1 rounded-full text-xs ${getPersonalityTraitColor(trait)}`}
+                          >
+                            {trait}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-                  <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">
-                    Good with
-                  </div>
-                  <div className="flex gap-2 mb-3">
-                    {comparisonData.good_with_dogs?.values[
-                      dogsToCompare.indexOf(dog)
-                    ] && (
-                      <span className="text-green-600 dark:text-green-400 text-sm">
-                        ✓ Dogs
-                      </span>
+                  {/* Energy & Experience Levels */}
+                  <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
+                    {energyLevel && (
+                      <div className="flex items-center gap-1">
+                        {getEnergyLevelIcon(energyLevel)}
+                        <span className="text-gray-600 dark:text-gray-400">
+                          {formatEnergyLevel(energyLevel)}
+                        </span>
+                      </div>
                     )}
-                    {comparisonData.good_with_cats?.values[
-                      dogsToCompare.indexOf(dog)
-                    ] && (
-                      <span className="text-green-600 dark:text-green-400 text-sm">
-                        ✓ Cats
-                      </span>
-                    )}
-                    {comparisonData.good_with_children?.values[
-                      dogsToCompare.indexOf(dog)
-                    ] && (
-                      <span className="text-green-600 dark:text-green-400 text-sm">
-                        ✓ Kids
-                      </span>
+                    {experienceLevel && (
+                      <div className="flex items-center gap-1">
+                        {getExperienceLevelIcon(experienceLevel)}
+                        <span className="text-gray-600 dark:text-gray-400">
+                          {formatExperienceLevel(experienceLevel)}
+                        </span>
+                      </div>
                     )}
                   </div>
+
+                  {/* Compatibility Matrix */}
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mb-3">
+                    <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">
+                      Compatibility
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="flex items-center gap-1">
+                        <DogIcon size={14} className="text-gray-400" />
+                        {getCompatibilityIcon(compatibility.dogs)}
+                        <span className="text-xs">Dogs</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Cat size={14} className="text-gray-400" />
+                        {getCompatibilityIcon(compatibility.cats)}
+                        <span className="text-xs">Cats</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Baby size={14} className="text-gray-400" />
+                        {getCompatibilityIcon(compatibility.children)}
+                        <span className="text-xs">Kids</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Unique Quirk */}
+                  {uniqueQuirk && (
+                    <div className="bg-yellow-50 dark:bg-yellow-900/10 rounded-lg p-2 mb-3">
+                      <div className="flex items-center gap-1 text-xs font-medium text-yellow-700 dark:text-yellow-300 mb-1">
+                        <Sparkles size={12} />
+                        Special Quality
+                      </div>
+                      <p className="text-xs text-gray-700 dark:text-gray-300">
+                        {uniqueQuirk}
+                      </p>
+                    </div>
+                  )}
 
                   {description && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3 mb-3">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">
                       {description}
                     </p>
                   )}
@@ -734,11 +793,11 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
           })}
         </div>
 
-        {/* Desktop Comparison Table */}
+        {/* Desktop Enhanced Comparison Table */}
         <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 mb-6">
           <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <span className="text-lg">📊</span>
-            Quick Comparison
+            <Brain className="w-5 h-5 text-purple-600" />
+            Detailed Comparison
           </h3>
 
           <div className="overflow-x-auto">
@@ -759,6 +818,59 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {/* Tagline Row */}
+                <tr>
+                  <td className="py-2 px-3 text-gray-600 dark:text-gray-400">
+                    Tagline
+                  </td>
+                  {dogsToCompare.map((dog) => (
+                    <td key={dog.id} className="py-2 px-3 text-center">
+                      {dog.dog_profiler_data?.tagline ? (
+                        <span className="text-xs italic text-gray-600 dark:text-gray-400">
+                          &ldquo;{dog.dog_profiler_data.tagline}&rdquo;
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+                {/* Energy Level Row */}
+                <tr>
+                  <td className="py-2 px-3 text-gray-600 dark:text-gray-400">
+                    Energy Level
+                  </td>
+                  {dogsToCompare.map((dog) => (
+                    <td key={dog.id} className="py-2 px-3 text-center">
+                      {dog.dog_profiler_data?.energy_level ? (
+                        <span className="flex items-center justify-center gap-1">
+                          {getEnergyLevelIcon(dog.dog_profiler_data.energy_level)}
+                          {formatEnergyLevel(dog.dog_profiler_data.energy_level)}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+                {/* Experience Level Row */}
+                <tr>
+                  <td className="py-2 px-3 text-gray-600 dark:text-gray-400">
+                    Experience Needed
+                  </td>
+                  {dogsToCompare.map((dog) => (
+                    <td key={dog.id} className="py-2 px-3 text-center">
+                      {dog.dog_profiler_data?.experience_level ? (
+                        <span className="flex items-center justify-center gap-1">
+                          {getExperienceLevelIcon(dog.dog_profiler_data.experience_level)}
+                          {formatExperienceLevel(dog.dog_profiler_data.experience_level)}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                  ))}
+                </tr>
                 <tr>
                   <td className="py-2 px-3 text-gray-600 dark:text-gray-400">
                     Age
@@ -770,25 +882,6 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
                         comparisonData.age.highlight[idx]
                           ? "text-orange-600 dark:text-orange-400 font-semibold"
                           : comparisonData.age.allSame
-                            ? "text-gray-400 dark:text-gray-500"
-                            : ""
-                      }`}
-                    >
-                      {value}
-                    </td>
-                  ))}
-                </tr>
-                <tr>
-                  <td className="py-2 px-3 text-gray-600 dark:text-gray-400">
-                    Sex
-                  </td>
-                  {comparisonData.sex?.values.map((value, idx) => (
-                    <td
-                      key={idx}
-                      className={`py-2 px-3 text-center ${
-                        comparisonData.sex.highlight[idx]
-                          ? "text-orange-600 dark:text-orange-400 font-semibold"
-                          : comparisonData.sex.allSame
                             ? "text-gray-400 dark:text-gray-500"
                             : ""
                       }`}
@@ -814,45 +907,66 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
                     </td>
                   ))}
                 </tr>
+                {/* Enhanced Compatibility Row */}
                 <tr>
                   <td className="py-2 px-3 text-gray-600 dark:text-gray-400">
-                    Breed
+                    Good with Dogs
                   </td>
-                  {comparisonData.breed?.values.map((value, idx) => (
-                    <td
-                      key={idx}
-                      className={`py-2 px-3 text-center ${
-                        comparisonData.breed.highlight[idx]
-                          ? "text-orange-600 dark:text-orange-400 font-semibold"
-                          : comparisonData.breed.allSame
-                            ? "text-gray-400 dark:text-gray-500"
-                            : ""
-                      }`}
-                    >
-                      {value}
-                    </td>
-                  ))}
+                  {dogsToCompare.map((dog) => {
+                    const compatibility = getCompatibility(dog);
+                    return (
+                      <td key={dog.id} className="py-2 px-3 text-center">
+                        <span className="flex items-center justify-center gap-1">
+                          {getCompatibilityIcon(compatibility.dogs)}
+                          <span className="text-xs">
+                            {compatibility.dogs === 'yes' && 'Yes'}
+                            {compatibility.dogs === 'no' && 'No'}
+                            {compatibility.dogs === 'maybe' && 'Maybe'}
+                            {compatibility.dogs === 'unknown' && 'Unknown'}
+                          </span>
+                        </span>
+                      </td>
+                    );
+                  })}
                 </tr>
                 <tr>
                   <td className="py-2 px-3 text-gray-600 dark:text-gray-400">
-                    Location
+                    Good with Cats
                   </td>
-                  {dogsToCompare.map((dog, idx) => {
-                    const location =
-                      dog.location ||
-                      dog.properties?.location ||
-                      dog.organization?.country ||
-                      "Unknown";
+                  {dogsToCompare.map((dog) => {
+                    const compatibility = getCompatibility(dog);
                     return (
-                      <td
-                        key={dog.id}
-                        className={`py-2 px-3 text-center ${
-                          comparisonData.location?.allSame
-                            ? "text-gray-400 dark:text-gray-500"
-                            : ""
-                        }`}
-                      >
-                        {location}
+                      <td key={dog.id} className="py-2 px-3 text-center">
+                        <span className="flex items-center justify-center gap-1">
+                          {getCompatibilityIcon(compatibility.cats)}
+                          <span className="text-xs">
+                            {compatibility.cats === 'yes' && 'Yes'}
+                            {compatibility.cats === 'no' && 'No'}
+                            {compatibility.cats === 'maybe' && 'Maybe'}
+                            {compatibility.cats === 'unknown' && 'Unknown'}
+                          </span>
+                        </span>
+                      </td>
+                    );
+                  })}
+                </tr>
+                <tr>
+                  <td className="py-2 px-3 text-gray-600 dark:text-gray-400">
+                    Good with Kids
+                  </td>
+                  {dogsToCompare.map((dog) => {
+                    const compatibility = getCompatibility(dog);
+                    return (
+                      <td key={dog.id} className="py-2 px-3 text-center">
+                        <span className="flex items-center justify-center gap-1">
+                          {getCompatibilityIcon(compatibility.children)}
+                          <span className="text-xs">
+                            {compatibility.children === 'yes' && 'Yes'}
+                            {compatibility.children === 'no' && 'No'}
+                            {compatibility.children === 'maybe' && 'Maybe'}
+                            {compatibility.children === 'unknown' && 'Unknown'}
+                          </span>
+                        </span>
                       </td>
                     );
                   })}
@@ -869,50 +983,6 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
                       {value}
                     </td>
                   ))}
-                </tr>
-                <tr>
-                  <td className="py-2 px-3 text-gray-600 dark:text-gray-400">
-                    Good with Dogs
-                  </td>
-                  {comparisonData.good_with_dogs?.values.map((value, idx) => (
-                    <td key={idx} className="py-2 px-3 text-center">
-                      {value ? (
-                        <span className="text-green-600">✓ Yes</span>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </td>
-                  ))}
-                </tr>
-                <tr>
-                  <td className="py-2 px-3 text-gray-600 dark:text-gray-400">
-                    Good with Cats
-                  </td>
-                  {comparisonData.good_with_cats?.values.map((value, idx) => (
-                    <td key={idx} className="py-2 px-3 text-center">
-                      {value ? (
-                        <span className="text-green-600">✓ Yes</span>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </td>
-                  ))}
-                </tr>
-                <tr>
-                  <td className="py-2 px-3 text-gray-600 dark:text-gray-400">
-                    Good with Kids
-                  </td>
-                  {comparisonData.good_with_children?.values.map(
-                    (value, idx) => (
-                      <td key={idx} className="py-2 px-3 text-center">
-                        {value ? (
-                          <span className="text-green-600">✓ Yes</span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                    ),
-                  )}
                 </tr>
               </tbody>
             </table>
