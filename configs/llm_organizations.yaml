@@ -10,6 +10,14 @@ organizations:
     model_preference: "google/gemini-2.5-flash"
     enabled: true
 
+  12:
+    name: "Daisy Family Rescue"
+    prompt_file: "daisyfamilyrescue.yaml"
+    source_language: "de"
+    target_language: "en"
+    model_preference: "google/gemini-2.5-flash"
+    enabled: true
+
   13:
     name: "MISIs Animal Rescue"
     prompt_file: "misisrescue.yaml"

@@ -1,0 +1,193 @@
+metadata:
+  organization_id: 12
+  organization_name: "Daisy Family Rescue e.V."
+  language: de
+  version: "1.0.0"
+  created: "2025-01-26"
+
+system_prompt: |
+  You are an expert dog adoption specialist creating accurate, compelling profiles for rescue dogs.
+  You specialize in transforming mixed German/English rescue dog descriptions into engaging, world-class English profiles.
+
+  CRITICAL RULES:
+  1. NEVER hallucinate - only use information explicitly provided in the source text
+  2. Use "unknown" or null for any missing information
+  3. Maintain a warm, professional tone that creates emotional connection
+  4. Create world-class engaging copy while preserving ALL facts
+  5. Return valid JSON that exactly matches the required schema
+  6. Include confidence scores (0.0-1.0) for each field based on source clarity
+  7. Track source references showing which text led to each conclusion
+  8. Keep descriptions between 150-250 characters for optimal display
+
+extraction_prompt: |
+  STEP 1: Parse the dog information below carefully, noting that descriptions are often in a mix of German and English.
+  STEP 2: Extract ALL factual information from both the character traits and descriptions.
+  STEP 3: Create a world-class, emotionally engaging English adoption profile.
+
+  DOG INFORMATION:
+  Name: {name}
+  Breed: {breed}
+  Age: {age_text}
+  Properties: {properties}
+
+  SPECIAL DATA NOTES FOR DAISY FAMILY RESCUE:
+  - The "character" field contains personality traits in mixed German/English
+  - The "character_german" field has the same traits in full German
+  - The "container_text" often contains age/size/weight info like "Rachel\n12/2023 • ca. 55cm • 18kg"
+  - The "compatibility" field shows dog/cat compatibility
+  - The "sex_german" indicates gender and neuter status
+  - The "current_location" shows if dog is in North Macedonia, Germany, or foster care
+  - The standard description is boilerplate about permits/vaccinations - look for unique info in character fields
+
+  Return a FLAT JSON object (no nested sections) with exactly these fields:
+
+  CORE DESCRIPTION (required):
+  - description: 150-250 character engaging English description that captures the dog's unique personality and story
+  - tagline: Catchy, emotionally compelling hook under 50 characters (make it memorable!)
+
+  BEHAVIORAL ASSESSMENT (derive from character fields and text):
+  - energy_level: Use ONLY "low", "medium", "high", or "very_high". Keywords: "ruhig"=low, "aktiv/active"=high, "verspielt/playful"=medium-high
+  - trainability: Use ONLY "easy", "moderate", "challenging", or "very_challenging". Look for "gelehrig", "clever", "lernwillig", "futterorientiert"=easy
+  - sociability: Use ONLY "very_social", "social", "selective", "independent", or "needs_work". Check "aufgeschlossen", "friendly", "kontaktfreudig"=social
+  - confidence: Use ONLY "very_confident", "confident", "moderate", "shy", or "very_shy". "vorsichtig"=shy, "gelassen"=confident
+
+  COMPATIBILITY (extract from compatibility field and character):
+  - good_with_dogs: Look for "dogs: yes" in compatibility field or "verträglich mit Hund"
+  - good_with_cats: Look for "cats:" in compatibility or "verträglich mit Katze" in character
+  - good_with_children: Look for mentions in character fields
+
+  LIVING REQUIREMENTS (infer from description and location):
+  - home_type: Use "apartment_ok", "house_preferred", or "house_required"
+  - yard_required: Default false unless specifically mentioned
+  - experience_level: Use "first_time_ok", "some_experience", or "experienced_only"
+  - exercise_needs: Use "minimal", "moderate", "high", or "very_high"
+
+  CARE NEEDS:
+  - grooming_needs: Use "minimal", "weekly", "twice_weekly", or "daily" based on breed
+  - medical_needs: Only if mentioned (NOT the standard vaccination text)
+  - special_needs: Any special requirements mentioned
+
+  PERSONALITY (extract from character/character_german fields):
+  - personality_traits: List 3-5 key traits from character fields
+  - favorite_activities: 2-4 activities mentioned or inferred
+  - unique_quirk: Any endearing or unique behavior from character description
+
+  ADOPTION INFO:
+  - adoption_fee_euros: Extract from "adoption_fee_eur" if present
+  - ready_to_travel: true for dogs in North Macedonia, check for Germany locations
+  - vaccinated: Usually true (standard text mentions vaccinations)
+  - neutered: Check "sex_german" for "kastriert" or "spayed_neutered" field
+
+  METADATA (required for transparency):
+  - processing_time_ms: Time taken (will be filled by system)
+  - confidence_scores: Rate 0.0-1.0 for each field based on source clarity
+  - source_references: Map each conclusion to the source text that supports it
+  - prompt_version: "1.0.0"
+
+  CRITICAL RULES FOR DATA INTEGRITY:
+  1. NEVER invent data - if information is not in the text, return null
+  2. Focus on the character/personality fields for behavioral traits
+  3. Extract size/age/weight from container_text when available
+  4. Create engaging, world-class copy that would make someone fall in love with the dog
+  5. Use exact enum values listed above - no variations!
+  6. Keep descriptions concise but emotionally powerful
+
+german_keywords:
+  # Personality traits (common in Daisy Family descriptions)
+  aufgeschlossen: open-minded/sociable
+  freundlich: friendly
+  liebevoll: loving
+  verspielt: playful
+  ruhig: calm
+  aktiv: active
+  verschmust: cuddly
+  anhänglich: affectionate
+  menschenbezogen: people-oriented
+  people-oriented: people-oriented
+  kontaktfreudig: sociable
+  gelassen: calm/relaxed
+  futterorientiert: food-motivated
+  futteraffin: food-loving
+  gelehrig: trainable
+  clever: clever
+  neugierig: curious
+  curious: curious
+  vorsichtig: cautious
+  friedliebend: peaceful
+  lieb: sweet/kind
+  aufmerksam: attentive
+  lernwillig: eager to learn
+  sozialverträglich: socially compatible
+
+  # Compatibility
+  verträglich: compatible
+  Hunden: dogs
+  Katze: cat
+  
+  # Medical/Status
+  kastriert: neutered/spayed
+  männlich: male
+  weiblich: female
+  geimpft: vaccinated
+  
+  # Size/Age (from container_text)
+  im Wachstum: still growing
+  Jahre: years
+  Monate: months
+  ca.: approximately
+  
+few_shot_examples:
+  - input: |
+      Name: Rachel
+      Breed: Mixed Breed
+      Age: 12/2023
+      Properties: {
+        "character": "aufgeschlossen, friendly, active, clever, calm, playful, cuddly",
+        "character_german": "aufgeschlossen, freundlich, aktiv, clever, ruhig, verspielt, verschmust",
+        "container_text": "Rachel\n12/2023 • ca. 55cm • 18kg",
+        "compatibility": "dogs: yes",
+        "sex_german": "weiblich, kastriert",
+        "current_location": "North Macedonia"
+      }
+
+    output: |
+      {
+        "description": "Rachel is a brilliantly clever and playful mixed breed with the perfect balance of energy and calm. This affectionate girl combines curiosity with cuddles, making her an ideal companion for active families who appreciate both adventure and cozy evenings.",
+        "tagline": "Smart, sweet Rachel ready to steal your heart!",
+        "energy_level": "medium",
+        "trainability": "easy",
+        "sociability": "very_social",
+        "confidence": "confident",
+        "good_with_dogs": "yes",
+        "good_with_cats": "unknown",
+        "good_with_children": "unknown",
+        "home_type": "apartment_ok",
+        "yard_required": false,
+        "experience_level": "first_time_ok",
+        "exercise_needs": "moderate",
+        "grooming_needs": "weekly",
+        "medical_needs": null,
+        "special_needs": null,
+        "personality_traits": ["clever", "playful", "affectionate", "calm", "friendly"],
+        "favorite_activities": ["playing", "cuddling", "learning", "socializing"],
+        "unique_quirk": "perfect balance of playful energy and calm cuddles",
+        "adoption_fee_euros": 580,
+        "ready_to_travel": true,
+        "vaccinated": true,
+        "neutered": true,
+        "processing_time_ms": 1250,
+        "confidence_scores": {
+          "description": 0.95,
+          "energy_level": 0.9,
+          "good_with_dogs": 1.0,
+          "vaccinated": 0.9,
+          "neutered": 1.0
+        },
+        "source_references": {
+          "description": "aufgeschlossen, friendly, active, clever, calm, playful, cuddly",
+          "good_with_dogs": "dogs: yes",
+          "neutered": "weiblich, kastriert",
+          "personality_traits": "character: aufgeschlossen, friendly, active, clever, calm, playful, cuddly"
+        },
+        "prompt_version": "1.0.0"
+      }
