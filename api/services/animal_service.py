@@ -280,6 +280,7 @@ class AnimalService:
                        a.sex, a.size, a.standardized_size, a.status, a.properties,
                        a.primary_image_url, a.adoption_url, a.created_at, a.updated_at,
                        a.organization_id, a.external_id, a.language, a.last_scraped_at,
+                       a.dog_profiler_data,
                        o.name as org_name,
                        o.slug as org_slug,
                        o.city as org_city,
@@ -303,6 +304,7 @@ class AnimalService:
                          a.sex, a.size, a.standardized_size, a.status, a.properties,
                          a.primary_image_url, a.adoption_url, a.created_at, a.updated_at,
                          a.organization_id, a.external_id, a.language, a.last_scraped_at,
+                         a.dog_profiler_data,
                          o.id, o.slug, o.name, o.city, o.country, o.website_url, o.social_media,
                          o.ships_to, o.logo_url, o.service_regions, o.description
             """
@@ -318,6 +320,9 @@ class AnimalService:
 
             # Parse properties JSON using utility function
             parse_json_field(clean_dict, "properties")
+
+            # Parse dog_profiler_data JSON using utility function
+            parse_json_field(clean_dict, "dog_profiler_data")
 
             # Build organization data using utility function
             organization_data = build_organization_object(clean_dict)
@@ -360,6 +365,7 @@ class AnimalService:
                        a.sex, a.size, a.standardized_size, a.status, a.properties,
                        a.primary_image_url, a.adoption_url, a.created_at, a.updated_at,
                        a.organization_id, a.external_id, a.language, a.last_scraped_at,
+                       a.dog_profiler_data,
                        o.name as org_name,
                        o.slug as org_slug,
                        o.city as org_city,
@@ -383,6 +389,7 @@ class AnimalService:
                          a.sex, a.size, a.standardized_size, a.status, a.properties,
                          a.primary_image_url, a.adoption_url, a.created_at, a.updated_at,
                          a.organization_id, a.external_id, a.language, a.last_scraped_at,
+                         a.dog_profiler_data,
                          o.id, o.slug, o.name, o.city, o.country, o.website_url, o.social_media,
                          o.ships_to, o.logo_url, o.service_regions, o.description
             """
@@ -399,6 +406,9 @@ class AnimalService:
             clean_dict = dict(animal_dict)
             # Parse properties JSON using utility function
             parse_json_field(clean_dict, "properties")
+
+            # Parse dog_profiler_data JSON using utility function
+            parse_json_field(clean_dict, "dog_profiler_data")
 
             # Build organization data using utility function
             organization_data = build_organization_object(clean_dict)

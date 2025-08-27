@@ -115,7 +115,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
   const debouncedAgeGroupFilter = useDebounce(ageGroupFilter, 300);
   const debouncedOrganizationFilter = useDebounce(organizationFilter, 300);
 
-  // Detect mobile viewport
+  // Detect mobile viewport - use md breakpoint (768px) for consistency
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -160,7 +160,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
   const filteredDogs = useMemo(() => {
     return dogs.filter((dog) => {
       // Breed filter
-      if (debouncedBreedFilter) {
+      if (debouncedBreedFilter && debouncedBreedFilter !== "_all") {
         const dogBreed = dog.standardized_breed || dog.breed;
         if (dogBreed !== debouncedBreedFilter) {
           return false;
@@ -168,7 +168,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
       }
 
       // Size filter
-      if (debouncedSizeFilter) {
+      if (debouncedSizeFilter && debouncedSizeFilter !== "_all") {
         const dogSize = dog.standardized_size || dog.size;
         if (dogSize !== debouncedSizeFilter) {
           return false;
@@ -176,7 +176,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
       }
 
       // Age group filter
-      if (debouncedAgeGroupFilter) {
+      if (debouncedAgeGroupFilter && debouncedAgeGroupFilter !== "_all") {
         const ageCategory = getAgeCategory(dog);
         if (ageCategory !== debouncedAgeGroupFilter) {
           return false;
@@ -184,7 +184,10 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
       }
 
       // Organization filter
-      if (debouncedOrganizationFilter) {
+      if (
+        debouncedOrganizationFilter &&
+        debouncedOrganizationFilter !== "_all"
+      ) {
         const orgName = dog.organization_name || dog.organization?.name;
         if (orgName !== debouncedOrganizationFilter) {
           return false;
@@ -217,7 +220,10 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
 
   // Check if any filters are active
   const hasActiveFilters =
-    breedFilter || sizeFilter || ageGroupFilter || organizationFilter;
+    (breedFilter && breedFilter !== "_all") ||
+    (sizeFilter && sizeFilter !== "_all") ||
+    (ageGroupFilter && ageGroupFilter !== "_all") ||
+    (organizationFilter && organizationFilter !== "_all");
 
   const handleApplyFilters = () => {
     // Pass true to indicate user-initiated filter change
@@ -275,7 +281,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
           </div>
           <Select value={breedFilter} onValueChange={setBreedFilter}>
             <SelectTrigger
-              className={`w-[180px] pl-10 pr-10 py-2.5 text-sm font-medium rounded-xl transition-all
+              className={`w-[180px] pl-10 pr-10 py-2.5 text-sm font-medium rounded-lg transition-all
               ${
                 breedFilter
                   ? "bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-400 dark:border-orange-600 text-orange-900 dark:text-orange-100"
@@ -310,7 +316,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
           </div>
           <Select value={sizeFilter} onValueChange={setSizeFilter}>
             <SelectTrigger
-              className={`w-[180px] pl-10 pr-10 py-2.5 text-sm font-medium rounded-xl transition-all
+              className={`w-[180px] pl-10 pr-10 py-2.5 text-sm font-medium rounded-lg transition-all
               ${
                 sizeFilter
                   ? "bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-400 dark:border-purple-600 text-purple-900 dark:text-purple-100"
@@ -350,7 +356,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
           </div>
           <Select value={ageGroupFilter} onValueChange={setAgeGroupFilter}>
             <SelectTrigger
-              className={`w-[180px] pl-10 pr-10 py-2.5 text-sm font-medium rounded-xl transition-all
+              className={`w-[180px] pl-10 pr-10 py-2.5 text-sm font-medium rounded-lg transition-all
               ${
                 ageGroupFilter
                   ? "bg-green-50 dark:bg-green-900/20 border-2 border-green-400 dark:border-green-600 text-green-900 dark:text-green-100"
@@ -406,7 +412,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
             onValueChange={setOrganizationFilter}
           >
             <SelectTrigger
-              className={`w-[200px] pl-10 pr-10 py-2.5 text-sm font-medium rounded-xl transition-all
+              className={`w-[200px] pl-10 pr-10 py-2.5 text-sm font-medium rounded-lg transition-all
               ${
                 organizationFilter
                   ? "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-400 dark:border-blue-600 text-blue-900 dark:text-blue-100"
@@ -438,7 +444,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
             variant="ghost"
             size="sm"
             onClick={handleClearFilters}
-            className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 rounded-xl px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+            className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 rounded-lg px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
           >
             <X size={16} className="mr-1.5" />
             Clear all
@@ -461,16 +467,18 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
   // Mobile view: Enhanced button that opens bottom sheet
   if (!isOpen) {
     const activeCount = [
-      breedFilter,
-      sizeFilter,
-      ageGroupFilter,
-      organizationFilter,
+      breedFilter && breedFilter !== "_all" ? breedFilter : null,
+      sizeFilter && sizeFilter !== "_all" ? sizeFilter : null,
+      ageGroupFilter && ageGroupFilter !== "_all" ? ageGroupFilter : null,
+      organizationFilter && organizationFilter !== "_all"
+        ? organizationFilter
+        : null,
     ].filter(Boolean).length;
     return (
       <Button
         variant="outline"
         onClick={() => setIsOpen(true)}
-        className={`w-full sm:w-auto rounded-xl font-medium transition-all shadow-sm hover:shadow-md
+        className={`w-full sm:w-auto rounded-lg font-medium transition-all shadow-sm hover:shadow-md
           ${
             activeCount > 0
               ? "bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 border-orange-200 dark:border-orange-800 hover:from-orange-100 hover:to-yellow-100 dark:hover:from-orange-900/30 dark:hover:to-yellow-900/30"
@@ -535,10 +543,16 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
                   <div className="text-xs text-gray-500 dark:text-gray-400">
                     {
                       [
-                        breedFilter,
-                        sizeFilter,
-                        ageGroupFilter,
-                        organizationFilter,
+                        breedFilter && breedFilter !== "_all"
+                          ? breedFilter
+                          : null,
+                        sizeFilter && sizeFilter !== "_all" ? sizeFilter : null,
+                        ageGroupFilter && ageGroupFilter !== "_all"
+                          ? ageGroupFilter
+                          : null,
+                        organizationFilter && organizationFilter !== "_all"
+                          ? organizationFilter
+                          : null,
                       ].filter(Boolean).length
                     }{" "}
                     filters active
@@ -548,7 +562,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="p-2.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-all"
+              className="p-2.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all"
               aria-label="Close"
             >
               <X size={22} />
@@ -569,7 +583,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
               <Select value={breedFilter} onValueChange={setBreedFilter}>
                 <SelectTrigger
                   id="breed-filter-mobile"
-                  className={`w-full px-4 py-3 text-sm font-medium rounded-xl transition-all
+                  className={`w-full px-4 py-3 text-sm font-medium rounded-lg transition-all
                     ${
                       breedFilter
                         ? "bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-400 dark:border-orange-600"
@@ -604,7 +618,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
               <Select value={sizeFilter} onValueChange={setSizeFilter}>
                 <SelectTrigger
                   id="size-filter-mobile"
-                  className={`w-full px-4 py-3 text-sm font-medium rounded-xl transition-all
+                  className={`w-full px-4 py-3 text-sm font-medium rounded-lg transition-all
                     ${
                       sizeFilter
                         ? "bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-400 dark:border-purple-600"
@@ -644,7 +658,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
               <Select value={ageGroupFilter} onValueChange={setAgeGroupFilter}>
                 <SelectTrigger
                   id="age-filter-mobile"
-                  className={`w-full px-4 py-3 text-sm font-medium rounded-xl transition-all
+                  className={`w-full px-4 py-3 text-sm font-medium rounded-lg transition-all
                     ${
                       ageGroupFilter
                         ? "bg-green-50 dark:bg-green-900/20 border-2 border-green-400 dark:border-green-600"
@@ -700,7 +714,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
               >
                 <SelectTrigger
                   id="org-filter-mobile"
-                  className={`w-full px-4 py-3 text-sm font-medium rounded-xl transition-all
+                  className={`w-full px-4 py-3 text-sm font-medium rounded-lg transition-all
                     ${
                       organizationFilter
                         ? "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-400 dark:border-blue-600"
@@ -728,7 +742,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
           <div className="mt-8 space-y-3 sticky bottom-0 bg-white dark:bg-gray-800 pt-4 pb-2">
             <Button
               onClick={handleApplyFilters}
-              className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white rounded-xl py-3 font-semibold shadow-lg hover:shadow-xl transition-all"
+              className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white rounded-lg py-3 font-semibold shadow-lg hover:shadow-xl transition-all"
             >
               Apply Filters
               {hasActiveFilters && ` (${filteredDogs.length} dogs)`}
@@ -738,7 +752,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
               <Button
                 variant="outline"
                 onClick={handleClearFilters}
-                className="w-full border-gray-300 dark:border-gray-600 rounded-xl py-3 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+                className="w-full border-gray-300 dark:border-gray-600 rounded-lg py-3 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
               >
                 <X size={16} className="mr-2" />
                 Clear All Filters

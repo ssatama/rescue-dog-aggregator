@@ -22,6 +22,9 @@ import {
   isRecentDog,
   getOrganizationName,
   getShipsToCountries,
+  formatExperienceLevel,
+  formatCompatibility,
+  getPersonalityTraits,
 } from "../../utils/dogHelpers";
 
 const DogCardOptimized = React.memo(function DogCardOptimized({
@@ -47,6 +50,11 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
   const organizationName = getOrganizationName(dog);
   const shipsToCountries = getShipsToCountries(dog);
   const showNewBadge = isRecentDog(dog);
+
+  // New uncertainty indicators and enhanced data
+  const experienceLevel = formatExperienceLevel(dog);
+  const compatibility = formatCompatibility(dog);
+  const personalityTraits = getPersonalityTraits(dog);
 
   // Helper function to get standardized size for data attribute
   const getStandardizedSize = (dog) => {
@@ -123,14 +131,30 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
               <p className="flex items-center gap-1">
                 <span>🎂</span>
                 <span>{ageCategory}</span>
-                <span className="text-xs">• {formattedAge}</span>
               </p>
             )}
             <p className="flex items-center gap-1">
               <span>{genderData.icon}</span>
               <span>{genderData.text}</span>
             </p>
-            <p className="truncate">{breed}</p>
+            {breed && <p className="truncate">{breed}</p>}
+
+            {/* Experience level for mobile */}
+            {experienceLevel && (
+              <p className="text-xs text-blue-600 dark:text-blue-400">
+                👥 {experienceLevel}
+              </p>
+            )}
+
+            {/* Quick compatibility indicators for mobile */}
+            <div className="flex items-center gap-2 text-xs">
+              <span className={`${compatibility.withDogs.color}`}>
+                🐕 {compatibility.withDogs.text}
+              </span>
+              <span className={`${compatibility.withCats.color}`}>
+                🐱 {compatibility.withCats.text}
+              </span>
+            </div>
           </div>
 
           {/* Organization - hidden on mobile */}
@@ -239,9 +263,6 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
           {formattedAge && ageCategory !== "Unknown" && (
             <>
               <span data-testid="age-category">🎂 {ageCategory}</span>
-              <span className="text-xs" data-testid="formatted-age">
-                • {formattedAge}
-              </span>
             </>
           )}
           <span data-testid="gender-display">
@@ -265,6 +286,56 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
         >
           {organizationName}
         </p>
+
+        {/* Experience Level */}
+        {experienceLevel && (
+          <div className="pt-1" data-testid="experience-display">
+            <p className="text-xs text-blue-600 dark:text-blue-400">
+              👥 {experienceLevel}
+            </p>
+          </div>
+        )}
+
+        {/* Compatibility indicators */}
+        <div className="pt-1 space-y-1" data-testid="compatibility-display">
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="flex items-center gap-1">
+              <span>🐕</span>
+              <span className={compatibility.withDogs.color}>
+                {compatibility.withDogs.text}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span>🐱</span>
+              <span className={compatibility.withCats.color}>
+                {compatibility.withCats.text}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span>👶</span>
+              <span className={compatibility.withChildren.color}>
+                {compatibility.withChildren.text}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Special traits with hover */}
+        {personalityTraits.length > 0 && (
+          <div className="pt-1" data-testid="traits-display">
+            <div className="flex flex-wrap gap-1">
+              {personalityTraits.map((trait, index) => (
+                <span
+                  key={index}
+                  title={trait}
+                  className="inline-block px-2 py-1 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 rounded-full truncate max-w-20"
+                >
+                  {trait}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Ships to countries */}
         {shipsToCountries && shipsToCountries.length > 0 && (

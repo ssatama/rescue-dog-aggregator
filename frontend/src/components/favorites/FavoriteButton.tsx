@@ -58,7 +58,7 @@ export function FavoriteButton({
       aria-pressed={isFav}
       className={`
         inline-flex items-center justify-center
-        p-2 rounded-full
+        ${compact ? "p-2" : "p-3"} rounded-full
         transition-all duration-200 ease-in-out
         hover:scale-110 active:scale-95
         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
@@ -66,6 +66,10 @@ export function FavoriteButton({
         ${isFav ? "text-red-500 hover:text-red-600" : "text-gray-400 hover:text-red-500"}
         ${className}
       `}
+      style={{
+        minWidth: compact ? "36px" : "44px",
+        minHeight: compact ? "36px" : "44px",
+      }}
     >
       <Heart
         size={20}

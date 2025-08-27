@@ -8,27 +8,73 @@ import { useToast } from "../../contexts/ToastContext";
 import DogsGrid from "../../components/dogs/DogsGrid";
 import Loading from "../../components/ui/Loading";
 import EmptyState from "../../components/ui/EmptyState";
+import { getEnhancedInsights } from "../../utils/dogProfilerAnalyzer";
 import { Button } from "../../components/ui/button";
 import { Trash2, GitCompare } from "lucide-react";
 import { ErrorBoundary } from "react-error-boundary";
 import CompareMode from "../../components/favorites/CompareMode";
 import ShareButton from "../../components/ui/ShareButton";
 import FilterPanel from "../../components/favorites/FilterPanel";
+import FavoritesInsights from "../../components/favorites/FavoritesInsights";
+import type { DogProfilerData } from "../../types/dogProfiler";
 
-// Dog interface is handled by PropTypes or runtime validation
+// Type definitions
+interface Dog {
+  id: number;
+  name: string;
+  breed?: string;
+  standardized_breed?: string;
+  age_months?: number;
+  age_min_months?: number;
+  age_max_months?: number;
+  age_text?: string;
+  sex?: string;
+  size?: string;
+  standardized_size?: string;
+  organization_name?: string;
+  organization?: {
+    name: string;
+    country: string;
+  };
+  location?: string;
+  images?: Array<{ url: string }>;
+  dog_profiler_data?: DogProfilerData;
+  properties?: {
+    good_with_dogs?: boolean | string;
+    good_with_cats?: boolean | string;
+    good_with_children?: boolean | string;
+    good_with_list?: string[];
+    [key: string]: any;
+  };
+}
+
+interface Insights {
+  hasEnhancedData: boolean;
+  commonOrganizations?: Array<{ name: string; count: number }>;
+  commonBreeds?: Array<{ breed: string; count: number }>;
+  ageCounts?: { puppy: number; young: number; adult: number; senior: number };
+  sexBreakdown?: { male: number; female: number };
+  sizeCounts?: {
+    small: number;
+    medium: number;
+    large: number;
+    "extra-large": number;
+  };
+  [key: string]: any; // For additional enhanced insights
+}
 
 function FavoritesPageContent() {
   const { favorites, count, clearFavorites, getShareableUrl, loadFromUrl } =
     useFavorites();
   const { showToast } = useToast();
-  const [dogs, setDogs] = useState([]);
-  const [filteredDogs, setFilteredDogs] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showCompareMode, setShowCompareMode] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [dogs, setDogs] = useState<Dog[]>([]);
+  const [filteredDogs, setFilteredDogs] = useState<Dog[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showCompareMode, setShowCompareMode] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
 
-  // Detect mobile viewport
+  // Detect mobile viewport - use md breakpoint (768px) for consistency
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -115,7 +161,7 @@ function FavoritesPageContent() {
   };
 
   const handleFilter = useCallback(
-    (filtered, isUserInitiated = false) => {
+    (filtered: Dog[], isUserInitiated = false) => {
       setFilteredDogs(filtered);
       // Only show toast if user actively changed filters
       if (isUserInitiated) {
@@ -125,16 +171,52 @@ function FavoritesPageContent() {
     [showToast],
   );
 
-  // Smart insights based on filtered dogs
+  // Enhanced insights using LLM data
+  const [insights, setInsights] = useState<Insights | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState<boolean>(false);
   const showInsights = filteredDogs.length >= 2;
-  const insights = showInsights ? getSmartInsights(filteredDogs) : null;
+  const hasLLMData = filteredDogs.some((dog) => dog.dog_profiler_data);
 
-  // Helper function to get smart insights from filtered dogs
-  function getSmartInsights(dogList) {
+  // Effect to calculate enhanced insights
+  useEffect(() => {
+    if (!showInsights || filteredDogs.length < 2) {
+      setInsights(null);
+      return;
+    }
+
+    setInsightsLoading(true);
+
+    // Use setTimeout to avoid blocking the UI
+    const timer = setTimeout(() => {
+      try {
+        // Use statically imported function
+        const enhancedInsights = getEnhancedInsights(filteredDogs);
+        const basicInsights = getBasicInsights(filteredDogs);
+
+        setInsights({
+          ...basicInsights,
+          ...enhancedInsights,
+          hasEnhancedData: filteredDogs.some((d) => d.dog_profiler_data),
+        });
+      } catch (error) {
+        console.error("Error calculating enhanced insights:", error);
+        // Fall back to basic insights on error
+        setInsights(getBasicInsights(filteredDogs));
+      } finally {
+        setInsightsLoading(false);
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredDogs, showInsights]);
+
+  // Basic insights function (existing logic)
+  const getBasicInsights = useCallback((dogList: Dog[]): Insights | null => {
     if (!dogList || dogList.length === 0) return null;
 
     // Organization insights
-    const orgCounts = {};
+    const orgCounts: { [key: string]: number } = {};
     dogList.forEach((dog) => {
       const orgName =
         dog.organization_name || dog.organization?.name || "Unknown";
@@ -144,7 +226,7 @@ function FavoritesPageContent() {
     const topOrg = Object.entries(orgCounts).sort((a, b) => b[1] - a[1])[0];
 
     // Size preference insights
-    const sizeCounts = {};
+    const sizeCounts: { [key: string]: number } = {};
     dogList.forEach((dog) => {
       const size = dog.standardized_size || dog.size || "Unknown";
       sizeCounts[size] = (sizeCounts[size] || 0) + 1;
@@ -159,7 +241,7 @@ function FavoritesPageContent() {
     const ageRange = calculateAgeRange(dogList);
 
     // Compatibility insights (if available in properties)
-    let commonTraits = [];
+    let commonTraits: string[] = [];
     if (
       dogList.every(
         (d) =>
@@ -202,14 +284,17 @@ function FavoritesPageContent() {
       ageRange: ageRange,
       commonTraits: commonTraits.length > 0 ? commonTraits : null,
       totalCount: dogList.length,
+      hasEnhancedData: false,
     };
-  }
+  }, []);
 
   // Helper function to calculate age range using age_months
-  function calculateAgeRange(dogList) {
+  function calculateAgeRange(dogList: Dog[]) {
     const agesInMonths = dogList
       .map((d) => d.age_months)
-      .filter((age) => age !== undefined && age !== null && age > 0);
+      .filter(
+        (age): age is number => age !== undefined && age !== null && age > 0,
+      );
 
     if (agesInMonths.length === 0) {
       // Fallback to age text if age_months not available
@@ -219,7 +304,7 @@ function FavoritesPageContent() {
     const minMonths = Math.min(...agesInMonths);
     const maxMonths = Math.max(...agesInMonths);
 
-    const formatAge = (months) => {
+    const formatAge = (months: number) => {
       if (months < 12) return `${months} month${months !== 1 ? "s" : ""}`;
       const years = Math.floor(months / 12);
       return `${years} year${years !== 1 ? "s" : ""}`;
@@ -303,107 +388,63 @@ function FavoritesPageContent() {
               family.
             </p>
 
-            {/* Action Buttons - Mobile Optimized */}
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mt-8">
-              <ShareButton
-                url={getShareableUrl()}
-                title="My Favorite Rescue Dogs"
-                text={`Check out my collection of ${count} favorite rescue dogs!`}
-                variant="default"
-                className="bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                Share Favorites
-              </ShareButton>
-
-              {/* Compare Button - Only show when 2+ dogs */}
-              {count >= 2 && (
-                <Button
+            {/* Action Buttons Row - Responsive Layout */}
+            <div className="flex flex-col md:flex-row justify-center items-center gap-4 mt-8">
+              {/* Primary Action Buttons */}
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-3">
+                <ShareButton
+                  url={getShareableUrl()}
+                  title="My Favorite Rescue Dogs"
+                  text={`Check out my collection of ${count} favorite rescue dogs!`}
                   variant="default"
-                  size="default"
-                  onClick={() => setShowCompareMode(true)}
                   className="bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300"
                 >
-                  Compare Dogs
-                </Button>
-              )}
+                  Share Favorites
+                </ShareButton>
 
-              <FilterPanel dogs={dogs} onFilter={handleFilter} />
+                {/* Compare Button - Only show when 2+ dogs */}
+                {count >= 2 && (
+                  <Button
+                    variant="default"
+                    size="default"
+                    onClick={() => setShowCompareMode(true)}
+                    className="bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    Compare Dogs
+                  </Button>
+                )}
+              </div>
+
+              {/* Filter Controls - Separate Section */}
+              <div className="w-full md:w-auto flex justify-center">
+                <FilterPanel dogs={dogs} onFilter={handleFilter} />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Smart Insights - Mobile Optimized */}
+        {/* Enhanced Smart Insights - Compact Design */}
         {showInsights && insights && (
-          <div className="container mx-auto px-4 mb-8">
-            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg p-6 shadow-sm">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <span className="text-2xl">💡</span>
-                Your Favorites Insights
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Top Organization */}
-                {insights.topOrganization && (
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm">🏢</span>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Most dogs from
-                      </div>
-                      <div className="font-medium">
-                        {insights.topOrganization}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Size Preference */}
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm">📏</span>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      Size preference
-                    </div>
-                    <div className="font-medium">{insights.sizePreference}</div>
-                  </div>
-                </div>
-
-                {/* Age Range */}
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm">📅</span>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      Age range
-                    </div>
-                    <div className="font-medium">{insights.ageRange}</div>
-                  </div>
-                </div>
-
-                {/* Common Traits */}
-                {insights.commonTraits && (
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm">✨</span>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Common traits
-                      </div>
-                      <div className="font-medium">
-                        {insights.commonTraits.join(", ")}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          <FavoritesInsights
+            insights={insights}
+            insightsLoading={insightsLoading}
+          />
         )}
+
+        {/* Dogs Section Header */}
+        <div className="container mx-auto px-4 pt-6">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              Your Saved Dogs
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              {filteredDogs.length} dog{filteredDogs.length !== 1 ? "s" : ""}{" "}
+              saved
+            </p>
+            {/* Visual divider */}
+            <hr className="mx-auto mt-4 mb-0 w-24 h-0.5 bg-gradient-to-r from-transparent via-orange-400 to-transparent border-0" />
+          </div>
+        </div>
 
         {/* Dogs grid - use filtered dogs */}
         <div className="container mx-auto px-4">
