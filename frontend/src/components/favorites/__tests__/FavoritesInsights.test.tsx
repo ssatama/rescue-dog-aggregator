@@ -127,7 +127,7 @@ describe("FavoritesInsights", () => {
     expect(screen.queryByText("Size Preference")).not.toBeInTheDocument();
   });
 
-  it("truncates long special traits text", () => {
+  it("shows full special traits text", () => {
     const longQuirkInsights = {
       ...mockInsights,
       hiddenGems: {
@@ -135,7 +135,7 @@ describe("FavoritesInsights", () => {
           {
             dogName: "Buddy",
             quirk:
-              "This is a very long quirk description that should be truncated when it exceeds the character limit set in the component",
+              "This is a very long quirk description that should be shown in full when it exceeds the previous character limit",
           },
         ],
       },
@@ -144,22 +144,32 @@ describe("FavoritesInsights", () => {
     render(<FavoritesInsights insights={longQuirkInsights} />);
 
     expect(screen.getByText(/Buddy:/)).toBeInTheDocument();
-    expect(screen.getByText(/\.\.\.$/)).toBeInTheDocument(); // Should end with ...
+    expect(
+      screen.getByText(
+        /This is a very long quirk description that should be shown in full when it exceeds the previous character limit/,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/\.\.\.$/)).not.toBeInTheDocument(); // Should not end with ...
   });
 
-  it("truncates long care requirements text", () => {
+  it("shows full care requirements text", () => {
     const longCareInsights = {
       ...mockInsights,
       careComplexity: {
         description:
-          "This is a very long care requirements description that should be truncated when it exceeds the eighty character limit set in the component for better display",
+          "This is a very long care requirements description that should be shown in full when it exceeds the previous eighty character limit for better display",
       },
     };
 
     render(<FavoritesInsights insights={longCareInsights} />);
 
     expect(screen.getByText("Care Requirements")).toBeInTheDocument();
-    expect(screen.getByText(/\.\.\.$/)).toBeInTheDocument(); // Should end with ...
+    expect(
+      screen.getByText(
+        /This is a very long care requirements description that should be shown in full when it exceeds the previous eighty character limit for better display/,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/\.\.\.$/)).not.toBeInTheDocument(); // Should not end with ...
   });
 
   describe("Mobile collapse/expand functionality", () => {
@@ -276,7 +286,10 @@ describe("FavoritesInsights", () => {
       const insightsContainer = container.querySelector(
         '[data-testid="insights-container"]',
       );
-      expect(insightsContainer).toHaveClass("max-h-[45vh]"); // Less than 50% viewport height when collapsed
+      const insightsGrid = container.querySelector(
+        '[data-testid="insights-grid"]',
+      );
+      expect(insightsGrid).toHaveClass("max-h-80"); // Height restriction applied to grid
       expect(insightsContainer).toHaveClass("mb-10"); // Better bottom spacing
     });
 

@@ -129,7 +129,8 @@ describe("CompareTable", () => {
 
       expect(screen.getByText("Energy Level")).toBeInTheDocument();
       expect(screen.getByText("High")).toBeInTheDocument();
-      expect(screen.getByText("Moderate")).toBeInTheDocument();
+      // Check for energy level formatting - should have both visual indicator and table row
+      expect(screen.getAllByText("Medium")).toHaveLength(2); // One in visual indicator, one in row
     });
 
     it("hides energy level row when ANY dog lacks energy level data", () => {
@@ -169,7 +170,7 @@ describe("CompareTable", () => {
 
       expect(screen.getByText("Experience Needed")).toBeInTheDocument();
       expect(screen.getByText("Some Experience")).toBeInTheDocument();
-      expect(screen.getByText("First Timer")).toBeInTheDocument();
+      expect(screen.getByText("First-time owners")).toBeInTheDocument();
     });
 
     it("hides experience level row when ANY dog lacks experience level data", () => {
