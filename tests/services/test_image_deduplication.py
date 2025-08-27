@@ -55,7 +55,7 @@ class TestImageDeduplication:
         mock_cursor.execute.assert_called_once()
         query = mock_cursor.execute.call_args[0][0]
         assert "SELECT DISTINCT original_image_url, primary_image_url" in query
-        assert "WHERE original_image_url = ANY" in query  # Updated to match new parameterized query
+        assert "WHERE original_image_url IN" in query  # Updated to match new IN clause instead of ANY()
 
         # Verify existing images were reused
         assert result[0]["primary_image_url"] == "https://images.rescuedogs.me/org/existing1.jpg"

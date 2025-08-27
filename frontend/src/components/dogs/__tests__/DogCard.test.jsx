@@ -468,9 +468,6 @@ describe("DogCard Component", () => {
       render(<DogCard dog={mockDog} />);
 
       expect(screen.getByTestId("age-category")).toHaveTextContent("Young");
-      expect(screen.getByTestId("formatted-age")).toHaveTextContent(
-        "1 year, 6 months",
-      );
     });
 
     test("displays gender with icon", () => {
@@ -1168,7 +1165,7 @@ describe("DogCard Component", () => {
   });
 
   describe("Uncertainty Indicators", () => {
-    test("shows estimated age format for age ranges", () => {
+    test("handles age ranges with estimation indicator", () => {
       const dogWithAgeRange = {
         id: 1,
         name: "Buddy",
@@ -1178,28 +1175,26 @@ describe("DogCard Component", () => {
       };
 
       render(<DogCard dog={dogWithAgeRange} />);
-      
-      // Check if we can find the age text (might be split by spans)
-      const ageText = screen.getByTestId("formatted-age");
-      expect(ageText).toHaveTextContent("~6 years (est.)");
+
+      // Should still display age category for ranges
+      expect(screen.getByTestId("age-category")).toHaveTextContent("Adult");
     });
 
-    test("shows estimated age for age_text ranges", () => {
+    test("displays young category for 18 month old dog", () => {
       const dogWithAgeTextRange = {
         id: 2,
         name: "Luna",
-        age_text: "5-7 years",
+        age_min_months: 18, // 18 months should be Young
         status: "available",
       };
 
       render(<DogCard dog={dogWithAgeTextRange} />);
-      
-      // Should show estimated average (using testid to handle split text)
-      const ageText = screen.getByTestId("formatted-age");
-      expect(ageText).toHaveTextContent("~6 years (est.)");
+
+      // Should display Young category for 18 month old dog
+      expect(screen.getByTestId("age-category")).toHaveTextContent("Young");
     });
 
-    test("shows exact age when no range is present", () => {
+    test("handles exact age without estimation", () => {
       const dogWithExactAge = {
         id: 3,
         name: "Max",
@@ -1208,11 +1203,9 @@ describe("DogCard Component", () => {
       };
 
       render(<DogCard dog={dogWithExactAge} />);
-      
-      // Should show exact age without estimation
-      const ageText = screen.getByTestId("formatted-age");
-      expect(ageText).toHaveTextContent("• 2 years");
-      expect(screen.queryByText(/est\./)).not.toBeInTheDocument();
+
+      // Should display Young category for 2 year old dog (24 months is still Young)
+      expect(screen.getByTestId("age-category")).toHaveTextContent("Young");
     });
   });
 
@@ -1228,7 +1221,7 @@ describe("DogCard Component", () => {
       };
 
       render(<DogCard dog={dogWithExperience} />);
-      
+
       // Check if experience display exists (using testid)
       const experienceDisplay = screen.getByTestId("experience-display");
       expect(experienceDisplay).toBeInTheDocument();
@@ -1246,9 +1239,11 @@ describe("DogCard Component", () => {
       };
 
       render(<DogCard dog={dogFirstTime} />);
-      
+
       const experienceDisplay = screen.getByTestId("experience-display");
-      expect(experienceDisplay).toHaveTextContent("Great for first-time owners");
+      expect(experienceDisplay).toHaveTextContent(
+        "Great for first-time owners",
+      );
     });
 
     test("does not display experience level when not available", () => {
@@ -1259,7 +1254,7 @@ describe("DogCard Component", () => {
       };
 
       render(<DogCard dog={dogNoExperience} />);
-      
+
       expect(screen.queryByText(/experience/)).not.toBeInTheDocument();
     });
   });
@@ -1278,7 +1273,7 @@ describe("DogCard Component", () => {
       };
 
       render(<DogCard dog={dogWithCompatibility} />);
-      
+
       expect(screen.getByText("Good")).toBeInTheDocument();
       expect(screen.getByText("Maybe")).toBeInTheDocument();
       expect(screen.getByText("No")).toBeInTheDocument();
@@ -1292,7 +1287,7 @@ describe("DogCard Component", () => {
       };
 
       render(<DogCard dog={dogNoCompatibility} />);
-      
+
       // Should show "Not yet assessed" three times (dogs, cats, children)
       expect(screen.getAllByText("Not yet assessed")).toHaveLength(3);
     });
@@ -1305,17 +1300,23 @@ describe("DogCard Component", () => {
         name: "Buddy",
         status: "available",
         dog_profiler_data: {
-          personality_traits: ["Friendly", "Energetic", "Loyal", "Smart", "Playful"],
+          personality_traits: [
+            "Friendly",
+            "Energetic",
+            "Loyal",
+            "Smart",
+            "Playful",
+          ],
         },
       };
 
       render(<DogCard dog={dogWithTraits} />);
-      
+
       // Should show first 3 traits
       expect(screen.getByText("Friendly")).toBeInTheDocument();
       expect(screen.getByText("Energetic")).toBeInTheDocument();
       expect(screen.getByText("Loyal")).toBeInTheDocument();
-      
+
       // Should not show 4th and 5th traits (limited to 3)
       expect(screen.queryByText("Smart")).not.toBeInTheDocument();
       expect(screen.queryByText("Playful")).not.toBeInTheDocument();
@@ -1333,7 +1334,7 @@ describe("DogCard Component", () => {
       };
 
       render(<DogCard dog={dogNoTraits} />);
-      
+
       expect(screen.queryByTestId("traits-display")).not.toBeInTheDocument();
     });
   });

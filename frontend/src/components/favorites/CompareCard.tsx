@@ -38,7 +38,10 @@ export default function CompareCard({ dog }: CompareCardProps) {
     const levelValue = level?.toLowerCase();
     if (levelValue?.includes("high") || levelValue?.includes("very_high")) {
       return "bg-green-50 dark:bg-green-900/10";
-    } else if (levelValue?.includes("medium") || levelValue?.includes("moderate")) {
+    } else if (
+      levelValue?.includes("medium") ||
+      levelValue?.includes("moderate")
+    ) {
       return "bg-yellow-50 dark:bg-yellow-900/10";
     } else if (levelValue?.includes("low") || levelValue?.includes("minimal")) {
       return "bg-orange-50 dark:bg-orange-900/10";
@@ -61,7 +64,10 @@ export default function CompareCard({ dog }: CompareCardProps) {
       <DogHeader dog={dog} tagline={tagline} />
 
       {/* Personality Traits - always show container with visual hierarchy */}
-      <div className="px-4 pb-3 min-h-[4rem] gap-4" data-testid="personality-section">
+      <div
+        className="px-4 pb-3 min-h-[4rem] gap-4"
+        data-testid="personality-section"
+      >
         {personalityTraits.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {personalityTraits.slice(0, 2).map((trait, idx) => (
@@ -115,7 +121,10 @@ export default function CompareCard({ dog }: CompareCardProps) {
       />
 
       {/* Perfect For Section - always show container with more spacing */}
-      <div className="px-4 pb-3 min-h-[3rem] gap-6" data-testid="perfect-for-section">
+      <div
+        className="px-4 pb-3 min-h-[3rem] gap-6"
+        data-testid="perfect-for-section"
+      >
         <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
           Perfect for:
         </div>

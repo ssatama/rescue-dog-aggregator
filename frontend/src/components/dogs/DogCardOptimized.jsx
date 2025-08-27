@@ -50,7 +50,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
   const organizationName = getOrganizationName(dog);
   const shipsToCountries = getShipsToCountries(dog);
   const showNewBadge = isRecentDog(dog);
-  
+
   // New uncertainty indicators and enhanced data
   const experienceLevel = formatExperienceLevel(dog);
   const compatibility = formatCompatibility(dog);
@@ -131,7 +131,6 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
               <p className="flex items-center gap-1">
                 <span>🎂</span>
                 <span>{ageCategory}</span>
-                <span className="text-xs">• {formattedAge}</span>
               </p>
             )}
             <p className="flex items-center gap-1">
@@ -139,21 +138,21 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
               <span>{genderData.text}</span>
             </p>
             {breed && <p className="truncate">{breed}</p>}
-            
+
             {/* Experience level for mobile */}
             {experienceLevel && (
               <p className="text-xs text-blue-600 dark:text-blue-400">
                 👥 {experienceLevel}
               </p>
             )}
-            
+
             {/* Quick compatibility indicators for mobile */}
             <div className="flex items-center gap-2 text-xs">
               <span className={`${compatibility.withDogs.color}`}>
                 🐕 {compatibility.withDogs.text}
               </span>
               <span className={`${compatibility.withCats.color}`}>
-                🐱 {compatibility.withCats.text}  
+                🐱 {compatibility.withCats.text}
               </span>
             </div>
           </div>
@@ -264,9 +263,6 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
           {formattedAge && ageCategory !== "Unknown" && (
             <>
               <span data-testid="age-category">🎂 {ageCategory}</span>
-              <span className="text-xs" data-testid="formatted-age">
-                • {formattedAge}
-              </span>
             </>
           )}
           <span data-testid="gender-display">
@@ -331,7 +327,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
               {personalityTraits.map((trait, index) => (
                 <span
                   key={index}
-                  title={trait} 
+                  title={trait}
                   className="inline-block px-2 py-1 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 rounded-full truncate max-w-20"
                 >
                   {trait}

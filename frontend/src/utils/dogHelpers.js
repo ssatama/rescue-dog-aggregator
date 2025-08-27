@@ -9,21 +9,27 @@
  */
 export const formatAge = (dog) => {
   // Handle age ranges (age_min_months + age_max_months) - show as estimated
-  if (dog?.age_min_months && dog?.age_max_months && dog.age_min_months !== dog.age_max_months) {
+  if (
+    dog?.age_min_months &&
+    dog?.age_max_months &&
+    dog.age_min_months !== dog.age_max_months
+  ) {
     const minYears = Math.floor(dog.age_min_months / 12);
     const maxYears = Math.floor(dog.age_max_months / 12);
-    
+
     if (minYears === maxYears) {
       // Same year range, show as estimated
       return `~${minYears} year${minYears === 1 ? "" : "s"} (est.)`;
     } else {
       // Different years, show average as estimated
-      const avgMonths = Math.round((dog.age_min_months + dog.age_max_months) / 2);
+      const avgMonths = Math.round(
+        (dog.age_min_months + dog.age_max_months) / 2,
+      );
       const avgYears = Math.floor(avgMonths / 12);
       return `~${avgYears} year${avgYears === 1 ? "" : "s"} (est.)`;
     }
   }
-  
+
   // Handle exact age from age_min_months (more precise)
   if (dog?.age_min_months) {
     if (dog.age_min_months < 12) {
@@ -38,7 +44,7 @@ export const formatAge = (dog) => {
       }
     }
   }
-  
+
   // Handle age_text - add uncertainty indicator for ranges
   if (dog?.age_text) {
     const ageText = dog.age_text.trim();
@@ -51,7 +57,7 @@ export const formatAge = (dog) => {
     }
     return ageText;
   }
-  
+
   return "Age unknown";
 };
 
@@ -87,14 +93,16 @@ export const getAgeCategory = (dog) => {
     if (ageText === "young") return "Young";
     if (ageText === "adult") return "Adult";
     if (ageText === "senior") return "Senior";
-    
+
     // Handle age ranges like "5-7 years" or "2-3 months"
     const rangeMatch = ageText.match(/(\d+)\s*-\s*(\d+)\s*(year|month)s?/i);
     if (rangeMatch) {
       const [, min, max, unit] = rangeMatch;
       const avgAge = Math.round((parseInt(min) + parseInt(max)) / 2);
-      const avgMonths = unit.toLowerCase().includes('year') ? avgAge * 12 : avgAge;
-      
+      const avgMonths = unit.toLowerCase().includes("year")
+        ? avgAge * 12
+        : avgAge;
+
       if (avgMonths < 12) {
         return "Puppy";
       } else if (avgMonths < 36) {
@@ -203,7 +211,7 @@ export const formatSize = (dog) => {
  */
 export const formatExperienceLevel = (dog) => {
   const experienceLevel = dog?.dog_profiler_data?.experience_level;
-  
+
   switch (experienceLevel) {
     case "first_time_ok":
       return "Great for first-time owners";
@@ -224,7 +232,7 @@ export const formatExperienceLevel = (dog) => {
 export const formatCompatibility = (dog) => {
   const profilerData = dog?.dog_profiler_data;
   const props = dog?.properties || {};
-  
+
   const getCompatibilityDisplay = (value) => {
     switch (value) {
       case "yes":
@@ -250,9 +258,15 @@ export const formatCompatibility = (dog) => {
   };
 
   return {
-    withDogs: getCompatibilityDisplay(getCompatValue("good_with_dogs", "good_with_dogs")),
-    withCats: getCompatibilityDisplay(getCompatValue("good_with_cats", "good_with_cats")),
-    withChildren: getCompatibilityDisplay(getCompatValue("good_with_children", "good_with_children"))
+    withDogs: getCompatibilityDisplay(
+      getCompatValue("good_with_dogs", "good_with_dogs"),
+    ),
+    withCats: getCompatibilityDisplay(
+      getCompatValue("good_with_cats", "good_with_cats"),
+    ),
+    withChildren: getCompatibilityDisplay(
+      getCompatValue("good_with_children", "good_with_children"),
+    ),
   };
 };
 

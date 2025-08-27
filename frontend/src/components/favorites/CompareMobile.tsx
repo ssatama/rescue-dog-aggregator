@@ -67,13 +67,13 @@ export default function CompareMobile({ dogs, onClose }: CompareMobileProps) {
   // Show swipe hint for first-time users with multiple dogs
   useEffect(() => {
     if (dogs.length > 1) {
-      const hasSeenSwipeHint = localStorage.getItem('hasSeenSwipeHint');
+      const hasSeenSwipeHint = localStorage.getItem("hasSeenSwipeHint");
       if (!hasSeenSwipeHint) {
         setShowSwipeHint(true);
         // Hide hint after 3 seconds or on first interaction
         const timer = setTimeout(() => {
           setShowSwipeHint(false);
-          localStorage.setItem('hasSeenSwipeHint', 'true');
+          localStorage.setItem("hasSeenSwipeHint", "true");
         }, 3000);
         return () => clearTimeout(timer);
       }
@@ -82,7 +82,7 @@ export default function CompareMobile({ dogs, onClose }: CompareMobileProps) {
 
   const hideSwipeHint = () => {
     setShowSwipeHint(false);
-    localStorage.setItem('hasSeenSwipeHint', 'true');
+    localStorage.setItem("hasSeenSwipeHint", "true");
   };
 
   const goToNext = () => {
@@ -320,15 +320,19 @@ export default function CompareMobile({ dogs, onClose }: CompareMobileProps) {
       </div>
 
       {/* Swipe Container */}
-      <div 
-        {...handlers} 
-        data-testid="swipe-container" 
+      <div
+        {...handlers}
+        data-testid="swipe-container"
         className={`mb-4 relative transition-transform duration-150 ${
-          isSwipingLeft ? '-translate-x-2' : isSwipingRight ? 'translate-x-2' : ''
+          isSwipingLeft
+            ? "-translate-x-2"
+            : isSwipingRight
+              ? "translate-x-2"
+              : ""
         }`}
       >
         {renderDogCard(currentDog)}
-        
+
         {/* Swipe Hint Overlay */}
         {showSwipeHint && dogs.length > 1 && (
           <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center pointer-events-none z-10">
