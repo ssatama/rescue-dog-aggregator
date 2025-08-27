@@ -273,7 +273,7 @@ describe("CompareCard", () => {
 
     it("renders all sections with consistent structure for alignment", () => {
       const { container } = render(<CompareCard dog={mockDogMinimal} />);
-      
+
       // All cards should have the same structural sections
       expect(screen.getByTestId("dog-header")).toBeInTheDocument();
       expect(screen.getByTestId("tagline-section")).toBeInTheDocument();

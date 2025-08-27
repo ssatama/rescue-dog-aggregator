@@ -113,7 +113,8 @@ export default function FavoritesInsights({
             {shouldShowExpandButton && (
               <>
                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                  Showing {visibleInsights.length} of {insightsArray.length} insights
+                  Showing {visibleInsights.length} of {insightsArray.length}{" "}
+                  insights
                 </span>
                 <button
                   onClick={() => setIsExpanded(!isExpanded)}

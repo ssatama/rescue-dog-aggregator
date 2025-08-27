@@ -438,7 +438,8 @@ function FavoritesPageContent() {
               Your Saved Dogs
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              {filteredDogs.length} dog{filteredDogs.length !== 1 ? "s" : ""} saved
+              {filteredDogs.length} dog{filteredDogs.length !== 1 ? "s" : ""}{" "}
+              saved
             </p>
             {/* Visual divider */}
             <hr className="mx-auto mt-4 mb-0 w-24 h-0.5 bg-gradient-to-r from-transparent via-orange-400 to-transparent border-0" />

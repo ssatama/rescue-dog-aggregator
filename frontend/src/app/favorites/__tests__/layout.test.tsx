@@ -11,12 +11,12 @@ const MockFavoritesLayout = ({ count = 2 }: { count?: number }) => {
   return (
     <div>
       {/* Action Buttons Row - Responsive Layout */}
-      <div 
+      <div
         className="flex flex-col md:flex-row justify-center items-center gap-4 mt-8"
         data-testid="action-buttons-container"
       >
         {/* Primary Action Buttons */}
-        <div 
+        <div
           className="flex flex-col sm:flex-row justify-center items-center gap-3"
           data-testid="primary-buttons"
         >
@@ -32,7 +32,7 @@ const MockFavoritesLayout = ({ count = 2 }: { count?: number }) => {
         </div>
 
         {/* Filter Controls - Separate Section */}
-        <div 
+        <div
           className="w-full md:w-auto flex justify-center"
           data-testid="filter-section"
         >
@@ -49,15 +49,34 @@ describe("Favorites Layout Structure", () => {
 
     // Check main container structure
     const container = screen.getByTestId("action-buttons-container");
-    expect(container).toHaveClass("flex", "flex-col", "md:flex-row", "justify-center", "items-center", "gap-4");
+    expect(container).toHaveClass(
+      "flex",
+      "flex-col",
+      "md:flex-row",
+      "justify-center",
+      "items-center",
+      "gap-4",
+    );
 
     // Check primary buttons section
     const primaryButtons = screen.getByTestId("primary-buttons");
-    expect(primaryButtons).toHaveClass("flex", "flex-col", "sm:flex-row", "justify-center", "items-center", "gap-3");
+    expect(primaryButtons).toHaveClass(
+      "flex",
+      "flex-col",
+      "sm:flex-row",
+      "justify-center",
+      "items-center",
+      "gap-3",
+    );
 
     // Check filter section is separate
     const filterSection = screen.getByTestId("filter-section");
-    expect(filterSection).toHaveClass("w-full", "md:w-auto", "flex", "justify-center");
+    expect(filterSection).toHaveClass(
+      "w-full",
+      "md:w-auto",
+      "flex",
+      "justify-center",
+    );
 
     // Verify buttons are present
     expect(screen.getByText("Share Favorites")).toBeInTheDocument();
@@ -69,7 +88,7 @@ describe("Favorites Layout Structure", () => {
     render(<MockFavoritesLayout count={2} />);
 
     const container = screen.getByTestId("action-buttons-container");
-    
+
     // Should use flex-col on mobile, md:flex-row on desktop
     expect(container).toHaveClass("flex-col", "md:flex-row");
 
@@ -87,16 +106,21 @@ describe("Favorites Layout Structure", () => {
 
     // Share button should still be present
     expect(screen.getByText("Share Favorites")).toBeInTheDocument();
-    
+
     // Compare button should not be present
     expect(screen.queryByText("Compare Dogs")).not.toBeInTheDocument();
-    
+
     // Filter should still be present
     expect(screen.getByText("Filter")).toBeInTheDocument();
 
     // Layout structure should remain consistent
     const container = screen.getByTestId("action-buttons-container");
-    expect(container).toHaveClass("flex", "flex-col", "md:flex-row", "justify-center");
+    expect(container).toHaveClass(
+      "flex",
+      "flex-col",
+      "md:flex-row",
+      "justify-center",
+    );
   });
 
   test("sections have proper spacing and alignment", () => {

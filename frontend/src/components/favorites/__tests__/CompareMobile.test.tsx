@@ -158,8 +158,14 @@ describe("CompareMobile", () => {
       expect(dots).toHaveLength(2);
 
       // First dot should be active
-      expect(screen.getByTestId("progress-dot-0")).toHaveClass("bg-orange-500", "border-orange-500");
-      expect(screen.getByTestId("progress-dot-1")).toHaveClass("bg-white", "border-gray-300");
+      expect(screen.getByTestId("progress-dot-0")).toHaveClass(
+        "bg-orange-500",
+        "border-orange-500",
+      );
+      expect(screen.getByTestId("progress-dot-1")).toHaveClass(
+        "bg-white",
+        "border-gray-300",
+      );
     });
 
     it("navigates to next dog on swipe left", () => {
@@ -183,8 +189,14 @@ describe("CompareMobile", () => {
       expect(screen.queryByText("Buddy")).not.toBeInTheDocument();
 
       // Second dot should be active
-      expect(screen.getByTestId("progress-dot-1")).toHaveClass("bg-orange-500", "border-orange-500");
-      expect(screen.getByTestId("progress-dot-0")).toHaveClass("bg-white", "border-gray-300");
+      expect(screen.getByTestId("progress-dot-1")).toHaveClass(
+        "bg-orange-500",
+        "border-orange-500",
+      );
+      expect(screen.getByTestId("progress-dot-0")).toHaveClass(
+        "bg-white",
+        "border-gray-300",
+      );
     });
 
     it("navigates to previous dog on swipe right", () => {
@@ -306,9 +318,9 @@ describe("CompareMobile", () => {
       render(<CompareMobile dogs={multipleDogs} onClose={onCloseMock} />);
 
       const dots = screen.getAllByTestId(/progress-dot-/);
-      
+
       // Dots should be large enough for touch targets
-      dots.forEach(dot => {
+      dots.forEach((dot) => {
         expect(dot).toHaveClass("w-12", "h-12");
         expect(dot).toHaveClass("rounded-full");
         expect(dot).toHaveClass("border-2");
@@ -323,7 +335,7 @@ describe("CompareMobile", () => {
 
       // Active dot should use orange-500/orange-600
       expect(activeDot).toHaveClass("bg-orange-500", "border-orange-500");
-      
+
       // Inactive dot should use gray-200/gray-300
       expect(inactiveDot).toHaveClass("bg-white", "border-gray-300");
     });
@@ -339,8 +351,12 @@ describe("CompareMobile", () => {
       render(<CompareMobile dogs={multipleDogs} onClose={onCloseMock} />);
 
       const dots = screen.getAllByTestId(/progress-dot-/);
-      dots.forEach(dot => {
-        expect(dot).toHaveClass("focus:outline-none", "focus:ring-2", "focus:ring-orange-500");
+      dots.forEach((dot) => {
+        expect(dot).toHaveClass(
+          "focus:outline-none",
+          "focus:ring-2",
+          "focus:ring-orange-500",
+        );
       });
     });
 
@@ -348,11 +364,11 @@ describe("CompareMobile", () => {
       render(<CompareMobile dogs={multipleDogs} onClose={onCloseMock} />);
 
       const dots = screen.getAllByTestId(/progress-dot-/);
-      dots.forEach(dot => {
+      dots.forEach((dot) => {
         const styles = window.getComputedStyle(dot);
         const minWidth = parseInt(styles.minWidth);
         const minHeight = parseInt(styles.minHeight);
-        
+
         expect(minWidth).toBeGreaterThanOrEqual(44);
         expect(minHeight).toBeGreaterThanOrEqual(44);
       });

@@ -177,9 +177,11 @@ describe("FavoritesInsights", () => {
       expect(
         screen.getByRole("button", { name: /show more insights/i }),
       ).toBeInTheDocument();
-      
+
       // Should show insights counter text
-      expect(screen.getByText(/showing \d+ of \d+ insights/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/showing \d+ of \d+ insights/i),
+      ).toBeInTheDocument();
     });
 
     it("shows chevron down icon when collapsed", () => {
@@ -318,7 +320,7 @@ describe("FavoritesInsights", () => {
 
       // Check for prominent styling and animation classes
       expect(expandButton).toHaveClass("animate-pulse");
-      
+
       // Should have larger chevron for prominence
       const chevron = expandButton.querySelector("svg");
       expect(chevron).toBeInTheDocument();
@@ -331,9 +333,9 @@ describe("FavoritesInsights", () => {
         <FavoritesInsights insights={mockInsights} />,
       );
 
-      const insightsCard = container.querySelector('.shadow-lg');
+      const insightsCard = container.querySelector(".shadow-lg");
       expect(insightsCard).toBeInTheDocument();
-      expect(insightsCard).not.toHaveClass('shadow-sm');
+      expect(insightsCard).not.toHaveClass("shadow-sm");
     });
 
     it("applies stronger border for clearer separation", () => {
@@ -341,9 +343,9 @@ describe("FavoritesInsights", () => {
         <FavoritesInsights insights={mockInsights} />,
       );
 
-      const insightsCard = container.querySelector('.border-b-2');
+      const insightsCard = container.querySelector(".border-b-2");
       expect(insightsCard).toBeInTheDocument();
-      expect(insightsCard).not.toHaveClass('border-b');
+      expect(insightsCard).not.toHaveClass("border-b");
     });
 
     it("applies z-index for subtle elevation", () => {
@@ -351,7 +353,7 @@ describe("FavoritesInsights", () => {
         <FavoritesInsights insights={mockInsights} />,
       );
 
-      const insightsCard = container.querySelector('.relative.z-10');
+      const insightsCard = container.querySelector(".relative.z-10");
       expect(insightsCard).toBeInTheDocument();
     });
 

@@ -38,9 +38,10 @@ export default function CompareCard({ dog }: CompareCardProps) {
       data-testid="compare-card"
       className="rounded-lg border shadow-sm bg-white dark:bg-gray-800 overflow-hidden h-full"
       style={{
-        display: 'grid',
-        gridTemplateRows: 'auto minmax(3rem, auto) minmax(4rem, auto) minmax(3rem, auto) auto minmax(3rem, auto) minmax(4rem, auto) auto',
-        gridTemplateColumns: '1fr'
+        display: "grid",
+        gridTemplateRows:
+          "auto minmax(3rem, auto) minmax(4rem, auto) minmax(3rem, auto) auto minmax(3rem, auto) minmax(4rem, auto) auto",
+        gridTemplateColumns: "1fr",
       }}
     >
       {/* Header with Image and Name - includes tagline */}
@@ -60,17 +61,20 @@ export default function CompareCard({ dog }: CompareCardProps) {
             ))}
           </div>
         ) : (
-          <div className="text-xs text-gray-400 italic">No personality data</div>
+          <div className="text-xs text-gray-400 italic">
+            No personality data
+          </div>
         )}
       </div>
 
       {/* Energy & Experience - always show container */}
-      <div className="px-4 pb-3 flex gap-4 text-sm min-h-[3rem]" data-testid="energy-section">
+      <div
+        className="px-4 pb-3 flex gap-4 text-sm min-h-[3rem]"
+        data-testid="energy-section"
+      >
         <div className="flex items-center gap-1">
           {getEnergyIcon(energyLevel)}
-          <span className="font-medium">
-            {formatEnergyLevel(energyLevel)}
-          </span>
+          <span className="font-medium">{formatEnergyLevel(energyLevel)}</span>
         </div>
         {experienceLevel && (
           <div className="flex items-center gap-1">
@@ -106,12 +110,17 @@ export default function CompareCard({ dog }: CompareCardProps) {
             ))}
           </div>
         ) : (
-          <div className="text-xs text-gray-400 italic">No specific matches identified</div>
+          <div className="text-xs text-gray-400 italic">
+            No specific matches identified
+          </div>
         )}
       </div>
 
       {/* Unique Quirk - always show container */}
-      <div className="px-4 pb-3 bg-orange-50 dark:bg-orange-900/10 min-h-[4rem]" data-testid="unique-quirk-section">
+      <div
+        className="px-4 pb-3 bg-orange-50 dark:bg-orange-900/10 min-h-[4rem]"
+        data-testid="unique-quirk-section"
+      >
         <div className="flex items-center gap-1 text-xs font-medium text-orange-700 dark:text-orange-300 mb-1">
           <Sparkles size={14} />
           <span>What makes {dog.name} special</span>
@@ -128,7 +137,10 @@ export default function CompareCard({ dog }: CompareCardProps) {
       </div>
 
       {/* Footer with CTA - always show */}
-      <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700" data-testid="footer-section">
+      <div
+        className="px-4 py-3 border-t border-gray-200 dark:border-gray-700"
+        data-testid="footer-section"
+      >
         <div className="flex items-center justify-between">
           <span className="text-xs text-gray-600 dark:text-gray-400">
             {dog.organization_name || dog.organization?.name}

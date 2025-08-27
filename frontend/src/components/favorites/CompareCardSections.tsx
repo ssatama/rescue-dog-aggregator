@@ -150,7 +150,7 @@ export function CompatibilitySection({
   childrenScore,
 }: CompatibilitySectionProps) {
   return (
-    <div 
+    <div
       className="px-4 pb-3 border-t border-gray-200 dark:border-gray-700 pt-3"
       data-testid="compatibility-section"
     >
