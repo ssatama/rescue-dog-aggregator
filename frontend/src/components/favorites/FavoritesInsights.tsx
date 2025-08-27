@@ -99,7 +99,7 @@ export default function FavoritesInsights({
 
   return (
     <div
-      className={`container mx-auto px-4 mb-10 ${isMobile && !isExpanded ? "max-h-[45vh] overflow-hidden" : ""}`}
+      className="container mx-auto px-4 mb-10"
       data-testid="insights-container"
     >
       <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg p-4 shadow-lg border-b-2 border-gray-100 dark:border-gray-800 relative z-10 content-fade-in">
@@ -140,9 +140,15 @@ export default function FavoritesInsights({
 
         {/* Main Grid Layout - 2 columns on desktop, 1 on mobile */}
         <div
-          className="grid md:grid-cols-2 gap-4 transition-all duration-300 ease-in-out"
+          className={`grid md:grid-cols-2 gap-4 transition-all duration-300 ease-in-out ${
+            isMobile && !isExpanded ? "max-h-80 overflow-hidden relative" : ""
+          }`}
           data-testid="insights-grid"
         >
+          {/* Gradient fade overlay for mobile truncation */}
+          {isMobile && !isExpanded && shouldShowExpandButton && (
+            <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-yellow-50 dark:from-yellow-900/20 to-transparent pointer-events-none z-10" />
+          )}
           {/* Personality Pattern */}
           {insights.personalityPattern &&
             visibleInsights.includes("personalityPattern") && (
@@ -247,9 +253,7 @@ export default function FavoritesInsights({
                           {item.dogName}:
                         </span>{" "}
                         <span className="text-gray-600 dark:text-gray-400">
-                          {item.quirk.length > 40
-                            ? `${item.quirk.slice(0, 40)}...`
-                            : item.quirk}
+                          {item.quirk}
                         </span>
                       </p>
                     ))}
@@ -272,9 +276,7 @@ export default function FavoritesInsights({
                   <span className="text-sm">🩺</span> Care Requirements
                 </h3>
                 <p className="text-xs text-gray-600 dark:text-gray-400 leading-tight">
-                  {insights.careComplexity.description.length > 80
-                    ? `${insights.careComplexity.description.slice(0, 80)}...`
-                    : insights.careComplexity.description}
+                  {insights.careComplexity.description}
                 </p>
               </div>
             )}

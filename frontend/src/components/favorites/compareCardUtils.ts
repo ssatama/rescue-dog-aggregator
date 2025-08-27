@@ -1,4 +1,8 @@
 import type { Dog } from "./types";
+import {
+  formatEnergyLevel as formatEnergyLevelUtil,
+  formatExperienceLevel as formatExperienceLevelUtil,
+} from "../../utils/dogProfilerFormatters";
 
 export function getCompatibilityScore(
   value: string | boolean | undefined,
@@ -10,33 +14,18 @@ export function getCompatibilityScore(
 }
 
 export function formatEnergyLevel(level: string | undefined): string {
-  switch (level) {
-    case "very_high":
-      return "Very High Energy";
-    case "high":
-      return "High Energy";
-    case "medium":
-    case "moderate":
-      return "Moderate Energy";
-    case "low":
-    case "minimal":
-      return "Low Energy";
-    default:
-      return "Energy Unknown";
-  }
+  const formatted = formatEnergyLevelUtil(level);
+  if (!formatted) return "Energy Unknown";
+
+  // Add "Energy" suffix for CompareCard context
+  return `${formatted} Energy`;
 }
 
 export function formatExperienceLevel(level: string | undefined): string {
-  switch (level) {
-    case "beginner_friendly":
-      return "Beginner Friendly";
-    case "some_experience_needed":
-      return "Some Experience Needed";
-    case "experienced_only":
-      return "Experienced Only";
-    default:
-      return "";
-  }
+  const formatted = formatExperienceLevelUtil(level);
+  if (!formatted) return "";
+
+  return formatted;
 }
 
 export function getLifestyleMatches(dog: Dog): string[] {

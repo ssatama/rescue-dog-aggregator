@@ -78,35 +78,43 @@ export function getCompatibilityIcon(value: string) {
   }
 }
 
-export function formatEnergyLevel(level: string): string {
-  switch (level) {
+export function formatEnergyLevel(level: string | undefined | null): string {
+  if (!level) return "Unknown";
+
+  switch (level.toLowerCase()) {
     case "very_high":
       return "Very High";
     case "high":
       return "High";
     case "medium":
     case "moderate":
-      return "Moderate";
+      return "Medium";
     case "low":
     case "minimal":
       return "Low";
     default:
-      return level;
+      return level.charAt(0).toUpperCase() + level.slice(1).replace(/_/g, " ");
   }
 }
 
-export function formatExperienceLevel(level: string): string {
-  switch (level) {
+export function formatExperienceLevel(
+  level: string | undefined | null,
+): string {
+  if (!level) return "Unknown";
+
+  switch (level.toLowerCase()) {
+    case "first_time_ok":
     case "first_time_owner":
-      return "First Timer";
+      return "First-time owners";
     case "some_experience":
       return "Some Experience";
+    case "experienced_only":
     case "experienced":
-      return "Experienced";
+      return "Experienced owners";
     case "very_experienced":
-      return "Expert";
+      return "Expert owners";
     default:
-      return level;
+      return level.charAt(0).toUpperCase() + level.slice(1).replace(/_/g, " ");
   }
 }
 

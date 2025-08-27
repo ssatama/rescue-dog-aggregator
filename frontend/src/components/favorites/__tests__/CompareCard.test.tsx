@@ -98,7 +98,7 @@ describe("CompareCard", () => {
 
     it("displays experience level requirement", () => {
       render(<CompareCard dog={mockDog} />);
-      expect(screen.getByText("Some Experience Needed")).toBeInTheDocument();
+      expect(screen.getByText("Some experience needed")).toBeInTheDocument();
     });
   });
 
