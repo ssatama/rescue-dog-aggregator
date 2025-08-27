@@ -67,18 +67,18 @@ describe("CompareSelection", () => {
       expect(screen.getByText("Bella")).toBeInTheDocument();
     });
 
-    it("displays selection instruction", () => {
+    it("displays selection count when dogs are selected", () => {
       render(
         <CompareSelection
           dogs={mockDogs}
-          selectedDogs={new Set()}
+          selectedDogs={new Set([1, 2])}
           onSelectionChange={mockOnSelectionChange}
           onCompare={mockOnCompare}
         />,
       );
 
       expect(
-        screen.getByText(/Select 2-3 dogs to compare/),
+        screen.getByText("2 selected"),
       ).toBeInTheDocument();
     });
 
@@ -200,7 +200,7 @@ describe("CompareSelection", () => {
       );
 
       const compareButton = screen.getByRole("button", {
-        name: /Compare Selected/i,
+        name: /Compare/i,
       });
       expect(compareButton).toBeDisabled();
     });
@@ -216,7 +216,7 @@ describe("CompareSelection", () => {
       );
 
       const compareButton = screen.getByRole("button", {
-        name: /Compare Selected/i,
+        name: /Compare/i,
       });
       expect(compareButton).not.toBeDisabled();
     });
@@ -232,7 +232,7 @@ describe("CompareSelection", () => {
       );
 
       const compareButton = screen.getByRole("button", {
-        name: /Compare Selected/i,
+        name: /Compare/i,
       });
       expect(compareButton).not.toBeDisabled();
     });
@@ -248,7 +248,7 @@ describe("CompareSelection", () => {
       );
 
       const compareButton = screen.getByRole("button", {
-        name: /Compare Selected/i,
+        name: /Compare/i,
       });
       fireEvent.click(compareButton);
 
