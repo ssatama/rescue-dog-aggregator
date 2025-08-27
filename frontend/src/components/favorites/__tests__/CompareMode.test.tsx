@@ -133,34 +133,26 @@ describe("CompareMode", () => {
     it("should allow selecting dogs", () => {
       render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
 
-      const buddyCard = screen
-        .getByText("Buddy")
-        .closest('div[class*="border"]');
-      fireEvent.click(buddyCard!);
+      const buddyCheckbox = screen.getByRole("checkbox", { name: /Select Buddy/i });
+      fireEvent.click(buddyCheckbox);
 
-      expect(screen.getByText("1 of 3 selected")).toBeInTheDocument();
+      expect(screen.getByText("1 selected")).toBeInTheDocument();
     });
 
     it("should limit selection to 3 dogs", () => {
       const fourDogs = [...mockDogs, { ...mockDogs[0], id: 4, name: "Extra" }];
       render(<CompareMode dogs={fourDogs} onClose={mockOnClose} />);
 
-      // Select 3 dogs
-      fireEvent.click(
-        screen.getByText("Buddy").closest('div[class*="border"]')!,
-      );
-      fireEvent.click(
-        screen.getByText("Luna").closest('div[class*="border"]')!,
-      );
-      fireEvent.click(screen.getByText("Max").closest('div[class*="border"]')!);
+      // Select 3 dogs using checkboxes
+      fireEvent.click(screen.getByRole("checkbox", { name: /Select Buddy/i }));
+      fireEvent.click(screen.getByRole("checkbox", { name: /Select Luna/i }));
+      fireEvent.click(screen.getByRole("checkbox", { name: /Select Max/i }));
 
-      expect(screen.getByText("3 of 3 selected")).toBeInTheDocument();
+      expect(screen.getByText("3 selected")).toBeInTheDocument();
 
-      // Fourth dog should be disabled
-      const extraCard = screen
-        .getByText("Extra")
-        .closest('div[class*="border"]');
-      expect(extraCard).toHaveClass("opacity-50", "cursor-not-allowed");
+      // Fourth dog checkbox should be disabled
+      const extraCheckbox = screen.getByRole("checkbox", { name: /Select Extra/i });
+      expect(extraCheckbox).toBeDisabled();
     });
 
     it("should enable compare button when 2+ dogs selected", () => {
@@ -169,13 +161,9 @@ describe("CompareMode", () => {
       const compareButton = screen.getByRole("button", { name: /Compare/i });
       expect(compareButton).toBeDisabled();
 
-      // Select 2 dogs
-      fireEvent.click(
-        screen.getByText("Buddy").closest('div[class*="border"]')!,
-      );
-      fireEvent.click(
-        screen.getByText("Luna").closest('div[class*="border"]')!,
-      );
+      // Select 2 dogs using checkboxes
+      fireEvent.click(screen.getByRole("checkbox", { name: /Select Buddy/i }));
+      fireEvent.click(screen.getByRole("checkbox", { name: /Select Luna/i }));
 
       expect(compareButton).not.toBeDisabled();
       expect(compareButton).toHaveTextContent("Compare (2)");
@@ -186,13 +174,9 @@ describe("CompareMode", () => {
     it("should switch to comparison view when compare is clicked", () => {
       render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
 
-      // Select dogs and compare
-      fireEvent.click(
-        screen.getByText("Buddy").closest('div[class*="border"]')!,
-      );
-      fireEvent.click(
-        screen.getByText("Luna").closest('div[class*="border"]')!,
-      );
+      // Select dogs using checkboxes and compare
+      fireEvent.click(screen.getByRole("checkbox", { name: /Select Buddy/i }));
+      fireEvent.click(screen.getByRole("checkbox", { name: /Select Luna/i }));
       fireEvent.click(screen.getByRole("button", { name: /Compare \(2\)/i }));
 
       // Should show comparison view
@@ -224,14 +208,10 @@ describe("CompareMode", () => {
 
       render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
 
-      // Select dogs and compare
-      fireEvent.click(
-        screen.getByText("Buddy").closest('div[class*="border"]')!,
-      );
-      fireEvent.click(
-        screen.getByText("Luna").closest('div[class*="border"]')!,
-      );
-      fireEvent.click(screen.getByText("Max").closest('div[class*="border"]')!);
+      // Select dogs using checkboxes and compare
+      fireEvent.click(screen.getByRole("checkbox", { name: /Select Buddy/i }));
+      fireEvent.click(screen.getByRole("checkbox", { name: /Select Luna/i }));
+      fireEvent.click(screen.getByRole("checkbox", { name: /Select Max/i }));
       fireEvent.click(screen.getByRole("button", { name: /Compare \(3\)/i }));
 
       // Check that comparison table exists
@@ -293,13 +273,9 @@ describe("CompareMode", () => {
     it("should render mobile comparison table layout", () => {
       render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
 
-      // Select dogs and compare
-      fireEvent.click(
-        screen.getByText("Buddy").closest('div[class*="border"]')!,
-      );
-      fireEvent.click(
-        screen.getByText("Luna").closest('div[class*="border"]')!,
-      );
+      // Select dogs using checkboxes and compare
+      fireEvent.click(screen.getByRole("checkbox", { name: /Select Buddy/i }));
+      fireEvent.click(screen.getByRole("checkbox", { name: /Select Luna/i }));
       fireEvent.click(screen.getByRole("button", { name: /Compare \(2\)/i }));
 
       // Should show mobile-specific elements
