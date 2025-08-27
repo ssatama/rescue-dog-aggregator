@@ -126,7 +126,7 @@ export function ShareModal({ isOpen, url, onClose }: ShareModalProps) {
           role="dialog"
           aria-modal="true"
           aria-labelledby="share-modal-title"
-          className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 pointer-events-auto animate-slide-up"
+          className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 pointer-events-auto content-fade-in"
         >
           {/* Header */}
           <div className="flex items-center justify-between mb-4">

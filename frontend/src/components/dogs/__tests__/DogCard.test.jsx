@@ -1166,4 +1166,175 @@ describe("DogCard Component", () => {
       expect(shipsToElement).toHaveTextContent("Adoptable to:");
     });
   });
+
+  describe("Uncertainty Indicators", () => {
+    test("shows estimated age format for age ranges", () => {
+      const dogWithAgeRange = {
+        id: 1,
+        name: "Buddy",
+        age_min_months: 60, // 5 years
+        age_max_months: 84, // 7 years
+        status: "available",
+      };
+
+      render(<DogCard dog={dogWithAgeRange} />);
+      
+      // Check if we can find the age text (might be split by spans)
+      const ageText = screen.getByTestId("formatted-age");
+      expect(ageText).toHaveTextContent("~6 years (est.)");
+    });
+
+    test("shows estimated age for age_text ranges", () => {
+      const dogWithAgeTextRange = {
+        id: 2,
+        name: "Luna",
+        age_text: "5-7 years",
+        status: "available",
+      };
+
+      render(<DogCard dog={dogWithAgeTextRange} />);
+      
+      // Should show estimated average (using testid to handle split text)
+      const ageText = screen.getByTestId("formatted-age");
+      expect(ageText).toHaveTextContent("~6 years (est.)");
+    });
+
+    test("shows exact age when no range is present", () => {
+      const dogWithExactAge = {
+        id: 3,
+        name: "Max",
+        age_min_months: 24, // Exactly 2 years
+        status: "available",
+      };
+
+      render(<DogCard dog={dogWithExactAge} />);
+      
+      // Should show exact age without estimation
+      const ageText = screen.getByTestId("formatted-age");
+      expect(ageText).toHaveTextContent("• 2 years");
+      expect(screen.queryByText(/est\./)).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Experience Level Display", () => {
+    test("displays specific experience requirement", () => {
+      const dogWithExperience = {
+        id: 1,
+        name: "Buddy",
+        status: "available",
+        dog_profiler_data: {
+          experience_level: "some_experience",
+        },
+      };
+
+      render(<DogCard dog={dogWithExperience} />);
+      
+      // Check if experience display exists (using testid)
+      const experienceDisplay = screen.getByTestId("experience-display");
+      expect(experienceDisplay).toBeInTheDocument();
+      expect(experienceDisplay).toHaveTextContent("Some experience helpful");
+    });
+
+    test("displays first-time owner friendly message", () => {
+      const dogFirstTime = {
+        id: 2,
+        name: "Luna",
+        status: "available",
+        dog_profiler_data: {
+          experience_level: "first_time_ok",
+        },
+      };
+
+      render(<DogCard dog={dogFirstTime} />);
+      
+      const experienceDisplay = screen.getByTestId("experience-display");
+      expect(experienceDisplay).toHaveTextContent("Great for first-time owners");
+    });
+
+    test("does not display experience level when not available", () => {
+      const dogNoExperience = {
+        id: 3,
+        name: "Max",
+        status: "available",
+      };
+
+      render(<DogCard dog={dogNoExperience} />);
+      
+      expect(screen.queryByText(/experience/)).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Compatibility Indicators", () => {
+    test("displays compatibility status with icons", () => {
+      const dogWithCompatibility = {
+        id: 1,
+        name: "Buddy",
+        status: "available",
+        dog_profiler_data: {
+          good_with_dogs: "yes",
+          good_with_cats: "maybe",
+          good_with_children: "no",
+        },
+      };
+
+      render(<DogCard dog={dogWithCompatibility} />);
+      
+      expect(screen.getByText("Good")).toBeInTheDocument();
+      expect(screen.getByText("Maybe")).toBeInTheDocument();
+      expect(screen.getByText("No")).toBeInTheDocument();
+    });
+
+    test("displays 'Not yet assessed' for unknown compatibility", () => {
+      const dogNoCompatibility = {
+        id: 2,
+        name: "Luna",
+        status: "available",
+      };
+
+      render(<DogCard dog={dogNoCompatibility} />);
+      
+      // Should show "Not yet assessed" three times (dogs, cats, children)
+      expect(screen.getAllByText("Not yet assessed")).toHaveLength(3);
+    });
+  });
+
+  describe("Special Traits Display", () => {
+    test("displays personality traits with hover titles", () => {
+      const dogWithTraits = {
+        id: 1,
+        name: "Buddy",
+        status: "available",
+        dog_profiler_data: {
+          personality_traits: ["Friendly", "Energetic", "Loyal", "Smart", "Playful"],
+        },
+      };
+
+      render(<DogCard dog={dogWithTraits} />);
+      
+      // Should show first 3 traits
+      expect(screen.getByText("Friendly")).toBeInTheDocument();
+      expect(screen.getByText("Energetic")).toBeInTheDocument();
+      expect(screen.getByText("Loyal")).toBeInTheDocument();
+      
+      // Should not show 4th and 5th traits (limited to 3)
+      expect(screen.queryByText("Smart")).not.toBeInTheDocument();
+      expect(screen.queryByText("Playful")).not.toBeInTheDocument();
+
+      // Check hover titles
+      const friendlyTrait = screen.getByText("Friendly");
+      expect(friendlyTrait).toHaveAttribute("title", "Friendly");
+    });
+
+    test("does not display traits section when no traits available", () => {
+      const dogNoTraits = {
+        id: 2,
+        name: "Luna",
+        status: "available",
+      };
+
+      render(<DogCard dog={dogNoTraits} />);
+      
+      expect(screen.queryByTestId("traits-display")).not.toBeInTheDocument();
+    });
+  });
 });

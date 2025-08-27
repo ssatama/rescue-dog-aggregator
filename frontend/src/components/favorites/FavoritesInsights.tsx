@@ -84,13 +84,13 @@ export default function FavoritesInsights({
   if (insightsLoading) {
     return (
       <div className="container mx-auto px-4 mb-10">
-        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg p-4 shadow-lg border-b-2 border-gray-100 dark:border-gray-800 relative z-10 animate-pulse">
-          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-4"></div>
+        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg p-4 shadow-lg border-b-2 border-gray-100 dark:border-gray-800 relative z-10 content-fade-in">
+          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-4 skeleton-element"></div>
           <div className="grid md:grid-cols-2 gap-4">
-            <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
-            <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
-            <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
-            <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded skeleton-element animate-stagger-1"></div>
+            <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded skeleton-element animate-stagger-2"></div>
+            <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded skeleton-element animate-stagger-3"></div>
+            <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded skeleton-element animate-stagger-4"></div>
           </div>
         </div>
       </div>
@@ -102,7 +102,7 @@ export default function FavoritesInsights({
       className={`container mx-auto px-4 mb-10 ${isMobile && !isExpanded ? "max-h-[45vh] overflow-hidden" : ""}`}
       data-testid="insights-container"
     >
-      <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg p-4 shadow-lg border-b-2 border-gray-100 dark:border-gray-800 relative z-10">
+      <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg p-4 shadow-lg border-b-2 border-gray-100 dark:border-gray-800 relative z-10 content-fade-in">
         {/* Compact Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold flex items-center gap-2">
@@ -112,13 +112,13 @@ export default function FavoritesInsights({
           <div className="flex flex-col items-end gap-1">
             {shouldShowExpandButton && (
               <>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   Showing {visibleInsights.length} of {insightsArray.length}{" "}
                   insights
                 </span>
                 <button
                   onClick={() => setIsExpanded(!isExpanded)}
-                  className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors animate-pulse"
+                  className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-300 rounded px-2 py-1"
                   aria-expanded={isExpanded}
                   aria-label={
                     isExpanded ? "Show less insights" : "Show more insights"
@@ -147,7 +147,7 @@ export default function FavoritesInsights({
           {insights.personalityPattern &&
             visibleInsights.includes("personalityPattern") && (
               <div
-                className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg"
+                className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg transition-all duration-200 hover:bg-white/70 dark:hover:bg-gray-800/70 hover:shadow-sm"
                 role="group"
                 aria-labelledby="personality-pattern-heading"
               >
@@ -181,7 +181,7 @@ export default function FavoritesInsights({
           {(insights.lifestyleCompatibility?.messages?.length ?? 0) > 0 &&
             visibleInsights.includes("lifestyleCompatibility") && (
               <div
-                className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg"
+                className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg transition-all duration-200 hover:bg-white/70 dark:hover:bg-gray-800/70 hover:shadow-sm"
                 role="group"
                 aria-labelledby="lifestyle-compatibility-heading"
               >
@@ -208,7 +208,7 @@ export default function FavoritesInsights({
           {insights.experienceRequirements &&
             visibleInsights.includes("experienceRequirements") && (
               <div
-                className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg"
+                className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg transition-all duration-200 hover:bg-white/70 dark:hover:bg-gray-800/70 hover:shadow-sm"
                 role="group"
                 aria-labelledby="experience-requirements-heading"
               >
@@ -228,7 +228,7 @@ export default function FavoritesInsights({
           {(insights.hiddenGems?.uniqueQuirks?.length ?? 0) > 0 &&
             visibleInsights.includes("hiddenGems") && (
               <div
-                className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg"
+                className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg transition-all duration-200 hover:bg-white/70 dark:hover:bg-gray-800/70 hover:shadow-sm"
                 role="group"
                 aria-labelledby="special-traits-heading"
               >
@@ -261,7 +261,7 @@ export default function FavoritesInsights({
           {insights.careComplexity &&
             visibleInsights.includes("careComplexity") && (
               <div
-                className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg"
+                className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg transition-all duration-200 hover:bg-white/70 dark:hover:bg-gray-800/70 hover:shadow-sm"
                 role="group"
                 aria-labelledby="care-requirements-heading"
               >
@@ -283,7 +283,7 @@ export default function FavoritesInsights({
           {insights.energyProfile &&
             visibleInsights.includes("energyProfile") && (
               <div
-                className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg"
+                className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg transition-all duration-200 hover:bg-white/70 dark:hover:bg-gray-800/70 hover:shadow-sm"
                 role="group"
                 aria-labelledby="energy-profile-heading"
               >
@@ -303,7 +303,7 @@ export default function FavoritesInsights({
           {insights.topOrganization &&
             visibleInsights.includes("topOrganization") && (
               <div
-                className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg"
+                className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg transition-all duration-200 hover:bg-white/70 dark:hover:bg-gray-800/70 hover:shadow-sm"
                 role="group"
                 aria-labelledby="top-organization-heading"
               >
@@ -322,7 +322,7 @@ export default function FavoritesInsights({
           {/* Age Range */}
           {insights.ageRange && visibleInsights.includes("ageRange") && (
             <div
-              className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg"
+              className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg transition-all duration-200 hover:bg-white/70 dark:hover:bg-gray-800/70 hover:shadow-sm"
               role="group"
               aria-labelledby="age-range-heading"
             >
@@ -343,7 +343,7 @@ export default function FavoritesInsights({
             insights.sizePreference &&
             visibleInsights.includes("sizePreference") && (
               <div
-                className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg"
+                className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg transition-all duration-200 hover:bg-white/70 dark:hover:bg-gray-800/70 hover:shadow-sm"
                 role="group"
                 aria-labelledby="size-preference-heading"
               >

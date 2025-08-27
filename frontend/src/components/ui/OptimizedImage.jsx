@@ -153,7 +153,7 @@ const OptimizedImage = React.memo(
           src={optimizedUrls.desktopUrl}
           alt={alt}
           loading={priority ? undefined : "lazy"}
-          fetchPriority={priority ? "high" : undefined}
+          fetchpriority={priority ? "high" : undefined}
           sizes={sizes}
           data-testid={
             src === placeholderImage ? "image-placeholder" : "optimized-image"

@@ -75,13 +75,17 @@ export default function CompareSelection({
                 />
                 <label
                   htmlFor={`select-dog-${dog.id}`}
-                  className={`flex items-center justify-center w-6 h-6 rounded border-2 transition-colors ${
+                  className={`flex items-center justify-center w-11 h-11 rounded-lg border-2 transition-colors ${
                     isSelected
                       ? "bg-orange-500 border-orange-500"
                       : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
                   } ${!isDisabled ? "cursor-pointer" : "cursor-not-allowed"}`}
+                  style={{
+                    minWidth: "44px",
+                    minHeight: "44px",
+                  }}
                 >
-                  {isSelected && <Check size={16} className="text-white" />}
+                  {isSelected && <Check size={18} className="text-white" />}
                 </label>
               </div>
 

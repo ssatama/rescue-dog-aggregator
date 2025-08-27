@@ -124,7 +124,7 @@ export default function CompareTable({
   comparisonData,
 }: CompareTableProps) {
   return (
-    <div className="bg-white dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-6">
+    <div className="bg-white dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm mb-6">
       <div className="p-6 border-b border-gray-200 dark:border-gray-700">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
           <Brain className="w-5 h-5 text-purple-600 dark:text-purple-400" />
@@ -256,7 +256,7 @@ export default function CompareTable({
                         <span
                           className={`text-sm font-medium ${
                             comparisonData.age.highlight[idx]
-                              ? "text-orange-600 dark:text-orange-400 font-semibold bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded-md"
+                              ? "text-orange-600 dark:text-orange-400 font-semibold bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded-lg"
                               : comparisonData.age.allSame
                                 ? "text-gray-500 dark:text-gray-400"
                                 : "text-gray-900 dark:text-gray-100"

@@ -95,7 +95,7 @@ export function DogHeader({ dog, tagline }: DogHeaderProps) {
             <Image
               src={imageUrl}
               alt={dog.name}
-              fill
+              fill={true}
               className="object-cover"
               sizes="80px"
             />
@@ -119,21 +119,20 @@ export function DogHeader({ dog, tagline }: DogHeaderProps) {
             {dog.standardized_breed || dog.breed || "Mixed breed"} •{" "}
             {getAgeDisplay()}
           </p>
+          {tagline && (
+            <p className="text-sm font-medium text-orange-600 dark:text-orange-400 italic mt-1">
+              &ldquo;{tagline}&rdquo;
+            </p>
+          )}
           {dog.sex && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {dog.sex}
             </p>
           )}
         </div>
       </div>
 
-      <div className="mt-3 min-h-[2rem]" data-testid="tagline-section">
-        {tagline && (
-          <p className="text-base font-semibold text-gray-800 dark:text-gray-200 italic">
-            &ldquo;{tagline}&rdquo;
-          </p>
-        )}
-      </div>
+      {/* Removed separate tagline section - moved inline above */}
     </div>
   );
 }

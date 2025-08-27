@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useSwipeable } from "react-swipeable";
 import {
@@ -60,28 +60,76 @@ function allDogsHaveCompatibilityData(dogs: Dog[]): boolean {
 export default function CompareMobile({ dogs, onClose }: CompareMobileProps) {
   const comparisonData = analyzeComparison(dogs);
   const [currentDogIndex, setCurrentDogIndex] = useState(0);
+  const [showSwipeHint, setShowSwipeHint] = useState(false);
+  const [isSwipingLeft, setIsSwipingLeft] = useState(false);
+  const [isSwipingRight, setIsSwipingRight] = useState(false);
+
+  // Show swipe hint for first-time users with multiple dogs
+  useEffect(() => {
+    if (dogs.length > 1) {
+      const hasSeenSwipeHint = localStorage.getItem('hasSeenSwipeHint');
+      if (!hasSeenSwipeHint) {
+        setShowSwipeHint(true);
+        // Hide hint after 3 seconds or on first interaction
+        const timer = setTimeout(() => {
+          setShowSwipeHint(false);
+          localStorage.setItem('hasSeenSwipeHint', 'true');
+        }, 3000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [dogs.length]);
+
+  const hideSwipeHint = () => {
+    setShowSwipeHint(false);
+    localStorage.setItem('hasSeenSwipeHint', 'true');
+  };
 
   const goToNext = () => {
+    hideSwipeHint(); // Hide hint on interaction
     if (currentDogIndex < dogs.length - 1) {
       setCurrentDogIndex(currentDogIndex + 1);
     }
   };
 
   const goToPrevious = () => {
+    hideSwipeHint(); // Hide hint on interaction
     if (currentDogIndex > 0) {
       setCurrentDogIndex(currentDogIndex - 1);
     }
   };
 
   const goToDog = (index: number) => {
+    hideSwipeHint(); // Hide hint on interaction
     if (index >= 0 && index < dogs.length) {
       setCurrentDogIndex(index);
     }
   };
 
   const handlers = useSwipeable({
-    onSwipedLeft: goToNext,
-    onSwipedRight: goToPrevious,
+    onSwipedLeft: () => {
+      setIsSwipingLeft(false);
+      goToNext();
+    },
+    onSwipedRight: () => {
+      setIsSwipingRight(false);
+      goToPrevious();
+    },
+    onSwiping: (eventData) => {
+      // Show visual feedback during swipe
+      if (eventData.deltaX > 10) {
+        setIsSwipingRight(true);
+        setIsSwipingLeft(false);
+      } else if (eventData.deltaX < -10) {
+        setIsSwipingLeft(true);
+        setIsSwipingRight(false);
+      }
+    },
+    onTap: () => {
+      // Reset swipe states on tap
+      setIsSwipingLeft(false);
+      setIsSwipingRight(false);
+    },
     trackMouse: true,
   });
 
@@ -272,8 +320,27 @@ export default function CompareMobile({ dogs, onClose }: CompareMobileProps) {
       </div>
 
       {/* Swipe Container */}
-      <div {...handlers} data-testid="swipe-container" className="mb-4">
+      <div 
+        {...handlers} 
+        data-testid="swipe-container" 
+        className={`mb-4 relative transition-transform duration-150 ${
+          isSwipingLeft ? '-translate-x-2' : isSwipingRight ? 'translate-x-2' : ''
+        }`}
+      >
         {renderDogCard(currentDog)}
+        
+        {/* Swipe Hint Overlay */}
+        {showSwipeHint && dogs.length > 1 && (
+          <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center pointer-events-none z-10">
+            <div className="bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 animate-pulse">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <span className="animate-bounce">👈</span>
+                Swipe to compare
+                <span className="animate-bounce">👉</span>
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Progress Dots - only show for multiple dogs */}
@@ -291,8 +358,8 @@ export default function CompareMobile({ dogs, onClose }: CompareMobileProps) {
                 onClick={() => goToDog(index)}
                 className={`w-12 h-12 rounded-full border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${
                   isActive
-                    ? "bg-orange-500 border-orange-500"
-                    : "bg-white border-gray-300 hover:border-orange-400 dark:bg-gray-800 dark:border-gray-600 dark:hover:border-orange-400"
+                    ? "bg-orange-500 border-orange-500 shadow-md"
+                    : "bg-white border-gray-300 hover:border-orange-400 hover:bg-orange-50 dark:bg-gray-800 dark:border-gray-600 dark:hover:border-orange-400 dark:hover:bg-orange-900/20"
                 }`}
                 aria-label={`Go to dog ${index + 1}`}
                 style={{

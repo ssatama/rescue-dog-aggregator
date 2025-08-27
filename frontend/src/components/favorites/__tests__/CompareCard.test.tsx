@@ -60,18 +60,19 @@ describe("CompareCard", () => {
       expect(screen.getByText(/Unknown age/)).toBeInTheDocument();
     });
 
-    it("displays organization name", () => {
+    it("does not display organization name redundantly", () => {
       render(<CompareCard dog={mockDog} />);
-      expect(screen.getByText("Test Rescue")).toBeInTheDocument();
+      // Organization name should not appear in the footer anymore
+      expect(screen.queryByText("Test Rescue")).not.toBeInTheDocument();
     });
   });
 
   describe("LLM Data Display", () => {
-    it("displays tagline prominently at top", () => {
+    it("displays tagline prominently in header section", () => {
       render(<CompareCard dog={mockDog} />);
       const tagline = screen.getByText(/Your new adventure buddy!/);
       expect(tagline).toBeInTheDocument();
-      expect(tagline).toHaveClass("text-base", "font-semibold");
+      expect(tagline).toHaveClass("text-sm", "font-medium", "text-orange-600");
     });
 
     it("shows personality traits as badges", () => {
@@ -207,16 +208,12 @@ describe("CompareCard", () => {
   });
 
   describe("Card Layout Consistency", () => {
-    it("always renders tagline section even when empty", () => {
-      const dogNoTagline = {
-        ...mockDog,
-        dog_profiler_data: {
-          ...mockDog.dog_profiler_data!,
-          tagline: undefined,
-        },
-      };
-      render(<CompareCard dog={dogNoTagline} />);
-      expect(screen.getByTestId("tagline-section")).toBeInTheDocument();
+    it("renders tagline inline in header when present", () => {
+      render(<CompareCard dog={mockDog} />);
+      const tagline = screen.getByText(/Your new adventure buddy!/);
+      expect(tagline).toBeInTheDocument();
+      // Should be within the header section
+      expect(screen.getByTestId("dog-header")).toContainElement(tagline);
     });
 
     it("always renders personality traits section even when empty", () => {
@@ -276,7 +273,6 @@ describe("CompareCard", () => {
 
       // All cards should have the same structural sections
       expect(screen.getByTestId("dog-header")).toBeInTheDocument();
-      expect(screen.getByTestId("tagline-section")).toBeInTheDocument();
       expect(screen.getByTestId("personality-section")).toBeInTheDocument();
       expect(screen.getByTestId("energy-section")).toBeInTheDocument();
       expect(screen.getByTestId("compatibility-section")).toBeInTheDocument();

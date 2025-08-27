@@ -60,11 +60,11 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 animate-fade-in"
       onClick={handleBackdropClick}
     >
       <div
-        className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl max-h-[90vh] overflow-y-auto"
+        className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl max-h-[90vh] overflow-y-auto content-fade-in"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-4 md:p-6">
@@ -80,7 +80,7 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-300"
                   aria-label="Close"
                 >
                   <X size={24} />
@@ -99,7 +99,7 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
               <div className="mb-4">
                 <button
                   onClick={handleBackToSelection}
-                  className="text-orange-600 hover:text-orange-700 text-sm font-medium"
+                  className="text-orange-600 hover:text-orange-700 text-sm font-medium transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-300 rounded px-2 py-1"
                 >
                   ← Back to Selection
                 </button>

@@ -47,7 +47,8 @@ describe("FavoritesInsights", () => {
       <FavoritesInsights insights={mockInsights} insightsLoading={true} />,
     );
 
-    expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
+    expect(container.querySelector(".skeleton-element")).toBeInTheDocument();
+    expect(container.querySelector(".content-fade-in")).toBeInTheDocument();
   });
 
   it("renders enhanced insights without AI badge", () => {
@@ -309,7 +310,7 @@ describe("FavoritesInsights", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("shows prominent expand button with animation", () => {
+    it("shows prominent expand button with hover effects", () => {
       const { container } = render(
         <FavoritesInsights insights={mockInsights} />,
       );
@@ -318,10 +319,11 @@ describe("FavoritesInsights", () => {
         name: /show more insights/i,
       });
 
-      // Check for prominent styling and animation classes
-      expect(expandButton).toHaveClass("animate-pulse");
+      // Check for hover and transition classes
+      expect(expandButton).toHaveClass("hover:scale-105");
+      expect(expandButton).toHaveClass("transition-all");
 
-      // Should have larger chevron for prominence
+      // Should have chevron icon for functionality
       const chevron = expandButton.querySelector("svg");
       expect(chevron).toBeInTheDocument();
     });
