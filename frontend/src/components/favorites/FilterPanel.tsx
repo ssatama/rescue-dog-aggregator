@@ -115,7 +115,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
   const debouncedAgeGroupFilter = useDebounce(ageGroupFilter, 300);
   const debouncedOrganizationFilter = useDebounce(organizationFilter, 300);
 
-  // Detect mobile viewport
+  // Detect mobile viewport - use md breakpoint (768px) for consistency
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);

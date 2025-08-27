@@ -69,7 +69,7 @@ describe("CompareCard", () => {
   describe("LLM Data Display", () => {
     it("displays tagline prominently at top", () => {
       render(<CompareCard dog={mockDog} />);
-      const tagline = screen.getByText('"Your new adventure buddy!"');
+      const tagline = screen.getByText(/Your new adventure buddy!/);
       expect(tagline).toBeInTheDocument();
       expect(tagline).toHaveClass("text-base", "font-semibold");
     });
@@ -203,6 +203,86 @@ describe("CompareCard", () => {
       const { container } = render(<CompareCard dog={mockDog} />);
       const card = container.firstChild;
       expect(card).toHaveClass("rounded-lg", "border", "shadow-sm");
+    });
+  });
+
+  describe("Card Layout Consistency", () => {
+    it("always renders tagline section even when empty", () => {
+      const dogNoTagline = {
+        ...mockDog,
+        dog_profiler_data: {
+          ...mockDog.dog_profiler_data!,
+          tagline: undefined,
+        },
+      };
+      render(<CompareCard dog={dogNoTagline} />);
+      expect(screen.getByTestId("tagline-section")).toBeInTheDocument();
+    });
+
+    it("always renders personality traits section even when empty", () => {
+      const dogNoTraits = {
+        ...mockDog,
+        dog_profiler_data: {
+          ...mockDog.dog_profiler_data!,
+          personality_traits: [],
+        },
+      };
+      render(<CompareCard dog={dogNoTraits} />);
+      expect(screen.getByTestId("personality-section")).toBeInTheDocument();
+    });
+
+    it("always renders energy section even when data missing", () => {
+      const dogNoEnergy = {
+        ...mockDog,
+        dog_profiler_data: {
+          ...mockDog.dog_profiler_data!,
+          energy_level: undefined,
+          experience_level: undefined,
+        },
+      };
+      render(<CompareCard dog={dogNoEnergy} />);
+      expect(screen.getByTestId("energy-section")).toBeInTheDocument();
+    });
+
+    it("always renders perfect-for section even when empty", () => {
+      const dogNoMatches = {
+        ...mockDog,
+        standardized_size: undefined,
+        dog_profiler_data: {
+          ...mockDog.dog_profiler_data!,
+          energy_level: undefined,
+          good_with_children: undefined,
+          experience_level: undefined,
+        },
+      };
+      render(<CompareCard dog={dogNoMatches} />);
+      expect(screen.getByTestId("perfect-for-section")).toBeInTheDocument();
+    });
+
+    it("always renders unique quirk section even when empty", () => {
+      const dogNoQuirk = {
+        ...mockDog,
+        dog_profiler_data: {
+          ...mockDog.dog_profiler_data!,
+          unique_quirk: undefined,
+        },
+      };
+      render(<CompareCard dog={dogNoQuirk} />);
+      expect(screen.getByTestId("unique-quirk-section")).toBeInTheDocument();
+    });
+
+    it("renders all sections with consistent structure for alignment", () => {
+      const { container } = render(<CompareCard dog={mockDogMinimal} />);
+      
+      // All cards should have the same structural sections
+      expect(screen.getByTestId("dog-header")).toBeInTheDocument();
+      expect(screen.getByTestId("tagline-section")).toBeInTheDocument();
+      expect(screen.getByTestId("personality-section")).toBeInTheDocument();
+      expect(screen.getByTestId("energy-section")).toBeInTheDocument();
+      expect(screen.getByTestId("compatibility-section")).toBeInTheDocument();
+      expect(screen.getByTestId("perfect-for-section")).toBeInTheDocument();
+      expect(screen.getByTestId("unique-quirk-section")).toBeInTheDocument();
+      expect(screen.getByTestId("footer-section")).toBeInTheDocument();
     });
   });
 });

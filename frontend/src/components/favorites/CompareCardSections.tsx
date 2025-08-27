@@ -85,20 +85,26 @@ export function DogHeader({ dog, tagline }: DogHeaderProps) {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4" data-testid="dog-header">
       <div className="flex items-start gap-3">
         {imageUrl ? (
-          <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+          <div
+            data-testid="dog-image-container"
+            className="relative w-20 aspect-[4/3] rounded-lg overflow-hidden flex-shrink-0"
+          >
             <Image
               src={imageUrl}
               alt={dog.name}
-              fill={true}
+              fill
               className="object-cover"
               sizes="80px"
             />
           </div>
         ) : (
-          <div className="w-20 h-20 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+          <div
+            data-testid="dog-image-container"
+            className="w-20 aspect-[4/3] rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0"
+          >
             <DogIcon
               size={32}
               className="text-gray-400"
@@ -121,13 +127,13 @@ export function DogHeader({ dog, tagline }: DogHeaderProps) {
         </div>
       </div>
 
-      {tagline && (
-        <div className="mt-3">
+      <div className="mt-3 min-h-[2rem]" data-testid="tagline-section">
+        {tagline && (
           <p className="text-base font-semibold text-gray-800 dark:text-gray-200 italic">
             &ldquo;{tagline}&rdquo;
           </p>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -144,7 +150,10 @@ export function CompatibilitySection({
   childrenScore,
 }: CompatibilitySectionProps) {
   return (
-    <div className="px-4 pb-3 border-t border-gray-200 dark:border-gray-700 pt-3">
+    <div 
+      className="px-4 pb-3 border-t border-gray-200 dark:border-gray-700 pt-3"
+      data-testid="compatibility-section"
+    >
       <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
         Compatibility
       </div>

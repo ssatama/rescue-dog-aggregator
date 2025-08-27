@@ -36,7 +36,11 @@ export default function CompareDesktop({ dogs, onClose }: CompareDesktopProps) {
       </div>
 
       {/* Enhanced Dog Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+      <div
+        data-testid="dog-cards-grid"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 grid-rows-[min-content]"
+        style={{ gridTemplateRows: "min-content" }}
+      >
         {dogs.map((dog) => (
           <CompareCard key={dog.id} dog={dog} />
         ))}

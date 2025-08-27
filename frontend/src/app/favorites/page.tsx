@@ -74,7 +74,7 @@ function FavoritesPageContent() {
   const [showCompareMode, setShowCompareMode] = useState<boolean>(false);
   const [isMobile, setIsMobile] = useState<boolean>(false);
 
-  // Detect mobile viewport
+  // Detect mobile viewport - use md breakpoint (768px) for consistency
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -388,31 +388,37 @@ function FavoritesPageContent() {
               family.
             </p>
 
-            {/* Action Buttons - Mobile Optimized */}
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mt-8">
-              <ShareButton
-                url={getShareableUrl()}
-                title="My Favorite Rescue Dogs"
-                text={`Check out my collection of ${count} favorite rescue dogs!`}
-                variant="default"
-                className="bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                Share Favorites
-              </ShareButton>
-
-              {/* Compare Button - Only show when 2+ dogs */}
-              {count >= 2 && (
-                <Button
+            {/* Action Buttons Row - Responsive Layout */}
+            <div className="flex flex-col md:flex-row justify-center items-center gap-4 mt-8">
+              {/* Primary Action Buttons */}
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-3">
+                <ShareButton
+                  url={getShareableUrl()}
+                  title="My Favorite Rescue Dogs"
+                  text={`Check out my collection of ${count} favorite rescue dogs!`}
                   variant="default"
-                  size="default"
-                  onClick={() => setShowCompareMode(true)}
                   className="bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300"
                 >
-                  Compare Dogs
-                </Button>
-              )}
+                  Share Favorites
+                </ShareButton>
 
-              <FilterPanel dogs={dogs} onFilter={handleFilter} />
+                {/* Compare Button - Only show when 2+ dogs */}
+                {count >= 2 && (
+                  <Button
+                    variant="default"
+                    size="default"
+                    onClick={() => setShowCompareMode(true)}
+                    className="bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    Compare Dogs
+                  </Button>
+                )}
+              </div>
+
+              {/* Filter Controls - Separate Section */}
+              <div className="w-full md:w-auto flex justify-center">
+                <FilterPanel dogs={dogs} onFilter={handleFilter} />
+              </div>
             </div>
           </div>
         </div>
@@ -424,6 +430,20 @@ function FavoritesPageContent() {
             insightsLoading={insightsLoading}
           />
         )}
+
+        {/* Dogs Section Header */}
+        <div className="container mx-auto px-4 pt-6">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              Your Saved Dogs
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              {filteredDogs.length} dog{filteredDogs.length !== 1 ? "s" : ""} saved
+            </p>
+            {/* Visual divider */}
+            <hr className="mx-auto mt-4 mb-0 w-24 h-0.5 bg-gradient-to-r from-transparent via-orange-400 to-transparent border-0" />
+          </div>
+        </div>
 
         {/* Dogs grid - use filtered dogs */}
         <div className="container mx-auto px-4">

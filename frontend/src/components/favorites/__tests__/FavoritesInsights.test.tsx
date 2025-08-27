@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import FavoritesInsights from "../FavoritesInsights";
 
 const mockInsights = {
@@ -50,11 +50,11 @@ describe("FavoritesInsights", () => {
     expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
   });
 
-  it("renders enhanced insights with AI badge", () => {
+  it("renders enhanced insights without AI badge", () => {
     render(<FavoritesInsights insights={mockInsights} />);
 
     expect(screen.getByText("Your Favorites Insights")).toBeInTheDocument();
-    expect(screen.getByText("AI Enhanced")).toBeInTheDocument();
+    expect(screen.queryByText("AI Enhanced")).not.toBeInTheDocument();
     expect(screen.getByText("Personality Pattern")).toBeInTheDocument();
     expect(screen.getByText("Active and Social")).toBeInTheDocument();
   });
@@ -159,5 +159,211 @@ describe("FavoritesInsights", () => {
 
     expect(screen.getByText("Care Requirements")).toBeInTheDocument();
     expect(screen.getByText(/\.\.\.$/)).toBeInTheDocument(); // Should end with ...
+  });
+
+  describe("Mobile collapse/expand functionality", () => {
+    beforeEach(() => {
+      // Mock window.innerWidth to simulate mobile viewport
+      Object.defineProperty(window, "innerWidth", {
+        writable: true,
+        configurable: true,
+        value: 375, // Mobile width
+      });
+    });
+
+    it("shows expand/collapse button on mobile with insights counter", () => {
+      render(<FavoritesInsights insights={mockInsights} />);
+
+      expect(
+        screen.getByRole("button", { name: /show more insights/i }),
+      ).toBeInTheDocument();
+      
+      // Should show insights counter text
+      expect(screen.getByText(/showing \d+ of \d+ insights/i)).toBeInTheDocument();
+    });
+
+    it("shows chevron down icon when collapsed", () => {
+      render(<FavoritesInsights insights={mockInsights} />);
+
+      const button = screen.getByRole("button", {
+        name: /show more insights/i,
+      });
+      expect(button).toHaveAttribute("aria-expanded", "false");
+
+      // Check for chevron down icon in button
+      const chevronDown = button.querySelector('[aria-hidden="true"]');
+      expect(chevronDown).toBeInTheDocument();
+    });
+
+    it("shows only 3 insights when collapsed on mobile", () => {
+      render(<FavoritesInsights insights={mockInsights} />);
+
+      // Should show 3 insights initially (collapsed state)
+      const insightCards = screen.getAllByRole("group"); // Using role group for insight cards
+      expect(insightCards).toHaveLength(3);
+    });
+
+    it("expands to show all insights when expand button is clicked", () => {
+      render(<FavoritesInsights insights={mockInsights} />);
+
+      const expandButton = screen.getByRole("button", {
+        name: /show more insights/i,
+      });
+
+      // Initially collapsed - should show 3 insights
+      let insightCards = screen.getAllByRole("group");
+      expect(insightCards).toHaveLength(3);
+
+      // Click to expand
+      fireEvent.click(expandButton);
+
+      // Should now show all insights (8 with our mock data)
+      insightCards = screen.getAllByRole("group");
+      expect(insightCards.length).toBeGreaterThan(3);
+
+      // Button should show "show less" and be expanded
+      expect(expandButton).toHaveAttribute("aria-expanded", "true");
+      expect(
+        screen.getByRole("button", { name: /show less insights/i }),
+      ).toBeInTheDocument();
+    });
+
+    it("shows chevron up icon when expanded", () => {
+      render(<FavoritesInsights insights={mockInsights} />);
+
+      const button = screen.getByRole("button", {
+        name: /show more insights/i,
+      });
+
+      // Click to expand
+      fireEvent.click(button);
+
+      expect(button).toHaveAttribute("aria-expanded", "true");
+    });
+
+    it("collapses back to 3 insights when collapse button is clicked", () => {
+      render(<FavoritesInsights insights={mockInsights} />);
+
+      const toggleButton = screen.getByRole("button", {
+        name: /show more insights/i,
+      });
+
+      // Expand first
+      fireEvent.click(toggleButton);
+      let insightCards = screen.getAllByRole("group");
+      expect(insightCards.length).toBeGreaterThan(3);
+
+      // Then collapse
+      const collapseButton = screen.getByRole("button", {
+        name: /show less insights/i,
+      });
+      fireEvent.click(collapseButton);
+
+      // Should be back to 3 insights
+      insightCards = screen.getAllByRole("group");
+      expect(insightCards).toHaveLength(3);
+    });
+
+    it("applies proper CSS classes for mobile layout with improved spacing", () => {
+      const { container } = render(
+        <FavoritesInsights insights={mockInsights} />,
+      );
+
+      // Check for mobile-specific classes
+      const insightsContainer = container.querySelector(
+        '[data-testid="insights-container"]',
+      );
+      expect(insightsContainer).toHaveClass("max-h-[45vh]"); // Less than 50% viewport height when collapsed
+      expect(insightsContainer).toHaveClass("mb-10"); // Better bottom spacing
+    });
+
+    it("applies transition classes for smooth animation", () => {
+      const { container } = render(
+        <FavoritesInsights insights={mockInsights} />,
+      );
+
+      const insightsGrid = container.querySelector(
+        '[data-testid="insights-grid"]',
+      );
+      expect(insightsGrid).toHaveClass(
+        "transition-all",
+        "duration-300",
+        "ease-in-out",
+      );
+    });
+
+    it("hides expand button on desktop", () => {
+      // Mock desktop width
+      Object.defineProperty(window, "innerWidth", {
+        writable: true,
+        configurable: true,
+        value: 1024, // Desktop width
+      });
+
+      render(<FavoritesInsights insights={mockInsights} />);
+
+      expect(
+        screen.queryByRole("button", { name: /show more insights/i }),
+      ).not.toBeInTheDocument();
+    });
+
+    it("shows prominent expand button with animation", () => {
+      const { container } = render(
+        <FavoritesInsights insights={mockInsights} />,
+      );
+
+      const expandButton = screen.getByRole("button", {
+        name: /show more insights/i,
+      });
+
+      // Check for prominent styling and animation classes
+      expect(expandButton).toHaveClass("animate-pulse");
+      
+      // Should have larger chevron for prominence
+      const chevron = expandButton.querySelector("svg");
+      expect(chevron).toBeInTheDocument();
+    });
+  });
+
+  describe("Enhanced visual separation", () => {
+    it("applies stronger shadow for better elevation", () => {
+      const { container } = render(
+        <FavoritesInsights insights={mockInsights} />,
+      );
+
+      const insightsCard = container.querySelector('.shadow-lg');
+      expect(insightsCard).toBeInTheDocument();
+      expect(insightsCard).not.toHaveClass('shadow-sm');
+    });
+
+    it("applies stronger border for clearer separation", () => {
+      const { container } = render(
+        <FavoritesInsights insights={mockInsights} />,
+      );
+
+      const insightsCard = container.querySelector('.border-b-2');
+      expect(insightsCard).toBeInTheDocument();
+      expect(insightsCard).not.toHaveClass('border-b');
+    });
+
+    it("applies z-index for subtle elevation", () => {
+      const { container } = render(
+        <FavoritesInsights insights={mockInsights} />,
+      );
+
+      const insightsCard = container.querySelector('.relative.z-10');
+      expect(insightsCard).toBeInTheDocument();
+    });
+
+    it("maintains proper spacing with mb-10", () => {
+      const { container } = render(
+        <FavoritesInsights insights={mockInsights} />,
+      );
+
+      const insightsContainer = container.querySelector(
+        '[data-testid="insights-container"]',
+      );
+      expect(insightsContainer).toHaveClass("mb-10");
+    });
   });
 });

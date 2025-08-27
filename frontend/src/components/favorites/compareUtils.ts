@@ -100,7 +100,7 @@ export function formatExperienceLevel(level: string): string {
     case "first_time_owner":
       return "First Timer";
     case "some_experience":
-      return "Some Exp";
+      return "Some Experience";
     case "experienced":
       return "Experienced";
     case "very_experienced":

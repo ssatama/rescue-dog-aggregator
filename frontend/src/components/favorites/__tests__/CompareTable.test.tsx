@@ -168,7 +168,7 @@ describe("CompareTable", () => {
       );
 
       expect(screen.getByText("Experience Needed")).toBeInTheDocument();
-      expect(screen.getByText("Some Exp")).toBeInTheDocument();
+      expect(screen.getByText("Some Experience")).toBeInTheDocument();
       expect(screen.getByText("First Timer")).toBeInTheDocument();
     });
 

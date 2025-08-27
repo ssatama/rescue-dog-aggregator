@@ -34,13 +34,21 @@ export default function CompareCard({ dog }: CompareCardProps) {
   const lifestyleMatches = getLifestyleMatches(dog);
 
   return (
-    <div className="rounded-lg border shadow-sm bg-white dark:bg-gray-800 overflow-hidden">
-      {/* Header with Image and Name */}
+    <div
+      data-testid="compare-card"
+      className="rounded-lg border shadow-sm bg-white dark:bg-gray-800 overflow-hidden h-full"
+      style={{
+        display: 'grid',
+        gridTemplateRows: 'auto minmax(3rem, auto) minmax(4rem, auto) minmax(3rem, auto) auto minmax(3rem, auto) minmax(4rem, auto) auto',
+        gridTemplateColumns: '1fr'
+      }}
+    >
+      {/* Header with Image and Name - includes tagline */}
       <DogHeader dog={dog} tagline={tagline} />
 
-      {/* Personality Traits */}
-      {personalityTraits.length > 0 && (
-        <div className="px-4 pb-3">
+      {/* Personality Traits - always show container */}
+      <div className="px-4 pb-3 min-h-[4rem]" data-testid="personality-section">
+        {personalityTraits.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {personalityTraits.slice(0, 3).map((trait, idx) => (
               <span
@@ -51,19 +59,19 @@ export default function CompareCard({ dog }: CompareCardProps) {
               </span>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* Energy & Experience */}
-      <div className="px-4 pb-3 flex gap-4 text-sm">
-        {energyLevel && (
-          <div className="flex items-center gap-1">
-            {getEnergyIcon(energyLevel)}
-            <span className="font-medium">
-              {formatEnergyLevel(energyLevel)}
-            </span>
-          </div>
+        ) : (
+          <div className="text-xs text-gray-400 italic">No personality data</div>
         )}
+      </div>
+
+      {/* Energy & Experience - always show container */}
+      <div className="px-4 pb-3 flex gap-4 text-sm min-h-[3rem]" data-testid="energy-section">
+        <div className="flex items-center gap-1">
+          {getEnergyIcon(energyLevel)}
+          <span className="font-medium">
+            {formatEnergyLevel(energyLevel)}
+          </span>
+        </div>
         {experienceLevel && (
           <div className="flex items-center gap-1">
             <Shield className="w-4 h-4 text-blue-500" />
@@ -74,19 +82,19 @@ export default function CompareCard({ dog }: CompareCardProps) {
         )}
       </div>
 
-      {/* Compatibility Scores */}
+      {/* Compatibility Scores - always show */}
       <CompatibilitySection
         dogsScore={dogsScore}
         catsScore={catsScore}
         childrenScore={childrenScore}
       />
 
-      {/* Perfect For Section */}
-      {lifestyleMatches.length > 0 && (
-        <div className="px-4 pb-3">
-          <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-            Perfect for:
-          </div>
+      {/* Perfect For Section - always show container */}
+      <div className="px-4 pb-3 min-h-[3rem]" data-testid="perfect-for-section">
+        <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+          Perfect for:
+        </div>
+        {lifestyleMatches.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {lifestyleMatches.map((match, idx) => (
               <span
@@ -97,29 +105,35 @@ export default function CompareCard({ dog }: CompareCardProps) {
               </span>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="text-xs text-gray-400 italic">No specific matches identified</div>
+        )}
+      </div>
 
-      {/* Unique Quirk */}
-      {uniqueQuirk && (
-        <div className="px-4 pb-3 bg-orange-50 dark:bg-orange-900/10">
-          <div className="flex items-center gap-1 text-xs font-medium text-orange-700 dark:text-orange-300 mb-1">
-            <Sparkles size={14} />
-            <span>What makes {dog.name} special</span>
-          </div>
+      {/* Unique Quirk - always show container */}
+      <div className="px-4 pb-3 bg-orange-50 dark:bg-orange-900/10 min-h-[4rem]" data-testid="unique-quirk-section">
+        <div className="flex items-center gap-1 text-xs font-medium text-orange-700 dark:text-orange-300 mb-1">
+          <Sparkles size={14} />
+          <span>What makes {dog.name} special</span>
+        </div>
+        {uniqueQuirk ? (
           <p className="text-sm text-gray-700 dark:text-gray-300">
             {uniqueQuirk}
           </p>
-        </div>
-      )}
+        ) : (
+          <p className="text-sm text-gray-400 italic">
+            Every dog is special in their own way
+          </p>
+        )}
+      </div>
 
-      {/* Footer with CTA */}
-      <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+      {/* Footer with CTA - always show */}
+      <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700" data-testid="footer-section">
         <div className="flex items-center justify-between">
           <span className="text-xs text-gray-600 dark:text-gray-400">
             {dog.organization_name || dog.organization?.name}
           </span>
-          {dog.adoption_url && (
+          {dog.adoption_url ? (
             <a
               href={dog.adoption_url}
               target="_blank"
@@ -128,6 +142,8 @@ export default function CompareCard({ dog }: CompareCardProps) {
             >
               Visit {dog.name} →
             </a>
+          ) : (
+            <span className="text-sm text-gray-400">Contact organization</span>
           )}
         </div>
       </div>
