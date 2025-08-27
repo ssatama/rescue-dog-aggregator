@@ -207,3 +207,4 @@ migrations/railway/versions/
 
 # AI agent memory files
 .serena/
+docs/feature_implementation/

@@ -72,9 +72,61 @@ jest.mock("../../../../utils/logger", () => ({
   reportError: jest.fn(),
 }));
 
+// Mock the LLM detail components
+jest.mock("../../../../components/dogs/detail", () => ({
+  PersonalityTraits: ({ profilerData }) => {
+    if (!profilerData || (profilerData.confidence_scores?.personality_traits || 0) <= 0.5) {
+      return null;
+    }
+    return <div data-testid="personality-traits">Personality Traits</div>;
+  },
+  EnergyTrainability: ({ profilerData }) => {
+    if (!profilerData || (!profilerData.energy_level && !profilerData.trainability)) {
+      return null;
+    }
+    return <div data-testid="energy-trainability">Energy & Trainability</div>;
+  },
+  CompatibilityIcons: ({ profilerData }) => {
+    if (!profilerData) return null;
+    return <div data-testid="compatibility-icons">Compatibility</div>;
+  },
+  ActivitiesQuirks: ({ profilerData }) => {
+    if (!profilerData) return null;
+    return <div data-testid="activities-quirks">Activities & Quirks</div>;
+  },
+  NavigationArrows: ({ onPrev, onNext, hasPrev, hasNext, isLoading }) => (
+    <div data-testid="navigation-arrows">
+      {hasPrev && (
+        <button data-testid="nav-arrow-prev" onClick={onPrev} disabled={isLoading}>
+          Previous
+        </button>
+      )}
+      {hasNext && (
+        <button data-testid="nav-arrow-next" onClick={onNext} disabled={isLoading}>
+          Next
+        </button>
+      )}
+    </div>
+  ),
+}));
+
+// Mock the useSwipeNavigation hook
+jest.mock("../../../../hooks/useSwipeNavigation", () => ({
+  useSwipeNavigation: () => ({
+    handlers: {},
+    prevDog: null,
+    nextDog: null,
+    isLoading: false,
+  }),
+}));
+
 jest.mock("next/navigation", () => ({
   useParams: () => ({ slug: "test-dog-mixed-breed-1" }),
   usePathname: () => "/dogs/test-dog-mixed-breed-1",
+  useSearchParams: () => ({
+    entries: () => [],
+    toString: () => "",
+  }),
 }));
 
 // Mock all other potentially problematic components
