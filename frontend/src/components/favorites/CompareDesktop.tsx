@@ -13,10 +13,7 @@ interface CompareDesktopProps {
   onBack?: () => void;
 }
 
-export default function CompareDesktop({
-  dogs,
-  onClose,
-}: CompareDesktopProps) {
+export default function CompareDesktop({ dogs, onClose }: CompareDesktopProps) {
   const comparisonData = analyzeComparison(dogs);
 
   return (

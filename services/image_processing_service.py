@@ -226,18 +226,18 @@ class ImageProcessingService:
         cursor = None
         try:
             # Ensure connection is in a good state
-            if hasattr(database_connection, 'rollback'):
+            if hasattr(database_connection, "rollback"):
                 try:
                     database_connection.rollback()
                 except Exception:
                     pass  # Ignore if no transaction
-                    
+
             cursor = database_connection.cursor()
-            
-            # Use IN clause instead of ANY() to avoid psycopg2 issues  
+
+            # Use IN clause instead of ANY() to avoid psycopg2 issues
             # Build placeholders for parameterized query
-            placeholders = ','.join(['%s'] * len(original_urls))
-            
+            placeholders = ",".join(["%s"] * len(original_urls))
+
             # Check if we've already uploaded these source URLs
             # The original_urls parameter contains the source URLs (e.g., from the org's website)
             # We need to check if we've already processed and uploaded these
@@ -248,13 +248,13 @@ class ImageProcessingService:
                 AND primary_image_url IS NOT NULL
                 AND primary_image_url LIKE '%%images.rescuedogs.me%%'
             """
-            
+
             # Debug: Log what we're about to query
             self.logger.debug(f"Querying for {len(original_urls)} URLs using IN clause")
 
             cursor.execute(query, tuple(original_urls))
             results = cursor.fetchall()
-            
+
             # Debug: Log results
             self.logger.debug(f"Query returned {len(results)} results")
 

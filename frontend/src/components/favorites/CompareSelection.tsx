@@ -133,7 +133,8 @@ export default function CompareSelection({
           disabled={selectedDogs.size < 2}
           className="bg-orange-600 hover:bg-orange-700 text-white disabled:opacity-50"
         >
-          Compare {selectedDogs.size > 0 ? `(${selectedDogs.size})` : "Selected"}
+          Compare{" "}
+          {selectedDogs.size > 0 ? `(${selectedDogs.size})` : "Selected"}
         </Button>
       </div>
     </div>

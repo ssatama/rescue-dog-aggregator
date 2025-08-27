@@ -40,6 +40,22 @@ function getCompatibilityIcon(status?: string) {
   }
 }
 
+// Helper function to check if ALL dogs have complete compatibility data
+function allDogsHaveCompatibilityData(dogs: Dog[]): boolean {
+  return dogs.every((dog) => {
+    const compatibility = getCompatibility(dog);
+    // Only consider yes/no/maybe as complete data
+    const isValidValue = (value: string) =>
+      value === "yes" || value === "no" || value === "maybe";
+
+    return (
+      isValidValue(compatibility.dogs) &&
+      isValidValue(compatibility.cats) &&
+      isValidValue(compatibility.children)
+    );
+  });
+}
+
 export default function CompareMobile({ dogs, onClose }: CompareMobileProps) {
   const comparisonData = analyzeComparison(dogs);
 
@@ -137,18 +153,22 @@ export default function CompareMobile({ dogs, onClose }: CompareMobileProps) {
               {/* Key Attributes */}
               <div className="px-4 py-3 grid grid-cols-2 gap-3 text-xs">
                 <div>
-                  <span className="text-gray-600 dark:text-gray-400">Size:</span>
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Size:
+                  </span>
                   <span className="ml-2 font-medium">
-                    {dog.standardized_size || dog.size || "Unknown"}
+                    {dog.standardized_size || dog.size || "-"}
                   </span>
                 </div>
                 <div>
                   <span className="text-gray-600 dark:text-gray-400">Sex:</span>
-                  <span className="ml-2 font-medium">{dog.sex || "Unknown"}</span>
+                  <span className="ml-2 font-medium">{dog.sex || "-"}</span>
                 </div>
                 {energyLevel && (
                   <div className="flex items-center gap-1">
-                    <span className="text-gray-600 dark:text-gray-400">Energy:</span>
+                    <span className="text-gray-600 dark:text-gray-400">
+                      Energy:
+                    </span>
                     <span className="ml-2 font-medium">
                       {formatEnergyLevel(energyLevel)}
                     </span>
@@ -156,7 +176,9 @@ export default function CompareMobile({ dogs, onClose }: CompareMobileProps) {
                 )}
                 {experienceLevel && (
                   <div className="flex items-center gap-1">
-                    <span className="text-gray-600 dark:text-gray-400">Experience:</span>
+                    <span className="text-gray-600 dark:text-gray-400">
+                      Experience:
+                    </span>
                     <span className="ml-2 font-medium">
                       {formatExperienceLevel(experienceLevel)}
                     </span>
@@ -164,29 +186,31 @@ export default function CompareMobile({ dogs, onClose }: CompareMobileProps) {
                 )}
               </div>
 
-              {/* Compatibility Matrix */}
-              <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
-                <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-                  Good with
+              {/* Compatibility Matrix - only show if ALL dogs have complete compatibility data */}
+              {allDogsHaveCompatibilityData(dogs) && (
+                <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+                  <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                    Good with
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="flex items-center gap-1">
+                      <DogIcon size={14} className="text-gray-400" />
+                      <span className="text-xs">Dogs</span>
+                      {getCompatibilityIcon(compatibility.dogs)}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Cat size={14} className="text-gray-400" />
+                      <span className="text-xs">Cats</span>
+                      {getCompatibilityIcon(compatibility.cats)}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Baby size={14} className="text-gray-400" />
+                      <span className="text-xs">Kids</span>
+                      {getCompatibilityIcon(compatibility.children)}
+                    </div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="flex items-center gap-1">
-                    <DogIcon size={14} className="text-gray-400" />
-                    <span className="text-xs">Dogs</span>
-                    {getCompatibilityIcon(compatibility.dogs)}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Cat size={14} className="text-gray-400" />
-                    <span className="text-xs">Cats</span>
-                    {getCompatibilityIcon(compatibility.cats)}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Baby size={14} className="text-gray-400" />
-                    <span className="text-xs">Kids</span>
-                    {getCompatibilityIcon(compatibility.children)}
-                  </div>
-                </div>
-              </div>
+              )}
 
               {/* Unique Quirk */}
               {uniqueQuirk && (

@@ -15,6 +15,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import CompareMode from "../../components/favorites/CompareMode";
 import ShareButton from "../../components/ui/ShareButton";
 import FilterPanel from "../../components/favorites/FilterPanel";
+import FavoritesInsights from "../../components/favorites/FavoritesInsights";
 import type { DogProfilerData } from "../../types/dogProfiler";
 
 // Type definitions
@@ -184,7 +185,7 @@ function FavoritesPageContent() {
     }
 
     setInsightsLoading(true);
-    
+
     // Use setTimeout to avoid blocking the UI
     const timer = setTimeout(() => {
       try {
@@ -416,178 +417,12 @@ function FavoritesPageContent() {
           </div>
         </div>
 
-        {/* Enhanced Smart Insights - Mobile Optimized */}
+        {/* Enhanced Smart Insights - Compact Design */}
         {showInsights && insights && (
-          <div className="container mx-auto px-4 mb-8">
-            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg p-6 shadow-sm">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <span className="text-2xl">💡</span>
-                Your Favorites Insights
-                {insights.hasEnhancedData && (
-                  <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-1 rounded-full">
-                    AI Enhanced
-                  </span>
-                )}
-              </h2>
-
-              {/* Enhanced Personality Insights */}
-              {insights.personalityPattern && (
-                <div className="mb-4 p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                  <h3 className="font-medium mb-2 flex items-center gap-2">
-                    <span>🎭</span> Personality Pattern
-                  </h3>
-                  <p className="text-sm font-medium text-orange-600 dark:text-orange-400 mb-2">
-                    {insights.personalityPattern.personalityTheme}
-                  </p>
-                  {insights.personalityPattern.commonTraits.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {insights.personalityPattern.dominantTraits
-                        .slice(0, 5)
-                        .map((trait: string, idx: number) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-full text-xs"
-                          >
-                            {trait}
-                          </span>
-                        ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Lifestyle Compatibility */}
-              {insights.lifestyleCompatibility &&
-                insights.lifestyleCompatibility.messages.length > 0 && (
-                  <div className="mb-4 p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                    <h3 className="font-medium mb-2 flex items-center gap-2">
-                      <span>🏠</span> Lifestyle Match
-                    </h3>
-                    <div className="space-y-2">
-                      {insights.lifestyleCompatibility.messages.map(
-                        (message: string, idx: number) => (
-                          <div key={idx} className="flex items-center gap-2">
-                            <span className="text-green-500">✓</span>
-                            <span className="text-sm">{message}</span>
-                          </div>
-                        ),
-                      )}
-                    </div>
-                  </div>
-                )}
-
-              {/* Experience Requirements */}
-              {insights.experienceRequirements && (
-                <div className="mb-4 p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                  <h3 className="font-medium mb-2 flex items-center gap-2">
-                    <span>🎓</span> Experience Level
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {insights.experienceRequirements.recommendation}
-                  </p>
-                </div>
-              )}
-
-              {/* Hidden Gems */}
-              {insights.hiddenGems &&
-                insights.hiddenGems.uniqueQuirks.length > 0 && (
-                  <div className="mb-4 p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                    <h3 className="font-medium mb-2 flex items-center gap-2">
-                      <span>✨</span> Special Traits
-                    </h3>
-                    <div className="space-y-1">
-                      {insights.hiddenGems.uniqueQuirks.map(
-                        (item: any, idx: number) => (
-                          <p key={idx} className="text-sm">
-                            <span className="font-medium">{item.dogName}:</span>{" "}
-                            {item.quirk}
-                          </p>
-                        ),
-                      )}
-                    </div>
-                  </div>
-                )}
-
-              {/* Care Complexity */}
-              {insights.careComplexity && (
-                <div className="mb-4 p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                  <h3 className="font-medium mb-2 flex items-center gap-2">
-                    <span>🩺</span> Care Requirements
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {insights.careComplexity.description}
-                  </p>
-                </div>
-              )}
-
-              {/* Basic insights grid (fallback/additional) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                {/* Top Organization */}
-                {insights.topOrganization && (
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm">🏢</span>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Most dogs from
-                      </div>
-                      <div className="font-medium">
-                        {insights.topOrganization}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Size Preference */}
-                {!insights.hasEnhancedData && (
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm">📏</span>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Size preference
-                      </div>
-                      <div className="font-medium">
-                        {insights.sizePreference}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Age Range */}
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm">📅</span>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      Age range
-                    </div>
-                    <div className="font-medium">{insights.ageRange}</div>
-                  </div>
-                </div>
-
-                {/* Energy Profile */}
-                {insights.energyProfile && (
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm">⚡</span>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Energy level
-                      </div>
-                      <div className="font-medium">
-                        {insights.energyProfile.recommendation}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          <FavoritesInsights
+            insights={insights}
+            insightsLoading={insightsLoading}
+          />
         )}
 
         {/* Dogs grid - use filtered dogs */}

@@ -77,9 +77,7 @@ describe("CompareSelection", () => {
         />,
       );
 
-      expect(
-        screen.getByText("2 selected"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("2 selected")).toBeInTheDocument();
     });
 
     it("shows dog images when available", () => {

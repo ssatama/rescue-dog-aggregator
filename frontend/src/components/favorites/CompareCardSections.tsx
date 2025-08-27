@@ -17,13 +17,28 @@ export function getEnergyIcon(level: string | undefined) {
   switch (level) {
     case "very_high":
     case "high":
-      return <Zap className="w-4 h-4 text-orange-500" data-testid="energy-icon-high" />;
+      return (
+        <Zap
+          className="w-4 h-4 text-orange-500"
+          data-testid="energy-icon-high"
+        />
+      );
     case "medium":
     case "moderate":
-      return <Battery className="w-4 h-4 text-yellow-500" data-testid="energy-icon-medium" />;
+      return (
+        <Battery
+          className="w-4 h-4 text-yellow-500"
+          data-testid="energy-icon-medium"
+        />
+      );
     case "low":
     case "minimal":
-      return <BatteryLow className="w-4 h-4 text-green-500" data-testid="energy-icon-low" />;
+      return (
+        <BatteryLow
+          className="w-4 h-4 text-green-500"
+          data-testid="energy-icon-low"
+        />
+      );
     default:
       return null;
   }
@@ -54,7 +69,7 @@ interface DogHeaderProps {
 
 export function DogHeader({ dog, tagline }: DogHeaderProps) {
   const imageUrl = dog.main_image || dog.primary_image_url;
-  
+
   const getAgeDisplay = () => {
     if (dog.age_text) return dog.age_text;
     if (dog.age_min_months && dog.age_max_months) {
@@ -84,25 +99,32 @@ export function DogHeader({ dog, tagline }: DogHeaderProps) {
           </div>
         ) : (
           <div className="w-20 h-20 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-            <DogIcon size={32} className="text-gray-400" data-testid="dog-placeholder-icon" />
+            <DogIcon
+              size={32}
+              className="text-gray-400"
+              data-testid="dog-placeholder-icon"
+            />
           </div>
         )}
-        
+
         <div className="flex-1">
           <h3 className="text-xl font-bold">{dog.name}</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            {dog.standardized_breed || dog.breed || "Mixed breed"} • {getAgeDisplay()}
+            {dog.standardized_breed || dog.breed || "Mixed breed"} •{" "}
+            {getAgeDisplay()}
           </p>
           {dog.sex && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">{dog.sex}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {dog.sex}
+            </p>
           )}
         </div>
       </div>
-      
+
       {tagline && (
         <div className="mt-3">
           <p className="text-base font-semibold text-gray-800 dark:text-gray-200 italic">
-            "{tagline}"
+            &ldquo;{tagline}&rdquo;
           </p>
         </div>
       )}
@@ -116,10 +138,16 @@ interface CompatibilitySectionProps {
   childrenScore: number;
 }
 
-export function CompatibilitySection({ dogsScore, catsScore, childrenScore }: CompatibilitySectionProps) {
+export function CompatibilitySection({
+  dogsScore,
+  catsScore,
+  childrenScore,
+}: CompatibilitySectionProps) {
   return (
     <div className="px-4 pb-3 border-t border-gray-200 dark:border-gray-700 pt-3">
-      <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Compatibility</div>
+      <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+        Compatibility
+      </div>
       <div className="grid grid-cols-3 gap-2">
         <div data-testid="compat-dogs" className="text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
@@ -130,7 +158,7 @@ export function CompatibilitySection({ dogsScore, catsScore, childrenScore }: Co
             <CompatibilityPaws score={dogsScore} />
           </div>
         </div>
-        
+
         <div data-testid="compat-cats" className="text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
             <Cat size={14} className="text-gray-500" />
@@ -140,7 +168,7 @@ export function CompatibilitySection({ dogsScore, catsScore, childrenScore }: Co
             <CompatibilityPaws score={catsScore} />
           </div>
         </div>
-        
+
         <div data-testid="compat-children" className="text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
             <Baby size={14} className="text-gray-500" />

@@ -58,7 +58,9 @@ describe("dogProfilerAnalyzer", () => {
       ];
 
       const result = analyzePersonalityPatterns(dogs);
-      expect(result?.personalityTheme).toBe("You prefer calm, gentle companions");
+      expect(result?.personalityTheme).toBe(
+        "You prefer calm, gentle companions",
+      );
     });
 
     it("identifies dominant traits (top 5 most common)", () => {

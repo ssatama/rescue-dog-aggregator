@@ -23,7 +23,7 @@ export function getAgeDisplay(dog: Dog): string {
 export function getCompatibility(dog: Dog) {
   const props = dog.properties || {};
   const profilerData = dog.dog_profiler_data;
-  
+
   const compatibility: any = {
     dogs: "unknown",
     cats: "unknown",
@@ -35,27 +35,31 @@ export function getCompatibility(dog: Dog) {
     compatibility.cats = profilerData.good_with_cats || "unknown";
     compatibility.children = profilerData.good_with_children || "unknown";
   } else if (props) {
-    compatibility.dogs = props.good_with_dogs === true || props.good_with_dogs === "yes"
-      ? "yes"
-      : props.good_with_dogs === false || props.good_with_dogs === "no"
-      ? "no"
-      : props.good_with_dogs === "maybe"
-      ? "maybe"
-      : "unknown";
-    compatibility.cats = props.good_with_cats === true || props.good_with_cats === "yes"
-      ? "yes"
-      : props.good_with_cats === false || props.good_with_cats === "no"
-      ? "no"
-      : props.good_with_cats === "maybe"
-      ? "maybe"
-      : "unknown";
-    compatibility.children = props.good_with_children === true || props.good_with_children === "yes"
-      ? "yes"
-      : props.good_with_children === false || props.good_with_children === "no"
-      ? "no"
-      : props.good_with_children === "maybe"
-      ? "maybe"
-      : "unknown";
+    compatibility.dogs =
+      props.good_with_dogs === true || props.good_with_dogs === "yes"
+        ? "yes"
+        : props.good_with_dogs === false || props.good_with_dogs === "no"
+          ? "no"
+          : props.good_with_dogs === "maybe"
+            ? "maybe"
+            : "unknown";
+    compatibility.cats =
+      props.good_with_cats === true || props.good_with_cats === "yes"
+        ? "yes"
+        : props.good_with_cats === false || props.good_with_cats === "no"
+          ? "no"
+          : props.good_with_cats === "maybe"
+            ? "maybe"
+            : "unknown";
+    compatibility.children =
+      props.good_with_children === true || props.good_with_children === "yes"
+        ? "yes"
+        : props.good_with_children === false ||
+            props.good_with_children === "no"
+          ? "no"
+          : props.good_with_children === "maybe"
+            ? "maybe"
+            : "unknown";
   }
 
   return compatibility;
@@ -111,7 +115,7 @@ export function getPersonalityTraits(dog: Dog): string[] {
     return dog.dog_profiler_data.personality_traits;
   }
   if (!dog.properties?.personality) return [];
-  
+
   return dog.properties.personality
     .split(/[,;]/)
     .map((t) => t.trim())

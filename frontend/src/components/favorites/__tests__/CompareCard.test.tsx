@@ -27,7 +27,10 @@ const mockDog: Dog = {
     good_with_cats: "maybe",
     good_with_children: "yes",
     favorite_activities: ["Fetch", "Swimming", "Hiking"],
-    special_considerations: ["Needs regular exercise", "Strong puller on leash"],
+    special_considerations: [
+      "Needs regular exercise",
+      "Strong puller on leash",
+    ],
     confidence_scores: {
       personality: 0.9,
       behavior: 0.85,

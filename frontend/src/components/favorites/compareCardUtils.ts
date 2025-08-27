@@ -1,6 +1,8 @@
 import type { Dog } from "./types";
 
-export function getCompatibilityScore(value: string | boolean | undefined): number {
+export function getCompatibilityScore(
+  value: string | boolean | undefined,
+): number {
   if (value === true || value === "yes") return 5;
   if (value === "maybe") return 3;
   if (value === false || value === "no") return 1;
@@ -40,27 +42,28 @@ export function formatExperienceLevel(level: string | undefined): string {
 export function getLifestyleMatches(dog: Dog): string[] {
   const matches: string[] = [];
   const energy = dog.dog_profiler_data?.energy_level;
-  const size = dog.standardized_size || dog.size || dog.dog_profiler_data?.standardized_size;
-  
-  if (energy === "low" || energy === "minimal") {
+  const exerciseNeeds = dog.dog_profiler_data?.exercise_needs;
+  const size = dog.standardized_size || dog.size;
+
+  if (energy === "low" || exerciseNeeds === "minimal") {
     if (!size || size === "Small" || size === "Medium") {
       matches.push("Apartment living");
     }
     matches.push("Seniors");
   }
-  
+
   if (energy === "high" || energy === "very_high") {
     matches.push("Active families");
     matches.push("Runners");
   }
-  
+
   if (dog.dog_profiler_data?.good_with_children === "yes") {
     matches.push("Families with kids");
   }
-  
-  if (dog.dog_profiler_data?.experience_level === "beginner_friendly") {
+
+  if (dog.dog_profiler_data?.experience_level === "first_time_ok") {
     matches.push("First-time owners");
   }
-  
+
   return matches.slice(0, 3);
 }

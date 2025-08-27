@@ -160,7 +160,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
   const filteredDogs = useMemo(() => {
     return dogs.filter((dog) => {
       // Breed filter
-      if (debouncedBreedFilter) {
+      if (debouncedBreedFilter && debouncedBreedFilter !== "_all") {
         const dogBreed = dog.standardized_breed || dog.breed;
         if (dogBreed !== debouncedBreedFilter) {
           return false;
@@ -168,7 +168,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
       }
 
       // Size filter
-      if (debouncedSizeFilter) {
+      if (debouncedSizeFilter && debouncedSizeFilter !== "_all") {
         const dogSize = dog.standardized_size || dog.size;
         if (dogSize !== debouncedSizeFilter) {
           return false;
@@ -176,7 +176,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
       }
 
       // Age group filter
-      if (debouncedAgeGroupFilter) {
+      if (debouncedAgeGroupFilter && debouncedAgeGroupFilter !== "_all") {
         const ageCategory = getAgeCategory(dog);
         if (ageCategory !== debouncedAgeGroupFilter) {
           return false;
@@ -184,7 +184,10 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
       }
 
       // Organization filter
-      if (debouncedOrganizationFilter) {
+      if (
+        debouncedOrganizationFilter &&
+        debouncedOrganizationFilter !== "_all"
+      ) {
         const orgName = dog.organization_name || dog.organization?.name;
         if (orgName !== debouncedOrganizationFilter) {
           return false;
@@ -217,7 +220,10 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
 
   // Check if any filters are active
   const hasActiveFilters =
-    breedFilter || sizeFilter || ageGroupFilter || organizationFilter;
+    (breedFilter && breedFilter !== "_all") ||
+    (sizeFilter && sizeFilter !== "_all") ||
+    (ageGroupFilter && ageGroupFilter !== "_all") ||
+    (organizationFilter && organizationFilter !== "_all");
 
   const handleApplyFilters = () => {
     // Pass true to indicate user-initiated filter change
@@ -461,10 +467,12 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
   // Mobile view: Enhanced button that opens bottom sheet
   if (!isOpen) {
     const activeCount = [
-      breedFilter,
-      sizeFilter,
-      ageGroupFilter,
-      organizationFilter,
+      breedFilter && breedFilter !== "_all" ? breedFilter : null,
+      sizeFilter && sizeFilter !== "_all" ? sizeFilter : null,
+      ageGroupFilter && ageGroupFilter !== "_all" ? ageGroupFilter : null,
+      organizationFilter && organizationFilter !== "_all"
+        ? organizationFilter
+        : null,
     ].filter(Boolean).length;
     return (
       <Button
@@ -535,10 +543,16 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
                   <div className="text-xs text-gray-500 dark:text-gray-400">
                     {
                       [
-                        breedFilter,
-                        sizeFilter,
-                        ageGroupFilter,
-                        organizationFilter,
+                        breedFilter && breedFilter !== "_all"
+                          ? breedFilter
+                          : null,
+                        sizeFilter && sizeFilter !== "_all" ? sizeFilter : null,
+                        ageGroupFilter && ageGroupFilter !== "_all"
+                          ? ageGroupFilter
+                          : null,
+                        organizationFilter && organizationFilter !== "_all"
+                          ? organizationFilter
+                          : null,
                       ].filter(Boolean).length
                     }{" "}
                     filters active

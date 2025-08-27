@@ -133,7 +133,9 @@ describe("CompareMode", () => {
     it("should allow selecting dogs", () => {
       render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
 
-      const buddyCheckbox = screen.getByRole("checkbox", { name: /Select Buddy/i });
+      const buddyCheckbox = screen.getByRole("checkbox", {
+        name: /Select Buddy/i,
+      });
       fireEvent.click(buddyCheckbox);
 
       expect(screen.getByText("1 selected")).toBeInTheDocument();
@@ -151,7 +153,9 @@ describe("CompareMode", () => {
       expect(screen.getByText("3 selected")).toBeInTheDocument();
 
       // Fourth dog checkbox should be disabled
-      const extraCheckbox = screen.getByRole("checkbox", { name: /Select Extra/i });
+      const extraCheckbox = screen.getByRole("checkbox", {
+        name: /Select Extra/i,
+      });
       expect(extraCheckbox).toBeDisabled();
     });
 

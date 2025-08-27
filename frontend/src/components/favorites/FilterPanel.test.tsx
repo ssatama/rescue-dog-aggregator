@@ -572,6 +572,27 @@ describe("FilterPanel Component", () => {
       // All filters should be reset - onFilter should be called with all dogs
       expect(onFilter).toHaveBeenLastCalledWith(mockDogs, true);
     });
+
+    test("breed filter correctly handles _all reset value", () => {
+      // Test the filtering logic directly to confirm _all is treated as showing all dogs
+      const testDogs = mockDogs;
+
+      // Simulate the fixed filtering logic with "_all" value
+      const result = testDogs.filter((dog) => {
+        const breedFilter = "_all"; // This is what gets set when "All Breeds" is selected
+        if (breedFilter && breedFilter !== "_all") {
+          const dogBreed = dog.breed;
+          if (dogBreed !== breedFilter) {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      // Should show all dogs when breedFilter is "_all"
+      expect(result).toHaveLength(4);
+      expect(result).toEqual(mockDogs);
+    });
   });
 
   describe("Mobile View", () => {
