@@ -14,19 +14,58 @@ import { ErrorBoundary } from "react-error-boundary";
 import CompareMode from "../../components/favorites/CompareMode";
 import ShareButton from "../../components/ui/ShareButton";
 import FilterPanel from "../../components/favorites/FilterPanel";
+import type { DogProfilerData } from "../../types/dogProfiler";
 
-// Dog interface is handled by PropTypes or runtime validation
+// Type definitions
+interface Dog {
+  id: number;
+  name: string;
+  breed?: string;
+  standardized_breed?: string;
+  age_months?: number;
+  age_min_months?: number;
+  age_max_months?: number;
+  age_text?: string;
+  sex?: string;
+  size?: string;
+  standardized_size?: string;
+  organization_name?: string;
+  organization?: {
+    name: string;
+    country: string;
+  };
+  location?: string;
+  images?: Array<{ url: string }>;
+  dog_profiler_data?: DogProfilerData;
+  properties?: {
+    good_with_dogs?: boolean | string;
+    good_with_cats?: boolean | string;
+    good_with_children?: boolean | string;
+    good_with_list?: string[];
+    [key: string]: any;
+  };
+}
+
+interface Insights {
+  hasEnhancedData: boolean;
+  commonOrganizations?: Array<{ name: string; count: number }>;
+  commonBreeds?: Array<{ breed: string; count: number }>;
+  ageCounts?: { puppy: number; young: number; adult: number; senior: number };
+  sexBreakdown?: { male: number; female: number };
+  sizeCounts?: { small: number; medium: number; large: number; "extra-large": number };
+  [key: string]: any; // For additional enhanced insights
+}
 
 function FavoritesPageContent() {
   const { favorites, count, clearFavorites, getShareableUrl, loadFromUrl } =
     useFavorites();
   const { showToast } = useToast();
-  const [dogs, setDogs] = useState([]);
-  const [filteredDogs, setFilteredDogs] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showCompareMode, setShowCompareMode] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [dogs, setDogs] = useState<Dog[]>([]);
+  const [filteredDogs, setFilteredDogs] = useState<Dog[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showCompareMode, setShowCompareMode] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
 
   // Detect mobile viewport
   useEffect(() => {
@@ -115,7 +154,7 @@ function FavoritesPageContent() {
   };
 
   const handleFilter = useCallback(
-    (filtered, isUserInitiated = false) => {
+    (filtered: Dog[], isUserInitiated = false) => {
       setFilteredDogs(filtered);
       // Only show toast if user actively changed filters
       if (isUserInitiated) {
@@ -126,32 +165,52 @@ function FavoritesPageContent() {
   );
 
   // Enhanced insights using LLM data
+  const [insights, setInsights] = useState<Insights | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState<boolean>(false);
   const showInsights = filteredDogs.length >= 2;
-  const insights = showInsights ? getEnhancedInsights(filteredDogs) : null;
-  const hasLLMData = filteredDogs.some(dog => dog.dog_profiler_data);
+  const hasLLMData = filteredDogs.some((dog) => dog.dog_profiler_data);
 
-  // Helper function to get enhanced insights using new analyzer
-  function getEnhancedInsights(dogList) {
-    // Lazy load the analyzer to avoid bundle size impact on initial load
-    const analyzer = require('../../utils/dogProfilerAnalyzer');
-    const enhancedInsights = analyzer.getEnhancedInsights(dogList);
+  // Effect to load enhanced insights asynchronously
+  useEffect(() => {
+    async function loadEnhancedInsights() {
+      if (!showInsights || filteredDogs.length < 2) {
+        setInsights(null);
+        return;
+      }
 
-    // Also calculate basic insights as fallback
-    const basicInsights = getBasicInsights(dogList);
-
-    return {
-      ...basicInsights,
-      ...enhancedInsights,
-      hasEnhancedData: dogList.some(d => d.dog_profiler_data)
-    };
-  }
+      setInsightsLoading(true);
+      try {
+        // Dynamic import for code splitting and optimization
+        const analyzerModule = await import('../../utils/dogProfilerAnalyzer');
+        const enhancedInsights = analyzerModule.getEnhancedInsights(filteredDogs);
+        
+        // Also calculate basic insights as fallback
+        const basicInsights = getBasicInsights(filteredDogs);
+        
+        setInsights({
+          ...basicInsights,
+          ...enhancedInsights,
+          hasEnhancedData: filteredDogs.some(d => d.dog_profiler_data)
+        });
+      } catch (error) {
+        console.error('Error loading enhanced insights:', error);
+        // Fall back to basic insights on error
+        setInsights(getBasicInsights(filteredDogs));
+      } finally {
+        setInsightsLoading(false);
+      }
+    }
+    
+    loadEnhancedInsights();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredDogs, showInsights]);
 
   // Basic insights function (existing logic)
-  function getBasicInsights(dogList) {
+  const getBasicInsights = useCallback((dogList: Dog[]): Insights | null => {
     if (!dogList || dogList.length === 0) return null;
 
     // Organization insights
-    const orgCounts = {};
+    const orgCounts: { [key: string]: number } = {};
     dogList.forEach((dog) => {
       const orgName =
         dog.organization_name || dog.organization?.name || "Unknown";
@@ -161,7 +220,7 @@ function FavoritesPageContent() {
     const topOrg = Object.entries(orgCounts).sort((a, b) => b[1] - a[1])[0];
 
     // Size preference insights
-    const sizeCounts = {};
+    const sizeCounts: { [key: string]: number } = {};
     dogList.forEach((dog) => {
       const size = dog.standardized_size || dog.size || "Unknown";
       sizeCounts[size] = (sizeCounts[size] || 0) + 1;
@@ -176,7 +235,7 @@ function FavoritesPageContent() {
     const ageRange = calculateAgeRange(dogList);
 
     // Compatibility insights (if available in properties)
-    let commonTraits = [];
+    let commonTraits: string[] = [];
     if (
       dogList.every(
         (d) =>
@@ -219,14 +278,15 @@ function FavoritesPageContent() {
       ageRange: ageRange,
       commonTraits: commonTraits.length > 0 ? commonTraits : null,
       totalCount: dogList.length,
+      hasEnhancedData: false,
     };
-  }
+  }, []);
 
   // Helper function to calculate age range using age_months
-  function calculateAgeRange(dogList) {
+  function calculateAgeRange(dogList: Dog[]) {
     const agesInMonths = dogList
       .map((d) => d.age_months)
-      .filter((age) => age !== undefined && age !== null && age > 0);
+      .filter((age): age is number => age !== undefined && age !== null && age > 0);
 
     if (agesInMonths.length === 0) {
       // Fallback to age text if age_months not available
@@ -236,7 +296,7 @@ function FavoritesPageContent() {
     const minMonths = Math.min(...agesInMonths);
     const maxMonths = Math.max(...agesInMonths);
 
-    const formatAge = (months) => {
+    const formatAge = (months: number) => {
       if (months < 12) return `${months} month${months !== 1 ? "s" : ""}`;
       const years = Math.floor(months / 12);
       return `${years} year${years !== 1 ? "s" : ""}`;
@@ -374,7 +434,7 @@ function FavoritesPageContent() {
                   </p>
                   {insights.personalityPattern.commonTraits.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {insights.personalityPattern.dominantTraits.slice(0, 5).map((trait, idx) => (
+                      {insights.personalityPattern.dominantTraits.slice(0, 5).map((trait: string, idx: number) => (
                         <span 
                           key={idx} 
                           className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-full text-xs"
@@ -394,7 +454,7 @@ function FavoritesPageContent() {
                     <span>🏠</span> Lifestyle Match
                   </h3>
                   <div className="space-y-2">
-                    {insights.lifestyleCompatibility.messages.map((message, idx) => (
+                    {insights.lifestyleCompatibility.messages.map((message: string, idx: number) => (
                       <div key={idx} className="flex items-center gap-2">
                         <span className="text-green-500">✓</span>
                         <span className="text-sm">{message}</span>
@@ -423,7 +483,7 @@ function FavoritesPageContent() {
                     <span>✨</span> Special Traits
                   </h3>
                   <div className="space-y-1">
-                    {insights.hiddenGems.uniqueQuirks.map((item, idx) => (
+                    {insights.hiddenGems.uniqueQuirks.map((item: any, idx: number) => (
                       <p key={idx} className="text-sm">
                         <span className="font-medium">{item.dogName}:</span> {item.quirk}
                       </p>

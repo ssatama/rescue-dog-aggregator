@@ -29,6 +29,7 @@ import {
   type Dog as AnalyzerDog,
 } from "../../utils/comparisonAnalyzer";
 import type { DogProfilerData } from "../../types/dogProfiler";
+import { useIsMobile } from "../../hooks/useMediaQuery";
 
 interface Dog {
   id: number;
@@ -79,6 +80,7 @@ interface CompareModeProps {
 export default function CompareMode({ dogs, onClose }: CompareModeProps) {
   const [selectedDogs, setSelectedDogs] = useState<Set<number>>(new Set());
   const [isComparing, setIsComparing] = useState(false);
+  const isMobile = useIsMobile(); // Move hook to top level
   const MAX_SELECTIONS = 3;
 
   // Handle backdrop click
@@ -402,7 +404,6 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
   const renderComparisonView = () => {
     const dogsToCompare = getSelectedDogData();
     const comparisonData = analyzeComparison(dogsToCompare as AnalyzerDog[]);
-    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
     if (isMobile) {
       // Mobile view - Enhanced card layout
@@ -1000,8 +1001,6 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
     );
   };
 
-  // Check for mobile viewport
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
   return (
     <div
