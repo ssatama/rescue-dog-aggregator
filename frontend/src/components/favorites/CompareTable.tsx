@@ -23,6 +23,37 @@ function getCompatibilityIcon(value: string) {
   }
 }
 
+// Helper functions to check if ALL dogs have complete data for each field
+function allDogsHaveTaglines(dogs: Dog[]): boolean {
+  return dogs.every(dog => 
+    dog.dog_profiler_data?.tagline && 
+    dog.dog_profiler_data.tagline.trim().length > 0
+  );
+}
+
+function allDogsHaveEnergyLevel(dogs: Dog[]): boolean {
+  return dogs.every(dog => 
+    dog.dog_profiler_data?.energy_level && 
+    dog.dog_profiler_data.energy_level.trim().length > 0
+  );
+}
+
+function allDogsHaveExperienceLevel(dogs: Dog[]): boolean {
+  return dogs.every(dog => 
+    dog.dog_profiler_data?.experience_level && 
+    dog.dog_profiler_data.experience_level.trim().length > 0
+  );
+}
+
+function allDogsHaveCompatibilityData(dogs: Dog[]): boolean {
+  return dogs.every(dog => {
+    const compatibility = getCompatibility(dog);
+    return compatibility.dogs !== "unknown" && 
+           compatibility.cats !== "unknown" && 
+           compatibility.children !== "unknown";
+  });
+}
+
 export default function CompareTable({ dogs, comparisonData }: CompareTableProps) {
   return (
     <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 mb-6">
@@ -46,49 +77,43 @@ export default function CompareTable({ dogs, comparisonData }: CompareTableProps
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {/* Tagline Row */}
-            <tr>
-              <td className="py-2 px-3 text-gray-600 dark:text-gray-400">Tagline</td>
-              {dogs.map((dog) => (
-                <td key={dog.id} className="py-2 px-3 text-center">
-                  {dog.dog_profiler_data?.tagline ? (
+            {/* Tagline Row - only show if ALL dogs have taglines */}
+            {allDogsHaveTaglines(dogs) && (
+              <tr>
+                <td className="py-2 px-3 text-gray-600 dark:text-gray-400">Tagline</td>
+                {dogs.map((dog) => (
+                  <td key={dog.id} className="py-2 px-3 text-center">
                     <span className="text-xs italic text-gray-600 dark:text-gray-400">
-                      &ldquo;{dog.dog_profiler_data.tagline}&rdquo;
+                      &ldquo;{dog.dog_profiler_data!.tagline}&rdquo;
                     </span>
-                  ) : (
-                    <span className="text-gray-400">-</span>
-                  )}
-                </td>
-              ))}
-            </tr>
+                  </td>
+                ))}
+              </tr>
+            )}
             
-            {/* Energy Level */}
-            <tr>
-              <td className="py-2 px-3 text-gray-600 dark:text-gray-400">Energy Level</td>
-              {dogs.map((dog) => (
-                <td key={dog.id} className="py-2 px-3 text-center">
-                  {dog.dog_profiler_data?.energy_level ? (
-                    <span>{formatEnergyLevel(dog.dog_profiler_data.energy_level)}</span>
-                  ) : (
-                    <span className="text-gray-400">-</span>
-                  )}
-                </td>
-              ))}
-            </tr>
+            {/* Energy Level - only show if ALL dogs have energy level data */}
+            {allDogsHaveEnergyLevel(dogs) && (
+              <tr>
+                <td className="py-2 px-3 text-gray-600 dark:text-gray-400">Energy Level</td>
+                {dogs.map((dog) => (
+                  <td key={dog.id} className="py-2 px-3 text-center">
+                    <span>{formatEnergyLevel(dog.dog_profiler_data!.energy_level!)}</span>
+                  </td>
+                ))}
+              </tr>
+            )}
             
-            {/* Experience Level */}
-            <tr>
-              <td className="py-2 px-3 text-gray-600 dark:text-gray-400">Experience Needed</td>
-              {dogs.map((dog) => (
-                <td key={dog.id} className="py-2 px-3 text-center">
-                  {dog.dog_profiler_data?.experience_level ? (
-                    <span>{formatExperienceLevel(dog.dog_profiler_data.experience_level)}</span>
-                  ) : (
-                    <span className="text-gray-400">-</span>
-                  )}
-                </td>
-              ))}
-            </tr>
+            {/* Experience Level - only show if ALL dogs have experience level data */}
+            {allDogsHaveExperienceLevel(dogs) && (
+              <tr>
+                <td className="py-2 px-3 text-gray-600 dark:text-gray-400">Experience Needed</td>
+                {dogs.map((dog) => (
+                  <td key={dog.id} className="py-2 px-3 text-center">
+                    <span>{formatExperienceLevel(dog.dog_profiler_data!.experience_level!)}</span>
+                  </td>
+                ))}
+              </tr>
+            )}
 
             {/* Age */}
             <tr>
@@ -121,73 +146,75 @@ export default function CompareTable({ dogs, comparisonData }: CompareTableProps
                       : ""
                   }`}
                 >
-                  {value || "Unknown"}
+                  {value}
                 </td>
               ))}
             </tr>
 
-            {/* Good with Dogs */}
-            <tr>
-              <td className="py-2 px-3 text-gray-600 dark:text-gray-400">Good with Dogs</td>
-              {dogs.map((dog) => {
-                const compatibility = getCompatibility(dog);
-                return (
-                  <td key={dog.id} className="py-2 px-3 text-center">
-                    <span className="flex items-center justify-center gap-1">
-                      {getCompatibilityIcon(compatibility.dogs)}
-                      <span className="text-xs">
-                        {compatibility.dogs === "yes" && "Yes"}
-                        {compatibility.dogs === "no" && "No"}
-                        {compatibility.dogs === "maybe" && "Maybe"}
-                        {compatibility.dogs === "unknown" && "Unknown"}
-                      </span>
-                    </span>
-                  </td>
-                );
-              })}
-            </tr>
+            {/* Compatibility Rows - only show if ALL dogs have complete compatibility data */}
+            {allDogsHaveCompatibilityData(dogs) && (
+              <>
+                {/* Good with Dogs */}
+                <tr>
+                  <td className="py-2 px-3 text-gray-600 dark:text-gray-400">Good with Dogs</td>
+                  {dogs.map((dog) => {
+                    const compatibility = getCompatibility(dog);
+                    return (
+                      <td key={dog.id} className="py-2 px-3 text-center">
+                        <span className="flex items-center justify-center gap-1">
+                          {getCompatibilityIcon(compatibility.dogs)}
+                          <span className="text-xs">
+                            {compatibility.dogs === "yes" && "Yes"}
+                            {compatibility.dogs === "no" && "No"}
+                            {compatibility.dogs === "maybe" && "Maybe"}
+                          </span>
+                        </span>
+                      </td>
+                    );
+                  })}
+                </tr>
 
-            {/* Good with Cats */}
-            <tr>
-              <td className="py-2 px-3 text-gray-600 dark:text-gray-400">Good with Cats</td>
-              {dogs.map((dog) => {
-                const compatibility = getCompatibility(dog);
-                return (
-                  <td key={dog.id} className="py-2 px-3 text-center">
-                    <span className="flex items-center justify-center gap-1">
-                      {getCompatibilityIcon(compatibility.cats)}
-                      <span className="text-xs">
-                        {compatibility.cats === "yes" && "Yes"}
-                        {compatibility.cats === "no" && "No"}
-                        {compatibility.cats === "maybe" && "Maybe"}
-                        {compatibility.cats === "unknown" && "Unknown"}
-                      </span>
-                    </span>
-                  </td>
-                );
-              })}
-            </tr>
+                {/* Good with Cats */}
+                <tr>
+                  <td className="py-2 px-3 text-gray-600 dark:text-gray-400">Good with Cats</td>
+                  {dogs.map((dog) => {
+                    const compatibility = getCompatibility(dog);
+                    return (
+                      <td key={dog.id} className="py-2 px-3 text-center">
+                        <span className="flex items-center justify-center gap-1">
+                          {getCompatibilityIcon(compatibility.cats)}
+                          <span className="text-xs">
+                            {compatibility.cats === "yes" && "Yes"}
+                            {compatibility.cats === "no" && "No"}
+                            {compatibility.cats === "maybe" && "Maybe"}
+                          </span>
+                        </span>
+                      </td>
+                    );
+                  })}
+                </tr>
 
-            {/* Good with Children */}
-            <tr>
-              <td className="py-2 px-3 text-gray-600 dark:text-gray-400">Good with Children</td>
-              {dogs.map((dog) => {
-                const compatibility = getCompatibility(dog);
-                return (
-                  <td key={dog.id} className="py-2 px-3 text-center">
-                    <span className="flex items-center justify-center gap-1">
-                      {getCompatibilityIcon(compatibility.children)}
-                      <span className="text-xs">
-                        {compatibility.children === "yes" && "Yes"}
-                        {compatibility.children === "no" && "No"}
-                        {compatibility.children === "maybe" && "Maybe"}
-                        {compatibility.children === "unknown" && "Unknown"}
-                      </span>
-                    </span>
-                  </td>
-                );
-              })}
-            </tr>
+                {/* Good with Children */}
+                <tr>
+                  <td className="py-2 px-3 text-gray-600 dark:text-gray-400">Good with Children</td>
+                  {dogs.map((dog) => {
+                    const compatibility = getCompatibility(dog);
+                    return (
+                      <td key={dog.id} className="py-2 px-3 text-center">
+                        <span className="flex items-center justify-center gap-1">
+                          {getCompatibilityIcon(compatibility.children)}
+                          <span className="text-xs">
+                            {compatibility.children === "yes" && "Yes"}
+                            {compatibility.children === "no" && "No"}
+                            {compatibility.children === "maybe" && "Maybe"}
+                          </span>
+                        </span>
+                      </td>
+                    );
+                  })}
+                </tr>
+              </>
+            )}
 
             {/* Organization */}
             <tr>

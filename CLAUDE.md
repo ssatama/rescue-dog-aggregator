@@ -51,7 +51,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Skip tests or write code without tests
 - Delete/modify tests to make them pass
 - Mutate state or data structures
-- Create files >200 lines
+- Create files >300 lines
 - Commit directly to main
 - Act like a sycophant. Always be direct and fair.
 
