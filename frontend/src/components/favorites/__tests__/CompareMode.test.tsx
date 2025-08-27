@@ -208,11 +208,11 @@ describe("CompareMode", () => {
         configurable: true,
         value: 1024,
       });
-      
+
       // Mock matchMedia for useMediaQuery hook - desktop view
       Object.defineProperty(window, "matchMedia", {
         writable: true,
-        value: jest.fn().mockImplementation(query => ({
+        value: jest.fn().mockImplementation((query) => ({
           matches: true, // Desktop is when (min-width: 768px) returns true
           media: query,
           onchange: null,
@@ -275,11 +275,11 @@ describe("CompareMode", () => {
         configurable: true,
         value: 375,
       });
-      
+
       // Mock matchMedia for useMediaQuery hook
       Object.defineProperty(window, "matchMedia", {
         writable: true,
-        value: jest.fn().mockImplementation(query => ({
+        value: jest.fn().mockImplementation((query) => ({
           matches: false, // Mobile is when (min-width: 768px) returns false
           media: query,
           onchange: null,

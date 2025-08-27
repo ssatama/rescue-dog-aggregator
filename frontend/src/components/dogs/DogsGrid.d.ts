@@ -1,4 +1,4 @@
-import { ReactElement } from 'react';
+import { ReactElement } from "react";
 
 interface DogsGridProps {
   dogs?: any[];
@@ -8,7 +8,7 @@ interface DogsGridProps {
   emptyStateVariant?: string;
   onClearFilters?: () => void;
   onBrowseOrganizations?: () => void;
-  loadingType?: 'initial' | 'filter' | 'pagination';
+  loadingType?: "initial" | "filter" | "pagination";
   [key: string]: any;
 }
 

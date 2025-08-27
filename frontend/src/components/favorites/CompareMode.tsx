@@ -271,36 +271,54 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
 
   const getPersonalityTraitColor = (trait: string): string => {
     const traitLower = trait.toLowerCase();
-    if (['friendly', 'affectionate', 'loving', 'gentle'].some(t => traitLower.includes(t))) {
-      return 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300';
+    if (
+      ["friendly", "affectionate", "loving", "gentle"].some((t) =>
+        traitLower.includes(t),
+      )
+    ) {
+      return "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300";
     }
-    if (['playful', 'energetic', 'active', 'lively'].some(t => traitLower.includes(t))) {
-      return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300';
+    if (
+      ["playful", "energetic", "active", "lively"].some((t) =>
+        traitLower.includes(t),
+      )
+    ) {
+      return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300";
     }
-    if (['calm', 'relaxed', 'quiet', 'mellow'].some(t => traitLower.includes(t))) {
-      return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
+    if (
+      ["calm", "relaxed", "quiet", "mellow"].some((t) => traitLower.includes(t))
+    ) {
+      return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300";
     }
-    if (['smart', 'intelligent', 'clever', 'trainable'].some(t => traitLower.includes(t))) {
-      return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300';
+    if (
+      ["smart", "intelligent", "clever", "trainable"].some((t) =>
+        traitLower.includes(t),
+      )
+    ) {
+      return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300";
     }
-    if (['loyal', 'devoted', 'protective'].some(t => traitLower.includes(t))) {
-      return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300';
+    if (
+      ["loyal", "devoted", "protective"].some((t) => traitLower.includes(t))
+    ) {
+      return "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300";
     }
-    if (['independent', 'confident', 'brave'].some(t => traitLower.includes(t))) {
-      return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300';
+    if (
+      ["independent", "confident", "brave"].some((t) => traitLower.includes(t))
+    ) {
+      return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300";
     }
-    return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
+    return "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300";
   };
 
   const getEnergyLevelIcon = (level?: string) => {
     switch (level) {
-      case 'low':
+      case "low":
         return <Activity className="w-4 h-4 text-gray-400" />;
-      case 'medium':
+      case "medium":
         return <Activity className="w-4 h-4 text-orange-500" />;
-      case 'high':
+      case "high":
         return <Zap className="w-4 h-4 text-yellow-500" />;
-      case 'very_high':
+      case "very_high":
         return <Zap className="w-4 h-4 text-red-500" />;
       default:
         return null;
@@ -309,11 +327,11 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
 
   const getExperienceLevelIcon = (level?: string) => {
     switch (level) {
-      case 'first_time_ok':
+      case "first_time_ok":
         return <Shield className="w-4 h-4 text-green-500" />;
-      case 'some_experience':
+      case "some_experience":
         return <Shield className="w-4 h-4 text-yellow-500" />;
-      case 'experienced_only':
+      case "experienced_only":
         return <Shield className="w-4 h-4 text-red-500" />;
       default:
         return null;
@@ -321,46 +339,70 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
   };
 
   const formatEnergyLevel = (level?: string): string => {
-    if (!level) return 'Unknown';
-    return level.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    if (!level) return "Unknown";
+    return level.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
   const formatExperienceLevel = (level?: string): string => {
     switch (level) {
-      case 'first_time_ok':
-        return 'Beginner Friendly';
-      case 'some_experience':
-        return 'Some Experience';
-      case 'experienced_only':
-        return 'Experienced Only';
+      case "first_time_ok":
+        return "Beginner Friendly";
+      case "some_experience":
+        return "Some Experience";
+      case "experienced_only":
+        return "Experienced Only";
       default:
-        return 'Unknown';
+        return "Unknown";
     }
   };
 
-  const getCompatibility = (dog: Dog): { dogs?: string; cats?: string; children?: string } => {
-    const compatibility: { dogs?: string; cats?: string; children?: string } = {};
+  const getCompatibility = (
+    dog: Dog,
+  ): { dogs?: string; cats?: string; children?: string } => {
+    const compatibility: { dogs?: string; cats?: string; children?: string } =
+      {};
 
     // First check dog_profiler_data for more detailed compatibility info
     if (dog.dog_profiler_data) {
-      compatibility.dogs = dog.dog_profiler_data.good_with_dogs || 'unknown';
-      compatibility.cats = dog.dog_profiler_data.good_with_cats || 'unknown';
-      compatibility.children = dog.dog_profiler_data.good_with_children || 'unknown';
+      compatibility.dogs = dog.dog_profiler_data.good_with_dogs || "unknown";
+      compatibility.cats = dog.dog_profiler_data.good_with_cats || "unknown";
+      compatibility.children =
+        dog.dog_profiler_data.good_with_children || "unknown";
     } else {
       // Fallback to properties data
       if (dog.properties?.good_with_list) {
-        compatibility.dogs = dog.properties.good_with_list.includes("dogs") ? 'yes' : 'no';
-        compatibility.cats = dog.properties.good_with_list.includes("cats") ? 'yes' : 'no';
-        compatibility.children = dog.properties.good_with_list.includes("children") ? 'yes' : 'no';
+        compatibility.dogs = dog.properties.good_with_list.includes("dogs")
+          ? "yes"
+          : "no";
+        compatibility.cats = dog.properties.good_with_list.includes("cats")
+          ? "yes"
+          : "no";
+        compatibility.children = dog.properties.good_with_list.includes(
+          "children",
+        )
+          ? "yes"
+          : "no";
       } else if (dog.properties?.good_with) {
         const goodWith = dog.properties.good_with.toLowerCase();
-        compatibility.dogs = goodWith.includes("dog") ? 'yes' : 'unknown';
-        compatibility.cats = goodWith.includes("cat") ? 'yes' : 'unknown';
-        compatibility.children = goodWith.includes("child") ? 'yes' : 'unknown';
+        compatibility.dogs = goodWith.includes("dog") ? "yes" : "unknown";
+        compatibility.cats = goodWith.includes("cat") ? "yes" : "unknown";
+        compatibility.children = goodWith.includes("child") ? "yes" : "unknown";
       } else {
-        compatibility.dogs = (dog.properties?.good_with_dogs === true || dog.properties?.good_with_dogs === "yes") ? 'yes' : 'unknown';
-        compatibility.cats = (dog.properties?.good_with_cats === true || dog.properties?.good_with_cats === "yes") ? 'yes' : 'unknown';
-        compatibility.children = (dog.properties?.good_with_children === true || dog.properties?.good_with_children === "yes") ? 'yes' : 'unknown';
+        compatibility.dogs =
+          dog.properties?.good_with_dogs === true ||
+          dog.properties?.good_with_dogs === "yes"
+            ? "yes"
+            : "unknown";
+        compatibility.cats =
+          dog.properties?.good_with_cats === true ||
+          dog.properties?.good_with_cats === "yes"
+            ? "yes"
+            : "unknown";
+        compatibility.children =
+          dog.properties?.good_with_children === true ||
+          dog.properties?.good_with_children === "yes"
+            ? "yes"
+            : "unknown";
       }
     }
 
@@ -369,11 +411,11 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
 
   const getCompatibilityIcon = (status?: string) => {
     switch (status) {
-      case 'yes':
+      case "yes":
         return <Check className="w-4 h-4 text-green-600" />;
-      case 'no':
+      case "no":
         return <X className="w-4 h-4 text-red-600" />;
-      case 'maybe':
+      case "maybe":
         return <AlertCircle className="w-4 h-4 text-yellow-600" />;
       default:
         return <AlertCircle className="w-4 h-4 text-gray-400" />;
@@ -435,9 +477,12 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
               const uniqueQuirk = dog.dog_profiler_data?.unique_quirk;
               const energyLevel = dog.dog_profiler_data?.energy_level;
               const experienceLevel = dog.dog_profiler_data?.experience_level;
-              
+
               return (
-                <div key={dog.id} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div
+                  key={dog.id}
+                  className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
+                >
                   {/* Dog Header */}
                   <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex items-start gap-3">
@@ -465,7 +510,9 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
                         )}
                         <div className="flex items-center gap-2 mt-2 text-xs">
                           <span className="text-gray-600 dark:text-gray-400">
-                            {dog.standardized_breed || dog.breed || "Mixed breed"}
+                            {dog.standardized_breed ||
+                              dog.breed ||
+                              "Mixed breed"}
                           </span>
                           <span className="text-gray-400">•</span>
                           <span className="text-gray-600 dark:text-gray-400">
@@ -476,7 +523,6 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
                     </div>
                   </div>
 
-                  
                   {/* Personality Traits */}
                   {personalityTraits.length > 0 && (
                     <div className="px-4 py-3">
@@ -499,18 +545,26 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
                   {/* Key Attributes */}
                   <div className="px-4 py-3 grid grid-cols-2 gap-3 text-xs">
                     <div>
-                      <span className="text-gray-600 dark:text-gray-400">Size:</span>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        Size:
+                      </span>
                       <span className="ml-2 font-medium">
                         {dog.standardized_size || dog.size || "Unknown"}
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-600 dark:text-gray-400">Sex:</span>
-                      <span className="ml-2 font-medium">{dog.sex || "Unknown"}</span>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        Sex:
+                      </span>
+                      <span className="ml-2 font-medium">
+                        {dog.sex || "Unknown"}
+                      </span>
                     </div>
                     {energyLevel && (
                       <div className="flex items-center gap-1">
-                        <span className="text-gray-600 dark:text-gray-400">Energy:</span>
+                        <span className="text-gray-600 dark:text-gray-400">
+                          Energy:
+                        </span>
                         <span className="ml-2 font-medium flex items-center gap-1">
                           {getEnergyLevelIcon(energyLevel)}
                           {formatEnergyLevel(energyLevel)}
@@ -519,7 +573,9 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
                     )}
                     {experienceLevel && (
                       <div className="flex items-center gap-1">
-                        <span className="text-gray-600 dark:text-gray-400">Experience:</span>
+                        <span className="text-gray-600 dark:text-gray-400">
+                          Experience:
+                        </span>
                         <span className="ml-2 font-medium flex items-center gap-1">
                           {getExperienceLevelIcon(experienceLevel)}
                           {formatExperienceLevel(experienceLevel)}
@@ -590,7 +646,7 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
 
           {/* Mobile Footer */}
           <div className="text-center text-sm text-gray-600 dark:text-gray-400">
-            Swipe through {dogsToCompare.length} dogs • {" "}
+            Swipe through {dogsToCompare.length} dogs •{" "}
             {comparisonData.organization?.allSame
               ? "Same organization"
               : "Multiple organizations"}
@@ -628,7 +684,10 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
               dog.properties?.location ||
               dog.organization?.country ||
               "Unknown";
-            const description = dog.dog_profiler_data?.description || dog.properties?.description || dog.description;
+            const description =
+              dog.dog_profiler_data?.description ||
+              dog.properties?.description ||
+              dog.description;
             const tagline = dog.dog_profiler_data?.tagline;
             const uniqueQuirk = dog.dog_profiler_data?.unique_quirk;
             const personalityTraits = getPersonalityTraits(dog);
@@ -845,8 +904,12 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
                     <td key={dog.id} className="py-2 px-3 text-center">
                       {dog.dog_profiler_data?.energy_level ? (
                         <span className="flex items-center justify-center gap-1">
-                          {getEnergyLevelIcon(dog.dog_profiler_data.energy_level)}
-                          {formatEnergyLevel(dog.dog_profiler_data.energy_level)}
+                          {getEnergyLevelIcon(
+                            dog.dog_profiler_data.energy_level,
+                          )}
+                          {formatEnergyLevel(
+                            dog.dog_profiler_data.energy_level,
+                          )}
                         </span>
                       ) : (
                         <span className="text-gray-400">-</span>
@@ -863,8 +926,12 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
                     <td key={dog.id} className="py-2 px-3 text-center">
                       {dog.dog_profiler_data?.experience_level ? (
                         <span className="flex items-center justify-center gap-1">
-                          {getExperienceLevelIcon(dog.dog_profiler_data.experience_level)}
-                          {formatExperienceLevel(dog.dog_profiler_data.experience_level)}
+                          {getExperienceLevelIcon(
+                            dog.dog_profiler_data.experience_level,
+                          )}
+                          {formatExperienceLevel(
+                            dog.dog_profiler_data.experience_level,
+                          )}
                         </span>
                       ) : (
                         <span className="text-gray-400">-</span>
@@ -920,10 +987,10 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
                         <span className="flex items-center justify-center gap-1">
                           {getCompatibilityIcon(compatibility.dogs)}
                           <span className="text-xs">
-                            {compatibility.dogs === 'yes' && 'Yes'}
-                            {compatibility.dogs === 'no' && 'No'}
-                            {compatibility.dogs === 'maybe' && 'Maybe'}
-                            {compatibility.dogs === 'unknown' && 'Unknown'}
+                            {compatibility.dogs === "yes" && "Yes"}
+                            {compatibility.dogs === "no" && "No"}
+                            {compatibility.dogs === "maybe" && "Maybe"}
+                            {compatibility.dogs === "unknown" && "Unknown"}
                           </span>
                         </span>
                       </td>
@@ -941,10 +1008,10 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
                         <span className="flex items-center justify-center gap-1">
                           {getCompatibilityIcon(compatibility.cats)}
                           <span className="text-xs">
-                            {compatibility.cats === 'yes' && 'Yes'}
-                            {compatibility.cats === 'no' && 'No'}
-                            {compatibility.cats === 'maybe' && 'Maybe'}
-                            {compatibility.cats === 'unknown' && 'Unknown'}
+                            {compatibility.cats === "yes" && "Yes"}
+                            {compatibility.cats === "no" && "No"}
+                            {compatibility.cats === "maybe" && "Maybe"}
+                            {compatibility.cats === "unknown" && "Unknown"}
                           </span>
                         </span>
                       </td>
@@ -962,10 +1029,10 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
                         <span className="flex items-center justify-center gap-1">
                           {getCompatibilityIcon(compatibility.children)}
                           <span className="text-xs">
-                            {compatibility.children === 'yes' && 'Yes'}
-                            {compatibility.children === 'no' && 'No'}
-                            {compatibility.children === 'maybe' && 'Maybe'}
-                            {compatibility.children === 'unknown' && 'Unknown'}
+                            {compatibility.children === "yes" && "Yes"}
+                            {compatibility.children === "no" && "No"}
+                            {compatibility.children === "maybe" && "Maybe"}
+                            {compatibility.children === "unknown" && "Unknown"}
                           </span>
                         </span>
                       </td>
@@ -1000,7 +1067,6 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
       </>
     );
   };
-
 
   return (
     <div

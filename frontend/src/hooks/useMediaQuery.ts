@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 /**
  * Custom hook for responsive media query detection
@@ -11,7 +11,7 @@ export function useMediaQuery(query: string): boolean {
 
   useEffect(() => {
     // Check if we're in a browser environment
-    if (typeof window === 'undefined' || !window.matchMedia) {
+    if (typeof window === "undefined" || !window.matchMedia) {
       return;
     }
 
@@ -27,11 +27,11 @@ export function useMediaQuery(query: string): boolean {
     };
 
     // Add event listener (modern browsers)
-    mediaQueryList.addEventListener('change', handleChange);
+    mediaQueryList.addEventListener("change", handleChange);
 
     // Cleanup
     return () => {
-      mediaQueryList.removeEventListener('change', handleChange);
+      mediaQueryList.removeEventListener("change", handleChange);
     };
   }, [query]);
 
@@ -43,7 +43,7 @@ export function useMediaQuery(query: string): boolean {
  * Uses standard mobile breakpoint (768px)
  */
 export function useIsMobile(): boolean {
-  return !useMediaQuery('(min-width: 768px)');
+  return !useMediaQuery("(min-width: 768px)");
 }
 
 /**
@@ -51,8 +51,8 @@ export function useIsMobile(): boolean {
  * Uses standard tablet breakpoint (768px - 1024px)
  */
 export function useIsTablet(): boolean {
-  const isAboveMobile = useMediaQuery('(min-width: 768px)');
-  const isBelowDesktop = !useMediaQuery('(min-width: 1024px)');
+  const isAboveMobile = useMediaQuery("(min-width: 768px)");
+  const isBelowDesktop = !useMediaQuery("(min-width: 1024px)");
   return isAboveMobile && isBelowDesktop;
 }
 
@@ -61,5 +61,5 @@ export function useIsTablet(): boolean {
  * Uses standard desktop breakpoint (1024px+)
  */
 export function useIsDesktop(): boolean {
-  return useMediaQuery('(min-width: 1024px)');
+  return useMediaQuery("(min-width: 1024px)");
 }

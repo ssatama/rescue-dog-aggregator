@@ -1,4 +1,4 @@
-import type { DogWithProfiler, DogProfilerData } from '../types/dogProfiler';
+import type { DogWithProfiler, DogProfilerData } from "../types/dogProfiler";
 
 export interface PersonalityPattern {
   commonTraits: string[];
@@ -16,7 +16,10 @@ export interface LifestyleCompatibility {
 }
 
 export interface ExperienceRequirements {
-  overallLevel: 'beginner_friendly' | 'some_experience_needed' | 'experienced_only';
+  overallLevel:
+    | "beginner_friendly"
+    | "some_experience_needed"
+    | "experienced_only";
   distribution: Record<string, number>;
   recommendation: string;
 }
@@ -29,7 +32,7 @@ export interface HiddenGems {
 }
 
 export interface CareComplexity {
-  overallScore: 'low' | 'moderate' | 'high';
+  overallScore: "low" | "moderate" | "high";
   factors: {
     training: number;
     grooming: number;
@@ -57,16 +60,20 @@ export interface EnhancedInsights {
   } | null;
 }
 
-export function analyzePersonalityPatterns(dogs: DogWithProfiler[]): PersonalityPattern | null {
-  const dogsWithData = dogs.filter(d => d.dog_profiler_data?.personality_traits);
+export function analyzePersonalityPatterns(
+  dogs: DogWithProfiler[],
+): PersonalityPattern | null {
+  const dogsWithData = dogs.filter(
+    (d) => d.dog_profiler_data?.personality_traits,
+  );
   if (dogsWithData.length === 0) return null;
 
   const traitCounts: Record<string, number> = {};
   const allTraits: string[] = [];
 
-  dogsWithData.forEach(dog => {
+  dogsWithData.forEach((dog) => {
     const traits = dog.dog_profiler_data?.personality_traits || [];
-    traits.forEach(trait => {
+    traits.forEach((trait) => {
       const normalizedTrait = trait.toLowerCase().trim();
       traitCounts[normalizedTrait] = (traitCounts[normalizedTrait] || 0) + 1;
       allTraits.push(normalizedTrait);
@@ -81,15 +88,24 @@ export function analyzePersonalityPatterns(dogs: DogWithProfiler[]): Personality
     .sort((a, b) => traitCounts[b] - traitCounts[a]);
 
   // Determine personality theme
-  let personalityTheme = 'Diverse personalities';
-  if (commonTraits.includes('gentle') || commonTraits.includes('calm')) {
-    personalityTheme = 'You prefer calm, gentle companions';
-  } else if (commonTraits.includes('playful') || commonTraits.includes('energetic')) {
-    personalityTheme = 'You love playful, energetic dogs';
-  } else if (commonTraits.includes('loyal') || commonTraits.includes('affectionate')) {
-    personalityTheme = 'You value loyalty and affection';
-  } else if (commonTraits.includes('intelligent') || commonTraits.includes('smart')) {
-    personalityTheme = 'You appreciate intelligent, trainable dogs';
+  let personalityTheme = "Diverse personalities";
+  if (commonTraits.includes("gentle") || commonTraits.includes("calm")) {
+    personalityTheme = "You prefer calm, gentle companions";
+  } else if (
+    commonTraits.includes("playful") ||
+    commonTraits.includes("energetic")
+  ) {
+    personalityTheme = "You love playful, energetic dogs";
+  } else if (
+    commonTraits.includes("loyal") ||
+    commonTraits.includes("affectionate")
+  ) {
+    personalityTheme = "You value loyalty and affection";
+  } else if (
+    commonTraits.includes("intelligent") ||
+    commonTraits.includes("smart")
+  ) {
+    personalityTheme = "You appreciate intelligent, trainable dogs";
   }
 
   // Get top 5 most common traits
@@ -106,8 +122,10 @@ export function analyzePersonalityPatterns(dogs: DogWithProfiler[]): Personality
   };
 }
 
-export function calculateLifestyleCompatibility(dogs: DogWithProfiler[]): LifestyleCompatibility | null {
-  const dogsWithData = dogs.filter(d => d.dog_profiler_data);
+export function calculateLifestyleCompatibility(
+  dogs: DogWithProfiler[],
+): LifestyleCompatibility | null {
+  const dogsWithData = dogs.filter((d) => d.dog_profiler_data);
   if (dogsWithData.length === 0) return null;
 
   let apartmentScore = 0;
@@ -116,30 +134,39 @@ export function calculateLifestyleCompatibility(dogs: DogWithProfiler[]): Lifest
   let workFromHomeScore = 0;
   const messages: string[] = [];
 
-  dogsWithData.forEach(dog => {
+  dogsWithData.forEach((dog) => {
     const data = dog.dog_profiler_data!;
-    
+
     // Apartment suitability
-    if (data.home_type === 'apartment_ok') apartmentScore += 100;
-    else if (data.home_type === 'house_preferred') apartmentScore += 50;
-    if (data.energy_level === 'low' || data.energy_level === 'medium') apartmentScore += 20;
+    if (data.home_type === "apartment_ok") apartmentScore += 100;
+    else if (data.home_type === "house_preferred") apartmentScore += 50;
+    if (data.energy_level === "low" || data.energy_level === "medium")
+      apartmentScore += 20;
     if (data.yard_required === false) apartmentScore += 30;
 
     // Active family suitability
-    if (data.energy_level === 'high' || data.energy_level === 'very_high') activeScore += 50;
-    if (data.exercise_needs === 'high') activeScore += 50;
-    if (data.favorite_activities?.some(a => a.includes('hik') || a.includes('run'))) activeScore += 20;
+    if (data.energy_level === "high" || data.energy_level === "very_high")
+      activeScore += 50;
+    if (data.exercise_needs === "high") activeScore += 50;
+    if (
+      data.favorite_activities?.some(
+        (a) => a.includes("hik") || a.includes("run"),
+      )
+    )
+      activeScore += 20;
 
     // First-time owner suitability
-    if (data.experience_level === 'first_time_ok') firstTimeScore += 100;
-    else if (data.experience_level === 'some_experience') firstTimeScore += 30;
-    if (data.trainability === 'easy') firstTimeScore += 50;
-    if (data.confidence === 'confident') firstTimeScore += 20;
+    if (data.experience_level === "first_time_ok") firstTimeScore += 100;
+    else if (data.experience_level === "some_experience") firstTimeScore += 30;
+    if (data.trainability === "easy") firstTimeScore += 50;
+    if (data.confidence === "confident") firstTimeScore += 20;
 
     // Work from home suitability
-    if (data.sociability === 'very_social' || data.sociability === 'social') workFromHomeScore += 50;
-    if (data.energy_level === 'low' || data.energy_level === 'medium') workFromHomeScore += 30;
-    if (data.confidence === 'confident') workFromHomeScore += 20;
+    if (data.sociability === "very_social" || data.sociability === "social")
+      workFromHomeScore += 50;
+    if (data.energy_level === "low" || data.energy_level === "medium")
+      workFromHomeScore += 30;
+    if (data.confidence === "confident") workFromHomeScore += 20;
   });
 
   // Normalize scores
@@ -150,10 +177,10 @@ export function calculateLifestyleCompatibility(dogs: DogWithProfiler[]): Lifest
   workFromHomeScore = Math.min(100, Math.round(workFromHomeScore / count));
 
   // Generate messages
-  if (apartmentScore >= 70) messages.push('Great for apartment living');
-  if (activeScore >= 70) messages.push('Perfect for active families');
-  if (firstTimeScore >= 70) messages.push('Suitable for first-time owners');
-  if (workFromHomeScore >= 70) messages.push('Ideal work-from-home companions');
+  if (apartmentScore >= 70) messages.push("Great for apartment living");
+  if (activeScore >= 70) messages.push("Perfect for active families");
+  if (firstTimeScore >= 70) messages.push("Suitable for first-time owners");
+  if (workFromHomeScore >= 70) messages.push("Ideal work-from-home companions");
 
   return {
     apartmentSuitability: apartmentScore,
@@ -164,8 +191,12 @@ export function calculateLifestyleCompatibility(dogs: DogWithProfiler[]): Lifest
   };
 }
 
-export function assessExperienceRequirements(dogs: DogWithProfiler[]): ExperienceRequirements | null {
-  const dogsWithData = dogs.filter(d => d.dog_profiler_data?.experience_level);
+export function assessExperienceRequirements(
+  dogs: DogWithProfiler[],
+): ExperienceRequirements | null {
+  const dogsWithData = dogs.filter(
+    (d) => d.dog_profiler_data?.experience_level,
+  );
   if (dogsWithData.length === 0) return null;
 
   const distribution: Record<string, number> = {
@@ -174,31 +205,36 @@ export function assessExperienceRequirements(dogs: DogWithProfiler[]): Experienc
     experienced_only: 0,
   };
 
-  dogsWithData.forEach(dog => {
+  dogsWithData.forEach((dog) => {
     const level = dog.dog_profiler_data!.experience_level!;
     distribution[level] = (distribution[level] || 0) + 1;
   });
 
   // Determine overall requirement
-  let overallLevel: ExperienceRequirements['overallLevel'] = 'beginner_friendly';
-  let recommendation = '';
+  let overallLevel: ExperienceRequirements["overallLevel"] =
+    "beginner_friendly";
+  let recommendation = "";
 
-  const percentExperienced = distribution.experienced_only / dogsWithData.length;
+  const percentExperienced =
+    distribution.experienced_only / dogsWithData.length;
   const percentSome = distribution.some_experience / dogsWithData.length;
   const percentFirstTime = distribution.first_time_ok / dogsWithData.length;
 
   if (percentExperienced > 0.5) {
-    overallLevel = 'experienced_only';
-    recommendation = 'These dogs need experienced handlers. Consider getting support from a trainer.';
+    overallLevel = "experienced_only";
+    recommendation =
+      "These dogs need experienced handlers. Consider getting support from a trainer.";
   } else if (percentSome > 0.6) {
-    overallLevel = 'some_experience_needed';
-    recommendation = 'Some dog experience helpful. Great opportunity to grow your skills!';
+    overallLevel = "some_experience_needed";
+    recommendation =
+      "Some dog experience helpful. Great opportunity to grow your skills!";
   } else if (percentFirstTime > 0.5) {
-    overallLevel = 'beginner_friendly';
-    recommendation = 'Perfect for first-time dog owners! These dogs are forgiving and adaptable.';
+    overallLevel = "beginner_friendly";
+    recommendation =
+      "Perfect for first-time dog owners! These dogs are forgiving and adaptable.";
   } else {
-    overallLevel = 'some_experience_needed';
-    recommendation = 'Good mix of experience levels - you can learn together!';
+    overallLevel = "some_experience_needed";
+    recommendation = "Good mix of experience levels - you can learn together!";
   }
 
   return {
@@ -209,7 +245,7 @@ export function assessExperienceRequirements(dogs: DogWithProfiler[]): Experienc
 }
 
 export function discoverHiddenGems(dogs: DogWithProfiler[]): HiddenGems | null {
-  const dogsWithData = dogs.filter(d => d.dog_profiler_data);
+  const dogsWithData = dogs.filter((d) => d.dog_profiler_data);
   if (dogsWithData.length === 0) return null;
 
   const uniqueQuirks: Array<{ dogName: string; quirk: string }> = [];
@@ -217,9 +253,9 @@ export function discoverHiddenGems(dogs: DogWithProfiler[]): HiddenGems | null {
   const funFacts: string[] = [];
   const unexpectedCommonalities: string[] = [];
 
-  dogsWithData.forEach(dog => {
+  dogsWithData.forEach((dog) => {
     const data = dog.dog_profiler_data!;
-    
+
     // Collect unique quirks
     if (data.unique_quirk) {
       uniqueQuirks.push({
@@ -229,7 +265,7 @@ export function discoverHiddenGems(dogs: DogWithProfiler[]): HiddenGems | null {
     }
 
     // Count activities
-    data.favorite_activities?.forEach(activity => {
+    data.favorite_activities?.forEach((activity) => {
       const normalized = activity.toLowerCase().trim();
       activityCounts[normalized] = (activityCounts[normalized] || 0) + 1;
     });
@@ -247,16 +283,22 @@ export function discoverHiddenGems(dogs: DogWithProfiler[]): HiddenGems | null {
   }
 
   // Check for unexpected commonalities
-  const allConfident = dogsWithData.every(d => d.dog_profiler_data?.confidence === 'confident');
+  const allConfident = dogsWithData.every(
+    (d) => d.dog_profiler_data?.confidence === "confident",
+  );
   if (allConfident && dogsWithData.length >= 2) {
-    unexpectedCommonalities.push('All your favorites are confident dogs');
+    unexpectedCommonalities.push("All your favorites are confident dogs");
   }
 
-  const allSameEnergy = dogsWithData.every(d => 
-    d.dog_profiler_data?.energy_level === dogsWithData[0].dog_profiler_data?.energy_level
+  const allSameEnergy = dogsWithData.every(
+    (d) =>
+      d.dog_profiler_data?.energy_level ===
+      dogsWithData[0].dog_profiler_data?.energy_level,
   );
   if (allSameEnergy && dogsWithData.length >= 2) {
-    unexpectedCommonalities.push(`All have ${dogsWithData[0].dog_profiler_data?.energy_level} energy`);
+    unexpectedCommonalities.push(
+      `All have ${dogsWithData[0].dog_profiler_data?.energy_level} energy`,
+    );
   }
 
   return {
@@ -267,8 +309,10 @@ export function discoverHiddenGems(dogs: DogWithProfiler[]): HiddenGems | null {
   };
 }
 
-export function calculateCareComplexity(dogs: DogWithProfiler[]): CareComplexity | null {
-  const dogsWithData = dogs.filter(d => d.dog_profiler_data);
+export function calculateCareComplexity(
+  dogs: DogWithProfiler[],
+): CareComplexity | null {
+  const dogsWithData = dogs.filter((d) => d.dog_profiler_data);
   if (dogsWithData.length === 0) return null;
 
   let trainingScore = 0;
@@ -276,27 +320,27 @@ export function calculateCareComplexity(dogs: DogWithProfiler[]): CareComplexity
   let medicalScore = 0;
   let exerciseScore = 0;
 
-  dogsWithData.forEach(dog => {
+  dogsWithData.forEach((dog) => {
     const data = dog.dog_profiler_data!;
-    
+
     // Training complexity
-    if (data.trainability === 'easy') trainingScore += 1;
-    else if (data.trainability === 'moderate') trainingScore += 2;
-    else if (data.trainability === 'challenging') trainingScore += 3;
+    if (data.trainability === "easy") trainingScore += 1;
+    else if (data.trainability === "moderate") trainingScore += 2;
+    else if (data.trainability === "challenging") trainingScore += 3;
 
     // Grooming needs
-    if (data.grooming_needs === 'minimal') groomingScore += 1;
-    else if (data.grooming_needs === 'weekly') groomingScore += 2;
-    else if (data.grooming_needs === 'frequent') groomingScore += 3;
+    if (data.grooming_needs === "minimal") groomingScore += 1;
+    else if (data.grooming_needs === "weekly") groomingScore += 2;
+    else if (data.grooming_needs === "frequent") groomingScore += 3;
 
     // Medical needs
     if (data.medical_needs) medicalScore += 3;
     if (data.special_needs) medicalScore += 2;
 
     // Exercise needs
-    if (data.exercise_needs === 'minimal') exerciseScore += 1;
-    else if (data.exercise_needs === 'moderate') exerciseScore += 2;
-    else if (data.exercise_needs === 'high') exerciseScore += 3;
+    if (data.exercise_needs === "minimal") exerciseScore += 1;
+    else if (data.exercise_needs === "moderate") exerciseScore += 2;
+    else if (data.exercise_needs === "high") exerciseScore += 3;
   });
 
   // Calculate averages
@@ -308,18 +352,18 @@ export function calculateCareComplexity(dogs: DogWithProfiler[]): CareComplexity
 
   // Calculate overall score
   const totalScore = avgTraining + avgGrooming + avgMedical + avgExercise;
-  let overallScore: CareComplexity['overallScore'];
+  let overallScore: CareComplexity["overallScore"];
   let description: string;
 
   if (totalScore <= 5) {
-    overallScore = 'low';
-    description = 'Low maintenance - great for busy lifestyles';
+    overallScore = "low";
+    description = "Low maintenance - great for busy lifestyles";
   } else if (totalScore <= 8) {
-    overallScore = 'moderate';
-    description = 'Moderate care needs - manageable with routine';
+    overallScore = "moderate";
+    description = "Moderate care needs - manageable with routine";
   } else {
-    overallScore = 'high';
-    description = 'Higher care needs - requires dedicated time';
+    overallScore = "high";
+    description = "Higher care needs - requires dedicated time";
   }
 
   return {
@@ -343,35 +387,35 @@ export function getEnhancedInsights(dogs: DogWithProfiler[]): EnhancedInsights {
 
   // Energy profile
   let energyProfile = null;
-  const dogsWithEnergy = dogs.filter(d => d.dog_profiler_data?.energy_level);
+  const dogsWithEnergy = dogs.filter((d) => d.dog_profiler_data?.energy_level);
   if (dogsWithEnergy.length > 0) {
     const energyDist: Record<string, number> = {};
     let totalEnergy = 0;
-    dogsWithEnergy.forEach(dog => {
+    dogsWithEnergy.forEach((dog) => {
       const level = dog.dog_profiler_data!.energy_level!;
       energyDist[level] = (energyDist[level] || 0) + 1;
-      if (level === 'low') totalEnergy += 1;
-      else if (level === 'medium') totalEnergy += 2;
-      else if (level === 'high') totalEnergy += 3;
-      else if (level === 'very_high') totalEnergy += 4;
+      if (level === "low") totalEnergy += 1;
+      else if (level === "medium") totalEnergy += 2;
+      else if (level === "high") totalEnergy += 3;
+      else if (level === "very_high") totalEnergy += 4;
     });
 
     const avgEnergy = totalEnergy / dogsWithEnergy.length;
-    let averageLevel = 'medium';
-    let recommendation = '';
+    let averageLevel = "medium";
+    let recommendation = "";
 
     if (avgEnergy <= 1.5) {
-      averageLevel = 'low';
-      recommendation = 'Perfect for relaxed, quiet homes';
+      averageLevel = "low";
+      recommendation = "Perfect for relaxed, quiet homes";
     } else if (avgEnergy <= 2.5) {
-      averageLevel = 'medium';
-      recommendation = 'Good balance of activity and calm';
+      averageLevel = "medium";
+      recommendation = "Good balance of activity and calm";
     } else if (avgEnergy <= 3.5) {
-      averageLevel = 'high';
-      recommendation = 'Need active owners and regular exercise';
+      averageLevel = "high";
+      recommendation = "Need active owners and regular exercise";
     } else {
-      averageLevel = 'very_high';
-      recommendation = 'Require very active lifestyle and lots of stimulation';
+      averageLevel = "very_high";
+      recommendation = "Require very active lifestyle and lots of stimulation";
     }
 
     energyProfile = {
@@ -383,7 +427,7 @@ export function getEnhancedInsights(dogs: DogWithProfiler[]): EnhancedInsights {
 
   // Compatibility matrix
   let compatibilityMatrix = null;
-  const dogsWithCompat = dogs.filter(d => d.dog_profiler_data);
+  const dogsWithCompat = dogs.filter((d) => d.dog_profiler_data);
   if (dogsWithCompat.length > 0) {
     const matrix = {
       withDogs: { yes: 0, no: 0, maybe: 0, unknown: 0 },
@@ -391,11 +435,11 @@ export function getEnhancedInsights(dogs: DogWithProfiler[]): EnhancedInsights {
       withChildren: { yes: 0, no: 0, maybe: 0, unknown: 0 },
     };
 
-    dogsWithCompat.forEach(dog => {
+    dogsWithCompat.forEach((dog) => {
       const data = dog.dog_profiler_data!;
-      const dogCompat = data.good_with_dogs || 'unknown';
-      const catCompat = data.good_with_cats || 'unknown';
-      const childCompat = data.good_with_children || 'unknown';
+      const dogCompat = data.good_with_dogs || "unknown";
+      const catCompat = data.good_with_cats || "unknown";
+      const childCompat = data.good_with_children || "unknown";
 
       matrix.withDogs[dogCompat as keyof typeof matrix.withDogs]++;
       matrix.withCats[catCompat as keyof typeof matrix.withCats]++;

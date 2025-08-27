@@ -8,6 +8,7 @@ import { useToast } from "../../contexts/ToastContext";
 import DogsGrid from "../../components/dogs/DogsGrid";
 import Loading from "../../components/ui/Loading";
 import EmptyState from "../../components/ui/EmptyState";
+import { getEnhancedInsights } from "../../utils/dogProfilerAnalyzer";
 import { Button } from "../../components/ui/button";
 import { Trash2, GitCompare } from "lucide-react";
 import { ErrorBoundary } from "react-error-boundary";
@@ -52,7 +53,12 @@ interface Insights {
   commonBreeds?: Array<{ breed: string; count: number }>;
   ageCounts?: { puppy: number; young: number; adult: number; senior: number };
   sexBreakdown?: { male: number; female: number };
-  sizeCounts?: { small: number; medium: number; large: number; "extra-large": number };
+  sizeCounts?: {
+    small: number;
+    medium: number;
+    large: number;
+    "extra-large": number;
+  };
   [key: string]: any; // For additional enhanced insights
 }
 
@@ -170,38 +176,37 @@ function FavoritesPageContent() {
   const showInsights = filteredDogs.length >= 2;
   const hasLLMData = filteredDogs.some((dog) => dog.dog_profiler_data);
 
-  // Effect to load enhanced insights asynchronously
+  // Effect to calculate enhanced insights
   useEffect(() => {
-    async function loadEnhancedInsights() {
-      if (!showInsights || filteredDogs.length < 2) {
-        setInsights(null);
-        return;
-      }
+    if (!showInsights || filteredDogs.length < 2) {
+      setInsights(null);
+      return;
+    }
 
-      setInsightsLoading(true);
+    setInsightsLoading(true);
+    
+    // Use setTimeout to avoid blocking the UI
+    const timer = setTimeout(() => {
       try {
-        // Dynamic import for code splitting and optimization
-        const analyzerModule = await import('../../utils/dogProfilerAnalyzer');
-        const enhancedInsights = analyzerModule.getEnhancedInsights(filteredDogs);
-        
-        // Also calculate basic insights as fallback
+        // Use statically imported function
+        const enhancedInsights = getEnhancedInsights(filteredDogs);
         const basicInsights = getBasicInsights(filteredDogs);
-        
+
         setInsights({
           ...basicInsights,
           ...enhancedInsights,
-          hasEnhancedData: filteredDogs.some(d => d.dog_profiler_data)
+          hasEnhancedData: filteredDogs.some((d) => d.dog_profiler_data),
         });
       } catch (error) {
-        console.error('Error loading enhanced insights:', error);
+        console.error("Error calculating enhanced insights:", error);
         // Fall back to basic insights on error
         setInsights(getBasicInsights(filteredDogs));
       } finally {
         setInsightsLoading(false);
       }
-    }
-    
-    loadEnhancedInsights();
+    }, 0);
+
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filteredDogs, showInsights]);
 
@@ -286,7 +291,9 @@ function FavoritesPageContent() {
   function calculateAgeRange(dogList: Dog[]) {
     const agesInMonths = dogList
       .map((d) => d.age_months)
-      .filter((age): age is number => age !== undefined && age !== null && age > 0);
+      .filter(
+        (age): age is number => age !== undefined && age !== null && age > 0,
+      );
 
     if (agesInMonths.length === 0) {
       // Fallback to age text if age_months not available
@@ -434,35 +441,40 @@ function FavoritesPageContent() {
                   </p>
                   {insights.personalityPattern.commonTraits.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {insights.personalityPattern.dominantTraits.slice(0, 5).map((trait: string, idx: number) => (
-                        <span 
-                          key={idx} 
-                          className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-full text-xs"
-                        >
-                          {trait}
-                        </span>
-                      ))}
+                      {insights.personalityPattern.dominantTraits
+                        .slice(0, 5)
+                        .map((trait: string, idx: number) => (
+                          <span
+                            key={idx}
+                            className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-full text-xs"
+                          >
+                            {trait}
+                          </span>
+                        ))}
                     </div>
                   )}
                 </div>
               )}
 
               {/* Lifestyle Compatibility */}
-              {insights.lifestyleCompatibility && insights.lifestyleCompatibility.messages.length > 0 && (
-                <div className="mb-4 p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                  <h3 className="font-medium mb-2 flex items-center gap-2">
-                    <span>🏠</span> Lifestyle Match
-                  </h3>
-                  <div className="space-y-2">
-                    {insights.lifestyleCompatibility.messages.map((message: string, idx: number) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <span className="text-green-500">✓</span>
-                        <span className="text-sm">{message}</span>
-                      </div>
-                    ))}
+              {insights.lifestyleCompatibility &&
+                insights.lifestyleCompatibility.messages.length > 0 && (
+                  <div className="mb-4 p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                    <h3 className="font-medium mb-2 flex items-center gap-2">
+                      <span>🏠</span> Lifestyle Match
+                    </h3>
+                    <div className="space-y-2">
+                      {insights.lifestyleCompatibility.messages.map(
+                        (message: string, idx: number) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <span className="text-green-500">✓</span>
+                            <span className="text-sm">{message}</span>
+                          </div>
+                        ),
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* Experience Requirements */}
               {insights.experienceRequirements && (
@@ -477,20 +489,24 @@ function FavoritesPageContent() {
               )}
 
               {/* Hidden Gems */}
-              {insights.hiddenGems && insights.hiddenGems.uniqueQuirks.length > 0 && (
-                <div className="mb-4 p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                  <h3 className="font-medium mb-2 flex items-center gap-2">
-                    <span>✨</span> Special Traits
-                  </h3>
-                  <div className="space-y-1">
-                    {insights.hiddenGems.uniqueQuirks.map((item: any, idx: number) => (
-                      <p key={idx} className="text-sm">
-                        <span className="font-medium">{item.dogName}:</span> {item.quirk}
-                      </p>
-                    ))}
+              {insights.hiddenGems &&
+                insights.hiddenGems.uniqueQuirks.length > 0 && (
+                  <div className="mb-4 p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                    <h3 className="font-medium mb-2 flex items-center gap-2">
+                      <span>✨</span> Special Traits
+                    </h3>
+                    <div className="space-y-1">
+                      {insights.hiddenGems.uniqueQuirks.map(
+                        (item: any, idx: number) => (
+                          <p key={idx} className="text-sm">
+                            <span className="font-medium">{item.dogName}:</span>{" "}
+                            {item.quirk}
+                          </p>
+                        ),
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* Care Complexity */}
               {insights.careComplexity && (
@@ -533,7 +549,9 @@ function FavoritesPageContent() {
                       <div className="text-sm text-gray-600 dark:text-gray-400">
                         Size preference
                       </div>
-                      <div className="font-medium">{insights.sizePreference}</div>
+                      <div className="font-medium">
+                        {insights.sizePreference}
+                      </div>
                     </div>
                   </div>
                 )}
