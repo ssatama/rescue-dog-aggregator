@@ -52,7 +52,9 @@ class LRUCache<K, V> {
     } else if (this.cache.size >= this.capacity) {
       // Remove least recently used (first item)
       const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+      }
     }
     this.cache.set(key, value);
   }
@@ -66,9 +68,12 @@ class LRUCache<K, V> {
 const navigationCache = new LRUCache<string, Dog[]>(10);
 
 // Pure function to build URL with search params
-const buildNavigationUrl = (slug: string, searchParams: Record<string, string>): string => {
+const buildNavigationUrl = (
+  slug: string,
+  searchParams: Record<string, string>,
+): string => {
   const params = new URLSearchParams();
-  
+
   Object.entries(searchParams).forEach(([key, value]) => {
     if (value && value !== "" && value !== "Any") {
       params.set(key, value);
@@ -81,14 +86,18 @@ const buildNavigationUrl = (slug: string, searchParams: Record<string, string>):
 
 // Pure function to find current dog index
 const findCurrentDogIndex = (dogs: Dog[], currentSlug: string): number => {
-  return dogs.findIndex(dog => dog.slug === currentSlug);
+  return dogs.findIndex((dog) => dog.slug === currentSlug);
 };
 
 // Pure function to get adjacent dogs
-const getAdjacentDogs = (dogs: Dog[], currentIndex: number): { prevDog: Dog | null; nextDog: Dog | null } => {
+const getAdjacentDogs = (
+  dogs: Dog[],
+  currentIndex: number,
+): { prevDog: Dog | null; nextDog: Dog | null } => {
   const prevDog = currentIndex > 0 ? dogs[currentIndex - 1] : null;
-  const nextDog = currentIndex < dogs.length - 1 ? dogs[currentIndex + 1] : null;
-  
+  const nextDog =
+    currentIndex < dogs.length - 1 ? dogs[currentIndex + 1] : null;
+
   return { prevDog, nextDog };
 };
 
@@ -105,7 +114,7 @@ export function useSwipeNavigation({
   const cacheKey = useMemo(() => {
     const sortedParams = Object.keys(searchParams)
       .sort()
-      .map(key => `${key}:${searchParams[key]}`)
+      .map((key) => `${key}:${searchParams[key]}`)
       .join("|");
     return `${currentDogSlug}-${sortedParams}`;
   }, [currentDogSlug, searchParams]);
@@ -134,7 +143,7 @@ export function useSwipeNavigation({
       if (!mountedRef.current) return;
 
       const currentIndex = findCurrentDogIndex(allDogs, currentDogSlug);
-      
+
       if (currentIndex === -1) {
         // Current dog not found, just set empty and stop loading
         setDogs([]);
@@ -149,7 +158,7 @@ export function useSwipeNavigation({
 
       // Cache the result
       navigationCache.set(cacheKey, preloadedDogs);
-      
+
       setDogs(preloadedDogs);
     } catch (error) {
       console.error("Error loading dogs for navigation:", error);

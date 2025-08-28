@@ -1,27 +1,23 @@
 /**
  * Example usage of useSwipeNavigation hook
- * 
+ *
  * This demonstrates how to integrate swipe navigation into a dog detail page
  */
 
-import React from 'react';
-import { useSwipeNavigation } from './useSwipeNavigation';
+import React from "react";
+import Image from "next/image";
+import { useSwipeNavigation } from "./useSwipeNavigation";
 
 interface DogDetailWithNavigationProps {
   dogSlug: string;
   searchParams?: Record<string, string>;
 }
 
-export function DogDetailWithNavigation({ 
-  dogSlug, 
-  searchParams = {} 
+export function DogDetailWithNavigation({
+  dogSlug,
+  searchParams = {},
 }: DogDetailWithNavigationProps) {
-  const { 
-    handlers, 
-    prevDog, 
-    nextDog, 
-    isLoading 
-  } = useSwipeNavigation({
+  const { handlers, prevDog, nextDog, isLoading } = useSwipeNavigation({
     currentDogSlug: dogSlug,
     searchParams,
   });
@@ -31,7 +27,7 @@ export function DogDetailWithNavigation({
   }
 
   return (
-    <div 
+    <div
       {...handlers} // Enables swipe navigation
       className="dog-detail-container"
       tabIndex={0} // Enables keyboard focus for arrow key navigation
@@ -39,15 +35,11 @@ export function DogDetailWithNavigation({
       {/* Navigation indicators */}
       <div className="navigation-indicators">
         {prevDog && (
-          <div className="prev-indicator">
-            ← Previous: {prevDog.name}
-          </div>
+          <div className="prev-indicator">← Previous: {prevDog.name}</div>
         )}
-        
+
         {nextDog && (
-          <div className="next-indicator">
-            Next: {nextDog.name} →
-          </div>
+          <div className="next-indicator">Next: {nextDog.name} →</div>
         )}
       </div>
 
@@ -55,19 +47,31 @@ export function DogDetailWithNavigation({
       <div className="dog-content">
         <h1>Current Dog: {dogSlug}</h1>
         <p>Swipe left/right or use arrow keys to navigate</p>
-        
+
         {/* Show preloaded adjacent dogs */}
         <div className="adjacent-dogs">
           {prevDog && (
             <div className="adjacent-dog prev">
-              <img src={prevDog.primary_image_url} alt={prevDog.name} />
+              <Image
+                src={prevDog.primary_image_url || "/placeholder-dog.jpg"}
+                alt={prevDog.name}
+                width={100}
+                height={100}
+                className="object-cover"
+              />
               <span>{prevDog.name}</span>
             </div>
           )}
-          
+
           {nextDog && (
             <div className="adjacent-dog next">
-              <img src={nextDog.primary_image_url} alt={nextDog.name} />
+              <Image
+                src={nextDog.primary_image_url || "/placeholder-dog.jpg"}
+                alt={nextDog.name}
+                width={100}
+                height={100}
+                className="object-cover"
+              />
               <span>{nextDog.name}</span>
             </div>
           )}
@@ -76,16 +80,20 @@ export function DogDetailWithNavigation({
 
       {/* Manual navigation buttons (optional) */}
       <div className="manual-navigation">
-        <button 
-          onClick={() => prevDog && window.history.pushState({}, '', `/dogs/${prevDog.slug}`)}
+        <button
+          onClick={() =>
+            prevDog && window.history.pushState({}, "", `/dogs/${prevDog.slug}`)
+          }
           disabled={!prevDog}
           className="nav-button prev"
         >
           ← Previous
         </button>
-        
-        <button 
-          onClick={() => nextDog && window.history.pushState({}, '', `/dogs/${nextDog.slug}`)}
+
+        <button
+          onClick={() =>
+            nextDog && window.history.pushState({}, "", `/dogs/${nextDog.slug}`)
+          }
           disabled={!nextDog}
           className="nav-button next"
         >
@@ -97,19 +105,22 @@ export function DogDetailWithNavigation({
 }
 
 // Example with search parameters preserved
-export function DogDetailWithFilters({ 
-  dogSlug, 
-  breed, 
-  size 
-}: { 
-  dogSlug: string; 
-  breed?: string; 
-  size?: string; 
+export function DogDetailWithFilters({
+  dogSlug,
+  breed,
+  size,
+}: {
+  dogSlug: string;
+  breed?: string;
+  size?: string;
 }) {
-  const searchParams = React.useMemo(() => ({
-    ...(breed && { breed }),
-    ...(size && { size }),
-  }), [breed, size]);
+  const searchParams = React.useMemo(
+    () => ({
+      ...(breed && { breed }),
+      ...(size && { size }),
+    }),
+    [breed, size],
+  );
 
   const navigation = useSwipeNavigation({
     currentDogSlug: dogSlug,
@@ -117,7 +128,9 @@ export function DogDetailWithFilters({
   });
 
   // Navigation will preserve the breed and size filters
-  return <DogDetailWithNavigation dogSlug={dogSlug} searchParams={searchParams} />;
+  return (
+    <DogDetailWithNavigation dogSlug={dogSlug} searchParams={searchParams} />
+  );
 }
 
 // TypeScript usage with proper typing
@@ -143,8 +156,8 @@ export function TypedDogNavigation({ dogSlug }: { dogSlug: string }) {
   return (
     <div {...handlers}>
       {/* Fully typed component */}
-      <p>Previous: {prevDogName || 'None'}</p>
-      <p>Next: {nextDogName || 'None'}</p>
+      <p>Previous: {prevDogName || "None"}</p>
+      <p>Next: {nextDogName || "None"}</p>
     </div>
   );
 }

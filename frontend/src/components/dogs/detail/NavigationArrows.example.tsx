@@ -1,6 +1,6 @@
 /**
  * Usage Example for NavigationArrows Component
- * 
+ *
  * This file demonstrates how to use the NavigationArrows component
  * in different scenarios. This is for documentation purposes only.
  */
@@ -60,7 +60,7 @@ export function NavigationArrowsExamples() {
             <p className="text-sm text-gray-500 mt-2">Loading...</p>
           )}
         </div>
-        
+
         {/* Navigation arrows overlay */}
         <NavigationArrows
           onPrev={handlePrev}
@@ -78,7 +78,7 @@ export function NavigationArrowsExamples() {
           <h2 className="text-2xl font-bold">Last Dog</h2>
           <p className="text-gray-600">Only previous navigation available</p>
         </div>
-        
+
         <NavigationArrows
           onPrev={() => console.log("Go to previous dog")}
           onNext={() => console.log("Next not available")}
@@ -94,7 +94,7 @@ export function NavigationArrowsExamples() {
           <h2 className="text-2xl font-bold">First Dog</h2>
           <p className="text-gray-600">Only next navigation available</p>
         </div>
-        
+
         <NavigationArrows
           onPrev={() => console.log("Previous not available")}
           onNext={() => console.log("Go to next dog")}
@@ -110,7 +110,7 @@ export function NavigationArrowsExamples() {
           <h2 className="text-2xl font-bold">Single Dog</h2>
           <p className="text-gray-600">No navigation arrows shown</p>
         </div>
-        
+
         <NavigationArrows
           onPrev={() => console.log("Previous not available")}
           onNext={() => console.log("Next not available")}
@@ -132,36 +132,36 @@ export function NavigationArrowsExamples() {
 }
 
 // Usage in a dog detail page:
-/*
-import { NavigationArrows } from '../components/dogs/detail';
-
-function DogDetailPage({ dog, prevDogId, nextDogId, isLoading }) {
-  const router = useRouter();
-
-  const handlePrev = () => {
-    if (prevDogId) {
-      router.push(`/dogs/${prevDogId}`);
-    }
-  };
-
-  const handleNext = () => {
-    if (nextDogId) {
-      router.push(`/dogs/${nextDogId}`);
-    }
-  };
-
-  return (
-    <div>
-      <NavigationArrows
-        onPrev={handlePrev}
-        onNext={handleNext}
-        hasPrev={!!prevDogId}
-        hasNext={!!nextDogId}
-        isLoading={isLoading}
-      />
-      
-      {/* Dog content */}
-      <div>{dog.name}</div>
-    </div>
-  );
-}
+//
+// import { NavigationArrows } from '../components/dogs/detail';
+//
+// function DogDetailPage({ dog, prevDogId, nextDogId, isLoading }) {
+//   const router = useRouter();
+//
+//   const handlePrev = () => {
+//     if (prevDogId) {
+//       router.push(`/dogs/${prevDogId}`);
+//     }
+//   };
+//
+//   const handleNext = () => {
+//     if (nextDogId) {
+//       router.push(`/dogs/${nextDogId}`);
+//     }
+//   };
+//
+//   return (
+//     <div>
+//       <NavigationArrows
+//         onPrev={handlePrev}
+//         onNext={handleNext}
+//         hasPrev={!!prevDogId}
+//         hasNext={!!nextDogId}
+//         isLoading={isLoading}
+//       />
+//
+//       {/* Dog content */}
+//       <div>{dog.name}</div>
+//     </div>
+//   );
+// }
