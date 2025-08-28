@@ -165,4 +165,3 @@ function DogDetailPage({ dog, prevDogId, nextDogId, isLoading }) {
     </div>
   );
 }
-*/

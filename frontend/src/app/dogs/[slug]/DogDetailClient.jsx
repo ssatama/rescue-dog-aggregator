@@ -329,11 +329,11 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
             className="max-w-4xl mx-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-8"
           >
             {/* Breadcrumb Navigation using reusable component */}
-            <ScrollAnimationWrapper>
+            <div>
               <Breadcrumbs items={breadcrumbItems} />
-            </ScrollAnimationWrapper>
+            </div>
 
-            <ScrollAnimationWrapper delay={100}>
+            <div>
               <Link href="/dogs">
                 <Button
                   variant="link"
@@ -343,12 +343,9 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                   ← Back to all dogs
                 </Button>
               </Link>
-            </ScrollAnimationWrapper>
+            </div>
 
-            <ScrollAnimationWrapper
-              delay={200}
-              className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden"
-            >
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden">
               {dog.status && dog.status !== "available" && (
                 <div
                   className={`w-full py-2 text-center text-white font-semibold transition-all duration-300 ${dog.status === "adopted" ? "bg-gray-600" : "bg-yellow-500"}`}
@@ -359,13 +356,24 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
 
               {/* Apply swipe handlers to the entire content area */}
               <div className="p-4 sm:p-6" {...handlers}>
-                {/* Desktop Layout - Two Column (≥1024px) */}
-                <div className="hidden lg:block">
-                  <div className="flex gap-8">
-                    {/* Left Column - Image */}
-                    <div className="w-1/2">
-                      <ScrollAnimationWrapper delay={300}>
-                        <div className="sticky top-6" data-testid="hero-image-container">
+                {/* Unified Single Column Responsive Layout */}
+                <div className="flex flex-col gap-8">
+                  {/* Hero Image Section - Full Width */}
+                  <div>
+                    <div className="w-full relative" data-testid="hero-image-container">
+                      {/* Swipe hint for mobile only */}
+                      <div className="lg:hidden">
+                        {(prevDog || nextDog) && (
+                          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
+                            <div className="bg-black/50 text-white px-3 py-1 rounded-full text-xs flex items-center gap-2">
+                              {prevDog && <span>←</span>}
+                              <span>Swipe to browse</span>
+                              {nextDog && <span>→</span>}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
                       {(() => {
                         // Development logging only
                         if (process.env.NODE_ENV !== "production") {
@@ -412,7 +420,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                             key={`hero-${dogSlug}-${dog.id}`}
                             src={dog.primary_image_url}
                             alt={`${sanitizeText(dog.name)} - Hero Image`}
-                            className="rounded-lg shadow-xl"
+                            className="mb-6 shadow-xl"
                             onError={() => {
                               reportError(
                                 new Error("Hero image failed to load"),
@@ -425,14 +433,13 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                           />
                         );
                       })()}
-                        </div>
-                      </ScrollAnimationWrapper>
                     </div>
+                  </div>
 
-                    {/* Right Column - Content */}
-                    <div className="w-1/2">
+                  {/* Content Section - Below Hero */}
+                  <div className="w-full">
                       {/* Enhanced Header with better integrated action buttons */}
-                      <ScrollAnimationWrapper delay={400}>
+                      <div>
                         <div className="mb-6">
                           {/* Title and action buttons in one visual group */}
                           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-4">
@@ -481,182 +488,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                             </p>
                           </div>
                         </div>
-                      </ScrollAnimationWrapper>
-
-                      {/* LLM Components Section - Desktop */}
-                      {dog.dog_profiler_data && (
-                        <ScrollAnimationWrapper delay={500}>
-                          <div className="space-y-6">
-                            {/* Personality Traits */}
-                            <div>
-                              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">
-                                Personality
-                              </h3>
-                              <PersonalityTraits profilerData={dog.dog_profiler_data} />
-                            </div>
-
-                            {/* Energy & Trainability */}
-                            <div>
-                              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">
-                                Energy & Training
-                              </h3>
-                              <EnergyTrainability profilerData={dog.dog_profiler_data} />
-                            </div>
-
-                            {/* Compatibility Icons */}
-                            <div>
-                              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">
-                                Good With
-                              </h3>
-                              <CompatibilityIcons profilerData={dog.dog_profiler_data} />
-                            </div>
-
-                            {/* Activities & Quirks */}
-                            <div>
-                              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">
-                                Activities & Quirks
-                              </h3>
-                              <ActivitiesQuirks profilerData={dog.dog_profiler_data} />
-                            </div>
-                          </div>
-                        </ScrollAnimationWrapper>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Mobile Layout - Stacked Vertically (<1024px) */}
-                <div className="lg:hidden">
-                  <div className="flex flex-col gap-8">
-                    {/* Hero Image Section - Full Width */}
-                    <ScrollAnimationWrapper delay={300}>
-                      <div className="w-full relative" data-testid="hero-image-container">
-                        {/* Swipe hint for mobile */}
-                        {(prevDog || nextDog) && (
-                          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
-                            <div className="bg-black/50 text-white px-3 py-1 rounded-full text-xs flex items-center gap-2">
-                              {prevDog && <span>←</span>}
-                              <span>Swipe to browse</span>
-                              {nextDog && <span>→</span>}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {(() => {
-                          // Development logging only
-                          if (process.env.NODE_ENV !== "production") {
-                            console.log(
-                              "[DogDetail] Navigation: rendering hero section",
-                              {
-                                pathname,
-                                dogSlug,
-                                hasDog: !!dog,
-                                hasImageUrl: !!dog?.primary_image_url,
-                                imageUrl: dog?.primary_image_url,
-                                timestamp: Date.now(),
-                              },
-                            );
-                          }
-
-                          if (!dog || !dog.primary_image_url) {
-                            return (
-                              <div className="w-full aspect-[16/9] bg-gray-100 rounded-lg flex items-center justify-center">
-                                <div className="text-center">
-                                  <p className="text-gray-500">
-                                    Loading image...
-                                  </p>
-                                </div>
-                              </div>
-                            );
-                          }
-
-                          // DIAGNOSTIC: Log image URL being passed to component
-                          if (process.env.NODE_ENV !== "production") {
-                            console.log(
-                              "[DogDetailClient] About to render HeroImageWithBlurredBackground:",
-                              {
-                                dogSlug: dog.slug,
-                                dogName: dog.name,
-                                imageUrl: dog.primary_image_url,
-                                timestamp: Date.now(),
-                              },
-                            );
-                          }
-
-                          return (
-                            <HeroImageWithBlurredBackground
-                              key={`hero-${dogSlug}-${dog.id}`}
-                              src={dog.primary_image_url}
-                              alt={`${sanitizeText(dog.name)} - Hero Image`}
-                              className="mb-6 shadow-xl"
-                              onError={() => {
-                                reportError(
-                                  new Error("Hero image failed to load"),
-                                  {
-                                    dogSlug: dog.slug,
-                                    imageUrl: dog.primary_image_url,
-                                  },
-                                );
-                              }}
-                            />
-                          );
-                        })()}
                       </div>
-                    </ScrollAnimationWrapper>
-
-                    {/* Content Section - Below Hero */}
-                    <div className="w-full">
-                      {/* Enhanced Header with better integrated action buttons */}
-                    <ScrollAnimationWrapper delay={400}>
-                      <div className="mb-6">
-                        {/* Title and action buttons in one visual group */}
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-4">
-                          <div className="flex-1">
-                            <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-                              {sanitizeText(dog.name)}
-                            </h1>
-                          </div>
-
-                          {/* Action bar with enhanced styling */}
-                          <div
-                            className="flex items-center space-x-3 sm:ml-6"
-                            data-testid="action-bar"
-                          >
-                            {/* Favorite Button */}
-                            <div className="flex items-center">
-                              <FavoriteButton
-                                dogId={dog.id}
-                                dogName={dog.name}
-                                className="p-3 rounded-full hover:bg-gray-100 transition-all duration-200 hover:scale-110 hover:shadow-md focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
-                              />
-                            </div>
-
-                            {/* Share Button with enhanced styling */}
-                            <div className="flex items-center">
-                              <ShareButton
-                                url={
-                                  typeof window !== "undefined"
-                                    ? window.location.href
-                                    : ""
-                                }
-                                title={`Meet ${dog.name} - Available for Adoption`}
-                                text={`${dog.name} is a ${dog.standardized_breed || dog.breed || "lovely dog"} looking for a forever home.`}
-                                variant="ghost"
-                                size="sm"
-                                className="p-3 rounded-full hover:bg-gray-100 transition-all duration-200 hover:scale-110 hover:shadow-md focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Tagline with better spacing - use LLM tagline if available */}
-                        <div className="">
-                          <p className="text-xl text-gray-600 font-medium">
-                            {dog.llm_tagline || "Looking for a loving home"}
-                          </p>
-                        </div>
-                      </div>
-                    </ScrollAnimationWrapper>
 
                     {/* Only show breed section if we have a known breed */}
                     {(() => {
@@ -671,7 +503,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                       }
 
                       return (
-                        <ScrollAnimationWrapper delay={500}>
+                        <div>
                           <div className="mb-6">
                             <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-3">
                               Breed
@@ -699,12 +531,12 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                                 </Badge>
                               )}
                           </div>
-                        </ScrollAnimationWrapper>
+                        </div>
                       );
                     })()}
 
                     {/* Quick Info Cards */}
-                    <ScrollAnimationWrapper delay={600}>
+                    <div>
                       <div
                         className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8"
                         data-testid="metadata-cards"
@@ -784,10 +616,10 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                           </div>
                         )}
                       </div>
-                    </ScrollAnimationWrapper>
+                    </div>
 
                     {/* Enhanced About Section with New Description Component */}
-                    <ScrollAnimationWrapper delay={700}>
+                    <div>
                       <div className="mb-8" data-testid="about-section">
                         <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">
                           About {sanitizeText(dog.name)}
@@ -805,9 +637,9 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                           className="mt-0"
                         />
                       </div>
-                    </ScrollAnimationWrapper>
+                    </div>
 
-                    {/* LLM Components Section - Mobile */}
+                    {/* LLM Components Section */}
                     {dog.dog_profiler_data && (
                       <ScrollAnimationWrapper delay={750}>
                         <div className="mb-8 space-y-6">
@@ -925,7 +757,6 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                         </div>
                       </ScrollAnimationWrapper>
                     )}
-                    </div>
                   </div>
                 </div>
 
@@ -938,7 +769,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                   isLoading={navLoading}
                 />
               </div>
-            </ScrollAnimationWrapper>
+            </div>
           </div>
 
           {/* Mobile Sticky Bar */}
