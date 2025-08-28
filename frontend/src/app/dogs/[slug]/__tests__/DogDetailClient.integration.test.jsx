@@ -10,7 +10,10 @@ import { getAnimalBySlug } from "../../../../services/animalsService";
 // Mock the animalsService
 jest.mock("../../../../services/animalsService", () => ({
   getAnimalBySlug: jest.fn(),
+  getAnimals: jest.fn(() => Promise.resolve({ data: [] })), // For useSwipeNavigation hook
 }));
+
+// next/navigation is mocked globally in jest.setup.js
 
 // Mock OrganizationCard to verify props
 jest.mock("../../../../components/organizations/OrganizationCard", () => {
@@ -47,12 +50,6 @@ jest.mock("../../../../components/ui/ShareButton", () => {
   };
 });
 
-jest.mock("../../../../components/ui/MobileStickyBar", () => {
-  return function MockMobileStickyBar() {
-    return <div data-testid="mobile-sticky-bar">Mobile Bar</div>;
-  };
-});
-
 jest.mock("../../../../components/error/DogDetailErrorBoundary", () => {
   return function MockDogDetailErrorBoundary({ children }) {
     return <div data-testid="error-boundary">{children}</div>;
@@ -72,10 +69,69 @@ jest.mock("../../../../utils/logger", () => ({
   reportError: jest.fn(),
 }));
 
-jest.mock("next/navigation", () => ({
-  useParams: () => ({ slug: "test-dog-mixed-breed-1" }),
-  usePathname: () => "/dogs/test-dog-mixed-breed-1",
+// Mock the LLM detail components
+jest.mock("../../../../components/dogs/detail", () => ({
+  PersonalityTraits: ({ profilerData }) => {
+    if (
+      !profilerData ||
+      (profilerData.confidence_scores?.personality_traits || 0) <= 0.5
+    ) {
+      return null;
+    }
+    return <div data-testid="personality-traits">Personality Traits</div>;
+  },
+  EnergyTrainability: ({ profilerData }) => {
+    if (
+      !profilerData ||
+      (!profilerData.energy_level && !profilerData.trainability)
+    ) {
+      return null;
+    }
+    return <div data-testid="energy-trainability">Energy & Trainability</div>;
+  },
+  CompatibilityIcons: ({ profilerData }) => {
+    if (!profilerData) return null;
+    return <div data-testid="compatibility-icons">Compatibility</div>;
+  },
+  ActivitiesQuirks: ({ profilerData }) => {
+    if (!profilerData) return null;
+    return <div data-testid="activities-quirks">Activities & Quirks</div>;
+  },
+  NavigationArrows: ({ onPrev, onNext, hasPrev, hasNext, isLoading }) => (
+    <div data-testid="navigation-arrows">
+      {hasPrev && (
+        <button
+          data-testid="nav-arrow-prev"
+          onClick={onPrev}
+          disabled={isLoading}
+        >
+          Previous
+        </button>
+      )}
+      {hasNext && (
+        <button
+          data-testid="nav-arrow-next"
+          onClick={onNext}
+          disabled={isLoading}
+        >
+          Next
+        </button>
+      )}
+    </div>
+  ),
 }));
+
+// Mock the useSwipeNavigation hook
+jest.mock("../../../../hooks/useSwipeNavigation", () => ({
+  useSwipeNavigation: () => ({
+    handlers: {},
+    prevDog: null,
+    nextDog: null,
+    isLoading: false,
+  }),
+}));
+
+// next/navigation is mocked globally in jest.setup.js
 
 // Mock all other potentially problematic components
 jest.mock("../../../../components/dogs/RelatedDogsSection", () => {
@@ -356,6 +412,55 @@ describe("DogDetailClient Dog Detail Integration", () => {
         expect(
           screen.getByTestId("organization-card-mock"),
         ).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("Dark Mode Support", () => {
+    test("applies dark mode classes to tagline", async () => {
+      render(<DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />);
+
+      await waitFor(() => {
+        // Find the tagline element - it should have the dark mode class
+        const taglineElements = screen.getAllByText(
+          "Looking for a loving home",
+        );
+        // There should be at least one tagline element with dark mode class
+        const taglineWithDarkMode = taglineElements.find((element) =>
+          element.classList.contains("dark:text-gray-300"),
+        );
+        expect(taglineWithDarkMode).toBeDefined();
+      });
+    });
+
+    test("maintains accessibility in dark mode", async () => {
+      render(<DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />);
+
+      await waitFor(() => {
+        // Verify dog name heading is accessible
+        expect(
+          screen.getByRole("heading", { name: "Buddy" }),
+        ).toBeInTheDocument();
+
+        // Verify main content is properly structured
+        expect(screen.getByTestId("dog-detail-container")).toBeInTheDocument();
+      });
+    });
+
+    test("ensures tagline remains visible with proper contrast in dark mode", async () => {
+      render(<DogDetailClient params={{ slug: "test-dog-mixed-breed-1" }} />);
+
+      await waitFor(() => {
+        // Check that tagline exists and has correct classes for visibility
+        const taglineElements = screen.getAllByText(
+          "Looking for a loving home",
+        );
+        const taglineWithDarkMode = taglineElements.find(
+          (element) =>
+            element.classList.contains("text-gray-600") &&
+            element.classList.contains("dark:text-gray-300"),
+        );
+        expect(taglineWithDarkMode).toBeDefined();
       });
     });
   });

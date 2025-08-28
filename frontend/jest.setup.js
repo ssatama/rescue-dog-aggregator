@@ -1,5 +1,8 @@
 require("@testing-library/jest-dom");
 
+// Set NODE_ENV to test to disable development console logs that cause infinite renders
+process.env.NODE_ENV = 'test';
+
 // Load environment variables for tests from actual .env.local
 // Do NOT hardcode any secrets or cloud names here
 require("dotenv").config({ path: ".env.local" });
@@ -135,10 +138,14 @@ jest.mock("next/navigation", () => ({
     push: jest.fn(),
     replace: jest.fn(),
     back: jest.fn(),
+    forward: jest.fn(),
     prefetch: jest.fn(), // Added prefetch just in case
   }),
   useParams: () => ({ id: "1" }),
-  useSearchParams: () => ({ get: jest.fn() }),
+  useSearchParams: () => {
+    const searchParams = new URLSearchParams();
+    return searchParams;
+  },
   usePathname: jest.fn(() => "/dogs"), // Keep or adjust as needed
 }));
 
@@ -190,14 +197,18 @@ beforeEach(() => {
     ) {
       return;
     }
-    // Suppress fetchPriority warning in tests - jsdom doesn't support this attribute yet
-    // but it works fine in real browsers
+    // Suppress swipe handler warnings from react-swipeable
     if (
       typeof args[0] === "string" &&
-      args[0].includes("React does not recognize the `fetchPriority` prop")
+      (args[0].includes("Unknown event handler property") &&
+        (args[0].includes("onSwipedLeft") ||
+         args[0].includes("onSwipedRight") ||
+         args[0].includes("onSwiped") ||
+         args[0].includes("onSwiping")))
     ) {
       return;
     }
+    // fetchPriority warning fixed by using correct lowercase 'fetchpriority' attribute
     originalError.call(console, ...args);
   };
 });

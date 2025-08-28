@@ -15,6 +15,13 @@ export type { UseLazyImageOptions, UseLazyImageReturn } from "./useLazyImage";
 export { useShare } from "./useShare";
 export type { UseShareOptions, UseShareReturn } from "./useShare";
 
+// Navigation hooks
+export { useSwipeNavigation } from "./useSwipeNavigation";
+export type {
+  UseSwipeNavigationProps,
+  UseSwipeNavigationReturn,
+} from "./useSwipeNavigation";
+
 // Existing hooks (re-exported for completeness)
 export { default as useFilteredDogs } from "./useFilteredDogs";
 export { usePageTransition } from "./usePageTransition";

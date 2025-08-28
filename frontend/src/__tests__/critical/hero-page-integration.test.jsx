@@ -19,6 +19,7 @@ jest.mock("../../services/animalsService", () => ({
   getAllAnimals: jest.fn(),
   getAllAnimalsForSitemap: jest.fn(),
   getAnimalBySlug: jest.fn(),
+  getAnimals: jest.fn(), // Add getAnimals mock for useSwipeNavigation
 }));
 
 // Mock the API layer to return test data
@@ -42,6 +43,7 @@ jest.mock("../../utils/logger", () => ({
 import {
   getAllAnimals,
   getAllAnimalsForSitemap,
+  getAnimals,
 } from "../../services/animalsService";
 
 const { get } = require("../../utils/api");
@@ -49,6 +51,7 @@ const { get } = require("../../utils/api");
 // Get references to the mocked functions
 const mockGetAllAnimals = getAllAnimals;
 const mockGetAllAnimalsForSitemap = getAllAnimalsForSitemap;
+const mockGetAnimals = getAnimals;
 const mockGetAnimalBySlug =
   require("../../services/animalsService").getAnimalBySlug;
 
@@ -56,6 +59,11 @@ const mockGetAnimalBySlug =
 jest.mock("next/navigation", () => ({
   useParams: () => ({ slug: "test-dog-mixed-breed-123" }),
   usePathname: () => "/dogs/test-dog-mixed-breed-123",
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({
+    push: jest.fn(),
+    back: jest.fn(),
+  }),
 }));
 
 // Mock Layout and other UI components to focus on data integration
@@ -150,6 +158,8 @@ describe("Hero Page Integration - Critical Tests", () => {
         mockAnimals.find((animal) => animal.slug === slug) || null,
       );
     });
+    // Mock getAnimals for useSwipeNavigation hook
+    mockGetAnimals.mockResolvedValue(mockAnimals);
 
     // Default mock - getAllAnimals returns all animals
     get.mockImplementation((endpoint, params) => {
@@ -392,7 +402,7 @@ describe("Hero Page Integration - Critical Tests", () => {
 
         // Should show error state, not crash - check for the Loading image... text instead
         // since the animal without image shows the loading state
-        const heroContainer = screen.getByTestId("hero-image-container");
+        const heroContainer = screen.getByTestId("hero-section");
         expect(heroContainer).toBeInTheDocument();
         expect(screen.getByText("Loading image...")).toBeInTheDocument();
       } finally {

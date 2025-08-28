@@ -1,6 +1,11 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useParams, usePathname } from "next/navigation";
+import {
+  useParams,
+  usePathname,
+  useSearchParams,
+  useRouter,
+} from "next/navigation";
 import Link from "next/link";
 import Layout from "../../../components/layout/Layout";
 import Loading from "../../../components/ui/Loading";
@@ -22,26 +27,60 @@ import {
 } from "../../../utils/imageUtils";
 import HeroImageWithBlurredBackground from "../../../components/ui/HeroImageWithBlurredBackground";
 import OrganizationCard from "../../../components/organizations/OrganizationCard";
-import MobileStickyBar from "../../../components/ui/MobileStickyBar";
 import { ToastProvider } from "../../../contexts/ToastContext";
 import RelatedDogsSection from "../../../components/dogs/RelatedDogsSection";
 import DogDescription from "../../../components/dogs/DogDescription";
 import { reportError } from "../../../utils/logger";
-import { sanitizeText, sanitizeHtml } from "../../../utils/security";
+import {
+  sanitizeText,
+  sanitizeHtml,
+  safeExternalUrl,
+} from "../../../utils/security";
 import DogDetailSkeleton from "../../../components/ui/DogDetailSkeleton";
 import DogDetailErrorBoundary from "../../../components/error/DogDetailErrorBoundary";
 import { ScrollAnimationWrapper } from "../../../hooks/useScrollAnimation";
 import { DogSchema, BreadcrumbSchema } from "../../../components/seo";
 import Breadcrumbs from "../../../components/ui/Breadcrumbs";
+import { useSwipeNavigation } from "../../../hooks/useSwipeNavigation";
+import {
+  PersonalityTraits,
+  EnergyTrainability,
+  CompatibilityIcons,
+  ActivitiesQuirks,
+  NavigationArrows,
+} from "../../../components/dogs/detail";
 
 export default function DogDetailClient({ params = {}, initialDog = null }) {
   const urlParams = useParams();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const dogSlug = params?.slug || urlParams?.slug;
   const [dog, setDog] = useState(initialDog);
   const [loading, setLoading] = useState(!initialDog);
   const [error, setError] = useState(false);
+  const [retryInProgress, setRetryInProgress] = useState(false);
+  const [showSwipeHint, setShowSwipeHint] = useState(true); // Control swipe hint visibility
   const mountedRef = useRef(true); // Track component mount status for cleanup
+
+  // Convert search params to object for swipe navigation
+  const searchParamsObj = useMemo(() => {
+    const params = {};
+    for (const [key, value] of searchParams.entries()) {
+      params[key] = value;
+    }
+    return params;
+  }, [searchParams]);
+
+  // Swipe navigation setup
+  const {
+    handlers,
+    prevDog,
+    nextDog,
+    isLoading: navLoading,
+  } = useSwipeNavigation({
+    currentDogSlug: dogSlug,
+    searchParams: searchParamsObj,
+  });
 
   // Enhanced fetchDogData with comprehensive error handling and retry logic
   const fetchDogData = useCallback(
@@ -51,6 +90,8 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
       const fetchStartTime = Date.now();
       const maxRetries = 3;
 
+      let timeoutId;
+
       try {
         setLoading(true);
         setError(false);
@@ -58,7 +99,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
         // Create timeout promise for hanging requests detection
         const timeoutMs = 10000; // 10 second timeout
         const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => {
+          timeoutId = setTimeout(() => {
             reject(new Error(`API request timeout after ${timeoutMs}ms`));
           }, timeoutMs);
         });
@@ -68,6 +109,11 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
           getAnimalBySlug(dogSlug),
           timeoutPromise,
         ]);
+
+        // Clear timeout on successful response
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
 
         // Only update state if component is still mounted
         if (mountedRef.current) {
@@ -93,10 +139,15 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
           retryCount < maxRetries &&
           (err.name === "AbortError" || err.message.includes("fetch"))
         ) {
+          if (mountedRef.current) {
+            setRetryInProgress(true);
+          }
+
           // Exponential backoff delay
           setTimeout(
             () => {
               if (mountedRef.current) {
+                setRetryInProgress(false);
                 fetchDogData(retryCount + 1);
               }
             },
@@ -109,8 +160,13 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
           setError(true);
         }
       } finally {
-        if (mountedRef.current && retryCount === 0) {
-          // Only set loading to false on the original call, not retries
+        // Clear timeout in finally block to prevent memory leaks
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+
+        if (mountedRef.current && retryCount === 0 && !retryInProgress) {
+          // Only set loading to false on the original call when no retry is pending
           setLoading(false);
         }
       }
@@ -176,6 +232,22 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
     };
   }, []);
 
+  // Handle swipe hint visibility timing
+  useEffect(() => {
+    if (showSwipeHint && (prevDog || nextDog)) {
+      const timer = setTimeout(() => {
+        setShowSwipeHint(false);
+      }, 3500); // Hide after 3.5 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [showSwipeHint, prevDog, nextDog]);
+
+  // Reset swipe hint visibility when navigating to a new dog
+  useEffect(() => {
+    setShowSwipeHint(true);
+  }, [dogSlug]);
+
   const formatAge = (dog) => {
     if (dog.age_min_months) {
       if (dog.age_min_months < 12) {
@@ -197,6 +269,23 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
   const handleRetry = useCallback(() => {
     fetchDogData();
   }, [fetchDogData]);
+
+  // Navigation handlers for arrow navigation - use router for better performance
+  const router = useRouter();
+
+  const handlePrevDog = useCallback(() => {
+    if (prevDog) {
+      const url = `/dogs/${prevDog.slug}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+      router.push(url);
+    }
+  }, [prevDog, searchParams, router]);
+
+  const handleNextDog = useCallback(() => {
+    if (nextDog) {
+      const url = `/dogs/${nextDog.slug}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+      router.push(url);
+    }
+  }, [nextDog, searchParams, router]);
 
   if (loading) {
     return (
@@ -285,11 +374,11 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
             className="max-w-4xl mx-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-8"
           >
             {/* Breadcrumb Navigation using reusable component */}
-            <ScrollAnimationWrapper>
+            <div>
               <Breadcrumbs items={breadcrumbItems} />
-            </ScrollAnimationWrapper>
+            </div>
 
-            <ScrollAnimationWrapper delay={100}>
+            <div>
               <Link href="/dogs">
                 <Button
                   variant="link"
@@ -299,28 +388,57 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                   ← Back to all dogs
                 </Button>
               </Link>
-            </ScrollAnimationWrapper>
+            </div>
 
-            <ScrollAnimationWrapper
-              delay={200}
-              className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden"
-            >
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden">
               {dog.status && dog.status !== "available" && (
                 <div
                   className={`w-full py-2 text-center text-white font-semibold transition-all duration-300 ${dog.status === "adopted" ? "bg-gray-600" : "bg-yellow-500"}`}
+                  role="status"
+                  aria-live="polite"
                 >
                   {dog.status.charAt(0).toUpperCase() + dog.status.slice(1)}
                 </div>
               )}
 
-              <div className="p-4 sm:p-6">
+              {/* Apply swipe handlers to the entire content area */}
+              <div className="p-4 sm:p-6" {...handlers}>
+                {/* Unified Single Column Responsive Layout */}
                 <div className="flex flex-col gap-8">
                   {/* Hero Image Section - Full Width */}
-                  <ScrollAnimationWrapper delay={300}>
-                    <div className="w-full" data-testid="hero-image-container">
+                  <div>
+                    <div
+                      className="w-full relative"
+                      data-testid="hero-section"
+                    >
+                      {/* Swipe hint for mobile only - fades out after 3.5 seconds */}
+                      <div className="lg:hidden">
+                        {(prevDog || nextDog) && (
+                          <div
+                            className={`absolute top-4 left-1/2 transform -translate-x-1/2 z-10 transition-opacity duration-500 ${
+                              showSwipeHint
+                                ? "opacity-100"
+                                : "opacity-0 pointer-events-none"
+                            }`}
+                            role="status"
+                            aria-live="polite"
+                            aria-label="Swipe navigation hint"
+                          >
+                            <div className="bg-black/50 text-white px-3 py-1 rounded-full text-xs flex items-center gap-2">
+                              {prevDog && <span aria-hidden="true">←</span>}
+                              <span>Swipe to browse</span>
+                              {nextDog && <span aria-hidden="true">→</span>}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                       {(() => {
-                        // Development logging only
-                        if (process.env.NODE_ENV !== "production") {
+                        // Development logging only (disabled in tests to prevent noise)
+                        if (
+                          process.env.NODE_ENV === "development" &&
+                          typeof jest === "undefined"
+                        ) {
                           console.log(
                             "[DogDetail] Navigation: rendering hero section",
                             {
@@ -346,8 +464,11 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                           );
                         }
 
-                        // DIAGNOSTIC: Log image URL being passed to component
-                        if (process.env.NODE_ENV !== "production") {
+                        // DIAGNOSTIC: Log image URL being passed to component (disabled in tests to prevent noise)
+                        if (
+                          process.env.NODE_ENV === "development" &&
+                          typeof jest === "undefined"
+                        ) {
                           console.log(
                             "[DogDetailClient] About to render HeroImageWithBlurredBackground:",
                             {
@@ -378,12 +499,12 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                         );
                       })()}
                     </div>
-                  </ScrollAnimationWrapper>
+                  </div>
 
                   {/* Content Section - Below Hero */}
                   <div className="w-full">
                     {/* Enhanced Header with better integrated action buttons */}
-                    <ScrollAnimationWrapper delay={400}>
+                    <header>
                       <div className="mb-6">
                         {/* Title and action buttons in one visual group */}
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-4">
@@ -427,12 +548,12 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
 
                         {/* Tagline with better spacing - use LLM tagline if available */}
                         <div className="">
-                          <p className="text-xl text-gray-600 font-medium">
+                          <p className="text-xl text-gray-600 dark:text-gray-300 font-medium">
                             {dog.llm_tagline || "Looking for a loving home"}
                           </p>
                         </div>
                       </div>
-                    </ScrollAnimationWrapper>
+                    </header>
 
                     {/* Only show breed section if we have a known breed */}
                     {(() => {
@@ -447,7 +568,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                       }
 
                       return (
-                        <ScrollAnimationWrapper delay={500}>
+                        <div>
                           <div className="mb-6">
                             <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-3">
                               Breed
@@ -475,12 +596,12 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                                 </Badge>
                               )}
                           </div>
-                        </ScrollAnimationWrapper>
+                        </div>
                       );
                     })()}
 
                     {/* Quick Info Cards */}
-                    <ScrollAnimationWrapper delay={600}>
+                    <section aria-label="Dog Information Summary">
                       <div
                         className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8"
                         data-testid="metadata-cards"
@@ -560,10 +681,10 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                           </div>
                         )}
                       </div>
-                    </ScrollAnimationWrapper>
+                    </section>
 
                     {/* Enhanced About Section with New Description Component */}
-                    <ScrollAnimationWrapper delay={700}>
+                    <section aria-label="About the Dog">
                       <div className="mb-8" data-testid="about-section">
                         <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">
                           About {sanitizeText(dog.name)}
@@ -581,35 +702,99 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                           className="mt-0"
                         />
                       </div>
-                    </ScrollAnimationWrapper>
+                    </section>
+
+                    {/* LLM Components Section */}
+                    {dog.dog_profiler_data && (
+                      <ScrollAnimationWrapper delay={750}>
+                        <section
+                          aria-label="Personality and Behavioral Information"
+                          className="mb-8 space-y-6"
+                        >
+                          {/* Personality Traits */}
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">
+                              Personality
+                            </h3>
+                            <PersonalityTraits
+                              profilerData={dog.dog_profiler_data}
+                            />
+                          </div>
+
+                          {/* Energy & Trainability */}
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">
+                              Energy & Training
+                            </h3>
+                            <EnergyTrainability
+                              profilerData={dog.dog_profiler_data}
+                            />
+                          </div>
+
+                          {/* Compatibility Icons */}
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">
+                              Good With
+                            </h3>
+                            <CompatibilityIcons
+                              profilerData={dog.dog_profiler_data}
+                            />
+                          </div>
+
+                          {/* Activities & Quirks */}
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">
+                              Activities & Quirks
+                            </h3>
+                            <ActivitiesQuirks
+                              profilerData={dog.dog_profiler_data}
+                            />
+                          </div>
+                        </section>
+                      </ScrollAnimationWrapper>
+                    )}
 
                     {/* CTA Section */}
                     {dog.status === "available" && (
-                      <ScrollAnimationWrapper delay={750}>
+                      <ScrollAnimationWrapper delay={850}>
                         <div className="mb-8" data-testid="cta-section">
                           <div className="flex justify-center">
-                            <Button
-                              asChild
-                              className="w-full sm:w-auto sm:min-w-[280px] sm:max-w-[400px] bg-orange-600 dark:bg-orange-600 hover:bg-orange-700 dark:hover:bg-orange-700 text-white text-lg py-4 px-8 shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg transform hover:scale-105 focus:ring-4 focus:ring-orange-500 focus:ring-offset-2"
-                            >
-                              <a
-                                href={dog.adoption_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-center"
-                                data-testid="adopt-button"
-                              >
-                                <svg
-                                  className="w-5 h-5 mr-3 transition-transform duration-200"
-                                  fill="currentColor"
-                                  viewBox="0 0 24 24"
-                                  aria-hidden="true"
+                            {(() => {
+                              const safeUrl = safeExternalUrl(dog.adoption_url);
+                              if (!safeUrl) {
+                                return (
+                                  <div className="text-center text-gray-500 dark:text-gray-400">
+                                    <p>Adoption URL not available</p>
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <Button
+                                  asChild
+                                  className="w-full sm:w-auto sm:min-w-[280px] sm:max-w-[400px] bg-orange-600 dark:bg-orange-600 hover:bg-orange-700 dark:hover:bg-orange-700 text-white text-lg py-4 px-8 shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg transform hover:scale-105 focus:ring-4 focus:ring-orange-500 focus:ring-offset-2"
                                 >
-                                  <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                </svg>
-                                Start Adoption Process
-                              </a>
-                            </Button>
+                                  <a
+                                    href={safeUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center"
+                                    data-testid="adopt-button"
+                                    aria-label={`Start adoption process for ${dog.name}`}
+                                  >
+                                    <svg
+                                      className="w-5 h-5 mr-3 transition-transform duration-200"
+                                      fill="currentColor"
+                                      viewBox="0 0 24 24"
+                                      aria-hidden="true"
+                                    >
+                                      <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                    </svg>
+                                    Start Adoption Process
+                                  </a>
+                                </Button>
+                              );
+                            })()}
                           </div>
                           <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-3 transition-colors duration-200">
                             You'll be redirected to the rescue organization's
@@ -620,7 +805,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                     )}
 
                     {/* Organization Section with Loading State */}
-                    <ScrollAnimationWrapper delay={850}>
+                    <ScrollAnimationWrapper delay={950}>
                       <div
                         className="mb-8"
                         data-testid="organization-container"
@@ -652,7 +837,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
 
                     {/* Related Dogs Section with Lazy Loading */}
                     {dog.organization_id && (
-                      <ScrollAnimationWrapper delay={950} threshold={0.1}>
+                      <ScrollAnimationWrapper delay={1050} threshold={0.1}>
                         <div data-testid="related-dogs-section">
                           <RelatedDogsSection
                             organizationId={dog.organization_id}
@@ -664,12 +849,18 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                     )}
                   </div>
                 </div>
-              </div>
-            </ScrollAnimationWrapper>
-          </div>
 
-          {/* Mobile Sticky Bar */}
-          <MobileStickyBar dog={dog} />
+                {/* Navigation Arrows for Desktop */}
+                <NavigationArrows
+                  onPrev={handlePrevDog}
+                  onNext={handleNextDog}
+                  hasPrev={!!prevDog}
+                  hasNext={!!nextDog}
+                  isLoading={navLoading}
+                />
+              </div>
+            </div>
+          </div>
         </Layout>
       </DogDetailErrorBoundary>
     </ToastProvider>

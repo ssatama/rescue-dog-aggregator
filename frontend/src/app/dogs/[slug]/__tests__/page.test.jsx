@@ -8,14 +8,26 @@ import { getAnimalBySlug } from "../../../../services/animalsService";
 // mock the service
 jest.mock("../../../../services/animalsService", () => ({
   getAnimalBySlug: jest.fn(),
+  getAnimals: jest.fn(),
 }));
 
 // mock next/navigation
+const mockRouter = { back: jest.fn(), push: jest.fn() };
+const mockSearchParams = {
+  get: jest.fn(() => null),
+  entries: jest.fn(() => []), // Mock entries method to return empty array
+  has: jest.fn(() => false),
+  getAll: jest.fn(() => []),
+  keys: jest.fn(() => []),
+  values: jest.fn(() => []),
+  toString: jest.fn(() => ""),
+};
+
 jest.mock("next/navigation", () => ({
   useParams: () => ({ slug: "test-dog-mixed-breed-1" }),
-  useRouter: () => ({ back: jest.fn() }),
+  useRouter: () => mockRouter,
   usePathname: () => "/dogs/test-dog-mixed-breed-1",
-  useSearchParams: () => ({ get: () => null }),
+  useSearchParams: () => mockSearchParams,
 }));
 
 // mock Loading
@@ -27,6 +39,16 @@ jest.mock("../../../../components/ui/Loading", () => () => (
 jest.mock("../../../../components/ui/DogDetailSkeleton", () => () => (
   <div data-testid="loading" />
 ));
+
+// mock useSwipeNavigation hook
+jest.mock("../../../../hooks/useSwipeNavigation", () => ({
+  useSwipeNavigation: () => ({
+    handlers: {},
+    prevDog: null,
+    nextDog: null,
+    isLoading: false,
+  }),
+}));
 
 // Console error suppression is handled globally in jest.setup.js
 
@@ -285,7 +307,7 @@ describe("DogDetailPage - Hero Layout", () => {
 
     // Hero image container should be full width
     const heroContainer = container.querySelector(
-      '[data-testid="hero-image-container"]',
+      '[data-testid="hero-section"]',
     );
     expect(heroContainer).toBeInTheDocument();
     expect(heroContainer).toHaveClass("w-full");
@@ -409,7 +431,7 @@ describe("DogDetailPage - Hero Layout", () => {
 
     // Hero image should always be full width
     const heroContainer = container.querySelector(
-      '[data-testid="hero-image-container"]',
+      '[data-testid="hero-section"]',
     );
     expect(heroContainer).toHaveClass("w-full");
 
