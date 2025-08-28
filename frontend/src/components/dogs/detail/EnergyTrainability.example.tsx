@@ -1,6 +1,6 @@
 /**
  * Usage Example for EnergyTrainability Component
- * 
+ *
  * This file demonstrates how to use the EnergyTrainability component
  * in different scenarios. This is for documentation purposes only.
  */
@@ -14,8 +14,8 @@ const highEnergyEasyTrain: DogProfilerData = {
   trainability: "easy",
   confidence_scores: {
     energy_level: 0.9,
-    trainability: 0.8
-  }
+    trainability: 0.8,
+  },
 };
 
 // Example 2: Only energy shown (trainability has low confidence)
@@ -24,8 +24,8 @@ const onlyEnergyShown: DogProfilerData = {
   trainability: "moderate",
   confidence_scores: {
     energy_level: 0.7,
-    trainability: 0.4  // Too low, won't show
-  }
+    trainability: 0.4, // Too low, won't show
+  },
 };
 
 // Example 3: Only trainability shown (energy has low confidence)
@@ -33,9 +33,9 @@ const onlyTrainabilityShown: DogProfilerData = {
   energy_level: "high",
   trainability: "challenging",
   confidence_scores: {
-    energy_level: 0.3,  // Too low, won't show
-    trainability: 0.85
-  }
+    energy_level: 0.3, // Too low, won't show
+    trainability: 0.85,
+  },
 };
 
 // Example 4: Nothing shown (both have low confidence)
@@ -44,8 +44,8 @@ const nothingShown: DogProfilerData = {
   trainability: "easy",
   confidence_scores: {
     energy_level: 0.2,
-    trainability: 0.3
-  }
+    trainability: 0.3,
+  },
 };
 
 export function EnergyTrainabilityExamples() {
@@ -62,7 +62,9 @@ export function EnergyTrainabilityExamples() {
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold mb-4">Example 3: Only Trainability</h3>
+        <h3 className="text-lg font-semibold mb-4">
+          Example 3: Only Trainability
+        </h3>
         <EnergyTrainability profilerData={onlyTrainabilityShown} />
       </div>
 

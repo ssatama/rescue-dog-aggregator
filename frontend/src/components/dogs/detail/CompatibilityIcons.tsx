@@ -51,7 +51,7 @@ const getCompatibilityColor = (value: string): string => {
 
 const hasHighConfidence = (
   profilerData: DogProfilerData | null | undefined,
-  confidenceKey: string
+  confidenceKey: string,
 ): boolean => {
   if (!profilerData?.confidence_scores) {
     return false;
@@ -60,7 +60,9 @@ const hasHighConfidence = (
   return typeof score === "number" && score > 0.5;
 };
 
-const CompatibilityIcons: React.FC<CompatibilityIconsProps> = ({ profilerData }) => {
+const CompatibilityIcons: React.FC<CompatibilityIconsProps> = ({
+  profilerData,
+}) => {
   if (!profilerData) {
     return null;
   }
@@ -71,26 +73,26 @@ const CompatibilityIcons: React.FC<CompatibilityIconsProps> = ({ profilerData })
       label: "Dogs",
       value: profilerData.good_with_dogs,
       confidenceKey: "good_with_dogs",
-      testId: "dogs-compatibility"
+      testId: "dogs-compatibility",
     },
     {
       key: "cats",
       label: "Cats",
       value: profilerData.good_with_cats,
       confidenceKey: "good_with_cats",
-      testId: "cats-compatibility"
+      testId: "cats-compatibility",
     },
     {
       key: "children",
       label: "Children",
       value: profilerData.good_with_children,
       confidenceKey: "good_with_children",
-      testId: "children-compatibility"
-    }
+      testId: "children-compatibility",
+    },
   ];
 
-  const validItems = compatibilityItems.filter(item => 
-    item.value && hasHighConfidence(profilerData, item.confidenceKey)
+  const validItems = compatibilityItems.filter(
+    (item) => item.value && hasHighConfidence(profilerData, item.confidenceKey),
   );
 
   if (validItems.length === 0) {
@@ -98,14 +100,11 @@ const CompatibilityIcons: React.FC<CompatibilityIconsProps> = ({ profilerData })
   }
 
   return (
-    <div 
-      data-testid="compatibility-icons-container"
-      className="flex gap-3"
-    >
-      {validItems.map(item => {
+    <div data-testid="compatibility-icons-container" className="flex gap-3">
+      {validItems.map((item) => {
         const icon = getCompatibilityIcon(item.value!);
         const colorClass = getCompatibilityColor(item.value!);
-        
+
         return (
           <div
             key={item.key}

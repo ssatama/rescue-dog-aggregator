@@ -62,6 +62,10 @@ class LRUCache<K, V> {
   has(key: K): boolean {
     return this.cache.has(key);
   }
+
+  clear(): void {
+    this.cache.clear();
+  }
 }
 
 // Global cache instance (10-item limit)
@@ -86,6 +90,9 @@ const buildNavigationUrl = (
 
 // Pure function to find current dog index
 const findCurrentDogIndex = (dogs: Dog[], currentSlug: string): number => {
+  if (!Array.isArray(dogs) || !currentSlug) {
+    return -1;
+  }
   return dogs.findIndex((dog) => dog.slug === currentSlug);
 };
 
@@ -109,6 +116,7 @@ export function useSwipeNavigation({
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const mountedRef = useRef(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Create cache key for current search context
   const cacheKey = useMemo(() => {
@@ -123,6 +131,11 @@ export function useSwipeNavigation({
   const loadDogs = useCallback(async () => {
     if (!mountedRef.current) return;
 
+    // Cancel any previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
     // Check cache first
     const cachedDogs = navigationCache.get(cacheKey);
     if (cachedDogs) {
@@ -133,15 +146,23 @@ export function useSwipeNavigation({
 
     setIsLoading(true);
 
+    // Create new AbortController for this request
+    abortControllerRef.current = new AbortController();
+
     try {
-      // First, get all dogs to find current position
-      const allDogs = await getAnimals({
+      // Reduced limit from 1000 to 300 for better performance
+      const response = await getAnimals({
         ...searchParams,
-        limit: 1000, // Get enough to find current position
+        limit: 300, // Reduced from 1000 for better performance
       });
 
       if (!mountedRef.current) return;
 
+      // Ensure we have a valid array of dogs with valid objects
+      const responseArray = Array.isArray(response) ? response : [];
+      const allDogs = responseArray.filter(
+        (dog) => dog && typeof dog === "object" && dog.slug,
+      );
       const currentIndex = findCurrentDogIndex(allDogs, currentDogSlug);
 
       if (currentIndex === -1) {
@@ -161,12 +182,20 @@ export function useSwipeNavigation({
 
       setDogs(preloadedDogs);
     } catch (error) {
-      console.error("Error loading dogs for navigation:", error);
-      setDogs([]);
+      // Don't log errors if request was aborted (user navigated away)
+      if (error instanceof Error && error.name !== "AbortError") {
+        console.error("Error loading dogs for navigation:", error);
+      } else if (!(error instanceof Error)) {
+        console.error("Error loading dogs for navigation:", error);
+      }
+      if (mountedRef.current) {
+        setDogs([]);
+      }
     } finally {
       if (mountedRef.current) {
         setIsLoading(false);
       }
+      abortControllerRef.current = null;
     }
   }, [currentDogSlug, searchParams, cacheKey]);
 
@@ -177,6 +206,11 @@ export function useSwipeNavigation({
 
     return () => {
       mountedRef.current = false;
+      // Cancel any ongoing request when component unmounts
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
     };
   }, [loadDogs]);
 
@@ -239,10 +273,10 @@ export function useSwipeNavigation({
     };
   }, [navigateToPrev, navigateToNext]);
 
-  // Swipe handlers
+  // Swipe handlers - Fix: left swipe = next, right swipe = previous
   const handlers = useSwipeable({
-    onSwipedLeft: navigateToPrev, // Swipe left = go to previous
-    onSwipedRight: navigateToNext, // Swipe right = go to next
+    onSwipedLeft: navigateToNext, // Swipe left = go to next (like turning page forward)
+    onSwipedRight: navigateToPrev, // Swipe right = go to previous (like turning page back)
     preventScrollOnSwipe: true,
     trackMouse: false, // Only track touch, not mouse
   });
@@ -255,5 +289,6 @@ export function useSwipeNavigation({
   };
 }
 
-// Export types for consumers
+// Export types and cache for consumers and testing
 export type { Dog, UseSwipeNavigationProps, UseSwipeNavigationReturn };
+export { navigationCache };

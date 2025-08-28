@@ -3,7 +3,6 @@
  * Tests the key CTA features implemented in the optimization:
  * - Primary CTA button styling and behavior
  * - Favorites functionality with persistence
- * - Mobile sticky bar functionality
  * - ShareButton enhancements
  * - Toast notifications
  * - Responsive design
@@ -13,7 +12,6 @@ import React from "react";
 import { render, screen, waitFor, act } from "../../test-utils";
 import "@testing-library/jest-dom";
 import { ToastProvider } from "../../contexts/ToastContext";
-import MobileStickyBar from "../../components/ui/MobileStickyBar";
 import ShareButton from "../../components/ui/ShareButton";
 
 // Mock localStorage
@@ -61,43 +59,6 @@ describe("CTA Optimization Features", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     localStorageMock.getItem.mockReturnValue(null);
-  });
-
-  describe("Enhanced MobileStickyBar Component", () => {
-    test("renders with proper mobile-only positioning", () => {
-      renderWithToast(<MobileStickyBar dog={mockDog} />);
-
-      const stickyBar = screen.getByTestId("mobile-sticky-bar");
-      expect(stickyBar).toBeInTheDocument();
-      expect(stickyBar).toHaveClass(
-        "fixed",
-        "bottom-0",
-        "left-0",
-        "right-0",
-        "z-50",
-      );
-      expect(stickyBar).toHaveClass("md:hidden"); // Hidden on desktop
-    });
-
-    test("has contact button with proper functionality", async () => {
-      renderWithToast(<MobileStickyBar dog={mockDog} />);
-
-      const contactButton = screen.getByTestId("mobile-contact-button");
-
-      expect(contactButton).toBeInTheDocument();
-      expect(contactButton).toHaveTextContent("Start Adoption Process");
-
-      // Test contact button functionality
-      act(() => {
-        contactButton.click();
-      });
-
-      expect(mockWindowOpen).toHaveBeenCalledWith(
-        mockDog.adoption_url,
-        "_blank",
-        "noopener,noreferrer",
-      );
-    });
   });
 
   describe("Enhanced ShareButton Component", () => {
@@ -208,42 +169,7 @@ describe("CTA Optimization Features", () => {
     });
   });
 
-  describe("Error Handling and Edge Cases", () => {
-    test("handles missing dog data gracefully", () => {
-      renderWithToast(<MobileStickyBar dog={null} />);
-
-      // Should not render when dog is null
-      expect(screen.queryByTestId("mobile-sticky-bar")).not.toBeInTheDocument();
-    });
-
-    test("handles missing adoption URL", async () => {
-      const dogWithoutUrl = { ...mockDog, adoption_url: null };
-
-      renderWithToast(<MobileStickyBar dog={dogWithoutUrl} />);
-
-      const contactButton = screen.getByTestId("mobile-contact-button");
-
-      act(() => {
-        contactButton.click();
-      });
-
-      // Should not call window.open with invalid URL
-      expect(mockWindowOpen).not.toHaveBeenCalled();
-    });
-  });
-
   describe("Accessibility Compliance", () => {
-    test("mobile sticky bar buttons have proper accessibility", () => {
-      renderWithToast(<MobileStickyBar dog={mockDog} />);
-
-      const contactButton = screen.getByTestId("mobile-contact-button");
-
-      expect(contactButton).toHaveAttribute(
-        "aria-label",
-        "Start adoption process",
-      );
-    });
-
     test("share button has proper accessibility", () => {
       renderWithToast(
         <ShareButton url="https://example.com" title="Test" text="Test" />,

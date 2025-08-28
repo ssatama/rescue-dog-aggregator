@@ -5,7 +5,7 @@ import type { DogProfilerData } from "../../../types/dogProfiler";
  * PersonalityTraits component displays personality traits as colored badge pills
  * Only shows traits when confidence score > 0.5
  * Displays max 5 traits with rotating pastel colors
- * 
+ *
  * Usage:
  * ```tsx
  * <PersonalityTraits profilerData={dog.dog_profiler_data} />
@@ -29,11 +29,14 @@ const capitalizeFirst = (str: string): string => {
   return str.charAt(0).toUpperCase() + str.slice(1);
 };
 
-const getColorForIndex = (index: number) => PASTEL_COLORS[index % PASTEL_COLORS.length];
+const getColorForIndex = (index: number) =>
+  PASTEL_COLORS[index % PASTEL_COLORS.length];
 
-const shouldShowTraits = (profilerData: DogProfilerData | null | undefined): boolean => {
+const shouldShowTraits = (
+  profilerData: DogProfilerData | null | undefined,
+): boolean => {
   if (!profilerData) return false;
-  
+
   const confidenceScore = profilerData.confidence_scores?.personality_traits;
   if (typeof confidenceScore !== "number" || confidenceScore <= 0.5) {
     return false;
@@ -43,7 +46,9 @@ const shouldShowTraits = (profilerData: DogProfilerData | null | undefined): boo
   return Array.isArray(traits) && traits.length > 0;
 };
 
-export default function PersonalityTraits({ profilerData }: PersonalityTraitsProps) {
+export default function PersonalityTraits({
+  profilerData,
+}: PersonalityTraitsProps) {
   if (!shouldShowTraits(profilerData)) {
     return null;
   }
@@ -51,13 +56,10 @@ export default function PersonalityTraits({ profilerData }: PersonalityTraitsPro
   const traits = profilerData!.personality_traits!.slice(0, 5);
 
   return (
-    <div 
-      data-testid="personality-traits" 
-      className="flex flex-wrap gap-2"
-    >
+    <div data-testid="personality-traits" className="flex flex-wrap gap-2">
       {traits.map((trait, index) => {
         const colors = getColorForIndex(index);
-        
+
         return (
           <span
             key={trait}

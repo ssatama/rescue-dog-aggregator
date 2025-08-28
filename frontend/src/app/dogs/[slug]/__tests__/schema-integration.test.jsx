@@ -12,15 +12,10 @@ import { getAnimalBySlug } from "../../../../services/animalsService";
 // Mock the service
 jest.mock("../../../../services/animalsService", () => ({
   getAnimalBySlug: jest.fn(),
+  getAnimals: jest.fn(() => Promise.resolve({ data: [] })), // For useSwipeNavigation hook
 }));
 
-// Mock next/navigation
-jest.mock("next/navigation", () => ({
-  useParams: () => ({ slug: "test-dog-mixed-breed-1" }),
-  useRouter: () => ({ back: jest.fn() }),
-  usePathname: () => "/dogs/test-dog-mixed-breed-1",
-  useSearchParams: () => ({ get: () => null }),
-}));
+// next/navigation is mocked globally in jest.setup.js
 
 // Mock UI components to focus on schema testing
 jest.mock("../../../../components/ui/Loading", () => () => (

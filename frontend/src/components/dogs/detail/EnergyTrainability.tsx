@@ -22,7 +22,7 @@ const getEnergyConfig = (level: EnergyLevel): ProgressBarConfig => {
     low: { percentage: 25, color: "bg-green-500", label: "Low" },
     medium: { percentage: 50, color: "bg-yellow-500", label: "Medium" },
     high: { percentage: 75, color: "bg-orange-500", label: "High" },
-    very_high: { percentage: 100, color: "bg-red-500", label: "Very High" }
+    very_high: { percentage: 100, color: "bg-red-500", label: "Very High" },
   };
   return configs[level];
 };
@@ -32,7 +32,7 @@ const getTrainabilityConfig = (level: TrainabilityLevel): ProgressBarConfig => {
   const configs: Record<TrainabilityLevel, ProgressBarConfig> = {
     easy: { percentage: 33, color: "bg-green-500", label: "Easy" },
     moderate: { percentage: 67, color: "bg-yellow-500", label: "Moderate" },
-    challenging: { percentage: 100, color: "bg-red-500", label: "Challenging" }
+    challenging: { percentage: 100, color: "bg-red-500", label: "Challenging" },
   };
   return configs[level];
 };
@@ -59,7 +59,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ title, config, testId }) => (
         {config.label}
       </span>
     </div>
-    <div 
+    <div
       className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700"
       data-testid={`${testId}-progress-bg`}
     >
@@ -73,7 +73,9 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ title, config, testId }) => (
 );
 
 // Main component
-const EnergyTrainability: React.FC<EnergyTrainabilityProps> = ({ profilerData }) => {
+const EnergyTrainability: React.FC<EnergyTrainabilityProps> = ({
+  profilerData,
+}) => {
   // Early return for invalid data
   if (!profilerData?.confidence_scores) {
     return null;
@@ -82,14 +84,12 @@ const EnergyTrainability: React.FC<EnergyTrainabilityProps> = ({ profilerData })
   const { energy_level, trainability, confidence_scores } = profilerData;
 
   // Check if we should show energy level
-  const shouldShowEnergy = 
-    energy_level && 
-    isValidConfidence(confidence_scores.energy_level);
+  const shouldShowEnergy =
+    energy_level && isValidConfidence(confidence_scores.energy_level);
 
   // Check if we should show trainability
-  const shouldShowTrainability = 
-    trainability && 
-    isValidConfidence(confidence_scores.trainability);
+  const shouldShowTrainability =
+    trainability && isValidConfidence(confidence_scores.trainability);
 
   // Return null if neither should be shown
   if (!shouldShowEnergy && !shouldShowTrainability) {
@@ -105,7 +105,7 @@ const EnergyTrainability: React.FC<EnergyTrainabilityProps> = ({ profilerData })
           testId="energy"
         />
       )}
-      
+
       {shouldShowTrainability && (
         <ProgressBar
           title="Trainability"

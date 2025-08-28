@@ -18,7 +18,7 @@ describe("NavigationArrows Component", () => {
           onNext={mockOnNext}
           hasPrev={true}
           hasNext={true}
-        />
+        />,
       );
 
       expect(screen.getByTestId("nav-arrow-prev")).toBeInTheDocument();
@@ -32,7 +32,7 @@ describe("NavigationArrows Component", () => {
           onNext={mockOnNext}
           hasPrev={true}
           hasNext={false}
-        />
+        />,
       );
 
       expect(screen.getByTestId("nav-arrow-prev")).toBeInTheDocument();
@@ -46,7 +46,7 @@ describe("NavigationArrows Component", () => {
           onNext={mockOnNext}
           hasPrev={false}
           hasNext={true}
-        />
+        />,
       );
 
       expect(screen.queryByTestId("nav-arrow-prev")).not.toBeInTheDocument();
@@ -60,7 +60,7 @@ describe("NavigationArrows Component", () => {
           onNext={mockOnNext}
           hasPrev={false}
           hasNext={false}
-        />
+        />,
       );
 
       expect(screen.queryByTestId("nav-arrow-prev")).not.toBeInTheDocument();
@@ -76,7 +76,7 @@ describe("NavigationArrows Component", () => {
           onNext={mockOnNext}
           hasPrev={true}
           hasNext={true}
-        />
+        />,
       );
 
       const prevButton = screen.getByTestId("nav-arrow-prev");
@@ -93,7 +93,7 @@ describe("NavigationArrows Component", () => {
           onNext={mockOnNext}
           hasPrev={true}
           hasNext={true}
-        />
+        />,
       );
 
       const prevButton = screen.getByTestId("nav-arrow-prev");
@@ -112,7 +112,7 @@ describe("NavigationArrows Component", () => {
           onNext={mockOnNext}
           hasPrev={true}
           hasNext={true}
-        />
+        />,
       );
 
       const prevButton = screen.getByTestId("nav-arrow-prev");
@@ -129,7 +129,7 @@ describe("NavigationArrows Component", () => {
           onNext={mockOnNext}
           hasPrev={true}
           hasNext={true}
-        />
+        />,
       );
 
       const nextButton = screen.getByTestId("nav-arrow-next");
@@ -149,7 +149,7 @@ describe("NavigationArrows Component", () => {
           hasPrev={true}
           hasNext={true}
           isLoading={true}
-        />
+        />,
       );
 
       const prevButton = screen.getByTestId("nav-arrow-prev");
@@ -167,7 +167,7 @@ describe("NavigationArrows Component", () => {
           hasPrev={true}
           hasNext={true}
           isLoading={true}
-        />
+        />,
       );
 
       const prevButton = screen.getByTestId("nav-arrow-prev");
@@ -188,7 +188,7 @@ describe("NavigationArrows Component", () => {
           hasPrev={true}
           hasNext={true}
           isLoading={false}
-        />
+        />,
       );
 
       const prevButton = screen.getByTestId("nav-arrow-prev");
@@ -207,7 +207,7 @@ describe("NavigationArrows Component", () => {
           onNext={mockOnNext}
           hasPrev={true}
           hasNext={true}
-        />
+        />,
       );
 
       const prevButton = screen.getByTestId("nav-arrow-prev");
@@ -225,7 +225,7 @@ describe("NavigationArrows Component", () => {
           onNext={mockOnNext}
           hasPrev={true}
           hasNext={true}
-        />
+        />,
       );
 
       const prevButton = screen.getByTestId("nav-arrow-prev");
@@ -242,16 +242,16 @@ describe("NavigationArrows Component", () => {
           onNext={mockOnNext}
           hasPrev={true}
           hasNext={true}
-        />
+        />,
       );
 
       const prevButton = screen.getByTestId("nav-arrow-prev");
       const nextButton = screen.getByTestId("nav-arrow-next");
 
       // Previous button should be on the left
-      expect(prevButton).toHaveClass("left-4");
+      expect(prevButton).toHaveClass("left-12");
       // Next button should be on the right
-      expect(nextButton).toHaveClass("right-4");
+      expect(nextButton).toHaveClass("right-12");
       // Both should be vertically centered
       expect(prevButton).toHaveClass("top-1/2");
       expect(nextButton).toHaveClass("top-1/2");
@@ -266,7 +266,7 @@ describe("NavigationArrows Component", () => {
           onNext={mockOnNext}
           hasPrev={true}
           hasNext={true}
-        />
+        />,
       );
 
       const prevButton = screen.getByTestId("nav-arrow-prev");
@@ -285,7 +285,7 @@ describe("NavigationArrows Component", () => {
           onNext={mockOnNext}
           hasPrev={true}
           hasNext={true}
-        />
+        />,
       );
 
       const prevButton = screen.getByTestId("nav-arrow-prev");
@@ -304,7 +304,7 @@ describe("NavigationArrows Component", () => {
           onNext={mockOnNext}
           hasPrev={true}
           hasNext={false}
-        />
+        />,
       );
 
       // Check that the icon component exists with correct props
@@ -319,7 +319,7 @@ describe("NavigationArrows Component", () => {
           onNext={mockOnNext}
           hasPrev={false}
           hasNext={true}
-        />
+        />,
       );
 
       // Check that the icon component exists with correct props
@@ -337,28 +337,34 @@ describe("NavigationArrows Component", () => {
           hasPrev={true}
           hasNext={true}
           isLoading={true}
-        />
+        />,
       );
 
       const prevButton = screen.getByTestId("nav-arrow-prev");
       const nextButton = screen.getByTestId("nav-arrow-next");
 
-      expect(prevButton).toHaveClass("disabled:opacity-50", "disabled:cursor-not-allowed");
-      expect(nextButton).toHaveClass("disabled:opacity-50", "disabled:cursor-not-allowed");
+      expect(prevButton).toHaveClass(
+        "disabled:opacity-50",
+        "disabled:cursor-not-allowed",
+      );
+      expect(nextButton).toHaveClass(
+        "disabled:opacity-50",
+        "disabled:cursor-not-allowed",
+      );
     });
   });
 
   describe("Pure Function Behavior", () => {
     test("does not cause side effects during rendering", () => {
       const consoleError = jest.spyOn(console, "error");
-      
+
       render(
         <NavigationArrows
           onPrev={mockOnPrev}
           onNext={mockOnNext}
           hasPrev={true}
           hasNext={true}
-        />
+        />,
       );
 
       expect(consoleError).not.toHaveBeenCalled();
@@ -374,13 +380,13 @@ describe("NavigationArrows Component", () => {
       };
 
       const { rerender } = render(<NavigationArrows {...props} />);
-      
+
       const firstRender = screen.getByTestId("nav-arrow-prev").outerHTML;
-      
+
       rerender(<NavigationArrows {...props} />);
-      
+
       const secondRender = screen.getByTestId("nav-arrow-prev").outerHTML;
-      
+
       expect(firstRender).toBe(secondRender);
     });
   });

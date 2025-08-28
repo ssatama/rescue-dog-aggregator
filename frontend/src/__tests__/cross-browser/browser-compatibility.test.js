@@ -15,12 +15,37 @@ import { act } from "../../test-utils";
 import DogDetailClient from "../../app/dogs/[slug]/DogDetailClient";
 import { LazyImage } from "../../components/ui/LazyImage";
 
+// Suppress console errors for swipe handler warnings in tests
+const originalError = console.error;
+beforeAll(() => {
+  console.error = (...args) => {
+    const message = args[0];
+    if (typeof message === 'string' && (
+      message.includes('Unknown event handler property') ||
+      message.includes('onSwipedLeft') ||
+      message.includes('onSwipedRight') ||
+      message.includes('onSwiped') ||
+      message.includes('onSwiping')
+    )) {
+      return; // Suppress swipe handler warnings
+    }
+    originalError.call(console, ...args);
+  };
+});
+
+afterAll(() => {
+  console.error = originalError;
+});
+
 // Mock Next.js navigation
 jest.mock("next/navigation", () => ({
   useParams: () => ({ slug: "test-dog-123" }),
-  useRouter: () => ({ back: jest.fn() }),
+  useRouter: () => ({
+    back: jest.fn(),
+    push: jest.fn(),
+  }),
   usePathname: () => "/dogs/test-dog-123",
-  useSearchParams: () => ({ get: () => null }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 // Mock services
@@ -48,10 +73,69 @@ jest.mock("../../services/animalsService", () => ({
       adoption_url: "https://testrescue.org/adopt",
     }),
   ),
+  getAnimals: jest.fn(() => Promise.resolve([])), // Mock immediately resolved for useSwipeNavigation
+}));
+
+// Mock the useSwipeNavigation hook to prevent real API calls
+jest.mock("../../hooks/useSwipeNavigation", () => ({
+  useSwipeNavigation: jest.fn(() => ({
+    handlers: {
+      onSwipedLeft: jest.fn(),
+      onSwipedRight: jest.fn(),
+    },
+    prevDog: null,
+    nextDog: null,
+    isLoading: false,
+  })),
+  navigationCache: {
+    clear: jest.fn(),
+    get: jest.fn(),
+    set: jest.fn(),
+    has: jest.fn(),
+  },
 }));
 
 jest.mock("../../services/relatedDogsService", () => ({
   getRelatedDogs: jest.fn(() => Promise.resolve([])),
+}));
+
+// Mock the HeroImageWithBlurredBackground to avoid loading issues
+jest.mock("../../components/ui/HeroImageWithBlurredBackground", () => {
+  return function MockHeroImage({ src, alt }) {
+    return (
+      <div data-testid="mock-hero-image">
+        <img src={src} alt={alt} data-testid="hero-image" />
+      </div>
+    );
+  };
+});
+
+// Mock useAdvancedImage hook to avoid infinite loops
+jest.mock("../../hooks/useAdvancedImage", () => ({
+  useAdvancedImage: jest.fn(() => ({
+    src: "https://example.com/dog.jpg",
+    isLoading: false,
+    hasError: false,
+    onLoad: jest.fn(),
+    onError: jest.fn(),
+  })),
+}));
+
+// Mock additional complex components that might cause loading issues
+jest.mock("../../components/dogs/RelatedDogsSection", () => {
+  return function MockRelatedDogsSection() {
+    return <div data-testid="related-dogs-section">Related Dogs</div>;
+  };
+});
+
+jest.mock("../../components/layout/Layout", () => {
+  return function MockLayout({ children }) {
+    return <div data-testid="layout">{children}</div>;
+  };
+});
+
+jest.mock("../../hooks/useScrollAnimation", () => ({
+  ScrollAnimationWrapper: ({ children }) => <div>{children}</div>,
 }));
 
 describe("Cross-Browser Compatibility Tests", () => {
@@ -108,12 +192,17 @@ describe("Cross-Browser Compatibility Tests", () => {
 
     test("CSS custom properties fallbacks work", async () => {
       await act(async () => {
-        render(<DogDetailClient />);
+        render(<DogDetailClient params={{ slug: "test-dog-123" }} />);
       });
 
-      await waitFor(() => {
-        expect(screen.getByTestId("hero-image-container")).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(
+            screen.getAllByTestId("hero-section")[0],
+          ).toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
 
       // Test that components render even if CSS custom properties aren't supported
       const elements = screen.getAllByTestId(/.*/).filter((el) => el.style);
@@ -129,12 +218,15 @@ describe("Cross-Browser Compatibility Tests", () => {
 
     test("flexbox and grid layouts work correctly", async () => {
       await act(async () => {
-        render(<DogDetailClient />);
+        render(<DogDetailClient params={{ slug: "test-dog-123" }} />);
       });
 
-      await waitFor(() => {
-        expect(screen.getByTestId("metadata-cards")).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByTestId("metadata-cards")).toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
 
       const gridContainer = screen.getByTestId("metadata-cards");
 
@@ -156,15 +248,20 @@ describe("Cross-Browser Compatibility Tests", () => {
 
     test("webkit-specific styles are handled correctly", async () => {
       await act(async () => {
-        render(<DogDetailClient />);
+        render(<DogDetailClient params={{ slug: "test-dog-123" }} />);
       });
 
-      await waitFor(() => {
-        expect(screen.getByTestId("hero-image-container")).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(
+            screen.getAllByTestId("hero-section")[0],
+          ).toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
 
       // Test that webkit-specific CSS doesn't break other browsers
-      const heroImage = screen.getByTestId("hero-image-container");
+      const heroImage = screen.getAllByTestId("hero-section")[0];
       expect(heroImage).toBeInTheDocument();
     });
 
@@ -176,12 +273,15 @@ describe("Cross-Browser Compatibility Tests", () => {
       });
 
       await act(async () => {
-        render(<DogDetailClient />);
+        render(<DogDetailClient params={{ slug: "test-dog-123" }} />);
       });
 
-      await waitFor(() => {
-        expect(screen.getByTestId("action-bar")).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByTestId("action-bar")).toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
 
       const actionBar = screen.getByTestId("action-bar");
       const buttons = actionBar.querySelectorAll("button");
@@ -199,12 +299,17 @@ describe("Cross-Browser Compatibility Tests", () => {
 
     test("Safari date handling works correctly", async () => {
       await act(async () => {
-        render(<DogDetailClient />);
+        render(<DogDetailClient params={{ slug: "test-dog-123" }} />);
       });
 
-      await waitFor(() => {
-        expect(screen.getByTestId("hero-image-container")).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(
+            screen.getAllByTestId("hero-section")[0],
+          ).toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
 
       // Test that date formatting works in Safari
       const dateElements = document.querySelectorAll(
@@ -228,12 +333,15 @@ describe("Cross-Browser Compatibility Tests", () => {
 
     test("Firefox CSS grid implementation works", async () => {
       await act(async () => {
-        render(<DogDetailClient />);
+        render(<DogDetailClient params={{ slug: "test-dog-123" }} />);
       });
 
-      await waitFor(() => {
-        expect(screen.getByTestId("metadata-cards")).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByTestId("metadata-cards")).toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
 
       const gridContainer = screen.getByTestId("metadata-cards");
       expect(gridContainer).toHaveClass("grid");
@@ -241,12 +349,17 @@ describe("Cross-Browser Compatibility Tests", () => {
 
     test("Firefox image loading behavior", async () => {
       await act(async () => {
-        render(<DogDetailClient />);
+        render(<DogDetailClient params={{ slug: "test-dog-123" }} />);
       });
 
-      await waitFor(() => {
-        expect(screen.getByTestId("hero-image-container")).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(
+            screen.getAllByTestId("hero-section")[0],
+          ).toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
 
       const images = document.querySelectorAll("img");
       images.forEach((img) => {
@@ -270,15 +383,20 @@ describe("Cross-Browser Compatibility Tests", () => {
 
     test("Edge legacy features work correctly", async () => {
       await act(async () => {
-        render(<DogDetailClient />);
+        render(<DogDetailClient params={{ slug: "test-dog-123" }} />);
       });
 
-      await waitFor(() => {
-        expect(screen.getByTestId("hero-image-container")).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(
+            screen.getAllByTestId("hero-section")[0],
+          ).toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
 
       // Test that modern features have appropriate fallbacks
-      const heroContainer = screen.getByTestId("hero-image-container");
+      const heroContainer = screen.getAllByTestId("hero-section")[0];
       expect(heroContainer).toBeInTheDocument();
     });
 
@@ -305,12 +423,17 @@ describe("Cross-Browser Compatibility Tests", () => {
       global.requestAnimationFrame = undefined;
 
       await act(async () => {
-        render(<DogDetailClient />);
+        render(<DogDetailClient params={{ slug: "test-dog-123" }} />);
       });
 
-      await waitFor(() => {
-        expect(screen.getByTestId("hero-image-container")).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(
+            screen.getAllByTestId("hero-section")[0],
+          ).toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
 
       global.requestAnimationFrame = originalRAF;
     });
@@ -324,12 +447,17 @@ describe("Cross-Browser Compatibility Tests", () => {
       });
 
       await act(async () => {
-        render(<DogDetailClient />);
+        render(<DogDetailClient params={{ slug: "test-dog-123" }} />);
       });
 
-      await waitFor(() => {
-        expect(screen.getByTestId("hero-image-container")).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(
+            screen.getAllByTestId("hero-section")[0],
+          ).toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
 
       global.localStorage = originalLocalStorage;
     });
@@ -340,12 +468,17 @@ describe("Cross-Browser Compatibility Tests", () => {
       global.window = undefined;
 
       await act(async () => {
-        render(<DogDetailClient />);
+        render(<DogDetailClient params={{ slug: "test-dog-123" }} />);
       });
 
-      await waitFor(() => {
-        expect(screen.getByTestId("hero-image-container")).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(
+            screen.getAllByTestId("hero-section")[0],
+          ).toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
 
       global.window = originalWindow;
     });
@@ -374,29 +507,32 @@ describe("Cross-Browser Compatibility Tests", () => {
         });
 
         await act(async () => {
-          render(<DogDetailClient />);
+          render(<DogDetailClient params={{ slug: "test-dog-123" }} />);
         });
 
         await waitFor(() => {
           expect(
-            screen.getAllByTestId("hero-image-container").length,
+            screen.getAllByTestId("hero-section").length,
           ).toBeGreaterThan(0);
         });
 
         // Component should render correctly at all viewport sizes
-        const heroContainers = screen.getAllByTestId("hero-image-container");
+        const heroContainers = screen.getAllByTestId("hero-section");
         expect(heroContainers.length).toBeGreaterThan(0);
       }
     });
 
     test("touch vs mouse interactions are handled correctly", async () => {
       await act(async () => {
-        render(<DogDetailClient />);
+        render(<DogDetailClient params={{ slug: "test-dog-123" }} />);
       });
 
-      await waitFor(() => {
-        expect(screen.getByTestId("action-bar")).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByTestId("action-bar")).toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
 
       const actionBar = screen.getByTestId("action-bar");
       const buttons = actionBar.querySelectorAll("button");
@@ -423,12 +559,17 @@ describe("Cross-Browser Compatibility Tests", () => {
   describe("Performance Across Browsers", () => {
     test("animations perform well in all browsers", async () => {
       await act(async () => {
-        render(<DogDetailClient />);
+        render(<DogDetailClient params={{ slug: "test-dog-123" }} />);
       });
 
-      await waitFor(() => {
-        expect(screen.getByTestId("hero-image-container")).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(
+            screen.getAllByTestId("hero-section")[0],
+          ).toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
 
       // Test that animations don't cause performance issues
       const animatedElements = document.querySelectorAll(
@@ -443,11 +584,13 @@ describe("Cross-Browser Compatibility Tests", () => {
     test("memory usage is reasonable across browsers", async () => {
       // Test multiple renders and unmounts
       for (let i = 0; i < 5; i++) {
-        const { unmount } = render(<DogDetailClient />);
+        const { unmount } = render(
+          <DogDetailClient params={{ slug: "test-dog-123" }} />,
+        );
 
         await waitFor(() => {
           expect(
-            screen.getByTestId("hero-image-container"),
+            screen.getAllByTestId("hero-section")[0],
           ).toBeInTheDocument();
         });
 

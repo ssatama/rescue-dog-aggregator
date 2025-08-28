@@ -99,6 +99,39 @@ export function sanitizeUserInput(input) {
   return input;
 }
 
+// Safe external URL validation with strict protocol checking
+export function safeExternalUrl(url) {
+  if (!url || typeof url !== "string") return null;
+
+  try {
+    const urlObj = new URL(url);
+    // Only allow http and https for external URLs
+    const allowedProtocols = ["http:", "https:"];
+
+    if (!allowedProtocols.includes(urlObj.protocol.toLowerCase())) {
+      console.warn(
+        `[Security] Blocked dangerous URL protocol: ${urlObj.protocol} in ${url}`,
+      );
+      return null;
+    }
+
+    // Additional checks for malicious URLs
+    if (
+      urlObj.hostname === "localhost" ||
+      urlObj.hostname.startsWith("127.") ||
+      urlObj.hostname.startsWith("192.168.")
+    ) {
+      console.warn(`[Security] Blocked private network URL: ${url}`);
+      return null;
+    }
+
+    return url;
+  } catch (error) {
+    console.warn(`[Security] Invalid URL format: ${url}`);
+    return null;
+  }
+}
+
 // Content Security Policy helpers
 export const CSP_DIRECTIVES = {
   defaultSrc: ["'self'"],
