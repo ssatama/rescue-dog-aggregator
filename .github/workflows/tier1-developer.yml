@@ -47,8 +47,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: dev-${{ runner.os }}-pip-${{ hashFiles('requirements*.txt') }}
+          key: dev-${{ runner.os }}-pip-3.12-${{ hashFiles('requirements*.txt') }}
           restore-keys: |
+            dev-${{ runner.os }}-pip-3.12-
             dev-${{ runner.os }}-pip-
 
       - name: Install dependencies (minimal)
@@ -69,6 +70,7 @@ jobs:
         env:
           PYTHONPATH: .
           CI: true
+          TESTING: true
           PYTEST_TIMEOUT: 120 # 2 minute timeout for entire test run
         run: |
           echo "🚀 Starting Tier 1 Developer Feedback Tests"
