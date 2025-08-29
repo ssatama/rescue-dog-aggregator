@@ -3,6 +3,76 @@ import { render, screen } from "../../../test-utils";
 import "@testing-library/jest-dom";
 import ResponsiveDogImage from "../ResponsiveDogImage";
 
+jest.mock("next/image", () => {
+  const MockImage = React.forwardRef(function MockImage(props, ref) {
+    const {
+      src,
+      alt,
+      onError,
+      fill,
+      width,
+      height,
+      priority,
+      quality,
+      placeholder,
+      blurDataURL,
+      sizes,
+      style,
+      className,
+      loading,
+      ...rest
+    } = props;
+
+    const handleError = (e) => {
+      if (onError) {
+        onError(e);
+      }
+    };
+
+    const validDomProps = {};
+
+    Object.keys(rest).forEach((key) => {
+      if (
+        key.startsWith("data-") ||
+        key.startsWith("aria-") ||
+        ["id", "title", "role", "tabIndex", "onClick", "onKeyDown"].includes(
+          key,
+        )
+      ) {
+        validDomProps[key] = rest[key];
+      }
+    });
+
+    return (
+      <img
+        ref={ref}
+        src={src}
+        alt={alt}
+        width={fill ? undefined : width}
+        height={fill ? undefined : height}
+        style={style}
+        className={className}
+        loading={loading}
+        onError={handleError}
+        data-testid="optimized-image"
+        data-priority={priority}
+        data-quality={quality}
+        data-placeholder={placeholder}
+        data-blur-data-url={blurDataURL}
+        data-sizes={sizes}
+        {...validDomProps}
+      />
+    );
+  });
+
+  MockImage.displayName = "NextImage";
+  return MockImage;
+});
+
+jest.mock("../../../utils/networkUtils", () => ({
+  getAdaptiveImageQuality: jest.fn(() => "q_80,"),
+}));
+
 describe("ResponsiveDogImage Component", () => {
   const mockDog = {
     id: 1,
@@ -11,63 +81,55 @@ describe("ResponsiveDogImage Component", () => {
       "https://images.example.com/rescue_dogs/org/dog_abc123.jpg",
   };
 
-  it("renders picture element with multiple sources", () => {
+  it("renders optimized image element", () => {
     render(<ResponsiveDogImage dog={mockDog} />);
-    const pictureElement = document.querySelector("picture");
-    expect(pictureElement).toBeInTheDocument();
+    const imageElement = screen.getByTestId("optimized-image");
+    expect(imageElement).toBeInTheDocument();
   });
 
-  it("generates mobile source with square aspect ratio and face gravity", () => {
-    render(<ResponsiveDogImage dog={mockDog} />);
-    const mobileSource = document.querySelector('source[media*="640px"]');
-    expect(mobileSource).toBeInTheDocument();
-
-    const srcset = mobileSource.getAttribute("srcset");
-    expect(srcset).toContain("w_400");
-    expect(srcset).toContain("h_400");
-    expect(srcset).toContain("g_face");
-    expect(srcset).toContain("c_cover");
-  });
-
-  it("generates tablet source with 4:3 aspect ratio and auto gravity", () => {
-    render(<ResponsiveDogImage dog={mockDog} />);
-    const tabletSource = document.querySelector('source[media*="1024px"]');
-    expect(tabletSource).toBeInTheDocument();
-
-    const srcset = tabletSource.getAttribute("srcset");
-    expect(srcset).toContain("w_600");
-    expect(srcset).toContain("h_450");
-    expect(srcset).toContain("g_auto");
-    expect(srcset).toContain("c_cover");
-  });
-
-  it("includes fallback img element with auto gravity", () => {
+  it("renders with correct src and alt attributes", () => {
     render(<ResponsiveDogImage dog={mockDog} />);
     const imgElement = screen.getByAltText("Max");
     expect(imgElement).toBeInTheDocument();
-
-    const src = imgElement.getAttribute("src");
-    expect(src).toContain("w_800");
-    expect(src).toContain("h_600");
-    expect(src).toContain("g_auto");
+    expect(imgElement).toHaveAttribute("src", mockDog.primary_image_url);
   });
 
-  it("applies provided className to picture element", () => {
+  it("uses dog-card sizes preset", () => {
+    render(<ResponsiveDogImage dog={mockDog} />);
+    const imgElement = screen.getByTestId("optimized-image");
+    expect(imgElement).toHaveAttribute(
+      "data-sizes",
+      "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
+    );
+  });
+
+  it("applies correct aspect ratio and layout", () => {
+    render(<ResponsiveDogImage dog={mockDog} />);
+    const imgElement = screen.getByTestId("optimized-image");
+    expect(imgElement).not.toHaveAttribute("width");
+    expect(imgElement).not.toHaveAttribute("height");
+  });
+
+  it("applies provided className to image element", () => {
     render(<ResponsiveDogImage dog={mockDog} className="custom-class" />);
-    const pictureElement = document.querySelector("picture");
-    expect(pictureElement).toHaveClass("custom-class");
+    const imgElement = screen.getByTestId("optimized-image");
+    expect(imgElement).toHaveClass("custom-class");
+    expect(imgElement).toHaveClass("transition-transform");
+    expect(imgElement).toHaveClass("duration-300");
+    expect(imgElement).toHaveClass("ease-out");
+    expect(imgElement).toHaveClass("group-hover:scale-105");
   });
 
   it("handles priority prop for lazy loading", () => {
     const { rerender } = render(
       <ResponsiveDogImage dog={mockDog} priority={false} />,
     );
-    let imgElement = screen.getByAltText("Max");
-    expect(imgElement).toHaveAttribute("loading", "lazy");
+    let imgElement = screen.getByTestId("optimized-image");
+    expect(imgElement).toHaveAttribute("data-priority", "false");
 
     rerender(<ResponsiveDogImage dog={mockDog} priority={true} />);
-    imgElement = screen.getByAltText("Max");
-    expect(imgElement).not.toHaveAttribute("loading");
+    imgElement = screen.getByTestId("optimized-image");
+    expect(imgElement).toHaveAttribute("data-priority", "true");
   });
 
   it("handles missing image gracefully", () => {
@@ -80,7 +142,7 @@ describe("ResponsiveDogImage Component", () => {
     render(<ResponsiveDogImage dog={dogWithoutImage} />);
     const imgElement = screen.getByAltText("Luna");
     expect(imgElement).toBeInTheDocument();
-    expect(imgElement.src).toContain("placeholder");
+    expect(imgElement.src).toContain("dog-placeholder.svg");
   });
 
   it("supports custom sizes prop for responsive breakpoints", () => {
@@ -90,21 +152,22 @@ describe("ResponsiveDogImage Component", () => {
         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
       />,
     );
-    const imgElement = screen.getByAltText("Max");
+    const imgElement = screen.getByTestId("optimized-image");
     expect(imgElement).toHaveAttribute(
-      "sizes",
+      "data-sizes",
       "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
     );
   });
 
-  it("generates correct srcset for different pixel densities", () => {
+  it("uses NextImage internally with correct props", () => {
     render(<ResponsiveDogImage dog={mockDog} />);
-    const mobileSource = document.querySelector('source[media*="640px"]');
-    const srcset = mobileSource.getAttribute("srcset");
-
-    // Should include 1x and 2x versions
-    expect(srcset).toContain("1x");
-    expect(srcset).toContain("2x");
+    const imgElement = screen.getByTestId("optimized-image");
+    expect(imgElement).toHaveAttribute("alt", "Max");
+    expect(imgElement).toHaveAttribute("src", mockDog.primary_image_url);
+    expect(imgElement).toHaveStyle({
+      objectFit: "cover",
+      objectPosition: "center 30%",
+    });
   });
 
   it("applies object-position for better framing", () => {

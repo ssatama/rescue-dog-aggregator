@@ -17,9 +17,8 @@ jest.mock("next/link", () => {
   };
 });
 
-// Mock OptimizedImage component
-jest.mock("../../ui/OptimizedImage", () => {
-  return function MockedOptimizedImage({
+jest.mock("../../ui/NextImage", () => {
+  return function MockedNextImage({
     src,
     alt,
     className,
@@ -32,7 +31,7 @@ jest.mock("../../ui/OptimizedImage", () => {
         alt={alt}
         className={className}
         onError={onError}
-        data-testid="lazy-image"
+        data-testid="optimized-image"
       />
     );
   };
@@ -101,7 +100,7 @@ describe("OrganizationCard Size Variants", () => {
 
     test('defaults to size="large" when no size prop provided', () => {
       render(<OrganizationCard organization={mockOrganization} />);
-      const logoImage = screen.getAllByTestId("lazy-image")[0];
+      const logoImage = screen.getAllByTestId("optimized-image")[0];
       const logoContainer = logoImage.closest(".w-16");
       expect(logoContainer).toHaveClass("w-16", "h-16"); // 64px (large)
     });
@@ -110,7 +109,7 @@ describe("OrganizationCard Size Variants", () => {
   describe("Logo Size Scaling", () => {
     test('renders 48px logo for size="small"', () => {
       render(<OrganizationCard organization={mockOrganization} size="small" />);
-      const logoImage = screen.getAllByTestId("lazy-image")[0];
+      const logoImage = screen.getAllByTestId("optimized-image")[0];
       const logoContainer = logoImage.closest(".w-12");
       expect(logoContainer).toHaveClass("w-12", "h-12"); // 48px
     });
@@ -119,14 +118,14 @@ describe("OrganizationCard Size Variants", () => {
       render(
         <OrganizationCard organization={mockOrganization} size="medium" />,
       );
-      const logoImage = screen.getAllByTestId("lazy-image")[0];
+      const logoImage = screen.getAllByTestId("optimized-image")[0];
       const logoContainer = logoImage.closest(".w-14");
       expect(logoContainer).toHaveClass("w-14", "h-14"); // 56px
     });
 
     test('renders 64px logo for size="large"', () => {
       render(<OrganizationCard organization={mockOrganization} size="large" />);
-      const logoImage = screen.getAllByTestId("lazy-image")[0];
+      const logoImage = screen.getAllByTestId("optimized-image")[0];
       const logoContainer = logoImage.closest(".w-16");
       expect(logoContainer).toHaveClass("w-16", "h-16"); // 64px
     });
@@ -325,7 +324,7 @@ describe("OrganizationCard Size Variants", () => {
       expect(screen.getByTestId("social-media-links")).toBeInTheDocument();
 
       // Dog preview images should be visible
-      const dogImages = screen.getAllByTestId("lazy-image");
+      const dogImages = screen.getAllByTestId("optimized-image");
       expect(dogImages.length).toBeGreaterThan(1); // Logo + dog thumbnails
     });
   });
@@ -335,7 +334,7 @@ describe("OrganizationCard Size Variants", () => {
       const { rerender } = render(
         <OrganizationCard organization={mockOrganization} size="small" />,
       );
-      let dogThumbnails = screen.getAllByTestId("lazy-image").slice(1); // Skip logo
+      let dogThumbnails = screen.getAllByTestId("optimized-image").slice(1); // Skip logo
       dogThumbnails.forEach((img) => {
         const container = img.closest(".w-10");
         expect(container).toHaveClass("w-10", "h-10"); // 40px for small
@@ -344,7 +343,7 @@ describe("OrganizationCard Size Variants", () => {
       rerender(
         <OrganizationCard organization={mockOrganization} size="medium" />,
       );
-      dogThumbnails = screen.getAllByTestId("lazy-image").slice(1);
+      dogThumbnails = screen.getAllByTestId("optimized-image").slice(1);
       dogThumbnails.forEach((img) => {
         const container = img.closest(".w-11");
         expect(container).toHaveClass("w-11", "h-11"); // 44px for medium
@@ -353,7 +352,7 @@ describe("OrganizationCard Size Variants", () => {
       rerender(
         <OrganizationCard organization={mockOrganization} size="large" />,
       );
-      dogThumbnails = screen.getAllByTestId("lazy-image").slice(1);
+      dogThumbnails = screen.getAllByTestId("optimized-image").slice(1);
       dogThumbnails.forEach((img) => {
         const container = img.closest(".w-12");
         expect(container).toHaveClass("w-12", "h-12"); // 48px for large
@@ -521,7 +520,7 @@ describe("OrganizationCard Size Variants", () => {
       );
 
       expect(
-        container.querySelectorAll('[data-testid="lazy-image"]').length,
+        container.querySelectorAll('[data-testid="optimized-image"]').length,
       ).toBeGreaterThanOrEqual(3); // At least one logo per card
     });
   });

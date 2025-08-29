@@ -88,7 +88,7 @@ const nextConfig = {
     ]
   },
 
-  // Image optimization configuration
+  // Enhanced image optimization configuration
   images: {
     remotePatterns: [
       {
@@ -114,8 +114,31 @@ const nextConfig = {
         hostname: 'example.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'r2.cloudflarestorage.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.rescuedogs.me',
+        port: '',
+        pathname: '/**',
       }
     ],
+    // Image optimization settings for optimal performance
+    formats: ['image/webp', 'image/avif'], // Modern formats first
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days cache
+    dangerouslyAllowSVG: false, // Prevent XSS
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    // Device sizes based on common viewports and our breakpoints
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    // Image sizes for responsive images
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // Use Cloudflare for optimization when possible
+    unoptimized: false,
   },
 
   // Enhanced webpack optimizations for production builds

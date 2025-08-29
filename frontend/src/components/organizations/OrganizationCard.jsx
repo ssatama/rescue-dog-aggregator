@@ -8,7 +8,7 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import SocialMediaLinks from "../ui/SocialMediaLinks";
-import OptimizedImage from "../ui/OptimizedImage";
+import NextImage from "../ui/NextImage";
 import { handleImageError } from "../../utils/imageUtils";
 import {
   formatBasedIn,
@@ -119,11 +119,13 @@ const OrganizationCard = memo(
             <div className="flex-shrink-0">
               {logoUrl ? (
                 <div className={`${styles.logo} rounded-lg overflow-hidden`}>
-                  <OptimizedImage
+                  <NextImage
                     src={logoUrl}
                     alt={`${name} logo`}
-                    className="w-full h-full"
-                    sizes="(max-width: 640px) 64px, (max-width: 1024px) 56px, 64px"
+                    className=""
+                    sizes="org-logo"
+                    aspectRatio="1/1"
+                    layout="fill"
                     objectFit="cover"
                   />
                 </div>
@@ -235,11 +237,13 @@ const OrganizationCard = memo(
                     <div
                       className={`${styles.dogThumbnail} rounded-lg overflow-hidden`}
                     >
-                      <OptimizedImage
+                      <NextImage
                         src={dog.thumbnail_url || dog.primary_image_url}
                         alt={dog.name || "Dog preview"}
-                        className="w-full h-full"
-                        sizes="(max-width: 640px) 40px, (max-width: 1024px) 44px, 48px"
+                        className=""
+                        sizes="dog-thumbnail"
+                        aspectRatio="1/1"
+                        layout="fill"
                         objectFit="cover"
                       />
                     </div>

@@ -16,9 +16,8 @@ jest.mock("next/link", () => {
   };
 });
 
-// Mock OptimizedImage component
-jest.mock("../../ui/OptimizedImage", () => {
-  return function MockedOptimizedImage({
+jest.mock("../../ui/NextImage", () => {
+  return function MockedNextImage({
     src,
     alt,
     className,
@@ -31,7 +30,7 @@ jest.mock("../../ui/OptimizedImage", () => {
         alt={alt}
         className={className}
         onError={onError}
-        data-testid="lazy-image"
+        data-testid="optimized-image"
       />
     );
   };
@@ -126,7 +125,7 @@ describe("EnhancedOrganizationCard", () => {
     test("renders logo image when logo_url is provided", () => {
       render(<OrganizationCard organization={mockOrganization} />);
 
-      const logoImage = screen.getAllByTestId("lazy-image")[0]; // First image is the logo
+      const logoImage = screen.getAllByTestId("optimized-image")[0]; // First image is the logo
       expect(logoImage).toHaveAttribute("src", "https://example.com/logo.jpg");
       expect(logoImage).toHaveAttribute("alt", "Pets in Turkey logo");
       const logoContainer = logoImage.closest(".w-16");
@@ -243,7 +242,7 @@ describe("EnhancedOrganizationCard", () => {
     test("renders recent dog thumbnails when available", () => {
       render(<OrganizationCard organization={mockOrganization} />);
 
-      const dogImages = screen.getAllByTestId("lazy-image");
+      const dogImages = screen.getAllByTestId("optimized-image");
       // One for logo, three for recent dogs
       expect(dogImages).toHaveLength(4);
 
@@ -290,7 +289,7 @@ describe("EnhancedOrganizationCard", () => {
       const noRecentDogsOrg = { ...mockOrganization, recent_dogs: [] };
       render(<OrganizationCard organization={noRecentDogsOrg} />);
 
-      const dogImages = screen.getAllByTestId("lazy-image");
+      const dogImages = screen.getAllByTestId("optimized-image");
       expect(dogImages).toHaveLength(1); // Only logo
     });
   });
@@ -376,7 +375,7 @@ describe("EnhancedOrganizationCard", () => {
     test("logo has correct 64px size", () => {
       render(<OrganizationCard organization={mockOrganization} />);
 
-      const logoImage = screen.getAllByTestId("lazy-image")[0]; // First image is the logo
+      const logoImage = screen.getAllByTestId("optimized-image")[0]; // First image is the logo
       const logoContainer = logoImage.closest(".w-16");
       expect(logoContainer).toHaveClass("w-16", "h-16"); // w-16 h-16 = 64px
     });
@@ -443,14 +442,14 @@ describe("EnhancedOrganizationCard", () => {
     test("has proper alt text for logo", () => {
       render(<OrganizationCard organization={mockOrganization} />);
 
-      const logoImage = screen.getAllByTestId("lazy-image")[0]; // First image is the logo
+      const logoImage = screen.getAllByTestId("optimized-image")[0]; // First image is the logo
       expect(logoImage).toHaveAttribute("alt", "Pets in Turkey logo");
     });
 
     test("has proper alt text for dog thumbnails", () => {
       render(<OrganizationCard organization={mockOrganization} />);
 
-      const dogImages = screen.getAllByTestId("lazy-image");
+      const dogImages = screen.getAllByTestId("optimized-image");
       const dogThumbnails = dogImages.slice(1); // Skip logo
 
       expect(dogThumbnails[0]).toHaveAttribute("alt", "Buddy");

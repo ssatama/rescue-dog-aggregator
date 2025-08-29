@@ -118,7 +118,106 @@ CREATE TABLE IF NOT EXISTS service_regions (
     UNIQUE (organization_id, country)
 );
 
--- Indexes for Performance
+-- ============================================================================
+-- DATABASE MIGRATION TRACKING TABLE
+-- ============================================================================
+
+-- Migration tracking table to keep track of applied migrations
+CREATE TABLE IF NOT EXISTS schema_migrations (
+    id SERIAL PRIMARY KEY,
+    version VARCHAR(50) NOT NULL UNIQUE,
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    description TEXT
+);
+
+-- ============================================================================
+-- PERFORMANCE INDEXES (From Migration 010)
+-- ============================================================================
+
+-- STEP 1: Enhanced composite index for homepage queries
+-- Optimized for homepage queries: WHERE status = 'available' ORDER BY availability_confidence, created_at DESC
+-- Expected performance improvement: 60-80% faster homepage queries
+CREATE INDEX IF NOT EXISTS idx_animals_homepage_optimized 
+  ON animals (status, availability_confidence, created_at DESC)
+  WHERE status = 'available';
+
+COMMENT ON INDEX idx_animals_homepage_optimized IS 
+  'Optimized composite index for homepage queries: status + availability_confidence + created_at DESC. 
+   Supports filtering available animals with quality ranking and recency sorting.
+   Expected 60-80% performance improvement for homepage queries.';
+
+-- STEP 2: Organization join optimization  
+-- Enhanced organization filtering index for homepage JOINs
+-- Supports: WHERE organizations.active = true AND organizations.country = ?
+CREATE INDEX IF NOT EXISTS idx_organizations_active_country 
+  ON organizations (active, country, id)
+  WHERE active = true;
+
+COMMENT ON INDEX idx_organizations_active_country IS 
+  'Composite index for organization filtering in homepage queries.
+   Supports active organization filtering by country with covering index for ID.
+   Expected 40-50% improvement for organization JOINs.';
+
+-- STEP 3: Enhanced JSON property indexes for location filtering
+-- Composite index for location-based filtering
+-- Supports: WHERE status = 'available' AND properties->>'location_country' = ?
+CREATE INDEX IF NOT EXISTS idx_animals_location_composite 
+  ON animals (status, (properties->>'location_country'), (properties->>'location_region'))
+  WHERE status = 'available' 
+    AND properties->>'location_country' IS NOT NULL;
+
+COMMENT ON INDEX idx_animals_location_composite IS 
+  'Composite index for location-based filtering with status.
+   Supports country and region filtering for available animals.
+   Expected 50-70% improvement for location-filtered queries.';
+
+-- STEP 4: Size and breed filtering optimization
+-- Enhanced size filtering index
+CREATE INDEX IF NOT EXISTS idx_animals_size_breed_status 
+  ON animals (status, standardized_size, breed_group, created_at DESC)
+  WHERE status = 'available' 
+    AND standardized_size IS NOT NULL 
+    AND breed_group IS NOT NULL;
+
+COMMENT ON INDEX idx_animals_size_breed_status IS 
+  'Composite index for size and breed filtering with recency sorting.
+   Supports multiple filter combinations commonly used in search.
+   Expected 30-50% improvement for filtered search queries.';
+
+-- STEP 5: Analytics and counting optimizations
+-- Comprehensive covering index for analytics queries
+CREATE INDEX IF NOT EXISTS idx_animals_analytics_covering 
+  ON animals (status, organization_id, standardized_size, breed_group, sex, 
+              availability_confidence, created_at)
+  WHERE status = 'available';
+
+COMMENT ON INDEX idx_animals_analytics_covering IS 
+  'Covering index for analytics and count queries.
+   Includes all commonly filtered columns to avoid table lookups.
+   Expected 70-90% improvement for dashboard analytics queries.';
+
+-- STEP 6: Search performance optimization
+-- Enhanced full-text search index with ranking
+CREATE INDEX IF NOT EXISTS idx_animals_search_enhanced 
+  ON animals USING gin (
+    to_tsvector('english', 
+      COALESCE(name, '') || ' ' || 
+      COALESCE(breed, '') || ' ' || 
+      COALESCE(properties->>'description', '')
+    )
+  )
+  WHERE status = 'available';
+
+COMMENT ON INDEX idx_animals_search_enhanced IS 
+  'Enhanced GIN index for full-text search including descriptions.
+   Supports search across name, breed, and description fields.
+   Expected 40-60% improvement for search query performance.';
+
+-- ============================================================================
+-- LEGACY INDEXES (Maintained for backward compatibility)
+-- ============================================================================
+
+-- Basic indexes for core functionality
 CREATE INDEX IF NOT EXISTS idx_animals_organization ON animals(organization_id);
 CREATE INDEX IF NOT EXISTS idx_animals_status ON animals(status);
 CREATE INDEX IF NOT EXISTS idx_animals_breed ON animals(breed);
@@ -129,7 +228,7 @@ CREATE INDEX IF NOT EXISTS idx_animals_animal_type ON animals(animal_type);
 CREATE INDEX IF NOT EXISTS idx_animals_standardized_breed ON animals(standardized_breed);
 CREATE INDEX IF NOT EXISTS idx_animals_standardized_size ON animals(standardized_size);
 
--- Text search indexes
+-- Legacy text search indexes (supplemented by enhanced search above)
 CREATE INDEX IF NOT EXISTS idx_animals_name_gin ON animals USING gin(to_tsvector('english', name));
 CREATE INDEX IF NOT EXISTS idx_animals_breed_gin ON animals USING gin(to_tsvector('english', breed));
 
@@ -145,7 +244,7 @@ CREATE INDEX IF NOT EXISTS idx_animals_last_seen_at ON animals(last_seen_at);
 CREATE INDEX IF NOT EXISTS idx_animals_consecutive_missing ON animals(consecutive_scrapes_missing);
 CREATE INDEX IF NOT EXISTS idx_animals_availability_confidence ON animals(availability_confidence);
 
--- Add index for performance
+-- Image URL indexes
 CREATE INDEX IF NOT EXISTS idx_animals_original_image_url ON animals(original_image_url);
 CREATE INDEX IF NOT EXISTS idx_animal_images_original_image_url ON animal_images(original_image_url);
 

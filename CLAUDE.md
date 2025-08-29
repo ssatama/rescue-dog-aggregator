@@ -11,6 +11,24 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Testing: pytest (backend), Jest (frontend)
 - Current: 434+ backend tests, 1,249 frontend tests, 2200 dogs
 
+## USE SUB-AGENTS FOR CONTEXT OPTIMIZATION
+
+1. Always use the file-analyzer sub-agent when asked to read files.
+   The file-analyzer agent is an expert in extracting and summarizing critical information from files, particularly log files and verbose outputs. It provides concise, actionable summaries that preserve essential information while dramatically reducing context usage.
+
+2. Always use the code-analyzer sub-agent when asked to search code, analyze code, research bugs, or trace logic flow.
+   The code-analyzer agent is an expert in code analysis, logic tracing, and vulnerability detection. It provides concise, actionable summaries that preserve essential information while dramatically reducing context usage.
+
+3. Always use the test-runner sub-agent to run tests and analyze the test results.
+
+Using the test-runner agent ensures:
+
+- Full test output is captured for debugging
+- Main conversation stays clean and focused
+- Context usage is optimized
+- All issues are properly surfaced
+- No approval dialogs interrupt the workflow
+
 ## MCP Tools for Claude Code
 
 - Utilize the available MCP servers and tools
@@ -48,107 +66,39 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 
 ### 3. Anti-Patterns (NEVER DO)
 
-- Skip tests or write code without tests
-- Delete/modify tests to make them pass
-- Mutate state or data structures
-- Create files >300 lines
-- Commit directly to main
-- Act like a sycophant. Always be direct and fair.
+- NO PARTIAL IMPLEMENTATION
+- NO SIMPLIFICATION : no "//This is simplified stuff for now, complete implementation would blablabla"
+- NO CODE DUPLICATION : check existing codebase to reuse functions and constants Read files before writing new functions. Use common sense function name to find them easily.
+- NO DEAD CODE : either use or delete from codebase completely
+- NO CHEATER TESTS : test must be accurate, reflect real usage and be designed to reveal flaws. No useless tests! Design tests to be verbose so we can use them for debuging.
+- NO INCONSISTENT NAMING - read existing codebase naming patterns.
+- NO OVER-ENGINEERING - Don't add unnecessary abstractions, factory patterns, or middleware when simple functions would work. Don't think "enterprise" when you need "working"
+- NO MIXED CONCERNS - Don't put validation logic inside API handlers, database queries inside UI components, etc. instead of proper separation
+- NO RESOURCE LEAKS - Don't forget to close database connections, clear timeouts, remove event listeners, or clean up file handles
 
-## CI/CD Tiered Test Execution Strategy
+### 4. Tone and Behavior
 
-### 4-Tier Testing Framework (1,449 Total Tests)
-
-**ALWAYS activate venv first:** `source venv/bin/activate`
-
-#### Tier 1: Developer Feedback (Target: <30 seconds)
-```bash
-pytest -m "unit or fast" --maxfail=5 -x
-# 587 tests: Pure logic, no I/O, instant feedback
-# Use during development for rapid iteration
-```
-
-#### Tier 2: CI Pipeline (Target: <5 minutes)
-```bash
-pytest -m "not slow and not browser and not external" --maxfail=3
-# 951 tests: Core functionality without slow/external dependencies
-# MUST PASS before pushing to any branch
-```
-
-#### Tier 3: Pre-merge (Target: <10 minutes) 
-```bash
-pytest -m "not requires_migrations" --maxfail=1
-# 1,444 tests: Comprehensive coverage excluding migration-dependent tests
-# Required for merge to main branch
-```
-
-#### Tier 4: Release/Full (Target: <20 minutes)
-```bash
-pytest
-# 1,449 tests: Complete test suite including all migrations
-# Required for production releases
-```
-
-### Usage Guidelines
-
-- **Development**: Use Tier 1 for rapid feedback loops
-- **Before Push**: Tier 2 must pass for any commit
-- **Before Merge**: Tier 3 must pass for pull requests  
-- **Release**: Tier 4 validates production readiness
-
-### Legacy Commands (Backward Compatible)
-
-```bash
-# Still supported for existing workflows
-pytest tests/ -m "unit" -v                            # Tier 1 equivalent
-pytest tests/ -m "not slow" -v                        # Similar to Tier 2
-pytest tests/ -v                                      # Tier 4 equivalent
+- Criticism is welcome. Please tell me when I am wrong or mistaken, or even when you think I might be wrong or mistaken.
+- Please tell me if there is a better approach than the one I am taking.
+- Please tell me if there is a relevant standard or convention that I appear to be unaware of.
+- Be skeptical.
+- Be concise.
+- Short summaries are OK, but don't give an extended breakdown unless we are working through the details of a plan.
+- Do not flatter, and do not give compliments unless I am specifically asking for your judgement.
+- Occasional pleasantries are fine.
+- Feel free to ask many questions. If you are in doubt of my intent, don't guess. Ask.
 
 # Frontend
+
 cd frontend
-npm test                                # All tests
-npm run build                          # Verify build
+npm test # All tests
+npm run build # Verify build
 
 # Config Management (Configuration-Driven Architecture)
+
 python management/config_commands.py list
 python management/config_commands.py sync
 python management/config_commands.py run pets-turkey
-
-# Data Quality Monitoring
-PYTHONPATH=. python monitoring/data_quality_monitor.py --mode=overall --all        # All organizations
-PYTHONPATH=. python monitoring/data_quality_monitor.py --mode=detailed --org-id=26 # Specific org (26 = gold standard)
-```
-
-### Common Tasks
-
-- API endpoint: Write test → Create route → Implement
-- Scraper: Config YAML → Test extraction → Implement (now with modern patterns)
-- Component: Test behavior → Create component → Style
-- **Duplicate check**: `npm run check:duplicates` (frontend only)
-
-### Scraper Architecture (Recent Refactoring)
-
-**BaseScraper now implements modern design patterns:**
-
-- **Null Object Pattern**: Services default to null objects (no conditional checks)
-- **Context Manager**: Use `with scraper:` for automatic connection handling
-- **Template Method**: `run()` decomposed into focused phases
-- **Dependency Injection**: Clean service injection at constructor level
-
-**Example Usage:**
-
-```python
-# Modern pattern with context manager
-with MyScraper(config_id="org-name") as scraper:
-    result = scraper.run()  # Automatic connection management
-
-# Service injection for testing/customization
-scraper = MyScraper(
-    config_id="org-name",
-    metrics_collector=CustomMetricsCollector(),
-    session_manager=CustomSessionManager()
-)
-```
 
 ## Project Structure
 
@@ -290,51 +240,3 @@ npm install
 pytest tests/path/to/test.py::test_name -v
 npm test -- --testNamePattern="test name"
 ```
-
-## Test Commands Summary
-
-```bash
-# Modern Tiered Strategy (RECOMMENDED)
-pytest -m "unit or fast" --maxfail=5 -x              # Tier 1: Developer Feedback (587 tests)
-pytest -m "not slow and not browser and not external" --maxfail=3  # Tier 2: CI Pipeline (951 tests)
-pytest -m "not requires_migrations" --maxfail=1      # Tier 3: Pre-merge (1,444 tests)
-pytest                                               # Tier 4: Full Release (1,449 tests)
-
-# Individual Test Execution
-pytest tests/scrapers/test_specific.py::test_name -v  # Single test
-pytest tests/scrapers/ -m unit -v                     # Module unit tests
-pytest -k "test_name_pattern" -v                     # Pattern matching
-
-# Legacy Commands (Still Supported)
-pytest tests/ -m "unit" -v                            # Legacy Tier 1
-pytest tests/ -m "not slow" -v                        # Legacy Tier 2
-pytest tests/ -v                                      # Legacy full suite
-
-# Frontend Testing
-npm test DogCard                                      # One component
-npm test -- --testNamePattern="renders correctly"     # Pattern match
-npm test                                              # All tests
-```
-
-## Common Patterns
-
-```python
-# Scraper patterns
-AGE_PATTERN = r'(\d+)\s*(year|month|week)s?\s*old'
-WEIGHT_PATTERN = r'(\d+\.?\d*)\s*(kg|lb|pound)'
-ID_PATTERN = r'[A-Z0-9]{6,12}'
-
-# Validation patterns
-EMAIL_PATTERN = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-URL_PATTERN = r'^https?://[^\s<>"{}|\\^`\[\]]+$'
-```
-
-## References
-
-- Architecture: `docs/technical/architecture.md`
-- Testing Guide: `docs/guides/testing.md`
-- Installation: `docs/guides/installation.md`
-- Deployment: `docs/guides/deployment.md`
-- API Reference: `docs/technical/api-reference.md`
-- Troubleshooting: `docs/troubleshooting.md`
-- Contributing: `CONTRIBUTING.md`

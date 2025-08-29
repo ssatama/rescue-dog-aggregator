@@ -9,6 +9,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 # Import database initialization
 from api.database import initialize_pool
 
+# Import cache headers middleware
+from api.middleware.cache_headers import CacheHeadersMiddleware
+
 # Import routes
 from api.routes import animals, enhanced_animals, llm, monitoring, organizations
 
@@ -113,6 +116,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 # Add security headers middleware
 app.add_middleware(SecurityHeadersMiddleware)
+
+# Add cache headers middleware for intelligent caching
+app.add_middleware(CacheHeadersMiddleware)
 
 # Log CORS configuration on startup
 logger = logging.getLogger(__name__)

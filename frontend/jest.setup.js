@@ -152,7 +152,39 @@ jest.mock("next/navigation", () => ({
 // Simple mocks for Next.js components
 jest.mock("next/image", () => ({
   __esModule: true,
-  default: ({ priority, ...props }) => <img {...props} />, // Filter out Next.js-specific props
+  default: ({ 
+    priority, 
+    sizes, 
+    quality, 
+    placeholder, 
+    blurDataURL, 
+    fill, 
+    loader, 
+    unoptimized,
+    style,
+    className,
+    ...props 
+  }) => {
+    // When fill is true, Next.js Image applies position styles and sizing
+    const fillStyles = fill ? {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover'
+    } : {};
+    
+    // Add CSS classes that Next.js Image typically adds for fill behavior
+    const fillClasses = fill ? 'w-full h-full object-cover' : '';
+    const combinedClassName = [className, fillClasses].filter(Boolean).join(' ');
+    
+    return <img 
+      {...props}
+      style={{ ...style, ...fillStyles }}
+      className={combinedClassName}
+    />;
+  },
 }));
 
 jest.mock("next/link", () => ({

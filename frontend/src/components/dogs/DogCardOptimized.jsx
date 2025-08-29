@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import OptimizedImage from "../ui/OptimizedImage";
+import NextImage from "../ui/NextImage";
 import { FavoriteButton } from "../favorites/FavoriteButton";
 import ShareButton from "../ui/ShareButton";
 import { sanitizeText } from "../../utils/security";
@@ -93,12 +93,14 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
             className="aspect-[4/3] relative overflow-hidden bg-muted dark:bg-muted/50"
             data-testid="image-container"
           >
-            <OptimizedImage
+            <NextImage
               src={dog.primary_image_url || dog.main_image}
               alt={dog.name}
-              className="dog-card-image w-full h-full transition-transform duration-300 ease-out group-hover:scale-105"
+              className="dog-card-image transition-transform duration-300 ease-out group-hover:scale-105"
               priority={priority}
               sizes="128px"
+              aspectRatio="4/3"
+              layout="fill"
               objectFit="cover"
               objectPosition="center 30%"
             />
@@ -218,12 +220,14 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
               {status.charAt(0).toUpperCase() + status.slice(1)}
             </Badge>
           )}
-          <OptimizedImage
+          <NextImage
             src={dog.primary_image_url || dog.main_image}
             alt={dog.name}
-            className="dog-card-image w-full h-full transition-transform duration-300 ease-out group-hover:scale-105"
+            className="dog-card-image transition-transform duration-300 ease-out group-hover:scale-105"
             priority={priority}
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            sizes="dog-card"
+            aspectRatio="4/3"
+            layout="fill"
             objectFit="cover"
             objectPosition="center 30%"
           />

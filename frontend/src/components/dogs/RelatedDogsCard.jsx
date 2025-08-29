@@ -1,7 +1,7 @@
 "use client";
 import React, { memo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import OptimizedImage from "../ui/OptimizedImage";
+import NextImage from "../ui/NextImage";
 import { getThumbnailImage, handleImageError } from "../../utils/imageUtils";
 import { sanitizeText } from "../../utils/security";
 
@@ -60,11 +60,13 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
         className="aspect-[4/3] w-full overflow-hidden rounded-t-lg bg-gray-200"
       >
         {dog.primary_image_url || dog.main_image ? (
-          <OptimizedImage
+          <NextImage
             src={getThumbnailImage(dog.primary_image_url || dog.main_image)}
             alt={dog.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="group-hover:scale-105 transition-transform duration-200"
+            sizes="related-dog"
+            aspectRatio="4/3"
+            layout="fill"
             objectFit="cover"
             objectPosition="center 30%"
           />
