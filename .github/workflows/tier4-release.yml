@@ -48,8 +48,8 @@ jobs:
         image: postgres:15
         env:
           POSTGRES_PASSWORD: test_password
-          POSTGRES_USER: test_user
-          POSTGRES_DB: rescue_dogs_test
+          POSTGRES_USER: postgres
+          POSTGRES_DB: test_rescue_dogs
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -98,12 +98,12 @@ jobs:
 
       - name: Setup complete test database
         env:
-          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/rescue_dogs_test
+          DATABASE_URL: postgresql://postgres:test_password@localhost:5432/test_rescue_dogs
         run: |
           # Run all migrations to ensure production-like environment
           python -c "
           import psycopg2
-          conn = psycopg2.connect('postgresql://test_user:test_password@localhost:5432/rescue_dogs_test')
+          conn = psycopg2.connect('postgresql://postgres:test_password@localhost:5432/test_rescue_dogs')
           with open('database/schema.sql', 'r') as f:
               with conn.cursor() as cur:
                   cur.execute(f.read())
@@ -114,16 +114,17 @@ jobs:
           # Apply all database migrations
           for migration in database/migrations/*.sql; do
             if [ -f "$migration" ]; then
-              psql postgresql://test_user:test_password@localhost:5432/rescue_dogs_test -f "$migration"
+              psql postgresql://postgres:test_password@localhost:5432/test_rescue_dogs -f "$migration"
             fi
           done
 
       - name: Run Test Group - ${{ matrix.test-group }}
         env:
-          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/rescue_dogs_test
+          DATABASE_URL: postgresql://postgres:test_password@localhost:5432/test_rescue_dogs
           REDIS_URL: redis://localhost:6379/0
           PYTHONPATH: .
           CI: true
+          TESTING: true
           TEST_ENVIRONMENT: release
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}

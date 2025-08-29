@@ -26,8 +26,8 @@ jobs:
         image: postgres:15
         env:
           POSTGRES_PASSWORD: test_password
-          POSTGRES_USER: test_user
-          POSTGRES_DB: rescue_dogs_test
+          POSTGRES_USER: postgres
+          POSTGRES_DB: test_rescue_dogs
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -76,11 +76,11 @@ jobs:
 
       - name: Setup test database schema
         env:
-          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/rescue_dogs_test
+          DATABASE_URL: postgresql://postgres:test_password@localhost:5432/test_rescue_dogs
         run: |
           python -c "
           import psycopg2
-          conn = psycopg2.connect('postgresql://test_user:test_password@localhost:5432/rescue_dogs_test')
+          conn = psycopg2.connect('postgresql://postgres:test_password@localhost:5432/test_rescue_dogs')
           with open('database/schema.sql', 'r') as f:
               with conn.cursor() as cur:
                   cur.execute(f.read())
@@ -90,10 +90,11 @@ jobs:
 
       - name: Run Tier 3 Pre-merge Tests
         env:
-          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/rescue_dogs_test
+          DATABASE_URL: postgresql://postgres:test_password@localhost:5432/test_rescue_dogs
           REDIS_URL: redis://localhost:6379/0
           PYTHONPATH: .
           CI: true
+          TESTING: true
           TEST_ENVIRONMENT: pre-merge
         run: |
           pytest \

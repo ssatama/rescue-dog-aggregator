@@ -43,8 +43,8 @@ jobs:
         image: postgres:15
         env:
           POSTGRES_PASSWORD: test_password
-          POSTGRES_USER: test_user
-          POSTGRES_DB: rescue_dogs_test
+          POSTGRES_USER: postgres
+          POSTGRES_DB: test_rescue_dogs
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -68,8 +68,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements*.txt') }}
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('requirements*.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-${{ matrix.python-version }}-
             ${{ runner.os }}-pip-
 
       - name: Install dependencies
@@ -84,9 +85,10 @@ jobs:
 
       - name: Run Tier 2 CI Tests
         env:
-          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/rescue_dogs_test
+          DATABASE_URL: postgresql://postgres:test_password@localhost:5432/test_rescue_dogs
           PYTHONPATH: .
           CI: true
+          TESTING: true
         run: |
           pytest \
             -m "not slow and not browser and not external" \
