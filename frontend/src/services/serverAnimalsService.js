@@ -3,7 +3,11 @@
 // Next.js will handle ISR caching with the 'next' option in fetch
 const cache = (fn) => fn;
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.rescuedogs.me";
+// Use internal URL for server-side requests in development
+const API_URL =
+  process.env.NODE_ENV === "development" && typeof window === "undefined"
+    ? "http://localhost:8000" // Server-side in dev
+    : process.env.NEXT_PUBLIC_API_URL || "https://api.rescuedogs.me";
 
 // Cache functions for deduplication within request lifecycle
 export const getAnimals = cache(async (params = {}) => {
@@ -200,7 +204,7 @@ export const getFilterCounts = cache(async (params = {}) => {
 // Statistics API fetch with caching
 export const getStatistics = cache(async () => {
   try {
-    const response = await fetch(`${API_URL}/api/statistics/`, {
+    const response = await fetch(`${API_URL}/api/animals/statistics`, {
       next: {
         revalidate: 300, // 5 minutes
         tags: ["statistics"],
@@ -225,8 +229,15 @@ export const getStatistics = cache(async () => {
 // Animals by curation with caching
 export const getAnimalsByCuration = cache(async (curationType, limit = 4) => {
   try {
+    const queryParams = new URLSearchParams({
+      curation_type: curationType,
+      limit: limit.toString(),
+      animal_type: "dog",
+      status: "available",
+    });
+
     const response = await fetch(
-      `${API_URL}/api/animals/?curation=${curationType}&limit=${limit}`,
+      `${API_URL}/api/animals/?${queryParams.toString()}`,
       {
         next: {
           revalidate: 300, // 5 minutes
