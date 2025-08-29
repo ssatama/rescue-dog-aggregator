@@ -11,7 +11,7 @@ scraper:
     timeout: 240
     skip_existing_animals: true
     enable_llm_profiling: true
-    llm_organization_id: 11
+    llm_organization_id: 12
 metadata:
   website_url: "https://daisyfamilyrescue.de"
   description: |

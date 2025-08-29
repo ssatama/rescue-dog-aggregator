@@ -1,12 +1,12 @@
 # Pre-merge - Tier 3: Comprehensive testing before merging to main
-# Target: <10 minutes execution time  
+# Target: <10 minutes execution time
 # Scope: 1,444 tests excluding migration-dependent tests
 
 name: Tier 3 - Pre-merge Validation
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
     types: [ready_for_review, synchronize]
   workflow_dispatch:
 
@@ -15,18 +15,18 @@ jobs:
     name: Pre-merge Backend Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    
+
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.11", "3.12"]
-        
+
     services:
       postgres:
         image: postgres:15
         env:
           POSTGRES_PASSWORD: test_password
-          POSTGRES_USER: test_user  
+          POSTGRES_USER: test_user
           POSTGRES_DB: rescue_dogs_test
         options: >-
           --health-cmd pg_isready
@@ -35,7 +35,7 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-      
+
       redis:
         image: redis:7
         options: >-
@@ -47,96 +47,96 @@ jobs:
           - 6379:6379
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Cache Python dependencies
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/pip
-          ~/.cache/pytest_cache
-        key: ${{ runner.os }}-python-${{ matrix.python-version }}-${{ hashFiles('requirements*.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-python-${{ matrix.python-version }}-
-          ${{ runner.os }}-python-
+      - name: Cache Python dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.cache/pytest_cache
+          key: ${{ runner.os }}-python-${{ matrix.python-version }}-${{ hashFiles('requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-python-${{ matrix.python-version }}-
+            ${{ runner.os }}-python-
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements-dev.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
 
-    - name: Setup test database schema
-      env:
-        DATABASE_URL: postgresql://test_user:test_password@localhost:5432/rescue_dogs_test
-      run: |
-        python -c "
-        import psycopg2
-        conn = psycopg2.connect('postgresql://test_user:test_password@localhost:5432/rescue_dogs_test')
-        with open('database/schema.sql', 'r') as f:
-            with conn.cursor() as cur:
-                cur.execute(f.read())
-        conn.commit()
-        conn.close()
-        "
+      - name: Setup test database schema
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/rescue_dogs_test
+        run: |
+          python -c "
+          import psycopg2
+          conn = psycopg2.connect('postgresql://test_user:test_password@localhost:5432/rescue_dogs_test')
+          with open('database/schema.sql', 'r') as f:
+              with conn.cursor() as cur:
+                  cur.execute(f.read())
+          conn.commit()
+          conn.close()
+          "
 
-    - name: Run Tier 3 Pre-merge Tests
-      env:
-        DATABASE_URL: postgresql://test_user:test_password@localhost:5432/rescue_dogs_test
-        REDIS_URL: redis://localhost:6379/0
-        PYTHONPATH: .
-        CI: true
-        TEST_ENVIRONMENT: pre-merge
-      run: |
-        pytest \
-          -m "not requires_migrations" \
-          --maxfail=1 \
-          --tb=short \
-          --durations=20 \
-          --cov=api \
-          --cov=scrapers \
-          --cov=services \
-          --cov=utils \
-          --cov-report=xml \
-          --cov-report=term-missing \
-          --cov-report=html:htmlcov \
-          --junit-xml=test-results-pre-merge.xml \
-          --disable-warnings \
-          -x
+      - name: Run Tier 3 Pre-merge Tests
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/rescue_dogs_test
+          REDIS_URL: redis://localhost:6379/0
+          PYTHONPATH: .
+          CI: true
+          TEST_ENVIRONMENT: pre-merge
+        run: |
+          pytest \
+            -m "not requires_migrations" \
+            --maxfail=1 \
+            --tb=short \
+            --durations=20 \
+            --cov=api \
+            --cov=scrapers \
+            --cov=services \
+            --cov=utils \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-report=html:htmlcov \
+            --junit-xml=test-results-pre-merge.xml \
+            --disable-warnings \
+            -x
 
-    - name: Upload comprehensive coverage
-      uses: codecov/codecov-action@v4
-      if: success()
-      with:
-        file: ./coverage.xml
-        flags: backend-tier3-pre-merge
-        name: comprehensive-coverage
+      - name: Upload comprehensive coverage
+        uses: codecov/codecov-action@v4
+        if: success()
+        with:
+          file: ./coverage.xml
+          flags: backend-tier3-pre-merge
+          name: comprehensive-coverage
 
-    - name: Archive coverage reports
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: coverage-reports-${{ matrix.python-version }}
-        path: |
-          coverage.xml
-          htmlcov/
-          test-results-pre-merge.xml
+      - name: Archive coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-reports-${{ matrix.python-version }}
+          path: |
+            coverage.xml
+            htmlcov/
+            test-results-pre-merge.xml
 
-    - name: Performance Analysis
-      if: success()
-      run: |
-        echo "✅ Tier 3 Pre-merge validation completed successfully"
-        echo "📊 Expected: ~1,444 tests in <10 minutes" 
-        echo "🎯 Comprehensive coverage achieved"
-        echo "🚀 Ready for main branch merge"
+      - name: Performance Analysis
+        if: success()
+        run: |
+          echo "✅ Tier 3 Pre-merge validation completed successfully"
+          echo "📊 Expected: ~1,444 tests in <10 minutes"
+          echo "🎯 Comprehensive coverage achieved"
+          echo "🚀 Ready for main branch merge"
 
   comprehensive-frontend-tests:
     name: Pre-merge Frontend Tests
@@ -147,86 +147,87 @@ jobs:
         working-directory: ./frontend
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
 
-    - name: Install dependencies
-      run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Run comprehensive tests
-      run: |
-        npm test -- --coverage --watchAll=false --maxWorkers=2 --verbose
+      - name: Run comprehensive tests
+        run: |
+          npm test -- --coverage --watchAll=false --maxWorkers=2 --verbose
 
-    - name: Type checking
-      run: npx tsc --noEmit
+      - name: Type checking
+        run: npx tsc --noEmit
 
-    - name: Linting
-      run: npm run lint
+      - name: Linting
+        run: npm run lint
 
-    - name: Build validation
-      run: npm run build
+      - name: Build validation
+        run: npm run build
 
-    - name: E2E smoke tests (critical paths only)
-      run: |
-        npm run test:e2e:ci -- --grep "smoke|critical"
+      - name: E2E smoke tests (critical paths only)
+        run: |
+          npm run test:e2e:ci -- --grep "smoke|critical"
 
   security-scan:
     name: Security Validation
     runs-on: ubuntu-latest
     timeout-minutes: 8
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Run security tests
-      run: |
-        source venv/bin/activate 2>/dev/null || python -m venv venv && source venv/bin/activate
-        pip install -r requirements.txt -r requirements-dev.txt
-        pytest tests/security/ -v --tb=short
+      - name: Run security tests
+        run: |
+          source venv/bin/activate 2>/dev/null || python -m venv venv && source venv/bin/activate
+          pip install -r requirements.txt -r requirements-dev.txt
+          pytest tests/security/ -v --tb=short
 
-    - name: Dependency vulnerability check
-      run: |
-        pip install safety
-        safety check --json --output safety-report.json || true
-        
-    - name: Upload security report
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: security-scan-results
-        path: safety-report.json
+      - name: Dependency vulnerability check
+        run: |
+          pip install safety
+          safety check --json --output safety-report.json || true
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-scan-results
+          path: safety-report.json
 
   merge-readiness:
     name: Merge Readiness Check
     runs-on: ubuntu-latest
-    needs: [comprehensive-backend-tests, comprehensive-frontend-tests, security-scan]
+    needs:
+      [comprehensive-backend-tests, comprehensive-frontend-tests, security-scan]
     if: always()
-    
+
     steps:
-    - name: Validate merge readiness
-      run: |
-        backend_result="${{ needs.comprehensive-backend-tests.result }}"
-        frontend_result="${{ needs.comprehensive-frontend-tests.result }}"
-        security_result="${{ needs.security-scan.result }}"
-        
-        if [[ "$backend_result" != "success" ]] || [[ "$frontend_result" != "success" ]] || [[ "$security_result" != "success" ]]; then
-          echo "❌ Pre-merge validation failed"
-          echo "Backend: $backend_result"
-          echo "Frontend: $frontend_result"  
-          echo "Security: $security_result"
-          echo "🚫 PR cannot be merged to main"
-          exit 1
-        else
-          echo "✅ All Tier 3 pre-merge validations passed"
-          echo "🎯 Comprehensive test coverage achieved"
-          echo "🔒 Security validation passed"
-          echo "🚀 PR approved for merge to main branch"
-        fi
+      - name: Validate merge readiness
+        run: |
+          backend_result="${{ needs.comprehensive-backend-tests.result }}"
+          frontend_result="${{ needs.comprehensive-frontend-tests.result }}"
+          security_result="${{ needs.security-scan.result }}"
+
+          if [[ "$backend_result" != "success" ]] || [[ "$frontend_result" != "success" ]] || [[ "$security_result" != "success" ]]; then
+            echo "❌ Pre-merge validation failed"
+            echo "Backend: $backend_result"
+            echo "Frontend: $frontend_result"
+            echo "Security: $security_result"
+            echo "🚫 PR cannot be merged to main"
+            exit 1
+          else
+            echo "✅ All Tier 3 pre-merge validations passed"
+            echo "🎯 Comprehensive test coverage achieved"
+            echo "🔒 Security validation passed"
+            echo "🚀 PR approved for merge to main branch"
+          fi

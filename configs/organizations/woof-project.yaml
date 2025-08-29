@@ -11,7 +11,7 @@ scraper:
     timeout: 60 # Increased for AI processing
     skip_existing_animals: true
     enable_llm_profiling: true
-    llm_organization_id: 11
+    llm_organization_id: 17
 metadata:
   website_url: "https://woofproject.eu/"
   description: |
