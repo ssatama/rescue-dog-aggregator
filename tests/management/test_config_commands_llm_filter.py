@@ -9,9 +9,14 @@ Following CLAUDE.md principles:
 import unittest
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from management.config_commands import ConfigManager
 
 
+@pytest.mark.file_io
+@pytest.mark.management
+@pytest.mark.unit
 class TestLLMAvailabilityFiltering(unittest.TestCase):
     """Test that LLM commands filter by availability_confidence."""
 

@@ -8,6 +8,10 @@ import pytest
 from services.image_processing_service import ImageProcessingService
 
 
+@pytest.mark.external
+@pytest.mark.services
+@pytest.mark.slow
+@pytest.mark.unit
 class TestImageDeduplication:
     """Test deduplication of images to avoid re-uploading existing R2 images."""
 

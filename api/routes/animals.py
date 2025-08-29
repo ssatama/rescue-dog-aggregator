@@ -7,8 +7,8 @@ from fastapi.responses import RedirectResponse
 from psycopg2.extras import RealDictCursor
 from pydantic import ValidationError
 
-from api.dependencies import get_db_cursor, get_pooled_db_cursor
-from api.exceptions import APIException, handle_database_error, handle_validation_error, safe_execute
+from api.dependencies import get_pooled_db_cursor
+from api.exceptions import APIException, handle_database_error, handle_validation_error
 from api.models.dog import Animal
 from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
 from api.models.responses import FilterCountsResponse

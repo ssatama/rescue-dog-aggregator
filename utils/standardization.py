@@ -8,7 +8,6 @@ This module provides functions to standardize dog data including:
 - Size estimation based on breed
 """
 
-import os
 import re
 from typing import Dict, Optional, Tuple
 
@@ -644,12 +643,19 @@ def normalize_breed_case(breed: str) -> str:
     """
     Normalize breed text to consistent capitalization.
 
+    DEPRECATED: This function is deprecated and will be removed in a future version.
+    Use utils.enhanced_breed_standardization.normalize_breed_case_v2() directly.
+
     Args:
         breed: Breed text to normalize
 
     Returns:
         Breed text with consistent capitalization
     """
+    import warnings
+
+    warnings.warn("normalize_breed_case is deprecated. Use enhanced_breed_standardization.normalize_breed_case_v2() directly.", DeprecationWarning, stacklevel=2)
+
     # Always use enhanced version (migration completed)
     from utils.enhanced_breed_standardization import normalize_breed_case_v2
 

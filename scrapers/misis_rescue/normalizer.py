@@ -2,10 +2,17 @@
 
 This module provides pure functions to normalize and standardize data extracted
 from MisisRescue website "Things you should know" sections.
+
+MIGRATION NOTICE: This module uses shared extraction utilities for consolidation.
+Age, breed, sex, and weight extraction logic has been moved to:
+- utils.shared_extraction_patterns
 """
 
 import re
 from typing import List, Optional
+
+# Import shared extraction utilities
+from utils.shared_extraction_patterns import calculate_age_range_months, extract_age_from_text, extract_breed_from_text, extract_sex_from_text, extract_weight_from_text, normalize_age_text
 
 
 def extract_birth_date(text: Optional[str]) -> Optional[str]:
@@ -159,7 +166,7 @@ def normalize_name(name: Optional[str]) -> str:
     return cleaned.title()
 
 
-def extract_age_from_text(text: Optional[str]) -> Optional[float]:
+def extract_age_from_text_legacy(text: Optional[str]) -> Optional[float]:
     """Extract age from detailed text using enhanced patterns.
 
     Args:
@@ -202,7 +209,7 @@ def extract_age_from_text(text: Optional[str]) -> Optional[float]:
     return None
 
 
-def extract_sex_from_text(text: Optional[str]) -> Optional[str]:
+def extract_sex_from_text_legacy(text: Optional[str]) -> Optional[str]:
     """Extract sex from detailed text with confidence scoring.
 
     Args:
@@ -256,7 +263,7 @@ def extract_sex_from_text(text: Optional[str]) -> Optional[str]:
     return None
 
 
-def extract_breed_from_text(text: Optional[str]) -> Optional[str]:
+def extract_breed_from_text_legacy(text: Optional[str]) -> Optional[str]:
     """Extract breed from detailed text when bullet points are insufficient.
 
     Args:
@@ -540,8 +547,8 @@ def normalize_size(weight_text: Optional[str]) -> Optional[str]:
     if not weight_text:
         return None
 
-    # Extract weight in kg
-    weight_kg = extract_weight_kg(weight_text)
+    # Extract weight in kg using shared utility
+    weight_kg = extract_weight_from_text(weight_text)
     if not weight_kg:
         return None
 
@@ -558,7 +565,7 @@ def normalize_size(weight_text: Optional[str]) -> Optional[str]:
         return "XLarge"
 
 
-def extract_weight_kg(text: Optional[str]) -> Optional[float]:
+def extract_weight_kg_legacy(text: Optional[str]) -> Optional[float]:
     """Extract weight in kg from text.
 
     Args:

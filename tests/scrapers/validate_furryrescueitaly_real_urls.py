@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """Simple validation of Furry Rescue Italy detail extraction."""
 
+import pytest
 import requests
 from bs4 import BeautifulSoup
 
 
+# This is a validation utility that makes external HTTP requests
+@pytest.mark.external
+@pytest.mark.scrapers
+@pytest.mark.browser
 def test_detail_extraction(url):
     """Test extracting details from a single URL."""
     print(f"\nTesting: {url}")

@@ -16,6 +16,8 @@ from scrapers.misis_rescue.normalizer import (
 )
 
 
+@pytest.mark.integration
+@pytest.mark.scrapers
 class TestNormalizerFixes:
     """Test the fixes for normalizer issues discovered in production."""
 

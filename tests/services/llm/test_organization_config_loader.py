@@ -16,6 +16,9 @@ import yaml
 from services.llm.organization_config_loader import OrganizationConfig, OrganizationConfigLoader, PromptTemplate
 
 
+@pytest.mark.file_io
+@pytest.mark.services
+@pytest.mark.slow
 class TestOrganizationConfig:
     """Test organization configuration model."""
 

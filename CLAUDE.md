@@ -55,14 +55,54 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Commit directly to main
 - Act like a sycophant. Always be direct and fair.
 
-## Essential Commands
+## CI/CD Tiered Test Execution Strategy
+
+### 4-Tier Testing Framework (1,449 Total Tests)
+
+**ALWAYS activate venv first:** `source venv/bin/activate`
+
+#### Tier 1: Developer Feedback (Target: <30 seconds)
+```bash
+pytest -m "unit or fast" --maxfail=5 -x
+# 587 tests: Pure logic, no I/O, instant feedback
+# Use during development for rapid iteration
+```
+
+#### Tier 2: CI Pipeline (Target: <5 minutes)
+```bash
+pytest -m "not slow and not browser and not external" --maxfail=3
+# 951 tests: Core functionality without slow/external dependencies
+# MUST PASS before pushing to any branch
+```
+
+#### Tier 3: Pre-merge (Target: <10 minutes) 
+```bash
+pytest -m "not requires_migrations" --maxfail=1
+# 1,444 tests: Comprehensive coverage excluding migration-dependent tests
+# Required for merge to main branch
+```
+
+#### Tier 4: Release/Full (Target: <20 minutes)
+```bash
+pytest
+# 1,449 tests: Complete test suite including all migrations
+# Required for production releases
+```
+
+### Usage Guidelines
+
+- **Development**: Use Tier 1 for rapid feedback loops
+- **Before Push**: Tier 2 must pass for any commit
+- **Before Merge**: Tier 3 must pass for pull requests  
+- **Release**: Tier 4 validates production readiness
+
+### Legacy Commands (Backward Compatible)
 
 ```bash
-# Backend (ALWAYS activate venv first)
-source venv/bin/activate
-source venv/bin/activate && pytest tests/ -m "unit or fast" -v      # Fast development feedback (RECOMMENDED)
-pytest tests/ -m "not browser and not requires_migrations" -v  # CI pipeline - MUST PASS before push
-pytest tests/ -v                        # All tests
+# Still supported for existing workflows
+pytest tests/ -m "unit" -v                            # Tier 1 equivalent
+pytest tests/ -m "not slow" -v                        # Similar to Tier 2
+pytest tests/ -v                                      # Tier 4 equivalent
 
 # Frontend
 cd frontend
@@ -254,11 +294,21 @@ npm test -- --testNamePattern="test name"
 ## Test Commands Summary
 
 ```bash
-# Backend Testing Levels
-pytest tests/scrapers/test_specific.py::test_name -v  # One test
-pytest tests/ -m "unit" -v                            # Fast unit tests
-pytest tests/ -m "not slow" -v                        # Dev tests
-pytest tests/ -v                                      # All tests
+# Modern Tiered Strategy (RECOMMENDED)
+pytest -m "unit or fast" --maxfail=5 -x              # Tier 1: Developer Feedback (587 tests)
+pytest -m "not slow and not browser and not external" --maxfail=3  # Tier 2: CI Pipeline (951 tests)
+pytest -m "not requires_migrations" --maxfail=1      # Tier 3: Pre-merge (1,444 tests)
+pytest                                               # Tier 4: Full Release (1,449 tests)
+
+# Individual Test Execution
+pytest tests/scrapers/test_specific.py::test_name -v  # Single test
+pytest tests/scrapers/ -m unit -v                     # Module unit tests
+pytest -k "test_name_pattern" -v                     # Pattern matching
+
+# Legacy Commands (Still Supported)
+pytest tests/ -m "unit" -v                            # Legacy Tier 1
+pytest tests/ -m "not slow" -v                        # Legacy Tier 2
+pytest tests/ -v                                      # Legacy full suite
 
 # Frontend Testing
 npm test DogCard                                      # One component

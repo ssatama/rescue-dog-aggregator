@@ -4,9 +4,15 @@ import time
 import unittest
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from utils.r2_service import R2Service
 
 
+@pytest.mark.api
+@pytest.mark.external
+@pytest.mark.slow
+@pytest.mark.utils
 class TestR2ExponentialBackoff(unittest.TestCase):
     """Test exponential backoff for R2 uploads"""
 

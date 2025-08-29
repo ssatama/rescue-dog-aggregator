@@ -16,7 +16,7 @@ Following CLAUDE.md principles:
 import logging
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from psycopg2.extras import RealDictCursor
 
 from api.dependencies import get_pooled_db_cursor

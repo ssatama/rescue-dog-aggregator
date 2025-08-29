@@ -14,15 +14,22 @@ import pytest
 
 from scrapers.misis_rescue.normalizer import (
     calculate_age_years,
-    extract_age_from_text,
+)
+from scrapers.misis_rescue.normalizer import extract_age_from_text_legacy as extract_age_from_text
+from scrapers.misis_rescue.normalizer import (
     extract_birth_date,
     extract_breed,
-    extract_weight_kg,
+)
+from scrapers.misis_rescue.normalizer import extract_weight_kg_legacy as extract_weight_kg
+from scrapers.misis_rescue.normalizer import (
     normalize_name,
     normalize_size,
 )
 
 
+@pytest.mark.integration
+@pytest.mark.scrapers
+@pytest.mark.slow
 class TestSizeStandardization:
     """Test correct size categorization based on weight."""
 

@@ -5,9 +5,15 @@ import unittest
 from typing import List, Tuple
 from unittest.mock import MagicMock, call, patch
 
+import pytest
+
 from utils.r2_service import R2Service
 
 
+@pytest.mark.api
+@pytest.mark.external
+@pytest.mark.slow
+@pytest.mark.utils
 class TestR2BatchUpload(unittest.TestCase):
     """Test batch upload functionality for R2 Service."""
 

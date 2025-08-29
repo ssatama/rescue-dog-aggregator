@@ -17,6 +17,8 @@ from services.llm.dog_profiler import DogProfilerPipeline
 pytestmark = pytest.mark.skipif(not os.environ.get("OPENROUTER_API_KEY"), reason="OPENROUTER_API_KEY not set - skipping LLM tests")
 
 
+@pytest.mark.api
+@pytest.mark.services
 class TestNormalizationRegression:
     """Comprehensive tests capturing current normalization behavior."""
 

@@ -7,7 +7,7 @@ Improved breed standardization algorithm based on database analysis and pattern 
 import json
 import re
 from difflib import SequenceMatcher
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 
 # Load the enhanced mapping rules from Phase 2 analysis

@@ -2,7 +2,13 @@
 
 import pytest
 
-from scrapers.theunderdog.normalizer import extract_age_text, extract_breed_from_description, extract_gender, extract_size_and_weight, normalize_animal_data
+from scrapers.theunderdog.normalizer import extract_age_text_legacy as extract_age_text
+from scrapers.theunderdog.normalizer import extract_breed_from_description_legacy as extract_breed_from_description
+from scrapers.theunderdog.normalizer import extract_gender_legacy as extract_gender
+from scrapers.theunderdog.normalizer import extract_size_and_weight_legacy as extract_size_and_weight
+from scrapers.theunderdog.normalizer import (
+    normalize_animal_data,
+)
 
 
 @pytest.mark.computation
@@ -60,7 +66,7 @@ class TestTheUnderdogNormalizer:
         # Check normalized fields
         assert result["age_text"] == "2 years"
         assert result["breed"] == "Mixed Breed"
-        assert result["sex"] == "Female"  # Updated to new format
+        assert result["sex"] == "Female"  # Capitalized for DB consistency
         assert result["size"] == "Large"
         assert result["weight_kg"] == 30.0
 
@@ -75,7 +81,7 @@ class TestTheUnderdogNormalizer:
         # Check normalized fields
         assert result["age_text"] is None  # No age info
         assert result["breed"] == "Mixed Breed"  # Default from description
-        assert result["sex"] == "Male"  # Updated to new format
+        assert result["sex"] == "Male"  # Capitalized for DB consistency
         assert result["size"] == "Medium"
         assert result["weight_kg"] is None  # No weight specified
 

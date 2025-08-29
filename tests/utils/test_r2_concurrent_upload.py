@@ -5,9 +5,14 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import MagicMock, call, patch
 
+import pytest
+
 from utils.r2_service import R2Service
 
 
+@pytest.mark.external
+@pytest.mark.slow
+@pytest.mark.utils
 class TestR2ConcurrentUpload(unittest.TestCase):
     """Test concurrent upload functionality for R2 Service."""
 

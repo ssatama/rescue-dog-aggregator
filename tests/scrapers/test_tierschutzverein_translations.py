@@ -5,6 +5,9 @@ import pytest
 from scrapers.tierschutzverein_europa.translations import normalize_name, translate_age, translate_breed, translate_gender
 
 
+@pytest.mark.api
+@pytest.mark.integration
+@pytest.mark.scrapers
 class TestTierschutzvereinTranslations:
     """Test all translation functions with real production data patterns."""
 

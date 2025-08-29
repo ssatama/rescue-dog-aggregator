@@ -28,8 +28,6 @@ from tenacity import (
 
 from services.llm.config import get_llm_config, get_model_temperature
 from services.llm.models import (
-    AnimalEnrichmentRequest,
-    AnimalEnrichmentResponse,
     DogProfilerData,
     LLMMessage,
     LLMRequest,

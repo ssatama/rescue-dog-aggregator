@@ -40,12 +40,6 @@ class QueryBuilder:
         self._from_table = f"{table} {alias}" if alias else table
         return self
 
-    def left_join(self, table: str, on_condition: str, alias: Optional[str] = None) -> "QueryBuilder":
-        """Add LEFT JOIN."""
-        table_expr = f"{table} {alias}" if alias else table
-        self._joins.append(f"LEFT JOIN {table_expr} ON {on_condition}")
-        return self
-
     def inner_join(self, table: str, on_condition: str, alias: Optional[str] = None) -> "QueryBuilder":
         """Add INNER JOIN."""
         table_expr = f"{table} {alias}" if alias else table
@@ -155,44 +149,6 @@ class BatchQueryExecutor:
 
     def __init__(self, cursor: RealDictCursor):
         self.cursor = cursor
-
-    def fetch_organization_data(self, organization_ids: List[int]) -> Dict[int, Dict[str, Any]]:
-        """
-        Fetch organization data for multiple organizations in a single query.
-
-        This prevents N+1 queries when fetching organization details for animals.
-        """
-        if not organization_ids:
-            return {}
-
-        query = QueryBuilder()
-        query.select("id", "name", "city", "country", "website_url", "social_media", "ships_to", "logo_url", "service_regions", "description")
-        query.from_table("organizations")
-        query.where_in("id", organization_ids)
-
-        results = query.execute(self.cursor)
-
-        # Convert to dict keyed by organization_id
-        return {row["id"]: dict(row) for row in results}
-
-    def fetch_animal_statistics(self, organization_ids: List[int]) -> Dict[int, Dict[str, Any]]:
-        """
-        Fetch animal statistics for multiple organizations in a single query.
-        """
-        if not organization_ids:
-            return {}
-
-        query = QueryBuilder()
-        query.select("organization_id", "COUNT(*) as total_dogs", "COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days') as new_this_week")
-        query.from_table("animals")
-        query.where("status = %s", "available")
-        query.where_in("organization_id", organization_ids)
-        query.group_by("organization_id")
-
-        results = query.execute(self.cursor)
-
-        # Convert to dict keyed by organization_id
-        return {row["organization_id"]: dict(row) for row in results}
 
     def fetch_service_regions(self, organization_ids: List[int]) -> Dict[int, List[Dict[str, Any]]]:
         """

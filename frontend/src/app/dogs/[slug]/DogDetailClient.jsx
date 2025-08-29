@@ -407,10 +407,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                 <div className="flex flex-col gap-8">
                   {/* Hero Image Section - Full Width */}
                   <div>
-                    <div
-                      className="w-full relative"
-                      data-testid="hero-section"
-                    >
+                    <div className="w-full relative" data-testid="hero-section">
                       {/* Swipe hint for mobile only - fades out after 3.5 seconds */}
                       <div className="lg:hidden">
                         {(prevDog || nextDog) && (

@@ -1125,12 +1125,11 @@ class BaseScraper(ABC):
         self.metrics_collector.log_detailed_metrics(metrics)
         return True
 
-    def _is_significant_update(self, existing_animal, new_data):
+    def _is_significant_update(self, existing_animal):
         """Determine if an update is significant enough to warrant re-profiling.
 
         Args:
             existing_animal: Tuple from database with existing animal data
-            new_data: New data being saved
 
         Returns:
             bool: True if update is significant

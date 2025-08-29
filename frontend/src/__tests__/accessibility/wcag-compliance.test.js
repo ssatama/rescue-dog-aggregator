@@ -179,9 +179,7 @@ describe("WCAG 2.1 AA Compliance Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -213,9 +211,7 @@ describe("WCAG 2.1 AA Compliance Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -254,9 +250,7 @@ describe("WCAG 2.1 AA Compliance Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -281,9 +275,7 @@ describe("WCAG 2.1 AA Compliance Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -316,9 +308,7 @@ describe("WCAG 2.1 AA Compliance Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -349,9 +339,7 @@ describe("WCAG 2.1 AA Compliance Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -398,9 +386,7 @@ describe("WCAG 2.1 AA Compliance Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -432,9 +418,7 @@ describe("WCAG 2.1 AA Compliance Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -460,9 +444,7 @@ describe("WCAG 2.1 AA Compliance Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -487,9 +469,7 @@ describe("WCAG 2.1 AA Compliance Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -514,9 +494,7 @@ describe("WCAG 2.1 AA Compliance Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -586,9 +564,7 @@ describe("WCAG 2.1 AA Compliance Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -618,9 +594,7 @@ describe("WCAG 2.1 AA Compliance Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );

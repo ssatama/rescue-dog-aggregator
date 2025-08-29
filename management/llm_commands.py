@@ -27,7 +27,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import DB_CONFIG
 from management.batch_processor import create_batch_processor
 from services.llm.config import get_llm_config
-from services.llm.models import ProcessingType
+
+# ProcessingType import removed - was unused
 from services.llm_data_service import OpenRouterLLMDataService
 
 console = Console()

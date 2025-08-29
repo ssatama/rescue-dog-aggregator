@@ -11,6 +11,10 @@ from selenium.webdriver.common.by import By
 
 from scrapers.base_scraper import BaseScraper
 
+# Import shared extraction utilities for consolidation
+from utils.shared_extraction_patterns import extract_age_from_text as shared_extract_age
+from utils.shared_extraction_patterns import extract_weight_from_text as shared_extract_weight
+
 
 class REANScraper(BaseScraper):
     """REAN (Rescuing European Animals in Need) scraper for Romania and UK foster dogs."""
@@ -1077,6 +1081,14 @@ class REANScraper(BaseScraper):
 
         return None
 
+    def normalize_age_text_from_years(self, age_years: float) -> str:
+        """Convert age in years to REAN-style age text."""
+        if age_years < 1.0:
+            months = round(age_years * 12)
+            return f"{months} months"
+        else:
+            return f"{age_years:.1f} years" if age_years != int(age_years) else f"{int(age_years)} years"
+
     def extract_age(self, text: str) -> Optional[str]:
         """
         Extract age information from text.
@@ -1447,8 +1459,13 @@ class REANScraper(BaseScraper):
             if not name:
                 return None
 
-            age_text = self.extract_age(entry_text)
-            weight_kg = self.extract_weight(entry_text)
+            # Try shared utilities first, fallback to REAN-specific methods
+            age_years = shared_extract_age(entry_text)
+            age_text = self.normalize_age_text_from_years(age_years) if age_years else self.extract_age(entry_text)
+
+            weight_kg = shared_extract_weight(entry_text)
+            if not weight_kg:
+                weight_kg = self.extract_weight(entry_text)
 
             # Determine size
             size_prediction = None

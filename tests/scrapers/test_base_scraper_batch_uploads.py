@@ -7,6 +7,10 @@ import pytest
 from scrapers.base_scraper import BaseScraper
 
 
+@pytest.mark.external
+@pytest.mark.scrapers
+@pytest.mark.slow
+@pytest.mark.unit
 class TestBaseScraperBatchUploads:
     """Test batch upload functionality in BaseScraper."""
 

@@ -15,6 +15,8 @@ import pytest
 from services.llm.prompt_builder import PromptBuilder
 
 
+@pytest.mark.file_io
+@pytest.mark.services
 class TestPromptBuilder:
     """Test suite for PromptBuilder class."""
 

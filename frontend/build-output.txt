@@ -1,0 +1,64 @@
+
+> rescue-dog-aggregator-frontend@0.1.0 build
+> next build
+
+   ▲ Next.js 15.3.5
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 2000ms
+   Linting and checking validity of types ...
+
+./src/__tests__/accessibility/wcag-compliance.test.js
+107:9  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/__tests__/cross-browser/browser-compatibility.test.js
+107:9  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/25) ...
+   Generating static pages (6/25) 
+SSR: Successfully loaded 13 organizations
+   Generating static pages (12/25) 
+   Generating static pages (18/25) 
+ ✓ Generating static pages (25/25)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                        Size  First Load JS  Revalidate  Expire
+┌ ○ /                                            5.2 kB         305 kB
+├ ○ /_not-found                                   198 B         270 kB
+├ ○ /about                                        186 B         300 kB
+├ ƒ /dogs                                       2.82 kB         302 kB
+├ ● /dogs/[slug]                                11.6 kB         311 kB
+├ ○ /favorites                                    16 kB         316 kB
+├ ○ /organizations                              2.12 kB         302 kB          5m      1y
+├ ● /organizations/[slug]                          7 kB         307 kB          1d      1y
+├   ├ /organizations/animal-rescue-bosnia-15                                    1d      1y
+├   ├ /organizations/daisy-family-rescue-ev-12                                  1d      1y
+├   ├ /organizations/dogs-trust                                                 1d      1y
+├   └ [+10 more paths]
+├ ƒ /sitemap-dogs.xml                             131 B         270 kB
+├ ƒ /sitemap-images.xml                           131 B         270 kB
+├ ƒ /sitemap-organizations.xml                    131 B         270 kB
+├ ƒ /sitemap.xml                                  131 B         270 kB
+└ ○ /test-images                                2.85 kB         272 kB
++ First Load JS shared by all                    270 kB
+  ├ chunks/4bd1b696-52e4cce8d1f1a924.js         53.2 kB
+  ├ chunks/common-17c841080adac577.js           36.1 kB
+  └ chunks/vendors-eb465642f01c826a.js           178 kB
+  └ other shared chunks (total)                 2.05 kB
+
+Route (pages)                                      Size  First Load JS
+─ ƒ /api/health                                     0 B         261 kB
++ First Load JS shared by all                    261 kB
+  ├ chunks/common-17c841080adac577.js           36.1 kB
+  ├ chunks/framework-be704551803917a8.js        44.8 kB
+  ├ chunks/vendors-eb465642f01c826a.js           178 kB
+  └ other shared chunks (total)                 2.15 kB
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+

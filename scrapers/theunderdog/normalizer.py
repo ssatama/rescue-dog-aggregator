@@ -2,10 +2,17 @@
 
 This module provides pure functions to normalize and standardize data extracted
 from The Underdog website properties and description sections.
+
+MIGRATION NOTICE: This module uses shared extraction utilities for consolidation.
+Age, breed, sex, and weight extraction logic has been moved to:
+- utils.shared_extraction_patterns
 """
 
 import re
 from typing import Any, Dict, Optional, Tuple
+
+# Import shared extraction utilities
+from utils.shared_extraction_patterns import calculate_age_range_months, extract_age_from_text, extract_breed_from_text, extract_sex_from_text, extract_weight_from_text, normalize_age_text
 
 
 def normalize_animal_data(animal_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -38,38 +45,37 @@ def normalize_animal_data(animal_data: Dict[str, Any]) -> Dict[str, Any]:
 
     description = animal_data.get("description", "")
 
-    # Enhanced age extraction with standardized format
-    age_years = extract_age_years(qa_data.get("How old?"))
+    # Enhanced age extraction with shared utilities
+    age_years = extract_age_from_text(qa_data.get("How old?"))
     if age_years:
-        result["age_text"] = format_age_text(age_years)
+        result["age_text"] = normalize_age_text(age_years)
         result["age_years"] = age_years
 
         # Calculate age range in months
-        min_months, max_months = calculate_age_range(age_years)
+        min_months, max_months = calculate_age_range_months(age_years)
         result["age_min_months"] = min_months
         result["age_max_months"] = max_months
     else:
-        # Fallback to original extraction for compatibility
-        result["age_text"] = extract_age_text(qa_data.get("How old?"))
+        result["age_text"] = None
         result["age_years"] = None
         result["age_min_months"] = None
         result["age_max_months"] = None
 
     # Breed extraction (CRITICAL - from description, not properties!)
-    result["breed"] = extract_breed_from_description(description)
+    result["breed"] = extract_breed_from_text(description)
 
-    # Gender mapping
-    result["sex"] = extract_gender(qa_data.get("Male or female?"))
+    # Gender mapping using shared utilities
+    result["sex"] = extract_sex_from_text(qa_data.get("Male or female?"))
 
     # Size and weight extraction
-    size, weight_kg = extract_size_and_weight(qa_data.get("How big?"))
+    size, weight_kg = extract_size_and_weight_legacy(qa_data.get("How big?"))
     result["size"] = size
     result["weight_kg"] = weight_kg
 
     return result
 
 
-def extract_age_text(age_property: Optional[str]) -> Optional[str]:
+def extract_age_text_legacy(age_property: Optional[str]) -> Optional[str]:
     """Extract and normalize age text from 'How old?' property.
 
     Patterns handled:
@@ -166,7 +172,7 @@ def extract_age_text(age_property: Optional[str]) -> Optional[str]:
     return None
 
 
-def extract_breed_from_description(description: Optional[str]) -> str:
+def extract_breed_from_description_legacy(description: Optional[str]) -> str:
     """Extract breed from description text (CRITICAL for user filtering).
 
     This is the primary source of breed information since it's not in properties.
@@ -275,7 +281,7 @@ def extract_breed_from_description(description: Optional[str]) -> str:
     return "Mixed Breed"
 
 
-def extract_gender(gender_property: Optional[str]) -> Optional[str]:
+def extract_gender_legacy(gender_property: Optional[str]) -> Optional[str]:
     """Extract and map gender from 'Male or female?' property.
 
     Args:
@@ -297,7 +303,7 @@ def extract_gender(gender_property: Optional[str]) -> Optional[str]:
     return None
 
 
-def extract_size_and_weight(size_property: Optional[str]) -> Tuple[Optional[str], Optional[float]]:
+def extract_size_and_weight_legacy(size_property: Optional[str]) -> Tuple[Optional[str], Optional[float]]:
     """Extract size category and weight from 'How big?' property.
 
     Patterns handled:
@@ -378,7 +384,7 @@ def extract_size_and_weight(size_property: Optional[str]) -> Tuple[Optional[str]
     return size_category, weight_kg
 
 
-def extract_age_years(age_property: Optional[str]) -> Optional[float]:
+def extract_age_years_legacy(age_property: Optional[str]) -> Optional[float]:
     """Extract age in decimal years from 'How old?' property.
 
     Args:
@@ -473,7 +479,7 @@ def extract_age_years(age_property: Optional[str]) -> Optional[float]:
     return None
 
 
-def calculate_age_range(age_years: Optional[float]) -> Tuple[Optional[int], Optional[int]]:
+def calculate_age_range_legacy(age_years: Optional[float]) -> Tuple[Optional[int], Optional[int]]:
     """Calculate age range in months from decimal years.
 
     Args:
@@ -499,7 +505,7 @@ def calculate_age_range(age_years: Optional[float]) -> Tuple[Optional[int], Opti
         return int(age_months - 24), int(age_months + 24)
 
 
-def format_age_text(age_years: Optional[float]) -> Optional[str]:
+def format_age_text_legacy(age_years: Optional[float]) -> Optional[str]:
     """Format age in years to standardized text format.
 
     Args:

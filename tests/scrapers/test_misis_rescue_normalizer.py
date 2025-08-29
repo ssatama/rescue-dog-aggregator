@@ -2,16 +2,22 @@ from datetime import datetime
 
 import pytest
 
-# These imports will fail initially - that's expected!
+# Updated imports for legacy functions after consolidation
 from scrapers.misis_rescue.normalizer import (
     calculate_age_years,
-    extract_age_from_text,
+)
+from scrapers.misis_rescue.normalizer import extract_age_from_text_legacy as extract_age_from_text
+from scrapers.misis_rescue.normalizer import (
     extract_birth_date,
     extract_breed,
-    extract_breed_from_text,
+)
+from scrapers.misis_rescue.normalizer import extract_breed_from_text_legacy as extract_breed_from_text
+from scrapers.misis_rescue.normalizer import (
     extract_sex,
-    extract_sex_from_text,
-    extract_weight_kg,
+)
+from scrapers.misis_rescue.normalizer import extract_sex_from_text_legacy as extract_sex_from_text
+from scrapers.misis_rescue.normalizer import extract_weight_kg_legacy as extract_weight_kg
+from scrapers.misis_rescue.normalizer import (
     normalize_name,
     normalize_size,
 )
@@ -534,7 +540,14 @@ class TestIntegratedNormalization:
 
     def test_comprehensive_normalization_pipeline(self):
         """Test that all normalization functions work together."""
-        from scrapers.misis_rescue.normalizer import extract_age_from_text, extract_breed_from_text, extract_sex_from_text, extract_weight_kg, normalize_name, normalize_size
+        from scrapers.misis_rescue.normalizer import extract_age_from_text_legacy as extract_age_from_text
+        from scrapers.misis_rescue.normalizer import extract_breed_from_text_legacy as extract_breed_from_text
+        from scrapers.misis_rescue.normalizer import extract_sex_from_text_legacy as extract_sex_from_text
+        from scrapers.misis_rescue.normalizer import extract_weight_kg_legacy as extract_weight_kg
+        from scrapers.misis_rescue.normalizer import (
+            normalize_name,
+            normalize_size,
+        )
 
         # Test data based on real database patterns
         test_cases = [

@@ -240,7 +240,8 @@ class TestMisisRescueDetailParser:
         result = parser.parse_detail_page(soup)
 
         # Verify normalizer integration
-        from scrapers.misis_rescue.normalizer import calculate_age_years, extract_birth_date, extract_breed, extract_sex, extract_weight_kg, normalize_size
+        from scrapers.misis_rescue.normalizer import calculate_age_years, extract_birth_date, extract_breed, extract_sex, normalize_size
+        from utils.shared_extraction_patterns import extract_weight_from_text as extract_weight_kg
 
         bullets = result["bullet_points"]
 

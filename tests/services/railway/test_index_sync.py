@@ -7,6 +7,9 @@ import pytest
 from services.railway.index_sync import get_local_indexes, get_railway_indexes, sync_all_table_indexes, sync_indexes_to_railway
 
 
+@pytest.mark.services
+@pytest.mark.slow
+@pytest.mark.unit
 class TestIndexSync:
     """Test suite for index synchronization functionality."""
 

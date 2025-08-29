@@ -20,13 +20,14 @@ const originalError = console.error;
 beforeAll(() => {
   console.error = (...args) => {
     const message = args[0];
-    if (typeof message === 'string' && (
-      message.includes('Unknown event handler property') ||
-      message.includes('onSwipedLeft') ||
-      message.includes('onSwipedRight') ||
-      message.includes('onSwiped') ||
-      message.includes('onSwiping')
-    )) {
+    if (
+      typeof message === "string" &&
+      (message.includes("Unknown event handler property") ||
+        message.includes("onSwipedLeft") ||
+        message.includes("onSwipedRight") ||
+        message.includes("onSwiped") ||
+        message.includes("onSwiping"))
+    ) {
       return; // Suppress swipe handler warnings
     }
     originalError.call(console, ...args);
@@ -197,9 +198,7 @@ describe("Cross-Browser Compatibility Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -253,9 +252,7 @@ describe("Cross-Browser Compatibility Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -304,9 +301,7 @@ describe("Cross-Browser Compatibility Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -354,9 +349,7 @@ describe("Cross-Browser Compatibility Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -388,9 +381,7 @@ describe("Cross-Browser Compatibility Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -428,9 +419,7 @@ describe("Cross-Browser Compatibility Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -452,9 +441,7 @@ describe("Cross-Browser Compatibility Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -473,9 +460,7 @@ describe("Cross-Browser Compatibility Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -511,9 +496,9 @@ describe("Cross-Browser Compatibility Tests", () => {
         });
 
         await waitFor(() => {
-          expect(
-            screen.getAllByTestId("hero-section").length,
-          ).toBeGreaterThan(0);
+          expect(screen.getAllByTestId("hero-section").length).toBeGreaterThan(
+            0,
+          );
         });
 
         // Component should render correctly at all viewport sizes
@@ -564,9 +549,7 @@ describe("Cross-Browser Compatibility Tests", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         },
         { timeout: 2000 },
       );
@@ -589,9 +572,7 @@ describe("Cross-Browser Compatibility Tests", () => {
         );
 
         await waitFor(() => {
-          expect(
-            screen.getAllByTestId("hero-section")[0],
-          ).toBeInTheDocument();
+          expect(screen.getAllByTestId("hero-section")[0]).toBeInTheDocument();
         });
 
         unmount();
