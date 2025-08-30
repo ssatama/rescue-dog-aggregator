@@ -5,15 +5,65 @@
 
 import * as Sentry from "@sentry/nextjs";
 
-Sentry.init({
-  dsn: "https://3e013eea839f1016a4d06f3ec78d1407@o4509932462800896.ingest.de.sentry.io/4509932479250512",
+// Determine environment
+const environment = process.env.VERCEL_ENV || process.env.NODE_ENV || "development";
+const isDevelopment = environment === "development";
+const isProduction = environment === "production";
 
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
+Sentry.init({
+  dsn: process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN || "https://3e013eea839f1016a4d06f3ec78d1407@o4509932462800896.ingest.de.sentry.io/4509932479250512",
+
+  // Environment configuration
+  environment,
+
+  // Release tracking
+  release: process.env.SENTRY_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || "unknown",
+
+  // Performance monitoring - Adjust sample rate based on environment
+  tracesSampleRate: isProduction ? 0.1 : 1.0,
 
   // Enable logs to be sent to Sentry
   enableLogs: true,
 
-  // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: false,
+  // Debug mode only in development
+  debug: isDevelopment,
+
+  // Ignore certain errors
+  ignoreErrors: [
+    "ResizeObserver loop limit exceeded",
+    "Non-Error promise rejection captured",
+  ],
+
+  // Data scrubbing
+  beforeSend(event, hint) {
+    // In development, always send events
+    if (isDevelopment) {
+      return event;
+    }
+
+    // Add edge context
+    event.contexts = {
+      ...event.contexts,
+      runtime: {
+        name: "edge",
+      },
+    };
+
+    // Add edge tags
+    event.tags = {
+      ...event.tags,
+      "edge.region": process.env.VERCEL_REGION || "unknown",
+      "deployment.type": process.env.VERCEL ? "vercel" : "local",
+    };
+
+    return event;
+  },
+
+  // Set initial scope
+  initialScope: {
+    tags: {
+      component: "edge",
+      runtime: "edge",
+    },
+  },
 });

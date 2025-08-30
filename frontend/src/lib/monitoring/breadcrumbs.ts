@@ -416,3 +416,295 @@ export function cancelPendingTracking(): void {
   debounceTimers.forEach((timer) => clearTimeout(timer));
   debounceTimers.clear();
 }
+
+/**
+ * Tracks when a user selects dogs for comparison.
+ * Should be called when dogs are added/removed from comparison selection.
+ * @param action - Whether dog was selected or deselected for comparison
+ * @param dogId - Unique identifier for the dog
+ * @param dogName - Name of the dog
+ * @param selectedCount - Current number of dogs selected for comparison
+ */
+export function trackCompareSelection(
+  action: "select" | "deselect",
+  dogId: string,
+  dogName: string,
+  selectedCount: number,
+): void {
+  try {
+    Sentry.addBreadcrumb({
+      category: "ui",
+      type: "user",
+      level: "info",
+      message: `${action === "select" ? "Selected" : "Deselected"} dog for comparison: ${dogName}`,
+      data: {
+        action,
+        dogId,
+        dogName,
+        selectedCount,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to track compare selection:", error);
+  }
+}
+
+/**
+ * Tracks when a user initiates dog comparison.
+ * Should be called when compare button is clicked.
+ * @param dogIds - Array of dog IDs being compared
+ * @param dogNames - Array of dog names being compared
+ */
+export function trackCompareInitiation(
+  dogIds: string[],
+  dogNames: string[],
+): void {
+  try {
+    Sentry.addBreadcrumb({
+      category: "navigation",
+      type: "navigation",
+      level: "info",
+      message: `Started comparison of ${dogIds.length} dogs`,
+      data: {
+        dogIds,
+        dogNames,
+        compareCount: dogIds.length,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to track compare initiation:", error);
+  }
+}
+
+/**
+ * Tracks when a user shares content.
+ * Should be called when any share action is triggered.
+ * @param shareType - Type of content being shared
+ * @param method - Share method used
+ * @param contentId - ID of content being shared (dog ID, favorites list ID, etc.)
+ * @param contentDescription - Human-readable description of shared content
+ */
+export function trackShare(
+  shareType: "dog" | "favorites" | "search-results",
+  method: "copy-link" | "email" | "social" | "native-share",
+  contentId: string,
+  contentDescription?: string,
+): void {
+  try {
+    const message = contentDescription
+      ? `Shared ${shareType}: ${contentDescription} via ${method}`
+      : `Shared ${shareType} via ${method}`;
+
+    Sentry.addBreadcrumb({
+      category: "ui",
+      type: "user",
+      level: "info",
+      message,
+      data: {
+        shareType,
+        method,
+        contentId,
+        contentDescription: contentDescription || null,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to track share:", error);
+  }
+}
+
+/**
+ * Tracks when a user interacts with the favorites share feature.
+ * Should be called when user generates or shares a favorites link.
+ * @param action - Action performed with favorites
+ * @param favoritesCount - Number of favorites being shared
+ * @param shareUrl - Generated share URL (optional)
+ */
+export function trackFavoritesShare(
+  action: "generate-link" | "copy-link" | "share",
+  favoritesCount: number,
+  shareUrl?: string,
+): void {
+  try {
+    Sentry.addBreadcrumb({
+      category: "ui",
+      type: "user",
+      level: "info",
+      message: `${action} favorites list with ${favoritesCount} dogs`,
+      data: {
+        action,
+        favoritesCount,
+        shareUrl: shareUrl || null,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to track favorites share:", error);
+  }
+}
+
+/**
+ * Tracks page load performance metrics.
+ * Should be called after page has fully loaded with performance data.
+ * @param page - Page identifier
+ * @param loadTime - Time taken to load in milliseconds
+ * @param dataFetchTime - Time taken to fetch data in milliseconds (optional)
+ */
+export function trackPageLoadPerformance(
+  page: string,
+  loadTime: number,
+  dataFetchTime?: number,
+): void {
+  try {
+    Sentry.addBreadcrumb({
+      category: "performance",
+      type: "default",
+      level: "info",
+      message: `Page ${page} loaded in ${loadTime}ms`,
+      data: {
+        page,
+        loadTime,
+        dataFetchTime: dataFetchTime || null,
+        slow: loadTime > 3000,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to track page load performance:", error);
+  }
+}
+
+/**
+ * Tracks header navigation clicks.
+ * Should be called when any header navigation item is clicked.
+ * @param destination - Navigation destination
+ * @param isAuthenticated - Whether user is authenticated (if applicable)
+ */
+export function trackHeaderNavigation(
+  destination: string,
+  isAuthenticated?: boolean,
+): void {
+  try {
+    Sentry.addBreadcrumb({
+      category: "navigation",
+      type: "navigation",
+      level: "info",
+      message: `Header navigation to: ${destination}`,
+      data: {
+        destination,
+        isAuthenticated: isAuthenticated ?? null,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to track header navigation:", error);
+  }
+}
+
+/**
+ * Tracks footer navigation clicks.
+ * Should be called when any footer link is clicked.
+ * @param destination - Navigation destination or link type
+ * @param isExternal - Whether the link is external
+ */
+export function trackFooterNavigation(
+  destination: string,
+  isExternal: boolean,
+): void {
+  try {
+    Sentry.addBreadcrumb({
+      category: "navigation",
+      type: "navigation",
+      level: "info",
+      message: `Footer navigation to: ${destination}`,
+      data: {
+        destination,
+        isExternal,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to track footer navigation:", error);
+  }
+}
+
+/**
+ * Tracks empty state interactions.
+ * Should be called when user interacts with empty state UI.
+ * @param context - Where the empty state was shown
+ * @param action - What action was taken (if any)
+ */
+export function trackEmptyStateInteraction(
+  context: "favorites" | "search" | "organization",
+  action?: "browse-all" | "clear-filters" | "add-first",
+): void {
+  try {
+    const message = action
+      ? `Empty state interaction in ${context}: ${action}`
+      : `Viewed empty state in ${context}`;
+
+    Sentry.addBreadcrumb({
+      category: "ui",
+      type: "user",
+      level: "info",
+      message,
+      data: {
+        context,
+        action: action || null,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to track empty state interaction:", error);
+  }
+}
+
+/**
+ * Tracks catalog page loads with initial state.
+ * Should be called when catalog/search page loads.
+ * @param initialResultCount - Number of dogs shown initially
+ * @param hasFilters - Whether any filters are pre-applied
+ */
+export function trackCatalogPageLoad(
+  initialResultCount: number,
+  hasFilters: boolean,
+): void {
+  try {
+    Sentry.addBreadcrumb({
+      category: "navigation",
+      type: "navigation",
+      level: "info",
+      message: `Loaded catalog with ${initialResultCount} dogs`,
+      data: {
+        initialResultCount,
+        hasFilters,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to track catalog page load:", error);
+  }
+}
+
+/**
+ * Tracks about page interactions.
+ * Should be called for significant interactions on about page.
+ * @param action - Type of interaction
+ * @param target - What was interacted with
+ */
+export function trackAboutPageInteraction(
+  action: "view" | "mailto-click" | "external-link",
+  target?: string,
+): void {
+  try {
+    const message = target
+      ? `About page ${action}: ${target}`
+      : `About page ${action}`;
+
+    Sentry.addBreadcrumb({
+      category: action === "view" ? "navigation" : "ui",
+      type: action === "view" ? "navigation" : "user",
+      level: "info",
+      message,
+      data: {
+        action,
+        target: target || null,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to track about page interaction:", error);
+  }
+}

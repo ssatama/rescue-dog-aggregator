@@ -15,6 +15,16 @@ import {
   trackExternalLinkClick,
   trackPaginationClick,
   addTestBreadcrumb,
+  trackCompareSelection,
+  trackCompareInitiation,
+  trackShare,
+  trackFavoritesShare,
+  trackPageLoadPerformance,
+  trackHeaderNavigation,
+  trackFooterNavigation,
+  trackEmptyStateInteraction,
+  trackCatalogPageLoad,
+  trackAboutPageInteraction,
 } from "@/lib/monitoring/breadcrumbs";
 
 interface BreadcrumbLog {
