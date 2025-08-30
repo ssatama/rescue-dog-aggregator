@@ -47,7 +47,7 @@ export default function SentryTestPage() {
     // Capture Sentry configuration
     const client = Sentry.getClient();
     const options = client?.getOptions() as any;
-    
+
     if (options) {
       setEnvInfo({
         environment: options.environment || "unknown",
@@ -62,12 +62,12 @@ export default function SentryTestPage() {
     // Get current scope data
     const scope = Sentry.getCurrentScope();
     const scopeData = scope as any;
-    
+
     // Try to get user context
     if (scopeData._user) {
       setUserContext(scopeData._user);
     }
-    
+
     // Try to get tags
     if (scopeData._tags) {
       setTags(scopeData._tags);
@@ -76,25 +76,30 @@ export default function SentryTestPage() {
     // Track page load
     const startTime = performance.now();
     trackPageLoadPerformance("sentry-test", performance.now() - startTime);
-    
+
     // Add initial breadcrumb
     addTestBreadcrumb("Sentry test page loaded");
   }, []);
 
   // Track breadcrumbs manually when we add them
   const trackBreadcrumb = (message: string, data?: any) => {
-    setBreadcrumbs(prev => [{
-      timestamp: new Date().toISOString(),
-      message,
-      category: "user",
-      level: "info",
-      data
-    }, ...prev].slice(0, 20));
+    setBreadcrumbs((prev) =>
+      [
+        {
+          timestamp: new Date().toISOString(),
+          message,
+          category: "user",
+          level: "info",
+          data,
+        },
+        ...prev,
+      ].slice(0, 20),
+    );
   };
 
   const simulateUserJourney = async () => {
     setBreadcrumbs([]);
-    
+
     // Simulate a complete user journey
     const steps = [
       () => {
@@ -109,7 +114,10 @@ export default function SentryTestPage() {
       },
       () => {
         trackSearch("golden retriever", { breed: "retriever" }, 23);
-        trackBreadcrumb("Search for golden retriever", { query: "golden retriever", results: 23 });
+        trackBreadcrumb("Search for golden retriever", {
+          query: "golden retriever",
+          results: 23,
+        });
         return "Search for golden retriever";
       },
       () => {
@@ -119,12 +127,18 @@ export default function SentryTestPage() {
       },
       () => {
         trackDogView("dog-123", "Buddy", "pets-turkey");
-        trackBreadcrumb("View Buddy's details", { dogId: "dog-123", org: "pets-turkey" });
+        trackBreadcrumb("View Buddy's details", {
+          dogId: "dog-123",
+          org: "pets-turkey",
+        });
         return "View Buddy's details";
       },
       () => {
         trackFavoriteToggle("add", "dog-123", "Buddy", "pets-turkey");
-        trackBreadcrumb("Add Buddy to favorites", { action: "add", dogId: "dog-123" });
+        trackBreadcrumb("Add Buddy to favorites", {
+          action: "add",
+          dogId: "dog-123",
+        });
         return "Add Buddy to favorites";
       },
       () => {
@@ -156,13 +170,13 @@ export default function SentryTestPage() {
 
     for (const step of steps) {
       const message = step();
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 300));
     }
   };
 
   const throwError = (type: "standard" | "unhandled" | "promise") => {
     const message = errorMessage || `Test ${type} error with breadcrumb trail`;
-    
+
     switch (type) {
       case "standard":
         throw new Error(message);
@@ -209,7 +223,8 @@ export default function SentryTestPage() {
     <div className="container mx-auto p-8 max-w-7xl">
       <h1 className="text-3xl font-bold mb-2">Sentry Test & Debug Page</h1>
       <p className="text-gray-600 mb-8">
-        Test Sentry integration, view breadcrumb trail, and verify environment configuration
+        Test Sentry integration, view breadcrumb trail, and verify environment
+        configuration
       </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -220,15 +235,21 @@ export default function SentryTestPage() {
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <dt className="font-medium">Environment:</dt>
-                <dd className={`font-mono ${
-                  envInfo.environment === "production" ? "text-red-600" : "text-green-600"
-                }`}>
+                <dd
+                  className={`font-mono ${
+                    envInfo.environment === "production"
+                      ? "text-red-600"
+                      : "text-green-600"
+                  }`}
+                >
                   {envInfo.environment}
                 </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="font-medium">Release:</dt>
-                <dd className="font-mono text-xs">{envInfo.release.slice(0, 12)}</dd>
+                <dd className="font-mono text-xs">
+                  {envInfo.release.slice(0, 12)}
+                </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="font-medium">DSN:</dt>
@@ -236,11 +257,15 @@ export default function SentryTestPage() {
               </div>
               <div className="flex justify-between">
                 <dt className="font-medium">Trace Rate:</dt>
-                <dd className="font-mono">{(envInfo.sampleRate * 100).toFixed(0)}%</dd>
+                <dd className="font-mono">
+                  {(envInfo.sampleRate * 100).toFixed(0)}%
+                </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="font-medium">Replay Rate:</dt>
-                <dd className="font-mono">{(envInfo.replaySampleRate * 100).toFixed(0)}%</dd>
+                <dd className="font-mono">
+                  {(envInfo.replaySampleRate * 100).toFixed(0)}%
+                </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="font-medium">Debug Mode:</dt>
@@ -294,7 +319,7 @@ export default function SentryTestPage() {
         {/* Test Actions */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">Test Actions</h2>
-          
+
           <div className="space-y-4">
             <div>
               <h3 className="font-medium mb-2">User Journey Simulation</h3>
@@ -358,7 +383,9 @@ export default function SentryTestPage() {
                   Dog View
                 </button>
                 <button
-                  onClick={() => trackFavoriteToggle("add", "test-2", "Max", "org-2")}
+                  onClick={() =>
+                    trackFavoriteToggle("add", "test-2", "Max", "org-2")
+                  }
                   className="px-3 py-2 bg-gray-500 text-white text-sm rounded"
                 >
                   Add Favorite
@@ -393,7 +420,7 @@ export default function SentryTestPage() {
               {showBreadcrumbs ? "Hide" : "Show"}
             </button>
           </div>
-          
+
           {showBreadcrumbs && (
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {breadcrumbs.length === 0 ? (
@@ -415,17 +442,23 @@ export default function SentryTestPage() {
                             </span>
                           )}
                           {crumb.level && (
-                            <span className={`text-xs px-2 py-1 rounded ${
-                              crumb.level === "error" ? "bg-red-100 text-red-700" :
-                              crumb.level === "warning" ? "bg-yellow-100 text-yellow-700" :
-                              "bg-gray-100 text-gray-700"
-                            }`}>
+                            <span
+                              className={`text-xs px-2 py-1 rounded ${
+                                crumb.level === "error"
+                                  ? "bg-red-100 text-red-700"
+                                  : crumb.level === "warning"
+                                    ? "bg-yellow-100 text-yellow-700"
+                                    : "bg-gray-100 text-gray-700"
+                              }`}
+                            >
                               {crumb.level}
                             </span>
                           )}
                         </div>
                         {crumb.message && (
-                          <p className="text-sm font-medium mt-1">{crumb.message}</p>
+                          <p className="text-sm font-medium mt-1">
+                            {crumb.message}
+                          </p>
                         )}
                         {crumb.data && (
                           <pre className="text-xs text-gray-600 mt-1 overflow-x-auto">
@@ -451,7 +484,8 @@ export default function SentryTestPage() {
               Clear Local Display
             </button>
             <p className="text-xs text-gray-500 mt-2">
-              Note: This only clears the display. Breadcrumbs are still being sent to Sentry.
+              Note: This only clears the display. Breadcrumbs are still being
+              sent to Sentry.
             </p>
           </div>
         </div>
@@ -459,7 +493,9 @@ export default function SentryTestPage() {
 
       {/* Instructions */}
       <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h3 className="font-semibold text-blue-900 mb-3">Testing Instructions</h3>
+        <h3 className="font-semibold text-blue-900 mb-3">
+          Testing Instructions
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
           <div>
             <h4 className="font-medium mb-2">1. Environment Verification</h4>
@@ -472,7 +508,9 @@ export default function SentryTestPage() {
           <div>
             <h4 className="font-medium mb-2">2. Breadcrumb Testing</h4>
             <ul className="list-disc list-inside space-y-1">
-              <li>Click &quot;Simulate User Journey&quot; to create breadcrumbs</li>
+              <li>
+                Click &quot;Simulate User Journey&quot; to create breadcrumbs
+              </li>
               <li>Throw an error to send breadcrumbs to Sentry</li>
               <li>Check Sentry dashboard for the complete trail</li>
             </ul>

@@ -18,8 +18,8 @@ Sentry.init({
   // Release tracking
   release: process.env.SENTRY_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || "unknown",
 
-  // Performance monitoring - Adjust sample rate based on environment
-  tracesSampleRate: isProduction ? 0.1 : 1.0,
+  // Performance monitoring - 100% sampling for low-traffic site (15 visitors/day)
+  tracesSampleRate: 1.0,
 
   // Enable logs to be sent to Sentry (only errors in production)
   enableLogs: true,

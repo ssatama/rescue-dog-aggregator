@@ -22,11 +22,11 @@ if (typeof window !== "undefined" && !(window as any).__sentryInitialized) {
   // Release tracking - uses VERCEL_GIT_COMMIT_SHA in production
   release: process.env.NEXT_PUBLIC_SENTRY_RELEASE || process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "unknown",
 
-  // Performance monitoring - Adjust sample rate based on environment
-  tracesSampleRate: isProduction ? 0.1 : 1.0,
+  // Performance monitoring - 100% sampling for low-traffic site (15 visitors/day)
+  tracesSampleRate: 1.0,
 
-  // Session Replay - Disabled in development to avoid conflicts, enabled in production
-  replaysSessionSampleRate: isProduction ? 0.1 : 0,
+  // Session Replay - Disabled in development to avoid conflicts, 100% in production for better debugging
+  replaysSessionSampleRate: isProduction ? 1.0 : 0,
   replaysOnErrorSampleRate: isProduction ? 1.0 : 0,
 
   // Integrations
