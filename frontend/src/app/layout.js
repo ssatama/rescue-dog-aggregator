@@ -8,6 +8,7 @@ import { Analytics, SpeedInsights } from "@/components/analytics";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import QueryProvider from "@/providers/QueryProvider";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
+import SentryInitializer from "@/components/SentryInitializer";
 
 // Use Inter variable font with all required weights
 const inter = Inter({
@@ -84,6 +85,7 @@ export default function RootLayout({ children }) {
             </ToastProvider>
           </ThemeProvider>
         </QueryProvider>
+        <SentryInitializer />
         <ServiceWorkerRegistration />
         <PerformanceMonitor />
         <Analytics />

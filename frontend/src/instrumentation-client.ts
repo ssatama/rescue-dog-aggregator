@@ -4,127 +4,213 @@
 
 import * as Sentry from "@sentry/nextjs";
 
-Sentry.init({
-  dsn: "https://3e013eea839f1016a4d06f3ec78d1407@o4509932462800896.ingest.de.sentry.io/4509932479250512",
+console.log("[Sentry] Client instrumentation file loaded");
 
-  // Set environment
-  environment: process.env.NODE_ENV || "development",
+// Prevent multiple initializations
+if (typeof window !== "undefined" && !(window as any).__sentryInitialized) {
+  (window as any).__sentryInitialized = true;
+  console.log("[Sentry] Initializing Sentry in client-side mode");
 
-  // Add optional integrations for additional features
-  integrations: [Sentry.replayIntegration()],
+  // Determine environment
+  const environment =
+    process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.NODE_ENV || "development";
+  const isDevelopment = environment === "development";
+  const isProduction = environment === "production";
 
-  // Capture all traces since we have low traffic
-  tracesSampleRate: 1.0,
+  Sentry.init({
+    dsn:
+      process.env.NEXT_PUBLIC_SENTRY_DSN ||
+      "https://3e013eea839f1016a4d06f3ec78d1407@o4509932462800896.ingest.de.sentry.io/4509932479250512",
 
-  // Capture all sessions since we have low traffic
-  replaysSessionSampleRate: 1.0,
+    // Environment configuration
+    environment,
 
-  // Always capture replays when errors occur
-  replaysOnErrorSampleRate: 1.0,
+    // Release tracking - uses VERCEL_GIT_COMMIT_SHA in production
+    release:
+      process.env.NEXT_PUBLIC_SENTRY_RELEASE ||
+      process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ||
+      "unknown",
 
-  // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: false,
+    // Performance monitoring - 100% sampling for low-traffic site (15 visitors/day)
+    tracesSampleRate: 1.0,
 
-  // Breadcrumb configuration for user behavior tracking
-  maxBreadcrumbs: 50, // Keep last 50 breadcrumbs (enough context without excess)
+    // Session Replay - Disabled in development to avoid conflicts, 100% in production for better debugging
+    replaysSessionSampleRate: isProduction ? 1.0 : 0,
+    replaysOnErrorSampleRate: isProduction ? 1.0 : 0,
 
-  // Filter breadcrumbs to reduce noise
-  beforeBreadcrumb(breadcrumb) {
-    // Filter out noisy console breadcrumbs unless they're errors
-    if (breadcrumb.category === "console" && breadcrumb.level !== "error") {
-      return null;
-    }
+    // Integrations
+    integrations: [
+      ...(isProduction
+        ? [
+            Sentry.replayIntegration({
+              maskAllText: false,
+              blockAllMedia: false,
+              // Mask sensitive selectors
+              mask: [
+                "input[type=password]",
+                "input[type=email]",
+                "input[type=tel]",
+                "[data-sensitive]",
+              ],
+            }),
+          ]
+        : []),
+      Sentry.browserTracingIntegration(),
+    ],
 
-    // Filter out very frequent navigation breadcrumbs from Next.js internals
-    if (
-      breadcrumb.category === "navigation" &&
-      breadcrumb.data?.to?.includes("_next")
-    ) {
-      return null;
-    }
+    // Transport options
+    transportOptions: {
+      // Use tunnel to bypass ad-blockers
+      tunnel: "/monitoring",
+    },
 
-    // Keep all ui and navigation breadcrumbs (our custom tracking)
-    if (breadcrumb.category === "ui" || breadcrumb.category === "navigation") {
+    // Debug mode disabled (non-debug bundle in use)
+    // debug: isDevelopment,
+
+    // Ignore certain errors
+    ignoreErrors: [
+      // Browser extensions
+      "top.GLOBALS",
+      "ResizeObserver loop limit exceeded",
+      "ResizeObserver loop completed with undelivered notifications",
+      // Network errors
+      "Network request failed",
+      "NetworkError",
+      "Failed to fetch",
+      // Common browser errors
+      "Non-Error promise rejection captured",
+    ],
+
+    // Data scrubbing and filtering
+    beforeSend(event, hint) {
+      // In development, always send events
+      if (isDevelopment) {
+        return event;
+      }
+
+      // Filter out specific errors in production
+      const error = hint.originalException as Error;
+
+      // Don't send cancelled fetch requests
+      if (error?.name === "AbortError") {
+        return null;
+      }
+
+      // Add user context
+      if (typeof window !== "undefined") {
+        event.contexts = {
+          ...event.contexts,
+          browser: {
+            ...event.contexts?.browser,
+            viewport: {
+              width: window.innerWidth,
+              height: window.innerHeight,
+            },
+          },
+          screen: {
+            width: window.screen.width,
+            height: window.screen.height,
+            pixel_ratio: window.devicePixelRatio,
+          },
+        };
+
+        // Add user preferences
+        event.tags = {
+          ...event.tags,
+          "ui.theme": localStorage.getItem("theme") || "light",
+          "ui.language": navigator.language,
+          "device.online": navigator.onLine,
+        };
+      }
+
+      // Scrub sensitive data from URLs
+      if (event.request?.url) {
+        const url = new URL(event.request.url);
+        // Remove any auth tokens from query params
+        url.searchParams.delete("token");
+        url.searchParams.delete("key");
+        url.searchParams.delete("api_key");
+        event.request.url = url.toString();
+      }
+
+      return event;
+    },
+
+    // Breadcrumb filtering
+    beforeBreadcrumb(breadcrumb, hint) {
+      // Filter out noisy breadcrumbs
+      if (breadcrumb.category === "console" && breadcrumb.level === "debug") {
+        return null;
+      }
+
+      // Don't track certain XHR requests
+      if (breadcrumb.category === "xhr" || breadcrumb.category === "fetch") {
+        const url = breadcrumb.data?.url;
+        if (url?.includes("/api/health") || url?.includes("/_next/")) {
+          return null;
+        }
+      }
+
+      // Enhance navigation breadcrumbs
+      if (breadcrumb.category === "navigation") {
+        breadcrumb.data = {
+          ...breadcrumb.data,
+          timestamp: new Date().toISOString(),
+        };
+      }
+
       return breadcrumb;
-    }
+    },
 
-    // Keep error and warning breadcrumbs
-    if (breadcrumb.level === "error" || breadcrumb.level === "warning") {
-      return breadcrumb;
-    }
-
-    // Keep fetch/XHR breadcrumbs for API tracking
-    if (breadcrumb.category === "fetch" || breadcrumb.category === "xhr") {
-      return breadcrumb;
-    }
-
-    // Default: keep the breadcrumb
-    return breadcrumb;
-  },
-
-  // Initialize user context
-  initialScope: {
-    contexts: {
-      user_preferences: {
-        language:
-          typeof navigator !== "undefined" ? navigator.language : "unknown",
-        timezone:
-          typeof Intl !== "undefined"
-            ? Intl.DateTimeFormat().resolvedOptions().timeZone
-            : "unknown",
-        colorScheme:
-          typeof window !== "undefined" && window.matchMedia
-            ? window.matchMedia("(prefers-color-scheme: dark)").matches
-              ? "dark"
-              : "light"
-            : "unknown",
-      },
-      device: {
-        screen_width:
-          typeof window !== "undefined" ? window.screen?.width : undefined,
-        screen_height:
-          typeof window !== "undefined" ? window.screen?.height : undefined,
-        viewport_width:
-          typeof window !== "undefined" ? window.innerWidth : undefined,
-        viewport_height:
-          typeof window !== "undefined" ? window.innerHeight : undefined,
-        pixel_ratio:
-          typeof window !== "undefined" ? window.devicePixelRatio : undefined,
-        platform:
-          typeof navigator !== "undefined" ? navigator.platform : "unknown",
-        user_agent:
-          typeof navigator !== "undefined" ? navigator.userAgent : "unknown",
+    // Set user identification
+    initialScope: {
+      tags: {
+        component: "frontend",
       },
     },
-  },
-});
+  });
 
-// Update context when viewport changes
-if (typeof window !== "undefined") {
+  // Set initial user context if available
+  // Track viewport changes
+  let resizeTimeout: NodeJS.Timeout;
   window.addEventListener("resize", () => {
-    Sentry.setContext("device", {
-      screen_width: window.screen?.width,
-      screen_height: window.screen?.height,
-      viewport_width: window.innerWidth,
-      viewport_height: window.innerHeight,
-      pixel_ratio: window.devicePixelRatio,
-      platform: navigator.platform,
-      user_agent: navigator.userAgent,
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      Sentry.setContext("viewport", {
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    }, 500);
+  });
+
+  // Track online/offline status
+  window.addEventListener("online", () => {
+    Sentry.addBreadcrumb({
+      category: "device",
+      message: "Device came online",
+      level: "info",
     });
   });
 
-  // Update context when color scheme changes
-  if (window.matchMedia) {
-    window
-      .matchMedia("(prefers-color-scheme: dark)")
-      .addEventListener("change", (e) => {
-        Sentry.setContext("user_preferences", {
-          language: navigator.language,
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          colorScheme: e.matches ? "dark" : "light",
-        });
-      });
-  }
+  window.addEventListener("offline", () => {
+    Sentry.addBreadcrumb({
+      category: "device",
+      message: "Device went offline",
+      level: "warning",
+    });
+  });
+
+  // Track theme changes
+  const trackThemeChange = () => {
+    const theme = localStorage.getItem("theme") || "light";
+    Sentry.setTag("ui.theme", theme);
+  };
+
+  window.addEventListener("storage", (e) => {
+    if (e.key === "theme") {
+      trackThemeChange();
+    }
+  });
 }
 
 // Export for router transition tracking
