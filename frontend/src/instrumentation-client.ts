@@ -4,18 +4,25 @@
 
 import * as Sentry from "@sentry/nextjs";
 
-console.log("[Sentry] Client instrumentation file loaded");
+// Determine environment early for logging decisions
+const environment =
+  process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.NODE_ENV || "development";
+const isDevelopment = environment === "development";
+const isProduction = environment === "production";
+
+// Only log in development mode
+if (isDevelopment) {
+  console.log("[Sentry] Client instrumentation file loaded");
+}
 
 // Prevent multiple initializations
 if (typeof window !== "undefined" && !(window as any).__sentryInitialized) {
   (window as any).__sentryInitialized = true;
-  console.log("[Sentry] Initializing Sentry in client-side mode");
-
-  // Determine environment
-  const environment =
-    process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.NODE_ENV || "development";
-  const isDevelopment = environment === "development";
-  const isProduction = environment === "production";
+  
+  // Only log initialization in development mode
+  if (isDevelopment) {
+    console.log("[Sentry] Initializing Sentry in client-side mode");
+  }
 
   Sentry.init({
     dsn:
