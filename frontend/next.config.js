@@ -226,8 +226,9 @@ module.exports = withSentryConfig(
     // For all available options, see:
     // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-    // Upload a larger set of source maps for prettier stack traces (increases build time)
-    widenClientFileUpload: true,
+    // Disable widening client file upload to improve build performance
+    // Only enable this if you need source maps for third-party code
+    widenClientFileUpload: false,
 
     // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
     // This can increase your server load as well as your hosting bill.
@@ -243,5 +244,16 @@ module.exports = withSentryConfig(
     // https://docs.sentry.io/product/crons/
     // https://vercel.com/docs/cron-jobs
     automaticVercelMonitors: true,
+
+    // Build performance optimizations
+    sourcemaps: {
+      // Only delete source maps in production to save space
+      deleteSourcemapsAfterUpload: process.env.NODE_ENV === 'production',
+    },
+
+    // Bundle size optimizations
+    bundleSizeOptimizations: {
+      excludeDebugStatements: true, // Remove debug code in production
+    },
   }
 );

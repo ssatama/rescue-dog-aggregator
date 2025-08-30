@@ -24,8 +24,8 @@ Sentry.init({
   // Enable logs to be sent to Sentry (only errors in production)
   enableLogs: true,
 
-  // Debug mode only in development
-  debug: isDevelopment,
+  // Debug mode disabled (non-debug bundle in use)
+  // debug: isDevelopment,
 
   // Integrations (profiling only available in Node.js runtime)
   integrations: [],

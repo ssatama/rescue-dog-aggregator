@@ -25,8 +25,8 @@ Sentry.init({
   // Enable logs to be sent to Sentry
   enableLogs: true,
 
-  // Debug mode only in development
-  debug: isDevelopment,
+  // Debug mode disabled (non-debug bundle in use)
+  // debug: isDevelopment,
 
   // Ignore certain errors
   ignoreErrors: [
