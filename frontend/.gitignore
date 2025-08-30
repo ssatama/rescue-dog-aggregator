@@ -39,3 +39,6 @@ src/app/favicon.ico
 *storybook.log
 storybook-static
 .storybook
+
+# Sentry Config File
+.env.sentry-build-plugin
