@@ -43,6 +43,11 @@ import { DogSchema, BreadcrumbSchema } from "../../../components/seo";
 import Breadcrumbs from "../../../components/ui/Breadcrumbs";
 import { useSwipeNavigation } from "../../../hooks/useSwipeNavigation";
 import {
+  trackDogView,
+  trackDogImageView,
+  trackExternalLinkClick,
+} from "@/lib/monitoring/breadcrumbs";
+import {
   PersonalityTraits,
   EnergyTrainability,
   CompatibilityIcons,
@@ -118,6 +123,19 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
         // Only update state if component is still mounted
         if (mountedRef.current) {
           setDog(data);
+
+          // Track dog view when successfully loaded
+          if (data?.id && data?.name && data?.organization?.slug) {
+            try {
+              trackDogView(
+                data.id.toString(),
+                data.name,
+                data.organization.slug,
+              );
+            } catch (error) {
+              console.error("Failed to track dog view:", error);
+            }
+          }
         }
       } catch (err) {
         const errorInfo = {
@@ -180,6 +198,23 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
       setDog(initialDog);
       setLoading(false);
       setError(false);
+
+      // Track dog view for SSR data
+      if (
+        initialDog?.id &&
+        initialDog?.name &&
+        initialDog?.organization?.slug
+      ) {
+        try {
+          trackDogView(
+            initialDog.id.toString(),
+            initialDog.name,
+            initialDog.organization.slug,
+          );
+        } catch (error) {
+          console.error("Failed to track dog view:", error);
+        }
+      }
       return;
     }
 
@@ -483,6 +518,19 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                             src={dog.primary_image_url}
                             alt={`${sanitizeText(dog.name)} - Hero Image`}
                             className="mb-6 shadow-xl"
+                            onClick={() => {
+                              // Track image view when hero image is clicked
+                              if (dog?.id) {
+                                try {
+                                  trackDogImageView(dog.id.toString(), 0, 1);
+                                } catch (error) {
+                                  console.error(
+                                    "Failed to track dog image view:",
+                                    error,
+                                  );
+                                }
+                              }
+                            }}
                             onError={() => {
                               reportError(
                                 new Error("Hero image failed to load"),
@@ -521,6 +569,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                               <FavoriteButton
                                 dogId={dog.id}
                                 dogName={dog.name}
+                                orgSlug={dog.organization?.slug}
                                 className="p-3 rounded-full hover:bg-gray-100 transition-all duration-200 hover:scale-110 hover:shadow-md focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                               />
                             </div>
@@ -778,6 +827,23 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                                     className="flex items-center justify-center"
                                     data-testid="adopt-button"
                                     aria-label={`Start adoption process for ${dog.name}`}
+                                    onClick={() => {
+                                      // Track external link click
+                                      if (dog?.organization?.slug && dog?.id) {
+                                        try {
+                                          trackExternalLinkClick(
+                                            "adopt",
+                                            dog.organization.slug,
+                                            dog.id.toString(),
+                                          );
+                                        } catch (error) {
+                                          console.error(
+                                            "Failed to track external link click:",
+                                            error,
+                                          );
+                                        }
+                                      }
+                                    }}
                                   >
                                     <svg
                                       className="w-5 h-5 mr-3 transition-transform duration-200"

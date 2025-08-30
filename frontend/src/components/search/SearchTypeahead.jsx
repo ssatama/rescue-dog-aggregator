@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/badge";
 import { useDebouncedCallback } from "use-debounce";
+import { trackSearch } from "@/lib/monitoring/breadcrumbs";
 
 /**
  * Calculates Levenshtein distance for fuzzy matching
@@ -350,10 +351,18 @@ const SearchTypeahead = forwardRef(
     const handleSearch = useCallback(() => {
       if (inputValue.trim()) {
         saveToHistory(inputValue);
+
+        // Track search with basic filters (empty object for now)
+        try {
+          trackSearch(inputValue, {}, filteredSuggestions.length);
+        } catch (error) {
+          console.error("Failed to track search:", error);
+        }
+
         onSearch?.(inputValue);
         setIsOpen(false);
       }
-    }, [inputValue, onSearch, saveToHistory]);
+    }, [inputValue, onSearch, saveToHistory, filteredSuggestions.length]);
 
     // Keyboard navigation
     const handleKeyDown = useCallback(

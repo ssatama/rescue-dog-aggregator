@@ -17,6 +17,7 @@ import ShareButton from "../../components/ui/ShareButton";
 import FilterPanel from "../../components/favorites/FilterPanel";
 import FavoritesInsights from "../../components/favorites/FavoritesInsights";
 import type { DogProfilerData } from "../../types/dogProfiler";
+import { trackFavoritesPageView } from "@/lib/monitoring/breadcrumbs";
 
 // Type definitions
 interface Dog {
@@ -152,6 +153,13 @@ function FavoritesPageContent() {
     }
 
     fetchFavoriteDogs();
+
+    // Track favorites page view
+    try {
+      trackFavoritesPageView(favorites.length);
+    } catch (error) {
+      console.error("Failed to track favorites page view:", error);
+    }
   }, [favorites]);
 
   const handleClearAll = () => {
@@ -462,6 +470,7 @@ function FavoritesPageContent() {
               dogs={filteredDogs}
               loading={false}
               className="animate-in fade-in duration-200"
+              listContext="favorites"
             />
           )}
         </div>

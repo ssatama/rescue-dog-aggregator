@@ -26,6 +26,7 @@ import {
   formatCompatibility,
   getPersonalityTraits,
 } from "../../utils/dogHelpers";
+import { trackDogCardClick } from "@/lib/monitoring/breadcrumbs";
 
 const DogCardOptimized = React.memo(function DogCardOptimized({
   dog,
@@ -33,6 +34,8 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
   animationDelay = 0,
   compact = false,
   isVirtualized = false,
+  position = 0,
+  listContext = "home",
 }) {
   // Enhanced data processing using helper functions
   const name = sanitizeText(dog?.name || "Unknown Dog");
@@ -88,6 +91,21 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
           href={`/dogs/${slug}`}
           className="block w-32 md:w-full flex-shrink-0"
           prefetch={priority ? true : false}
+          onClick={() => {
+            // Track dog card click
+            if (dog?.id && dog?.name) {
+              try {
+                trackDogCardClick(
+                  dog.id.toString(),
+                  dog.name,
+                  position,
+                  listContext,
+                );
+              } catch (error) {
+                console.error("Failed to track dog card click:", error);
+              }
+            }
+          }}
         >
           <div
             className="aspect-[4/3] relative overflow-hidden bg-muted dark:bg-muted/50"
@@ -110,7 +128,25 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
         {/* Compact content */}
         <div className="flex-1 p-3 md:p-4">
           <div className="flex items-start justify-between mb-2">
-            <Link href={`/dogs/${slug}`} prefetch={priority ? true : undefined}>
+            <Link
+              href={`/dogs/${slug}`}
+              prefetch={priority ? true : undefined}
+              onClick={() => {
+                // Track dog card click
+                if (dog?.id && dog?.name) {
+                  try {
+                    trackDogCardClick(
+                      dog.id.toString(),
+                      dog.name,
+                      position,
+                      listContext,
+                    );
+                  } catch (error) {
+                    console.error("Failed to track dog card click:", error);
+                  }
+                }
+              }}
+            >
               <CardTitle className="text-base md:text-lg hover:underline">
                 {name}
               </CardTitle>
@@ -123,7 +159,12 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
                 variant="ghost"
                 compact
               />
-              <FavoriteButton dogId={dog.id} dogName={dog.name} compact />
+              <FavoriteButton
+                dogId={dog.id}
+                dogName={dog.name}
+                orgSlug={dog.organization?.slug}
+                compact
+              />
             </div>
           </div>
 
@@ -171,7 +212,25 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
             size="sm"
             className="w-full mt-3 md:hidden animate-button-hover"
           >
-            <Link href={`/dogs/${slug}`} prefetch={priority ? true : undefined}>
+            <Link
+              href={`/dogs/${slug}`}
+              prefetch={priority ? true : undefined}
+              onClick={() => {
+                // Track dog card click
+                if (dog?.id && dog?.name) {
+                  try {
+                    trackDogCardClick(
+                      dog.id.toString(),
+                      dog.name,
+                      position,
+                      listContext,
+                    );
+                  } catch (error) {
+                    console.error("Failed to track dog card click:", error);
+                  }
+                }
+              }}
+            >
               Meet {name} →
             </Link>
           </Button>
@@ -196,6 +255,21 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
         href={`/dogs/${slug}`}
         className="block"
         prefetch={priority ? true : undefined}
+        onClick={() => {
+          // Track dog card click
+          if (dog?.id && dog?.name) {
+            try {
+              trackDogCardClick(
+                dog.id.toString(),
+                dog.name,
+                position,
+                listContext,
+              );
+            } catch (error) {
+              console.error("Failed to track dog card click:", error);
+            }
+          }
+        }}
       >
         <div
           className="aspect-[4/3] relative overflow-hidden bg-muted dark:bg-muted/50"
@@ -237,7 +311,25 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
       {/* Card content */}
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <Link href={`/dogs/${slug}`} prefetch={priority ? true : undefined}>
+          <Link
+            href={`/dogs/${slug}`}
+            prefetch={priority ? true : undefined}
+            onClick={() => {
+              // Track dog card click
+              if (dog?.id && dog?.name) {
+                try {
+                  trackDogCardClick(
+                    dog.id.toString(),
+                    dog.name,
+                    position,
+                    listContext,
+                  );
+                } catch (error) {
+                  console.error("Failed to track dog card click:", error);
+                }
+              }
+            }}
+          >
             <h3
               className="text-card-title hover:underline truncate"
               data-testid="dog-name"
@@ -253,7 +345,11 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
               variant="ghost"
               compact
             />
-            <FavoriteButton dogId={dog.id} dogName={dog.name} />
+            <FavoriteButton
+              dogId={dog.id}
+              dogName={dog.name}
+              orgSlug={dog.organization?.slug}
+            />
           </div>
         </div>
       </CardHeader>
@@ -359,7 +455,25 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
           variant="outline"
           className="w-full animate-button-hover"
         >
-          <Link href={`/dogs/${slug}`} prefetch={priority ? true : undefined}>
+          <Link
+            href={`/dogs/${slug}`}
+            prefetch={priority ? true : undefined}
+            onClick={() => {
+              // Track dog card click
+              if (dog?.id && dog?.name) {
+                try {
+                  trackDogCardClick(
+                    dog.id.toString(),
+                    dog.name,
+                    position,
+                    listContext,
+                  );
+                } catch (error) {
+                  console.error("Failed to track dog card click:", error);
+                }
+              }
+            }}
+          >
             Meet {name} →
           </Link>
         </Button>

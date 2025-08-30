@@ -21,6 +21,10 @@ import {
   getDefaultFilters,
 } from "@/utils/dogFilters";
 import { getCountryName } from "@/utils/countryHelpers";
+import {
+  trackFilterChange,
+  trackSortChange,
+} from "@/lib/monitoring/breadcrumbs";
 
 /**
  * DogFilters component for filtering and sorting dogs
@@ -72,6 +76,20 @@ export default function DogFilters({
 
       onFiltersChange(newFilters);
 
+      // Track filter changes
+      try {
+        if (filterType === "sort") {
+          trackSortChange(value || "newest");
+        } else {
+          // For filter tracking, we'll need result count which we don't have here
+          // We'll track with 0 as a placeholder - the actual implementation might need
+          // to be adjusted based on how result counting is handled
+          trackFilterChange(filterType, value, totalCount || 0);
+        }
+      } catch (error) {
+        console.error("Failed to track filter change:", error);
+      }
+
       // Update URL params for shareable views
       const params = new URLSearchParams(searchParams);
       if (value && value !== "All" && value !== "") {
@@ -81,7 +99,7 @@ export default function DogFilters({
       }
       router.push(`?${params.toString()}`, { scroll: false });
     },
-    [filters, onFiltersChange, router, searchParams],
+    [filters, onFiltersChange, router, searchParams, totalCount],
   );
 
   const handleClearAll = useCallback(() => {

@@ -25,6 +25,43 @@ Sentry.init({
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
 
+  // Breadcrumb configuration for user behavior tracking
+  maxBreadcrumbs: 50, // Keep last 50 breadcrumbs (enough context without excess)
+
+  // Filter breadcrumbs to reduce noise
+  beforeBreadcrumb(breadcrumb) {
+    // Filter out noisy console breadcrumbs unless they're errors
+    if (breadcrumb.category === "console" && breadcrumb.level !== "error") {
+      return null;
+    }
+
+    // Filter out very frequent navigation breadcrumbs from Next.js internals
+    if (
+      breadcrumb.category === "navigation" &&
+      breadcrumb.data?.to?.includes("_next")
+    ) {
+      return null;
+    }
+
+    // Keep all ui and navigation breadcrumbs (our custom tracking)
+    if (breadcrumb.category === "ui" || breadcrumb.category === "navigation") {
+      return breadcrumb;
+    }
+
+    // Keep error and warning breadcrumbs
+    if (breadcrumb.level === "error" || breadcrumb.level === "warning") {
+      return breadcrumb;
+    }
+
+    // Keep fetch/XHR breadcrumbs for API tracking
+    if (breadcrumb.category === "fetch" || breadcrumb.category === "xhr") {
+      return breadcrumb;
+    }
+
+    // Default: keep the breadcrumb
+    return breadcrumb;
+  },
+
   // Initialize user context
   initialScope: {
     contexts: {

@@ -17,6 +17,7 @@ const DogsGrid = React.memo(function DogsGrid({
   onClearFilters,
   onBrowseOrganizations,
   loadingType = "initial", // 'initial' | 'filter' | 'pagination'
+  listContext = "home", // 'search' | 'org-page' | 'home' | 'favorites'
   ...props
 }) {
   // Handle loading state with skeleton cards
@@ -78,6 +79,8 @@ const DogsGrid = React.memo(function DogsGrid({
               dog={dog}
               animationDelay={index}
               priority={index < 4} // Prioritize loading for first 4 images
+              position={index}
+              listContext={listContext}
             />
           </DogCardErrorBoundary>
         );

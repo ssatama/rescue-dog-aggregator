@@ -19,6 +19,7 @@ import { getBreedSuggestions } from "../../../services/animalsService";
 import { reportError } from "../../../utils/logger";
 import { OrganizationSchema, BreadcrumbSchema } from "../../../components/seo";
 import Breadcrumbs from "../../../components/ui/Breadcrumbs";
+import { trackOrgPageView } from "@/lib/monitoring/breadcrumbs";
 
 export default function OrganizationDetailClient({ params = {} }) {
   const urlParams = useParams();
@@ -164,6 +165,15 @@ export default function OrganizationDetailClient({ params = {} }) {
         const orgData = await getOrganizationBySlug(organizationSlug);
         setOrganization(orgData);
         setTotalDogs(orgData.total_dogs || 0);
+
+        // Track organization page view
+        if (orgData?.slug) {
+          try {
+            trackOrgPageView(orgData.slug, orgData.total_dogs || 0);
+          } catch (error) {
+            console.error("Failed to track organization page view:", error);
+          }
+        }
 
         // Fetch first page of dogs using the organization ID
         const limit = 20;
@@ -375,6 +385,7 @@ export default function OrganizationDetailClient({ params = {} }) {
               onBrowseOrganizations={() =>
                 (window.location.href = "/organizations")
               }
+              listContext="org-page"
             />
 
             {/* Load More Button */}

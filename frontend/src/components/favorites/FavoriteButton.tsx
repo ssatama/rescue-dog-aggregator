@@ -3,12 +3,14 @@
 import React, { useState, useCallback } from "react";
 import { Heart } from "lucide-react";
 import { useFavorites } from "../../hooks/useFavorites";
+import { trackFavoriteToggle } from "@/lib/monitoring/breadcrumbs";
 
 interface FavoriteButtonProps {
   dogId: number;
   dogName?: string;
   className?: string;
   compact?: boolean;
+  orgSlug?: string;
 }
 
 export function FavoriteButton({
@@ -16,6 +18,7 @@ export function FavoriteButton({
   dogName,
   className = "",
   compact = false,
+  orgSlug,
 }: FavoriteButtonProps) {
   const { isFavorited, toggleFavorite } = useFavorites();
   const [isLoading, setIsLoading] = useState(false);
@@ -29,12 +32,23 @@ export function FavoriteButton({
 
       setIsLoading(true);
       try {
+        const wasFavorited = isFav;
         await toggleFavorite(dogId, dogName);
+
+        // Track favorite toggle
+        if (dogName && orgSlug) {
+          try {
+            const action = wasFavorited ? "remove" : "add";
+            trackFavoriteToggle(action, dogId.toString(), dogName, orgSlug);
+          } catch (error) {
+            console.error("Failed to track favorite toggle:", error);
+          }
+        }
       } finally {
         setIsLoading(false);
       }
     },
-    [dogId, dogName, toggleFavorite],
+    [dogId, dogName, toggleFavorite, isFav, orgSlug],
   );
 
   const handleKeyDown = useCallback(
@@ -42,10 +56,22 @@ export function FavoriteButton({
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         e.stopPropagation();
+
+        const wasFavorited = isFav;
         toggleFavorite(dogId, dogName);
+
+        // Track favorite toggle for keyboard interaction
+        if (dogName && orgSlug) {
+          try {
+            const action = wasFavorited ? "remove" : "add";
+            trackFavoriteToggle(action, dogId.toString(), dogName, orgSlug);
+          } catch (error) {
+            console.error("Failed to track favorite toggle:", error);
+          }
+        }
       }
     },
-    [dogId, dogName, toggleFavorite],
+    [dogId, dogName, toggleFavorite, isFav, orgSlug],
   );
 
   return (
