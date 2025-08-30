@@ -8,7 +8,9 @@ export async function register() {
   }
 }
 
-export async function onRequestError(...args: any[]) {
+export async function onRequestError(
+  ...args: Parameters<typeof import("@sentry/nextjs").captureRequestError>
+) {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     const Sentry = await import("@sentry/nextjs");
     return Sentry.captureRequestError(...args);
