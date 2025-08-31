@@ -79,6 +79,10 @@ fastapi==0.116.1
     # via -r requirements.txt
 flake8==7.3.0
     # via -r requirements-dev.in
+greenlet==3.2.4
+    # via
+    #   -r requirements.txt
+    #   sqlalchemy
 h11==0.16.0
     # via
     #   -r requirements.txt
@@ -304,7 +308,7 @@ sqlalchemy==2.0.41
     #   alembic
 stack-data==0.6.3
     # via ipython
-starlette==0.47.1
+starlette==0.47.2
     # via
     #   -r requirements.txt
     #   fastapi
