@@ -131,6 +131,22 @@ configs/      # Organization YAMLs (8 orgs)
 - **No JSX/TSX duplicate files** (automatically enforced by pre-commit hook)
 - **Complete database isolation in tests** (automatically enforced by global conftest.py fixture)
 
+## Tests
+
+### Frontend
+
+`cd frontend && npm test`
+
+### Backend
+
+Go to the root of the repo and run:
+
+```python
+'source venv/bin/activate && pytest -m "unit or fast" --maxfail=5' # Tier 1: Developer Feedback
+'source venv/bin/activate && pytest -m "not slow and not browser and not external" --maxfail=3' # Tier 2: CI Pipeline
+'source venv/bin/activate && pytest -m "not requires_migrations" --maxfail=1' # Tier 3: Pre-merge
+```
+
 ## Database Isolation for Tests
 
 **CRITICAL**: All Python tests are automatically protected from writing to production database.
