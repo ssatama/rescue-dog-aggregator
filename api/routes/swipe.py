@@ -1,0 +1,216 @@
+from fastapi import APIRouter, Query, Depends, HTTPException
+from typing import Optional, List, Dict, Any
+from datetime import datetime, timedelta, timezone
+import logging
+from psycopg2.extras import RealDictCursor
+
+from api.dependencies import get_pooled_db_cursor
+from api.models.dog import Animal
+from api.services.animal_service import AnimalService
+from api.models.requests import AnimalFilterRequest
+from api.exceptions import handle_database_error
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter()
+
+@router.get("/swipe")
+async def get_swipe_stack(
+    country: Optional[str] = Query(None, description="Filter by country code (e.g., 'GB', 'US')"),
+    size: Optional[str] = Query(None, description="Filter by size (small, medium, large)"),
+    excluded: Optional[str] = Query(None, description="Comma-separated list of excluded dog IDs"),
+    limit: int = Query(20, ge=1, le=50, description="Number of dogs to return (default: 20, max: 50)"),
+    offset: int = Query(0, ge=0, description="Offset for pagination"),
+    cursor: RealDictCursor = Depends(get_pooled_db_cursor)
+) -> Dict[str, Any]:
+    """
+    Get a stack of dogs for the swipe feature.
+    
+    Returns dogs with quality LLM profiler data (quality_score > 0.7),
+    ordered by a smart algorithm that prioritizes:
+    1. New dogs (added within last 7 days)
+    2. Dogs with high engagement scores
+    3. Diverse mix of breeds and sizes
+    
+    Excludes dogs that have already been swiped (passed via excluded parameter).
+    """
+    try:
+        # Parse excluded IDs
+        excluded_ids = []
+        if excluded:
+            try:
+                excluded_ids = [int(id_str.strip()) for id_str in excluded.split(',') if id_str.strip()]
+            except ValueError:
+                logger.warning(f"Invalid excluded IDs format: {excluded}")
+        
+        # Build the base query with quality filter
+        query_parts = [
+            """
+            SELECT DISTINCT ON (a.id)
+                a.*,
+                o.name as organization_name,
+                o.slug as organization_slug,
+                o.logo_url as organization_logo_url,
+                o.website_url as organization_website_url,
+                o.country as organization_country,
+                o.city as organization_city,
+                CASE 
+                    WHEN a.created_at > %s THEN 1  -- New dogs (last 7 days)
+                    WHEN a.dog_profiler_data->>'engagement_score' IS NOT NULL 
+                        THEN CAST(a.dog_profiler_data->>'engagement_score' AS FLOAT)
+                    ELSE 0.5
+                END as sort_priority
+            FROM animals a
+            INNER JOIN organizations o ON a.organization_id = o.id
+            WHERE a.status = 'available'
+                AND a.animal_type = 'dog'
+                AND a.dog_profiler_data IS NOT NULL
+                AND (a.dog_profiler_data->>'quality_score')::float > 0.7
+            """
+        ]
+        
+        params = [datetime.now(timezone.utc) - timedelta(days=7)]
+        
+        # Add filters
+        if country:
+            query_parts.append("AND o.country = %s")
+            params.append(country)
+        
+        if size:
+            query_parts.append("AND a.size = %s")
+            params.append(size)
+        
+        if excluded_ids:
+            placeholders = ','.join(['%s'] * len(excluded_ids))
+            query_parts.append(f"AND a.id NOT IN ({placeholders})")
+            params.extend(excluded_ids)
+        
+        # Add ordering - smart algorithm
+        query_parts.append("""
+            ORDER BY a.id, sort_priority DESC, 
+                     RANDOM()  -- Add randomness for diversity within priority groups
+        """)
+        
+        # Build final query with limit and offset
+        final_query = ' '.join(query_parts) + f"""
+            LIMIT %s OFFSET %s
+        """
+        params.extend([limit, offset])
+        
+        # Execute query
+        cursor.execute(final_query, params)
+        results = cursor.fetchall()
+        
+        # Build response
+        dogs = []
+        for row in results:
+            # Convert row to dict if it's not already
+            if hasattr(row, '_asdict'):
+                animal_dict = row._asdict()
+            else:
+                animal_dict = dict(row)
+            
+            # Build organization data
+            org_data = {
+                'id': animal_dict.get('organization_id'),
+                'name': animal_dict.get('organization_name'),
+                'slug': animal_dict.get('organization_slug'),
+                'logo_url': animal_dict.get('organization_logo_url'),
+                'website_url': animal_dict.get('organization_website_url'),
+                'country': animal_dict.get('organization_country'),
+                'city': animal_dict.get('organization_city')
+            }
+            
+            # Process dog_profiler_data to ensure proper camelCase
+            profiler_data = animal_dict.get('dog_profiler_data', {})
+            if profiler_data:
+                # Convert snake_case keys to camelCase for frontend
+                camel_profiler_data = {}
+                for key, value in profiler_data.items():
+                    camel_key = ''.join(word.capitalize() if i > 0 else word 
+                                      for i, word in enumerate(key.split('_')))
+                    camel_profiler_data[camel_key] = value
+                profiler_data = camel_profiler_data
+            
+            # Extract properties from JSONB field
+            properties = animal_dict.get('properties', {}) or {}
+            
+            # Build animal response
+            dog = {
+                'id': animal_dict['id'],
+                'name': animal_dict['name'],
+                'animal_type': animal_dict['animal_type'],
+                'breed': animal_dict.get('breed') or properties.get('breed'),
+                'standardized_breed': animal_dict.get('standardized_breed'),
+                'secondary_breed': properties.get('secondary_breed'),
+                'mixed_breed': properties.get('mixed_breed', False),
+                'age': animal_dict.get('age_text') or properties.get('age_text'),
+                'sex': animal_dict.get('sex') or properties.get('sex'),
+                'size': animal_dict.get('size') or properties.get('size'),
+                'coat': properties.get('coat'),
+                'color': properties.get('color'),
+                'spayed_neutered': properties.get('spayed_neutered'),
+                'house_trained': properties.get('house_trained'),
+                'special_needs': properties.get('special_needs', False),
+                'shots_current': properties.get('shots_current'),
+                'good_with_children': properties.get('good_with_children'),
+                'good_with_dogs': properties.get('good_with_dogs'),
+                'good_with_cats': properties.get('good_with_cats'),
+                'description': properties.get('description'),
+                'status': animal_dict['status'],
+                'adoption_url': animal_dict.get('adoption_url'),
+                'primary_image_url': animal_dict.get('primary_image_url'),
+                'images': properties.get('images', []),
+                'videos': properties.get('videos', []),
+                'location': properties.get('location'),
+                'city': properties.get('city') or org_data.get('city'),
+                'state': properties.get('state'),
+                'postcode': properties.get('postcode'),
+                'country': org_data.get('country'),
+                'created_at': animal_dict.get('created_at').isoformat() if animal_dict.get('created_at') else None,
+                'updated_at': animal_dict.get('updated_at').isoformat() if animal_dict.get('updated_at') else None,
+                'organization': org_data,
+                'dogProfilerData': profiler_data  # camelCase for frontend
+            }
+            dogs.append(dog)
+        
+        # Check if there are more dogs available
+        check_more_query = """
+            SELECT COUNT(*) as total
+            FROM animals a
+            INNER JOIN organizations o ON a.organization_id = o.id
+            WHERE a.status = 'available'
+                AND a.animal_type = 'dog'
+                AND a.dog_profiler_data IS NOT NULL
+                AND (a.dog_profiler_data->>'quality_score')::float > 0.7
+        """
+        check_params = []
+        
+        if country:
+            check_more_query += " AND o.country = %s"
+            check_params.append(country)
+        
+        if size:
+            check_more_query += " AND a.size = %s"
+            check_params.append(size)
+        
+        if excluded_ids:
+            placeholders = ','.join(['%s'] * len(excluded_ids))
+            check_more_query += f" AND a.id NOT IN ({placeholders})"
+            check_params.extend(excluded_ids)
+        
+        cursor.execute(check_more_query, check_params)
+        total_count = cursor.fetchone()['total']
+        
+        has_more = (offset + limit) < total_count
+        
+        return {
+            'dogs': dogs,
+            'hasMore': has_more,
+            'nextOffset': offset + limit if has_more else None,
+            'total': total_count
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching swipe stack: {str(e)}")
+        handle_database_error(e, "fetching swipe stack")

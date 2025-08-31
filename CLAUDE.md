@@ -9,7 +9,16 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Backend: Python/FastAPI/PostgreSQL
 - Frontend: Next.js 15/React/TypeScript
 - Testing: pytest (backend), Jest (frontend)
+- Monitoring/logging: Sentry integration for both prod and dev
 - Current: 434+ backend tests, 1,249 frontend tests, 2200 dogs
+
+## Status
+
+- Site live at www.rescuedogs.me
+- 2500 dogs and 13 organizations
+- Deployment via github integration to Vercel. Backend hosted by Railway for Postgres & API
+- We develop in dev environment, then push to main to push to prod
+- Site has been live around a month. Getting 20 daily visitors and growing fast
 
 ## USE SUB-AGENTS FOR CONTEXT OPTIMIZATION
 
@@ -33,7 +42,9 @@ Using the test-runner agent ensures:
 
 - Utilize the available MCP servers and tools
 - Use Postgres MCP to query the local dev database
-- Use zen toolsfor planning, debugging, test generation, code reviews and peer feedback
+- Use Sentry MCP to analyse logs for errors and performance split by dev and prod environments
+- Use Playwright MCP with its capabilities for taking full page screenshots as pdfs to inspect the current site via localhost browsing
+- Use zen tools for planning, debugging, test generation, code reviews and peer feedback
 - Use subagents in parallel from /agents to execute work efficiently
 - Use Serena MCP tools when possible, they are very powerful, Switch serena modes as appropriate using the switch mode command.
 
@@ -147,48 +158,6 @@ def isolate_database_writes():
 5. Use subagents and MCP tools to help you
 
 ## Quick Reference - Common Tasks
-
-### Add New API Endpoint
-
-```
-TASK: Add /api/v1/[endpoint] that [functionality]
-
-PHASE 1 - RESEARCH:
-- Read api/routes/ structure
-- Check existing endpoint patterns
-- Review database models
-
-PHASE 2 - PLAN:
-□ Write failing test for endpoint
-□ Create route handler
-□ Add database query
-□ Handle errors
-□ Update API documentation
-
-PHASE 3 - EXECUTE:
-[Implement with TDD...]
-```
-
-### Add New Scraper
-
-```
-TASK: Add scraper for [Organization]
-
-PHASE 1 - RESEARCH:
-- Analyze target website structure
-- Identify data patterns
-- Check existing scraper implementations
-
-PHASE 2 - PLAN:
-□ Create YAML config
-□ Write extraction tests
-□ Implement scraper class
-□ Test with real data
-□ Add to documentation
-
-PHASE 3 - EXECUTE:
-[Implement step by step...]
-```
 
 ### Fix Failing Test
 

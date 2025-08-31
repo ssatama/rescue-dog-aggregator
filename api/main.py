@@ -13,7 +13,7 @@ from api.database import initialize_pool
 from api.middleware.cache_headers import CacheHeadersMiddleware
 
 # Import routes
-from api.routes import animals, enhanced_animals, llm, monitoring, organizations
+from api.routes import animals, enhanced_animals, llm, monitoring, organizations, swipe
 
 # Import CORS configuration
 from config import (
@@ -140,6 +140,9 @@ app.include_router(monitoring.router, tags=["monitoring"])
 
 # Include LLM routes
 app.include_router(llm.router, tags=["llm"])
+
+# Include swipe routes for the swipe feature
+app.include_router(swipe.router, prefix="/api/dogs", tags=["swipe"])
 
 
 @app.get("/", tags=["root"])
