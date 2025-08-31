@@ -32,7 +32,7 @@ describe("SwipeCard", () => {
   it("should show LLM tagline", () => {
     render(<SwipeCard dog={mockDog} />);
     
-    expect(screen.getByText(/"A friendly and energetic companion"/)).toBeInTheDocument();
+    expect(screen.getByText(/A friendly and energetic companion/)).toBeInTheDocument();
   });
 
   it("should render personality traits (max 3)", () => {
