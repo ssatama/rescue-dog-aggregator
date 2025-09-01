@@ -1,10 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SwipeContainerWithFilters } from "../../components/swipe/SwipeContainerWithFilters";
 import { SwipeDetails } from "../../components/swipe/SwipeDetails";
+import SwipeErrorBoundary from "../../components/swipe/SwipeErrorBoundary";
 import { useRouter } from "next/navigation";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
+import { swipeMetrics } from "../../utils/swipeMetrics";
+import * as Sentry from "@sentry/nextjs";
 
 interface Dog {
   id: number;
@@ -34,6 +37,28 @@ export default function SwipePage() {
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [selectedDog, setSelectedDog] = useState<Dog | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [totalSwiped, setTotalSwiped] = useState(0);
+
+  // Initialize performance tracking on mount
+  useEffect(() => {
+    if (isMobile) {
+      // Track load time
+      swipeMetrics.trackLoadTime();
+      
+      // Start FPS monitoring for mobile
+      swipeMetrics.startFPSMonitoring();
+      
+      // Check FPS health periodically
+      const fpsInterval = setInterval(() => {
+        swipeMetrics.checkFPSHealth();
+      }, 5000);
+      
+      return () => {
+        clearInterval(fpsInterval);
+        swipeMetrics.stopFPSMonitoring();
+      };
+    }
+  }, [isMobile]);
 
   // Helper function to map dog data to SwipeDetails format
   const mapDogForDetails = (dog: Dog): any => ({
@@ -97,6 +122,38 @@ export default function SwipePage() {
 
   const handleSwipe = (direction: "left" | "right", dog: Dog) => {
     console.log(`Swiped ${direction} on ${dog.name}`);
+    
+    // Track swipe metrics
+    swipeMetrics.trackSwipe(direction, dog.id.toString());
+    setTotalSwiped(prev => {
+      const newTotal = prev + 1;
+      
+      // Track when queue is exhausted (every 20 swipes as a checkpoint)
+      if (newTotal % 20 === 0) {
+        swipeMetrics.trackQueueExhausted(newTotal);
+      }
+      
+      return newTotal;
+    });
+    
+    // Track favorite added separately from swipe
+    if (direction === "right") {
+      swipeMetrics.trackFavoriteAdded(dog.id.toString(), "swipe");
+      
+      // Also track this in Sentry for redundancy
+      Sentry.captureEvent({
+        message: "swipe.favorite.added",
+        level: "info",
+        contexts: {
+          dog: {
+            id: dog.id,
+            name: dog.name,
+            breed: dog.breed,
+            source: "swipe_gesture"
+          }
+        }
+      });
+    }
   };
 
   const handleCardExpanded = (dog: Dog) => {
@@ -105,23 +162,25 @@ export default function SwipePage() {
   };
 
   return (
-    <div className="h-screen bg-gray-50">
-      <SwipeContainerWithFilters
-        fetchDogs={fetchDogsWithFilters}
-        onSwipe={handleSwipe}
-        onCardExpanded={handleCardExpanded}
-      />
-      
-      {selectedDog && (
-        <SwipeDetails
-          dog={mapDogForDetails(selectedDog)}
-          isOpen={showDetails}
-          onClose={() => {
-            setShowDetails(false);
-            setSelectedDog(null);
-          }}
+    <SwipeErrorBoundary>
+      <div className="h-screen bg-gray-50">
+        <SwipeContainerWithFilters
+          fetchDogs={fetchDogsWithFilters}
+          onSwipe={handleSwipe}
+          onCardExpanded={handleCardExpanded}
         />
-      )}
-    </div>
+        
+        {selectedDog && (
+          <SwipeDetails
+            dog={mapDogForDetails(selectedDog)}
+            isOpen={showDetails}
+            onClose={() => {
+              setShowDetails(false);
+              setSelectedDog(null);
+            }}
+          />
+        )}
+      </div>
+    </SwipeErrorBoundary>
   );
 }
