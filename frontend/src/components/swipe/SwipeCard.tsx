@@ -19,9 +19,10 @@ interface SwipeCardProps {
     quality_score?: number;
     created_at?: string;
   };
+  isStacked?: boolean;
 }
 
-export function SwipeCard({ dog }: SwipeCardProps) {
+export function SwipeCard({ dog, isStacked = false }: SwipeCardProps) {
   const isNewDog = (createdAt?: string) => {
     if (!createdAt) return false;
     const daysSinceAdded = (Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24);

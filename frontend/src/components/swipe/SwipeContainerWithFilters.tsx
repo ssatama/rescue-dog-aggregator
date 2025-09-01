@@ -8,6 +8,7 @@ import { Heart, X } from "lucide-react";
 import { SwipeCard } from "./SwipeCard";
 import SwipeOnboarding from "./SwipeOnboarding";
 import SwipeFilters from "./SwipeFilters";
+import { SwipeContainerEnhanced } from "./SwipeContainerEnhanced";
 import useSwipeFilters from "../../hooks/useSwipeFilters";
 import type { SwipeFilters as Filters } from "../../hooks/useSwipeFilters";
 

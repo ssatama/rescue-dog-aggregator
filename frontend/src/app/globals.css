@@ -5,6 +5,52 @@
 /* Import performance-optimized animations */
 @import "../styles/animations.css";
 
+/* Swipe animations */
+@keyframes heart-burst {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2) rotate(10deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.animate-heart-burst {
+  animation: heart-burst 0.5s ease-out;
+}
+
+/* GPU-accelerated animations */
+.will-change-transform {
+  will-change: transform;
+}
+
+/* Shimmer effect for loading states */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
 @layer base {
   :root {
     /* Updated warm color scheme */
