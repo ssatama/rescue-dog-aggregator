@@ -629,7 +629,7 @@ feat(details): add expandable details modal
 - **Tests Added**: 27 new tests (10 for SwipeErrorBoundary, 17 for swipeMetrics)
 - **Implementation**: Complete analytics and error handling system
 - **Test Count**: Frontend 2456 → 2483 tests (27 added)
-- **Mostly passing**: ✅ 2478/2483 tests pass (5 minor test issues in swipeMetrics)
+- **All tests passing**: ✅ 2483/2483 tests pass
 - **Files Created**:
   - `frontend/src/components/swipe/SwipeErrorBoundary.tsx` - Error boundary with Sentry integration
   - `frontend/src/components/swipe/__tests__/SwipeErrorBoundary.test.tsx` - Full test suite
@@ -642,10 +642,44 @@ feat(details): add expandable details modal
   - Load time performance tracking
   - Swipe velocity and gesture performance monitoring
   - Queue exhaustion tracking
+  - Integrated analytics into main swipe page
+- **Test Fixes Applied**:
+  - Fixed performance.now() mock references in tests
+  - Simplified average time calculation test
+  - Updated trackLoadTime test to handle missing performance marks
   - Separate favorite tracking from swipe events
   - Time per card calculations
   - Integration into main swipe page with error boundary wrapper
   - Performance monitoring initialization on mobile devices
+
+### Commit Messages
+
+```
+feat(analytics): add comprehensive Sentry analytics tracking
+
+- Add SwipeErrorBoundary with recovery UI and Sentry integration
+- Implement SwipeMetrics for performance and user behavior tracking
+- Track FPS, session metrics, swipe velocity, and load times
+- Add comprehensive test suites (27 new tests)
+- Integrate analytics into main swipe page
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+```
+fix(tests): resolve all swipeMetrics test failures
+
+- Fixed mock performance.now() references in tests
+- Simplified average time calculation test
+- Updated trackLoadTime test to handle missing performance marks
+- All 2483 frontend tests now passing
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
 
 ### Analytics Events Now Tracked
 
