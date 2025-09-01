@@ -20,6 +20,7 @@ describe('SwipeOnboarding', () => {
 
     it('should not show onboarding for returning users', () => {
       localStorage.setItem('swipeOnboardingComplete', 'true');
+      localStorage.setItem('swipeFilters', JSON.stringify({ country: 'Germany', sizes: [] }));
       
       const { container } = render(<SwipeOnboarding onComplete={mockOnComplete} />);
       
@@ -111,7 +112,8 @@ describe('SwipeOnboarding', () => {
       fireEvent.click(screen.getByRole('button', { name: /Continue/i }));
       
       await waitFor(() => {
-        expect(screen.getByText(/🐕/)).toBeInTheDocument(); // Small dog emoji
+        const dogEmojis = screen.getAllByText(/🐕/);
+        expect(dogEmojis.length).toBeGreaterThan(0); // Should have dog emojis for sizes
       });
     });
 

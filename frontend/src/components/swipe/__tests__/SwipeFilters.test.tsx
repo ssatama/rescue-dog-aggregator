@@ -15,20 +15,20 @@ describe('SwipeFilters', () => {
     it('should render country selector', () => {
       render(<SwipeFilters onFiltersChange={mockOnFiltersChange} />);
       
-      expect(screen.getByLabelText(/country/i)).toBeInTheDocument();
+      expect(screen.getByLabelText('Country')).toBeInTheDocument();
     });
 
     it('should require country selection on first use', () => {
       render(<SwipeFilters onFiltersChange={mockOnFiltersChange} />);
       
-      const countrySelect = screen.getByLabelText(/country/i);
+      const countrySelect = screen.getByLabelText('Country');
       expect(countrySelect).toHaveAttribute('required');
     });
 
     it('should show available countries with dog counts', () => {
       render(<SwipeFilters onFiltersChange={mockOnFiltersChange} />);
       
-      const countrySelect = screen.getByLabelText(/country/i);
+      const countrySelect = screen.getByLabelText('Country');
       fireEvent.click(countrySelect);
       
       expect(screen.getByText(/Germany/)).toBeInTheDocument();
@@ -39,7 +39,7 @@ describe('SwipeFilters', () => {
     it('should update filters when country is selected', async () => {
       render(<SwipeFilters onFiltersChange={mockOnFiltersChange} />);
       
-      const countrySelect = screen.getByLabelText(/country/i);
+      const countrySelect = screen.getByLabelText('Country');
       fireEvent.change(countrySelect, { target: { value: 'Germany' } });
       
       await waitFor(() => {
@@ -80,7 +80,7 @@ describe('SwipeFilters', () => {
       render(<SwipeFilters onFiltersChange={mockOnFiltersChange} />);
       
       // First set country (required)
-      const countrySelect = screen.getByLabelText(/country/i);
+      const countrySelect = screen.getByLabelText('Country');
       fireEvent.change(countrySelect, { target: { value: 'Germany' } });
       
       // Then select sizes
@@ -117,7 +117,7 @@ describe('SwipeFilters', () => {
     it('should persist filters to localStorage', async () => {
       render(<SwipeFilters onFiltersChange={mockOnFiltersChange} />);
       
-      const countrySelect = screen.getByLabelText(/country/i);
+      const countrySelect = screen.getByLabelText('Country');
       fireEvent.change(countrySelect, { target: { value: 'Germany' } });
       
       const smallButton = screen.getByRole('button', { name: /Small/i });
@@ -138,7 +138,7 @@ describe('SwipeFilters', () => {
       
       render(<SwipeFilters onFiltersChange={mockOnFiltersChange} />);
       
-      const countrySelect = screen.getByLabelText(/country/i) as HTMLSelectElement;
+      const countrySelect = screen.getByLabelText('Country') as HTMLSelectElement;
       expect(countrySelect.value).toBe('United Kingdom');
       
       const mediumButton = screen.getByRole('button', { name: /Medium/i });
@@ -161,7 +161,7 @@ describe('SwipeFilters', () => {
     it('should show selected country with flag emoji', () => {
       render(<SwipeFilters onFiltersChange={mockOnFiltersChange} />);
       
-      const countrySelect = screen.getByLabelText(/country/i);
+      const countrySelect = screen.getByLabelText('Country');
       fireEvent.change(countrySelect, { target: { value: 'Germany' } });
       
       expect(screen.getByText(/🇩🇪/)).toBeInTheDocument();
@@ -195,7 +195,7 @@ describe('SwipeFilters', () => {
     it('should update queue on filter change', async () => {
       render(<SwipeFilters onFiltersChange={mockOnFiltersChange} />);
       
-      const countrySelect = screen.getByLabelText(/country/i);
+      const countrySelect = screen.getByLabelText('Country');
       fireEvent.change(countrySelect, { target: { value: 'United States' } });
       
       await waitFor(() => {
@@ -221,10 +221,13 @@ describe('SwipeFilters', () => {
       
       const smallButton = screen.getByRole('button', { name: /Small/i });
       const mediumButton = screen.getByRole('button', { name: /Medium/i });
-      const clearButton = screen.getByRole('button', { name: /Clear sizes/i });
       
+      // Select sizes first
       fireEvent.click(smallButton);
       fireEvent.click(mediumButton);
+      
+      // Now the clear button should be visible
+      const clearButton = screen.getByRole('button', { name: /Clear sizes/i });
       fireEvent.click(clearButton);
       
       expect(smallButton).not.toHaveClass('selected');
@@ -243,7 +246,7 @@ describe('SwipeFilters', () => {
     it('should be keyboard navigable', () => {
       render(<SwipeFilters onFiltersChange={mockOnFiltersChange} />);
       
-      const countrySelect = screen.getByLabelText(/country/i);
+      const countrySelect = screen.getByLabelText('Country');
       const smallButton = screen.getByRole('button', { name: /Small/i });
       
       countrySelect.focus();

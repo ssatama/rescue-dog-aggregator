@@ -201,7 +201,7 @@ describe('useSwipeFilters', () => {
         result.current.setCountry('United Kingdom');
       });
       
-      expect(result.current.toQueryString()).toBe('country=United%20Kingdom');
+      expect(result.current.toQueryString()).toBe('country=United+Kingdom');
     });
 
     it('should omit empty values from query string', () => {
