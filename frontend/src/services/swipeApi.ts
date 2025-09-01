@@ -57,7 +57,7 @@ export async function fetchSwipeDogs(
     breed: dog.breed,
     age: dog.age,
     image: dog.image_url || dog.image,
-    organization: dog.organization_name || dog.organization,
+    organization: dog.organization_name || (typeof dog.organization === 'object' ? dog.organization?.name : dog.organization),
     location: dog.location,
     slug: dog.slug,
     description: dog.tagline || dog.description,
