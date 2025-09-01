@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { SwipeContainerWithFilters } from "../../components/swipe/SwipeContainerWithFilters";
+import { SwipeDetails } from "../../components/swipe/SwipeDetails";
 import { useRouter } from "next/navigation";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 
@@ -20,11 +21,43 @@ interface Dog {
   special_characteristic?: string;
   quality_score?: number;
   created_at?: string;
+  sex?: string;
+  size?: string;
+  good_with_dogs?: boolean | string;
+  good_with_cats?: boolean | string;
+  good_with_kids?: boolean | string;
+  additional_images?: string[];
 }
 
 export default function SwipePage() {
   const router = useRouter();
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const [selectedDog, setSelectedDog] = useState<Dog | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
+
+  // Helper function to map dog data to SwipeDetails format
+  const mapDogForDetails = (dog: Dog): any => ({
+    id: dog.id,
+    name: dog.name,
+    age: dog.age || 'Unknown',
+    sex: dog.sex || 'Unknown',
+    size: dog.size || 'Medium',
+    breed: dog.breed || 'Mixed Breed',
+    organization_name: dog.organization || '',
+    location: dog.location || '',
+    adoption_url: `/dogs/${dog.slug}`,
+    image_url: dog.image || '',
+    additional_images: dog.additional_images || [],
+    dog_profiler_data: dog.description ? {
+      description: dog.description,
+      personality_traits: dog.traits || [],
+      energy_level: dog.energy_level,
+      good_with_dogs: dog.good_with_dogs,
+      good_with_cats: dog.good_with_cats,
+      good_with_kids: dog.good_with_kids,
+      unique_quirk: dog.special_characteristic
+    } : undefined
+  });
 
   // Redirect desktop users
   if (!isMobile && typeof window !== "undefined") {
@@ -67,8 +100,8 @@ export default function SwipePage() {
   };
 
   const handleCardExpanded = (dog: Dog) => {
-    // Could navigate to dog detail page or open modal
-    console.log(`Expanded details for ${dog.name}`);
+    setSelectedDog(dog);
+    setShowDetails(true);
   };
 
   return (
@@ -78,6 +111,17 @@ export default function SwipePage() {
         onSwipe={handleSwipe}
         onCardExpanded={handleCardExpanded}
       />
+      
+      {selectedDog && (
+        <SwipeDetails
+          dog={mapDogForDetails(selectedDog)}
+          isOpen={showDetails}
+          onClose={() => {
+            setShowDetails(false);
+            setSelectedDog(null);
+          }}
+        />
+      )}
     </div>
   );
 }
