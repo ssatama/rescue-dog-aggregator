@@ -18,7 +18,7 @@ if (isDevelopment) {
 // Prevent multiple initializations
 if (typeof window !== "undefined" && !(window as any).__sentryInitialized) {
   (window as any).__sentryInitialized = true;
-  
+
   // Only log initialization in development mode
   if (isDevelopment) {
     console.log("[Sentry] Initializing Sentry in client-side mode");

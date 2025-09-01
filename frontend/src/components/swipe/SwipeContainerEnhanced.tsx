@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from 'framer-motion';
-import { useFavorites } from '@/hooks/useFavorites';
-import * as Sentry from '@sentry/nextjs';
-import { SwipeStack } from './SwipeStack';
-import { SwipeActions } from './SwipeActions';
-import { triggerSwipeHaptic, triggerDoubleTapHaptic } from '@/utils/haptic';
-import { DogWithProfiler } from '@/types/dogProfiler';
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useTransform,
+  PanInfo,
+} from "framer-motion";
+import { useFavorites } from "@/hooks/useFavorites";
+import * as Sentry from "@sentry/nextjs";
+import { SwipeStack } from "./SwipeStack";
+import { SwipeActions } from "./SwipeActions";
+import { triggerSwipeHaptic, triggerDoubleTapHaptic } from "@/utils/haptic";
+import { DogWithProfiler } from "@/types/dogProfiler";
 
 const SWIPE_THRESHOLD = 50;
 const VELOCITY_THRESHOLD = 0.5;
@@ -17,7 +23,7 @@ const DOUBLE_TAP_DELAY = 300;
 interface SwipeContainerEnhancedProps {
   dogs: DogWithProfiler[];
   currentIndex: number;
-  onSwipe: (direction: 'left' | 'right', dog: DogWithProfiler) => void;
+  onSwipe: (direction: "left" | "right", dog: DogWithProfiler) => void;
   onCardExpanded: (dog: DogWithProfiler) => void;
   isLoading?: boolean;
 }
@@ -35,12 +41,14 @@ export function SwipeContainerEnhanced({
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-45, 45]);
   const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
+  const rightOverlayOpacity = useTransform(x, [0, 100], [0, 0.5]);
+  const leftOverlayOpacity = useTransform(x, [-100, 0], [0.5, 0]);
 
   // Track session start
   useEffect(() => {
     Sentry.captureEvent({
-      message: 'swipe.session.started',
-      level: 'info',
+      message: "swipe.session.started",
+      level: "info",
       extra: {
         initialDogCount: dogs.length,
       },
@@ -48,34 +56,34 @@ export function SwipeContainerEnhanced({
 
     return () => {
       Sentry.captureEvent({
-        message: 'swipe.session.ended',
-        level: 'info',
+        message: "swipe.session.ended",
+        level: "info",
         extra: {
           finalIndex: currentIndex,
         },
       });
     };
-  }, []);
+  }, [currentIndex, dogs.length]);
 
   const currentDog = dogs[currentIndex];
 
   // Handle swipe completion with animations
   const handleSwipeComplete = useCallback(
-    async (direction: 'left' | 'right') => {
+    async (direction: "left" | "right") => {
       if (!currentDog) return;
 
       // Trigger haptic feedback
       triggerSwipeHaptic(direction);
 
-      if (direction === 'right') {
+      if (direction === "right") {
         // Show success animation
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 1500);
-        
-        await addFavorite(currentDog);
+
+        await addFavorite(currentDog.id, currentDog.name);
         Sentry.captureEvent({
-          message: 'swipe.card.swiped_right',
-          level: 'info',
+          message: "swipe.card.swiped_right",
+          level: "info",
           extra: {
             dogId: currentDog.id,
             dogName: currentDog.name,
@@ -83,8 +91,8 @@ export function SwipeContainerEnhanced({
         });
       } else {
         Sentry.captureEvent({
-          message: 'swipe.card.swiped_left',
-          level: 'info',
+          message: "swipe.card.swiped_left",
+          level: "info",
           extra: {
             dogId: currentDog.id,
             dogName: currentDog.name,
@@ -94,7 +102,7 @@ export function SwipeContainerEnhanced({
 
       onSwipe(direction, currentDog);
     },
-    [currentDog, addFavorite, onSwipe]
+    [currentDog, addFavorite, onSwipe],
   );
 
   // Handle drag end
@@ -103,12 +111,15 @@ export function SwipeContainerEnhanced({
       const swipeDistance = Math.abs(info.offset.x);
       const swipeVelocity = Math.abs(info.velocity.x);
 
-      if (swipeDistance > SWIPE_THRESHOLD || swipeVelocity > VELOCITY_THRESHOLD) {
-        const direction = info.offset.x > 0 ? 'right' : 'left';
+      if (
+        swipeDistance > SWIPE_THRESHOLD ||
+        swipeVelocity > VELOCITY_THRESHOLD
+      ) {
+        const direction = info.offset.x > 0 ? "right" : "left";
         handleSwipeComplete(direction);
       }
     },
-    [handleSwipeComplete]
+    [handleSwipeComplete],
   );
 
   // Handle tap for expansion or double-tap for favorite
@@ -120,7 +131,7 @@ export function SwipeContainerEnhanced({
       // Double tap - add to favorites
       if (currentDog) {
         triggerDoubleTapHaptic();
-        handleSwipeComplete('right');
+        handleSwipeComplete("right");
       }
     } else {
       // Single tap - expand card
@@ -130,8 +141,8 @@ export function SwipeContainerEnhanced({
           if (currentDog) {
             onCardExpanded(currentDog);
             Sentry.captureEvent({
-              message: 'swipe.card.expanded',
-              level: 'info',
+              message: "swipe.card.expanded",
+              level: "info",
               extra: {
                 dogId: currentDog.id,
                 dogName: currentDog.name,
@@ -167,7 +178,9 @@ export function SwipeContainerEnhanced({
         <div className="text-center">
           <div className="text-6xl mb-4">🐕</div>
           <h3 className="text-2xl font-bold mb-2">More dogs coming!</h3>
-          <p className="text-gray-600 mb-4">Check back soon or adjust your filters</p>
+          <p className="text-gray-600 mb-4">
+            Check back soon or adjust your filters
+          </p>
           <button className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
             Change Filters →
           </button>
@@ -177,8 +190,9 @@ export function SwipeContainerEnhanced({
   }
 
   // Check for reduced motion preference
-  const prefersReducedMotion = typeof window !== 'undefined' && 
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const prefersReducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   return (
     <div className="relative h-full flex flex-col">
@@ -195,39 +209,43 @@ export function SwipeContainerEnhanced({
             onDragEnd={handleDragEnd}
             initial={{ scale: 0.8, opacity: 0, y: 100 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={(x.get() > 0) ? {
-              x: 500,
-              rotate: 45,
-              opacity: 0,
-              transition: { duration: 0.3, ease: 'easeOut' }
-            } : {
-              x: -500,
-              rotate: -45,
-              opacity: 0,
-              transition: { duration: 0.3, ease: 'easeOut' }
-            }}
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            exit={
+              x.get() > 0
+                ? {
+                    x: 500,
+                    rotate: 45,
+                    opacity: 0,
+                    transition: { duration: 0.3, ease: "easeOut" },
+                  }
+                : {
+                    x: -500,
+                    rotate: -45,
+                    opacity: 0,
+                    transition: { duration: 0.3, ease: "easeOut" },
+                  }
+            }
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
             whileDrag={{ scale: 1.05 }}
             onClick={handleTap}
           >
             <SwipeStack dogs={dogs} currentIndex={currentIndex} />
-            
+
             {/* Swipe Overlays */}
             <motion.div
               className="absolute inset-0 bg-green-500 rounded-2xl flex items-center justify-center pointer-events-none"
-              style={{ 
-                opacity: useTransform(x, [0, 100], [0, 0.5])
+              style={{
+                opacity: rightOverlayOpacity,
               }}
             >
               <div className="text-white text-5xl font-bold transform rotate-12">
                 MATCH
               </div>
             </motion.div>
-            
+
             <motion.div
               className="absolute inset-0 bg-red-500 rounded-2xl flex items-center justify-center pointer-events-none"
-              style={{ 
-                opacity: useTransform(x, [-100, 0], [0.5, 0])
+              style={{
+                opacity: leftOverlayOpacity,
               }}
             >
               <div className="text-white text-5xl font-bold transform -rotate-12">
@@ -271,7 +289,10 @@ export function SwipeContainerEnhanced({
       </div>
 
       {/* Action Buttons */}
-      <SwipeActions onSwipe={handleSwipeComplete} disabled={isLoading || !currentDog} />
+      <SwipeActions
+        onSwipe={handleSwipeComplete}
+        disabled={isLoading || !currentDog}
+      />
     </div>
   );
 }

@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useTransform,
+  PanInfo,
+} from "framer-motion";
 import { useFavorites } from "../../hooks/useFavorites";
 import * as Sentry from "@sentry/nextjs";
 import { Heart, X } from "lucide-react";
@@ -60,7 +66,7 @@ export function SwipeContainer({
         initialDogCount: dogs.length,
       },
     });
-  }, []);
+  }, [dogs.length]);
 
   const currentDog = dogs[currentIndex];
 
@@ -90,7 +96,7 @@ export function SwipeContainer({
 
       onSwipe(direction, currentDog);
     },
-    [currentDog, addFavorite, onSwipe]
+    [currentDog, addFavorite, onSwipe],
   );
 
   // Handle drag
@@ -104,14 +110,17 @@ export function SwipeContainer({
       const swipeDistance = Math.abs(info.offset.x);
       const swipeVelocity = Math.abs(info.velocity.x);
 
-      if (swipeDistance > SWIPE_THRESHOLD || swipeVelocity > VELOCITY_THRESHOLD) {
+      if (
+        swipeDistance > SWIPE_THRESHOLD ||
+        swipeVelocity > VELOCITY_THRESHOLD
+      ) {
         const direction = info.offset.x > 0 ? "right" : "left";
         handleSwipeComplete(direction);
       }
-      
+
       setDragX(0);
     },
-    [handleSwipeComplete]
+    [handleSwipeComplete],
   );
 
   // Handle tap/click for expansion or double-tap for favorite
@@ -177,7 +186,9 @@ export function SwipeContainer({
         <div className="text-center">
           <div className="text-6xl mb-4">🐕</div>
           <h3 className="text-2xl font-bold mb-2">More dogs coming!</h3>
-          <p className="text-gray-600 mb-4">Check back soon or adjust your filters</p>
+          <p className="text-gray-600 mb-4">
+            Check back soon or adjust your filters
+          </p>
           <button className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
             Change Filters
           </button>
@@ -208,7 +219,7 @@ export function SwipeContainer({
           {/* Card Content */}
           <div className="relative">
             <SwipeCard dog={currentDog} />
-            
+
             {/* Swipe Overlays */}
             {dragX > SWIPE_THRESHOLD && (
               <div

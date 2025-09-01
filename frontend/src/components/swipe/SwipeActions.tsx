@@ -1,25 +1,25 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { triggerHaptic } from '@/utils/haptic';
+import React from "react";
+import { motion } from "framer-motion";
+import { triggerHaptic } from "@/utils/haptic";
 
 interface SwipeActionsProps {
-  onSwipe: (direction: 'left' | 'right') => void;
+  onSwipe: (direction: "left" | "right") => void;
   disabled?: boolean;
 }
 
 export function SwipeActions({ onSwipe, disabled = false }: SwipeActionsProps) {
   const handlePass = () => {
     if (disabled) return;
-    triggerHaptic('light');
-    onSwipe('left');
+    triggerHaptic("light");
+    onSwipe("left");
   };
 
   const handleLike = () => {
     if (disabled) return;
-    triggerHaptic('success');
-    onSwipe('right');
+    triggerHaptic("success");
+    onSwipe("right");
   };
 
   return (
@@ -31,12 +31,12 @@ export function SwipeActions({ onSwipe, disabled = false }: SwipeActionsProps) {
         aria-label="Pass"
         className="w-16 h-16 rounded-full bg-gray-100 shadow-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition-colors"
       >
-        <svg 
-          width="24" 
-          height="24" 
-          viewBox="0 0 24 24" 
-          fill="none" 
-          stroke="currentColor" 
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
           strokeWidth="2"
           className="text-gray-600"
         >
@@ -52,10 +52,10 @@ export function SwipeActions({ onSwipe, disabled = false }: SwipeActionsProps) {
         aria-label="Like"
         className="w-16 h-16 rounded-full bg-green-500 shadow-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-600 transition-colors"
       >
-        <svg 
-          width="28" 
-          height="28" 
-          viewBox="0 0 24 24" 
+        <svg
+          width="28"
+          height="28"
+          viewBox="0 0 24 24"
           fill="white"
           className="text-white"
         >

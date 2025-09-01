@@ -35,7 +35,7 @@ describe("SwipeErrorBoundary", () => {
     render(
       <SwipeErrorBoundary>
         <div>Test content</div>
-      </SwipeErrorBoundary>
+      </SwipeErrorBoundary>,
     );
 
     expect(screen.getByText("Test content")).toBeInTheDocument();
@@ -45,31 +45,33 @@ describe("SwipeErrorBoundary", () => {
     render(
       <SwipeErrorBoundary>
         <ThrowError shouldThrow={true} />
-      </SwipeErrorBoundary>
+      </SwipeErrorBoundary>,
     );
 
     expect(screen.getByText(/Oops! Something went wrong/)).toBeInTheDocument();
-    expect(screen.getByText(/having trouble with the swipe feature/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/having trouble with the swipe feature/),
+    ).toBeInTheDocument();
   });
 
   it("should report errors to Sentry with context", () => {
     render(
       <SwipeErrorBoundary>
         <ThrowError shouldThrow={true} />
-      </SwipeErrorBoundary>
+      </SwipeErrorBoundary>,
     );
 
     expect(Sentry.withScope).toHaveBeenCalled();
     expect(Sentry.captureException).toHaveBeenCalledWith(
       expect.objectContaining({
         message: "Test error",
-      })
+      }),
     );
   });
 
   it("should allow retrying after an error", () => {
     let shouldThrow = true;
-    
+
     const TestComponent = () => {
       if (shouldThrow) {
         throw new Error("Test error");
@@ -80,13 +82,13 @@ describe("SwipeErrorBoundary", () => {
     const { rerender } = render(
       <SwipeErrorBoundary>
         <TestComponent />
-      </SwipeErrorBoundary>
+      </SwipeErrorBoundary>,
     );
 
     expect(screen.getByText(/Oops! Something went wrong/)).toBeInTheDocument();
 
     const retryButton = screen.getByText("Try Again");
-    
+
     // Change the condition before clicking retry
     shouldThrow = false;
     fireEvent.click(retryButton);
@@ -99,7 +101,7 @@ describe("SwipeErrorBoundary", () => {
     render(
       <SwipeErrorBoundary>
         <ThrowError shouldThrow={true} />
-      </SwipeErrorBoundary>
+      </SwipeErrorBoundary>,
     );
 
     const backButton = screen.getByText("Go to Browse");
@@ -118,7 +120,7 @@ describe("SwipeErrorBoundary", () => {
     render(
       <SwipeErrorBoundary>
         <ErrorComponent />
-      </SwipeErrorBoundary>
+      </SwipeErrorBoundary>,
     );
 
     expect(screen.getByText(/Oops! Something went wrong/)).toBeInTheDocument();
@@ -129,7 +131,7 @@ describe("SwipeErrorBoundary", () => {
     const { rerender } = render(
       <SwipeErrorBoundary resetKeys={["key1"]}>
         <ThrowError shouldThrow={true} />
-      </SwipeErrorBoundary>
+      </SwipeErrorBoundary>,
     );
 
     expect(screen.getByText(/Oops! Something went wrong/)).toBeInTheDocument();
@@ -137,7 +139,7 @@ describe("SwipeErrorBoundary", () => {
     rerender(
       <SwipeErrorBoundary resetKeys={["key2"]}>
         <ThrowError shouldThrow={false} />
-      </SwipeErrorBoundary>
+      </SwipeErrorBoundary>,
     );
 
     expect(screen.getByText("No error")).toBeInTheDocument();
@@ -150,7 +152,7 @@ describe("SwipeErrorBoundary", () => {
     render(
       <SwipeErrorBoundary>
         <ThrowError shouldThrow={true} />
-      </SwipeErrorBoundary>
+      </SwipeErrorBoundary>,
     );
 
     expect(screen.getByText(/Error details:/)).toBeInTheDocument();
@@ -166,7 +168,7 @@ describe("SwipeErrorBoundary", () => {
     render(
       <SwipeErrorBoundary>
         <ThrowError shouldThrow={true} />
-      </SwipeErrorBoundary>
+      </SwipeErrorBoundary>,
     );
 
     expect(screen.queryByText(/Error details:/)).not.toBeInTheDocument();
@@ -187,7 +189,7 @@ describe("SwipeErrorBoundary", () => {
     render(
       <SwipeErrorBoundary>
         <AsyncErrorComponent />
-      </SwipeErrorBoundary>
+      </SwipeErrorBoundary>,
     );
 
     // Note: Async errors thrown in setTimeout won't be caught by error boundary

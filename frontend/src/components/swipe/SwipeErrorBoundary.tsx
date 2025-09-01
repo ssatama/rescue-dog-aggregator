@@ -88,8 +88,8 @@ class SwipeErrorBoundary extends Component<Props, State> {
                 Oops! Something went wrong
               </h2>
               <p className="text-gray-600">
-                We're having trouble with the swipe feature right now. 
-                Don't worry, all the dogs are still safe!
+                We&apos;re having trouble with the swipe feature right now.
+                Don&apos;t worry, all the dogs are still safe!
               </p>
             </div>
 
@@ -131,8 +131,8 @@ class SwipeErrorBoundary extends Component<Props, State> {
 
             {this.state.errorCount > 2 && (
               <p className="mt-4 text-sm text-gray-500">
-                If this keeps happening, please try refreshing the page or
-                come back later.
+                If this keeps happening, please try refreshing the page or come
+                back later.
               </p>
             )}
           </div>

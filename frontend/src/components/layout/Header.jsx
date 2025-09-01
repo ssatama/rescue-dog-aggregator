@@ -83,6 +83,28 @@ export default function Header() {
               {" "}
               {/* Increased spacing for better visual separation */}
               {renderNavLink("/dogs", "Find Dogs", "dogs")}
+              <div className="lg:hidden">
+                <div className="relative">
+                  <Link href="/swipe" className={getLinkClasses("/swipe")}>
+                    <span className="flex items-center gap-1">
+                      <Icon
+                        name="heart"
+                        size="default"
+                        className="text-red-500"
+                        filled
+                        aria-label="Heart icon"
+                      />
+                      Swipe
+                    </span>
+                  </Link>
+                  {pathname === "/swipe" && (
+                    <div
+                      data-testid="nav-underline-swipe"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"
+                    />
+                  )}
+                </div>
+              </div>
               {renderNavLink("/favorites", "Favorites", "favorites", true)}
               {renderNavLink(
                 "/organizations",
@@ -137,6 +159,30 @@ export default function Header() {
                 {pathname === "/dogs" && (
                   <div
                     data-testid="nav-underline-dogs"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"
+                  />
+                )}
+              </div>
+              <div className="relative">
+                <Link
+                  href="/swipe"
+                  className={`block ${getLinkClasses("/swipe")}`}
+                  onClick={handleMobileLinkClick}
+                >
+                  <span className="flex items-center gap-1">
+                    <Icon
+                      name="heart"
+                      size="default"
+                      className="text-red-500"
+                      filled
+                      aria-label="Heart icon"
+                    />
+                    Swipe
+                  </span>
+                </Link>
+                {pathname === "/swipe" && (
+                  <div
+                    data-testid="nav-underline-swipe"
                     className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"
                   />
                 )}

@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useTransform,
+  PanInfo,
+} from "framer-motion";
 import { useFavorites } from "../../hooks/useFavorites";
 import * as Sentry from "@sentry/nextjs";
 import { Heart, X } from "lucide-react";
@@ -47,15 +53,15 @@ export function SwipeContainerWithFilters({
   onCardExpanded,
 }: SwipeContainerWithFiltersProps) {
   const { addFavorite, isFavorited } = useFavorites();
-  const { 
-    filters, 
-    setFilters, 
-    isValid, 
-    toQueryString, 
+  const {
+    filters,
+    setFilters,
+    isValid,
+    toQueryString,
     needsOnboarding,
-    completeOnboarding 
+    completeOnboarding,
   } = useSwipeFilters();
-  
+
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -77,12 +83,12 @@ export function SwipeContainerWithFilters({
           const fetchedDogs = await fetchDogs(queryString);
           setDogs(fetchedDogs);
           setCurrentIndex(0);
-          
+
           Sentry.captureEvent({
             message: "swipe.queue.loaded",
             extra: {
-              filters,
-              dogCount: fetchedDogs.length
+              filtersData: filters,
+              dogCount: fetchedDogs.length,
             },
           });
         } catch (error) {
@@ -106,13 +112,13 @@ export function SwipeContainerWithFilters({
     return () => {
       Sentry.captureEvent({
         message: "swipe.session.ended",
-        extra: { 
+        extra: {
           timestamp: new Date().toISOString(),
-          dogsViewed: currentIndex
+          dogsViewed: currentIndex,
         },
       });
     };
-  }, []);
+  }, [currentIndex]);
 
   const handleOnboardingComplete = useCallback(
     (skipped: boolean, onboardingFilters?: Filters) => {
@@ -120,7 +126,7 @@ export function SwipeContainerWithFilters({
         completeOnboarding(onboardingFilters);
       }
     },
-    [completeOnboarding]
+    [completeOnboarding],
   );
 
   const handleSwipeComplete = useCallback(
@@ -150,18 +156,20 @@ export function SwipeContainerWithFilters({
       if (onSwipe) {
         onSwipe(direction, currentDog);
       }
-      
-      setCurrentIndex(prev => prev + 1);
+
+      setCurrentIndex((prev) => prev + 1);
 
       // Check if we need to load more dogs
       if (currentIndex === dogs.length - 5 && fetchDogs) {
         const queryString = toQueryString();
-        fetchDogs(queryString + `&offset=${dogs.length}`).then(newDogs => {
-          setDogs(prev => [...prev, ...newDogs]);
-        }).catch(console.error);
+        fetchDogs(queryString + `&offset=${dogs.length}`)
+          .then((newDogs) => {
+            setDogs((prev) => [...prev, ...newDogs]);
+          })
+          .catch(console.error);
       }
     },
-    [currentIndex, dogs, addFavorite, onSwipe, fetchDogs, toQueryString]
+    [currentIndex, dogs, addFavorite, onSwipe, fetchDogs, toQueryString],
   );
 
   const handleDragEnd = useCallback(
@@ -170,12 +178,15 @@ export function SwipeContainerWithFilters({
       const threshold = SWIPE_THRESHOLD;
       const velocity = VELOCITY_THRESHOLD;
 
-      if (Math.abs(info.offset.x) > threshold || Math.abs(info.velocity.x) > velocity) {
+      if (
+        Math.abs(info.offset.x) > threshold ||
+        Math.abs(info.velocity.x) > velocity
+      ) {
         const direction = info.offset.x > 0 ? "right" : "left";
         handleSwipeComplete(direction);
       }
     },
-    [handleSwipeComplete]
+    [handleSwipeComplete],
   );
 
   const handleCardTap = useCallback(() => {
@@ -233,8 +244,10 @@ export function SwipeContainerWithFilters({
           <div className="text-center">
             <div className="text-6xl mb-4">🐕</div>
             <h3 className="text-2xl font-bold mb-2">More dogs coming!</h3>
-            <p className="text-gray-600 mb-4">Check back soon or adjust your filters</p>
-            <button 
+            <p className="text-gray-600 mb-4">
+              Check back soon or adjust your filters
+            </p>
+            <button
               onClick={() => setShowFilters(true)}
               className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
             >
@@ -268,15 +281,17 @@ export function SwipeContainerWithFilters({
                 ✕
               </button>
             </div>
-            <SwipeFilters 
+            <SwipeFilters
               onFiltersChange={(newFilters) => {
                 setFilters(newFilters);
                 setShowFilters(false);
                 Sentry.captureEvent({
                   message: "swipe.filter.changed",
-                  extra: newFilters,
+                  extra: {
+                    filters: newFilters,
+                  },
                 });
-              }} 
+              }}
             />
           </div>
         </div>
@@ -313,18 +328,18 @@ export function SwipeContainerWithFilters({
                 style={{ x, rotate }}
                 initial={{ scale: 0.8, opacity: 0, y: 100 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ 
-                  x: dragX > 0 ? 500 : -500, 
+                exit={{
+                  x: dragX > 0 ? 500 : -500,
                   rotate: dragX > 0 ? 45 : -45,
                   opacity: 0,
-                  transition: { duration: 0.3 }
+                  transition: { duration: 0.3 },
                 }}
                 transition={{ type: "spring", stiffness: 300, damping: 25 }}
                 whileTap={{ scale: 0.98 }}
                 whileDrag={{ scale: 1.05 }}
               >
                 <SwipeCard dog={currentDog} />
-                
+
                 {/* Swipe indicators */}
                 {isDragging && (
                   <>
@@ -356,7 +371,7 @@ export function SwipeContainerWithFilters({
               >
                 <X className="w-8 h-8 text-red-500" />
               </button>
-              
+
               <button
                 onClick={() => handleSwipeComplete("right")}
                 className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform"

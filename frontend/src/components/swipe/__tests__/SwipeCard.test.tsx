@@ -23,7 +23,7 @@ describe("SwipeCard", () => {
 
   it("should display dog name, age, and breed", () => {
     render(<SwipeCard dog={mockDog} />);
-    
+
     expect(screen.getByText("Buddy")).toBeInTheDocument();
     expect(screen.getByText(/Golden Retriever/)).toBeInTheDocument();
     expect(screen.getByText(/2 years/)).toBeInTheDocument();
@@ -31,8 +31,10 @@ describe("SwipeCard", () => {
 
   it("should show LLM tagline", () => {
     render(<SwipeCard dog={mockDog} />);
-    
-    expect(screen.getByText(/A friendly and energetic companion/)).toBeInTheDocument();
+
+    expect(
+      screen.getByText(/A friendly and energetic companion/),
+    ).toBeInTheDocument();
   });
 
   it("should render personality traits (max 3)", () => {
@@ -40,9 +42,9 @@ describe("SwipeCard", () => {
       ...mockDog,
       traits: ["Playful", "Loyal", "Gentle", "Smart", "Curious"],
     };
-    
+
     render(<SwipeCard dog={dogWithManyTraits} />);
-    
+
     expect(screen.getByText("Playful")).toBeInTheDocument();
     expect(screen.getByText("Loyal")).toBeInTheDocument();
     expect(screen.getByText("Gentle")).toBeInTheDocument();
@@ -52,14 +54,14 @@ describe("SwipeCard", () => {
 
   it("should display energy level indicator", () => {
     render(<SwipeCard dog={mockDog} />);
-    
+
     expect(screen.getByTestId("energy-indicator")).toBeInTheDocument();
     expect(screen.getByText("Energy:")).toBeInTheDocument();
   });
 
   it("should show unique quirk", () => {
     render(<SwipeCard dog={mockDog} />);
-    
+
     expect(screen.getByText(/Loves to play fetch/)).toBeInTheDocument();
     expect(screen.getByText(/🦴/)).toBeInTheDocument();
   });
@@ -69,9 +71,9 @@ describe("SwipeCard", () => {
       ...mockDog,
       created_at: new Date().toISOString(),
     };
-    
+
     render(<SwipeCard dog={newDog} />);
-    
+
     expect(screen.getByText("NEW")).toBeInTheDocument();
   });
 
@@ -82,15 +84,15 @@ describe("SwipeCard", () => {
       ...mockDog,
       created_at: oldDate.toISOString(),
     };
-    
+
     render(<SwipeCard dog={oldDog} />);
-    
+
     expect(screen.queryByText("NEW")).not.toBeInTheDocument();
   });
 
   it("should display organization and location", () => {
     render(<SwipeCard dog={mockDog} />);
-    
+
     expect(screen.getByText(/Happy Paws Rescue/)).toBeInTheDocument();
     expect(screen.getByText(/San Francisco, CA/)).toBeInTheDocument();
   });
@@ -100,9 +102,9 @@ describe("SwipeCard", () => {
       ...mockDog,
       image: undefined,
     };
-    
+
     render(<SwipeCard dog={dogWithoutImage} />);
-    
+
     expect(screen.getByText("🐕")).toBeInTheDocument();
   });
 
@@ -112,9 +114,9 @@ describe("SwipeCard", () => {
       name: "Max",
       slug: "max",
     };
-    
+
     render(<SwipeCard dog={minimalDog} />);
-    
+
     expect(screen.getByText("Max")).toBeInTheDocument();
     expect(screen.queryByText("Energy:")).not.toBeInTheDocument();
     expect(screen.queryByText("🦴")).not.toBeInTheDocument();
@@ -122,7 +124,7 @@ describe("SwipeCard", () => {
 
   it("should apply proper styling with rounded corners and shadow", () => {
     const { container } = render(<SwipeCard dog={mockDog} />);
-    
+
     const card = container.querySelector(".rounded-2xl");
     expect(card).toBeInTheDocument();
     expect(card).toHaveClass("shadow-lg");
@@ -130,7 +132,7 @@ describe("SwipeCard", () => {
 
   it("should maintain 16:9 aspect ratio for image container", () => {
     render(<SwipeCard dog={mockDog} />);
-    
+
     const imageContainer = screen.getByTestId("image-container");
     expect(imageContainer).toHaveClass("aspect-video");
   });

@@ -1,34 +1,50 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { SwipeFilters } from '../../hooks/useSwipeFilters';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { SwipeFilters } from "../../hooks/useSwipeFilters";
 
 interface SwipeOnboardingProps {
   onComplete: (skipped: boolean, filters?: SwipeFilters) => void;
 }
 
 const COUNTRIES = [
-  { value: 'Germany', label: 'Germany', flag: '🇩🇪', count: '486 dogs available' },
-  { value: 'United Kingdom', label: 'United Kingdom', flag: '🇬🇧', count: '1,245 dogs available' },
-  { value: 'United States', label: 'United States', flag: '🇺🇸', count: '342 dogs available' }
+  {
+    value: "Germany",
+    label: "Germany",
+    flag: "🇩🇪",
+    count: "486 dogs available",
+  },
+  {
+    value: "United Kingdom",
+    label: "United Kingdom",
+    flag: "🇬🇧",
+    count: "1,245 dogs available",
+  },
+  {
+    value: "United States",
+    label: "United States",
+    flag: "🇺🇸",
+    count: "342 dogs available",
+  },
 ];
 
 const SIZES = [
-  { value: 'small', label: 'Small', icon: '🐕' },
-  { value: 'medium', label: 'Medium', icon: '🐕‍🦺' },
-  { value: 'large', label: 'Large', icon: '🦮' },
-  { value: 'giant', label: 'Giant', icon: '🐻' }
+  { value: "small", label: "Small", icon: "🐕" },
+  { value: "medium", label: "Medium", icon: "🐕‍🦺" },
+  { value: "large", label: "Large", icon: "🦮" },
+  { value: "giant", label: "Giant", icon: "🐻" },
 ];
 
 export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
   const [step, setStep] = useState(1);
-  const [selectedCountry, setSelectedCountry] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
-    const onboardingComplete = localStorage.getItem('swipeOnboardingComplete') === 'true';
-    const savedFilters = localStorage.getItem('swipeFilters');
-    
+    const onboardingComplete =
+      localStorage.getItem("swipeOnboardingComplete") === "true";
+    const savedFilters = localStorage.getItem("swipeFilters");
+
     if (onboardingComplete && savedFilters) {
       try {
         const filters = JSON.parse(savedFilters);
@@ -37,10 +53,10 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
           return;
         }
       } catch (error) {
-        console.error('Failed to parse saved filters:', error);
+        console.error("Failed to parse saved filters:", error);
       }
     }
-    
+
     setShowOnboarding(true);
   }, [onComplete]);
 
@@ -49,10 +65,8 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
   };
 
   const toggleSize = (size: string) => {
-    setSelectedSizes(prev => 
-      prev.includes(size) 
-        ? prev.filter(s => s !== size)
-        : [...prev, size]
+    setSelectedSizes((prev) =>
+      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size],
     );
   };
 
@@ -65,12 +79,12 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
   const handleComplete = () => {
     const filters: SwipeFilters = {
       country: selectedCountry,
-      sizes: selectedSizes
+      sizes: selectedSizes,
     };
-    
-    localStorage.setItem('swipeOnboardingComplete', 'true');
-    localStorage.setItem('swipeFilters', JSON.stringify(filters));
-    
+
+    localStorage.setItem("swipeOnboardingComplete", "true");
+    localStorage.setItem("swipeFilters", JSON.stringify(filters));
+
     onComplete(false, filters);
   };
 
@@ -83,7 +97,7 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
   }
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
       role="dialog"
       aria-label="Swipe feature onboarding"
@@ -100,25 +114,30 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
             >
               <div className="text-center mb-6">
                 <div className="text-6xl mb-4">🌍</div>
-                <h2 className="text-2xl font-bold mb-2">Where can you adopt?</h2>
-                <p className="text-gray-600">We'll show dogs available in your country</p>
+                <h2 className="text-2xl font-bold mb-2">
+                  Where can you adopt?
+                </h2>
+                <p className="text-gray-600">
+                  We&apos;ll show dogs available in your country
+                </p>
               </div>
 
               <div className="space-y-3">
-                {COUNTRIES.map(country => (
+                {COUNTRIES.map((country) => (
                   <button
                     key={country.value}
                     onClick={() => handleCountrySelect(country.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
+                      if (e.key === "Enter") {
                         handleCountrySelect(country.value);
                       }
                     }}
                     className={`
                       w-full p-4 rounded-lg border-2 transition-all text-left
-                      ${selectedCountry === country.value 
-                        ? 'border-orange-500 bg-orange-50 selected' 
-                        : 'border-gray-200 hover:border-orange-300'
+                      ${
+                        selectedCountry === country.value
+                          ? "border-orange-500 bg-orange-50 selected"
+                          : "border-gray-200 hover:border-orange-300"
                       }
                     `}
                     aria-label={country.label}
@@ -128,7 +147,9 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
                         <span className="text-2xl mr-3">{country.flag}</span>
                         <span className="font-medium">{country.label}</span>
                       </div>
-                      <div className="text-sm text-gray-500">{country.count}</div>
+                      <div className="text-sm text-gray-500">
+                        {country.count}
+                      </div>
                     </div>
                   </button>
                 ))}
@@ -139,9 +160,10 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
                 disabled={!selectedCountry}
                 className={`
                   w-full mt-6 py-3 rounded-lg font-medium transition-all
-                  ${selectedCountry
-                    ? 'bg-orange-500 text-white hover:bg-orange-600'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  ${
+                    selectedCountry
+                      ? "bg-orange-500 text-white hover:bg-orange-600"
+                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
                   }
                 `}
                 aria-label="Continue"
@@ -149,7 +171,11 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
                 Continue
               </button>
 
-              <div className="mt-4 text-center" role="status" aria-live="polite">
+              <div
+                className="mt-4 text-center"
+                role="status"
+                aria-live="polite"
+              >
                 <span className="text-sm text-gray-500">Step 1 of 2</span>
               </div>
             </motion.div>
@@ -164,25 +190,28 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
               className="p-6 animate-in"
             >
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold mb-2">Size preference? (optional)</h2>
+                <h2 className="text-2xl font-bold mb-2">
+                  Size preference? (optional)
+                </h2>
                 <p className="text-gray-600">Select your preferred dog sizes</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-6">
-                {SIZES.map(size => (
+                {SIZES.map((size) => (
                   <button
                     key={size.value}
                     onClick={() => toggleSize(size.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
+                      if (e.key === "Enter") {
                         toggleSize(size.value);
                       }
                     }}
                     className={`
                       p-4 rounded-lg border-2 transition-all
-                      ${selectedSizes.includes(size.value)
-                        ? 'border-orange-500 bg-orange-50 selected'
-                        : 'border-gray-200 hover:border-orange-300'
+                      ${
+                        selectedSizes.includes(size.value)
+                          ? "border-orange-500 bg-orange-50 selected"
+                          : "border-gray-200 hover:border-orange-300"
                       }
                     `}
                     aria-label={size.label}
@@ -209,7 +238,11 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
                 Skip - All sizes
               </button>
 
-              <div className="mt-4 text-center" role="status" aria-live="polite">
+              <div
+                className="mt-4 text-center"
+                role="status"
+                aria-live="polite"
+              >
                 <span className="text-sm text-gray-500">Step 2 of 2</span>
               </div>
             </motion.div>

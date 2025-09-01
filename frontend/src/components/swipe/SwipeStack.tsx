@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { DogWithProfiler } from '@/types/dogProfiler';
-import { SwipeCard } from './SwipeCard';
+import React from "react";
+import { motion } from "framer-motion";
+import { DogWithProfiler } from "@/types/dogProfiler";
+import { SwipeCard } from "./SwipeCard";
 
 interface SwipeStackProps {
   dogs: DogWithProfiler[];
@@ -15,16 +15,19 @@ const STACK_SCALE_FACTOR = 0.05;
 const MAX_VISIBLE_CARDS = 3;
 
 export function SwipeStack({ dogs, currentIndex }: SwipeStackProps) {
-  const visibleDogs = dogs.slice(currentIndex, currentIndex + MAX_VISIBLE_CARDS);
+  const visibleDogs = dogs.slice(
+    currentIndex,
+    currentIndex + MAX_VISIBLE_CARDS,
+  );
 
   return (
     <div className="relative h-full w-full">
       {visibleDogs.map((dog, index) => {
         const isActive = index === 0;
         const stackPosition = index;
-        
+
         // Calculate visual properties for stacked cards
-        const scale = 1 - (stackPosition * STACK_SCALE_FACTOR);
+        const scale = 1 - stackPosition * STACK_SCALE_FACTOR;
         const yOffset = stackPosition * STACK_OFFSET;
         const opacity = index === 0 ? 1 : index === 1 ? 0.5 : 0.3;
         const zIndex = MAX_VISIBLE_CARDS - index;
@@ -44,15 +47,15 @@ export function SwipeStack({ dogs, currentIndex }: SwipeStackProps) {
               zIndex: isActive ? 10 : -index,
               transform: `translateY(${yOffset}px) scale(${scale})`,
               opacity,
-              pointerEvents: isActive ? 'auto' : 'none',
+              pointerEvents: isActive ? "auto" : "none",
             }}
             transition={{
-              type: 'spring',
+              type: "spring",
               stiffness: 300,
               damping: 25,
             }}
           >
-            <SwipeCard 
+            <SwipeCard
               dog={{
                 id: dog.id,
                 name: dog.name,
@@ -64,14 +67,19 @@ export function SwipeStack({ dogs, currentIndex }: SwipeStackProps) {
                 slug: dog.slug || `dog-${dog.id}`,
                 description: dog.dog_profiler_data?.description,
                 traits: dog.dog_profiler_data?.personality_traits,
-                energy_level: dog.dog_profiler_data?.energy_level === 'low' ? 1 : 
-                             dog.dog_profiler_data?.energy_level === 'medium' ? 2 :
-                             dog.dog_profiler_data?.energy_level === 'high' ? 3 : 4,
+                energy_level:
+                  dog.dog_profiler_data?.energy_level === "low"
+                    ? 1
+                    : dog.dog_profiler_data?.energy_level === "medium"
+                      ? 2
+                      : dog.dog_profiler_data?.energy_level === "high"
+                        ? 3
+                        : 4,
                 special_characteristic: dog.dog_profiler_data?.unique_quirk,
                 quality_score: dog.dog_profiler_data?.quality_score,
                 created_at: dog.created_at,
-              }} 
-              isStacked={!isActive} 
+              }}
+              isStacked={!isActive}
             />
           </motion.div>
         );

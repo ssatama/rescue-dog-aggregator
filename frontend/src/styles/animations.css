@@ -120,3 +120,31 @@
     transition: transform 0.15s ease-out;
   }
 }
+
+/* Pulsing animation for Start Swiping button */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(251, 146, 60, 0.7);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 8px rgba(251, 146, 60, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(251, 146, 60, 0);
+  }
+}
+
+.animate-pulse-orange {
+  animation: pulse 2s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-orange {
+    animation: none;
+    transform: none;
+    box-shadow: none;
+  }
+}

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { SwipeFilters as Filters } from '../../hooks/useSwipeFilters';
+import React, { useEffect, useState } from "react";
+import { SwipeFilters as Filters } from "../../hooks/useSwipeFilters";
 
 interface SwipeFiltersProps {
   onFiltersChange: (filters: Filters) => void;
@@ -7,56 +7,59 @@ interface SwipeFiltersProps {
 }
 
 const COUNTRIES = [
-  { value: 'Germany', label: 'Germany', flag: '🇩🇪', count: 486 },
-  { value: 'United Kingdom', label: 'United Kingdom', flag: '🇬🇧', count: 1245 },
-  { value: 'United States', label: 'United States', flag: '🇺🇸', count: 342 }
+  { value: "Germany", label: "Germany", flag: "🇩🇪", count: 486 },
+  { value: "United Kingdom", label: "United Kingdom", flag: "🇬🇧", count: 1245 },
+  { value: "United States", label: "United States", flag: "🇺🇸", count: 342 },
 ];
 
 const SIZES = [
-  { value: 'small', label: 'Small', icon: '🐕' },
-  { value: 'medium', label: 'Medium', icon: '🐕' },
-  { value: 'large', label: 'Large', icon: '🐕' },
-  { value: 'giant', label: 'Giant', icon: '🐕' }
+  { value: "small", label: "Small", icon: "🐕" },
+  { value: "medium", label: "Medium", icon: "🐕" },
+  { value: "large", label: "Large", icon: "🐕" },
+  { value: "giant", label: "Giant", icon: "🐕" },
 ];
 
-export default function SwipeFilters({ onFiltersChange, compact = false }: SwipeFiltersProps) {
+export default function SwipeFilters({
+  onFiltersChange,
+  compact = false,
+}: SwipeFiltersProps) {
   const [filters, setFilters] = useState<Filters>(() => {
     try {
-      const stored = localStorage.getItem('swipeFilters');
+      const stored = localStorage.getItem("swipeFilters");
       if (stored) {
         return JSON.parse(stored);
       }
     } catch (error) {
-      console.error('Failed to load filters:', error);
+      console.error("Failed to load filters:", error);
     }
-    return { country: '', sizes: [] };
+    return { country: "", sizes: [] };
   });
 
   useEffect(() => {
     if (filters.country || filters.sizes.length > 0) {
-      localStorage.setItem('swipeFilters', JSON.stringify(filters));
+      localStorage.setItem("swipeFilters", JSON.stringify(filters));
     }
     onFiltersChange(filters);
   }, [filters, onFiltersChange]);
 
   const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFilters(prev => ({ ...prev, country: e.target.value }));
+    setFilters((prev) => ({ ...prev, country: e.target.value }));
   };
 
   const toggleSize = (size: string) => {
-    setFilters(prev => {
+    setFilters((prev) => {
       const sizes = prev.sizes.includes(size)
-        ? prev.sizes.filter(s => s !== size)
+        ? prev.sizes.filter((s) => s !== size)
         : [...prev.sizes, size];
       return { ...prev, sizes };
     });
   };
 
   const clearSizes = () => {
-    setFilters(prev => ({ ...prev, sizes: [] }));
+    setFilters((prev) => ({ ...prev, sizes: [] }));
   };
 
-  const selectedCountry = COUNTRIES.find(c => c.value === filters.country);
+  const selectedCountry = COUNTRIES.find((c) => c.value === filters.country);
 
   if (compact) {
     return (
@@ -68,7 +71,9 @@ export default function SwipeFilters({ onFiltersChange, compact = false }: Swipe
         )}
         {filters.sizes.length > 0 && (
           <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
-            {filters.sizes.map(s => SIZES.find(size => size.value === s)?.label).join(' & ')}
+            {filters.sizes
+              .map((s) => SIZES.find((size) => size.value === s)?.label)
+              .join(" & ")}
           </span>
         )}
       </div>
@@ -78,8 +83,8 @@ export default function SwipeFilters({ onFiltersChange, compact = false }: Swipe
   return (
     <div className="space-y-4 p-4">
       <div>
-        <label 
-          htmlFor="country-select" 
+        <label
+          htmlFor="country-select"
           className="block text-sm font-medium text-gray-700 mb-2"
           aria-label="Select adoption country"
         >
@@ -94,7 +99,7 @@ export default function SwipeFilters({ onFiltersChange, compact = false }: Swipe
           aria-label="Country"
         >
           <option value="">Select a country</option>
-          {COUNTRIES.map(country => (
+          {COUNTRIES.map((country) => (
             <option key={country.value} value={country.value}>
               {country.label} ({country.count} dogs)
             </option>
@@ -109,7 +114,7 @@ export default function SwipeFilters({ onFiltersChange, compact = false }: Swipe
 
       <div>
         <div className="flex justify-between items-center mb-2">
-          <label 
+          <label
             className="text-sm font-medium text-gray-700"
             aria-label="Filter by dog size"
           >
@@ -126,7 +131,7 @@ export default function SwipeFilters({ onFiltersChange, compact = false }: Swipe
           )}
         </div>
         <div className="grid grid-cols-2 gap-2">
-          {SIZES.map(size => {
+          {SIZES.map((size) => {
             const isSelected = filters.sizes.includes(size.value);
             return (
               <button
@@ -134,12 +139,13 @@ export default function SwipeFilters({ onFiltersChange, compact = false }: Swipe
                 onClick={() => toggleSize(size.value)}
                 className={`
                   px-4 py-2 rounded-lg border-2 transition-all
-                  ${isSelected 
-                    ? 'border-orange-500 bg-orange-100 selected' 
-                    : 'border-gray-300 bg-white hover:border-orange-300'
+                  ${
+                    isSelected
+                      ? "border-orange-500 bg-orange-100 selected"
+                      : "border-gray-300 bg-white hover:border-orange-300"
                   }
                 `}
-                style={isSelected ? { backgroundColor: '#fed7aa' } : {}}
+                style={isSelected ? { backgroundColor: "#fed7aa" } : {}}
                 aria-label={size.label}
               >
                 {size.icon} {size.label}

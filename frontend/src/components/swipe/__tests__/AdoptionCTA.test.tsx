@@ -1,143 +1,164 @@
-import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import { AdoptionCTA } from '../AdoptionCTA';
-import * as Sentry from '@sentry/nextjs';
+import React from "react";
+import { render, screen, fireEvent } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import { AdoptionCTA } from "../AdoptionCTA";
+import * as Sentry from "@sentry/nextjs";
 
-jest.mock('@sentry/nextjs');
+jest.mock("@sentry/nextjs");
 
-describe('AdoptionCTA', () => {
+describe("AdoptionCTA", () => {
   const mockCaptureEvent = jest.mocked(Sentry.captureEvent);
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should render adoption button with correct text', () => {
+  it("should render adoption button with correct text", () => {
     render(
-      <AdoptionCTA 
+      <AdoptionCTA
         adoptionUrl="https://example.com/adopt"
         dogId={1}
         dogName="Buddy"
         organizationName="Happy Paws"
-      />
+      />,
     );
 
-    const button = screen.getByRole('button', { name: /Start Adoption Process/i });
+    const button = screen.getByRole("button", {
+      name: /Start Adoption Process/i,
+    });
     expect(button).toBeInTheDocument();
-    expect(button).toHaveClass('bg-orange-500');
+    expect(button).toHaveClass("bg-orange-500");
   });
 
-  it('should track click event to Sentry', () => {
+  it("should track click event to Sentry", () => {
     render(
-      <AdoptionCTA 
+      <AdoptionCTA
         adoptionUrl="https://example.com/adopt"
         dogId={1}
         dogName="Buddy"
         organizationName="Happy Paws"
-      />
+      />,
     );
 
-    const button = screen.getByRole('button', { name: /Start Adoption Process/i });
+    const button = screen.getByRole("button", {
+      name: /Start Adoption Process/i,
+    });
     fireEvent.click(button);
 
     expect(mockCaptureEvent).toHaveBeenCalledWith({
-      message: 'swipe.adoption.clicked',
-      level: 'info',
+      message: "swipe.adoption.clicked",
+      level: "info",
       extra: {
         dog_id: 1,
-        dog_name: 'Buddy',
-        organization: 'Happy Paws'
-      }
+        dog_name: "Buddy",
+        organization: "Happy Paws",
+      },
     });
   });
 
-  it('should open adoption URL in new tab', () => {
+  it("should open adoption URL in new tab", () => {
     const mockOpen = jest.fn();
     window.open = mockOpen;
 
     render(
-      <AdoptionCTA 
+      <AdoptionCTA
         adoptionUrl="https://example.com/adopt"
         dogId={1}
         dogName="Buddy"
         organizationName="Happy Paws"
-      />
+      />,
     );
 
-    const button = screen.getByRole('button', { name: /Start Adoption Process/i });
+    const button = screen.getByRole("button", {
+      name: /Start Adoption Process/i,
+    });
     fireEvent.click(button);
 
-    expect(mockOpen).toHaveBeenCalledWith('https://example.com/adopt', '_blank', 'noopener,noreferrer');
+    expect(mockOpen).toHaveBeenCalledWith(
+      "https://example.com/adopt",
+      "_blank",
+      "noopener,noreferrer",
+    );
   });
 
-  it('should show arrow icon', () => {
+  it("should show arrow icon", () => {
     render(
-      <AdoptionCTA 
+      <AdoptionCTA
         adoptionUrl="https://example.com/adopt"
         dogId={1}
         dogName="Buddy"
         organizationName="Happy Paws"
-      />
+      />,
     );
 
-    expect(screen.getByText('→')).toBeInTheDocument();
+    expect(screen.getByText("→")).toBeInTheDocument();
   });
 
-  it('should be disabled when no adoption URL', () => {
+  it("should be disabled when no adoption URL", () => {
     render(
-      <AdoptionCTA 
+      <AdoptionCTA
         adoptionUrl=""
         dogId={1}
         dogName="Buddy"
         organizationName="Happy Paws"
-      />
+      />,
     );
 
-    const button = screen.getByRole('button', { name: /Adoption Info Coming Soon/i });
+    const button = screen.getByRole("button", {
+      name: /Adoption Info Coming Soon/i,
+    });
     expect(button).toBeDisabled();
-    expect(button).toHaveClass('bg-gray-300');
+    expect(button).toHaveClass("bg-gray-300");
   });
 
-  it('should have hover effect', () => {
+  it("should have hover effect", () => {
     render(
-      <AdoptionCTA 
+      <AdoptionCTA
         adoptionUrl="https://example.com/adopt"
         dogId={1}
         dogName="Buddy"
         organizationName="Happy Paws"
-      />
+      />,
     );
 
-    const button = screen.getByRole('button', { name: /Start Adoption Process/i });
-    expect(button).toHaveClass('hover:bg-orange-600');
+    const button = screen.getByRole("button", {
+      name: /Start Adoption Process/i,
+    });
+    expect(button).toHaveClass("hover:bg-orange-600");
   });
 
-  it('should have full width styling', () => {
+  it("should have full width styling", () => {
     render(
-      <AdoptionCTA 
+      <AdoptionCTA
         adoptionUrl="https://example.com/adopt"
         dogId={1}
         dogName="Buddy"
         organizationName="Happy Paws"
-      />
+      />,
     );
 
-    const button = screen.getByRole('button', { name: /Start Adoption Process/i });
-    expect(button).toHaveClass('w-full');
+    const button = screen.getByRole("button", {
+      name: /Start Adoption Process/i,
+    });
+    expect(button).toHaveClass("w-full");
   });
 
-  it('should have proper accessibility attributes', () => {
+  it("should have proper accessibility attributes", () => {
     render(
-      <AdoptionCTA 
+      <AdoptionCTA
         adoptionUrl="https://example.com/adopt"
         dogId={1}
         dogName="Buddy"
         organizationName="Happy Paws"
-      />
+      />,
     );
 
-    const button = screen.getByRole('button', { name: /Start Adoption Process/i });
-    expect(button).toHaveAttribute('aria-label', 'Start adoption process for Buddy');
+    const button = screen.getByRole("button", {
+      name: /Start Adoption Process/i,
+    });
+    expect(button).toHaveAttribute(
+      "aria-label",
+      "Start adoption process for Buddy",
+    );
   });
 });

@@ -13,41 +13,50 @@ jest.mock("@sentry/nextjs", () => ({
 
 jest.mock("framer-motion", () => {
   const React = require("react");
+  const MotionDiv = React.forwardRef(
+    ({ children, onDrag, onDragEnd, onClick, ...props }: any, ref: any) => {
+      const handleMouseDown = (e: any) => {
+        const startX = e.clientX;
+        const handleMouseMove = (e: any) => {
+          if (onDrag) {
+            onDrag(e, { offset: { x: e.clientX - startX, y: 0 } });
+          }
+        };
+        const handleMouseUp = (e: any) => {
+          if (onDragEnd) {
+            onDragEnd(e, {
+              offset: { x: e.clientX - startX, y: 0 },
+              velocity: { x: Math.abs(e.clientX - startX) > 50 ? 1 : 0, y: 0 },
+            });
+          }
+          document.removeEventListener("mousemove", handleMouseMove);
+          document.removeEventListener("mouseup", handleMouseUp);
+        };
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseup", handleMouseUp);
+      };
+
+      return (
+        <div
+          ref={ref}
+          {...props}
+          onMouseDown={handleMouseDown}
+          onClick={onClick}
+        >
+          {children}
+        </div>
+      );
+    },
+  );
+  MotionDiv.displayName = "MotionDiv";
   return {
     motion: {
-      div: React.forwardRef(({ children, onDrag, onDragEnd, onClick, ...props }: any, ref: any) => {
-        const handleMouseDown = (e: any) => {
-          const startX = e.clientX;
-          const handleMouseMove = (e: any) => {
-            if (onDrag) {
-              onDrag(e, { offset: { x: e.clientX - startX, y: 0 } });
-            }
-          };
-          const handleMouseUp = (e: any) => {
-            if (onDragEnd) {
-              onDragEnd(e, { 
-                offset: { x: e.clientX - startX, y: 0 },
-                velocity: { x: Math.abs(e.clientX - startX) > 50 ? 1 : 0, y: 0 }
-              });
-            }
-            document.removeEventListener("mousemove", handleMouseMove);
-            document.removeEventListener("mouseup", handleMouseUp);
-          };
-          document.addEventListener("mousemove", handleMouseMove);
-          document.addEventListener("mouseup", handleMouseUp);
-        };
-
-        return (
-          <div ref={ref} {...props} onMouseDown={handleMouseDown} onClick={onClick}>
-            {children}
-          </div>
-        );
-      }),
+      div: MotionDiv,
     },
     AnimatePresence: ({ children }: any) => <>{children}</>,
-    useMotionValue: () => ({ 
+    useMotionValue: () => ({
       set: jest.fn(),
-      get: jest.fn().mockReturnValue(0)
+      get: jest.fn().mockReturnValue(0),
     }),
     useTransform: () => 0,
     useAnimation: () => ({
@@ -143,7 +152,7 @@ describe("SwipeContainer", () => {
           currentIndex={0}
           onSwipe={mockOnSwipe}
           onCardExpanded={mockOnCardExpanded}
-        />
+        />,
       );
 
       expect(screen.getByText("Buddy")).toBeInTheDocument();
@@ -159,7 +168,7 @@ describe("SwipeContainer", () => {
           currentIndex={0}
           onSwipe={mockOnSwipe}
           onCardExpanded={mockOnCardExpanded}
-        />
+        />,
       );
 
       const newBadges = screen.getAllByText("NEW");
@@ -173,7 +182,7 @@ describe("SwipeContainer", () => {
           currentIndex={1}
           onSwipe={mockOnSwipe}
           onCardExpanded={mockOnCardExpanded}
-        />
+        />,
       );
 
       // Luna is 10 days old, should not have NEW badge
@@ -187,7 +196,7 @@ describe("SwipeContainer", () => {
           currentIndex={0}
           onSwipe={mockOnSwipe}
           onCardExpanded={mockOnCardExpanded}
-        />
+        />,
       );
 
       expect(screen.getByText("Friendly")).toBeInTheDocument();
@@ -202,13 +211,13 @@ describe("SwipeContainer", () => {
           currentIndex={0}
           onSwipe={mockOnSwipe}
           onCardExpanded={mockOnCardExpanded}
-        />
+        />,
       );
 
       const energyDots = screen.getAllByTestId(/energy-dot/);
       expect(energyDots).toHaveLength(5); // 5 total dots
       const filledDots = energyDots.filter((dot) =>
-        dot.classList.contains("bg-orange-500")
+        dot.classList.contains("bg-orange-500"),
       );
       expect(filledDots).toHaveLength(4); // Energy level 4
     });
@@ -222,7 +231,7 @@ describe("SwipeContainer", () => {
           currentIndex={0}
           onSwipe={mockOnSwipe}
           onCardExpanded={mockOnCardExpanded}
-        />
+        />,
       );
 
       const card = screen.getByTestId("swipe-card");
@@ -242,7 +251,7 @@ describe("SwipeContainer", () => {
               dogId: 1,
               dogName: "Buddy",
             }),
-          })
+          }),
         );
       });
     });
@@ -254,7 +263,7 @@ describe("SwipeContainer", () => {
           currentIndex={0}
           onSwipe={mockOnSwipe}
           onCardExpanded={mockOnCardExpanded}
-        />
+        />,
       );
 
       const card = screen.getByTestId("swipe-card");
@@ -274,7 +283,7 @@ describe("SwipeContainer", () => {
               dogId: 1,
               dogName: "Buddy",
             }),
-          })
+          }),
         );
       });
     });
@@ -286,7 +295,7 @@ describe("SwipeContainer", () => {
           currentIndex={0}
           onSwipe={mockOnSwipe}
           onCardExpanded={mockOnCardExpanded}
-        />
+        />,
       );
 
       const card = screen.getByTestId("swipe-card");
@@ -312,14 +321,14 @@ describe("SwipeContainer", () => {
   describe("Double Tap", () => {
     it("should add to favorites on double tap", async () => {
       jest.useFakeTimers();
-      
+
       render(
         <SwipeContainer
           dogs={mockDogs}
           currentIndex={0}
           onSwipe={mockOnSwipe}
           onCardExpanded={mockOnCardExpanded}
-        />
+        />,
       );
 
       const card = screen.getByTestId("swipe-card");
@@ -332,7 +341,7 @@ describe("SwipeContainer", () => {
       await waitFor(() => {
         expect(mockAddFavorite).toHaveBeenCalledWith(1, "Buddy");
       });
-      
+
       jest.useRealTimers();
     });
 
@@ -343,7 +352,7 @@ describe("SwipeContainer", () => {
           currentIndex={0}
           onSwipe={mockOnSwipe}
           onCardExpanded={mockOnCardExpanded}
-        />
+        />,
       );
 
       const card = screen.getByTestId("swipe-card");
@@ -361,10 +370,10 @@ describe("SwipeContainer", () => {
                 dogId: 1,
                 dogName: "Buddy",
               }),
-            })
+            }),
           );
         },
-        { timeout: 400 }
+        { timeout: 400 },
       ); // Wait longer than double-tap detection window
     });
   });
@@ -377,7 +386,7 @@ describe("SwipeContainer", () => {
           currentIndex={0}
           onSwipe={mockOnSwipe}
           onCardExpanded={mockOnCardExpanded}
-        />
+        />,
       );
 
       expect(screen.getByLabelText("Pass")).toBeInTheDocument();
@@ -391,7 +400,7 @@ describe("SwipeContainer", () => {
           currentIndex={0}
           onSwipe={mockOnSwipe}
           onCardExpanded={mockOnCardExpanded}
-        />
+        />,
       );
 
       const passButton = screen.getByLabelText("Pass");
@@ -410,7 +419,7 @@ describe("SwipeContainer", () => {
           currentIndex={0}
           onSwipe={mockOnSwipe}
           onCardExpanded={mockOnCardExpanded}
-        />
+        />,
       );
 
       const likeButton = screen.getByLabelText("Like");
@@ -431,7 +440,7 @@ describe("SwipeContainer", () => {
           currentIndex={0}
           onSwipe={mockOnSwipe}
           onCardExpanded={mockOnCardExpanded}
-        />
+        />,
       );
 
       const card = screen.getByTestId("swipe-card");
@@ -451,7 +460,7 @@ describe("SwipeContainer", () => {
           currentIndex={0}
           onSwipe={mockOnSwipe}
           onCardExpanded={mockOnCardExpanded}
-        />
+        />,
       );
 
       const card = screen.getByTestId("swipe-card");
@@ -473,7 +482,7 @@ describe("SwipeContainer", () => {
           currentIndex={0}
           onSwipe={mockOnSwipe}
           onCardExpanded={mockOnCardExpanded}
-        />
+        />,
       );
 
       expect(screen.getByText("More dogs coming!")).toBeInTheDocument();
@@ -490,7 +499,7 @@ describe("SwipeContainer", () => {
           onSwipe={mockOnSwipe}
           onCardExpanded={mockOnCardExpanded}
           isLoading={true}
-        />
+        />,
       );
 
       expect(screen.getByTestId("skeleton-card")).toBeInTheDocument();
@@ -505,7 +514,7 @@ describe("SwipeContainer", () => {
           currentIndex={0}
           onSwipe={mockOnSwipe}
           onCardExpanded={mockOnCardExpanded}
-        />
+        />,
       );
 
       expect(Sentry.captureEvent).toHaveBeenCalledWith(
@@ -514,7 +523,7 @@ describe("SwipeContainer", () => {
           extra: expect.objectContaining({
             initialDogCount: 3,
           }),
-        })
+        }),
       );
     });
   });

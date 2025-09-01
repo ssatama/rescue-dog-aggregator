@@ -57,7 +57,7 @@ export class SwipeMetrics {
     this.sessionMetrics = this.initSessionMetrics();
     this.sessionMetrics.sessionActive = true;
     this.sessionMetrics.sessionStartTime = this.now();
-    
+
     if (this.hasPerformanceAPI()) {
       performance.mark("swipe-session-start");
     }
@@ -66,11 +66,16 @@ export class SwipeMetrics {
   endSession(): void {
     if (!this.sessionMetrics.sessionActive) return;
 
-    const sessionDuration = this.now() - (this.sessionMetrics.sessionStartTime || 0);
-    
+    const sessionDuration =
+      this.now() - (this.sessionMetrics.sessionStartTime || 0);
+
     if (this.hasPerformanceAPI()) {
       performance.mark("swipe-session-end");
-      performance.measure("swipe-session-duration", "swipe-session-start", "swipe-session-end");
+      performance.measure(
+        "swipe-session-duration",
+        "swipe-session-start",
+        "swipe-session-end",
+      );
     }
 
     Sentry.captureEvent({
@@ -92,13 +97,13 @@ export class SwipeMetrics {
 
   trackCardView(dogId: string): void {
     const now = this.now();
-    
+
     if (this.cardStartTime.has(dogId)) {
       const viewTime = now - this.cardStartTime.get(dogId)!;
       this.sessionMetrics.cardViewTimes.push(viewTime);
       this.updateAverageTimePerCard();
     }
-    
+
     this.sessionMetrics.cardsViewed++;
     this.cardStartTime.set(dogId, now);
   }
@@ -159,27 +164,50 @@ export class SwipeMetrics {
   trackLoadTime(): void {
     if (!this.hasPerformanceAPI()) return;
 
-    performance.mark("swipe-init-complete");
-    performance.measure("swipe-load-time", "swipe-init-start", "swipe-init-complete");
-    
-    const entries = performance.getEntriesByName("swipe-load-time");
-    const loadTime = entries.length > 0 ? entries[0].duration : 0;
-
-    Sentry.captureEvent({
-      message: "swipe.performance.load_time",
-      level: "info",
-      contexts: {
-        performance: {
-          loadTime,
-        },
-      },
-    });
-
-    if (loadTime > 3000) {
-      Sentry.captureMessage(
-        `Slow swipe load time detected: ${loadTime.toFixed(0)}ms`,
-        "warning"
+    // Check if start mark exists, if not create it
+    try {
+      const startMarks = performance.getEntriesByName("swipe-init-start");
+      if (startMarks.length === 0) {
+        performance.mark("swipe-init-start");
+      }
+      
+      performance.mark("swipe-init-complete");
+      performance.measure(
+        "swipe-load-time",
+        "swipe-init-start",
+        "swipe-init-complete",
       );
+
+      const entries = performance.getEntriesByName("swipe-load-time");
+      const loadTime = entries.length > 0 ? entries[0].duration : 0;
+      
+      Sentry.captureEvent({
+        message: "swipe.performance.load_time",
+        level: "info",
+        contexts: {
+          performance: {
+            loadTime,
+          },
+        },
+      });
+
+      if (loadTime > 3000) {
+        Sentry.captureMessage(
+          `Slow swipe load time detected: ${loadTime.toFixed(0)}ms`,
+          "warning",
+        );
+      }
+    } catch (error) {
+      // If measure fails, just track the event without timing
+      Sentry.captureEvent({
+        message: "swipe.performance.load_time",
+        level: "info",
+        contexts: {
+          performance: {
+            loadTime: 0,
+          },
+        },
+      });
     }
   }
 
@@ -193,37 +221,42 @@ export class SwipeMetrics {
     const measureFPS = (timestamp: number) => {
       // Prevent infinite recursion in tests
       if (this.performanceMetrics.animationFrameId === null) return;
-      
+
       // Use consistent time source
       const currentTime = timestamp || this.now();
       const deltaTime = currentTime - this.performanceMetrics.lastFrameTime;
-      
+
       if (deltaTime >= 1000) {
         const fps = (this.performanceMetrics.frameCount * 1000) / deltaTime;
         this.performanceMetrics.fps = fps;
         this.performanceMetrics.fpsHistory.push(fps);
-        
+
         if (this.performanceMetrics.fpsHistory.length > 60) {
           this.performanceMetrics.fpsHistory.shift();
         }
-        
+
         this.performanceMetrics.frameCount = 0;
         this.performanceMetrics.lastFrameTime = currentTime;
       }
-      
+
       this.performanceMetrics.frameCount++;
-      
+
       // Only continue if still monitoring
       if (this.performanceMetrics.animationFrameId !== null) {
-        this.performanceMetrics.animationFrameId = requestAnimationFrame(measureFPS);
+        this.performanceMetrics.animationFrameId =
+          requestAnimationFrame(measureFPS);
       }
     };
 
-    this.performanceMetrics.animationFrameId = requestAnimationFrame(measureFPS);
+    this.performanceMetrics.animationFrameId =
+      requestAnimationFrame(measureFPS);
   }
 
   stopFPSMonitoring(): void {
-    if (this.performanceMetrics.animationFrameId !== null && this.hasRequestAnimationFrame()) {
+    if (
+      this.performanceMetrics.animationFrameId !== null &&
+      this.hasRequestAnimationFrame()
+    ) {
       cancelAnimationFrame(this.performanceMetrics.animationFrameId);
       this.performanceMetrics.animationFrameId = null;
     }
@@ -235,18 +268,18 @@ export class SwipeMetrics {
 
   checkFPSHealth(): void {
     const avgFPS = this.getAverageFPS();
-    
+
     if (avgFPS < 30) {
       Sentry.captureMessage(
         `Low FPS detected in swipe interface: ${avgFPS.toFixed(1)} fps`,
-        "warning"
+        "warning",
       );
     }
   }
 
   startSwipeGesture(): void {
     this.swipeGestureStart = this.now();
-    
+
     if (this.hasPerformanceAPI()) {
       performance.mark(`swipe-gesture-start-${this.swipeGestureStart}`);
     }
@@ -256,21 +289,21 @@ export class SwipeMetrics {
     if (!this.swipeGestureStart) return;
 
     const duration = this.now() - this.swipeGestureStart;
-    
+
     if (this.hasPerformanceAPI()) {
       const endMark = `swipe-gesture-end-${this.now()}`;
       performance.mark(endMark);
       performance.measure(
         "swipe-gesture-duration",
         `swipe-gesture-start-${this.swipeGestureStart}`,
-        endMark
+        endMark,
       );
     }
 
     if (duration > 500) {
       Sentry.captureMessage(
         `Slow swipe gesture detected: ${duration.toFixed(0)}ms`,
-        "warning"
+        "warning",
       );
     }
 
@@ -284,7 +317,7 @@ export class SwipeMetrics {
   private updateAverageTimePerCard(): void {
     const times = this.sessionMetrics.cardViewTimes;
     if (times.length === 0) return;
-    
+
     const sum = times.reduce((acc, time) => acc + time, 0);
     this.sessionMetrics.avgTimePerCard = sum / times.length;
   }
@@ -292,7 +325,7 @@ export class SwipeMetrics {
   private getAverageFPS(): number {
     const history = this.performanceMetrics.fpsHistory;
     if (history.length === 0) return this.performanceMetrics.fps;
-    
+
     const sum = history.reduce((acc, fps) => acc + fps, 0);
     return sum / history.length;
   }
@@ -302,15 +335,19 @@ export class SwipeMetrics {
   }
 
   private hasPerformanceAPI(): boolean {
-    return typeof performance !== "undefined" && 
-           typeof performance.now === "function" &&
-           typeof performance.mark === "function" &&
-           typeof performance.measure === "function";
+    return (
+      typeof performance !== "undefined" &&
+      typeof performance.now === "function" &&
+      typeof performance.mark === "function" &&
+      typeof performance.measure === "function"
+    );
   }
 
   private hasRequestAnimationFrame(): boolean {
-    return typeof requestAnimationFrame === "function" &&
-           typeof cancelAnimationFrame === "function";
+    return (
+      typeof requestAnimationFrame === "function" &&
+      typeof cancelAnimationFrame === "function"
+    );
   }
 }
 

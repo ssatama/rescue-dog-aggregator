@@ -5,14 +5,17 @@ interface PersonalityTraitsProps {
   maxTraits?: number;
 }
 
-export function PersonalityTraits({ traits, maxTraits = 3 }: PersonalityTraitsProps) {
+export function PersonalityTraits({
+  traits,
+  maxTraits = 3,
+}: PersonalityTraitsProps) {
   if (!traits || traits.length === 0) {
     return null;
   }
 
   const cleanTraits = traits
-    .map(trait => trait.trim())
-    .filter(trait => trait.length > 0)
+    .map((trait) => trait.trim())
+    .filter((trait) => trait.length > 0)
     .slice(0, maxTraits);
 
   if (cleanTraits.length === 0) {

@@ -44,15 +44,15 @@ export default function SwipePage() {
     if (isMobile) {
       // Track load time
       swipeMetrics.trackLoadTime();
-      
+
       // Start FPS monitoring for mobile
       swipeMetrics.startFPSMonitoring();
-      
+
       // Check FPS health periodically
       const fpsInterval = setInterval(() => {
         swipeMetrics.checkFPSHealth();
       }, 5000);
-      
+
       return () => {
         clearInterval(fpsInterval);
         swipeMetrics.stopFPSMonitoring();
@@ -64,24 +64,26 @@ export default function SwipePage() {
   const mapDogForDetails = (dog: Dog): any => ({
     id: dog.id,
     name: dog.name,
-    age: dog.age || 'Unknown',
-    sex: dog.sex || 'Unknown',
-    size: dog.size || 'Medium',
-    breed: dog.breed || 'Mixed Breed',
-    organization_name: dog.organization || '',
-    location: dog.location || '',
+    age: dog.age || "Unknown",
+    sex: dog.sex || "Unknown",
+    size: dog.size || "Medium",
+    breed: dog.breed || "Mixed Breed",
+    organization_name: dog.organization || "",
+    location: dog.location || "",
     adoption_url: `/dogs/${dog.slug}`,
-    image_url: dog.image || '',
+    image_url: dog.image || "",
     additional_images: dog.additional_images || [],
-    dog_profiler_data: dog.description ? {
-      description: dog.description,
-      personality_traits: dog.traits || [],
-      energy_level: dog.energy_level,
-      good_with_dogs: dog.good_with_dogs,
-      good_with_cats: dog.good_with_cats,
-      good_with_kids: dog.good_with_kids,
-      unique_quirk: dog.special_characteristic
-    } : undefined
+    dog_profiler_data: dog.description
+      ? {
+          description: dog.description,
+          personality_traits: dog.traits || [],
+          energy_level: dog.energy_level,
+          good_with_dogs: dog.good_with_dogs,
+          good_with_cats: dog.good_with_cats,
+          good_with_kids: dog.good_with_kids,
+          unique_quirk: dog.special_characteristic,
+        }
+      : undefined,
   });
 
   // Redirect desktop users
@@ -92,8 +94,8 @@ export default function SwipePage() {
           <div className="text-6xl mb-4">📱</div>
           <h1 className="text-3xl font-bold mb-4">Mobile Only Feature</h1>
           <p className="text-gray-600 mb-6">
-            The swipe feature is designed for mobile devices. 
-            Please visit this page on your phone to start swiping!
+            The swipe feature is designed for mobile devices. Please visit this
+            page on your phone to start swiping!
           </p>
           <button
             onClick={() => router.push("/")}
@@ -122,24 +124,24 @@ export default function SwipePage() {
 
   const handleSwipe = (direction: "left" | "right", dog: Dog) => {
     console.log(`Swiped ${direction} on ${dog.name}`);
-    
+
     // Track swipe metrics
     swipeMetrics.trackSwipe(direction, dog.id.toString());
-    setTotalSwiped(prev => {
+    setTotalSwiped((prev) => {
       const newTotal = prev + 1;
-      
+
       // Track when queue is exhausted (every 20 swipes as a checkpoint)
       if (newTotal % 20 === 0) {
         swipeMetrics.trackQueueExhausted(newTotal);
       }
-      
+
       return newTotal;
     });
-    
+
     // Track favorite added separately from swipe
     if (direction === "right") {
       swipeMetrics.trackFavoriteAdded(dog.id.toString(), "swipe");
-      
+
       // Also track this in Sentry for redundancy
       Sentry.captureEvent({
         message: "swipe.favorite.added",
@@ -149,9 +151,9 @@ export default function SwipePage() {
             id: dog.id,
             name: dog.name,
             breed: dog.breed,
-            source: "swipe_gesture"
-          }
-        }
+            source: "swipe_gesture",
+          },
+        },
       });
     }
   };
@@ -169,7 +171,7 @@ export default function SwipePage() {
           onSwipe={handleSwipe}
           onCardExpanded={handleCardExpanded}
         />
-        
+
         {selectedDog && (
           <SwipeDetails
             dog={mapDogForDetails(selectedDog)}

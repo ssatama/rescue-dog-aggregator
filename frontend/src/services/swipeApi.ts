@@ -24,28 +24,32 @@ export interface SwipeDog {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-export async function fetchSwipeDogs(filters: SwipeFilters): Promise<SwipeDog[]> {
+export async function fetchSwipeDogs(
+  filters: SwipeFilters,
+): Promise<SwipeDog[]> {
   const params = new URLSearchParams();
-  
+
   if (filters.country) {
     params.append("country", filters.country);
   }
-  
+
   if (filters.sizes && filters.sizes.length > 0) {
-    filters.sizes.forEach(size => params.append("size", size));
+    filters.sizes.forEach((size) => params.append("size", size));
   }
-  
+
   params.append("limit", String(filters.limit || 20));
   params.append("offset", String(filters.offset || 0));
 
-  const response = await fetch(`${API_BASE_URL}/api/dogs/swipe?${params.toString()}`);
-  
+  const response = await fetch(
+    `${API_BASE_URL}/api/dogs/swipe?${params.toString()}`,
+  );
+
   if (!response.ok) {
     throw new Error(`Failed to fetch dogs: ${response.statusText}`);
   }
 
   const data = await response.json();
-  
+
   // Transform backend response to match frontend interface
   return data.dogs.map((dog: any) => ({
     id: dog.id,

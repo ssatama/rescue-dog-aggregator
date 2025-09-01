@@ -7,12 +7,12 @@ import * as swipeApi from "../../services/swipeApi";
 jest.mock("../../services/swipeApi");
 
 describe("useSwipeQueue", () => {
-  const mockFetchSwipeDogs = swipeApi.fetchSwipeDogs as jest.MockedFunction<typeof swipeApi.fetchSwipeDogs>;
+  const mockFetchSwipeDogs = swipeApi.fetchSwipeDogs as jest.MockedFunction<
+    typeof swipeApi.fetchSwipeDogs
+  >;
 
   const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <SWRConfig value={{ provider: () => new Map() }}>
-      {children}
-    </SWRConfig>
+    <SWRConfig value={{ provider: () => new Map() }}>{children}</SWRConfig>
   );
 
   const createMockDogs = (count: number, startId = 1) => {
@@ -42,7 +42,10 @@ describe("useSwipeQueue", () => {
     const mockDogs = createMockDogs(20);
     mockFetchSwipeDogs.mockResolvedValueOnce(mockDogs);
 
-    const { result } = renderHook(() => useSwipeQueue({ country: "US", sizes: [] }), { wrapper });
+    const { result } = renderHook(
+      () => useSwipeQueue({ country: "US", sizes: [] }),
+      { wrapper },
+    );
 
     expect(result.current.loading).toBe(true);
     expect(result.current.queue).toEqual([]);
@@ -65,12 +68,15 @@ describe("useSwipeQueue", () => {
   it("should preload when 5 dogs remain", async () => {
     const initialDogs = createMockDogs(20);
     const nextBatch = createMockDogs(20, 21);
-    
+
     mockFetchSwipeDogs
       .mockResolvedValueOnce(initialDogs)
       .mockResolvedValueOnce(nextBatch);
 
-    const { result } = renderHook(() => useSwipeQueue({ country: "US", sizes: [] }), { wrapper });
+    const { result } = renderHook(
+      () => useSwipeQueue({ country: "US", sizes: [] }),
+      { wrapper },
+    );
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -103,13 +109,16 @@ describe("useSwipeQueue", () => {
     const initialDogs = createMockDogs(20);
     const secondBatch = createMockDogs(20, 21);
     const thirdBatch = createMockDogs(20, 41);
-    
+
     mockFetchSwipeDogs
       .mockResolvedValueOnce(initialDogs)
       .mockResolvedValueOnce(secondBatch)
       .mockResolvedValueOnce(thirdBatch);
 
-    const { result } = renderHook(() => useSwipeQueue({ country: "US", sizes: [] }), { wrapper });
+    const { result } = renderHook(
+      () => useSwipeQueue({ country: "US", sizes: [] }),
+      { wrapper },
+    );
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -151,7 +160,10 @@ describe("useSwipeQueue", () => {
     const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
     mockFetchSwipeDogs.mockRejectedValueOnce(new Error("API Error"));
 
-    const { result } = renderHook(() => useSwipeQueue({ country: "US", sizes: [] }), { wrapper });
+    const { result } = renderHook(
+      () => useSwipeQueue({ country: "US", sizes: [] }),
+      { wrapper },
+    );
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -166,7 +178,10 @@ describe("useSwipeQueue", () => {
   it("should show empty state when no dogs", async () => {
     mockFetchSwipeDogs.mockResolvedValueOnce([]);
 
-    const { result } = renderHook(() => useSwipeQueue({ country: "US", sizes: [] }), { wrapper });
+    const { result } = renderHook(
+      () => useSwipeQueue({ country: "US", sizes: [] }),
+      { wrapper },
+    );
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -179,7 +194,7 @@ describe("useSwipeQueue", () => {
   it("should reload queue when filters change", async () => {
     const dogsUS = createMockDogs(10);
     const dogsUK = createMockDogs(10, 11);
-    
+
     mockFetchSwipeDogs
       .mockResolvedValueOnce(dogsUS)
       .mockResolvedValueOnce(dogsUK);
@@ -189,7 +204,7 @@ describe("useSwipeQueue", () => {
       {
         wrapper,
         initialProps: { filters: { country: "US", sizes: [] } },
-      }
+      },
     );
 
     await waitFor(() => {
@@ -221,7 +236,7 @@ describe("useSwipeQueue", () => {
 
     const { result } = renderHook(
       () => useSwipeQueue({ country: "US", sizes: ["small", "medium"] }),
-      { wrapper }
+      { wrapper },
     );
 
     await waitFor(() => {
@@ -239,12 +254,15 @@ describe("useSwipeQueue", () => {
   it("should deduplicate dogs in queue", async () => {
     const initialDogs = createMockDogs(10);
     const duplicateBatch = [...createMockDogs(5, 6), ...createMockDogs(5, 11)];
-    
+
     mockFetchSwipeDogs
       .mockResolvedValueOnce(initialDogs)
       .mockResolvedValueOnce(duplicateBatch);
 
-    const { result } = renderHook(() => useSwipeQueue({ country: "US", sizes: [] }), { wrapper });
+    const { result } = renderHook(
+      () => useSwipeQueue({ country: "US", sizes: [] }),
+      { wrapper },
+    );
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -262,19 +280,22 @@ describe("useSwipeQueue", () => {
     });
 
     // Check for unique IDs
-    const uniqueIds = new Set(result.current.queue.map(dog => dog.id));
+    const uniqueIds = new Set(result.current.queue.map((dog) => dog.id));
     expect(uniqueIds.size).toBe(result.current.queue.length);
   });
 
   it("should provide refetch function", async () => {
     const firstBatch = createMockDogs(10);
     const secondBatch = createMockDogs(10, 11);
-    
+
     mockFetchSwipeDogs
       .mockResolvedValueOnce(firstBatch)
       .mockResolvedValueOnce(secondBatch);
 
-    const { result } = renderHook(() => useSwipeQueue({ country: "US", sizes: [] }), { wrapper });
+    const { result } = renderHook(
+      () => useSwipeQueue({ country: "US", sizes: [] }),
+      { wrapper },
+    );
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -301,10 +322,13 @@ describe("useSwipeQueue", () => {
     const delayedPromise = new Promise((resolve) => {
       resolvePromise = resolve;
     });
-    
+
     mockFetchSwipeDogs.mockReturnValueOnce(delayedPromise as any);
 
-    const { result } = renderHook(() => useSwipeQueue({ country: "US", sizes: [] }), { wrapper });
+    const { result } = renderHook(
+      () => useSwipeQueue({ country: "US", sizes: [] }),
+      { wrapper },
+    );
 
     expect(result.current.loading).toBe(true);
     expect(result.current.isPreloading).toBe(false);

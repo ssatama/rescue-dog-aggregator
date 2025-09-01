@@ -5,6 +5,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/Icon";
 import AnimatedCounter from "../ui/AnimatedCounter";
 import { getStatistics } from "../../services/animalsService";
 import { reportError } from "../../utils/logger";
@@ -95,6 +96,27 @@ export default function HeroSection({
                   style={{ minWidth: "48px", minHeight: "48px" }}
                 >
                   About Our Mission
+                </Button>
+              </Link>
+            </div>
+
+            {/* Mobile-only Swipe CTA */}
+            <div className="mt-6 md:hidden">
+              <Link href="/swipe">
+                <Button
+                  data-testid="hero-swipe-cta"
+                  size="lg"
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white px-8 py-3 animate-pulse-orange"
+                  style={{ minWidth: "48px", minHeight: "48px" }}
+                >
+                  <Icon
+                    name="heart"
+                    size="medium"
+                    className="mr-2 text-white"
+                    filled
+                    aria-label="Heart icon"
+                  />
+                  Start Swiping
                 </Button>
               </Link>
             </div>

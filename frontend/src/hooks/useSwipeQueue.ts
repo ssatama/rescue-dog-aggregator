@@ -21,7 +21,9 @@ const INITIAL_LOAD_SIZE = 20;
 const PRELOAD_THRESHOLD = 5;
 const MAX_QUEUE_SIZE = 30;
 
-export function useSwipeQueue(filters: UseSwipeQueueOptions): UseSwipeQueueResult {
+export function useSwipeQueue(
+  filters: UseSwipeQueueOptions,
+): UseSwipeQueueResult {
   const [queue, setQueue] = useState<SwipeDog[]>([]);
   const [offset, setOffset] = useState(0);
   const [isPreloading, setIsPreloading] = useState(false);
@@ -35,43 +37,49 @@ export function useSwipeQueue(filters: UseSwipeQueueOptions): UseSwipeQueueResul
     : null;
 
   // Fetch data using SWR
-  const { data, error: swrError, mutate, isLoading } = useSWR(
+  const {
+    data,
+    error: swrError,
+    mutate,
+    isLoading,
+  } = useSWR(
     swrKey,
-    () => fetchSwipeDogs({
-      country: filters.country,
-      sizes: filters.sizes,
-      limit: INITIAL_LOAD_SIZE,
-      offset,
-    }),
+    () =>
+      fetchSwipeDogs({
+        country: filters.country,
+        sizes: filters.sizes,
+        limit: INITIAL_LOAD_SIZE,
+        offset,
+      }),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-    }
+    },
   );
 
   // Handle initial data load and preloading
   useEffect(() => {
     if (data && data.length > 0) {
-      setQueue(prevQueue => {
+      setQueue((prevQueue) => {
         // Deduplicate dogs
-        const newDogs = data.filter(dog => !seenDogsRef.current.has(dog.id));
-        newDogs.forEach(dog => seenDogsRef.current.add(dog.id));
-        
+        const newDogs = data.filter((dog) => !seenDogsRef.current.has(dog.id));
+        newDogs.forEach((dog) => seenDogsRef.current.add(dog.id));
+
         // Combine with existing queue
         const combined = [...prevQueue, ...newDogs];
-        
+
         // Limit queue size
         if (combined.length > MAX_QUEUE_SIZE) {
           // Remove oldest dogs that exceed the limit
           const trimmed = combined.slice(0, MAX_QUEUE_SIZE);
           // Update seen dogs set to only include dogs still in queue
-          seenDogsRef.current = new Set(trimmed.map(d => d.id));
+          seenDogsRef.current = new Set(trimmed.map((d) => d.id));
           return trimmed;
         }
-        
+
         return combined;
       });
-      
+
       setIsPreloading(false);
       preloadingRef.current = false;
     }
@@ -98,13 +106,13 @@ export function useSwipeQueue(filters: UseSwipeQueueOptions): UseSwipeQueueResul
     ) {
       preloadingRef.current = true;
       setIsPreloading(true);
-      setOffset(prev => prev + INITIAL_LOAD_SIZE);
+      setOffset((prev) => prev + INITIAL_LOAD_SIZE);
     }
   }, [queue.length, isLoading, error]);
 
   // Remove dog from queue
   const removeFromQueue = useCallback((dogId: number) => {
-    setQueue(prevQueue => prevQueue.filter(dog => dog.id !== dogId));
+    setQueue((prevQueue) => prevQueue.filter((dog) => dog.id !== dogId));
   }, []);
 
   // Refetch function
@@ -114,12 +122,13 @@ export function useSwipeQueue(filters: UseSwipeQueueOptions): UseSwipeQueueResul
     setOffset(0);
     seenDogsRef.current.clear();
     setError(null);
-    
+
     // Trigger SWR refetch
     mutate();
   }, [mutate]);
 
   // Reset when filters change
+  const sizesKey = filters.sizes?.join(",") || "";
   useEffect(() => {
     setQueue([]);
     setOffset(0);
@@ -127,7 +136,7 @@ export function useSwipeQueue(filters: UseSwipeQueueOptions): UseSwipeQueueResul
     setError(null);
     preloadingRef.current = false;
     setIsPreloading(false);
-  }, [filters.country, filters.sizes?.join(",")]);
+  }, [filters.country, sizesKey]);
 
   return {
     queue,

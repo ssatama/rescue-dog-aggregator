@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import * as Sentry from '@sentry/nextjs';
-import { useFavorites } from '@/hooks/useFavorites';
-import { ImageCarousel } from './ImageCarousel';
-import { AdoptionCTA } from './AdoptionCTA';
-import { X, Share, Heart } from 'lucide-react';
+import React, { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import * as Sentry from "@sentry/nextjs";
+import { useFavorites } from "@/hooks/useFavorites";
+import { ImageCarousel } from "./ImageCarousel";
+import { AdoptionCTA } from "./AdoptionCTA";
+import { X, Share, Heart } from "lucide-react";
 
 interface DogProfilerData {
   description?: string;
@@ -39,8 +39,12 @@ interface SwipeDetailsProps {
   onClose: () => void;
 }
 
-export const SwipeDetails: React.FC<SwipeDetailsProps> = ({ dog, isOpen, onClose }) => {
-  const { toggleFavorite, isFavorite } = useFavorites();
+export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
+  dog,
+  isOpen,
+  onClose,
+}) => {
+  const { toggleFavorite, isFavorited } = useFavorites();
   const modalRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number>(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -49,12 +53,12 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({ dog, isOpen, onClose
   useEffect(() => {
     if (isOpen) {
       Sentry.captureEvent({
-        message: 'swipe.details.opened',
-        level: 'info',
+        message: "swipe.details.opened",
+        level: "info",
         extra: {
           dog_id: dog.id,
-          dog_name: dog.name
-        }
+          dog_name: dog.name,
+        },
       });
     }
   }, [isOpen, dog.id, dog.name]);
@@ -64,11 +68,13 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({ dog, isOpen, onClose
       try {
         await navigator.share({
           title: `Check out ${dog.name} for adoption!`,
-          text: dog.dog_profiler_data?.description || `${dog.name} is a ${dog.age} ${dog.breed} looking for a forever home!`,
-          url: dog.adoption_url || window.location.href
+          text:
+            dog.dog_profiler_data?.description ||
+            `${dog.name} is a ${dog.age} ${dog.breed} looking for a forever home!`,
+          url: dog.adoption_url || window.location.href,
         });
       } catch (error) {
-        console.error('Error sharing:', error);
+        console.error("Error sharing:", error);
       }
     }
   };
@@ -102,13 +108,13 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({ dog, isOpen, onClose
   if (!isOpen) return null;
 
   const allImages = [dog.image_url, ...(dog.additional_images || [])];
-  const isAlreadyFavorite = isFavorite(dog.id);
+  const isAlreadyFavorite = isFavorited(dog.id);
   const profilerData = dog.dog_profiler_data;
 
   const getGoodWithIcon = (value: boolean | string | undefined) => {
-    if (value === true) return '✓';
-    if (value === 'maybe' || value === '?') return '?';
-    return '✗';
+    if (value === true) return "✓";
+    if (value === "maybe" || value === "?") return "?";
+    return "✗";
   };
 
   return (
@@ -123,13 +129,13 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({ dog, isOpen, onClose
             onClick={onClose}
             data-testid="modal-backdrop"
           />
-          
+
           <motion.div
             ref={modalRef}
-            initial={{ y: '100%' }}
+            initial={{ y: "100%" }}
             animate={{ y: dragY }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
             className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[90vh] overflow-y-auto"
             style={{ transform: `translateY(${dragY}px)` }}
             data-testid="modal-content"
@@ -152,11 +158,11 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({ dog, isOpen, onClose
 
             <div className="pb-safe">
               <ImageCarousel images={allImages} dogName={dog.name} />
-              
+
               <div className="px-4 py-6 space-y-6">
                 <div>
                   <h1 className="text-3xl font-bold mb-2">{dog.name}</h1>
-                  
+
                   <div className="flex items-center gap-4 text-gray-600 mb-4">
                     <span className="flex items-center gap-1">
                       <span className="text-orange-500">🐾</span> {dog.age}
@@ -177,26 +183,35 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({ dog, isOpen, onClose
 
                 {profilerData?.description && (
                   <div>
-                    <h3 className="text-lg font-semibold mb-2">About {dog.name}</h3>
-                    <p className="text-gray-700 leading-relaxed">{profilerData.description}</p>
+                    <h3 className="text-lg font-semibold mb-2">
+                      About {dog.name}
+                    </h3>
+                    <p className="text-gray-700 leading-relaxed">
+                      {profilerData.description}
+                    </p>
                   </div>
                 )}
 
-                {profilerData?.personality_traits && profilerData.personality_traits.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3">Personality</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {profilerData.personality_traits.slice(0, 4).map((trait, index) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-full text-sm font-medium"
-                        >
-                          🐕 {trait}
-                        </span>
-                      ))}
+                {profilerData?.personality_traits &&
+                  profilerData.personality_traits.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3">
+                        Personality
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {profilerData.personality_traits
+                          .slice(0, 4)
+                          .map((trait, index) => (
+                            <span
+                              key={index}
+                              className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-full text-sm font-medium"
+                            >
+                              🐕 {trait}
+                            </span>
+                          ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {profilerData?.energy_level && (
                   <div>
@@ -208,7 +223,7 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({ dog, isOpen, onClose
                           data-testid={`energy-dot-${level}`}
                           className={`
                             w-3 h-3 rounded-full
-                            ${level <= profilerData.energy_level ? 'bg-orange-500' : 'bg-gray-200'}
+                            ${level <= (profilerData.energy_level || 0) ? "bg-orange-500" : "bg-gray-200"}
                           `}
                         />
                       ))}
@@ -216,44 +231,65 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({ dog, isOpen, onClose
                   </div>
                 )}
 
-                {(profilerData?.good_with_dogs !== undefined || 
-                  profilerData?.good_with_cats !== undefined || 
+                {(profilerData?.good_with_dogs !== undefined ||
+                  profilerData?.good_with_cats !== undefined ||
                   profilerData?.good_with_kids !== undefined) && (
                   <div>
                     <h3 className="text-lg font-semibold mb-3">Good With</h3>
                     <div className="flex gap-3">
                       {profilerData.good_with_dogs !== undefined && (
-                        <div className={`
+                        <div
+                          className={`
                           px-4 py-3 rounded-xl flex flex-col items-center gap-1
-                          ${profilerData.good_with_dogs === true ? 'bg-green-100' : 
-                            profilerData.good_with_dogs === 'maybe' ? 'bg-yellow-100' : 'bg-gray-100'}
-                        `}>
+                          ${
+                            profilerData.good_with_dogs === true
+                              ? "bg-green-100"
+                              : profilerData.good_with_dogs === "maybe"
+                                ? "bg-yellow-100"
+                                : "bg-gray-100"
+                          }
+                        `}
+                        >
                           <span className="text-2xl">🐕</span>
                           <span className="text-sm font-medium">
                             Dogs {getGoodWithIcon(profilerData.good_with_dogs)}
                           </span>
                         </div>
                       )}
-                      
+
                       {profilerData.good_with_cats !== undefined && (
-                        <div className={`
+                        <div
+                          className={`
                           px-4 py-3 rounded-xl flex flex-col items-center gap-1
-                          ${profilerData.good_with_cats === true ? 'bg-green-100' : 
-                            profilerData.good_with_cats === 'maybe' ? 'bg-yellow-100' : 'bg-gray-100'}
-                        `}>
+                          ${
+                            profilerData.good_with_cats === true
+                              ? "bg-green-100"
+                              : profilerData.good_with_cats === "maybe"
+                                ? "bg-yellow-100"
+                                : "bg-gray-100"
+                          }
+                        `}
+                        >
                           <span className="text-2xl">🐱</span>
                           <span className="text-sm font-medium">
                             Cats {getGoodWithIcon(profilerData.good_with_cats)}
                           </span>
                         </div>
                       )}
-                      
+
                       {profilerData.good_with_kids !== undefined && (
-                        <div className={`
+                        <div
+                          className={`
                           px-4 py-3 rounded-xl flex flex-col items-center gap-1
-                          ${profilerData.good_with_kids === true ? 'bg-green-100' : 
-                            profilerData.good_with_kids === 'maybe' ? 'bg-yellow-100' : 'bg-gray-100'}
-                        `}>
+                          ${
+                            profilerData.good_with_kids === true
+                              ? "bg-green-100"
+                              : profilerData.good_with_kids === "maybe"
+                                ? "bg-yellow-100"
+                                : "bg-gray-100"
+                          }
+                        `}
+                        >
                           <span className="text-2xl">👶</span>
                           <span className="text-sm font-medium">
                             Kids {getGoodWithIcon(profilerData.good_with_kids)}
@@ -266,12 +302,12 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({ dog, isOpen, onClose
 
                 <div className="space-y-3 pt-4">
                   <AdoptionCTA
-                    adoptionUrl={dog.adoption_url || ''}
+                    adoptionUrl={dog.adoption_url || ""}
                     dogId={dog.id}
                     dogName={dog.name}
                     organizationName={dog.organization_name}
                   />
-                  
+
                   <div className="flex gap-3">
                     <button
                       onClick={handleShare}
@@ -280,7 +316,7 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({ dog, isOpen, onClose
                       <Share size={20} />
                       Share
                     </button>
-                    
+
                     {!isAlreadyFavorite && (
                       <button
                         onClick={handleSave}

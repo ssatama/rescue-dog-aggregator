@@ -1,12 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
-import Image from 'next/image';
+import React, { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 
 interface ImageCarouselProps {
   images: string[];
   dogName: string;
 }
 
-export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, dogName }) => {
+export const ImageCarousel: React.FC<ImageCarouselProps> = ({
+  images,
+  dogName,
+}) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number>(0);
@@ -24,10 +27,10 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, dogName })
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (!showDots) return;
-    
+
     const touchEndX = e.changedTouches[0].clientX;
     const diff = touchStartX.current - touchEndX;
-    
+
     if (Math.abs(diff) > 50) {
       if (diff > 0 && currentIndex < allImages.length - 1) {
         setCurrentIndex(currentIndex + 1);
@@ -39,10 +42,10 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, dogName })
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!showDots) return;
-    
-    if (e.key === 'ArrowRight' && currentIndex < allImages.length - 1) {
+
+    if (e.key === "ArrowRight" && currentIndex < allImages.length - 1) {
       setCurrentIndex(currentIndex + 1);
-    } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
+    } else if (e.key === "ArrowLeft" && currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
     }
   };
@@ -56,7 +59,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, dogName })
 
   if (allImages.length === 0) {
     return (
-      <div 
+      <div
         data-testid="image-placeholder"
         className="w-full aspect-square bg-gray-200 rounded-t-2xl flex items-center justify-center"
       >
@@ -81,19 +84,21 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, dogName })
             key={index}
             className={`
               absolute inset-0 transition-opacity duration-300
-              ${index === currentIndex ? 'opacity-100' : 'opacity-0'}
+              ${index === currentIndex ? "opacity-100" : "opacity-0"}
             `}
           >
-            <img
+            <Image
               src={image}
               alt={`${dogName} - Photo ${index + 1}`}
-              loading={index === 0 ? 'eager' : 'lazy'}
-              className="w-full h-full object-cover"
+              fill
+              priority={index === 0}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover"
             />
           </div>
         ))}
       </div>
-      
+
       {showDots && (
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
           {allImages.map((_, index) => (
@@ -103,7 +108,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, dogName })
               aria-label={`Go to image ${index + 1}`}
               className={`
                 w-2 h-2 rounded-full transition-all duration-200
-                ${index === currentIndex ? 'bg-gray-800 w-4' : 'bg-gray-300'}
+                ${index === currentIndex ? "bg-gray-800 w-4" : "bg-gray-300"}
               `}
             />
           ))}
