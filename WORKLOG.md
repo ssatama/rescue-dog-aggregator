@@ -581,13 +581,15 @@ All 194 swipe-related tests now passing
 
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
+
 feat(details): add expandable details modal
 
 - Create modal with full dog information
 - Add image carousel for multiple photos
 - Include adoption CTA and share buttons
 - Display complete personality profile
-```
+
+````
 
 ---
 
@@ -600,7 +602,7 @@ feat(details): add expandable details modal
 ### Objectives
 
 ✅ Write tests for analytics events
-✅ Track all swipe interactions  
+✅ Track all swipe interactions
 ✅ Monitor performance metrics
 ✅ Add error boundaries
 ✅ Create analytics dashboard queries
@@ -622,7 +624,7 @@ feat(details): add expandable details modal
 ✅ should track adoption clicks
 ✅ should measure time per card
 ✅ should handle tracking errors gracefully
-```
+````
 
 ### ✅ ACTUAL RESULTS
 
@@ -684,6 +686,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ### Analytics Events Now Tracked
 
 **Already Implemented (from previous sessions):**
+
 - ✅ swipe.session.started
 - ✅ swipe.session.ended
 - ✅ swipe.filter.changed
@@ -696,6 +699,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - ✅ swipe.details.opened
 
 **Added in Session 9:**
+
 - ✅ swipe.queue.exhausted
 - ✅ swipe.favorite.added (separate from swipe)
 - ✅ swipe.gesture.velocity
@@ -746,13 +750,15 @@ feat(analytics): integrate Sentry event tracking
 
 ### Key Changes
 
-1. **SwipeLoader Component**: 
+1. **SwipeLoader Component**:
+
    - Animated dog emoji with rotation/scale animations
    - Loading dots with staggered animation
    - Skeleton card preview for progressive enhancement
    - Customizable loading message
 
 2. **Performance Fixes**:
+
    - Handle missing `swipe-init-start` mark gracefully
    - Try-catch wrapper for performance measurement
    - Fallback to 0 load time if measurement fails
@@ -855,7 +861,150 @@ Always start each session by:
 
 ---
 
-_Last Updated: 2025-08-31_
-_Current Session: 6 Completed_
-_Next Session: 7 - Animations & Polish_
+## Bug Fixes & Gap Analysis - Session 11
+
+### Fixed Issues:
+
+1. ✅ **"Swipe Now" CTA Issues**
+
+   - Removed pulse animation that was distracting
+   - Navigation to /swipe already working correctly
+
+2. ✅ **Country Code Mismatch**
+
+   - Frontend was sending "Germany", backend expects "DE"
+   - Updated all country values to use codes (DE, GB, US)
+   - Added migration for existing localStorage values
+
+3. ✅ **Empty Screen After Onboarding**
+
+   - Fixed filters not triggering dog fetch after onboarding
+   - Added proper filter state reset when changing filters
+   - "Change Filters" button now properly refreshes dogs
+
+4. ✅ **Dynamic Dog Counts**
+   - Onboarding now fetches real dog counts from API
+   - Shows actual available dogs per country and size
+   - No more hardcoded values
+
+### Remaining Gaps from PRD:
+
+#### High Priority (Blocking Discovery):
+
+1. **No Navigation Entry Points** - Users can't find the swipe feature
+   - Missing link in main navigation
+   - Mobile-specific nav item needed
+
+#### Medium Priority:
+
+1. **Limited Filters** - Only country/size currently
+   - Missing: age range
+2. **Share Functionality** - Partially implemented
+
+#### Low Priority:
+
+2. User preference settings
+3. Advanced animations
+
+### Test Status:
+
+- ✅ All backend tests passing (321 passed)
+- ✅ All frontend tests passing (183 test suites)
+- ✅ SwipeOnboarding tests updated for async data
+- ✅ Filter tests updated for country codes
+
+## Session 12: Navigation & Filter Enhancements - 2025-09-01
+
+### Objectives
+
+✅ Add navigation entry points for Swipe feature (HIGH PRIORITY)
+✅ Implement age range filter (MEDIUM PRIORITY)
+⏳ Complete share functionality (MEDIUM PRIORITY - postponed)
+⏳ Enhance desktop experience (LOW PRIORITY - postponed)
+
+### Completed Tasks
+
+#### 1. ✅ **Navigation Entry Points Fixed**
+
+- **Problem**: Swipe feature was hidden - no way to access except hero button
+- **Solution**: Fixed visibility in Header component
+  - Shows on mobile (< 768px) in hamburger menu
+  - Shows on tablet (768px - 1023px) in main nav
+  - Hidden on desktop (≥ 1024px) as intended
+- **Files Modified**:
+  - `frontend/src/components/layout/Header.jsx` - Changed `lg:hidden` to `block lg:hidden`
+  - Added test: `Header.swipe-visibility.test.jsx`
+
+#### 2. ✅ **Age Range Filter Implemented**
+
+- **Added age filtering across the entire stack**:
+  - Hook: Updated `useSwipeFilters.ts` to include ages array
+  - UI: Added age selection to `SwipeFilters.tsx` component
+  - Icons: Puppy 🐶, Young 🐕, Adult 🦮, Senior 🐕‍🦺
+  - Onboarding: Updated to persist age preferences
+- **Files Modified**:
+  - `frontend/src/hooks/useSwipeFilters.ts` - Added age methods
+  - `frontend/src/components/swipe/SwipeFilters.tsx` - Added age UI
+  - `frontend/src/components/swipe/SwipeOnboarding.tsx` - Added ages to filters
+- **Tests Added**:
+  - `useSwipeFilters.age.test.tsx` - 7 tests for age functionality
+  - `SwipeFilters.age.test.tsx` - 7 tests for UI interactions
+- **Backend Ready**: API already accepts `age` parameter
+
+### Test Results
+
+- ✅ All new tests passing (14 added)
+- ✅ Fixed existing tests broken by ages field addition
+- ✅ Frontend tests: 2487 passed (was 2473)
+- ✅ No console errors or warnings
+
+### Current Feature Status
+
+#### ✅ Completed:
+- Core swipe functionality with animations
+- Filter system (country, size, age)
+- Navigation entry points
+- Onboarding flow with dynamic counts
+- Analytics integration
+
+#### ⏳ Remaining (Lower Priority):
+- Share functionality (button exists, needs implementation)
+- Desktop redirect enhancement
+- User preference persistence beyond filters
+
+### Files Changed Summary
+
+```
+Modified:
+- frontend/src/components/layout/Header.jsx
+- frontend/src/hooks/useSwipeFilters.ts
+- frontend/src/components/swipe/SwipeFilters.tsx
+- frontend/src/components/swipe/SwipeOnboarding.tsx
+- frontend/src/hooks/__tests__/useSwipeFilters.test.tsx
+- frontend/src/components/swipe/__tests__/SwipeOnboarding.test.tsx
+
+Added:
+- frontend/src/components/layout/__tests__/Header.swipe-visibility.test.jsx
+- frontend/src/hooks/__tests__/useSwipeFilters.age.test.tsx
+- frontend/src/components/swipe/__tests__/SwipeFilters.age.test.tsx
+```
+
+### Next Steps
+
+The Swipe Dogs feature is now **production-ready** with all critical functionality:
+1. ✅ Users can discover the feature via navigation
+2. ✅ Full filtering capabilities (country, size, age)
+3. ✅ Smooth onboarding experience
+4. ✅ Mobile-optimized interface
+
+Optional enhancements for future sessions:
+- Implement Web Share API for share button
+- Add "swipe again" for liked dogs
+- Enhance desktop redirect message
+
+---
+
+_Last Updated: 2025-09-01_
+_Current Session: 12 - Navigation & Filter Enhancements_
+_Status: Feature Complete - Ready for Production_
 _Branch: feature/swipe-dogs_

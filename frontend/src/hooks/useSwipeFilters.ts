@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 export interface SwipeFilters {
   country: string;
   sizes: string[];
+  ages: string[];
 }
 
 interface UseSwipeFiltersReturn {
@@ -10,6 +11,8 @@ interface UseSwipeFiltersReturn {
   setCountry: (country: string) => void;
   setSizes: (sizes: string[]) => void;
   toggleSize: (size: string) => void;
+  setAges: (ages: string[]) => void;
+  toggleAge: (age: string) => void;
   setFilters: (filters: SwipeFilters) => void;
   resetFilters: () => void;
   isValid: boolean;
@@ -21,17 +24,36 @@ interface UseSwipeFiltersReturn {
 const DEFAULT_FILTERS: SwipeFilters = {
   country: "",
   sizes: [],
+  ages: [],
 };
 
 const STORAGE_KEY = "swipeFilters";
 const ONBOARDING_KEY = "swipeOnboardingComplete";
+
+// Migration map for old country names to country codes
+const COUNTRY_MIGRATION: Record<string, string> = {
+  "Germany": "DE",
+  "United Kingdom": "GB",
+  "United States": "US",
+};
 
 export default function useSwipeFilters(): UseSwipeFiltersReturn {
   const [filters, setFiltersState] = useState<SwipeFilters>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        // Migrate old country names to country codes
+        if (parsed.country && COUNTRY_MIGRATION[parsed.country]) {
+          parsed.country = COUNTRY_MIGRATION[parsed.country];
+          // Save the migrated version back
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+        }
+        // Ensure ages field exists (migration for old data)
+        if (!parsed.ages) {
+          parsed.ages = [];
+        }
+        return parsed;
       }
     } catch (error) {
       console.error("Failed to load filters from localStorage:", error);
@@ -47,7 +69,7 @@ export default function useSwipeFilters(): UseSwipeFiltersReturn {
 
   // Save to localStorage immediately (tests expect this)
   useEffect(() => {
-    if (filters.country || filters.sizes.length > 0) {
+    if (filters.country || filters.sizes.length > 0 || filters.ages.length > 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
     }
   }, [filters]);
@@ -66,6 +88,19 @@ export default function useSwipeFilters(): UseSwipeFiltersReturn {
         ? prev.sizes.filter((s) => s !== size)
         : [...prev.sizes, size];
       return { ...prev, sizes };
+    });
+  }, []);
+
+  const setAges = useCallback((ages: string[]) => {
+    setFiltersState((prev) => ({ ...prev, ages }));
+  }, []);
+
+  const toggleAge = useCallback((age: string) => {
+    setFiltersState((prev) => {
+      const ages = prev.ages.includes(age)
+        ? prev.ages.filter((a) => a !== age)
+        : [...prev.ages, age];
+      return { ...prev, ages };
     });
   }, []);
 
@@ -100,6 +135,10 @@ export default function useSwipeFilters(): UseSwipeFiltersReturn {
       params.append("size", size);
     });
 
+    filters.ages.forEach((age) => {
+      params.append("age", age);
+    });
+
     return params.toString();
   }, [filters]);
 
@@ -108,6 +147,8 @@ export default function useSwipeFilters(): UseSwipeFiltersReturn {
     setCountry,
     setSizes,
     toggleSize,
+    setAges,
+    toggleAge,
     setFilters,
     resetFilters,
     isValid,

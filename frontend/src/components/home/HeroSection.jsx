@@ -106,7 +106,7 @@ export default function HeroSection({
                 <Button
                   data-testid="hero-swipe-cta"
                   size="lg"
-                  className="w-full bg-orange-600 hover:bg-orange-700 text-white px-8 py-3 animate-pulse-orange"
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white px-8 py-3"
                   style={{ minWidth: "48px", minHeight: "48px" }}
                 >
                   <Icon

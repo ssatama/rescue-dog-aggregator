@@ -83,7 +83,8 @@ export default function Header() {
               {" "}
               {/* Increased spacing for better visual separation */}
               {renderNavLink("/dogs", "Find Dogs", "dogs")}
-              <div className="lg:hidden">
+              {/* Show Swipe on mobile and tablet, hide on desktop (lg and above) */}
+              <div className="block lg:hidden">
                 <div className="relative">
                   <Link href="/swipe" className={getLinkClasses("/swipe")}>
                     <span className="flex items-center gap-1">

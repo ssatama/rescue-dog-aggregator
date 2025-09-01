@@ -13,11 +13,12 @@ describe("useSwipeFilters", () => {
       expect(result.current.filters).toEqual({
         country: "",
         sizes: [],
+        ages: [],
       });
     });
 
     it("should load filters from localStorage on mount", () => {
-      const savedFilters = { country: "Germany", sizes: ["small", "medium"] };
+      const savedFilters = { country: "DE", sizes: ["small", "medium"], ages: [] };
       localStorage.setItem("swipeFilters", JSON.stringify(savedFilters));
 
       const { result } = renderHook(() => useSwipeFilters());
@@ -33,6 +34,7 @@ describe("useSwipeFilters", () => {
       expect(result.current.filters).toEqual({
         country: "",
         sizes: [],
+        ages: [],
       });
     });
   });
@@ -100,6 +102,7 @@ describe("useSwipeFilters", () => {
       expect(stored).toEqual({
         country: "Germany",
         sizes: ["small"],
+        ages: [],
       });
     });
 
@@ -162,6 +165,7 @@ describe("useSwipeFilters", () => {
       expect(result.current.filters).toEqual({
         country: "",
         sizes: [],
+        ages: [],
       });
     });
 

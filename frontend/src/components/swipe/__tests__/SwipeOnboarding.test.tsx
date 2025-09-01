@@ -3,12 +3,51 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import SwipeOnboarding from "../SwipeOnboarding";
 
+// Mock fetch globally
+global.fetch = jest.fn();
+
 describe("SwipeOnboarding", () => {
   const mockOnComplete = jest.fn();
 
   beforeEach(() => {
     mockOnComplete.mockClear();
     localStorage.clear();
+    
+    // Mock fetch responses for country and size counts
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes("country=DE")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ total: 486, dogs: [] }),
+        });
+      }
+      if (url.includes("country=GB")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ total: 1245, dogs: [] }),
+        });
+      }
+      if (url.includes("country=US")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ total: 342, dogs: [] }),
+        });
+      }
+      if (url.includes("size=")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ total: 100, dogs: [] }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ total: 0, dogs: [] }),
+      });
+    });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe("First-Time User Detection", () => {
@@ -22,7 +61,7 @@ describe("SwipeOnboarding", () => {
       localStorage.setItem("swipeOnboardingComplete", "true");
       localStorage.setItem(
         "swipeFilters",
-        JSON.stringify({ country: "Germany", sizes: [] }),
+        JSON.stringify({ country: "DE", sizes: [] }),
       );
 
       const { container } = render(
@@ -44,23 +83,27 @@ describe("SwipeOnboarding", () => {
   });
 
   describe("Country Selection Step", () => {
-    it("should display available countries with dog counts", () => {
+    it("should display available countries with dog counts", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
-      expect(screen.getByText(/Germany/)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText(/Germany/)).toBeInTheDocument();
+      });
+      
       expect(screen.getByText(/486 dogs available/)).toBeInTheDocument();
-
       expect(screen.getByText(/United Kingdom/)).toBeInTheDocument();
-      expect(screen.getByText(/1,245 dogs available/)).toBeInTheDocument();
-
+      expect(screen.getByText(/1245 dogs available/)).toBeInTheDocument();
       expect(screen.getByText(/United States/)).toBeInTheDocument();
       expect(screen.getByText(/342 dogs available/)).toBeInTheDocument();
     });
 
-    it("should show country flags", () => {
+    it("should show country flags", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
-      expect(screen.getByText(/🇩🇪/)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText(/🇩🇪/)).toBeInTheDocument();
+      });
+      
       expect(screen.getByText(/🇬🇧/)).toBeInTheDocument();
       expect(screen.getByText(/🇺🇸/)).toBeInTheDocument();
     });
@@ -68,6 +111,10 @@ describe("SwipeOnboarding", () => {
     it("should highlight selected country", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
+      await waitFor(() => {
+        expect(screen.getByText(/Germany/)).toBeInTheDocument();
+      });
+      
       const germanyButton = screen.getByRole("button", { name: /Germany/i });
       fireEvent.click(germanyButton);
 
@@ -76,9 +123,13 @@ describe("SwipeOnboarding", () => {
       });
     });
 
-    it("should require country selection before proceeding", () => {
+    it("should require country selection before proceeding", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
+      await waitFor(() => {
+        expect(screen.getByText(/Germany/)).toBeInTheDocument();
+      });
+      
       const nextButton = screen.getByRole("button", { name: /Continue/i });
       expect(nextButton).toBeDisabled();
 
@@ -93,6 +144,10 @@ describe("SwipeOnboarding", () => {
     it("should show size options after country selection", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
+      await waitFor(() => {
+        expect(screen.getByText(/Germany/)).toBeInTheDocument();
+      });
+      
       const germanyButton = screen.getByRole("button", { name: /Germany/i });
       fireEvent.click(germanyButton);
 
@@ -120,6 +175,11 @@ describe("SwipeOnboarding", () => {
     it("should show size icons", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
+      // Wait for countries to load
+      await waitFor(() => {
+        expect(screen.getByText(/Germany/)).toBeInTheDocument();
+      });
+      
       // Select country first
       fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
       fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
@@ -133,6 +193,11 @@ describe("SwipeOnboarding", () => {
     it("should allow multiple size selection", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
+      // Wait for countries to load
+      await waitFor(() => {
+        expect(screen.getByText(/Germany/)).toBeInTheDocument();
+      });
+      
       // Select country first
       fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
       fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
@@ -152,6 +217,11 @@ describe("SwipeOnboarding", () => {
     it("should allow skipping size selection", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
+      // Wait for countries to load
+      await waitFor(() => {
+        expect(screen.getByText(/Germany/)).toBeInTheDocument();
+      });
+      
       // Select country
       fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
       fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
@@ -169,6 +239,11 @@ describe("SwipeOnboarding", () => {
     it("should save filters and mark onboarding complete", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
+      // Wait for countries to load
+      await waitFor(() => {
+        expect(screen.getByText(/Germany/)).toBeInTheDocument();
+      });
+      
       // Select country
       fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
       fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
@@ -187,8 +262,9 @@ describe("SwipeOnboarding", () => {
         expect(
           JSON.parse(localStorage.getItem("swipeFilters") || "{}"),
         ).toEqual({
-          country: "Germany",
+          country: "DE",
           sizes: ["small", "medium"],
+          ages: [],
         });
       });
     });
@@ -196,6 +272,11 @@ describe("SwipeOnboarding", () => {
     it("should call onComplete with filters", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
+      // Wait for countries to load
+      await waitFor(() => {
+        expect(screen.getByText(/Germany/)).toBeInTheDocument();
+      });
+      
       // Complete onboarding
       fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
       fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
@@ -208,8 +289,9 @@ describe("SwipeOnboarding", () => {
 
       await waitFor(() => {
         expect(mockOnComplete).toHaveBeenCalledWith(false, {
-          country: "Germany",
+          country: "DE",
           sizes: ["small"],
+          ages: [],
         });
       });
     });
@@ -238,6 +320,11 @@ describe("SwipeOnboarding", () => {
       // Check for animation class on initial render
       expect(container.querySelector(".animate-in")).toBeInTheDocument();
 
+      // Wait for countries to load
+      await waitFor(() => {
+        expect(screen.getByText(/Germany/)).toBeInTheDocument();
+      });
+      
       // Move to next step
       fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
       fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
@@ -258,9 +345,14 @@ describe("SwipeOnboarding", () => {
       );
     });
 
-    it("should be keyboard navigable", () => {
+    it("should be keyboard navigable", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
+      // Wait for countries to load
+      await waitFor(() => {
+        expect(screen.getByText(/Germany/)).toBeInTheDocument();
+      });
+      
       const germanyButton = screen.getByRole("button", { name: /Germany/i });
       germanyButton.focus();
 
@@ -271,6 +363,11 @@ describe("SwipeOnboarding", () => {
     it("should announce step changes to screen readers", async () => {
       render(<SwipeOnboarding onComplete={mockOnComplete} />);
 
+      // Wait for countries to load
+      await waitFor(() => {
+        expect(screen.getByText(/Germany/)).toBeInTheDocument();
+      });
+      
       fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
       fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
 

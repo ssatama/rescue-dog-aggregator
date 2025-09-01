@@ -220,6 +220,11 @@ export function SwipeContainerWithFilters({
     setLastTap(now);
   }, [currentIndex, dogs, lastTap, handleSwipeComplete, onCardExpanded]);
 
+  // Onboarding state - check this first, before loading or empty states
+  if (needsOnboarding) {
+    return <SwipeOnboarding onComplete={handleOnboardingComplete} />;
+  }
+
   // Loading state
   if (isLoading) {
     return (
@@ -236,26 +241,21 @@ export function SwipeContainerWithFilters({
   // Empty state
   if (dogs.length === 0 || currentIndex >= dogs.length) {
     return (
-      <>
-        {needsOnboarding && (
-          <SwipeOnboarding onComplete={handleOnboardingComplete} />
-        )}
-        <div className="flex flex-col items-center justify-center h-full p-8">
-          <div className="text-center">
-            <div className="text-6xl mb-4">🐕</div>
-            <h3 className="text-2xl font-bold mb-2">More dogs coming!</h3>
-            <p className="text-gray-600 mb-4">
-              Check back soon or adjust your filters
-            </p>
-            <button
-              onClick={() => setShowFilters(true)}
-              className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-            >
-              Change Filters
-            </button>
-          </div>
+      <div className="flex flex-col items-center justify-center h-full p-8">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🐕</div>
+          <h3 className="text-2xl font-bold mb-2">More dogs coming!</h3>
+          <p className="text-gray-600 mb-4">
+            Check back soon or adjust your filters
+          </p>
+          <button
+            onClick={() => setShowFilters(true)}
+            className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+          >
+            Change Filters
+          </button>
         </div>
-      </>
+      </div>
     );
   }
 
@@ -263,11 +263,6 @@ export function SwipeContainerWithFilters({
 
   return (
     <>
-      {/* Onboarding Modal */}
-      {needsOnboarding && (
-        <SwipeOnboarding onComplete={handleOnboardingComplete} />
-      )}
-
       {/* Filter Modal */}
       {showFilters && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -285,6 +280,10 @@ export function SwipeContainerWithFilters({
               onFiltersChange={(newFilters) => {
                 setFilters(newFilters);
                 setShowFilters(false);
+                // Reset index when filters change
+                setCurrentIndex(0);
+                setDogs([]);
+                setIsLoading(true);
                 Sentry.captureEvent({
                   message: "swipe.filter.changed",
                   extra: {

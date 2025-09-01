@@ -40,12 +40,13 @@ describe("SwipeFilters", () => {
       render(<SwipeFilters onFiltersChange={mockOnFiltersChange} />);
 
       const countrySelect = screen.getByLabelText("Country");
-      fireEvent.change(countrySelect, { target: { value: "Germany" } });
+      fireEvent.change(countrySelect, { target: { value: "DE" } });
 
       await waitFor(() => {
         expect(mockOnFiltersChange).toHaveBeenCalledWith({
-          country: "Germany",
+          country: "DE",
           sizes: [],
+          ages: [],
         });
       });
     });
@@ -81,7 +82,7 @@ describe("SwipeFilters", () => {
 
       // First set country (required)
       const countrySelect = screen.getByLabelText("Country");
-      fireEvent.change(countrySelect, { target: { value: "Germany" } });
+      fireEvent.change(countrySelect, { target: { value: "DE" } });
 
       // Then select sizes
       const smallButton = screen.getByRole("button", { name: /Small/i });
@@ -92,8 +93,9 @@ describe("SwipeFilters", () => {
 
       await waitFor(() => {
         expect(mockOnFiltersChange).toHaveBeenLastCalledWith({
-          country: "Germany",
+          country: "DE",
           sizes: ["small", "medium"],
+          ages: [],
         });
       });
     });
@@ -118,7 +120,7 @@ describe("SwipeFilters", () => {
       render(<SwipeFilters onFiltersChange={mockOnFiltersChange} />);
 
       const countrySelect = screen.getByLabelText("Country");
-      fireEvent.change(countrySelect, { target: { value: "Germany" } });
+      fireEvent.change(countrySelect, { target: { value: "DE" } });
 
       const smallButton = screen.getByRole("button", { name: /Small/i });
       fireEvent.click(smallButton);
@@ -126,16 +128,18 @@ describe("SwipeFilters", () => {
       await waitFor(() => {
         const stored = JSON.parse(localStorage.getItem("swipeFilters") || "{}");
         expect(stored).toEqual({
-          country: "Germany",
+          country: "DE",
           sizes: ["small"],
+          ages: [],
         });
       });
     });
 
     it("should load filters from localStorage on mount", () => {
       const savedFilters = {
-        country: "United Kingdom",
+        country: "GB",
         sizes: ["medium", "large"],
+        ages: [],
       };
       localStorage.setItem("swipeFilters", JSON.stringify(savedFilters));
 
@@ -144,7 +148,7 @@ describe("SwipeFilters", () => {
       const countrySelect = screen.getByLabelText(
         "Country",
       ) as HTMLSelectElement;
-      expect(countrySelect.value).toBe("United Kingdom");
+      expect(countrySelect.value).toBe("GB");
 
       const mediumButton = screen.getByRole("button", { name: /Medium/i });
       const largeButton = screen.getByRole("button", { name: /Large/i });
@@ -153,7 +157,7 @@ describe("SwipeFilters", () => {
     });
 
     it("should call onFiltersChange with saved filters on mount", () => {
-      const savedFilters = { country: "Germany", sizes: ["small"] };
+      const savedFilters = { country: "DE", sizes: ["small"], ages: [] };
       localStorage.setItem("swipeFilters", JSON.stringify(savedFilters));
 
       render(<SwipeFilters onFiltersChange={mockOnFiltersChange} />);
@@ -167,7 +171,7 @@ describe("SwipeFilters", () => {
       render(<SwipeFilters onFiltersChange={mockOnFiltersChange} />);
 
       const countrySelect = screen.getByLabelText("Country");
-      fireEvent.change(countrySelect, { target: { value: "Germany" } });
+      fireEvent.change(countrySelect, { target: { value: "DE" } });
 
       expect(screen.getByText(/🇩🇪/)).toBeInTheDocument();
     });
@@ -186,7 +190,7 @@ describe("SwipeFilters", () => {
     });
 
     it("should show filter pills in compact view", () => {
-      const savedFilters = { country: "Germany", sizes: ["small", "medium"] };
+      const savedFilters = { country: "DE", sizes: ["small", "medium"], ages: [] };
       localStorage.setItem("swipeFilters", JSON.stringify(savedFilters));
 
       render(<SwipeFilters onFiltersChange={mockOnFiltersChange} compact />);
@@ -201,12 +205,13 @@ describe("SwipeFilters", () => {
       render(<SwipeFilters onFiltersChange={mockOnFiltersChange} />);
 
       const countrySelect = screen.getByLabelText("Country");
-      fireEvent.change(countrySelect, { target: { value: "United States" } });
+      fireEvent.change(countrySelect, { target: { value: "US" } });
 
       await waitFor(() => {
         expect(mockOnFiltersChange).toHaveBeenCalledWith({
-          country: "United States",
+          country: "US",
           sizes: [],
+          ages: [],
         });
       });
 
@@ -215,8 +220,9 @@ describe("SwipeFilters", () => {
 
       await waitFor(() => {
         expect(mockOnFiltersChange).toHaveBeenCalledWith({
-          country: "United States",
+          country: "US",
           sizes: ["large"],
+          ages: [],
         });
       });
     });

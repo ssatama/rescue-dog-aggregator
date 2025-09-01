@@ -170,7 +170,7 @@ export class SwipeMetrics {
       if (startMarks.length === 0) {
         performance.mark("swipe-init-start");
       }
-      
+
       performance.mark("swipe-init-complete");
       performance.measure(
         "swipe-load-time",
@@ -180,7 +180,7 @@ export class SwipeMetrics {
 
       const entries = performance.getEntriesByName("swipe-load-time");
       const loadTime = entries.length > 0 ? entries[0].duration : 0;
-      
+
       Sentry.captureEvent({
         message: "swipe.performance.load_time",
         level: "info",
