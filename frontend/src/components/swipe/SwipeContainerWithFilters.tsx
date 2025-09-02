@@ -426,7 +426,10 @@ export function SwipeContainerWithFilters({
     <>
       {/* Filter Modal - increased z-index to ensure visibility */}
       {showFilters && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+          style={{ zIndex: 9999 }}
+        >
           <div className="bg-white rounded-2xl max-w-md w-full">
             <div className="p-4 border-b flex justify-between items-center">
               <h2 className="text-xl font-bold">Filter Dogs</h2>
@@ -486,7 +489,7 @@ export function SwipeContainerWithFilters({
                   setOffset(0);
                   setDogs([]);
                   setIsLoading(true);
-                  
+
                   // Fetch dogs after reset if we have valid filters
                   if (isValid && fetchDogs && queryString) {
                     fetchDogs(queryString)
@@ -496,7 +499,10 @@ export function SwipeContainerWithFilters({
                         setIsLoading(false);
                       })
                       .catch((error) => {
-                        console.error("Failed to fetch dogs after reset:", error);
+                        console.error(
+                          "Failed to fetch dogs after reset:",
+                          error,
+                        );
                         setIsLoading(false);
                       });
                   } else {
@@ -526,10 +532,10 @@ export function SwipeContainerWithFilters({
         {/* Main swipe container - responsive for small screens */}
         <div
           className="flex-1 flex flex-col items-center justify-center p-2 sm:p-4 overflow-hidden"
-          style={{ 
+          style={{
             height: "100dvh",
             paddingTop: "env(safe-area-inset-top)",
-            paddingBottom: "env(safe-area-inset-bottom)"
+            paddingBottom: "env(safe-area-inset-bottom)",
           }}
         >
           <div
@@ -556,8 +562,12 @@ export function SwipeContainerWithFilters({
                 className="paw-btn paw-left w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white shadow-lg flex flex-col items-center justify-center hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Previous dog"
               >
-                <span className="text-2xl sm:text-3xl transform rotate-180">🐾</span>
-                <span className="text-[10px] sm:text-xs text-gray-500 mt-1">Back</span>
+                <span className="text-2xl sm:text-3xl transform rotate-180">
+                  🐾
+                </span>
+                <span className="text-[10px] sm:text-xs text-gray-500 mt-1">
+                  Back
+                </span>
               </button>
 
               <button
@@ -567,7 +577,9 @@ export function SwipeContainerWithFilters({
                 aria-label="Next dog"
               >
                 <span className="text-2xl sm:text-3xl">🐾</span>
-                <span className="text-[10px] sm:text-xs text-gray-500 mt-1">Next</span>
+                <span className="text-[10px] sm:text-xs text-gray-500 mt-1">
+                  Next
+                </span>
               </button>
             </div>
 

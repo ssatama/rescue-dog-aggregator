@@ -18,6 +18,14 @@ interface SwipeCardProps {
     special_characteristic?: string;
     quality_score?: number;
     created_at?: string;
+    dogProfilerData?: {
+      tagline?: string;
+      uniqueQuirk?: string;
+      personalityTraits?: string[];
+      favoriteActivities?: string[];
+      engagement_score?: number;
+      quality_score?: number;
+    };
   };
   isStacked?: boolean;
 }
@@ -27,68 +35,30 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
 
-  const handleFavorite = useCallback(async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!dog.id) return;
+  const handleFavorite = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!dog.id) return;
 
-    setIsLiked(true);
-    setShowHeartAnimation(true);
+      setIsLiked(true);
+      setShowHeartAnimation(true);
 
-    await addFavorite(dog.id, dog.name);
+      await addFavorite(dog.id, dog.name);
 
-    Sentry.captureEvent({
-      message: "swipe.card.favorited_via_button",
-      extra: {
-        dogId: dog.id,
-        dogName: dog.name,
-      },
-    });
+      Sentry.captureEvent({
+        message: "swipe.card.favorited_via_button",
+        extra: {
+          dogId: dog.id,
+          dogName: dog.name,
+        },
+      });
 
-    setTimeout(() => setShowHeartAnimation(false), 1000);
-  }, [dog.id, dog.name, addFavorite]);
+      setTimeout(() => setShowHeartAnimation(false), 1000);
+    },
+    [dog.id, dog.name, addFavorite],
+  );
 
-  const handleShare = useCallback(async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const shareTitle = `Check out ${dog.name} for adoption!`;
-    const shareText = dog.description || `${dog.name} is a ${dog.age || ""} ${dog.breed || ""} looking for a forever home!`;
-    const shareUrl = `https://www.rescuedogs.me/dog/${dog.id}`;
-
-    try {
-      // Check if Web Share API is available and we're in a secure context
-      if (navigator.share && window.isSecureContext) {
-        try {
-          await navigator.share({
-            title: shareTitle,
-            text: shareText,
-            url: shareUrl,
-          });
-          Sentry.captureEvent({
-            message: "swipe.card.shared",
-            level: "info",
-            extra: {
-              dog_id: dog.id,
-              dog_name: dog.name,
-              method: "web_share_api",
-            },
-          });
-        } catch (error) {
-          // User cancelled or error occurred, fall back to clipboard
-          if ((error as Error).name !== "AbortError") {
-            await copyToClipboard(shareUrl);
-          }
-        }
-      } else {
-        // Fallback to clipboard copy
-        await copyToClipboard(shareUrl);
-      }
-    } catch (error) {
-      console.error("Share failed:", error);
-      // Final fallback - just copy to clipboard
-      await copyToClipboard(shareUrl);
-    }
-  }, [dog]);
-
-  const copyToClipboard = async (url: string) => {
+  const copyToClipboard = useCallback(async (url: string) => {
     try {
       await navigator.clipboard.writeText(url);
       Sentry.captureEvent({
@@ -103,7 +73,54 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
     } catch (error) {
       console.error("Failed to copy to clipboard:", error);
     }
-  };
+  }, [dog.id, dog.name]);
+
+  const handleShare = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const shareTitle = `Check out ${dog.name} for adoption!`;
+      const shareText =
+        dog.description ||
+        `${dog.name} is a ${dog.age || ""} ${dog.breed || ""} looking for a forever home!`;
+      const shareUrl = `https://www.rescuedogs.me/dog/${dog.id}`;
+
+      try {
+        // Check if Web Share API is available and we're in a secure context
+        if (navigator.share && window.isSecureContext) {
+          try {
+            await navigator.share({
+              title: shareTitle,
+              text: shareText,
+              url: shareUrl,
+            });
+            Sentry.captureEvent({
+              message: "swipe.card.shared",
+              level: "info",
+              extra: {
+                dog_id: dog.id,
+                dog_name: dog.name,
+                method: "web_share_api",
+              },
+            });
+          } catch (error) {
+            // User cancelled or error occurred, fall back to clipboard
+            if ((error as Error).name !== "AbortError") {
+              await copyToClipboard(shareUrl);
+            }
+          }
+        } else {
+          // Fallback to clipboard copy
+          await copyToClipboard(shareUrl);
+        }
+      } catch (error) {
+        console.error("Share failed:", error);
+        // Final fallback - just copy to clipboard
+        await copyToClipboard(shareUrl);
+      }
+    },
+    [dog, copyToClipboard],
+  );
+
 
   // Access enriched LLM data
   const profileData = dog.dogProfilerData || {};
@@ -162,12 +179,15 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
       </div>
 
       {/* Essential Info with Enriched Data */}
-      <div className="p-3 sm:p-4 md:p-6 flex flex-col" style={{ height: "45%" }}>
+      <div
+        className="p-3 sm:p-4 md:p-6 flex flex-col"
+        style={{ height: "45%" }}
+      >
         {/* Always show name as fallback */}
         <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2">
           About {dog.name}
         </h3>
-        
+
         {/* Tagline */}
         {tagline && (
           <p className="text-sm sm:text-base font-medium text-gray-800 mb-2 line-clamp-2">
@@ -179,8 +199,8 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
         {personalityTraits.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
             {personalityTraits.slice(0, 3).map((trait, idx) => (
-              <span 
-                key={idx} 
+              <span
+                key={idx}
                 className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs"
               >
                 {trait}
@@ -208,7 +228,6 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
             </p>
           </div>
         )}
-
       </div>
     </div>
   );

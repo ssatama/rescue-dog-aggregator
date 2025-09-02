@@ -29,7 +29,7 @@ describe("SwipeCard", () => {
       uniqueQuirk: "Loves to play fetch for hours",
       personalityTraits: ["Playful", "Loyal", "Gentle"],
       favoriteActivities: ["fetch", "swimming"],
-      qualityScore: 90
+      qualityScore: 90,
     },
     created_at: new Date().toISOString(),
   };
