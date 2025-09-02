@@ -133,10 +133,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
   const favoriteActivities = profileData.favoriteActivities || [];
 
   return (
-    <div
-      className="bg-white rounded-2xl shadow-lg overflow-hidden relative h-full group"
-      style={{ minHeight: "400px", maxHeight: "600px" }}
-    >
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg dark:shadow-gray-900/50 overflow-hidden relative group transition-colors flex flex-col">
       {/* NEW Badge for recent dogs */}
       {dog.created_at &&
         new Date().getTime() - new Date(dog.created_at).getTime() <
@@ -152,14 +149,14 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
       <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 flex gap-2">
         <button
           onClick={handleShare}
-          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur flex items-center justify-center shadow-lg hover:scale-110 transition-all"
           aria-label="Share dog"
         >
-          <Share2 className="w-5 h-5 text-gray-600" />
+          <Share2 className="w-5 h-5 text-gray-600 dark:text-gray-300" />
         </button>
         <button
           onClick={handleFavorite}
-          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow-lg hover:scale-110 transition-transform ${isLiked ? "scale-125" : ""}`}
+          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur flex items-center justify-center shadow-lg hover:scale-110 transition-all ${isLiked ? "scale-125" : ""}`}
           aria-label="Add to favorites"
         >
           <span
@@ -172,7 +169,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
 
       {/* Main Image - Mobile optimized with 4:3 aspect ratio */}
       <div
-        className="relative aspect-[4/3] bg-gradient-to-br from-orange-400 to-orange-600 overflow-hidden rounded-t-2xl"
+        className="relative aspect-[4/3] bg-gradient-to-br from-orange-400 to-orange-600 overflow-hidden rounded-t-2xl flex-shrink-0"
         data-testid="image-container"
       >
         {dog.image ? (
@@ -193,12 +190,14 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
       </div>
 
       {/* Essential Info with Enriched Data */}
-      <div className="p-6 flex flex-col space-y-4">
+      <div className="p-6 flex flex-col space-y-4 dark:bg-gray-800 overflow-y-auto flex-1">
         {/* Primary info: Name, Age, Breed */}
         <div>
-          <h3 className="text-xl font-bold text-gray-900">{dog.name}</h3>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+            {dog.name}
+          </h3>
           {(dog.age || dog.breed) && (
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               {[dog.age, dog.breed].filter(Boolean).join(" • ")}
             </p>
           )}
@@ -206,7 +205,9 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
 
         {/* Tagline */}
         {tagline && (
-          <p className="italic text-gray-700 text-sm line-clamp-2">{tagline}</p>
+          <p className="italic text-gray-700 dark:text-gray-300 text-sm line-clamp-2">
+            {tagline}
+          </p>
         )}
 
         {/* Top 3 Personality Traits with consistent colors */}
@@ -217,7 +218,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
                 key={idx}
                 className={`px-3 py-1.5 rounded-full text-sm font-medium ${getPersonalityTraitColor(trait)}`}
               >
-                {trait}
+                {trait.charAt(0).toUpperCase() + trait.slice(1)}
               </span>
             ))}
           </div>
@@ -226,7 +227,9 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
         {/* Energy Level Indicator - Visual bars */}
         {dog.dogProfilerData?.engagement_score && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-600">Energy:</span>
+            <span className="text-xs text-gray-600 dark:text-gray-400">
+              Energy:
+            </span>
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map((level) => (
                 <div
@@ -234,7 +237,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
                   className={`h-2 w-6 rounded-full ${
                     level <= (dog.dogProfilerData?.engagement_score || 0) / 20
                       ? "bg-orange-500"
-                      : "bg-gray-200"
+                      : "bg-gray-200 dark:bg-gray-700"
                   }`}
                 />
               ))}
@@ -244,8 +247,8 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
 
         {/* What Makes Me Special */}
         {uniqueQuirk && (
-          <div className="mt-auto pt-2 border-t border-gray-100">
-            <p className="text-xs text-gray-700 flex items-start gap-2">
+          <div className="mt-auto pt-2 border-t border-gray-100 dark:border-gray-700">
+            <p className="text-xs text-gray-700 dark:text-gray-300 flex items-start gap-2">
               <span className="text-base">✨</span>
               <span className="line-clamp-2">{uniqueQuirk}</span>
             </p>

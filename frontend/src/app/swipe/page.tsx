@@ -186,7 +186,7 @@ export default function SwipePage() {
 
   return (
     <SwipeErrorBoundary>
-      <div className="h-screen bg-gray-50">
+      <div className="min-h-[100dvh] bg-gray-50">
         <SwipeContainerWithFilters
           fetchDogs={fetchDogsWithFilters}
           onSwipe={handleSwipe}

@@ -13,6 +13,7 @@ import { Heart, ChevronRight, Home } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { SwipeCard } from "./SwipeCard";
 import SwipeOnboarding from "./SwipeOnboarding";
+import { FilterModal } from "./FilterModal";
 import SwipeFilters from "./SwipeFilters";
 import { SwipeContainerEnhanced } from "./SwipeContainerEnhanced";
 import useSwipeFilters from "../../hooks/useSwipeFilters";
@@ -107,6 +108,7 @@ export function SwipeContainerWithFilters({
     const preloadCount = 3; // Preload next 3 images
     const imagesToPreload: string[] = [];
     const imageElements: HTMLImageElement[] = [];
+    let mounted = true;
 
     for (let i = 1; i <= preloadCount; i++) {
       const nextIndex = currentIndex + i;
@@ -115,16 +117,34 @@ export function SwipeContainerWithFilters({
       }
     }
 
-    // Preload images using Image constructor and store references for cleanup
+    // Preload images using Image constructor with proper cleanup
     imagesToPreload.forEach((src) => {
+      if (!mounted) return;
+      
       const img = new Image();
+      
+      // Set up handlers before setting src to avoid race conditions
+      img.onload = () => {
+        if (!mounted) {
+          img.src = "";
+        }
+      };
+      
+      img.onerror = () => {
+        if (!mounted) {
+          img.src = "";
+        }
+      };
+      
       img.src = src;
       imageElements.push(img);
     });
 
     // Cleanup function to prevent memory leaks
     return () => {
+      mounted = false;
       imageElements.forEach((img) => {
+        // Cancel any in-flight image loads
         img.src = "";
         img.onload = null;
         img.onerror = null;
@@ -179,15 +199,8 @@ export function SwipeContainerWithFilters({
     }
   }, [filters, isValid, queryString, fetchDogs]);
 
-  // Prevent body scroll on mobile while swiping
-  useEffect(() => {
-    const originalStyle = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = originalStyle;
-    };
-  }, []);
+  // Allow natural scrolling - no swipe gestures used
+  // Body scroll lock removed to enable vertical scrolling to reach all controls
 
   // Log session start
   useEffect(() => {
@@ -438,11 +451,11 @@ export function SwipeContainerWithFilters({
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-8">
+      <div className="flex flex-col items-center justify-center h-full p-8 bg-gray-50 dark:bg-gray-900">
         <div className="animate-pulse">
-          <div className="w-80 h-96 bg-gray-200 rounded-2xl mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="w-80 h-96 bg-gray-200 dark:bg-gray-700 rounded-2xl mb-4"></div>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
         </div>
       </div>
     );
@@ -452,75 +465,20 @@ export function SwipeContainerWithFilters({
   if (dogs.length === 0 || (currentIndex >= dogs.length && !isLoadingMore)) {
     return (
       <>
-        {/* Filter Modal - show when clicking Change Filters */}
-        {showFilters && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
-            <div className="bg-white rounded-2xl max-w-md w-full">
-              <div className="p-4 border-b flex justify-between items-center">
-                <h2 className="text-xl font-bold">Filter Dogs</h2>
-                <button
-                  onClick={() => setShowFilters(false)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl"
-                >
-                  ✕
-                </button>
-              </div>
-              <SwipeFilters
-                initialFilters={filters}
-                onFiltersChange={(newFilters) => {
-                  setFilters(newFilters);
-                  setShowFilters(false);
-                  // Preserve current position when filters change
-                  Sentry.captureEvent({
-                    message: "swipe.filter.changed",
-                    extra: {
-                      filters: newFilters,
-                    },
-                  });
-                }}
-                onCancel={() => setShowFilters(false)}
-                onPreviewCount={async (testFilters) => {
-                  try {
-                    // Build query string from filters
-                    const params = new URLSearchParams();
-                    if (testFilters.country) {
-                      params.append(
-                        "adoptable_to_country",
-                        testFilters.country,
-                      );
-                    }
-                    testFilters.sizes.forEach((size) => {
-                      params.append("size[]", size);
-                    });
-                    testFilters.ages.forEach((age) => {
-                      params.append("age[]", age);
-                    });
-
-                    const response = await fetch(
-                      `/api/dogs/swipe?${params.toString()}&limit=1`,
-                    );
-                    if (response.ok) {
-                      const data = await response.json();
-                      // API returns object with dogs array and total count
-                      if (data && typeof data.total === "number") {
-                        return data.total;
-                      }
-                      return 0;
-                    }
-                    return 0;
-                  } catch {
-                    return 0;
-                  }
-                }}
-              />
-            </div>
-          </div>
-        )}
-        <div className="flex flex-col items-center justify-center h-full p-8">
+        <FilterModal
+          show={showFilters}
+          filters={filters}
+          onClose={() => setShowFilters(false)}
+          onFiltersChange={setFilters}
+          isDarkMode={true}
+        />
+        <div className="flex flex-col items-center justify-center h-full p-8 bg-gray-50 dark:bg-gray-900">
           <div className="text-center">
             <div className="text-6xl mb-4">🐕</div>
-            <h3 className="text-2xl font-bold mb-2">More dogs coming!</h3>
-            <p className="text-gray-600 mb-4">
+            <h3 className="text-2xl font-bold mb-2 dark:text-gray-100">
+              More dogs coming!
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
               Check back soon or adjust your filters
             </p>
             <button
@@ -538,13 +496,15 @@ export function SwipeContainerWithFilters({
   // If we're at the end but loading more, show a loading state
   if (currentIndex >= dogs.length && isLoadingMore) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-8">
+      <div className="flex flex-col items-center justify-center h-full p-8 bg-gray-50 dark:bg-gray-900">
         <div className="animate-pulse">
-          <div className="w-80 h-96 bg-gray-200 rounded-2xl mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="w-80 h-96 bg-gray-200 dark:bg-gray-700 rounded-2xl mb-4"></div>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
         </div>
-        <p className="text-gray-600 mt-4">Loading more dogs...</p>
+        <p className="text-gray-600 dark:text-gray-400 mt-4">
+          Loading more dogs...
+        </p>
       </div>
     );
   }
@@ -553,81 +513,27 @@ export function SwipeContainerWithFilters({
 
   return (
     <>
-      {/* Filter Modal - increased z-index to ensure visibility */}
-      {showFilters && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
-          <div className="bg-white rounded-2xl max-w-md w-full">
-            <div className="p-4 border-b flex justify-between items-center">
-              <h2 className="text-xl font-bold">Filter Dogs</h2>
-              <button
-                onClick={() => setShowFilters(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ✕
-              </button>
-            </div>
-            <SwipeFilters
-              initialFilters={filters}
-              onFiltersChange={(newFilters) => {
-                setFilters(newFilters);
-                setShowFilters(false);
-                // Preserve current position when filters change
-                Sentry.captureEvent({
-                  message: "swipe.filter.changed",
-                  extra: {
-                    filters: newFilters,
-                  },
-                });
-              }}
-              onCancel={() => setShowFilters(false)}
-              onPreviewCount={async (testFilters) => {
-                try {
-                  // Build query string from filters
-                  const params = new URLSearchParams();
-                  if (testFilters.country) {
-                    params.append("adoptable_to_country", testFilters.country);
-                  }
-                  testFilters.sizes.forEach((size) => {
-                    params.append("size[]", size);
-                  });
-                  testFilters.ages.forEach((age) => {
-                    params.append("age[]", age);
-                  });
+      <FilterModal
+        show={showFilters}
+        filters={filters}
+        onClose={() => setShowFilters(false)}
+        onFiltersChange={setFilters}
+        isDarkMode={false}
+      />
 
-                  const response = await fetch(
-                    `/api/dogs/swipe?${params.toString()}&limit=1`,
-                  );
-                  if (response.ok) {
-                    const data = await response.json();
-                    // API returns object with dogs array and total count
-                    if (data && typeof data.total === "number") {
-                      return data.total;
-                    }
-                    return 0;
-                  }
-                  return 0;
-                } catch {
-                  return 0;
-                }
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      <div className="relative h-full flex flex-col">
+      <div className="relative flex flex-col min-h-[100dvh] overflow-y-auto bg-gray-50 dark:bg-gray-900">
         {/* Header with Filter Bar and Exit Button */}
-        <div className="p-4 flex justify-between items-center bg-white border-b relative">
+        <div className="flex-shrink-0 p-4 flex justify-between items-center bg-white dark:bg-gray-800 border-b dark:border-gray-700 relative">
           {/* Exit button - absolute positioned */}
           <button
             onClick={() => {
               // Use window.location to avoid Next.js 15 navigation bugs
               window.location.href = "/";
             }}
-            className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors z-50"
+            className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors z-50"
             aria-label="Exit to home"
           >
-            <Home className="w-5 h-5 text-gray-600" />
+            <Home className="w-5 h-5 text-gray-600 dark:text-gray-300" />
           </button>
 
           <div className="flex-1 flex justify-between items-center pr-12">
@@ -666,7 +572,7 @@ export function SwipeContainerWithFilters({
                     setIsLoading(false);
                   }
                 }}
-                className="px-3 py-2 text-sm bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                className="px-3 py-2 text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
                 title="Start fresh with all dogs"
               >
                 Reset
@@ -677,7 +583,7 @@ export function SwipeContainerWithFilters({
                   e.stopPropagation();
                   setShowFilters(true);
                 }}
-                className="px-4 py-2 text-sm bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
               >
                 + Filters
               </button>
@@ -686,19 +592,12 @@ export function SwipeContainerWithFilters({
         </div>
 
         {/* Main swipe container - responsive for small screens */}
-        <div
-          className="flex-1 flex flex-col items-center justify-center p-2 sm:p-4 overflow-hidden"
-          style={{
-            height: "100dvh",
-            paddingTop: "env(safe-area-inset-top)",
-            paddingBottom: "env(safe-area-inset-bottom)",
-          }}
-        >
+        <div className="flex-1 flex flex-col items-center justify-start p-2 sm:p-4 pb-8 bg-gray-50 dark:bg-gray-900">
           <div
             className="relative w-full flex flex-col"
             style={{
-              maxWidth: "min(calc(100vw - 1rem), 400px)",
-              height: "min(calc(100dvh - 160px), 700px)",
+              maxWidth: "min(calc(100vw - 2rem), 400px)",
+              minHeight: "300px",
             }}
           >
             <div
@@ -723,30 +622,30 @@ export function SwipeContainerWithFilters({
                           ? "bg-orange-500 w-3"
                           : idx < currentIndex % 10
                             ? "bg-orange-300"
-                            : "bg-gray-300"
+                            : "bg-gray-300 dark:bg-gray-600"
                       }`}
                     />
                   ),
                 )}
               </div>
               {/* Progress text */}
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Dog {currentIndex + 1} of {dogs.length}
               </p>
             </div>
 
             {/* Paw Navigation - responsive sizes */}
-            <div className="flex justify-center gap-4 sm:gap-8 mt-2 sm:mt-4">
+            <div className="flex justify-center gap-4 sm:gap-8 mt-2 sm:mt-4 pb-[env(safe-area-inset-bottom)]">
               <button
                 onClick={goToPrevious}
                 disabled={currentIndex === 0}
-                className="paw-btn paw-left w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white shadow-lg flex flex-col items-center justify-center hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                className="paw-btn paw-left w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white dark:bg-gray-600 shadow-lg dark:shadow-xl dark:shadow-black/50 border-2 border-gray-300 dark:border-gray-400 flex flex-col items-center justify-center hover:scale-110 hover:bg-gray-50 dark:hover:bg-gray-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Previous dog"
               >
                 <span className="text-2xl sm:text-3xl transform rotate-180">
                   🐾
                 </span>
-                <span className="text-[10px] sm:text-xs text-gray-500 mt-1">
+                <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-200 font-medium mt-1">
                   Back
                 </span>
               </button>
@@ -754,11 +653,11 @@ export function SwipeContainerWithFilters({
               <button
                 onClick={goToNext}
                 disabled={currentIndex === dogs.length - 1}
-                className="paw-btn paw-right w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white shadow-lg flex flex-col items-center justify-center hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                className="paw-btn paw-right w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white dark:bg-gray-600 shadow-lg dark:shadow-xl dark:shadow-black/50 border-2 border-gray-300 dark:border-gray-400 flex flex-col items-center justify-center hover:scale-110 hover:bg-gray-50 dark:hover:bg-gray-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Next dog"
               >
                 <span className="text-2xl sm:text-3xl">🐾</span>
-                <span className="text-[10px] sm:text-xs text-gray-500 mt-1">
+                <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-200 font-medium mt-1">
                   Next
                 </span>
               </button>

@@ -1,4 +1,4 @@
-import { SwipeMetrics } from "../swipeMetrics";
+import { SwipeMetrics, testHelpers } from "../swipeMetrics";
 import * as Sentry from "@sentry/nextjs";
 
 jest.mock("@sentry/nextjs", () => ({
@@ -189,57 +189,100 @@ describe("SwipeMetrics", () => {
 
       metrics.endSession();
 
-      // Check that Sentry was called with session summary
+      // With batching, the session summary is included in a batch
       expect(Sentry.captureEvent).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: "swipe.session.summary",
+          message: "swipe.metrics.batch",
           level: "info",
+          extra: expect.objectContaining({
+            events: expect.arrayContaining([
+              expect.objectContaining({
+                message: "swipe.session.summary",
+              }),
+            ]),
+          }),
         }),
       );
     });
 
     it("should track queue exhausted event", () => {
       metrics.trackQueueExhausted(25);
+      
+      // Force flush to test the batched event
+      testHelpers.flushEventBatch();
 
-      expect(Sentry.captureEvent).toHaveBeenCalledWith({
-        message: "swipe.queue.exhausted",
-        level: "info",
-        contexts: {
-          queue: {
-            totalSwiped: 25,
-          },
-        },
-      });
+      expect(Sentry.captureEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "swipe.metrics.batch",
+          level: "info",
+          extra: expect.objectContaining({
+            events: expect.arrayContaining([
+              expect.objectContaining({
+                message: "swipe.queue.exhausted",
+                contexts: expect.objectContaining({
+                  queue: expect.objectContaining({
+                    totalSwiped: 25,
+                  }),
+                }),
+              }),
+            ]),
+          }),
+        }),
+      );
     });
 
     it("should track favorite added separately from swipe", () => {
       metrics.trackFavoriteAdded("dog1", "swipe");
+      
+      // Force flush to test the batched event
+      testHelpers.flushEventBatch();
 
-      expect(Sentry.captureEvent).toHaveBeenCalledWith({
-        message: "swipe.favorite.added",
-        level: "info",
-        contexts: {
-          favorite: {
-            dogId: "dog1",
-            source: "swipe",
-          },
-        },
-      });
+      expect(Sentry.captureEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "swipe.metrics.batch",
+          level: "info",
+          extra: expect.objectContaining({
+            events: expect.arrayContaining([
+              expect.objectContaining({
+                message: "swipe.favorite.added",
+                contexts: expect.objectContaining({
+                  favorite: expect.objectContaining({
+                    dogId: "dog1",
+                    source: "swipe",
+                  }),
+                }),
+              }),
+            ]),
+          }),
+        }),
+      );
     });
 
     it("should track swipe velocity", () => {
       metrics.trackSwipeVelocity(2.5, "right");
+      
+      // Force flush to test the batched event
+      testHelpers.flushEventBatch();
 
-      expect(Sentry.captureEvent).toHaveBeenCalledWith({
-        message: "swipe.gesture.velocity",
-        level: "info",
-        contexts: {
-          gesture: {
-            velocity: 2.5,
-            direction: "right",
-          },
-        },
-      });
+      expect(Sentry.captureEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "swipe.metrics.batch",
+          level: "info",
+          extra: expect.objectContaining({
+            events: expect.arrayContaining([
+              expect.objectContaining({
+                message: "swipe.gesture.velocity",
+                contexts: expect.objectContaining({
+                  gesture: expect.objectContaining({
+                    velocity: 2.5,
+                    direction: "right",
+                  }),
+                }),
+              }),
+            ]),
+          }),
+        }),
+      );
     });
   });
 

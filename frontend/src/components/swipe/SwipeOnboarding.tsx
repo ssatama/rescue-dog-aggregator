@@ -206,11 +206,11 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4"
       role="dialog"
       aria-label="Swipe feature onboarding"
     >
-      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         <AnimatePresence mode="wait">
           {step === 1 && (
             <motion.div
@@ -222,10 +222,10 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
             >
               <div className="text-center mb-6">
                 <div className="text-6xl mb-4">🌍</div>
-                <h2 className="text-2xl font-bold mb-2">
+                <h2 className="text-2xl font-bold mb-2 dark:text-gray-100">
                   Where can you adopt?
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-400">
                   We&apos;ll show dogs available in your country
                 </p>
               </div>
@@ -233,7 +233,7 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
               <div className="space-y-3">
                 {loading ? (
                   <div className="text-center py-4">
-                    <div className="text-gray-500">
+                    <div className="text-gray-500 dark:text-gray-400">
                       Loading available dogs...
                     </div>
                   </div>
@@ -259,8 +259,8 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
                             w-full p-4 rounded-lg border-2 transition-all text-left
                             ${
                               selectedCountry === country.value
-                                ? "border-orange-500 bg-orange-50 selected"
-                                : "border-gray-200 hover:border-orange-300"
+                                ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20 selected"
+                                : "border-gray-200 dark:border-gray-600 hover:border-orange-300 dark:hover:border-orange-500"
                             }
                           `}
                           aria-label={country.label}
@@ -270,11 +270,11 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
                               <span className="text-2xl mr-3">
                                 {country.flag}
                               </span>
-                              <span className="font-medium">
+                              <span className="font-medium dark:text-gray-100">
                                 {country.label}
                               </span>
                             </div>
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
                               {country.count}{" "}
                               {country.count === 1 ? "dog" : "dogs"} available
                             </div>
@@ -287,7 +287,7 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
                     {countries.length > 5 && (
                       <button
                         onClick={() => setShowAllCountries(!showAllCountries)}
-                        className="w-full py-2 text-center text-orange-500 hover:text-orange-600 transition-colors text-sm font-medium"
+                        className="w-full py-2 text-center text-orange-500 dark:text-orange-400 hover:text-orange-600 dark:hover:text-orange-300 transition-colors text-sm font-medium"
                         aria-label={
                           showAllCountries
                             ? "Show fewer countries"
@@ -343,7 +343,7 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
                   ${
                     selectedCountry
                       ? "bg-orange-500 text-white hover:bg-orange-600"
-                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
                   }
                 `}
                 aria-label="Continue"
@@ -356,7 +356,9 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
                 role="status"
                 aria-live="polite"
               >
-                <span className="text-sm text-gray-500">Step 1 of 2</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  Step 1 of 2
+                </span>
               </div>
             </motion.div>
           )}
@@ -372,7 +374,7 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
               {/* Back button */}
               <button
                 onClick={() => setStep(1)}
-                className="absolute top-4 left-4 p-2 text-gray-600 hover:text-gray-800 transition-colors"
+                className="absolute top-4 left-4 p-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
                 aria-label="Go back"
               >
                 <svg
@@ -391,10 +393,12 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
               </button>
 
               <div className="text-center mb-6 mt-8">
-                <h2 className="text-2xl font-bold mb-2">
+                <h2 className="text-2xl font-bold mb-2 dark:text-gray-100">
                   Size preference? (optional)
                 </h2>
-                <p className="text-gray-600">Select your preferred dog sizes</p>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Select your preferred dog sizes
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-6">
@@ -411,16 +415,18 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
                       p-4 rounded-lg border-2 transition-all relative
                       ${
                         selectedSizes.includes(size.value)
-                          ? "border-orange-500 bg-orange-50 selected"
-                          : "border-gray-200 hover:border-orange-300"
+                          ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20 selected"
+                          : "border-gray-200 dark:border-gray-600 hover:border-orange-300 dark:hover:border-orange-500"
                       }
                     `}
                     aria-label={size.label}
                   >
                     <div className="text-2xl mb-1">{size.icon}</div>
-                    <div className="font-medium">{size.label}</div>
+                    <div className="font-medium dark:text-gray-100">
+                      {size.label}
+                    </div>
                     {size.count !== undefined && (
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         {size.count} {size.count === 1 ? "dog" : "dogs"}
                       </div>
                     )}
@@ -438,7 +444,7 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
 
               <button
                 onClick={handleSkipSizes}
-                className="w-full mt-3 py-3 text-gray-600 hover:text-gray-800 transition-all"
+                className="w-full mt-3 py-3 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-all"
                 aria-label="All sizes"
               >
                 Skip - All sizes
@@ -449,7 +455,9 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
                 role="status"
                 aria-live="polite"
               >
-                <span className="text-sm text-gray-500">Step 2 of 2</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  Step 2 of 2
+                </span>
               </div>
             </motion.div>
           )}

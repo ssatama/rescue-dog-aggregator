@@ -179,7 +179,7 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm z-50"
             onClick={onClose}
             data-testid="modal-backdrop"
           />
@@ -190,23 +190,25 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
             animate={{ y: dragY }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[90vh] overflow-y-auto"
+            className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-3xl z-50 max-h-[90vh] overflow-y-auto"
             style={{ transform: `translateY(${dragY}px)` }}
             data-testid="modal-content"
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            <div className="sticky top-0 bg-white z-10 px-4 py-3 border-b">
+            <div className="sticky top-0 bg-white dark:bg-gray-800 z-10 px-4 py-3 border-b dark:border-gray-700">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold">Dog Details</h2>
+                <h2 className="text-xl font-bold dark:text-gray-100">
+                  Dog Details
+                </h2>
                 <button
                   onClick={onClose}
                   aria-label="Close"
-                  className="p-3 hover:bg-gray-100 rounded-full transition-colors mr-safe min-w-[48px] min-h-[48px] flex items-center justify-center"
+                  className="p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors mr-safe min-w-[48px] min-h-[48px] flex items-center justify-center"
                   style={{ marginRight: "env(safe-area-inset-right, 0px)" }}
                 >
-                  <X size={24} />
+                  <X size={24} className="dark:text-gray-300" />
                 </button>
               </div>
             </div>
@@ -216,9 +218,11 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
 
               <div className="px-4 py-6 space-y-6">
                 <div>
-                  <h1 className="text-3xl font-bold mb-2">{dog.name}</h1>
+                  <h1 className="text-3xl font-bold mb-2 dark:text-gray-100">
+                    {dog.name}
+                  </h1>
 
-                  <div className="flex items-center gap-4 text-gray-600 mb-4">
+                  <div className="flex items-center gap-4 text-gray-600 dark:text-gray-400 mb-4">
                     <span className="flex items-center gap-1">
                       <span className="text-orange-500">🐾</span> {dog.age}
                     </span>
@@ -230,7 +234,7 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                     </span>
                   </div>
 
-                  <div className="text-sm text-gray-500 space-y-1">
+                  <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
                     <p>{dog.organization_name}</p>
                     <p>{dog.location}</p>
                   </div>
@@ -238,10 +242,10 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
 
                 {profilerData?.description && (
                   <div>
-                    <h3 className="text-lg font-semibold mb-2">
+                    <h3 className="text-lg font-semibold dark:text-gray-100 mb-2">
                       About {dog.name}
                     </h3>
-                    <p className="text-gray-700 leading-relaxed">
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                       {profilerData.description}
                     </p>
                   </div>
@@ -250,7 +254,7 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                 {profilerData?.personality_traits &&
                   profilerData.personality_traits.length > 0 && (
                     <div>
-                      <h3 className="text-lg font-semibold mb-3">
+                      <h3 className="text-lg font-semibold dark:text-gray-100 mb-3">
                         Personality
                       </h3>
                       <div className="flex flex-wrap gap-2">
@@ -261,7 +265,7 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                               key={index}
                               className={`px-4 py-2 rounded-full text-base font-medium ${getPersonalityTraitColor(trait)}`}
                             >
-                              {trait}
+                              {trait.charAt(0).toUpperCase() + trait.slice(1)}
                             </span>
                           ))}
                       </div>
@@ -272,7 +276,9 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                   profilerData?.good_with_cats !== undefined ||
                   profilerData?.good_with_kids !== undefined) && (
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">Good With</h3>
+                    <h3 className="text-lg font-semibold dark:text-gray-100 mb-3">
+                      Good With
+                    </h3>
                     <div className="flex gap-3">
                       {profilerData.good_with_dogs !== undefined && (
                         <div
@@ -280,15 +286,15 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                           px-4 py-3 rounded-xl flex flex-col items-center gap-1
                           ${
                             profilerData.good_with_dogs === true
-                              ? "bg-green-100"
+                              ? "bg-green-100 dark:bg-green-900/30"
                               : profilerData.good_with_dogs === "maybe"
-                                ? "bg-yellow-100"
-                                : "bg-gray-100"
+                                ? "bg-yellow-100 dark:bg-yellow-900/30"
+                                : "bg-gray-100 dark:bg-gray-700"
                           }
                         `}
                         >
                           <span className="text-2xl">🐕</span>
-                          <span className="text-sm font-medium">
+                          <span className="text-sm font-medium dark:text-gray-200">
                             Dogs {getGoodWithIcon(profilerData.good_with_dogs)}
                           </span>
                         </div>
@@ -300,15 +306,15 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                           px-4 py-3 rounded-xl flex flex-col items-center gap-1
                           ${
                             profilerData.good_with_cats === true
-                              ? "bg-green-100"
+                              ? "bg-green-100 dark:bg-green-900/30"
                               : profilerData.good_with_cats === "maybe"
-                                ? "bg-yellow-100"
-                                : "bg-gray-100"
+                                ? "bg-yellow-100 dark:bg-yellow-900/30"
+                                : "bg-gray-100 dark:bg-gray-700"
                           }
                         `}
                         >
                           <span className="text-2xl">🐱</span>
-                          <span className="text-sm font-medium">
+                          <span className="text-sm font-medium dark:text-gray-200">
                             Cats {getGoodWithIcon(profilerData.good_with_cats)}
                           </span>
                         </div>
@@ -320,15 +326,15 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                           px-4 py-3 rounded-xl flex flex-col items-center gap-1
                           ${
                             profilerData.good_with_kids === true
-                              ? "bg-green-100"
+                              ? "bg-green-100 dark:bg-green-900/30"
                               : profilerData.good_with_kids === "maybe"
-                                ? "bg-yellow-100"
-                                : "bg-gray-100"
+                                ? "bg-yellow-100 dark:bg-yellow-900/30"
+                                : "bg-gray-100 dark:bg-gray-700"
                           }
                         `}
                         >
                           <span className="text-2xl">👶</span>
-                          <span className="text-sm font-medium">
+                          <span className="text-sm font-medium dark:text-gray-200">
                             Kids {getGoodWithIcon(profilerData.good_with_kids)}
                           </span>
                         </div>
@@ -350,10 +356,10 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                       onClick={handleShare}
                       className={`flex-1 py-3 px-4 border rounded-full font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
                         shareStatus === "copied"
-                          ? "bg-green-100 border-green-300 text-green-700"
+                          ? "bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400"
                           : shareStatus === "shared"
-                            ? "bg-blue-100 border-blue-300 text-blue-700"
-                            : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                            ? "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-400"
+                            : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                       }`}
                     >
                       <Share size={20} />
@@ -367,7 +373,7 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                     {!isAlreadyFavorite && (
                       <button
                         onClick={handleSave}
-                        className="flex-1 py-3 px-4 bg-pink-100 text-pink-600 rounded-full font-medium hover:bg-pink-200 transition-colors flex items-center justify-center gap-2"
+                        className="flex-1 py-3 px-4 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-full font-medium hover:bg-pink-200 dark:hover:bg-pink-900/50 transition-colors flex items-center justify-center gap-2"
                       >
                         <Heart size={20} />
                         Save

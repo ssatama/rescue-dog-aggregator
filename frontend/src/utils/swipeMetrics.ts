@@ -1,5 +1,56 @@
 import * as Sentry from "@sentry/nextjs";
 
+// Check if we're in development mode
+const isDevelopment = process.env.NODE_ENV === "development";
+const shouldSendEvents = !isDevelopment || process.env.NEXT_PUBLIC_FORCE_SENTRY === "true";
+
+// Event batching configuration
+const EVENT_BATCH_SIZE = 10;
+const EVENT_BATCH_TIMEOUT = 5000; // 5 seconds
+let eventBatch: any[] = [];
+let batchTimer: NodeJS.Timeout | null = null;
+
+// Helper function to flush the event batch
+function flushEventBatch() {
+  if (eventBatch.length === 0) return;
+  
+  if (shouldSendEvents) {
+    // Send a single event with all batched metrics
+    Sentry.captureEvent({
+      message: "swipe.metrics.batch",
+      level: "info",
+      extra: {
+        events: eventBatch,
+        batchSize: eventBatch.length,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+  
+  eventBatch = [];
+  if (batchTimer) {
+    clearTimeout(batchTimer);
+    batchTimer = null;
+  }
+}
+
+// Helper function to send events only in production with batching
+function captureMetricEvent(event: any) {
+  // Add to batch
+  eventBatch.push({
+    ...event,
+    timestamp: new Date().toISOString(),
+  });
+  
+  // Flush if batch is full
+  if (eventBatch.length >= EVENT_BATCH_SIZE) {
+    flushEventBatch();
+  } else if (!batchTimer) {
+    // Set timer to flush after timeout
+    batchTimer = setTimeout(flushEventBatch, EVENT_BATCH_TIMEOUT);
+  }
+}
+
 interface SessionMetrics {
   sessionActive: boolean;
   sessionStartTime: number | null;
@@ -78,7 +129,7 @@ export class SwipeMetrics {
       );
     }
 
-    Sentry.captureEvent({
+    captureMetricEvent({
       message: "swipe.session.summary",
       level: "info",
       contexts: {
@@ -91,6 +142,9 @@ export class SwipeMetrics {
         },
       },
     });
+
+    // Force flush any pending events when session ends
+    flushEventBatch();
 
     this.sessionMetrics = this.initSessionMetrics();
   }
@@ -124,7 +178,7 @@ export class SwipeMetrics {
   }
 
   trackSwipeVelocity(velocity: number, direction: string): void {
-    Sentry.captureEvent({
+    captureMetricEvent({
       message: "swipe.gesture.velocity",
       level: "info",
       contexts: {
@@ -137,7 +191,7 @@ export class SwipeMetrics {
   }
 
   trackQueueExhausted(totalSwiped: number): void {
-    Sentry.captureEvent({
+    captureMetricEvent({
       message: "swipe.queue.exhausted",
       level: "info",
       contexts: {
@@ -149,7 +203,7 @@ export class SwipeMetrics {
   }
 
   trackFavoriteAdded(dogId: string, source: string): void {
-    Sentry.captureEvent({
+    captureMetricEvent({
       message: "swipe.favorite.added",
       level: "info",
       contexts: {
@@ -195,7 +249,7 @@ export class SwipeMetrics {
         loadTime = performance.now();
       }
 
-      Sentry.captureEvent({
+      captureMetricEvent({
         message: "swipe.performance.load_time",
         level: "info",
         contexts: {
@@ -213,7 +267,7 @@ export class SwipeMetrics {
       }
     } catch (error) {
       // If measure fails, just track the event without timing
-      Sentry.captureEvent({
+      captureMetricEvent({
         message: "swipe.performance.load_time",
         level: "info",
         contexts: {
@@ -367,3 +421,8 @@ export class SwipeMetrics {
 
 // Singleton instance
 export const swipeMetrics = new SwipeMetrics();
+
+// Export for testing purposes
+export const testHelpers = {
+  flushEventBatch,
+};
