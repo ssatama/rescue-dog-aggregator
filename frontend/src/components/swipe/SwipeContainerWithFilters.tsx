@@ -465,7 +465,10 @@ export function SwipeContainerWithFilters({
         <div className="p-4 flex justify-between items-center bg-white border-b relative">
           {/* Exit button - absolute positioned */}
           <button
-            onClick={() => router.push("/")}
+            onClick={() => {
+              // Use window.location to avoid Next.js 15 navigation bugs
+              window.location.href = "/";
+            }}
             className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors z-50"
             aria-label="Exit to home"
           >
@@ -473,10 +476,7 @@ export function SwipeContainerWithFilters({
           </button>
 
           <div className="flex-1 flex justify-between items-center pr-12">
-            <div
-              onClick={() => setShowFilters(true)}
-              className="cursor-pointer"
-            >
+            <div className="cursor-pointer">
               <SwipeFilters compact onFiltersChange={() => {}} />
             </div>
             <div className="flex gap-2">
@@ -515,10 +515,9 @@ export function SwipeContainerWithFilters({
                 Reset
               </button>
               <button
-                onClick={() => {
-                  console.log(
-                    "Filter button clicked, setting showFilters to true",
-                  );
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   setShowFilters(true);
                 }}
                 className="px-4 py-2 text-sm bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"

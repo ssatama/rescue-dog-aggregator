@@ -58,22 +58,25 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
     [dog.id, dog.name, addFavorite],
   );
 
-  const copyToClipboard = useCallback(async (url: string) => {
-    try {
-      await navigator.clipboard.writeText(url);
-      Sentry.captureEvent({
-        message: "swipe.card.shared",
-        level: "info",
-        extra: {
-          dog_id: dog.id,
-          dog_name: dog.name,
-          method: "clipboard",
-        },
-      });
-    } catch (error) {
-      console.error("Failed to copy to clipboard:", error);
-    }
-  }, [dog.id, dog.name]);
+  const copyToClipboard = useCallback(
+    async (url: string) => {
+      try {
+        await navigator.clipboard.writeText(url);
+        Sentry.captureEvent({
+          message: "swipe.card.shared",
+          level: "info",
+          extra: {
+            dog_id: dog.id,
+            dog_name: dog.name,
+            method: "clipboard",
+          },
+        });
+      } catch (error) {
+        console.error("Failed to copy to clipboard:", error);
+      }
+    },
+    [dog.id, dog.name],
+  );
 
   const handleShare = useCallback(
     async (e: React.MouseEvent) => {
@@ -120,7 +123,6 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
     },
     [dog, copyToClipboard],
   );
-
 
   // Access enriched LLM data
   const profileData = dog.dogProfilerData || {};
@@ -169,6 +171,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className="object-cover"
+            style={{ objectPosition: "top" }}
             priority
           />
         ) : (
