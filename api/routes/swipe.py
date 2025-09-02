@@ -38,13 +38,18 @@ async def get_swipe_stack(
     Excludes dogs that have already been swiped (passed via excluded parameter).
     """
     try:
-        # Parse excluded IDs
+        # Parse and validate excluded IDs
         excluded_ids = []
         if excluded:
+            # First validate the format to prevent SQL injection
+            import re
+            if not re.match(r'^[\d,\s]*$', excluded):
+                raise HTTPException(status_code=400, detail="Invalid excluded IDs format. Only comma-separated numbers are allowed.")
             try:
                 excluded_ids = [int(id_str.strip()) for id_str in excluded.split(',') if id_str.strip()]
-            except ValueError:
+            except ValueError as e:
                 logger.warning(f"Invalid excluded IDs format: {excluded}")
+                raise HTTPException(status_code=400, detail="Invalid excluded IDs format. Each ID must be a valid integer.")
         
         # Build the base query with quality filter
         query_parts = [

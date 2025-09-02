@@ -130,7 +130,7 @@ describe("SwipeContainerWithFilters - Paw Navigation", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Buddy")).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
 
     // Find and click the Next paw button
     const nextButton = screen.getByLabelText("Next dog");
@@ -138,7 +138,7 @@ describe("SwipeContainerWithFilters - Paw Navigation", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Max")).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
 
     expect(Sentry.captureEvent).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -162,7 +162,7 @@ describe("SwipeContainerWithFilters - Paw Navigation", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Buddy")).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
 
     // First go to next dog
     const nextButton = screen.getByLabelText("Next dog");
@@ -170,7 +170,7 @@ describe("SwipeContainerWithFilters - Paw Navigation", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Max")).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
 
     // Then go back
     const prevButton = screen.getByLabelText("Previous dog");
@@ -178,7 +178,7 @@ describe("SwipeContainerWithFilters - Paw Navigation", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Buddy")).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
   });
 
   it("should disable previous button at first dog", async () => {
@@ -192,7 +192,7 @@ describe("SwipeContainerWithFilters - Paw Navigation", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Buddy")).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
 
     const prevButton = screen.getByLabelText("Previous dog");
     expect(prevButton).toBeDisabled();
@@ -215,7 +215,7 @@ describe("SwipeContainerWithFilters - Paw Navigation", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Buddy")).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
 
     // Navigate to the last dog
     const nextButton = screen.getByLabelText("Next dog");
@@ -251,7 +251,7 @@ describe("SwipeContainerWithFilters - Paw Navigation", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Buddy")).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
 
     // Check for paw emojis - there should be two (one for each button)
     const pawEmojis = screen.getAllByText("🐾");

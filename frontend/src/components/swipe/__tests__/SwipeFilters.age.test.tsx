@@ -32,6 +32,11 @@ describe("SwipeFilters - Age Filter", () => {
     // Click to select
     fireEvent.click(puppyButton);
     expect(puppyButton).toHaveClass("selected");
+
+    // Need to click Apply button to trigger onFiltersChange
+    const applyButton = screen.getByRole("button", { name: /Apply Filters/i });
+    fireEvent.click(applyButton);
+
     expect(mockOnFiltersChange).toHaveBeenCalledWith(
       expect.objectContaining({
         ages: ["puppy"],
@@ -41,6 +46,10 @@ describe("SwipeFilters - Age Filter", () => {
     // Click to deselect
     fireEvent.click(puppyButton);
     expect(puppyButton).not.toHaveClass("selected");
+
+    // Click Apply again
+    fireEvent.click(applyButton);
+
     expect(mockOnFiltersChange).toHaveBeenCalledWith(
       expect.objectContaining({
         ages: [],
@@ -59,6 +68,11 @@ describe("SwipeFilters - Age Filter", () => {
 
     expect(puppyButton).toHaveClass("selected");
     expect(adultButton).toHaveClass("selected");
+
+    // Need to click Apply button to trigger onFiltersChange
+    const applyButton = screen.getByRole("button", { name: /Apply Filters/i });
+    fireEvent.click(applyButton);
+
     expect(mockOnFiltersChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         ages: ["puppy", "adult"],
@@ -86,6 +100,11 @@ describe("SwipeFilters - Age Filter", () => {
 
     // Ages should be cleared
     expect(puppyButton).not.toHaveClass("selected");
+
+    // Need to click Apply button to trigger onFiltersChange
+    const applyButton = screen.getByRole("button", { name: /Apply Filters/i });
+    fireEvent.click(applyButton);
+
     expect(mockOnFiltersChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         ages: [],

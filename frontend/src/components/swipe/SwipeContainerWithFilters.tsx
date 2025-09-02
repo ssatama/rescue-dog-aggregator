@@ -89,6 +89,9 @@ export function SwipeContainerWithFilters({
     }
     return new Set();
   });
+  const swipedDogIdsRef = useRef(swipedDogIds);
+  swipedDogIdsRef.current = swipedDogIds;
+  const isProcessingSwipe = useRef(false);
   const [offset, setOffset] = useState(0);
 
   // Memoize the query string to prevent unnecessary re-renders
@@ -122,7 +125,7 @@ export function SwipeContainerWithFilters({
     // Cleanup function to prevent memory leaks
     return () => {
       imageElements.forEach((img) => {
-        img.src = '';
+        img.src = "";
         img.onload = null;
         img.onerror = null;
       });
@@ -282,8 +285,15 @@ export function SwipeContainerWithFilters({
 
   const handleSwipeComplete = useCallback(
     async (direction: "left" | "right") => {
+      // Prevent concurrent swipes
+      if (isProcessingSwipe.current) return;
+      isProcessingSwipe.current = true;
+
       const currentDog = dogs[currentIndex];
-      if (!currentDog) return;
+      if (!currentDog) {
+        isProcessingSwipe.current = false;
+        return;
+      }
 
       // Track this dog as swiped AFTER we move to next index
       // to avoid filtering issues
@@ -367,7 +377,14 @@ export function SwipeContainerWithFilters({
           .catch((error) => {
             console.error("Failed to load more dogs:", error);
             setIsLoadingMore(false);
+          })
+          .finally(() => {
+            // Reset processing flag after all operations complete
+            isProcessingSwipe.current = false;
           });
+      } else {
+        // Reset processing flag if not loading more
+        isProcessingSwipe.current = false;
       }
     },
     [

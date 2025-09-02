@@ -3,13 +3,46 @@ import { SwipeFilters as Filters } from "../../hooks/useSwipeFilters";
 
 interface SwipeFiltersProps {
   onFiltersChange: (filters: Filters) => void;
+  onCancel?: () => void;
+  initialFilters?: Filters;
   compact?: boolean;
+  availableDogCount?: number;
+  onPreviewCount?: (filters: Filters) => Promise<number | string>;
 }
 
 const COUNTRIES = [
-  { value: "DE", label: "Germany", flag: "🇩🇪", count: 486 },
-  { value: "GB", label: "United Kingdom", flag: "🇬🇧", count: 1245 },
-  { value: "US", label: "United States", flag: "🇺🇸", count: 342 },
+  { value: "AT", label: "Austria", flag: "🇦🇹" },
+  { value: "BE", label: "Belgium", flag: "🇧🇪" },
+  { value: "BG", label: "Bulgaria", flag: "🇧🇬" },
+  { value: "CA", label: "Canada", flag: "🇨🇦" },
+  { value: "CH", label: "Switzerland", flag: "🇨🇭" },
+  { value: "CY", label: "Cyprus", flag: "🇨🇾" },
+  { value: "CZ", label: "Czech Republic", flag: "🇨🇿" },
+  { value: "DE", label: "Germany", flag: "🇩🇪" },
+  { value: "DK", label: "Denmark", flag: "🇩🇰" },
+  { value: "EE", label: "Estonia", flag: "🇪🇪" },
+  { value: "ES", label: "Spain", flag: "🇪🇸" },
+  { value: "FI", label: "Finland", flag: "🇫🇮" },
+  { value: "FR", label: "France", flag: "🇫🇷" },
+  { value: "GR", label: "Greece", flag: "🇬🇷" },
+  { value: "HR", label: "Croatia", flag: "🇭🇷" },
+  { value: "HU", label: "Hungary", flag: "🇭🇺" },
+  { value: "IE", label: "Ireland", flag: "🇮🇪" },
+  { value: "IT", label: "Italy", flag: "🇮🇹" },
+  { value: "LT", label: "Lithuania", flag: "🇱🇹" },
+  { value: "LU", label: "Luxembourg", flag: "🇱🇺" },
+  { value: "LV", label: "Latvia", flag: "🇱🇻" },
+  { value: "MT", label: "Malta", flag: "🇲🇹" },
+  { value: "NL", label: "Netherlands", flag: "🇳🇱" },
+  { value: "NO", label: "Norway", flag: "🇳🇴" },
+  { value: "PL", label: "Poland", flag: "🇵🇱" },
+  { value: "PT", label: "Portugal", flag: "🇵🇹" },
+  { value: "RO", label: "Romania", flag: "🇷🇴" },
+  { value: "SE", label: "Sweden", flag: "🇸🇪" },
+  { value: "SI", label: "Slovenia", flag: "🇸🇮" },
+  { value: "SK", label: "Slovakia", flag: "🇸🇰" },
+  { value: "UK", label: "United Kingdom", flag: "🇬🇧" },
+  { value: "US", label: "United States", flag: "🇺🇸" },
 ];
 
 const SIZES = [
@@ -28,9 +61,16 @@ const AGES = [
 
 export default function SwipeFilters({
   onFiltersChange,
+  onCancel,
+  initialFilters,
   compact = false,
+  availableDogCount,
+  onPreviewCount,
 }: SwipeFiltersProps) {
   const [filters, setFilters] = useState<Filters>(() => {
+    if (initialFilters) {
+      return initialFilters;
+    }
     try {
       const stored = localStorage.getItem("swipeFilters");
       if (stored) {
@@ -47,6 +87,7 @@ export default function SwipeFilters({
     return { country: "", sizes: [], ages: [] };
   });
 
+  // Save to localStorage when filters change, but don't call onFiltersChange automatically
   useEffect(() => {
     if (
       filters.country ||
@@ -55,8 +96,7 @@ export default function SwipeFilters({
     ) {
       localStorage.setItem("swipeFilters", JSON.stringify(filters));
     }
-    onFiltersChange(filters);
-  }, [filters, onFiltersChange]);
+  }, [filters]);
 
   const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFilters((prev) => ({ ...prev, country: e.target.value }));
@@ -87,6 +127,24 @@ export default function SwipeFilters({
   const clearAges = () => {
     setFilters((prev) => ({ ...prev, ages: [] }));
   };
+
+  const [previewCount, setPreviewCount] = useState<number | string | null>(
+    null,
+  );
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+
+  // Update preview count when filters change
+  useEffect(() => {
+    if (onPreviewCount && filters.country) {
+      const timer = setTimeout(() => {
+        setIsLoadingPreview(true);
+        onPreviewCount(filters)
+          .then(setPreviewCount)
+          .finally(() => setIsLoadingPreview(false));
+      }, 300); // Debounce
+      return () => clearTimeout(timer);
+    }
+  }, [filters, onPreviewCount]);
 
   const selectedCountry = COUNTRIES.find((c) => c.value === filters.country);
 
@@ -137,7 +195,7 @@ export default function SwipeFilters({
           <option value="">Select a country</option>
           {COUNTRIES.map((country) => (
             <option key={country.value} value={country.value}>
-              {country.label} ({country.count} dogs)
+              {country.flag} {country.label}
             </option>
           ))}
         </select>
@@ -233,6 +291,52 @@ export default function SwipeFilters({
           })}
         </div>
       </div>
+
+      {/* Preview count */}
+      {!compact && previewCount !== null && (
+        <div className="text-center py-2 text-sm text-gray-600">
+          {isLoadingPreview ? (
+            <span>Checking...</span>
+          ) : previewCount === 0 ? (
+            <span className="text-red-600 font-medium">
+              No dogs match these filters - try different options
+            </span>
+          ) : (
+            <span className="text-green-600 font-medium">
+              {typeof previewCount === "string"
+                ? `${previewCount} dogs available`
+                : `${previewCount} dog${previewCount !== 1 ? "s" : ""} available`}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Apply and Cancel buttons */}
+      {!compact && (
+        <div className="flex gap-2 pt-2">
+          <button
+            onClick={() => onFiltersChange(filters)}
+            disabled={previewCount === 0}
+            className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+              previewCount === 0
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-orange-500 text-white hover:bg-orange-600"
+            }`}
+            aria-label="Apply filters"
+          >
+            Apply Filters
+          </button>
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+              aria-label="Cancel"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
