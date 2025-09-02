@@ -2,8 +2,8 @@ import React, { useState, useCallback } from "react";
 import Image from "next/image";
 import { useFavorites } from "../../hooks/useFavorites";
 import * as Sentry from "@sentry/nextjs";
-import { Share2 } from "lucide-react";
 import { getPersonalityTraitColor } from "../../utils/personalityColors";
+import ShareButton from "../ui/ShareButton";
 
 interface SwipeCardProps {
   dog: {
@@ -59,71 +59,6 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
     [dog.id, dog.name, addFavorite],
   );
 
-  const copyToClipboard = useCallback(
-    async (url: string) => {
-      try {
-        await navigator.clipboard.writeText(url);
-        Sentry.captureEvent({
-          message: "swipe.card.shared",
-          level: "info",
-          extra: {
-            dog_id: dog.id,
-            dog_name: dog.name,
-            method: "clipboard",
-          },
-        });
-      } catch (error) {
-        console.error("Failed to copy to clipboard:", error);
-      }
-    },
-    [dog.id, dog.name],
-  );
-
-  const handleShare = useCallback(
-    async (e: React.MouseEvent) => {
-      e.stopPropagation();
-      const shareTitle = `Check out ${dog.name} for adoption!`;
-      const shareText =
-        dog.description ||
-        `${dog.name} is a ${dog.age || ""} ${dog.breed || ""} looking for a forever home!`;
-      const shareUrl = `https://www.rescuedogs.me/dog/${dog.id}`;
-
-      try {
-        // Check if Web Share API is available and we're in a secure context
-        if (navigator.share && window.isSecureContext) {
-          try {
-            await navigator.share({
-              title: shareTitle,
-              text: shareText,
-              url: shareUrl,
-            });
-            Sentry.captureEvent({
-              message: "swipe.card.shared",
-              level: "info",
-              extra: {
-                dog_id: dog.id,
-                dog_name: dog.name,
-                method: "web_share_api",
-              },
-            });
-          } catch (error) {
-            // User cancelled or error occurred, fall back to clipboard
-            if ((error as Error).name !== "AbortError") {
-              await copyToClipboard(shareUrl);
-            }
-          }
-        } else {
-          // Fallback to clipboard copy
-          await copyToClipboard(shareUrl);
-        }
-      } catch (error) {
-        console.error("Share failed:", error);
-        // Final fallback - just copy to clipboard
-        await copyToClipboard(shareUrl);
-      }
-    },
-    [dog, copyToClipboard],
-  );
 
   // Access enriched LLM data
   const profileData = dog.dogProfilerData || {};
@@ -147,16 +82,19 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
 
       {/* Quick Action Buttons */}
       <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 flex gap-2">
-        <button
-          onClick={handleShare}
-          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur flex items-center justify-center shadow-lg hover:scale-110 transition-all"
-          aria-label="Share dog"
-        >
-          <Share2 className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-        </button>
+        <div onClick={(e) => e.stopPropagation()}>
+          <ShareButton
+            url={`${typeof window !== 'undefined' ? window.location.origin : 'https://www.rescuedogs.me'}/dog/${dog.slug}`}
+            title={`Check out ${dog.name} for adoption!`}
+            text={dog.description || `${dog.name} is a ${dog.age || ""} ${dog.breed || ""} looking for a forever home!`}
+            compact={true}
+            variant="ghost"
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/90 backdrop-blur shadow-lg hover:scale-110 transition-all"
+          />
+        </div>
         <button
           onClick={handleFavorite}
-          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur flex items-center justify-center shadow-lg hover:scale-110 transition-all ${isLiked ? "scale-125" : ""}`}
+          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow-lg hover:scale-110 transition-all ${isLiked ? "scale-125" : ""}`}
           aria-label="Add to favorites"
         >
           <span

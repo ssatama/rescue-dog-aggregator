@@ -56,7 +56,7 @@ describe("SwipeCard", () => {
     renderWithProvider(<SwipeCard dog={mockDog} />);
 
     expect(screen.getByLabelText("Add to favorites")).toBeInTheDocument();
-    expect(screen.getByLabelText("Share dog")).toBeInTheDocument();
+    expect(screen.getByLabelText("Share")).toBeInTheDocument();
   });
 
   it("should not display energy level (removed in redesign)", () => {

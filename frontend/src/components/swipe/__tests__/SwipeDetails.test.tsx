@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { SwipeDetails } from "../SwipeDetails";
 import { useFavorites } from "@/hooks/useFavorites";
+import { ToastProvider } from "../../../contexts/ToastContext";
 import * as Sentry from "@sentry/nextjs";
 
 jest.mock("@/hooks/useFavorites");
@@ -19,6 +20,7 @@ const mockDog = {
   location: "Berlin, Germany",
   adoption_url: "https://example.com/adopt/buddy",
   image_url: "https://example.com/buddy1.jpg",
+  slug: "buddy-golden-mix",
   additional_images: [
     "https://example.com/buddy2.jpg",
     "https://example.com/buddy3.jpg",
@@ -48,6 +50,7 @@ const mockDogWithoutLLMData = {
   location: "Munich, Germany",
   adoption_url: "https://example.com/adopt/max",
   image_url: "https://example.com/max.jpg",
+  slug: "max-german-shepherd",
   additional_images: [],
 };
 
@@ -73,15 +76,19 @@ describe("SwipeDetails", () => {
     delete (global.window as any).open;
   });
 
+  const renderWithProvider = (component) => {
+    return render(<ToastProvider>{component}</ToastProvider>);
+  };
+
   it("should open modal on card tap", () => {
-    render(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
+    renderWithProvider(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
 
     expect(screen.getByText("Dog Details")).toBeInTheDocument();
     expect(screen.getByText("Buddy")).toBeInTheDocument();
   });
 
   it("should display image carousel", () => {
-    render(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
+    renderWithProvider(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
 
     const images = screen.getAllByRole("img");
     expect(images.length).toBeGreaterThan(0);
@@ -91,7 +98,7 @@ describe("SwipeDetails", () => {
   });
 
   it("should show full personality description", () => {
-    render(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
+    renderWithProvider(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
 
     expect(
       screen.getByText(/Buddy is a lovable 2-year-old Golden Mix/),
@@ -104,7 +111,7 @@ describe("SwipeDetails", () => {
   });
 
   it("should include adoption CTA button", () => {
-    render(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
+    renderWithProvider(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
 
     const adoptButton = screen.getByRole("button", {
       name: /Visit Buddy's profile page/i,
@@ -159,7 +166,7 @@ describe("SwipeDetails", () => {
       configurable: true,
     });
 
-    render(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
+    renderWithProvider(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
 
     const shareButton = screen.getByText("Share");
     expect(shareButton).toBeInTheDocument();
@@ -170,13 +177,13 @@ describe("SwipeDetails", () => {
       expect(mockShare).toHaveBeenCalledWith({
         title: "Check out Buddy for adoption!",
         text: "Buddy is a lovable 2-year-old Golden Mix seeking his forever home. This playful pup has a heart of gold and endless energy for adventures.",
-        url: "https://www.rescuedogs.me/dog/1",
+        url: "http://localhost/dog/buddy-golden-mix",
       });
     });
   });
 
   it("should close on backdrop click", () => {
-    render(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
+    renderWithProvider(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
 
     const backdrop = screen.getByTestId("modal-backdrop");
     fireEvent.click(backdrop);
@@ -185,7 +192,7 @@ describe("SwipeDetails", () => {
   });
 
   it("should show close button", () => {
-    render(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
+    renderWithProvider(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
 
     const closeButton = screen.getByRole("button", { name: /Close/i });
     expect(closeButton).toBeInTheDocument();
@@ -195,7 +202,7 @@ describe("SwipeDetails", () => {
   });
 
   it("should display basic info correctly", () => {
-    render(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
+    renderWithProvider(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
 
     expect(screen.getByText("2 years")).toBeInTheDocument();
     expect(screen.getByText("Male")).toBeInTheDocument();
@@ -203,7 +210,7 @@ describe("SwipeDetails", () => {
   });
 
   it("should show good with badges", () => {
-    render(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
+    renderWithProvider(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
 
     expect(screen.getByText("Dogs ✓")).toBeInTheDocument();
     expect(screen.getByText("Cats ?")).toBeInTheDocument();
@@ -211,7 +218,7 @@ describe("SwipeDetails", () => {
   });
 
   it("should show save button when not favorited", () => {
-    render(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
+    renderWithProvider(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
 
     const saveButton = screen.getByRole("button", { name: /Save/i });
     expect(saveButton).toBeInTheDocument();
@@ -221,7 +228,7 @@ describe("SwipeDetails", () => {
   });
 
   it("should handle dogs without LLM data gracefully", () => {
-    render(
+    renderWithProvider(
       <SwipeDetails
         dog={mockDogWithoutLLMData}
         isOpen={true}
@@ -239,7 +246,7 @@ describe("SwipeDetails", () => {
   });
 
   it("should not render when closed", () => {
-    const { container } = render(
+    const { container } = renderWithProvider(
       <SwipeDetails dog={mockDog} isOpen={false} onClose={mockOnClose} />,
     );
 
@@ -247,7 +254,7 @@ describe("SwipeDetails", () => {
   });
 
   it("should track modal open event", () => {
-    render(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
+    renderWithProvider(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
 
     expect(mockCaptureEvent).toHaveBeenCalledWith({
       message: "swipe.details.opened",
@@ -260,21 +267,21 @@ describe("SwipeDetails", () => {
   });
 
   it("should not display energy level indicator (removed in redesign)", () => {
-    render(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
+    renderWithProvider(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
 
     expect(screen.queryByTestId(/energy-dot/)).not.toBeInTheDocument();
     expect(screen.queryByText("Energy Level")).not.toBeInTheDocument();
   });
 
   it("should show organization information", () => {
-    render(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
+    renderWithProvider(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
 
     expect(screen.getByText("Happy Paws Rescue")).toBeInTheDocument();
     expect(screen.getByText("Berlin, Germany")).toBeInTheDocument();
   });
 
   it("should handle swipe down to dismiss", () => {
-    const { container } = render(
+    const { container } = renderWithProvider(
       <SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />,
     );
 

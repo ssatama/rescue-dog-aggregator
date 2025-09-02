@@ -4,8 +4,9 @@ import * as Sentry from "@sentry/nextjs";
 import { useFavorites } from "@/hooks/useFavorites";
 import { ImageCarousel } from "./ImageCarousel";
 import { AdoptionCTA } from "./AdoptionCTA";
-import { X, Share, Heart } from "lucide-react";
+import { X, Heart } from "lucide-react";
 import { getPersonalityTraitColor } from "../../utils/personalityColors";
+import ShareButton from "../ui/ShareButton";
 
 interface DogProfilerData {
   description?: string;
@@ -64,74 +65,7 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
     }
   }, [isOpen, dog.id, dog.name]);
 
-  const [shareStatus, setShareStatus] = useState<"idle" | "copied" | "shared">(
-    "idle",
-  );
 
-  const handleShare = async () => {
-    const shareTitle = `Check out ${dog.name} for adoption!`;
-    const shareText =
-      dog.dog_profiler_data?.description ||
-      `${dog.name} is a ${dog.age} ${dog.breed} looking for a forever home!`;
-    const shareUrl = `https://www.rescuedogs.me/dog/${dog.id}`;
-
-    try {
-      // Check if Web Share API is available and we're in a secure context
-      if (navigator.share && window.isSecureContext) {
-        try {
-          await navigator.share({
-            title: shareTitle,
-            text: shareText,
-            url: shareUrl,
-          });
-          setShareStatus("shared");
-          setTimeout(() => setShareStatus("idle"), 2000);
-
-          Sentry.captureEvent({
-            message: "swipe.details.shared",
-            level: "info",
-            extra: {
-              dog_id: dog.id,
-              dog_name: dog.name,
-              method: "web_share_api",
-            },
-          });
-        } catch (error) {
-          // User cancelled or error occurred, fall back to clipboard
-          if ((error as Error).name !== "AbortError") {
-            await copyToClipboard(shareUrl);
-          }
-        }
-      } else {
-        // Fallback to clipboard copy
-        await copyToClipboard(shareUrl);
-      }
-    } catch (error) {
-      console.error("Share failed:", error);
-      // Final fallback - just copy to clipboard
-      await copyToClipboard(shareUrl);
-    }
-  };
-
-  const copyToClipboard = async (url: string) => {
-    try {
-      await navigator.clipboard.writeText(url);
-      setShareStatus("copied");
-      setTimeout(() => setShareStatus("idle"), 2000);
-
-      Sentry.captureEvent({
-        message: "swipe.details.shared",
-        level: "info",
-        extra: {
-          dog_id: dog.id,
-          dog_name: dog.name,
-          method: "clipboard",
-        },
-      });
-    } catch (error) {
-      console.error("Failed to copy to clipboard:", error);
-    }
-  };
 
   const handleSave = () => {
     toggleFavorite(dog.id);
@@ -352,23 +286,13 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                   />
 
                   <div className="flex gap-3">
-                    <button
-                      onClick={handleShare}
-                      className={`flex-1 py-3 px-4 border rounded-full font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-                        shareStatus === "copied"
-                          ? "bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400"
-                          : shareStatus === "shared"
-                            ? "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-400"
-                            : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                      }`}
-                    >
-                      <Share size={20} />
-                      {shareStatus === "copied"
-                        ? "Link Copied!"
-                        : shareStatus === "shared"
-                          ? "Shared!"
-                          : "Share"}
-                    </button>
+                    <ShareButton
+                      url={`${typeof window !== 'undefined' ? window.location.origin : 'https://www.rescuedogs.me'}/dog/${dog.slug}`}
+                      title={`Check out ${dog.name} for adoption!`}
+                      text={dog.dog_profiler_data?.description || `${dog.name} is a ${dog.age} ${dog.breed} looking for a forever home!`}
+                      variant="outline"
+                      className="!flex-1 !w-full !h-auto !py-3 !px-4 !bg-pink-100 dark:!bg-pink-900/30 !text-pink-600 dark:!text-pink-400 !rounded-full !font-medium hover:!bg-pink-200 dark:hover:!bg-pink-900/50 !transition-colors !flex !items-center !justify-center !gap-2 !border-0 !shadow-none hover:!shadow-none hover:!translate-y-0"
+                    />
 
                     {!isAlreadyFavorite && (
                       <button
