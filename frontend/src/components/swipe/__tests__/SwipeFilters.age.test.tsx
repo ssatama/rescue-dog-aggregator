@@ -28,14 +28,14 @@ describe("SwipeFilters - Age Filter", () => {
     render(<SwipeFilters onFiltersChange={mockOnFiltersChange} />);
 
     const puppyButton = screen.getByRole("button", { name: /puppy/i });
-    
+
     // Click to select
     fireEvent.click(puppyButton);
     expect(puppyButton).toHaveClass("selected");
     expect(mockOnFiltersChange).toHaveBeenCalledWith(
       expect.objectContaining({
         ages: ["puppy"],
-      })
+      }),
     );
 
     // Click to deselect
@@ -44,7 +44,7 @@ describe("SwipeFilters - Age Filter", () => {
     expect(mockOnFiltersChange).toHaveBeenCalledWith(
       expect.objectContaining({
         ages: [],
-      })
+      }),
     );
   });
 
@@ -62,7 +62,7 @@ describe("SwipeFilters - Age Filter", () => {
     expect(mockOnFiltersChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         ages: ["puppy", "adult"],
-      })
+      }),
     );
   });
 
@@ -70,26 +70,26 @@ describe("SwipeFilters - Age Filter", () => {
     render(<SwipeFilters onFiltersChange={mockOnFiltersChange} />);
 
     const puppyButton = screen.getByRole("button", { name: /puppy/i });
-    
+
     // Initially, no clear button
     expect(screen.queryByText("Clear ages")).not.toBeInTheDocument();
 
     // Select an age
     fireEvent.click(puppyButton);
-    
+
     // Clear button should appear
     const clearButton = screen.getByText("Clear ages");
     expect(clearButton).toBeInTheDocument();
 
     // Click clear
     fireEvent.click(clearButton);
-    
+
     // Ages should be cleared
     expect(puppyButton).not.toHaveClass("selected");
     expect(mockOnFiltersChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         ages: [],
-      })
+      }),
     );
   });
 
@@ -113,7 +113,7 @@ describe("SwipeFilters - Age Filter", () => {
         country: "DE",
         sizes: ["small"],
         ages: ["adult", "senior"],
-      })
+      }),
     );
 
     render(<SwipeFilters onFiltersChange={mockOnFiltersChange} />);
@@ -132,7 +132,7 @@ describe("SwipeFilters - Age Filter", () => {
         country: "GB",
         sizes: [],
         ages: ["puppy", "young"],
-      })
+      }),
     );
 
     render(<SwipeFilters onFiltersChange={mockOnFiltersChange} compact />);

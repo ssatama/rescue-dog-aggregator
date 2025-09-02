@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { safeStorage } from "../utils/safeStorage";
 
 export interface SwipeFilters {
   country: string;
@@ -32,7 +33,7 @@ const ONBOARDING_KEY = "swipeOnboardingComplete";
 
 // Migration map for old country names to country codes
 const COUNTRY_MIGRATION: Record<string, string> = {
-  "Germany": "DE",
+  Germany: "DE",
   "United Kingdom": "GB",
   "United States": "US",
 };
@@ -40,14 +41,14 @@ const COUNTRY_MIGRATION: Record<string, string> = {
 export default function useSwipeFilters(): UseSwipeFiltersReturn {
   const [filters, setFiltersState] = useState<SwipeFilters>(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = safeStorage.get(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         // Migrate old country names to country codes
         if (parsed.country && COUNTRY_MIGRATION[parsed.country]) {
           parsed.country = COUNTRY_MIGRATION[parsed.country];
           // Save the migrated version back
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+          safeStorage.stringify(STORAGE_KEY, parsed);
         }
         // Ensure ages field exists (migration for old data)
         if (!parsed.ages) {
@@ -56,21 +57,25 @@ export default function useSwipeFilters(): UseSwipeFiltersReturn {
         return parsed;
       }
     } catch (error) {
-      console.error("Failed to load filters from localStorage:", error);
+      console.error("Failed to load filters from storage:", error);
     }
     return DEFAULT_FILTERS;
   });
 
   const [needsOnboarding, setNeedsOnboarding] = useState(() => {
-    const onboardingComplete = localStorage.getItem(ONBOARDING_KEY) === "true";
+    const onboardingComplete = safeStorage.get(ONBOARDING_KEY) === "true";
     const hasFilters = Boolean(filters.country);
     return !onboardingComplete || !hasFilters;
   });
 
   // Save to localStorage immediately (tests expect this)
   useEffect(() => {
-    if (filters.country || filters.sizes.length > 0 || filters.ages.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
+    if (
+      filters.country ||
+      filters.sizes.length > 0 ||
+      filters.ages.length > 0
+    ) {
+      safeStorage.stringify(STORAGE_KEY, filters);
     }
   }, [filters]);
 
@@ -110,12 +115,12 @@ export default function useSwipeFilters(): UseSwipeFiltersReturn {
 
   const resetFilters = useCallback(() => {
     setFiltersState(DEFAULT_FILTERS);
-    localStorage.removeItem(STORAGE_KEY);
+    safeStorage.remove(STORAGE_KEY);
   }, []);
 
   const completeOnboarding = useCallback((newFilters: SwipeFilters) => {
-    localStorage.setItem(ONBOARDING_KEY, "true");
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newFilters));
+    safeStorage.set(ONBOARDING_KEY, "true");
+    safeStorage.stringify(STORAGE_KEY, newFilters);
     setFiltersState(newFilters);
     setNeedsOnboarding(false);
   }, []);
@@ -128,11 +133,12 @@ export default function useSwipeFilters(): UseSwipeFiltersReturn {
     const params = new URLSearchParams();
 
     if (filters.country) {
-      params.append("country", filters.country);
+      params.append("adoptable_to_country", filters.country);
     }
 
+    // Use array notation for sizes
     filters.sizes.forEach((size) => {
-      params.append("size", size);
+      params.append("size[]", size);
     });
 
     filters.ages.forEach((age) => {

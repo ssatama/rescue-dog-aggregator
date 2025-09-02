@@ -8,9 +8,17 @@ jest.mock("@sentry/nextjs");
 
 describe("AdoptionCTA", () => {
   const mockCaptureEvent = jest.mocked(Sentry.captureEvent);
+  const mockWindowOpen = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Mock window.open
+    global.window.open = mockWindowOpen;
+  });
+
+  afterEach(() => {
+    // Clean up
+    delete (global.window as any).open;
   });
 
   it("should render adoption button with correct text", () => {
@@ -57,9 +65,6 @@ describe("AdoptionCTA", () => {
   });
 
   it("should open adoption URL in new tab", () => {
-    const mockOpen = jest.fn();
-    window.open = mockOpen;
-
     render(
       <AdoptionCTA
         adoptionUrl="https://example.com/adopt"
@@ -74,7 +79,7 @@ describe("AdoptionCTA", () => {
     });
     fireEvent.click(button);
 
-    expect(mockOpen).toHaveBeenCalledWith(
+    expect(mockWindowOpen).toHaveBeenCalledWith(
       "https://example.com/adopt",
       "_blank",
       "noopener,noreferrer",

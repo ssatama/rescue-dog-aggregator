@@ -63,19 +63,72 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
     }
   }, [isOpen, dog.id, dog.name]);
 
+  const [shareStatus, setShareStatus] = useState<"idle" | "copied" | "shared">(
+    "idle",
+  );
+
   const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Check out ${dog.name} for adoption!`,
-          text:
-            dog.dog_profiler_data?.description ||
-            `${dog.name} is a ${dog.age} ${dog.breed} looking for a forever home!`,
-          url: dog.adoption_url || window.location.href,
-        });
-      } catch (error) {
-        console.error("Error sharing:", error);
+    const shareTitle = `Check out ${dog.name} for adoption!`;
+    const shareText =
+      dog.dog_profiler_data?.description ||
+      `${dog.name} is a ${dog.age} ${dog.breed} looking for a forever home!`;
+    const shareUrl = `https://www.rescuedogs.me/dog/${dog.id}`;
+
+    try {
+      // Check if Web Share API is available and we're in a secure context
+      if (navigator.share && window.isSecureContext) {
+        try {
+          await navigator.share({
+            title: shareTitle,
+            text: shareText,
+            url: shareUrl,
+          });
+          setShareStatus("shared");
+          setTimeout(() => setShareStatus("idle"), 2000);
+
+          Sentry.captureEvent({
+            message: "swipe.details.shared",
+            level: "info",
+            extra: {
+              dog_id: dog.id,
+              dog_name: dog.name,
+              method: "web_share_api",
+            },
+          });
+        } catch (error) {
+          // User cancelled or error occurred, fall back to clipboard
+          if ((error as Error).name !== "AbortError") {
+            await copyToClipboard(shareUrl);
+          }
+        }
+      } else {
+        // Fallback to clipboard copy
+        await copyToClipboard(shareUrl);
       }
+    } catch (error) {
+      console.error("Share failed:", error);
+      // Final fallback - just copy to clipboard
+      await copyToClipboard(shareUrl);
+    }
+  };
+
+  const copyToClipboard = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareStatus("copied");
+      setTimeout(() => setShareStatus("idle"), 2000);
+
+      Sentry.captureEvent({
+        message: "swipe.details.shared",
+        level: "info",
+        extra: {
+          dog_id: dog.id,
+          dog_name: dog.name,
+          method: "clipboard",
+        },
+      });
+    } catch (error) {
+      console.error("Failed to copy to clipboard:", error);
     }
   };
 
@@ -149,7 +202,8 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                 <button
                   onClick={onClose}
                   aria-label="Close"
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-3 hover:bg-gray-100 rounded-full transition-colors mr-safe min-w-[48px] min-h-[48px] flex items-center justify-center"
+                  style={{ marginRight: "env(safe-area-inset-right, 0px)" }}
                 >
                   <X size={24} />
                 </button>
@@ -311,10 +365,20 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                   <div className="flex gap-3">
                     <button
                       onClick={handleShare}
-                      className="flex-1 py-3 px-4 border border-gray-300 rounded-full font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                      className={`flex-1 py-3 px-4 border rounded-full font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+                        shareStatus === "copied"
+                          ? "bg-green-100 border-green-300 text-green-700"
+                          : shareStatus === "shared"
+                            ? "bg-blue-100 border-blue-300 text-blue-700"
+                            : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                      }`}
                     >
                       <Share size={20} />
-                      Share
+                      {shareStatus === "copied"
+                        ? "Link Copied!"
+                        : shareStatus === "shared"
+                          ? "Shared!"
+                          : "Share"}
                     </button>
 
                     {!isAlreadyFavorite && (

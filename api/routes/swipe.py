@@ -3,6 +3,7 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta, timezone
 import logging
 from psycopg2.extras import RealDictCursor
+import json
 
 from api.dependencies import get_pooled_db_cursor
 from api.models.dog import Animal
@@ -16,8 +17,9 @@ router = APIRouter()
 
 @router.get("/swipe")
 async def get_swipe_stack(
-    country: Optional[str] = Query(None, description="Filter by country code (e.g., 'GB', 'US')"),
-    size: Optional[str] = Query(None, description="Filter by size (small, medium, large)"),
+    country: Optional[str] = Query(None, description="Filter by country code (e.g., 'GB', 'US') - DEPRECATED, use adoptable_to_country"),
+    adoptable_to_country: Optional[str] = Query(None, description="Filter by adoptable to country code (e.g., 'GB', 'US')"),
+    size: Optional[List[str]] = Query(None, alias="size[]", description="Filter by size (small, medium, large) - accepts multiple values"),
     excluded: Optional[str] = Query(None, description="Comma-separated list of excluded dog IDs"),
     limit: int = Query(20, ge=1, le=50, description="Number of dogs to return (default: 20, max: 50)"),
     offset: int = Query(0, ge=0, description="Offset for pagination"),
@@ -54,6 +56,7 @@ async def get_swipe_stack(
                 o.website_url as organization_website_url,
                 o.country as organization_country,
                 o.city as organization_city,
+                o.ships_to as organization_ships_to,
                 CASE 
                     WHEN a.created_at > %s THEN 1  -- New dogs (last 7 days)
                     WHEN a.dog_profiler_data->>'engagement_score' IS NOT NULL 
@@ -72,23 +75,33 @@ async def get_swipe_stack(
         params = [datetime.now(timezone.utc) - timedelta(days=7)]
         
         # Add filters
-        if country:
-            query_parts.append("AND o.country = %s")
-            params.append(country)
+        # Use adoptable_to_country if provided, fallback to country for backward compatibility
+        filter_country = adoptable_to_country or country
+        if filter_country:
+            # Filter by organizations that ship to the specified country
+            query_parts.append("AND o.ships_to ? %s")
+            params.append(filter_country)
         
         if size:
-            query_parts.append("AND a.size = %s")
-            params.append(size)
+            if isinstance(size, list) and len(size) > 0:
+                # Handle multiple sizes
+                placeholders = ','.join(['%s'] * len(size))
+                query_parts.append(f"AND LOWER(a.size) IN ({placeholders})")
+                params.extend([s.lower() for s in size])
+            elif isinstance(size, str):
+                # Handle single size (backward compatibility)
+                query_parts.append("AND LOWER(a.size) = %s")
+                params.append(size.lower())
         
         if excluded_ids:
             placeholders = ','.join(['%s'] * len(excluded_ids))
             query_parts.append(f"AND a.id NOT IN ({placeholders})")
             params.extend(excluded_ids)
         
-        # Add ordering - smart algorithm
+        # Add ordering - deterministic algorithm with priority then id
         query_parts.append("""
             ORDER BY a.id, sort_priority DESC, 
-                     RANDOM()  -- Add randomness for diversity within priority groups
+                     a.id  -- Use id for stable, deterministic ordering
         """)
         
         # Build final query with limit and offset
@@ -118,7 +131,8 @@ async def get_swipe_stack(
                 'logo_url': animal_dict.get('organization_logo_url'),
                 'website_url': animal_dict.get('organization_website_url'),
                 'country': animal_dict.get('organization_country'),
-                'city': animal_dict.get('organization_city')
+                'city': animal_dict.get('organization_city'),
+                'ships_to': animal_dict.get('organization_ships_to', [])
             }
             
             # Process dog_profiler_data to ensure proper camelCase
@@ -186,13 +200,19 @@ async def get_swipe_stack(
         """
         check_params = []
         
-        if country:
-            check_more_query += " AND o.country = %s"
-            check_params.append(country)
+        filter_country = adoptable_to_country or country
+        if filter_country:
+            check_more_query += " AND o.ships_to ? %s"
+            check_params.append(filter_country)
         
         if size:
-            check_more_query += " AND a.size = %s"
-            check_params.append(size)
+            if isinstance(size, list) and len(size) > 0:
+                placeholders = ','.join(['%s'] * len(size))
+                check_more_query += f" AND LOWER(a.size) IN ({placeholders})"
+                check_params.extend([s.lower() for s in size])
+            elif isinstance(size, str):
+                check_more_query += " AND LOWER(a.size) = %s"
+                check_params.append(size.lower())
         
         if excluded_ids:
             placeholders = ','.join(['%s'] * len(excluded_ids))
@@ -214,3 +234,98 @@ async def get_swipe_stack(
     except Exception as e:
         logger.error(f"Error fetching swipe stack: {str(e)}")
         handle_database_error(e, "fetching swipe stack")
+
+@router.get("/available-countries")
+async def get_available_countries(
+    cursor: RealDictCursor = Depends(get_pooled_db_cursor)
+) -> List[Dict[str, Any]]:
+    """
+    Get list of all countries that dogs can be adopted to, with dog counts.
+    
+    Returns a list of countries derived from the ships_to field of organizations,
+    along with the count of dogs available for adoption to each country.
+    """
+    try:
+        # Query to get all unique countries from ships_to arrays with dog counts
+        query = """
+            WITH country_dogs AS (
+                SELECT 
+                    jsonb_array_elements_text(o.ships_to) as country,
+                    COUNT(DISTINCT a.id) as dog_count
+                FROM organizations o
+                INNER JOIN animals a ON a.organization_id = o.id
+                WHERE a.status = 'available'
+                    AND a.animal_type = 'dog'
+                    AND a.dog_profiler_data IS NOT NULL
+                    AND (a.dog_profiler_data->>'quality_score')::float > 0.7
+                    AND o.ships_to IS NOT NULL
+                GROUP BY jsonb_array_elements_text(o.ships_to)
+            )
+            SELECT 
+                country,
+                SUM(dog_count) as total_dogs
+            FROM country_dogs
+            GROUP BY country
+            ORDER BY total_dogs DESC, country ASC
+        """
+        
+        cursor.execute(query)
+        results = cursor.fetchall()
+        
+        # Build response with country codes and names
+        countries = []
+        country_names = {
+            'UK': 'United Kingdom',
+            'GB': 'United Kingdom',
+            'US': 'United States',
+            'DE': 'Germany',
+            'FR': 'France',
+            'ES': 'Spain',
+            'IT': 'Italy',
+            'NL': 'Netherlands',
+            'BE': 'Belgium',
+            'AT': 'Austria',
+            'CH': 'Switzerland',
+            'SE': 'Sweden',
+            'NO': 'Norway',
+            'DK': 'Denmark',
+            'FI': 'Finland',
+            'PL': 'Poland',
+            'CZ': 'Czech Republic',
+            'HU': 'Hungary',
+            'RO': 'Romania',
+            'BG': 'Bulgaria',
+            'GR': 'Greece',
+            'PT': 'Portugal',
+            'IE': 'Ireland',
+            'LU': 'Luxembourg',
+            'MT': 'Malta',
+            'CY': 'Cyprus',
+            'EE': 'Estonia',
+            'LV': 'Latvia',
+            'LT': 'Lithuania',
+            'SK': 'Slovakia',
+            'SI': 'Slovenia',
+            'HR': 'Croatia',
+            'BA': 'Bosnia and Herzegovina',
+            'RS': 'Serbia',
+            'ME': 'Montenegro',
+            'MK': 'North Macedonia',
+            'AL': 'Albania',
+            'TR': 'Turkey',
+            'SR': 'Suriname'
+        }
+        
+        for row in results:
+            country_code = row['country']
+            countries.append({
+                'code': country_code,
+                'name': country_names.get(country_code, country_code),
+                'dogCount': int(row['total_dogs'])
+            })
+        
+        return countries
+        
+    except Exception as e:
+        logger.error(f"Error fetching available countries: {str(e)}")
+        handle_database_error(e, "fetching available countries")

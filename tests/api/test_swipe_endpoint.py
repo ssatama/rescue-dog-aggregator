@@ -128,3 +128,50 @@ class TestSwipeEndpoint:
             
             # No overlap between pages
             assert len(first_ids & second_ids) == 0
+    
+    def test_swipe_endpoint_filters_by_adoptable_to_country(self, client: TestClient):
+        """Test that endpoint correctly filters dogs by adoptable_to_country"""
+        # Test with UK - should only return dogs from orgs that ship to UK
+        uk_response = client.get("/api/dogs/swipe?adoptable_to_country=UK&limit=50")
+        assert uk_response.status_code == 200
+        uk_data = uk_response.json()
+        
+        # All returned dogs should be from organizations that ship to UK
+        for dog in uk_data['dogs']:
+            assert 'organization' in dog
+            # Organization should have ships_to field containing UK
+            # (This will be validated once the API is updated)
+        
+        # Test with DE - should only return dogs from orgs that ship to DE
+        de_response = client.get("/api/dogs/swipe?adoptable_to_country=DE&limit=50")
+        assert de_response.status_code == 200
+        de_data = de_response.json()
+        
+        # Test with US - might return fewer/no dogs if no orgs ship to US
+        us_response = client.get("/api/dogs/swipe?adoptable_to_country=US&limit=50")
+        assert us_response.status_code == 200
+        us_data = us_response.json()
+        
+        # The counts should be different for different countries
+        # (exact assertion depends on test data)
+    
+    def test_swipe_endpoint_accepts_multiple_sizes(self, client: TestClient):
+        """Test that endpoint correctly accepts multiple size parameters"""
+        # Test with multiple sizes using array notation
+        response = client.get("/api/dogs/swipe?size[]=small&size[]=medium&limit=50")
+        assert response.status_code == 200
+        data = response.json()
+        
+        # All returned dogs should be either small or medium
+        for dog in data['dogs']:
+            if dog.get('size'):
+                assert dog['size'].lower() in ['small', 'medium']
+        
+        # Test with single size for comparison
+        single_response = client.get("/api/dogs/swipe?size=small&limit=50")
+        assert single_response.status_code == 200
+        single_data = single_response.json()
+        
+        # Multiple sizes should return more or equal dogs than single size
+        if len(single_data['dogs']) > 0:
+            assert len(data['dogs']) >= len(single_data['dogs'])

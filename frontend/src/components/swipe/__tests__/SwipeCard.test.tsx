@@ -2,6 +2,18 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { SwipeCard } from "../SwipeCard";
+import { FavoritesProvider } from "../../../contexts/FavoritesContext";
+import { ToastProvider } from "../../../contexts/ToastContext";
+
+const renderWithProvider = (component) => {
+  return render(
+    <ToastProvider>
+      <FavoritesProvider>
+        {component}
+      </FavoritesProvider>
+    </ToastProvider>
+  );
+};
 
 describe("SwipeCard", () => {
   const mockDog = {
@@ -21,60 +33,54 @@ describe("SwipeCard", () => {
     created_at: new Date().toISOString(),
   };
 
-  it("should display dog name, age, and breed", () => {
-    render(<SwipeCard dog={mockDog} />);
+  it("should display dog name and tagline", () => {
+    renderWithProvider(<SwipeCard dog={mockDog} />);
 
     expect(screen.getByText("Buddy")).toBeInTheDocument();
-    expect(screen.getByText(/Golden Retriever/)).toBeInTheDocument();
-    expect(screen.getByText(/2 years/)).toBeInTheDocument();
+    // Description becomes the tagline
+    expect(screen.getByText(/A friendly and energetic companion/)).toBeInTheDocument();
   });
 
-  it("should show LLM tagline", () => {
-    render(<SwipeCard dog={mockDog} />);
-
-    expect(
-      screen.getByText(/A friendly and energetic companion/),
-    ).toBeInTheDocument();
-  });
-
-  it("should render personality traits (max 3)", () => {
-    const dogWithManyTraits = {
+  it("should show breed and age as tagline when no description", () => {
+    const dogWithoutDescription = {
       ...mockDog,
-      traits: ["Playful", "Loyal", "Gentle", "Smart", "Curious"],
+      description: undefined,
     };
+    renderWithProvider(<SwipeCard dog={dogWithoutDescription} />);
 
-    render(<SwipeCard dog={dogWithManyTraits} />);
-
-    expect(screen.getByText("Playful")).toBeInTheDocument();
-    expect(screen.getByText("Loyal")).toBeInTheDocument();
-    expect(screen.getByText("Gentle")).toBeInTheDocument();
-    expect(screen.queryByText("Smart")).not.toBeInTheDocument();
-    expect(screen.queryByText("Curious")).not.toBeInTheDocument();
+    expect(screen.getByText(/2 years Golden Retriever/)).toBeInTheDocument();
   });
 
-  it("should display energy level indicator", () => {
-    render(<SwipeCard dog={mockDog} />);
+  it("should have heart and share action buttons", () => {
+    renderWithProvider(<SwipeCard dog={mockDog} />);
+    
+    expect(screen.getByLabelText("Add to favorites")).toBeInTheDocument();
+    expect(screen.getByLabelText("Share dog")).toBeInTheDocument();
+  });
 
-    expect(screen.getByTestId("energy-indicator")).toBeInTheDocument();
-    expect(screen.getByText("Energy:")).toBeInTheDocument();
+  it("should not display energy level (removed in redesign)", () => {
+    renderWithProvider(<SwipeCard dog={mockDog} />);
+
+    expect(screen.queryByTestId("energy-indicator")).not.toBeInTheDocument();
+    expect(screen.queryByText("Energy:")).not.toBeInTheDocument();
   });
 
   it("should show unique quirk", () => {
-    render(<SwipeCard dog={mockDog} />);
+    renderWithProvider(<SwipeCard dog={mockDog} />);
 
     expect(screen.getByText(/Loves to play fetch/)).toBeInTheDocument();
-    expect(screen.getByText(/🦴/)).toBeInTheDocument();
+    expect(screen.getByText(/✨/)).toBeInTheDocument();
   });
 
-  it("should indicate new dogs with badge", () => {
+  it("should not show NEW badge (removed in redesign)", () => {
     const newDog = {
       ...mockDog,
       created_at: new Date().toISOString(),
     };
 
-    render(<SwipeCard dog={newDog} />);
+    renderWithProvider(<SwipeCard dog={newDog} />);
 
-    expect(screen.getByText("NEW")).toBeInTheDocument();
+    expect(screen.queryByText("NEW")).not.toBeInTheDocument();
   });
 
   it("should not show NEW badge for dogs older than 7 days", () => {
@@ -85,16 +91,16 @@ describe("SwipeCard", () => {
       created_at: oldDate.toISOString(),
     };
 
-    render(<SwipeCard dog={oldDog} />);
+    renderWithProvider(<SwipeCard dog={oldDog} />);
 
     expect(screen.queryByText("NEW")).not.toBeInTheDocument();
   });
 
-  it("should display organization and location", () => {
-    render(<SwipeCard dog={mockDog} />);
+  it("should not display organization and location (removed in redesign)", () => {
+    renderWithProvider(<SwipeCard dog={mockDog} />);
 
-    expect(screen.getByText(/Happy Paws Rescue/)).toBeInTheDocument();
-    expect(screen.getByText(/San Francisco, CA/)).toBeInTheDocument();
+    expect(screen.queryByText(/Happy Paws Rescue/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/San Francisco, CA/)).not.toBeInTheDocument();
   });
 
   it("should show placeholder when no image provided", () => {
@@ -103,7 +109,7 @@ describe("SwipeCard", () => {
       image: undefined,
     };
 
-    render(<SwipeCard dog={dogWithoutImage} />);
+    renderWithProvider(<SwipeCard dog={dogWithoutImage} />);
 
     expect(screen.getByText("🐕")).toBeInTheDocument();
   });
@@ -115,7 +121,7 @@ describe("SwipeCard", () => {
       slug: "max",
     };
 
-    render(<SwipeCard dog={minimalDog} />);
+    renderWithProvider(<SwipeCard dog={minimalDog} />);
 
     expect(screen.getByText("Max")).toBeInTheDocument();
     expect(screen.queryByText("Energy:")).not.toBeInTheDocument();
@@ -123,17 +129,17 @@ describe("SwipeCard", () => {
   });
 
   it("should apply proper styling with rounded corners and shadow", () => {
-    const { container } = render(<SwipeCard dog={mockDog} />);
+    const { container } = renderWithProvider(<SwipeCard dog={mockDog} />);
 
     const card = container.querySelector(".rounded-2xl");
     expect(card).toBeInTheDocument();
     expect(card).toHaveClass("shadow-lg");
   });
 
-  it("should maintain 16:9 aspect ratio for image container", () => {
-    render(<SwipeCard dog={mockDog} />);
+  it("should have responsive height for image container", () => {
+    renderWithProvider(<SwipeCard dog={mockDog} />);
 
     const imageContainer = screen.getByTestId("image-container");
-    expect(imageContainer).toHaveClass("aspect-video");
+    expect(imageContainer).toHaveStyle({ height: "45%" });
   });
 });

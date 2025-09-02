@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SwipeFilters } from "../../hooks/useSwipeFilters";
+import { safeStorage } from "../../utils/safeStorage";
 
 interface SwipeOnboardingProps {
   onComplete: (skipped: boolean, filters?: SwipeFilters) => void;
@@ -20,23 +21,48 @@ interface SizeOption {
   count?: number;
 }
 
-const COUNTRIES_BASE: Omit<CountryOption, "count">[] = [
-  {
-    value: "DE",
-    label: "Germany",
-    flag: "🇩🇪",
-  },
-  {
-    value: "GB",
-    label: "United Kingdom",
-    flag: "🇬🇧",
-  },
-  {
-    value: "US",
-    label: "United States",
-    flag: "🇺🇸",
-  },
-];
+// Country flags mapping
+const COUNTRY_FLAGS: Record<string, string> = {
+  UK: "🇬🇧",
+  GB: "🇬🇧",
+  US: "🇺🇸",
+  DE: "🇩🇪",
+  FR: "🇫🇷",
+  ES: "🇪🇸",
+  IT: "🇮🇹",
+  NL: "🇳🇱",
+  BE: "🇧🇪",
+  AT: "🇦🇹",
+  CH: "🇨🇭",
+  SE: "🇸🇪",
+  NO: "🇳🇴",
+  DK: "🇩🇰",
+  FI: "🇫🇮",
+  PL: "🇵🇱",
+  CZ: "🇨🇿",
+  HU: "🇭🇺",
+  RO: "🇷🇴",
+  BG: "🇧🇬",
+  GR: "🇬🇷",
+  PT: "🇵🇹",
+  IE: "🇮🇪",
+  LU: "🇱🇺",
+  MT: "🇲🇹",
+  CY: "🇨🇾",
+  EE: "🇪🇪",
+  LV: "🇱🇻",
+  LT: "🇱🇹",
+  SK: "🇸🇰",
+  SI: "🇸🇮",
+  HR: "🇭🇷",
+  BA: "🇧🇦",
+  RS: "🇷🇸",
+  ME: "🇲🇪",
+  MK: "🇲🇰",
+  AL: "🇦🇱",
+  TR: "🇹🇷",
+  SR: "🇸🇷",
+};
 
 const SIZES: SizeOption[] = [
   { value: "small", label: "Small", icon: "🐕" },
@@ -61,32 +87,36 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
   const [countries, setCountries] = useState<CountryOption[]>([]);
   const [sizesWithCounts, setSizesWithCounts] = useState<SizeOption[]>(SIZES);
   const [loading, setLoading] = useState(true);
+  const [showAllCountries, setShowAllCountries] = useState(false);
 
-  // Fetch country counts on mount
+  // Fetch available countries dynamically
   useEffect(() => {
-    const fetchCountryCounts = async () => {
+    const fetchAvailableCountries = async () => {
       try {
-        const countPromises = COUNTRIES_BASE.map(async (country) => {
-          const response = await fetch(`/api/dogs/swipe?country=${country.value}&limit=1`);
-          const data = await response.json();
-          return {
-            ...country,
-            count: data.total || 0,
-          };
-        });
-        
-        const countriesWithCounts = await Promise.all(countPromises);
+        const response = await fetch("/api/dogs/available-countries");
+        const data = await response.json();
+
+        // Transform API response to CountryOption format
+        const countriesWithCounts = (data.countries || data).map(
+          (country: any) => ({
+            value: country.code,
+            label: country.name,
+            flag: COUNTRY_FLAGS[country.code] || "🏳️",
+            count: country.dog_count || country.dogCount,
+          }),
+        );
+
         setCountries(countriesWithCounts);
       } catch (error) {
-        console.error("Failed to fetch country counts:", error);
-        // Fallback to default counts
-        setCountries(COUNTRIES_BASE.map(c => ({ ...c, count: 0 })));
+        console.error("Failed to fetch available countries:", error);
+        // Fallback to empty list
+        setCountries([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCountryCounts();
+    fetchAvailableCountries();
   }, []);
 
   // Fetch size counts when country is selected
@@ -97,7 +127,7 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
       try {
         const sizePromises = SIZES.map(async (size) => {
           const response = await fetch(
-            `/api/dogs/swipe?country=${selectedCountry}&size=${size.value}&limit=1`
+            `/api/dogs/swipe?adoptable_to_country=${selectedCountry}&size[]=${size.value}&limit=1`,
           );
           const data = await response.json();
           return {
@@ -105,7 +135,7 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
             count: data.total || 0,
           };
         });
-        
+
         const sizesWithCounts = await Promise.all(sizePromises);
         setSizesWithCounts(sizesWithCounts);
       } catch (error) {
@@ -119,8 +149,8 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
 
   useEffect(() => {
     const onboardingComplete =
-      localStorage.getItem("swipeOnboardingComplete") === "true";
-    const savedFilters = localStorage.getItem("swipeFilters");
+      safeStorage.get("swipeOnboardingComplete") === "true";
+    const savedFilters = safeStorage.get("swipeFilters");
 
     if (onboardingComplete && savedFilters) {
       try {
@@ -160,8 +190,8 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
       ages: selectedAges,
     };
 
-    localStorage.setItem("swipeOnboardingComplete", "true");
-    localStorage.setItem("swipeFilters", JSON.stringify(filters));
+    safeStorage.set("swipeOnboardingComplete", "true");
+    safeStorage.stringify("swipeFilters", filters);
 
     onComplete(false, filters);
   };
@@ -203,39 +233,105 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
               <div className="space-y-3">
                 {loading ? (
                   <div className="text-center py-4">
-                    <div className="text-gray-500">Loading available dogs...</div>
+                    <div className="text-gray-500">
+                      Loading available dogs...
+                    </div>
                   </div>
                 ) : (
-                  countries.map((country) => (
-                    <button
-                      key={country.value}
-                      onClick={() => handleCountrySelect(country.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          handleCountrySelect(country.value);
+                  <>
+                    {/* Show top 5 countries or selected + top 4 */}
+                    {(() => {
+                      const topCountries = countries.slice(0, 5);
+                      const displayCountries = showAllCountries
+                        ? countries
+                        : topCountries;
+
+                      return displayCountries.map((country) => (
+                        <button
+                          key={country.value}
+                          onClick={() => handleCountrySelect(country.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              handleCountrySelect(country.value);
+                            }
+                          }}
+                          className={`
+                            w-full p-4 rounded-lg border-2 transition-all text-left
+                            ${
+                              selectedCountry === country.value
+                                ? "border-orange-500 bg-orange-50 selected"
+                                : "border-gray-200 hover:border-orange-300"
+                            }
+                          `}
+                          aria-label={country.label}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="text-2xl mr-3">
+                                {country.flag}
+                              </span>
+                              <span className="font-medium">
+                                {country.label}
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {country.count}{" "}
+                              {country.count === 1 ? "dog" : "dogs"} available
+                            </div>
+                          </div>
+                        </button>
+                      ));
+                    })()}
+
+                    {/* Show more/less button if there are more than 5 countries */}
+                    {countries.length > 5 && (
+                      <button
+                        onClick={() => setShowAllCountries(!showAllCountries)}
+                        className="w-full py-2 text-center text-orange-500 hover:text-orange-600 transition-colors text-sm font-medium"
+                        aria-label={
+                          showAllCountries
+                            ? "Show fewer countries"
+                            : "Show all countries"
                         }
-                      }}
-                      className={`
-                        w-full p-4 rounded-lg border-2 transition-all text-left
-                        ${
-                          selectedCountry === country.value
-                            ? "border-orange-500 bg-orange-50 selected"
-                            : "border-gray-200 hover:border-orange-300"
-                        }
-                      `}
-                      aria-label={country.label}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="text-2xl mr-3">{country.flag}</span>
-                          <span className="font-medium">{country.label}</span>
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {country.count} {country.count === 1 ? "dog" : "dogs"} available
-                        </div>
-                      </div>
-                    </button>
-                  ))
+                      >
+                        {showAllCountries ? (
+                          <span className="flex items-center justify-center gap-1">
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 15l7-7 7 7"
+                              />
+                            </svg>
+                            Show fewer countries
+                          </span>
+                        ) : (
+                          <span className="flex items-center justify-center gap-1">
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                            Show {countries.length - 5} more countries
+                          </span>
+                        )}
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -271,9 +367,30 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="p-6 animate-in"
+              className="p-6 animate-in relative"
             >
-              <div className="text-center mb-6">
+              {/* Back button */}
+              <button
+                onClick={() => setStep(1)}
+                className="absolute top-4 left-4 p-2 text-gray-600 hover:text-gray-800 transition-colors"
+                aria-label="Go back"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+
+              <div className="text-center mb-6 mt-8">
                 <h2 className="text-2xl font-bold mb-2">
                   Size preference? (optional)
                 </h2>

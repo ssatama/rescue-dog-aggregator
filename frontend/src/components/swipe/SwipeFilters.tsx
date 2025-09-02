@@ -48,7 +48,11 @@ export default function SwipeFilters({
   });
 
   useEffect(() => {
-    if (filters.country || filters.sizes.length > 0 || filters.ages.length > 0) {
+    if (
+      filters.country ||
+      filters.sizes.length > 0 ||
+      filters.ages.length > 0
+    ) {
       localStorage.setItem("swipeFilters", JSON.stringify(filters));
     }
     onFiltersChange(filters);

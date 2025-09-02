@@ -190,7 +190,11 @@ describe("SwipeFilters", () => {
     });
 
     it("should show filter pills in compact view", () => {
-      const savedFilters = { country: "DE", sizes: ["small", "medium"], ages: [] };
+      const savedFilters = {
+        country: "DE",
+        sizes: ["small", "medium"],
+        ages: [],
+      };
       localStorage.setItem("swipeFilters", JSON.stringify(savedFilters));
 
       render(<SwipeFilters onFiltersChange={mockOnFiltersChange} compact />);

@@ -18,7 +18,11 @@ describe("useSwipeFilters", () => {
     });
 
     it("should load filters from localStorage on mount", () => {
-      const savedFilters = { country: "DE", sizes: ["small", "medium"], ages: [] };
+      const savedFilters = {
+        country: "DE",
+        sizes: ["small", "medium"],
+        ages: [],
+      };
       localStorage.setItem("swipeFilters", JSON.stringify(savedFilters));
 
       const { result } = renderHook(() => useSwipeFilters());
@@ -196,7 +200,7 @@ describe("useSwipeFilters", () => {
       });
 
       expect(result.current.toQueryString()).toBe(
-        "country=Germany&size=small&size=medium",
+        "adoptable_to_country=Germany&size%5B%5D=small&size%5B%5D=medium",
       );
     });
 
@@ -207,7 +211,9 @@ describe("useSwipeFilters", () => {
         result.current.setCountry("United Kingdom");
       });
 
-      expect(result.current.toQueryString()).toBe("country=United+Kingdom");
+      expect(result.current.toQueryString()).toBe(
+        "adoptable_to_country=United+Kingdom",
+      );
     });
 
     it("should omit empty values from query string", () => {
@@ -218,7 +224,9 @@ describe("useSwipeFilters", () => {
         // No sizes selected
       });
 
-      expect(result.current.toQueryString()).toBe("country=Germany");
+      expect(result.current.toQueryString()).toBe(
+        "adoptable_to_country=Germany",
+      );
     });
   });
 

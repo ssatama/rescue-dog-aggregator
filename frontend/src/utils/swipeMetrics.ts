@@ -164,22 +164,36 @@ export class SwipeMetrics {
   trackLoadTime(): void {
     if (!this.hasPerformanceAPI()) return;
 
-    // Check if start mark exists, if not create it
     try {
-      const startMarks = performance.getEntriesByName("swipe-init-start");
-      if (startMarks.length === 0) {
+      // Ensure start mark exists
+      try {
+        const startMarks = performance.getEntriesByName("swipe-init-start");
+        if (startMarks.length === 0) {
+          performance.mark("swipe-init-start");
+        }
+      } catch (e) {
+        // If mark creation fails, just create it now
         performance.mark("swipe-init-start");
       }
 
+      // Create end mark
       performance.mark("swipe-init-complete");
-      performance.measure(
-        "swipe-load-time",
-        "swipe-init-start",
-        "swipe-init-complete",
-      );
-
-      const entries = performance.getEntriesByName("swipe-load-time");
-      const loadTime = entries.length > 0 ? entries[0].duration : 0;
+      
+      // Measure only if we can
+      let loadTime = 0;
+      try {
+        performance.measure(
+          "swipe-load-time",
+          "swipe-init-start",
+          "swipe-init-complete",
+        );
+        
+        const entries = performance.getEntriesByName("swipe-load-time");
+        loadTime = entries.length > 0 ? entries[0].duration : 0;
+      } catch (e) {
+        // If measure fails, use navigationTiming as fallback
+        loadTime = performance.now();
+      }
 
       Sentry.captureEvent({
         message: "swipe.performance.load_time",

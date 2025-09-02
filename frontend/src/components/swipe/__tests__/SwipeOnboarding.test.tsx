@@ -12,22 +12,35 @@ describe("SwipeOnboarding", () => {
   beforeEach(() => {
     mockOnComplete.mockClear();
     localStorage.clear();
-    
+
     // Mock fetch responses for country and size counts
     (global.fetch as jest.Mock).mockImplementation((url: string) => {
-      if (url.includes("country=DE")) {
+      if (url.includes("/api/dogs/available-countries")) {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              countries: [
+                { code: "DE", name: "Germany", dog_count: 486 },
+                { code: "GB", name: "United Kingdom", dog_count: 1245 },
+                { code: "US", name: "United States", dog_count: 342 },
+              ],
+            }),
+        });
+      }
+      if (url.includes("adoptable_to_country=DE")) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({ total: 486, dogs: [] }),
         });
       }
-      if (url.includes("country=GB")) {
+      if (url.includes("adoptable_to_country=GB")) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({ total: 1245, dogs: [] }),
         });
       }
-      if (url.includes("country=US")) {
+      if (url.includes("adoptable_to_country=US")) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({ total: 342, dogs: [] }),
@@ -89,7 +102,7 @@ describe("SwipeOnboarding", () => {
       await waitFor(() => {
         expect(screen.getByText(/Germany/)).toBeInTheDocument();
       });
-      
+
       expect(screen.getByText(/486 dogs available/)).toBeInTheDocument();
       expect(screen.getByText(/United Kingdom/)).toBeInTheDocument();
       expect(screen.getByText(/1245 dogs available/)).toBeInTheDocument();
@@ -103,7 +116,7 @@ describe("SwipeOnboarding", () => {
       await waitFor(() => {
         expect(screen.getByText(/🇩🇪/)).toBeInTheDocument();
       });
-      
+
       expect(screen.getByText(/🇬🇧/)).toBeInTheDocument();
       expect(screen.getByText(/🇺🇸/)).toBeInTheDocument();
     });
@@ -114,7 +127,7 @@ describe("SwipeOnboarding", () => {
       await waitFor(() => {
         expect(screen.getByText(/Germany/)).toBeInTheDocument();
       });
-      
+
       const germanyButton = screen.getByRole("button", { name: /Germany/i });
       fireEvent.click(germanyButton);
 
@@ -129,7 +142,7 @@ describe("SwipeOnboarding", () => {
       await waitFor(() => {
         expect(screen.getByText(/Germany/)).toBeInTheDocument();
       });
-      
+
       const nextButton = screen.getByRole("button", { name: /Continue/i });
       expect(nextButton).toBeDisabled();
 
@@ -147,7 +160,7 @@ describe("SwipeOnboarding", () => {
       await waitFor(() => {
         expect(screen.getByText(/Germany/)).toBeInTheDocument();
       });
-      
+
       const germanyButton = screen.getByRole("button", { name: /Germany/i });
       fireEvent.click(germanyButton);
 
@@ -179,7 +192,7 @@ describe("SwipeOnboarding", () => {
       await waitFor(() => {
         expect(screen.getByText(/Germany/)).toBeInTheDocument();
       });
-      
+
       // Select country first
       fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
       fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
@@ -197,7 +210,7 @@ describe("SwipeOnboarding", () => {
       await waitFor(() => {
         expect(screen.getByText(/Germany/)).toBeInTheDocument();
       });
-      
+
       // Select country first
       fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
       fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
@@ -221,7 +234,7 @@ describe("SwipeOnboarding", () => {
       await waitFor(() => {
         expect(screen.getByText(/Germany/)).toBeInTheDocument();
       });
-      
+
       // Select country
       fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
       fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
@@ -243,7 +256,7 @@ describe("SwipeOnboarding", () => {
       await waitFor(() => {
         expect(screen.getByText(/Germany/)).toBeInTheDocument();
       });
-      
+
       // Select country
       fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
       fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
@@ -276,7 +289,7 @@ describe("SwipeOnboarding", () => {
       await waitFor(() => {
         expect(screen.getByText(/Germany/)).toBeInTheDocument();
       });
-      
+
       // Complete onboarding
       fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
       fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
@@ -324,7 +337,7 @@ describe("SwipeOnboarding", () => {
       await waitFor(() => {
         expect(screen.getByText(/Germany/)).toBeInTheDocument();
       });
-      
+
       // Move to next step
       fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
       fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
@@ -352,7 +365,7 @@ describe("SwipeOnboarding", () => {
       await waitFor(() => {
         expect(screen.getByText(/Germany/)).toBeInTheDocument();
       });
-      
+
       const germanyButton = screen.getByRole("button", { name: /Germany/i });
       germanyButton.focus();
 
@@ -367,7 +380,7 @@ describe("SwipeOnboarding", () => {
       await waitFor(() => {
         expect(screen.getByText(/Germany/)).toBeInTheDocument();
       });
-      
+
       fireEvent.click(screen.getByRole("button", { name: /Germany/i }));
       fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
 

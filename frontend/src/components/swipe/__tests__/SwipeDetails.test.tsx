@@ -55,6 +55,7 @@ describe("SwipeDetails", () => {
   const mockOnClose = jest.fn();
   const mockToggleFavorite = jest.fn();
   const mockCaptureEvent = jest.mocked(Sentry.captureEvent);
+  const mockWindowOpen = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -63,6 +64,13 @@ describe("SwipeDetails", () => {
       toggleFavorite: mockToggleFavorite,
       isFavorited: jest.fn().mockReturnValue(false),
     });
+    // Mock window.open
+    global.window.open = mockWindowOpen;
+  });
+
+  afterEach(() => {
+    // Clean up
+    delete (global.window as any).open;
   });
 
   it("should open modal on card tap", () => {
@@ -117,15 +125,30 @@ describe("SwipeDetails", () => {
   });
 
   it("should allow sharing dog profile", async () => {
-    const mockShare = jest.fn();
+    const mockShare = jest.fn().mockResolvedValue(undefined);
+    const mockWriteText = jest.fn().mockResolvedValue(undefined);
+
     Object.defineProperty(navigator, "share", {
       value: mockShare,
       writable: true,
+      configurable: true,
+    });
+
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: mockWriteText },
+      writable: true,
+      configurable: true,
+    });
+
+    Object.defineProperty(window, "isSecureContext", {
+      value: true,
+      writable: true,
+      configurable: true,
     });
 
     render(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
 
-    const shareButton = screen.getByRole("button", { name: /Share/i });
+    const shareButton = screen.getByText("Share");
     expect(shareButton).toBeInTheDocument();
 
     fireEvent.click(shareButton);
@@ -134,7 +157,7 @@ describe("SwipeDetails", () => {
       expect(mockShare).toHaveBeenCalledWith({
         title: "Check out Buddy for adoption!",
         text: "Buddy is a lovable 2-year-old Golden Mix seeking his forever home. This playful pup has a heart of gold and endless energy for adventures.",
-        url: "https://example.com/adopt/buddy",
+        url: "https://www.rescuedogs.me/dog/1",
       });
     });
   });

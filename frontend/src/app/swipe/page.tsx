@@ -30,6 +30,7 @@ interface Dog {
   good_with_cats?: boolean | string;
   good_with_kids?: boolean | string;
   additional_images?: string[];
+  adoption_url?: string;
 }
 
 export default function SwipePage() {
@@ -70,7 +71,7 @@ export default function SwipePage() {
     breed: dog.breed || "Mixed Breed",
     organization_name: dog.organization || "",
     location: dog.location || "",
-    adoption_url: `/dogs/${dog.slug}`,
+    adoption_url: dog.adoption_url || "",
     image_url: dog.image || "",
     additional_images: dog.additional_images || [],
     dog_profiler_data: dog.description
@@ -115,24 +116,26 @@ export default function SwipePage() {
         throw new Error(`Failed to fetch dogs: ${response.statusText}`);
       }
       const data = await response.json();
-      
+
       // Transform the dogs data to ensure organization is a string
       const transformedDogs = (data.dogs || []).map((dog: any) => ({
         ...dog,
         // Extract organization name from object if it exists
-        organization: typeof dog.organization === 'object' && dog.organization 
-          ? dog.organization.name 
-          : dog.organization,
+        organization:
+          typeof dog.organization === "object" && dog.organization
+            ? dog.organization.name
+            : dog.organization,
         // Ensure other fields are properly mapped
         image: dog.primary_image_url || dog.image,
         traits: dog.dogProfilerData?.personalityTraits || dog.traits || [],
         description: dog.dogProfilerData?.description || dog.description,
         energy_level: dog.dogProfilerData?.energyLevel || dog.energy_level,
-        special_characteristic: dog.dogProfilerData?.uniqueQuirk || dog.special_characteristic,
+        special_characteristic:
+          dog.dogProfilerData?.uniqueQuirk || dog.special_characteristic,
         quality_score: dog.dogProfilerData?.qualityScore || dog.quality_score,
         additional_images: dog.images || dog.additional_images || [],
       }));
-      
+
       return transformedDogs;
     } catch (error) {
       console.error("Error fetching dogs:", error);
