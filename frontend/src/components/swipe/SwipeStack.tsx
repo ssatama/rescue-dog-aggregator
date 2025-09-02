@@ -66,15 +66,6 @@ export function SwipeStack({ dogs, currentIndex }: SwipeStackProps) {
                 location: dog.location,
                 slug: dog.slug || `dog-${dog.id}`,
                 description: dog.dog_profiler_data?.description,
-                traits: dog.dog_profiler_data?.personality_traits,
-                energy_level:
-                  dog.dog_profiler_data?.energy_level === "low"
-                    ? 1
-                    : dog.dog_profiler_data?.energy_level === "medium"
-                      ? 2
-                      : dog.dog_profiler_data?.energy_level === "high"
-                        ? 3
-                        : 4,
                 special_characteristic: dog.dog_profiler_data?.unique_quirk,
                 quality_score: dog.dog_profiler_data?.quality_score,
                 created_at: dog.created_at,

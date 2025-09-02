@@ -16,144 +16,40 @@ jest.mock("@sentry/nextjs", () => ({
   captureException: jest.fn(),
 }));
 
-jest.mock("framer-motion", () => {
-  const React = require("react");
+// Mock SwipeCard, SwipeOnboarding, and SwipeFilters
+jest.mock("../SwipeCard", () => ({
+  SwipeCard: ({ dog }: { dog: any }) => (
+    <div data-testid="swipe-card">
+      <div>{dog.name}</div>
+      <div>{dog.breed}</div>
+    </div>
+  ),
+}));
 
-  // List of props that should be filtered out to prevent React warnings
-  const FRAMER_MOTION_PROPS = [
-    "drag",
-    "dragConstraints",
-    "dragElastic",
-    "onDrag",
-    "onDragEnd",
-    "onDragStart",
-    "initial",
-    "animate",
-    "exit",
-    "transition",
-    "variants",
-    "style",
-    "whileTap",
-    "whileDrag",
-    "whileHover",
-    "whileFocus",
-    "whileInView",
-    "onAnimationComplete",
-    "onAnimationStart",
-    "onAnimationUpdate",
-    "layoutId",
-    "layout",
-    "layoutDependency",
-    "layoutScroll",
-  ];
-
-  const MotionDiv = React.forwardRef<HTMLDivElement, any>(
-    function MockMotionDiv(
-      {
-        children,
-        onDrag,
-        onDragEnd,
-        onClick,
-        onAnimationComplete,
-        exit,
-        ...allProps
-      },
-      ref,
-    ) {
-      // Filter out framer-motion props to prevent React warnings
-      const domProps = Object.keys(allProps).reduce((acc, key) => {
-        if (!FRAMER_MOTION_PROPS.includes(key)) {
-          acc[key] = allProps[key];
-        }
-        return acc;
-      }, {} as any);
-
-      // Handle exit animation completion
-      React.useEffect(() => {
-        if (exit && onAnimationComplete) {
-          const timer = setTimeout(() => onAnimationComplete(), 100);
-          return () => clearTimeout(timer);
-        }
-      }, [exit, onAnimationComplete]);
-
-      // Handle drag events by converting them to mouse events for testing
-      const handleMouseDown = (e: React.MouseEvent) => {
-        if (!onDrag && !onDragEnd) return;
-
-        const startX = e.clientX;
-        const startY = e.clientY;
-
-        const handleMouseMove = (e: MouseEvent) => {
-          if (onDrag) {
-            onDrag(e, {
-              offset: { x: e.clientX - startX, y: e.clientY - startY },
-              point: { x: e.clientX, y: e.clientY },
-            });
-          }
-        };
-
-        const handleMouseUp = (e: MouseEvent) => {
-          if (onDragEnd) {
-            const offset = { x: e.clientX - startX, y: e.clientY - startY };
-            onDragEnd(e, {
-              offset,
-              velocity: {
-                x: Math.abs(offset.x) > 50 ? (offset.x > 0 ? 1 : -1) : 0,
-                y: 0,
-              },
-              point: { x: e.clientX, y: e.clientY },
-            });
-          }
-          document.removeEventListener("mousemove", handleMouseMove);
-          document.removeEventListener("mouseup", handleMouseUp);
-        };
-
-        document.addEventListener("mousemove", handleMouseMove);
-        document.addEventListener("mouseup", handleMouseUp);
-      };
-
-      return (
-        <div
-          ref={ref}
-          onClick={onClick}
-          onMouseDown={handleMouseDown}
-          {...domProps}
-        >
-          {children}
-        </div>
-      );
-    },
-  );
-
-  MotionDiv.displayName = "MockMotionDiv";
-
-  return {
-    motion: {
-      div: MotionDiv,
-    },
-    AnimatePresence: ({ children, onExitComplete }: any) => {
-      React.useEffect(() => {
-        if (onExitComplete) {
-          const timer = setTimeout(() => onExitComplete(), 150);
-          return () => clearTimeout(timer);
-        }
-      }, [children, onExitComplete]);
-      return <>{children}</>;
-    },
-    useMotionValue: () => ({
-      set: jest.fn(),
-      get: () => 0,
-    }),
-    useTransform: () => 0,
+jest.mock("../SwipeOnboarding", () => {
+  return function SwipeOnboarding({ onComplete }: { onComplete: any }) {
+    return (
+      <div data-testid="swipe-onboarding">
+        <button onClick={() => onComplete(true)}>Skip Onboarding</button>
+      </div>
+    );
   };
 });
 
-describe("SwipeContainerWithFilters - Animation Bug", () => {
-  const mockPush = jest.fn();
-  const mockAddFavorite = jest.fn();
-  const mockFetchDogs = jest.fn();
-  const mockOnSwipe = jest.fn();
+jest.mock("../SwipeFilters", () => {
+  return function SwipeFilters({ onFiltersChange, compact }: any) {
+    if (compact) {
+      return <div data-testid="compact-filters">Compact Filters</div>;
+    }
+    return (
+      <div data-testid="filters">
+        <button onClick={() => onFiltersChange({})}>Apply Filters</button>
+      </div>
+    );
+  };
+});
 
+describe("SwipeContainerWithFilters - Paw Navigation", () => {
   const mockDogs = [
     {
       id: 1,
@@ -161,9 +57,9 @@ describe("SwipeContainerWithFilters - Animation Bug", () => {
       breed: "Golden Retriever",
       age: "2 years",
       slug: "buddy-1",
+      image: "/dog1.jpg",
       organization: "Happy Paws",
       location: "New York",
-      image: "/dog1.jpg",
       description: "Friendly dog",
       traits: ["Friendly", "Playful"],
       energy_level: 4,
@@ -174,10 +70,10 @@ describe("SwipeContainerWithFilters - Animation Bug", () => {
       breed: "Labrador",
       age: "3 years",
       slug: "max-2",
-      organization: "Dog Rescue",
-      location: "Boston",
       image: "/dog2.jpg",
-      description: "Energetic dog",
+      organization: "Pet Rescue",
+      location: "Boston",
+      description: "Energetic pup",
       traits: ["Energetic", "Loyal"],
       energy_level: 5,
     },
@@ -187,54 +83,48 @@ describe("SwipeContainerWithFilters - Animation Bug", () => {
       breed: "Husky",
       age: "1 year",
       slug: "luna-3",
-      organization: "Pet Haven",
-      location: "Chicago",
       image: "/dog3.jpg",
+      organization: "Animal Haven",
+      location: "Chicago",
       description: "Beautiful husky",
       traits: ["Independent", "Active"],
       energy_level: 5,
     },
   ];
 
+  const mockFetchDogs = jest.fn().mockResolvedValue(mockDogs);
+  const mockOnSwipe = jest.fn();
+  const mockOnCardExpanded = jest.fn();
+  const mockAddFavorite = jest.fn();
+  const mockIsFavorited = jest.fn().mockReturnValue(false);
+  const mockRouter = { push: jest.fn() };
+
   beforeEach(() => {
     jest.clearAllMocks();
 
-    (useRouter as jest.Mock).mockReturnValue({
-      push: mockPush,
-    });
-
     (useFavorites as jest.Mock).mockReturnValue({
       addFavorite: mockAddFavorite,
-      isFavorited: jest.fn().mockReturnValue(false),
+      isFavorited: mockIsFavorited,
     });
 
     (useSwipeFilters as jest.Mock).mockReturnValue({
-      filters: {
-        country: "US",
-        size: "medium",
-        ageRange: null,
-      },
+      filters: {},
       setFilters: jest.fn(),
       isValid: true,
-      toQueryString: jest.fn().mockReturnValue("country=US&size=medium"),
+      toQueryString: jest.fn().mockReturnValue("age=0-10&breed=all"),
       needsOnboarding: false,
       completeOnboarding: jest.fn(),
     });
 
-    mockFetchDogs.mockImplementation((queryString) => {
-      // First call returns the initial dogs, subsequent calls (with offset) return empty
-      if (queryString.includes("offset=")) {
-        return Promise.resolve([]);
-      }
-      return Promise.resolve(mockDogs);
-    });
+    (useRouter as jest.Mock).mockReturnValue(mockRouter);
   });
 
-  it("should load next dog after swipe animation completes", async () => {
+  it("should navigate to next dog with paw button", async () => {
     render(
       <SwipeContainerWithFilters
         fetchDogs={mockFetchDogs}
         onSwipe={mockOnSwipe}
+        onCardExpanded={mockOnCardExpanded}
       />,
     );
 
@@ -242,137 +132,31 @@ describe("SwipeContainerWithFilters - Animation Bug", () => {
       expect(screen.getByText("Buddy")).toBeInTheDocument();
     });
 
-    expect(screen.getByText("1 / 3")).toBeInTheDocument();
-
-    const favoriteButton = screen.getByLabelText("Add to favorites");
-    fireEvent.click(favoriteButton);
-
-    await waitFor(() => {
-      expect(mockOnSwipe).toHaveBeenCalledWith("right", mockDogs[0]);
-    });
-
-    await waitFor(
-      () => {
-        expect(screen.getByText("Max")).toBeInTheDocument();
-      },
-      { timeout: 1000 },
-    );
-
-    await waitFor(
-      () => {
-        expect(screen.getByText("2 / 3")).toBeInTheDocument();
-      },
-      { timeout: 1000 },
-    );
-  });
-
-  it("should handle rapid consecutive swipes without getting stuck", async () => {
-    render(
-      <SwipeContainerWithFilters
-        fetchDogs={mockFetchDogs}
-        onSwipe={mockOnSwipe}
-      />,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText("Buddy")).toBeInTheDocument();
-    });
-
+    // Find and click the Next paw button
     const nextButton = screen.getByLabelText("Next dog");
-
-    // First swipe
     fireEvent.click(nextButton);
 
-    await waitFor(() => {
-      expect(mockOnSwipe).toHaveBeenCalledWith("left", mockDogs[0]);
-    });
-
-    // Wait for animation to complete
     await waitFor(() => {
       expect(screen.getByText("Max")).toBeInTheDocument();
     });
 
-    // Wait for button to be enabled again
-    await waitFor(() => {
-      expect(nextButton).not.toBeDisabled();
-    });
-
-    // Second swipe after animation completes
-    fireEvent.click(nextButton);
-
-    await waitFor(() => {
-      expect(mockOnSwipe).toHaveBeenCalledWith("left", mockDogs[1]);
-    });
-
-    await waitFor(
-      () => {
-        expect(screen.getByText("Luna")).toBeInTheDocument();
-      },
-      { timeout: 1000 },
+    expect(Sentry.captureEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "swipe.card.viewed",
+        extra: expect.objectContaining({
+          dogId: 2,
+          dogName: "Max",
+        }),
+      }),
     );
-
-    await waitFor(() => {
-      expect(screen.getByText("3 / 3")).toBeInTheDocument();
-    });
   });
 
-  it("should properly reset animation state between swipes", async () => {
-    const { rerender } = render(
-      <SwipeContainerWithFilters
-        fetchDogs={mockFetchDogs}
-        onSwipe={mockOnSwipe}
-      />,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText("Buddy")).toBeInTheDocument();
-    });
-
-    const favoriteButton = screen.getByLabelText("Add to favorites");
-
-    fireEvent.click(favoriteButton);
-
-    await waitFor(() => {
-      expect(mockOnSwipe).toHaveBeenCalledWith("right", mockDogs[0]);
-    });
-
-    // Wait for animation to complete and next card to appear
-    await waitFor(
-      () => {
-        expect(screen.getByText("Max")).toBeInTheDocument();
-      },
-      { timeout: 1000 },
-    );
-
-    // Wait for button to be enabled again
-    await waitFor(() => {
-      expect(favoriteButton).not.toBeDisabled();
-    });
-
-    const nextButton = screen.getByLabelText("Next dog");
-    fireEvent.click(nextButton);
-
-    await waitFor(() => {
-      expect(mockOnSwipe).toHaveBeenCalledWith("left", mockDogs[1]);
-    });
-
-    await waitFor(
-      () => {
-        expect(screen.getByText("Luna")).toBeInTheDocument();
-      },
-      { timeout: 1000 },
-    );
-
-    const currentCard = screen.getByText("Luna").closest("div");
-    expect(currentCard).toBeInTheDocument();
-    // Remove style check as it's not relevant with our mock
-  });
-
-  it("should not allow interactions during exit animation", async () => {
+  it("should navigate to previous dog with paw button", async () => {
     render(
       <SwipeContainerWithFilters
         fetchDogs={mockFetchDogs}
         onSwipe={mockOnSwipe}
+        onCardExpanded={mockOnCardExpanded}
       />,
     );
 
@@ -380,29 +164,101 @@ describe("SwipeContainerWithFilters - Animation Bug", () => {
       expect(screen.getByText("Buddy")).toBeInTheDocument();
     });
 
-    const favoriteButton = screen.getByLabelText("Add to favorites");
+    // First go to next dog
     const nextButton = screen.getByLabelText("Next dog");
-
-    // First swipe triggers the animation
-    fireEvent.click(favoriteButton);
-
-    // Button should be disabled during animation
-    expect(favoriteButton).toBeDisabled();
-    expect(nextButton).toBeDisabled();
-
-    // Try clicking during animation (should be ignored)
     fireEvent.click(nextButton);
 
     await waitFor(() => {
-      expect(mockOnSwipe).toHaveBeenCalledTimes(1);
+      expect(screen.getByText("Max")).toBeInTheDocument();
     });
 
-    expect(mockOnSwipe).toHaveBeenCalledWith("right", mockDogs[0]);
-    expect(mockOnSwipe).not.toHaveBeenCalledWith("left", mockDogs[0]);
+    // Then go back
+    const prevButton = screen.getByLabelText("Previous dog");
+    fireEvent.click(prevButton);
 
-    // Wait for animation to complete
     await waitFor(() => {
-      expect(favoriteButton).not.toBeDisabled();
+      expect(screen.getByText("Buddy")).toBeInTheDocument();
     });
+  });
+
+  it("should disable previous button at first dog", async () => {
+    render(
+      <SwipeContainerWithFilters
+        fetchDogs={mockFetchDogs}
+        onSwipe={mockOnSwipe}
+        onCardExpanded={mockOnCardExpanded}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Buddy")).toBeInTheDocument();
+    });
+
+    const prevButton = screen.getByLabelText("Previous dog");
+    expect(prevButton).toBeDisabled();
+  });
+
+  it("should disable next button at last dog", async () => {
+    // Mock fetch to return dogs initially, then empty array when loading more
+    const limitedFetchDogs = jest
+      .fn()
+      .mockResolvedValueOnce(mockDogs) // Initial load
+      .mockResolvedValue([]); // Any subsequent loads return empty
+
+    render(
+      <SwipeContainerWithFilters
+        fetchDogs={limitedFetchDogs}
+        onSwipe={mockOnSwipe}
+        onCardExpanded={mockOnCardExpanded}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Buddy")).toBeInTheDocument();
+    });
+
+    // Navigate to the last dog
+    const nextButton = screen.getByLabelText("Next dog");
+
+    // Click to go to Max (index 1)
+    fireEvent.click(nextButton);
+    await waitFor(() => expect(screen.getByText("Max")).toBeInTheDocument());
+
+    // Click to go to Luna (index 2, last dog)
+    fireEvent.click(nextButton);
+    await waitFor(() => expect(screen.getByText("Luna")).toBeInTheDocument());
+
+    // Wait a bit for any async load operations to complete
+    await waitFor(
+      () => {
+        // Now the button should be disabled since Luna is the last dog
+        // and no more dogs were loaded
+        const nextButtonAfterLastDog = screen.getByLabelText("Next dog");
+        expect(nextButtonAfterLastDog).toBeDisabled();
+      },
+      { timeout: 2000 },
+    );
+  });
+
+  it("should show paw icons on navigation buttons", async () => {
+    render(
+      <SwipeContainerWithFilters
+        fetchDogs={mockFetchDogs}
+        onSwipe={mockOnSwipe}
+        onCardExpanded={mockOnCardExpanded}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Buddy")).toBeInTheDocument();
+    });
+
+    // Check for paw emojis - there should be two (one for each button)
+    const pawEmojis = screen.getAllByText("🐾");
+    expect(pawEmojis).toHaveLength(2);
+
+    // Check for button labels
+    expect(screen.getByText("Back")).toBeInTheDocument();
+    expect(screen.getByText("Next")).toBeInTheDocument();
   });
 });

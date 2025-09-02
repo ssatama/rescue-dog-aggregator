@@ -28,12 +28,12 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
 
   const handleFavorite = useCallback(async () => {
     if (!dog.id) return;
-    
+
     setIsLiked(true);
     setShowHeartAnimation(true);
-    
+
     await addFavorite(dog.id, dog.name);
-    
+
     Sentry.captureEvent({
       message: "swipe.card.favorited_via_button",
       extra: {
@@ -41,14 +41,14 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
         dogName: dog.name,
       },
     });
-    
+
     setTimeout(() => setShowHeartAnimation(false), 1000);
   }, [dog.id, dog.name, addFavorite]);
 
   const handleShare = useCallback(async () => {
     const shareUrl = `${window.location.origin}/dogs/${dog.slug}`;
-    const shareText = `Meet ${dog.name}! ${dog.description || `${dog.age || ''} ${dog.breed || ''} looking for a loving home`}`;
-    
+    const shareText = `Meet ${dog.name}! ${dog.description || `${dog.age || ""} ${dog.breed || ""} looking for a loving home`}`;
+
     if (navigator.share) {
       try {
         await navigator.share({
@@ -64,7 +64,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
           },
         });
       } catch (err) {
-        console.log('Share cancelled or failed');
+        console.log("Share cancelled or failed");
       }
     } else {
       await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
@@ -78,7 +78,8 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
     }
   }, [dog]);
 
-  const tagline = dog.description || (dog.age && dog.breed ? `${dog.age} ${dog.breed}` : '');
+  const tagline =
+    dog.description || (dog.age && dog.breed ? `${dog.age} ${dog.breed}` : "");
 
   return (
     <div
@@ -96,11 +97,13 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
         </button>
         <button
           onClick={handleFavorite}
-          className={`w-12 h-12 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow-lg hover:scale-110 transition-transform ${isLiked ? 'scale-125' : ''}`}
+          className={`w-12 h-12 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow-lg hover:scale-110 transition-transform ${isLiked ? "scale-125" : ""}`}
           aria-label="Add to favorites"
         >
-          <span className={`text-xl ${showHeartAnimation ? 'animate-ping' : ''}`}>
-            {isLiked ? '❤️' : '🤍'}
+          <span
+            className={`text-xl ${showHeartAnimation ? "animate-ping" : ""}`}
+          >
+            {isLiked ? "❤️" : "🤍"}
           </span>
         </button>
       </div>
@@ -130,12 +133,8 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
       {/* Essential Info Only */}
       <div className="p-4 sm:p-6" style={{ height: "40%" }}>
         <h2 className="text-2xl sm:text-3xl font-bold mb-2">{dog.name}</h2>
-        
-        {tagline && (
-          <p className="text-gray-600 text-lg mb-3">
-            {tagline}
-          </p>
-        )}
+
+        {tagline && <p className="text-gray-600 text-lg mb-3">{tagline}</p>}
 
         {dog.special_characteristic && (
           <p className="text-gray-700 flex items-start gap-2">

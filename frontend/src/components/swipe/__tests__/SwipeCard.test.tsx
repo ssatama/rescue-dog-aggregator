@@ -8,10 +8,8 @@ import { ToastProvider } from "../../../contexts/ToastContext";
 const renderWithProvider = (component) => {
   return render(
     <ToastProvider>
-      <FavoritesProvider>
-        {component}
-      </FavoritesProvider>
-    </ToastProvider>
+      <FavoritesProvider>{component}</FavoritesProvider>
+    </ToastProvider>,
   );
 };
 
@@ -38,7 +36,9 @@ describe("SwipeCard", () => {
 
     expect(screen.getByText("Buddy")).toBeInTheDocument();
     // Description becomes the tagline
-    expect(screen.getByText(/A friendly and energetic companion/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/A friendly and energetic companion/),
+    ).toBeInTheDocument();
   });
 
   it("should show breed and age as tagline when no description", () => {
@@ -53,7 +53,7 @@ describe("SwipeCard", () => {
 
   it("should have heart and share action buttons", () => {
     renderWithProvider(<SwipeCard dog={mockDog} />);
-    
+
     expect(screen.getByLabelText("Add to favorites")).toBeInTheDocument();
     expect(screen.getByLabelText("Share dog")).toBeInTheDocument();
   });
@@ -140,6 +140,6 @@ describe("SwipeCard", () => {
     renderWithProvider(<SwipeCard dog={mockDog} />);
 
     const imageContainer = screen.getByTestId("image-container");
-    expect(imageContainer).toHaveStyle({ height: "45%" });
+    expect(imageContainer).toHaveStyle({ height: "60%" });
   });
 });

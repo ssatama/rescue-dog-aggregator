@@ -68,7 +68,7 @@ export function SwipeContainerWithFilters({
   const [showFilters, setShowFilters] = useState(false);
   const [lastTap, setLastTap] = useState<number>(0);
   const [swipedDogIds, setSwipedDogIds] = useState<Set<number>>(() => {
-    const stored = safeStorage.get('swipedDogIds');
+    const stored = safeStorage.get("swipedDogIds");
     if (stored) {
       try {
         return new Set(JSON.parse(stored));
@@ -115,12 +115,14 @@ export function SwipeContainerWithFilters({
         try {
           const fetchedDogs = await fetchDogs(queryString);
           // Get swiped IDs from storage instead of state to avoid stale closure
-          const storedSwipedIds = safeStorage.get('swipedDogIds');
-          const swipedIds = new Set(storedSwipedIds ? JSON.parse(storedSwipedIds) : []);
-          
+          const storedSwipedIds = safeStorage.get("swipedDogIds");
+          const swipedIds = new Set(
+            storedSwipedIds ? JSON.parse(storedSwipedIds) : [],
+          );
+
           // Filter out only dogs that have been swiped
-          const newDogs = fetchedDogs.filter(dog => !swipedIds.has(dog.id));
-          
+          const newDogs = fetchedDogs.filter((dog) => !swipedIds.has(dog.id));
+
           setDogs(newDogs);
           setCurrentIndex(0);
           setOffset(0);
@@ -183,7 +185,7 @@ export function SwipeContainerWithFilters({
 
   const goToNext = useCallback(() => {
     if (currentIndex < dogs.length - 1) {
-      setCurrentIndex(prev => prev + 1);
+      setCurrentIndex((prev) => prev + 1);
       const nextDog = dogs[currentIndex + 1];
       if (nextDog) {
         Sentry.captureEvent({
@@ -205,17 +207,19 @@ export function SwipeContainerWithFilters({
         setIsLoadingMore(true);
         const newOffset = offset + dogs.length;
         setOffset(newOffset);
-        
+
         fetchDogs(queryString + `&offset=${newOffset}`)
           .then((fetchedDogs) => {
             if (fetchedDogs && fetchedDogs.length > 0) {
               setDogs((prevDogs) => {
-                const storedSwipedIds = safeStorage.get('swipedDogIds');
-                const swipedIds = new Set(storedSwipedIds ? JSON.parse(storedSwipedIds) : []);
+                const storedSwipedIds = safeStorage.get("swipedDogIds");
+                const swipedIds = new Set(
+                  storedSwipedIds ? JSON.parse(storedSwipedIds) : [],
+                );
                 const newDogs = fetchedDogs.filter((dog) => {
                   return !swipedIds.has(dog.id);
                 });
-                
+
                 if (newDogs.length > 0) {
                   return [...prevDogs, ...newDogs];
                 }
@@ -234,7 +238,7 @@ export function SwipeContainerWithFilters({
 
   const goToPrevious = useCallback(() => {
     if (currentIndex > 0) {
-      setCurrentIndex(prev => prev - 1);
+      setCurrentIndex((prev) => prev - 1);
     }
   }, [currentIndex]);
 
@@ -266,11 +270,11 @@ export function SwipeContainerWithFilters({
       setCurrentIndex((prev) => prev + 1);
 
       // NOW track this dog as swiped (after index is updated)
-      setSwipedDogIds(prev => {
+      setSwipedDogIds((prev) => {
         const newSet = new Set(prev);
         newSet.add(currentDogId);
         // Save to storage safely
-        safeStorage.stringify('swipedDogIds', Array.from(newSet));
+        safeStorage.stringify("swipedDogIds", Array.from(newSet));
         return newSet;
       });
 
@@ -284,16 +288,18 @@ export function SwipeContainerWithFilters({
         setIsLoadingMore(true);
         const newOffset = offset + dogs.length;
         setOffset(newOffset);
-        
+
         fetchDogs(queryString + `&offset=${newOffset}`)
           .then((fetchedDogs) => {
             if (fetchedDogs && fetchedDogs.length > 0) {
               // Use functional update to get latest swipedDogIds
               setDogs((prevDogs) => {
                 // Get the current swiped IDs from storage to be safe
-                const storedSwipedIds = safeStorage.get('swipedDogIds');
-                const swipedIds = new Set(storedSwipedIds ? JSON.parse(storedSwipedIds) : []);
-                
+                const storedSwipedIds = safeStorage.get("swipedDogIds");
+                const swipedIds = new Set(
+                  storedSwipedIds ? JSON.parse(storedSwipedIds) : [],
+                );
+
                 // Filter out dogs that have been swiped, but NOT the dog at current viewing index
                 const currentViewingIndex = prevDogs.length; // This will be the index after we append
                 const newDogs = fetchedDogs.filter((dog, idx) => {
@@ -303,7 +309,7 @@ export function SwipeContainerWithFilters({
                   }
                   return !swipedIds.has(dog.id);
                 });
-                
+
                 if (newDogs.length > 0) {
                   return [...prevDogs, ...newDogs];
                 }
@@ -359,13 +365,7 @@ export function SwipeContainerWithFilters({
       });
     }
     setLastTap(now);
-  }, [
-    currentIndex,
-    dogs,
-    lastTap,
-    handleSwipeComplete,
-    onCardExpanded,
-  ]);
+  }, [currentIndex, dogs, lastTap, handleSwipeComplete, onCardExpanded]);
 
   // Onboarding state - check this first, before loading or empty states
   if (needsOnboarding) {
@@ -470,7 +470,10 @@ export function SwipeContainerWithFilters({
           </button>
 
           <div className="flex-1 flex justify-between items-center pr-12">
-            <div onClick={() => setShowFilters(true)} className="cursor-pointer">
+            <div
+              onClick={() => setShowFilters(true)}
+              className="cursor-pointer"
+            >
               <SwipeFilters compact onFiltersChange={() => {}} />
             </div>
             <div className="flex gap-2">
@@ -478,7 +481,7 @@ export function SwipeContainerWithFilters({
                 onClick={() => {
                   // Clear swiped dogs history
                   setSwipedDogIds(new Set());
-                  safeStorage.remove('swipedDogIds');
+                  safeStorage.remove("swipedDogIds");
                   setCurrentIndex(0);
                   setOffset(0);
                   setDogs([]);
@@ -491,7 +494,9 @@ export function SwipeContainerWithFilters({
               </button>
               <button
                 onClick={() => {
-                  console.log('Filter button clicked, setting showFilters to true');
+                  console.log(
+                    "Filter button clicked, setting showFilters to true",
+                  );
                   setShowFilters(true);
                 }}
                 className="px-4 py-2 text-sm bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
@@ -534,7 +539,7 @@ export function SwipeContainerWithFilters({
                 <span className="text-3xl transform rotate-180">🐾</span>
                 <span className="text-xs text-gray-500 mt-1">Back</span>
               </button>
-              
+
               <button
                 onClick={goToNext}
                 disabled={currentIndex === dogs.length - 1}

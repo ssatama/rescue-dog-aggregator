@@ -178,7 +178,7 @@ export class SwipeMetrics {
 
       // Create end mark
       performance.mark("swipe-init-complete");
-      
+
       // Measure only if we can
       let loadTime = 0;
       try {
@@ -187,7 +187,7 @@ export class SwipeMetrics {
           "swipe-init-start",
           "swipe-init-complete",
         );
-        
+
         const entries = performance.getEntriesByName("swipe-load-time");
         loadTime = entries.length > 0 ? entries[0].duration : 0;
       } catch (e) {

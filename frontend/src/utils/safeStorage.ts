@@ -40,7 +40,7 @@ export const safeStorage = {
   parse<T>(key: string, defaultValue: T): T {
     const value = this.get(key);
     if (!value) return defaultValue;
-    
+
     try {
       return JSON.parse(value) as T;
     } catch {
@@ -54,5 +54,5 @@ export const safeStorage = {
     } catch {
       return false;
     }
-  }
+  },
 };
