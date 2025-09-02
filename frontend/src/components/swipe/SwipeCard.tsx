@@ -67,7 +67,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
   const favoriteActivities = profileData.favoriteActivities || [];
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg dark:shadow-gray-900/50 overflow-hidden relative group transition-colors flex flex-col">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl dark:shadow-gray-900/50 overflow-hidden relative group transition-colors flex flex-col">
       {/* NEW Badge for recent dogs */}
       {dog.created_at &&
         new Date().getTime() - new Date(dog.created_at).getTime() <

@@ -4,11 +4,13 @@ import Image from "next/image";
 interface ImageCarouselProps {
   images: string[];
   dogName: string;
+  overlayButtons?: React.ReactNode;
 }
 
 export const ImageCarousel: React.FC<ImageCarouselProps> = ({
   images,
   dogName,
+  overlayButtons,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -97,6 +99,13 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
             />
           </div>
         ))}
+        
+        {/* Overlay buttons */}
+        {overlayButtons && (
+          <div className="absolute top-4 right-4 z-10">
+            {overlayButtons}
+          </div>
+        )}
       </div>
 
       {showDots && (

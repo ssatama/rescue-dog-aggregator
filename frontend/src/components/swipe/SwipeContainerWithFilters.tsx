@@ -453,7 +453,7 @@ export function SwipeContainerWithFilters({
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-8 bg-gray-50 dark:bg-gray-900">
+      <div className="flex flex-col items-center justify-center h-full p-8 bg-gradient-to-b from-orange-50/30 to-white dark:bg-gray-900">
         <div className="animate-pulse">
           <div className="w-80 h-96 bg-gray-200 dark:bg-gray-700 rounded-2xl mb-4"></div>
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
@@ -474,7 +474,7 @@ export function SwipeContainerWithFilters({
           onFiltersChange={setFilters}
           isDarkMode={theme === "dark"}
         />
-        <div className="flex flex-col items-center justify-center h-full p-8 bg-gray-50 dark:bg-gray-900">
+        <div className="flex flex-col items-center justify-center h-full p-8 bg-gradient-to-b from-orange-50/30 to-white dark:bg-gray-900">
           <div className="text-center">
             <div className="text-6xl mb-4">🐕</div>
             <h3 className="text-2xl font-bold mb-2 dark:text-gray-100">
@@ -498,7 +498,7 @@ export function SwipeContainerWithFilters({
   // If we're at the end but loading more, show a loading state
   if (currentIndex >= dogs.length && isLoadingMore) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-8 bg-gray-50 dark:bg-gray-900">
+      <div className="flex flex-col items-center justify-center h-full p-8 bg-gradient-to-b from-orange-50/30 to-white dark:bg-gray-900">
         <div className="animate-pulse">
           <div className="w-80 h-96 bg-gray-200 dark:bg-gray-700 rounded-2xl mb-4"></div>
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
@@ -523,7 +523,7 @@ export function SwipeContainerWithFilters({
         isDarkMode={theme === "dark"}
       />
 
-      <div className="relative flex flex-col min-h-[100dvh] overflow-y-auto bg-gray-50 dark:bg-gray-900">
+      <div className="relative flex flex-col min-h-[100dvh] overflow-y-auto bg-gradient-to-b from-orange-50/30 to-white dark:bg-gray-900">
         {/* Header with Filter Bar and Exit Button */}
         <div className="flex-shrink-0 p-4 flex justify-between items-center bg-white dark:bg-gray-800 border-b dark:border-gray-700 relative">
           {/* Exit button - absolute positioned */}
@@ -594,7 +594,7 @@ export function SwipeContainerWithFilters({
         </div>
 
         {/* Main swipe container - responsive for small screens */}
-        <div className="flex-1 flex flex-col items-center justify-start p-2 sm:p-4 pb-8 bg-gray-50 dark:bg-gray-900">
+        <div className="flex-1 flex flex-col items-center justify-start p-2 sm:p-4 pb-8">
           <div
             className="relative w-full flex flex-col"
             style={{
@@ -619,12 +619,12 @@ export function SwipeContainerWithFilters({
                   (_, idx) => (
                     <div
                       key={idx}
-                      className={`w-2 h-2 rounded-full transition-all ${
+                      className={`rounded-full transition-all duration-200 ${
                         idx === currentIndex % 10
-                          ? "bg-orange-500 w-3"
+                          ? "bg-orange-500 w-3 h-3"
                           : idx < currentIndex % 10
-                            ? "bg-orange-300"
-                            : "bg-gray-300 dark:bg-gray-600"
+                            ? "bg-orange-300 w-2 h-2"
+                            : "bg-gray-300 dark:bg-gray-600 w-2 h-2"
                       }`}
                     />
                   ),

@@ -134,7 +134,7 @@ describe("SwipeCard", () => {
 
     const card = container.querySelector(".rounded-2xl");
     expect(card).toBeInTheDocument();
-    expect(card).toHaveClass("shadow-lg");
+    expect(card).toHaveClass("shadow-xl");
   });
 
   it("should have 4:3 aspect ratio for image container", () => {

@@ -178,7 +178,7 @@ describe("SwipeDetails", () => {
       <SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />,
     );
 
-    const shareButton = screen.getByText("Share");
+    const shareButton = screen.getByLabelText("Share");
     expect(shareButton).toBeInTheDocument();
 
     fireEvent.click(shareButton);
@@ -240,7 +240,7 @@ describe("SwipeDetails", () => {
       <SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />,
     );
 
-    const saveButton = screen.getByRole("button", { name: /Save/i });
+    const saveButton = screen.getByRole("button", { name: /Add to favorites/i });
     expect(saveButton).toBeInTheDocument();
 
     fireEvent.click(saveButton);

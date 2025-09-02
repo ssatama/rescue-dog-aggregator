@@ -4,7 +4,7 @@ import * as Sentry from "@sentry/nextjs";
 import { useFavorites } from "@/hooks/useFavorites";
 import { ImageCarousel } from "./ImageCarousel";
 import { AdoptionCTA } from "./AdoptionCTA";
-import { X, Heart } from "lucide-react";
+import { X, Heart, Share2 } from "lucide-react";
 import { getPersonalityTraitColor } from "../../utils/personalityColors";
 import ShareButton from "../ui/ShareButton";
 
@@ -96,6 +96,44 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
   const allImages = [dog.image_url, ...(dog.additional_images || [])];
   const isAlreadyFavorite = isFavorited(dog.id);
   const profilerData = dog.dog_profiler_data;
+  
+  // Create overlay buttons
+  const overlayButtons = (
+    <div className="flex gap-2">
+      <div onClick={(e) => e.stopPropagation()}>
+        <ShareButton
+          url={`${typeof window !== "undefined" ? window.location.origin : "https://www.rescuedogs.me"}/dog/${dog.id}`}
+          title={`Check out ${dog.name} for adoption!`}
+          text={
+            dog.dog_profiler_data?.description ||
+            `${dog.name} is a ${dog.age} ${dog.breed} looking for a forever home!`
+          }
+          compact={true}
+          variant="ghost"
+          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:scale-105 hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all"
+        />
+      </div>
+      {!isAlreadyFavorite && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleSave();
+          }}
+          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:scale-105 hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all flex items-center justify-center"
+          aria-label={isAlreadyFavorite ? "Remove from favorites" : "Add to favorites"}
+        >
+          <Heart 
+            size={20}
+            className={`${
+              isAlreadyFavorite 
+                ? 'text-red-500 fill-current' 
+                : 'text-gray-700 dark:text-gray-200'
+            }`}
+          />
+        </button>
+      )}
+    </div>
+  );
 
   const getGoodWithIcon = (value: boolean | string | undefined) => {
     if (value === true) return "✓";
@@ -146,7 +184,11 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
             </div>
 
             <div className="pb-safe">
-              <ImageCarousel images={allImages} dogName={dog.name} />
+              <ImageCarousel 
+                images={allImages} 
+                dogName={dog.name}
+                overlayButtons={overlayButtons}
+              />
 
               <div className="px-4 py-6 space-y-6">
                 <div>
@@ -275,36 +317,13 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                   </div>
                 )}
 
-                <div className="space-y-3 pt-4">
+                <div className="pt-4">
                   <AdoptionCTA
                     adoptionUrl={dog.adoption_url || ""}
                     dogId={dog.id}
                     dogName={dog.name}
                     organizationName={dog.organization_name}
                   />
-
-                  <div className="flex gap-3">
-                    <ShareButton
-                      url={`${typeof window !== "undefined" ? window.location.origin : "https://www.rescuedogs.me"}/dog/${dog.id}`}
-                      title={`Check out ${dog.name} for adoption!`}
-                      text={
-                        dog.dog_profiler_data?.description ||
-                        `${dog.name} is a ${dog.age} ${dog.breed} looking for a forever home!`
-                      }
-                      variant="outline"
-                      className="!flex-1 !w-full !h-auto !py-3 !px-4 !bg-pink-100 dark:!bg-pink-900/30 !text-pink-600 dark:!text-pink-400 !rounded-full !font-medium hover:!bg-pink-200 dark:hover:!bg-pink-900/50 !transition-colors !flex !items-center !justify-center !gap-2 !border-0 !shadow-none hover:!shadow-none hover:!translate-y-0"
-                    />
-
-                    {!isAlreadyFavorite && (
-                      <button
-                        onClick={handleSave}
-                        className="flex-1 py-3 px-4 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-full font-medium hover:bg-pink-200 dark:hover:bg-pink-900/50 transition-colors flex items-center justify-center gap-2"
-                      >
-                        <Heart size={20} />
-                        Save
-                      </button>
-                    )}
-                  </div>
                 </div>
               </div>
             </div>
