@@ -7,6 +7,7 @@ import SwipeErrorBoundary from "../../components/swipe/SwipeErrorBoundary";
 import { useRouter } from "next/navigation";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { swipeMetrics } from "../../utils/swipeMetrics";
+import { get } from "../../utils/api";
 import * as Sentry from "@sentry/nextjs";
 
 interface Dog {
@@ -111,11 +112,9 @@ export default function SwipePage() {
 
   const fetchDogsWithFilters = async (queryString: string): Promise<Dog[]> => {
     try {
-      const response = await fetch(`/api/dogs/swipe?${queryString}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch dogs: ${response.statusText}`);
-      }
-      const data = await response.json();
+      // Parse query string into params object for the get function
+      const params = Object.fromEntries(new URLSearchParams(queryString));
+      const data = await get("/api/dogs/swipe", params);
 
       // Transform the dogs data to ensure organization is a string
       const transformedDogs = (data.dogs || []).map((dog: any) => ({
