@@ -19,6 +19,7 @@ import { SwipeContainerEnhanced } from "./SwipeContainerEnhanced";
 import useSwipeFilters from "../../hooks/useSwipeFilters";
 import type { SwipeFilters as Filters } from "../../hooks/useSwipeFilters";
 import { safeStorage } from "../../utils/safeStorage";
+import { useTheme } from "../providers/ThemeProvider";
 
 // Constants
 const DOUBLE_TAP_DELAY = 300;
@@ -52,6 +53,7 @@ export function SwipeContainerWithFilters({
   onCardExpanded,
 }: SwipeContainerWithFiltersProps) {
   const router = useRouter();
+  const { theme } = useTheme();
   const { addFavorite, isFavorited } = useFavorites();
   const {
     filters,
@@ -470,7 +472,7 @@ export function SwipeContainerWithFilters({
           filters={filters}
           onClose={() => setShowFilters(false)}
           onFiltersChange={setFilters}
-          isDarkMode={true}
+          isDarkMode={theme === "dark"}
         />
         <div className="flex flex-col items-center justify-center h-full p-8 bg-gray-50 dark:bg-gray-900">
           <div className="text-center">
@@ -518,7 +520,7 @@ export function SwipeContainerWithFilters({
         filters={filters}
         onClose={() => setShowFilters(false)}
         onFiltersChange={setFilters}
-        isDarkMode={false}
+        isDarkMode={theme === "dark"}
       />
 
       <div className="relative flex flex-col min-h-[100dvh] overflow-y-auto bg-gray-50 dark:bg-gray-900">
