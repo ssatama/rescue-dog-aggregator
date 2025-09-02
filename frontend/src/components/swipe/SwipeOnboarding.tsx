@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SwipeFilters } from "../../hooks/useSwipeFilters";
 import { safeStorage } from "../../utils/safeStorage";
+import { get } from "../../utils/api";
 
 interface SwipeOnboardingProps {
   onComplete: (skipped: boolean, filters?: SwipeFilters) => void;
@@ -93,8 +94,7 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
   useEffect(() => {
     const fetchAvailableCountries = async () => {
       try {
-        const response = await fetch("/api/dogs/available-countries");
-        const data = await response.json();
+        const data = await get("/api/dogs/available-countries");
 
         // Transform API response to CountryOption format
         const countriesWithCounts = (data.countries || data).map(
@@ -126,10 +126,11 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
     const fetchSizeCounts = async () => {
       try {
         const sizePromises = SIZES.map(async (size) => {
-          const response = await fetch(
-            `/api/dogs/swipe?adoptable_to_country=${selectedCountry}&size[]=${size.value}&limit=1`,
-          );
-          const data = await response.json();
+          const data = await get("/api/dogs/swipe", {
+            adoptable_to_country: selectedCountry,
+            "size[]": size.value,
+            limit: 1,
+          });
           return {
             ...size,
             count: data.total || 0,

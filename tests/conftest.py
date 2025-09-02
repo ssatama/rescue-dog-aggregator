@@ -38,13 +38,29 @@ TEST_DB_HOST = "localhost"
 
 # --- Database Pool Initialization ---
 @pytest.fixture(scope="session", autouse=True)
-def initialize_database_pool():
+def initialize_database_pool(request):
     """Initialize the database connection pool for the entire test session.
 
     This fixture runs automatically at the start of the test session and ensures
     the database pool is initialized before any tests that might use the new
     secure database modules.
+    
+    For unit/fast tests, skip database initialization since they should not access database.
     """
+    # Check if we're running only unit/fast tests that don't need database
+    print(f"\n[conftest] DEBUG: request.config exists: {hasattr(request.config, 'getoption')}")
+    if hasattr(request.config, 'getoption'):
+        markexpr = request.config.getoption('-m', None)
+        print(f"[conftest] DEBUG: markexpr = {markexpr}")
+        if markexpr and ('unit or fast' in markexpr or 'unit and fast' in markexpr):
+            print("\n[conftest] Skipping database pool initialization for unit/fast tests.")
+            return
+    
+    # Check environment variable that indicates unit-only test run
+    if os.environ.get('PYTEST_UNIT_ONLY') == 'true':
+        print("\n[conftest] Skipping database pool initialization for unit-only test run.")
+        return
+    
     print("\n[conftest] Initializing database connection pool for test session...")
 
     # Initialize the new api.database connection pool
@@ -66,34 +82,32 @@ def initialize_database_pool():
     # Initialize the api.database pool
     from api.database import get_connection_pool, initialize_pool
 
+    utils_pool = None
     try:
         initialize_pool(max_retries=3)
         print("[conftest] API database connection pool initialized successfully.")
+        
+        # Also initialize the utils.db_connection pool for backward compatibility
+        test_db_config = DatabaseConfig(host=TEST_DB_HOST, user=TEST_DB_USER, database=TEST_DB_NAME, password=TEST_DB_PASSWORD, port=5432)
+        from utils.db_connection import initialize_database_pool as init_utils_pool
+
+        utils_pool = init_utils_pool(test_db_config)
+        print("[conftest] Utils database connection pool initialized successfully.")
+        
     except Exception as e:
-        print(f"[conftest] Warning: Could not initialize API pool: {e}")
-
-    # Also initialize the utils.db_connection pool for backward compatibility
-    test_db_config = DatabaseConfig(host=TEST_DB_HOST, user=TEST_DB_USER, database=TEST_DB_NAME, password=TEST_DB_PASSWORD, port=5432)
-    from utils.db_connection import initialize_database_pool as init_utils_pool
-
-    utils_pool = init_utils_pool(test_db_config)
-    print("[conftest] Utils database connection pool initialized successfully.")
+        print(f"[conftest] Warning: Could not initialize database pools: {e}")
+        print("[conftest] This is expected for unit/fast tests that don't need database access.")
 
     yield
 
     # Cleanup: Close utils pool only - api pool managed per module
-    print("[conftest] Closing utils database connection pool...")
-
-    # Close utils pool
     if utils_pool:
+        print("[conftest] Closing utils database connection pool...")
         utils_pool.close_all_connections()
+        print("[conftest] Database connection pools cleanup completed.")
 
-    # Note: We don't close api.database pool here anymore since it's managed
-    # at the module level by the client fixture
-
-    # Restore original config
-    config.DB_CONFIG.update(original_db_config)
-    print("[conftest] Database connection pools cleanup completed.")
+        # Restore original config
+        config.DB_CONFIG.update(original_db_config)
 
 
 # ---
