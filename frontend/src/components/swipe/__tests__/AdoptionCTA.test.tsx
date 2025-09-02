@@ -32,9 +32,10 @@ describe("AdoptionCTA", () => {
     );
 
     const button = screen.getByRole("button", {
-      name: /Start Adoption Process/i,
+      name: /Visit Buddy's profile page/i,
     });
     expect(button).toBeInTheDocument();
+    expect(screen.getByText(/Visit Buddy/)).toBeInTheDocument();
     expect(button).toHaveClass("bg-orange-500");
   });
 
@@ -49,7 +50,7 @@ describe("AdoptionCTA", () => {
     );
 
     const button = screen.getByRole("button", {
-      name: /Start Adoption Process/i,
+      name: /Visit Buddy's profile page/i,
     });
     fireEvent.click(button);
 
@@ -64,7 +65,7 @@ describe("AdoptionCTA", () => {
     });
   });
 
-  it("should open adoption URL in new tab", () => {
+  it("should open dog detail page in new tab", () => {
     render(
       <AdoptionCTA
         adoptionUrl="https://example.com/adopt"
@@ -75,18 +76,18 @@ describe("AdoptionCTA", () => {
     );
 
     const button = screen.getByRole("button", {
-      name: /Start Adoption Process/i,
+      name: /Visit Buddy's profile page/i,
     });
     fireEvent.click(button);
 
     expect(mockWindowOpen).toHaveBeenCalledWith(
-      "https://example.com/adopt",
+      "/dogs/1",
       "_blank",
       "noopener,noreferrer",
     );
   });
 
-  it("should show arrow icon", () => {
+  it("should show paw print icon", () => {
     render(
       <AdoptionCTA
         adoptionUrl="https://example.com/adopt"
@@ -96,10 +97,10 @@ describe("AdoptionCTA", () => {
       />,
     );
 
-    expect(screen.getByText("→")).toBeInTheDocument();
+    expect(screen.getByText("🐾")).toBeInTheDocument();
   });
 
-  it("should be disabled when no adoption URL", () => {
+  it("should still work even when no adoption URL provided", () => {
     render(
       <AdoptionCTA
         adoptionUrl=""
@@ -110,10 +111,10 @@ describe("AdoptionCTA", () => {
     );
 
     const button = screen.getByRole("button", {
-      name: /Adoption Info Coming Soon/i,
+      name: /Visit Buddy's profile page/i,
     });
-    expect(button).toBeDisabled();
-    expect(button).toHaveClass("bg-gray-300");
+    expect(button).not.toBeDisabled();
+    expect(button).toHaveClass("bg-orange-500");
   });
 
   it("should have hover effect", () => {
@@ -127,7 +128,7 @@ describe("AdoptionCTA", () => {
     );
 
     const button = screen.getByRole("button", {
-      name: /Start Adoption Process/i,
+      name: /Visit Buddy's profile page/i,
     });
     expect(button).toHaveClass("hover:bg-orange-600");
   });
@@ -143,7 +144,7 @@ describe("AdoptionCTA", () => {
     );
 
     const button = screen.getByRole("button", {
-      name: /Start Adoption Process/i,
+      name: /Visit Buddy's profile page/i,
     });
     expect(button).toHaveClass("w-full");
   });
@@ -159,11 +160,8 @@ describe("AdoptionCTA", () => {
     );
 
     const button = screen.getByRole("button", {
-      name: /Start Adoption Process/i,
+      name: /Visit Buddy's profile page/i,
     });
-    expect(button).toHaveAttribute(
-      "aria-label",
-      "Start adoption process for Buddy",
-    );
+    expect(button).toHaveAttribute("aria-label", "Visit Buddy's profile page");
   });
 });

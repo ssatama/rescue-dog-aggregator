@@ -121,7 +121,7 @@
   }
 }
 
-/* Pulsing animation for Start Swiping button */
+/* Pulsing animation for Quick Browse button */
 @keyframes pulse {
   0% {
     transform: scale(1);

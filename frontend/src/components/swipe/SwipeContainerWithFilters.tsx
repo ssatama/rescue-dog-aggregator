@@ -710,6 +710,31 @@ export function SwipeContainerWithFilters({
               <SwipeCard dog={currentDog} />
             </div>
 
+            {/* Progress Indicator */}
+            <div className="flex flex-col items-center mt-4 mb-2">
+              {/* Progress dots */}
+              <div className="flex gap-1 mb-2">
+                {Array.from({ length: Math.min(dogs.length, 10) }).map(
+                  (_, idx) => (
+                    <div
+                      key={idx}
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        idx === currentIndex % 10
+                          ? "bg-orange-500 w-3"
+                          : idx < currentIndex % 10
+                            ? "bg-orange-300"
+                            : "bg-gray-300"
+                      }`}
+                    />
+                  ),
+                )}
+              </div>
+              {/* Progress text */}
+              <p className="text-sm text-gray-500">
+                Dog {currentIndex + 1} of {dogs.length}
+              </p>
+            </div>
+
             {/* Paw Navigation - responsive sizes */}
             <div className="flex justify-center gap-4 sm:gap-8 mt-2 sm:mt-4">
               <button

@@ -37,7 +37,7 @@ describe("SwipeCard", () => {
   it("should display dog name and tagline", () => {
     renderWithProvider(<SwipeCard dog={mockDog} />);
 
-    expect(screen.getByText(/About Buddy/)).toBeInTheDocument();
+    expect(screen.getByText("Buddy")).toBeInTheDocument();
     // Shows enriched tagline
     expect(
       screen.getByText(/Buddy: Your next adventure companion!/),
@@ -73,7 +73,7 @@ describe("SwipeCard", () => {
     expect(screen.getByText(/✨/)).toBeInTheDocument();
   });
 
-  it("should not show NEW badge (removed in redesign)", () => {
+  it("should show NEW badge for recent dogs", () => {
     const newDog = {
       ...mockDog,
       created_at: new Date().toISOString(),
@@ -81,7 +81,7 @@ describe("SwipeCard", () => {
 
     renderWithProvider(<SwipeCard dog={newDog} />);
 
-    expect(screen.queryByText("NEW")).not.toBeInTheDocument();
+    expect(screen.getByText("NEW")).toBeInTheDocument();
   });
 
   it("should not show NEW badge for dogs older than 7 days", () => {
@@ -124,7 +124,7 @@ describe("SwipeCard", () => {
 
     renderWithProvider(<SwipeCard dog={minimalDog} />);
 
-    expect(screen.getByText(/About Max/)).toBeInTheDocument();
+    expect(screen.getByText("Max")).toBeInTheDocument();
     expect(screen.queryByText("Energy:")).not.toBeInTheDocument();
     expect(screen.queryByText("🦴")).not.toBeInTheDocument();
   });
@@ -137,10 +137,10 @@ describe("SwipeCard", () => {
     expect(card).toHaveClass("shadow-lg");
   });
 
-  it("should have responsive height for image container", () => {
+  it("should have 4:3 aspect ratio for image container", () => {
     renderWithProvider(<SwipeCard dog={mockDog} />);
 
     const imageContainer = screen.getByTestId("image-container");
-    expect(imageContainer).toHaveStyle({ height: "55%" });
+    expect(imageContainer).toHaveClass("aspect-[4/3]");
   });
 });

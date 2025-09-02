@@ -5,6 +5,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { ImageCarousel } from "./ImageCarousel";
 import { AdoptionCTA } from "./AdoptionCTA";
 import { X, Share, Heart } from "lucide-react";
+import { getPersonalityTraitColor } from "../../utils/personalityColors";
 
 interface DogProfilerData {
   description?: string;
@@ -258,32 +259,14 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                           .map((trait, index) => (
                             <span
                               key={index}
-                              className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-full text-sm font-medium"
+                              className={`px-4 py-2 rounded-full text-base font-medium ${getPersonalityTraitColor(trait)}`}
                             >
-                              🐕 {trait}
+                              {trait}
                             </span>
                           ))}
                       </div>
                     </div>
                   )}
-
-                {profilerData?.energy_level && (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">Energy Level</h3>
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map((level) => (
-                        <div
-                          key={level}
-                          data-testid={`energy-dot-${level}`}
-                          className={`
-                            w-3 h-3 rounded-full
-                            ${level <= (profilerData.energy_level || 0) ? "bg-orange-500" : "bg-gray-200"}
-                          `}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {(profilerData?.good_with_dogs !== undefined ||
                   profilerData?.good_with_cats !== undefined ||

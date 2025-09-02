@@ -268,7 +268,7 @@ describe("SwipeOnboarding", () => {
       });
 
       // Complete
-      fireEvent.click(screen.getByRole("button", { name: /Start Swiping/i }));
+      fireEvent.click(screen.getByRole("button", { name: /Start Browsing/i }));
 
       await waitFor(() => {
         expect(localStorage.getItem("swipeOnboardingComplete")).toBe("true");
@@ -298,7 +298,7 @@ describe("SwipeOnboarding", () => {
         fireEvent.click(screen.getByRole("button", { name: /Small/i }));
       });
 
-      fireEvent.click(screen.getByRole("button", { name: /Start Swiping/i }));
+      fireEvent.click(screen.getByRole("button", { name: /Start Browsing/i }));
 
       await waitFor(() => {
         expect(mockOnComplete).toHaveBeenCalledWith(false, {

@@ -107,11 +107,24 @@ describe("SwipeDetails", () => {
     render(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
 
     const adoptButton = screen.getByRole("button", {
-      name: /Start Adoption Process/i,
+      name: /Visit Buddy's profile page/i,
     });
     expect(adoptButton).toBeInTheDocument();
+    expect(screen.getByText(/Visit Buddy/)).toBeInTheDocument();
+    // Check that the button contains a paw print
+    const pawPrints = screen.getAllByText("🐾");
+    expect(pawPrints.length).toBeGreaterThan(0);
 
+    // Mock window.open for the test
+    const originalOpen = window.open;
+    window.open = jest.fn();
     fireEvent.click(adoptButton);
+    expect(window.open).toHaveBeenCalledWith(
+      "/dogs/1",
+      "_blank",
+      "noopener,noreferrer",
+    );
+    window.open = originalOpen;
 
     expect(mockCaptureEvent).toHaveBeenCalledWith({
       message: "swipe.adoption.clicked",
@@ -246,16 +259,11 @@ describe("SwipeDetails", () => {
     });
   });
 
-  it("should display energy level indicator", () => {
+  it("should not display energy level indicator (removed in redesign)", () => {
     render(<SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />);
 
-    const energyIndicators = screen.getAllByTestId(/energy-dot/);
-    expect(energyIndicators).toHaveLength(5);
-
-    const filledDots = energyIndicators.filter((dot) =>
-      dot.className.includes("bg-orange"),
-    );
-    expect(filledDots).toHaveLength(4);
+    expect(screen.queryByTestId(/energy-dot/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Energy Level")).not.toBeInTheDocument();
   });
 
   it("should show organization information", () => {

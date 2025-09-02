@@ -95,7 +95,7 @@ export default function Header() {
                         filled
                         aria-label="Heart icon"
                       />
-                      Swipe
+                      Quick Browse
                     </span>
                   </Link>
                   {pathname === "/swipe" && (
@@ -178,7 +178,7 @@ export default function Header() {
                       filled
                       aria-label="Heart icon"
                     />
-                    Swipe
+                    Quick Browse
                   </span>
                 </Link>
                 {pathname === "/swipe" && (

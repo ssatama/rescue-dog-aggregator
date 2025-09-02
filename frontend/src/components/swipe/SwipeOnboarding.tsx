@@ -431,9 +431,9 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
               <button
                 onClick={handleComplete}
                 className="w-full py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-all"
-                aria-label="Start Swiping"
+                aria-label="Start Browsing"
               >
-                Start Swiping
+                Start Browsing
               </button>
 
               <button

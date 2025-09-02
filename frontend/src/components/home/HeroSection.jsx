@@ -100,25 +100,24 @@ export default function HeroSection({
               </Link>
             </div>
 
-            {/* Mobile-only Swipe CTA */}
+            {/* Mobile-only Quick Browse CTA */}
             <div className="mt-6 md:hidden">
               <Link href="/swipe">
                 <Button
                   data-testid="hero-swipe-cta"
                   size="lg"
-                  className="w-full bg-orange-600 hover:bg-orange-700 text-white px-8 py-3"
+                  className="w-full bg-white text-orange-600 border-2 border-orange-600 hover:bg-orange-50 font-bold px-8 py-3"
                   style={{ minWidth: "48px", minHeight: "48px" }}
                 >
-                  <Icon
-                    name="heart"
-                    size="medium"
-                    className="mr-2 text-white"
-                    filled
-                    aria-label="Heart icon"
-                  />
-                  Start Swiping
+                  <span className="mr-2 text-xl" aria-label="Paw icon">
+                    🐾
+                  </span>
+                  Quick Browse Dogs
                 </Button>
               </Link>
+              <p className="text-sm text-gray-600 mt-2 text-center">
+                Meet dogs one at a time
+              </p>
             </div>
           </div>
 
