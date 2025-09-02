@@ -4,8 +4,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from psycopg2.extras import RealDictCursor
 from psycopg2 import sql
+from psycopg2.extras import RealDictCursor
 
 from api.dependencies import get_pooled_db_cursor
 from api.exceptions import handle_database_error
@@ -21,10 +21,10 @@ router = APIRouter()
 def build_age_conditions(age_groups):
     """Build SQL conditions for age filtering based on age groups."""
     age_conditions = []
-    
+
     for age_group in age_groups:
         age_group_lower = age_group.lower() if isinstance(age_group, str) else age_group
-        
+
         if age_group_lower == "puppy":
             # Puppy: 0-12 months only (not including "1 year")
             age_conditions.append(
@@ -69,7 +69,7 @@ def build_age_conditions(age_groups):
                 a.properties->>'age_text' ~* '^([8-9]|1[0-9])\\s*(year|years)'
             )"""
             )
-    
+
     return age_conditions
 
 
@@ -78,7 +78,7 @@ def apply_filters_to_query(query_parts, params, filter_country, size, age, exclu
     if filter_country:
         query_parts.append("AND o.ships_to ? %s")
         params.append(filter_country)
-    
+
     if size:
         if isinstance(size, list) and len(size) > 0:
             placeholders = ",".join(["%s"] * len(size))
@@ -87,7 +87,7 @@ def apply_filters_to_query(query_parts, params, filter_country, size, age, exclu
         elif isinstance(size, str):
             query_parts.append("AND LOWER(a.size) = %s")
             params.append(size.lower())
-    
+
     if age:
         if isinstance(age, list) and len(age) > 0:
             age_conditions = build_age_conditions(age)
@@ -97,12 +97,12 @@ def apply_filters_to_query(query_parts, params, filter_country, size, age, exclu
             age_conditions = build_age_conditions([age])
             if age_conditions:
                 query_parts.append("AND " + age_conditions[0])
-    
+
     if excluded_ids:
         placeholders = ",".join(["%s"] * len(excluded_ids))
         query_parts.append(f"AND a.id NOT IN ({placeholders})")
         params.extend(excluded_ids)
-    
+
     return query_parts, params
 
 
@@ -174,9 +174,7 @@ async def get_swipe_stack(
 
         # Apply filters using helper function
         filter_country = adoptable_to_country or country
-        query_parts, params = apply_filters_to_query(
-            query_parts, params, filter_country, size, age, excluded_ids
-        )
+        query_parts, params = apply_filters_to_query(query_parts, params, filter_country, size, age, excluded_ids)
 
         # Add ordering - deterministic algorithm with priority then id
         query_parts.append(
@@ -288,10 +286,8 @@ async def get_swipe_stack(
 
         # Apply same filters using helper function
         filter_country = adoptable_to_country or country
-        check_more_query_parts, check_params = apply_filters_to_query(
-            check_more_query_parts, check_params, filter_country, size, age, excluded_ids
-        )
-        
+        check_more_query_parts, check_params = apply_filters_to_query(check_more_query_parts, check_params, filter_country, size, age, excluded_ids)
+
         check_more_query = " ".join(check_more_query_parts)
 
         cursor.execute(check_more_query, check_params)

@@ -85,6 +85,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
           }}
           onCancel={onClose}
           onPreviewCount={handlePreviewCount}
+          isDarkMode={isDarkMode}
         />
       </div>
     </div>
