@@ -36,6 +36,7 @@ export interface DogProfilerData {
 
 export interface DogWithProfiler {
   id: number;
+  external_id?: string;
   name: string;
   breed?: string;
   standardized_breed?: string;
@@ -56,6 +57,8 @@ export interface DogWithProfiler {
   main_image?: string;
   primary_image_url?: string;
   adoption_url?: string;
+  slug?: string;
+  created_at?: string;
   dog_profiler_data?: DogProfilerData;
   properties?: Record<string, any>;
   [key: string]: any;
