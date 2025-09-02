@@ -96,19 +96,84 @@ async def get_swipe_stack(
         
         if age:
             if isinstance(age, list) and len(age) > 0:
-                # Handle multiple age groups - check both age_text and properties->age_text
-                placeholders = ','.join(['%s'] * len(age))
-                query_parts.append(f"""AND (
-                    LOWER(a.age_text) IN ({placeholders}) OR 
-                    LOWER(a.properties->>'age_text') IN ({placeholders})
-                )""")
-                params.extend([a.lower() for a in age])
-                params.extend([a.lower() for a in age])  # Need to add twice for both conditions
+                # Map age groups to age range conditions
+                age_conditions = []
+                for age_group in age:
+                    age_group_lower = age_group.lower()
+                    if age_group_lower == "puppy":
+                        # Puppy: 0-12 months only (not including "1 year")
+                        age_conditions.append("""(
+                            a.age_text ~* '^([1-9]|1[0-2])\\s*(month|months|mo)' OR
+                            a.properties->>'age_text' ~* '^([1-9]|1[0-2])\\s*(month|months|mo)' OR
+                            a.age_text ~* '^0\\s*(year|years|yr)' OR
+                            a.properties->>'age_text' ~* '^0\\s*(year|years|yr)'
+                        )""")
+                    elif age_group_lower == "young":
+                        # Young: 13-24 months OR 1-2 years
+                        age_conditions.append("""(
+                            a.age_text ~* '^(1[3-9]|2[0-4])\\s*(month|months|mo)' OR
+                            a.properties->>'age_text' ~* '^(1[3-9]|2[0-4])\\s*(month|months|mo)' OR
+                            a.age_text ~* '^1\\s*(year|years|yr)' OR
+                            a.properties->>'age_text' ~* '^1\\s*(year|years|yr)' OR
+                            a.age_text ~* '^2\\s*(year|years|yr)' OR
+                            a.properties->>'age_text' ~* '^2\\s*(year|years|yr)'
+                        )""")
+                    elif age_group_lower == "adult":
+                        # Adult: 3-7 years (not including 2 years)
+                        age_conditions.append("""(
+                            a.age_text ~* '^[3-7]\\s*(year|years|yr)' OR
+                            a.properties->>'age_text' ~* '^[3-7]\\s*(year|years|yr)' OR
+                            a.age_text ~* '^3\\s*-\\s*[4-7]\\s*(year|years)' OR
+                            a.properties->>'age_text' ~* '^3\\s*-\\s*[4-7]\\s*(year|years)' OR
+                            a.age_text ~* '^[4-6]\\s*-\\s*7\\s*(year|years)' OR
+                            a.properties->>'age_text' ~* '^[4-6]\\s*-\\s*7\\s*(year|years)'
+                        )""")
+                    elif age_group_lower == "senior":
+                        # Senior: 8+ years
+                        age_conditions.append("""(
+                            a.age_text ~* '^8\\s*\\+\\s*(year|years)' OR
+                            a.properties->>'age_text' ~* '^8\\s*\\+\\s*(year|years)' OR
+                            a.age_text ~* '^([8-9]|1[0-9])\\s*(year|years)' OR
+                            a.properties->>'age_text' ~* '^([8-9]|1[0-9])\\s*(year|years)'
+                        )""")
+                
+                if age_conditions:
+                    query_parts.append("AND (" + " OR ".join(age_conditions) + ")")
             elif isinstance(age, str):
-                # Handle single age (backward compatibility)
-                query_parts.append("AND (LOWER(a.age_text) = %s OR LOWER(a.properties->>'age_text') = %s)")
-                params.append(age.lower())
-                params.append(age.lower())
+                # Handle single age group (backward compatibility)
+                age_group_lower = age.lower()
+                if age_group_lower == "puppy":
+                    query_parts.append("""AND (
+                        a.age_text ~* '^([1-9]|1[0-2])\\s*(month|months|mo)' OR
+                        a.properties->>'age_text' ~* '^([1-9]|1[0-2])\\s*(month|months|mo)' OR
+                        a.age_text ~* '^0\\s*(year|years|yr)' OR
+                        a.properties->>'age_text' ~* '^0\\s*(year|years|yr)'
+                    )""")
+                elif age_group_lower == "young":
+                    query_parts.append("""AND (
+                        a.age_text ~* '^(1[3-9]|2[0-4])\\s*(month|months|mo)' OR
+                        a.properties->>'age_text' ~* '^(1[3-9]|2[0-4])\\s*(month|months|mo)' OR
+                        a.age_text ~* '^1\\s*(year|years|yr)' OR
+                        a.properties->>'age_text' ~* '^1\\s*(year|years|yr)' OR
+                        a.age_text ~* '^2\\s*(year|years|yr)' OR
+                        a.properties->>'age_text' ~* '^2\\s*(year|years|yr)'
+                    )""")
+                elif age_group_lower == "adult":
+                    query_parts.append("""AND (
+                        a.age_text ~* '^[3-7]\\s*(year|years|yr)' OR
+                        a.properties->>'age_text' ~* '^[3-7]\\s*(year|years|yr)' OR
+                        a.age_text ~* '^3\\s*-\\s*[4-7]\\s*(year|years)' OR
+                        a.properties->>'age_text' ~* '^3\\s*-\\s*[4-7]\\s*(year|years)' OR
+                        a.age_text ~* '^[4-6]\\s*-\\s*7\\s*(year|years)' OR
+                        a.properties->>'age_text' ~* '^[4-6]\\s*-\\s*7\\s*(year|years)'
+                    )""")
+                elif age_group_lower == "senior":
+                    query_parts.append("""AND (
+                        a.age_text ~* '^8\\s*\\+\\s*(year|years)' OR
+                        a.properties->>'age_text' ~* '^8\\s*\\+\\s*(year|years)' OR
+                        a.age_text ~* '^([8-9]|1[0-9])\\s*(year|years)' OR
+                        a.properties->>'age_text' ~* '^([8-9]|1[0-9])\\s*(year|years)'
+                    )""")
         
         if excluded_ids:
             placeholders = ','.join(['%s'] * len(excluded_ids))
@@ -233,17 +298,78 @@ async def get_swipe_stack(
         
         if age:
             if isinstance(age, list) and len(age) > 0:
-                placeholders = ','.join(['%s'] * len(age))
-                check_more_query += f""" AND (
-                    LOWER(a.age_text) IN ({placeholders}) OR 
-                    LOWER(a.properties->>'age_text') IN ({placeholders})
-                )"""
-                check_params.extend([a.lower() for a in age])
-                check_params.extend([a.lower() for a in age])
+                # Map age groups to age range conditions (same as main query)
+                age_conditions = []
+                for age_group in age:
+                    age_group_lower = age_group.lower()
+                    if age_group_lower == "puppy":
+                        age_conditions.append("""(
+                            a.age_text ~* '^(\\d+)\\s*(month|months|mo)' OR
+                            a.properties->>'age_text' ~* '^(\\d+)\\s*(month|months|mo)' OR
+                            a.age_text ~* '^(0|1)\\s*(year|years|yr)' OR
+                            a.properties->>'age_text' ~* '^(0|1)\\s*(year|years|yr)'
+                        )""")
+                    elif age_group_lower == "young":
+                        age_conditions.append("""(
+                            a.age_text ~* '^1\\s*-\\s*2\\s*(year|years)' OR
+                            a.properties->>'age_text' ~* '^1\\s*-\\s*2\\s*(year|years)' OR
+                            a.age_text ~* '^2\\s*(year|years)' OR
+                            a.properties->>'age_text' ~* '^2\\s*(year|years)' OR
+                            a.age_text ~* '^3\\s*(year|years)' OR
+                            a.properties->>'age_text' ~* '^3\\s*(year|years)'
+                        )""")
+                    elif age_group_lower == "adult":
+                        age_conditions.append("""(
+                            a.age_text ~* '^2\\s*-\\s*5\\s*(year|years)' OR
+                            a.properties->>'age_text' ~* '^2\\s*-\\s*5\\s*(year|years)' OR
+                            a.age_text ~* '^5\\s*-\\s*7\\s*(year|years)' OR
+                            a.properties->>'age_text' ~* '^5\\s*-\\s*7\\s*(year|years)' OR
+                            a.age_text ~* '^[4-7]\\s*(year|years)' OR
+                            a.properties->>'age_text' ~* '^[4-7]\\s*(year|years)'
+                        )""")
+                    elif age_group_lower == "senior":
+                        age_conditions.append("""(
+                            a.age_text ~* '^8\\s*\\+\\s*(year|years)' OR
+                            a.properties->>'age_text' ~* '^8\\s*\\+\\s*(year|years)' OR
+                            a.age_text ~* '^([8-9]|1[0-9])\\s*(year|years)' OR
+                            a.properties->>'age_text' ~* '^([8-9]|1[0-9])\\s*(year|years)'
+                        )""")
+                
+                if age_conditions:
+                    check_more_query += " AND (" + " OR ".join(age_conditions) + ")"
             elif isinstance(age, str):
-                check_more_query += " AND (LOWER(a.age_text) = %s OR LOWER(a.properties->>'age_text') = %s)"
-                check_params.append(age.lower())
-                check_params.append(age.lower())
+                # Handle single age group (backward compatibility)
+                age_group_lower = age.lower()
+                if age_group_lower == "puppy":
+                    check_more_query += """ AND (
+                        a.age_text ~* '^(\\d+)\\s*(month|months|mo)' OR
+                        a.properties->>'age_text' ~* '^(\\d+)\\s*(month|months|mo)' OR
+                        a.age_text ~* '^(0|1)\\s*(year|years|yr)' OR
+                        a.properties->>'age_text' ~* '^(0|1)\\s*(year|years|yr)'
+                    )"""
+                elif age_group_lower == "young":
+                    check_more_query += """ AND (
+                        a.age_text ~* '^1\\s*-\\s*2\\s*(year|years)' OR
+                        a.properties->>'age_text' ~* '^1\\s*-\\s*2\\s*(year|years)' OR
+                        a.age_text ~* '^[2-3]\\s*(year|years)' OR
+                        a.properties->>'age_text' ~* '^[2-3]\\s*(year|years)'
+                    )"""
+                elif age_group_lower == "adult":
+                    check_more_query += """ AND (
+                        a.age_text ~* '^2\\s*-\\s*5\\s*(year|years)' OR
+                        a.properties->>'age_text' ~* '^2\\s*-\\s*5\\s*(year|years)' OR
+                        a.age_text ~* '^5\\s*-\\s*7\\s*(year|years)' OR
+                        a.properties->>'age_text' ~* '^5\\s*-\\s*7\\s*(year|years)' OR
+                        a.age_text ~* '^[4-7]\\s*(year|years)' OR
+                        a.properties->>'age_text' ~* '^[4-7]\\s*(year|years)'
+                    )"""
+                elif age_group_lower == "senior":
+                    check_more_query += """ AND (
+                        a.age_text ~* '^8\\s*\\+\\s*(year|years)' OR
+                        a.properties->>'age_text' ~* '^8\\s*\\+\\s*(year|years)' OR
+                        a.age_text ~* '^([8-9]|1[0-9])\\s*(year|years)' OR
+                        a.properties->>'age_text' ~* '^([8-9]|1[0-9])\\s*(year|years)'
+                    )"""
         
         if excluded_ids:
             placeholders = ','.join(['%s'] * len(excluded_ids))

@@ -103,6 +103,7 @@ export function SwipeContainerWithFilters({
   useEffect(() => {
     const preloadCount = 3; // Preload next 3 images
     const imagesToPreload: string[] = [];
+    const imageElements: HTMLImageElement[] = [];
 
     for (let i = 1; i <= preloadCount; i++) {
       const nextIndex = currentIndex + i;
@@ -111,11 +112,21 @@ export function SwipeContainerWithFilters({
       }
     }
 
-    // Preload images using Image constructor
+    // Preload images using Image constructor and store references for cleanup
     imagesToPreload.forEach((src) => {
       const img = new Image();
       img.src = src;
+      imageElements.push(img);
     });
+
+    // Cleanup function to prevent memory leaks
+    return () => {
+      imageElements.forEach((img) => {
+        img.src = '';
+        img.onload = null;
+        img.onerror = null;
+      });
+    };
   }, [currentIndex, dogs]);
 
   // Fetch dogs when filters change
@@ -137,7 +148,10 @@ export function SwipeContainerWithFilters({
           setDogs(newDogs);
           // Preserve current position or clamp if needed when filters change
           setCurrentIndex((prevIndex) => {
-            const clampedIndex = Math.min(prevIndex, Math.max(0, newDogs.length - 1));
+            const clampedIndex = Math.min(
+              prevIndex,
+              Math.max(0, newDogs.length - 1),
+            );
             safeStorage.set("swipeCurrentIndex", clampedIndex.toString());
             return clampedIndex;
           });
@@ -297,14 +311,18 @@ export function SwipeContainerWithFilters({
         return newIndex;
       });
 
-      // NOW track this dog as swiped (after index is updated)
-      setSwipedDogIds((prev) => {
-        const newSet = new Set(prev);
-        newSet.add(currentDogId);
-        // Save to storage safely
-        safeStorage.stringify("swipedDogIds", Array.from(newSet));
-        return newSet;
-      });
+      // Track the dog we just swiped BEFORE updating the index
+      // This ensures we track the correct dog even if a re-render happens
+      const dogToTrack = dogs[currentIndex];
+      if (dogToTrack?.id) {
+        setSwipedDogIds((prev) => {
+          const newSet = new Set(prev);
+          newSet.add(dogToTrack.id);
+          // Save to storage safely
+          safeStorage.stringify("swipedDogIds", Array.from(newSet));
+          return newSet;
+        });
+      }
 
       // Check if we need to load more dogs
       if (
@@ -416,21 +434,87 @@ export function SwipeContainerWithFilters({
   // Empty state - but show loading if we're fetching more
   if (dogs.length === 0 || (currentIndex >= dogs.length && !isLoadingMore)) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-8">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🐕</div>
-          <h3 className="text-2xl font-bold mb-2">More dogs coming!</h3>
-          <p className="text-gray-600 mb-4">
-            Check back soon or adjust your filters
-          </p>
-          <button
-            onClick={() => setShowFilters(true)}
-            className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-          >
-            Change Filters
-          </button>
+      <>
+        {/* Filter Modal - show when clicking Change Filters */}
+        {showFilters && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
+            <div className="bg-white rounded-2xl max-w-md w-full">
+              <div className="p-4 border-b flex justify-between items-center">
+                <h2 className="text-xl font-bold">Filter Dogs</h2>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ✕
+                </button>
+              </div>
+              <SwipeFilters
+                initialFilters={filters}
+                onFiltersChange={(newFilters) => {
+                  setFilters(newFilters);
+                  setShowFilters(false);
+                  // Preserve current position when filters change
+                  Sentry.captureEvent({
+                    message: "swipe.filter.changed",
+                    extra: {
+                      filters: newFilters,
+                    },
+                  });
+                }}
+                onCancel={() => setShowFilters(false)}
+                onPreviewCount={async (testFilters) => {
+                  try {
+                    // Build query string from filters
+                    const params = new URLSearchParams();
+                    if (testFilters.country) {
+                      params.append(
+                        "adoptable_to_country",
+                        testFilters.country,
+                      );
+                    }
+                    testFilters.sizes.forEach((size) => {
+                      params.append("size[]", size);
+                    });
+                    testFilters.ages.forEach((age) => {
+                      params.append("age[]", age);
+                    });
+
+                    const response = await fetch(
+                      `/api/dogs/swipe?${params.toString()}&limit=1`,
+                    );
+                    if (response.ok) {
+                      const data = await response.json();
+                      // API returns object with dogs array and total count
+                      if (data && typeof data.total === "number") {
+                        return data.total;
+                      }
+                      return 0;
+                    }
+                    return 0;
+                  } catch {
+                    return 0;
+                  }
+                }}
+              />
+            </div>
+          </div>
+        )}
+        <div className="flex flex-col items-center justify-center h-full p-8">
+          <div className="text-center">
+            <div className="text-6xl mb-4">🐕</div>
+            <h3 className="text-2xl font-bold mb-2">More dogs coming!</h3>
+            <p className="text-gray-600 mb-4">
+              Check back soon or adjust your filters
+            </p>
+            <button
+              onClick={() => setShowFilters(true)}
+              className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+            >
+              Change Filters
+            </button>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -466,6 +550,7 @@ export function SwipeContainerWithFilters({
               </button>
             </div>
             <SwipeFilters
+              initialFilters={filters}
               onFiltersChange={(newFilters) => {
                 setFilters(newFilters);
                 setShowFilters(false);
@@ -476,6 +561,37 @@ export function SwipeContainerWithFilters({
                     filters: newFilters,
                   },
                 });
+              }}
+              onCancel={() => setShowFilters(false)}
+              onPreviewCount={async (testFilters) => {
+                try {
+                  // Build query string from filters
+                  const params = new URLSearchParams();
+                  if (testFilters.country) {
+                    params.append("adoptable_to_country", testFilters.country);
+                  }
+                  testFilters.sizes.forEach((size) => {
+                    params.append("size[]", size);
+                  });
+                  testFilters.ages.forEach((age) => {
+                    params.append("age[]", age);
+                  });
+
+                  const response = await fetch(
+                    `/api/dogs/swipe?${params.toString()}&limit=1`,
+                  );
+                  if (response.ok) {
+                    const data = await response.json();
+                    // API returns object with dogs array and total count
+                    if (data && typeof data.total === "number") {
+                      return data.total;
+                    }
+                    return 0;
+                  }
+                  return 0;
+                } catch {
+                  return 0;
+                }
               }}
             />
           </div>
@@ -605,7 +721,6 @@ export function SwipeContainerWithFilters({
                 </span>
               </button>
             </div>
-
           </div>
         </div>
       </div>

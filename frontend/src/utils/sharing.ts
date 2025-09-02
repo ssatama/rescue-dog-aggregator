@@ -263,7 +263,7 @@ export async function shareDog(
   },
   options?: Partial<ShareOptions>,
 ): Promise<{ success: boolean; method?: string; message?: string }> {
-  const shareUrl = `${SHARE_CONFIG.baseUrl}/dogs/${dog.id}`;
+  const shareUrl = `${SHARE_CONFIG.baseUrl}/dog/${dog.id}`;
   const shareText = `${dog.name} - ${dog.breed || "Rescue Dog"} at ${dog.organization_name || "Rescue Organization"}`;
 
   const shareData: ShareOptions = {
