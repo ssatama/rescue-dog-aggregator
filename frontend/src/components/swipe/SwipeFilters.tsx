@@ -154,31 +154,37 @@ export default function SwipeFilters({
     return (
       <div className="flex gap-2 items-center">
         {selectedCountry && (
-          <span className={`px-3 py-1 rounded-full text-sm ${
-            isDarkMode 
-              ? "bg-orange-900/30 text-orange-300" 
-              : "bg-orange-100 text-orange-800"
-          }`}>
+          <span
+            className={`px-3 py-1 rounded-full text-sm ${
+              isDarkMode
+                ? "bg-orange-900/30 text-orange-300"
+                : "bg-orange-100 text-orange-800"
+            }`}
+          >
             {selectedCountry.flag} {selectedCountry.label}
           </span>
         )}
         {filters.sizes.length > 0 && (
-          <span className={`px-3 py-1 rounded-full text-sm ${
-            isDarkMode 
-              ? "bg-orange-900/30 text-orange-300" 
-              : "bg-orange-100 text-orange-800"
-          }`}>
+          <span
+            className={`px-3 py-1 rounded-full text-sm ${
+              isDarkMode
+                ? "bg-orange-900/30 text-orange-300"
+                : "bg-orange-100 text-orange-800"
+            }`}
+          >
             {filters.sizes
               .map((s) => SIZES.find((size) => size.value === s)?.label)
               .join(" & ")}
           </span>
         )}
         {filters.ages.length > 0 && (
-          <span className={`px-3 py-1 rounded-full text-sm ${
-            isDarkMode 
-              ? "bg-orange-900/30 text-orange-300" 
-              : "bg-orange-100 text-orange-800"
-          }`}>
+          <span
+            className={`px-3 py-1 rounded-full text-sm ${
+              isDarkMode
+                ? "bg-orange-900/30 text-orange-300"
+                : "bg-orange-100 text-orange-800"
+            }`}
+          >
             {filters.ages
               .map((a) => AGES.find((age) => age.value === a)?.label)
               .join(" & ")}
@@ -189,7 +195,9 @@ export default function SwipeFilters({
   }
 
   return (
-    <div className={`space-y-4 p-4 ${isDarkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"}`}>
+    <div
+      className={`space-y-4 p-4 ${isDarkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"}`}
+    >
       <div>
         <label
           htmlFor="country-select"
@@ -220,9 +228,11 @@ export default function SwipeFilters({
           ))}
         </select>
         {selectedCountry && (
-          <div className={`mt-2 text-sm ${
-            isDarkMode ? "text-gray-300" : "text-gray-600"
-          }`}>
+          <div
+            className={`mt-2 text-sm ${
+              isDarkMode ? "text-gray-300" : "text-gray-600"
+            }`}
+          >
             {selectedCountry.flag} {selectedCountry.label}
           </div>
         )}
@@ -334,21 +344,27 @@ export default function SwipeFilters({
 
       {/* Preview count */}
       {!compact && previewCount !== null && (
-        <div className={`text-center py-2 text-sm ${
-          isDarkMode ? "text-gray-300" : "text-gray-600"
-        }`}>
+        <div
+          className={`text-center py-2 text-sm ${
+            isDarkMode ? "text-gray-300" : "text-gray-600"
+          }`}
+        >
           {isLoadingPreview ? (
             <span>Checking...</span>
           ) : previewCount === 0 ? (
-            <span className={`font-medium ${
-              isDarkMode ? "text-red-400" : "text-red-600"
-            }`}>
+            <span
+              className={`font-medium ${
+                isDarkMode ? "text-red-400" : "text-red-600"
+              }`}
+            >
               No dogs match these filters - try different options
             </span>
           ) : (
-            <span className={`font-medium ${
-              isDarkMode ? "text-green-400" : "text-green-600"
-            }`}>
+            <span
+              className={`font-medium ${
+                isDarkMode ? "text-green-400" : "text-green-600"
+              }`}
+            >
               {typeof previewCount === "string"
                 ? `${previewCount} dogs available`
                 : `${previewCount} dog${previewCount !== 1 ? "s" : ""} available`}
