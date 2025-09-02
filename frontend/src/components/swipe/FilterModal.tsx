@@ -1,13 +1,13 @@
 import React from "react";
 import * as Sentry from "@sentry/nextjs";
-import SwipeFilters from "./SwipeFilters";
-import { SwipeFilter } from "../../hooks/useSwipeFilters";
+import SwipeFiltersComponent from "./SwipeFilters";
+import { SwipeFilters } from "../../hooks/useSwipeFilters";
 
 interface FilterModalProps {
   show: boolean;
-  filters: SwipeFilter;
+  filters: SwipeFilters;
   onClose: () => void;
-  onFiltersChange: (filters: SwipeFilter) => void;
+  onFiltersChange: (filters: SwipeFilters) => void;
   isDarkMode?: boolean;
 }
 
@@ -20,7 +20,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
 }) => {
   if (!show) return null;
 
-  const handlePreviewCount = async (testFilters: SwipeFilter) => {
+  const handlePreviewCount = async (testFilters: SwipeFilters) => {
     try {
       const params = new URLSearchParams();
       if (testFilters.country) {
@@ -34,7 +34,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
       });
 
       const response = await fetch(
-        `/api/dogs/swipe?${params.toString()}&limit=1`
+        `/api/dogs/swipe?${params.toString()}&limit=1`,
       );
       if (response.ok) {
         const data = await response.json();
@@ -50,20 +50,28 @@ export const FilterModal: React.FC<FilterModalProps> = ({
   };
 
   return (
-    <div className={`fixed inset-0 bg-black ${isDarkMode ? 'bg-opacity-70' : 'bg-opacity-50'} flex items-center justify-center p-4 z-[9999]`}>
-      <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-2xl max-w-md w-full`}>
-        <div className={`p-4 border-b ${isDarkMode ? 'border-gray-700' : ''} flex justify-between items-center`}>
-          <h2 className={`text-xl font-bold ${isDarkMode ? 'text-gray-100' : ''}`}>
+    <div
+      className={`fixed inset-0 bg-black ${isDarkMode ? "bg-opacity-70" : "bg-opacity-50"} flex items-center justify-center p-4 z-[9999]`}
+    >
+      <div
+        className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-2xl max-w-md w-full`}
+      >
+        <div
+          className={`p-4 border-b ${isDarkMode ? "border-gray-700" : ""} flex justify-between items-center`}
+        >
+          <h2
+            className={`text-xl font-bold ${isDarkMode ? "text-gray-100" : ""}`}
+          >
             Filter Dogs
           </h2>
           <button
             onClick={onClose}
-            className={`${isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'} text-2xl`}
+            className={`${isDarkMode ? "text-gray-400 hover:text-gray-200" : "text-gray-500 hover:text-gray-700"} text-2xl`}
           >
             ✕
           </button>
         </div>
-        <SwipeFilters
+        <SwipeFiltersComponent
           initialFilters={filters}
           onFiltersChange={(newFilters) => {
             onFiltersChange(newFilters);

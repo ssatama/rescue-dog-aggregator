@@ -120,22 +120,22 @@ export function SwipeContainerWithFilters({
     // Preload images using Image constructor with proper cleanup
     imagesToPreload.forEach((src) => {
       if (!mounted) return;
-      
+
       const img = new Image();
-      
+
       // Set up handlers before setting src to avoid race conditions
       img.onload = () => {
         if (!mounted) {
           img.src = "";
         }
       };
-      
+
       img.onerror = () => {
         if (!mounted) {
           img.src = "";
         }
       };
-      
+
       img.src = src;
       imageElements.push(img);
     });

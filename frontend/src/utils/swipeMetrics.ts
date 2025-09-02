@@ -2,7 +2,8 @@ import * as Sentry from "@sentry/nextjs";
 
 // Check if we're in development mode
 const isDevelopment = process.env.NODE_ENV === "development";
-const shouldSendEvents = !isDevelopment || process.env.NEXT_PUBLIC_FORCE_SENTRY === "true";
+const shouldSendEvents =
+  !isDevelopment || process.env.NEXT_PUBLIC_FORCE_SENTRY === "true";
 
 // Event batching configuration
 const EVENT_BATCH_SIZE = 10;
@@ -13,7 +14,7 @@ let batchTimer: NodeJS.Timeout | null = null;
 // Helper function to flush the event batch
 function flushEventBatch() {
   if (eventBatch.length === 0) return;
-  
+
   if (shouldSendEvents) {
     // Send a single event with all batched metrics
     Sentry.captureEvent({
@@ -26,7 +27,7 @@ function flushEventBatch() {
       },
     });
   }
-  
+
   eventBatch = [];
   if (batchTimer) {
     clearTimeout(batchTimer);
@@ -41,7 +42,7 @@ function captureMetricEvent(event: any) {
     ...event,
     timestamp: new Date().toISOString(),
   });
-  
+
   // Flush if batch is full
   if (eventBatch.length >= EVENT_BATCH_SIZE) {
     flushEventBatch();

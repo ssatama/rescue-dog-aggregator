@@ -207,7 +207,7 @@ describe("SwipeMetrics", () => {
 
     it("should track queue exhausted event", () => {
       metrics.trackQueueExhausted(25);
-      
+
       // Force flush to test the batched event
       testHelpers.flushEventBatch();
 
@@ -233,7 +233,7 @@ describe("SwipeMetrics", () => {
 
     it("should track favorite added separately from swipe", () => {
       metrics.trackFavoriteAdded("dog1", "swipe");
-      
+
       // Force flush to test the batched event
       testHelpers.flushEventBatch();
 
@@ -260,7 +260,7 @@ describe("SwipeMetrics", () => {
 
     it("should track swipe velocity", () => {
       metrics.trackSwipeVelocity(2.5, "right");
-      
+
       // Force flush to test the batched event
       testHelpers.flushEventBatch();
 
