@@ -62,7 +62,18 @@ export function SwipeContainerWithFilters({
   } = useSwipeFilters();
 
   const [dogs, setDogs] = useState<Dog[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    // Initialize from sessionStorage to preserve navigation state
+    const stored = safeStorage.get("swipeCurrentIndex");
+    if (stored) {
+      try {
+        return parseInt(stored, 10) || 0;
+      } catch {
+        return 0;
+      }
+    }
+    return 0;
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -124,7 +135,12 @@ export function SwipeContainerWithFilters({
           const newDogs = fetchedDogs.filter((dog) => !swipedIds.has(dog.id));
 
           setDogs(newDogs);
-          setCurrentIndex(0);
+          // Preserve current position or clamp if needed when filters change
+          setCurrentIndex((prevIndex) => {
+            const clampedIndex = Math.min(prevIndex, Math.max(0, newDogs.length - 1));
+            safeStorage.set("swipeCurrentIndex", clampedIndex.toString());
+            return clampedIndex;
+          });
           setOffset(0);
 
           Sentry.captureEvent({
@@ -185,7 +201,11 @@ export function SwipeContainerWithFilters({
 
   const goToNext = useCallback(() => {
     if (currentIndex < dogs.length - 1) {
-      setCurrentIndex((prev) => prev + 1);
+      setCurrentIndex((prev) => {
+        const newIndex = prev + 1;
+        safeStorage.set("swipeCurrentIndex", newIndex.toString());
+        return newIndex;
+      });
       const nextDog = dogs[currentIndex + 1];
       if (nextDog) {
         Sentry.captureEvent({
@@ -238,7 +258,11 @@ export function SwipeContainerWithFilters({
 
   const goToPrevious = useCallback(() => {
     if (currentIndex > 0) {
-      setCurrentIndex((prev) => prev - 1);
+      setCurrentIndex((prev) => {
+        const newIndex = prev - 1;
+        safeStorage.set("swipeCurrentIndex", newIndex.toString());
+        return newIndex;
+      });
     }
   }, [currentIndex]);
 
@@ -267,7 +291,11 @@ export function SwipeContainerWithFilters({
       }
 
       // Update index FIRST, before updating swipedDogIds
-      setCurrentIndex((prev) => prev + 1);
+      setCurrentIndex((prev) => {
+        const newIndex = prev + 1;
+        safeStorage.set("swipeCurrentIndex", newIndex.toString());
+        return newIndex;
+      });
 
       // NOW track this dog as swiped (after index is updated)
       setSwipedDogIds((prev) => {
@@ -426,10 +454,7 @@ export function SwipeContainerWithFilters({
     <>
       {/* Filter Modal - increased z-index to ensure visibility */}
       {showFilters && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
-          style={{ zIndex: 9999 }}
-        >
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
           <div className="bg-white rounded-2xl max-w-md w-full">
             <div className="p-4 border-b flex justify-between items-center">
               <h2 className="text-xl font-bold">Filter Dogs</h2>
@@ -444,8 +469,7 @@ export function SwipeContainerWithFilters({
               onFiltersChange={(newFilters) => {
                 setFilters(newFilters);
                 setShowFilters(false);
-                // Reset index when filters change
-                setCurrentIndex(0);
+                // Preserve current position when filters change
                 Sentry.captureEvent({
                   message: "swipe.filter.changed",
                   extra: {
@@ -484,6 +508,7 @@ export function SwipeContainerWithFilters({
                   setSwipedDogIds(new Set());
                   safeStorage.remove("swipedDogIds");
                   setCurrentIndex(0);
+                  safeStorage.set("swipeCurrentIndex", "0");
                   setOffset(0);
                   setDogs([]);
                   setIsLoading(true);
@@ -494,6 +519,7 @@ export function SwipeContainerWithFilters({
                       .then((fetchedDogs) => {
                         setDogs(fetchedDogs);
                         setCurrentIndex(0);
+                        safeStorage.set("swipeCurrentIndex", "0");
                         setIsLoading(false);
                       })
                       .catch((error) => {
