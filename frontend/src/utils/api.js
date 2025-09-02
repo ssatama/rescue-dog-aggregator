@@ -105,9 +105,15 @@ export function get(endpoint, params = {}) {
   // Build query string from params
   const queryString = Object.keys(params)
     .filter((key) => params[key] !== undefined && params[key] !== null)
-    .map(
-      (key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`,
-    )
+    .flatMap((key) => {
+      const value = params[key];
+      // Handle array values by creating multiple parameters with the same key
+      if (Array.isArray(value)) {
+        return value.map(item => `${encodeURIComponent(key)}=${encodeURIComponent(item)}`);
+      }
+      // Handle single values
+      return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+    })
     .join("&");
 
   const url = queryString

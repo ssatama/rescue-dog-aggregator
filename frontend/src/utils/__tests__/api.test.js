@@ -54,4 +54,36 @@ describe("get()", () => {
     });
     await expect(get("/dogs")).rejects.toThrow("API error: 500 Oops");
   });
+
+  it("handles array parameters correctly by creating multiple query parameters", async () => {
+    const fakeJson = { dogs: [] };
+    global.fetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(fakeJson),
+    });
+    
+    // Test with array parameters for size and age filters
+    const result = await get("/api/dogs/swipe", {
+      adoptable_to_country: "UK",
+      "size[]": ["small", "medium", "large"],
+      "age[]": ["puppy", "young"],
+      limit: 20
+    });
+    
+    // Verify that array parameters are converted to multiple query parameters
+    const calledUrl = global.fetch.mock.calls[0][0];
+    expect(calledUrl).toContain("adoptable_to_country=UK");
+    expect(calledUrl).toContain("size%5B%5D=small"); // size[]=small
+    expect(calledUrl).toContain("size%5B%5D=medium"); // size[]=medium  
+    expect(calledUrl).toContain("size%5B%5D=large"); // size[]=large
+    expect(calledUrl).toContain("age%5B%5D=puppy"); // age[]=puppy
+    expect(calledUrl).toContain("age%5B%5D=young"); // age[]=young
+    expect(calledUrl).toContain("limit=20");
+    
+    // Verify it does NOT contain comma-separated values
+    expect(calledUrl).not.toContain("small%2Cmedium%2Clarge"); // should not be "small,medium,large"
+    expect(calledUrl).not.toContain("puppy%2Cyoung"); // should not be "puppy,young"
+    
+    expect(result).toEqual(fakeJson);
+  });
 });
