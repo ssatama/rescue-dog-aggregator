@@ -189,7 +189,7 @@ export default function SwipeFilters({
   }
 
   return (
-    <div className="space-y-4 p-4">
+    <div className={`space-y-4 p-4 ${isDarkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"}`}>
       <div>
         <label
           htmlFor="country-select"

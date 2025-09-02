@@ -54,13 +54,13 @@ export const FilterModal: React.FC<FilterModalProps> = ({
       className={`fixed inset-0 bg-black ${isDarkMode ? "bg-opacity-70" : "bg-opacity-50"} flex items-center justify-center p-4 z-[9999]`}
     >
       <div
-        className={`${isDarkMode ? "bg-gray-800" : "bg-white"} rounded-2xl max-w-md w-full`}
+        className={`${isDarkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"} rounded-2xl max-w-md w-full`}
       >
         <div
-          className={`p-4 border-b ${isDarkMode ? "border-gray-700" : ""} flex justify-between items-center`}
+          className={`p-4 border-b ${isDarkMode ? "border-gray-700" : "border-gray-200"} flex justify-between items-center`}
         >
           <h2
-            className={`text-xl font-bold ${isDarkMode ? "text-gray-100" : ""}`}
+            className={`text-xl font-bold ${isDarkMode ? "text-gray-100" : "text-gray-900"}`}
           >
             Filter Dogs
           </h2>
