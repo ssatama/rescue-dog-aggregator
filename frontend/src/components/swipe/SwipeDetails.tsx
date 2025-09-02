@@ -65,8 +65,6 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
     }
   }, [isOpen, dog.id, dog.name]);
 
-
-
   const handleSave = () => {
     toggleFavorite(dog.id);
   };
@@ -287,9 +285,12 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
 
                   <div className="flex gap-3">
                     <ShareButton
-                      url={`${typeof window !== 'undefined' ? window.location.origin : 'https://www.rescuedogs.me'}/dog/${dog.slug}`}
+                      url={`${typeof window !== "undefined" ? window.location.origin : "https://www.rescuedogs.me"}/dog/${dog.id}`}
                       title={`Check out ${dog.name} for adoption!`}
-                      text={dog.dog_profiler_data?.description || `${dog.name} is a ${dog.age} ${dog.breed} looking for a forever home!`}
+                      text={
+                        dog.dog_profiler_data?.description ||
+                        `${dog.name} is a ${dog.age} ${dog.breed} looking for a forever home!`
+                      }
                       variant="outline"
                       className="!flex-1 !w-full !h-auto !py-3 !px-4 !bg-pink-100 dark:!bg-pink-900/30 !text-pink-600 dark:!text-pink-400 !rounded-full !font-medium hover:!bg-pink-200 dark:hover:!bg-pink-900/50 !transition-colors !flex !items-center !justify-center !gap-2 !border-0 !shadow-none hover:!shadow-none hover:!translate-y-0"
                     />

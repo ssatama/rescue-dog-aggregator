@@ -59,7 +59,6 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
     [dog.id, dog.name, addFavorite],
   );
 
-
   // Access enriched LLM data
   const profileData = dog.dogProfilerData || {};
   const tagline = profileData.tagline || "";
@@ -84,9 +83,12 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
       <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 flex gap-2">
         <div onClick={(e) => e.stopPropagation()}>
           <ShareButton
-            url={`${typeof window !== 'undefined' ? window.location.origin : 'https://www.rescuedogs.me'}/dog/${dog.slug}`}
+            url={`${typeof window !== "undefined" ? window.location.origin : "https://www.rescuedogs.me"}/dog/${dog.id}`}
             title={`Check out ${dog.name} for adoption!`}
-            text={dog.description || `${dog.name} is a ${dog.age || ""} ${dog.breed || ""} looking for a forever home!`}
+            text={
+              dog.description ||
+              `${dog.name} is a ${dog.age || ""} ${dog.breed || ""} looking for a forever home!`
+            }
             compact={true}
             variant="ghost"
             className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/90 backdrop-blur shadow-lg hover:scale-110 transition-all"
