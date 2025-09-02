@@ -2,6 +2,7 @@ import React from "react";
 import * as Sentry from "@sentry/nextjs";
 import SwipeFiltersComponent from "./SwipeFilters";
 import { SwipeFilters } from "../../hooks/useSwipeFilters";
+import { get } from "../../utils/api";
 
 interface FilterModalProps {
   show: boolean;
@@ -22,26 +23,21 @@ export const FilterModal: React.FC<FilterModalProps> = ({
 
   const handlePreviewCount = async (testFilters: SwipeFilters) => {
     try {
-      const params = new URLSearchParams();
+      const params: Record<string, any> = {};
       if (testFilters.country) {
-        params.append("adoptable_to_country", testFilters.country);
+        params.adoptable_to_country = testFilters.country;
       }
-      testFilters.sizes.forEach((size) => {
-        params.append("size[]", size);
-      });
-      testFilters.ages.forEach((age) => {
-        params.append("age[]", age);
-      });
+      if (testFilters.sizes.length > 0) {
+        params["size[]"] = testFilters.sizes;
+      }
+      if (testFilters.ages.length > 0) {
+        params["age[]"] = testFilters.ages;
+      }
+      params.limit = 1;
 
-      const response = await fetch(
-        `/api/dogs/swipe?${params.toString()}&limit=1`,
-      );
-      if (response.ok) {
-        const data = await response.json();
-        if (data && typeof data.total === "number") {
-          return data.total;
-        }
-        return 0;
+      const data = await get("/api/dogs/swipe", params);
+      if (data && typeof data.total === "number") {
+        return data.total;
       }
       return 0;
     } catch {
