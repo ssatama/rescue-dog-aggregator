@@ -171,7 +171,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className="object-cover"
-            style={{ objectPosition: "top" }}
+            style={{ objectPosition: "center 30%" }}
             priority
           />
         ) : (

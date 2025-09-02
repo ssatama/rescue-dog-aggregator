@@ -446,8 +446,6 @@ export function SwipeContainerWithFilters({
                 setShowFilters(false);
                 // Reset index when filters change
                 setCurrentIndex(0);
-                setDogs([]);
-                setIsLoading(true);
                 Sentry.captureEvent({
                   message: "swipe.filter.changed",
                   extra: {
@@ -582,10 +580,6 @@ export function SwipeContainerWithFilters({
               </button>
             </div>
 
-            {/* Progress indicator */}
-            <div className="text-center mt-2 sm:mt-4 text-sm text-gray-500">
-              {currentIndex + 1} / {dogs.length}
-            </div>
           </div>
         </div>
       </div>
