@@ -71,8 +71,8 @@ describe("useSwipeFilters - Age Filter", () => {
 
     const queryString = result.current.toQueryString();
     expect(queryString).toContain("adoptable_to_country=GB");
-    expect(queryString).toContain("age=puppy");
-    expect(queryString).toContain("age=adult");
+    expect(queryString).toContain("age%5B%5D=puppy");
+    expect(queryString).toContain("age%5B%5D=adult");
     expect(queryString).toContain("size%5B%5D=small");
   });
 

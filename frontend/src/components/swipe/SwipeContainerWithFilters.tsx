@@ -424,15 +424,15 @@ export function SwipeContainerWithFilters({
 
   return (
     <>
-      {/* Filter Modal */}
+      {/* Filter Modal - increased z-index to ensure visibility */}
       {showFilters && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
           <div className="bg-white rounded-2xl max-w-md w-full">
             <div className="p-4 border-b flex justify-between items-center">
               <h2 className="text-xl font-bold">Filter Dogs</h2>
               <button
                 onClick={() => setShowFilters(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 hover:text-gray-700 text-2xl"
               >
                 ✕
               </button>
@@ -486,6 +486,22 @@ export function SwipeContainerWithFilters({
                   setOffset(0);
                   setDogs([]);
                   setIsLoading(true);
+                  
+                  // Fetch dogs after reset if we have valid filters
+                  if (isValid && fetchDogs && queryString) {
+                    fetchDogs(queryString)
+                      .then((fetchedDogs) => {
+                        setDogs(fetchedDogs);
+                        setCurrentIndex(0);
+                        setIsLoading(false);
+                      })
+                      .catch((error) => {
+                        console.error("Failed to fetch dogs after reset:", error);
+                        setIsLoading(false);
+                      });
+                  } else {
+                    setIsLoading(false);
+                  }
                 }}
                 className="px-3 py-2 text-sm bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
                 title="Start fresh with all dogs"
@@ -509,14 +525,18 @@ export function SwipeContainerWithFilters({
 
         {/* Main swipe container - responsive for small screens */}
         <div
-          className="flex-1 flex flex-col items-center justify-center p-4 overflow-hidden"
-          style={{ height: "calc(100vh - 80px)" }}
+          className="flex-1 flex flex-col items-center justify-center p-2 sm:p-4 overflow-hidden"
+          style={{ 
+            height: "100dvh",
+            paddingTop: "env(safe-area-inset-top)",
+            paddingBottom: "env(safe-area-inset-bottom)"
+          }}
         >
           <div
             className="relative w-full flex flex-col"
             style={{
-              maxWidth: "min(90vw, 400px)",
-              height: "calc(100vh - 200px)",
+              maxWidth: "min(calc(100vw - 1rem), 400px)",
+              height: "min(calc(100dvh - 160px), 700px)",
             }}
           >
             <div
@@ -528,26 +548,26 @@ export function SwipeContainerWithFilters({
               <SwipeCard dog={currentDog} />
             </div>
 
-            {/* Paw Navigation - replacing swipe actions */}
-            <div className="flex justify-center gap-8 mt-4 sm:mt-8">
+            {/* Paw Navigation - responsive sizes */}
+            <div className="flex justify-center gap-4 sm:gap-8 mt-2 sm:mt-4">
               <button
                 onClick={goToPrevious}
                 disabled={currentIndex === 0}
-                className="paw-btn paw-left w-20 h-20 rounded-full bg-white shadow-lg flex flex-col items-center justify-center hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                className="paw-btn paw-left w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white shadow-lg flex flex-col items-center justify-center hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Previous dog"
               >
-                <span className="text-3xl transform rotate-180">🐾</span>
-                <span className="text-xs text-gray-500 mt-1">Back</span>
+                <span className="text-2xl sm:text-3xl transform rotate-180">🐾</span>
+                <span className="text-[10px] sm:text-xs text-gray-500 mt-1">Back</span>
               </button>
 
               <button
                 onClick={goToNext}
                 disabled={currentIndex === dogs.length - 1}
-                className="paw-btn paw-right w-20 h-20 rounded-full bg-white shadow-lg flex flex-col items-center justify-center hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                className="paw-btn paw-right w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white shadow-lg flex flex-col items-center justify-center hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Next dog"
               >
-                <span className="text-3xl">🐾</span>
-                <span className="text-xs text-gray-500 mt-1">Next</span>
+                <span className="text-2xl sm:text-3xl">🐾</span>
+                <span className="text-[10px] sm:text-xs text-gray-500 mt-1">Next</span>
               </button>
             </div>
 

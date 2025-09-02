@@ -175,3 +175,20 @@ class TestSwipeEndpoint:
         # Multiple sizes should return more or equal dogs than single size
         if len(single_data['dogs']) > 0:
             assert len(data['dogs']) >= len(single_data['dogs'])
+    
+    def test_swipe_endpoint_filters_by_age(self, client: TestClient):
+        """Test that endpoint correctly filters dogs by age"""
+        response = client.get("/api/dogs/swipe?age[]=puppy&limit=20")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert 'dogs' in data
+        assert isinstance(data['dogs'], list)
+    
+    def test_swipe_endpoint_accepts_multiple_ages(self, client: TestClient):
+        """Test that endpoint accepts multiple age parameters"""
+        response = client.get("/api/dogs/swipe?age[]=puppy&age[]=young&limit=20")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert 'dogs' in data

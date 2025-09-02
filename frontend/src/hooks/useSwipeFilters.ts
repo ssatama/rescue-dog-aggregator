@@ -141,8 +141,9 @@ export default function useSwipeFilters(): UseSwipeFiltersReturn {
       params.append("size[]", size);
     });
 
+    // Use array notation for ages  
     filters.ages.forEach((age) => {
-      params.append("age", age);
+      params.append("age[]", age);
     });
 
     return params.toString();

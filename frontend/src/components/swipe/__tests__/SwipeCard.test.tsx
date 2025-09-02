@@ -24,31 +24,32 @@ describe("SwipeCard", () => {
     location: "San Francisco, CA",
     slug: "buddy-golden",
     description: "A friendly and energetic companion",
-    traits: ["Playful", "Loyal", "Gentle"],
-    energy_level: 4,
-    special_characteristic: "Loves to play fetch",
-    quality_score: 0.9,
+    dogProfilerData: {
+      tagline: "Buddy: Your next adventure companion!",
+      uniqueQuirk: "Loves to play fetch for hours",
+      personalityTraits: ["Playful", "Loyal", "Gentle"],
+      favoriteActivities: ["fetch", "swimming"],
+      qualityScore: 90
+    },
     created_at: new Date().toISOString(),
   };
 
   it("should display dog name and tagline", () => {
     renderWithProvider(<SwipeCard dog={mockDog} />);
 
-    expect(screen.getByText("Buddy")).toBeInTheDocument();
-    // Description becomes the tagline
+    expect(screen.getByText(/About Buddy/)).toBeInTheDocument();
+    // Shows enriched tagline
     expect(
-      screen.getByText(/A friendly and energetic companion/),
+      screen.getByText(/Buddy: Your next adventure companion!/),
     ).toBeInTheDocument();
   });
 
-  it("should show breed and age as tagline when no description", () => {
-    const dogWithoutDescription = {
-      ...mockDog,
-      description: undefined,
-    };
-    renderWithProvider(<SwipeCard dog={dogWithoutDescription} />);
+  it("should show personality traits", () => {
+    renderWithProvider(<SwipeCard dog={mockDog} />);
 
-    expect(screen.getByText(/2 years Golden Retriever/)).toBeInTheDocument();
+    expect(screen.getByText("Playful")).toBeInTheDocument();
+    expect(screen.getByText("Loyal")).toBeInTheDocument();
+    expect(screen.getByText("Gentle")).toBeInTheDocument();
   });
 
   it("should have heart and share action buttons", () => {
@@ -123,7 +124,7 @@ describe("SwipeCard", () => {
 
     renderWithProvider(<SwipeCard dog={minimalDog} />);
 
-    expect(screen.getByText("Max")).toBeInTheDocument();
+    expect(screen.getByText(/About Max/)).toBeInTheDocument();
     expect(screen.queryByText("Energy:")).not.toBeInTheDocument();
     expect(screen.queryByText("🦴")).not.toBeInTheDocument();
   });
@@ -140,6 +141,6 @@ describe("SwipeCard", () => {
     renderWithProvider(<SwipeCard dog={mockDog} />);
 
     const imageContainer = screen.getByTestId("image-container");
-    expect(imageContainer).toHaveStyle({ height: "60%" });
+    expect(imageContainer).toHaveStyle({ height: "55%" });
   });
 });

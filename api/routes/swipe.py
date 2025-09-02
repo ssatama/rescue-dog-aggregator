@@ -20,6 +20,7 @@ async def get_swipe_stack(
     country: Optional[str] = Query(None, description="Filter by country code (e.g., 'GB', 'US') - DEPRECATED, use adoptable_to_country"),
     adoptable_to_country: Optional[str] = Query(None, description="Filter by adoptable to country code (e.g., 'GB', 'US')"),
     size: Optional[List[str]] = Query(None, alias="size[]", description="Filter by size (small, medium, large) - accepts multiple values"),
+    age: Optional[List[str]] = Query(None, alias="age[]", description="Filter by age group (puppy, young, adult, senior) - accepts multiple values"),
     excluded: Optional[str] = Query(None, description="Comma-separated list of excluded dog IDs"),
     limit: int = Query(20, ge=1, le=50, description="Number of dogs to return (default: 20, max: 50)"),
     offset: int = Query(0, ge=0, description="Offset for pagination"),
@@ -92,6 +93,22 @@ async def get_swipe_stack(
                 # Handle single size (backward compatibility)
                 query_parts.append("AND LOWER(a.size) = %s")
                 params.append(size.lower())
+        
+        if age:
+            if isinstance(age, list) and len(age) > 0:
+                # Handle multiple age groups - check both age_text and properties->age_text
+                placeholders = ','.join(['%s'] * len(age))
+                query_parts.append(f"""AND (
+                    LOWER(a.age_text) IN ({placeholders}) OR 
+                    LOWER(a.properties->>'age_text') IN ({placeholders})
+                )""")
+                params.extend([a.lower() for a in age])
+                params.extend([a.lower() for a in age])  # Need to add twice for both conditions
+            elif isinstance(age, str):
+                # Handle single age (backward compatibility)
+                query_parts.append("AND (LOWER(a.age_text) = %s OR LOWER(a.properties->>'age_text') = %s)")
+                params.append(age.lower())
+                params.append(age.lower())
         
         if excluded_ids:
             placeholders = ','.join(['%s'] * len(excluded_ids))
@@ -213,6 +230,20 @@ async def get_swipe_stack(
             elif isinstance(size, str):
                 check_more_query += " AND LOWER(a.size) = %s"
                 check_params.append(size.lower())
+        
+        if age:
+            if isinstance(age, list) and len(age) > 0:
+                placeholders = ','.join(['%s'] * len(age))
+                check_more_query += f""" AND (
+                    LOWER(a.age_text) IN ({placeholders}) OR 
+                    LOWER(a.properties->>'age_text') IN ({placeholders})
+                )"""
+                check_params.extend([a.lower() for a in age])
+                check_params.extend([a.lower() for a in age])
+            elif isinstance(age, str):
+                check_more_query += " AND (LOWER(a.age_text) = %s OR LOWER(a.properties->>'age_text') = %s)"
+                check_params.append(age.lower())
+                check_params.append(age.lower())
         
         if excluded_ids:
             placeholders = ','.join(['%s'] * len(excluded_ids))
