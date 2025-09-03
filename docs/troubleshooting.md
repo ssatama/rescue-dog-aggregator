@@ -1,6 +1,8 @@
 # Troubleshooting Guide
 
-## Common Issues & Solutions
+*Primary audience: Claude Code*
+
+## Quick Fixes for Common Issues
 
 ### Backend Issues
 

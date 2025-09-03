@@ -99,12 +99,10 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
             />
           </div>
         ))}
-        
+
         {/* Overlay buttons */}
         {overlayButtons && (
-          <div className="absolute top-4 right-4 z-10">
-            {overlayButtons}
-          </div>
+          <div className="absolute top-4 right-4 z-10">{overlayButtons}</div>
         )}
       </div>
 

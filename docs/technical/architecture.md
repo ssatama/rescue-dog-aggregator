@@ -1,546 +1,523 @@
-# Rescue Dog Aggregator - Technical Architecture
+# Technical Architecture Documentation
 
 ## System Overview
 
-The Rescue Dog Aggregator is a production-ready platform aggregating rescue dog listings from multiple organizations into a unified, searchable interface. Built with Next.js 15.3.0, Python 3.13, FastAPI, and PostgreSQL, the system serves 8 rescue organizations with 1,500+ animal listings.
+The Rescue Dog Aggregator is a full-stack web application that aggregates rescue dog listings from multiple organizations into a unified, searchable platform. The system follows a microservices-inspired monolithic architecture with clear separation of concerns.
 
-**Key Metrics**
-- **Test Coverage**: 565+ test files (109 backend, 456 frontend)
-- **Performance**: Core Web Vitals 95+, API responses <200ms
-- **Architecture**: Configuration-driven, zero-code organization onboarding
-- **Security**: Multi-layer validation, XSS prevention, secure headers
+### Core Architecture Principles
 
-## High-Level Architecture
+1. **Configuration-Driven Design**: Organizations defined via YAML configurations
+2. **Test-Driven Development**: 434+ backend tests, 1,249+ frontend tests
+3. **Pure Functions & Immutability**: No side effects, no mutations
+4. **Service Layer Pattern**: Business logic isolated from API handlers
+5. **Null Object Pattern**: Graceful handling of missing data
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                Frontend Layer (Next.js 15.3.0)                  │
-│                    App Router Architecture                      │
-├─────────────────────────────────────────────────────────────────┤
-│  Server Components        │  Client Components                  │
-│  • SEO & Metadata         │  • Interactive Search               │
-│  • Static Generation      │  • Real-time State Management       │
-│  • Image Optimization     │  • Progressive Web App Features     │
-└─────────────────────┬────────────────────────────────────────────┘
-                      │ RESTful API (JSON/HTTP)
-┌─────────────────────▼────────────────────────────────────────────┐
-│           Backend API Layer (FastAPI + Python 3.13)            │
-├─────────────────────────────────────────────────────────────────┤
-│  • OpenAPI 3.0 Documentation  │ • Pydantic v2 Validation      │
-│  • Security Headers & CORS    │ • Async Request Handling      │
-│  • Connection Pooling         │ • Structured Error Responses   │
-└─────────────────────┬────────────────────────────────────────────┘
-                      │
-┌─────────────────────▼────────────────────────────────────────────┐
-│            Configuration Management System                      │
-├─────────────────────────────────────────────────────────────────┤
-│  • YAML Organization Configs  │ • JSON Schema Validation       │
-│  • Zero-Code Onboarding       │ • Hot-Reload Capability        │
-└─────────────────────┬────────────────────────────────────────────┘
-                      │
-┌─────────────────────▼────────────────────────────────────────────┐
-│           Web Scraping & Data Processing Pipeline              │
-├─────────────────────────────────────────────────────────────────┤
-│  • Template Method Pattern    │ • Data Standardization         │
-│  • Dependency Injection       │ • Quality Scoring              │
-│  • Context Manager Pattern    │ • Availability Tracking        │
-└─────────────────────┬────────────────────────────────────────────┘
-                      │
-┌─────────────────────▼────────────────────────────────────────────┐
-│             PostgreSQL 14+ Database Engine                     │
-├─────────────────────────────────────────────────────────────────┤
-│  • Normalized Schema Design   │ • JSONB Flexible Metadata      │
-│  • Full-Text Search (GIN)     │ • Connection Pooling           │
-│  • Strategic Indexing         │ • Alembic Migrations           │
-└─────────────────────────────────────────────────────────────────┘
-```
+## Technology Stack
 
-## Frontend Architecture (Next.js 15)
+### Backend
 
-### App Router Structure
+- **Framework**: FastAPI (Python 3.9+)
+- **Database**: PostgreSQL with SQLAlchemy ORM
+- **Testing**: pytest with comprehensive fixtures
+- **Async**: asyncio for concurrent operations
+- **Validation**: Pydantic models
 
-```
-src/app/
-├── layout.js                    # Root layout with metadata
-├── page.jsx                     # Homepage (server component)
-├── dogs/
-│   ├── page.jsx                # Dogs listing
-│   └── [slug]/                 # Dynamic dog routes
-│       └── page.jsx            # Dog detail with metadata
-├── organizations/
-│   ├── page.jsx                # Organizations listing
-│   └── [slug]/                 # Dynamic organization routes
-└── api/                        # Minimal API routes
-```
+### Frontend
 
-### Server Components (SEO-Optimized)
+- **Framework**: Next.js 15 with React 18
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Testing**: Jest + React Testing Library
+- **State Management**: React Context + Hooks
 
-```javascript
-// Dynamic metadata generation for SEO
-export async function generateMetadata({ params }) {
-  const { slug } = await params;
-  const dog = await getAnimalBySlug(slug);
-  
-  return {
-    title: `${dog.name} - ${dog.breed} Available for Adoption`,
-    description: generateSEODescription(dog),
-    openGraph: {
-      images: [{ url: dog.primary_image_url }]
-    }
-  };
-}
+### Infrastructure
 
-// Static generation for popular pages
-export async function generateStaticParams() {
-  const dogs = await getAllAnimals();
-  return dogs.slice(0, 50).map(dog => ({ slug: dog.slug }));
-}
-```
+- **API Hosting**: Railway (PostgreSQL + FastAPI)
+- **Frontend Hosting**: Vercel (Next.js)
+- **Monitoring**: Sentry (dev + prod environments)
+- **CI/CD**: GitHub Actions + Vercel/Railway integrations
 
-### Component Library
+## System Components
 
-- **UI Framework**: Tailwind CSS 3.3.2 + shadcn/ui
-- **Core Components**: Button, Card, Input, Badge, Sheet
-- **Specialized**: LazyImage, AnimatedCounter, CountryFlag, ShareButton
-- **Business Components**: DogCard, OrganizationCard, FilterControls
+### 1. API Layer (`/api`)
 
-### Performance Features
+#### Core Components
 
-- **Image Optimization**: Cloudflare R2 + Images CDN
-- **Progressive Loading**: IntersectionObserver for lazy loading
-- **Component Memoization**: React.memo for expensive operations
-- **Code Splitting**: Dynamic imports for route optimization
+- `api/main.py`: FastAPI application initialization, CORS, middleware
+- `api/routes/`: RESTful endpoints organized by domain
+- `api/dependencies.py`: Dependency injection setup
+- `api/async_dependencies.py`: Async dependency providers
 
-## Backend Architecture (FastAPI)
+#### Key Routes
 
-### Layered Architecture
+- `/api/animals`: Animal CRUD operations with filtering
+- `/api/organizations`: Organization management
+- `/api/swipe`: Swipe-based discovery interface
+- `/api/admin`: Administrative operations
+- `/api/auth`: Authentication endpoints
+- `/api/metrics`: System metrics and analytics
 
-```
-Application Layer (main.py)
-    ↓
-Routes Layer (api/routes/)
-    ↓
-Services Layer (api/services/)
-    ↓
-Database Layer (api/database/)
-    ↓
-Models Layer (api/models/)
-```
+#### Middleware Stack
 
-### API Endpoints
+- CORS handling for frontend integration
+- Request/response logging
+- Error handling and transformation
+- Performance monitoring
 
-```
-GET /api/animals                 # List with filtering
-GET /api/animals/{id}            # Animal details
-GET /api/organizations           # List organizations
-GET /api/organizations/{id}      # Organization details
-GET /health                      # Health check
-POST /api/animals/filter-counts  # Filter option counts
-```
+### 2. Service Layer (`/services`)
 
-### Database Connection Management
+#### Core Services
 
-```python
-class ConnectionPool:
-    def __init__(self):
-        self._pool = psycopg2.pool.ThreadedConnectionPool(
-            minconn=2, maxconn=20, **conn_params
-        )
+##### DatabaseService
 
-@contextmanager
-def get_pooled_cursor():
-    with get_connection_pool().get_cursor() as cursor:
-        yield cursor  # Automatic connection return
-```
+- **Purpose**: Database connection management and query execution
+- **Pattern**: Connection pooling with automatic retry
+- **Key Methods**:
+  - `execute_query()`: Safe query execution with error handling
+  - `get_connection()`: Connection pool management
+  - Transaction management with context managers
 
-### Service Architecture
+##### MetricsCollector
 
-**AnimalService**: Advanced search, batch image fetching, statistics
-**DatabaseService**: CRUD operations, scrape log management
-**MetricsCollector**: Performance and execution metrics
-**SessionManager**: HTTP session management for scraping
+- **Purpose**: System and business metrics aggregation
+- **Metrics Types**:
+  - Query performance metrics
+  - API endpoint latencies
+  - Business metrics (dogs, orgs, searches)
+- **Storage**: In-memory with periodic PostgreSQL persistence
 
-## Scraper Architecture
+##### SessionManager
 
-### Design Patterns
+- **Purpose**: User session and preference management
+- **Features**:
+  - Session token generation and validation
+  - User preference storage
+  - Activity tracking
 
-#### Template Method Pattern
-```python
-class BaseScraper(ABC):
-    def run(self) -> Dict[str, Any]:
-        return self._execute_scrape_phases()
-    
-    @abstractmethod  
-    def collect_data(self) -> List[Dict[str, Any]]:
-        pass  # Subclasses implement org-specific logic
-```
+##### ImageProcessingService
 
-#### Dependency Injection
-```python
-def __init__(self, config_id: str, metrics_collector=None, 
-             session_manager=None, database_service=None):
-    self.metrics_collector = metrics_collector or NullMetricsCollector()
-    self.session_manager = session_manager or NullSessionManager()
-```
+- **Purpose**: Dog image optimization and caching
+- **Operations**:
+  - Image URL validation
+  - Thumbnail generation
+  - CDN integration preparation
 
-#### Context Manager Pattern
-```python
-with MyScraper(config_id="org-name") as scraper:
-    result = scraper.run()  # Automatic resource management
-```
+##### LLMDataService & LLMProfilerService
 
-### Configuration-Driven System
+- **Purpose**: AI-powered dog matching and profiling
+- **Features**:
+  - Personality trait extraction
+  - Compatibility scoring
+  - Natural language search
 
-```yaml
-# configs/organizations/example.yaml
-schema_version: "1.0"
-id: "example-rescue"
-name: "Example Rescue Organization"
-scraper:
-  class_name: "ExampleScraper"
-  module: "scrapers.example.scraper"
-  config:
-    rate_limit_delay: 2.0
-    max_retries: 3
-metadata:
-  website_url: "https://example.org"
-  location:
-    country: "US"
-  ships_to: ["US", "CA"]
-```
+##### NullObjects Module
 
-## Data Standardization System
+- **Pattern**: Null Object Pattern implementations
+- **Components**:
+  - `NullDog`: Safe default for missing animals
+  - `NullOrganization`: Default org representation
+  - `NullMetrics`: Empty metrics container
 
-### Core Components
+### 3. Data Layer (`/database`, `/migrations`)
 
-#### Breed Standardization
-- **129+ breed mappings** across 9 breed groups
-- Multi-language support (English, Spanish, German)
-- Mix breed detection and categorization
+#### Schema Design
 
-#### Age Standardization
-- Birth date parsing (MM/YYYY, YYYY formats)
-- Natural language processing ("2 years", "puppy", "senior")
-- Age category mapping (Puppy, Young, Adult, Senior)
-
-#### Size Standardization
-- Weight-based classification (primary)
-- Text-based mapping (fallback)
-- Breed-based estimation (last resort)
-
-### Quality Scoring
-
-```python
-QUALITY_WEIGHTS = {
-    "required_fields": 0.7,  # 70% weight
-    "optional_fields": 0.3,  # 30% weight
-}
-
-# Score ranges:
-# 0.85-1.0: Excellent - Ready for display
-# 0.70-0.84: Good - Ready for display
-# 0.50-0.69: Fair - Review recommended
-# 0.0-0.49: Poor - Manual review required
-```
-
-### Availability Tracking
-
-```
-Session 1: Dog found → high confidence
-Session 2: Dog not found → medium confidence
-Session 3: Dog not found → low confidence
-Session 4: Dog not found → unavailable (hidden)
-```
-
-## Database Schema
-
-### Core Tables
+##### Core Tables
 
 ```sql
-CREATE TABLE animals (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    organization_id INTEGER NOT NULL,
-    external_id VARCHAR(255),
-    
-    -- Original data
-    breed VARCHAR(255),
-    age_text VARCHAR(100),
-    size VARCHAR(50),
-    
-    -- Standardized data
-    standardized_breed VARCHAR(100),
-    breed_group VARCHAR(50),
-    age_min_months INTEGER,
-    age_max_months INTEGER,
-    standardized_size VARCHAR(50),
-    
-    -- Availability
-    status VARCHAR(50) DEFAULT 'available',
-    availability_confidence VARCHAR(20) DEFAULT 'high',
-    consecutive_scrapes_missing INTEGER DEFAULT 0,
-    
-    -- Metadata
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    UNIQUE (external_id, organization_id)
-);
+animals (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR,
+  organization_id INTEGER,
+  breed VARCHAR[],
+  age VARCHAR,
+  size VARCHAR,
+  gender VARCHAR,
+  description TEXT,
+  photos JSONB,
+  personality_traits JSONB,
+  created_at TIMESTAMP,
+  updated_at TIMESTAMP
+)
 
-CREATE TABLE organizations (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) UNIQUE NOT NULL,
-    website_url VARCHAR(255),
-    country VARCHAR(50),
-    service_regions JSONB,
-    ships_to JSONB,
-    social_media JSONB,
-    adoption_fees JSONB
-);
+organizations (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR UNIQUE,
+  website VARCHAR,
+  config_path VARCHAR,
+  active BOOLEAN,
+  last_sync TIMESTAMP
+)
 
-CREATE TABLE scrape_logs (
-    id SERIAL PRIMARY KEY,
-    organization_id INTEGER NOT NULL,
-    started_at TIMESTAMP NOT NULL,
-    completed_at TIMESTAMP,
-    status VARCHAR(50) NOT NULL,
-    dogs_found INTEGER,
-    dogs_added INTEGER,
-    dogs_updated INTEGER,
-    detailed_metrics JSONB,
-    data_quality_score NUMERIC(3,2)
-);
+user_sessions (
+  id UUID PRIMARY KEY,
+  preferences JSONB,
+  created_at TIMESTAMP,
+  last_activity TIMESTAMP
+)
+
 ```
 
-### Performance Indexes
+#### Migration Strategy
 
-```sql
--- Filtering optimization
-CREATE INDEX idx_animals_standardized_breed ON animals(standardized_breed);
-CREATE INDEX idx_animals_breed_group ON animals(breed_group);
-CREATE INDEX idx_animals_standardized_size ON animals(standardized_size);
-CREATE INDEX idx_animals_age_range ON animals(age_min_months, age_max_months);
+- Alembic for schema versioning
+- Automatic rollback on failure
+- Zero-downtime migrations
 
--- Availability tracking
-CREATE INDEX idx_animals_availability_confidence ON animals(availability_confidence);
-CREATE INDEX idx_animals_consecutive_missing ON animals(consecutive_scrapes_missing);
+### 4. Scraper System (`/scrapers`)
 
--- Full-text search
-CREATE INDEX idx_animals_name_gin ON animals USING gin(to_tsvector('english', name));
-CREATE INDEX idx_animals_breed_gin ON animals USING gin(to_tsvector('english', breed));
+#### Architecture
+
+- **Base Classes**: Abstract scraper interfaces
+- **Organization Scrapers**: Custom implementations per org
+- **Batch Processing**: Concurrent scraping with rate limiting
+- **Data Validation**: Pydantic models for scraped data
+
+#### Key Components
+
+- `BaseScraper`: Abstract base with common functionality
+- `ScraperRegistry`: Dynamic scraper discovery and loading
+- `ScraperScheduler`: Cron-based scraping orchestration
+
+### 5. Frontend Architecture (`/frontend`)
+
+#### Component Hierarchy
+
+```
+App
+├── Layout (Header, Navigation)
+├── Pages
+│   ├── Home (Search, Filters)
+│   ├── Swipe (SwipeInterface, SwipeDetails)
+│   ├── Browse (DogGrid, DogCard)
+│   └── Admin (Dashboard, Controls)
+├── Components
+│   ├── Common (Button, Input, Modal)
+│   ├── Dog (DogCard, DogDetails, ImageCarousel)
+│   └── Filters (FilterPanel, FilterChip)
+└── Utils
+    ├── api.js (API client)
+    ├── personalityColors.ts (Trait visualization)
+    └── helpers.ts (Utility functions)
+```
+
+#### State Management
+
+- **Global State**: React Context for user preferences
+- **Local State**: Component-level useState hooks
+- **Server State**: React Query for API data caching
+
+#### API Integration
+
+- Centralized API client (`utils/api.js`)
+- Automatic retry with exponential backoff
+- Request/response interceptors for auth
+- Environment-based endpoint configuration
+
+### 6. Configuration Management (`/configs`, `/management`)
+
+#### Organization Configuration
+
+- YAML-based organization definitions
+- Scraper configuration per organization
+- Feature flags and toggles
+
+#### Management Commands
+
+- `config_commands.py`: YAML sync and validation
+- `emergency_operations.py`: Production hotfixes
+- `data_management.py`: Bulk data operations
+
+## Data Flow Architecture
+
+### 1. Scraping Pipeline
+
+```
+YAML Config → Scraper Selection → Data Extraction →
+Validation → Deduplication → Database Storage →
+Cache Invalidation → API Updates
+```
+
+### 2. User Request Flow
+
+```
+User Request → Next.js Frontend → API Gateway →
+FastAPI Router → Dependency Injection →
+Service Layer → Database Query →
+Response Transformation → JSON Response
+```
+
+### 3. Swipe Feature Flow
+
+```
+Initial Load → Get Stack (10 dogs) → User Swipe →
+Record Interaction → Update Preferences →
+Refetch Stack → Personalization Engine →
+Return Optimized Stack
 ```
 
 ## Security Architecture
 
-### Frontend Security
-- **Content Security Policy**: Strict source restrictions
-- **XSS Prevention**: DOMPurify sanitization
-- **Secure Headers**: HSTS, X-Frame-Options, X-Content-Type-Options
-- **URL Validation**: Protocol and domain verification
+### Authentication & Authorization
 
-### Backend Security
-- **Input Validation**: Pydantic v2 with custom validators
-- **SQL Injection Prevention**: Parameterized queries
-- **Rate Limiting**: Configurable per-endpoint limits
-- **Error Handling**: Secure responses without information leakage
+- Session-based authentication
+- UUID session tokens
+- Admin role verification
+- API key management for scrapers
 
-### Middleware Stack
-```python
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
-        response = await call_next(request)
-        response.headers.update({
-            "X-Content-Type-Options": "nosniff",
-            "X-Frame-Options": "DENY",
-            "X-XSS-Protection": "1; mode=block",
-            "Referrer-Policy": "strict-origin-when-cross-origin"
-        })
-        return response
-```
+### Data Protection
 
-## Testing Strategy
-
-### Backend Testing (109 Test Files)
-- **Unit Tests**: Service logic with mocked dependencies
-- **Integration Tests**: API endpoints with test database
-- **Fast Tests**: `pytest -m "unit or fast"` for development
-- **CI Tests**: `pytest -m "not browser and not requires_migrations"`
-
-### Frontend Testing (456 Test Files)
-- **Unit Tests**: Component logic and utilities
-- **Integration Tests**: User workflows and API interactions
-- **E2E Tests**: Playwright for critical user journeys
-- **Accessibility Tests**: WCAG 2.1 AA compliance with jest-axe
-
-### Test Isolation
-```python
-@pytest.fixture(autouse=True)
-def isolate_database_writes():
-    """Automatically protect all tests from database writes."""
-    with patch('utils.organization_sync_service.create_default_sync_service'):
-        with patch('scrapers.base_scraper.create_default_sync_service'):
-            yield  # All tests run with database isolation
-```
+- SQL injection prevention via parameterized queries
+- XSS protection through input sanitization
+- CORS configuration for frontend origin
+- Environment variable management for secrets
 
 ## Performance Optimization
 
-### Frontend Optimizations
-- **Image CDN**: Cloudflare Images with on-the-fly transformation
-- **Bundle Optimization**: Code splitting and tree shaking
-- **Lazy Loading**: IntersectionObserver for progressive loading
-- **Virtual Scrolling**: Infinite scroll for large lists
+### Database
 
-### Backend Optimizations
-- **Connection Pooling**: 2-20 connections with ThreadedConnectionPool
-- **Batch Operations**: Single query for multiple animals' images
-- **Query Optimization**: Strategic indexing and selective field loading
-- **Async Handlers**: FastAPI async/await for concurrent requests
+- Connection pooling (10-20 connections)
+- Query optimization with indexes
+- Materialized views for aggregates
+- Batch operations for bulk updates
 
-### Scraper Performance
-| Organization | Traditional | AJAX | Performance Gain |
-|-------------|------------|------|-----------------|
-| Santer Paws | 12 requests + 45 details | 1 request + 45 details | 12x fewer |
-| Galgo del Sol | 40 requests + 200 details | 1 request + 200 details | 40x fewer |
+### Caching Strategy
 
-## CI/CD Pipeline
+- In-memory caching for hot data
+- Redis preparation (connection pool ready)
+- Frontend caching with React Query
+- CDN for static assets
 
-### GitHub Actions Pipeline
-```yaml
-# Parallel execution stages
-1. Backend Tests (Python 3.13 + PostgreSQL 14)
-2. Frontend Tests (Node.js 18 + Jest + Playwright)
-3. Lint & Format Validation (Black, isort, ESLint)
-4. E2E Critical Tests (Playwright)
+### API Performance
+
+- Async request handling
+- Pagination for large datasets
+- Query parameter optimization
+- Response compression
+
+## Testing Architecture
+
+### Backend Testing Strategy
+
+#### Test Tiers
+
+1. **Tier 1 (unit/fast)**: Developer feedback loop
+
+   - Unit tests for services
+   - Fast integration tests
+   - Mocked external dependencies
+
+2. **Tier 2 (CI)**: Pipeline validation
+
+   - Full integration tests
+   - Database transaction tests
+   - API endpoint tests
+
+3. **Tier 3 (pre-merge)**: Production readiness
+   - End-to-end tests
+   - Performance benchmarks
+   - Migration tests
+
+#### Test Isolation
+
+- Global fixture for database protection
+- Automatic mocking of external services
+- Transaction rollback after each test
+- Separate test database
+
+### Frontend Testing
+
+- Component unit tests with Jest
+- Integration tests with React Testing Library
+- Snapshot testing for UI consistency
+- End-to-end tests with Playwright
+
+## Monitoring & Observability
+
+### Sentry Integration
+
+- Separate DSNs for dev/prod
+- Error tracking with stack traces
+- Performance monitoring
+- Custom breadcrumbs for debugging
+
+### Metrics Collection
+
+- Query performance tracking
+- API endpoint latencies
+- Business metrics dashboard
+- Resource utilization monitoring
+
+## Deployment Architecture
+
+### CI/CD Pipeline
+
+```
+Git Push → GitHub Actions →
+Test Suite → Build →
+Vercel (Frontend) / Railway (Backend) →
+Health Checks → Production
 ```
 
-### Railway Deployment
-- **Nixpacks Build**: Automatic dependency detection
-- **Zero-Downtime**: Rolling updates with health checks
-- **SSL/TLS**: Automatic certificate management
-- **Database**: Managed PostgreSQL with automated backups
+### Environment Management
 
-## Monitoring & Operations
+- Development: Local PostgreSQL + FastAPI dev server
+- Staging: Railway preview environments
+- Production: Railway (API) + Vercel (Frontend)
 
-### Health Monitoring
-```python
-GET /health            # Basic health check
-GET /api/health        # Comprehensive health with database
+## Scalability Considerations
 
-# Response includes:
-# - Connection pool status
-# - Database connectivity
-# - Environment information
-# - Performance metrics
-```
+### Horizontal Scaling
 
-### Weekly Scraping Automation
-```bash
-# Production cron (weekly at 2 AM Monday)
-0 2 * * 1 python management/config_commands.py run-all
+- Stateless API design
+- Database connection pooling
+- Load balancer ready
+- Microservices migration path
 
-# Available commands:
-python management/config_commands.py list      # List organizations
-python management/config_commands.py sync      # Sync configurations
-python management/config_commands.py run [id]  # Run specific scraper
-```
+### Vertical Scaling
 
-### Data Quality Monitoring
-```bash
-# Overall quality assessment
-PYTHONPATH=. python monitoring/data_quality_monitor.py --mode=overall --all
+- Async processing for heavy operations
+- Batch processing for scrapers
+- Query optimization ongoing
+- Caching layer expansion
 
-# Organization-specific analysis
-PYTHONPATH=. python monitoring/data_quality_monitor.py --mode=detailed --org-id=26
-```
+## Future Architecture Evolution
+
+### Planned Enhancements
+
+1. **Microservices Migration**
+
+   - Extract scraper service
+   - Separate analytics service
+   - Independent auth service
+
+2. **Event-Driven Architecture**
+
+   - Message queue integration
+   - Event sourcing for interactions
+   - Real-time updates via WebSockets
+
+3. **AI/ML Pipeline**
+
+   - Dedicated ML service
+   - Model versioning
+   - A/B testing framework
+
+4. **Infrastructure**
+   - Kubernetes orchestration
+   - Service mesh implementation
+   - GraphQL federation
 
 ## Development Workflow
 
-### Test-Driven Development (TDD)
+### Local Development Setup
+
 ```bash
-# Step 1: Write failing test
-pytest tests/new_feature/test_feature.py -v  # EXPECTED: FAILED
+# Backend
+source venv/bin/activate
+python run_api.py
 
-# Step 2: Implement minimal code
-# ... implement feature ...
-
-# Step 3: Confirm test passes
-pytest tests/new_feature/test_feature.py -v  # EXPECTED: PASSED
-
-# Step 4: Refactor with confidence
-pytest tests/new_feature/ -v  # All tests pass
+# Frontend
+cd frontend
+npm run dev
 ```
 
-### Code Standards
-- **Immutable Data**: No mutations, functional patterns
-- **Pure Functions**: Single responsibility, no side effects
-- **Small Functions**: One clear purpose per function
-- **Self-Documenting**: Clear naming, no comments needed
-- **Early Returns**: Avoid nested conditionals
+### Code Organization Principles
+
+1. **Single Responsibility**: Each module has one clear purpose
+2. **Dependency Injection**: Services injected, not imported
+3. **Pure Functions**: No side effects in business logic
+4. **Early Returns**: Avoid nested conditionals
+5. **Self-Documenting**: Code clarity over comments
 
 ### Quality Gates
-- ✅ All 565+ tests passing
-- ✅ Zero linting errors
-- ✅ Type checking validation
-- ✅ No duplicate files (frontend)
-- ✅ Database migration compatibility
-- ✅ Security vulnerability scanning
 
-## Configuration Management
+- Pre-commit hooks for formatting
+- Type checking (mypy/TypeScript)
+- Test coverage requirements (>80%)
+- Linting standards (ruff/ESLint)
+- No duplicate JSX/TSX files
 
-### Environment-Based Settings
+## Emergency Procedures
+
+### Database Recovery
+
 ```python
-ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO" if ENVIRONMENT == "development" else "WARNING")
-
-DB_CONFIG = {
-    "host": os.environ.get("DB_HOST", "localhost"),
-    "database": os.environ.get("DB_NAME", default_db_name),
-    "user": os.environ.get("DB_USER", system_user),
-    "password": os.environ.get("DB_PASSWORD"),
-}
+python management/emergency_operations.py --reset-stale-data
 ```
 
-### CORS Configuration
+### Cache Invalidation
+
 ```python
-ALLOWED_ORIGINS = ["http://localhost:3000"] if ENVIRONMENT == "development" else production_origins
-CORS_ALLOW_CREDENTIALS = True if ENVIRONMENT == "development" else False
+python management/cache_operations.py --flush-all
 ```
 
-## Key Architectural Decisions
+### Rollback Procedures
 
-### Why Custom SQL Over ORM
-- **Performance**: Fine-grained control over queries
-- **Flexibility**: Complex queries with window functions
-- **Transparency**: Explicit SQL for debugging
-- **Batch Operations**: Optimized bulk operations
+- Database: Alembic downgrade
+- Frontend: Vercel instant rollback
+- Backend: Railway deployment history
 
-### Why Configuration-Driven Design
-- **Zero-Code Onboarding**: Add organizations without coding
-- **Environment Flexibility**: Different settings per deployment
-- **Hot Reloading**: Configuration changes without restarts
-- **Schema Validation**: Prevents configuration errors
+## Key Design Decisions
 
-### Why Template Method Pattern for Scrapers
-- **Consistency**: All scrapers follow same flow
-- **Maintainability**: Core logic centralized
-- **Extensibility**: Easy to add new phases
-- **Testing**: Predictable behavior patterns
+### Why FastAPI?
 
-## Future Enhancements
+- Native async support
+- Automatic API documentation
+- Pydantic validation
+- High performance
 
-### Immediate Priorities (Q1-Q2 2025)
-- Enhanced search with AI-powered matching
-- Progressive Web App with offline support
-- Advanced analytics and adoption metrics
-- Multi-language internationalization
+### Why Next.js?
 
-### Long-Term Vision (2026+)
-- Microservices architecture migration
-- Real-time updates with WebSockets
-- Machine learning for breed identification
-- Global multi-region deployment
+- Server-side rendering for SEO
+- Built-in optimization
+- Vercel integration
+- React ecosystem
+
+### Why PostgreSQL?
+
+- JSONB for flexible schemas
+- Full-text search capabilities
+- ACID compliance
+- Railway integration
+
+### Why Service Layer Pattern?
+
+- Business logic isolation
+- Testability
+- Reusability
+- Clear boundaries
+
+## Contact & Support
+
+- **Production URL**: www.rescuedogs.me
+- **GitHub**: [repository URL]
+- **Monitoring**: Sentry dashboards
+- **Database**: Railway PostgreSQL console
+
+## Appendix: Common Tasks
+
+### Adding New Organization
+
+1. Create YAML in `/configs`
+2. Implement scraper in `/scrapers`
+3. Run sync command
+4. Verify in admin panel
+
+### Performance Debugging
+
+1. Check Sentry for errors
+2. Review metrics collector
+3. Analyze slow queries
+4. Profile with LLMProfilerService
+
+### Database Migrations
+
+1. Create migration with Alembic
+2. Test in development
+3. Apply to staging
+4. Production deployment
 
 ---
 
-This architecture represents a production-ready platform combining modern web technologies with enterprise-grade patterns. Built with zero-technical-debt methodology and comprehensive testing, the system is designed for scale, reliability, and maintainability while serving the mission of connecting rescue dogs with loving homes.
+_This document is maintained for Claude Code as the primary audience. It provides comprehensive architectural understanding for AI-assisted development and maintenance._

@@ -9,15 +9,23 @@ const PASTEL_COLORS = [
 
 export const getPersonalityTraitColor = (trait: string): string => {
   const lowerTrait = trait.toLowerCase();
-  
+
   // Semantic color mapping
-  if (lowerTrait.includes('soft') || lowerTrait.includes('gentle') || lowerTrait.includes('sweet')) {
+  if (
+    lowerTrait.includes("soft") ||
+    lowerTrait.includes("gentle") ||
+    lowerTrait.includes("sweet")
+  ) {
     return "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300";
   }
-  if (lowerTrait.includes('squishy') || lowerTrait.includes('playful') || lowerTrait.includes('goofy')) {
+  if (
+    lowerTrait.includes("squishy") ||
+    lowerTrait.includes("playful") ||
+    lowerTrait.includes("goofy")
+  ) {
     return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300";
   }
-  if (lowerTrait.includes('sweet-natured') || lowerTrait.includes('loving')) {
+  if (lowerTrait.includes("sweet-natured") || lowerTrait.includes("loving")) {
     return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300";
   }
 

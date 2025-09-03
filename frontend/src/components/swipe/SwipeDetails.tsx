@@ -96,7 +96,7 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
   const allImages = [dog.image_url, ...(dog.additional_images || [])];
   const isAlreadyFavorite = isFavorited(dog.id);
   const profilerData = dog.dog_profiler_data;
-  
+
   // Create overlay buttons
   const overlayButtons = (
     <div className="flex gap-2">
@@ -120,14 +120,16 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
             handleSave();
           }}
           className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:scale-105 hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all flex items-center justify-center"
-          aria-label={isAlreadyFavorite ? "Remove from favorites" : "Add to favorites"}
+          aria-label={
+            isAlreadyFavorite ? "Remove from favorites" : "Add to favorites"
+          }
         >
-          <Heart 
+          <Heart
             size={20}
             className={`${
-              isAlreadyFavorite 
-                ? 'text-red-500 fill-current' 
-                : 'text-gray-700 dark:text-gray-200'
+              isAlreadyFavorite
+                ? "text-red-500 fill-current"
+                : "text-gray-700 dark:text-gray-200"
             }`}
           />
         </button>
@@ -184,8 +186,8 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
             </div>
 
             <div className="pb-safe">
-              <ImageCarousel 
-                images={allImages} 
+              <ImageCarousel
+                images={allImages}
                 dogName={dog.name}
                 overlayButtons={overlayButtons}
               />
