@@ -1,5 +1,4 @@
 import re
-from datetime import date
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
@@ -193,11 +192,9 @@ class DaisyFamilyRescueDogDetailScraper:
         """Process and standardize the raw Steckbrief data."""
         processed_data = {}
 
-        # Process age/birth date
+        # Process age/birth date - just extract the age text for unified parsing
         if "Alter:" in steckbrief_data:
-            age_data = self._parse_age(steckbrief_data["Alter:"])
-            if age_data:
-                processed_data.update(age_data)
+            processed_data["age_text"] = steckbrief_data["Alter:"]
 
         # Process gender/sex
         if "Geschlecht:" in steckbrief_data:
@@ -258,50 +255,6 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return processed_data
 
-    def _parse_age(self, age_text: str) -> Optional[Dict[str, Any]]:
-        """Parse age from German text like '03/2020' or '5 Jahre'."""
-        if not age_text:
-            return None
-
-        age_data: Dict[str, Any] = {}
-
-        # Pattern 1: MM/YYYY (birth month/year)
-        date_match = re.search(r"(\d{1,2})/(\d{4})", age_text)
-        if date_match:
-            birth_month = int(date_match.group(1))
-            birth_year = int(date_match.group(2))
-
-            # Calculate current age
-            current_date = date.today()
-            age_years = current_date.year - birth_year
-            if current_date.month < birth_month:
-                age_years -= 1
-
-            age_data["age_years"] = max(0, age_years)
-            age_data["age_text"] = f"{birth_month:02d}/{birth_year}"
-            age_data["properties"] = {"birth_month": birth_month, "birth_year": birth_year}
-
-            return age_data
-
-        # Pattern 2: X Jahre (X years old)
-        years_match = re.search(r"(\d+)\s+Jahre?", age_text)
-        if years_match:
-            years = int(years_match.group(1))
-            age_data["age_years"] = years
-            age_data["age_text"] = f"{years} Jahre"
-            return age_data
-
-        # Pattern 3: X Monate (X months old)
-        months_match = re.search(r"(\d+)\s+Monate?", age_text)
-        if months_match:
-            months = int(months_match.group(1))
-            age_data["age_years"] = round(months / 12, 1)
-            age_data["age_text"] = f"{months} Monate"
-            return age_data
-
-        # Store original text if we can't parse it
-        age_data["age_text"] = age_text
-        return age_data
 
     def _parse_sex(self, sex_text: str) -> Optional[Dict[str, Any]]:
         """Parse sex from German text like 'weiblich, kastriert'."""

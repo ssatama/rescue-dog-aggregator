@@ -40,16 +40,12 @@ class TestREANUnifiedStandardization:
         raw_animal = {"name": "Buddy", "age_text": "2 years old", "properties": {"weight": "25kg", "location": "Romania"}}
 
         # Process through base scraper's process_animal method
-        with patch.object(scraper, "save_animal") as mock_save:
-            scraper.process_animal(raw_animal)
+        processed = scraper.process_animal(raw_animal)
 
-            # Verify save_animal was called
-            mock_save.assert_called_once()
-            processed = mock_save.call_args[0][0]
-
-            # Verify standardization was applied (even without breed data)
-            assert processed["name"] == "Buddy"
-            assert "age_text" in processed
+        # Verify standardization was applied (even without breed data)
+        assert processed["name"] == "Buddy"
+        assert "age_text" in processed
+        # With no breed data, the processed data should be returned as-is with any age standardization
 
     def test_rean_handles_missing_breed_gracefully(self, scraper):
         """Test REAN handles cases where breed is not extracted."""
@@ -57,28 +53,28 @@ class TestREANUnifiedStandardization:
 
         raw_animal = {"name": "Max", "age_text": "3 years", "properties": {}}
 
-        # Process animal
-        with patch.object(scraper, "save_animal") as mock_save:
-            scraper.process_animal(raw_animal)
+        # Process animal through standardization
+        processed = scraper.process_animal(raw_animal)
 
-            # Verify it was saved even without breed
-            mock_save.assert_called_once()
-            processed = mock_save.call_args[0][0]
-            assert processed["name"] == "Max"
+        # Verify it processes gracefully even without breed
+        assert processed["name"] == "Max"
+        assert processed["age_text"] == "3 years"
 
     def test_rean_future_breed_extraction_ready(self, scraper):
         """Test that if REAN adds breed extraction, it will use unified standardization."""
         scraper.use_unified_standardization = True
 
         # Simulate future breed data extraction
-        raw_animal = {"name": "Luna", "age_text": "1 year", "breed": "Lurcher", "properties": {}}  # If REAN adds breed extraction
+        raw_animal = {"name": "Luna", "age_text": "1 year", "breed": "Lurcher", "properties": {}}
 
-        # Process through standardizer directly
-        standardized = scraper.standardizer.apply_full_standardization(raw_animal)
+        # Process through standardizer with proper keyword arguments
+        standardized = scraper.standardizer.apply_full_standardization(breed="Lurcher", age="1 year")
 
-        # Verify Lurcher would be properly categorized as Hound
-        if "breed_group" in standardized:
-            assert standardized["breed_group"] == "Hound"
+        # Verify Lurcher would be properly standardized
+        if standardized.get("breed"):
+            breed_info = standardized["breed"]
+            assert breed_info["name"] == "Lurcher"
+            assert breed_info["group"] == "Hound"
 
     def test_rean_data_extraction_unchanged(self, scraper):
         """Verify REAN's data extraction logic remains unchanged."""
@@ -97,14 +93,13 @@ class TestREANUnifiedStandardization:
         """Test feature flag properly controls standardization usage."""
         raw_animal = {"name": "Charlie", "age_text": "4 years", "properties": {}}
 
-        # Test with flag disabled
+        # Test with flag disabled - should return data unchanged
         scraper.use_unified_standardization = False
-        with patch.object(scraper, "save_animal") as mock_save:
-            scraper.process_animal(raw_animal)
-            assert mock_save.called
+        result_disabled = scraper.process_animal(raw_animal)
+        assert result_disabled == raw_animal
 
-        # Test with flag enabled
+        # Test with flag enabled - should apply any available standardization
         scraper.use_unified_standardization = True
-        with patch.object(scraper, "save_animal") as mock_save:
-            scraper.process_animal(raw_animal)
-            assert mock_save.called
+        result_enabled = scraper.process_animal(raw_animal)
+        assert result_enabled["name"] == "Charlie"
+        assert result_enabled["age_text"] == "4 years"

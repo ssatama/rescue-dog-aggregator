@@ -23,9 +23,10 @@ class FeatureFlags:
         "theunderdog": True,  # Enabled - TheUnderdog migrated to unified standardization
         "tierschutzverein_europa": True,  # German-to-English translation then standardization
         "animalrescuebosnia": True,  # Enabled - Size standardization migrated to unified
-        "daisy_family_rescue": False,
+        "daisy_family_rescue": True,  # Enabled - Age parsing migrated to unified standardization
+        "daisyfamilyrescue": True,  # Alias for daisy_family_rescue
         # Group A: Currently using optimized_standardization.py
-        "dogstrust": False,
+        "dogstrust": True,  # Enabled - Migrated from optimized_standardization to unified
         "woof_project": False,
         "pets_in_turkey": False,
         # Group B: Currently using standardization.py
@@ -91,6 +92,23 @@ def is_scraper_standardization_enabled(scraper_name: str) -> bool:
 
     # Fall back to configuration
     return FeatureFlags.SCRAPER_FLAGS.get(scraper_name, False)
+
+
+def is_feature_enabled(feature_name: str, scraper_name: str) -> bool:
+    """Check if a feature is enabled for a specific scraper.
+    
+    This is an alias for backward compatibility with tests.
+    
+    Args:
+        feature_name: Name of the feature (e.g., 'unified_breed_standardization')
+        scraper_name: Name of the scraper
+        
+    Returns:
+        True if the feature is enabled for this scraper
+    """
+    if feature_name == "unified_breed_standardization":
+        return is_scraper_standardization_enabled(scraper_name)
+    return False
 
 
 def get_enabled_scrapers() -> List[str]:

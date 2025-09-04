@@ -16,7 +16,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
 from scrapers.base_scraper import BaseScraper
-from utils.optimized_standardization import parse_age_text, standardize_breed, standardize_size_value
 
 
 class DogsTrustScraper(BaseScraper):
@@ -682,15 +681,7 @@ class DogsTrustScraper(BaseScraper):
             description = self._extract_description(soup)
             primary_image_url = self._extract_primary_image(soup)
 
-            # Apply standardization utilities
-            if breed:
-                breed_info = standardize_breed(breed)
-                breed = breed_info.standardized_name
-
-            if age_text:
-                age_info = parse_age_text(age_text)
-            else:
-                age_info = None
+            # Note: Standardization will be applied later via process_animal()
 
             # BUILD PROPERTIES JSON following Many Tears Rescue pattern
             properties = {}
@@ -730,11 +721,11 @@ class DogsTrustScraper(BaseScraper):
             # CRITICAL: Store description in properties (Many Tears pattern)
             properties["description"] = description or ""
 
-            # Build result following BaseScraper format with Zero NULLs compliance
-            result = {
+            # Build raw result for unified standardization processing
+            raw_result = {
                 "name": name or "Unknown",
                 "breed": breed or "Mixed Breed",
-                "age_text": age_text or "Unknown",
+                "age": age_text or "Unknown",  # Changed from age_text to age for standardization
                 "sex": sex or "Unknown",
                 "size": size or "Medium",
                 "location": location or "UK",
@@ -746,19 +737,14 @@ class DogsTrustScraper(BaseScraper):
                 "properties": properties,  # Following Many Tears pattern
             }
 
-            # Add standardized age information
-            if age_info and age_info.min_months is not None:
-                result["age_min_months"] = age_info.min_months
-                result["age_max_months"] = age_info.max_months
-                result["age_category"] = age_info.category or "Unknown"
-
             # Add image_urls for R2 integration
             if primary_image_url:
-                result["image_urls"] = [primary_image_url]
+                raw_result["image_urls"] = [primary_image_url]
             else:
-                result["image_urls"] = []
+                raw_result["image_urls"] = []
 
-            return result
+            # Apply unified standardization
+            return self.process_animal(raw_result)
 
         except Exception as e:
             self.logger.error(f"Error scraping details from {adoption_url}: {e}")
