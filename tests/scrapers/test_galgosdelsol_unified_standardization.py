@@ -122,7 +122,7 @@ class TestGalgosDelSolUnifiedStandardization:
             ("small", "Small"),
             ("medium", "Medium"),
             ("large", "Large"),
-            ("xlarge", "XLarge"),
+            ("xlarge", "Large"),  # xlarge maps to Large for canonical sizes
         ]
         
         for raw_size, expected_size in test_cases:
@@ -143,7 +143,7 @@ class TestGalgosDelSolUnifiedStandardization:
             ("Podenco", "Podenco", "Hound"),
             ("galgo español", "Galgo Español", "Hound"),
             ("GALGO", "Galgo", "Hound"),
-            ("podenco mix", "podenco mix", "Mixed"),  # Mixed breeds keep their original form
+            ("podenco mix", "Podenco Mix", "Mixed"),  # Mixed breeds are capitalized properly
         ]
         
         for raw_breed, expected_breed, expected_category in test_breeds:

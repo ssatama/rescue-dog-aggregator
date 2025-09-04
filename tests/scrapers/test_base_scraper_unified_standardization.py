@@ -56,11 +56,11 @@ class TestBasScraperUnifiedStandardization:
 
         processed = scraper.process_animal(raw_data)
 
-        # Should standardize the breed
-        assert processed["breed"] == "Staffordshire Bull Terrier"
-        assert processed["primary_breed"] == "Staffordshire Bull Terrier"
-        assert processed["secondary_breed"] == "Mixed Breed"
-        assert processed["breed_category"] == "Terrier"
+        # Should standardize the breed (Cross becomes Mix)
+        assert processed["breed"] == "Staffordshire Bull Terrier Mix"
+        assert processed["primary_breed"] == "Staffordshire Bull Terrier Mix"  # Primary is the full name
+        assert processed["secondary_breed"] == "Mixed Breed"  # Secondary indicates it's a mix
+        assert processed["breed_category"] == "Mixed"  # Mixed breed category for crosses
         assert "standardization_confidence" in processed
         assert processed["name"] == "Buddy"
         assert processed["external_id"] == "dog-123"
@@ -155,10 +155,10 @@ class TestBasScraperUnifiedStandardization:
         # Just verify it doesn't crash when logging
         result = scraper.save_animal(animal_data)
 
-        # Verify the breed was standardized
+        # Verify the breed was standardized - "Staff X" becomes "Staffordshire Bull Terrier Mix"
         assert result == (222, "create")
         call_args = scraper.database_service.create_animal.call_args[0][0]
-        assert call_args["breed"] == "Staffordshire Bull Terrier"
+        assert call_args["breed"] == "Staffordshire Bull Terrier Mix"
 
     def test_existing_animal_update_with_standardization(self, scraper):
         """Updating existing animal should apply standardization"""
