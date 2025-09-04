@@ -35,6 +35,7 @@ class FeatureFlags:
         "manytearsrescue": True,  # Enabled - Migrated from standardization.py to unified
         "petsinturkey": False,  # Note: different from pets_in_turkey
         "santerpaws": False,
+        "santerpawsbulgarianrescue": True,  # Enabled - Migrated from standardization.py to unified
     }
 
 

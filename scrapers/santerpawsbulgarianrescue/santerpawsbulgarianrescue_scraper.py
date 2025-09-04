@@ -8,12 +8,9 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
-from utils.standardization import (
-    apply_standardization,
-    normalize_breed_case,
-    parse_age_text,
-    standardize_age,
-)
+# Migrated to unified standardization - using BaseScraper.process_animal()
+# Legacy standardize_age kept for date-of-birth calculations
+from utils.standardization import standardize_age
 
 
 class SanterPawsBulgarianRescueScraper(BaseScraper):
@@ -468,7 +465,8 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                             raw_age_text = value or "Unknown"
                             properties["age_text"] = raw_age_text
 
-                            # Use standardize_age() for age processing following galgosdelsol patterns
+                            # Store raw age text for unified standardization
+                            # Legacy standardize_age kept for D.O.B calculations if needed
                             if raw_age_text and raw_age_text != "Unknown":
                                 age_info = standardize_age(raw_age_text)
                                 if age_info.get("age_min_months") is not None:
@@ -480,9 +478,8 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                         elif label == "Sex":
                             properties["sex"] = value or "Unknown"
                         elif label == "Breed":
-                            raw_breed = value or "Mixed Breed"
-                            # Apply breed case normalization following galgosdelsol patterns
-                            properties["breed"] = normalize_breed_case(raw_breed) if raw_breed != "Mixed Breed" else raw_breed
+                            # Store raw breed for unified standardization
+                            properties["breed"] = value or "Mixed Breed"
                         elif label == "Status":
                             # Map status values
                             if value and value.lower() in ["reserved", "on hold"]:
@@ -618,22 +615,26 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
             if properties:
                 if "breed" in properties:
                     result["breed"] = properties["breed"] or "Mixed Breed"
+                # Use gender field for consistency with unified standardization
                 if "sex" in properties:
-                    result["sex"] = properties["sex"] or "Unknown"
+                    result["gender"] = properties["sex"] or "Unknown"
+                # Rename age_text to age for unified standardization API
                 if "age_text" in properties:
-                    result["age_text"] = properties["age_text"] or "Unknown"
+                    result["age"] = properties["age_text"] or "Unknown"
                 if "size" in properties:
                     result["size"] = properties["size"] or "Medium"
                 if "status" in properties:
                     result["status"] = properties["status"]  # Override default with extracted status
 
-            # Zero NULLs compliance - only set defaults for fields that must not be NULL in production
-            # Tests expect some fields to be None when not found, so be selective
-            if "breed" not in result:
+            # Apply unified standardization via process_animal from BaseScraper
+            # This handles breed standardization, age parsing, size normalization, etc.
+            result = self.process_animal(result)
+            
+            # Zero NULLs compliance - set defaults only if unified standardization didn't provide them
+            if "breed" not in result or not result["breed"]:
                 result["breed"] = "Mixed Breed"
-            if "size" not in result:
-                result["size"] = "Medium"
-            # Leave age_text and sex as None if not found to maintain test compatibility
+            if "standardized_size" not in result or not result["standardized_size"]:
+                result["standardized_size"] = "Medium"
 
             self.logger.debug(f"Successfully extracted data for {name}")
             return result
