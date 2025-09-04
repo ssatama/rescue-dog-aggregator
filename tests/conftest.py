@@ -236,8 +236,14 @@ def _clear_test_tables_robust(cursor, conn, max_retries=3):
 # --- Test Data Management Fixture ---
 # MODIFIED: Now uses the override_get_db_cursor logic directly
 @pytest.fixture(scope="function", autouse=True)
-def manage_test_data():
+def manage_test_data(request):
     """Fixture to clear tables and insert test data using the override connection logic."""
+    # Skip database setup for unit tests that don't need it
+    if request.node.get_closest_marker("unit") or request.node.get_closest_marker("fast"):
+        # Unit tests don't need database setup
+        yield
+        return
+    
     print("[conftest manage_test_data] Setting up data for test function...")
     # Get a cursor using the same logic as the dependency override
     # We need to manually iterate the generator returned by
