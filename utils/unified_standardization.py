@@ -126,6 +126,11 @@ class UnifiedStandardizer:
             "galgo": BreedInfo("Galgo", "Hound", "Large"),
             "galgo español": BreedInfo("Galgo Español", "Hound", "Large"),
             "livestock guardian dog": BreedInfo("Livestock Guardian Dog", "Working", "Large"),
+            # Turkish breeds
+            "kangal": BreedInfo("Kangal", "Guardian", "XLarge"),
+            "anatolian shepherd": BreedInfo("Anatolian Shepherd", "Guardian", "XLarge"),
+            "anatolian shepherd dog": BreedInfo("Anatolian Shepherd", "Guardian", "XLarge"),
+            "akbash": BreedInfo("Akbash", "Guardian", "XLarge"),
         }
 
         return breed_data
@@ -277,11 +282,49 @@ class UnifiedStandardizer:
         # Check for crosses with specific breed mentioned
         if is_mixed and any(word in breed_lower for word in ["labrador", "collie", "terrier", "spaniel"]):
             # This is a cross with an identifiable breed component
-            return {"name": breed.strip(), "group": "Mixed", "size": None, "confidence": 0.7, "breed_type": "crossbreed", "is_mixed": True}  # Medium confidence for identifiable crosses
+            # Properly capitalize breed names like "Terrier Mix", "Labrador Cross"
+            breed_name = self._capitalize_breed_name(breed.strip())
+            return {"name": breed_name, "group": "Mixed", "size": None, "confidence": 0.7, "breed_type": "crossbreed", "is_mixed": True}  # Medium confidence for identifiable crosses
 
         # Unknown breed - if it's mixed, put in Mixed group, otherwise Unknown
-        return {"name": breed.strip(), "group": "Mixed" if is_mixed else "Unknown", "size": None, "confidence": 0.3, "breed_type": "unknown", "is_mixed": is_mixed}
+        breed_name = self._capitalize_breed_name(breed.strip())
+        return {"name": breed_name, "group": "Mixed" if is_mixed else "Unknown", "size": None, "confidence": 0.3, "breed_type": "unknown", "is_mixed": is_mixed}
 
+    def _capitalize_breed_name(self, breed: str) -> str:
+        """
+        Properly capitalize breed names.
+        
+        Args:
+            breed: The breed string to capitalize
+            
+        Returns:
+            Properly capitalized breed name
+        """
+        if not breed:
+            return breed
+            
+        # Common words that should remain lowercase unless at start
+        lowercase_words = {'of', 'de', 'and', 'or', 'the'}
+        
+        # Words that should always be uppercase
+        uppercase_words = {'ii', 'iii', 'iv'}
+        
+        words = breed.split()
+        result = []
+        
+        for i, word in enumerate(words):
+            word_lower = word.lower()
+            
+            if word_lower in uppercase_words:
+                result.append(word.upper())
+            elif i == 0 or word_lower not in lowercase_words:
+                # Capitalize first letter, keep rest of case
+                result.append(word.capitalize())
+            else:
+                result.append(word_lower)
+                
+        return ' '.join(result)
+    
     def _standardize_age(self, age: Optional[str]) -> Dict[str, Any]:
         """Standardize age string into structured format."""
         if not age:
