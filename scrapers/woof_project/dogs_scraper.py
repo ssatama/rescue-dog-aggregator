@@ -9,7 +9,6 @@ import requests
 from bs4 import BeautifulSoup, Tag
 
 from scrapers.base_scraper import BaseScraper
-from utils.optimized_standardization import standardize_breed, standardize_size_value
 
 
 class WoofProjectScraper(BaseScraper):
@@ -778,26 +777,20 @@ class WoofProjectScraper(BaseScraper):
             # Extract sex from description patterns
             sex = self._extract_sex_from_description(description or "")
 
-            # Apply standardization following other scraper patterns
+            # Apply standardization to name only (breed/size/age handled by unified standardizer)
             standardized_name = self._standardize_name(name or "Unknown")
-            raw_breed = breed or "Mixed Breed"
-            standardized_breed = standardize_breed(raw_breed)
-            raw_size = size or "Medium"
-            standardized_size = standardize_size_value(raw_size)
 
-            # Build result dictionary with comprehensive NULL prevention and standardization
+            # Build result dictionary with raw data (unified standardization will process it)
             result = {
                 "name": standardized_name,
                 "external_id": external_id,
                 "adoption_url": url,
                 "primary_image_url": primary_image_url,
                 "description": description or "Rescue dog from Woof Project available for adoption",
-                "breed": raw_breed,  # Original breed
-                "standardized_breed": standardized_breed,  # Standardized breed
-                "age_text": age or "Unknown age",  # Default age
-                "size": raw_size,  # Original size
-                "standardized_size": standardized_size,  # Standardized size
-                "sex": sex or "Unknown",  # Default sex
+                "breed": breed or "Mixed Breed",
+                "age": age or "Unknown age",  # Changed from age_text to age for standardization
+                "size": size or "Medium",
+                "sex": sex or "Unknown",
                 "animal_type": "dog",
                 "status": "available",
             }

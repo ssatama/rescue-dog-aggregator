@@ -27,7 +27,7 @@ class FeatureFlags:
         "daisyfamilyrescue": True,  # Alias for daisy_family_rescue
         # Group A: Currently using optimized_standardization.py
         "dogstrust": True,  # Enabled - Migrated from optimized_standardization to unified
-        "woof_project": False,
+        "woof_project": True,  # Enabled - Migrated from optimized_standardization to unified
         "pets_in_turkey": False,
         # Group B: Currently using standardization.py
         "furryrescueitaly": False,
