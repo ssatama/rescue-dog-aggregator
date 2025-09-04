@@ -8,9 +8,9 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
+from utils.shared_extraction_patterns import extract_age_from_text
 
 from .normalizer import extract_qa_data, extract_size_and_weight_from_qa
-from utils.shared_extraction_patterns import extract_age_from_text
 
 
 class TheUnderdogScraper(BaseScraper):
@@ -294,13 +294,13 @@ class TheUnderdogScraper(BaseScraper):
 
             # Extract Q&A data for size/weight information
             qa_data = extract_qa_data(result.get("properties", {}))
-            
+
             # Extract age from Q&A data if available
             if qa_data.get("How old?"):
                 age_text = extract_age_from_text(qa_data["How old?"])
                 if age_text:
                     result["age"] = age_text
-            
+
             # Ensure ALL critical fields are present for BaseScraper
             # BaseScraper will handle standardization automatically
 
@@ -325,7 +325,7 @@ class TheUnderdogScraper(BaseScraper):
                     result["size"] = size
                 if weight_kg:
                     result["weight_kg"] = weight_kg
-                
+
                 # If still no size, try to estimate from weight if available
                 if not result.get("size") and result.get("weight_kg"):
                     try:
@@ -333,7 +333,7 @@ class TheUnderdogScraper(BaseScraper):
                         result["size"] = self._estimate_size_from_weight(weight)
                     except (ValueError, TypeError):
                         result["size"] = "Medium"  # Fallback if conversion fails
-                
+
                 # Final fallback
                 if not result.get("size"):
                     result["size"] = "Medium"

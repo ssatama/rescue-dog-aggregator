@@ -360,41 +360,37 @@ class BaseScraper(ABC):
     def process_animal(self, animal_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Process animal data through standardization if enabled.
-        
+
         Args:
             animal_data: Raw animal data dictionary
-            
+
         Returns:
             Processed animal data with standardized breed fields if enabled
         """
         if not self.use_unified_standardization:
             # Feature flag disabled - return data unchanged
             return animal_data
-        
+
         # Make a copy to avoid modifying the original
         processed_data = animal_data.copy()
-        
+
         # Log standardization for breed if present
         original_breed = animal_data.get("breed")
         if original_breed:
             self.logger.info(f"Standardizing breed: {original_breed}")
-        
+
         # Apply full standardization (handles breed, age, size)
-        standardized = self.standardizer.apply_full_standardization(
-            breed=animal_data.get("breed"),
-            age=animal_data.get("age"),
-            size=animal_data.get("size")
-        )
-        
+        standardized = self.standardizer.apply_full_standardization(breed=animal_data.get("breed"), age=animal_data.get("age"), size=animal_data.get("size"))
+
         # Flatten the nested breed structure if present
         if standardized.get("breed"):
             breed_info = standardized["breed"]
-            
+
             # Map the nested structure to flat database fields
             if isinstance(breed_info, dict):
                 # Standard breed name
                 processed_data["breed"] = breed_info.get("name", original_breed)
-                
+
                 # Primary and secondary breeds
                 if "primary_breed" in breed_info:
                     processed_data["primary_breed"] = breed_info["primary_breed"]
@@ -407,21 +403,18 @@ class BaseScraper(ABC):
                     # For purebreds, only primary breed
                     processed_data["primary_breed"] = breed_info.get("name")
                     processed_data["secondary_breed"] = None
-                
+
                 # Breed category (group)
                 processed_data["breed_category"] = breed_info.get("group")
-                
+
                 # Confidence score
                 processed_data["standardization_confidence"] = breed_info.get("confidence", 0.0)
-                
+
                 # Log the result if breed changed
                 new_breed = processed_data.get("breed")
                 if original_breed and new_breed != original_breed:
-                    self.logger.info(
-                        f"Breed standardized: '{original_breed}' -> '{new_breed}' "
-                        f"(confidence: {processed_data.get('standardization_confidence', 0):.2f})"
-                    )
-        
+                    self.logger.info(f"Breed standardized: '{original_breed}' -> '{new_breed}' " f"(confidence: {processed_data.get('standardization_confidence', 0):.2f})")
+
         # Handle age standardization if present
         if standardized.get("age"):
             age_info = standardized["age"]
@@ -430,14 +423,14 @@ class BaseScraper(ABC):
                 if "original" in age_info:
                     processed_data["age"] = age_info["original"]
                 # Can add age_category, age_min_months, age_max_months if needed
-        
-        # Handle size standardization if present  
+
+        # Handle size standardization if present
         if standardized.get("size"):
             size_info = standardized["size"]
             if isinstance(size_info, dict):
                 # For now, just keep the standardized size
                 processed_data["size"] = size_info.get("standardized", animal_data.get("size"))
-        
+
         return processed_data
 
     def save_animal(self, animal_data):
@@ -445,7 +438,7 @@ class BaseScraper(ABC):
         try:
             # Process animal data through standardization if enabled
             animal_data = self.process_animal(animal_data)
-            
+
             # Validate external_id pattern to prevent collisions
             if animal_data.get("external_id"):
                 self.validate_external_id(animal_data["external_id"])

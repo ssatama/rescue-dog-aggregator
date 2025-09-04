@@ -1,6 +1,9 @@
 """Test TheUnderdog scraper with unified standardization enabled."""
+
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+
 from scrapers.theunderdog.theunderdog_scraper import TheUnderdogScraper
 
 
@@ -17,9 +20,8 @@ def mock_db_connection():
 @pytest.fixture
 def theunderdog_scraper(mock_db_connection):
     """Create TheUnderdog scraper with mocked dependencies."""
-    with patch('scrapers.theunderdog.theunderdog_scraper.requests'), \
-         patch('scrapers.base_scraper.ConfigLoader'):
-        
+    with patch("scrapers.theunderdog.theunderdog_scraper.requests"), patch("scrapers.base_scraper.ConfigLoader"):
+
         # Create scraper with real UnifiedStandardizer (not mocked)
         scraper = TheUnderdogScraper(config_id="theunderdog")
         scraper.conn = mock_db_connection
@@ -42,12 +44,12 @@ def test_theunderdog_uses_unified_standardization_when_enabled(theunderdog_scrap
         "organization_id": 100,
         "external_id": "buddy-123",
         "description": "A lovely dog",
-        "primary_image_url": "https://example.com/buddy.jpg"
+        "primary_image_url": "https://example.com/buddy.jpg",
     }
-    
+
     # Process through base scraper's standardization
     processed_data = theunderdog_scraper.process_animal(raw_animal_data)
-    
+
     # Verify standardization was applied
     assert processed_data["breed"] == "Staffordshire Bull Terrier Mix"  # Proper capitalization
     assert processed_data["age"] == "2 years"  # Age preserved
@@ -66,11 +68,11 @@ def test_theunderdog_handles_lurcher_breed_correctly(theunderdog_scraper):
         "organization_id": 100,
         "external_id": "shadow-456",
         "description": "A beautiful lurcher",
-        "primary_image_url": "https://example.com/shadow.jpg"
+        "primary_image_url": "https://example.com/shadow.jpg",
     }
-    
+
     processed_data = theunderdog_scraper.process_animal(raw_animal_data)
-    
+
     assert processed_data["breed"] == "Lurcher"
     assert processed_data["breed_category"] == "Hound"  # Critical fix applied
 
@@ -86,11 +88,11 @@ def test_theunderdog_handles_designer_breeds(theunderdog_scraper):
         "organization_id": 100,
         "external_id": "max-789",
         "description": "Adorable cockapoo puppy",
-        "primary_image_url": "https://example.com/max.jpg"
+        "primary_image_url": "https://example.com/max.jpg",
     }
-    
+
     processed_data = theunderdog_scraper.process_animal(raw_animal_data)
-    
+
     assert processed_data["breed"] == "Cockapoo"
     assert processed_data["breed_category"] == "Non-Sporting"  # Designer breeds have their parent's group
 
@@ -106,17 +108,11 @@ def test_theunderdog_preserves_qa_data_structure(theunderdog_scraper):
         "external_id": "luna-101",
         "description": "Sweet dog",
         "primary_image_url": "https://example.com/luna.jpg",
-        "properties": {
-            "raw_qa_data": {
-                "How big?": "Medium (20kg)",
-                "How old?": "Around 2 years",
-                "Good with cats?": "Yes"
-            }
-        }
+        "properties": {"raw_qa_data": {"How big?": "Medium (20kg)", "How old?": "Around 2 years", "Good with cats?": "Yes"}},
     }
-    
+
     processed_data = theunderdog_scraper.process_animal(raw_animal_data)
-    
+
     # Q&A data should be preserved in properties
     assert "properties" in processed_data
     assert "raw_qa_data" in processed_data["properties"]
@@ -134,11 +130,11 @@ def test_theunderdog_handles_missing_breed_gracefully(theunderdog_scraper):
         "organization_id": 100,
         "external_id": "unknown-202",
         "description": "No breed specified",
-        "primary_image_url": "https://example.com/unknown.jpg"
+        "primary_image_url": "https://example.com/unknown.jpg",
     }
-    
+
     processed_data = theunderdog_scraper.process_animal(raw_animal_data)
-    
+
     # Should have a fallback breed
     assert processed_data["breed"] in ["Mixed Breed", "Unknown"]
     assert processed_data.get("breed_category") in ["Mixed", "Unknown", None]
@@ -156,17 +152,13 @@ def test_theunderdog_size_extraction_from_qa_data(theunderdog_scraper):
         "external_id": "rex-303",
         "description": "Large dog",
         "primary_image_url": "https://example.com/rex.jpg",
-        "properties": {
-            "raw_qa_data": {
-                "How big?": "Large (around 35kg)"
-            }
-        }
+        "properties": {"raw_qa_data": {"How big?": "Large (around 35kg)"}},
     }
-    
+
     # The scraper should extract size from Q&A data
     # This would happen in the scraper's scrape_animal_details method
     # For now, test that Q&A data is preserved for extraction
     processed_data = theunderdog_scraper.process_animal(raw_animal_data)
-    
+
     # Q&A data should be available for size extraction
     assert processed_data["properties"]["raw_qa_data"]["How big?"] == "Large (around 35kg)"
