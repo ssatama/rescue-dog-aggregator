@@ -8,6 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
+
 # Migrated to unified standardization - using BaseScraper.process_animal()
 # Legacy standardize_age kept for date-of-birth calculations
 from utils.standardization import standardize_age
@@ -629,7 +630,7 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
             # Apply unified standardization via process_animal from BaseScraper
             # This handles breed standardization, age parsing, size normalization, etc.
             result = self.process_animal(result)
-            
+
             # Zero NULLs compliance - set defaults only if unified standardization didn't provide them
             if "breed" not in result or not result["breed"]:
                 result["breed"] = "Mixed Breed"

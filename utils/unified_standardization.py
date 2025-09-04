@@ -139,7 +139,7 @@ class UnifiedStandardizer:
         """Initialize designer breed mappings with parent breeds."""
         return {
             "cockapoo": {"name": "Cockapoo", "primary": "Cocker Spaniel", "secondary": "Poodle", "group": "Non-Sporting", "size": "Small"},  # Takes from Poodle
-            "labradoodle": {"name": "Labradoodle", "primary": "Labrador Retriever", "secondary": "Poodle", "group": "Sporting", "size": "Large"},  # Mixed heritage, defaulting to Labrador
+            "labradoodle": {"name": "Labradoodle", "primary": "Labrador Retriever", "secondary": "Poodle", "group": "Designer/Hybrid", "size": "Large"},  # Designer breed
             "puggle": {"name": "Puggle", "primary": "Pug", "secondary": "Beagle", "group": "Hound", "size": "Small"},  # Takes from Beagle
             "schnoodle": {"name": "Schnoodle", "primary": "Schnauzer", "secondary": "Poodle", "group": "Non-Sporting", "size": "Medium"},
             "yorkipoo": {"name": "Yorkipoo", "primary": "Yorkshire Terrier", "secondary": "Poodle", "group": "Toy", "size": "Tiny"},
@@ -201,13 +201,123 @@ class UnifiedStandardizer:
         Returns:
             Dictionary with standardized breed, age, and size information
         """
+        # Standardize breed
+        breed_result = self._standardize_breed(breed) if self.enable_breed_standardization else {"name": breed, "group": "Unknown", "confidence": 0.0, "is_mixed": False}
+
+        # Standardize age
+        age_result = self._standardize_age(age) if self.enable_age_standardization else {"age_category": None, "age_min_months": None, "age_max_months": None}
+
+        # Standardize size
+        size_result = self._standardize_size(size, breed) if self.enable_size_standardization else {"category": size}
+
+        # Build result in the format expected by BaseScraper and tests
         result = {
-            "breed": self._standardize_breed(breed) if self.enable_breed_standardization else {"original": breed},
-            "age": self._standardize_age(age) if self.enable_age_standardization else {"original": age},
-            "size": self._standardize_size(size, breed) if self.enable_size_standardization else {"original": size},
+            # Breed fields
+            "breed": breed_result.get("name", "Unknown"),
+            "breed_category": breed_result.get("group", "Unknown"),
+            "primary_breed": breed_result.get("primary_breed", breed_result.get("name", "Unknown")),
+            "secondary_breed": breed_result.get("secondary_breed"),
+            "standardization_confidence": breed_result.get("confidence", 0.0),
+            # Age fields - preserve original and add ranges
+            "age": age,  # Preserve original age field
+            "age_category": age_result.get("age_category"),
+            "age_min_months": age_result.get("age_min_months"),
+            "age_max_months": age_result.get("age_max_months"),
+            # Size fields - preserve original and add standardized
+            "size": size,  # Preserve original size field
+            "standardized_size": size_result.get("category", "Medium"),
         }
 
+        # Handle mixed breeds properly for primary/secondary breed fields
+        if breed_result.get("is_mixed") and not breed_result.get("primary_breed"):
+            # For regular mixed breeds like "Terrier Mix", set secondary to "Mixed Breed"
+            result["secondary_breed"] = "Mixed Breed"
+        elif not breed_result.get("is_mixed"):
+            # For pure breeds, secondary breed should be None
+            result["secondary_breed"] = None
+
         return result
+
+    def apply_field_normalization(self, animal_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Apply field normalization including trimming, boolean conversion, and defaults.
+        This method handles all the field cleaning that was in the legacy standardization.
+        """
+        if not animal_data:
+            return animal_data
+
+        result = animal_data.copy()
+
+        # String field trimming and cleaning
+        string_fields = ["name", "breed", "age", "size", "sex", "gender", "location", "description", "external_url", "external_id"]
+        for field in string_fields:
+            if field in result and isinstance(result[field], str):
+                result[field] = result[field].strip()
+                # Clean empty strings to None for consistency
+                if not result[field]:
+                    result[field] = None
+
+        # Boolean field normalization
+        boolean_fields = ["neutered", "spayed", "vaccinated", "microchipped"]
+        for field in boolean_fields:
+            if field in result:
+                result[field] = self._normalize_boolean(result[field])
+
+        # Image URL cleaning (especially for PetsInTurkey Wix images)
+        if "image" in result and result["image"]:
+            result["image"] = self._clean_image_url(result["image"])
+
+        # Set default values for required fields
+        result = self._set_default_values(result)
+
+        return result
+
+    def _normalize_boolean(self, value: Any) -> Optional[bool]:
+        """Convert various boolean representations to actual booleans."""
+        if value is None:
+            return None
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            value_lower = value.strip().lower()
+            if value_lower in ["yes", "true", "1", "y", "ja", "si"]:
+                return True
+            elif value_lower in ["no", "false", "0", "n", "nein", "no"]:
+                return False
+            elif value_lower == "":
+                return None
+        return None
+
+    def _clean_image_url(self, image_url: str) -> str:
+        """Clean image URLs, especially Wix platform URLs."""
+        if not image_url or not isinstance(image_url, str):
+            return image_url
+
+        # Clean Wix image URLs by removing parameters
+        if "wix:image://" in image_url:
+            # Remove everything after # for Wix URLs
+            if "#" in image_url:
+                image_url = image_url.split("#")[0]
+            # Convert wix:image:// to actual URL if possible
+            # This is a simplified conversion - in practice you'd need the full Wix media URL
+            if image_url.startswith("wix:image://"):
+                # For now, just remove the wix:image:// prefix as it's not a valid URL
+                return image_url.replace("wix:image://", "https://static.wixstatic.com/")
+
+        return image_url
+
+    def _set_default_values(self, animal_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Set default values for required fields."""
+        defaults = {
+            "animal_type": "dog",
+            "status": "available",
+        }
+
+        for field, default_value in defaults.items():
+            if field not in animal_data or animal_data[field] is None:
+                animal_data[field] = default_value
+
+        return animal_data
 
     def _standardize_breed(self, breed: Optional[str]) -> Dict[str, Any]:
         """Standardize breed with all fixes including Lurcher, designer breeds, and Staffordshire."""
@@ -293,28 +403,28 @@ class UnifiedStandardizer:
     def _capitalize_breed_name(self, breed: str) -> str:
         """
         Properly capitalize breed names.
-        
+
         Args:
             breed: The breed string to capitalize
-            
+
         Returns:
             Properly capitalized breed name
         """
         if not breed:
             return breed
-            
+
         # Common words that should remain lowercase unless at start
-        lowercase_words = {'of', 'de', 'and', 'or', 'the'}
-        
+        lowercase_words = {"of", "de", "and", "or", "the"}
+
         # Words that should always be uppercase
-        uppercase_words = {'ii', 'iii', 'iv'}
-        
+        uppercase_words = {"ii", "iii", "iv"}
+
         words = breed.split()
         result = []
-        
+
         for i, word in enumerate(words):
             word_lower = word.lower()
-            
+
             if word_lower in uppercase_words:
                 result.append(word.upper())
             elif i == 0 or word_lower not in lowercase_words:
@@ -322,9 +432,247 @@ class UnifiedStandardizer:
                 result.append(word.capitalize())
             else:
                 result.append(word_lower)
-                
-        return ' '.join(result)
-    
+
+        return " ".join(result)
+
+    def _parse_age_text(self, age_text: str) -> Tuple[Optional[str], Optional[int], Optional[int]]:
+        """
+        Parse age text into a standardized age category and month range.
+        Ported from legacy standardization.py for full compatibility.
+
+        Args:
+            age_text: Text description of age (e.g., "2 years", "6 months", "Young", "6 - 12 months")
+
+        Returns:
+            Tuple of (age_category, min_months, max_months)
+        """
+        if not age_text:
+            return None, None, None
+
+        age_text = str(age_text).lower().strip()
+
+        # Handle Dogs Trust specific patterns first
+        # Pattern: "Under X months" -> 0 to X months
+        under_match = re.search(r"under\s+(\d+)\s*(?:months?|mo)", age_text)
+        if under_match:
+            max_months = int(under_match.group(1))
+            if max_months <= 12:
+                return "Puppy", 0, max_months
+            else:
+                return "Young", 0, max_months
+
+        # Pattern: "X + years" -> X years minimum, capped at max lifespan (for senior dogs)
+        plus_years_match = re.search(r"(\d+)\s*\+\s*years?", age_text)
+        if plus_years_match:
+            min_years = int(plus_years_match.group(1))
+            min_months = min_years * 12
+            # Determine category based on minimum age
+            if min_months >= 96:  # 8+ years
+                return "Senior", min_months, MAX_DOG_AGE_MONTHS  # Capped max instead of open-ended
+            elif min_months >= 60:  # 5+ years
+                return "Adult", min_months, MAX_DOG_AGE_MONTHS
+            else:
+                return "Young", min_months, MAX_DOG_AGE_MONTHS
+
+        # Pattern: "X - Y months/years" -> X to Y range
+        range_match = re.search(r"(\d+)\s*-\s*(\d+)\s*(months?|years?|mo|yr)", age_text)
+        if range_match:
+            min_val = int(range_match.group(1))
+            max_val = int(range_match.group(2))
+            unit = range_match.group(3).lower()
+
+            # Convert to months if needed
+            if "year" in unit or "yr" in unit:
+                min_months = min_val * 12
+                max_months = max_val * 12
+            else:
+                min_months = min_val
+                max_months = max_val
+
+            # Determine category based on range
+            if max_months <= 12:
+                return "Puppy", min_months, max_months
+            elif max_months <= 36:
+                return "Young", min_months, max_months
+            elif max_months <= 96:
+                return "Adult", min_months, max_months
+            else:
+                return "Senior", min_months, max_months
+
+        # Check for years pattern (e.g., "2 years", "2.5 y/o") - no negative numbers
+        years_match = re.search(r"(?<!-)\b(\d+(?:[.,]\d+)?)\s*(?:years?|y(?:rs?)?(?:\/o)?|yo|jahr)", age_text)
+        if years_match:
+            try:
+                years = float(years_match.group(1).replace(",", "."))
+                if years < 0 or years > 25:  # Reasonable bounds for dog age
+                    return None, None, None
+                months = int(years * 12)
+
+                # Determine category
+                if months < 12:
+                    return "Puppy", months, min(months + 2, 12)
+                elif months < 36:
+                    return "Young", months, min(months + 12, 36)
+                elif months < 96:
+                    return "Adult", months, min(months + 12, 96)
+                else:
+                    return "Senior", months, months + 24
+            except (ValueError, TypeError):
+                # If parsing fails, continue to other patterns
+                pass
+
+        # Check for months pattern (e.g., "6 months", "6mo") - no negative numbers
+        months_match = re.search(r"(?<!-)\b(\d+)\s*(?:months?|mo|mon)", age_text)
+        if months_match:
+            try:
+                months = int(months_match.group(1))
+                if months < 0 or months > 300:  # Reasonable bounds for dog age in months
+                    return None, None, None
+                if months < 12:
+                    return "Puppy", months, min(months + 2, 12)
+                else:
+                    return "Young", months, min(months + 6, 36)
+            except (ValueError, TypeError):
+                # If parsing fails, continue to other patterns
+                pass
+
+        # Check for weeks pattern (e.g., "10 weeks", "8 wks") - no negative numbers
+        weeks_match = re.search(r"(?<!-)\b(\d+)\s*(?:weeks?|wks?)", age_text)
+        if weeks_match:
+            weeks = int(weeks_match.group(1))
+            months = int(weeks / 4.3)  # Approximate conversion
+            return "Puppy", months, min(months + 2, 12)
+
+        # Check for birth date pattern (e.g., "Born 03/2020", "03/2020", "Born 2020")
+        current_date = datetime.now()
+
+        # Pattern 1: Born MM/YYYY or MM/YYYY
+        birth_date_match = re.search(r"(?:born\s*)?(\d{1,2})[/-](\d{4})", age_text)
+        if birth_date_match:
+            try:
+                birth_month = int(birth_date_match.group(1))
+                birth_year = int(birth_date_match.group(2))
+
+                # Validate birth date reasonableness (dogs live max ~15-20 years)
+                earliest_reasonable_year = current_date.year - 20
+                if birth_year < earliest_reasonable_year or birth_year > current_date.year + 1:
+                    # Dogs don't live 20+ years, future dates are errors
+                    return None, None, None
+
+                if birth_month < 1 or birth_month > 12:
+                    # Invalid month
+                    return None, None, None
+
+                # Calculate age in months
+                age_years = current_date.year - birth_year
+                age_months = age_years * 12 + (current_date.month - birth_month)
+
+                # Handle future birth months in current year (assume they meant last year)
+                if age_months < 0 and age_years == 0:
+                    age_months += 12  # Born last year, not this year
+
+                # Ensure non-negative age after adjustment
+                if age_months < 0:
+                    return None, None, None
+
+                # Determine category based on age
+                if age_months < 12:
+                    return "Puppy", max(0, age_months), min(age_months + 2, 12)
+                elif age_months < 36:
+                    return "Young", age_months, min(age_months + 6, 36)
+                elif age_months < 96:
+                    return "Adult", age_months, min(age_months + 12, 96)
+                else:
+                    return "Senior", age_months, age_months + 24
+            except (ValueError, TypeError):
+                pass
+
+        # Pattern 2: Born YYYY (just year)
+        birth_year_match = re.search(r"(?:born\s*)?(\d{4})(?:\s|$)", age_text)
+        if birth_year_match and not re.search(r"\d+\s*(?:years?|months?)", age_text):  # Avoid matching "2 years"
+            try:
+                birth_year = int(birth_year_match.group(1))
+
+                # Validate birth year reasonableness (dogs live max ~15-20 years)
+                earliest_reasonable_year = current_date.year - 20
+                if birth_year < earliest_reasonable_year or birth_year > current_date.year + 1:
+                    return None, None, None
+
+                # Assume born in middle of year (June)
+                age_years = current_date.year - birth_year
+                age_months = age_years * 12 + (current_date.month - 6)
+
+                # Ensure non-negative age
+                if age_months < 0:
+                    return None, None, None
+
+                # Add some uncertainty since we don't know exact month
+                if age_months < 12:
+                    return "Puppy", max(0, age_months - 3), min(age_months + 3, 12)
+                elif age_months < 36:
+                    return "Young", max(12, age_months - 6), min(age_months + 6, 36)
+                elif age_months < 96:
+                    return "Adult", max(36, age_months - 6), min(age_months + 6, 96)
+                else:
+                    return "Senior", max(96, age_months - 6), age_months + 24
+            except (ValueError, TypeError):
+                pass
+
+        # Check for exact standardized category names first (fastest check)
+        if age_text == "puppy":
+            return "Puppy", 2, 10
+        elif age_text == "young":
+            return "Young", 12, 36
+        elif age_text == "adult":
+            return "Adult", 36, 96
+        elif age_text == "senior":
+            return "Senior", 96, 240
+
+        # Check for descriptive terms (includes exact matches from above)
+        if any(term in age_text for term in ["puppy", "pup", "baby", "young puppy"]):
+            return "Puppy", 2, 10
+        elif any(term in age_text for term in ["young adult", "adolescent", "juvenile", "teen"]):
+            return "Young", 12, 36
+        elif any(term in age_text for term in ["adult", "grown", "mature"]):
+            return "Adult", 36, 96
+        elif any(term in age_text for term in ["senior", "older", "elderly", "old"]):
+            return "Senior", 96, 240
+
+        # Handle ranges (duplicate pattern for different order)
+        range_match = re.search(r"(\d+)\s*-\s*(\d+)\s*(years?|months?)", age_text)
+        if range_match:
+            start, end, unit = range_match.groups()
+            start, end = int(start), int(end)
+
+            if "month" in unit:
+                if end < 12:
+                    return "Puppy", start, end
+                elif end < 36:
+                    return "Young", start, end
+                else:
+                    return "Adult", start, end
+            else:  # years
+                start_months, end_months = start * 12, end * 12
+                if end < 1:
+                    return "Puppy", start_months, end_months
+                elif end < 3:
+                    return "Young", start_months, end_months
+                elif end < 8:
+                    return "Adult", start_months, end_months
+                else:
+                    return "Senior", start_months, end_months
+
+        # Check for German "Unbekannt" (Unknown) and English "Unknown"
+        if any(unknown in age_text for unknown in ["unbekannt", "unknown"]):
+            return None, None, None
+
+        # Check for corrupted data (gender info in age field)
+        if any(gender_term in age_text for gender_term in ["geschlecht:", "gender:", "sex:"]):
+            return None, None, None
+
+        # If we can't determine, return None
+        return None, None, None
+
     def _standardize_age(self, age: Optional[str]) -> Dict[str, Any]:
         """Standardize age string into structured format."""
         if not age:
@@ -333,84 +681,73 @@ class UnifiedStandardizer:
         if not isinstance(age, str):
             return {"original": str(age), "age_category": None, "age_min_months": None, "age_max_months": None}
 
-        age_lower = age.strip().lower()
+        # Use the comprehensive age parsing logic
+        category, min_months, max_months = self._parse_age_text(age)
 
-        # Check for descriptive terms (but not "X years old")
-        if "puppy" in age_lower or "pup" in age_lower:
-            return {"original": age, "age_category": "Puppy", "age_min_months": 0, "age_max_months": 12}
-        elif "young" in age_lower or "junior" in age_lower:
-            return {"original": age, "age_category": "Young", "age_min_months": 12, "age_max_months": 24}
-        elif "adult" in age_lower:
-            return {"original": age, "age_category": "Adult", "age_min_months": 24, "age_max_months": 84}
-        elif "senior" in age_lower or (re.search(r"\bold\b", age_lower) and not re.search(r"\d+.*years?\s+old", age_lower)):
-            # Only treat as senior if "old" is standalone, not part of "X years old"
-            return {"original": age, "age_category": "Senior", "age_min_months": 84, "age_max_months": MAX_DOG_AGE_MONTHS}
+        return {
+            "original": age,
+            "age_category": category,
+            "age_min_months": min_months,
+            "age_max_months": max_months,
+        }
 
-        # Try to parse numeric ages
-        # First check for simple year patterns like "2 years old"
-        simple_years = re.match(r"(\d+)\s*(?:year|yr)s?\s*(?:old)?", age_lower)
-        if simple_years:
-            years = int(simple_years.group(1))
-            total_months = years * 12
+    def _get_size_from_breed(self, breed: str) -> Optional[str]:
+        """
+        Estimate dog size based on breed.
+        Ported from legacy standardization.py for breed-based size estimation.
 
-            if total_months < 12:
-                category = "Puppy"
-            elif total_months < 24:
-                category = "Young"
-            elif total_months < 84:
-                category = "Adult"
-            else:
-                category = "Senior"
+        Args:
+            breed: Standardized breed name
 
-            return {"original": age, "age_category": category, "age_min_months": total_months, "age_max_months": total_months}
+        Returns:
+            Size estimate (Tiny, Small, Medium, Large, XLarge) or None if unknown
+        """
+        if not breed:
+            return None
 
-        # Then try years and months pattern
-        years_match = self.age_patterns["years_months"].search(age_lower)
-        if years_match:
-            years = int(years_match.group(1))
-            months = int(years_match.group(2)) if years_match.group(2) else 0
-            total_months = years * 12 + months
+        # Try to find the breed in our mapping
+        clean_breed = breed.lower()
 
-            if total_months < 12:
-                category = "Puppy"
-            elif total_months < 24:
-                category = "Young"
-            elif total_months < 84:
-                category = "Adult"
-            else:
-                category = "Senior"
+        # First check our breed_data for direct matches
+        if clean_breed in self.breed_data:
+            breed_info = self.breed_data[clean_breed]
+            return breed_info.size_estimate
 
-            return {"original": age, "age_category": category, "age_min_months": total_months, "age_max_months": total_months}
+        # Check designer breeds
+        for designer_key, designer_info in self.designer_breeds.items():
+            if designer_key in clean_breed:
+                return designer_info["size"]
 
-        # Check for months only pattern
-        months_match = self.age_patterns["months_only"].search(age_lower)
-        if months_match:
-            months = int(months_match.group(1))
-            
-            if months < 12:
-                category = "Puppy"
-            elif months < 24:
-                category = "Young"
-            elif months < 84:
-                category = "Adult"
-            else:
-                category = "Senior"
-            
-            return {"original": age, "age_category": category, "age_min_months": months, "age_max_months": months}
+        # For mixed breeds, try to extract the base breed
+        if "mix" in clean_breed or "cross" in clean_breed:
+            # Remove mix/cross indicators to find base breed
+            base_breed = clean_breed.replace("mix", "").replace("cross", "").strip()
 
-        # Default case
-        return {"original": age, "age_category": "Adult", "age_min_months": 24, "age_max_months": 84}
+            # Try partial matches for common breed words
+            for breed_key, breed_info in self.breed_data.items():
+                if breed_key in base_breed or base_breed in breed_key:
+                    return breed_info.size_estimate
+
+        # Try partial matching for any breed words
+        breed_words = clean_breed.split()
+        for word in breed_words:
+            if len(word) > 3:  # Skip short words
+                for breed_key, breed_info in self.breed_data.items():
+                    if word in breed_key or breed_key in word:
+                        return breed_info.size_estimate
+
+        return None
 
     def _standardize_size(self, size: Optional[str], breed: Optional[str] = None) -> Dict[str, Any]:
-        """Standardize size with breed-based estimation as fallback."""
+        """Standardize size with comprehensive fallback chain: explicit → breed → weight → default."""
         canonical_sizes = ["Tiny", "Small", "Medium", "Large", "XLarge"]
 
-        # First try to use explicit size if provided
+        # Step 1: Try to use explicit size if provided
         if size and isinstance(size, str):
             size_lower = size.strip().lower()
 
             size_map = {
-                "tiny": "Small",  # Map tiny to Small for canonical sizes
+                "tiny": "Tiny",  # Keep actual tiny for tiny breeds
                 "extra small": "Small",
                 "xs": "Small",
                 "small": "Small",
@@ -428,14 +765,18 @@ class UnifiedStandardizer:
             if size_lower in size_map:
                 return {"category": size_map[size_lower], "weight_range": self._get_weight_range(size_map[size_lower]), "source": "explicit"}
 
-        # Fall back to breed-based estimation
+        # Step 2: Fall back to breed-based estimation
         if breed and self.enable_breed_standardization:
-            breed_info = self._standardize_breed(breed)
-            if breed_info.get("size"):
-                return {"category": breed_info["size"], "weight_range": self._get_weight_range(breed_info["size"]), "source": "breed_estimated"}
+            breed_size = self._get_size_from_breed(breed)
+            if breed_size:
+                # Map XLarge to Large for canonical sizes unless it's a guardian breed
+                if breed_size == "XLarge":
+                    breed_size = "Large"
+                return {"category": breed_size, "weight_range": self._get_weight_range(breed_size), "source": "breed_estimated"}
 
-        # Default to medium if nothing else works
-        return {"category": size if size in canonical_sizes else "Medium", "weight_range": self._get_weight_range("Medium"), "source": "default"}
+        # Step 3: TODO - Weight-based estimation would go here
+        # Step 4: Default fallback
+        return {"category": "Medium", "weight_range": self._get_weight_range("Medium"), "source": "default"}
 
     def _get_weight_range(self, size_category: str) -> Dict[str, int]:
         """Get weight range for a size category."""

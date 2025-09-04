@@ -255,7 +255,6 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return processed_data
 
-
     def _parse_sex(self, sex_text: str) -> Optional[Dict[str, Any]]:
         """Parse sex from German text like 'weiblich, kastriert'."""
         if not sex_text:

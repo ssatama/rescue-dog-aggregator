@@ -97,13 +97,13 @@ def is_scraper_standardization_enabled(scraper_name: str) -> bool:
 
 def is_feature_enabled(feature_name: str, scraper_name: str) -> bool:
     """Check if a feature is enabled for a specific scraper.
-    
+
     This is an alias for backward compatibility with tests.
-    
+
     Args:
         feature_name: Name of the feature (e.g., 'unified_breed_standardization')
         scraper_name: Name of the scraper
-        
+
     Returns:
         True if the feature is enabled for this scraper
     """

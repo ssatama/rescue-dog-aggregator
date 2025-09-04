@@ -72,9 +72,8 @@ class TestREANUnifiedStandardization:
 
         # Verify Lurcher would be properly standardized
         if standardized.get("breed"):
-            breed_info = standardized["breed"]
-            assert breed_info["name"] == "Lurcher"
-            assert breed_info["group"] == "Hound"
+            assert standardized["breed"] == "Lurcher"
+            assert standardized["breed_category"] == "Hound"
 
     def test_rean_data_extraction_unchanged(self, scraper):
         """Verify REAN's data extraction logic remains unchanged."""

@@ -13,17 +13,17 @@ def galgosdelsol_scraper():
     mock_metrics = Mock()
     mock_session = Mock()
     mock_database = Mock()
-    
+
     scraper = GalgosDelSolScraper(
         config_id="galgosdelsol",
         metrics_collector=mock_metrics,
         session_manager=mock_session,
         database_service=mock_database,
     )
-    
+
     # Enable unified standardization
     scraper.use_unified_standardization = True
-    
+
     return scraper
 
 
@@ -38,9 +38,9 @@ class TestGalgosDelSolUnifiedStandardization:
             "sex": "Male",
             "size": "Large",
         }
-        
+
         result = galgosdelsol_scraper.process_animal(animal)
-        
+
         assert result["breed"] == "Galgo"
         assert result["breed_category"] == "Hound"
         assert result["standardized_size"] == "Large"
@@ -54,9 +54,9 @@ class TestGalgosDelSolUnifiedStandardization:
             "sex": "Female",
             "size": "Large",
         }
-        
+
         result = galgosdelsol_scraper.process_animal(animal)
-        
+
         assert result["breed"] == "Galgo Español"
         assert result["breed_category"] == "Hound"
         assert result["standardized_size"] == "Large"
@@ -70,9 +70,9 @@ class TestGalgosDelSolUnifiedStandardization:
             "sex": "Male",
             "size": "Medium",
         }
-        
+
         result = galgosdelsol_scraper.process_animal(animal)
-        
+
         assert result["breed"] == "Podenco"
         assert result["breed_category"] == "Hound"
         assert result["standardized_size"] == "Medium"
@@ -86,9 +86,9 @@ class TestGalgosDelSolUnifiedStandardization:
             "sex": "Female",
             "size": "Large",
         }
-        
+
         result = galgosdelsol_scraper.process_animal(animal)
-        
+
         assert "galgo" in result["breed"].lower()
         assert result["breed_category"] == "Mixed"
         assert result["standardized_size"] == "Large"
@@ -99,12 +99,12 @@ class TestGalgosDelSolUnifiedStandardization:
             ("6 months", "Puppy"),
             ("10 months", "Puppy"),
             ("1 year", "Young"),
-            ("2 years", "Adult"),
+            ("2 years", "Young"),  # 2 years = 24 months = Young (12-36 months)
             ("5 years", "Adult"),
             ("8 years", "Senior"),
             ("10 years", "Senior"),
         ]
-        
+
         for age_text, expected_category in test_cases:
             animal = {
                 "breed": "galgo",
@@ -112,7 +112,7 @@ class TestGalgosDelSolUnifiedStandardization:
                 "sex": "Male",
                 "size": "Large",
             }
-            
+
             result = galgosdelsol_scraper.process_animal(animal)
             assert result.get("age_category") == expected_category, f"Failed for age: {age_text}"
 
@@ -124,7 +124,7 @@ class TestGalgosDelSolUnifiedStandardization:
             ("large", "Large"),
             ("xlarge", "Large"),  # xlarge maps to Large for canonical sizes
         ]
-        
+
         for raw_size, expected_size in test_cases:
             animal = {
                 "breed": "galgo",
@@ -132,7 +132,7 @@ class TestGalgosDelSolUnifiedStandardization:
                 "sex": "Male",
                 "size": raw_size,
             }
-            
+
             result = galgosdelsol_scraper.process_animal(animal)
             assert result["standardized_size"] == expected_size
 
@@ -145,7 +145,7 @@ class TestGalgosDelSolUnifiedStandardization:
             ("GALGO", "Galgo", "Hound"),
             ("podenco mix", "Podenco Mix", "Mixed"),  # Mixed breeds are capitalized properly
         ]
-        
+
         for raw_breed, expected_breed, expected_category in test_breeds:
             animal = {
                 "breed": raw_breed,
@@ -153,7 +153,7 @@ class TestGalgosDelSolUnifiedStandardization:
                 "sex": "Female",
                 "size": "Medium",
             }
-            
+
             result = galgosdelsol_scraper.process_animal(animal)
             assert result["breed"] == expected_breed
             assert result["breed_category"] == expected_category
@@ -166,13 +166,13 @@ class TestGalgosDelSolUnifiedStandardization:
             "sex": "Male",
             "size": "large",
         }
-        
+
         # With flag enabled (default in fixture)
         result_enabled = galgosdelsol_scraper.process_animal(animal)
         assert "breed" in result_enabled
         assert result_enabled["breed"] == "Galgo"
         assert "breed_category" in result_enabled
-        
+
         # With flag disabled
         galgosdelsol_scraper.use_unified_standardization = False
         result_disabled = galgosdelsol_scraper.process_animal(animal)

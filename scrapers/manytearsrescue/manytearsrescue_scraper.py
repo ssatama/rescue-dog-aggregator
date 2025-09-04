@@ -523,7 +523,7 @@ class ManyTearsRescueScraper(BaseScraper):
 
             # Apply unified standardization
             result = self.process_animal(result)
-            
+
             self.logger.debug(f"Successfully extracted details for {name}")
             return result
 

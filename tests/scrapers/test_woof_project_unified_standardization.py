@@ -1,9 +1,11 @@
 """Test Woof Project scraper integration with unified standardization."""
 
-import pytest
 from unittest.mock import Mock, patch
-from scrapers.woof_project.dogs_scraper import WoofProjectScraper
+
+import pytest
+
 from scrapers.base_scraper import BaseScraper
+from scrapers.woof_project.dogs_scraper import WoofProjectScraper
 from utils.unified_standardization import UnifiedStandardizer
 
 
@@ -30,6 +32,7 @@ class TestWoofProjectUnifiedStandardization:
     def test_feature_flag_enables_unified_standardization(self):
         """Verify feature flag controls unified standardization."""
         from utils.feature_flags import is_scraper_standardization_enabled
+
         scraper = WoofProjectScraper()
         # Feature flag should be enabled for woof_project
         assert is_scraper_standardization_enabled("woof_project") is True
@@ -37,6 +40,7 @@ class TestWoofProjectUnifiedStandardization:
     def test_scraper_no_longer_imports_optimized_standardization(self):
         """Verify scraper doesn't import from optimized_standardization."""
         import scrapers.woof_project.dogs_scraper as module
+
         source = module.__file__
         with open(source, "r") as f:
             content = f.read()
@@ -46,6 +50,7 @@ class TestWoofProjectUnifiedStandardization:
     def test_scraper_removes_standardized_fields_from_extraction(self):
         """Verify scraper no longer sets standardized_breed/size fields."""
         import scrapers.woof_project.dogs_scraper as module
+
         source = module.__file__
         with open(source, "r") as f:
             content = f.read()
@@ -57,9 +62,9 @@ class TestWoofProjectUnifiedStandardization:
     def test_process_animal_applies_unified_standardization(self, mock_flag):
         """Verify process_animal applies unified standardization."""
         mock_flag.return_value = True
-        
+
         scraper = WoofProjectScraper()
-        
+
         # Test data similar to what scraper extracts
         animal_data = {
             "name": "Bella",
@@ -70,18 +75,18 @@ class TestWoofProjectUnifiedStandardization:
             "external_id": "woof-123",
             "description": "Sweet dog",
             "animal_type": "dog",
-            "status": "available"
+            "status": "available",
         }
-        
+
         # Process the animal
         result = scraper.process_animal(animal_data)
-        
+
         # Verify standardization was applied (using actual field names from base_scraper)
         assert "primary_breed" in result
-        assert "breed_category" in result  
+        assert "breed_category" in result
         assert "standardized_size" in result
         assert "standardization_confidence" in result
-        
+
         # Check values (mixed breeds keep the original breed name)
         assert "labrador" in result["primary_breed"].lower()
         assert result["breed_category"] == "Mixed"  # Mixed for "mix" breeds
@@ -92,9 +97,9 @@ class TestWoofProjectUnifiedStandardization:
     def test_lurcher_standardization(self, mock_flag):
         """Test Lurcher breed is correctly mapped to Hound group."""
         mock_flag.return_value = True
-        
+
         scraper = WoofProjectScraper()
-        
+
         animal_data = {
             "name": "Shadow",
             "breed": "lurcher",
@@ -102,11 +107,11 @@ class TestWoofProjectUnifiedStandardization:
             "size": "medium",
             "sex": "Male",
             "external_id": "woof-456",
-            "animal_type": "dog"
+            "animal_type": "dog",
         }
-        
+
         result = scraper.process_animal(animal_data)
-        
+
         # Verify Lurcher is correctly mapped to Hound group
         assert "primary_breed" in result
         assert "breed_category" in result

@@ -9,6 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
+
 # Using unified standardization through base_scraper.process_animal()
 
 
@@ -872,13 +873,13 @@ class FurryRescueItalyScraper(BaseScraper):
         # Prepare data for unified standardization
         # Extract key fields to match expected format
         props = animal["properties"]
-        
+
         # Set breed at top level for standardization
         if "breed" in props:
             animal["breed"] = props["breed"]
         else:
             animal["breed"] = "Mixed Breed"
-            
+
         # Set sex at top level
         if "sex" in props:
             sex_value = props["sex"].lower()
@@ -888,7 +889,7 @@ class FurryRescueItalyScraper(BaseScraper):
                 animal["sex"] = "Male"
             else:
                 animal["sex"] = props["sex"]
-        
+
         # Set size at top level - extract from weight info if needed
         if "size" in props:
             # Extract size category from "(20+ kg)" format
@@ -911,31 +912,31 @@ class FurryRescueItalyScraper(BaseScraper):
                 animal["size"] = "Large"
             else:
                 animal["size"] = "Medium"
-        
+
         # Set age at top level (renamed from age_text to age for unified standardization)
         if "born" in props:
             animal["age"] = props["born"]
         elif "age_category" in props:
             animal["age"] = props["age_category"]
-        
+
         # Apply unified standardization
         animal = self.process_animal(animal)
-        
+
         # Preserve good_with field processing
         if "good_with" in props:
             good_with_value = props["good_with"].lower()
             good_with_list = []
-            
+
             if "dog" in good_with_value:
                 good_with_list.append("dogs")
             if "cat" in good_with_value:
                 good_with_list.append("cats")
             if "child" in good_with_value or "kid" in good_with_value:
                 good_with_list.append("children")
-                
+
             if good_with_list:
                 props["good_with_list"] = good_with_list
-        
+
         # Preserve location processing
         if "location" in props:
             location = props["location"].strip()
@@ -959,7 +960,6 @@ class FurryRescueItalyScraper(BaseScraper):
             return False
 
         return True
-
 
     def _generate_external_id(self, name: str, adoption_url: str) -> str:
         """Generate unique external_id to prevent duplicate animals.

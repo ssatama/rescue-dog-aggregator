@@ -371,11 +371,11 @@ class PetsInTurkeyScraper(BaseScraper):
         """
         # Make a copy to avoid modifying original
         data = dog_data.copy()
-        
+
         # Trim the name field before processing
         if data.get("name"):
             data["name"] = data["name"].strip()
-            
+
         # Check if unified standardization is enabled
         if self.use_unified_standardization:
             # Use the inherited process_animal method for unified standardization
@@ -386,7 +386,7 @@ class PetsInTurkeyScraper(BaseScraper):
 
         # Ensure required fields have defaults
         standardized["name"] = (standardized.get("name") or "Unknown").strip()
-        
+
         # Handle breed standardization properly
         if self.use_unified_standardization and "breed" in standardized:
             # breed is already handled by process_animal
@@ -398,7 +398,7 @@ class PetsInTurkeyScraper(BaseScraper):
         standardized.setdefault("age_text", "Unknown")
         standardized.setdefault("status", "available")
         standardized.setdefault("animal_type", "dog")
-        
+
         # Handle neutered/spayed field standardization
         neutered_value = dog_data.get("properties", {}).get("neutered_spayed", "")
         if neutered_value:

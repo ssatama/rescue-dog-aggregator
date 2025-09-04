@@ -374,64 +374,25 @@ class BaseScraper(ABC):
         # Make a copy to avoid modifying the original
         processed_data = animal_data.copy()
 
+        # Apply field normalization first (trimming, boolean conversion, defaults)
+        processed_data = self.standardizer.apply_field_normalization(processed_data)
+
         # Log standardization for breed if present
         original_breed = animal_data.get("breed")
         if original_breed:
             self.logger.info(f"Standardizing breed: {original_breed}")
 
         # Apply full standardization (handles breed, age, size)
-        standardized = self.standardizer.apply_full_standardization(breed=animal_data.get("breed"), age=animal_data.get("age"), size=animal_data.get("size"))
+        standardized = self.standardizer.apply_full_standardization(breed=processed_data.get("breed"), age=processed_data.get("age"), size=processed_data.get("size"))
 
-        # Flatten the nested breed structure if present
-        if standardized.get("breed"):
-            breed_info = standardized["breed"]
+        # Update processed_data with standardized fields (now returned flattened)
+        processed_data.update(standardized)
 
-            # Map the nested structure to flat database fields
-            if isinstance(breed_info, dict):
-                # Standard breed name
-                processed_data["breed"] = breed_info.get("name", original_breed)
-
-                # Primary and secondary breeds
-                if "primary_breed" in breed_info:
-                    processed_data["primary_breed"] = breed_info["primary_breed"]
-                    processed_data["secondary_breed"] = breed_info.get("secondary_breed")
-                elif breed_info.get("is_mixed"):
-                    # For mixed breeds, primary is the breed name, secondary is "Mixed Breed"
-                    processed_data["primary_breed"] = breed_info.get("name")
-                    processed_data["secondary_breed"] = "Mixed Breed"
-                else:
-                    # For purebreds, only primary breed
-                    processed_data["primary_breed"] = breed_info.get("name")
-                    processed_data["secondary_breed"] = None
-
-                # Breed category (group)
-                processed_data["breed_category"] = breed_info.get("group")
-
-                # Confidence score
-                processed_data["standardization_confidence"] = breed_info.get("confidence", 0.0)
-
-                # Log the result if breed changed
-                new_breed = processed_data.get("breed")
-                if original_breed and new_breed != original_breed:
-                    self.logger.info(f"Breed standardized: '{original_breed}' -> '{new_breed}' " f"(confidence: {processed_data.get('standardization_confidence', 0):.2f})")
-
-        # Handle age standardization if present
-        if standardized.get("age"):
-            age_info = standardized["age"]
-            if isinstance(age_info, dict):
-                # Keep original age string if we have it
-                if "original" in age_info:
-                    processed_data["age"] = age_info["original"]
-                # Add age category
-                if "age_category" in age_info:
-                    processed_data["age_category"] = age_info["age_category"]
-
-        # Handle size standardization if present
-        if standardized.get("size"):
-            size_info = standardized["size"]
-            if isinstance(size_info, dict):
-                # Extract the standardized size category
-                processed_data["standardized_size"] = size_info.get("category", animal_data.get("size"))
+        # Log the result if breed changed
+        new_breed = processed_data.get("breed")
+        if original_breed and new_breed != original_breed:
+            confidence = processed_data.get("standardization_confidence", 0)
+            self.logger.info(f"Breed standardized: '{original_breed}' -> '{new_breed}' " f"(confidence: {confidence:.2f})")
 
         return processed_data
 

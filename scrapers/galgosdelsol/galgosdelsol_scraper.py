@@ -301,10 +301,10 @@ class GalgosDelSolScraper(BaseScraper):
             result["size"] = "Medium"  # Default fallback as requested
 
             self.logger.debug(f"Successfully extracted data for {name}")
-            
+
             # Apply unified standardization
             result = self.process_animal(result)
-            
+
             return result
 
         except Exception as e:
