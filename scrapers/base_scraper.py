@@ -428,8 +428,8 @@ class BaseScraper(ABC):
         if standardized.get("size"):
             size_info = standardized["size"]
             if isinstance(size_info, dict):
-                # For now, just keep the standardized size
-                processed_data["size"] = size_info.get("standardized", animal_data.get("size"))
+                # Extract the standardized size category
+                processed_data["standardized_size"] = size_info.get("category", animal_data.get("size"))
 
         return processed_data
 

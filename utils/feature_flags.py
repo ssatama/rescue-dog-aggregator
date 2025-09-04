@@ -22,7 +22,7 @@ class FeatureFlags:
         "rean": True,  # Enabled - REAN has no custom standardization, ready to use unified
         "theunderdog": True,  # Enabled - TheUnderdog migrated to unified standardization
         "tierschutzverein_europa": True,  # German-to-English translation then standardization
-        "animalrescuebosnia": False,
+        "animalrescuebosnia": True,  # Enabled - Size standardization migrated to unified
         "daisy_family_rescue": False,
         # Group A: Currently using optimized_standardization.py
         "dogstrust": False,

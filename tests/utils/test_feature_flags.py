@@ -35,7 +35,8 @@ class TestFeatureFlags:
 
         # Tierschutzverein Europa is enabled as third migrated scraper (with German translation)
         assert FeatureFlags.SCRAPER_FLAGS["tierschutzverein_europa"] is True
-        assert FeatureFlags.SCRAPER_FLAGS["animalrescuebosnia"] is False
+        # AnimalRescueBosnia is enabled as fourth migrated scraper (size standardization)
+        assert FeatureFlags.SCRAPER_FLAGS["animalrescuebosnia"] is True
         assert FeatureFlags.SCRAPER_FLAGS["daisy_family_rescue"] is False
 
         # Group A still disabled
@@ -85,8 +86,8 @@ class TestFeatureFlags:
 
     def test_get_enabled_scrapers(self):
         """Test getting list of enabled scrapers."""
-        # REAN and TheUnderdog are enabled by default now
-        assert get_enabled_scrapers() == ["rean", "theunderdog", "tierschutzverein_europa"]
+        # REAN, TheUnderdog, Tierschutzverein Europa, and AnimalRescueBosnia are enabled by default now
+        assert get_enabled_scrapers() == ["rean", "theunderdog", "tierschutzverein_europa", "animalrescuebosnia"]
 
         # Enable specific scrapers
         with patch.dict(
