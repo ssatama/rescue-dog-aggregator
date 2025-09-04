@@ -4,6 +4,7 @@ Combines the best features from standardization.py, optimized_standardization.py
 """
 
 import re
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import date, datetime
 from difflib import SequenceMatcher
@@ -236,7 +237,8 @@ class UnifiedStandardizer:
             # For pure breeds, secondary breed should be None
             result["secondary_breed"] = None
 
-        return result
+        # Return deep copy to prevent cache mutation
+        return deepcopy(result)
 
     def apply_field_normalization(self, animal_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -282,7 +284,7 @@ class UnifiedStandardizer:
             value_lower = value.strip().lower()
             if value_lower in ["yes", "true", "1", "y", "ja", "si"]:
                 return True
-            elif value_lower in ["no", "false", "0", "n", "nein", "no"]:
+            elif value_lower in ["no", "false", "0", "n", "nein"]:
                 return False
             elif value_lower == "":
                 return None

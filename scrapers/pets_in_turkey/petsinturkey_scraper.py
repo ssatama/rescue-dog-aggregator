@@ -9,7 +9,6 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
-from utils.standardization import apply_standardization
 
 
 class PetsInTurkeyScraper(BaseScraper):
@@ -376,13 +375,8 @@ class PetsInTurkeyScraper(BaseScraper):
         if data.get("name"):
             data["name"] = data["name"].strip()
 
-        # Check if unified standardization is enabled
-        if self.use_unified_standardization:
-            # Use the inherited process_animal method for unified standardization
-            standardized = self.process_animal(data)
-        else:
-            # Apply legacy standardization
-            standardized = apply_standardization(data)
+        # Use unified standardization through base scraper
+        standardized = self.process_animal(data)
 
         # Ensure required fields have defaults
         standardized["name"] = (standardized.get("name") or "Unknown").strip()

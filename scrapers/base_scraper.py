@@ -374,25 +374,32 @@ class BaseScraper(ABC):
         # Make a copy to avoid modifying the original
         processed_data = animal_data.copy()
 
-        # Apply field normalization first (trimming, boolean conversion, defaults)
-        processed_data = self.standardizer.apply_field_normalization(processed_data)
+        try:
+            # Apply field normalization first (trimming, boolean conversion, defaults)
+            processed_data = self.standardizer.apply_field_normalization(processed_data)
 
-        # Log standardization for breed if present
-        original_breed = animal_data.get("breed")
-        if original_breed:
-            self.logger.info(f"Standardizing breed: {original_breed}")
+            # Log standardization for breed if present
+            original_breed = animal_data.get("breed")
+            if original_breed:
+                self.logger.info(f"Standardizing breed: {original_breed}")
 
-        # Apply full standardization (handles breed, age, size)
-        standardized = self.standardizer.apply_full_standardization(breed=processed_data.get("breed"), age=processed_data.get("age"), size=processed_data.get("size"))
+            # Apply full standardization (handles breed, age, size)
+            standardized = self.standardizer.apply_full_standardization(breed=processed_data.get("breed"), age=processed_data.get("age"), size=processed_data.get("size"))
 
-        # Update processed_data with standardized fields (now returned flattened)
-        processed_data.update(standardized)
+            # Update processed_data with standardized fields (now returned flattened)
+            processed_data.update(standardized)
 
-        # Log the result if breed changed
-        new_breed = processed_data.get("breed")
-        if original_breed and new_breed != original_breed:
-            confidence = processed_data.get("standardization_confidence", 0)
-            self.logger.info(f"Breed standardized: '{original_breed}' -> '{new_breed}' " f"(confidence: {confidence:.2f})")
+            # Log the result if breed changed
+            new_breed = processed_data.get("breed")
+            if original_breed and new_breed != original_breed:
+                confidence = processed_data.get("standardization_confidence", 0)
+                self.logger.info(f"Breed standardized: '{original_breed}' -> '{new_breed}' " f"(confidence: {confidence:.2f})")
+
+        except Exception as e:
+            # If standardization fails, log the error and return the original data
+            self.logger.warning(f"Standardization failed: {e}, using raw data")
+            # Return the original data so scraping can continue
+            return animal_data
 
         return processed_data
 

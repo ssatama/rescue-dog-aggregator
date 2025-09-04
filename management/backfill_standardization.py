@@ -49,6 +49,15 @@ class StandardizationBackfillService:
                 conn_params["password"] = DB_CONFIG["password"]
 
             self.conn = psycopg2.connect(**conn_params)
+            # CRITICAL: Disable autocommit for proper transaction management
+            self.conn.autocommit = False
+            
+            # Production safety check
+            if DB_CONFIG['database'] == 'rescue_dogs' and not os.getenv('ALLOW_PROD_BACKFILL'):
+                logger.error("SAFETY: Refusing to run against production database without ALLOW_PROD_BACKFILL=1")
+                self.conn.close()
+                return False
+            
             logger.info(f"Connected to database: {DB_CONFIG['database']}")
             return True
         except Exception as e:
@@ -60,6 +69,36 @@ class StandardizationBackfillService:
         if self.conn:
             self.conn.close()
             logger.info("Database connection closed")
+    
+    def safe_process_batch(self, batch_function, *args, **kwargs):
+        """Execute batch processing with proper transaction handling using savepoints."""
+        from datetime import datetime
+        
+        if not self.conn:
+            logger.error("No database connection")
+            return False
+            
+        savepoint_name = f"sp_{int(datetime.now().timestamp())}"
+        cursor = self.conn.cursor()
+        
+        try:
+            # Create savepoint for this batch
+            cursor.execute(f"SAVEPOINT {savepoint_name}")
+            
+            # Execute the batch function
+            result = batch_function(*args, **kwargs)
+            
+            # Release savepoint on success
+            cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
+            return result
+            
+        except Exception as e:
+            # Rollback to savepoint on error
+            cursor.execute(f"ROLLBACK TO SAVEPOINT {savepoint_name}")
+            logger.error(f"Batch processing failed, rolled back: {e}")
+            raise
+        finally:
+            cursor.close()
 
     def get_lurchers_to_fix(self) -> List[Tuple]:
         """Get Lurcher dogs that need breed_group fix."""
@@ -145,13 +184,10 @@ class StandardizationBackfillService:
                 set_clauses.append("standardized_breed = %s")
                 values.append(standardized_data["breed"])
 
+            # Note: unified_standardization returns breed_category but DB column is breed_group
             if "breed_category" in standardized_data:
-                set_clauses.append("breed_category = %s")
-                values.append(standardized_data["breed_category"])
-
-            if "breed_group" in standardized_data:
                 set_clauses.append("breed_group = %s")
-                values.append(standardized_data["breed_group"])
+                values.append(standardized_data["breed_category"])
 
             if "age_category" in standardized_data:
                 set_clauses.append("age_category = %s")
