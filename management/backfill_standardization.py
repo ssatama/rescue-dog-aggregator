@@ -189,10 +189,6 @@ class StandardizationBackfillService:
                 set_clauses.append("breed_group = %s")
                 values.append(standardized_data["breed_category"])
 
-            if "age_category" in standardized_data:
-                set_clauses.append("age_category = %s")
-                values.append(standardized_data["age_category"])
-
             if "standardized_size" in standardized_data:
                 set_clauses.append("standardized_size = %s")
                 values.append(standardized_data["standardized_size"])
@@ -226,7 +222,6 @@ class StandardizationBackfillService:
             "breed": standardized.get("standardized_breed"),
             "breed_category": standardized.get("breed_category"),
             "breed_group": standardized.get("breed_group"),
-            "age_category": standardized.get("age_category"),
             "standardized_size": standardized.get("standardized_size"),
         }
 
