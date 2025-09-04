@@ -32,7 +32,7 @@ class FeatureFlags:
         # Group B: Currently using standardization.py
         "furryrescueitaly": True,  # Enabled - Migrated from standardization.py to unified
         "galgosdelsol": True,  # Enabled - Migrated from standardization.py to unified
-        "manytearsrescue": False,
+        "manytearsrescue": True,  # Enabled - Migrated from standardization.py to unified
         "petsinturkey": False,  # Note: different from pets_in_turkey
         "santerpaws": False,
     }

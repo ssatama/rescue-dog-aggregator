@@ -13,11 +13,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
 from scrapers.base_scraper import BaseScraper
-from utils.standardization import (
-    get_size_from_breed,
-    normalize_breed_case,
-    standardize_age,
-)
+from utils.standardization import standardize_age
 
 
 class ManyTearsRescueScraper(BaseScraper):
@@ -517,11 +513,8 @@ class ManyTearsRescueScraper(BaseScraper):
             result["age_text"] = structured_data.get("age_text") or "Unknown"
 
             # Apply size standardization with default fallback
-            if structured_data.get("breed"):
-                breed_size = get_size_from_breed(structured_data["breed"])
-                result["size"] = breed_size or "Medium"
-            else:
-                result["size"] = "Medium"
+            # Size will be handled by unified standardization
+            result["size"] = structured_data.get("size", "Medium")
 
             # Add image_urls for R2 integration
             if hero_image_url:
@@ -529,6 +522,9 @@ class ManyTearsRescueScraper(BaseScraper):
             else:
                 result["image_urls"] = []
 
+            # Apply unified standardization
+            result = self.process_animal(result)
+            
             self.logger.debug(f"Successfully extracted details for {name}")
             return result
 
@@ -654,13 +650,13 @@ class ManyTearsRescueScraper(BaseScraper):
 
                         # Age extraction
                         if ("year" in text_lower or "month" in text_lower or "week" in text_lower) and text_lower not in ["male", "female"]:
-                            structured_data["age_text"] = text
-                            # Apply standardization
+                            # Store raw age text for unified standardization
+                            structured_data["age"] = text
+                            # Still use standardize_age for date calculations
                             age_info = standardize_age(text)
                             if age_info.get("age_min_months") is not None:
                                 structured_data["age_min_months"] = age_info["age_min_months"]
                                 structured_data["age_max_months"] = age_info["age_max_months"]
-                                structured_data["age_category"] = age_info.get("age_category", "Unknown")
 
                         # Gender extraction
                         elif text_lower in ["male", "female"]:
@@ -684,8 +680,8 @@ class ManyTearsRescueScraper(BaseScraper):
                             and len(text) < 50
                         ):  # Reasonable breed name length
 
-                            # Apply breed normalization
-                            structured_data["breed"] = normalize_breed_case(text)
+                            # Store raw breed for unified standardization
+                            structured_data["breed"] = text
 
                     break  # Found the main info list, stop looking
 

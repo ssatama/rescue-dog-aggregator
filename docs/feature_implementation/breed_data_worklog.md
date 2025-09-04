@@ -311,8 +311,7 @@
 
 **File:** `scrapers/pets_in_turkey/petsinturkey_scraper.py`
 
-- [ ] Consolidate with pets_in_turkey
-- [ ] Remove duplicate logic
+- [ ] Complete implementation
 - [ ] Enable feature flag
 
 #### SanterPaws
@@ -883,6 +882,7 @@
 
 - **Completed:** GalgosDelSol scraper migration from standardization.py to unified
 - **Key Achievements:**
+
   - Removed unused standardization imports (apply_standardization, normalize_breed_case, parse_age_text)
   - Only kept standardize_age import which is still used for date calculations
   - Added process_animal() call in scrape_animal_details method
@@ -894,6 +894,7 @@
   - Enabled feature flag for galgosdelsol
 
 - **Files Modified:**
+
   - scrapers/galgosdelsol/galgosdelsol_scraper.py (removed unused imports, added process_animal)
   - utils/unified_standardization.py (added Spanish breeds, fixed age parsing, added xlarge)
   - scrapers/base_scraper.py (added age_category field extraction)
@@ -901,6 +902,7 @@
   - tests/scrapers/test_galgosdelsol_unified_standardization.py (created)
 
 - **Epic Progress:**
+
   - ✅ Epic 1: Infrastructure Foundation (5/5 tasks complete)
   - ✅ Epic 2: Migrate Non-Standardized Scrapers (5/5 Group C scrapers)
   - 🔄 Epic 3: Migrate Existing Standardization Users (5/8 scrapers complete)

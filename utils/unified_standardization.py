@@ -74,6 +74,7 @@ class UnifiedStandardizer:
             "staffordshire bull terrier": BreedInfo("Staffordshire Bull Terrier", "Terrier", "Medium"),
             "american staffordshire terrier": BreedInfo("American Staffordshire Terrier", "Terrier", "Medium"),
             "jack russell terrier": BreedInfo("Jack Russell Terrier", "Terrier", "Small"),
+            "jack russell": BreedInfo("Jack Russell Terrier", "Terrier", "Small"),  # Alias without "Terrier"
             "yorkshire terrier": BreedInfo("Yorkshire Terrier", "Terrier", "Tiny"),
             "bull terrier": BreedInfo("Bull Terrier", "Terrier", "Medium"),
             "scottish terrier": BreedInfo("Scottish Terrier", "Terrier", "Small"),
@@ -83,6 +84,7 @@ class UnifiedStandardizer:
             "golden retriever": BreedInfo("Golden Retriever", "Sporting", "Large"),
             "cocker spaniel": BreedInfo("Cocker Spaniel", "Sporting", "Medium"),
             "english springer spaniel": BreedInfo("English Springer Spaniel", "Sporting", "Medium"),
+            "english springer": BreedInfo("English Springer Spaniel", "Sporting", "Medium"),  # Alias without "Spaniel"
             "pointer": BreedInfo("Pointer", "Sporting", "Large"),
             "setter": BreedInfo("Setter", "Sporting", "Large"),
             # Working Group
@@ -365,19 +367,19 @@ class UnifiedStandardizer:
             size_lower = size.strip().lower()
 
             size_map = {
-                "tiny": "Tiny",
-                "extra small": "Tiny",
-                "xs": "Tiny",
+                "tiny": "Small",  # Map tiny to Small for canonical sizes
+                "extra small": "Small",
+                "xs": "Small",
                 "small": "Small",
                 "s": "Small",
                 "medium": "Medium",
                 "m": "Medium",
                 "large": "Large",
                 "l": "Large",
-                "extra large": "XLarge",
-                "xlarge": "XLarge",
-                "xl": "XLarge",
-                "giant": "XLarge",
+                "extra large": "Large",  # Map XLarge to Large for canonical sizes
+                "xlarge": "Large",
+                "xl": "Large",
+                "giant": "Large",
             }
 
             if size_lower in size_map:
