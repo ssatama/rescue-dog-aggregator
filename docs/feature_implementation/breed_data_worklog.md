@@ -272,7 +272,7 @@
 
 ### Task 3.2: Migrate Group B - Standard Users (5 scrapers)
 
-**Status:** 1/5 COMPLETED
+**Status:** 3/5 COMPLETED
 
 #### FurryRescueItaly ✅ COMPLETED
 
@@ -299,13 +299,13 @@
 - [x] Test Galgo/Podenco breeds
 - [x] Enable feature flag
 
-#### ManyTearsRescue
+#### ManyTearsRescue ✅ COMPLETED
 
-**File:** `scrapers/manytearsrescue/dogs_scraper.py`
+**File:** `scrapers/manytearsrescue/manytearsrescue_scraper.py`
 
-- [ ] Add missing standardization usage
-- [ ] Complete implementation
-- [ ] Enable feature flag
+- [x] Removed legacy standardization code
+- [x] Fixed age, size, and gender field handling
+- [x] All tests passing (13 tests, 8 unified standardization tests)
 
 #### PetsInTurkey (second implementation - THIS IS MODERN one being used, the other one was legacy and is now deleted)
 
@@ -913,6 +913,30 @@
   - Continue Task 3.2: Migrate remaining Group B scrapers
   - ManyTearsRescue (add missing standardization)
   - PetsInTurkey (consolidate with pets_in_turkey)
+  - SanterPaws (preserve Bulgarian breeds)
+
+### Session 10: 2025-09-04 (Epic 3, Task 3.2 Continued)
+
+**Epic 3, Task 3.2: Migrate ManyTearsRescue Scraper (Third Group B scraper)**
+
+- **Completed:** ManyTearsRescue scraper legacy code cleanup
+- **Key Achievements:**
+
+  - Removed unused legacy standardize_age import and usage
+  - Fixed redundant age processing (was double-standardizing)
+  - Removed forced "Medium" size defaults (let unified handle it)
+  - Standardized field naming (sex → gender for consistency)
+  - All 13 tests passing (including 8 unified standardization tests)
+  - Feature flag already enabled via BaseScraper
+
+- **Progress Update:**
+  - Epic 3: 6/8 scrapers migrated (75% complete)
+  - Task 3.2 (Group B): 3/5 scrapers migrated (60% complete)
+  - Remaining: PetsInTurkey and SanterPaws
+
+- **Next Steps:**
+  - Continue Task 3.2: Migrate remaining Group B scrapers
+  - PetsInTurkey (modern implementation)
   - SanterPaws (preserve Bulgarian breeds)
 
 ---
