@@ -6,9 +6,6 @@ without expensive database operations, providing quick feedback during developme
 """
 
 import pytest
-from fastapi.testclient import TestClient
-
-from api.main import app
 
 
 @pytest.mark.unit
