@@ -28,7 +28,7 @@ class FeatureFlags:
         # Group A: Currently using optimized_standardization.py
         "dogstrust": True,  # Enabled - Migrated from optimized_standardization to unified
         "woof_project": True,  # Enabled - Migrated from optimized_standardization to unified
-        "pets_in_turkey": False,
+        "pets_in_turkey": True,  # Enabled - Migrated from optimized_standardization to unified
         # Group B: Currently using standardization.py
         "furryrescueitaly": False,
         "galgosdelsol": False,
