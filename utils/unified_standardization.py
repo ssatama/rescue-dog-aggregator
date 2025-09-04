@@ -93,6 +93,7 @@ class UnifiedStandardizer:
             "great dane": BreedInfo("Great Dane", "Working", "XLarge"),
             "bernese mountain dog": BreedInfo("Bernese Mountain Dog", "Working", "Large"),
             "boxer": BreedInfo("Boxer", "Working", "Large"),
+            "cane corso": BreedInfo("Cane Corso", "Working", "Large"),  # Italian breed
             # Herding Group
             "german shepherd": BreedInfo("German Shepherd Dog", "Herding", "Large"),
             "german shepherd dog": BreedInfo("German Shepherd Dog", "Herding", "Large"),
@@ -136,6 +137,7 @@ class UnifiedStandardizer:
             "maltipoo": {"name": "Maltipoo", "primary": "Maltese", "secondary": "Poodle", "group": "Toy", "size": "Small"},
             "goldendoodle": {"name": "Goldendoodle", "primary": "Golden Retriever", "secondary": "Poodle", "group": "Sporting", "size": "Large"},
             "cavapoo": {"name": "Cavapoo", "primary": "Cavalier King Charles Spaniel", "secondary": "Poodle", "group": "Toy", "size": "Small"},
+            "cavachon": {"name": "Cavachon", "primary": "Cavalier King Charles Spaniel", "secondary": "Bichon Frise", "group": "Designer", "size": "Small"},
         }
 
     def _initialize_staffordshire_variations(self) -> List[str]:

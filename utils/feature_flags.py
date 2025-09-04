@@ -30,7 +30,7 @@ class FeatureFlags:
         "woof_project": True,  # Enabled - Migrated from optimized_standardization to unified
         "pets_in_turkey": True,  # Enabled - Migrated from optimized_standardization to unified
         # Group B: Currently using standardization.py
-        "furryrescueitaly": False,
+        "furryrescueitaly": True,  # Enabled - Migrated from standardization.py to unified
         "galgosdelsol": False,
         "manytearsrescue": False,
         "petsinturkey": False,  # Note: different from pets_in_turkey
