@@ -9,7 +9,8 @@ from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
 
-from .normalizer import normalize_animal_data
+from .normalizer import extract_qa_data, extract_size_and_weight_from_qa
+from utils.shared_extraction_patterns import extract_age_from_text
 
 
 class TheUnderdogScraper(BaseScraper):
@@ -291,37 +292,51 @@ class TheUnderdogScraper(BaseScraper):
                 result["country"] = country["name"]
                 result["country_code"] = country["iso_code"]
 
-            # Apply organization-specific normalization
-            result = normalize_animal_data(result)
-
+            # Extract Q&A data for size/weight information
+            qa_data = extract_qa_data(result.get("properties", {}))
+            
+            # Extract age from Q&A data if available
+            if qa_data.get("How old?"):
+                age_text = extract_age_from_text(qa_data["How old?"])
+                if age_text:
+                    result["age"] = age_text
+            
             # Ensure ALL critical fields are present for BaseScraper
             # BaseScraper will handle standardization automatically
 
             # Required fields - these MUST have values
             if not result.get("breed"):
+                # Try to extract from description
+                # Let BaseScraper's UnifiedStandardizer handle the actual standardization
                 result["breed"] = "Mixed Breed"  # Default if extraction failed
 
-            if not result.get("age_text"):
+            if not result.get("age"):
                 # Try to extract from description as fallback
-                result["age_text"] = self._extract_age_fallback(description)
+                result["age"] = self._extract_age_fallback(description)
 
             if not result.get("sex"):
                 # Try to extract from description as fallback
                 result["sex"] = self._extract_sex_fallback(description)
 
             if not result.get("size"):
-                # Try to estimate from weight if available
-                weight_value = result.get("weight_kg")
-                if weight_value:
+                # Extract size and weight from Q&A data
+                size, weight_kg = extract_size_and_weight_from_qa(qa_data)
+                if size:
+                    result["size"] = size
+                if weight_kg:
+                    result["weight_kg"] = weight_kg
+                
+                # If still no size, try to estimate from weight if available
+                if not result.get("size") and result.get("weight_kg"):
                     try:
-                        # Ensure weight is a float, handling potential list/collection
-                        value_to_convert = weight_value[0] if isinstance(weight_value, (list, tuple)) else weight_value
-                        weight_kg = float(str(value_to_convert))
-                        result["size"] = self._estimate_size_from_weight(weight_kg)
-                    except (ValueError, TypeError, IndexError):
+                        weight = float(result["weight_kg"])
+                        result["size"] = self._estimate_size_from_weight(weight)
+                    except (ValueError, TypeError):
                         result["size"] = "Medium"  # Fallback if conversion fails
-                else:
-                    result["size"] = "Medium"  # Default fallback
+                
+                # Final fallback
+                if not result.get("size"):
+                    result["size"] = "Medium"
 
             # Ensure description is not empty
             if not result.get("description"):

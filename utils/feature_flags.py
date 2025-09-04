@@ -19,7 +19,7 @@ class FeatureFlags:
     SCRAPER_FLAGS: Dict[str, bool] = {
         # Group C: Non-standardized scrapers (migrate first)
         'rean': True,  # Enabled - REAN has no custom standardization, ready to use unified
-        'theunderdog': False, 
+        'theunderdog': True,  # Enabled - TheUnderdog migrated to unified standardization 
         'tierschutzverein_europa': False,
         'animalrescuebosnia': False,
         'daisy_family_rescue': False,

@@ -288,11 +288,11 @@ class UnifiedStandardizer:
         for variation in self.american_staffordshire_variations:
             if variation in breed_lower or ('american' in breed_lower and 'staff' in breed_lower):
                 return {
-                    'name': 'American Staffordshire Terrier',
+                    'name': 'American Staffordshire Terrier' + (' Mix' if is_mixed else ''),
                     'group': 'Terrier',
                     'size': 'Medium',
-                    'confidence': 0.9,
-                    'breed_type': 'purebred',
+                    'confidence': 0.9 if not is_mixed else 0.8,
+                    'breed_type': 'purebred' if not is_mixed else 'crossbreed',
                     'is_mixed': is_mixed
                 }
         
@@ -300,11 +300,11 @@ class UnifiedStandardizer:
         for variation in self.staffordshire_variations:
             if variation in breed_lower and 'american' not in breed_lower:
                 return {
-                    'name': 'Staffordshire Bull Terrier',
+                    'name': 'Staffordshire Bull Terrier' + (' Mix' if is_mixed else ''),
                     'group': 'Terrier',
                     'size': 'Medium',
-                    'confidence': 0.9,
-                    'breed_type': 'purebred',
+                    'confidence': 0.9 if not is_mixed else 0.8,
+                    'breed_type': 'purebred' if not is_mixed else 'crossbreed',
                     'is_mixed': is_mixed
                 }
         

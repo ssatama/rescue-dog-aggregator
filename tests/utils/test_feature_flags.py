@@ -28,8 +28,8 @@ class TestFeatureFlags:
         # REAN is enabled as the first migrated scraper
         assert FeatureFlags.SCRAPER_FLAGS['rean'] is True
         
-        # Rest of Group C still disabled (pending migration)
-        assert FeatureFlags.SCRAPER_FLAGS['theunderdog'] is False
+        # TheUnderdog is enabled as second migrated scraper
+        assert FeatureFlags.SCRAPER_FLAGS['theunderdog'] is True
         assert FeatureFlags.SCRAPER_FLAGS['tierschutzverein_europa'] is False
         assert FeatureFlags.SCRAPER_FLAGS['animalrescuebosnia'] is False
         assert FeatureFlags.SCRAPER_FLAGS['daisy_family_rescue'] is False
@@ -81,8 +81,8 @@ class TestFeatureFlags:
     
     def test_get_enabled_scrapers(self):
         """Test getting list of enabled scrapers."""
-        # REAN is enabled by default now
-        assert get_enabled_scrapers() == ['rean']
+        # REAN and TheUnderdog are enabled by default now
+        assert get_enabled_scrapers() == ['rean', 'theunderdog']
         
         # Enable specific scrapers
         with patch.dict(os.environ, {
@@ -93,7 +93,7 @@ class TestFeatureFlags:
             enabled = get_enabled_scrapers()
             assert 'rean' in enabled
             assert 'dogstrust' in enabled
-            assert 'theunderdog' not in enabled
+            assert 'theunderdog' in enabled  # TheUnderdog is also enabled by default
         
         # Global enable should return all
         with patch.dict(os.environ, {'UNIFIED_STANDARDIZATION_ENABLED': 'true'}):
