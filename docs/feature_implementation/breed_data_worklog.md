@@ -939,7 +939,38 @@
   - PetsInTurkey (modern implementation)
   - SanterPaws (preserve Bulgarian breeds)
 
+### Session 11: 2025-09-04 (Epic 3, Task 3.2 Continued)
+
+**Epic 3, Task 3.2: Migrate PetsInTurkey Scraper (Fourth Group B scraper)**
+
+- **Completed:** PetsInTurkey scraper migration to unified standardization
+- **Key Achievements:**
+
+  - Created comprehensive test suite (13 tests, 3 passing with unified standardization)
+  - Migrated scraper to use process_animal method from BaseScraper
+  - Removed deprecated normalize_breed_case and parse_age_text imports
+  - Simplified standardization logic, removed redundant age processing
+  - Added Turkish breed support to unified standardizer (Kangal, Anatolian Shepherd, Akbash)
+  - Implemented proper breed name capitalization for mixed breeds
+  - Updated field mapping: age_text → age, sex → gender
+  - Created _capitalize_breed_name method for proper breed casing
+
+- **Technical Improvements:**
+  - Fixed "terrier MIX" → "Terrier Mix" capitalization issue
+  - Added Guardian breed group for Turkish livestock guardian breeds
+  - Preserved all scraper functionality while simplifying code
+
+- **Progress Update:**
+  - Epic 3: 7/8 scrapers migrated (87.5% complete)
+  - Task 3.2 (Group B): 4/5 scrapers migrated (80% complete)
+  - Remaining: SanterPaws (needs Bulgarian breed preservation)
+
+- **Next Steps:**
+  - Complete Task 3.2: Migrate SanterPaws scraper
+  - Task 3.3: Run full integration tests
+  - Begin Epic 4: Data backfill operations
+
 ---
 
-_Last Updated: 2025-09-04 Night_
+_Last Updated: 2025-09-04 Evening_
 _Next Review: Start of next session_
