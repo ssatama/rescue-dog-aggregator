@@ -8,12 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
-from utils.standardization import (
-    apply_standardization,
-    normalize_breed_case,
-    parse_age_text,
-    standardize_age,
-)
+from utils.standardization import standardize_age
 
 
 class GalgosDelSolScraper(BaseScraper):
@@ -306,6 +301,10 @@ class GalgosDelSolScraper(BaseScraper):
             result["size"] = "Medium"  # Default fallback as requested
 
             self.logger.debug(f"Successfully extracted data for {name}")
+            
+            # Apply unified standardization
+            result = self.process_animal(result)
+            
             return result
 
         except Exception as e:

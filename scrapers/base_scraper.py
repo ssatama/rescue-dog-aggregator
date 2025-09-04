@@ -422,7 +422,9 @@ class BaseScraper(ABC):
                 # Keep original age string if we have it
                 if "original" in age_info:
                     processed_data["age"] = age_info["original"]
-                # Can add age_category, age_min_months, age_max_months if needed
+                # Add age category
+                if "age_category" in age_info:
+                    processed_data["age_category"] = age_info["age_category"]
 
         # Handle size standardization if present
         if standardized.get("size"):

@@ -121,6 +121,8 @@ class UnifiedStandardizer:
             "brittany": BreedInfo("Brittany", "Sporting", "Medium"),
             "brittany spaniel": BreedInfo("Brittany", "Sporting", "Medium"),
             "podenco": BreedInfo("Podenco", "Hound", "Medium"),
+            "galgo": BreedInfo("Galgo", "Hound", "Large"),
+            "galgo español": BreedInfo("Galgo Español", "Hound", "Large"),
             "livestock guardian dog": BreedInfo("Livestock Guardian Dog", "Working", "Large"),
         }
 
@@ -335,6 +337,22 @@ class UnifiedStandardizer:
 
             return {"original": age, "age_category": category, "age_min_months": total_months, "age_max_months": total_months}
 
+        # Check for months only pattern
+        months_match = self.age_patterns["months_only"].search(age_lower)
+        if months_match:
+            months = int(months_match.group(1))
+            
+            if months < 12:
+                category = "Puppy"
+            elif months < 24:
+                category = "Young"
+            elif months < 84:
+                category = "Adult"
+            else:
+                category = "Senior"
+            
+            return {"original": age, "age_category": category, "age_min_months": months, "age_max_months": months}
+
         # Default case
         return {"original": age, "age_category": "Adult", "age_min_months": 24, "age_max_months": 84}
 
@@ -357,6 +375,7 @@ class UnifiedStandardizer:
                 "large": "Large",
                 "l": "Large",
                 "extra large": "XLarge",
+                "xlarge": "XLarge",
                 "xl": "XLarge",
                 "giant": "XLarge",
             }
