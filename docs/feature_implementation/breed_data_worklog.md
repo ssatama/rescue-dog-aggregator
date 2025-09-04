@@ -264,16 +264,23 @@
 
 ### Task 3.2: Migrate Group B - Standard Users (5 scrapers)
 
-**Status:** NOT STARTED
+**Status:** 1/5 COMPLETED
 
-#### FurryRescueItaly
+#### FurryRescueItaly ✅ COMPLETED
 
 **File:** `scrapers/furryrescueitaly/dogs_scraper.py`
 
-- [ ] Remove standardization.py imports
-- [ ] Remove normalize_breed_case
-- [ ] Test Italian breeds
-- [ ] Enable feature flag
+- [x] Remove standardization.py imports
+- [x] Remove normalize_breed_case
+- [x] Test Italian breeds
+- [x] Enable feature flag
+
+**Migration Details:**
+- Removed imports: normalize_breed_case, parse_age_text, standardize_age
+- Deleted custom _standardize_animal_data() method (80+ lines)
+- Updated _merge_animal_details() to use process_animal()
+- Added Cane Corso Italian breed to UnifiedStandardizer
+- Created test suite with 8/8 tests passing
 
 #### GalgosDelSol
 
@@ -812,7 +819,41 @@
   - Start with FurryRescueItaly scraper
   - Consider parallel work on Epic 4 backfill script
 
+### Session 8: 2025-09-04 Late Evening (Epic 3, Task 3.2 Started)
+
+**Epic 3, Task 3.2: Migrate FurryRescueItaly Scraper (First Group B scraper)**
+
+- **Completed:** FurryRescueItaly scraper migration from standardization.py to unified
+- **Key Achievements:**
+  - Removed old standardization imports (normalize_breed_case, parse_age_text, standardize_age)
+  - Deleted custom _standardize_animal_data() method (80+ lines removed)
+  - Updated _merge_animal_details() to use unified process_animal()
+  - Enhanced UnifiedStandardizer with Italian breed (Cane Corso)
+  - Added missing designer breed (Cavachon with parent breeds)
+  - Created comprehensive test suite with 8/8 tests passing
+  - Enabled feature flag for furryrescueitaly
+
+- **Files Modified:**
+  - scrapers/furryrescueitaly/furryrescueitaly_scraper.py (removed manual standardization)
+  - utils/unified_standardization.py (added Cane Corso, Cavachon breeds)
+  - utils/feature_flags.py (enabled furryrescueitaly: True)
+  - tests/scrapers/test_furryrescueitaly_unified_standardization.py (created)
+
+- **Epic Progress:**
+  - ✅ Epic 1: Infrastructure Foundation (5/5 tasks complete)
+  - ✅ Epic 2: Migrate Non-Standardized Scrapers (5/5 Group C scrapers)
+  - 🔄 Epic 3: Migrate Existing Standardization Users (4/8 scrapers complete)
+    - ✅ Group A (Optimized Users): 3/3 COMPLETE
+    - 🔄 Group B (Standard Users): 1/5 (FurryRescueItaly ✅, 4 remaining)
+
+- **Next Steps:**
+  - Continue Task 3.2: Migrate remaining Group B scrapers
+  - GalgosDelSol (preserve Spanish breeds)
+  - ManyTearsRescue (add missing standardization)
+  - PetsInTurkey (consolidate duplicate)
+  - SanterPaws (preserve Bulgarian breeds)
+
 ---
 
-_Last Updated: 2025-09-04_
+_Last Updated: 2025-09-04 Late Evening_
 _Next Review: Start of next session_
