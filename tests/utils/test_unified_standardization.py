@@ -63,7 +63,7 @@ class TestUnifiedStandardizer:
         # Cockapoo (Cocker Spaniel + Poodle)
         result = standardizer.apply_full_standardization(breed="Cockapoo")
         assert result["breed"] == "Cockapoo"
-        assert result["breed_category"] == "Non-Sporting"  # Uses Poodle's category
+        assert result["breed_category"] == "Designer/Hybrid"  # Designer breed category
         assert result["primary_breed"] == "Cocker Spaniel"
         assert result["secondary_breed"] == "Poodle"
 
@@ -215,3 +215,281 @@ class TestUnifiedStandardizer:
         assert results[0]["breed_category"] == "Hound"
         # Skip breed_type assertion - that's from Task 4.2 not yet implemented
         assert results[2]["breed"] == "Staffordshire Bull Terrier"
+
+
+def test_unknown_breed_returns_unknown():
+    """Test that truly unknown breeds return Unknown group."""
+    standardizer = UnifiedStandardizer()
+    
+    result = standardizer.apply_full_standardization(breed="Flibbertigibbet")
+    
+    assert result["breed"] == "Flibbertigibbet"
+    assert result["breed_category"] == "Unknown"
+    assert result["breed_confidence"] == 0.0
+    assert result["breed_type"] == "purebred"
+
+
+def test_new_terrier_breed_mappings():
+    """Test newly added terrier breed mappings from database analysis."""
+    standardizer = UnifiedStandardizer()
+    
+    # Test generic "Terrier" mapping
+    result = standardizer.apply_full_standardization(breed="Terrier")
+    assert result["breed"] == "Terrier"
+    assert result["breed_category"] == "Terrier"
+    assert result["standardization_confidence"] > 0.7
+    
+    # Test Patterdale Terrier
+    result = standardizer.apply_full_standardization(breed="Terrier (patterdale)")
+    assert result["breed"] == "Patterdale Terrier"
+    assert result["breed_category"] == "Terrier"
+    
+    # Test Yorkshire Terrier
+    result = standardizer.apply_full_standardization(breed="Terrier (yorkshire)")
+    assert result["breed"] == "Yorkshire Terrier"
+    assert result["breed_category"] == "Terrier"
+    
+    # Test Lakeland Terrier
+    result = standardizer.apply_full_standardization(breed="Terrier (lakeland)")
+    assert result["breed"] == "Lakeland Terrier"
+    assert result["breed_category"] == "Terrier"
+    
+    # Test Fox Terrier Wire
+    result = standardizer.apply_full_standardization(breed="Terrier (fox Wire)")
+    assert result["breed"] == "Wire Fox Terrier"
+    assert result["breed_category"] == "Terrier"
+    
+    # Test Soft Coated Wheaten Terrier
+    result = standardizer.apply_full_standardization(breed="Terrier (soft Coated Wheaten)")
+    assert result["breed"] == "Soft Coated Wheaten Terrier"
+    assert result["breed_category"] == "Terrier"
+    
+    # Test Miniature Bull Terrier
+    result = standardizer.apply_full_standardization(breed="Terrier (miniature Bull)")
+    assert result["breed"] == "Miniature Bull Terrier"
+    assert result["breed_category"] == "Terrier"
+    
+    # Test Boston Terrier
+    result = standardizer.apply_full_standardization(breed="Terrier (boston)")
+    assert result["breed"] == "Boston Terrier"
+    assert result["breed_category"] == "Non-Sporting"  # Boston Terrier is Non-Sporting group!
+    
+    # Test Bedlington Terrier
+    result = standardizer.apply_full_standardization(breed="Terrier (bedlington)")
+    assert result["breed"] == "Bedlington Terrier"
+    assert result["breed_category"] == "Terrier"
+    
+    # Test Bull Terrier
+    result = standardizer.apply_full_standardization(breed="Terrier (bull)")
+    assert result["breed"] == "Bull Terrier"
+    assert result["breed_category"] == "Terrier"
+    
+    # Test Parson Russell Terrier
+    result = standardizer.apply_full_standardization(breed="Terrier (parson Russell)")
+    assert result["breed"] == "Parson Russell Terrier"
+    assert result["breed_category"] == "Terrier"
+    
+    # Test Border Terrier
+    result = standardizer.apply_full_standardization(breed="Terrier (border)")
+    assert result["breed"] == "Border Terrier"
+    assert result["breed_category"] == "Terrier"
+    
+    # Test German Hunting Terrier (Deutscher Jagdterrier)
+    result = standardizer.apply_full_standardization(breed="Deutscher Jagdterrier")
+    assert result["breed"] == "German Hunting Terrier"
+    assert result["breed_category"] == "Terrier"
+
+
+def test_new_hound_breed_mappings():
+    """Test newly added hound breed mappings from database analysis."""
+    standardizer = UnifiedStandardizer()
+    
+    # Test generic "Hound"
+    result = standardizer.apply_full_standardization(breed="Hound")
+    assert result["breed"] == "Hound"
+    assert result["breed_category"] == "Hound"
+    
+    # Test Foxhound
+    result = standardizer.apply_full_standardization(breed="Foxhound")
+    assert result["breed"] == "Foxhound"
+    assert result["breed_category"] == "Hound"
+    
+    # Test Harrier
+    result = standardizer.apply_full_standardization(breed="Harrier")
+    assert result["breed"] == "Harrier"
+    assert result["breed_category"] == "Hound"
+    
+    # Test Segugio Italiano (Italian hound)
+    result = standardizer.apply_full_standardization(breed="Hound Dog (segugio)")
+    assert result["breed"] == "Segugio Italiano"
+    assert result["breed_category"] == "Hound"
+    
+    # Test Maremma variant
+    result = standardizer.apply_full_standardization(breed="Brindle Maremma Hound")
+    assert result["breed"] == "Maremma Sheepdog"
+    assert result["breed_category"] == "Guardian"  # Maremma is actually a guardian breed
+    
+    # Test Bulgarian Scenthound
+    result = standardizer.apply_full_standardization(breed="Gonche (bulgarian Scenthound)")
+    assert result["breed"] == "Bulgarian Scenthound"
+    assert result["breed_category"] == "Hound"
+    
+    result = standardizer.apply_full_standardization(breed="Gonche Bulgarian Scenthound")
+    assert result["breed"] == "Bulgarian Scenthound"
+    assert result["breed_category"] == "Hound"
+    
+    # Test Black and Tan Coonhound
+    result = standardizer.apply_full_standardization(breed="Black And Tan Coonhound")
+    assert result["breed"] == "Black and Tan Coonhound"
+    assert result["breed_category"] == "Hound"
+    
+    # Test generic Hound Dog
+    result = standardizer.apply_full_standardization(breed="Hound Dog")
+    assert result["breed"] == "Hound"
+    assert result["breed_category"] == "Hound"
+
+
+def test_new_working_and_spitz_breed_mappings():
+    """Test newly added working and spitz breed mappings."""
+    standardizer = UnifiedStandardizer()
+    
+    # Test Samoyed
+    result = standardizer.apply_full_standardization(breed="Samoyed")
+    assert result["breed"] == "Samoyed"
+    assert result["breed_category"] == "Working"
+    
+    # Test Finnish Lapphund
+    result = standardizer.apply_full_standardization(breed="Finnish Lapphund")
+    assert result["breed"] == "Finnish Lapphund"
+    assert result["breed_category"] == "Herding"
+    
+    # Test generic Spitz
+    result = standardizer.apply_full_standardization(breed="Spitz")
+    assert result["breed"] == "Spitz"
+    assert result["breed_category"] == "Non-Sporting"
+    
+    # Test Rottweiler misspelling
+    result = standardizer.apply_full_standardization(breed="Rottweiller")
+    assert result["breed"] == "Rottweiler"
+    assert result["breed_category"] == "Working"
+    
+    # Test Dogue de Bordeaux
+    result = standardizer.apply_full_standardization(breed="Dogue De Bordeaux")
+    assert result["breed"] == "Dogue de Bordeaux"
+    assert result["breed_category"] == "Working"
+    
+    # Test St Bernard
+    result = standardizer.apply_full_standardization(breed="St Bernard")
+    assert result["breed"] == "Saint Bernard"
+    assert result["breed_category"] == "Working"
+    
+    # Test Turkish Kangal
+    result = standardizer.apply_full_standardization(breed="Turkish Kangal Dog")
+    assert result["breed"] == "Kangal"
+    assert result["breed_category"] == "Guardian"
+    
+    # Test Czechoslovakian Wolfdog
+    result = standardizer.apply_full_standardization(breed="Tschechoslowakischer Wolfshund")
+    assert result["breed"] == "Czechoslovakian Wolfdog"
+    assert result["breed_category"] == "Working"
+    
+    # Test American Bully
+    result = standardizer.apply_full_standardization(breed="American Bully Pocket")
+    assert result["breed"] == "American Bully"
+    assert result["breed_category"] == "Non-Sporting"
+
+
+def test_new_toy_and_small_breed_mappings():
+    """Test newly added toy and small breed mappings."""
+    standardizer = UnifiedStandardizer()
+    
+    # Test Bolognese
+    result = standardizer.apply_full_standardization(breed="Bolognese")
+    assert result["breed"] == "Bolognese"
+    assert result["breed_category"] == "Toy"
+    
+    # Test Shar Pei
+    result = standardizer.apply_full_standardization(breed="Shar Pei")
+    assert result["breed"] == "Shar Pei"
+    assert result["breed_category"] == "Non-Sporting"
+    
+    # Test Miniature Schnauzer
+    result = standardizer.apply_full_standardization(breed="Schnauzer (miniature)")
+    assert result["breed"] == "Miniature Schnauzer"
+    assert result["breed_category"] == "Terrier"
+    
+    # Test Miniature Pinscher
+    result = standardizer.apply_full_standardization(breed="Pinscher (miniature)")
+    assert result["breed"] == "Miniature Pinscher"
+    assert result["breed_category"] == "Toy"
+    
+    # Test Dachshund (German)
+    result = standardizer.apply_full_standardization(breed="Dackel (Kurzhaar)")
+    assert result["breed"] == "Dachshund"
+    assert result["breed_category"] == "Hound"
+
+
+def test_new_herding_breed_mappings():
+    """Test newly added herding breed mappings."""
+    standardizer = UnifiedStandardizer()
+    
+    # Test Belgian Malinois
+    result = standardizer.apply_full_standardization(breed="Malinois")
+    assert result["breed"] == "Belgian Malinois"
+    assert result["breed_category"] == "Herding"
+    
+    # Test Australian Kelpie
+    result = standardizer.apply_full_standardization(breed="Australian Kelpie")
+    assert result["breed"] == "Australian Kelpie"
+    assert result["breed_category"] == "Herding"
+
+
+def test_new_designer_breed_mappings():
+    """Test newly added designer breed mappings."""
+    standardizer = UnifiedStandardizer()
+    
+    # Test Pomsky
+    result = standardizer.apply_full_standardization(breed="Pomsky")
+    assert result["breed"] == "Pomsky"
+    assert result["breed_category"] == "Designer/Hybrid"
+    assert result["breed_type"] == "crossbreed"
+    
+    # Test Cockerpoo (variant spelling)
+    result = standardizer.apply_full_standardization(breed="Cockerpoo")
+    assert result["breed"] == "Cockapoo"
+    assert result["breed_category"] == "Designer/Hybrid"
+    assert result["breed_type"] == "crossbreed"
+
+
+def test_new_spanish_breed_mappings():
+    """Test newly added Spanish breed mappings."""
+    standardizer = UnifiedStandardizer()
+    
+    # Test Bodeguero Andaluz
+    result = standardizer.apply_full_standardization(breed="Bodeguero Andaluz")
+    assert result["breed"] == "Bodeguero Andaluz"
+    assert result["breed_category"] == "Terrier"
+    
+    # Test Podengo Portugues
+    result = standardizer.apply_full_standardization(breed="Podengo Portugues Pequeno")
+    assert result["breed"] == "Portuguese Podengo"
+    assert result["breed_category"] == "Hound"
+
+
+def test_italian_corso_mapping():
+    """Test Italian Corso Dog mapping to Cane Corso."""
+    standardizer = UnifiedStandardizer()
+    
+    result = standardizer.apply_full_standardization(breed="Italian Corso Dog")
+    assert result["breed"] == "Cane Corso"
+    assert result["breed_category"] == "Working"
+
+
+def test_data_quality_fix():
+    """Test that bad data like 'Can Be The Only Dog' is handled."""
+    standardizer = UnifiedStandardizer()
+    
+    # This is not a breed, it's a behavioral note
+    result = standardizer.apply_full_standardization(breed="Can Be The Only Dog")
+    # Should remain as Unknown since it's not a breed
+    assert result["breed_category"] == "Unknown"

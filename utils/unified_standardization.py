@@ -69,17 +69,51 @@ class UnifiedStandardizer:
             "basset hound": BreedInfo("Basset Hound", "Hound", "Medium"),
             "bloodhound": BreedInfo("Bloodhound", "Hound", "Large"),
             "dachshund": BreedInfo("Dachshund", "Hound", "Small"),
+            "dackel (kurzhaar)": BreedInfo("Dachshund", "Hound", "Small"),  # German name for Dachshund
             "irish wolfhound": BreedInfo("Irish Wolfhound", "Hound", "XLarge"),
             "afghan hound": BreedInfo("Afghan Hound", "Hound", "Large"),
+            "hound": BreedInfo("Hound", "Hound", "Medium"),  # Generic hound
+            "hound dog": BreedInfo("Hound", "Hound", "Medium"),  # Generic hound dog
+            "foxhound": BreedInfo("Foxhound", "Hound", "Large"),
+            "harrier": BreedInfo("Harrier", "Hound", "Medium"),
+            "hound dog (segugio)": BreedInfo("Segugio Italiano", "Hound", "Medium"),  # Italian hound
+            "black and tan coonhound": BreedInfo("Black and Tan Coonhound", "Hound", "Large"),
+            "gonche (bulgarian scenthound)": BreedInfo("Bulgarian Scenthound", "Hound", "Medium"),
+            "gonche bulgarian scenthound": BreedInfo("Bulgarian Scenthound", "Hound", "Medium"),
+            "podengo portugues pequeno": BreedInfo("Portuguese Podengo", "Hound", "Small"),
             # Terrier Group - Including Staffordshire Bull Terrier
             "staffordshire bull terrier": BreedInfo("Staffordshire Bull Terrier", "Terrier", "Medium"),
             "american staffordshire terrier": BreedInfo("American Staffordshire Terrier", "Terrier", "Medium"),
             "jack russell terrier": BreedInfo("Jack Russell Terrier", "Terrier", "Small"),
             "jack russell": BreedInfo("Jack Russell Terrier", "Terrier", "Small"),  # Alias without "Terrier"
             "yorkshire terrier": BreedInfo("Yorkshire Terrier", "Terrier", "Tiny"),
+            "terrier (yorkshire)": BreedInfo("Yorkshire Terrier", "Terrier", "Tiny"),
             "bull terrier": BreedInfo("Bull Terrier", "Terrier", "Medium"),
+            "terrier (bull)": BreedInfo("Bull Terrier", "Terrier", "Medium"),
             "scottish terrier": BreedInfo("Scottish Terrier", "Terrier", "Small"),
             "west highland white terrier": BreedInfo("West Highland White Terrier", "Terrier", "Small"),
+            "terrier": BreedInfo("Terrier", "Terrier", "Medium"),  # Generic terrier
+            "terrier (patterdale)": BreedInfo("Patterdale Terrier", "Terrier", "Small"),
+            "patterdale terrier": BreedInfo("Patterdale Terrier", "Terrier", "Small"),
+            "terrier (lakeland)": BreedInfo("Lakeland Terrier", "Terrier", "Small"),
+            "lakeland terrier": BreedInfo("Lakeland Terrier", "Terrier", "Small"),
+            "terrier (fox wire)": BreedInfo("Wire Fox Terrier", "Terrier", "Small"),
+            "wire fox terrier": BreedInfo("Wire Fox Terrier", "Terrier", "Small"),
+            "terrier (soft coated wheaten)": BreedInfo("Soft Coated Wheaten Terrier", "Terrier", "Medium"),
+            "soft coated wheaten terrier": BreedInfo("Soft Coated Wheaten Terrier", "Terrier", "Medium"),
+            "terrier (miniature bull)": BreedInfo("Miniature Bull Terrier", "Terrier", "Small"),
+            "miniature bull terrier": BreedInfo("Miniature Bull Terrier", "Terrier", "Small"),
+            "terrier (bedlington)": BreedInfo("Bedlington Terrier", "Terrier", "Small"),
+            "bedlington terrier": BreedInfo("Bedlington Terrier", "Terrier", "Small"),
+            "terrier (parson russell)": BreedInfo("Parson Russell Terrier", "Terrier", "Small"),
+            "parson russell terrier": BreedInfo("Parson Russell Terrier", "Terrier", "Small"),
+            "terrier (border)": BreedInfo("Border Terrier", "Terrier", "Small"),
+            "border terrier": BreedInfo("Border Terrier", "Terrier", "Small"),
+            "deutscher jagdterrier": BreedInfo("German Hunting Terrier", "Terrier", "Small"),
+            "german hunting terrier": BreedInfo("German Hunting Terrier", "Terrier", "Small"),
+            "bodeguero andaluz": BreedInfo("Bodeguero Andaluz", "Terrier", "Small"),  # Spanish terrier
+            "miniature schnauzer": BreedInfo("Miniature Schnauzer", "Terrier", "Small"),
+            "schnauzer (miniature)": BreedInfo("Miniature Schnauzer", "Terrier", "Small"),
             # Sporting Group
             "labrador retriever": BreedInfo("Labrador Retriever", "Sporting", "Large"),
             "golden retriever": BreedInfo("Golden Retriever", "Sporting", "Large"),
@@ -92,19 +126,30 @@ class UnifiedStandardizer:
             "siberian husky": BreedInfo("Siberian Husky", "Working", "Large"),
             "alaskan malamute": BreedInfo("Alaskan Malamute", "Working", "Large"),
             "rottweiler": BreedInfo("Rottweiler", "Working", "Large"),
+            "rottweiller": BreedInfo("Rottweiler", "Working", "Large"),  # Common misspelling
             "doberman pinscher": BreedInfo("Doberman Pinscher", "Working", "Large"),
             "great dane": BreedInfo("Great Dane", "Working", "XLarge"),
             "bernese mountain dog": BreedInfo("Bernese Mountain Dog", "Working", "Large"),
             "boxer": BreedInfo("Boxer", "Working", "Large"),
             "cane corso": BreedInfo("Cane Corso", "Working", "Large"),  # Italian breed
+            "italian corso dog": BreedInfo("Cane Corso", "Working", "Large"),  # Alias for Cane Corso
+            "samoyed": BreedInfo("Samoyed", "Working", "Large"),
+            "dogue de bordeaux": BreedInfo("Dogue de Bordeaux", "Working", "XLarge"),
+            "saint bernard": BreedInfo("Saint Bernard", "Working", "XLarge"),
+            "st bernard": BreedInfo("Saint Bernard", "Working", "XLarge"),
+            "czechoslovakian wolfdog": BreedInfo("Czechoslovakian Wolfdog", "Working", "Large"),
+            "tschechoslowakischer wolfshund": BreedInfo("Czechoslovakian Wolfdog", "Working", "Large"),  # German name
             # Herding Group
             "german shepherd": BreedInfo("German Shepherd Dog", "Herding", "Large"),
             "german shepherd dog": BreedInfo("German Shepherd Dog", "Herding", "Large"),
             "border collie": BreedInfo("Border Collie", "Herding", "Medium"),
             "australian shepherd": BreedInfo("Australian Shepherd", "Herding", "Large"),
             "belgian malinois": BreedInfo("Belgian Malinois", "Herding", "Large"),
+            "malinois": BreedInfo("Belgian Malinois", "Herding", "Large"),
             "collie": BreedInfo("Collie", "Herding", "Large"),
             "corgi": BreedInfo("Corgi", "Herding", "Small"),
+            "finnish lapphund": BreedInfo("Finnish Lapphund", "Herding", "Medium"),
+            "australian kelpie": BreedInfo("Australian Kelpie", "Herding", "Medium"),
             # Toy Group
             "chihuahua": BreedInfo("Chihuahua", "Toy", "Tiny"),
             "pomeranian": BreedInfo("Pomeranian", "Toy", "Tiny"),
@@ -112,12 +157,21 @@ class UnifiedStandardizer:
             "maltese": BreedInfo("Maltese", "Toy", "Tiny"),
             "pug": BreedInfo("Pug", "Toy", "Small"),
             "papillon": BreedInfo("Papillon", "Toy", "Small"),
+            "bolognese": BreedInfo("Bolognese", "Toy", "Small"),
+            "miniature pinscher": BreedInfo("Miniature Pinscher", "Toy", "Small"),
+            "pinscher (miniature)": BreedInfo("Miniature Pinscher", "Toy", "Small"),
             # Non-Sporting Group
             "poodle": BreedInfo("Poodle", "Non-Sporting", "Medium"),
             "bulldog": BreedInfo("Bulldog", "Non-Sporting", "Medium"),
             "french bulldog": BreedInfo("French Bulldog", "Non-Sporting", "Small"),
             "dalmatian": BreedInfo("Dalmatian", "Non-Sporting", "Large"),
             "bichon frise": BreedInfo("Bichon Frise", "Non-Sporting", "Small"),
+            "shar pei": BreedInfo("Shar Pei", "Non-Sporting", "Medium"),
+            "spitz": BreedInfo("Spitz", "Non-Sporting", "Medium"),
+            "american bully": BreedInfo("American Bully", "Non-Sporting", "Medium"),
+            "american bully pocket": BreedInfo("American Bully", "Non-Sporting", "Medium"),
+            "boston terrier": BreedInfo("Boston Terrier", "Non-Sporting", "Small"),  # Boston Terrier is Non-Sporting, not Terrier group!
+            "terrier (boston)": BreedInfo("Boston Terrier", "Non-Sporting", "Small"),
             # Additional breeds for European scrapers
             "spanish mastiff": BreedInfo("Spanish Mastiff", "Working", "XLarge"),
             "mastiff": BreedInfo("Mastiff", "Working", "XLarge"),
@@ -127,11 +181,14 @@ class UnifiedStandardizer:
             "galgo": BreedInfo("Galgo", "Hound", "Large"),
             "galgo español": BreedInfo("Galgo Español", "Hound", "Large"),
             "livestock guardian dog": BreedInfo("Livestock Guardian Dog", "Working", "Large"),
-            # Turkish breeds
+            # Guardian breeds
             "kangal": BreedInfo("Kangal", "Guardian", "XLarge"),
+            "turkish kangal dog": BreedInfo("Kangal", "Guardian", "XLarge"),
             "anatolian shepherd": BreedInfo("Anatolian Shepherd", "Guardian", "XLarge"),
             "anatolian shepherd dog": BreedInfo("Anatolian Shepherd", "Guardian", "XLarge"),
             "akbash": BreedInfo("Akbash", "Guardian", "XLarge"),
+            "maremma sheepdog": BreedInfo("Maremma Sheepdog", "Guardian", "Large"),
+            "brindle maremma hound": BreedInfo("Maremma Sheepdog", "Guardian", "Large"),  # Maremma is actually a guardian breed
         }
 
         return breed_data
@@ -139,8 +196,9 @@ class UnifiedStandardizer:
     def _initialize_designer_breeds(self) -> Dict[str, Dict[str, str]]:
         """Initialize designer breed mappings with parent breeds."""
         return {
-            "cockapoo": {"name": "Cockapoo", "primary": "Cocker Spaniel", "secondary": "Poodle", "group": "Non-Sporting", "size": "Small"},  # Takes from Poodle
-            "labradoodle": {"name": "Labradoodle", "primary": "Labrador Retriever", "secondary": "Poodle", "group": "Designer/Hybrid", "size": "Large"},  # Designer breed
+            "cockapoo": {"name": "Cockapoo", "primary": "Cocker Spaniel", "secondary": "Poodle", "group": "Designer/Hybrid", "size": "Small"},
+            "cockerpoo": {"name": "Cockapoo", "primary": "Cocker Spaniel", "secondary": "Poodle", "group": "Designer/Hybrid", "size": "Small"},  # Variant spelling
+            "labradoodle": {"name": "Labradoodle", "primary": "Labrador Retriever", "secondary": "Poodle", "group": "Designer/Hybrid", "size": "Large"},
             "puggle": {"name": "Puggle", "primary": "Pug", "secondary": "Beagle", "group": "Hound", "size": "Small"},  # Takes from Beagle
             "schnoodle": {"name": "Schnoodle", "primary": "Schnauzer", "secondary": "Poodle", "group": "Non-Sporting", "size": "Medium"},
             "yorkipoo": {"name": "Yorkipoo", "primary": "Yorkshire Terrier", "secondary": "Poodle", "group": "Toy", "size": "Tiny"},
@@ -148,6 +206,7 @@ class UnifiedStandardizer:
             "goldendoodle": {"name": "Goldendoodle", "primary": "Golden Retriever", "secondary": "Poodle", "group": "Sporting", "size": "Large"},
             "cavapoo": {"name": "Cavapoo", "primary": "Cavalier King Charles Spaniel", "secondary": "Poodle", "group": "Toy", "size": "Small"},
             "cavachon": {"name": "Cavachon", "primary": "Cavalier King Charles Spaniel", "secondary": "Bichon Frise", "group": "Designer", "size": "Small"},
+            "pomsky": {"name": "Pomsky", "primary": "Pomeranian", "secondary": "Siberian Husky", "group": "Designer/Hybrid", "size": "Small"},
         }
 
     def _initialize_staffordshire_variations(self) -> List[str]:
@@ -216,6 +275,8 @@ class UnifiedStandardizer:
             # Breed fields
             "breed": breed_result.get("name", "Unknown"),
             "breed_category": breed_result.get("group", "Unknown"),
+            "breed_type": breed_result.get("breed_type", "purebred"),  # Add breed_type field
+            "breed_confidence": breed_result.get("confidence", 0.0),  # Add breed_confidence field
             "primary_breed": breed_result.get("primary_breed", breed_result.get("name", "Unknown")),
             "secondary_breed": breed_result.get("secondary_breed"),
             "standardization_confidence": breed_result.get("confidence", 0.0),
@@ -369,7 +430,7 @@ class UnifiedStandardizer:
                     "group": designer_info["group"],
                     "size": designer_info["size"],
                     "confidence": 0.85,
-                    "breed_type": "designer",
+                    "breed_type": "crossbreed",  # Designer breeds are crossbreeds
                     "primary_breed": designer_info["primary"],
                     "secondary_breed": designer_info["secondary"],
                     "is_mixed": True,
