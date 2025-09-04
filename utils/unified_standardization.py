@@ -706,6 +706,10 @@ class UnifiedStandardizer:
         """
         if not breed:
             return None
+        
+        # Ensure breed is a string
+        if not isinstance(breed, str):
+            return None
 
         # Try to find the breed in our mapping
         clean_breed = breed.lower()

@@ -119,8 +119,9 @@ class TestStandardizationBackfillService:
         assert "UPDATE animals" in query
         assert "SET" in query
         assert "standardized_breed" in query
-        assert "breed_category" in query
+        # Field was renamed from breed_category to breed_group
         assert "breed_group" in query
+        assert "age_category" in query
 
     def test_fix_lurchers_processing(self, service, mock_connection):
         """Test fix_lurchers processes all Lurcher breeds correctly."""
