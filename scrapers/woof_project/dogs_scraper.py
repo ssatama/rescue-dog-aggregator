@@ -788,7 +788,7 @@ class WoofProjectScraper(BaseScraper):
                 "primary_image_url": primary_image_url,
                 "description": description or "Rescue dog from Woof Project available for adoption",
                 "breed": breed or "Mixed Breed",
-                "age": age or "Unknown age",  # Changed from age_text to age for standardization
+                "age": age or "Unknown age",  # Using age for standardizer
                 "size": size or "Medium",
                 "sex": sex or "Unknown",
                 "animal_type": "dog",
@@ -816,9 +816,10 @@ class WoofProjectScraper(BaseScraper):
 
             result["properties"] = properties
 
-            self.logger.debug(f"Extracted data for {result['name']}: breed={result['breed']}, " f"age={result['age']}, size={result['size']}")
+            self.logger.debug(f"Extracted data for {result['name']}: breed={result['breed']}, " f"age={result.get('age', 'Unknown')}, size={result['size']}")
 
-            return result
+            # Apply unified standardization
+            return self.process_animal(result)
 
         except Exception as e:
             self.logger.error(f"Error scraping detail page {url}: {e}")

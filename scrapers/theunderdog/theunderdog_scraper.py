@@ -297,9 +297,16 @@ class TheUnderdogScraper(BaseScraper):
 
             # Extract age from Q&A data if available
             if qa_data.get("How old?"):
-                age_text = extract_age_from_text(qa_data["How old?"])
-                if age_text:
-                    result["age"] = age_text
+                # Keep the original text for age_text field
+                result["age"] = qa_data["How old?"]
+
+            # Extract sex from Q&A data if available
+            if qa_data.get("Male or female?"):
+                sex_value = qa_data["Male or female?"].strip().lower()
+                if sex_value in ["male", "m"]:
+                    result["sex"] = "Male"
+                elif sex_value in ["female", "f"]:
+                    result["sex"] = "Female"
 
             # Ensure ALL critical fields are present for BaseScraper
             # BaseScraper will handle standardization automatically
@@ -754,7 +761,7 @@ class TheUnderdogScraper(BaseScraper):
             description: Dog description text
 
         Returns:
-            Sex (M/F) or None if not found
+            Sex ("Male"/"Female") or None if not found
         """
         if not description:
             return None
@@ -773,12 +780,12 @@ class TheUnderdogScraper(BaseScraper):
         # Check for female patterns
         for pattern in female_patterns:
             if re.search(pattern, desc_lower):
-                return "F"
+                return "Female"
 
         # Check for male patterns
         for pattern in male_patterns:
             if re.search(pattern, desc_lower):
-                return "M"
+                return "Male"
 
         return None
 

@@ -274,6 +274,7 @@ class UnifiedStandardizer:
         result = {
             # Breed fields
             "breed": breed_result.get("name", "Unknown"),
+            "standardized_breed": breed_result.get("name", "Unknown"),  # Add standardized_breed for tests
             "breed_category": breed_result.get("group", "Unknown"),
             "breed_type": breed_result.get("breed_type", "purebred"),  # Add breed_type field
             "breed_confidence": breed_result.get("confidence", 0.0),  # Add breed_confidence field
