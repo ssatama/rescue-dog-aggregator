@@ -23,7 +23,7 @@ from api.middleware.cache_headers import CacheHeadersMiddleware
 
 
 @pytest.fixture
-def app():
+def test_app():
     """Create a test FastAPI app with cache headers middleware."""
     app = FastAPI()
     app.add_middleware(CacheHeadersMiddleware)
@@ -65,31 +65,31 @@ def app():
 
 
 @pytest.fixture
-def client(app):
+def test_client(test_app):
     """Create a test client."""
-    return TestClient(app)
+    return TestClient(test_app)
 
 
 class TestCacheHeadersBasic:
     """Test basic cache header functionality."""
 
-    def test_health_endpoint_no_cache(self, client):
+    def test_health_endpoint_no_cache(self, test_client):
         """Health endpoints should not be cached."""
-        response = client.get("/health")
+        response = test_client.get("/health")
         assert response.status_code == 200
         assert response.headers.get("Cache-Control") == "no-cache, no-store, must-revalidate"
         assert response.headers.get("Pragma") == "no-cache"
         assert response.headers.get("Expires") == "0"
 
-    def test_monitoring_endpoint_no_cache(self, client):
+    def test_monitoring_endpoint_no_cache(self, test_client):
         """Monitoring endpoints should not be cached."""
-        response = client.get("/monitoring/scrapers")
+        response = test_client.get("/monitoring/scrapers")
         assert response.status_code == 200
         assert response.headers.get("Cache-Control") == "no-cache, no-store, must-revalidate"
 
-    def test_response_time_header(self, client):
+    def test_response_time_header(self, test_client):
         """All responses should include X-Response-Time header."""
-        response = client.get("/api/animals")
+        response = test_client.get("/api/animals")
         assert response.status_code == 200
         assert "X-Response-Time" in response.headers
         # Should be a float formatted as string
@@ -99,9 +99,9 @@ class TestCacheHeadersBasic:
 class TestAnimalEndpointCaching:
     """Test caching for animal endpoints."""
 
-    def test_recent_animals_cache(self, client):
+    def test_recent_animals_cache(self, test_client):
         """Recent animals should have 5 minute cache."""
-        response = client.get("/api/animals?curation=recent")
+        response = test_client.get("/api/animals?curation=recent")
         assert response.status_code == 200
 
         cache_control = response.headers.get("Cache-Control")
@@ -109,9 +109,9 @@ class TestAnimalEndpointCaching:
         assert "max-age=300" in cache_control  # 5 minutes
         assert "stale-while-revalidate=60" in cache_control  # 1 minute SWR
 
-    def test_diverse_animals_cache(self, client):
+    def test_diverse_animals_cache(self, test_client):
         """Diverse animals should have 1 hour cache."""
-        response = client.get("/api/animals?curation=diverse")
+        response = test_client.get("/api/animals?curation=diverse")
         assert response.status_code == 200
 
         cache_control = response.headers.get("Cache-Control")
@@ -119,9 +119,9 @@ class TestAnimalEndpointCaching:
         assert "max-age=3600" in cache_control  # 1 hour
         assert "stale-while-revalidate=300" in cache_control  # 5 minutes SWR
 
-    def test_default_animals_cache(self, client):
+    def test_default_animals_cache(self, test_client):
         """Default animal listing should have 15 minute cache."""
-        response = client.get("/api/animals")
+        response = test_client.get("/api/animals")
         assert response.status_code == 200
 
         cache_control = response.headers.get("Cache-Control")
@@ -129,9 +129,9 @@ class TestAnimalEndpointCaching:
         assert "max-age=900" in cache_control  # 15 minutes
         assert "stale-while-revalidate=120" in cache_control  # 2 minutes SWR
 
-    def test_individual_animal_cache(self, client):
+    def test_individual_animal_cache(self, test_client):
         """Individual animal details should have 30 minute cache."""
-        response = client.get("/api/animals/test-dog-123")
+        response = test_client.get("/api/animals/test-dog-123")
         assert response.status_code == 200
 
         cache_control = response.headers.get("Cache-Control")
@@ -139,9 +139,9 @@ class TestAnimalEndpointCaching:
         assert "max-age=1800" in cache_control  # 30 minutes
         assert "stale-while-revalidate=300" in cache_control  # 5 minutes SWR
 
-    def test_enhanced_animals_recent_cache(self, client):
+    def test_enhanced_animals_recent_cache(self, test_client):
         """Enhanced animals with recent curation should have 5 minute cache."""
-        response = client.get("/api/animals/enhanced?curation=recent")
+        response = test_client.get("/api/animals/enhanced?curation=recent")
         assert response.status_code == 200
 
         cache_control = response.headers.get("Cache-Control")
@@ -149,9 +149,9 @@ class TestAnimalEndpointCaching:
         assert "max-age=300" in cache_control  # 5 minutes
         assert "stale-while-revalidate=60" in cache_control  # 1 minute SWR
 
-    def test_enhanced_animals_diverse_cache(self, client):
+    def test_enhanced_animals_diverse_cache(self, test_client):
         """Enhanced animals with diverse curation should have 1 hour cache."""
-        response = client.get("/api/animals/enhanced?curation=diverse")
+        response = test_client.get("/api/animals/enhanced?curation=diverse")
         assert response.status_code == 200
 
         cache_control = response.headers.get("Cache-Control")
@@ -163,9 +163,9 @@ class TestAnimalEndpointCaching:
 class TestMetaEndpointCaching:
     """Test caching for meta endpoints."""
 
-    def test_meta_breeds_cache(self, client):
+    def test_meta_breeds_cache(self, test_client):
         """Meta endpoints should have 24 hour cache."""
-        response = client.get("/api/animals/meta/breeds")
+        response = test_client.get("/api/animals/meta/breeds")
         assert response.status_code == 200
 
         cache_control = response.headers.get("Cache-Control")
@@ -177,9 +177,9 @@ class TestMetaEndpointCaching:
 class TestStatisticsEndpointCaching:
     """Test caching for statistics endpoints."""
 
-    def test_statistics_cache(self, client):
+    def test_statistics_cache(self, test_client):
         """Statistics should have 1 hour cache."""
-        response = client.get("/api/statistics")
+        response = test_client.get("/api/statistics")
         assert response.status_code == 200
 
         cache_control = response.headers.get("Cache-Control")
@@ -191,9 +191,9 @@ class TestStatisticsEndpointCaching:
 class TestOrganizationEndpointCaching:
     """Test caching for organization endpoints."""
 
-    def test_organizations_cache(self, client):
+    def test_organizations_cache(self, test_client):
         """Organizations should have 1 hour cache."""
-        response = client.get("/api/organizations")
+        response = test_client.get("/api/organizations")
         assert response.status_code == 200
 
         cache_control = response.headers.get("Cache-Control")
@@ -205,9 +205,9 @@ class TestOrganizationEndpointCaching:
 class TestCDNHeaders:
     """Test CDN-specific cache headers."""
 
-    def test_cdn_cache_control_header(self, client):
+    def test_cdn_cache_control_header(self, test_client):
         """CDN-Cache-Control header should be present for cacheable content."""
-        response = client.get("/api/animals?curation=diverse")
+        response = test_client.get("/api/animals?curation=diverse")
         assert response.status_code == 200
 
         cdn_cache = response.headers.get("CDN-Cache-Control")
@@ -220,9 +220,9 @@ class TestCDNHeaders:
 class TestVaryHeaders:
     """Test Vary headers for cache key generation."""
 
-    def test_basic_vary_headers(self, client):
+    def test_basic_vary_headers(self, test_client):
         """Basic endpoints should vary on Accept and Accept-Encoding."""
-        response = client.get("/api/statistics")
+        response = test_client.get("/api/statistics")
         assert response.status_code == 200
 
         vary = response.headers.get("Vary")
@@ -230,9 +230,9 @@ class TestVaryHeaders:
         assert "Accept" in vary
         assert "Accept-Encoding" in vary
 
-    def test_animals_vary_headers(self, client):
+    def test_animals_vary_headers(self, test_client):
         """Animal endpoints should include Origin for CORS."""
-        response = client.get("/api/animals")
+        response = test_client.get("/api/animals")
         assert response.status_code == 200
 
         vary = response.headers.get("Vary")
@@ -241,9 +241,9 @@ class TestVaryHeaders:
         assert "Accept-Encoding" in vary
         assert "Origin" in vary
 
-    def test_location_based_vary_headers(self, client):
+    def test_location_based_vary_headers(self, test_client):
         """Location-based queries should vary on X-Forwarded-For."""
-        response = client.get("/api/animals?city=Seattle")
+        response = test_client.get("/api/animals?city=Seattle")
         assert response.status_code == 200
 
         vary = response.headers.get("Vary")
@@ -254,9 +254,9 @@ class TestVaryHeaders:
 class TestETagSupport:
     """Test ETag generation and conditional requests."""
 
-    def test_etag_generation(self, client):
+    def test_etag_generation(self, test_client):
         """ETags should be generated for cacheable responses when possible."""
-        response = client.get("/api/animals/meta/breeds")
+        response = test_client.get("/api/animals/meta/breeds")
         assert response.status_code == 200
 
         etag = response.headers.get("ETag")
@@ -266,10 +266,10 @@ class TestETagSupport:
             assert etag.startswith('W/"')  # Weak ETag
             assert etag.endswith('"')
 
-    def test_conditional_request_not_modified(self, client):
+    def test_conditional_request_not_modified(self, test_client):
         """Conditional requests with matching ETag should return 304 if ETags are supported."""
         # First request to get ETag
-        response1 = client.get("/api/animals/meta/breeds")
+        response1 = test_client.get("/api/animals/meta/breeds")
         assert response1.status_code == 200
         etag = response1.headers.get("ETag")
 
@@ -281,9 +281,9 @@ class TestETagSupport:
         response2 = client.get("/api/animals/meta/breeds", headers={"If-None-Match": etag})
         assert response2.status_code == 304  # Not Modified
 
-    def test_conditional_request_modified(self, client):
+    def test_conditional_request_modified(self, test_client):
         """Conditional requests with non-matching ETag should return full response."""
-        response = client.get("/api/animals/meta/breeds", headers={"If-None-Match": 'W/"different-etag"'})
+        response = test_client.get("/api/animals/meta/breeds", headers={"If-None-Match": 'W/"different-etag"'})
         assert response.status_code == 200
         assert response.json() == ["Labrador", "Poodle", "Beagle"]
 
@@ -291,15 +291,15 @@ class TestETagSupport:
 class TestErrorResponses:
     """Test caching behavior for error responses."""
 
-    def test_error_response_short_cache(self, client):
+    def test_error_response_short_cache(self, test_client):
         """Error responses should have short cache to prevent hammering."""
 
         # Create an endpoint that returns an error
-        @client.app.get("/api/error")
+        @test_client.app.get("/api/error")
         async def error_endpoint():
             return Response(status_code=500, content="Internal Server Error")
 
-        response = client.get("/api/error")
+        response = test_client.get("/api/error")
         assert response.status_code == 500
 
         cache_control = response.headers.get("Cache-Control")
@@ -309,14 +309,14 @@ class TestErrorResponses:
 class TestNonGetRequests:
     """Test that non-GET requests are not cached."""
 
-    def test_post_request_no_cache(self, client):
+    def test_post_request_no_cache(self, test_client):
         """POST requests should not have cache headers."""
 
-        @client.app.post("/api/test")
+        @test_client.app.post("/api/test")
         async def post_endpoint():
             return {"result": "created"}
 
-        response = client.post("/api/test", json={})
+        response = test_client.post("/api/test", json={})
         assert response.status_code == 200
 
         # Should not have cache headers

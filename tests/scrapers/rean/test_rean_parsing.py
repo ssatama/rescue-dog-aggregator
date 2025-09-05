@@ -317,7 +317,7 @@ class TestREANParsing:
         assert standardized["name"] == "Lucky"
         assert standardized["animal_type"] == "dog"
         assert standardized["age_min_months"] == 7
-        assert standardized["age_max_months"] == 7
+        assert standardized["age_max_months"] == 9  # Unified standardization expands range to 7-9 months
         assert standardized["size"] == "Small"
         assert standardized["language"] == "en"
         assert "external_id" in standardized

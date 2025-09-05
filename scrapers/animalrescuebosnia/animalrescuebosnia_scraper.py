@@ -266,7 +266,6 @@ class AnimalRescueBosniaScraper(BaseScraper):
                 "age_text": self._calculate_age_text(properties.get("date_of_birth")),
                 "sex": self._standardize_sex(properties.get("gender")),
                 "size": self._extract_size_from_weight(properties.get("weight")),
-                "standardized_size": self._standardize_size_for_database(self._extract_size_from_weight(properties.get("weight"))),
                 # Properties for additional data storage
                 "properties": {
                     **properties,
@@ -276,7 +275,8 @@ class AnimalRescueBosniaScraper(BaseScraper):
                 },
             }
 
-            return result
+            # Apply unified standardization
+            return self.process_animal(result)
 
         except Exception as e:
             self.logger.error(f"Error scraping animal details from {url}: {e}")
@@ -552,20 +552,3 @@ class AnimalRescueBosniaScraper(BaseScraper):
             return True
 
         return False
-
-    def _standardize_size_for_database(self, size: Optional[str]) -> Optional[str]:
-        """Map size values to standardized_size for database storage.
-
-        Args:
-            size: Size value from scraper (Tiny, Small, Medium, Large, XLarge)
-
-        Returns:
-            Standardized size value for database
-        """
-        if not size:
-            return None
-
-        # Direct mapping - AnimalRescueBosnia uses standard size categories
-        size_mapping = {"Tiny": "Tiny", "Small": "Small", "Medium": "Medium", "Large": "Large", "XLarge": "XLarge"}
-
-        return size_mapping.get(size)

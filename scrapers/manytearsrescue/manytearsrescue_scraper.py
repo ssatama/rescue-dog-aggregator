@@ -13,11 +13,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
 from scrapers.base_scraper import BaseScraper
-from utils.standardization import (
-    get_size_from_breed,
-    normalize_breed_case,
-    standardize_age,
-)
 
 
 class ManyTearsRescueScraper(BaseScraper):
@@ -402,9 +397,9 @@ class ManyTearsRescueScraper(BaseScraper):
             "status": "available",
             # Default values for required fields (will be enriched in detail scraping)
             "breed": "Mixed Breed",
-            "size": "Medium",
+            "size": None,  # Let unified standardization handle defaults
             "age": "Unknown",
-            "gender": "Unknown",
+            "sex": "Unknown",
             "location": "Wales, UK",
             "description": "",
             "requirements": "",
@@ -514,20 +509,20 @@ class ManyTearsRescueScraper(BaseScraper):
             # Zero NULLs compliance - always provide defaults
             result["breed"] = structured_data.get("breed") or "Mixed Breed"
             result["sex"] = structured_data.get("sex") or "Unknown"
-            result["age_text"] = structured_data.get("age_text") or "Unknown"
+            result["age"] = structured_data.get("age") or "Unknown"
+            result["age_text"] = structured_data.get("age_text") or structured_data.get("age") or "Unknown"
 
-            # Apply size standardization with default fallback
-            if structured_data.get("breed"):
-                breed_size = get_size_from_breed(structured_data["breed"])
-                result["size"] = breed_size or "Medium"
-            else:
-                result["size"] = "Medium"
+            # Size will be handled by unified standardization
+            result["size"] = structured_data.get("size")
 
             # Add image_urls for R2 integration
             if hero_image_url:
                 result["image_urls"] = [hero_image_url]
             else:
                 result["image_urls"] = []
+
+            # Apply unified standardization
+            result = self.process_animal(result)
 
             self.logger.debug(f"Successfully extracted details for {name}")
             return result
@@ -654,13 +649,8 @@ class ManyTearsRescueScraper(BaseScraper):
 
                         # Age extraction
                         if ("year" in text_lower or "month" in text_lower or "week" in text_lower) and text_lower not in ["male", "female"]:
-                            structured_data["age_text"] = text
-                            # Apply standardization
-                            age_info = standardize_age(text)
-                            if age_info.get("age_min_months") is not None:
-                                structured_data["age_min_months"] = age_info["age_min_months"]
-                                structured_data["age_max_months"] = age_info["age_max_months"]
-                                structured_data["age_category"] = age_info.get("age_category", "Unknown")
+                            # Store raw age text for unified standardization
+                            structured_data["age"] = text
 
                         # Gender extraction
                         elif text_lower in ["male", "female"]:
@@ -684,8 +674,8 @@ class ManyTearsRescueScraper(BaseScraper):
                             and len(text) < 50
                         ):  # Reasonable breed name length
 
-                            # Apply breed normalization
-                            structured_data["breed"] = normalize_breed_case(text)
+                            # Store raw breed for unified standardization
+                            structured_data["breed"] = text
 
                     break  # Found the main info list, stop looking
 

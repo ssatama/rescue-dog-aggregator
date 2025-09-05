@@ -9,12 +9,6 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
-from utils.standardization import (
-    apply_standardization,
-    normalize_breed_case,
-    parse_age_text,
-    standardize_age,
-)
 
 
 class PetsInTurkeyScraper(BaseScraper):
@@ -140,7 +134,7 @@ class PetsInTurkeyScraper(BaseScraper):
         dog_data = {
             "name": "",
             "breed": "Mixed Breed",
-            "age_text": "Unknown",
+            "age": "Unknown",
             "sex": "Unknown",
             "size": "Medium",
             "status": "available",
@@ -200,7 +194,7 @@ class PetsInTurkeyScraper(BaseScraper):
                     # Breed is first value after Adopt Me
                     breed_text = all_texts[value_start] if value_start < len(all_texts) else ""
                     if breed_text and not breed_text.lower() in ["yes", "no", "male", "female"]:
-                        dog_data["breed"] = normalize_breed_case(breed_text)
+                        dog_data["breed"] = breed_text
 
                     # Weight is next (look for kg pattern)
                     for i in range(value_start + 1, min(value_start + 5, len(all_texts))):
@@ -248,16 +242,7 @@ class PetsInTurkeyScraper(BaseScraper):
                                 else:
                                     age_text = f"{age_value} months"
 
-                                dog_data["age_text"] = age_text.strip()
-
-                                # Parse age for standardization
-                                category, min_months, max_months = parse_age_text(age_text)
-                                if category:
-                                    dog_data["age_text"] = category
-                                    # Also set the min/max months for database
-                                    if min_months is not None:
-                                        dog_data["age_min_months"] = min_months
-                                        dog_data["age_max_months"] = max_months
+                                dog_data["age"] = age_text.strip()
                                 age_found = True
                                 break
 
@@ -300,17 +285,9 @@ class PetsInTurkeyScraper(BaseScraper):
                             birth = datetime.strptime(birth_match.group(1), "%d/%m/%Y")
                             age_months = (datetime.now() - birth).days // 30
                             if age_months < 12:
-                                dog_data["age_text"] = f"{age_months} months"
+                                dog_data["age"] = f"{age_months} months"
                             else:
-                                dog_data["age_text"] = f"{age_months // 12} years"
-
-                            category, min_months, max_months = parse_age_text(dog_data["age_text"])
-                            if category:
-                                dog_data["age_text"] = category
-                                # Also set the min/max months for database
-                                if min_months is not None:
-                                    dog_data["age_min_months"] = min_months
-                                    dog_data["age_max_months"] = max_months
+                                dog_data["age"] = f"{age_months // 12} years"
                         except:
                             pass
                     break
@@ -391,16 +368,37 @@ class PetsInTurkeyScraper(BaseScraper):
         Returns:
             Standardized dog data
         """
-        # Apply general standardization
-        standardized = apply_standardization(dog_data)
+        # Make a copy to avoid modifying original
+        data = dog_data.copy()
+
+        # Trim the name field before processing
+        if data.get("name"):
+            data["name"] = data["name"].strip()
+
+        # Use unified standardization through base scraper
+        standardized = self.process_animal(data)
 
         # Ensure required fields have defaults
-        standardized["name"] = standardized.get("name") or "Unknown"
-        standardized["breed"] = standardized.get("breed") or "Mixed Breed"
-        standardized["size"] = standardized.get("size") or "Medium"
-        standardized["sex"] = standardized.get("sex") or "Unknown"
-        standardized["age_text"] = standardized.get("age_text") or "Unknown"
-        standardized["status"] = "available"
-        standardized["animal_type"] = "dog"
+        standardized["name"] = (standardized.get("name") or "Unknown").strip()
+
+        # Handle breed standardization properly
+        if self.use_unified_standardization and "breed" in standardized:
+            # breed is already handled by process_animal
+            pass
+        else:
+            standardized["breed"] = standardized.get("breed") or "Mixed Breed"
+        standardized.setdefault("standardized_size", standardized.get("size") or "Medium")
+        standardized.setdefault("gender", standardized.get("sex", "Unknown").lower() if standardized.get("sex") else "unknown")
+        # Don't override age_text if it was processed from age data
+        if not standardized.get("age_text") and standardized.get("age"):
+            standardized["age_text"] = standardized["age"]
+        standardized.setdefault("age_text", "Unknown")
+        standardized.setdefault("status", "available")
+        standardized.setdefault("animal_type", "dog")
+
+        # Handle neutered/spayed field standardization
+        neutered_value = dog_data.get("properties", {}).get("neutered_spayed", "")
+        if neutered_value:
+            standardized.setdefault("neutered", neutered_value.lower() == "yes")
 
         return standardized

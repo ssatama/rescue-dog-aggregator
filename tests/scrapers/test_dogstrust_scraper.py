@@ -10,8 +10,10 @@ from unittest.mock import Mock, patch
 import pytest
 import requests
 
+from scrapers.base_scraper import BaseScraper
 from scrapers.dogstrust.dogstrust_scraper import DogsTrustScraper
 from tests.scrapers.test_scraper_base import ScraperTestBase
+from utils.unified_standardization import UnifiedStandardizer
 
 
 @pytest.mark.slow
@@ -62,3 +64,78 @@ class TestDogsTrustScraper(ScraperTestBase):
         # Verify attempts to find filter elements were made
         assert mock_driver.find_element.called
         assert isinstance(result, list)
+
+
+class TestDogsTrustUnifiedStandardization:
+    """Test DogsTrust scraper unified standardization integration."""
+
+    def test_dogstrust_inherits_from_base_scraper(self):
+        """Test that DogsTrust scraper inherits from BaseScraper."""
+        scraper = DogsTrustScraper()
+        assert isinstance(scraper, BaseScraper)
+        assert hasattr(scraper, "standardizer")
+        assert isinstance(scraper.standardizer, UnifiedStandardizer)
+
+    def test_dogstrust_uses_unified_standardization_when_enabled(self):
+        """Test that DogsTrust uses unified standardization when feature flag is enabled."""
+        scraper = DogsTrustScraper()
+
+        # Mock feature flag enabled
+        with patch("utils.feature_flags.is_scraper_standardization_enabled", return_value=True):
+            raw_animal_data = {"name": "Buddy", "breed": "german shepherd", "age": "3 years old", "size": "large", "gender": "Male"}
+
+            processed = scraper.process_animal(raw_animal_data)
+
+            # Verify unified standardization was applied
+            assert processed["breed"] == "German Shepherd Dog"  # Standardized breed
+            assert processed["breed_category"] == "Herding"  # Group assignment
+            assert processed["standardized_size"] == "Large"  # Size standardization
+            assert processed["primary_breed"] == "German Shepherd Dog"  # Primary breed
+            assert processed["standardization_confidence"] > 0.8  # Confidence score
+
+    def test_dogstrust_bypasses_unified_when_disabled(self):
+        """Test that DogsTrust bypasses unified standardization when feature flag is disabled."""
+        scraper = DogsTrustScraper()
+
+        # Disable unified standardization
+        scraper.use_unified_standardization = False
+
+        raw_animal_data = {"name": "Buddy", "breed": "german shepherd", "age": "3 years old", "size": "large"}
+
+        processed = scraper.process_animal(raw_animal_data)
+
+        # Should return original data when flag disabled
+        assert processed == raw_animal_data
+
+    def test_dogstrust_removes_optimized_standardization_imports(self):
+        """Test that DogsTrust no longer imports from optimized_standardization after migration."""
+        import inspect
+
+        import scrapers.dogstrust.dogstrust_scraper as dogstrust_module
+
+        # Get the source code
+        source = inspect.getsource(dogstrust_module)
+
+        # Should NOT contain optimized_standardization imports after migration
+        assert "from utils.optimized_standardization" not in source
+        assert "parse_age_text" not in source or "import" not in source
+        assert "standardize_breed" not in source or "import" not in source
+        assert "standardize_size_value" not in source or "import" not in source
+
+    def test_dogstrust_handles_missing_breed_gracefully(self):
+        """Test that DogsTrust handles missing breed data gracefully."""
+        scraper = DogsTrustScraper()
+
+        with patch("utils.feature_flags.is_scraper_standardization_enabled", return_value=True):
+            raw_animal_data = {
+                "name": "Buddy",
+                # Missing breed field
+                "age": "2 years",
+                "size": "medium",
+            }
+
+            processed = scraper.process_animal(raw_animal_data)
+
+            # Should handle missing breed gracefully
+            assert "breed" in processed
+            assert processed["breed_category"] == "Unknown"

@@ -44,23 +44,25 @@ def initialize_database_pool(request):
     This fixture runs automatically at the start of the test session and ensures
     the database pool is initialized before any tests that might use the new
     secure database modules.
-    
+
     For unit/fast tests, skip database initialization since they should not access database.
     """
     # Check if we're running only unit/fast tests that don't need database
     print(f"\n[conftest] DEBUG: request.config exists: {hasattr(request.config, 'getoption')}")
-    if hasattr(request.config, 'getoption'):
-        markexpr = request.config.getoption('-m', None)
+    if hasattr(request.config, "getoption"):
+        markexpr = request.config.getoption("-m", None)
         print(f"[conftest] DEBUG: markexpr = {markexpr}")
-        if markexpr and ('unit or fast' in markexpr or 'unit and fast' in markexpr):
+        if markexpr and ("unit or fast" in markexpr or "unit and fast" in markexpr):
             print("\n[conftest] Skipping database pool initialization for unit/fast tests.")
+            yield  # Must yield for fixture to work
             return
-    
+
     # Check environment variable that indicates unit-only test run
-    if os.environ.get('PYTEST_UNIT_ONLY') == 'true':
+    if os.environ.get("PYTEST_UNIT_ONLY") == "true":
         print("\n[conftest] Skipping database pool initialization for unit-only test run.")
+        yield  # Must yield for fixture to work
         return
-    
+
     print("\n[conftest] Initializing database connection pool for test session...")
 
     # Initialize the new api.database connection pool
@@ -86,14 +88,14 @@ def initialize_database_pool(request):
     try:
         initialize_pool(max_retries=3)
         print("[conftest] API database connection pool initialized successfully.")
-        
+
         # Also initialize the utils.db_connection pool for backward compatibility
         test_db_config = DatabaseConfig(host=TEST_DB_HOST, user=TEST_DB_USER, database=TEST_DB_NAME, password=TEST_DB_PASSWORD, port=5432)
         from utils.db_connection import initialize_database_pool as init_utils_pool
 
         utils_pool = init_utils_pool(test_db_config)
         print("[conftest] Utils database connection pool initialized successfully.")
-        
+
     except Exception as e:
         print(f"[conftest] Warning: Could not initialize database pools: {e}")
         print("[conftest] This is expected for unit/fast tests that don't need database access.")
@@ -236,8 +238,14 @@ def _clear_test_tables_robust(cursor, conn, max_retries=3):
 # --- Test Data Management Fixture ---
 # MODIFIED: Now uses the override_get_db_cursor logic directly
 @pytest.fixture(scope="function", autouse=True)
-def manage_test_data():
+def manage_test_data(request):
     """Fixture to clear tables and insert test data using the override connection logic."""
+    # Skip database setup for unit tests that don't need it
+    if request.node.get_closest_marker("unit") or request.node.get_closest_marker("fast"):
+        # Unit tests don't need database setup
+        yield
+        return
+
     print("[conftest manage_test_data] Setting up data for test function...")
     # Get a cursor using the same logic as the dependency override
     # We need to manually iterate the generator returned by

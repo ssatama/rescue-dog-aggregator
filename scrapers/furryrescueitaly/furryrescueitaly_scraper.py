@@ -9,7 +9,8 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
-from utils.standardization import normalize_breed_case, parse_age_text, standardize_age
+
+# Using unified standardization through base_scraper.process_animal()
 
 
 class FurryRescueItalyScraper(BaseScraper):
@@ -869,77 +870,80 @@ class FurryRescueItalyScraper(BaseScraper):
                 if new_desc not in existing_desc:
                     animal["properties"]["description"] = existing_desc + "\n\n" + new_desc
 
-        # Apply standardization to certain fields
-        self._standardize_animal_data(animal)
-
-        # CRITICAL: Extract key fields from properties to top-level database columns
-        # Following Santerpaws pattern - data goes to BOTH properties AND top-level fields
+        # Prepare data for unified standardization
+        # Extract key fields to match expected format
         props = animal["properties"]
 
-        # Breed - normalized and at top level
+        # Set breed at top level for standardization
         if "breed" in props:
             animal["breed"] = props["breed"]
         else:
             animal["breed"] = "Mixed Breed"
 
-        # Sex - at top level
+        # Set sex at top level
         if "sex" in props:
-            animal["sex"] = props["sex"]
+            sex_value = props["sex"].lower()
+            if "female" in sex_value or sex_value == "f":
+                animal["sex"] = "Female"
+            elif "male" in sex_value or sex_value == "m":
+                animal["sex"] = "Male"
+            else:
+                animal["sex"] = props["sex"]
 
-        # Size - standardized for database, raw in properties
-        if "size_category" in props:
-            # Database size column should have standardized value
-            animal["size"] = props["size_category"]
-            animal["standardized_size"] = props["size_category"]
-        elif "size" in props:
-            # Fallback if no category - try to extract from raw
-            raw_size = props["size"].lower()
-            if "small" in raw_size:
+        # Set size at top level - extract from weight info if needed
+        if "size" in props:
+            # Extract size category from "(20+ kg)" format
+            size_value = props["size"].lower()
+            if "tiny" in size_value or "very small" in size_value:
+                animal["size"] = "Tiny"
+            elif "small" in size_value and "medium" not in size_value:
                 animal["size"] = "Small"
-            elif "large" in raw_size:
+            elif "large" in size_value:
                 animal["size"] = "Large"
             else:
                 animal["size"] = "Medium"
-            # Also set standardized_size to match
-            animal["standardized_size"] = animal["size"]
-
-        # Age fields - ALWAYS copy to top level after standardization
-        # Following santerpawsbulgarianrescue pattern - standardized values MUST reach database
-        if "age_min_months" in props:
-            animal["age_min_months"] = props["age_min_months"]
-        if "age_max_months" in props:
-            animal["age_max_months"] = props["age_max_months"]
-
-        # Convert birth date to human-readable age format like "2 years"
-        # Following the pattern from manytearsrescue and other orgs
-        if "born" in props and ("age_min_months" in props or "age_max_months" in props):
-            # Calculate age in years from the standardized months
-            if "age_min_months" in props and props["age_min_months"] is not None:
-                age_months = props["age_min_months"]
-            elif "age_max_months" in props and props["age_max_months"] is not None:
-                age_months = props["age_max_months"]
+        elif "future_size" in props:
+            size_value = props["future_size"].lower()
+            if "tiny" in size_value or "very small" in size_value:
+                animal["size"] = "Tiny"
+            elif "small" in size_value and "medium" not in size_value:
+                animal["size"] = "Small"
+            elif "large" in size_value:
+                animal["size"] = "Large"
             else:
-                # Fallback to original born text if no months calculated
-                animal["age_text"] = props["born"][:90].strip() if len(props["born"]) > 90 else props["born"]
-                return
+                animal["size"] = "Medium"
 
-            # Convert months to human-readable years format
-            if age_months < 12:
-                # Less than a year - show in months
-                if age_months == 1:
-                    animal["age_text"] = "1 month"
-                else:
-                    animal["age_text"] = f"{age_months} months"
-            else:
-                # 1 year or more - show in years
-                years = age_months // 12
-                if years == 1:
-                    animal["age_text"] = "1 year"
-                else:
-                    animal["age_text"] = f"{years} years"
+        # Set age at top level (renamed from age_text to age for unified standardization)
+        if "born" in props:
+            animal["age"] = props["born"]
         elif "age_category" in props:
-            # Only use category if no born date available
-            animal["age_text"] = props["age_category"]
+            animal["age"] = props["age_category"]
+
+        # Apply unified standardization
+        animal = self.process_animal(animal)
+
+        # Preserve good_with field processing
+        if "good_with" in props:
+            good_with_value = props["good_with"].lower()
+            good_with_list = []
+
+            if "dog" in good_with_value:
+                good_with_list.append("dogs")
+            if "cat" in good_with_value:
+                good_with_list.append("cats")
+            if "child" in good_with_value or "kid" in good_with_value:
+                good_with_list.append("children")
+
+            if good_with_list:
+                props["good_with_list"] = good_with_list
+
+        # Preserve location processing
+        if "location" in props:
+            location = props["location"].strip()
+            if location.lower() in ["italy", "italia", "it"]:
+                props["location_country"] = "IT"
+            elif location.lower() in ["uk", "united kingdom", "england"]:
+                props["location_country"] = "UK"
 
     def _validate_animal_data(self, animal: Dict[str, Any]) -> bool:
         """Validate that animal has all required fields with non-null values."""
@@ -956,91 +960,6 @@ class FurryRescueItalyScraper(BaseScraper):
             return False
 
         return True
-
-    def _standardize_animal_data(self, animal: Dict[str, Any]) -> None:
-        """Apply standardization to animal data fields."""
-        properties = animal.get("properties", {})
-
-        # Standardize age from born field
-        if "born" in properties:
-            age_info = standardize_age(properties["born"])
-            if age_info:
-                for key, value in age_info.items():
-                    if value is not None:
-                        properties[key] = value
-
-        # Standardize breed
-        if "breed" in properties:
-            properties["breed"] = normalize_breed_case(properties["breed"])
-
-        # Standardize size to proper format (Title Case for database)
-        if "size" in properties:
-            # Keep original size with weight info in properties
-            size_value = properties["size"].lower()
-            # Determine standardized size category
-            if "tiny" in size_value or "very small" in size_value:
-                standardized_size = "Tiny"
-            elif "small" in size_value and "medium" not in size_value:
-                standardized_size = "Small"
-            elif "large" in size_value:
-                standardized_size = "Large"
-            else:
-                # Default to Medium for "medium" or unclear cases
-                standardized_size = "Medium"
-            properties["size_category"] = standardized_size
-
-        elif "future_size" in properties:
-            size_value = properties["future_size"].lower()
-            if "tiny" in size_value or "very small" in size_value:
-                standardized_size = "Tiny"
-            elif "small" in size_value and "medium" not in size_value:
-                standardized_size = "Small"
-            elif "large" in size_value:
-                standardized_size = "Large"
-            else:
-                standardized_size = "Medium"
-            properties["size_category"] = standardized_size
-
-        # Standardize sex to match database format (Title Case)
-        if "sex" in properties:
-            sex_value = properties["sex"].lower()
-            if "female" in sex_value or sex_value == "f":
-                properties["sex"] = "Female"
-            elif "male" in sex_value or sex_value == "m":
-                properties["sex"] = "Male"
-
-        # Standardize good_with field
-        if "good_with" in properties:
-            good_with_value = properties["good_with"].lower()
-            good_with_list = []
-
-            if "dog" in good_with_value:
-                good_with_list.append("dogs")
-            if "cat" in good_with_value:
-                good_with_list.append("cats")
-            if "child" in good_with_value or "kid" in good_with_value:
-                good_with_list.append("children")
-
-            if good_with_list:
-                properties["good_with_list"] = good_with_list
-
-        # Standardize location
-        if "location" in properties:
-            location = properties["location"].strip()
-            # Map common location values
-            if location.lower() in ["italy", "italia", "it"]:
-                properties["location_country"] = "IT"
-            elif location.lower() in ["uk", "united kingdom", "england"]:
-                properties["location_country"] = "UK"
-
-        # Ensure defaults for important fields
-        if "breed" not in properties:
-            properties["breed"] = "Mixed Breed"
-        if "size_category" not in properties:
-            properties["size_category"] = "Medium"
-
-        # Update animal properties
-        animal["properties"] = properties
 
     def _generate_external_id(self, name: str, adoption_url: str) -> str:
         """Generate unique external_id to prevent duplicate animals.
