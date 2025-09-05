@@ -9,7 +9,7 @@ scraper:
     rate_limit_delay: 2.5
     max_retries: 3
     timeout: 30
-    skip_existing_animals: false
+    skip_existing_animals: true
     enable_llm_profiling: true
     llm_organization_id: 5
 metadata:

@@ -9,8 +9,8 @@ scraper:
     rate_limit_delay: 3.0 # Increased for API calls
     max_retries: 3
     timeout: 60
-    skip_existing_animals: false
-    enable_llm_profiling: false
+    skip_existing_animals: true
+    enable_llm_profiling: true
 metadata:
   website_url: "https://www.petsinturkey.org/"
   description: "We are a group of animal and nature loving people living in Switzerland with close ties to Turkey. Our mission is to help all breeds of cats and dogs in Turkey that are regularly being abandoned in large numbers."
