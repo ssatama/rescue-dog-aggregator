@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Footer() {
@@ -9,13 +10,22 @@ export default function Footer() {
           <div className="mb-6 md:mb-0">
             <Link
               href="/"
-              className="text-card-title font-semibold text-foreground hover:text-muted-foreground"
+              className="flex items-center gap-3 text-card-title font-semibold text-foreground hover:text-muted-foreground"
             >
-              Rescue Dog Aggregator
+              <Image
+                src="/logo.jpeg"
+                alt="Rescue Dog Aggregator logo"
+                width={80}
+                height={80}
+                className="rounded-full object-cover w-20 h-20"
+              />
+              <div>
+                <span className="block">Rescue Dog Aggregator</span>
+                <p className="mt-1 text-small text-muted-foreground font-normal">
+                  Helping rescue dogs find loving homes.
+                </p>
+              </div>
             </Link>
-            <p className="mt-1 text-small text-muted-foreground">
-              Helping rescue dogs find loving homes.
-            </p>
           </div>
 
           {/* Right Side: Navigation Links */}
@@ -38,12 +48,6 @@ export default function Footer() {
               Privacy Policy
             </Link> */}
           </div>
-        </div>
-
-        {/* Bottom Copyright */}
-        <div className="mt-8 border-t border-border pt-6 text-small text-muted-foreground text-center">
-          &copy; {new Date().getFullYear()} Rescue Dog Aggregator. All rights
-          reserved.
         </div>
       </div>
     </footer>

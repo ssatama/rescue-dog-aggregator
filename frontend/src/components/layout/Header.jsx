@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Icon } from "../ui/Icon";
@@ -72,9 +73,19 @@ export default function Header() {
             <div>
               <Link
                 href="/"
-                className="text-section font-extrabold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors duration-300 hover:scale-105 transform focus:outline-none focus:ring-2 focus:ring-orange-600 dark:focus:ring-orange-400 focus:ring-offset-2 rounded"
+                className="flex items-center gap-2 text-section font-extrabold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors duration-300 hover:scale-105 transform focus:outline-none focus:ring-2 focus:ring-orange-600 dark:focus:ring-orange-400 focus:ring-offset-2 rounded"
               >
-                Rescue Dog Aggregator
+                <Image
+                  src="/logo.jpeg"
+                  alt="Rescue Dog Aggregator logo"
+                  width={80}
+                  height={80}
+                  className="rounded-full object-cover md:w-20 md:h-20 w-16 h-16"
+                  priority
+                />
+                <span className="sr-only md:not-sr-only">
+                  Rescue Dog Aggregator
+                </span>
               </Link>
             </div>
 

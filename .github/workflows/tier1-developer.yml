@@ -57,7 +57,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           # Install only essential test dependencies for speed
-          pip install pytest pytest-mock pytest-cov
+          pip install -r requirements-dev.txt
 
       - name: Verify environment
         run: |

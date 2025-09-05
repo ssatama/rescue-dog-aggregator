@@ -54,12 +54,21 @@ export const metadata = {
       "Find your perfect rescue dog from multiple organizations, all in one place. Browse available dogs for adoption and connect with rescue organizations.",
     type: "website",
     siteName: "Rescue Dog Aggregator",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Rescue Dog Aggregator - Find Your Perfect Rescue Dog",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Rescue Dog Aggregator - Find Your Perfect Rescue Dog",
     description:
       "Find your perfect rescue dog from multiple organizations, all in one place.",
+    images: ["/og-image.png"],
   },
   robots: {
     index: true,
