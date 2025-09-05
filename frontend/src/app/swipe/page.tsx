@@ -36,7 +36,7 @@ interface Dog {
 
 export default function SwipePage() {
   const router = useRouter();
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useMediaQuery("(max-width: 1023px)");
   const [selectedDog, setSelectedDog] = useState<Dog | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [totalSwiped, setTotalSwiped] = useState(0);

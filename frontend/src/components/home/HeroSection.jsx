@@ -101,7 +101,7 @@ export default function HeroSection({
             </div>
 
             {/* Mobile-only Quick Browse CTA */}
-            <div className="mt-6 md:hidden">
+            <div className="mt-6 lg:hidden">
               <Link href="/swipe">
                 <Button
                   data-testid="hero-swipe-cta"
