@@ -107,7 +107,7 @@ class TestStandardizationBackfillService:
         mock_conn, mock_cursor = mock_connection
         service.conn = mock_conn
 
-        standardized_data = {"breed": "German Shepherd Dog", "breed_category": "Herding", "breed_group": "Herding", "age_category": "Adult", "standardized_size": "Large"}
+        standardized_data = {"breed": "German Shepherd Dog", "breed_category": "Herding", "breed_group": "Herding", "standardized_size": "Large"}
 
         result = service.update_animal_standardization(1, standardized_data)
 
@@ -121,7 +121,7 @@ class TestStandardizationBackfillService:
         assert "standardized_breed" in query
         # Field was renamed from breed_category to breed_group
         assert "breed_group" in query
-        assert "age_category" in query
+        # Note: age_category is NOT updated in the UPDATE query, only breed fields
 
     def test_fix_lurchers_processing(self, service, mock_connection):
         """Test fix_lurchers processes all Lurcher breeds correctly."""
@@ -137,8 +137,17 @@ class TestStandardizationBackfillService:
         with patch.object(service, "get_lurchers_to_fix", return_value=lurchers):
             with patch.object(service, "update_animal_standardization", return_value=True) as mock_update:
                 with patch.object(service.standardizer, "apply_full_standardization") as mock_standardize:
-                    # Mock standardization to return Hound group
-                    mock_standardize.return_value = {"standardized_breed": "Lurcher", "breed_category": "Hound", "breed_group": "Hound", "age_category": "Adult", "standardized_size": "Large"}
+                    # Mock standardization to return Hound group - use actual field names from apply_full_standardization
+                    mock_standardize.return_value = {
+                        "breed": "Lurcher",
+                        "breed_category": "Hound",
+                        "breed_group": "Hound",
+                        "standardized_size": "Large",
+                        "breed_confidence": 0.95,
+                        "breed_type": "sighthound",
+                        "primary_breed": "Lurcher",
+                        "secondary_breed": None,
+                    }
 
                     stats = service.fix_lurchers(dry_run=False)
 
@@ -150,7 +159,8 @@ class TestStandardizationBackfillService:
                     # Verify Lurcher was standardized to Hound group
                     for call_args in mock_update.call_args_list:
                         animal_id, data = call_args[0]
-                        assert data["breed_group"] == "Hound"
+                        # breed_category is what gets passed to update function (DB column is breed_group)
+                        assert data["breed_category"] == "Hound"
 
     def test_fix_lurchers_dry_run(self, service, mock_connection):
         """Test fix_lurchers in dry-run mode doesn't update database."""
@@ -181,13 +191,16 @@ class TestStandardizationBackfillService:
         with patch.object(service, "get_staffordshires_to_fix", return_value=staffies):
             with patch.object(service, "update_animal_standardization", return_value=True) as mock_update:
                 with patch.object(service.standardizer, "apply_full_standardization") as mock_standardize:
-                    # Mock standardization to return proper Staffordshire name
+                    # Mock standardization to return proper Staffordshire name - use actual field names
                     mock_standardize.return_value = {
-                        "standardized_breed": "Staffordshire Bull Terrier",
+                        "breed": "Staffordshire Bull Terrier",
                         "breed_category": "Terrier",
                         "breed_group": "Terrier",
-                        "age_category": "Adult",
                         "standardized_size": "Medium",
+                        "breed_confidence": 0.9,
+                        "breed_type": "purebred",
+                        "primary_breed": "Staffordshire Bull Terrier",
+                        "secondary_breed": None,
                     }
 
                     stats = service.fix_staffordshire(dry_run=False)

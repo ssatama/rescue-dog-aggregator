@@ -399,7 +399,7 @@ class ManyTearsRescueScraper(BaseScraper):
             "breed": "Mixed Breed",
             "size": None,  # Let unified standardization handle defaults
             "age": "Unknown",
-            "gender": "Unknown",
+            "sex": "Unknown",
             "location": "Wales, UK",
             "description": "",
             "requirements": "",
@@ -508,7 +508,7 @@ class ManyTearsRescueScraper(BaseScraper):
             # Extract individual fields from structured_data for compatibility with BaseScraper
             # Zero NULLs compliance - always provide defaults
             result["breed"] = structured_data.get("breed") or "Mixed Breed"
-            result["gender"] = structured_data.get("sex") or "Unknown"
+            result["sex"] = structured_data.get("sex") or "Unknown"
             result["age"] = structured_data.get("age") or "Unknown"
             result["age_text"] = structured_data.get("age_text") or structured_data.get("age") or "Unknown"
 

@@ -31,10 +31,10 @@ class TestTierschutzvereinEuropaUnifiedStandardization:
         translated = translate_breed("Mischling")
         assert translated == "Mixed Breed"
 
-        # Then standardize - apply_full_standardization returns nested structure
+        # Then standardize - apply_full_standardization now returns flat structure
         result = standardizer.apply_full_standardization(breed=translated)
-        assert result["breed"]["name"] == "Mixed Breed"
-        assert result["breed"]["group"] == "Mixed"
+        assert result["breed"] == "Mixed Breed"
+        assert result["breed_category"] == "Mixed"
 
     def test_german_shepherd_variations(self, standardizer):
         """Test German Shepherd variations are properly handled."""
@@ -42,23 +42,23 @@ class TestTierschutzvereinEuropaUnifiedStandardization:
         translated = translate_breed("Deutscher Schäferhund")
         assert translated == "German Shepherd"
         result = standardizer.apply_full_standardization(breed=translated)
-        assert result["breed"]["name"] == "German Shepherd Dog"
-        assert result["breed"]["group"] == "Herding"
+        assert result["breed"] == "German Shepherd Dog"
+        assert result["breed_category"] == "Herding"
 
         # Test "Schäferhund"
         translated = translate_breed("Schäferhund")
         assert translated == "German Shepherd"
         result = standardizer.apply_full_standardization(breed=translated)
-        assert result["breed"]["name"] == "German Shepherd Dog"
-        assert result["breed"]["group"] == "Herding"
+        assert result["breed"] == "German Shepherd Dog"
+        assert result["breed_category"] == "Herding"
 
         # Test "Schäferhund-Mischling"
         translated = translate_breed("Schäferhund-Mischling")
         assert translated == "German Shepherd Mix"
         result = standardizer.apply_full_standardization(breed=translated)
-        assert result["breed"]["name"] == "German Shepherd Mix"  # Standardizer keeps mix names as-is
-        assert result["breed"]["group"] == "Mixed"
-        assert result["breed"]["is_mixed"] == True
+        assert result["breed"] == "German Shepherd Mix"  # Standardizer keeps mix names as-is
+        assert result["breed_category"] == "Mixed"
+        # Mixed breeds have breed_type as "unknown" but category as "Mixed"
 
     def test_livestock_guardian_dog_translation(self, standardizer):
         """Test German 'Herdenschutzhund' is properly handled."""
@@ -66,8 +66,8 @@ class TestTierschutzvereinEuropaUnifiedStandardization:
         assert translated == "Livestock Guardian Dog"
         result = standardizer.apply_full_standardization(breed=translated)
         # Livestock Guardian Dog is not a specific breed, should be handled as unknown
-        assert result["breed"]["name"] == "Livestock Guardian Dog"
-        assert result["breed"]["group"] == "Working"  # Guardian dogs are working dogs
+        assert result["breed"] == "Livestock Guardian Dog"
+        assert result["breed_category"] == "Working"  # Guardian dogs are working dogs
 
     def test_compound_breeds_with_und(self, standardizer):
         """Test German compound breeds with 'und' (and)."""
@@ -76,19 +76,19 @@ class TestTierschutzvereinEuropaUnifiedStandardization:
         assert translated == "Husky and German Shepherd Mix"
         result = standardizer.apply_full_standardization(breed=translated)
         # For mixed breeds with "and", the standardizer should recognize both breeds
-        assert "Husky" in result["breed"]["name"]
-        assert "German Shepherd" in result["breed"]["name"]
-        assert result["breed"]["group"] == "Mixed"
-        assert result["breed"]["is_mixed"] == True
+        assert "Husky" in result["breed"]
+        assert "German Shepherd" in result["breed"]
+        assert result["breed_category"] == "Mixed"
+        # Mixed breeds have breed_type as "unknown" but category as "Mixed"
 
     def test_podenco_mischling(self, standardizer):
         """Test Podenco-Mischling (Spanish breed with German suffix)."""
         translated = translate_breed("Podenco-Mischling")
         assert translated == "Podenco Mix"
         result = standardizer.apply_full_standardization(breed=translated)
-        assert result["breed"]["name"] == "Podenco Mix"
-        assert result["breed"]["group"] == "Mixed"
-        assert result["breed"]["is_mixed"] == True
+        assert result["breed"] == "Podenco Mix"
+        assert result["breed_category"] == "Mixed"
+        # Mixed breeds have breed_type as "unknown" but category as "Mixed"
 
     def test_spanish_breeds_with_german_names(self, standardizer):
         """Test Spanish breeds that appear with German names."""
@@ -96,15 +96,15 @@ class TestTierschutzvereinEuropaUnifiedStandardization:
         translated = translate_breed("Mastin")
         assert translated == "Spanish Mastiff"
         result = standardizer.apply_full_standardization(breed=translated)
-        assert result["breed"]["name"] == "Spanish Mastiff"
-        assert result["breed"]["group"] == "Working"
+        assert result["breed"] == "Spanish Mastiff"
+        assert result["breed_category"] == "Working"
 
         # Test "Bretone Epagneul"
         translated = translate_breed("Bretone Epagneul")
         assert translated == "Brittany Spaniel"
         result = standardizer.apply_full_standardization(breed=translated)
-        assert result["breed"]["name"] == "Brittany"
-        assert result["breed"]["group"] == "Sporting"
+        assert result["breed"] == "Brittany"
+        assert result["breed_category"] == "Sporting"
 
     def test_scraper_integration_with_german_breeds(self, scraper):
         """Test that the scraper properly processes German breeds through translation and standardization."""
@@ -122,9 +122,9 @@ class TestTierschutzvereinEuropaUnifiedStandardization:
         # The scraper with unified standardization should handle this
         standardizer = UnifiedStandardizer()
         result = standardizer.apply_full_standardization(breed=translated)
-        assert result["breed"]["name"] == "German Shepherd Mix"  # Standardizer keeps mix names as-is
-        assert result["breed"]["group"] == "Mixed"
-        assert result["breed"]["is_mixed"] == True
+        assert result["breed"] == "German Shepherd Mix"  # Standardizer keeps mix names as-is
+        assert result["breed_category"] == "Mixed"
+        # Mixed breeds have breed_type as "unknown" but category as "Mixed"
 
     def test_preserve_language_metadata(self, scraper):
         """Test that language and original_language fields are preserved."""

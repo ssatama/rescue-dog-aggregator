@@ -1616,7 +1616,9 @@ class REANScraper(BaseScraper):
             "organization_id": self.organization_id,  # Add organization_id
             "adoption_url": adoption_url,
             "animal_type": "dog",
-            "age_text": dog_data.get("age_text"),
+            "age": dog_data.get("age_text"),  # Unified standardization expects 'age' field
+            "breed": dog_data.get("breed"),  # Add breed field for unified standardization
+            "sex": dog_data.get("sex"),  # Add sex field for unified standardization
             "language": "en",
             "properties": properties,
         }
@@ -1645,7 +1647,8 @@ class REANScraper(BaseScraper):
             standardized_data["size"] = size_prediction
             standardized_data["standardized_size"] = size_prediction
 
-        return standardized_data
+        # Apply unified standardization
+        return self.process_animal(standardized_data)
 
     def standardize_age_to_months(self, age_text: str) -> Optional[int]:
         """

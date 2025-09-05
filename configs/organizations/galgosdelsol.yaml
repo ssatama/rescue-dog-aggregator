@@ -10,8 +10,8 @@ scraper:
     max_retries: 3
     timeout: 240
     batch_size: 6
-    skip_existing_animals: true
-    enable_llm_profiling: true
+    skip_existing_animals: false
+    enable_llm_profiling: false
     llm_organization_id: 25
 metadata:
   website_url: "https://galgosdelsol.org/"

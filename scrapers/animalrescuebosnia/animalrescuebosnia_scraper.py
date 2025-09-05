@@ -275,7 +275,8 @@ class AnimalRescueBosniaScraper(BaseScraper):
                 },
             }
 
-            return result
+            # Apply unified standardization
+            return self.process_animal(result)
 
         except Exception as e:
             self.logger.error(f"Error scraping animal details from {url}: {e}")

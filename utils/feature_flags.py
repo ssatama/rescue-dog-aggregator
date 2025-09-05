@@ -16,7 +16,7 @@ class FeatureFlags:
     UNIFIED_STANDARDIZATION_ENABLED = False
 
     # Per-scraper flags for granular control
-    # Start with all scrapers disabled, enable progressively
+    # ALL scrapers now enabled with unified standardization
     SCRAPER_FLAGS: Dict[str, bool] = {
         # Group C: Non-standardized scrapers (migrate first)
         "rean": True,  # Enabled - REAN has no custom standardization, ready to use unified
@@ -25,6 +25,7 @@ class FeatureFlags:
         "animalrescuebosnia": True,  # Enabled - Size standardization migrated to unified
         "daisy_family_rescue": True,  # Enabled - Age parsing migrated to unified standardization
         "daisyfamilyrescue": True,  # Alias for daisy_family_rescue
+        "misis_rescue": True,  # Enabled - Misis Rescue migrated to unified standardization
         # Group A: Currently using optimized_standardization.py
         "dogstrust": True,  # Enabled - Migrated from optimized_standardization to unified
         "woof_project": True,  # Enabled - Migrated from optimized_standardization to unified
@@ -33,8 +34,8 @@ class FeatureFlags:
         "furryrescueitaly": True,  # Enabled - Migrated from standardization.py to unified
         "galgosdelsol": True,  # Enabled - Migrated from standardization.py to unified
         "manytearsrescue": True,  # Enabled - Migrated from standardization.py to unified
-        "petsinturkey": False,  # Note: different from pets_in_turkey
-        "santerpaws": False,
+        "petsinturkey": True,  # Enabled - Now using unified standardization
+        "santerpaws": True,  # Enabled - Now using unified standardization
         "santerpawsbulgarianrescue": True,  # Enabled - Migrated from standardization.py to unified
     }
 

@@ -800,9 +800,9 @@ class WoofProjectScraper(BaseScraper):
                 "description": description or "No description available",
                 "raw_name": name or "Unknown",
                 "raw_description": description or "No description available",
-                "breed": raw_breed,
+                "breed": breed or "Mixed Breed",
                 "age_text": age or "Unknown age",
-                "size": raw_size,
+                "size": size or "Medium",
                 "sex": sex or "Unknown",
                 "page_url": url,
                 "source_page": url,
@@ -816,7 +816,7 @@ class WoofProjectScraper(BaseScraper):
 
             result["properties"] = properties
 
-            self.logger.debug(f"Extracted data for {result['name']}: breed={result['breed']}, " f"age={result['age_text']}, size={result['size']}")
+            self.logger.debug(f"Extracted data for {result['name']}: breed={result['breed']}, " f"age={result['age']}, size={result['size']}")
 
             return result
 

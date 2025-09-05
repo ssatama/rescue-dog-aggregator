@@ -389,6 +389,9 @@ class PetsInTurkeyScraper(BaseScraper):
             standardized["breed"] = standardized.get("breed") or "Mixed Breed"
         standardized.setdefault("standardized_size", standardized.get("size") or "Medium")
         standardized.setdefault("gender", standardized.get("sex", "Unknown").lower() if standardized.get("sex") else "unknown")
+        # Don't override age_text if it was processed from age data
+        if not standardized.get("age_text") and standardized.get("age"):
+            standardized["age_text"] = standardized["age"]
         standardized.setdefault("age_text", "Unknown")
         standardized.setdefault("status", "available")
         standardized.setdefault("animal_type", "dog")

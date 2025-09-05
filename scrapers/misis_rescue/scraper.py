@@ -629,7 +629,8 @@ class MisisRescueScraper(BaseScraper):
             else:
                 self.logger.warning(f"No image found for dog at {url}")
 
-            return dog_data
+            # Apply unified standardization
+            return self.process_animal(dog_data)
 
         except Exception as e:
             self.logger.error(f"Error scraping dog detail {url}: {e}")

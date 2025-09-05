@@ -177,6 +177,10 @@ class MisisRescueDetailParser:
                         # ALSO store in properties for BaseScraper standardization to use
                         result["properties"]["standardized_size"] = size
 
+        # Add "age" field for unified standardization (expects "age", not "age_text")
+        if result.get("age_text"):
+            result["age"] = result["age_text"]
+
         return result
 
     def _extract_dog_name(self, soup: BeautifulSoup) -> Optional[str]:

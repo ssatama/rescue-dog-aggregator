@@ -295,7 +295,7 @@ class TestErrorResponses:
         """Error responses should have short cache to prevent hammering."""
 
         # Create an endpoint that returns an error
-        @client.app.get("/api/error")
+        @test_client.app.get("/api/error")
         async def error_endpoint():
             return Response(status_code=500, content="Internal Server Error")
 
@@ -312,7 +312,7 @@ class TestNonGetRequests:
     def test_post_request_no_cache(self, test_client):
         """POST requests should not have cache headers."""
 
-        @client.app.post("/api/test")
+        @test_client.app.post("/api/test")
         async def post_endpoint():
             return {"result": "created"}
 

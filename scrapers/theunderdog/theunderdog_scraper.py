@@ -350,7 +350,8 @@ class TheUnderdogScraper(BaseScraper):
                 else:
                     result["location"] = "Unknown"
 
-            return result
+            # Apply unified standardization
+            return self.process_animal(result)
 
         except Exception as e:
             self.logger.error(f"Error scraping detail page {url}: {e}")

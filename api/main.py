@@ -37,17 +37,17 @@ async def lifespan(app: FastAPI):
     """
     import os
     import sys
-    
+
     # Skip pool initialization for unit tests
     is_pytest = "pytest" in sys.modules
     is_unit_test = os.environ.get("PYTEST_CURRENT_TEST", "").find("unit") != -1 or os.environ.get("PYTEST_CURRENT_TEST", "").find("fast") != -1
     skip_pool = is_pytest and is_unit_test
-    
+
     if skip_pool:
         logger.info("Skipping database pool initialization for unit tests")
         yield
         return
-    
+
     # Startup
     logger.info("Starting application - initializing database connection pool")
     try:

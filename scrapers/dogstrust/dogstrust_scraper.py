@@ -653,102 +653,130 @@ class DogsTrustScraper(BaseScraper):
         Returns:
             Dictionary with detailed dog information following BaseScraper format
         """
+        # Implement retry logic for HTTP failures
+        max_retries = getattr(self, "max_retries", 3)
+        retry_delay = 2.0
+
+        for attempt in range(max_retries):
+            try:
+                # Use HTTP requests for detail pages (faster than Selenium)
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "DNT": "1",
+                    "Connection": "keep-alive",
+                    "Upgrade-Insecure-Requests": "1",
+                }
+
+                # Fix timeout configuration - use safe default if self.timeout is not an int
+                timeout = getattr(self, "timeout", 30)
+                if not isinstance(timeout, (int, float)):
+                    timeout = 30
+
+                response = requests.get(adoption_url, headers=headers, timeout=timeout)
+                response.raise_for_status()
+
+                # If successful, break out of retry loop
+                break
+
+            except (requests.exceptions.RequestException, requests.exceptions.Timeout) as e:
+                if attempt < max_retries - 1:
+                    self.logger.warning(f"HTTP request failed for {adoption_url} (attempt {attempt + 1}/{max_retries}): {e}")
+                    self.logger.info(f"Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    retry_delay *= 1.5  # Exponential backoff
+                    continue
+                else:
+                    self.logger.error(f"All {max_retries} HTTP attempts failed for {adoption_url}: {e}")
+                    return {}
+            except Exception as e:
+                self.logger.error(f"Unexpected error during HTTP request for {adoption_url}: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+                    retry_delay *= 1.5
+                    continue
+                else:
+                    return {}
+
+        # Parse HTML with BeautifulSoup
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        # Extract core fields using analysis-identified selectors
+        name = self._extract_name(soup)
+        breed = self._extract_breed(soup)
+        age = self._extract_age(soup)
+        sex = self._extract_sex(soup)
+        size = self._extract_size(soup)
+        location = self._extract_location(soup)
+        description = self._extract_description(soup)
+        primary_image_url = self._extract_primary_image(soup)
+
+        # Note: Standardization will be applied later via process_animal()
+
+        # BUILD PROPERTIES JSON following Many Tears Rescue pattern
+        properties = {}
+
+        # Add structured data from DOM (reference ID, basic info)
+        structured_data = {}
+        if breed:
+            structured_data["breed"] = breed
+        if age:
+            structured_data["age_text"] = age
+        if sex:
+            structured_data["sex"] = sex
+        if size:
+            structured_data["size"] = size
+        if location:
+            structured_data["location"] = location
+
+        properties.update(structured_data)
+
+        # Extract additional properties specific to Dogs Trust
         try:
-            # Use HTTP requests for detail pages (faster than Selenium)
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            }
-
-            # Fix timeout configuration - use safe default if self.timeout is not an int
-            timeout = getattr(self, "timeout", 30)
-            if not isinstance(timeout, (int, float)):
-                timeout = 30
-
-            response = requests.get(adoption_url, headers=headers, timeout=timeout)
-            response.raise_for_status()
-
-            # Parse HTML with BeautifulSoup
-            soup = BeautifulSoup(response.text, "html.parser")
-
-            # Extract core fields using analysis-identified selectors
-            name = self._extract_name(soup)
-            breed = self._extract_breed(soup)
-            age_text = self._extract_age(soup)
-            sex = self._extract_sex(soup)
-            size = self._extract_size(soup)
-            location = self._extract_location(soup)
-            description = self._extract_description(soup)
-            primary_image_url = self._extract_primary_image(soup)
-
-            # Note: Standardization will be applied later via process_animal()
-
-            # BUILD PROPERTIES JSON following Many Tears Rescue pattern
-            properties = {}
-
-            # Add structured data from DOM (reference ID, basic info)
-            structured_data = {}
-            if breed:
-                structured_data["breed"] = breed
-            if age_text:
-                structured_data["age_text"] = age_text
-            if sex:
-                structured_data["sex"] = sex
-            if size:
-                structured_data["size"] = size
-            if location:
-                structured_data["location"] = location
-
-            properties.update(structured_data)
-
-            # Extract additional properties specific to Dogs Trust
-            try:
-                additional_properties = self._extract_additional_properties(soup)
-                properties.update(additional_properties)
-            except Exception as e:
-                print(f"Error in _extract_additional_properties: {e}")
-                import traceback
-
-                traceback.print_exc()
-
-            # Extract behavioral traits (good with children/dogs/cats)
-            try:
-                behavioral_traits = self._extract_behavioral_traits(soup)
-                properties.update(behavioral_traits)
-            except Exception as e:
-                self.logger.error(f"Error extracting behavioral traits: {e}")
-
-            # CRITICAL: Store description in properties (Many Tears pattern)
-            properties["description"] = description or ""
-
-            # Build raw result for unified standardization processing
-            raw_result = {
-                "name": name or "Unknown",
-                "breed": breed or "Mixed Breed",
-                "age": age_text or "Unknown",  # Changed from age_text to age for standardization
-                "sex": sex or "Unknown",
-                "size": size or "Medium",
-                "location": location or "UK",
-                "description": description or "",
-                "primary_image_url": primary_image_url,
-                "original_image_url": primary_image_url,
-                "animal_type": "dog",
-                "status": "available",
-                "properties": properties,  # Following Many Tears pattern
-            }
-
-            # Add image_urls for R2 integration
-            if primary_image_url:
-                raw_result["image_urls"] = [primary_image_url]
-            else:
-                raw_result["image_urls"] = []
-
-            # Apply unified standardization
-            return self.process_animal(raw_result)
-
+            additional_properties = self._extract_additional_properties(soup)
+            properties.update(additional_properties)
         except Exception as e:
-            self.logger.error(f"Error scraping details from {adoption_url}: {e}")
-            return {}
+            print(f"Error in _extract_additional_properties: {e}")
+            import traceback
+
+            traceback.print_exc()
+
+        # Extract behavioral traits (good with children/dogs/cats)
+        try:
+            behavioral_traits = self._extract_behavioral_traits(soup)
+            properties.update(behavioral_traits)
+        except Exception as e:
+            self.logger.error(f"Error extracting behavioral traits: {e}")
+
+        # CRITICAL: Store description in properties (Many Tears pattern)
+        properties["description"] = description or ""
+
+        # Build raw result for unified standardization processing
+        raw_result = {
+            "name": name or "Unknown",
+            "breed": breed or "Mixed Breed",
+            "age": age or "Unknown",  # Unified standardization expects 'age' field
+            "sex": sex or "Unknown",
+            "size": size or "Medium",
+            "location": location or "UK",
+            "description": description or "",
+            "primary_image_url": primary_image_url,
+            "original_image_url": primary_image_url,
+            "animal_type": "dog",
+            "status": "available",
+            "properties": properties,  # Following Many Tears pattern
+        }
+
+        # Add image_urls for R2 integration
+        if primary_image_url:
+            raw_result["image_urls"] = [primary_image_url]
+        else:
+            raw_result["image_urls"] = []
+
+        # Apply unified standardization
+        return self.process_animal(raw_result)
 
     def _extract_name(self, soup: BeautifulSoup) -> str:
         """Extract dog name from h1 heading."""

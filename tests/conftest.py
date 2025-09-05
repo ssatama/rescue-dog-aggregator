@@ -54,11 +54,13 @@ def initialize_database_pool(request):
         print(f"[conftest] DEBUG: markexpr = {markexpr}")
         if markexpr and ("unit or fast" in markexpr or "unit and fast" in markexpr):
             print("\n[conftest] Skipping database pool initialization for unit/fast tests.")
+            yield  # Must yield for fixture to work
             return
 
     # Check environment variable that indicates unit-only test run
     if os.environ.get("PYTEST_UNIT_ONLY") == "true":
         print("\n[conftest] Skipping database pool initialization for unit-only test run.")
+        yield  # Must yield for fixture to work
         return
 
     print("\n[conftest] Initializing database connection pool for test session...")

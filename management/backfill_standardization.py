@@ -51,13 +51,13 @@ class StandardizationBackfillService:
             self.conn = psycopg2.connect(**conn_params)
             # CRITICAL: Disable autocommit for proper transaction management
             self.conn.autocommit = False
-            
+
             # Production safety check
-            if DB_CONFIG['database'] == 'rescue_dogs' and not os.getenv('ALLOW_PROD_BACKFILL'):
+            if DB_CONFIG["database"] == "rescue_dogs" and not os.getenv("ALLOW_PROD_BACKFILL"):
                 logger.error("SAFETY: Refusing to run against production database without ALLOW_PROD_BACKFILL=1")
                 self.conn.close()
                 return False
-            
+
             logger.info(f"Connected to database: {DB_CONFIG['database']}")
             return True
         except Exception as e:
@@ -69,29 +69,29 @@ class StandardizationBackfillService:
         if self.conn:
             self.conn.close()
             logger.info("Database connection closed")
-    
+
     def safe_process_batch(self, batch_function, *args, **kwargs):
         """Execute batch processing with proper transaction handling using savepoints."""
         from datetime import datetime
-        
+
         if not self.conn:
             logger.error("No database connection")
             return False
-            
+
         savepoint_name = f"sp_{int(datetime.now().timestamp())}"
         cursor = self.conn.cursor()
-        
+
         try:
             # Create savepoint for this batch
             cursor.execute(f"SAVEPOINT {savepoint_name}")
-            
+
             # Execute the batch function
             result = batch_function(*args, **kwargs)
-            
+
             # Release savepoint on success
             cursor.execute(f"RELEASE SAVEPOINT {savepoint_name}")
             return result
-            
+
         except Exception as e:
             # Rollback to savepoint on error
             cursor.execute(f"ROLLBACK TO SAVEPOINT {savepoint_name}")
@@ -149,15 +149,19 @@ class StandardizationBackfillService:
             return []
 
     def get_animals_to_backfill(self, limit: int = None) -> List[Tuple]:
-        """Get animals that need breed standardization backfill."""
+        """Get animals that need breed standardization backfill including new enhancement fields."""
         try:
             cursor = self.conn.cursor()
+            # Updated query to get ALL animals that are missing ANY of the new fields
             query = """
                 SELECT id, name, breed, standardized_breed, breed_group, age_text, standardized_size
                 FROM animals 
                 WHERE breed_group IS NULL 
                 OR breed_group = 'Unknown'
                 OR standardized_breed IS NULL
+                OR breed_confidence IS NULL
+                OR breed_type IS NULL
+                OR primary_breed IS NULL
                 ORDER BY id
             """
             if limit:
@@ -172,7 +176,7 @@ class StandardizationBackfillService:
             return []
 
     def update_animal_standardization(self, animal_id: int, standardized_data: Dict[str, Any]) -> bool:
-        """Update an animal's standardization fields."""
+        """Update an animal's standardization fields including new breed enhancement fields."""
         try:
             cursor = self.conn.cursor()
 
@@ -180,6 +184,7 @@ class StandardizationBackfillService:
             set_clauses = []
             values = []
 
+            # Legacy fields for backward compatibility
             if "breed" in standardized_data:
                 set_clauses.append("standardized_breed = %s")
                 values.append(standardized_data["breed"])
@@ -192,6 +197,23 @@ class StandardizationBackfillService:
             if "standardized_size" in standardized_data:
                 set_clauses.append("standardized_size = %s")
                 values.append(standardized_data["standardized_size"])
+
+            # NEW ENHANCED BREED FIELDS - Add the missing fields
+            if "breed_confidence" in standardized_data:
+                set_clauses.append("breed_confidence = %s")
+                values.append(str(standardized_data["breed_confidence"]))
+
+            if "breed_type" in standardized_data:
+                set_clauses.append("breed_type = %s")
+                values.append(standardized_data["breed_type"])
+
+            if "primary_breed" in standardized_data:
+                set_clauses.append("primary_breed = %s")
+                values.append(standardized_data["primary_breed"])
+
+            if "secondary_breed" in standardized_data:
+                set_clauses.append("secondary_breed = %s")
+                values.append(standardized_data["secondary_breed"])
 
             if not set_clauses:
                 return True  # Nothing to update
@@ -212,17 +234,22 @@ class StandardizationBackfillService:
             return False
 
     def standardize_animal_data(self, animal_tuple: Tuple) -> Dict[str, Any]:
-        """Apply unified standardization to animal data."""
+        """Apply unified standardization to animal data including new enhancement fields."""
         id_, name, breed, standardized_breed, breed_group, age_text, size = animal_tuple
 
         # Apply standardization with individual parameters
         standardized = self.standardizer.apply_full_standardization(breed=breed, age=age_text, size=size)
 
         return {
-            "breed": standardized.get("standardized_breed"),
+            # Legacy fields for backward compatibility
+            "breed": standardized.get("breed"),  # Fixed: use 'breed' not 'standardized_breed'
             "breed_category": standardized.get("breed_category"),
-            "breed_group": standardized.get("breed_group"),
             "standardized_size": standardized.get("standardized_size"),
+            # New enhancement fields
+            "breed_confidence": standardized.get("breed_confidence"),
+            "breed_type": standardized.get("breed_type"),
+            "primary_breed": standardized.get("primary_breed"),
+            "secondary_breed": standardized.get("secondary_breed"),
         }
 
     def fix_lurchers(self, dry_run: bool = False) -> Dict[str, Any]:

@@ -142,7 +142,7 @@ class TestBasScraperUnifiedStandardization:
         assert call_args["breed"] == "Cockapoo"
         assert call_args["primary_breed"] == "Cocker Spaniel"
         assert call_args["secondary_breed"] == "Poodle"
-        assert call_args["breed_category"] == "Non-Sporting"
+        assert call_args["breed_category"] == "Designer/Hybrid"  # Designer breeds now have their own category
 
     def test_standardization_logs_events(self, scraper):
         """Standardization should log breed changes"""

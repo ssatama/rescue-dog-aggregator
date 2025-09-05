@@ -94,7 +94,7 @@ def test_theunderdog_handles_designer_breeds(theunderdog_scraper):
     processed_data = theunderdog_scraper.process_animal(raw_animal_data)
 
     assert processed_data["breed"] == "Cockapoo"
-    assert processed_data["breed_category"] == "Non-Sporting"  # Designer breeds have their parent's group
+    assert processed_data["breed_category"] == "Designer/Hybrid"  # Designer breeds now have their own category
 
 
 def test_theunderdog_preserves_qa_data_structure(theunderdog_scraper):

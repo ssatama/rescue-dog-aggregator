@@ -26,30 +26,24 @@ class TestFeatureFlags:
         assert FeatureFlags.UNIFIED_STANDARDIZATION_ENABLED is False
 
     def test_scrapers_flag_states(self):
-        """Test scrapers have correct standardization flag states."""
-        # REAN is enabled as the first migrated scraper
+        """Test scrapers have correct standardization flag states - ALL enabled now."""
+        # ALL scrapers should be enabled
         assert FeatureFlags.SCRAPER_FLAGS["rean"] is True
-
-        # TheUnderdog is enabled as second migrated scraper
         assert FeatureFlags.SCRAPER_FLAGS["theunderdog"] is True
-
-        # Tierschutzverein Europa is enabled as third migrated scraper (with German translation)
         assert FeatureFlags.SCRAPER_FLAGS["tierschutzverein_europa"] is True
-        # AnimalRescueBosnia is enabled as fourth migrated scraper (size standardization)
         assert FeatureFlags.SCRAPER_FLAGS["animalrescuebosnia"] is True
-        assert FeatureFlags.SCRAPER_FLAGS["daisy_family_rescue"] is False
-
-        # Group A still disabled
-        assert FeatureFlags.SCRAPER_FLAGS["dogstrust"] is False
-        assert FeatureFlags.SCRAPER_FLAGS["woof_project"] is False
-        assert FeatureFlags.SCRAPER_FLAGS["pets_in_turkey"] is False
-
-        # Group B still disabled
-        assert FeatureFlags.SCRAPER_FLAGS["furryrescueitaly"] is False
-        assert FeatureFlags.SCRAPER_FLAGS["galgosdelsol"] is False
-        assert FeatureFlags.SCRAPER_FLAGS["manytearsrescue"] is False
-        assert FeatureFlags.SCRAPER_FLAGS["petsinturkey"] is False
-        assert FeatureFlags.SCRAPER_FLAGS["santerpaws"] is False
+        assert FeatureFlags.SCRAPER_FLAGS["daisy_family_rescue"] is True
+        assert FeatureFlags.SCRAPER_FLAGS["daisyfamilyrescue"] is True  # Alias
+        assert FeatureFlags.SCRAPER_FLAGS["misis_rescue"] is True
+        assert FeatureFlags.SCRAPER_FLAGS["dogstrust"] is True
+        assert FeatureFlags.SCRAPER_FLAGS["woof_project"] is True
+        assert FeatureFlags.SCRAPER_FLAGS["pets_in_turkey"] is True
+        assert FeatureFlags.SCRAPER_FLAGS["furryrescueitaly"] is True
+        assert FeatureFlags.SCRAPER_FLAGS["galgosdelsol"] is True
+        assert FeatureFlags.SCRAPER_FLAGS["manytearsrescue"] is True
+        assert FeatureFlags.SCRAPER_FLAGS["petsinturkey"] is True  # Now enabled
+        assert FeatureFlags.SCRAPER_FLAGS["santerpaws"] is True  # Now enabled
+        assert FeatureFlags.SCRAPER_FLAGS["santerpawsbulgarianrescue"] is True
 
     def test_is_unified_standardization_enabled(self):
         """Test global flag check function."""
@@ -69,14 +63,14 @@ class TestFeatureFlags:
         """Test per-scraper flag check."""
         # REAN is enabled
         assert is_scraper_standardization_enabled("rean") is True
-        # Others still disabled
-        assert is_scraper_standardization_enabled("dogstrust") is False
+        # DogsTrust is now enabled
+        assert is_scraper_standardization_enabled("dogstrust") is True
 
         # Test with environment override for specific scraper
-        with patch.dict(os.environ, {"SCRAPER_REAN_UNIFIED_ENABLED": "true"}):
+        with patch.dict(os.environ, {"SCRAPER_SANTERPAWS_UNIFIED_ENABLED": "true"}):
             reset_flags_cache()
-            assert is_scraper_standardization_enabled("rean") is True
-            assert is_scraper_standardization_enabled("dogstrust") is False
+            assert is_scraper_standardization_enabled("santerpaws") is True  # Override enables it
+            assert is_scraper_standardization_enabled("dogstrust") is True  # Still enabled by default
 
         # Test global override affects all scrapers
         with patch.dict(os.environ, {"UNIFIED_STANDARDIZATION_ENABLED": "true"}):
@@ -86,28 +80,46 @@ class TestFeatureFlags:
 
     def test_get_enabled_scrapers(self):
         """Test getting list of enabled scrapers."""
-        # REAN, TheUnderdog, Tierschutzverein Europa, and AnimalRescueBosnia are enabled by default now
-        assert get_enabled_scrapers() == ["rean", "theunderdog", "tierschutzverein_europa", "animalrescuebosnia"]
+        # ALL scrapers are enabled by default now
+        expected_enabled = [
+            "rean",
+            "theunderdog",
+            "tierschutzverein_europa",
+            "animalrescuebosnia",
+            "daisy_family_rescue",
+            "daisyfamilyrescue",
+            "misis_rescue",
+            "dogstrust",
+            "woof_project",
+            "pets_in_turkey",
+            "furryrescueitaly",
+            "galgosdelsol",
+            "manytearsrescue",
+            "petsinturkey",
+            "santerpaws",
+            "santerpawsbulgarianrescue",
+        ]
+        actual_enabled = get_enabled_scrapers()
+        assert set(actual_enabled) == set(expected_enabled)
 
-        # Enable specific scrapers
+        # Disable specific scraper via override (since all are enabled by default)
         with patch.dict(
             os.environ,
             {
-                "SCRAPER_REAN_UNIFIED_ENABLED": "true",
-                "SCRAPER_DOGSTRUST_UNIFIED_ENABLED": "true",
+                "SCRAPER_SANTERPAWS_UNIFIED_ENABLED": "false",  # Override to disable
             },
         ):
             reset_flags_cache()
             enabled = get_enabled_scrapers()
-            assert "rean" in enabled
-            assert "dogstrust" in enabled
-            assert "theunderdog" in enabled  # TheUnderdog is also enabled by default
+            assert "santerpaws" not in enabled  # Disabled via override
+            assert "rean" in enabled  # Still enabled by default
+            assert "dogstrust" in enabled  # Still enabled by default
 
         # Global enable should return all
         with patch.dict(os.environ, {"UNIFIED_STANDARDIZATION_ENABLED": "true"}):
             reset_flags_cache()
             enabled = get_enabled_scrapers()
-            assert len(enabled) == 13  # All scrapers
+            assert len(enabled) == 16  # All scrapers including aliases and misis_rescue
 
     def test_environment_variable_formats(self):
         """Test various environment variable formats."""

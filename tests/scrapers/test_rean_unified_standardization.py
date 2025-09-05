@@ -51,7 +51,7 @@ class TestREANUnifiedStandardization:
         """Test REAN handles cases where breed is not extracted."""
         scraper.use_unified_standardization = True
 
-        raw_animal = {"name": "Max", "age_text": "3 years", "properties": {}}
+        raw_animal = {"name": "Max", "age": "3 years", "properties": {}}
 
         # Process animal through standardization
         processed = scraper.process_animal(raw_animal)
@@ -59,6 +59,7 @@ class TestREANUnifiedStandardization:
         # Verify it processes gracefully even without breed
         assert processed["name"] == "Max"
         assert processed["age_text"] == "3 years"
+        assert processed["breed"] == "Unknown"  # Unified standardization sets default
 
     def test_rean_future_breed_extraction_ready(self, scraper):
         """Test that if REAN adds breed extraction, it will use unified standardization."""
@@ -90,7 +91,7 @@ class TestREANUnifiedStandardization:
 
     def test_feature_flag_controls_standardization(self, scraper):
         """Test feature flag properly controls standardization usage."""
-        raw_animal = {"name": "Charlie", "age_text": "4 years", "properties": {}}
+        raw_animal = {"name": "Charlie", "age": "4 years", "properties": {}}
 
         # Test with flag disabled - should return data unchanged
         scraper.use_unified_standardization = False
@@ -101,4 +102,4 @@ class TestREANUnifiedStandardization:
         scraper.use_unified_standardization = True
         result_enabled = scraper.process_animal(raw_animal)
         assert result_enabled["name"] == "Charlie"
-        assert result_enabled["age_text"] == "4 years"
+        assert result_enabled["age_text"] == "4 years"  # Unified standardization preserves age_text

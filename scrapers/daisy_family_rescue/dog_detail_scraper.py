@@ -195,6 +195,7 @@ class DaisyFamilyRescueDogDetailScraper:
         # Process age/birth date - just extract the age text for unified parsing
         if "Alter:" in steckbrief_data:
             processed_data["age_text"] = steckbrief_data["Alter:"]
+            processed_data["age"] = steckbrief_data["Alter:"]  # Unified standardization expects 'age' field
 
         # Process gender/sex
         if "Geschlecht:" in steckbrief_data:
