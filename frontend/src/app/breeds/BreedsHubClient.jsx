@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import EmptyState from "@/components/ui/EmptyState";
 import Layout from "@/components/layout/Layout";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
-import DogCardOptimized from "@/components/dogs/DogCardOptimized";
 import { ChevronRight, Dog, Heart, Home } from "lucide-react";
 
 export default function BreedsHubClient({ initialBreedStats }) {
@@ -63,17 +62,84 @@ export default function BreedsHubClient({ initialBreedStats }) {
     [breedStats, pureBreedCount, crossbreedCount],
   );
 
+  // Breed group color styles - matching mockup design
+  const breedGroupStyles = {
+    'Hound': { 
+      bg: 'bg-orange-50 hover:bg-orange-100', 
+      border: 'border-2 border-orange-200', 
+      text: 'text-orange-700',
+      countColor: 'text-orange-600',
+      icon: 'bg-orange-100' 
+    },
+    'Sporting': { 
+      bg: 'bg-emerald-50 hover:bg-emerald-100', 
+      border: 'border-2 border-emerald-200', 
+      text: 'text-emerald-700',
+      countColor: 'text-emerald-600',
+      icon: 'bg-emerald-100' 
+    },
+    'Herding': { 
+      bg: 'bg-purple-50 hover:bg-purple-100', 
+      border: 'border-2 border-purple-200', 
+      text: 'text-purple-700',
+      countColor: 'text-purple-600',
+      icon: 'bg-purple-100' 
+    },
+    'Working': { 
+      bg: 'bg-blue-50 hover:bg-blue-100', 
+      border: 'border-2 border-blue-200', 
+      text: 'text-blue-700',
+      countColor: 'text-blue-600',
+      icon: 'bg-blue-100' 
+    },
+    'Terrier': { 
+      bg: 'bg-red-50 hover:bg-red-100', 
+      border: 'border-2 border-red-200', 
+      text: 'text-red-700',
+      countColor: 'text-red-600',
+      icon: 'bg-red-100' 
+    },
+    'Non-Sporting': { 
+      bg: 'bg-teal-50 hover:bg-teal-100', 
+      border: 'border-2 border-teal-200', 
+      text: 'text-teal-700',
+      countColor: 'text-teal-600',
+      icon: 'bg-teal-100' 
+    },
+    'Toy': { 
+      bg: 'bg-pink-50 hover:bg-pink-100', 
+      border: 'border-2 border-pink-200', 
+      text: 'text-pink-700',
+      countColor: 'text-pink-600',
+      icon: 'bg-pink-100' 
+    },
+    'Mixed': { 
+      bg: 'bg-violet-50 hover:bg-violet-100', 
+      border: 'border-2 border-violet-200', 
+      text: 'text-violet-700',
+      countColor: 'text-violet-600',
+      icon: 'bg-violet-100' 
+    }
+  };
+
   // Breed groups from API (7 groups from PRD, excluding "Unknown")
   const breedGroups = useMemo(
     () =>
       (breedStats?.breed_groups || [])
         .filter((group) => group.name !== "Unknown" && group.count > 0)
         .sort((a, b) => b.count - a.count) // Sort by count descending
-        .slice(0, 7) // Take top 7 groups
+        .slice(0, 8) // Take top 8 groups (including Mixed if present)
         .map((group) => ({
           name: group.name,
           count: group.count,
           href: `/breeds?group=${encodeURIComponent(group.name)}`,
+          styles: breedGroupStyles[group.name] || {
+            bg: 'bg-gray-50 hover:bg-gray-100',
+            border: 'border-2 border-gray-200',
+            text: 'text-gray-700',
+            countColor: 'text-gray-600',
+            icon: 'bg-gray-100'
+          }
         })),
     [breedStats],
   );
@@ -197,32 +263,32 @@ export default function BreedsHubClient({ initialBreedStats }) {
               Popular Breed Groups
             </h2>
             {breedGroups.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {breedGroups.map((group) => (
                   <Link
                     key={group.name}
                     href={group.href}
                     aria-label={`View ${group.name} dogs: ${group.count} available`}
                   >
-                    <Card className="p-6 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer h-full focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2">
+                    <div className={`p-6 rounded-lg ${group.styles.bg} ${group.styles.border} shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer h-full focus-within:ring-2 focus-within:ring-offset-2`}>
                       <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-lg font-semibold mb-1">
+                        <div className="flex-1">
+                          <h3 className={`text-lg font-semibold mb-1 ${group.styles.text}`}>
                             {group.name}
                           </h3>
-                          <p className="text-2xl font-bold text-primary">
+                          <p className={`text-3xl font-bold ${group.styles.countColor}`}>
                             {group.count.toLocaleString()}
                           </p>
-                          <p className="text-sm text-muted-foreground mt-1">
+                          <p className="text-sm text-gray-600 mt-1">
                             rescue dogs available
                           </p>
                         </div>
                         <ChevronRight
-                          className="h-5 w-5 text-muted-foreground"
+                          className={`h-5 w-5 ${group.styles.text} opacity-60`}
                           aria-hidden="true"
                         />
                       </div>
-                    </Card>
+                    </div>
                   </Link>
                 ))}
               </div>

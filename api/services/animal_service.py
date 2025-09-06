@@ -743,10 +743,25 @@ class AnimalService:
                     }
                 })
             
+            # Get purebred and crossbreed counts
+            self.cursor.execute("""
+                SELECT 
+                    COUNT(*) FILTER (WHERE breed_type = 'purebred') as purebred_count,
+                    COUNT(*) FILTER (WHERE breed_type = 'crossbreed') as crossbreed_count
+                FROM animals a
+                JOIN organizations o ON a.organization_id = o.id
+                WHERE a.animal_type = 'dog' 
+                AND a.status = 'available'
+                AND o.active = TRUE
+            """)
+            breed_type_counts = self.cursor.fetchone()
+            
             return {
                 "total_dogs": total_dogs,
                 "unique_breeds": unique_breeds,
                 "breed_groups": breed_groups,
+                "purebred_count": breed_type_counts["purebred_count"] or 0,
+                "crossbreed_count": breed_type_counts["crossbreed_count"] or 0,
                 "qualifying_breeds": qualifying_breeds
             }
             

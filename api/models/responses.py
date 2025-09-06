@@ -109,3 +109,5 @@ class BreedStatsResponse(BaseModel):
     unique_breeds: int = Field(..., description="Number of unique breeds", ge=0)
     breed_groups: List[BreedGroupStats] = Field(default_factory=list, description="Distribution of dogs by breed group")
     qualifying_breeds: List[QualifyingBreed] = Field(default_factory=list, description="Breeds with 15+ dogs")
+    purebred_count: int = Field(default=0, description="Number of purebred dogs", ge=0)
+    crossbreed_count: int = Field(default=0, description="Number of crossbreed dogs", ge=0)
