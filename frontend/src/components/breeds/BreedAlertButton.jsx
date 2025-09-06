@@ -15,6 +15,7 @@ const BreedAlertButton = forwardRef(({
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   const timeoutRef = useRef();
 
   // Check if breed alert already exists on mount
@@ -35,6 +36,7 @@ const BreedAlertButton = forwardRef(({
     if (isLoading || isSaved) return;
 
     setIsLoading(true);
+    setErrorMsg(""); // Clear any previous errors
 
     try {
       // Track breed alert save event
@@ -70,7 +72,9 @@ const BreedAlertButton = forwardRef(({
       }, 3000);
     } catch (error) {
       console.error('Failed to save breed alert:', error);
-      // TODO: Show error toast/notification
+      setErrorMsg("Could not save alert. Please try again.");
+      // Clear error after 5 seconds
+      setTimeout(() => setErrorMsg(""), 5000);
     } finally {
       setIsLoading(false);
     }
@@ -119,28 +123,35 @@ const BreedAlertButton = forwardRef(({
   };
 
   return (
-    <Button
-      ref={ref}
-      onClick={handleSaveAlert}
-      disabled={isLoading || isSaved}
-      variant={getButtonVariant()}
-      size={size}
-      className={`transition-all duration-200 ${
-        showSuccess 
-          ? "bg-green-600 hover:bg-green-700 text-white" 
-          : isSaved
-          ? "bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
-          : ""
-      } ${className}`}
-      aria-label={`Save alert for ${breedData.primary_breed} dogs`}
-      title={
-        isSaved 
-          ? `You'll be notified when new ${breedData.primary_breed}s become available`
-          : `Get notified when new ${breedData.primary_breed}s are posted`
-      }
-    >
-      {getButtonContent()}
-    </Button>
+    <>
+      <Button
+        ref={ref}
+        onClick={handleSaveAlert}
+        disabled={isLoading || isSaved}
+        variant={getButtonVariant()}
+        size={size}
+        className={`transition-all duration-200 ${
+          showSuccess 
+            ? "bg-green-600 hover:bg-green-700 text-white" 
+            : isSaved
+            ? "bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+            : ""
+        } ${className}`}
+        aria-label={`Save alert for ${breedData.primary_breed} dogs`}
+        title={
+          isSaved 
+            ? `You'll be notified when new ${breedData.primary_breed}s become available`
+            : `Get notified when new ${breedData.primary_breed}s are posted`
+        }
+      >
+        {getButtonContent()}
+      </Button>
+      {errorMsg && (
+        <p role="alert" aria-live="polite" className="mt-2 text-sm text-red-600">
+          {errorMsg}
+        </p>
+      )}
+    </>
   );
 });
 
