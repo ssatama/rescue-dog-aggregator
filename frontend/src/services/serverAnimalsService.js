@@ -226,6 +226,35 @@ export const getStatistics = cache(async () => {
   }
 });
 
+// Breed statistics API fetch with caching
+export const getBreedStats = cache(async () => {
+  try {
+    const response = await fetch(`${API_URL}/api/breeds/stats`, {
+      next: {
+        revalidate: 3600, // Cache for 1 hour
+        tags: ["breed-stats"],
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch breed stats: ${response.statusText}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error("Error fetching breed stats:", error);
+    return {
+      total_dogs: 0,
+      unique_breeds: 0,
+      breed_groups: {},
+      qualifying_breeds: [],
+    };
+  }
+});
+
 // Animals by curation with caching
 export const getAnimalsByCuration = cache(async (curationType, limit = 4) => {
   try {
