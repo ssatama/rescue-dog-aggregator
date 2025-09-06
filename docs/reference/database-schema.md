@@ -1,6 +1,6 @@
 # Database Schema Reference
 
-This document provides complete documentation of the PostgreSQL database schema for the Rescue Dog Aggregator platform as of August 2025.
+This document provides complete documentation of the PostgreSQL database schema for the Rescue Dog Aggregator platform as of January 2025.
 
 ## Schema Overview
 
@@ -10,38 +10,39 @@ The database is designed around a central challenge: **normalizing heterogeneous
 - **Data Quality Tracking**: Monitoring availability confidence and scrape operation metrics
 - **Flexible Metadata**: Using JSONB fields for semi-structured data that varies by source
 - **Performance Optimization**: Strategic indexing including full-text search capabilities
+- **LLM Enhancement**: AI-powered enrichment fields for improved descriptions and profiling
 - **Global Test Isolation**: Comprehensive fixtures prevent test data contamination
 
-This design accommodates the reality that source data is inconsistent while providing a clean, queryable interface for the application across 8 active organizations.
+This design accommodates the reality that source data is inconsistent while providing a clean, queryable interface for the application across 13+ active organizations with 2,500+ dogs.
 
 ## Core Tables
 
 ### organizations
 Stores rescue organization metadata and configuration.
 
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | SERIAL PRIMARY KEY | Unique organization identifier |
-| `name` | VARCHAR(255) | Organization display name |
-| `website_url` | TEXT | Official website URL |
-| `description` | TEXT | Organization description |
-| `country` | VARCHAR(100) | Primary country of operation |
-| `city` | VARCHAR(100) | Primary city location |
-| `logo_url` | TEXT | Organization logo image URL |
-| `active` | BOOLEAN | Whether organization is currently active |
-| `config_id` | VARCHAR(50) UNIQUE | Configuration identifier for scraper settings |
-| `last_config_sync` | TIMESTAMP | Last configuration synchronization time |
-| `social_media` | JSONB | Social media profile links |
-| `ships_to` | JSONB | Array of countries/regions served |
-| `service_regions` | JSONB | Geographic service area metadata |
-| `total_dogs` | INTEGER | Current total dog count |
-| `new_this_week` | INTEGER | New dogs added this week |
-| `recent_dogs` | JSONB | Recent dog listing metadata |
-| `established_year` | INTEGER | Year organization was established |
-| `adoption_url` | TEXT | Base URL for adoption process (Added 2025) |
-| `donate_url` | TEXT | Donation page URL (Added 2025) |
-| `is_foster_based` | BOOLEAN | Whether organization uses foster homes |
-| `slug` | VARCHAR(100) UNIQUE | URL-friendly organization identifier |
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | SERIAL | PRIMARY KEY | Unique organization identifier |
+| `name` | VARCHAR(255) | NOT NULL | Organization display name |
+| `website_url` | TEXT | NOT NULL | Official website URL |
+| `description` | TEXT | | Organization description |
+| `country` | VARCHAR(100) | | Primary country of operation |
+| `city` | VARCHAR(100) | | Primary city location |
+| `logo_url` | TEXT | | Organization logo image URL |
+| `active` | BOOLEAN | DEFAULT TRUE | Whether organization is currently active |
+| `config_id` | VARCHAR(50) | UNIQUE | Configuration identifier for scraper settings |
+| `last_config_sync` | TIMESTAMP | | Last configuration synchronization time |
+| `social_media` | JSONB | DEFAULT '{}' | Social media profile links |
+| `ships_to` | JSONB | DEFAULT '[]' | Array of countries/regions served |
+| `service_regions` | JSONB | DEFAULT '[]' | Geographic service area metadata |
+| `total_dogs` | INTEGER | DEFAULT 0 | Current total dog count |
+| `new_this_week` | INTEGER | DEFAULT 0 | New dogs added this week |
+| `recent_dogs` | JSONB | DEFAULT '[]' | Recent dog listing metadata |
+| `established_year` | INTEGER | | Year organization was established |
+| `adoption_fees` | JSONB | DEFAULT '{}' | Dynamic pricing structure for adoptions |
+| `slug` | VARCHAR(255) | NOT NULL, UNIQUE | URL-friendly organization identifier |
+| `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | When organization was added |
+| `updated_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Last modification timestamp |
 
 **JSONB Field Examples:**
 ```json
@@ -63,39 +64,53 @@ Stores rescue organization metadata and configuration.
 ```
 
 ### animals
-Main table storing animal (primarily dog) listings with availability tracking.
+Main table storing animal (primarily dog) listings with availability tracking and LLM enrichment.
 
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | SERIAL PRIMARY KEY | Unique animal identifier |
-| `name` | VARCHAR(255) | Animal's name |
-| `organization_id` | INTEGER | Foreign key to organizations table |
-| `animal_type` | VARCHAR(50) | Type of animal (default: 'dog') |
-| `external_id` | VARCHAR(255) | Original identifier from source organization |
-| `primary_image_url` | TEXT | Optimized primary image URL |
-| `original_image_url` | TEXT | Original image URL for fallback |
-| `adoption_url` | TEXT | Direct link to adoption page |
-| `status` | VARCHAR(50) | Adoption status (available, pending, adopted) |
-| `breed` | VARCHAR(255) | Original breed information from source |
-| `standardized_breed` | VARCHAR(100) | Normalized breed classification |
-| `breed_group` | VARCHAR(100) | AKC/breed group classification |
-| `age_text` | VARCHAR(100) | Original age description from source |
-| `age_min_months` | INTEGER | Minimum age in months (parsed) |
-| `age_max_months` | INTEGER | Maximum age in months (parsed) |
-| `sex` | VARCHAR(50) | Animal's sex |
-| `size` | VARCHAR(50) | Original size description from source |
-| `standardized_size` | VARCHAR(50) | Normalized size (small, medium, large, extra-large) |
-| `language` | VARCHAR(10) | Content language (default: 'en') |
-| `properties` | JSONB | Additional metadata and characteristics |
-| `last_seen_at` | TIMESTAMP | Last time animal was found during scraping |
-| `consecutive_scrapes_missing` | INTEGER | Count of consecutive scrapes where animal was not found |
-| `availability_confidence` | VARCHAR(10) | Confidence level: 'high', 'medium', 'low' |
-| `created_at` | TIMESTAMP | When the animal was first added |
-| `updated_at` | TIMESTAMP | Last modification timestamp |
-| `description` | TEXT | Animal description/bio (Added 2025) |
-| `location` | VARCHAR(255) | Geographic location |
-| `weight` | VARCHAR(50) | Original weight description |
-| `standardized_weight_lbs` | INTEGER | Normalized weight in pounds |
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | SERIAL | PRIMARY KEY | Unique animal identifier |
+| `name` | VARCHAR(255) | NOT NULL | Animal's name |
+| `organization_id` | INTEGER | NOT NULL, FK → organizations(id) | Foreign key to organizations table |
+| `animal_type` | VARCHAR(50) | NOT NULL, DEFAULT 'dog' | Type of animal |
+| `external_id` | VARCHAR(255) | | Original identifier from source organization |
+| `primary_image_url` | TEXT | | Optimized primary image URL |
+| `original_image_url` | TEXT | | Original image URL for fallback |
+| `adoption_url` | TEXT | NOT NULL | Direct link to adoption page |
+| `status` | VARCHAR(50) | DEFAULT 'available' | Adoption status (available, pending, adopted) |
+| `breed` | VARCHAR(255) | | Original breed information from source |
+| `standardized_breed` | VARCHAR(100) | | Normalized breed classification |
+| `breed_group` | VARCHAR(50) | | AKC/breed group classification |
+| `breed_type` | VARCHAR(20) | | Breed type (purebred, mixed, unknown) |
+| `breed_confidence` | VARCHAR(20) | | Confidence in breed identification |
+| `primary_breed` | VARCHAR(255) | | Primary breed for mixed breeds |
+| `secondary_breed` | VARCHAR(255) | | Secondary breed for mixed breeds |
+| `age_text` | VARCHAR(100) | | Original age description from source |
+| `age_min_months` | INTEGER | | Minimum age in months (parsed) |
+| `age_max_months` | INTEGER | | Maximum age in months (parsed) |
+| `sex` | VARCHAR(50) | | Animal's sex |
+| `size` | VARCHAR(50) | | Original size description from source |
+| `standardized_size` | VARCHAR(50) | | Normalized size (small, medium, large, extra-large) |
+| `language` | VARCHAR(10) | DEFAULT 'en' | Content language |
+| `properties` | JSONB | | Additional metadata and characteristics |
+| `enriched_description` | TEXT | | LLM-enhanced description |
+| `dog_profiler_data` | JSONB | | AI-generated personality profile |
+| `translations` | JSONB | | Multi-language translations |
+| `llm_processed_at` | TIMESTAMP | | When LLM processing occurred |
+| `llm_model_used` | VARCHAR(100) | | Model used for enrichment |
+| `llm_processing_flags` | JSONB | DEFAULT '{}' | Processing status flags |
+| `last_seen_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Last time animal was found during scraping |
+| `consecutive_scrapes_missing` | INTEGER | DEFAULT 0 | Count of consecutive scrapes where animal was not found |
+| `availability_confidence` | VARCHAR(10) | DEFAULT 'high', CHECK IN ('high','medium','low') | Confidence level |
+| `last_session_id` | INTEGER | FK → scrape_sessions(id) | Last scrape session reference |
+| `active` | BOOLEAN | NOT NULL, DEFAULT TRUE | Whether animal is active in system |
+| `slug` | VARCHAR(255) | NOT NULL, UNIQUE | URL-friendly identifier |
+| `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | When the animal was first added |
+| `updated_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Last modification timestamp |
+| `last_scraped_at` | TIMESTAMP | | Last scraping attempt |
+| `source_last_updated` | TIMESTAMP | | When source data was last updated |
+
+**Unique Constraints:**
+- `(external_id, organization_id)` - Prevents duplicate animals from same organization
 
 **Availability Confidence Logic:**
 - **High**: Animal seen in last scrape (0 missing scrapes)
@@ -116,38 +131,50 @@ Main table storing animal (primarily dog) listings with availability tracking.
   "adoption_fee": "$350",
   "microchipped": true,
   "vaccinated": true,
-  "spayed_neutered": true
+  "spayed_neutered": true,
+  "location_country": "US",
+  "location_region": "CA",
+  "quality_score": 0.85,
+  "description": "Original description from source"
+}
+```
+
+**Dog Profiler Data JSONB Example:**
+```json
+{
+  "personality_traits": ["friendly", "energetic", "loyal"],
+  "ideal_home": "Active family with yard",
+  "training_level": "intermediate",
+  "special_needs": [],
+  "compatibility_score": {
+    "families": 0.9,
+    "singles": 0.7,
+    "seniors": 0.5
+  }
 }
 ```
 
 ### ~~animal_images~~ (REMOVED)
-Supports multiple images per animal with primary image designation.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | SERIAL PRIMARY KEY | Unique image identifier |
-| `animal_id` | INTEGER | Foreign key to animals table |
-| `image_url` | TEXT | Optimized image URL |
-| `original_image_url` | TEXT | Original image URL for fallback |
-| `is_primary` | BOOLEAN | Whether this is the primary display image |
+This table was removed in migration 005. Image URLs are now stored directly in the animals table (`primary_image_url` and `original_image_url` fields).
 
 ### scrape_logs
 Comprehensive logging of scraping operations with quality metrics.
 
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | SERIAL PRIMARY KEY | Unique log entry identifier |
-| `organization_id` | INTEGER | Foreign key to organizations table |
-| `started_at` | TIMESTAMP | Scrape operation start time |
-| `completed_at` | TIMESTAMP | Scrape operation completion time |
-| `dogs_found` | INTEGER | Total dogs discovered during scrape |
-| `dogs_added` | INTEGER | New dogs added to database |
-| `dogs_updated` | INTEGER | Existing dogs updated |
-| `status` | VARCHAR(50) | Operation status (success, error, partial) |
-| `error_message` | TEXT | Error details if operation failed |
-| `detailed_metrics` | JSONB | Comprehensive operation metrics |
-| `duration_seconds` | NUMERIC(10,2) | Total operation duration |
-| `data_quality_score` | NUMERIC(3,2) | Quality score (0.0-1.0) based on data completeness |
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | SERIAL | PRIMARY KEY | Unique log entry identifier |
+| `organization_id` | INTEGER | NOT NULL, FK → organizations(id) | Foreign key to organizations table |
+| `started_at` | TIMESTAMP | NOT NULL | Scrape operation start time |
+| `completed_at` | TIMESTAMP | | Scrape operation completion time |
+| `dogs_found` | INTEGER | | Total dogs discovered during scrape |
+| `dogs_added` | INTEGER | | New dogs added to database |
+| `dogs_updated` | INTEGER | | Existing dogs updated |
+| `status` | VARCHAR(50) | NOT NULL | Operation status (success, error, partial) |
+| `error_message` | TEXT | | Error details if operation failed |
+| `detailed_metrics` | JSONB | | Comprehensive operation metrics |
+| `duration_seconds` | NUMERIC(10,2) | | Total operation duration |
+| `data_quality_score` | NUMERIC(3,2) | CHECK (0 ≤ score ≤ 1) | Quality score based on data completeness |
+| `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | When log entry was created |
 
 **Detailed Metrics JSONB Example:**
 ```json
@@ -165,12 +192,44 @@ Comprehensive logging of scraping operations with quality metrics.
 ### service_regions
 Geographic service areas for organizations (normalized relationship).
 
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | SERIAL PRIMARY KEY | Unique region identifier |
-| `organization_id` | INTEGER | Foreign key to organizations table |
-| `country` | VARCHAR(100) | Country code or name |
-| `region` | VARCHAR(100) | State, province, or region |
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | SERIAL | PRIMARY KEY | Unique region identifier |
+| `organization_id` | INTEGER | NOT NULL, FK → organizations(id) | Foreign key to organizations table |
+| `country` | VARCHAR(100) | NOT NULL | Country code or name |
+| `region` | VARCHAR(100) | | State, province, or region |
+| `active` | BOOLEAN | DEFAULT TRUE | Whether this service region is active |
+| `notes` | TEXT | | Additional notes about the region |
+| `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | When region was added |
+| `updated_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Last modification timestamp |
+
+**Unique Constraints:**
+- `(organization_id, country)` - One entry per country per organization
+
+### llm_processing_logs
+Tracks LLM processing operations for enrichment and analysis.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | SERIAL | PRIMARY KEY | Unique log identifier |
+| `animal_id` | INTEGER | FK → animals(id) ON DELETE CASCADE | Reference to processed animal |
+| `processing_type` | VARCHAR(50) | NOT NULL | Type of processing (enrichment, translation, profiling) |
+| `status` | VARCHAR(20) | NOT NULL | Processing status (success, error, pending) |
+| `model_used` | VARCHAR(100) | | LLM model identifier |
+| `tokens_used` | INTEGER | | Number of tokens consumed |
+| `processing_time_ms` | INTEGER | | Processing duration in milliseconds |
+| `error_message` | TEXT | | Error details if processing failed |
+| `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | When processing occurred |
+
+### schema_migrations
+Tracks database migrations for version control.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | SERIAL | PRIMARY KEY | Unique migration identifier |
+| `version` | VARCHAR(50) | NOT NULL, UNIQUE | Migration version number |
+| `applied_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | When migration was applied |
+| `description` | TEXT | | Migration description |
 
 ## Relationships
 
@@ -180,31 +239,70 @@ The schema implements the following key relationships:
 organizations (1) ──── (many) animals
 organizations (1) ──── (many) service_regions  
 organizations (1) ──── (many) scrape_logs
-~~animals (1) ──── (many) animal_images~~ (REMOVED: Multi-image support eliminated)
+animals (1) ──── (many) llm_processing_logs
+animals (many) ──── (1) scrape_sessions (via last_session_id)
 ```
 
 **Key Constraints:**
 - `animals.external_id + organization_id` must be unique (prevents duplicates)
-- `service_regions.organization_id + country + region` must be unique
+- `service_regions.organization_id + country` must be unique
 - All foreign key relationships are enforced with referential integrity
+- CASCADE DELETE on `llm_processing_logs.animal_id` ensures cleanup when animals are removed
 
 ## Indexing Strategy
 
-The database employs a comprehensive indexing strategy optimized for common query patterns:
+The database employs a comprehensive indexing strategy with 50+ indexes optimized for common query patterns:
+
+### Performance-Critical Composite Indexes
+
+#### Homepage Optimization
+- `idx_animals_homepage_optimized`: (status, availability_confidence, created_at DESC) WHERE status = 'available'
+  - Optimizes homepage queries with 60-80% performance improvement
+- `idx_organizations_active_country`: (active, country, id) WHERE active = true
+  - Speeds up organization JOINs by 40-50%
+
+#### Search and Filtering
+- `idx_animals_size_breed_status`: (status, standardized_size, breed_group, created_at DESC)
+  - Supports multi-filter search queries
+- `idx_animals_location_composite`: (status, location_country, location_region)
+  - Optimizes location-based filtering
+
+#### Analytics Coverage
+- `idx_animals_analytics_covering`: (status, organization_id, standardized_size, breed_group, sex, availability_confidence, created_at)
+  - Covering index for dashboard analytics with 70-90% improvement
 
 ### B-Tree Indexes (Standard Queries)
 - All foreign key columns for fast JOINs
-- Frequently filtered columns: `status`, `breed`, `size`, `availability_confidence`
-- Temporal columns: `last_seen_at`, `created_at`
+- Single column indexes: `status`, `breed`, `size`, `sex`, `availability_confidence`
+- Temporal columns: `last_seen_at`, `created_at`, `updated_at`
+- Breed-related: `breed_type`, `breed_confidence`, `primary_breed`, `secondary_breed`
+- Unique indexes: `animals.slug`, `organizations.slug`, `organizations.config_id`
 
 ### GIN Indexes (Advanced Search)
-- **Full-Text Search**: `animals.name` and `animals.breed` using PostgreSQL's `to_tsvector`
-- **JSONB Queries**: `animals.properties`, `organizations.social_media`, `scrape_logs.detailed_metrics`
+- **Full-Text Search**: 
+  - `idx_animals_name_gin`: to_tsvector on name field
+  - `idx_animals_breed_gin`: to_tsvector on breed field
+  - `idx_animals_search_enhanced`: Combined tsvector on (name + breed + description)
+  - `idx_animals_name_trgm`: Trigram index for fuzzy name matching
+- **JSONB Queries**: 
+  - `animals.properties`: General properties access
+  - `animals.dog_profiler_data`: AI profiling data
+  - `animals.translations`: Multi-language support
+  - `organizations.social_media`, `organizations.ships_to`, `organizations.service_regions`
+  - `scrape_logs.detailed_metrics`
+
+### Specialized Indexes
+- **Behavioral Traits**: `good_with_kids`, `good_with_dogs`, `good_with_cats` (filtered on properties JSONB)
+- **Quality Filtering**: `idx_animals_quality_score` for high-quality profiles
+- **Swipe Feature**: `idx_animals_swipe_composite` for mobile swipe functionality
+- **SEO/Sitemap**: `idx_animals_sitemap_quality` for content quality ranking
 
 ### Performance Considerations
-- Indexes optimize read performance for common search and filter operations
-- Write operations (INSERT/UPDATE) have minimal overhead due to strategic index selection
-- JSONB indexes enable efficient key-value queries within JSON documents
+- Partial indexes with WHERE clauses reduce index size and improve query speed
+- Covering indexes eliminate table lookups for analytics queries
+- Strategic use of DESC ordering in indexes matches common sort patterns
+- JSONB GIN indexes enable efficient key-value queries within JSON documents
+- Trigram indexes support fuzzy text matching for improved search UX
 
 ## Data Quality & Standardization
 
@@ -249,39 +347,48 @@ WHERE detailed_metrics->>'parsing_errors'::int > 5;
 - Index commonly queried JSONB keys for performance
 - Preserve original structure while normalizing critical search fields
 
-## 2025 Schema Updates
+## Recent Schema Evolution
 
-### Recent Additions
-- **Organization enhancements**: Added `adoption_url`, `donate_url`, `is_foster_based`, `slug` fields
-- **Animal improvements**: Added `description`, `location`, `weight`, `standardized_weight_lbs`, `created_at`, `updated_at`
-- **Test isolation**: Global fixtures prevent test data from affecting production schema
-- **Railway deployment**: Production database hosted on Railway with automatic migrations
+### 2025 Updates
+- **LLM Integration** (Migration 005):
+  - Added `enriched_description`, `dog_profiler_data`, `translations` fields
+  - New `llm_processing_logs` table for tracking AI operations
+  - Enhanced breed classification with confidence scoring
+  
+- **Performance Optimization** (Migrations 006-010):
+  - Added 50+ strategic indexes for query optimization
+  - Composite indexes for homepage queries (60-80% improvement)
+  - Covering indexes for analytics (70-90% improvement)
+  - Enhanced full-text search with trigram support
+
+- **Data Quality Improvements**:
+  - Removed `animal_images` table in favor of direct URL storage
+  - Added breed confidence and type classification
+  - Enhanced availability tracking with session references
 
 ### Migration Files
-Recent migrations include:
 ```
 database/migrations/
-├── 001_initial_schema.sql
-├── 002_add_standardization_fields.sql  
-├── 003_add_missing_fields.sql
-└── 004_add_organization_enhanced_fields.sql
-
-database/migrations/railway/
-├── versions/
-└── alembic.ini (Production migrations)
+├── 005_add_llm_enrichment_fields.sql     # LLM integration
+├── 005_drop_animal_images_table.sql      # Table removal
+├── 006_add_llm_performance_indexes.sql   # LLM indexes
+├── 007_add_performance_indexes.sql       # General performance
+├── 008_optimize_indexes.sql              # Index optimization
+├── 009_security_and_index_fixes.sql     # Security improvements
+└── 010_performance_indexes.sql           # Homepage optimization
 ```
 
-### Performance Optimizations
-- **Composite indexes**: Added for common filter combinations (`status` + `availability_confidence`)
-- **JSONB GIN indexes**: Optimized for properties and social_media queries
-- **Full-text search**: Enhanced tsvector indexes for breed and name searching
-- **Query monitoring**: Added query performance tracking for slow query identification
+### Performance Metrics
+- **Homepage Load**: 200ms → 40ms (80% improvement)
+- **Search Queries**: 50-70% faster with composite indexes
+- **Analytics Queries**: 70-90% faster with covering indexes
+- **Full-Text Search**: Enhanced with trigram matching for fuzzy search
 
-### Development vs Production
-- **Development**: Uses local PostgreSQL with test isolation fixtures
-- **Production**: Railway PostgreSQL with automated backups and monitoring
-- **Testing**: Comprehensive database isolation prevents test contamination
-- **Migrations**: Automated via Alembic for production, manual for development
+### Environment Configuration
+- **Development**: Local PostgreSQL with test isolation
+- **Production**: Railway PostgreSQL with automated backups
+- **Testing**: Complete database isolation via global fixtures
+- **Monitoring**: Sentry integration for performance tracking
 
 ## Migration and Maintenance
 

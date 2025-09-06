@@ -6,7 +6,7 @@ Response models for API endpoints.
 This module contains Pydantic models for API response structures.
 """
 
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -73,18 +73,28 @@ class SizeDistribution(BaseModel):
     xlarge: int = Field(..., description="Number of extra large dogs", ge=0)
 
 
+class ExperienceDistribution(BaseModel):
+    """Model for experience level distribution of a breed."""
+    
+    first_time_ok: int = Field(..., description="Number suitable for first-time owners", ge=0)
+    some_experience: int = Field(..., description="Number requiring some experience", ge=0)
+    experienced: int = Field(..., description="Number requiring experienced owners", ge=0)
+
+
 class QualifyingBreed(BaseModel):
     """Model for a qualifying breed with detailed statistics."""
     
     primary_breed: str = Field(..., description="Primary breed name")
     breed_slug: str = Field(..., description="URL-friendly breed slug")
-    breed_type: str = Field(None, description="Breed type (purebred, mixed, crossbreed, unknown, sighthound)")
-    breed_group: str = Field(None, description="Breed group classification")
+    breed_type: Optional[str] = Field(None, description="Breed type (purebred, mixed, crossbreed, unknown, sighthound)")
+    breed_group: Optional[str] = Field(None, description="Breed group classification")
     count: int = Field(..., description="Total number of dogs of this breed", ge=0)
     organization_count: int = Field(..., description="Number of organizations with this breed", ge=0)
     organizations: List[str] = Field(default_factory=list, description="List of organization names (top 5)")
     age_distribution: AgeDistribution = Field(..., description="Age distribution for this breed")
     size_distribution: SizeDistribution = Field(..., description="Size distribution for this breed")
+    personality_traits: List[str] = Field(default_factory=list, description="Top 5 personality traits from LLM analysis")
+    experience_distribution: ExperienceDistribution = Field(..., description="Experience level distribution for this breed")
 
 
 class BreedStatsResponse(BaseModel):

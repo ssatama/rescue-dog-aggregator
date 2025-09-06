@@ -653,7 +653,11 @@ class AnimalService:
                         COUNT(*) FILTER (WHERE a.standardized_size = 'Small') as small_count,
                         COUNT(*) FILTER (WHERE a.standardized_size = 'Medium') as medium_count,
                         COUNT(*) FILTER (WHERE a.standardized_size = 'Large') as large_count,
-                        COUNT(*) FILTER (WHERE a.standardized_size = 'XLarge') as xlarge_count
+                        COUNT(*) FILTER (WHERE a.standardized_size = 'XLarge') as xlarge_count,
+                        -- Experience level distribution
+                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'experience_level' = 'beginner') as first_time_ok_count,
+                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'experience_level' = 'intermediate') as some_experience_count,
+                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'experience_level' = 'experienced') as experienced_count
                     FROM animals a
                     JOIN organizations o ON a.organization_id = o.id
                     WHERE a.animal_type = 'dog' 
@@ -662,9 +666,46 @@ class AnimalService:
                     AND a.primary_breed IS NOT NULL
                     GROUP BY a.primary_breed, a.breed_slug, a.breed_type, a.breed_group
                     HAVING COUNT(*) >= 15
+                ),
+                breed_traits AS (
+                    SELECT 
+                        a.primary_breed,
+                        trait,
+                        COUNT(*) as trait_count
+                    FROM animals a
+                    JOIN organizations o ON a.organization_id = o.id
+                    CROSS JOIN LATERAL jsonb_array_elements_text(
+                        COALESCE(a.dog_profiler_data->'personality_traits', '[]'::jsonb)
+                    ) AS trait
+                    WHERE a.animal_type = 'dog' 
+                    AND a.status = 'available'
+                    AND o.active = TRUE
+                    AND a.primary_breed IS NOT NULL
+                    AND a.dog_profiler_data IS NOT NULL 
+                    AND a.dog_profiler_data != '{}'::jsonb
+                    AND jsonb_typeof(a.dog_profiler_data->'personality_traits') = 'array'
+                    GROUP BY a.primary_breed, trait
+                ),
+                top_traits AS (
+                    SELECT 
+                        primary_breed,
+                        ARRAY_AGG(trait ORDER BY trait_count DESC) FILTER (WHERE row_num <= 5) as top_personality_traits
+                    FROM (
+                        SELECT 
+                            primary_breed,
+                            trait,
+                            trait_count,
+                            ROW_NUMBER() OVER (PARTITION BY primary_breed ORDER BY trait_count DESC) as row_num
+                        FROM breed_traits
+                    ) ranked_traits
+                    GROUP BY primary_breed
                 )
-                SELECT * FROM breed_stats
-                ORDER BY count DESC
+                SELECT 
+                    bs.*,
+                    COALESCE(tt.top_personality_traits, ARRAY[]::text[]) as personality_traits
+                FROM breed_stats bs
+                LEFT JOIN top_traits tt ON bs.primary_breed = tt.primary_breed
+                ORDER BY bs.count DESC
             """)
             
             qualifying_breeds = []
@@ -693,6 +734,12 @@ class AnimalService:
                         "medium": row["medium_count"],
                         "large": row["large_count"],
                         "xlarge": row["xlarge_count"]
+                    },
+                    "personality_traits": row["personality_traits"] if row["personality_traits"] else [],
+                    "experience_distribution": {
+                        "first_time_ok": row["first_time_ok_count"],
+                        "some_experience": row["some_experience_count"],
+                        "experienced": row["experienced_count"]
                     }
                 })
             
