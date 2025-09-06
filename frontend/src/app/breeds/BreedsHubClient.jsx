@@ -23,10 +23,10 @@ export default function BreedsHubClient({ initialBreedStats }) {
       return breedStats.purebred_count;
     }
     // Fallback: Sum all breeds except Mixed and Unknown
-    const groups = breedStats?.breed_groups ?? {};
-    return Object.entries(groups)
-      .filter(([group]) => group !== "Mixed" && group !== "Unknown")
-      .reduce((sum, [_, count]) => sum + count, 0);
+    const groups = breedStats?.breed_groups ?? [];
+    return groups
+      .filter((group) => group.name !== "Mixed" && group.name !== "Unknown")
+      .reduce((sum, group) => sum + group.count, 0);
   }, [breedStats]);
 
   const crossbreedCount = useMemo(() => {
@@ -40,7 +40,7 @@ export default function BreedsHubClient({ initialBreedStats }) {
     () => [
       {
         title: "Mixed Breeds",
-        count: breedStats?.breed_groups?.Mixed ?? 0,
+        count: (breedStats?.breed_groups || []).find(g => g.name === "Mixed")?.count ?? 0,
         href: "/breeds/mixed",
         icon: <Heart className="h-5 w-5" />,
         description: "Unique personalities from diverse backgrounds",
@@ -66,14 +66,14 @@ export default function BreedsHubClient({ initialBreedStats }) {
   // Breed groups from API (7 groups from PRD, excluding "Unknown")
   const breedGroups = useMemo(
     () =>
-      Object.entries(breedStats?.breed_groups || {})
-        .filter(([group, count]) => group !== "Unknown" && count > 0)
-        .sort((a, b) => b[1] - a[1]) // Sort by count descending
+      (breedStats?.breed_groups || [])
+        .filter((group) => group.name !== "Unknown" && group.count > 0)
+        .sort((a, b) => b.count - a.count) // Sort by count descending
         .slice(0, 7) // Take top 7 groups
-        .map(([group, count]) => ({
-          name: group,
-          count,
-          href: `/breeds?group=${encodeURIComponent(group)}`,
+        .map((group) => ({
+          name: group.name,
+          count: group.count,
+          href: `/breeds?group=${encodeURIComponent(group.name)}`,
         })),
     [breedStats],
   );
