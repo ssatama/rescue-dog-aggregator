@@ -251,6 +251,7 @@ export const getBreedStats = cache(async () => {
       unique_breeds: 0,
       breed_groups: {},
       qualifying_breeds: [],
+      error: true,
     };
   }
 });

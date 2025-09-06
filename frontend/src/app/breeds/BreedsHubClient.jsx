@@ -1,24 +1,29 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import EmptyState from "@/components/ui/EmptyState";
 import Layout from "@/components/layout/Layout";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
+import DogCardOptimized from "@/components/dogs/DogCardOptimized";
 import { ChevronRight, Dog, Heart, Home } from "lucide-react";
 
-export default function BreedsHubClient({ initialBreedStats, initialParams }) {
-  const [breedStats, setBreedStats] = useState(initialBreedStats);
-  const [isLoading, setIsLoading] = useState(false);
+export default function BreedsHubClient({ initialBreedStats }) {
+  const breedStats = initialBreedStats;
   const router = useRouter();
 
   // Calculate pure breeds and crossbreeds from API data
   const pureBreedCount = useMemo(() => {
-    // Sum all breeds except Mixed and Unknown
-    const groups = breedStats?.breed_groups || {};
+    // Check if API provides purebred_count directly
+    if (breedStats?.purebred_count !== undefined) {
+      return breedStats.purebred_count;
+    }
+    // Fallback: Sum all breeds except Mixed and Unknown
+    const groups = breedStats?.breed_groups ?? {};
     return Object.entries(groups)
       .filter(([group]) => group !== "Mixed" && group !== "Unknown")
       .reduce((sum, [_, count]) => sum + count, 0);
@@ -27,14 +32,14 @@ export default function BreedsHubClient({ initialBreedStats, initialParams }) {
   const crossbreedCount = useMemo(() => {
     // This would come from a specific API field if available
     // For now, estimate based on breed patterns
-    return breedStats?.crossbreed_count || 229;
+    return breedStats?.crossbreed_count ?? 0;
   }, [breedStats]);
 
   // Breed type cards configuration (3 cards as specified in PRD)
   const breedTypeCards = useMemo(() => [
     { 
       title: "Mixed Breeds", 
-      count: breedStats?.breed_groups?.Mixed || 0, 
+      count: breedStats?.breed_groups?.Mixed ?? 0, 
       href: "/breeds/mixed",
       icon: <Heart className="h-5 w-5" />,
       description: "Unique personalities from diverse backgrounds"
@@ -74,7 +79,7 @@ export default function BreedsHubClient({ initialBreedStats, initialParams }) {
     { label: "Breeds", href: "/breeds" },
   ];
 
-  if (!breedStats) {
+  if (!breedStats || breedStats.error) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-8">
@@ -101,11 +106,30 @@ export default function BreedsHubClient({ initialBreedStats, initialParams }) {
               Discover Dogs by Breed
             </h1>
             <p className="text-xl text-muted-foreground mb-6">
-              {breedStats.total_dogs || "2,717"} rescue dogs across {breedStats.unique_breeds || "259"} breeds
+              {breedStats?.total_dogs ?? 0} rescue dogs across {breedStats?.unique_breeds ?? 0} breeds
             </p>
             <p className="text-lg text-muted-foreground">
-              {breedStats.qualifying_breeds?.length || 26} breeds with dedicated pages
+              {breedStats?.qualifying_breeds?.length ?? 0} breeds with dedicated pages
             </p>
+          </div>
+
+          {/* Filter Chips Row */}
+          <div className="flex justify-center gap-3 mb-10">
+            <Link href="/breeds/mixed">
+              <Badge variant="outline" className="cursor-pointer hover:bg-primary/10 px-4 py-2 text-sm">
+                Mixed Breeds
+              </Badge>
+            </Link>
+            <Link href="/breeds?type=purebred">
+              <Badge variant="outline" className="cursor-pointer hover:bg-primary/10 px-4 py-2 text-sm">
+                Pure Breeds
+              </Badge>
+            </Link>
+            <Link href="/breeds?type=crossbreed">
+              <Badge variant="outline" className="cursor-pointer hover:bg-primary/10 px-4 py-2 text-sm">
+                Crossbreeds
+              </Badge>
+            </Link>
           </div>
 
           {/* Breed Type Cards Section */}
