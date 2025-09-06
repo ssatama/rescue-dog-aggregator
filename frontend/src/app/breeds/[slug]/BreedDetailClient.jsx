@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import BreedPhotoGallery from "@/components/breeds/BreedPhotoGallery";
 import { BreedInfo } from "@/components/breeds/BreedStatistics";
 import EmptyState from "@/components/ui/EmptyState";
-import { getBreedDogs, getBreedFilterCounts } from "@/services/animalsService";
+import { getBreedDogs, getBreedFilterCounts } from "@/services/serverAnimalsService";
 
 export default function BreedDetailClient({
   initialBreedData,
@@ -76,7 +76,7 @@ export default function BreedDetailClient({
         setLoading(false);
       }
     },
-    [breedData.slug, activeFilters],
+    [breedData.breed_slug, activeFilters],
   );
 
   useEffect(() => {

@@ -30,6 +30,8 @@ export const getAnimals = cache(async (params = {}) => {
     queryParams.append("available_country", params.available_country);
   if (params.available_region)
     queryParams.append("available_region", params.available_region);
+  if (params.sort_by) queryParams.append("sort_by", params.sort_by);
+  if (params.sort_order) queryParams.append("sort_order", params.sort_order);
 
   const url = `${API_URL}/api/animals/?${queryParams.toString()}`;
 
@@ -51,7 +53,7 @@ export const getAnimals = cache(async (params = {}) => {
     return response.json();
   } catch (error) {
     console.error("Error fetching animals:", error);
-    return [];
+    return { results: [], total: 0 };
   }
 });
 

@@ -29,21 +29,25 @@ export async function generateMetadata({ params }) {
         title: `${breedData.count} ${breedData.primary_breed} Dogs Need Homes`,
         description: `Browse ${breedData.primary_breed} rescue dogs with personality profiles and real-time availability.`,
         images:
-          breedData.topDogs?.slice(0, 4).map((d) => ({
-            url: d.primary_image_url,
-            width: 800,
-            height: 600,
-            alt: `${d.name} - ${breedData.primary_breed} rescue dog`,
-          })) || [],
+          breedData.topDogs
+            ?.filter((d) => d.primary_image_url)
+            .slice(0, 4)
+            .map((d) => ({
+              url: d.primary_image_url,
+              width: 800,
+              height: 600,
+              alt: `${d.name} - ${breedData.primary_breed} rescue dog`,
+            })) || [],
         type: "website",
       },
       twitter: {
         card: "summary_large_image",
         title: `${breedData.count} ${breedData.primary_breed} Dogs Need Homes`,
         description: `Browse ${breedData.primary_breed} rescue dogs with personality profiles and real-time availability.`,
-        images: breedData.topDogs?.[0]?.primary_image_url
-          ? [breedData.topDogs[0].primary_image_url]
-          : [],
+        images: breedData.topDogs
+          ?.filter((d) => d.primary_image_url)
+          .slice(0, 1)
+          .map((d) => d.primary_image_url) || [],
       },
     };
   } catch (error) {
@@ -86,8 +90,7 @@ export default async function BreedDetailPage(props) {
       offset: 0,
     });
 
-    const initialDogs =
-      initialDogsResponse?.results || initialDogsResponse || [];
+    const initialDogs = initialDogsResponse?.results || [];
 
     return (
       <Suspense fallback={<BreedDetailSkeleton />}>

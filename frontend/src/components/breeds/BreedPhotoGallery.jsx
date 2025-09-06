@@ -9,14 +9,15 @@ import { X } from "lucide-react";
 export default function BreedPhotoGallery({ dogs, breedName, className = "" }) {
   const [selectedImage, setSelectedImage] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [imageErrors, setImageErrors] = useState({});
 
   const handleImageClick = (dog, index) => {
     setSelectedImage({ dog, index });
     setIsModalOpen(true);
   };
 
-  const handleImageError = (e) => {
-    e.target.src = "/images/dog-placeholder.jpg";
+  const handleImageError = (dogId) => {
+    setImageErrors(prev => ({ ...prev, [dogId]: true }));
   };
 
   if (!dogs || dogs.length === 0) {
@@ -56,13 +57,13 @@ export default function BreedPhotoGallery({ dogs, breedName, className = "" }) {
             onClick={() => handleImageClick(dog, index)}
           >
             <Image
-              src={dog.primary_image_url}
+              src={imageErrors[dog.id] ? "/images/dog-placeholder.jpg" : dog.primary_image_url}
               alt={`${dog.name} - ${breedName} rescue dog`}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"
               priority={index < 3}
               sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              onError={handleImageError}
+              onError={() => handleImageError(dog.id)}
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
             <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -80,28 +81,59 @@ export default function BreedPhotoGallery({ dogs, breedName, className = "" }) {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           breedName={breedName}
+          imageError={imageErrors[selectedImage.dog.id]}
+          onImageError={() => handleImageError(selectedImage.dog.id)}
         />
       )}
     </div>
   );
 }
 
-function ImageModal({ dog, isOpen, onClose, breedName }) {
+function ImageModal({ dog, isOpen, onClose, breedName, imageError, onImageError }) {
+  const [modalRef, setModalRef] = useState(null);
+
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === "Escape") onClose();
     };
 
+    const handleFocusTrap = (e) => {
+      if (!modalRef || !isOpen) return;
+      
+      const focusableElements = modalRef.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.key === "Tab") {
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+
     if (isOpen) {
       document.addEventListener("keydown", handleEscape);
+      document.addEventListener("keydown", handleFocusTrap);
       document.body.style.overflow = "hidden";
+      
+      // Focus the close button when modal opens
+      setTimeout(() => {
+        modalRef?.querySelector('button')?.focus();
+      }, 0);
     }
 
     return () => {
       document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("keydown", handleFocusTrap);
       document.body.style.overflow = "unset";
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, modalRef]);
 
   if (!isOpen) return null;
 
@@ -109,8 +141,12 @@ function ImageModal({ dog, isOpen, onClose, breedName }) {
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
     >
       <div
+        ref={setModalRef}
         className="relative max-w-4xl max-h-[90vh] mx-4"
         onClick={(e) => e.stopPropagation()}
       >
@@ -125,16 +161,17 @@ function ImageModal({ dog, isOpen, onClose, breedName }) {
         <div className="bg-white rounded-lg overflow-hidden shadow-2xl">
           <div className="relative aspect-video">
             <Image
-              src={dog.primary_image_url}
+              src={imageError ? "/images/dog-placeholder.jpg" : dog.primary_image_url}
               alt={`${dog.name} - ${breedName} rescue dog`}
               fill
               className="object-cover"
               priority
+              onError={onImageError}
             />
           </div>
 
           <div className="p-6">
-            <h3 className="text-2xl font-bold mb-2">{dog.name}</h3>
+            <h3 id="modal-title" className="text-2xl font-bold mb-2">{dog.name}</h3>
             <p className="text-gray-600 mb-4">
               {breedName} • {dog.organization?.name}
             </p>
