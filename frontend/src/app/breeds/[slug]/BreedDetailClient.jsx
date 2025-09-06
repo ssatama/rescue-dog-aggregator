@@ -9,8 +9,7 @@ import Layout from "@/components/layout/Layout";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import DogsGrid from "@/components/dogs/DogsGrid";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Filter, Loader2, Heart } from "lucide-react";
+import { Filter, Loader2 } from "lucide-react";
 import BreedPhotoGallery from "@/components/breeds/BreedPhotoGallery";
 import { BreedInfo } from "@/components/breeds/BreedStatistics";
 import { getAnimals, getFilterCounts } from "@/services/animalsService";
@@ -262,15 +261,25 @@ export default function BreedDetailClient({
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Common Traits</h3>
                   <div className="flex flex-wrap gap-2">
-                    {breedData.personality_traits?.slice(0, 8).map((trait) => (
-                      <Badge
-                        key={trait}
-                        variant="secondary"
-                        className="px-3 py-1"
-                      >
-                        {trait}
-                      </Badge>
-                    ))}
+                    {breedData.personality_traits?.slice(0, 8).map((trait, index) => {
+                      // Use same pastel colors as PersonalityTraits component
+                      const colors = [
+                        { bg: "bg-blue-100", text: "text-blue-800" },
+                        { bg: "bg-green-100", text: "text-green-800" },
+                        { bg: "bg-purple-100", text: "text-purple-800" },
+                        { bg: "bg-yellow-100", text: "text-yellow-800" },
+                        { bg: "bg-pink-100", text: "text-pink-800" },
+                      ][index % 5];
+                      
+                      return (
+                        <span
+                          key={trait}
+                          className={`px-3 py-1.5 rounded-full text-sm font-medium ${colors.bg} ${colors.text}`}
+                        >
+                          {trait.charAt(0).toUpperCase() + trait.slice(1)}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
 
