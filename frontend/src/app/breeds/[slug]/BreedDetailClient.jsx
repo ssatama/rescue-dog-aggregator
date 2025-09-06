@@ -1,18 +1,37 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, useCallback, startTransition, useMemo, useRef } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import Layout from "@/components/layout/Layout";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
-import DogCardOptimized from "@/components/dogs/DogCardOptimized";
+import DogsGrid from "@/components/dogs/DogsGrid";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Filter, Loader2, Heart } from "lucide-react";
 import BreedPhotoGallery from "@/components/breeds/BreedPhotoGallery";
 import { BreedInfo } from "@/components/breeds/BreedStatistics";
+import { getAnimals, getFilterCounts } from "@/services/animalsService";
+import { useDebouncedCallback } from "use-debounce";
+import BreedAlertButton from "@/components/breeds/BreedAlertButton";
+import BreedFilterBar from "@/components/breeds/BreedFilterBar";
+import { getBreedEmptyStateConfig, getBreedFilterOptions } from "@/utils/breedFilterUtils";
 import EmptyState from "@/components/ui/EmptyState";
-import { getBreedDogs, getBreedFilterCounts } from "@/services/serverAnimalsService";
+
+// Lazy load filter components
+const DesktopFilters = dynamic(() => import("@/components/filters/DesktopFilters"), {
+  loading: () => <div className="w-64 h-96 bg-muted animate-pulse rounded" />,
+  ssr: false,
+});
+
+const MobileFilterDrawer = dynamic(() => import("@/components/filters/MobileFilterDrawer"), {
+  loading: () => null,
+  ssr: false,
+});
+
+const ITEMS_PER_PAGE = 12; // Smaller page size for breed pages
 
 export default function BreedDetailClient({
   initialBreedData,
@@ -20,103 +39,204 @@ export default function BreedDetailClient({
   initialParams,
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [breedData, setBreedData] = useState(initialBreedData);
-  const [dogs, setDogs] = useState(initialDogs);
+  
+  // Parse filters from URL with memoization to prevent unnecessary re-renders
+  const filters = useMemo(() => ({
+    searchQuery: searchParams.get("search") || "",
+    sizeFilter: searchParams.get("size") || "Any size",
+    ageFilter: searchParams.get("age") || "Any age",
+    sexFilter: searchParams.get("sex") || "Any",
+    organizationFilter: searchParams.get("organization_id") || "any",
+    availableCountryFilter: searchParams.get("available_country") || "Any country",
+    // Note: breed filter is locked to current breed
+  }), [searchParams]);
+  
+  // State for dogs grid and pagination
+  const [dogs, setDogs] = useState(initialDogs?.results || initialDogs || []);
   const [loading, setLoading] = useState(false);
-  const [activeFilters, setActiveFilters] = useState({
-    age: initialParams?.age || "all",
-    sex: initialParams?.sex || "all",
-    size: initialParams?.size || "all",
-    goodWithCats: initialParams?.goodWithCats === "true",
-    goodWithDogs: initialParams?.goodWithDogs === "true",
-  });
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState((initialDogs?.results || initialDogs || []).length === ITEMS_PER_PAGE);
+  const [page, setPage] = useState(1);
   const [filterCounts, setFilterCounts] = useState(null);
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [error, setError] = useState(null);
+  const breedAlertButtonRef = React.useRef(null);
+  const requestIdRef = useRef(0);
 
-  const loadFilterCounts = useCallback(async () => {
+  // Build API params from filters with breed-specific filtering
+  const buildAPIParams = (filters) => {
+    const params = {
+      breed: breedData.primary_breed, // Always filter by current breed
+    };
+    
+    if (filters.searchQuery) params.search = filters.searchQuery;
+    if (filters.sizeFilter !== "Any size") params.size = filters.sizeFilter;
+    if (filters.ageFilter !== "Any age") params.age = filters.ageFilter;
+    if (filters.sexFilter !== "Any") params.sex = filters.sexFilter;
+    if (filters.organizationFilter !== "any") params.organization_id = filters.organizationFilter;
+    if (filters.availableCountryFilter !== "Any country") params.available_country = filters.availableCountryFilter;
+    
+    return params;
+  };
+  
+  // URL update with debouncing (same pattern as DogsPageClientSimplified)
+  const updateURL = useDebouncedCallback((newFilters) => {
+    const params = new URLSearchParams();
+    
+    // Explicit mapping to correct URL param keys
+    const paramMapping = {
+      searchQuery: 'search',
+      sizeFilter: 'size',
+      ageFilter: 'age',
+      sexFilter: 'sex',
+      organizationFilter: 'organization_id',
+      availableCountryFilter: 'available_country'
+    };
+    
+    Object.entries(newFilters).forEach(([key, value]) => {
+      const paramKey = paramMapping[key] || key;
+      if (
+        value &&
+        value !== "Any" &&
+        value !== "Any size" &&
+        value !== "Any age" &&
+        value !== "Any country" &&
+        value !== "any"
+      ) {
+        params.set(paramKey, value);
+      }
+    });
+    
+    const newURL = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+    router.push(newURL, { scroll: false });
+  }, 500);
+  
+  // Fetch dogs with current filters and handle race conditions
+  const fetchDogsWithFilters = async (currentFilters) => {
+    const requestId = ++requestIdRef.current;
+    setLoading(true);
+    setError(null);
+    
     try {
-      const counts = await getBreedFilterCounts(breedData.breed_slug);
-      setFilterCounts(counts);
-    } catch (error) {
-      console.error("Error loading filter counts:", error);
-    }
-  }, [breedData.breed_slug]);
-
-  const loadDogs = useCallback(
-    async (newOffset = 0, append = false) => {
-      setLoading(true);
-      try {
-        const filters = {
-          ...activeFilters,
-          limit: 12,
-          offset: newOffset,
-        };
-
-        if (activeFilters.age !== "all") filters.age = activeFilters.age;
-        if (activeFilters.sex !== "all") filters.sex = activeFilters.sex;
-        if (activeFilters.size !== "all") filters.size = activeFilters.size;
-        if (activeFilters.goodWithCats) filters.good_with_cats = true;
-        if (activeFilters.goodWithDogs) filters.good_with_dogs = true;
-
-        const result = await getBreedDogs(breedData.breed_slug, filters);
-        const newDogs = result?.results || result || [];
-
-        if (append) {
-          setDogs((prev) => [...prev, ...newDogs]);
-        } else {
-          setDogs(newDogs);
-        }
-
-        setHasMore(newDogs.length === 12);
-        setOffset(newOffset);
-      } catch (error) {
-        console.error("Error loading dogs:", error);
-      } finally {
+      const params = {
+        limit: ITEMS_PER_PAGE,
+        offset: 0,
+        ...buildAPIParams(currentFilters),
+      };
+      
+      const [response, counts] = await Promise.all([
+        getAnimals(params),
+        getFilterCounts(params),
+      ]);
+      
+      // Ignore stale responses
+      if (requestId !== requestIdRef.current) return;
+      
+      const newDogs = response?.results || response || [];
+      
+      startTransition(() => {
+        setDogs(newDogs);
+        setHasMore(newDogs.length === ITEMS_PER_PAGE);
+        setFilterCounts(counts);
+        setPage(1);
+      });
+    } catch (err) {
+      console.error('Failed to load dogs:', err);
+      if (requestId === requestIdRef.current) {
+        setError('Could not load dogs. Please try again.');
+      }
+    } finally {
+      if (requestId === requestIdRef.current) {
         setLoading(false);
       }
-    },
-    [breedData.breed_slug, activeFilters],
-  );
-
-  useEffect(() => {
-    loadFilterCounts();
-  }, [loadFilterCounts]);
-
-  useEffect(() => {
-    loadDogs(0, false);
-
-    const params = new URLSearchParams();
-    if (activeFilters.age !== "all") params.set("age", activeFilters.age);
-    if (activeFilters.sex !== "all") params.set("sex", activeFilters.sex);
-    if (activeFilters.size !== "all") params.set("size", activeFilters.size);
-    if (activeFilters.goodWithCats) params.set("goodWithCats", "true");
-    if (activeFilters.goodWithDogs) params.set("goodWithDogs", "true");
-
-    const queryString = params.toString();
-    router.replace(
-      `/breeds/${breedData.breed_slug}${queryString ? `?${queryString}` : ""}`,
-      { scroll: false },
-    );
-  }, [activeFilters]);
-
-  const handleFilterChange = (filterType, value) => {
-    setActiveFilters((prev) => ({
-      ...prev,
-      [filterType]: value,
-    }));
+    }
   };
+  
+  // Debounced version of fetchDogsWithFilters
+  const debouncedFetchDogs = useDebouncedCallback(fetchDogsWithFilters, 300);
 
-  const handleLoadMore = () => {
-    const newOffset = offset + 12;
-    loadDogs(newOffset, true);
-  };
+  // Filter change handler
+  const handleFilterChange = useCallback((filterKey, value) => {
+    const newFilters = { ...filters, [filterKey]: value };
+    updateURL(newFilters);
+    
+    // Reset and reload with new filters
+    startTransition(() => {
+      setDogs([]);
+      setPage(1);
+      setHasMore(true);
+    });
+    
+    debouncedFetchDogs(newFilters);
+  }, [filters, updateURL, breedData, debouncedFetchDogs]);
+  
+  // Load more dogs (same pattern as DogsPageClientSimplified)
+  const loadMoreDogs = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    
+    setLoadingMore(true);
+    setError(null);
+    
+    try {
+      const nextPage = page + 1;
+      const offset = (nextPage - 1) * ITEMS_PER_PAGE;
+      
+      const params = {
+        limit: ITEMS_PER_PAGE,
+        offset,
+        ...buildAPIParams(filters),
+      };
+      
+      const response = await getAnimals(params);
+      const newDogs = response?.results || response || [];
+      
+      startTransition(() => {
+        setDogs(prev => [...prev, ...newDogs]);
+        setHasMore(newDogs.length === ITEMS_PER_PAGE);
+        setPage(nextPage);
+      });
+    } catch (err) {
+      console.error('Failed to load more dogs:', err);
+      setError('Could not load more dogs. Please try again.');
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [page, hasMore, filters, loadingMore, breedData]);
+  
+  // Initial load with filter counts - only if no initial data
+  useEffect(() => {
+    if (!initialDogs || initialDogs.length === 0) {
+      fetchDogsWithFilters(filters);
+    } else {
+      // Just fetch counts if we have initial dogs
+      const params = buildAPIParams(filters);
+      getFilterCounts(params).then(counts => {
+        setFilterCounts(counts);
+      }).catch(err => {
+        console.error('Failed to load filter counts:', err);
+      });
+    }
+  }, []);
+  
+  // Calculate active filter count
+  const activeFilterCount = Object.entries(filters).filter(
+    ([key, value]) => value && !value.includes("Any") && value !== "any" && value !== "",
+  ).length;
 
   const breadcrumbItems = [
     { label: "Home", href: "/" },
     { label: "Breeds", href: "/breeds" },
     { label: breedData.primary_breed, href: `/breeds/${breedData.breed_slug}` },
   ];
+  
+  // Get breed-specific filter options
+  const filterOptions = React.useMemo(() => 
+    getBreedFilterOptions(breedData, { organizations: [] }), 
+    [breedData]
+  );
 
   return (
     <Layout>
@@ -195,149 +315,161 @@ export default function BreedDetailClient({
             </div>
           )}
 
-        <div className="sticky top-16 z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 p-4 -mx-4 sm:-mx-6 lg:-mx-8 mb-6">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              <Button
-                variant={activeFilters.age === "all" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleFilterChange("age", "all")}
-                className="flex-shrink-0"
-              >
-                All Ages ({breedData.count})
-              </Button>
-              <Button
-                variant={activeFilters.age === "young" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleFilterChange("age", "young")}
-                className="flex-shrink-0"
-              >
-                Young ({filterCounts?.age?.young || 0})
-              </Button>
-              <Button
-                variant={activeFilters.age === "adult" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleFilterChange("age", "adult")}
-                className="flex-shrink-0"
-              >
-                Adult ({filterCounts?.age?.adult || 0})
-              </Button>
-              <Button
-                variant={activeFilters.age === "senior" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleFilterChange("age", "senior")}
-                className="flex-shrink-0"
-              >
-                Senior ({filterCounts?.age?.senior || 0})
-              </Button>
+        {/* Breed alert button in hero section */}
+        <div className="flex justify-end mb-4">
+          <BreedAlertButton 
+            ref={breedAlertButtonRef}
+            breedData={breedData}
+            filters={filters}
+            size="lg"
+          />
+        </div>
+        
+        {/* Breed filter bar for quick filters */}
+        <BreedFilterBar
+          breedData={breedData}
+          filters={filters}
+          filterCounts={filterCounts}
+          onFilterChange={handleFilterChange}
+          onClearFilters={() => router.push(pathname)}
+          onOpenMobileFilters={() => setIsFilterDrawerOpen(true)}
+          activeFilterCount={activeFilterCount}
+        />
 
-              <div className="border-l border-gray-300 dark:border-gray-600 mx-2" />
-
-              <Button
-                variant={activeFilters.sex === "all" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleFilterChange("sex", "all")}
-                className="flex-shrink-0"
-              >
-                Any Sex
-              </Button>
-              <Button
-                variant={activeFilters.sex === "male" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleFilterChange("sex", "male")}
-                className="flex-shrink-0"
-              >
-                Male ({filterCounts?.sex?.male || 0})
-              </Button>
-              <Button
-                variant={activeFilters.sex === "female" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleFilterChange("sex", "female")}
-                className="flex-shrink-0"
-              >
-                Female ({filterCounts?.sex?.female || 0})
-              </Button>
-
-              <div className="border-l border-gray-300 dark:border-gray-600 mx-2" />
-
-              <Button
-                variant={activeFilters.goodWithCats ? "default" : "outline"}
-                size="sm"
-                onClick={() =>
-                  handleFilterChange(
-                    "goodWithCats",
-                    !activeFilters.goodWithCats,
-                  )
-                }
-                className="flex-shrink-0"
-              >
-                😺 Cat Friendly
-              </Button>
-              <Button
-                variant={activeFilters.goodWithDogs ? "default" : "outline"}
-                size="sm"
-                onClick={() =>
-                  handleFilterChange(
-                    "goodWithDogs",
-                    !activeFilters.goodWithDogs,
-                  )
-                }
-                className="flex-shrink-0"
-              >
-                🐕 Dog Friendly
-              </Button>
-            </div>
+        <div className="flex gap-8">
+          {/* Desktop filters sidebar */}
+          <aside className="hidden lg:block w-64 flex-shrink-0">
+            <DesktopFilters
+              // Search
+              searchQuery={filters.searchQuery}
+              handleSearchChange={(value) => handleFilterChange("searchQuery", value)}
+              clearSearch={() => handleFilterChange("searchQuery", "")}
+              // Organization
+              organizationFilter={filters.organizationFilter}
+              setOrganizationFilter={(value) => handleFilterChange("organizationFilter", value)}
+              organizations={filterOptions.organizations}
+              // Breed is locked, so we hide it
+              showBreed={false}
+              standardizedBreeds={[]} // Pass empty array since we're not showing breed filter
+              // Pet Details
+              sexFilter={filters.sexFilter}
+              setSexFilter={(value) => handleFilterChange("sexFilter", value)}
+              sexOptions={["Any", "Male", "Female"]}
+              sizeFilter={filters.sizeFilter}
+              setSizeFilter={(value) => handleFilterChange("sizeFilter", value)}
+              sizeOptions={["Any size", "Tiny", "Small", "Medium", "Large", "Extra Large"]}
+              ageCategoryFilter={filters.ageFilter}
+              setAgeCategoryFilter={(value) => handleFilterChange("ageFilter", value)}
+              ageOptions={["Any age", "Puppy", "Young", "Adult", "Senior"]}
+              // Location
+              availableCountryFilter={filters.availableCountryFilter}
+              setAvailableCountryFilter={(value) => handleFilterChange("availableCountryFilter", value)}
+              availableCountries={filterOptions.availableCountries}
+              // Filter management
+              resetFilters={() => {
+                router.push(pathname);
+              }}
+              // Dynamic filter counts
+              filterCounts={filterCounts}
+            />
+          </aside>
+          
+          {/* Main content area with DogsGrid */}
+          <div className="flex-1 min-w-0">
+            {error && (
+              <div role="alert" className="text-sm text-red-600 mb-4 p-3 bg-red-50 rounded">
+                {error}
+              </div>
+            )}
+            {dogs.length === 0 && !loading ? (
+              <EmptyState
+                {...getBreedEmptyStateConfig(breedData, activeFilterCount > 0)}
+                onAction={() => {
+                  if (activeFilterCount > 0) {
+                    router.push(pathname);
+                  } else {
+                    // Trigger breed alert save via ref
+                    breedAlertButtonRef.current?.click();
+                  }
+                }}
+              />
+            ) : (
+              <DogsGrid
+                dogs={dogs}
+                loading={loading && dogs.length === 0}
+                loadingType="filter"
+                listContext="breed-page"
+              />
+            )}
+            
+            {/* Load more button */}
+            {hasMore && !loading && dogs.length > 0 && (
+              <div className="flex justify-center mt-8">
+                <Button
+                  onClick={loadMoreDogs}
+                  disabled={loadingMore}
+                  variant="outline"
+                  size="lg"
+                >
+                  {loadingMore ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    "Load More Dogs"
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
-
-        <div id="dogs-grid">
-          {loading && dogs.length === 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {[...Array(8)].map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-gray-200 rounded-lg h-96 animate-pulse"
-                />
-              ))}
-            </div>
-          ) : dogs.length > 0 ? (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {dogs.map((dog) => (
-                  <DogCardOptimized key={dog.id} dog={dog} />
-                ))}
-              </div>
-
-              {hasMore && (
-                <div className="mt-8 text-center">
-                  <Button
-                    onClick={handleLoadMore}
-                    disabled={loading}
-                    size="lg"
-                    variant="outline"
-                  >
-                    {loading ? "Loading..." : "Load More Dogs"}
-                  </Button>
-                </div>
-              )}
-            </>
-          ) : (
-            <EmptyState
-              title={`No ${breedData.primary_breed} dogs found`}
-              description="Try adjusting your filters to see more results"
-              actionLabel="Clear Filters"
-              onAction={() =>
-                setActiveFilters({
-                  age: "all",
-                  sex: "all",
-                  size: "all",
-                  goodWithCats: false,
-                  goodWithDogs: false,
-                })
-              }
-            />
-          )}
-        </div>
+        
+        {/* Mobile filter drawer */}
+        <MobileFilterDrawer
+          isOpen={isFilterDrawerOpen}
+          onClose={() => setIsFilterDrawerOpen(false)}
+          // Filter config to hide breed selector on breed page
+          filterConfig={{ 
+            showAge: true, 
+            showBreed: false, 
+            showSort: false, 
+            showSize: true, 
+            showSex: true, 
+            showShipsTo: true, 
+            showOrganization: true, 
+            showSearch: true 
+          }}
+          // Search
+          searchQuery={filters.searchQuery}
+          handleSearchChange={(value) => handleFilterChange("searchQuery", value)}
+          clearSearch={() => handleFilterChange("searchQuery", "")}
+          // Organization
+          organizationFilter={filters.organizationFilter}
+          setOrganizationFilter={(value) => handleFilterChange("organizationFilter", value)}
+          organizations={filterOptions.organizations}
+          // Hide breed filter since it's locked
+          showBreed={false}
+          standardizedBreeds={[]} // Pass empty array since we're not showing breed filter
+          // Pet Details
+          sexFilter={filters.sexFilter}
+          setSexFilter={(value) => handleFilterChange("sexFilter", value)}
+          sexOptions={["Any", "Male", "Female"]}
+          sizeFilter={filters.sizeFilter}
+          setSizeFilter={(value) => handleFilterChange("sizeFilter", value)}
+          sizeOptions={["Any size", "Tiny", "Small", "Medium", "Large", "Extra Large"]}
+          ageCategoryFilter={filters.ageFilter}
+          setAgeCategoryFilter={(value) => handleFilterChange("ageFilter", value)}
+          ageOptions={["Any age", "Puppy", "Young", "Adult", "Senior"]}
+          // Location
+          availableCountryFilter={filters.availableCountryFilter}
+          setAvailableCountryFilter={(value) => handleFilterChange("availableCountryFilter", value)}
+          availableCountries={["Any country"]}
+          // Filter management
+          resetFilters={() => router.push(pathname)}
+          // Dynamic filter counts
+          filterCounts={filterCounts}
+        />
       </div>
     </Layout>
   );
