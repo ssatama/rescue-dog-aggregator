@@ -11,6 +11,7 @@ from typing import Optional, Union
 from pydantic import BaseModel, Field, field_validator
 
 from .dog import AnimalStatus, StandardizedSize
+from utils.breed_utils import validate_breed_type
 
 
 class AnimalFilterRequest(BaseModel):
@@ -100,6 +101,14 @@ class AnimalFilterRequest(BaseModel):
         if v not in valid_sorts:
             raise ValueError(f"Invalid sort value: {v}. Must be one of: {', '.join(valid_sorts)}")
         return v
+    
+    @field_validator("breed_type")
+    @classmethod
+    def validate_breed_type_field(cls, v):
+        """Validate breed_type field."""
+        if not validate_breed_type(v):
+            raise ValueError(f"Invalid breed_type value: {v}. Must be one of: purebred, mixed, crossbreed, unknown, sighthound")
+        return v
 
     def get_confidence_levels(self) -> list[str]:
         """Get parsed confidence levels from string."""
@@ -171,6 +180,14 @@ class AnimalFilterCountRequest(BaseModel):
 
     # Availability and confidence (context for counting)
     availability_confidence: str = Field(default="high,medium", description="Availability confidence context for counting")
+    
+    @field_validator("breed_type")
+    @classmethod
+    def validate_breed_type_field(cls, v):
+        """Validate breed_type field."""
+        if not validate_breed_type(v):
+            raise ValueError(f"Invalid breed_type value: {v}. Must be one of: purebred, mixed, crossbreed, unknown, sighthound")
+        return v
 
     def get_confidence_levels(self) -> list[str]:
         """Get parsed confidence levels from string."""

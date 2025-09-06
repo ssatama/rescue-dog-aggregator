@@ -637,6 +637,7 @@ class AnimalService:
                 WITH breed_stats AS (
                     SELECT 
                         a.primary_breed,
+                        a.breed_slug,
                         a.breed_type,
                         a.breed_group,
                         COUNT(*) as count,
@@ -659,7 +660,7 @@ class AnimalService:
                     AND a.status = 'available'
                     AND o.active = TRUE
                     AND a.primary_breed IS NOT NULL
-                    GROUP BY a.primary_breed, a.breed_type, a.breed_group
+                    GROUP BY a.primary_breed, a.breed_slug, a.breed_type, a.breed_group
                     HAVING COUNT(*) >= 15
                 )
                 SELECT * FROM breed_stats
@@ -668,9 +669,9 @@ class AnimalService:
             
             qualifying_breeds = []
             for row in self.cursor.fetchall():
-                # Generate breed slug for URL routing
+                # Use stored breed_slug or generate if missing
                 from utils.breed_utils import generate_breed_slug
-                breed_slug = generate_breed_slug(row["primary_breed"])
+                breed_slug = row["breed_slug"] or generate_breed_slug(row["primary_breed"])
                 
                 qualifying_breeds.append({
                     "primary_breed": row["primary_breed"],
@@ -809,7 +810,7 @@ class AnimalService:
 
         if filters.organization_id:
             conditions.append("a.organization_id = %s")
-            params.append(str(filters.organization_id))
+            params.append(filters.organization_id)
 
         if filters.location_country:
             conditions.append("o.country = %s")
@@ -1327,3 +1328,104 @@ class AnimalService:
         results = self.cursor.fetchall()
 
         return [FilterOption(value=row["region"], label=row["region"], count=row["count"]) for row in results if row["count"] > 0]
+    
+    def _get_primary_breed_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
+        """Get counts for primary breeds, excluding current primary_breed filter."""
+        conditions = base_conditions.copy()
+        params = base_params.copy()
+        
+        # Add other non-primary-breed filters
+        if filters.sex:
+            conditions.append("a.sex = %s")
+            params.append(filters.sex)
+        
+        if filters.standardized_size:
+            conditions.append("a.standardized_size = %s")
+            params.append(filters.standardized_size.value)
+        
+        if filters.age_category:
+            if filters.age_category == "Puppy":
+                conditions.append("(a.age_max_months < 12)")
+            elif filters.age_category == "Young":
+                conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
+            elif filters.age_category == "Adult":
+                conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
+            elif filters.age_category == "Senior":
+                conditions.append("(a.age_min_months >= 96)")
+        
+        # Note: excluding current primary_breed filter to show counts without that filter
+        query = f"""
+            SELECT a.primary_breed, COUNT(DISTINCT a.id) as count
+            FROM animals a
+            LEFT JOIN organizations o ON a.organization_id = o.id
+            WHERE {' AND '.join(conditions)}
+              AND a.primary_breed IS NOT NULL
+              AND a.primary_breed != ''
+            GROUP BY a.primary_breed
+            HAVING COUNT(DISTINCT a.id) > 0
+            ORDER BY count DESC, a.primary_breed ASC
+            LIMIT 50
+        """
+        
+        self.cursor.execute(query, params)
+        results = self.cursor.fetchall()
+        
+        return [FilterOption(value=row["primary_breed"], label=row["primary_breed"], count=row["count"]) for row in results if row["count"] > 0]
+    
+    def _get_breed_type_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
+        """Get counts for breed types, excluding current breed_type filter."""
+        conditions = base_conditions.copy()
+        params = base_params.copy()
+        
+        # Add other non-breed-type filters
+        if filters.sex:
+            conditions.append("a.sex = %s")
+            params.append(filters.sex)
+        
+        if filters.standardized_size:
+            conditions.append("a.standardized_size = %s")
+            params.append(filters.standardized_size.value)
+        
+        if filters.age_category:
+            if filters.age_category == "Puppy":
+                conditions.append("(a.age_max_months < 12)")
+            elif filters.age_category == "Young":
+                conditions.append("(a.age_min_months >= 12 AND a.age_max_months <= 36)")
+            elif filters.age_category == "Adult":
+                conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
+            elif filters.age_category == "Senior":
+                conditions.append("(a.age_min_months >= 96)")
+        
+        # Note: excluding current breed_type filter to show counts without that filter
+        query = f"""
+            SELECT a.breed_type, COUNT(DISTINCT a.id) as count
+            FROM animals a
+            LEFT JOIN organizations o ON a.organization_id = o.id
+            WHERE {' AND '.join(conditions)}
+              AND a.breed_type IS NOT NULL
+              AND a.breed_type != ''
+            GROUP BY a.breed_type
+            HAVING COUNT(DISTINCT a.id) > 0
+            ORDER BY count DESC, a.breed_type ASC
+        """
+        
+        self.cursor.execute(query, params)
+        results = self.cursor.fetchall()
+        
+        # Capitalize breed type labels for display
+        breed_type_labels = {
+            "purebred": "Purebred",
+            "mixed": "Mixed",
+            "crossbreed": "Crossbreed",
+            "unknown": "Unknown",
+            "sighthound": "Sighthound"
+        }
+        
+        return [
+            FilterOption(
+                value=row["breed_type"], 
+                label=breed_type_labels.get(row["breed_type"].lower(), row["breed_type"]), 
+                count=row["count"]
+            ) 
+            for row in results if row["count"] > 0
+        ]

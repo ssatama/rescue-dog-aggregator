@@ -45,3 +45,57 @@ class FilterCountsResponse(BaseModel):
         # Add custom encoders if needed in the future
         # json_encoders can be replaced with custom serializers in v2
     )
+
+
+class BreedGroupStats(BaseModel):
+    """Model for breed group statistics."""
+    
+    name: str = Field(..., description="Breed group name")
+    count: int = Field(..., description="Number of dogs in this breed group", ge=0)
+
+
+class AgeDistribution(BaseModel):
+    """Model for age distribution of a breed."""
+    
+    puppy: int = Field(..., description="Number of puppies (< 12 months)", ge=0)
+    young: int = Field(..., description="Number of young dogs (12-36 months)", ge=0)
+    adult: int = Field(..., description="Number of adult dogs (36-96 months)", ge=0)
+    senior: int = Field(..., description="Number of senior dogs (96+ months)", ge=0)
+
+
+class SizeDistribution(BaseModel):
+    """Model for size distribution of a breed."""
+    
+    tiny: int = Field(..., description="Number of tiny dogs", ge=0)
+    small: int = Field(..., description="Number of small dogs", ge=0)
+    medium: int = Field(..., description="Number of medium dogs", ge=0)
+    large: int = Field(..., description="Number of large dogs", ge=0)
+    xlarge: int = Field(..., description="Number of extra large dogs", ge=0)
+
+
+class QualifyingBreed(BaseModel):
+    """Model for a qualifying breed with detailed statistics."""
+    
+    primary_breed: str = Field(..., description="Primary breed name")
+    breed_slug: str = Field(..., description="URL-friendly breed slug")
+    breed_type: str = Field(None, description="Breed type (purebred, mixed, crossbreed, unknown, sighthound)")
+    breed_group: str = Field(None, description="Breed group classification")
+    count: int = Field(..., description="Total number of dogs of this breed", ge=0)
+    organization_count: int = Field(..., description="Number of organizations with this breed", ge=0)
+    organizations: List[str] = Field(default_factory=list, description="List of organization names (top 5)")
+    age_distribution: AgeDistribution = Field(..., description="Age distribution for this breed")
+    size_distribution: SizeDistribution = Field(..., description="Size distribution for this breed")
+
+
+class BreedStatsResponse(BaseModel):
+    """
+    Response model for breed statistics endpoint.
+    
+    Provides comprehensive breed statistics including total counts,
+    breed group distribution, and detailed information for qualifying breeds.
+    """
+    
+    total_dogs: int = Field(..., description="Total number of available dogs", ge=0)
+    unique_breeds: int = Field(..., description="Number of unique breeds", ge=0)
+    breed_groups: List[BreedGroupStats] = Field(default_factory=list, description="Distribution of dogs by breed group")
+    qualifying_breeds: List[QualifyingBreed] = Field(default_factory=list, description="Breeds with 15+ dogs")

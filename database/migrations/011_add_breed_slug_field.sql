@@ -20,13 +20,21 @@ UPDATE animals
 SET breed_slug = LOWER(
     REGEXP_REPLACE(
         REGEXP_REPLACE(
-            REGEXP_REPLACE(primary_breed, '\s+Mix$', '-mix', 'i'),
-            '[^a-zA-Z0-9-]+', '-', 'g'
+            REGEXP_REPLACE(
+                REGEXP_REPLACE(primary_breed, '\s+Mix$', '-mix', 'i'),
+                '[^a-zA-Z0-9-]+', '-', 'g'
+            ),
+            '-+', '-', 'g'
         ),
         '^-+|-+$', '', 'g'
     )
 )
 WHERE primary_breed IS NOT NULL AND breed_slug IS NULL;
+
+-- Re-run backfill for rows with double hyphens to normalize existing data
+UPDATE animals
+SET breed_slug = REGEXP_REPLACE(breed_slug, '-+', '-', 'g')
+WHERE breed_slug LIKE '%--%';
 
 -- Update table statistics for query optimization
 ANALYZE animals;
