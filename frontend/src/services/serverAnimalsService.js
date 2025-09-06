@@ -22,7 +22,8 @@ export const getAnimals = cache(async (params = {}) => {
   if (params.organization_id)
     queryParams.append("organization_id", params.organization_id);
   if (params.breed) queryParams.append("breed", params.breed);
-  if (params.primary_breed) queryParams.append("primary_breed", params.primary_breed);
+  if (params.primary_breed)
+    queryParams.append("primary_breed", params.primary_breed);
   if (params.location_country)
     queryParams.append("location_country", params.location_country);
   if (params.available_country)
@@ -402,37 +403,51 @@ export const getAllAnimals = cache(async (params = {}) => {
 export const getBreedBySlug = cache(async (slug) => {
   try {
     const breedStats = await getBreedStats();
-    const breedData = breedStats.qualifying_breeds?.find(breed => breed.breed_slug === slug);
-    
+    const breedData = breedStats.qualifying_breeds?.find(
+      (breed) => breed.breed_slug === slug,
+    );
+
     if (!breedData) {
       throw new Error(`Breed not found: ${slug}`);
     }
-    
+
     const topDogs = await getAnimals({
       breed: breedData.primary_breed,
       limit: 6,
-      sort_by: 'created_at',
-      sort_order: 'desc'
+      sort_by: "created_at",
+      sort_order: "desc",
     });
-    
+
     const breedDescriptions = {
-      'galgo': 'Spanish Greyhounds are gentle sighthounds known for their calm, affectionate nature. Despite their athletic build, they\'re surprisingly lazy, preferring short bursts of exercise followed by long naps.',
-      'labrador-retriever': 'Labrador Retrievers are friendly, outgoing, and active companions who famously love water and retrieving games. They\'re excellent family dogs with a gentle nature.',
-      'german-shepherd': 'German Shepherds are versatile, intelligent working dogs devoted to their family. They\'re confident, courageous, and excel at everything they\'re trained to do.',
-      'mixed-breed': 'Mixed breed dogs combine the best traits of multiple breeds, often resulting in unique personalities and appearances. Each one is truly one-of-a-kind.',
-      'podenco': 'Podencos are ancient Spanish hunting dogs with keen senses and athletic builds. They\'re intelligent, independent, and make loyal companions when given proper exercise.',
-      'husky': 'Siberian Huskies are energetic, intelligent dogs bred for endurance in harsh climates. They\'re friendly, dignified, and known for their striking blue eyes.',
-      'boxer': 'Boxers are playful, energetic dogs with patience and protective instincts. They\'re excellent with children and make devoted family guardians.',
-      'beagle': 'Beagles are friendly, curious hounds with excellent noses and happy-go-lucky personalities. They\'re great with kids and other dogs.',
-      'golden-retriever': 'Golden Retrievers are intelligent, friendly, and devoted companions. They\'re eager to please and excel as family dogs and service animals.',
-      'pointer': 'Pointers are energetic, even-tempered dogs bred for hunting. They\'re loyal, hardworking, and make excellent companions for active families.'
+      galgo:
+        "Spanish Greyhounds are gentle sighthounds known for their calm, affectionate nature. Despite their athletic build, they're surprisingly lazy, preferring short bursts of exercise followed by long naps.",
+      "labrador-retriever":
+        "Labrador Retrievers are friendly, outgoing, and active companions who famously love water and retrieving games. They're excellent family dogs with a gentle nature.",
+      "german-shepherd":
+        "German Shepherds are versatile, intelligent working dogs devoted to their family. They're confident, courageous, and excel at everything they're trained to do.",
+      "mixed-breed":
+        "Mixed breed dogs combine the best traits of multiple breeds, often resulting in unique personalities and appearances. Each one is truly one-of-a-kind.",
+      podenco:
+        "Podencos are ancient Spanish hunting dogs with keen senses and athletic builds. They're intelligent, independent, and make loyal companions when given proper exercise.",
+      husky:
+        "Siberian Huskies are energetic, intelligent dogs bred for endurance in harsh climates. They're friendly, dignified, and known for their striking blue eyes.",
+      boxer:
+        "Boxers are playful, energetic dogs with patience and protective instincts. They're excellent with children and make devoted family guardians.",
+      beagle:
+        "Beagles are friendly, curious hounds with excellent noses and happy-go-lucky personalities. They're great with kids and other dogs.",
+      "golden-retriever":
+        "Golden Retrievers are intelligent, friendly, and devoted companions. They're eager to please and excel as family dogs and service animals.",
+      pointer:
+        "Pointers are energetic, even-tempered dogs bred for hunting. They're loyal, hardworking, and make excellent companions for active families.",
     };
-    
+
     return {
       ...breedData,
       breed_slug: slug, // Ensure breed_slug is included
       topDogs: topDogs.results || topDogs,
-      description: breedDescriptions[slug] || `${breedData.primary_breed} dogs are wonderful companions looking for loving homes.`,
+      description:
+        breedDescriptions[slug] ||
+        `${breedData.primary_breed} dogs are wonderful companions looking for loving homes.`,
     };
   } catch (error) {
     console.error(`Error fetching breed data for ${slug}:`, error);
@@ -443,19 +458,21 @@ export const getBreedBySlug = cache(async (slug) => {
 export const getBreedDogs = cache(async (breedSlug, filters = {}) => {
   try {
     const breedStats = await getBreedStats();
-    const breedData = breedStats.qualifying_breeds?.find(breed => breed.breed_slug === breedSlug);
-    
+    const breedData = breedStats.qualifying_breeds?.find(
+      (breed) => breed.breed_slug === breedSlug,
+    );
+
     if (!breedData) {
       throw new Error(`Breed not found: ${breedSlug}`);
     }
-    
+
     const params = {
       breed: breedData.primary_breed,
       limit: filters.limit || 12,
       offset: filters.offset || 0,
-      ...filters
+      ...filters,
     };
-    
+
     return getAnimals(params);
   } catch (error) {
     console.error(`Error fetching breed dogs for ${breedSlug}:`, error);
@@ -466,17 +483,22 @@ export const getBreedDogs = cache(async (breedSlug, filters = {}) => {
 export const getBreedFilterCounts = cache(async (breedSlug) => {
   try {
     const breedStats = await getBreedStats();
-    const breedData = breedStats.qualifying_breeds?.find(breed => breed.breed_slug === breedSlug);
-    
+    const breedData = breedStats.qualifying_breeds?.find(
+      (breed) => breed.breed_slug === breedSlug,
+    );
+
     if (!breedData) {
       return null;
     }
-    
+
     return getFilterCounts({
-      breed: breedData.primary_breed
+      breed: breedData.primary_breed,
     });
   } catch (error) {
-    console.error(`Error fetching breed filter counts for ${breedSlug}:`, error);
+    console.error(
+      `Error fetching breed filter counts for ${breedSlug}:`,
+      error,
+    );
     return null;
   }
 });

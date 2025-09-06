@@ -36,42 +36,46 @@ export default function BreedsHubClient({ initialBreedStats }) {
   }, [breedStats]);
 
   // Breed type cards configuration (3 cards as specified in PRD)
-  const breedTypeCards = useMemo(() => [
-    { 
-      title: "Mixed Breeds", 
-      count: breedStats?.breed_groups?.Mixed ?? 0, 
-      href: "/breeds/mixed",
-      icon: <Heart className="h-5 w-5" />,
-      description: "Unique personalities from diverse backgrounds"
-    },
-    { 
-      title: "Pure Breeds", 
-      count: pureBreedCount, 
-      href: "/breeds?type=purebred",
-      icon: <Dog className="h-5 w-5" />,
-      description: "Known temperaments and characteristics"
-    },
-    { 
-      title: "Crossbreeds", 
-      count: crossbreedCount, 
-      href: "/breeds?type=crossbreed",
-      icon: <Home className="h-5 w-5" />,
-      description: "Best of both worlds combinations"
-    }
-  ], [breedStats, pureBreedCount, crossbreedCount]);
+  const breedTypeCards = useMemo(
+    () => [
+      {
+        title: "Mixed Breeds",
+        count: breedStats?.breed_groups?.Mixed ?? 0,
+        href: "/breeds/mixed",
+        icon: <Heart className="h-5 w-5" />,
+        description: "Unique personalities from diverse backgrounds",
+      },
+      {
+        title: "Pure Breeds",
+        count: pureBreedCount,
+        href: "/breeds?type=purebred",
+        icon: <Dog className="h-5 w-5" />,
+        description: "Known temperaments and characteristics",
+      },
+      {
+        title: "Crossbreeds",
+        count: crossbreedCount,
+        href: "/breeds?type=crossbreed",
+        icon: <Home className="h-5 w-5" />,
+        description: "Best of both worlds combinations",
+      },
+    ],
+    [breedStats, pureBreedCount, crossbreedCount],
+  );
 
   // Breed groups from API (7 groups from PRD, excluding "Unknown")
-  const breedGroups = useMemo(() => 
-    Object.entries(breedStats?.breed_groups || {})
-      .filter(([group, count]) => group !== "Unknown" && count > 0)
-      .sort((a, b) => b[1] - a[1]) // Sort by count descending
-      .slice(0, 7) // Take top 7 groups
-      .map(([group, count]) => ({ 
-        name: group, 
-        count, 
-        href: `/breeds?group=${encodeURIComponent(group)}` 
-      })),
-    [breedStats]
+  const breedGroups = useMemo(
+    () =>
+      Object.entries(breedStats?.breed_groups || {})
+        .filter(([group, count]) => group !== "Unknown" && count > 0)
+        .sort((a, b) => b[1] - a[1]) // Sort by count descending
+        .slice(0, 7) // Take top 7 groups
+        .map(([group, count]) => ({
+          name: group,
+          count,
+          href: `/breeds?group=${encodeURIComponent(group)}`,
+        })),
+    [breedStats],
   );
 
   const breadcrumbItems = [
@@ -106,27 +110,38 @@ export default function BreedsHubClient({ initialBreedStats }) {
               Discover Dogs by Breed
             </h1>
             <p className="text-xl text-muted-foreground mb-6">
-              {breedStats?.total_dogs ?? 0} rescue dogs across {breedStats?.unique_breeds ?? 0} breeds
+              {breedStats?.total_dogs ?? 0} rescue dogs across{" "}
+              {breedStats?.unique_breeds ?? 0} breeds
             </p>
             <p className="text-lg text-muted-foreground">
-              {breedStats?.qualifying_breeds?.length ?? 0} breeds with dedicated pages
+              {breedStats?.qualifying_breeds?.length ?? 0} breeds with dedicated
+              pages
             </p>
           </div>
 
           {/* Filter Chips Row */}
           <div className="flex justify-center gap-3 mb-10">
             <Link href="/breeds/mixed">
-              <Badge variant="outline" className="cursor-pointer hover:bg-primary/10 px-4 py-2 text-sm">
+              <Badge
+                variant="outline"
+                className="cursor-pointer hover:bg-primary/10 px-4 py-2 text-sm"
+              >
                 Mixed Breeds
               </Badge>
             </Link>
             <Link href="/breeds?type=purebred">
-              <Badge variant="outline" className="cursor-pointer hover:bg-primary/10 px-4 py-2 text-sm">
+              <Badge
+                variant="outline"
+                className="cursor-pointer hover:bg-primary/10 px-4 py-2 text-sm"
+              >
                 Pure Breeds
               </Badge>
             </Link>
             <Link href="/breeds?type=crossbreed">
-              <Badge variant="outline" className="cursor-pointer hover:bg-primary/10 px-4 py-2 text-sm">
+              <Badge
+                variant="outline"
+                className="cursor-pointer hover:bg-primary/10 px-4 py-2 text-sm"
+              >
                 Crossbreeds
               </Badge>
             </Link>
@@ -134,22 +149,31 @@ export default function BreedsHubClient({ initialBreedStats }) {
 
           {/* Breed Type Cards Section */}
           <section className="mb-16" aria-labelledby="breed-types-heading">
-            <h2 id="breed-types-heading" className="text-2xl font-semibold mb-6 text-center">
+            <h2
+              id="breed-types-heading"
+              className="text-2xl font-semibold mb-6 text-center"
+            >
               Browse by Type
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {breedTypeCards.map((card) => (
-                <Link 
-                  key={card.title} 
+                <Link
+                  key={card.title}
                   href={card.href}
                   aria-label={`View ${card.title.toLowerCase()}: ${card.count} dogs available`}
                 >
                   <Card className="p-6 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer h-full focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2">
                     <div className="flex items-start justify-between mb-3">
-                      <div className="p-2 bg-primary/10 rounded-lg" aria-hidden="true">
+                      <div
+                        className="p-2 bg-primary/10 rounded-lg"
+                        aria-hidden="true"
+                      >
                         {card.icon}
                       </div>
-                      <ChevronRight className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                      <ChevronRight
+                        className="h-5 w-5 text-muted-foreground"
+                        aria-hidden="true"
+                      />
                     </div>
                     <h3 className="text-xl font-semibold mb-2">{card.title}</h3>
                     <p className="text-3xl font-bold text-primary mb-2">
@@ -166,14 +190,17 @@ export default function BreedsHubClient({ initialBreedStats }) {
 
           {/* Breed Groups Grid */}
           <section aria-labelledby="breed-groups-heading">
-            <h2 id="breed-groups-heading" className="text-2xl font-semibold mb-6 text-center">
+            <h2
+              id="breed-groups-heading"
+              className="text-2xl font-semibold mb-6 text-center"
+            >
               Popular Breed Groups
             </h2>
             {breedGroups.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {breedGroups.map((group) => (
-                  <Link 
-                    key={group.name} 
+                  <Link
+                    key={group.name}
                     href={group.href}
                     aria-label={`View ${group.name} dogs: ${group.count} available`}
                   >
@@ -190,7 +217,10 @@ export default function BreedsHubClient({ initialBreedStats }) {
                             rescue dogs available
                           </p>
                         </div>
-                        <ChevronRight className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                        <ChevronRight
+                          className="h-5 w-5 text-muted-foreground"
+                          aria-hidden="true"
+                        />
                       </div>
                     </Card>
                   </Link>
@@ -214,14 +244,11 @@ export default function BreedsHubClient({ initialBreedStats }) {
                 Browse all available rescue dogs or use our advanced filters
               </p>
               <div className="flex gap-4 justify-center flex-wrap">
-                <Button 
-                  size="lg" 
-                  onClick={() => router.push("/dogs")}
-                >
+                <Button size="lg" onClick={() => router.push("/dogs")}>
                   Browse All Dogs
                 </Button>
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   variant="outline"
                   onClick={() => router.push("/dogs?filters=advanced")}
                 >

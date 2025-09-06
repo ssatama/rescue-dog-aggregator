@@ -392,29 +392,31 @@ export async function getBreedSuggestions(query, limit = 5) {
  */
 export async function getBreedDogs(breedSlug, filters = {}) {
   logger.log(`Fetching dogs for breed: ${breedSlug}`, filters);
-  
+
   try {
     const breedStats = await get("/api/animals/breeds/stats");
-    const breedData = breedStats.qualifying_breeds?.find(breed => breed.breed_slug === breedSlug);
-    
+    const breedData = breedStats.qualifying_breeds?.find(
+      (breed) => breed.breed_slug === breedSlug,
+    );
+
     if (!breedData) {
       throw new Error(`Breed not found: ${breedSlug}`);
     }
-    
+
     const params = {
       breed: breedData.primary_breed,
       limit: filters.limit || 12,
       offset: filters.offset || 0,
       animal_type: "dog",
-      status: "available"
+      status: "available",
     };
-    
-    if (filters.age && filters.age !== 'all') params.age = filters.age;
-    if (filters.sex && filters.sex !== 'all') params.sex = filters.sex;
-    if (filters.size && filters.size !== 'all') params.size = filters.size;
+
+    if (filters.age && filters.age !== "all") params.age = filters.age;
+    if (filters.sex && filters.sex !== "all") params.sex = filters.sex;
+    if (filters.size && filters.size !== "all") params.size = filters.size;
     if (filters.good_with_cats) params.good_with_cats = true;
     if (filters.good_with_dogs) params.good_with_dogs = true;
-    
+
     return get("/api/animals", params);
   } catch (error) {
     logger.error(`Error fetching breed dogs for ${breedSlug}:`, error);
@@ -429,19 +431,21 @@ export async function getBreedDogs(breedSlug, filters = {}) {
  */
 export async function getBreedFilterCounts(breedSlug) {
   logger.log(`Fetching filter counts for breed: ${breedSlug}`);
-  
+
   try {
     const breedStats = await get("/api/animals/breeds/stats");
-    const breedData = breedStats.qualifying_breeds?.find(breed => breed.breed_slug === breedSlug);
-    
+    const breedData = breedStats.qualifying_breeds?.find(
+      (breed) => breed.breed_slug === breedSlug,
+    );
+
     if (!breedData) {
       return null;
     }
-    
+
     return getFilterCounts({
       breed: breedData.primary_breed,
       animal_type: "dog",
-      status: "available"
+      status: "available",
     });
   } catch (error) {
     logger.error(`Error fetching breed filter counts for ${breedSlug}:`, error);
