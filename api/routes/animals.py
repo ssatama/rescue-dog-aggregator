@@ -182,6 +182,33 @@ async def get_distinct_available_regions(
 # --- END NEW ---
 
 
+# --- Breed Statistics Endpoint ---
+@router.get("/breeds/stats", summary="Get Breed Statistics")
+async def get_breed_stats(
+    cursor: RealDictCursor = Depends(get_pooled_db_cursor),
+):
+    """
+    Get breed statistics including total dogs, unique breeds, breed groups distribution,
+    and qualifying breeds with 15+ dogs.
+    
+    Returns:
+        Breed statistics including:
+        - total_dogs: Total number of available dogs
+        - unique_breeds: Count of unique primary breeds
+        - breed_groups: Distribution of breed groups
+        - qualifying_breeds: Breeds with 15+ dogs including personality traits and demographics
+    """
+    try:
+        service = AnimalService(cursor)
+        stats = service.get_breed_stats()
+        return stats
+    except psycopg2.Error as db_err:
+        handle_database_error(db_err, "get_breed_stats")
+    except Exception as e:
+        logger.exception(f"Unexpected error fetching breed statistics: {e}")
+        raise APIException(status_code=500, detail="Failed to fetch breed statistics", error_code="INTERNAL_ERROR")
+
+
 # --- Search Suggestions Endpoints ---
 @router.get("/search/suggestions", response_model=List[str])
 async def get_search_suggestions(

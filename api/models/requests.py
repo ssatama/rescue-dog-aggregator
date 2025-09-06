@@ -52,6 +52,8 @@ class AnimalFilterRequest(BaseModel):
     breed: Optional[str] = Field(default=None, description="Filter by exact breed name")
     standardized_breed: Optional[str] = Field(default=None, description="Filter by standardized breed")
     breed_group: Optional[str] = Field(default=None, description="Filter by breed group")
+    primary_breed: Optional[str] = Field(default=None, description="Filter by primary breed")
+    breed_type: Optional[str] = Field(default=None, description="Filter by breed type (purebred, mixed, crossbreed, unknown, sighthound)")
 
     # Physical characteristics
     sex: Optional[str] = Field(default=None, description="Filter by sex (male, female)")
@@ -150,6 +152,8 @@ class AnimalFilterCountRequest(BaseModel):
     breed: Optional[str] = Field(default=None, description="Breed context for counting")
     standardized_breed: Optional[str] = Field(default=None, description="Standardized breed context for counting")
     breed_group: Optional[str] = Field(default=None, description="Breed group context for counting")
+    primary_breed: Optional[str] = Field(default=None, description="Primary breed context for counting")
+    breed_type: Optional[str] = Field(default=None, description="Breed type context for counting")
 
     # Physical characteristics (context for counting)
     sex: Optional[str] = Field(default=None, description="Sex context for counting")

@@ -583,12 +583,136 @@ class AnimalService:
             logger.error(f"Error in get_statistics: {e}")
             raise APIException(status_code=500, detail="Failed to fetch statistics", error_code="INTERNAL_ERROR")
 
+    def get_breed_stats(self) -> dict:
+        """
+        Get breed statistics aggregated by primary_breed.
+        
+        Returns data structure for /api/breeds/stats endpoint including:
+        - Total dogs
+        - Unique breeds count
+        - Breed groups distribution
+        - Qualifying breeds (15+ dogs) with details
+        """
+        try:
+            # Get total dog count
+            self.cursor.execute("""
+                SELECT COUNT(*) as total 
+                FROM animals a
+                JOIN organizations o ON a.organization_id = o.id
+                WHERE a.animal_type = 'dog' 
+                AND a.status = 'available'
+                AND o.active = TRUE
+            """)
+            total_dogs = self.cursor.fetchone()["total"]
+            
+            # Get unique breed count (where primary_breed is not null)
+            self.cursor.execute("""
+                SELECT COUNT(DISTINCT primary_breed) as count
+                FROM animals a
+                JOIN organizations o ON a.organization_id = o.id
+                WHERE a.animal_type = 'dog' 
+                AND a.status = 'available'
+                AND o.active = TRUE
+                AND a.primary_breed IS NOT NULL
+            """)
+            unique_breeds = self.cursor.fetchone()["count"]
+            
+            # Get breed groups distribution
+            self.cursor.execute("""
+                SELECT 
+                    COALESCE(breed_group, 'Unknown') as group_name,
+                    COUNT(*) as count
+                FROM animals a
+                JOIN organizations o ON a.organization_id = o.id
+                WHERE a.animal_type = 'dog' 
+                AND a.status = 'available'
+                AND o.active = TRUE
+                GROUP BY breed_group
+                ORDER BY count DESC
+            """)
+            breed_groups = [{"name": row["group_name"], "count": row["count"]} for row in self.cursor.fetchall()]
+            
+            # Get qualifying breeds (15+ dogs) with organization distribution
+            self.cursor.execute("""
+                WITH breed_stats AS (
+                    SELECT 
+                        a.primary_breed,
+                        a.breed_type,
+                        a.breed_group,
+                        COUNT(*) as count,
+                        COUNT(DISTINCT a.organization_id) as org_count,
+                        ARRAY_AGG(DISTINCT o.name) as organizations,
+                        -- Age distribution
+                        COUNT(*) FILTER (WHERE a.age_max_months < 12) as puppy_count,
+                        COUNT(*) FILTER (WHERE a.age_min_months >= 12 AND a.age_max_months <= 36) as young_count,
+                        COUNT(*) FILTER (WHERE a.age_min_months >= 36 AND a.age_max_months <= 96) as adult_count,
+                        COUNT(*) FILTER (WHERE a.age_min_months >= 96) as senior_count,
+                        -- Size distribution
+                        COUNT(*) FILTER (WHERE a.standardized_size = 'Tiny') as tiny_count,
+                        COUNT(*) FILTER (WHERE a.standardized_size = 'Small') as small_count,
+                        COUNT(*) FILTER (WHERE a.standardized_size = 'Medium') as medium_count,
+                        COUNT(*) FILTER (WHERE a.standardized_size = 'Large') as large_count,
+                        COUNT(*) FILTER (WHERE a.standardized_size = 'XLarge') as xlarge_count
+                    FROM animals a
+                    JOIN organizations o ON a.organization_id = o.id
+                    WHERE a.animal_type = 'dog' 
+                    AND a.status = 'available'
+                    AND o.active = TRUE
+                    AND a.primary_breed IS NOT NULL
+                    GROUP BY a.primary_breed, a.breed_type, a.breed_group
+                    HAVING COUNT(*) >= 15
+                )
+                SELECT * FROM breed_stats
+                ORDER BY count DESC
+            """)
+            
+            qualifying_breeds = []
+            for row in self.cursor.fetchall():
+                # Generate breed slug for URL routing
+                from utils.breed_utils import generate_breed_slug
+                breed_slug = generate_breed_slug(row["primary_breed"])
+                
+                qualifying_breeds.append({
+                    "primary_breed": row["primary_breed"],
+                    "breed_slug": breed_slug,
+                    "breed_type": row["breed_type"],
+                    "breed_group": row["breed_group"],
+                    "count": row["count"],
+                    "organization_count": row["org_count"],
+                    "organizations": row["organizations"][:5] if row["organizations"] else [],  # Limit to top 5 orgs
+                    "age_distribution": {
+                        "puppy": row["puppy_count"],
+                        "young": row["young_count"],
+                        "adult": row["adult_count"],
+                        "senior": row["senior_count"]
+                    },
+                    "size_distribution": {
+                        "tiny": row["tiny_count"],
+                        "small": row["small_count"],
+                        "medium": row["medium_count"],
+                        "large": row["large_count"],
+                        "xlarge": row["xlarge_count"]
+                    }
+                })
+            
+            return {
+                "total_dogs": total_dogs,
+                "unique_breeds": unique_breeds,
+                "breed_groups": breed_groups,
+                "qualifying_breeds": qualifying_breeds
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in get_breed_stats: {e}")
+            raise APIException(status_code=500, detail="Failed to fetch breed statistics", error_code="INTERNAL_ERROR")
+
     def _build_animals_query(self, filters: AnimalFilterRequest) -> tuple[str, List[Any]]:
         """Build the animals query with filters."""
         # Base query selects distinct animals and joins with organizations
         # Include dog_profiler_data for sitemap and other requests that need LLM content
         query_base = """
             SELECT DISTINCT a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
+                   a.primary_breed, a.breed_type, a.breed_confidence, a.secondary_breed, a.breed_slug,
                    a.age_text, a.age_min_months, a.age_max_months, a.sex, a.size, a.standardized_size,
                    a.status, a.primary_image_url, a.adoption_url, a.organization_id, a.external_id,
                    a.language, a.properties, a.created_at, a.updated_at, a.last_scraped_at,
@@ -653,6 +777,14 @@ class AnimalService:
             conditions.append("a.breed_group = %s")
             params.append(filters.breed_group)
 
+        if filters.primary_breed:
+            conditions.append("a.primary_breed = %s")
+            params.append(filters.primary_breed)
+
+        if filters.breed_type:
+            conditions.append("a.breed_type = %s")
+            params.append(filters.breed_type)
+
         if filters.sex:
             conditions.append("a.sex = %s")
             params.append(filters.sex)
@@ -716,6 +848,7 @@ class AnimalService:
             query = f"""
                 SELECT DISTINCT ON (a.organization_id)
                        a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
+                       a.primary_breed, a.breed_type, a.breed_confidence, a.secondary_breed, a.breed_slug,
                        a.age_text, a.age_min_months, a.age_max_months, a.sex, a.size, a.standardized_size,
                        a.status, a.primary_image_url, a.adoption_url, a.organization_id, a.external_id,
                        a.language, a.properties, a.created_at, a.updated_at, a.last_scraped_at,
@@ -838,6 +971,14 @@ class AnimalService:
         if filters.breed_group:
             conditions.append("a.breed_group = %s")
             params.append(filters.breed_group)
+
+        if filters.primary_breed:
+            conditions.append("a.primary_breed = %s")
+            params.append(filters.primary_breed)
+
+        if filters.breed_type:
+            conditions.append("a.breed_type = %s")
+            params.append(filters.breed_type)
 
         if filters.location_country:
             conditions.append("o.country = %s")
