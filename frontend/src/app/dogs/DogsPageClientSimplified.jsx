@@ -77,6 +77,7 @@ export default function DogsPageClientSimplified({
       searchParams.get("organization_id"),
     ),
     breedFilter: searchParams.get("breed") || "Any breed",
+    breedGroupFilter: searchParams.get("breed_group") || "Any group",
     locationCountryFilter:
       searchParams.get("location_country") || "Any country",
     availableCountryFilter:
@@ -141,6 +142,8 @@ export default function DogsPageClientSimplified({
       params.organization_id = filters.organizationFilter;
     if (filters.breedFilter !== "Any breed")
       params.standardized_breed = filters.breedFilter;
+    if (filters.breedGroupFilter !== "Any group")
+      params.breed_group = filters.breedGroupFilter;
     if (filters.locationCountryFilter !== "Any country")
       params.location_country = filters.locationCountryFilter;
     if (filters.availableCountryFilter !== "Any country")

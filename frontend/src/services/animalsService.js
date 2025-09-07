@@ -20,6 +20,7 @@ export async function getAnimals(params = {}) {
         !(key === "standardized_size" && v === "Any size") && // Check standardized_size
         !(key === "age_category" && v === "Any age") &&
         !(key === "standardized_breed" && v === "Any breed") &&
+        !(key === "breed_group" && v === "Any group") &&
         !(key === "organization_id" && v === "Any organization") &&
         !(key === "location_country" && v === "Any country") &&
         !(key === "available_to_country" && v === "Any country") &&

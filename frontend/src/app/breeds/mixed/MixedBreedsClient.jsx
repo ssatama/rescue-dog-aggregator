@@ -55,19 +55,19 @@ export default function MixedBreedsClient({
   ];
 
   // Build API parameters
-  const buildAPIParams = useCallback(() => {
+  const buildAPIParams = useCallback((currentFilters = filters) => {
     const params = {
       breed_type: "mixed",
       limit: ITEMS_PER_PAGE,
       offset: 0,
     };
 
-    if (filters.size) params.size = filters.size;
-    if (filters.age) params.age = filters.age;
-    if (filters.sex) params.sex = filters.sex;
-    if (filters.good_with_kids) params.good_with_kids = true;
-    if (filters.good_with_dogs) params.good_with_dogs = true;
-    if (filters.good_with_cats) params.good_with_cats = true;
+    if (currentFilters.size) params.size = currentFilters.size;
+    if (currentFilters.age) params.age = currentFilters.age;
+    if (currentFilters.sex) params.sex = currentFilters.sex;
+    if (currentFilters.good_with_kids) params.good_with_kids = true;
+    if (currentFilters.good_with_dogs) params.good_with_dogs = true;
+    if (currentFilters.good_with_cats) params.good_with_cats = true;
 
     return params;
   }, [filters]);
@@ -108,22 +108,13 @@ export default function MixedBreedsClient({
     // Fetch new data
     setIsLoading(true);
     try {
-      const params = {
-        breed_type: "mixed",
-        limit: ITEMS_PER_PAGE,
-        offset: 0,
-      };
-
-      if (newFilters.size) params.size = newFilters.size;
-      if (newFilters.age) params.age = newFilters.age;
-      if (newFilters.sex) params.sex = newFilters.sex;
-      if (newFilters.good_with_kids) params.good_with_kids = true;
-      if (newFilters.good_with_dogs) params.good_with_dogs = true;
-      if (newFilters.good_with_cats) params.good_with_cats = true;
-
+      const params = buildAPIParams(newFilters);
+      params.offset = 0; // Reset offset for new filter
+      
       const response = await getAnimals(params);
-      setDogs(response?.results || []);
-      setHasMore((response?.results || []).length === ITEMS_PER_PAGE);
+      const dogsData = Array.isArray(response) ? response : (response?.results || []);
+      setDogs(dogsData);
+      setHasMore(dogsData.length === ITEMS_PER_PAGE);
     } catch (error) {
       console.error("Error fetching filtered dogs:", error);
     } finally {
@@ -141,7 +132,7 @@ export default function MixedBreedsClient({
       params.offset = offset;
       
       const response = await getAnimals(params);
-      const newDogs = response?.results || [];
+      const newDogs = Array.isArray(response) ? response : (response?.results || []);
       
       setDogs(prev => [...prev, ...newDogs]);
       setOffset(prev => prev + ITEMS_PER_PAGE);

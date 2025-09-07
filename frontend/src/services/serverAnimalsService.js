@@ -22,6 +22,8 @@ export const getAnimals = cache(async (params = {}) => {
   if (params.organization_id)
     queryParams.append("organization_id", params.organization_id);
   if (params.breed) queryParams.append("breed", params.breed);
+  if (params.breed_type) queryParams.append("breed_type", params.breed_type);
+  if (params.breed_group) queryParams.append("breed_group", params.breed_group);
   if (params.primary_breed)
     queryParams.append("primary_breed", params.primary_breed);
   if (params.location_country)

@@ -132,7 +132,7 @@ export default function BreedsHubClient({ initialBreedStats }) {
         .map((group) => ({
           name: group.name,
           count: group.count,
-          href: `/breeds?group=${encodeURIComponent(group.name)}`,
+          href: `/dogs?breed_group=${encodeURIComponent(group.name)}`,
           styles: breedGroupStyles[group.name] || {
             bg: 'bg-gray-50 hover:bg-gray-100',
             border: 'border-2 border-gray-200',
@@ -253,6 +253,47 @@ export default function BreedsHubClient({ initialBreedStats }) {
               ))}
             </div>
           </section>
+
+          {/* Popular Individual Breeds Section */}
+          {breedStats?.qualifying_breeds && breedStats.qualifying_breeds.length > 0 && (
+            <section className="mb-16" aria-labelledby="popular-breeds-heading">
+              <h2
+                id="popular-breeds-heading"
+                className="text-2xl font-semibold mb-6 text-center"
+              >
+                Popular Breeds
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                {breedStats.qualifying_breeds
+                  .slice(0, 12)
+                  .map((breed) => (
+                    <Link
+                      key={breed.slug}
+                      href={`/breeds/${breed.slug}`}
+                      className="group"
+                    >
+                      <Card className="p-4 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer h-full">
+                        <h3 className="font-semibold text-sm mb-1 group-hover:text-primary">
+                          {breed.primary_breed}
+                        </h3>
+                        <p className="text-2xl font-bold text-primary">
+                          {breed.count}
+                        </p>
+                        <p className="text-xs text-muted-foreground">available</p>
+                      </Card>
+                    </Link>
+                  ))}
+              </div>
+              <div className="text-center mt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => router.push("/dogs")}
+                >
+                  Browse All Breeds
+                </Button>
+              </div>
+            </section>
+          )}
 
           {/* Breed Groups Grid */}
           <section aria-labelledby="breed-groups-heading">

@@ -55,7 +55,7 @@ export default async function MixedBreedsPage(props) {
       offset: 0,
     });
 
-    const initialDogs = initialDogsResponse?.results || [];
+    const initialDogs = Array.isArray(initialDogsResponse) ? initialDogsResponse : (initialDogsResponse?.results || []);
     
     // Get popular mixed breed types (e.g., Collie Mix, Lab Mix)
     const popularMixes = await getPopularMixes();
@@ -99,9 +99,10 @@ async function getPopularMixes() {
           primary_breed: mixType,
           limit: 1,
         });
+        const total = response?.total || (Array.isArray(response) ? response.length : 0);
         return {
           name: mixType,
-          count: response?.total || 0,
+          count: total,
           slug: mixType.toLowerCase().replace(/\s+/g, '-'),
         };
       })

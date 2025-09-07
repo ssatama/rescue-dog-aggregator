@@ -22,12 +22,29 @@ export async function generateMetadata({ params }) {
       };
     }
 
+    // Import breed descriptions for enhanced SEO
+    const { default: breedDescriptions } = await import('@/utils/breedDescriptions');
+    const breedKey = breedData.primary_breed.toLowerCase().replace(/\s+/g, '_');
+    const description = breedDescriptions[breedKey];
+    
+    const seoDescription = description?.tagline 
+      ? `${description.tagline} Find ${breedData.count} ${breedData.primary_breed} rescue dogs for adoption from verified organizations.`
+      : `Find ${breedData.count} ${breedData.primary_breed} rescue dogs for adoption. View photos, personality profiles, and apply from verified rescue organizations.`;
+
     return {
       title: `${breedData.primary_breed} Rescue Dogs | ${breedData.count} Available for Adoption`,
-      description: `Find ${breedData.count} ${breedData.primary_breed} rescue dogs for adoption. View photos, personality profiles, and apply from verified rescue organizations.`,
+      description: seoDescription,
+      keywords: [
+        `${breedData.primary_breed} rescue`,
+        `${breedData.primary_breed} adoption`,
+        `${breedData.primary_breed} dogs`,
+        'rescue dogs',
+        'dog adoption',
+        breedData.breed_group && `${breedData.breed_group} group dogs`
+      ].filter(Boolean).join(', '),
       openGraph: {
         title: `${breedData.count} ${breedData.primary_breed} Dogs Need Homes`,
-        description: `Browse ${breedData.primary_breed} rescue dogs with personality profiles and real-time availability.`,
+        description: seoDescription,
         images:
           breedData.topDogs
             ?.filter((d) => d.primary_image_url)
@@ -43,7 +60,7 @@ export async function generateMetadata({ params }) {
       twitter: {
         card: "summary_large_image",
         title: `${breedData.count} ${breedData.primary_breed} Dogs Need Homes`,
-        description: `Browse ${breedData.primary_breed} rescue dogs with personality profiles and real-time availability.`,
+        description: seoDescription,
         images: breedData.topDogs
           ?.filter((d) => d.primary_image_url)
           .slice(0, 1)
