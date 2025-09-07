@@ -13,6 +13,7 @@ import { Filter, Loader2 } from "lucide-react";
 import BreedPhotoGallery from "@/components/breeds/BreedPhotoGallery";
 import { BreedInfo } from "@/components/breeds/BreedStatistics";
 import { getAnimals, getFilterCounts } from "@/services/animalsService";
+import { getBreedDescription } from "@/utils/breedDescriptions";
 import { useDebouncedCallback } from "use-debounce";
 import BreedAlertButton from "@/components/breeds/BreedAlertButton";
 import BreedFilterBar from "@/components/breeds/BreedFilterBar";
@@ -263,6 +264,19 @@ export default function BreedDetailClient({
 
           <BreedInfo breedData={breedData} />
         </div>
+
+        {/* Breed Description Section */}
+        {(() => {
+          const description = getBreedDescription(breedData.primary_breed);
+          return description ? (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
+              <h2 className="text-2xl font-bold mb-4">About the {breedData.primary_breed}</h2>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-lg">
+                {description}
+              </p>
+            </div>
+          ) : null;
+        })()}
 
         {breedData.personality_traits &&
           breedData.personality_traits.length > 0 && (

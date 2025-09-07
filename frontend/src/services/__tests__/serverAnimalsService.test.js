@@ -37,7 +37,7 @@ describe("Server Animals Service", () => {
     fetch.mockRejectedValueOnce(new Error("API Error"));
 
     const result = await getAnimals();
-    expect(result).toEqual([]);
+    expect(result).toEqual({ results: [], total: 0 });
   });
 
   it("should fetch all metadata successfully", async () => {

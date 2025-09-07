@@ -1,24 +1,24 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import MixedBreedsClient from "../MixedBreedsClient";
-import { getAnimals } from "@/services/animalsService";
+import { getAnimals } from "../../../../services/animalsService";
 
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
   useSearchParams: jest.fn(),
 }));
 
-jest.mock("@/services/animalsService", () => ({
+jest.mock("../../../../services/animalsService", () => ({
   getAnimals: jest.fn(),
 }));
 
-jest.mock("@/components/layout/Layout", () => {
+jest.mock("../../../../components/layout/Layout", () => {
   return function Layout({ children }) {
     return <div data-testid="layout">{children}</div>;
   };
 });
 
-jest.mock("@/components/dogs/DogCard", () => {
+jest.mock("../../../../components/dogs/DogCard", () => {
   return function DogCard({ dog }) {
     return <div data-testid="dog-card">{dog.name}</div>;
   };
