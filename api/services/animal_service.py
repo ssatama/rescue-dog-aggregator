@@ -657,7 +657,21 @@ class AnimalService:
                         -- Experience level distribution
                         COUNT(*) FILTER (WHERE a.dog_profiler_data->>'experience_level' = 'beginner') as first_time_ok_count,
                         COUNT(*) FILTER (WHERE a.dog_profiler_data->>'experience_level' = 'intermediate') as some_experience_count,
-                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'experience_level' = 'experienced') as experienced_count
+                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'experience_level' = 'experienced') as experienced_count,
+                        -- Personality metrics for bar charts
+                        COUNT(*) FILTER (WHERE a.dog_profiler_data IS NOT NULL) as total_with_profiler_data,
+                        -- Energy Level
+                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'energy_level' = 'low') as energy_low_count,
+                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'energy_level' = 'medium') as energy_medium_count,
+                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'energy_level' = 'high') as energy_high_count,
+                        -- Confidence (as proxy for trainability/independence)
+                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'confidence' IN ('very_confident', 'confident')) as confidence_high_count,
+                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'confidence' = 'moderate') as confidence_moderate_count,
+                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'confidence' IN ('shy', 'very_shy')) as confidence_low_count,
+                        -- Good with dogs (as proxy for affection/sociability)
+                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'good_with_dogs' = 'yes') as good_with_dogs_yes_count,
+                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'good_with_dogs' = 'sometimes') as good_with_dogs_sometimes_count,
+                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'good_with_dogs' = 'no') as good_with_dogs_no_count
                     FROM animals a
                     JOIN organizations o ON a.organization_id = o.id
                     WHERE a.animal_type = 'dog' 
@@ -714,7 +728,97 @@ class AnimalService:
                 from utils.breed_utils import generate_breed_slug
                 breed_slug = row["breed_slug"] or generate_breed_slug(row["primary_breed"])
                 
-                qualifying_breeds.append({
+                # Calculate personality metrics percentages
+                total_with_data = row["total_with_profiler_data"] or 0
+                personality_metrics = None
+                
+                if total_with_data > 0:
+                    # Energy level calculation - convert to 0-100 scale
+                    energy_total = row["energy_low_count"] + row["energy_medium_count"] + row["energy_high_count"]
+                    if energy_total > 0:
+                        # Weight: low=1, medium=2, high=3, then scale to 0-100
+                        energy_weighted = (row["energy_low_count"] * 1 + row["energy_medium_count"] * 2 + row["energy_high_count"] * 3)
+                        energy_percentage = int((energy_weighted / (energy_total * 3)) * 100)
+                    else:
+                        energy_percentage = 50  # Default to medium if no data
+                    
+                    # Affection (using good_with_dogs as proxy) - higher is more affectionate
+                    dogs_total = row["good_with_dogs_yes_count"] + row["good_with_dogs_sometimes_count"] + row["good_with_dogs_no_count"]
+                    if dogs_total > 0:
+                        # Weight: yes=3, sometimes=2, no=1, then scale to 0-100
+                        affection_weighted = (row["good_with_dogs_yes_count"] * 3 + row["good_with_dogs_sometimes_count"] * 2 + row["good_with_dogs_no_count"] * 1)
+                        affection_percentage = int((affection_weighted / (dogs_total * 3)) * 100)
+                    else:
+                        affection_percentage = 70  # Default to high affection if no data
+                    
+                    # Trainability (using confidence as proxy) - higher confidence = better trainability
+                    confidence_total = row["confidence_high_count"] + row["confidence_moderate_count"] + row["confidence_low_count"]
+                    if confidence_total > 0:
+                        # Weight: high=3, moderate=2, low=1, then scale to 0-100
+                        trainability_weighted = (row["confidence_high_count"] * 3 + row["confidence_moderate_count"] * 2 + row["confidence_low_count"] * 1)
+                        trainability_percentage = int((trainability_weighted / (confidence_total * 3)) * 100)
+                    else:
+                        trainability_percentage = 60  # Default to moderate if no data
+                    
+                    # Independence (inverse of confidence - lower confidence = more independent)
+                    # We'll invert the trainability score
+                    independence_percentage = 100 - trainability_percentage
+                    
+                    # Create labels based on percentages
+                    def get_energy_label(percentage):
+                        if percentage <= 33:
+                            return "Low"
+                        elif percentage <= 50:
+                            return "Low-Medium"
+                        elif percentage <= 66:
+                            return "Medium"
+                        elif percentage <= 83:
+                            return "Medium-High"
+                        else:
+                            return "High"
+                    
+                    def get_level_label(percentage):
+                        if percentage <= 20:
+                            return "Very Low"
+                        elif percentage <= 40:
+                            return "Low"
+                        elif percentage <= 60:
+                            return "Moderate"
+                        elif percentage <= 80:
+                            return "High"
+                        else:
+                            return "Very High"
+                    
+                    def get_trainability_label(percentage):
+                        if percentage <= 40:
+                            return "Challenging"
+                        elif percentage <= 60:
+                            return "Moderate"
+                        elif percentage <= 80:
+                            return "Good"
+                        else:
+                            return "Excellent"
+                    
+                    personality_metrics = {
+                        "energy_level": {
+                            "percentage": energy_percentage,
+                            "label": get_energy_label(energy_percentage)
+                        },
+                        "affection": {
+                            "percentage": affection_percentage,
+                            "label": get_level_label(affection_percentage)
+                        },
+                        "trainability": {
+                            "percentage": trainability_percentage,
+                            "label": get_trainability_label(trainability_percentage)
+                        },
+                        "independence": {
+                            "percentage": independence_percentage,
+                            "label": get_level_label(independence_percentage)
+                        }
+                    }
+                
+                breed_data = {
                     "primary_breed": row["primary_breed"],
                     "breed_slug": breed_slug,
                     "breed_type": row["breed_type"],
@@ -741,7 +845,13 @@ class AnimalService:
                         "some_experience": row["some_experience_count"],
                         "experienced": row["experienced_count"]
                     }
-                })
+                }
+                
+                # Only add personality_metrics if we have data
+                if personality_metrics:
+                    breed_data["personality_metrics"] = personality_metrics
+                
+                qualifying_breeds.append(breed_data)
             
             # Get purebred and crossbreed counts
             self.cursor.execute("""

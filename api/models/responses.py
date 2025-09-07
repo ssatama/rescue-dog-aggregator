@@ -81,6 +81,22 @@ class ExperienceDistribution(BaseModel):
     experienced: int = Field(..., description="Number requiring experienced owners", ge=0)
 
 
+class PersonalityMetric(BaseModel):
+    """Model for a single personality metric with percentage and label."""
+    
+    percentage: int = Field(..., description="Percentage value (0-100)", ge=0, le=100)
+    label: str = Field(..., description="Human-readable label for the percentage")
+
+
+class PersonalityMetrics(BaseModel):
+    """Model for personality metrics from dog_profiler_data aggregation."""
+    
+    energy_level: PersonalityMetric = Field(..., description="Energy level metric")
+    affection: PersonalityMetric = Field(..., description="Affection/sociability metric")
+    trainability: PersonalityMetric = Field(..., description="Trainability metric")
+    independence: PersonalityMetric = Field(..., description="Independence metric")
+
+
 class QualifyingBreed(BaseModel):
     """Model for a qualifying breed with detailed statistics."""
     
@@ -95,6 +111,7 @@ class QualifyingBreed(BaseModel):
     size_distribution: SizeDistribution = Field(..., description="Size distribution for this breed")
     personality_traits: List[str] = Field(default_factory=list, description="Top 5 personality traits from LLM analysis")
     experience_distribution: ExperienceDistribution = Field(..., description="Experience level distribution for this breed")
+    personality_metrics: Optional[PersonalityMetrics] = Field(None, description="Personality metrics from dog_profiler_data aggregation")
 
 
 class BreedStatsResponse(BaseModel):

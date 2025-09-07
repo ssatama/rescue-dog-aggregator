@@ -1,20 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
 
 export default function BreedPhotoGallery({ dogs, breedName, className = "" }) {
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageErrors, setImageErrors] = useState({});
-
-  const handleImageClick = (dog, index) => {
-    setSelectedImage({ dog, index });
-    setIsModalOpen(true);
-  };
 
   const handleImageError = (dogId) => {
     setImageErrors(prev => ({ ...prev, [dogId]: true }));
@@ -47,14 +38,50 @@ export default function BreedPhotoGallery({ dogs, breedName, className = "" }) {
     );
   }
 
-  return (
-    <div className={`breed-photo-gallery ${className}`}>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+  const getMasonryLayout = () => {
+    // Predefined aspect ratios to create masonry effect
+    const aspectRatios = [
+      'aspect-[4/5]',    // Tall rectangle
+      'aspect-square',   // Square
+      'aspect-[3/4]',    // Portrait
+      'aspect-[5/4]',    // Landscape
+      'aspect-[4/3]',    // Landscape
+      'aspect-square'    // Square
+    ];
+
+    return dogs?.slice(0, 6).map((dog, index) => (
+      <Link
+        key={dog.id}
+        href={`/dogs/${dog.slug}`}
+        className={`relative overflow-hidden rounded-lg cursor-pointer group block ${aspectRatios[index]}`}
+      >
+        <Image
+          src={imageErrors[dog.id] ? "/images/dog-placeholder.jpg" : dog.primary_image_url}
+          alt={`${dog.name} - ${breedName} rescue dog`}
+          fill
+          className="object-cover group-hover:scale-105 transition-transform duration-300"
+          priority={index < 3}
+          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          onError={() => handleImageError(dog.id)}
+        />
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
+        <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <span className="text-white text-sm font-medium bg-black/50 px-2 py-1 rounded">
+            {dog.name}
+          </span>
+        </div>
+      </Link>
+    ));
+  };
+
+  const getMobileCarousel = () => {
+    return (
+      <div className="flex overflow-x-auto space-x-2 pb-2 scrollbar-hide">
         {dogs?.slice(0, 6).map((dog, index) => (
-          <div
+          <Link
             key={dog.id}
-            className="aspect-square relative overflow-hidden rounded-lg cursor-pointer group"
-            onClick={() => handleImageClick(dog, index)}
+            href={`/dogs/${dog.slug}`}
+            className="flex-shrink-0 w-64 aspect-[4/5] relative overflow-hidden rounded-lg cursor-pointer group block"
           >
             <Image
               src={imageErrors[dog.id] ? "/images/dog-placeholder.jpg" : dog.primary_image_url}
@@ -62,7 +89,7 @@ export default function BreedPhotoGallery({ dogs, breedName, className = "" }) {
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"
               priority={index < 3}
-              sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              sizes="256px"
               onError={() => handleImageError(dog.id)}
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
@@ -71,115 +98,24 @@ export default function BreedPhotoGallery({ dogs, breedName, className = "" }) {
                 {dog.name}
               </span>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
-
-      {isModalOpen && selectedImage && (
-        <ImageModal
-          dog={selectedImage.dog}
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          breedName={breedName}
-          imageError={imageErrors[selectedImage.dog.id]}
-          onImageError={() => handleImageError(selectedImage.dog.id)}
-        />
-      )}
-    </div>
-  );
-}
-
-function ImageModal({ dog, isOpen, onClose, breedName, imageError, onImageError }) {
-  const [modalRef, setModalRef] = useState(null);
-
-  useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-
-    const handleFocusTrap = (e) => {
-      if (!modalRef || !isOpen) return;
-      
-      const focusableElements = modalRef.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
-
-      if (e.key === "Tab") {
-        if (e.shiftKey && document.activeElement === firstElement) {
-          e.preventDefault();
-          lastElement.focus();
-        } else if (!e.shiftKey && document.activeElement === lastElement) {
-          e.preventDefault();
-          firstElement.focus();
-        }
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("keydown", handleEscape);
-      document.addEventListener("keydown", handleFocusTrap);
-      document.body.style.overflow = "hidden";
-      
-      // Focus the close button when modal opens
-      setTimeout(() => {
-        modalRef?.querySelector('button')?.focus();
-      }, 0);
-    }
-
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-      document.removeEventListener("keydown", handleFocusTrap);
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen, onClose, modalRef]);
-
-  if (!isOpen) return null;
+    );
+  };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-title"
-    >
-      <div
-        ref={setModalRef}
-        className="relative max-w-4xl max-h-[90vh] mx-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={onClose}
-          className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors p-2"
-          aria-label="Close modal"
-        >
-          <X size={24} />
-        </button>
-
-        <div className="bg-white rounded-lg overflow-hidden shadow-2xl">
-          <div className="relative aspect-video">
-            <Image
-              src={imageError ? "/images/dog-placeholder.jpg" : dog.primary_image_url}
-              alt={`${dog.name} - ${breedName} rescue dog`}
-              fill
-              className="object-cover"
-              priority
-              onError={onImageError}
-            />
-          </div>
-
-          <div className="p-6">
-            <h3 id="modal-title" className="text-2xl font-bold mb-2">{dog.name}</h3>
-            <p className="text-gray-600 mb-4">
-              {breedName} • {dog.organization?.name}
-            </p>
-            <Link href={`/dogs/${dog.slug}`}>
-              <Button className="w-full">View {dog.name}'s Profile</Button>
-            </Link>
-          </div>
+    <div className={`breed-photo-gallery ${className}`}>
+      {/* Desktop: Masonry Grid */}
+      <div className="hidden md:block">
+        <div className="grid grid-cols-3 gap-2 auto-rows-min">
+          {getMasonryLayout()}
         </div>
+      </div>
+      
+      {/* Mobile: Swipeable Carousel */}
+      <div className="md:hidden">
+        {getMobileCarousel()}
       </div>
     </div>
   );

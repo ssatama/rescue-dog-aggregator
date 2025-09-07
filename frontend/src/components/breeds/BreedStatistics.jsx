@@ -86,10 +86,6 @@ export function BreedInfo({ breedData, className = "" }) {
       ?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleSaveAlert = () => {
-    console.log("Save breed alert for", breedData.primary_breed);
-  };
-
   return (
     <div className={`breed-info space-y-6 ${className}`}>
       <div>
@@ -103,9 +99,6 @@ export function BreedInfo({ breedData, className = "" }) {
               {breedData.breed_group} Group
             </Badge>
           )}
-          <Badge variant="outline" className="text-sm">
-            {breedData.breed_type}
-          </Badge>
           {breedData.count >= 50 && (
             <Badge variant="default" className="bg-green-600 text-sm">
               Popular Breed
@@ -131,14 +124,6 @@ export function BreedInfo({ breedData, className = "" }) {
           View All {breedData.count} {breedData.primary_breed}s
         </Button>
 
-        <Button
-          variant="outline"
-          size="lg"
-          className="sm:w-auto"
-          onClick={handleSaveAlert}
-        >
-          ❤️ Save Breed Alert
-        </Button>
       </div>
     </div>
   );

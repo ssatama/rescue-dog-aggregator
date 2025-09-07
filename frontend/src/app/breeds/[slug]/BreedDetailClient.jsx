@@ -15,10 +15,12 @@ import { BreedInfo } from "@/components/breeds/BreedStatistics";
 import { getAnimals, getFilterCounts } from "@/services/animalsService";
 import { getBreedDescription } from "@/utils/breedDescriptions";
 import { useDebouncedCallback } from "use-debounce";
-import BreedAlertButton from "@/components/breeds/BreedAlertButton";
 import BreedFilterBar from "@/components/breeds/BreedFilterBar";
 import { getBreedEmptyStateConfig, getBreedFilterOptions } from "@/utils/breedFilterUtils";
 import EmptyState from "@/components/ui/EmptyState";
+import PersonalityBarChart from "@/components/breeds/PersonalityBarChart";
+import CommonTraits from "@/components/breeds/CommonTraits";
+import ExperienceLevelChart from "@/components/breeds/ExperienceLevelChart";
 
 // Lazy load filter component
 const MobileFilterDrawer = dynamic(() => import("@/components/filters/MobileFilterDrawer"), {
@@ -239,9 +241,9 @@ export default function BreedDetailClient({
   ).length;
 
   const breadcrumbItems = [
-    { label: "Home", href: "/" },
-    { label: "Breeds", href: "/breeds" },
-    { label: breedData.primary_breed, href: `/breeds/${breedData.breed_slug}` },
+    { name: "Home", url: "/" },
+    { name: "Breeds", url: "/breeds" },
+    { name: breedData.primary_breed, url: `/breeds/${breedData.breed_slug}` },
   ];
   
   // Get breed-specific filter options
@@ -278,87 +280,19 @@ export default function BreedDetailClient({
           ) : null;
         })()}
 
-        {breedData.personality_traits &&
-          breedData.personality_traits.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
-              <h2 className="text-2xl font-bold mb-6">Personality Profile</h2>
+        {/* Personality Profile with Horizontal Bar Charts */}
+        <PersonalityBarChart breedData={breedData} />
+        
+        {/* Common Traits Section */}
+        {breedData.personality_traits && breedData.personality_traits.length > 0 && (
+          <CommonTraits personalityTraits={breedData.personality_traits} />
+        )}
+        
+        {/* Experience Level with Visual Bars */}
+        {breedData.experience_distribution && (
+          <ExperienceLevelChart experienceDistribution={breedData.experience_distribution} />
+        )}
 
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">Common Traits</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {breedData.personality_traits?.slice(0, 8).map((trait, index) => {
-                      // Use same pastel colors as PersonalityTraits component
-                      const colors = [
-                        { bg: "bg-blue-100", text: "text-blue-800" },
-                        { bg: "bg-green-100", text: "text-green-800" },
-                        { bg: "bg-purple-100", text: "text-purple-800" },
-                        { bg: "bg-yellow-100", text: "text-yellow-800" },
-                        { bg: "bg-pink-100", text: "text-pink-800" },
-                      ][index % 5];
-                      
-                      return (
-                        <span
-                          key={trait}
-                          className={`px-3 py-1.5 rounded-full text-sm font-medium ${colors.bg} ${colors.text}`}
-                        >
-                          {trait.charAt(0).toUpperCase() + trait.slice(1)}
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {breedData.experience_distribution && (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-4">
-                      Experience Level
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600 dark:text-gray-400">
-                          First-time OK
-                        </span>
-                        <span className="font-semibold">
-                          {breedData.experience_distribution.first_time_ok || 0}{" "}
-                          dogs
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600 dark:text-gray-400">
-                          Some Experience
-                        </span>
-                        <span className="font-semibold">
-                          {breedData.experience_distribution.some_experience ||
-                            0}{" "}
-                          dogs
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600 dark:text-gray-400">
-                          Experienced
-                        </span>
-                        <span className="font-semibold">
-                          {breedData.experience_distribution.experienced || 0}{" "}
-                          dogs
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-        {/* Breed alert button in hero section */}
-        <div className="flex justify-end mb-4">
-          <BreedAlertButton 
-            ref={breedAlertButtonRef}
-            breedData={breedData}
-            filters={filters}
-            size="lg"
-          />
-        </div>
         
         {/* Breed filter bar for quick filters */}
         <BreedFilterBar
@@ -391,12 +325,14 @@ export default function BreedDetailClient({
               }}
             />
           ) : (
-            <DogsGrid
-              dogs={dogs}
-              loading={loading && dogs.length === 0}
-              loadingType="filter"
-              listContext="breed-page"
-            />
+            <div id="dogs-grid">
+              <DogsGrid
+                dogs={dogs}
+                loading={loading && dogs.length === 0}
+                loadingType="filter"
+                listContext="breed-page"
+              />
+            </div>
           )}
           
           {/* Load more button */}

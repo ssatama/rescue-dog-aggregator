@@ -93,7 +93,6 @@ export async function generateStaticParams() {
 export default async function BreedDetailPage(props) {
   try {
     const params = await props.params;
-    const searchParams = await props.searchParams;
 
     const breedData = await getBreedBySlug(params.slug);
 
@@ -114,7 +113,7 @@ export default async function BreedDetailPage(props) {
         <BreedDetailClient
           initialBreedData={breedData}
           initialDogs={initialDogs}
-          initialParams={searchParams || {}}
+          initialParams={{}}
         />
       </Suspense>
     );
