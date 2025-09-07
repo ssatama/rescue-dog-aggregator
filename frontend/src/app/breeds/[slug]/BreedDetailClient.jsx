@@ -65,9 +65,14 @@ export default function BreedDetailClient({
 
   // Build API params from filters with breed-specific filtering
   const buildAPIParams = (filters) => {
-    const params = {
-      breed: breedData.primary_breed, // Always filter by current breed
-    };
+    const params = {};
+    
+    // Handle mixed breeds differently - filter by breed_group instead of breed
+    if (breedData.breed_slug === 'mixed' || breedData.breed_type === 'mixed') {
+      params.breed_group = 'Mixed';
+    } else {
+      params.breed = breedData.primary_breed; // Filter by specific breed
+    }
     
     if (filters.searchQuery) params.search = filters.searchQuery;
     if (filters.sizeFilter !== "Any size") params.standardized_size = filters.sizeFilter;
@@ -279,7 +284,7 @@ export default function BreedDetailClient({
   const breadcrumbItems = [
     { name: "Home", url: "/" },
     { name: "Breeds", url: "/breeds" },
-    { name: breedData.primary_breed, url: `/breeds/${breedData.breed_slug}` },
+    { name: breedData.primary_breed, url: breedData.breed_slug === 'mixed' ? '/breeds/mixed' : `/breeds/${breedData.breed_slug}` },
   ];
   
   // Get breed-specific filter options

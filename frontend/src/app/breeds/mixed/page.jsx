@@ -1,27 +1,57 @@
 import { Suspense } from "react";
-import MixedBreedsClient from "./MixedBreedsClient";
+import { notFound } from "next/navigation";
+import BreedDetailClient from "../[slug]/BreedDetailClient";
 import BreedDetailSkeleton from "@/components/ui/BreedDetailSkeleton";
-import { getAnimals, getBreedStats } from "@/services/serverAnimalsService";
+import {
+  getBreedBySlug,
+  getAnimals,
+  getBreedStats,
+} from "@/services/serverAnimalsService";
 
 export const revalidate = 3600;
 
 export async function generateMetadata() {
   try {
-    const stats = await getBreedStats();
-    const mixedCount = stats?.breed_groups?.find(g => g.name === "Mixed")?.count || 0;
+    const breedData = await getBreedBySlug("mixed");
     
+    const seoDescription = `Discover ${breedData.count} unique mixed breed rescue dogs waiting for homes. Each one has a special personality and story. Browse by size, age, and location.`;
+
     return {
-      title: `Mixed Breed Rescue Dogs | ${mixedCount} Available for Adoption`,
-      description: `Discover ${mixedCount} unique mixed breed rescue dogs waiting for homes. Each one has a special personality and story. Browse by size, age, and location.`,
+      title: `Mixed Breed Rescue Dogs | ${breedData.count} Available for Adoption`,
+      description: seoDescription,
+      keywords: [
+        'mixed breed rescue',
+        'mixed breed adoption',
+        'mixed breed dogs',
+        'rescue dogs',
+        'dog adoption',
+        'unique dogs',
+        'crossbreed dogs',
+        'mutt adoption'
+      ].join(', '),
       openGraph: {
-        title: `${mixedCount} Mixed Breed Dogs Need Loving Homes`,
-        description: `Every mixed breed is unique! Browse ${mixedCount} rescue dogs with diverse personalities and find your perfect companion.`,
+        title: `${breedData.count} Mixed Breed Dogs Need Loving Homes`,
+        description: seoDescription,
+        images:
+          breedData.topDogs
+            ?.filter((d) => d.primary_image_url)
+            .slice(0, 4)
+            .map((d) => ({
+              url: d.primary_image_url,
+              width: 800,
+              height: 600,
+              alt: `${d.name} - Mixed breed rescue dog`,
+            })) || [],
         type: "website",
       },
       twitter: {
         card: "summary_large_image",
-        title: `${mixedCount} Mixed Breed Dogs Need Homes`,
+        title: `${breedData.count} Mixed Breed Dogs Need Homes`,
         description: `Unique personalities from diverse backgrounds. Find your perfect mixed breed rescue dog.`,
+        images: breedData.topDogs
+          ?.filter((d) => d.primary_image_url)
+          .slice(0, 1)
+          .map((d) => d.primary_image_url) || [],
       },
     };
   } catch (error) {
@@ -35,86 +65,36 @@ export async function generateMetadata() {
 
 export default async function MixedBreedsPage(props) {
   try {
-    const searchParams = await props.searchParams;
-    
-    // Get breed statistics
-    const breedStats = await getBreedStats();
-    const mixedBreedData = {
-      primary_breed: "Mixed Breed",
-      breed_type: "mixed",
-      breed_group: "Mixed",
-      count: breedStats?.breed_groups?.find(g => g.name === "Mixed")?.count || 0,
-      organizations: [],
-      countries: [],
-    };
+    const params = await props.params;
 
-    // Get initial mixed breed dogs
+    // Get mixed breed data using the enhanced getBreedBySlug function
+    const breedData = await getBreedBySlug("mixed");
+
+    if (!breedData) {
+      notFound();
+    }
+
+    // Get initial dogs for mixed breeds
     const initialDogsResponse = await getAnimals({
-      breed_type: "mixed",
+      breed_group: "Mixed",
       limit: 12,
       offset: 0,
     });
 
-    const initialDogs = Array.isArray(initialDogsResponse) ? initialDogsResponse : (initialDogsResponse?.results || []);
-    
-    // Get popular mixed breed types (e.g., Collie Mix, Lab Mix)
-    const popularMixes = await getPopularMixes();
+    const initialDogs = initialDogsResponse?.results || [];
 
+    // Use the same BreedDetailClient component as other breed pages
     return (
       <Suspense fallback={<BreedDetailSkeleton />}>
-        <MixedBreedsClient
-          breedData={mixedBreedData}
+        <BreedDetailClient
+          initialBreedData={breedData}
           initialDogs={initialDogs}
-          popularMixes={popularMixes}
-          breedStats={breedStats}
-          initialParams={searchParams || {}}
+          initialParams={{}}
         />
       </Suspense>
     );
   } catch (error) {
     console.error("Error loading mixed breeds page:", error);
-    throw error;
-  }
-}
-
-async function getPopularMixes() {
-  try {
-    // Get counts for specific mixed breed types
-    const mixTypes = [
-      "Collie Mix",
-      "Jack Russell Terrier Mix", 
-      "Labrador Retriever Mix",
-      "Cavalier King Charles Spaniel Mix",
-      "Spaniel Mix",
-      "Cocker Spaniel Mix",
-      "German Shepherd Mix",
-      "Terrier Mix",
-      "Staffie Mix",
-      "Lurcher"
-    ];
-    
-    const mixCounts = await Promise.all(
-      mixTypes.map(async (mixType) => {
-        const response = await getAnimals({
-          primary_breed: mixType,
-          limit: 1,
-        });
-        const total = response?.total || (Array.isArray(response) ? response.length : 0);
-        return {
-          name: mixType,
-          count: total,
-          slug: mixType.toLowerCase().replace(/\s+/g, '-'),
-        };
-      })
-    );
-    
-    // Filter out mixes with less than 15 dogs and sort by count
-    return mixCounts
-      .filter(mix => mix.count >= 15)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 6);
-  } catch (error) {
-    console.error("Error getting popular mixes:", error);
-    return [];
+    notFound();
   }
 }
