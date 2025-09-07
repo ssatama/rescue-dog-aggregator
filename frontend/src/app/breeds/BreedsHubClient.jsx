@@ -18,6 +18,11 @@ export default function BreedsHubClient({ initialBreedStats, mixedBreedData, pop
   const breedStats = initialBreedStats;
   const router = useRouter();
 
+  // Breadcrumb items
+  const breadcrumbItems = [
+    { name: "Home", url: "/" },
+    { name: "Breeds" }
+  ];
 
   // Breed type cards configuration (3 cards as specified in PRD)
   const breedTypeCards = useMemo(
@@ -47,12 +52,6 @@ export default function BreedsHubClient({ initialBreedStats, mixedBreedData, pop
     [breedStats],
   );
 
-
-  const breadcrumbItems = [
-    { label: "Home", href: "/" },
-    { label: "Breeds", href: "/breeds" },
-  ];
-
   if (!breedStats || breedStats.error) {
     return (
       <Layout>
@@ -70,6 +69,11 @@ export default function BreedsHubClient({ initialBreedStats, mixedBreedData, pop
 
   return (
     <Layout>
+      {/* Breadcrumb Navigation */}
+      <div className="container mx-auto px-4 pt-4">
+        <Breadcrumbs items={breadcrumbItems} />
+      </div>
+
       {/* Hero Section with Mixed Breed Dogs */}
       {mixedBreedData && (
         <BreedsHeroSection 
@@ -80,8 +84,6 @@ export default function BreedsHubClient({ initialBreedStats, mixedBreedData, pop
       
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         <div className="container mx-auto px-4 py-8">
-          <Breadcrumbs items={breadcrumbItems} />
-
           {/* Popular Individual Breeds Section with Images */}
           {popularBreedsWithImages && popularBreedsWithImages.length > 0 && (
             <PopularBreedsSection popularBreeds={popularBreedsWithImages} />
