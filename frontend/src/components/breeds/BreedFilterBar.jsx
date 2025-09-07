@@ -71,8 +71,8 @@ export default function BreedFilterBar({
           </Button>
         </div>
 
-        {/* Quick filter chips */}
-        <div className="flex flex-wrap gap-2 items-center">
+        {/* Quick filter chips - hidden on mobile */}
+        <div className="hidden md:flex flex-wrap gap-2 items-center">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mr-2">
             Quick Filters:
           </span>

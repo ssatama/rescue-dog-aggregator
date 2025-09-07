@@ -170,6 +170,42 @@ export default function BreedDetailClient({
     debouncedFetchDogs(newFilters);
   }, [filters, updateURL, breedData, debouncedFetchDogs]);
   
+  // Immediate filter change handler for mobile drawer (no debouncing)
+  const handleMobileFilterChange = useCallback((filterKey, value) => {
+    const newFilters = { ...filters, [filterKey]: value };
+    
+    // Update URL immediately without debounce
+    const params = new URLSearchParams();
+    const paramMapping = {
+      searchQuery: 'search',
+      sizeFilter: 'size',
+      ageFilter: 'age',
+      sexFilter: 'sex',
+      organizationFilter: 'organization_id',
+      availableCountryFilter: 'available_country'
+    };
+    
+    Object.entries(newFilters).forEach(([key, value]) => {
+      const paramKey = paramMapping[key] || key;
+      if (
+        value &&
+        value !== "Any" &&
+        value !== "Any size" &&
+        value !== "Any age" &&
+        value !== "Any country" &&
+        value !== "any"
+      ) {
+        params.set(paramKey, value);
+      }
+    });
+    
+    const newURL = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+    router.push(newURL, { scroll: false });
+    
+    // Fetch immediately
+    fetchDogsWithFilters(newFilters);
+  }, [filters, pathname, router, fetchDogsWithFilters]);
+  
   // Load more dogs with race condition protection
   const loadMoreDogs = useCallback(async () => {
     if (loadingMore || !hasMore) return;
@@ -257,14 +293,14 @@ export default function BreedDetailClient({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Breadcrumbs items={breadcrumbItems} />
 
-        <div className="grid lg:grid-cols-2 gap-8 mb-12 mt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8 lg:mb-12 mt-4 lg:mt-6">
           <BreedPhotoGallery
             dogs={breedData.topDogs}
             breedName={breedData.primary_breed}
-            className="w-full"
+            className="w-full order-2 lg:order-1"
           />
 
-          <BreedInfo breedData={breedData} />
+          <BreedInfo breedData={breedData} className="order-1 lg:order-2" />
         </div>
 
         {/* Breed Description Section */}
@@ -360,7 +396,16 @@ export default function BreedDetailClient({
         {/* Mobile filter drawer */}
         <MobileFilterDrawer
           isOpen={isFilterDrawerOpen}
-          onClose={() => setIsFilterDrawerOpen(false)}
+          onClose={() => {
+            setIsFilterDrawerOpen(false);
+            // Scroll to dogs grid after closing
+            setTimeout(() => {
+              document.getElementById("dogs-grid")?.scrollIntoView({ 
+                behavior: "smooth",
+                block: "start"
+              });
+            }, 300); // Wait for drawer animation to complete
+          }}
           // Filter config to hide breed selector on breed page
           filterConfig={{ 
             showAge: true, 
@@ -374,28 +419,28 @@ export default function BreedDetailClient({
           }}
           // Search
           searchQuery={filters.searchQuery}
-          handleSearchChange={(value) => handleFilterChange("searchQuery", value)}
-          clearSearch={() => handleFilterChange("searchQuery", "")}
+          handleSearchChange={(value) => handleMobileFilterChange("searchQuery", value)}
+          clearSearch={() => handleMobileFilterChange("searchQuery", "")}
           // Organization
           organizationFilter={filters.organizationFilter}
-          setOrganizationFilter={(value) => handleFilterChange("organizationFilter", value)}
+          setOrganizationFilter={(value) => handleMobileFilterChange("organizationFilter", value)}
           organizations={filterOptions.organizations}
           // Hide breed filter since it's locked
           showBreed={false}
           standardizedBreeds={[]} // Pass empty array since we're not showing breed filter
           // Pet Details
           sexFilter={filters.sexFilter}
-          setSexFilter={(value) => handleFilterChange("sexFilter", value)}
+          setSexFilter={(value) => handleMobileFilterChange("sexFilter", value)}
           sexOptions={["Any", "Male", "Female"]}
           sizeFilter={filters.sizeFilter}
-          setSizeFilter={(value) => handleFilterChange("sizeFilter", value)}
+          setSizeFilter={(value) => handleMobileFilterChange("sizeFilter", value)}
           sizeOptions={["Any size", "Tiny", "Small", "Medium", "Large", "Extra Large"]}
           ageCategoryFilter={filters.ageFilter}
-          setAgeCategoryFilter={(value) => handleFilterChange("ageFilter", value)}
+          setAgeCategoryFilter={(value) => handleMobileFilterChange("ageFilter", value)}
           ageOptions={["Any age", "Puppy", "Young", "Adult", "Senior"]}
           // Location
           availableCountryFilter={filters.availableCountryFilter}
-          setAvailableCountryFilter={(value) => handleFilterChange("availableCountryFilter", value)}
+          setAvailableCountryFilter={(value) => handleMobileFilterChange("availableCountryFilter", value)}
           availableCountries={["Any country"]}
           // Filter management
           resetFilters={() => router.push(pathname)}
