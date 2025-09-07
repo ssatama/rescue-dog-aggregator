@@ -23,11 +23,11 @@ export default function PopularBreedsSection({ popularBreeds }) {
 
   // Pastel colors for personality traits
   const PASTEL_COLORS = [
-    { bg: "bg-blue-100", text: "text-blue-800" },
-    { bg: "bg-green-100", text: "text-green-800" },
-    { bg: "bg-purple-100", text: "text-purple-800" },
-    { bg: "bg-yellow-100", text: "text-yellow-800" },
-    { bg: "bg-pink-100", text: "text-pink-800" },
+    { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-800 dark:text-blue-300" },
+    { bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-800 dark:text-green-300" },
+    { bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-800 dark:text-purple-300" },
+    { bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-800 dark:text-yellow-300" },
+    { bg: "bg-pink-100 dark:bg-pink-900/30", text: "text-pink-800 dark:text-pink-300" },
   ];
 
   const capitalizeFirst = (str) => {
@@ -36,10 +36,10 @@ export default function PopularBreedsSection({ popularBreeds }) {
   };
 
   return (
-    <section className="py-12 bg-white" aria-labelledby="popular-breeds-heading">
+    <section className="py-12 bg-white dark:bg-gray-900" aria-labelledby="popular-breeds-heading">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between mb-8">
-          <h2 id="popular-breeds-heading" className="text-3xl font-bold">
+          <h2 id="popular-breeds-heading" className="text-3xl font-bold dark:text-white">
             Popular Breeds Available Now
           </h2>
           <a 
@@ -71,9 +71,9 @@ export default function PopularBreedsSection({ popularBreeds }) {
                 className="group"
                 data-testid="breed-card"
               >
-                <div className="bg-white rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] h-full">
+                <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-lg dark:hover:shadow-xl dark:hover:shadow-gray-700/20 transition-all duration-200 hover:scale-[1.02] h-full">
                   {/* Dog Image */}
-                  <div className="relative h-64 w-full overflow-hidden bg-gray-100">
+                  <div className="relative h-64 w-full overflow-hidden bg-gray-100 dark:bg-gray-700">
                     <Image
                       src={imageUrl}
                       alt={`${breed.primary_breed} rescue dog`}
@@ -81,18 +81,18 @@ export default function PopularBreedsSection({ popularBreeds }) {
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                     />
-                    <Badge className="absolute top-3 right-3 bg-orange-500 text-white">
+                    <Badge className="absolute top-3 right-3 bg-orange-500 dark:bg-orange-600 text-white">
                       {breed.count} available
                     </Badge>
                   </div>
 
                   {/* Breed Info */}
                   <div className="p-4">
-                    <h3 className="text-xl font-semibold mb-1 group-hover:text-primary">
+                    <h3 className="text-xl font-semibold mb-1 group-hover:text-primary dark:text-gray-100">
                       {breed.primary_breed}
                     </h3>
                     
-                    <p className="text-sm text-gray-600 mb-3">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                       {breed.breed_group} Group • {breed.breed_type === "purebred" ? "Purebred" : "Mixed"}
                     </p>
 

@@ -96,8 +96,8 @@ export default function BreedsHubClient({ initialBreedStats, mixedBreedData, pop
 
           {/* Call to Action Section */}
           <div className="mt-16 text-center">
-            <Card className="p-8 bg-gradient-to-r from-orange-50 to-orange-100">
-              <h3 className="text-2xl font-semibold mb-4">
+            <Card className="p-8 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-950/30">
+              <h3 className="text-2xl font-semibold mb-4 dark:text-gray-100">
                 Can't find your perfect match?
               </h3>
               <p className="text-lg text-muted-foreground mb-6">
