@@ -866,11 +866,11 @@ class AnimalService:
                                 'sex', sd.sex,
                                 'personality_traits', COALESCE(sd.personality_traits, '[]'::jsonb)
                             ) ORDER BY sd.rn
-                        ) FILTER (WHERE sd.rn <= 3 AND sd.name IS NOT NULL),
+                        ) FILTER (WHERE sd.rn <= 5 AND sd.name IS NOT NULL),
                         '[]'::json
                     ) as sample_dogs
                 FROM breed_counts bc
-                LEFT JOIN sample_dogs sd ON sd.rn <= 3
+                LEFT JOIN sample_dogs sd ON sd.rn <= 5
                 GROUP BY bc.primary_breed, bc.breed_slug, bc.breed_type, bc.breed_group, bc.count
                 ORDER BY bc.count DESC
             """
@@ -935,11 +935,11 @@ class AnimalService:
                                 'sex', sd.sex,
                                 'personality_traits', COALESCE(sd.personality_traits, '[]'::jsonb)
                             ) ORDER BY sd.rn
-                        ) FILTER (WHERE sd.rn <= 3 AND sd.name IS NOT NULL),
+                        ) FILTER (WHERE sd.rn <= 5 AND sd.name IS NOT NULL),
                         '[]'::json
                     ) as sample_dogs
                 FROM breed_counts bc
-                LEFT JOIN sample_dogs sd ON bc.primary_breed = sd.primary_breed AND sd.rn <= 3
+                LEFT JOIN sample_dogs sd ON bc.primary_breed = sd.primary_breed AND sd.rn <= 5
                 GROUP BY bc.primary_breed, bc.breed_slug, bc.breed_type, bc.breed_group, bc.count
                 ORDER BY bc.count DESC
             """

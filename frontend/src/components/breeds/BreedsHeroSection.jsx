@@ -19,6 +19,20 @@ export default function BreedsHeroSection({ mixedBreedData, totalDogs }) {
     return count.toString();
   };
 
+  // Pastel colors for personality traits
+  const PASTEL_COLORS = [
+    { bg: "bg-blue-100", text: "text-blue-800" },
+    { bg: "bg-green-100", text: "text-green-800" },
+    { bg: "bg-purple-100", text: "text-purple-800" },
+    { bg: "bg-yellow-100", text: "text-yellow-800" },
+    { bg: "bg-pink-100", text: "text-pink-800" },
+  ];
+
+  const capitalizeFirst = (str) => {
+    if (!str) return "";
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  };
+
   return (
     <section 
       data-testid="hero-section"
@@ -66,8 +80,8 @@ export default function BreedsHeroSection({ mixedBreedData, totalDogs }) {
 
         {/* Sample Dogs */}
         {sampleDogs.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8 max-w-3xl mx-auto">
-            {sampleDogs.slice(0, 3).map((dog, index) => (
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-6 md:mb-8 max-w-6xl mx-auto">
+            {sampleDogs.slice(0, 5).map((dog, index) => (
               <div 
                 key={dog.slug}
                 className="bg-white rounded-lg p-3 shadow-lg transform transition-transform hover:scale-105"
@@ -89,15 +103,17 @@ export default function BreedsHeroSection({ mixedBreedData, totalDogs }) {
                   {dog.age_group || dog.age_text} • {dog.sex}
                 </p>
                 <div className="flex flex-wrap gap-1">
-                  {dog.personality_traits?.slice(0, 2).map((trait) => (
-                    <Badge 
-                      key={trait} 
-                      variant="secondary"
-                      className="text-xs bg-orange-100 text-orange-700 border-0"
-                    >
-                      {trait}
-                    </Badge>
-                  ))}
+                  {dog.personality_traits?.slice(0, 2).map((trait, idx) => {
+                    const colors = PASTEL_COLORS[idx % PASTEL_COLORS.length];
+                    return (
+                      <span
+                        key={trait}
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${colors.bg} ${colors.text}`}
+                      >
+                        {capitalizeFirst(trait)}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             ))}

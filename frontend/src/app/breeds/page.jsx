@@ -1,6 +1,6 @@
 import BreedsHubClient from "./BreedsHubClient";
 import { getBreedStats } from "@/services/serverAnimalsService";
-import { getMixedBreedData, getPopularBreedsWithImages } from "@/services/breedImagesService";
+import { getMixedBreedData, getPopularBreedsWithImages, getBreedGroupsWithTopBreeds } from "@/services/breedImagesService";
 
 export const revalidate = 300; // 5-minute revalidation
 
@@ -20,10 +20,11 @@ export async function generateMetadata() {
 
 export default async function BreedsPage() {
   // Fetch all data in parallel
-  const [breedStats, mixedBreedData, popularBreeds] = await Promise.all([
+  const [breedStats, mixedBreedData, popularBreeds, breedGroups] = await Promise.all([
     getBreedStats(),
     getMixedBreedData(),
-    getPopularBreedsWithImages(8)
+    getPopularBreedsWithImages(8),
+    getBreedGroupsWithTopBreeds()
   ]);
 
   // Since data is fetched before rendering, Suspense won't trigger
@@ -33,6 +34,7 @@ export default async function BreedsPage() {
       initialBreedStats={breedStats}
       mixedBreedData={mixedBreedData}
       popularBreedsWithImages={popularBreeds}
+      breedGroups={breedGroups}
     />
   );
 }
