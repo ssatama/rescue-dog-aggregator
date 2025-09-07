@@ -769,6 +769,204 @@ class AnimalService:
             logger.error(f"Error in get_breed_stats: {e}")
             raise APIException(status_code=500, detail="Failed to fetch breed statistics", error_code="INTERNAL_ERROR")
 
+    def get_breeds_with_images(self, breed_type: str = None, breed_group: str = None, 
+                               min_count: int = 0, limit: int = 10) -> List[dict]:
+        """Get breeds with sample dog images for the breeds overview page."""
+        try:
+            # Build WHERE conditions for counting ALL dogs (not just with images)
+            count_conditions = [
+                "a.animal_type = 'dog'",
+                "a.status = 'available'",
+                "o.active = TRUE"
+            ]
+            
+            # Build WHERE conditions for sample dogs (must have images)
+            sample_conditions = [
+                "a.animal_type = 'dog'",
+                "a.status = 'available'",
+                "o.active = TRUE",
+                "a.primary_image_url IS NOT NULL"
+            ]
+            params = []
+            
+            if breed_type:
+                if breed_type == "mixed":
+                    count_conditions.append("a.breed_group = 'Mixed'")
+                    sample_conditions.append("a.breed_group = 'Mixed'")
+                else:
+                    count_conditions.append("a.breed_type = %s")
+                    sample_conditions.append("a.breed_type = %s")
+                    params.append(breed_type)
+                    params.append(breed_type)  # Need it twice for both queries
+            
+            if breed_group:
+                count_conditions.append("a.breed_group = %s")
+                sample_conditions.append("a.breed_group = %s")
+                params.append(breed_group)
+                params.append(breed_group)  # Need it twice for both queries
+            
+            count_where_clause = " AND ".join(count_conditions)
+            sample_where_clause = " AND ".join(sample_conditions)
+            
+            # Get breeds with counts and sample dogs
+            # For mixed breeds, group by breed_group instead of primary_breed
+            if breed_type == "mixed":
+                query = f"""
+                WITH breed_counts AS (
+                    SELECT 
+                        'Mixed Breed' as primary_breed,
+                        'mixed-breed' as breed_slug,
+                        'mixed' as breed_type,
+                        'Mixed' as breed_group,
+                        COUNT(DISTINCT a.id) as count
+                    FROM animals a
+                    JOIN organizations o ON a.organization_id = o.id
+                    WHERE {count_where_clause}
+                    HAVING COUNT(DISTINCT a.id) >= %s
+                    LIMIT %s
+                ),
+                sample_dogs AS (
+                    SELECT DISTINCT ON (a.id)
+                        a.id,
+                        a.name,
+                        a.slug,
+                        a.primary_image_url,
+                        a.age_text,
+                        CASE 
+                            WHEN a.age_min_months < 12 THEN 'Puppy'
+                            WHEN a.age_min_months < 36 THEN 'Young'
+                            WHEN a.age_min_months < 84 THEN 'Adult'
+                            ELSE 'Senior'
+                        END as age_group,
+                        a.sex,
+                        a.dog_profiler_data->'personality_traits' as personality_traits,
+                        ROW_NUMBER() OVER (
+                            ORDER BY 
+                                CASE WHEN a.primary_image_url IS NOT NULL THEN 0 ELSE 1 END,
+                                a.created_at DESC
+                        ) as rn
+                    FROM animals a
+                    JOIN organizations o ON a.organization_id = o.id
+                    WHERE {sample_where_clause}
+                )
+                SELECT 
+                    bc.primary_breed,
+                    bc.breed_slug,
+                    bc.breed_type,
+                    bc.breed_group,
+                    bc.count,
+                    COALESCE(
+                        json_agg(
+                            json_build_object(
+                                'name', sd.name,
+                                'slug', sd.slug,
+                                'primary_image_url', sd.primary_image_url,
+                                'age_text', sd.age_text,
+                                'age_group', sd.age_group,
+                                'sex', sd.sex,
+                                'personality_traits', COALESCE(sd.personality_traits, '[]'::jsonb)
+                            ) ORDER BY sd.rn
+                        ) FILTER (WHERE sd.rn <= 3 AND sd.name IS NOT NULL),
+                        '[]'::json
+                    ) as sample_dogs
+                FROM breed_counts bc
+                LEFT JOIN sample_dogs sd ON sd.rn <= 3
+                GROUP BY bc.primary_breed, bc.breed_slug, bc.breed_type, bc.breed_group, bc.count
+                ORDER BY bc.count DESC
+            """
+            else:
+                query = f"""
+                WITH breed_counts AS (
+                    SELECT 
+                        a.primary_breed,
+                        a.breed_slug,
+                        a.breed_type,
+                        a.breed_group,
+                        COUNT(DISTINCT a.id) as count
+                    FROM animals a
+                    JOIN organizations o ON a.organization_id = o.id
+                    WHERE {count_where_clause}
+                    GROUP BY a.primary_breed, a.breed_slug, a.breed_type, a.breed_group
+                    HAVING COUNT(DISTINCT a.id) >= %s
+                    ORDER BY COUNT(DISTINCT a.id) DESC
+                    LIMIT %s
+                ),
+                sample_dogs AS (
+                    SELECT DISTINCT ON (a.primary_breed, a.id)
+                        a.primary_breed,
+                        a.id,
+                        a.name,
+                        a.slug,
+                        a.primary_image_url,
+                        a.age_text,
+                        CASE 
+                            WHEN a.age_min_months < 12 THEN 'Puppy'
+                            WHEN a.age_min_months < 36 THEN 'Young'
+                            WHEN a.age_min_months < 84 THEN 'Adult'
+                            ELSE 'Senior'
+                        END as age_group,
+                        a.sex,
+                        a.dog_profiler_data->'personality_traits' as personality_traits,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY a.primary_breed 
+                            ORDER BY 
+                                CASE WHEN a.primary_image_url IS NOT NULL THEN 0 ELSE 1 END,
+                                a.created_at DESC
+                        ) as rn
+                    FROM animals a
+                    JOIN organizations o ON a.organization_id = o.id
+                    JOIN breed_counts bc ON a.primary_breed = bc.primary_breed
+                    WHERE {sample_where_clause}
+                )
+                SELECT 
+                    bc.primary_breed,
+                    bc.breed_slug,
+                    bc.breed_type,
+                    bc.breed_group,
+                    bc.count,
+                    COALESCE(
+                        json_agg(
+                            json_build_object(
+                                'name', sd.name,
+                                'slug', sd.slug,
+                                'primary_image_url', sd.primary_image_url,
+                                'age_text', sd.age_text,
+                                'age_group', sd.age_group,
+                                'sex', sd.sex,
+                                'personality_traits', COALESCE(sd.personality_traits, '[]'::jsonb)
+                            ) ORDER BY sd.rn
+                        ) FILTER (WHERE sd.rn <= 3 AND sd.name IS NOT NULL),
+                        '[]'::json
+                    ) as sample_dogs
+                FROM breed_counts bc
+                LEFT JOIN sample_dogs sd ON bc.primary_breed = sd.primary_breed AND sd.rn <= 3
+                GROUP BY bc.primary_breed, bc.breed_slug, bc.breed_type, bc.breed_group, bc.count
+                ORDER BY bc.count DESC
+            """
+            
+            # Add min_count and limit to params
+            params.extend([min_count, limit])
+            
+            self.cursor.execute(query, params)
+            results = self.cursor.fetchall()
+            
+            breeds_with_images = []
+            for row in results:
+                breeds_with_images.append({
+                    "primary_breed": row["primary_breed"],
+                    "breed_slug": row["breed_slug"],
+                    "breed_type": row["breed_type"],
+                    "breed_group": row["breed_group"],
+                    "count": row["count"],
+                    "sample_dogs": row["sample_dogs"] if row["sample_dogs"] else []
+                })
+            
+            return breeds_with_images
+            
+        except Exception as e:
+            logger.error(f"Error in get_breeds_with_images: {e}")
+            raise APIException(status_code=500, detail="Failed to fetch breeds with images", error_code="INTERNAL_ERROR")
+
     def _build_animals_query(self, filters: AnimalFilterRequest) -> tuple[str, List[Any]]:
         """Build the animals query with filters."""
         # Base query selects distinct animals and joins with organizations

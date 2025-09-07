@@ -9,9 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import EmptyState from "@/components/ui/EmptyState";
 import Layout from "@/components/layout/Layout";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
+import BreedsHeroSection from "@/components/breeds/BreedsHeroSection";
 import { ChevronRight, Dog, Heart, Home } from "lucide-react";
 
-export default function BreedsHubClient({ initialBreedStats }) {
+export default function BreedsHubClient({ initialBreedStats, mixedBreedData, popularBreedsWithImages }) {
   const breedStats = initialBreedStats;
   const router = useRouter();
 
@@ -166,24 +167,17 @@ export default function BreedsHubClient({ initialBreedStats }) {
 
   return (
     <Layout>
+      {/* Hero Section with Mixed Breed Dogs */}
+      {mixedBreedData && (
+        <BreedsHeroSection 
+          mixedBreedData={mixedBreedData} 
+          totalDogs={breedStats?.total_dogs || 0} 
+        />
+      )}
+      
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         <div className="container mx-auto px-4 py-8">
           <Breadcrumbs items={breadcrumbItems} />
-
-          {/* Hero Section */}
-          <div className="text-center mb-12 mt-8">
-            <h1 className="text-4xl lg:text-5xl font-bold mb-4 text-foreground">
-              Discover Dogs by Breed
-            </h1>
-            <p className="text-xl text-muted-foreground mb-6">
-              {breedStats?.total_dogs ?? 0} rescue dogs across{" "}
-              {breedStats?.unique_breeds ?? 0} breeds
-            </p>
-            <p className="text-lg text-muted-foreground">
-              {breedStats?.qualifying_breeds?.length ?? 0} breeds with dedicated
-              pages
-            </p>
-          </div>
 
           {/* Filter Chips Row */}
           <div className="flex justify-center gap-3 mb-10">
@@ -268,8 +262,8 @@ export default function BreedsHubClient({ initialBreedStats }) {
                   .slice(0, 12)
                   .map((breed) => (
                     <Link
-                      key={breed.slug}
-                      href={`/breeds/${breed.slug}`}
+                      key={breed.breed_slug || breed.primary_breed}
+                      href={`/breeds/${breed.breed_slug}`}
                       className="group"
                     >
                       <Card className="p-4 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer h-full">

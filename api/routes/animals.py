@@ -267,6 +267,35 @@ async def get_search_suggestions(
         raise APIException(status_code=500, detail="Failed to fetch search suggestions", error_code="INTERNAL_ERROR")
 
 
+@router.get("/breeds/with-images")
+async def get_breeds_with_images(
+    breed_type: str = Query(None, description="Filter by breed type (mixed, purebred, crossbreed)"),
+    breed_group: str = Query(None, description="Filter by breed group"),
+    min_count: int = Query(0, ge=0, description="Minimum number of dogs per breed"),
+    limit: int = Query(10, ge=1, le=50, description="Maximum number of breeds to return"),
+    cursor: RealDictCursor = Depends(get_pooled_db_cursor),
+):
+    """
+    Get breeds with sample dog images for the breeds overview page.
+    
+    Returns breeds with their counts and up to 3 sample dogs with images.
+    """
+    try:
+        service = AnimalService(cursor)
+        breeds = service.get_breeds_with_images(
+            breed_type=breed_type,
+            breed_group=breed_group, 
+            min_count=min_count,
+            limit=limit
+        )
+        return breeds
+    except psycopg2.Error as db_err:
+        handle_database_error(db_err, "get_breeds_with_images")
+    except Exception as e:
+        logger.exception(f"Unexpected error fetching breeds with images: {e}")
+        raise APIException(status_code=500, detail="Failed to fetch breeds with images", error_code="INTERNAL_ERROR")
+
+
 @router.get("/breeds/suggestions", response_model=List[str])
 async def get_breed_suggestions(
     q: str = Query(..., min_length=1, max_length=100, description="Breed query"),

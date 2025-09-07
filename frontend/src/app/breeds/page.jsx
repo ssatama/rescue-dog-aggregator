@@ -1,5 +1,6 @@
 import BreedsHubClient from "./BreedsHubClient";
 import { getBreedStats } from "@/services/serverAnimalsService";
+import { getMixedBreedData, getPopularBreedsWithImages } from "@/services/breedImagesService";
 
 export const revalidate = 300; // 5-minute revalidation
 
@@ -18,10 +19,20 @@ export async function generateMetadata() {
 }
 
 export default async function BreedsPage() {
-  // Fetch breed statistics from the new API endpoint
-  const breedStats = await getBreedStats();
+  // Fetch all data in parallel
+  const [breedStats, mixedBreedData, popularBreeds] = await Promise.all([
+    getBreedStats(),
+    getMixedBreedData(),
+    getPopularBreedsWithImages(8)
+  ]);
 
   // Since data is fetched before rendering, Suspense won't trigger
   // The loading state would be handled by Next.js loading.jsx if needed
-  return <BreedsHubClient initialBreedStats={breedStats} />;
+  return (
+    <BreedsHubClient 
+      initialBreedStats={breedStats}
+      mixedBreedData={mixedBreedData}
+      popularBreedsWithImages={popularBreeds}
+    />
+  );
 }
