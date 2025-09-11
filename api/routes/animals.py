@@ -43,7 +43,12 @@ async def get_animals(
         raise
     except Exception as e:
         logger.exception(f"Unexpected error in get_animals: {e}")
-        raise APIException(status_code=500, detail=f"Internal server error in get_animals", error_code="INTERNAL_ERROR")
+        # In development, return the actual error for debugging
+        import os
+        if os.getenv("ENV", "development") == "development":
+            raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
+        else:
+            raise APIException(status_code=500, detail=f"Internal server error in get_animals", error_code="INTERNAL_ERROR")
 
 
 # --- Meta Endpoints ---

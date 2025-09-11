@@ -65,7 +65,7 @@ export default function BreedDetailClient({
   const abortControllerRef = useRef(null);
 
   // Build API params from filters with breed-specific filtering
-  const buildAPIParams = (filters) => {
+  const buildAPIParams = useCallback((filters) => {
     const params = {};
     
     // Handle mixed breeds differently - filter by breed_group instead of breed
@@ -92,7 +92,7 @@ export default function BreedDetailClient({
     if (filters.availableCountryFilter !== "Any country") params.available_to_country = filters.availableCountryFilter;
     
     return params;
-  };
+  }, [breedData.breed_slug, breedData.breed_type, breedData.primary_breed]);
   
   // URL update with debouncing (same pattern as DogsPageClientSimplified)
   const updateURL = useDebouncedCallback((newFilters) => {
@@ -127,7 +127,7 @@ export default function BreedDetailClient({
   }, 500);
   
   // Fetch dogs with current filters and handle race conditions
-  const fetchDogsWithFilters = async (currentFilters) => {
+  const fetchDogsWithFilters = useCallback(async (currentFilters) => {
     const requestId = ++requestIdRef.current;
     
     // Cancel any in-flight requests
@@ -177,7 +177,7 @@ export default function BreedDetailClient({
         setLoading(false);
       }
     }
-  };
+  }, [buildAPIParams]);
   
   // Debounced version of fetchDogsWithFilters
   const debouncedFetchDogs = useDebouncedCallback(fetchDogsWithFilters, 300);
@@ -195,7 +195,7 @@ export default function BreedDetailClient({
     });
     
     debouncedFetchDogs(newFilters);
-  }, [filters, updateURL, breedData, debouncedFetchDogs]);
+  }, [filters, updateURL, debouncedFetchDogs]);
   
   // Immediate filter change handler for mobile drawer (no debouncing)
   const handleMobileFilterChange = useCallback((filterKey, value) => {
@@ -277,9 +277,9 @@ export default function BreedDetailClient({
     } finally {
       setLoadingMore(false);
     }
-  }, [page, hasMore, filters, loadingMore, breedData, buildAPIParams]);
+  }, [page, hasMore, filters, loadingMore, buildAPIParams]);
   
-  // Initial load with filter counts - only if no initial data
+  // Initial load with filter counts - only on mount
   useEffect(() => {
     if (!initialDogs || initialDogs.length === 0) {
       fetchDogsWithFilters(filters);
@@ -294,7 +294,8 @@ export default function BreedDetailClient({
         }
       });
     }
-  }, [initialDogs, filters, fetchDogsWithFilters, buildAPIParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   // Cleanup debounced callbacks on unmount
   useEffect(() => {

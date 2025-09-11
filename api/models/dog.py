@@ -51,6 +51,7 @@ class AnimalBase(BaseModel):
     breed_type: Optional[str] = None
     breed_confidence: Optional[str] = None
     secondary_breed: Optional[str] = None
+    breed_slug: Optional[str] = None
     age_text: Optional[str] = None
     age_min_months: Optional[int] = None
     age_max_months: Optional[int] = None

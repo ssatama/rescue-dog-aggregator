@@ -138,15 +138,17 @@ describe("Core Service Integration - Critical Validation", () => {
       "/api/animals",
       expect.objectContaining({
         limit: 10000,
-        animal_type: "dog",
         status: "available",
+        animal_type: "dog",
       }),
+      {} // Add empty options object as third parameter
     );
     expect(get).toHaveBeenCalledWith(
       "/api/animals",
       expect.not.objectContaining({
         sitemap_quality_filter: true,
       }),
+      {}
     );
 
     jest.clearAllMocks();
@@ -162,6 +164,7 @@ describe("Core Service Integration - Critical Validation", () => {
         status: "available",
         // Phase 2A: No longer sends sitemap_quality_filter parameter
       }),
+      {}
     );
     // Verify sitemap_quality_filter is NOT sent
     expect(get).toHaveBeenCalledWith(
@@ -169,6 +172,7 @@ describe("Core Service Integration - Critical Validation", () => {
       expect.not.objectContaining({
         sitemap_quality_filter: true,
       }),
+      {}
     );
   });
 });

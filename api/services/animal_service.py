@@ -66,6 +66,10 @@ class AnimalService:
 
         except Exception as e:
             logger.error(f"Error in get_animals: {e}", exc_info=True)
+            logger.error(f"Error type: {type(e).__name__}")
+            logger.error(f"Filter parameters: limit={filters.limit}, animal_type={filters.animal_type}, status={filters.status}")
+            if hasattr(e, '__dict__'):
+                logger.error(f"Error details: {e.__dict__}")
             raise APIException(status_code=500, detail="Failed to fetch animals", error_code="INTERNAL_ERROR")
 
     def get_animals_for_sitemap(self, filters: AnimalFilterRequest) -> List[Animal]:
@@ -247,6 +251,10 @@ class AnimalService:
             try:
                 # Convert row to dictionary for manipulation
                 row_dict = dict(row)
+                
+                # Log the keys we have for debugging
+                if i == 0:  # Only log for first row to avoid spam
+                    logger.debug(f"Row keys: {list(row_dict.keys())}")
 
                 # Parse JSON properties using utility function
                 parse_json_field(row_dict, "properties")
@@ -264,8 +272,12 @@ class AnimalService:
                 animals.append(Animal(**clean))
             except Exception as e:
                 logger.error(f"Error building animal response for row {i}, id={row.get('id')}, name={row.get('name')}: {e}")
+                logger.error(f"Row keys: {list(row_dict.keys())}")
+                logger.error(f"Clean dict keys: {list(clean.keys())}")
+                logger.error(f"Error type: {type(e).__name__}")
+                if hasattr(e, 'errors'):
+                    logger.error(f"Validation errors: {e.errors()}")
                 raise
-
         return animals
 
     def get_animal_by_id(self, animal_id: int) -> Optional[Animal]:
@@ -281,6 +293,7 @@ class AnimalService:
         try:
             query = """
                 SELECT a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
+                       a.primary_breed, a.breed_type, a.breed_confidence, a.secondary_breed, a.breed_slug,
                        a.age_text, a.age_min_months, a.age_max_months,
                        a.sex, a.size, a.standardized_size, a.status, a.properties,
                        a.primary_image_url, a.adoption_url, a.created_at, a.updated_at,
@@ -305,6 +318,7 @@ class AnimalService:
                     AND a2.availability_confidence IN ('high', 'medium')
                 WHERE a.id = %s
                 GROUP BY a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
+                         a.primary_breed, a.breed_type, a.breed_confidence, a.secondary_breed, a.breed_slug,
                          a.age_text, a.age_min_months, a.age_max_months,
                          a.sex, a.size, a.standardized_size, a.status, a.properties,
                          a.primary_image_url, a.adoption_url, a.created_at, a.updated_at,
@@ -366,6 +380,7 @@ class AnimalService:
         try:
             query = """
                 SELECT a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
+                       a.primary_breed, a.breed_type, a.breed_confidence, a.secondary_breed, a.breed_slug,
                        a.age_text, a.age_min_months, a.age_max_months,
                        a.sex, a.size, a.standardized_size, a.status, a.properties,
                        a.primary_image_url, a.adoption_url, a.created_at, a.updated_at,
@@ -390,6 +405,7 @@ class AnimalService:
                     AND a2.availability_confidence IN ('high', 'medium')
                 WHERE a.slug = %s
                 GROUP BY a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
+                         a.primary_breed, a.breed_type, a.breed_confidence, a.secondary_breed, a.breed_slug,
                          a.age_text, a.age_min_months, a.age_max_months,
                          a.sex, a.size, a.standardized_size, a.status, a.properties,
                          a.primary_image_url, a.adoption_url, a.created_at, a.updated_at,

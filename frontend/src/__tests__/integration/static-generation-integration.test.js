@@ -62,22 +62,24 @@ describe("Static Site Generation Integration", () => {
       { slug: "no-description-dog-3" },
     ]);
 
-    // Verify the API was called WITHOUT sitemap quality filter (this will fail with current bug)
+    // Verify the API was called WITHOUT sitemap quality filter
     expect(get).toHaveBeenCalledWith(
       "/api/animals",
       expect.objectContaining({
         limit: 10000,
-        animal_type: "dog",
         status: "available",
+        animal_type: "dog",
       }),
+      {} // Add empty options object as third parameter
     );
 
-    // Ensure sitemap quality filter was NOT applied to static generation
-    expect(get).not.toHaveBeenCalledWith(
+    // Explicitly verify sitemap_quality_filter is NOT sent
+    expect(get).toHaveBeenCalledWith(
       "/api/animals",
-      expect.objectContaining({
+      expect.not.objectContaining({
         sitemap_quality_filter: true,
       }),
+      {} // Add empty options object as third parameter
     );
   });
 

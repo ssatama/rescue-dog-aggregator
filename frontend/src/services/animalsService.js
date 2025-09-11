@@ -6,9 +6,10 @@ import { logger } from "../utils/logger";
 /**
  * Fetches a list of animals based on provided filters.
  * @param {object} params - Filtering parameters (limit, offset, breed, size, etc.)
+ * @param {object} options - Additional fetch options (e.g., signal for AbortController)
  * @returns {Promise<Array>} - Promise resolving to an array of animal objects.
  */
-export async function getAnimals(params = {}) {
+export async function getAnimals(params = {}, options = {}) {
   logger.log("Fetching animals with params:", params);
   // Remove null/undefined/default values before sending
   const cleanParams = Object.fromEntries(
@@ -38,7 +39,7 @@ export async function getAnimals(params = {}) {
   }
 
   logger.log("Cleaned params for API:", cleanParams);
-  return get("/api/animals", cleanParams);
+  return get("/api/animals", cleanParams, options);
 }
 
 /**

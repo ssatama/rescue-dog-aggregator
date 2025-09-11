@@ -4,45 +4,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 export default function BreedStatistics({ breedData, className = "" }) {
-  // For mixed breeds, show a simplified stats layout
-  const isMixed = breedData.breed_slug === 'mixed' || breedData.breed_type === 'mixed';
-  
-  const stats = isMixed ? [
+  const stats = [
     {
       label: "Available Dogs",
       value: breedData.count || 0,
       icon: "🐕",
       color: "orange",
       description: "Currently available for adoption",
-    },
-    {
-      label: "Avg. Age",
-      value: breedData.average_age || "2-5 years",
-      icon: "📅",
-      color: "purple",
-      description: "Typical age range",
-    },
-  ] : [
-    {
-      label: "Available Dogs",
-      value: breedData.count || 0,
-      icon: "🐕",
-      color: "orange",
-      description: "Currently available for adoption",
-    },
-    {
-      label: "Organizations",
-      value: breedData.organization_count || breedData.organizations?.length || 0,
-      icon: "🏠",
-      color: "blue",
-      description: "Rescue organizations with this breed",
-    },
-    {
-      label: "Countries",
-      value: breedData.country_count || breedData.countries?.length || 1,
-      icon: "🌍",
-      color: "green",
-      description: "Countries where available",
     },
     {
       label: "Avg. Age",
@@ -55,7 +23,7 @@ export default function BreedStatistics({ breedData, className = "" }) {
 
   return (
     <div className={`breed-statistics ${className}`}>
-      <div className={`grid gap-4 ${isMixed ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2'}`}>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
         {stats.map((stat, index) => (
           <StatCard key={stat.label} stat={stat} index={index} />
         ))}
