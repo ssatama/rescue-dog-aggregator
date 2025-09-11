@@ -4,6 +4,99 @@ import { useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+function BreedMobileCarousel({ dogs, breedName, imageErrors, handleImageError }) {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const carouselRef = useRef(null);
+  const displayedDogs = dogs?.slice(0, 6) || [];
+
+  const scrollToSlide = (index) => {
+    if (carouselRef.current) {
+      const slideWidth = carouselRef.current.offsetWidth * 0.7; // 70vw
+      const gap = 12; // gap-3 = 0.75rem = 12px
+      const scrollPosition = index * (slideWidth + gap);
+      carouselRef.current.scrollTo({
+        left: scrollPosition,
+        behavior: 'smooth'
+      });
+      setCurrentSlide(index);
+    }
+  };
+
+  const handleScroll = () => {
+    if (carouselRef.current) {
+      const scrollLeft = carouselRef.current.scrollLeft;
+      const slideWidth = carouselRef.current.offsetWidth * 0.7;
+      const gap = 12;
+      const newIndex = Math.round(scrollLeft / (slideWidth + gap));
+      if (newIndex !== currentSlide) {
+        setCurrentSlide(newIndex);
+      }
+    }
+  };
+
+  return (
+    <div className="w-full">
+      <div 
+        ref={carouselRef}
+        className="flex overflow-x-auto gap-3 pb-2 snap-x snap-mandatory scrollbar-hide"
+        onScroll={handleScroll}
+        style={{
+          scrollSnapType: 'x mandatory',
+          WebkitOverflowScrolling: 'touch',
+        }}
+      >
+        {displayedDogs.map((dog, index) => (
+          <Link
+            key={dog.id}
+            href={`/dogs/${dog.slug}`}
+            className="flex-shrink-0 w-[70vw] max-w-[280px] aspect-[4/5] relative overflow-hidden rounded-lg cursor-pointer group block snap-start"
+          >
+            <Image
+              src={imageErrors[dog.id] ? "/images/dog-placeholder.jpg" : dog.primary_image_url}
+              alt={`${dog.name} - ${breedName} rescue dog`}
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              priority={index < 3}
+              sizes="(max-width: 640px) 70vw, 280px"
+              onError={() => handleImageError(dog.id)}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+            <div className="absolute bottom-2 left-2">
+              <span className="text-white text-sm font-medium bg-black/50 px-2 py-1 rounded">
+                {dog.name}
+              </span>
+            </div>
+          </Link>
+        ))}
+      </div>
+      {/* Lollipop-style indicators */}
+      <div className="flex justify-center mt-4 gap-2">
+        {displayedDogs.map((_, index) => {
+          const isActive = currentSlide === index;
+          return (
+            <button
+              key={index}
+              className={`w-10 h-10 rounded-full border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${
+                isActive
+                  ? "bg-orange-600 border-orange-600"
+                  : "bg-white border-gray-300 hover:border-orange-400"
+              }`}
+              onClick={() => scrollToSlide(index)}
+              aria-label={`Go to slide ${index + 1}`}
+            >
+              <div
+                className={`w-1.5 h-1.5 rounded-full mx-auto ${
+                  isActive ? "bg-white" : "bg-gray-400"
+                }`}
+              />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function BreedPhotoGallery({ dogs, breedName, className = "" }) {
   const [imageErrors, setImageErrors] = useState({});
 
@@ -112,98 +205,6 @@ export default function BreedPhotoGallery({ dogs, breedName, className = "" }) {
     ));
   };
 
-  const getMobileCarousel = () => {
-    const [currentSlide, setCurrentSlide] = useState(0);
-    const carouselRef = useRef(null);
-    const displayedDogs = dogs?.slice(0, 6) || [];
-
-    const scrollToSlide = (index) => {
-      if (carouselRef.current) {
-        const slideWidth = carouselRef.current.offsetWidth * 0.7; // 70vw
-        const gap = 12; // gap-3 = 0.75rem = 12px
-        const scrollPosition = index * (slideWidth + gap);
-        carouselRef.current.scrollTo({
-          left: scrollPosition,
-          behavior: 'smooth'
-        });
-        setCurrentSlide(index);
-      }
-    };
-
-    const handleScroll = () => {
-      if (carouselRef.current) {
-        const scrollLeft = carouselRef.current.scrollLeft;
-        const slideWidth = carouselRef.current.offsetWidth * 0.7;
-        const gap = 12;
-        const newIndex = Math.round(scrollLeft / (slideWidth + gap));
-        if (newIndex !== currentSlide) {
-          setCurrentSlide(newIndex);
-        }
-      }
-    };
-
-    return (
-      <div className="w-full">
-        <div 
-          ref={carouselRef}
-          className="flex overflow-x-auto gap-3 pb-2 snap-x snap-mandatory scrollbar-hide"
-          onScroll={handleScroll}
-          style={{
-            scrollSnapType: 'x mandatory',
-            WebkitOverflowScrolling: 'touch',
-          }}
-        >
-          {displayedDogs.map((dog, index) => (
-            <Link
-              key={dog.id}
-              href={`/dogs/${dog.slug}`}
-              className="flex-shrink-0 w-[70vw] max-w-[280px] aspect-[4/5] relative overflow-hidden rounded-lg cursor-pointer group block snap-start"
-            >
-              <Image
-                src={imageErrors[dog.id] ? "/images/dog-placeholder.jpg" : dog.primary_image_url}
-                alt={`${dog.name} - ${breedName} rescue dog`}
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
-                priority={index < 3}
-                sizes="(max-width: 640px) 70vw, 280px"
-                onError={() => handleImageError(dog.id)}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-              <div className="absolute bottom-2 left-2">
-                <span className="text-white text-sm font-medium bg-black/50 px-2 py-1 rounded">
-                  {dog.name}
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
-        {/* Lollipop-style indicators */}
-        <div className="flex justify-center mt-4 gap-2">
-          {displayedDogs.map((_, index) => {
-            const isActive = currentSlide === index;
-            return (
-              <button
-                key={index}
-                className={`w-10 h-10 rounded-full border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${
-                  isActive
-                    ? "bg-orange-600 border-orange-600"
-                    : "bg-white border-gray-300 hover:border-orange-400"
-                }`}
-                onClick={() => scrollToSlide(index)}
-                aria-label={`Go to slide ${index + 1}`}
-              >
-                <div
-                  className={`w-1.5 h-1.5 rounded-full mx-auto ${
-                    isActive ? "bg-white" : "bg-gray-400"
-                  }`}
-                />
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className={`breed-photo-gallery ${className}`}>
@@ -216,7 +217,12 @@ export default function BreedPhotoGallery({ dogs, breedName, className = "" }) {
       
       {/* Mobile: Swipeable Carousel */}
       <div className="md:hidden">
-        {getMobileCarousel()}
+        <BreedMobileCarousel 
+          dogs={dogs} 
+          breedName={breedName} 
+          imageErrors={imageErrors} 
+          handleImageError={handleImageError} 
+        />
       </div>
     </div>
   );

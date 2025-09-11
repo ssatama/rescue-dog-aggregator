@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import BreedDetailClient from "./BreedDetailClient";
 import BreedDetailSkeleton from "@/components/ui/BreedDetailSkeleton";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import {
   getBreedBySlug,
   getAnimals,
@@ -12,8 +13,7 @@ export const revalidate = 3600;
 
 export async function generateMetadata({ params }) {
   try {
-    const resolvedParams = await params;
-    const breedData = await getBreedBySlug(resolvedParams.slug);
+    const breedData = await getBreedBySlug(params.slug);
 
     if (!breedData) {
       return {
@@ -92,7 +92,7 @@ export async function generateStaticParams() {
 
 export default async function BreedDetailPage(props) {
   try {
-    const params = await props.params;
+    const params = props.params;
 
     const breedData = await getBreedBySlug(params.slug);
 
@@ -109,13 +109,15 @@ export default async function BreedDetailPage(props) {
     const initialDogs = initialDogsResponse?.results || [];
 
     return (
-      <Suspense fallback={<BreedDetailSkeleton />}>
-        <BreedDetailClient
-          initialBreedData={breedData}
-          initialDogs={initialDogs}
-          initialParams={{}}
-        />
-      </Suspense>
+      <ErrorBoundary fallbackMessage="Unable to load breed details. Please try refreshing the page.">
+        <Suspense fallback={<BreedDetailSkeleton />}>
+          <BreedDetailClient
+            initialBreedData={breedData}
+            initialDogs={initialDogs}
+            initialParams={{}}
+          />
+        </Suspense>
+      </ErrorBoundary>
     );
   } catch (error) {
     console.error("Error loading breed page:", error);

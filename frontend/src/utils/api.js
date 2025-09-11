@@ -81,7 +81,7 @@ export async function fetchApi(endpoint, options = {}) {
  * @param {Object} params - Query parameters
  * @returns {Promise} - Resolved promise with response data
  */
-export function get(endpoint, params = {}) {
+export function get(endpoint, params = {}, options = {}) {
   // Smart trailing slash normalization based on endpoint pattern
   // Collection endpoints (ending with resource name) need trailing slash: /api/organizations/
   // Item endpoints (with parameter) should NOT have trailing slash: /api/organizations/slug
@@ -124,7 +124,7 @@ export function get(endpoint, params = {}) {
 
   logger.log(`[api.js get] Calling fetchApi with smart-normalized URL: ${url}`);
 
-  return fetchApi(url);
+  return fetchApi(url, options);
 }
 
 /**

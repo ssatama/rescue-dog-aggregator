@@ -1,4 +1,5 @@
 import BreedsHubClient from "./BreedsHubClient";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import { getBreedStats } from "@/services/serverAnimalsService";
 import { getMixedBreedData, getPopularBreedsWithImages, getBreedGroupsWithTopBreeds } from "@/services/breedImagesService";
 
@@ -30,11 +31,13 @@ export default async function BreedsPage() {
   // Since data is fetched before rendering, Suspense won't trigger
   // The loading state would be handled by Next.js loading.jsx if needed
   return (
-    <BreedsHubClient 
-      initialBreedStats={breedStats}
-      mixedBreedData={mixedBreedData}
-      popularBreedsWithImages={popularBreeds}
-      breedGroups={breedGroups}
-    />
+    <ErrorBoundary fallbackMessage="Unable to load breeds page. Please try refreshing the page.">
+      <BreedsHubClient 
+        initialBreedStats={breedStats}
+        mixedBreedData={mixedBreedData}
+        popularBreedsWithImages={popularBreeds}
+        breedGroups={breedGroups}
+      />
+    </ErrorBoundary>
   );
 }

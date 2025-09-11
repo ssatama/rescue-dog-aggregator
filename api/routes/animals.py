@@ -14,7 +14,6 @@ from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
 from api.models.responses import BreedStatsResponse, FilterCountsResponse
 from api.services import AnimalService
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["animals"])
@@ -159,13 +158,14 @@ async def get_distinct_available_regions(
 ):
     """Get a distinct list of regions within a specific country organizations can adopt to."""
     try:
-        # Query distinct regions from organizations service_regions JSONB field
+        # Query distinct regions from service_regions table for consistency
         cursor.execute(
             """
-            SELECT DISTINCT jsonb_array_elements_text(service_regions) as region
-            FROM organizations
-            WHERE country = %s AND service_regions IS NOT NULL AND active = TRUE
-            ORDER BY region ASC
+            SELECT DISTINCT sr.region
+            FROM service_regions sr
+            JOIN organizations o ON sr.organization_id = o.id
+            WHERE sr.country = %s AND sr.region IS NOT NULL AND sr.region != '' AND o.active = TRUE
+            ORDER BY sr.region ASC
             """,
             (country,),  # Pass the country as a parameter
         )
@@ -418,7 +418,7 @@ async def get_random_animals(
             SELECT id, name, slug, animal_type, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, status, primary_image_url, adoption_url, organization_id, external_id, language, properties, created_at, updated_at, last_scraped_at
             FROM animals
             WHERE animal_type = 'dog' AND status = %s
-            ORDER BY RANDOM()
+            ORDER BY (abs(hashtext(id::text || to_char(now(), 'IYYY-IW'))) % 1000)
             LIMIT %s
         """
         params = [status, limit]

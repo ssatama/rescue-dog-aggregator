@@ -296,7 +296,7 @@ export async function getAllAnimalsForSitemap(params = {}) {
  * @param {object} params - Current filter context (search, animal_type, status, etc.)
  * @returns {Promise<object>} - Promise resolving to filter counts response.
  */
-export async function getFilterCounts(params = {}) {
+export async function getFilterCounts(params = {}, options = {}) {
   logger.log("Fetching filter counts with params:", params);
 
   // Remove null/undefined/default values before sending
@@ -326,7 +326,7 @@ export async function getFilterCounts(params = {}) {
   }
 
   logger.log("Cleaned filter count params for API:", cleanParams);
-  return get("/api/animals/meta/filter_counts", cleanParams);
+  return get("/api/animals/meta/filter_counts", cleanParams, options);
 }
 
 // --- Search Suggestions Endpoints ---

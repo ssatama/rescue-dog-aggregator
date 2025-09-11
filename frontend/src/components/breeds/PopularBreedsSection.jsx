@@ -19,7 +19,7 @@ export default function PopularBreedsSection({ popularBreeds }) {
       breed.breed_group !== "Mixed" &&
       breed.breed_group !== "Unknown"
     )
-    .slice(0, 5);
+    .slice(0, 4);
 
   // Pastel colors for personality traits
   const PASTEL_COLORS = [
@@ -42,23 +42,16 @@ export default function PopularBreedsSection({ popularBreeds }) {
           <h2 id="popular-breeds-heading" className="text-3xl font-bold dark:text-white">
             Popular Breeds Available Now
           </h2>
-          <a 
-            href="#breed-groups" 
-            className="text-primary hover:underline flex items-center gap-1 cursor-pointer"
-            onClick={(e) => {
-              e.preventDefault();
-              // Scroll to breed groups section
-              document.getElementById('breed-groups')?.scrollIntoView({ behavior: 'smooth' });
-              // Trigger expand all groups
-              window.dispatchEvent(new CustomEvent('expandAllBreedGroups'));
-            }}
+          <Link 
+            href="/breeds" 
+            className="text-primary hover:underline flex items-center gap-1"
           >
             Browse All Breeds
             <ChevronRight className="h-4 w-4" />
-          </a>
+          </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {displayBreeds.map((breed) => {
             const firstDog = breed.sample_dogs?.[0];
             const imageUrl = firstDog?.primary_image_url || "/images/dog-placeholder.jpg";

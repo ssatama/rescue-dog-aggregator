@@ -62,6 +62,7 @@ export default function BreedDetailClient({
   const [error, setError] = useState(null);
   const breedAlertButtonRef = React.useRef(null);
   const requestIdRef = useRef(0);
+  const abortControllerRef = useRef(null);
 
   // Build API params from filters with breed-specific filtering
   const buildAPIParams = (filters) => {
@@ -74,12 +75,21 @@ export default function BreedDetailClient({
       params.breed = breedData.primary_breed; // Filter by specific breed
     }
     
+    // Size mapping from UI labels to API values
+    const sizeMapping = {
+      'Tiny': 'Tiny',
+      'Small': 'Small',
+      'Medium': 'Medium',
+      'Large': 'Large',
+      'Extra Large': 'XLarge'
+    };
+    
     if (filters.searchQuery) params.search = filters.searchQuery;
-    if (filters.sizeFilter !== "Any size") params.standardized_size = filters.sizeFilter;
+    if (filters.sizeFilter !== "Any size") params.standardized_size = sizeMapping[filters.sizeFilter] || filters.sizeFilter;
     if (filters.ageFilter !== "Any age") params.age_category = filters.ageFilter;
     if (filters.sexFilter !== "Any") params.sex = filters.sexFilter;
     if (filters.organizationFilter !== "any") params.organization_id = filters.organizationFilter;
-    if (filters.availableCountryFilter !== "Any country") params.available_country = filters.availableCountryFilter;
+    if (filters.availableCountryFilter !== "Any country") params.available_to_country = filters.availableCountryFilter;
     
     return params;
   };
@@ -95,7 +105,7 @@ export default function BreedDetailClient({
       ageFilter: 'age',
       sexFilter: 'sex',
       organizationFilter: 'organization_id',
-      availableCountryFilter: 'available_country'
+      availableCountryFilter: 'available_to_country'
     };
     
     Object.entries(newFilters).forEach(([key, value]) => {
@@ -119,6 +129,13 @@ export default function BreedDetailClient({
   // Fetch dogs with current filters and handle race conditions
   const fetchDogsWithFilters = async (currentFilters) => {
     const requestId = ++requestIdRef.current;
+    
+    // Cancel any in-flight requests
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+    
     setLoading(true);
     setError(null);
     
@@ -130,8 +147,8 @@ export default function BreedDetailClient({
       };
       
       const [response, counts] = await Promise.all([
-        getAnimals(params),
-        getFilterCounts(params),
+        getAnimals(params, { signal: abortControllerRef.current.signal }),
+        getFilterCounts(params, { signal: abortControllerRef.current.signal }),
       ]);
       
       // Ignore stale responses
@@ -146,7 +163,12 @@ export default function BreedDetailClient({
         setPage(1);
       });
     } catch (err) {
-      console.error('Failed to load dogs:', err);
+      // Ignore abort errors
+      if (err.name === 'AbortError') return;
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load dogs:', err);
+      }
       if (requestId === requestIdRef.current) {
         setError('Could not load dogs. Please try again.');
       }
@@ -236,7 +258,9 @@ export default function BreedDetailClient({
       
       // Discard response if filters changed during request
       if (filtersSnapshot !== JSON.stringify(filters)) {
-        console.log('Filters changed during load more, discarding response');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Filters changed during load more, discarding response');
+        }
         return;
       }
       
@@ -246,12 +270,14 @@ export default function BreedDetailClient({
         setPage(nextPage);
       });
     } catch (err) {
-      console.error('Failed to load more dogs:', err);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load more dogs:', err);
+      }
       setError('Could not load more dogs. Please try again.');
     } finally {
       setLoadingMore(false);
     }
-  }, [page, hasMore, filters, loadingMore, breedData]);
+  }, [page, hasMore, filters, loadingMore, breedData, buildAPIParams]);
   
   // Initial load with filter counts - only if no initial data
   useEffect(() => {
@@ -263,10 +289,12 @@ export default function BreedDetailClient({
       getFilterCounts(params).then(counts => {
         setFilterCounts(counts);
       }).catch(err => {
-        console.error('Failed to load filter counts:', err);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Failed to load filter counts:', err);
+        }
       });
     }
-  }, []);
+  }, [initialDogs, filters, fetchDogsWithFilters, buildAPIParams]);
   
   // Cleanup debounced callbacks on unmount
   useEffect(() => {

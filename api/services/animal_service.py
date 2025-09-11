@@ -19,6 +19,7 @@ from api.models.dog import Animal
 from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
 from api.models.responses import FilterCountsResponse, FilterOption
 from api.utils.json_parser import build_organization_object, parse_json_field
+from utils.breed_utils import generate_breed_slug
 
 logger = logging.getLogger(__name__)
 
@@ -627,7 +628,7 @@ class AnimalService:
                 WHERE a.animal_type = 'dog' 
                 AND a.status = 'available'
                 AND o.active = TRUE
-                GROUP BY breed_group
+                GROUP BY COALESCE(breed_group, 'Unknown')
                 ORDER BY count DESC
             """)
             breed_groups = [{"name": row["group_name"], "count": row["count"]} for row in self.cursor.fetchall()]
@@ -642,7 +643,7 @@ class AnimalService:
                         a.breed_group,
                         COUNT(*) as count,
                         COUNT(DISTINCT a.organization_id) as org_count,
-                        ARRAY_AGG(DISTINCT o.name) as organizations,
+                        ARRAY_AGG(DISTINCT o.name ORDER BY o.name) as organizations,
                         -- Age distribution
                         COUNT(*) FILTER (WHERE a.age_max_months < 12) as puppy_count,
                         COUNT(*) FILTER (WHERE a.age_min_months >= 12 AND a.age_max_months <= 36) as young_count,
@@ -725,7 +726,6 @@ class AnimalService:
             qualifying_breeds = []
             for row in self.cursor.fetchall():
                 # Use stored breed_slug or generate if missing
-                from utils.breed_utils import generate_breed_slug
                 breed_slug = row["breed_slug"] or generate_breed_slug(row["primary_breed"])
                 
                 # Calculate personality metrics percentages
@@ -1235,7 +1235,7 @@ class AnimalService:
                 LEFT JOIN organizations o ON a.organization_id = o.id
                 {joins}
                 WHERE {where_clause}
-                ORDER BY a.organization_id, RANDOM()
+                ORDER BY a.organization_id, (abs(hashtext(a.id::text || to_char(now(), 'IYYY-IW'))) % 1000)
                 LIMIT %s OFFSET %s
             """
         else:
