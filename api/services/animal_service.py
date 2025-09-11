@@ -58,14 +58,14 @@ class AnimalService:
 
             # Execute query
             logger.debug(f"Executing query: {query} with params: {params}")
-            self.cursor.execute(query, tuple(params))
+            self.cursor.execute(query, params)
             animal_rows = self.cursor.fetchall()
             logger.info(f"Found {len(animal_rows)} animals matching criteria.")
 
             return self._build_animals_response(animal_rows)
 
         except Exception as e:
-            logger.error(f"Error in get_animals: {e}")
+            logger.error(f"Error in get_animals: {e}", exc_info=True)
             raise APIException(status_code=500, detail="Failed to fetch animals", error_code="INTERNAL_ERROR")
 
     def get_animals_for_sitemap(self, filters: AnimalFilterRequest) -> List[Animal]:
@@ -243,24 +243,28 @@ class AnimalService:
         """
         # Build response without images
         animals = []
-        for row in animal_rows:
-            # Convert row to dictionary for manipulation
-            row_dict = dict(row)
+        for i, row in enumerate(animal_rows):
+            try:
+                # Convert row to dictionary for manipulation
+                row_dict = dict(row)
 
-            # Parse JSON properties using utility function
-            parse_json_field(row_dict, "properties")
+                # Parse JSON properties using utility function
+                parse_json_field(row_dict, "properties")
 
-            # Parse dog_profiler_data if present (for LLM-enhanced descriptions)
-            parse_json_field(row_dict, "dog_profiler_data")
+                # Parse dog_profiler_data if present (for LLM-enhanced descriptions)
+                parse_json_field(row_dict, "dog_profiler_data")
 
-            # Build nested organization using utility function
-            organization = build_organization_object(row_dict)
+                # Build nested organization using utility function
+                organization = build_organization_object(row_dict)
 
-            # Strip out raw org_* keys and add organization
-            clean = {k: v for k, v in row_dict.items() if not k.startswith("org_")}
-            clean["organization"] = organization
+                # Strip out raw org_* keys and add organization
+                clean = {k: v for k, v in row_dict.items() if not k.startswith("org_")}
+                clean["organization"] = organization
 
-            animals.append(Animal(**clean))
+                animals.append(Animal(**clean))
+            except Exception as e:
+                logger.error(f"Error building animal response for row {i}, id={row.get('id')}, name={row.get('name')}: {e}")
+                raise
 
         return animals
 
