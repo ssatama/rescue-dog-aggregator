@@ -81,9 +81,17 @@ export async function generateStaticParams() {
   try {
     const breedStats = await getBreedStats();
     return (
-      breedStats.qualifying_breeds?.map((breed) => ({
-        slug: breed.breed_slug,
-      })) || []
+      breedStats.qualifying_breeds
+        ?.filter(breed => {
+          // Exclude mixed breeds from static generation
+          const isMixed = breed.breed_type === 'mixed' || 
+                         breed.breed_group === 'Mixed' ||
+                         breed.primary_breed?.toLowerCase().includes('mix');
+          return !isMixed;
+        })
+        .map((breed) => ({
+          slug: breed.breed_slug,
+        })) || []
     );
   } catch (error) {
     console.error("Error generating static params:", error);
@@ -95,6 +103,8 @@ export default async function BreedDetailPage(props) {
   try {
     const params = await props.params;
 
+    // Mixed breed redirects are now handled by middleware
+    
     const breedData = await getBreedBySlug(params.slug);
 
     if (!breedData) {

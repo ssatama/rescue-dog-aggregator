@@ -90,7 +90,7 @@ export async function getBreedGroupsWithTopBreeds() {
     
     // Transform breed groups with their top breeds
     const breedGroups = (stats.breed_groups || [])
-      .filter(group => group.name !== 'Unknown' && group.count > 0)
+      .filter(group => group.name !== 'Unknown' && group.count > 0 && group.name !== 'Mixed')
       .sort((a, b) => b.count - a.count)
       .slice(0, 8)
       .map(group => {
