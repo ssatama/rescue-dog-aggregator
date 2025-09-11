@@ -1236,7 +1236,7 @@ class AnimalService:
                 LEFT JOIN organizations o ON a.organization_id = o.id
                 {joins}
                 WHERE {where_clause}
-                ORDER BY a.organization_id, (abs(hashtext(a.id::text || to_char(now(), 'IYYY-IW'))) % 1000)
+                ORDER BY a.organization_id, (abs(hashtext(a.id::text || to_char(now(), 'IYYY-IW'))) %% 1000)
                 LIMIT %s OFFSET %s
             """
         else:

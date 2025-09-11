@@ -415,10 +415,16 @@ async def get_random_animals(
     """Get random available dogs for featured section."""
     try:
         query = """
-            SELECT id, name, slug, animal_type, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, status, primary_image_url, adoption_url, organization_id, external_id, language, properties, created_at, updated_at, last_scraped_at
+            SELECT id, name, slug, animal_type, breed, standardized_breed, breed_group,
+                   primary_breed, breed_type, breed_confidence, secondary_breed, breed_slug,
+                   age_text, age_min_months, age_max_months, sex, size, standardized_size,
+                   status, primary_image_url, adoption_url, organization_id, external_id,
+                   language, properties, created_at, updated_at, last_scraped_at,
+                   availability_confidence, last_seen_at, consecutive_scrapes_missing,
+                   dog_profiler_data
             FROM animals
             WHERE animal_type = 'dog' AND status = %s
-            ORDER BY (abs(hashtext(id::text || to_char(now(), 'IYYY-IW'))) % 1000)
+            ORDER BY (abs(hashtext(id::text || to_char(now(), 'IYYY-IW'))) %% 1000)
             LIMIT %s
         """
         params = [status, limit]
