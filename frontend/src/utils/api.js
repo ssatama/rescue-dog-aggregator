@@ -61,6 +61,13 @@ export async function fetchApi(endpoint, options = {}) {
     const data = await response.json();
     return data;
   } catch (error) {
+    // Check if the error is from an aborted request (user cancelled)
+    if (error.name === 'AbortError' || error.message?.includes('aborted')) {
+      // Don't report aborted requests as errors - they're intentional
+      logger.log(`[API] Request cancelled: ${endpoint}`);
+      throw error;
+    }
+    
     // If it's not already processed, parse it
     if (!error.status) {
       const parsedError = parseApiError(error);

@@ -11,8 +11,9 @@ import {
 
 export const revalidate = 3600;
 
-export async function generateMetadata({ params }) {
+export async function generateMetadata(props) {
   try {
+    const params = await props.params;
     const breedData = await getBreedBySlug(params.slug);
 
     if (!breedData) {
@@ -92,7 +93,7 @@ export async function generateStaticParams() {
 
 export default async function BreedDetailPage(props) {
   try {
-    const params = props.params;
+    const params = await props.params;
 
     const breedData = await getBreedBySlug(params.slug);
 
