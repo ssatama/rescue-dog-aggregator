@@ -4,6 +4,25 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 export default function BreedStatistics({ breedData, className = "" }) {
+  // Calculate age display from average_age_months
+  const getAgeDisplay = () => {
+    if (!breedData.average_age_months) {
+      return "N/A";
+    }
+    
+    const months = breedData.average_age_months;
+    const years = Math.floor(months / 12);
+    const remainingMonths = months % 12;
+    
+    if (years === 0) {
+      return `${months} ${months === 1 ? 'month' : 'months'}`;
+    } else if (remainingMonths === 0) {
+      return `${years} ${years === 1 ? 'year' : 'years'}`;
+    } else {
+      return `${years} ${years === 1 ? 'year' : 'years'}`;  // Simplified to just years
+    }
+  };
+
   const stats = [
     {
       label: "Available Dogs",
@@ -14,10 +33,10 @@ export default function BreedStatistics({ breedData, className = "" }) {
     },
     {
       label: "Avg. Age",
-      value: breedData.average_age || "2-5 years",
+      value: getAgeDisplay(),
       icon: "📅",
       color: "purple",
-      description: "Typical age range",
+      description: "Average age of available dogs",
     },
   ];
 

@@ -105,6 +105,7 @@ class QualifyingBreed(BaseModel):
     breed_type: Optional[str] = Field(None, description="Breed type (purebred, mixed, crossbreed, unknown, sighthound)")
     breed_group: Optional[str] = Field(None, description="Breed group classification")
     count: int = Field(..., description="Total number of dogs of this breed", ge=0)
+    average_age_months: Optional[int] = Field(None, description="Average age in months for this breed")
     organization_count: int = Field(..., description="Number of organizations with this breed", ge=0)
     organizations: List[str] = Field(default_factory=list, description="List of organization names (top 5)")
     age_distribution: AgeDistribution = Field(..., description="Age distribution for this breed")

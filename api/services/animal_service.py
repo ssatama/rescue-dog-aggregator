@@ -662,6 +662,8 @@ class AnimalService:
                         a.breed_type,
                         a.breed_group,
                         COUNT(*) as count,
+                        -- Calculate average age in months
+                        ROUND(AVG((a.age_min_months + a.age_max_months) / 2.0) FILTER (WHERE a.age_min_months IS NOT NULL AND a.age_max_months IS NOT NULL)) as average_age_months,
                         COUNT(DISTINCT a.organization_id) as org_count,
                         ARRAY_AGG(DISTINCT o.name ORDER BY o.name) as organizations,
                         -- Age distribution
@@ -844,6 +846,7 @@ class AnimalService:
                     "breed_type": row["breed_type"],
                     "breed_group": row["breed_group"],
                     "count": row["count"],
+                    "average_age_months": row["average_age_months"],  # Add actual average age
                     "organization_count": row["org_count"],
                     "organizations": row["organizations"][:5] if row["organizations"] else [],  # Limit to top 5 orgs
                     "age_distribution": {
