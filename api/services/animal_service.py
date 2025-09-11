@@ -1224,6 +1224,7 @@ class AnimalService:
                        a.status, a.primary_image_url, a.adoption_url, a.organization_id, a.external_id,
                        a.language, a.properties, a.created_at, a.updated_at, a.last_scraped_at,
                        a.availability_confidence, a.last_seen_at, a.consecutive_scrapes_missing,
+                       a.dog_profiler_data,
                        o.name as org_name,
                        o.slug as org_slug,
                        o.city as org_city,
