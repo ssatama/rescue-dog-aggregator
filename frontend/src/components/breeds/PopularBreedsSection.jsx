@@ -35,6 +35,22 @@ export default function PopularBreedsSection({ popularBreeds }) {
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
   };
 
+  const handleBrowseAllClick = () => {
+    // Dispatch event to expand all breed groups
+    window.dispatchEvent(new CustomEvent('expandAllBreedGroups'));
+    
+    // Smooth scroll to breed groups section
+    setTimeout(() => {
+      const breedGroupsSection = document.getElementById('breed-groups');
+      if (breedGroupsSection) {
+        breedGroupsSection.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }
+    }, 100); // Small delay to ensure expansion happens first
+  };
+
   return (
     <section className="py-12 bg-white dark:bg-gray-900" aria-labelledby="popular-breeds-heading">
       <div className="container mx-auto px-4">
@@ -42,13 +58,14 @@ export default function PopularBreedsSection({ popularBreeds }) {
           <h2 id="popular-breeds-heading" className="text-3xl font-bold dark:text-white">
             Popular Breeds Available Now
           </h2>
-          <Link 
-            href="/breeds" 
-            className="text-primary hover:underline flex items-center gap-1"
+          <button
+            onClick={handleBrowseAllClick}
+            className="text-primary hover:underline flex items-center gap-1 font-medium transition-colors"
+            aria-label="Browse all breeds and expand breed groups"
           >
             Browse All Breeds
             <ChevronRight className="h-4 w-4" />
-          </Link>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

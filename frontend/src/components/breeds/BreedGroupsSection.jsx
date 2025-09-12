@@ -14,10 +14,14 @@ export default function BreedGroupsSection({ breedGroups }) {
   // Listen for expand all event from Popular Breeds section
   useEffect(() => {
     const handleExpandAll = () => {
+      // First expand the section to show all groups
       setExpanded(true);
-      // Expand all groups
-      const allGroupNames = breedGroups.map(g => g.name);
-      setExpandedGroups(new Set(allGroupNames));
+      
+      // Then expand all individual groups after a brief delay
+      setTimeout(() => {
+        const allGroupNames = breedGroups.map(g => g.name);
+        setExpandedGroups(new Set(allGroupNames));
+      }, 200); // Slight delay to ensure smooth animation
     };
 
     window.addEventListener('expandAllBreedGroups', handleExpandAll);
