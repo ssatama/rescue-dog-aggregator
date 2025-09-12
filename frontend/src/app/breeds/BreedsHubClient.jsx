@@ -14,22 +14,30 @@ import PopularBreedsSection from "@/components/breeds/PopularBreedsSection";
 import BreedGroupsSection from "@/components/breeds/BreedGroupsSection";
 import { ChevronRight, Dog, Heart, Home } from "lucide-react";
 
-export default function BreedsHubClient({ initialBreedStats, mixedBreedData, popularBreedsWithImages, breedGroups }) {
+export default function BreedsHubClient({
+  initialBreedStats,
+  mixedBreedData,
+  popularBreedsWithImages,
+  breedGroups,
+}) {
   const breedStats = initialBreedStats;
   const router = useRouter();
 
   // Breadcrumb items
-  const breadcrumbItems = [
-    { name: "Home", url: "/" },
-    { name: "Breeds" }
-  ];
+  const breadcrumbItems = [{ name: "Home", url: "/" }, { name: "Breeds" }];
+
+  // Ensure breed_groups is always an array for safe .find() operations
+  const breedGroupsArray = Array.isArray(breedStats?.breed_groups) 
+    ? breedStats.breed_groups 
+    : [];
 
   // Breed type cards configuration (3 cards as specified in PRD)
   const breedTypeCards = useMemo(
     () => [
       {
         title: "Mixed Breeds",
-        count: (breedStats?.breed_groups || []).find(g => g.name === "Mixed")?.count ?? 0,
+        count:
+          breedGroupsArray.find((g) => g.name === "Mixed")?.count ?? 0,
         href: "/breeds/mixed",
         icon: <Heart className="h-5 w-5" />,
         description: "Unique personalities from diverse backgrounds",
@@ -49,7 +57,7 @@ export default function BreedsHubClient({ initialBreedStats, mixedBreedData, pop
         description: "Best of both worlds combinations",
       },
     ],
-    [breedStats],
+    [breedGroupsArray, breedStats],
   );
 
   if (!breedStats || breedStats.error) {
@@ -76,12 +84,12 @@ export default function BreedsHubClient({ initialBreedStats, mixedBreedData, pop
 
       {/* Hero Section with Mixed Breed Dogs */}
       {mixedBreedData && (
-        <BreedsHeroSection 
-          mixedBreedData={mixedBreedData} 
-          totalDogs={breedStats?.total_dogs || 0} 
+        <BreedsHeroSection
+          mixedBreedData={mixedBreedData}
+          totalDogs={breedStats?.total_dogs || 0}
         />
       )}
-      
+
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         <div className="container mx-auto px-4 py-8">
           {/* Popular Individual Breeds Section with Images */}
@@ -103,8 +111,8 @@ export default function BreedsHubClient({ initialBreedStats, mixedBreedData, pop
               <p className="text-lg text-muted-foreground mb-6">
                 Browse all available rescue dogs or use our advanced filters
               </p>
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 onClick={() => router.push("/dogs")}
                 className="bg-orange-500 hover:bg-orange-600 text-white"
               >
