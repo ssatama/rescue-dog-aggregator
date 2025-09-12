@@ -81,6 +81,13 @@ class ExperienceDistribution(BaseModel):
     experienced: int = Field(..., description="Number requiring experienced owners", ge=0)
 
 
+class SexDistribution(BaseModel):
+    """Model for sex distribution of a breed."""
+    
+    male: int = Field(..., description="Number of male dogs", ge=0)
+    female: int = Field(..., description="Number of female dogs", ge=0)
+
+
 class PersonalityMetric(BaseModel):
     """Model for a single personality metric with percentage and label."""
     
@@ -110,6 +117,7 @@ class QualifyingBreed(BaseModel):
     organizations: List[str] = Field(default_factory=list, description="List of organization names (top 5)")
     age_distribution: AgeDistribution = Field(..., description="Age distribution for this breed")
     size_distribution: SizeDistribution = Field(..., description="Size distribution for this breed")
+    sex_distribution: Optional[SexDistribution] = Field(None, description="Sex distribution for this breed")
     personality_traits: List[str] = Field(default_factory=list, description="Top 5 personality traits from LLM analysis")
     experience_distribution: ExperienceDistribution = Field(..., description="Experience level distribution for this breed")
     personality_metrics: Optional[PersonalityMetrics] = Field(None, description="Personality metrics from dog_profiler_data aggregation")

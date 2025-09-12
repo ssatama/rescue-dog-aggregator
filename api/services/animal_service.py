@@ -681,6 +681,9 @@ class AnimalService:
                         COUNT(*) FILTER (WHERE a.dog_profiler_data->>'experience_level' = 'beginner') as first_time_ok_count,
                         COUNT(*) FILTER (WHERE a.dog_profiler_data->>'experience_level' = 'intermediate') as some_experience_count,
                         COUNT(*) FILTER (WHERE a.dog_profiler_data->>'experience_level' = 'experienced') as experienced_count,
+                        -- Sex distribution
+                        COUNT(*) FILTER (WHERE a.sex = 'Male') as male_count,
+                        COUNT(*) FILTER (WHERE a.sex = 'Female') as female_count,
                         -- Personality metrics for bar charts
                         COUNT(*) FILTER (WHERE a.dog_profiler_data IS NOT NULL) as total_with_profiler_data,
                         -- Energy Level
@@ -861,6 +864,10 @@ class AnimalService:
                         "medium": row["medium_count"],
                         "large": row["large_count"],
                         "xlarge": row["xlarge_count"]
+                    },
+                    "sex_distribution": {
+                        "male": row["male_count"],
+                        "female": row["female_count"]
                     },
                     "personality_traits": row["personality_traits"] if row["personality_traits"] else [],
                     "experience_distribution": {
