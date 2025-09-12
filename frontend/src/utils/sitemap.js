@@ -481,6 +481,16 @@ export const generateSitemap = async () => {
       }
     }
 
+    // Add breed pages
+    try {
+      const breedPages = await generateBreedPages();
+      allEntries.push(...breedPages);
+    } catch (error) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("Failed to generate breed pages for sitemap:", error.message);
+      }
+    }
+
     // Convert to XML
     return entriesToXml(allEntries);
   } catch (error) {
@@ -573,26 +583,102 @@ export const generateImageSitemap = async () => {
 };
 
 /**
+ * Generate breed page entries for the sitemap
+ * @returns {Promise<Array<Object>>} Array of breed page sitemap entries
+ */
+const generateBreedPages = async () => {
+  const baseUrl = getBaseUrl();
+  const breedPages = [];
+
+  try {
+    // Add main breeds hub page
+    breedPages.push(formatSitemapEntry({
+      url: `${baseUrl}/breeds`,
+      changefreq: "weekly",
+      priority: 0.9,
+    }));
+
+    // Add mixed breeds consolidated page
+    breedPages.push(formatSitemapEntry({
+      url: `${baseUrl}/breeds/mixed`,
+      changefreq: "weekly",
+      priority: 0.85,
+    }));
+
+    // Fetch breed stats to get qualifying breeds
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://api.rescuedogs.me"}/api/animals/breeds/stats`);
+    
+    if (response.ok) {
+      const breedStats = await response.json();
+      
+      // Add individual breed pages (excluding mixed breed variants)
+      if (breedStats.qualifying_breeds && Array.isArray(breedStats.qualifying_breeds)) {
+        const purebreds = breedStats.qualifying_breeds.filter(breed => {
+          // Exclude mixed breed variants that would redirect
+          const isMixed = breed.breed_type === 'mixed' || 
+                         breed.breed_group === 'Mixed' ||
+                         breed.primary_breed?.toLowerCase().includes('mix');
+          return !isMixed && breed.breed_slug;
+        });
+
+        purebreds.forEach(breed => {
+          // Calculate priority based on dog count (0.7 to 0.9 range)
+          const counts = purebreds.map(b => Number(b.count) || 0);
+          const maxCount = counts.length ? Math.max(...counts) : 1;
+          const normalizedCount = maxCount > 0 ? ((Number(breed.count) || 0) / maxCount) : 0;
+          const priority = Math.min(0.9, Math.max(0.7, 0.7 + (normalizedCount * 0.2)));
+
+          const entry = {
+            url: `${baseUrl}/breeds/${breed.breed_slug}`,
+            changefreq: "weekly",
+            priority: Math.round(priority * 10) / 10, // Round to 1 decimal
+          };
+
+          // Add lastmod if breed has been recently updated
+          if (breed.last_updated) {
+            const formattedDate = formatDateForSitemap(breed.last_updated);
+            if (formattedDate) {
+              entry.lastmod = formattedDate;
+            }
+          }
+
+          breedPages.push(formatSitemapEntry(entry));
+        });
+      }
+    }
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("Failed to fetch breed stats for sitemap:", error.message);
+    }
+  }
+
+  return breedPages;
+};
+
+/**
  * Get sitemap statistics for monitoring
  * @returns {Promise<Object>} Sitemap generation stats
  */
 export const getSitemapStats = async () => {
   try {
-    const [dogs, organizations] = await Promise.allSettled([
+    const [dogs, organizations, breedPages] = await Promise.allSettled([
       getAllAnimalsForSitemap(),
       getAllOrganizations(),
+      generateBreedPages(),
     ]);
 
     const dogCount = dogs.status === "fulfilled" ? dogs.value.length : 0;
     const orgCount =
       organizations.status === "fulfilled" ? organizations.value.length : 0;
+    const breedCount = breedPages.status === "fulfilled" ? breedPages.value.length : 0;
     const staticCount = generateStaticPages().length;
 
     return {
-      totalUrls: staticCount + dogCount + orgCount,
+      totalUrls: staticCount + dogCount + orgCount + breedCount,
       staticPages: staticCount,
       dogPages: dogCount,
       organizationPages: orgCount,
+      breedPages: breedCount,
       lastGenerated: new Date().toISOString(),
     };
   } catch (error) {
@@ -601,6 +687,7 @@ export const getSitemapStats = async () => {
       staticPages: generateStaticPages().length,
       dogPages: 0,
       organizationPages: 0,
+      breedPages: 0,
       lastGenerated: new Date().toISOString(),
       error: error.message,
     };

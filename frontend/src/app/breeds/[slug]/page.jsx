@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import BreedDetailClient from "./BreedDetailClient";
 import BreedDetailSkeleton from "@/components/ui/BreedDetailSkeleton";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
+import BreedStructuredData from "@/components/seo/BreedStructuredData";
 import {
   getBreedBySlug,
   getAnimals,
@@ -28,21 +29,34 @@ export async function generateMetadata(props) {
     const breedKey = breedData.primary_breed.toLowerCase().replace(/\s+/g, '_');
     const description = breedDescriptions[breedKey];
     
+    // Enhanced SEO description with location and age information
+    const avgAge = breedData.average_age ? `Average age ${Math.round(breedData.average_age)} years. ` : '';
+    const locations = breedData.top_locations?.slice(0, 3).join(', ') || 'multiple locations';
+    
     const seoDescription = description?.tagline 
-      ? `${description.tagline} Find ${breedData.count} ${breedData.primary_breed} rescue dogs for adoption from verified organizations.`
-      : `Find ${breedData.count} ${breedData.primary_breed} rescue dogs for adoption. View photos, personality profiles, and apply from verified rescue organizations.`;
+      ? `${description.tagline} ${breedData.count} ${breedData.primary_breed} rescue dogs available. ${avgAge}Adoptable in ${locations}.`
+      : `Find ${breedData.count} ${breedData.primary_breed} rescue dogs for adoption. ${avgAge}View photos, profiles, and apply from verified rescues in ${locations}.`;
+
+    // Build comprehensive keywords
+    const keywords = [
+      `${breedData.primary_breed} rescue`,
+      `${breedData.primary_breed} adoption`,
+      `${breedData.primary_breed} dogs for adoption`,
+      `${breedData.primary_breed} puppies`,
+      `adopt ${breedData.primary_breed}`,
+      `${breedData.primary_breed} rescue near me`,
+      `${breedData.primary_breed} temperament`,
+      `${breedData.primary_breed} personality`,
+      breedData.breed_group && `${breedData.breed_group} group dogs`,
+      'rescue dogs',
+      'dog adoption',
+      'adoptable dogs'
+    ].filter(Boolean).join(', ');
 
     return {
-      title: `${breedData.primary_breed} Rescue Dogs | ${breedData.count} Available for Adoption`,
-      description: seoDescription,
-      keywords: [
-        `${breedData.primary_breed} rescue`,
-        `${breedData.primary_breed} adoption`,
-        `${breedData.primary_breed} dogs`,
-        'rescue dogs',
-        'dog adoption',
-        breedData.breed_group && `${breedData.breed_group} group dogs`
-      ].filter(Boolean).join(', '),
+      title: `${breedData.primary_breed} Rescue Dogs for Adoption | ${breedData.count} Available Near You`,
+      description: seoDescription.substring(0, 160), // Keep under 160 chars
+      keywords,
       openGraph: {
         title: `${breedData.count} ${breedData.primary_breed} Dogs Need Homes`,
         description: seoDescription,
@@ -61,11 +75,14 @@ export async function generateMetadata(props) {
       twitter: {
         card: "summary_large_image",
         title: `${breedData.count} ${breedData.primary_breed} Dogs Need Homes`,
-        description: seoDescription,
+        description: seoDescription.substring(0, 120),
         images: breedData.topDogs
           ?.filter((d) => d.primary_image_url)
           .slice(0, 1)
           .map((d) => d.primary_image_url) || [],
+      },
+      alternates: {
+        canonical: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.rescuedogs.me'}/breeds/${params.slug}`,
       },
     };
   } catch (error) {
@@ -119,16 +136,31 @@ export default async function BreedDetailPage(props) {
 
     const initialDogs = initialDogsResponse?.results || [];
 
+    // Import breed descriptions for structured data
+    const { default: breedDescriptions } = await import('@/utils/breedDescriptions');
+    const breedKey = breedData.primary_breed.toLowerCase().replace(/\s+/g, '_');
+    const enrichedBreedData = {
+      ...breedData,
+      description: breedDescriptions[breedKey] || breedData.description
+    };
+
     return (
-      <ErrorBoundary fallbackMessage="Unable to load breed details. Please try refreshing the page.">
-        <Suspense fallback={<BreedDetailSkeleton />}>
-          <BreedDetailClient
-            initialBreedData={breedData}
-            initialDogs={initialDogs}
-            initialParams={{}}
-          />
-        </Suspense>
-      </ErrorBoundary>
+      <>
+        <BreedStructuredData 
+          breedData={enrichedBreedData}
+          dogs={initialDogs}
+          pageType="detail"
+        />
+        <ErrorBoundary fallbackMessage="Unable to load breed details. Please try refreshing the page.">
+          <Suspense fallback={<BreedDetailSkeleton />}>
+            <BreedDetailClient
+              initialBreedData={breedData}
+              initialDogs={initialDogs}
+              initialParams={{}}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      </>
     );
   } catch (error) {
     console.error("Error loading breed page:", error);
