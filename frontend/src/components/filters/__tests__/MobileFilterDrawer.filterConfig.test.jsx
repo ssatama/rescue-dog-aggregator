@@ -87,7 +87,7 @@ describe("MobileFilterDrawer Context-Aware Filtering", () => {
       render(<MobileFilterDrawer {...propsWithActiveFilters} />);
 
       // Should count age (visible and active) but not size (hidden)
-      expect(screen.getByText("1 active")).toBeInTheDocument();
+      expect(screen.getByText("1")).toBeInTheDocument();
     });
   });
 

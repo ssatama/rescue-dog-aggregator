@@ -22,16 +22,16 @@ export default function BreedFilterBar({
   };
 
   const quickFilters = [
+    // Sex filters first
     {
-      key: "ageFilter",
-      label: "Age",
+      key: "sexFilter",
+      label: "Sex",
       options: [
-        { value: "Puppy", label: "Puppies", count: filterCounts?.age_options?.find(opt => opt.value === "Puppy")?.count },
-        { value: "Young", label: "Young", count: filterCounts?.age_options?.find(opt => opt.value === "Young")?.count },
-        { value: "Adult", label: "Adults", count: filterCounts?.age_options?.find(opt => opt.value === "Adult")?.count },
-        { value: "Senior", label: "Seniors", count: filterCounts?.age_options?.find(opt => opt.value === "Senior")?.count },
+        { value: "Male", label: "Male", count: filterCounts?.sex_options?.find(opt => opt.value === "Male")?.count },
+        { value: "Female", label: "Female", count: filterCounts?.sex_options?.find(opt => opt.value === "Female")?.count },
       ].filter(opt => opt.count == null || opt.count > 0)
     },
+    // Size filters second (small to large)
     {
       key: "sizeFilter",
       label: "Size",
@@ -41,15 +41,22 @@ export default function BreedFilterBar({
         { value: "Large", label: "Large", count: filterCounts?.size_options?.find(opt => opt.value === "Large")?.count },
       ].filter(opt => opt.count == null || opt.count > 0)
     },
+    // Age filters third (young to old)
     {
-      key: "sexFilter",
-      label: "Sex",
+      key: "ageFilter",
+      label: "Age",
       options: [
-        { value: "Male", label: "Male", count: filterCounts?.sex_options?.find(opt => opt.value === "Male")?.count },
-        { value: "Female", label: "Female", count: filterCounts?.sex_options?.find(opt => opt.value === "Female")?.count },
+        { value: "Puppy", label: "Puppies", count: filterCounts?.age_options?.find(opt => opt.value === "Puppy")?.count },
+        { value: "Young", label: "Young", count: filterCounts?.age_options?.find(opt => opt.value === "Young")?.count },
+        { value: "Adult", label: "Adults", count: filterCounts?.age_options?.find(opt => opt.value === "Adult")?.count },
+        { value: "Senior", label: "Seniors", count: filterCounts?.age_options?.find(opt => opt.value === "Senior")?.count },
       ].filter(opt => opt.count == null || opt.count > 0)
     }
   ];
+
+  // Calculate total dogs count
+  const totalDogsCount = filterCounts?.total_count || 0;
+  const hasActiveFilters = activeFilterCount > 0;
 
   return (
     <div className="sticky top-20 z-10 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 py-4">
@@ -73,9 +80,19 @@ export default function BreedFilterBar({
 
         {/* Quick filter chips - hidden on mobile */}
         <div className="hidden md:flex flex-wrap gap-2 items-center">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mr-2">
-            Quick Filters:
-          </span>
+          {/* All button - highlighted when no filters are active */}
+          <Button
+            variant={!hasActiveFilters ? "default" : "outline"}
+            size="sm"
+            onClick={onClearFilters}
+            className={`transition-all duration-200 ${
+              !hasActiveFilters
+                ? "bg-orange-600 hover:bg-orange-700 text-white dark:bg-orange-600 dark:hover:bg-orange-700" 
+                : "hover:bg-orange-50 hover:border-orange-200 dark:hover:bg-orange-950/50 dark:hover:border-orange-800"
+            }`}
+          >
+            All {totalDogsCount > 0 && `${totalDogsCount}`}
+          </Button>
           
           {quickFilters.map(filterGroup => 
             filterGroup.options.map(option => {
@@ -106,7 +123,7 @@ export default function BreedFilterBar({
             })
           )}
           
-          {/* Clear filters button */}
+          {/* Clear filters button - only show when filters are active */}
           {activeFilterCount > 0 && (
             <Button
               variant="ghost"

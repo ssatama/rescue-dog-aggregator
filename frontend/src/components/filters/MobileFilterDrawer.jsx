@@ -384,6 +384,9 @@ export default function MobileFilterDrawer({
     sexFilter,
   ]);
 
+  // Calculate total dogs count from filter counts
+  const totalDogsCount = filterCounts?.total_count || 0;
+
   if (!isOpen) {
     return null;
   }
@@ -403,91 +406,77 @@ export default function MobileFilterDrawer({
             onClick={handleBackdropClick}
           />
 
-          {/* Slide-out Drawer (left-to-right) */}
+          {/* Full-screen Drawer */}
           <motion.div
-            initial={{ x: "-100%" }}
+            initial={{ x: "100%" }}
             animate={{ x: 0 }}
-            exit={{ x: "-100%" }}
+            exit={{ x: "100%" }}
             transition={{
               type: "spring",
               damping: 25,
               stiffness: 300,
             }}
-            className="fixed top-0 left-0 bottom-0 w-80 bg-white dark:bg-gray-900 shadow-2xl z-50 overflow-hidden lg:hidden will-change-transform gpu-accelerated flex flex-col"
+            className="fixed inset-0 bg-white dark:bg-gray-900 z-50 overflow-hidden lg:hidden will-change-transform gpu-accelerated flex flex-col"
             data-testid="mobile-filter-drawer"
             role="dialog"
             aria-label="Filter options"
             aria-modal="true"
             aria-labelledby="filter-drawer-title"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-              <div className="flex items-center gap-3">
-                <Icon
-                  name="filter"
-                  size="default"
-                  className="text-orange-600"
-                />
-                <h2
-                  id="filter-drawer-title"
-                  className="text-lg font-semibold text-gray-900 dark:text-gray-100"
-                >
-                  Filters
-                </h2>
-              </div>
-              <div className="flex items-center gap-2">
-                {activeFilterCount > 0 && (
-                  <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2.5 py-1 rounded-full text-sm font-medium">
-                    {activeFilterCount} active
-                  </span>
-                )}
+            {/* Fixed Header with Apply Button */}
+            <div className="flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <Icon
+                    name="filter"
+                    size="default"
+                    className="text-orange-600"
+                  />
+                  <h2
+                    id="filter-drawer-title"
+                    className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+                  >
+                    Filters
+                  </h2>
+                  {activeFilterCount > 0 && (
+                    <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2.5 py-1 rounded-full text-sm font-medium">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={onClose}
-                  className="h-12 w-12 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-600 dark:focus:ring-orange-400"
+                  className="h-10 w-10 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-600 dark:focus:ring-orange-400"
                   aria-label="Close filters"
-                  style={{ minHeight: "48px", minWidth: "48px" }}
                 >
                   <Icon name="x" size="default" />
                 </Button>
               </div>
+              
+              {/* Apply Filters Button in Header */}
+              <div className="px-4 pb-3">
+                <Button
+                  onClick={onClose}
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-3"
+                >
+                  Apply Filters {totalDogsCount > 0 && `(${totalDogsCount} dogs)`}
+                </Button>
+              </div>
             </div>
 
-            {/* Content */}
+            {/* Scrollable Content */}
             <div
-              className="overflow-y-auto flex-1"
-              style={{ maxHeight: "calc(100vh - 140px)" }}
+              className="flex-1 overflow-y-auto overflow-x-hidden"
+              style={{ 
+                paddingBottom: "env(safe-area-inset-bottom, 20px)",
+                WebkitOverflowScrolling: "touch"
+              }}
             >
-              <div className="p-4 space-y-6 pb-8">
-                {/* Persistent Search Bar */}
-                {filterConfig.showSearch && (
-                  <div>
-                    <SearchTypeahead
-                      data-testid="search-input"
-                      value={searchQuery}
-                      placeholder="Search dogs..."
-                      onValueChange={handleSearchChange}
-                      onClear={clearSearch}
-                      fetchSuggestions={getSearchSuggestions}
-                      debounceMs={300}
-                      maxSuggestions={5}
-                      showHistory={true}
-                      showClearButton={true}
-                      showDidYouMean={true}
-                      historyKey="dog-search-history"
-                      size="lg"
-                      className="w-full"
-                      inputClassName="enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
-                    />
-                  </div>
-                )}
-
-                {/* === COLLAPSIBLE FILTER SECTIONS === */}
-                {/* Required order: Adoptable to Country → Size → Age → Sex → Breed → Organization */}
-
-                {/* 1. Adoptable to Country Section - PRIMARY FILTER */}
-                {filterConfig.showShipsTo && (
+              <div className="p-4 space-y-6">
+                {/* Filter Sections */}
+                {filterConfig.showShipsTo ? (
                   <MobileFilterSection
                     id="ships-to-country"
                     title="Adoptable to Country"
@@ -532,7 +521,7 @@ export default function MobileFilterDrawer({
                       </Select>
                     </div>
                   </MobileFilterSection>
-                )}
+                ) : null}
 
                 {/* === BUTTON/LOLLIPOP FILTERS SECTION === */}
 
@@ -850,7 +839,7 @@ export default function MobileFilterDrawer({
                         historyKey="mobile-breed-search-history"
                         size="lg"
                         className="w-full"
-                        inputClassName="enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
+                        inputClassName="enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
                         skipLocalFuzzySearch={true}
                       />
                     )}
@@ -922,17 +911,44 @@ export default function MobileFilterDrawer({
                     </Select>
                   </div>
                 )}
+
+                {/* 7. Search Bar - MOVED TO BOTTOM */}
+                {filterConfig.showSearch && (
+                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="mb-2">
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                        Search Dogs by Name
+                      </h4>
+                    </div>
+                    <SearchTypeahead
+                      data-testid="search-input"
+                      value={searchQuery}
+                      placeholder="Search dogs..."
+                      onValueChange={handleSearchChange}
+                      onClear={clearSearch}
+                      fetchSuggestions={getSearchSuggestions}
+                      debounceMs={300}
+                      maxSuggestions={5}
+                      showHistory={true}
+                      showClearButton={true}
+                      showDidYouMean={true}
+                      historyKey="dog-search-history"
+                      size="lg"
+                      className="w-full"
+                      inputClassName="enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Footer with Clear All Button */}
             {activeFilterCount > 0 && (
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 mt-auto">
+              <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
                 <button
                   data-testid="clear-all-filters"
-                  className="w-full text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950/30 font-medium py-2 px-4 rounded-lg transition-colors duration-200 interactive-enhanced enhanced-focus-button focus:ring-2 focus:ring-orange-600"
+                  className="w-full text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950/30 font-medium py-3 px-4 rounded-lg transition-colors duration-200 interactive-enhanced enhanced-focus-button focus:ring-2 focus:ring-orange-600"
                   onClick={resetFilters}
-                  style={{ minHeight: "48px" }}
                 >
                   Clear All Filters
                 </button>
