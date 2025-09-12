@@ -63,6 +63,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Skip browser extensions and non-http(s) requests
+  if (!url.protocol.startsWith('http')) {
+    return;
+  }
+
+  // Skip chrome-extension and other browser extension schemes
+  if (url.protocol === 'chrome-extension:' || url.protocol === 'moz-extension:' || url.protocol === 'safari-extension:') {
+    return;
+  }
+
   // API requests - Network first, fall back to cache
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
@@ -107,8 +117,13 @@ async function networkFirstStrategy(request, cacheName, timeout = 5000) {
     const networkResponse = await fetchWithTimeout(request, timeout);
     
     if (networkResponse.ok) {
-      const cache = await caches.open(cacheName);
-      cache.put(request, networkResponse.clone());
+      try {
+        const cache = await caches.open(cacheName);
+        await cache.put(request, networkResponse.clone());
+      } catch (cacheError) {
+        console.log('[ServiceWorker] Cache put failed:', cacheError);
+        // Continue without caching
+      }
     }
     
     return networkResponse;
@@ -148,8 +163,13 @@ async function cacheFirstStrategy(request, cacheName) {
     const networkResponse = await fetch(request);
     
     if (networkResponse.ok) {
-      const cache = await caches.open(cacheName);
-      cache.put(request, networkResponse.clone());
+      try {
+        const cache = await caches.open(cacheName);
+        await cache.put(request, networkResponse.clone());
+      } catch (cacheError) {
+        console.log('[ServiceWorker] Cache put failed:', cacheError);
+        // Continue without caching
+      }
     }
     
     return networkResponse;
@@ -168,7 +188,10 @@ async function staleWhileRevalidate(request, cacheName) {
       // Clone the response before using it since we need it both for cache and return
       const responseToCache = response.clone();
       caches.open(cacheName).then(cache => {
-        cache.put(request, responseToCache);
+        return cache.put(request, responseToCache);
+      }).catch(cacheError => {
+        console.log('[ServiceWorker] Cache put failed:', cacheError);
+        // Silent fail for background updates
       });
     }
     return response;
@@ -204,8 +227,13 @@ async function fetchAndCache(request, cacheName) {
   try {
     const response = await fetch(request);
     if (response.ok) {
-      const cache = await caches.open(cacheName);
-      await cache.put(request, response);
+      try {
+        const cache = await caches.open(cacheName);
+        await cache.put(request, response);
+      } catch (cacheError) {
+        console.log('[ServiceWorker] Background cache put failed:', cacheError);
+        // Silent fail for background updates
+      }
     }
   } catch (error) {
     // Silent fail for background updates
