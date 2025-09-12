@@ -27,8 +27,8 @@ export default function BreedsHubClient({
   const breadcrumbItems = [{ name: "Home", url: "/" }, { name: "Breeds" }];
 
   // Ensure breed_groups is always an array for safe .find() operations
-  const breedGroupsArray = Array.isArray(breedStats?.breed_groups) 
-    ? breedStats.breed_groups 
+  const breedGroupsArray = Array.isArray(breedStats?.breed_groups)
+    ? breedStats.breed_groups
     : [];
 
   // Breed type cards configuration (3 cards as specified in PRD)
@@ -36,8 +36,7 @@ export default function BreedsHubClient({
     () => [
       {
         title: "Mixed Breeds",
-        count:
-          breedGroupsArray.find((g) => g.name === "Mixed")?.count ?? 0,
+        count: breedGroupsArray.find((g) => g.name === "Mixed")?.count ?? 0,
         href: "/breeds/mixed",
         icon: <Heart className="h-5 w-5" />,
         description: "Unique personalities from diverse backgrounds",

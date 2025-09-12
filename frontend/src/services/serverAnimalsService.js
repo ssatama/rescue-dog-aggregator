@@ -250,15 +250,13 @@ export const getBreedStats = cache(async () => {
     }
 
     const data = await response.json();
-    
+
     // Inline validation to ensure breed_groups is always an array
     if (data) {
       if (data.breed_groups && !Array.isArray(data.breed_groups)) {
-        console.warn('[API] breed_groups is not an array:', typeof data.breed_groups);
         data.breed_groups = [];
       }
       if (data.qualifying_breeds && !Array.isArray(data.qualifying_breeds)) {
-        console.warn('[API] qualifying_breeds is not an array:', typeof data.qualifying_breeds);
         data.qualifying_breeds = [];
       }
       data.total_dogs = Number(data.total_dogs) || 0;
@@ -266,7 +264,7 @@ export const getBreedStats = cache(async () => {
       data.purebred_count = Number(data.purebred_count) || 0;
       data.crossbreed_count = Number(data.crossbreed_count) || 0;
     }
-    
+
     return data;
   } catch (error) {
     console.error("Error fetching breed stats:", error);

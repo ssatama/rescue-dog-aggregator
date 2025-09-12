@@ -121,8 +121,10 @@ export function hasBreedDescription(breedName) {
   return getBreedDescription(breedName) !== null;
 }
 
-export default {
+const breedDescriptions = {
   getBreedDescription,
   getAllBreedDescriptions,
   hasBreedDescription,
 };
+
+export default breedDescriptions;
