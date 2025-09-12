@@ -3,8 +3,6 @@
 // Next.js will handle ISR caching with the 'next' option in fetch
 const cache = (fn) => fn;
 
-import { validateBreedStats, getDefaultBreedStats } from '@/utils/apiValidation';
-
 // Use internal URL for server-side requests in development
 const API_URL =
   process.env.NODE_ENV === "development" && typeof window === "undefined"
@@ -252,10 +250,35 @@ export const getBreedStats = cache(async () => {
     }
 
     const data = await response.json();
-    return validateBreedStats(data);
+    
+    // Inline validation to ensure breed_groups is always an array
+    if (data) {
+      if (data.breed_groups && !Array.isArray(data.breed_groups)) {
+        console.warn('[API] breed_groups is not an array:', typeof data.breed_groups);
+        data.breed_groups = [];
+      }
+      if (data.qualifying_breeds && !Array.isArray(data.qualifying_breeds)) {
+        console.warn('[API] qualifying_breeds is not an array:', typeof data.qualifying_breeds);
+        data.qualifying_breeds = [];
+      }
+      data.total_dogs = Number(data.total_dogs) || 0;
+      data.unique_breeds = Number(data.unique_breeds) || 0;
+      data.purebred_count = Number(data.purebred_count) || 0;
+      data.crossbreed_count = Number(data.crossbreed_count) || 0;
+    }
+    
+    return data;
   } catch (error) {
     console.error("Error fetching breed stats:", error);
-    return getDefaultBreedStats();
+    return {
+      total_dogs: 0,
+      unique_breeds: 0,
+      breed_groups: [],
+      qualifying_breeds: [],
+      purebred_count: 0,
+      crossbreed_count: 0,
+      error: true,
+    };
   }
 });
 
