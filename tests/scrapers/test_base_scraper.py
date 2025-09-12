@@ -24,7 +24,7 @@ class ConcreteTestScraper(BaseScraper):
 @pytest.mark.fast
 class TestBaseScraperBehavior:
     """Test BaseScraper behavior - what it does, not how it does it."""
-    
+
     @pytest.fixture
     def scraper(self):
         """Create a test scraper instance."""
@@ -70,7 +70,7 @@ class TestBaseScraperBehavior:
         # Act & Assert
         result = scraper.save_animal(animal_data)
         assert result == (None, "error")  # Should return error tuple, not crash
-    
+
     def test_scraper_rejects_animal_with_empty_image_url(self, scraper):
         """Test that animals with empty string image URLs are rejected during validation."""
         # Animal data with empty string for primary_image_url (invalid)
@@ -81,10 +81,10 @@ class TestBaseScraperBehavior:
             "adoption_url": "https://example.com/adopt",
             "primary_image_url": "",  # Empty string should be rejected
         }
-        
+
         # Validate should return False for empty image URL
         assert not scraper._validate_animal_data(animal_data_empty_url)
-        
+
         # Animal data with None for primary_image_url (valid - optional field)
         animal_data_none_url = {
             "name": "Test Dog",
@@ -93,10 +93,10 @@ class TestBaseScraperBehavior:
             "adoption_url": "https://example.com/adopt",
             "primary_image_url": None,  # None is acceptable
         }
-        
+
         # Validate should return True for None image URL
         assert scraper._validate_animal_data(animal_data_none_url)
-        
+
         # Animal data with valid URL (valid)
         animal_data_valid_url = {
             "name": "Test Dog",
@@ -105,6 +105,6 @@ class TestBaseScraperBehavior:
             "adoption_url": "https://example.com/adopt",
             "primary_image_url": "https://example.com/dog.jpg",  # Valid URL
         }
-        
+
         # Validate should return True for valid image URL
         assert scraper._validate_animal_data(animal_data_valid_url)

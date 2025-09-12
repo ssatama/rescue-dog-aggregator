@@ -1,7 +1,10 @@
 """Tests for breed statistics endpoint."""
-import pytest
+
 from unittest.mock import MagicMock, patch
+
+import pytest
 from fastapi.testclient import TestClient
+
 from api.main import app
 
 
@@ -20,43 +23,34 @@ def mock_cursor():
 
 class TestBreedStatsEndpoint:
     """Test breed statistics endpoint."""
-    
+
     def test_get_breed_stats_endpoint_exists(self, client, mock_cursor):
         """Test that breed stats endpoint exists and responds."""
         # Mock minimal valid response that matches the actual data structure
-        mock_stats = {
-            "total_dogs": 2500,
-            "unique_breeds": 150,
-            "purebred_count": 800,
-            "crossbreed_count": 238,
-            "breed_groups": [],
-            "qualifying_breeds": []
-        }
-        
+        mock_stats = {"total_dogs": 2500, "unique_breeds": 150, "purebred_count": 800, "crossbreed_count": 238, "breed_groups": [], "qualifying_breeds": []}
+
         with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_cursor):
-            with patch("api.services.animal_service.AnimalService.get_breed_stats", 
-                      return_value=mock_stats):
+            with patch("api.services.animal_service.AnimalService.get_breed_stats", return_value=mock_stats):
                 response = client.get("/api/animals/breeds/stats")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "total_dogs" in data
         assert "unique_breeds" in data
         assert "breed_groups" in data
         assert "qualifying_breeds" in data
-        
+
     def test_get_breed_stats_database_error(self, client, mock_cursor):
         """Test database error handling in breed stats."""
         import psycopg2
-        
+
         with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_cursor):
-            with patch("api.services.animal_service.AnimalService.get_breed_stats",
-                      side_effect=psycopg2.Error("Database connection failed")):
+            with patch("api.services.animal_service.AnimalService.get_breed_stats", side_effect=psycopg2.Error("Database connection failed")):
                 response = client.get("/api/animals/breeds/stats")
-        
+
         assert response.status_code == 500
         assert "Database error" in response.json()["detail"]
-        
+
     def test_get_breed_stats_includes_average_age(self, client, mock_cursor):
         """Test that breed stats includes average age calculation for qualifying breeds."""
         # Mock response with qualifying breeds that includes average_age_months
@@ -65,9 +59,7 @@ class TestBreedStatsEndpoint:
             "unique_breeds": 150,
             "purebred_count": 800,
             "crossbreed_count": 238,
-            "breed_groups": [
-                {"name": "Sporting", "count": 450}
-            ],
+            "breed_groups": [{"name": "Sporting", "count": 450}],
             "qualifying_breeds": [
                 {
                     "primary_breed": "Golden Retriever",
@@ -77,24 +69,9 @@ class TestBreedStatsEndpoint:
                     "breed_type": "purebred",
                     "breed_group": "Sporting",
                     "organization_count": 3,
-                    "age_distribution": {
-                        "puppy": 2,
-                        "young": 5,
-                        "adult": 8,
-                        "senior": 2
-                    },
-                    "size_distribution": {
-                        "tiny": 0,
-                        "small": 0,
-                        "medium": 5,
-                        "large": 12,
-                        "xlarge": 0
-                    },
-                    "experience_distribution": {
-                        "first_time_ok": 8,
-                        "some_experience": 6,
-                        "experienced": 3
-                    }
+                    "age_distribution": {"puppy": 2, "young": 5, "adult": 8, "senior": 2},
+                    "size_distribution": {"tiny": 0, "small": 0, "medium": 5, "large": 12, "xlarge": 0},
+                    "experience_distribution": {"first_time_ok": 8, "some_experience": 6, "experienced": 3},
                 },
                 {
                     "primary_breed": "Mixed Breed",
@@ -104,36 +81,20 @@ class TestBreedStatsEndpoint:
                     "breed_type": "mixed",
                     "breed_group": None,
                     "organization_count": 10,
-                    "age_distribution": {
-                        "puppy": 200,
-                        "young": 500,
-                        "adult": 600,
-                        "senior": 217
-                    },
-                    "size_distribution": {
-                        "tiny": 50,
-                        "small": 300,
-                        "medium": 600,
-                        "large": 400,
-                        "xlarge": 167
-                    },
-                    "experience_distribution": {
-                        "first_time_ok": 700,
-                        "some_experience": 500,
-                        "experienced": 317
-                    }
-                }
-            ]
+                    "age_distribution": {"puppy": 200, "young": 500, "adult": 600, "senior": 217},
+                    "size_distribution": {"tiny": 50, "small": 300, "medium": 600, "large": 400, "xlarge": 167},
+                    "experience_distribution": {"first_time_ok": 700, "some_experience": 500, "experienced": 317},
+                },
+            ],
         }
-        
+
         with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_cursor):
-            with patch("api.services.animal_service.AnimalService.get_breed_stats", 
-                      return_value=mock_stats):
+            with patch("api.services.animal_service.AnimalService.get_breed_stats", return_value=mock_stats):
                 response = client.get("/api/animals/breeds/stats")
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+
         # Check that qualifying breeds have average_age_months
         assert len(data["qualifying_breeds"]) > 0
         for breed in data["qualifying_breeds"]:
@@ -152,9 +113,7 @@ class TestBreedStatsEndpoint:
             "unique_breeds": 150,
             "purebred_count": 800,
             "crossbreed_count": 238,
-            "breed_groups": [
-                {"name": "Sporting", "count": 450}
-            ],
+            "breed_groups": [{"name": "Sporting", "count": 450}],
             "qualifying_breeds": [
                 {
                     "primary_breed": "Golden Retriever",
@@ -164,28 +123,10 @@ class TestBreedStatsEndpoint:
                     "breed_type": "purebred",
                     "breed_group": "Sporting",
                     "organization_count": 3,
-                    "sex_distribution": {
-                        "male": 10,
-                        "female": 7
-                    },
-                    "age_distribution": {
-                        "puppy": 2,
-                        "young": 5,
-                        "adult": 8,
-                        "senior": 2
-                    },
-                    "size_distribution": {
-                        "tiny": 0,
-                        "small": 0,
-                        "medium": 5,
-                        "large": 12,
-                        "xlarge": 0
-                    },
-                    "experience_distribution": {
-                        "first_time_ok": 8,
-                        "some_experience": 6,
-                        "experienced": 3
-                    }
+                    "sex_distribution": {"male": 10, "female": 7},
+                    "age_distribution": {"puppy": 2, "young": 5, "adult": 8, "senior": 2},
+                    "size_distribution": {"tiny": 0, "small": 0, "medium": 5, "large": 12, "xlarge": 0},
+                    "experience_distribution": {"first_time_ok": 8, "some_experience": 6, "experienced": 3},
                 },
                 {
                     "primary_breed": "Mixed Breed",
@@ -195,40 +136,21 @@ class TestBreedStatsEndpoint:
                     "breed_type": "mixed",
                     "breed_group": None,
                     "organization_count": 10,
-                    "sex_distribution": {
-                        "male": 800,
-                        "female": 717
-                    },
-                    "age_distribution": {
-                        "puppy": 200,
-                        "young": 500,
-                        "adult": 600,
-                        "senior": 217
-                    },
-                    "size_distribution": {
-                        "tiny": 50,
-                        "small": 300,
-                        "medium": 600,
-                        "large": 400,
-                        "xlarge": 167
-                    },
-                    "experience_distribution": {
-                        "first_time_ok": 700,
-                        "some_experience": 500,
-                        "experienced": 317
-                    }
-                }
-            ]
+                    "sex_distribution": {"male": 800, "female": 717},
+                    "age_distribution": {"puppy": 200, "young": 500, "adult": 600, "senior": 217},
+                    "size_distribution": {"tiny": 50, "small": 300, "medium": 600, "large": 400, "xlarge": 167},
+                    "experience_distribution": {"first_time_ok": 700, "some_experience": 500, "experienced": 317},
+                },
+            ],
         }
-        
+
         with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_cursor):
-            with patch("api.services.animal_service.AnimalService.get_breed_stats", 
-                      return_value=mock_stats):
+            with patch("api.services.animal_service.AnimalService.get_breed_stats", return_value=mock_stats):
                 response = client.get("/api/animals/breeds/stats")
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+
         # Check that qualifying breeds have sex_distribution
         assert len(data["qualifying_breeds"]) > 0
         for breed in data["qualifying_breeds"]:

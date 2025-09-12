@@ -49,14 +49,14 @@ class FilterCountsResponse(BaseModel):
 
 class BreedGroupStats(BaseModel):
     """Model for breed group statistics."""
-    
+
     name: str = Field(..., description="Breed group name")
     count: int = Field(..., description="Number of dogs in this breed group", ge=0)
 
 
 class AgeDistribution(BaseModel):
     """Model for age distribution of a breed."""
-    
+
     puppy: int = Field(..., description="Number of puppies (< 12 months)", ge=0)
     young: int = Field(..., description="Number of young dogs (12-36 months)", ge=0)
     adult: int = Field(..., description="Number of adult dogs (36-96 months)", ge=0)
@@ -65,7 +65,7 @@ class AgeDistribution(BaseModel):
 
 class SizeDistribution(BaseModel):
     """Model for size distribution of a breed."""
-    
+
     tiny: int = Field(..., description="Number of tiny dogs", ge=0)
     small: int = Field(..., description="Number of small dogs", ge=0)
     medium: int = Field(..., description="Number of medium dogs", ge=0)
@@ -75,7 +75,7 @@ class SizeDistribution(BaseModel):
 
 class ExperienceDistribution(BaseModel):
     """Model for experience level distribution of a breed."""
-    
+
     first_time_ok: int = Field(..., description="Number suitable for first-time owners", ge=0)
     some_experience: int = Field(..., description="Number requiring some experience", ge=0)
     experienced: int = Field(..., description="Number requiring experienced owners", ge=0)
@@ -83,21 +83,21 @@ class ExperienceDistribution(BaseModel):
 
 class SexDistribution(BaseModel):
     """Model for sex distribution of a breed."""
-    
+
     male: int = Field(..., description="Number of male dogs", ge=0)
     female: int = Field(..., description="Number of female dogs", ge=0)
 
 
 class PersonalityMetric(BaseModel):
     """Model for a single personality metric with percentage and label."""
-    
+
     percentage: int = Field(..., description="Percentage value (0-100)", ge=0, le=100)
     label: str = Field(..., description="Human-readable label for the percentage")
 
 
 class PersonalityMetrics(BaseModel):
     """Model for personality metrics from dog_profiler_data aggregation."""
-    
+
     energy_level: PersonalityMetric = Field(..., description="Energy level metric")
     affection: PersonalityMetric = Field(..., description="Affection/sociability metric")
     trainability: PersonalityMetric = Field(..., description="Trainability metric")
@@ -106,7 +106,7 @@ class PersonalityMetrics(BaseModel):
 
 class QualifyingBreed(BaseModel):
     """Model for a qualifying breed with detailed statistics."""
-    
+
     primary_breed: str = Field(..., description="Primary breed name")
     breed_slug: str = Field(..., description="URL-friendly breed slug")
     breed_type: Optional[str] = Field(None, description="Breed type (purebred, mixed, crossbreed, unknown, sighthound)")
@@ -126,11 +126,11 @@ class QualifyingBreed(BaseModel):
 class BreedStatsResponse(BaseModel):
     """
     Response model for breed statistics endpoint.
-    
+
     Provides comprehensive breed statistics including total counts,
     breed group distribution, and detailed information for qualifying breeds.
     """
-    
+
     total_dogs: int = Field(..., description="Total number of available dogs", ge=0)
     unique_breeds: int = Field(..., description="Number of unique breeds", ge=0)
     breed_groups: List[BreedGroupStats] = Field(default_factory=list, description="Distribution of dogs by breed group")

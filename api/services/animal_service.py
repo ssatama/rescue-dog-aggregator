@@ -68,7 +68,7 @@ class AnimalService:
             logger.error(f"Error in get_animals: {e}", exc_info=True)
             logger.error(f"Error type: {type(e).__name__}")
             logger.error(f"Filter parameters: limit={filters.limit}, animal_type={filters.animal_type}, status={filters.status}")
-            if hasattr(e, '__dict__'):
+            if hasattr(e, "__dict__"):
                 logger.error(f"Error details: {e.__dict__}")
             raise APIException(status_code=500, detail="Failed to fetch animals", error_code="INTERNAL_ERROR")
 
@@ -251,7 +251,7 @@ class AnimalService:
             try:
                 # Convert row to dictionary for manipulation
                 row_dict = dict(row)
-                
+
                 # Log the keys we have for debugging
                 if i == 0:  # Only log for first row to avoid spam
                     logger.debug(f"Row keys: {list(row_dict.keys())}")
@@ -275,7 +275,7 @@ class AnimalService:
                 logger.error(f"Row keys: {list(row_dict.keys())}")
                 logger.error(f"Clean dict keys: {list(clean.keys())}")
                 logger.error(f"Error type: {type(e).__name__}")
-                if hasattr(e, 'errors'):
+                if hasattr(e, "errors"):
                     logger.error(f"Validation errors: {e.errors()}")
                 raise
         return animals
@@ -607,7 +607,7 @@ class AnimalService:
     def get_breed_stats(self) -> dict:
         """
         Get breed statistics aggregated by primary_breed.
-        
+
         Returns data structure for /api/breeds/stats endpoint including:
         - Total dogs
         - Unique breeds count
@@ -616,18 +616,21 @@ class AnimalService:
         """
         try:
             # Get total dog count
-            self.cursor.execute("""
+            self.cursor.execute(
+                """
                 SELECT COUNT(*) as total 
                 FROM animals a
                 JOIN organizations o ON a.organization_id = o.id
                 WHERE a.animal_type = 'dog' 
                 AND a.status = 'available'
                 AND o.active = TRUE
-            """)
+            """
+            )
             total_dogs = self.cursor.fetchone()["total"]
-            
+
             # Get unique breed count (where primary_breed is not null)
-            self.cursor.execute("""
+            self.cursor.execute(
+                """
                 SELECT COUNT(DISTINCT primary_breed) as count
                 FROM animals a
                 JOIN organizations o ON a.organization_id = o.id
@@ -635,11 +638,13 @@ class AnimalService:
                 AND a.status = 'available'
                 AND o.active = TRUE
                 AND a.primary_breed IS NOT NULL
-            """)
+            """
+            )
             unique_breeds = self.cursor.fetchone()["count"]
-            
+
             # Get breed groups distribution
-            self.cursor.execute("""
+            self.cursor.execute(
+                """
                 SELECT 
                     COALESCE(breed_group, 'Unknown') as group_name,
                     COUNT(*) as count
@@ -650,11 +655,13 @@ class AnimalService:
                 AND o.active = TRUE
                 GROUP BY COALESCE(breed_group, 'Unknown')
                 ORDER BY count DESC
-            """)
+            """
+            )
             breed_groups = [{"name": row["group_name"], "count": row["count"]} for row in self.cursor.fetchall()]
-            
+
             # Get qualifying breeds (15+ dogs) with organization distribution
-            self.cursor.execute("""
+            self.cursor.execute(
+                """
                 WITH breed_stats AS (
                     SELECT 
                         a.primary_breed,
@@ -746,49 +753,50 @@ class AnimalService:
                 FROM breed_stats bs
                 LEFT JOIN top_traits tt ON bs.primary_breed = tt.primary_breed
                 ORDER BY bs.count DESC
-            """)
-            
+            """
+            )
+
             qualifying_breeds = []
             for row in self.cursor.fetchall():
                 # Use stored breed_slug or generate if missing
                 breed_slug = row["breed_slug"] or generate_breed_slug(row["primary_breed"])
-                
+
                 # Calculate personality metrics percentages
                 total_with_data = row["total_with_profiler_data"] or 0
                 personality_metrics = None
-                
+
                 if total_with_data > 0:
                     # Energy level calculation - convert to 0-100 scale
                     energy_total = row["energy_low_count"] + row["energy_medium_count"] + row["energy_high_count"]
                     if energy_total > 0:
                         # Weight: low=1, medium=2, high=3, then scale to 0-100
-                        energy_weighted = (row["energy_low_count"] * 1 + row["energy_medium_count"] * 2 + row["energy_high_count"] * 3)
+                        energy_weighted = row["energy_low_count"] * 1 + row["energy_medium_count"] * 2 + row["energy_high_count"] * 3
                         energy_percentage = int((energy_weighted / (energy_total * 3)) * 100)
                     else:
                         energy_percentage = 50  # Default to medium if no data
-                    
+
                     # Affection (using good_with_dogs as proxy) - higher is more affectionate
                     dogs_total = row["good_with_dogs_yes_count"] + row["good_with_dogs_sometimes_count"] + row["good_with_dogs_no_count"]
                     if dogs_total > 0:
                         # Weight: yes=3, sometimes=2, no=1, then scale to 0-100
-                        affection_weighted = (row["good_with_dogs_yes_count"] * 3 + row["good_with_dogs_sometimes_count"] * 2 + row["good_with_dogs_no_count"] * 1)
+                        affection_weighted = row["good_with_dogs_yes_count"] * 3 + row["good_with_dogs_sometimes_count"] * 2 + row["good_with_dogs_no_count"] * 1
                         affection_percentage = int((affection_weighted / (dogs_total * 3)) * 100)
                     else:
                         affection_percentage = 70  # Default to high affection if no data
-                    
+
                     # Trainability (using confidence as proxy) - higher confidence = better trainability
                     confidence_total = row["confidence_high_count"] + row["confidence_moderate_count"] + row["confidence_low_count"]
                     if confidence_total > 0:
                         # Weight: high=3, moderate=2, low=1, then scale to 0-100
-                        trainability_weighted = (row["confidence_high_count"] * 3 + row["confidence_moderate_count"] * 2 + row["confidence_low_count"] * 1)
+                        trainability_weighted = row["confidence_high_count"] * 3 + row["confidence_moderate_count"] * 2 + row["confidence_low_count"] * 1
                         trainability_percentage = int((trainability_weighted / (confidence_total * 3)) * 100)
                     else:
                         trainability_percentage = 60  # Default to moderate if no data
-                    
+
                     # Independence (inverse of confidence - lower confidence = more independent)
                     # We'll invert the trainability score
                     independence_percentage = 100 - trainability_percentage
-                    
+
                     # Create labels based on percentages
                     def get_energy_label(percentage):
                         if percentage <= 33:
@@ -801,7 +809,7 @@ class AnimalService:
                             return "Medium-High"
                         else:
                             return "High"
-                    
+
                     def get_level_label(percentage):
                         if percentage <= 20:
                             return "Very Low"
@@ -813,7 +821,7 @@ class AnimalService:
                             return "High"
                         else:
                             return "Very High"
-                    
+
                     def get_trainability_label(percentage):
                         if percentage <= 40:
                             return "Challenging"
@@ -823,26 +831,14 @@ class AnimalService:
                             return "Good"
                         else:
                             return "Excellent"
-                    
+
                     personality_metrics = {
-                        "energy_level": {
-                            "percentage": energy_percentage,
-                            "label": get_energy_label(energy_percentage)
-                        },
-                        "affection": {
-                            "percentage": affection_percentage,
-                            "label": get_level_label(affection_percentage)
-                        },
-                        "trainability": {
-                            "percentage": trainability_percentage,
-                            "label": get_trainability_label(trainability_percentage)
-                        },
-                        "independence": {
-                            "percentage": independence_percentage,
-                            "label": get_level_label(independence_percentage)
-                        }
+                        "energy_level": {"percentage": energy_percentage, "label": get_energy_label(energy_percentage)},
+                        "affection": {"percentage": affection_percentage, "label": get_level_label(affection_percentage)},
+                        "trainability": {"percentage": trainability_percentage, "label": get_trainability_label(trainability_percentage)},
+                        "independence": {"percentage": independence_percentage, "label": get_level_label(independence_percentage)},
                     }
-                
+
                 breed_data = {
                     "primary_breed": row["primary_breed"],
                     "breed_slug": breed_slug,
@@ -852,39 +848,22 @@ class AnimalService:
                     "average_age_months": row["average_age_months"],  # Add actual average age
                     "organization_count": row["org_count"],
                     "organizations": row["organizations"][:5] if row["organizations"] else [],  # Limit to top 5 orgs
-                    "age_distribution": {
-                        "puppy": row["puppy_count"],
-                        "young": row["young_count"],
-                        "adult": row["adult_count"],
-                        "senior": row["senior_count"]
-                    },
-                    "size_distribution": {
-                        "tiny": row["tiny_count"],
-                        "small": row["small_count"],
-                        "medium": row["medium_count"],
-                        "large": row["large_count"],
-                        "xlarge": row["xlarge_count"]
-                    },
-                    "sex_distribution": {
-                        "male": row["male_count"],
-                        "female": row["female_count"]
-                    },
+                    "age_distribution": {"puppy": row["puppy_count"], "young": row["young_count"], "adult": row["adult_count"], "senior": row["senior_count"]},
+                    "size_distribution": {"tiny": row["tiny_count"], "small": row["small_count"], "medium": row["medium_count"], "large": row["large_count"], "xlarge": row["xlarge_count"]},
+                    "sex_distribution": {"male": row["male_count"], "female": row["female_count"]},
                     "personality_traits": row["personality_traits"] if row["personality_traits"] else [],
-                    "experience_distribution": {
-                        "first_time_ok": row["first_time_ok_count"],
-                        "some_experience": row["some_experience_count"],
-                        "experienced": row["experienced_count"]
-                    }
+                    "experience_distribution": {"first_time_ok": row["first_time_ok_count"], "some_experience": row["some_experience_count"], "experienced": row["experienced_count"]},
                 }
-                
+
                 # Only add personality_metrics if we have data
                 if personality_metrics:
                     breed_data["personality_metrics"] = personality_metrics
-                
+
                 qualifying_breeds.append(breed_data)
-            
+
             # Get purebred and crossbreed counts
-            self.cursor.execute("""
+            self.cursor.execute(
+                """
                 SELECT 
                     COUNT(*) FILTER (WHERE breed_type = 'purebred') as purebred_count,
                     COUNT(*) FILTER (WHERE breed_type = 'crossbreed') as crossbreed_count
@@ -893,42 +872,33 @@ class AnimalService:
                 WHERE a.animal_type = 'dog' 
                 AND a.status = 'available'
                 AND o.active = TRUE
-            """)
+            """
+            )
             breed_type_counts = self.cursor.fetchone()
-            
+
             return {
                 "total_dogs": total_dogs,
                 "unique_breeds": unique_breeds,
                 "breed_groups": breed_groups,
                 "purebred_count": breed_type_counts["purebred_count"] or 0,
                 "crossbreed_count": breed_type_counts["crossbreed_count"] or 0,
-                "qualifying_breeds": qualifying_breeds
+                "qualifying_breeds": qualifying_breeds,
             }
-            
+
         except Exception as e:
             logger.error(f"Error in get_breed_stats: {e}")
             raise APIException(status_code=500, detail="Failed to fetch breed statistics", error_code="INTERNAL_ERROR")
 
-    def get_breeds_with_images(self, breed_type: str = None, breed_group: str = None, 
-                               min_count: int = 0, limit: int = 10) -> List[dict]:
+    def get_breeds_with_images(self, breed_type: str = None, breed_group: str = None, min_count: int = 0, limit: int = 10) -> List[dict]:
         """Get breeds with sample dog images for the breeds overview page."""
         try:
             # Build WHERE conditions for counting ALL dogs (not just with images)
-            count_conditions = [
-                "a.animal_type = 'dog'",
-                "a.status = 'available'",
-                "o.active = TRUE"
-            ]
-            
+            count_conditions = ["a.animal_type = 'dog'", "a.status = 'available'", "o.active = TRUE"]
+
             # Build WHERE conditions for sample dogs (must have images)
-            sample_conditions = [
-                "a.animal_type = 'dog'",
-                "a.status = 'available'",
-                "o.active = TRUE",
-                "a.primary_image_url IS NOT NULL"
-            ]
+            sample_conditions = ["a.animal_type = 'dog'", "a.status = 'available'", "o.active = TRUE", "a.primary_image_url IS NOT NULL"]
             params = []
-            
+
             if breed_type:
                 if breed_type == "mixed":
                     count_conditions.append("a.breed_group = 'Mixed'")
@@ -938,16 +908,16 @@ class AnimalService:
                     sample_conditions.append("a.breed_type = %s")
                     params.append(breed_type)
                     params.append(breed_type)  # Need it twice for both queries
-            
+
             if breed_group:
                 count_conditions.append("a.breed_group = %s")
                 sample_conditions.append("a.breed_group = %s")
                 params.append(breed_group)
                 params.append(breed_group)  # Need it twice for both queries
-            
+
             count_where_clause = " AND ".join(count_conditions)
             sample_where_clause = " AND ".join(sample_conditions)
-            
+
             # Get breeds with counts and sample dogs
             # For mixed breeds, group by breed_group instead of primary_breed
             if breed_type == "mixed":
@@ -1083,26 +1053,28 @@ class AnimalService:
                 GROUP BY bc.primary_breed, bc.breed_slug, bc.breed_type, bc.breed_group, bc.count
                 ORDER BY bc.count DESC
             """
-            
+
             # Add min_count and limit to params
             params.extend([min_count, limit])
-            
+
             self.cursor.execute(query, params)
             results = self.cursor.fetchall()
-            
+
             breeds_with_images = []
             for row in results:
-                breeds_with_images.append({
-                    "primary_breed": row["primary_breed"],
-                    "breed_slug": row["breed_slug"],
-                    "breed_type": row["breed_type"],
-                    "breed_group": row["breed_group"],
-                    "count": row["count"],
-                    "sample_dogs": row["sample_dogs"] if row["sample_dogs"] else []
-                })
-            
+                breeds_with_images.append(
+                    {
+                        "primary_breed": row["primary_breed"],
+                        "breed_slug": row["breed_slug"],
+                        "breed_type": row["breed_type"],
+                        "breed_group": row["breed_group"],
+                        "count": row["count"],
+                        "sample_dogs": row["sample_dogs"] if row["sample_dogs"] else [],
+                    }
+                )
+
             return breeds_with_images
-            
+
         except Exception as e:
             logger.error(f"Error in get_breeds_with_images: {e}")
             raise APIException(status_code=500, detail="Failed to fetch breeds with images", error_code="INTERNAL_ERROR")
@@ -1729,21 +1701,21 @@ class AnimalService:
         results = self.cursor.fetchall()
 
         return [FilterOption(value=row["region"], label=row["region"], count=row["count"]) for row in results if row["count"] > 0]
-    
+
     def _get_primary_breed_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
         """Get counts for primary breeds, excluding current primary_breed filter."""
         conditions = base_conditions.copy()
         params = base_params.copy()
-        
+
         # Add other non-primary-breed filters
         if filters.sex:
             conditions.append("a.sex = %s")
             params.append(filters.sex)
-        
+
         if filters.standardized_size:
             conditions.append("a.standardized_size = %s")
             params.append(filters.standardized_size.value)
-        
+
         if filters.age_category:
             if filters.age_category == "Puppy":
                 conditions.append("(a.age_max_months < 12)")
@@ -1753,7 +1725,7 @@ class AnimalService:
                 conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
             elif filters.age_category == "Senior":
                 conditions.append("(a.age_min_months >= 96)")
-        
+
         # Note: excluding current primary_breed filter to show counts without that filter
         query = f"""
             SELECT a.primary_breed, COUNT(DISTINCT a.id) as count
@@ -1767,26 +1739,26 @@ class AnimalService:
             ORDER BY count DESC, a.primary_breed ASC
             LIMIT 50
         """
-        
+
         self.cursor.execute(query, params)
         results = self.cursor.fetchall()
-        
+
         return [FilterOption(value=row["primary_breed"], label=row["primary_breed"], count=row["count"]) for row in results if row["count"] > 0]
-    
+
     def _get_breed_type_counts(self, base_conditions: List[str], base_params: List[Any], filters: AnimalFilterCountRequest) -> List[FilterOption]:
         """Get counts for breed types, excluding current breed_type filter."""
         conditions = base_conditions.copy()
         params = base_params.copy()
-        
+
         # Add other non-breed-type filters
         if filters.sex:
             conditions.append("a.sex = %s")
             params.append(filters.sex)
-        
+
         if filters.standardized_size:
             conditions.append("a.standardized_size = %s")
             params.append(filters.standardized_size.value)
-        
+
         if filters.age_category:
             if filters.age_category == "Puppy":
                 conditions.append("(a.age_max_months < 12)")
@@ -1796,7 +1768,7 @@ class AnimalService:
                 conditions.append("(a.age_min_months >= 36 AND a.age_max_months <= 96)")
             elif filters.age_category == "Senior":
                 conditions.append("(a.age_min_months >= 96)")
-        
+
         # Note: excluding current breed_type filter to show counts without that filter
         query = f"""
             SELECT a.breed_type, COUNT(DISTINCT a.id) as count
@@ -1809,24 +1781,11 @@ class AnimalService:
             HAVING COUNT(DISTINCT a.id) > 0
             ORDER BY count DESC, a.breed_type ASC
         """
-        
+
         self.cursor.execute(query, params)
         results = self.cursor.fetchall()
-        
+
         # Capitalize breed type labels for display
-        breed_type_labels = {
-            "purebred": "Purebred",
-            "mixed": "Mixed",
-            "crossbreed": "Crossbreed",
-            "unknown": "Unknown",
-            "sighthound": "Sighthound"
-        }
-        
-        return [
-            FilterOption(
-                value=row["breed_type"], 
-                label=breed_type_labels.get(row["breed_type"].lower(), row["breed_type"]), 
-                count=row["count"]
-            ) 
-            for row in results if row["count"] > 0
-        ]
+        breed_type_labels = {"purebred": "Purebred", "mixed": "Mixed", "crossbreed": "Crossbreed", "unknown": "Unknown", "sighthound": "Sighthound"}
+
+        return [FilterOption(value=row["breed_type"], label=breed_type_labels.get(row["breed_type"].lower(), row["breed_type"]), count=row["count"]) for row in results if row["count"] > 0]

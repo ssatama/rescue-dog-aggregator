@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import HeroSection from "./HeroSection";
+import { BreedsCTA } from "./BreedsCTA";
 import DogSection from "./DogSection";
 import TrustSection from "./TrustSection";
 import DogSectionErrorBoundary from "../error/DogSectionErrorBoundary";
@@ -20,6 +21,11 @@ export default function ClientHomePage({
     <>
       {/* Hero Section - with pre-fetched statistics */}
       <HeroSection initialStatistics={initialStatistics} priority={true} />
+
+      {/* Breeds CTA Section - New feature promotion */}
+      <DogSectionErrorBoundary>
+        <BreedsCTA />
+      </DogSectionErrorBoundary>
 
       {/* Just Added Section - with pre-fetched dogs */}
       <DogSectionErrorBoundary>

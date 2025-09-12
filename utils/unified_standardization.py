@@ -10,6 +10,7 @@ from datetime import date, datetime
 from difflib import SequenceMatcher
 from functools import lru_cache
 from typing import Any, Dict, List, Optional, Tuple
+
 from utils.breed_utils import generate_breed_slug
 
 

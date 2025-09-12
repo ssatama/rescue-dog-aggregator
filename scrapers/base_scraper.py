@@ -400,7 +400,7 @@ class BaseScraper(ABC):
             self.logger.warning(f"Standardization failed: {e}, using raw data")
             # Return the original data so scraping can continue
             return animal_data
-        
+
         return processed_data
 
     def save_animal(self, animal_data):

@@ -193,7 +193,7 @@ class DatabaseService:
         # The UnifiedStandardizer provides these fields, use them if present
         final_standardized_breed = animal_data.get("standardized_breed") or standardized_breed
         final_breed_group = animal_data.get("breed_category") or breed_group
-        
+
         # NEW breed enhancement fields from UnifiedStandardizer
         breed_type = animal_data.get("breed_type")
         primary_breed = animal_data.get("primary_breed")
@@ -368,7 +368,7 @@ class DatabaseService:
             # NEW: Use unified standardization fields if available, fall back to old logic
             final_standardized_breed = animal_data.get("standardized_breed") or new_standardized_breed
             final_breed_group = animal_data.get("breed_category") or new_breed_group
-            
+
             # NEW breed enhancement fields from UnifiedStandardizer
             new_breed_type = animal_data.get("breed_type")
             new_primary_breed = animal_data.get("primary_breed")

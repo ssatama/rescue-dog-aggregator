@@ -45,6 +45,7 @@ async def get_animals(
         logger.exception(f"Unexpected error in get_animals: {e}")
         # In development, return the actual error for debugging
         import os
+
         if os.getenv("ENV", "development") == "development":
             raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
         else:
@@ -195,7 +196,7 @@ async def get_breed_stats(
     """
     Get breed statistics including total dogs, unique breeds, breed groups distribution,
     and qualifying breeds with 15+ dogs.
-    
+
     Returns:
         Breed statistics including:
         - total_dogs: Total number of available dogs
@@ -282,17 +283,12 @@ async def get_breeds_with_images(
 ):
     """
     Get breeds with sample dog images for the breeds overview page.
-    
+
     Returns breeds with their counts and up to 3 sample dogs with images.
     """
     try:
         service = AnimalService(cursor)
-        breeds = service.get_breeds_with_images(
-            breed_type=breed_type,
-            breed_group=breed_group, 
-            min_count=min_count,
-            limit=limit
-        )
+        breeds = service.get_breeds_with_images(breed_type=breed_type, breed_group=breed_group, min_count=min_count, limit=limit)
         return breeds
     except psycopg2.Error as db_err:
         handle_database_error(db_err, "get_breeds_with_images")
