@@ -5,22 +5,22 @@ import { Button } from "@/components/ui/button";
 
 export default function BreedStatistics({ breedData, className = "" }) {
   if (!breedData) return null;
-  
+
   const getAgeDisplay = () => {
     if (!breedData.average_age_months) {
       return "N/A";
     }
-    
+
     const months = breedData.average_age_months;
-    
+
     if (months < 12) {
-      return `${months} month${months === 1 ? '' : 's'}`;
+      return `${months} month${months === 1 ? "" : "s"}`;
     } else {
       const years = Math.floor(months / 12);
       const remainingMonths = months % 12;
-      
+
       if (remainingMonths === 0) {
-        return `${years} year${years === 1 ? '' : 's'}`;
+        return `${years} year${years === 1 ? "" : "s"}`;
       } else {
         return `${years}.${Math.floor((remainingMonths / 12) * 10)} years`;
       }
@@ -29,24 +29,24 @@ export default function BreedStatistics({ breedData, className = "" }) {
 
   const getSexDistributionDisplay = () => {
     if (!breedData.sex_distribution) return null;
-    
+
     const { male = 0, female = 0 } = breedData.sex_distribution;
     const total = male + female;
-    
+
     if (total === 0) return null;
-    
+
     const malePercentage = Math.round((male / total) * 100);
     const femalePercentage = Math.round((female / total) * 100);
-    
+
     return {
       male,
       female,
       malePercentage,
       femalePercentage,
-      total
+      total,
     };
   };
-  
+
   const sexData = getSexDistributionDisplay();
 
   const stats = [
@@ -65,7 +65,7 @@ export default function BreedStatistics({ breedData, className = "" }) {
       description: "Average age of available dogs",
     },
   ];
-  
+
   // Add sex distribution if data is available
   if (sexData) {
     stats.push({
@@ -76,16 +76,20 @@ export default function BreedStatistics({ breedData, className = "" }) {
             <div className="flex items-center gap-1">
               <span className="text-teal-600 text-lg">♂</span>
               <span className="text-sm font-medium">{sexData.male}</span>
-              <span className="text-xs text-gray-500">({sexData.malePercentage}%)</span>
+              <span className="text-xs text-gray-500">
+                ({sexData.malePercentage}%)
+              </span>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-pink-500 text-lg">♀</span>
               <span className="text-sm font-medium">{sexData.female}</span>
-              <span className="text-xs text-gray-500">({sexData.femalePercentage}%)</span>
+              <span className="text-xs text-gray-500">
+                ({sexData.femalePercentage}%)
+              </span>
             </div>
           </div>
           <div className="relative w-full h-8 bg-gray-100 rounded-full overflow-hidden">
-            <div 
+            <div
               data-testid="male-bar"
               className="absolute left-0 top-0 h-full bg-gradient-to-r from-teal-400 to-teal-500 transition-all duration-700 ease-out hover:brightness-110"
               style={{ width: `${sexData.malePercentage}%` }}
@@ -95,14 +99,15 @@ export default function BreedStatistics({ breedData, className = "" }) {
                 {sexData.malePercentage > 15 && `${sexData.malePercentage}%`}
               </div>
             </div>
-            <div 
+            <div
               data-testid="female-bar"
               className="absolute right-0 top-0 h-full bg-gradient-to-l from-pink-400 to-pink-500 transition-all duration-700 ease-out hover:brightness-110"
               style={{ width: `${sexData.femalePercentage}%` }}
               aria-label={`${sexData.female} females out of ${sexData.total} dogs`}
             >
               <div className="flex items-center justify-center h-full text-white text-xs font-bold">
-                {sexData.femalePercentage > 15 && `${sexData.femalePercentage}%`}
+                {sexData.femalePercentage > 15 &&
+                  `${sexData.femalePercentage}%`}
               </div>
             </div>
           </div>
@@ -128,7 +133,7 @@ export default function BreedStatistics({ breedData, className = "" }) {
   const StatCard = ({ stat, index }) => (
     <div
       className={`stat-card p-4 rounded-lg border-2 transition-all duration-300 hover:scale-105 hover:shadow-md ${getStatColors(
-        stat.color
+        stat.color,
       )}`}
       style={{ animationDelay: `${index * 100}ms` }}
     >
@@ -139,14 +144,10 @@ export default function BreedStatistics({ breedData, className = "" }) {
             <span className="text-2xl" role="img" aria-label={stat.label}>
               {stat.icon}
             </span>
-            <div className="text-sm font-semibold">
-              {stat.label}
-            </div>
+            <div className="text-sm font-semibold">{stat.label}</div>
           </div>
           {stat.value}
-          <div className="text-xs opacity-75 mt-2">
-            {stat.description}
-          </div>
+          <div className="text-xs opacity-75 mt-2">{stat.description}</div>
         </>
       ) : (
         // Default rendering for other stats
@@ -168,7 +169,9 @@ export default function BreedStatistics({ breedData, className = "" }) {
 
   return (
     <div className={`breed-statistics ${className}`}>
-      <div className={`grid gap-4 grid-cols-1 ${stats.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+      <div
+        className={`grid gap-4 grid-cols-1 ${stats.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
+      >
         {stats.map((stat, index) => (
           <StatCard key={stat.label} stat={stat} index={index} />
         ))}
@@ -221,7 +224,6 @@ export function BreedInfo({ breedData, className = "" }) {
         >
           View All {breedData.count} {breedData.primary_breed}s
         </Button>
-
       </div>
     </div>
   );

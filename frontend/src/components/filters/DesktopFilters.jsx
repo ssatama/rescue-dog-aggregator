@@ -640,42 +640,42 @@ export default function DesktopFilters({
                 </select>
               </div>
 
-            {/* Enhanced Breed Search with Typeahead */}
-            <SearchTypeahead
-              data-testid="breed-search-input"
-              placeholder="Search breeds..."
-              value={
-                standardizedBreedFilter === "Any breed"
-                  ? ""
-                  : standardizedBreedFilter
-              }
-              onValueChange={handleBreedValueChange}
-              onSuggestionSelect={(breed) => {
-                // Use parent-provided handler if available, otherwise fallback to direct setter
-                if (setStandardizedBreedFilter) {
-                  setStandardizedBreedFilter(breed);
+              {/* Enhanced Breed Search with Typeahead */}
+              <SearchTypeahead
+                data-testid="breed-search-input"
+                placeholder="Search breeds..."
+                value={
+                  standardizedBreedFilter === "Any breed"
+                    ? ""
+                    : standardizedBreedFilter
                 }
-              }}
-              onSearch={(breed) => {
-                // Use parent-provided handler if available, otherwise fallback to direct setter
-                if (handleBreedSearch) {
-                  handleBreedSearch(breed);
-                } else {
-                  setStandardizedBreedFilter(breed);
-                }
-              }}
-              onClear={handleBreedClear}
-              fetchSuggestions={getBreedSuggestions}
-              debounceMs={300}
-              maxSuggestions={8}
-              showHistory={true}
-              showClearButton={true}
-              showDidYouMean={true}
-              historyKey="breed-search-history"
-              className="w-full"
-              inputClassName="enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
-              skipLocalFuzzySearch={true}
-            />
+                onValueChange={handleBreedValueChange}
+                onSuggestionSelect={(breed) => {
+                  // Use parent-provided handler if available, otherwise fallback to direct setter
+                  if (setStandardizedBreedFilter) {
+                    setStandardizedBreedFilter(breed);
+                  }
+                }}
+                onSearch={(breed) => {
+                  // Use parent-provided handler if available, otherwise fallback to direct setter
+                  if (handleBreedSearch) {
+                    handleBreedSearch(breed);
+                  } else {
+                    setStandardizedBreedFilter(breed);
+                  }
+                }}
+                onClear={handleBreedClear}
+                fetchSuggestions={getBreedSuggestions}
+                debounceMs={300}
+                maxSuggestions={8}
+                showHistory={true}
+                showClearButton={true}
+                showDidYouMean={true}
+                historyKey="breed-search-history"
+                className="w-full"
+                inputClassName="enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
+                skipLocalFuzzySearch={true}
+              />
             </div>
           )}
 

@@ -33,19 +33,20 @@ export default function BreedCareInfo({ breedDescription }) {
     <Card className="p-6 mb-8">
       <h2 className="text-2xl font-semibold mb-6">Care & Training</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {sections.map((section, index) => (
-          section.content && (
-            <div key={index} className="space-y-2">
-              <div className="flex items-center gap-2">
-                {section.icon}
-                <h3 className="font-semibold text-lg">{section.title}</h3>
+        {sections.map(
+          (section, index) =>
+            section.content && (
+              <div key={index} className="space-y-2">
+                <div className="flex items-center gap-2">
+                  {section.icon}
+                  <h3 className="font-semibold text-lg">{section.title}</h3>
+                </div>
+                <p className="text-muted-foreground leading-relaxed">
+                  {section.content}
+                </p>
               </div>
-              <p className="text-muted-foreground leading-relaxed">
-                {section.content}
-              </p>
-            </div>
-          )
-        ))}
+            ),
+        )}
       </div>
     </Card>
   );

@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
-import LazyImage from '@/components/ui/LazyImage';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useRef, useEffect } from "react";
+import LazyImage from "@/components/ui/LazyImage";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-export default function MobileOptimizedGallery({ images = [], title = "Photo Gallery" }) {
+export default function MobileOptimizedGallery({
+  images = [],
+  title = "Photo Gallery",
+}) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
@@ -22,11 +25,11 @@ export default function MobileOptimizedGallery({ images = [], title = "Photo Gal
 
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
-    
+
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
-    
+
     if (isLeftSwipe && currentIndex < images.length - 1) {
       setCurrentIndex(currentIndex + 1);
     }
@@ -40,7 +43,7 @@ export default function MobileOptimizedGallery({ images = [], title = "Photo Gal
       const scrollWidth = scrollRef.current.scrollWidth;
       const containerWidth = scrollRef.current.offsetWidth;
       const scrollPosition = (scrollWidth / images.length) * index;
-      scrollRef.current.scrollTo({ left: scrollPosition, behavior: 'smooth' });
+      scrollRef.current.scrollTo({ left: scrollPosition, behavior: "smooth" });
     }
   };
 
@@ -55,19 +58,19 @@ export default function MobileOptimizedGallery({ images = [], title = "Photo Gal
   return (
     <div className="relative w-full">
       <h3 className="text-lg font-semibold mb-4">{title}</h3>
-      
+
       {/* Mobile Horizontal Scroll Gallery */}
       <div className="lg:hidden">
-        <div 
+        <div
           ref={scrollRef}
           className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-4 pb-4"
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {images.map((image, index) => (
-            <div 
+            <div
               key={index}
               className="flex-none w-[85%] sm:w-[45%] snap-center"
             >
@@ -83,7 +86,7 @@ export default function MobileOptimizedGallery({ images = [], title = "Photo Gal
             </div>
           ))}
         </div>
-        
+
         {/* Mobile Pagination Dots */}
         <div className="flex justify-center gap-2 mt-4">
           {images.map((_, index) => (
@@ -91,13 +94,15 @@ export default function MobileOptimizedGallery({ images = [], title = "Photo Gal
               key={index}
               onClick={() => setCurrentIndex(index)}
               className={`min-h-[44px] min-w-[44px] p-3 flex items-center justify-center ${
-                index === currentIndex ? 'opacity-100' : 'opacity-50'
+                index === currentIndex ? "opacity-100" : "opacity-50"
               }`}
               aria-label={`Go to image ${index + 1}`}
             >
-              <span className={`block w-2 h-2 rounded-full transition-all ${
-                index === currentIndex ? 'bg-primary w-6' : 'bg-gray-400'
-              }`} />
+              <span
+                className={`block w-2 h-2 rounded-full transition-all ${
+                  index === currentIndex ? "bg-primary w-6" : "bg-gray-400"
+                }`}
+              />
             </button>
           ))}
         </div>
@@ -106,7 +111,7 @@ export default function MobileOptimizedGallery({ images = [], title = "Photo Gal
       {/* Desktop Grid Gallery */}
       <div className="hidden lg:grid lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {images.map((image, index) => (
-          <div 
+          <div
             key={index}
             className="aspect-[4/3] relative rounded-lg overflow-hidden group cursor-pointer"
           >
@@ -133,7 +138,9 @@ export default function MobileOptimizedGallery({ images = [], title = "Photo Gal
             <ChevronLeft className="h-5 w-5" />
           </button>
           <button
-            onClick={() => setCurrentIndex(Math.min(images.length - 1, currentIndex + 1))}
+            onClick={() =>
+              setCurrentIndex(Math.min(images.length - 1, currentIndex + 1))
+            }
             disabled={currentIndex === images.length - 1}
             className="p-2 rounded-full bg-white shadow-md hover:shadow-lg disabled:opacity-50 min-h-[44px] min-w-[44px]"
             aria-label="Next image"

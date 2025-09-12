@@ -167,14 +167,14 @@ describe("Service Layer Separation - Critical Validation", () => {
           status: "available",
           animal_type: "dog",
         }),
-        {} // Add empty options object as third parameter
+        {}, // Add empty options object as third parameter
       );
       expect(get).toHaveBeenCalledWith(
         "/api/animals",
         expect.not.objectContaining({
           sitemap_quality_filter: true,
         }),
-        {}
+        {},
       );
 
       jest.clearAllMocks();
@@ -190,7 +190,7 @@ describe("Service Layer Separation - Critical Validation", () => {
           status: "available",
           // Phase 2A: No longer sends sitemap_quality_filter parameter
         }),
-        {}
+        {},
       );
       // Verify sitemap_quality_filter is NOT sent
       expect(get).toHaveBeenCalledWith(
@@ -198,7 +198,7 @@ describe("Service Layer Separation - Critical Validation", () => {
         expect.not.objectContaining({
           sitemap_quality_filter: true,
         }),
-        {}
+        {},
       );
     });
   });

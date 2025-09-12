@@ -1,2 +1,2 @@
-export { default } from './DogCardOptimized';
-export * from './DogCardOptimized';
+export { default } from "./DogCardOptimized";
+export * from "./DogCardOptimized";

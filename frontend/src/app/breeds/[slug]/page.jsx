@@ -25,15 +25,20 @@ export async function generateMetadata(props) {
     }
 
     // Import breed descriptions for enhanced SEO
-    const { default: breedDescriptions } = await import('@/utils/breedDescriptions');
-    const breedKey = breedData.primary_breed.toLowerCase().replace(/\s+/g, '_');
+    const { default: breedDescriptions } = await import(
+      "@/utils/breedDescriptions"
+    );
+    const breedKey = breedData.primary_breed.toLowerCase().replace(/\s+/g, "_");
     const description = breedDescriptions[breedKey];
-    
+
     // Enhanced SEO description with location and age information
-    const avgAge = breedData.average_age ? `Average age ${Math.round(breedData.average_age)} years. ` : '';
-    const locations = breedData.top_locations?.slice(0, 3).join(', ') || 'multiple locations';
-    
-    const seoDescription = description?.tagline 
+    const avgAge = breedData.average_age
+      ? `Average age ${Math.round(breedData.average_age)} years. `
+      : "";
+    const locations =
+      breedData.top_locations?.slice(0, 3).join(", ") || "multiple locations";
+
+    const seoDescription = description?.tagline
       ? `${description.tagline} ${breedData.count} ${breedData.primary_breed} rescue dogs available. ${avgAge}Adoptable in ${locations}.`
       : `Find ${breedData.count} ${breedData.primary_breed} rescue dogs for adoption. ${avgAge}View photos, profiles, and apply from verified rescues in ${locations}.`;
 
@@ -48,10 +53,12 @@ export async function generateMetadata(props) {
       `${breedData.primary_breed} temperament`,
       `${breedData.primary_breed} personality`,
       breedData.breed_group && `${breedData.breed_group} group dogs`,
-      'rescue dogs',
-      'dog adoption',
-      'adoptable dogs'
-    ].filter(Boolean).join(', ');
+      "rescue dogs",
+      "dog adoption",
+      "adoptable dogs",
+    ]
+      .filter(Boolean)
+      .join(", ");
 
     return {
       title: `${breedData.primary_breed} Rescue Dogs for Adoption | ${breedData.count} Available Near You`,
@@ -76,13 +83,14 @@ export async function generateMetadata(props) {
         card: "summary_large_image",
         title: `${breedData.count} ${breedData.primary_breed} Dogs Need Homes`,
         description: seoDescription.substring(0, 120),
-        images: breedData.topDogs
-          ?.filter((d) => d.primary_image_url)
-          .slice(0, 1)
-          .map((d) => d.primary_image_url) || [],
+        images:
+          breedData.topDogs
+            ?.filter((d) => d.primary_image_url)
+            .slice(0, 1)
+            .map((d) => d.primary_image_url) || [],
       },
       alternates: {
-        canonical: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.rescuedogs.me'}/breeds/${params.slug}`,
+        canonical: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me"}/breeds/${params.slug}`,
       },
     };
   } catch (error) {
@@ -99,11 +107,12 @@ export async function generateStaticParams() {
     const breedStats = await getBreedStats();
     return (
       breedStats.qualifying_breeds
-        ?.filter(breed => {
+        ?.filter((breed) => {
           // Exclude mixed breeds from static generation
-          const isMixed = breed.breed_type === 'mixed' || 
-                         breed.breed_group === 'Mixed' ||
-                         breed.primary_breed?.toLowerCase().includes('mix');
+          const isMixed =
+            breed.breed_type === "mixed" ||
+            breed.breed_group === "Mixed" ||
+            breed.primary_breed?.toLowerCase().includes("mix");
           return !isMixed;
         })
         .map((breed) => ({
@@ -121,7 +130,7 @@ export default async function BreedDetailPage(props) {
     const params = await props.params;
 
     // Mixed breed redirects are now handled by middleware
-    
+
     const breedData = await getBreedBySlug(params.slug);
 
     if (!breedData) {
@@ -137,16 +146,18 @@ export default async function BreedDetailPage(props) {
     const initialDogs = initialDogsResponse?.results || [];
 
     // Import breed descriptions for structured data
-    const { default: breedDescriptions } = await import('@/utils/breedDescriptions');
-    const breedKey = breedData.primary_breed.toLowerCase().replace(/\s+/g, '_');
+    const { default: breedDescriptions } = await import(
+      "@/utils/breedDescriptions"
+    );
+    const breedKey = breedData.primary_breed.toLowerCase().replace(/\s+/g, "_");
     const enrichedBreedData = {
       ...breedData,
-      description: breedDescriptions[breedKey] || breedData.description
+      description: breedDescriptions[breedKey] || breedData.description,
     };
 
     return (
       <>
-        <BreedStructuredData 
+        <BreedStructuredData
           breedData={enrichedBreedData}
           dogs={initialDogs}
           pageType="detail"

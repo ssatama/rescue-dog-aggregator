@@ -487,7 +487,10 @@ export const generateSitemap = async () => {
       allEntries.push(...breedPages);
     } catch (error) {
       if (process.env.NODE_ENV !== "production") {
-        console.warn("Failed to generate breed pages for sitemap:", error.message);
+        console.warn(
+          "Failed to generate breed pages for sitemap:",
+          error.message,
+        );
       }
     }
 
@@ -592,41 +595,55 @@ const generateBreedPages = async () => {
 
   try {
     // Add main breeds hub page
-    breedPages.push(formatSitemapEntry({
-      url: `${baseUrl}/breeds`,
-      changefreq: "weekly",
-      priority: 0.9,
-    }));
+    breedPages.push(
+      formatSitemapEntry({
+        url: `${baseUrl}/breeds`,
+        changefreq: "weekly",
+        priority: 0.9,
+      }),
+    );
 
     // Add mixed breeds consolidated page
-    breedPages.push(formatSitemapEntry({
-      url: `${baseUrl}/breeds/mixed`,
-      changefreq: "weekly",
-      priority: 0.85,
-    }));
+    breedPages.push(
+      formatSitemapEntry({
+        url: `${baseUrl}/breeds/mixed`,
+        changefreq: "weekly",
+        priority: 0.85,
+      }),
+    );
 
     // Fetch breed stats to get qualifying breeds
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://api.rescuedogs.me"}/api/animals/breeds/stats`);
-    
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || "https://api.rescuedogs.me"}/api/animals/breeds/stats`,
+    );
+
     if (response.ok) {
       const breedStats = await response.json();
-      
+
       // Add individual breed pages (excluding mixed breed variants)
-      if (breedStats.qualifying_breeds && Array.isArray(breedStats.qualifying_breeds)) {
-        const purebreds = breedStats.qualifying_breeds.filter(breed => {
+      if (
+        breedStats.qualifying_breeds &&
+        Array.isArray(breedStats.qualifying_breeds)
+      ) {
+        const purebreds = breedStats.qualifying_breeds.filter((breed) => {
           // Exclude mixed breed variants that would redirect
-          const isMixed = breed.breed_type === 'mixed' || 
-                         breed.breed_group === 'Mixed' ||
-                         breed.primary_breed?.toLowerCase().includes('mix');
+          const isMixed =
+            breed.breed_type === "mixed" ||
+            breed.breed_group === "Mixed" ||
+            breed.primary_breed?.toLowerCase().includes("mix");
           return !isMixed && breed.breed_slug;
         });
 
-        purebreds.forEach(breed => {
+        purebreds.forEach((breed) => {
           // Calculate priority based on dog count (0.7 to 0.9 range)
-          const counts = purebreds.map(b => Number(b.count) || 0);
+          const counts = purebreds.map((b) => Number(b.count) || 0);
           const maxCount = counts.length ? Math.max(...counts) : 1;
-          const normalizedCount = maxCount > 0 ? ((Number(breed.count) || 0) / maxCount) : 0;
-          const priority = Math.min(0.9, Math.max(0.7, 0.7 + (normalizedCount * 0.2)));
+          const normalizedCount =
+            maxCount > 0 ? (Number(breed.count) || 0) / maxCount : 0;
+          const priority = Math.min(
+            0.9,
+            Math.max(0.7, 0.7 + normalizedCount * 0.2),
+          );
 
           const entry = {
             url: `${baseUrl}/breeds/${breed.breed_slug}`,
@@ -670,7 +687,8 @@ export const getSitemapStats = async () => {
     const dogCount = dogs.status === "fulfilled" ? dogs.value.length : 0;
     const orgCount =
       organizations.status === "fulfilled" ? organizations.value.length : 0;
-    const breedCount = breedPages.status === "fulfilled" ? breedPages.value.length : 0;
+    const breedCount =
+      breedPages.status === "fulfilled" ? breedPages.value.length : 0;
     const staticCount = generateStaticPages().length;
 
     return {

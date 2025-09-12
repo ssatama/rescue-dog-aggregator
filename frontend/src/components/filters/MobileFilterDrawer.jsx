@@ -454,14 +454,15 @@ export default function MobileFilterDrawer({
                   <Icon name="x" size="default" />
                 </Button>
               </div>
-              
+
               {/* Apply Filters Button in Header */}
               <div className="px-4 pb-3">
                 <Button
                   onClick={onClose}
                   className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-3"
                 >
-                  Apply Filters {totalDogsCount > 0 && `(${totalDogsCount} dogs)`}
+                  Apply Filters{" "}
+                  {totalDogsCount > 0 && `(${totalDogsCount} dogs)`}
                 </Button>
               </div>
             </div>
@@ -469,9 +470,9 @@ export default function MobileFilterDrawer({
             {/* Scrollable Content */}
             <div
               className="flex-1 overflow-y-auto overflow-x-hidden"
-              style={{ 
+              style={{
                 paddingBottom: "env(safe-area-inset-bottom, 20px)",
-                WebkitOverflowScrolling: "touch"
+                WebkitOverflowScrolling: "touch",
               }}
             >
               <div className="p-4 space-y-6">

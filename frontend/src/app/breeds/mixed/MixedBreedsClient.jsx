@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useTransition } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useTransition,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Layout from "@/components/layout/Layout";
@@ -17,17 +23,17 @@ import { getAnimals } from "@/services/animalsService";
 
 const ITEMS_PER_PAGE = 12;
 
-export default function MixedBreedsClient({ 
-  breedData, 
-  initialDogs, 
+export default function MixedBreedsClient({
+  breedData,
+  initialDogs,
   popularMixes,
   breedStats,
-  initialParams 
+  initialParams,
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  
+
   const [dogs, setDogs] = useState(initialDogs);
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(initialDogs.length === ITEMS_PER_PAGE);
@@ -55,87 +61,106 @@ export default function MixedBreedsClient({
   ];
 
   // Build API parameters
-  const buildAPIParams = useCallback((currentFilters = filters) => {
-    const params = {
-      breed_type: "mixed",
-      limit: ITEMS_PER_PAGE,
-      offset: 0,
-    };
+  const buildAPIParams = useCallback(
+    (currentFilters = filters) => {
+      const params = {
+        breed_type: "mixed",
+        limit: ITEMS_PER_PAGE,
+        offset: 0,
+      };
 
-    if (currentFilters.size) params.size = currentFilters.size;
-    if (currentFilters.age) params.age = currentFilters.age;
-    if (currentFilters.sex) params.sex = currentFilters.sex;
-    if (currentFilters.good_with_kids) params.good_with_kids = true;
-    if (currentFilters.good_with_dogs) params.good_with_dogs = true;
-    if (currentFilters.good_with_cats) params.good_with_cats = true;
+      if (currentFilters.size) params.size = currentFilters.size;
+      if (currentFilters.age) params.age = currentFilters.age;
+      if (currentFilters.sex) params.sex = currentFilters.sex;
+      if (currentFilters.good_with_kids) params.good_with_kids = true;
+      if (currentFilters.good_with_dogs) params.good_with_dogs = true;
+      if (currentFilters.good_with_cats) params.good_with_cats = true;
 
-    return params;
-  }, [filters]);
+      return params;
+    },
+    [filters],
+  );
 
   // Update URL with filters
-  const updateURL = useCallback((newFilters) => {
-    const params = new URLSearchParams();
-    
-    if (newFilters.size) params.set("size", newFilters.size);
-    if (newFilters.age) params.set("age", newFilters.age);
-    if (newFilters.sex) params.set("sex", newFilters.sex);
-    if (newFilters.good_with_kids) params.set("good_with_kids", "true");
-    if (newFilters.good_with_dogs) params.set("good_with_dogs", "true");
-    if (newFilters.good_with_cats) params.set("good_with_cats", "true");
+  const updateURL = useCallback(
+    (newFilters) => {
+      const params = new URLSearchParams();
 
-    const queryString = params.toString();
-    const newURL = queryString ? `/breeds/mixed?${queryString}` : "/breeds/mixed";
-    
-    startTransition(() => {
-      router.push(newURL, { scroll: false });
-    });
-  }, [router]);
+      if (newFilters.size) params.set("size", newFilters.size);
+      if (newFilters.age) params.set("age", newFilters.age);
+      if (newFilters.sex) params.set("sex", newFilters.sex);
+      if (newFilters.good_with_kids) params.set("good_with_kids", "true");
+      if (newFilters.good_with_dogs) params.set("good_with_dogs", "true");
+      if (newFilters.good_with_cats) params.set("good_with_cats", "true");
+
+      const queryString = params.toString();
+      const newURL = queryString
+        ? `/breeds/mixed?${queryString}`
+        : "/breeds/mixed";
+
+      startTransition(() => {
+        router.push(newURL, { scroll: false });
+      });
+    },
+    [router],
+  );
 
   // Handle filter changes
-  const handleFilterChange = useCallback(async (filterType, value) => {
-    const newFilters = { ...filters };
-    
-    if (filterType === "size" || filterType === "age" || filterType === "sex") {
-      newFilters[filterType] = newFilters[filterType] === value ? "" : value;
-    } else {
-      newFilters[filterType] = !newFilters[filterType];
-    }
+  const handleFilterChange = useCallback(
+    async (filterType, value) => {
+      const newFilters = { ...filters };
 
-    setFilters(newFilters);
-    updateURL(newFilters);
-    setOffset(ITEMS_PER_PAGE);
+      if (
+        filterType === "size" ||
+        filterType === "age" ||
+        filterType === "sex"
+      ) {
+        newFilters[filterType] = newFilters[filterType] === value ? "" : value;
+      } else {
+        newFilters[filterType] = !newFilters[filterType];
+      }
 
-    // Fetch new data
-    setIsLoading(true);
-    try {
-      const params = buildAPIParams(newFilters);
-      params.offset = 0; // Reset offset for new filter
-      
-      const response = await getAnimals(params);
-      const dogsData = Array.isArray(response) ? response : (response?.results || []);
-      setDogs(dogsData);
-      setHasMore(dogsData.length === ITEMS_PER_PAGE);
-    } catch (error) {
-      console.error("Error fetching filtered dogs:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filters, updateURL]);
+      setFilters(newFilters);
+      updateURL(newFilters);
+      setOffset(ITEMS_PER_PAGE);
+
+      // Fetch new data
+      setIsLoading(true);
+      try {
+        const params = buildAPIParams(newFilters);
+        params.offset = 0; // Reset offset for new filter
+
+        const response = await getAnimals(params);
+        const dogsData = Array.isArray(response)
+          ? response
+          : response?.results || [];
+        setDogs(dogsData);
+        setHasMore(dogsData.length === ITEMS_PER_PAGE);
+      } catch (error) {
+        console.error("Error fetching filtered dogs:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [filters, updateURL],
+  );
 
   // Load more dogs
   const loadMore = useCallback(async () => {
     if (isLoading || !hasMore) return;
-    
+
     setIsLoading(true);
     try {
       const params = buildAPIParams();
       params.offset = offset;
-      
+
       const response = await getAnimals(params);
-      const newDogs = Array.isArray(response) ? response : (response?.results || []);
-      
-      setDogs(prev => [...prev, ...newDogs]);
-      setOffset(prev => prev + ITEMS_PER_PAGE);
+      const newDogs = Array.isArray(response)
+        ? response
+        : response?.results || [];
+
+      setDogs((prev) => [...prev, ...newDogs]);
+      setOffset((prev) => prev + ITEMS_PER_PAGE);
       setHasMore(newDogs.length === ITEMS_PER_PAGE);
     } catch (error) {
       console.error("Error loading more dogs:", error);
@@ -177,16 +202,19 @@ export default function MixedBreedsClient({
                 {breedData.count} one-of-a-kind rescue dogs waiting for homes
               </p>
               <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-                Mixed breeds combine the best traits from multiple breeds, creating dogs with 
-                diverse personalities, unique looks, and often fewer health issues. Each one 
-                has their own special story and character.
+                Mixed breeds combine the best traits from multiple breeds,
+                creating dogs with diverse personalities, unique looks, and
+                often fewer health issues. Each one has their own special story
+                and character.
               </p>
             </div>
           </div>
 
           {/* Size Filter Section */}
           <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 text-center">Filter by Size</h2>
+            <h2 className="text-xl font-semibold mb-4 text-center">
+              Filter by Size
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
               {sizeCategories.map((size) => (
                 <button
@@ -219,7 +247,9 @@ export default function MixedBreedsClient({
                     className="text-center p-3 bg-white rounded-lg border border-gray-200 hover:border-violet-300 hover:bg-violet-50 transition-all"
                   >
                     <p className="font-semibold text-sm">{mix.name}</p>
-                    <p className="text-2xl font-bold text-violet-600">{mix.count}</p>
+                    <p className="text-2xl font-bold text-violet-600">
+                      {mix.count}
+                    </p>
                     <p className="text-xs text-gray-500">available</p>
                   </Link>
                 ))}
@@ -230,8 +260,10 @@ export default function MixedBreedsClient({
           {/* Quick Filters */}
           <div className="bg-white rounded-lg shadow-sm p-4 mb-6 sticky top-0 z-10">
             <div className="flex flex-wrap gap-2 items-center">
-              <span className="text-sm font-medium text-gray-700 mr-2">Quick Filters:</span>
-              
+              <span className="text-sm font-medium text-gray-700 mr-2">
+                Quick Filters:
+              </span>
+
               <FilterChip
                 label="Young"
                 active={filters.age === "young"}
@@ -247,9 +279,9 @@ export default function MixedBreedsClient({
                 active={filters.age === "senior"}
                 onClick={() => handleFilterChange("age", "senior")}
               />
-              
+
               <div className="w-px h-6 bg-gray-300 mx-1" />
-              
+
               <FilterChip
                 label="Male"
                 active={filters.sex === "male"}
@@ -260,9 +292,9 @@ export default function MixedBreedsClient({
                 active={filters.sex === "female"}
                 onClick={() => handleFilterChange("sex", "female")}
               />
-              
+
               <div className="w-px h-6 bg-gray-300 mx-1" />
-              
+
               <FilterChip
                 label="Good with Kids"
                 active={filters.good_with_kids}
@@ -317,7 +349,7 @@ export default function MixedBreedsClient({
                     <DogCard key={dog.id} dog={dog} />
                   ))}
                 </div>
-                
+
                 {hasMore && (
                   <div className="mt-8 text-center">
                     <Button
@@ -363,7 +395,8 @@ export default function MixedBreedsClient({
                 </div>
                 <h4 className="font-semibold mb-2">Unique Personalities</h4>
                 <p className="text-sm text-gray-600">
-                  Every mixed breed has a one-of-a-kind personality shaped by their diverse heritage
+                  Every mixed breed has a one-of-a-kind personality shaped by
+                  their diverse heritage
                 </p>
               </div>
               <div>
@@ -372,7 +405,8 @@ export default function MixedBreedsClient({
                 </div>
                 <h4 className="font-semibold mb-2">Healthier Genetics</h4>
                 <p className="text-sm text-gray-600">
-                  Mixed breeds often have fewer breed-specific health issues due to genetic diversity
+                  Mixed breeds often have fewer breed-specific health issues due
+                  to genetic diversity
                 </p>
               </div>
               <div>
@@ -381,7 +415,8 @@ export default function MixedBreedsClient({
                 </div>
                 <h4 className="font-semibold mb-2">Perfect Companions</h4>
                 <p className="text-sm text-gray-600">
-                  With such variety, you're sure to find a mixed breed that fits your lifestyle perfectly
+                  With such variety, you're sure to find a mixed breed that fits
+                  your lifestyle perfectly
                 </p>
               </div>
             </div>

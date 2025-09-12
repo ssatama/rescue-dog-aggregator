@@ -1,31 +1,47 @@
 "use client";
 
-import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Heart, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import React from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { Heart, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export default function BreedsHeroSection({ mixedBreedData, totalDogs }) {
   const mixedBreedCount = mixedBreedData?.count || 0;
-  const percentage = totalDogs > 0 ? Math.round((mixedBreedCount / totalDogs) * 100) : 0;
+  const percentage =
+    totalDogs > 0 ? Math.round((mixedBreedCount / totalDogs) * 100) : 0;
   const sampleDogs = mixedBreedData?.sample_dogs || [];
-  
+
   const formatCount = (count) => {
     if (count >= 1000) {
-      return `${(count / 1000).toFixed(1).replace('.0', '')}K`;
+      return `${(count / 1000).toFixed(1).replace(".0", "")}K`;
     }
     return count.toString();
   };
 
   // Pastel colors for personality traits
   const PASTEL_COLORS = [
-    { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-800 dark:text-blue-300" },
-    { bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-800 dark:text-green-300" },
-    { bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-800 dark:text-purple-300" },
-    { bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-800 dark:text-yellow-300" },
-    { bg: "bg-pink-100 dark:bg-pink-900/30", text: "text-pink-800 dark:text-pink-300" },
+    {
+      bg: "bg-blue-100 dark:bg-blue-900/30",
+      text: "text-blue-800 dark:text-blue-300",
+    },
+    {
+      bg: "bg-green-100 dark:bg-green-900/30",
+      text: "text-green-800 dark:text-green-300",
+    },
+    {
+      bg: "bg-purple-100 dark:bg-purple-900/30",
+      text: "text-purple-800 dark:text-purple-300",
+    },
+    {
+      bg: "bg-yellow-100 dark:bg-yellow-900/30",
+      text: "text-yellow-800 dark:text-yellow-300",
+    },
+    {
+      bg: "bg-pink-100 dark:bg-pink-900/30",
+      text: "text-pink-800 dark:text-pink-300",
+    },
   ];
 
   const capitalizeFirst = (str) => {
@@ -34,7 +50,7 @@ export default function BreedsHeroSection({ mixedBreedData, totalDogs }) {
   };
 
   return (
-    <section 
+    <section
       data-testid="hero-section"
       className="relative bg-gradient-to-br from-orange-400 to-orange-500 dark:from-orange-600 dark:to-orange-700 text-white py-4 md:py-6 px-4 md:px-6 overflow-hidden"
     >
@@ -50,7 +66,8 @@ export default function BreedsHeroSection({ mixedBreedData, totalDogs }) {
             Every Dog is Unique
           </h1>
           <p className="text-base md:text-lg opacity-95 max-w-2xl mx-auto">
-            Discover {formatCount(mixedBreedCount)} one-of-a-kind mixed breed companions waiting for their forever homes
+            Discover {formatCount(mixedBreedCount)} one-of-a-kind mixed breed
+            companions waiting for their forever homes
           </p>
         </div>
 
@@ -62,19 +79,17 @@ export default function BreedsHeroSection({ mixedBreedData, totalDogs }) {
             </div>
             <div className="text-xs md:text-sm opacity-95">Mixed Breeds</div>
           </div>
-          
+
           <div className="bg-white/20 dark:bg-gray-900/30 backdrop-blur-sm rounded-lg p-3 md:p-4 min-w-[100px]">
-            <div className="text-2xl md:text-3xl font-bold">
-              {percentage}%
-            </div>
+            <div className="text-2xl md:text-3xl font-bold">{percentage}%</div>
             <div className="text-xs md:text-sm opacity-95">Of All Dogs</div>
           </div>
-          
+
           <div className="bg-white/20 dark:bg-gray-900/30 backdrop-blur-sm rounded-lg p-3 md:p-4 min-w-[100px]">
-            <div className="text-2xl md:text-3xl font-bold">
-              ∞
+            <div className="text-2xl md:text-3xl font-bold">∞</div>
+            <div className="text-xs md:text-sm opacity-95">
+              Unique Personalities
             </div>
-            <div className="text-xs md:text-sm opacity-95">Unique Personalities</div>
           </div>
         </div>
 
@@ -82,7 +97,7 @@ export default function BreedsHeroSection({ mixedBreedData, totalDogs }) {
         {sampleDogs.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-6 md:mb-8 max-w-6xl mx-auto">
             {sampleDogs.slice(0, 5).map((dog, index) => (
-              <div 
+              <div
                 key={dog.slug}
                 className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg transform transition-transform hover:scale-105"
               >
@@ -123,8 +138,8 @@ export default function BreedsHeroSection({ mixedBreedData, totalDogs }) {
         {/* CTA Button */}
         <div className="text-center">
           <Link href="/breeds/mixed">
-            <Button 
-              size="default" 
+            <Button
+              size="default"
               className="bg-white dark:bg-gray-800 text-orange-500 dark:text-orange-400 hover:bg-gray-100 dark:hover:bg-gray-700 font-semibold px-4 py-2 text-sm"
             >
               Explore Mixed Breeds

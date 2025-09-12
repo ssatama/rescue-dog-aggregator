@@ -27,7 +27,8 @@ export default class ErrorBoundary extends React.Component {
           <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
           <h2 className="text-xl font-semibold mb-2">Something went wrong</h2>
           <p className="text-gray-600 dark:text-gray-400 text-center mb-4">
-            {this.props.fallbackMessage || "We're sorry, but something went wrong loading this content."}
+            {this.props.fallbackMessage ||
+              "We're sorry, but something went wrong loading this content."}
           </p>
           <Button
             onClick={() => {

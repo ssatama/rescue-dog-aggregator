@@ -17,8 +17,8 @@ export default function BreedFilterBar({
   // Default values for each filter type to avoid constructing invalid "Any ..." strings
   const defaultValues = {
     ageFilter: "Any age",
-    sizeFilter: "Any size", 
-    sexFilter: "Any"
+    sizeFilter: "Any size",
+    sexFilter: "Any",
   };
 
   const quickFilters = [
@@ -27,31 +27,81 @@ export default function BreedFilterBar({
       key: "sexFilter",
       label: "Sex",
       options: [
-        { value: "Male", label: "Male", count: filterCounts?.sex_options?.find(opt => opt.value === "Male")?.count },
-        { value: "Female", label: "Female", count: filterCounts?.sex_options?.find(opt => opt.value === "Female")?.count },
-      ].filter(opt => opt.count == null || opt.count > 0)
+        {
+          value: "Male",
+          label: "Male",
+          count: filterCounts?.sex_options?.find((opt) => opt.value === "Male")
+            ?.count,
+        },
+        {
+          value: "Female",
+          label: "Female",
+          count: filterCounts?.sex_options?.find(
+            (opt) => opt.value === "Female",
+          )?.count,
+        },
+      ].filter((opt) => opt.count == null || opt.count > 0),
     },
     // Size filters second (small to large)
     {
       key: "sizeFilter",
       label: "Size",
       options: [
-        { value: "Small", label: "Small", count: filterCounts?.size_options?.find(opt => opt.value === "Small")?.count },
-        { value: "Medium", label: "Medium", count: filterCounts?.size_options?.find(opt => opt.value === "Medium")?.count },
-        { value: "Large", label: "Large", count: filterCounts?.size_options?.find(opt => opt.value === "Large")?.count },
-      ].filter(opt => opt.count == null || opt.count > 0)
+        {
+          value: "Small",
+          label: "Small",
+          count: filterCounts?.size_options?.find(
+            (opt) => opt.value === "Small",
+          )?.count,
+        },
+        {
+          value: "Medium",
+          label: "Medium",
+          count: filterCounts?.size_options?.find(
+            (opt) => opt.value === "Medium",
+          )?.count,
+        },
+        {
+          value: "Large",
+          label: "Large",
+          count: filterCounts?.size_options?.find(
+            (opt) => opt.value === "Large",
+          )?.count,
+        },
+      ].filter((opt) => opt.count == null || opt.count > 0),
     },
     // Age filters third (young to old)
     {
       key: "ageFilter",
       label: "Age",
       options: [
-        { value: "Puppy", label: "Puppies", count: filterCounts?.age_options?.find(opt => opt.value === "Puppy")?.count },
-        { value: "Young", label: "Young", count: filterCounts?.age_options?.find(opt => opt.value === "Young")?.count },
-        { value: "Adult", label: "Adults", count: filterCounts?.age_options?.find(opt => opt.value === "Adult")?.count },
-        { value: "Senior", label: "Seniors", count: filterCounts?.age_options?.find(opt => opt.value === "Senior")?.count },
-      ].filter(opt => opt.count == null || opt.count > 0)
-    }
+        {
+          value: "Puppy",
+          label: "Puppies",
+          count: filterCounts?.age_options?.find((opt) => opt.value === "Puppy")
+            ?.count,
+        },
+        {
+          value: "Young",
+          label: "Young",
+          count: filterCounts?.age_options?.find((opt) => opt.value === "Young")
+            ?.count,
+        },
+        {
+          value: "Adult",
+          label: "Adults",
+          count: filterCounts?.age_options?.find((opt) => opt.value === "Adult")
+            ?.count,
+        },
+        {
+          value: "Senior",
+          label: "Seniors",
+          count: filterCounts?.age_options?.find(
+            (opt) => opt.value === "Senior",
+          )?.count,
+        },
+      ].filter((opt) => opt.count == null || opt.count > 0),
+    },
   ];
 
   // Calculate total dogs count
@@ -87,28 +137,30 @@ export default function BreedFilterBar({
             onClick={onClearFilters}
             className={`transition-all duration-200 ${
               !hasActiveFilters
-                ? "bg-orange-600 hover:bg-orange-700 text-white dark:bg-orange-600 dark:hover:bg-orange-700" 
+                ? "bg-orange-600 hover:bg-orange-700 text-white dark:bg-orange-600 dark:hover:bg-orange-700"
                 : "hover:bg-orange-50 hover:border-orange-200 dark:hover:bg-orange-950/50 dark:hover:border-orange-800"
             }`}
           >
             All {totalDogsCount > 0 && `${totalDogsCount}`}
           </Button>
-          
-          {quickFilters.map(filterGroup => 
-            filterGroup.options.map(option => {
+
+          {quickFilters.map((filterGroup) =>
+            filterGroup.options.map((option) => {
               const isActive = filters[filterGroup.key] === option.value;
               return (
                 <Button
                   key={`${filterGroup.key}-${option.value}`}
                   variant={isActive ? "default" : "outline"}
                   size="sm"
-                  onClick={() => onFilterChange(
-                    filterGroup.key, 
-                    isActive ? defaultValues[filterGroup.key] : option.value
-                  )}
+                  onClick={() =>
+                    onFilterChange(
+                      filterGroup.key,
+                      isActive ? defaultValues[filterGroup.key] : option.value,
+                    )
+                  }
                   className={`transition-all duration-200 ${
-                    isActive 
-                      ? "bg-orange-600 hover:bg-orange-700 text-white dark:bg-orange-600 dark:hover:bg-orange-700" 
+                    isActive
+                      ? "bg-orange-600 hover:bg-orange-700 text-white dark:bg-orange-600 dark:hover:bg-orange-700"
                       : "hover:bg-orange-50 hover:border-orange-200 dark:hover:bg-orange-950/50 dark:hover:border-orange-800"
                   }`}
                 >
@@ -120,9 +172,9 @@ export default function BreedFilterBar({
                   )}
                 </Button>
               );
-            })
+            }),
           )}
-          
+
           {/* Clear filters button - only show when filters are active */}
           {activeFilterCount > 0 && (
             <Button

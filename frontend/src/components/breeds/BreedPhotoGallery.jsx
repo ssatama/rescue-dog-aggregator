@@ -4,7 +4,12 @@ import { useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-function BreedMobileCarousel({ dogs, breedName, imageErrors, handleImageError }) {
+function BreedMobileCarousel({
+  dogs,
+  breedName,
+  imageErrors,
+  handleImageError,
+}) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const carouselRef = useRef(null);
   const displayedDogs = dogs?.slice(0, 6) || [];
@@ -16,7 +21,7 @@ function BreedMobileCarousel({ dogs, breedName, imageErrors, handleImageError })
       const scrollPosition = index * (slideWidth + gap);
       carouselRef.current.scrollTo({
         left: scrollPosition,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
       setCurrentSlide(index);
     }
@@ -36,13 +41,13 @@ function BreedMobileCarousel({ dogs, breedName, imageErrors, handleImageError })
 
   return (
     <div className="w-full">
-      <div 
+      <div
         ref={carouselRef}
         className="flex overflow-x-auto gap-3 pb-2 snap-x snap-mandatory scrollbar-hide"
         onScroll={handleScroll}
         style={{
-          scrollSnapType: 'x mandatory',
-          WebkitOverflowScrolling: 'touch',
+          scrollSnapType: "x mandatory",
+          WebkitOverflowScrolling: "touch",
         }}
       >
         {displayedDogs.map((dog, index) => (
@@ -52,7 +57,11 @@ function BreedMobileCarousel({ dogs, breedName, imageErrors, handleImageError })
             className="flex-shrink-0 w-[70vw] max-w-[280px] aspect-[4/5] relative overflow-hidden rounded-lg cursor-pointer group block snap-start"
           >
             <Image
-              src={imageErrors[dog.id] ? "/images/dog-placeholder.jpg" : dog.primary_image_url}
+              src={
+                imageErrors[dog.id]
+                  ? "/images/dog-placeholder.jpg"
+                  : dog.primary_image_url
+              }
               alt={`${dog.name} - ${breedName} rescue dog`}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -101,7 +110,7 @@ export default function BreedPhotoGallery({ dogs, breedName, className = "" }) {
   const [imageErrors, setImageErrors] = useState({});
 
   const handleImageError = (dogId) => {
-    setImageErrors(prev => ({ ...prev, [dogId]: true }));
+    setImageErrors((prev) => ({ ...prev, [dogId]: true }));
   };
 
   if (!dogs || dogs.length === 0) {
@@ -111,12 +120,12 @@ export default function BreedPhotoGallery({ dogs, breedName, className = "" }) {
         <div className="hidden md:grid grid-cols-3 gap-2">
           {[...Array(6)].map((_, i) => {
             const aspectRatios = [
-              'aspect-[4/5]',
-              'aspect-square',
-              'aspect-[3/4]',
-              'aspect-[5/4]',
-              'aspect-[4/3]',
-              'aspect-square'
+              "aspect-[4/5]",
+              "aspect-square",
+              "aspect-[3/4]",
+              "aspect-[5/4]",
+              "aspect-[4/3]",
+              "aspect-square",
             ];
             return (
               <div
@@ -172,12 +181,12 @@ export default function BreedPhotoGallery({ dogs, breedName, className = "" }) {
   const getMasonryLayout = () => {
     // Predefined aspect ratios to create masonry effect
     const aspectRatios = [
-      'aspect-[4/5]',    // Tall rectangle
-      'aspect-square',   // Square
-      'aspect-[3/4]',    // Portrait
-      'aspect-[5/4]',    // Landscape
-      'aspect-[4/3]',    // Landscape
-      'aspect-square'    // Square
+      "aspect-[4/5]", // Tall rectangle
+      "aspect-square", // Square
+      "aspect-[3/4]", // Portrait
+      "aspect-[5/4]", // Landscape
+      "aspect-[4/3]", // Landscape
+      "aspect-square", // Square
     ];
 
     return dogs?.slice(0, 6).map((dog, index) => (
@@ -187,7 +196,11 @@ export default function BreedPhotoGallery({ dogs, breedName, className = "" }) {
         className={`relative overflow-hidden rounded-lg cursor-pointer group block ${aspectRatios[index]}`}
       >
         <Image
-          src={imageErrors[dog.id] ? "/images/dog-placeholder.jpg" : dog.primary_image_url}
+          src={
+            imageErrors[dog.id]
+              ? "/images/dog-placeholder.jpg"
+              : dog.primary_image_url
+          }
           alt={`${dog.name} - ${breedName} rescue dog`}
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -205,7 +218,6 @@ export default function BreedPhotoGallery({ dogs, breedName, className = "" }) {
     ));
   };
 
-
   return (
     <div className={`breed-photo-gallery ${className}`}>
       {/* Desktop: Masonry Grid */}
@@ -214,14 +226,14 @@ export default function BreedPhotoGallery({ dogs, breedName, className = "" }) {
           {getMasonryLayout()}
         </div>
       </div>
-      
+
       {/* Mobile: Swipeable Carousel */}
       <div className="md:hidden">
-        <BreedMobileCarousel 
-          dogs={dogs} 
-          breedName={breedName} 
-          imageErrors={imageErrors} 
-          handleImageError={handleImageError} 
+        <BreedMobileCarousel
+          dogs={dogs}
+          breedName={breedName}
+          imageErrors={imageErrors}
+          handleImageError={handleImageError}
         />
       </div>
     </div>

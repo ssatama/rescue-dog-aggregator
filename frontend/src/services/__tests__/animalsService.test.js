@@ -49,7 +49,7 @@ describe("animalsService", () => {
         status: "available",
         animal_type: "dog",
       }),
-      {} // Add empty options object as third parameter
+      {}, // Add empty options object as third parameter
     );
 
     // Check the result
@@ -80,7 +80,7 @@ describe("animalsService", () => {
         animal_type: "dog",
         status: "available", // Add this since getAnimals adds it
       }),
-      {} // Add empty options object as third parameter
+      {}, // Add empty options object as third parameter
     );
   });
 

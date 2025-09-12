@@ -7,8 +7,8 @@
 
 /* Hide scrollbar for IE, Edge and Firefox */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
 /* Ensure minimum touch target sizes */
@@ -44,7 +44,7 @@
     gap: 1rem;
     padding-bottom: 1rem;
   }
-  
+
   .mobile-card {
     flex: 0 0 85%;
     max-width: 85%;

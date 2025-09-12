@@ -31,12 +31,14 @@ const topBreeds = [
 
 export function BreedsCTA() {
   const router = useRouter();
-  const [viewportSize, setViewportSize] = useState<"mobile" | "tablet" | "desktop">("desktop");
+  const [viewportSize, setViewportSize] = useState<
+    "mobile" | "tablet" | "desktop"
+  >("desktop");
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-    
+
     const checkViewport = () => {
       const width = window.innerWidth;
       if (width < BREAKPOINTS.mobile) {
@@ -47,7 +49,7 @@ export function BreedsCTA() {
         setViewportSize("desktop");
       }
     };
-    
+
     checkViewport();
     window.addEventListener("resize", checkViewport);
     return () => window.removeEventListener("resize", checkViewport);
@@ -76,24 +78,34 @@ export function BreedsCTA() {
         aria-label="Breed Discovery"
         className="py-8 px-4 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-gray-900 dark:to-gray-800"
       >
-        <div className={`${viewportSize === "tablet" ? "max-w-2xl" : "max-w-sm"} mx-auto`}>
+        <div
+          className={`${viewportSize === "tablet" ? "max-w-2xl" : "max-w-sm"} mx-auto`}
+        >
           <div className="flex items-center gap-2 mb-4">
             <span className="animate-pulse bg-red-500 dark:bg-red-600 text-white text-xs px-2 py-1 rounded-full font-bold">
               NEW
             </span>
-            <h2 className={`${viewportSize === "tablet" ? "text-2xl" : "text-xl"} font-bold text-gray-900 dark:text-white`}>
+            <h2
+              className={`${viewportSize === "tablet" ? "text-2xl" : "text-xl"} font-bold text-gray-900 dark:text-white`}
+            >
               NEW: Breed Personality Insights
             </h2>
           </div>
 
-          <div className={`grid ${viewportSize === "tablet" ? "grid-cols-2 gap-4" : "grid-cols-1 gap-4"} mb-6`}>
+          <div
+            className={`grid ${viewportSize === "tablet" ? "grid-cols-2 gap-4" : "grid-cols-1 gap-4"} mb-6`}
+          >
             {/* Personality Traits Card */}
             <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md dark:shadow-gray-900/20">
-              <h3 className="font-semibold mb-3 text-gray-800 dark:text-gray-200">Personality Traits</h3>
+              <h3 className="font-semibold mb-3 text-gray-800 dark:text-gray-200">
+                Personality Traits
+              </h3>
               <div className="space-y-2">
                 {personalityTraits.slice(0, 3).map((trait) => (
                   <div key={trait.name} className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600 dark:text-gray-400 w-20">{trait.name}</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400 w-20">
+                      {trait.name}
+                    </span>
                     <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
                       <motion.div
                         className={`h-full ${trait.color}`}
@@ -109,15 +121,21 @@ export function BreedsCTA() {
 
             {/* Top Breeds Card */}
             <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md dark:shadow-gray-900/20">
-              <h3 className="font-semibold mb-3 text-gray-800 dark:text-gray-200">Top Breeds</h3>
+              <h3 className="font-semibold mb-3 text-gray-800 dark:text-gray-200">
+                Top Breeds
+              </h3>
               <div className="space-y-2">
                 {topBreeds.map((breed) => (
                   <div
                     key={breed.name}
                     className="flex items-center justify-between p-2 bg-orange-50 dark:bg-gray-700/50 rounded-md"
                   >
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{breed.name}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">{breed.count} available</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {breed.name}
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {breed.count} available
+                    </span>
                   </div>
                 ))}
               </div>
@@ -178,7 +196,8 @@ export function BreedsCTA() {
           </h2>
 
           <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Our new breed explorer reveals personality insights from 2,500+ rescue dogs
+            Our new breed explorer reveals personality insights from 2,500+
+            rescue dogs
           </p>
         </motion.div>
 
@@ -193,7 +212,9 @@ export function BreedsCTA() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               whileHover={{ scale: 1.05 }}
             >
-              <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3">{trait.name}</h3>
+              <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3">
+                {trait.name}
+              </h3>
               <div className="mb-2">
                 <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
                   <span>Average</span>
@@ -209,7 +230,9 @@ export function BreedsCTA() {
                   />
                 </div>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-500">Based on breed data</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500">
+                Based on breed data
+              </p>
             </motion.div>
           ))}
         </div>

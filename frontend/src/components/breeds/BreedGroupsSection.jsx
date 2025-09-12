@@ -16,16 +16,17 @@ export default function BreedGroupsSection({ breedGroups }) {
     const handleExpandAll = () => {
       // First expand the section to show all groups
       setExpanded(true);
-      
+
       // Then expand all individual groups after a brief delay
       setTimeout(() => {
-        const allGroupNames = breedGroups.map(g => g.name);
+        const allGroupNames = breedGroups.map((g) => g.name);
         setExpandedGroups(new Set(allGroupNames));
       }, 200); // Slight delay to ensure smooth animation
     };
 
-    window.addEventListener('expandAllBreedGroups', handleExpandAll);
-    return () => window.removeEventListener('expandAllBreedGroups', handleExpandAll);
+    window.addEventListener("expandAllBreedGroups", handleExpandAll);
+    return () =>
+      window.removeEventListener("expandAllBreedGroups", handleExpandAll);
   }, [breedGroups]);
 
   if (!breedGroups || breedGroups.length === 0) {
@@ -47,56 +48,65 @@ export default function BreedGroupsSection({ breedGroups }) {
 
   const getGroupStyles = (groupName) => {
     const styles = {
-      'Hound Group': { 
-        bg: 'bg-orange-50 dark:bg-orange-950 hover:bg-orange-100 dark:hover:bg-orange-900', 
-        border: 'border-orange-200 dark:border-orange-800', 
-        text: 'text-orange-700 dark:text-orange-300',
-        icon: 'bg-orange-100 dark:bg-orange-900' 
+      "Hound Group": {
+        bg: "bg-orange-50 dark:bg-orange-950 hover:bg-orange-100 dark:hover:bg-orange-900",
+        border: "border-orange-200 dark:border-orange-800",
+        text: "text-orange-700 dark:text-orange-300",
+        icon: "bg-orange-100 dark:bg-orange-900",
       },
-      'Sporting Group': { 
-        bg: 'bg-emerald-50 dark:bg-emerald-950 hover:bg-emerald-100 dark:hover:bg-emerald-900', 
-        border: 'border-emerald-200 dark:border-emerald-800', 
-        text: 'text-emerald-700 dark:text-emerald-300',
-        icon: 'bg-emerald-100 dark:bg-emerald-900' 
+      "Sporting Group": {
+        bg: "bg-emerald-50 dark:bg-emerald-950 hover:bg-emerald-100 dark:hover:bg-emerald-900",
+        border: "border-emerald-200 dark:border-emerald-800",
+        text: "text-emerald-700 dark:text-emerald-300",
+        icon: "bg-emerald-100 dark:bg-emerald-900",
       },
-      'Herding Group': { 
-        bg: 'bg-purple-50 dark:bg-purple-950 hover:bg-purple-100 dark:hover:bg-purple-900', 
-        border: 'border-purple-200 dark:border-purple-800', 
-        text: 'text-purple-700 dark:text-purple-300',
-        icon: 'bg-purple-100 dark:bg-purple-900' 
+      "Herding Group": {
+        bg: "bg-purple-50 dark:bg-purple-950 hover:bg-purple-100 dark:hover:bg-purple-900",
+        border: "border-purple-200 dark:border-purple-800",
+        text: "text-purple-700 dark:text-purple-300",
+        icon: "bg-purple-100 dark:bg-purple-900",
       },
-      'Working Group': { 
-        bg: 'bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 dark:hover:bg-blue-900', 
-        border: 'border-blue-200 dark:border-blue-800', 
-        text: 'text-blue-700 dark:text-blue-300',
-        icon: 'bg-blue-100 dark:bg-blue-900' 
+      "Working Group": {
+        bg: "bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 dark:hover:bg-blue-900",
+        border: "border-blue-200 dark:border-blue-800",
+        text: "text-blue-700 dark:text-blue-300",
+        icon: "bg-blue-100 dark:bg-blue-900",
       },
-      'Terrier Group': { 
-        bg: 'bg-red-50 dark:bg-red-950 hover:bg-red-100 dark:hover:bg-red-900', 
-        border: 'border-red-200 dark:border-red-800', 
-        text: 'text-red-700 dark:text-red-300',
-        icon: 'bg-red-100 dark:bg-red-900' 
+      "Terrier Group": {
+        bg: "bg-red-50 dark:bg-red-950 hover:bg-red-100 dark:hover:bg-red-900",
+        border: "border-red-200 dark:border-red-800",
+        text: "text-red-700 dark:text-red-300",
+        icon: "bg-red-100 dark:bg-red-900",
       },
-      'Toy Group': { 
-        bg: 'bg-pink-50 dark:bg-pink-950 hover:bg-pink-100 dark:hover:bg-pink-900', 
-        border: 'border-pink-200 dark:border-pink-800', 
-        text: 'text-pink-700 dark:text-pink-300',
-        icon: 'bg-pink-100 dark:bg-pink-900' 
-      }
+      "Toy Group": {
+        bg: "bg-pink-50 dark:bg-pink-950 hover:bg-pink-100 dark:hover:bg-pink-900",
+        border: "border-pink-200 dark:border-pink-800",
+        text: "text-pink-700 dark:text-pink-300",
+        icon: "bg-pink-100 dark:bg-pink-900",
+      },
     };
 
-    return styles[groupName] || {
-      bg: 'bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800',
-      border: 'border-gray-200 dark:border-gray-700',
-      text: 'text-gray-700 dark:text-gray-300',
-      icon: 'bg-gray-100 dark:bg-gray-800'
-    };
+    return (
+      styles[groupName] || {
+        bg: "bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800",
+        border: "border-gray-200 dark:border-gray-700",
+        text: "text-gray-700 dark:text-gray-300",
+        icon: "bg-gray-100 dark:bg-gray-800",
+      }
+    );
   };
 
   return (
-    <section id="breed-groups" className="py-12 bg-gray-50 dark:bg-gray-950" aria-labelledby="breed-groups-heading">
+    <section
+      id="breed-groups"
+      className="py-12 bg-gray-50 dark:bg-gray-950"
+      aria-labelledby="breed-groups-heading"
+    >
       <div className="container mx-auto px-4">
-        <h2 id="breed-groups-heading" className="text-3xl font-bold mb-8 text-center dark:text-white">
+        <h2
+          id="breed-groups-heading"
+          className="text-3xl font-bold mb-8 text-center dark:text-white"
+        >
           Explore by Breed Group
         </h2>
 
@@ -104,7 +114,7 @@ export default function BreedGroupsSection({ breedGroups }) {
           {displayGroups.map((group) => {
             const styles = getGroupStyles(group.name);
             const isExpanded = expandedGroups.has(group.name);
-            const testId = `breed-group-${group.name.toLowerCase().replace(/\s+/g, '-')}`;
+            const testId = `breed-group-${group.name.toLowerCase().replace(/\s+/g, "-")}`;
 
             return (
               <div key={group.name} className="space-y-3">
@@ -125,7 +135,7 @@ export default function BreedGroupsSection({ breedGroups }) {
                       )}
                     </div>
                   </div>
-                  
+
                   <h3 className={`text-lg font-semibold ${styles.text}`}>
                     {group.name}
                   </h3>
@@ -159,10 +169,14 @@ export default function BreedGroupsSection({ breedGroups }) {
                             </div>
                           ) : (
                             <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                              <span className="text-xs text-gray-500 dark:text-gray-400">🐕</span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                🐕
+                              </span>
                             </div>
                           )}
-                          <span className="font-medium text-sm group-hover:text-primary">{breed.name}</span>
+                          <span className="font-medium text-sm group-hover:text-primary">
+                            {breed.name}
+                          </span>
                         </div>
                         <span className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400 font-medium">
                           {breed.count} available
