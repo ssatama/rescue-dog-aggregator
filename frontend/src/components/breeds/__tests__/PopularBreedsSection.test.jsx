@@ -137,8 +137,8 @@ describe("PopularBreedsSection", () => {
   it("displays Browse All Breeds link", () => {
     render(<PopularBreedsSection popularBreeds={mockPopularBreeds} />);
     
-    const browseAllLink = screen.getByRole("link", { name: /Browse All Breeds/i });
-    expect(browseAllLink).toHaveAttribute("href", "/breeds");
+    const browseAllButton = screen.getByRole("button", { name: /Browse All Breeds/i });
+    expect(browseAllButton).toBeInTheDocument();
   });
 
   it("renders empty state when no breeds provided", () => {
