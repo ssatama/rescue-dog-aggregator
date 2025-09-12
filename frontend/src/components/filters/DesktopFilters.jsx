@@ -110,6 +110,7 @@ export default function DesktopFilters({
   organizations,
 
   // Breed
+  showBreed = true, // Default to true for backward compatibility
   standardizedBreedFilter,
   setStandardizedBreedFilter,
   handleBreedSearch,
@@ -598,83 +599,85 @@ export default function DesktopFilters({
           </div>
 
           {/* 5. Breed Filter - Direct search like Name filter */}
-          <div
-            className={`space-y-3 ${sectionCounts.breed > 0 ? "filter-section-active" : ""}`}
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
-                Breed
-              </h4>
-              {sectionCounts.breed > 0 && (
-                <span className="inline-flex bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2 rounded-full text-xs">
-                  ({sectionCounts.breed})
-                </span>
-              )}
-            </div>
+          {showBreed && (
+            <div
+              className={`space-y-3 ${sectionCounts.breed > 0 ? "filter-section-active" : ""}`}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                  Breed
+                </h4>
+                {sectionCounts.breed > 0 && (
+                  <span className="inline-flex bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-2 rounded-full text-xs">
+                    ({sectionCounts.breed})
+                  </span>
+                )}
+              </div>
 
-            {/* Hidden Breed Select for E2E tests */}
-            <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
-              <select
-                data-testid="breed-filter"
+              {/* Hidden Breed Select for E2E tests */}
+              <div className="absolute -left-[9999px] w-1 h-1 overflow-hidden">
+                <select
+                  data-testid="breed-filter"
+                  value={
+                    standardizedBreedFilter === "Any breed"
+                      ? "any"
+                      : standardizedBreedFilter
+                  }
+                  onChange={(e) =>
+                    setStandardizedBreedFilter(
+                      e.target.value === "any" ? "Any breed" : e.target.value,
+                    )
+                  }
+                >
+                  <option value="any">Any breed</option>
+                  {standardizedBreeds
+                    ?.filter((breed) => breed !== "Any breed")
+                    .map((breed) => (
+                      <option key={breed} value={breed}>
+                        {breed}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {/* Enhanced Breed Search with Typeahead */}
+              <SearchTypeahead
+                data-testid="breed-search-input"
+                placeholder="Search breeds..."
                 value={
                   standardizedBreedFilter === "Any breed"
-                    ? "any"
+                    ? ""
                     : standardizedBreedFilter
                 }
-                onChange={(e) =>
-                  setStandardizedBreedFilter(
-                    e.target.value === "any" ? "Any breed" : e.target.value,
-                  )
-                }
-              >
-                <option value="any">Any breed</option>
-                {standardizedBreeds
-                  .filter((breed) => breed !== "Any breed")
-                  .map((breed) => (
-                    <option key={breed} value={breed}>
-                      {breed}
-                    </option>
-                  ))}
-              </select>
+                onValueChange={handleBreedValueChange}
+                onSuggestionSelect={(breed) => {
+                  // Use parent-provided handler if available, otherwise fallback to direct setter
+                  if (setStandardizedBreedFilter) {
+                    setStandardizedBreedFilter(breed);
+                  }
+                }}
+                onSearch={(breed) => {
+                  // Use parent-provided handler if available, otherwise fallback to direct setter
+                  if (handleBreedSearch) {
+                    handleBreedSearch(breed);
+                  } else {
+                    setStandardizedBreedFilter(breed);
+                  }
+                }}
+                onClear={handleBreedClear}
+                fetchSuggestions={getBreedSuggestions}
+                debounceMs={300}
+                maxSuggestions={8}
+                showHistory={true}
+                showClearButton={true}
+                showDidYouMean={true}
+                historyKey="breed-search-history"
+                className="w-full"
+                inputClassName="enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
+                skipLocalFuzzySearch={true}
+              />
             </div>
-
-            {/* Enhanced Breed Search with Typeahead */}
-            <SearchTypeahead
-              data-testid="breed-search-input"
-              placeholder="Search breeds..."
-              value={
-                standardizedBreedFilter === "Any breed"
-                  ? ""
-                  : standardizedBreedFilter
-              }
-              onValueChange={handleBreedValueChange}
-              onSuggestionSelect={(breed) => {
-                // Use parent-provided handler if available, otherwise fallback to direct setter
-                if (setStandardizedBreedFilter) {
-                  setStandardizedBreedFilter(breed);
-                }
-              }}
-              onSearch={(breed) => {
-                // Use parent-provided handler if available, otherwise fallback to direct setter
-                if (handleBreedSearch) {
-                  handleBreedSearch(breed);
-                } else {
-                  setStandardizedBreedFilter(breed);
-                }
-              }}
-              onClear={handleBreedClear}
-              fetchSuggestions={getBreedSuggestions}
-              debounceMs={300}
-              maxSuggestions={8}
-              showHistory={true}
-              showClearButton={true}
-              showDidYouMean={true}
-              historyKey="breed-search-history"
-              className="w-full"
-              inputClassName="enhanced-hover enhanced-focus-input mobile-form-input focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition-colors duration-200"
-              skipLocalFuzzySearch={true}
-            />
-          </div>
+          )}
 
           {/* 6. Organization Filter - Direct select like other filters */}
           <div

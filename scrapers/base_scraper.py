@@ -907,6 +907,12 @@ class BaseScraper(ABC):
             self.logger.warning(f"Rejecting animal with invalid name: {name}")
             return False
 
+        # Check for invalid image URLs (empty strings are not valid URLs)
+        primary_image_url = animal_data.get("primary_image_url")
+        if primary_image_url == "":
+            self.logger.error(f"Rejecting animal '{name}' (ID: {animal_data.get('external_id')}) with empty image URL")
+            return False
+
         return True
 
     def _get_existing_animal_urls(self) -> set:
@@ -1162,7 +1168,6 @@ class BaseScraper(ABC):
             self.current_scrape_session = None
 
             return True
-
         except Exception as e:
             self.logger.error(f"Error handling scraper failure: {e}")
             return False

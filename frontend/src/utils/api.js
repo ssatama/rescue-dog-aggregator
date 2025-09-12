@@ -61,6 +61,13 @@ export async function fetchApi(endpoint, options = {}) {
     const data = await response.json();
     return data;
   } catch (error) {
+    // Check if the error is from an aborted request (user cancelled)
+    if (error.name === "AbortError" || error.message?.includes("aborted")) {
+      // Don't report aborted requests as errors - they're intentional
+      logger.log(`[API] Request cancelled: ${endpoint}`);
+      throw error;
+    }
+
     // If it's not already processed, parse it
     if (!error.status) {
       const parsedError = parseApiError(error);
@@ -81,7 +88,7 @@ export async function fetchApi(endpoint, options = {}) {
  * @param {Object} params - Query parameters
  * @returns {Promise} - Resolved promise with response data
  */
-export function get(endpoint, params = {}) {
+export function get(endpoint, params = {}, options = {}) {
   // Smart trailing slash normalization based on endpoint pattern
   // Collection endpoints (ending with resource name) need trailing slash: /api/organizations/
   // Item endpoints (with parameter) should NOT have trailing slash: /api/organizations/slug
@@ -124,7 +131,7 @@ export function get(endpoint, params = {}) {
 
   logger.log(`[api.js get] Calling fetchApi with smart-normalized URL: ${url}`);
 
-  return fetchApi(url);
+  return fetchApi(url, options);
 }
 
 /**

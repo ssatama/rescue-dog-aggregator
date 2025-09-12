@@ -26,57 +26,61 @@ describe("animalsService", () => {
   });
 
   test("getAnimals calls API with correct parameters", async () => {
+    const filters = {
+      search: "buddy",
+      standardized_breed: "Labrador Retriever",
+      sex: "Male",
+      age_category: "Adult",
+      standardized_size: "Large",
+      limit: 10,
+      offset: 0,
+    };
+
     // Setup mock return value
     get.mockResolvedValue([{ id: 1, name: "Test Animal" }]);
 
-    const filters = {
-      limit: 10,
-      offset: 0,
-      standardized_breed: "Labrador Retriever",
-      standardized_size: "Large",
-      status: "available",
-      sex: "Male",
-      age_category: "Adult",
-      search: "buddy",
-      // Add other potential filters if needed
-    };
-
-    // Call the service method with standardized fields
-    await getAnimals(filters);
+    const result = await getAnimals(filters);
 
     // Check that get was called with correct parameters
     expect(get).toHaveBeenCalledWith(
       "/api/animals",
       expect.objectContaining({
         ...filters,
-        animal_type: "dog",
         status: "available",
+        animal_type: "dog",
       }),
+      {}, // Add empty options object as third parameter
     );
+
+    // Check the result
+    expect(result).toEqual([{ id: 1, name: "Test Animal" }]);
   });
 
   test("getAnimalById calls API with correct ID", async () => {
     // Setup mock
-    get.mockResolvedValue({ id: 1, name: "Test Animal" });
+    get.mockResolvedValue({ id: 1, name: "Buddy" });
 
-    // Call the service method
-    await getAnimalById(1);
+    // Call the service
+    const result = await getAnimalById(1);
 
-    // Check API was called correctly
+    // Check that get was called correctly
     expect(get).toHaveBeenCalledWith("/api/animals/1");
   });
 
   test("getAnimalsByStandardizedBreed delegates correctly", async () => {
     get.mockResolvedValue([]);
+
     await getAnimalsByStandardizedBreed("Poodle", { limit: 4 });
     // underlying getAnimals should have been called
     expect(get).toHaveBeenCalledWith(
       "/api/animals",
       expect.objectContaining({
         standardized_breed: "Poodle",
-        animal_type: "dog",
         limit: 4,
+        animal_type: "dog",
+        status: "available", // Add this since getAnimals adds it
       }),
+      {}, // Add empty options object as third parameter
     );
   });
 

@@ -40,6 +40,7 @@ export default async function DogsPageOptimized(props) {
     sex: searchParams?.sex || null,
     organization_id: searchParams?.organization_id || null,
     breed: searchParams?.breed || null,
+    breed_group: searchParams?.breed_group || null,
     location_country: searchParams?.location_country || null,
     available_country: searchParams?.available_country || null,
     available_region: searchParams?.available_region || null,

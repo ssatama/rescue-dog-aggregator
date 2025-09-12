@@ -94,6 +94,7 @@ export default function Header() {
               {" "}
               {/* Increased spacing for better visual separation */}
               {renderNavLink("/dogs", "Find Dogs", "dogs")}
+              {renderNavLink("/breeds", "Breeds", "breeds")}
               {/* Show Swipe on mobile and tablet, hide on desktop (lg and above) */}
               <div className="block lg:hidden">
                 <div className="relative">
@@ -171,6 +172,21 @@ export default function Header() {
                 {pathname === "/dogs" && (
                   <div
                     data-testid="nav-underline-dogs"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"
+                  />
+                )}
+              </div>
+              <div className="relative">
+                <Link
+                  href="/breeds"
+                  className={`block ${getLinkClasses("/breeds")}`}
+                  onClick={handleMobileLinkClick}
+                >
+                  Breeds
+                </Link>
+                {pathname === "/breeds" && (
+                  <div
+                    data-testid="nav-underline-breeds"
                     className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"
                   />
                 )}

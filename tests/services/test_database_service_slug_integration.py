@@ -208,7 +208,6 @@ class TestDatabaseServiceSlugIntegration:
 
                 # Verify two-phase slug generation with pool connection
                 assert mock_slug_gen.call_count == 2
-
                 # Both calls should use pool connection
                 for call_args in mock_slug_gen.call_args_list:
                     assert call_args[1]["name"] == "Luna"
@@ -226,9 +225,27 @@ class TestDatabaseServiceSlugIntegration:
         mock_cursor = MagicMock()
 
         # Mock existing animal data (slug should be preserved)
+        # Updated to include all 16 columns that the SELECT query expects
         mock_cursor.fetchone.side_effect = [
-            # First call - get current animal data
-            ("Old Name", "Old Breed", "Old Age", "Male", "http://old-image.jpg", "available", "Old Standardized Breed", 24, 36, "Medium", '{"key": "value"}'),
+            # First call - get current animal data (16 columns)
+            (
+                "Old Name",  # name
+                "Old Breed",  # breed
+                "Old Age",  # age_text
+                "Male",  # sex
+                "http://old-image.jpg",  # primary_image_url
+                "available",  # status
+                "Old Standardized Breed",  # standardized_breed
+                24,  # age_min_months
+                36,  # age_max_months
+                "Medium",  # standardized_size
+                '{"key": "value"}',  # properties
+                "purebred",  # breed_type
+                "Old Primary Breed",  # primary_breed
+                None,  # secondary_breed
+                "old-breed-slug",  # breed_slug
+                0.95,  # breed_confidence
+            ),
             # No second call needed for updates
         ]
         mock_conn.cursor.return_value = mock_cursor
@@ -257,8 +274,12 @@ class TestDatabaseServiceSlugIntegration:
                 assert len(update_calls) > 0
                 update_sql = update_calls[0][0][0]
 
-                # Verify slug is NOT in the UPDATE statement (should be preserved)
-                assert "slug" not in update_sql.lower()
+                # Verify the main slug field is NOT in the UPDATE statement (should be preserved)
+                # Note: breed_slug is OK to update, we're checking the main slug field isn't modified
+                # Split by commas and check that 'slug =' is not present (but 'breed_slug =' is OK)
+                update_fields = update_sql.lower().split(",")
+                slug_updates = [field for field in update_fields if "slug =" in field and "breed_slug =" not in field]
+                assert len(slug_updates) == 0, "Main slug field should not be updated"
 
     def test_create_animal_slug_with_empty_name_fallback(self):
         """Test slug generation with empty name uses fallback (two-phase)."""

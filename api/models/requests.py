@@ -10,6 +10,8 @@ from typing import Optional, Union
 
 from pydantic import BaseModel, Field, field_validator
 
+from utils.breed_utils import validate_breed_type
+
 from .dog import AnimalStatus, StandardizedSize
 
 
@@ -52,6 +54,8 @@ class AnimalFilterRequest(BaseModel):
     breed: Optional[str] = Field(default=None, description="Filter by exact breed name")
     standardized_breed: Optional[str] = Field(default=None, description="Filter by standardized breed")
     breed_group: Optional[str] = Field(default=None, description="Filter by breed group")
+    primary_breed: Optional[str] = Field(default=None, description="Filter by primary breed")
+    breed_type: Optional[str] = Field(default=None, description="Filter by breed type (purebred, mixed, crossbreed, unknown, sighthound)")
 
     # Physical characteristics
     sex: Optional[str] = Field(default=None, description="Filter by sex (male, female)")
@@ -97,6 +101,14 @@ class AnimalFilterRequest(BaseModel):
         valid_sorts = ["newest", "oldest", "name-asc", "name-desc"]
         if v not in valid_sorts:
             raise ValueError(f"Invalid sort value: {v}. Must be one of: {', '.join(valid_sorts)}")
+        return v
+
+    @field_validator("breed_type")
+    @classmethod
+    def validate_breed_type_field(cls, v):
+        """Validate breed_type field."""
+        if not validate_breed_type(v):
+            raise ValueError(f"Invalid breed_type value: {v}. Must be one of: purebred, mixed, crossbreed, unknown, sighthound")
         return v
 
     def get_confidence_levels(self) -> list[str]:
@@ -150,6 +162,8 @@ class AnimalFilterCountRequest(BaseModel):
     breed: Optional[str] = Field(default=None, description="Breed context for counting")
     standardized_breed: Optional[str] = Field(default=None, description="Standardized breed context for counting")
     breed_group: Optional[str] = Field(default=None, description="Breed group context for counting")
+    primary_breed: Optional[str] = Field(default=None, description="Primary breed context for counting")
+    breed_type: Optional[str] = Field(default=None, description="Breed type context for counting")
 
     # Physical characteristics (context for counting)
     sex: Optional[str] = Field(default=None, description="Sex context for counting")
@@ -167,6 +181,14 @@ class AnimalFilterCountRequest(BaseModel):
 
     # Availability and confidence (context for counting)
     availability_confidence: str = Field(default="high,medium", description="Availability confidence context for counting")
+
+    @field_validator("breed_type")
+    @classmethod
+    def validate_breed_type_field(cls, v):
+        """Validate breed_type field."""
+        if not validate_breed_type(v):
+            raise ValueError(f"Invalid breed_type value: {v}. Must be one of: purebred, mixed, crossbreed, unknown, sighthound")
+        return v
 
     def get_confidence_levels(self) -> list[str]:
         """Get parsed confidence levels from string."""

@@ -1,5 +1,6 @@
 """Scraper implementation for Many Tears Rescue organization."""
 
+import random
 import re
 import time
 from typing import Any, Dict, List, Union, cast
@@ -7,6 +8,7 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, Tag
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -22,6 +24,15 @@ class ManyTearsRescueScraper(BaseScraper):
     This scraper uses Selenium WebDriver to bypass the protection and extract dog data
     from listing pages with pagination support.
     """
+
+    # User agents for rotation
+    USER_AGENTS = [
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0",
+    ]
 
     def __init__(
         self,
@@ -92,7 +103,7 @@ class ManyTearsRescueScraper(BaseScraper):
         return animals
 
     def _process_animals_parallel(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Process animals in parallel batches using individual WebDrivers per thread.
+        """Process animals with reduced parallelism to avoid resource exhaustion.
 
         Args:
             animals: List of animals to process
@@ -103,10 +114,8 @@ class ManyTearsRescueScraper(BaseScraper):
         all_dogs_data = []
         seen_urls = set()  # Track URLs to prevent duplicates
 
-        # PERFORMANCE OPTIMIZATION: Parallel processing with individual WebDrivers
-        # Each thread gets its own WebDriver to avoid concurrency bottlenecks
+        # REDUCED PARALLELISM: Max 2 threads to avoid detection and resource issues
         import concurrent.futures
-        import threading
         from threading import Lock
 
         self.logger.info(f"Starting detail scraping for {len(animals)} animals using batch_size={self.batch_size}")
@@ -120,7 +129,7 @@ class ManyTearsRescueScraper(BaseScraper):
             local_driver = None
 
             try:
-                # Create WebDriver for this thread
+                # Create WebDriver for this thread with stealth options
                 local_driver = self._setup_selenium_driver()
 
                 for animal in animal_batch:
@@ -133,8 +142,8 @@ class ManyTearsRescueScraper(BaseScraper):
                             continue
                         seen_urls.add(adoption_url)
 
-                    # Rate limiting for respectful scraping
-                    time.sleep(self.rate_limit_delay)
+                    # Random delay for respectful scraping
+                    time.sleep(random.uniform(self.rate_limit_delay + 1, self.rate_limit_delay + 3))
 
                     # Use thread-local WebDriver (no locking needed)
                     detail_data = self._scrape_animal_details(adoption_url, driver=local_driver)
@@ -150,7 +159,10 @@ class ManyTearsRescueScraper(BaseScraper):
             finally:
                 # Clean up thread-local WebDriver
                 if local_driver:
-                    local_driver.quit()
+                    try:
+                        local_driver.quit()
+                    except:
+                        pass
 
             return batch_results
 
@@ -162,18 +174,18 @@ class ManyTearsRescueScraper(BaseScraper):
 
         self.logger.info(f"Split {len(animals)} animals into {len(batches)} batches of size {self.batch_size}")
 
-        # Process batches with controlled concurrency
-        max_workers = min(self.batch_size, 3)  # Limit concurrent threads to prevent overwhelming
+        # Process batches with reduced concurrency
+        max_workers = min(2, len(batches))  # MAX 2 THREADS to prevent overwhelming
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit all batches
             future_to_batch = {executor.submit(process_animal_batch, batch): i for i, batch in enumerate(batches)}
 
-            # Collect results as they complete
+            # Collect results as they complete with extended timeout
             for future in concurrent.futures.as_completed(future_to_batch):
                 batch_index = future_to_batch[future]
                 try:
-                    batch_results = future.result(timeout=300)  # 5 minute timeout per batch
+                    batch_results = future.result(timeout=600)  # 10 minute timeout per batch
                     all_dogs_data.extend(batch_results)
                     self.logger.info(f"Completed batch {batch_index + 1}/{len(batches)}: {len(batch_results)} animals processed")
                 except Exception as e:
@@ -218,54 +230,109 @@ class ManyTearsRescueScraper(BaseScraper):
         Returns:
             List of dictionaries containing basic dog information from all pages
         """
-        driver = self._setup_selenium_driver()
+        driver = None
         all_dogs = []
 
         try:
+            driver = self._setup_selenium_driver()
+
             # Start with page 1 to detect max pages
             page_num = 1
             max_pages = None
+            consecutive_empty_pages = 0
+            max_empty_pages = 2  # Stop after 2 consecutive empty pages
 
             while True:
-                if page_num == 1:
-                    url = self.listing_url
-                else:
-                    url = f"{self.listing_url}?page={page_num}"
+                try:
+                    if page_num == 1:
+                        url = self.listing_url
+                    else:
+                        url = f"{self.listing_url}?page={page_num}"
 
-                self.logger.debug(f"Fetching page {page_num}: {url}")
-                driver.get(url)
-                time.sleep(2)  # Wait for page load
+                    self.logger.info(f"Fetching page {page_num}: {url}")
 
-                # Parse the page content
-                soup = BeautifulSoup(driver.page_source, "html.parser")
+                    # Load page with retry logic
+                    page_loaded = False
+                    for retry in range(3):
+                        try:
+                            driver.get(url)
 
-                # Detect max pages from pagination links on first page
-                if max_pages is None:
-                    max_pages = self._detect_max_pages(soup)
-                    self.logger.info(f"Detected maximum pages: {max_pages}")
+                            # Wait for page to load with random delay
+                            wait_time = random.uniform(3, 7)
+                            time.sleep(wait_time)
 
-                # Extract dogs from current page
-                page_dogs = self._extract_dogs_from_page(soup)
-                if page_dogs:
-                    all_dogs.extend(page_dogs)
-                    self.logger.debug(f"Found {len(page_dogs)} dogs on page {page_num}")
-                else:
-                    self.logger.debug(f"No dogs found on page {page_num}")
+                            # Verify page loaded by checking for dog cards
+                            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "a[href*='/adopt/dogs/']")))
+                            page_loaded = True
+                            break
+                        except TimeoutException:
+                            self.logger.warning(f"Timeout on page {page_num}, retry {retry + 1}/3")
+                            if retry < 2:
+                                time.sleep(2 ** (retry + 1))  # Exponential backoff
+                            continue
 
-                # Check if we should continue to next page
-                if page_num >= max_pages:
-                    break
+                    if not page_loaded:
+                        self.logger.error(f"Failed to load page {page_num} after 3 retries")
+                        break
 
-                page_num += 1
+                    # Random human-like scroll
+                    driver.execute_script("window.scrollTo(0, document.body.scrollHeight * 0.3);")
+                    time.sleep(random.uniform(0.5, 1.5))
+                    driver.execute_script("window.scrollTo(0, document.body.scrollHeight * 0.6);")
+                    time.sleep(random.uniform(0.5, 1.5))
+                    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
-                # Rate limiting between page requests
-                if page_num <= max_pages:
-                    time.sleep(self.rate_limit_delay)
+                    # Parse the page content
+                    soup = BeautifulSoup(driver.page_source, "html.parser")
+
+                    # Detect max pages from pagination links on first page
+                    if max_pages is None:
+                        max_pages = self._detect_max_pages(soup)
+                        self.logger.info(f"Detected maximum pages: {max_pages}")
+
+                    # Extract dogs from current page
+                    page_dogs = self._extract_dogs_from_page(soup)
+                    if page_dogs:
+                        all_dogs.extend(page_dogs)
+                        self.logger.info(f"Found {len(page_dogs)} dogs on page {page_num}")
+                        consecutive_empty_pages = 0
+                    else:
+                        self.logger.warning(f"No dogs found on page {page_num}")
+                        consecutive_empty_pages += 1
+
+                        # Stop if too many empty pages
+                        if consecutive_empty_pages >= max_empty_pages:
+                            self.logger.info(f"Stopping after {max_empty_pages} consecutive empty pages")
+                            break
+
+                    # Check if we should continue to next page
+                    if page_num >= max_pages:
+                        self.logger.info(f"Reached max page {max_pages}")
+                        break
+
+                    page_num += 1
+
+                    # Rate limiting between page requests with random delay
+                    if page_num <= max_pages:
+                        delay = random.uniform(self.rate_limit_delay + 2, self.rate_limit_delay + 5)
+                        self.logger.debug(f"Waiting {delay:.1f}s before next page...")
+                        time.sleep(delay)
+
+                except Exception as e:
+                    self.logger.error(f"Error processing page {page_num}: {e}")
+                    consecutive_empty_pages += 1
+                    if consecutive_empty_pages >= max_empty_pages:
+                        break
+                    continue
 
         except Exception as e:
             self.logger.error(f"Error during pagination scraping: {e}")
         finally:
-            driver.quit()
+            if driver:
+                try:
+                    driver.quit()
+                except:
+                    pass
 
         self.logger.info(f"Total dogs collected across all pages: {len(all_dogs)}")
         return all_dogs
@@ -280,17 +347,55 @@ class ManyTearsRescueScraper(BaseScraper):
             Configured Chrome Options instance
         """
         chrome_options = Options()
-        chrome_options.add_argument("--headless")
+
+        # Core headless settings
+        chrome_options.add_argument("--headless=new")  # Use new headless mode
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--window-size=1920,1080")
+
+        # Random viewport size for fingerprint variation
+        width = random.randint(1366, 1920)
+        height = random.randint(768, 1080)
+        chrome_options.add_argument(f"--window-size={width},{height}")
+
+        # Anti-detection arguments
+        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+        chrome_options.add_argument("--disable-features=IsolateOrigins,site-per-process")
         chrome_options.add_argument("--disable-web-security")
         chrome_options.add_argument("--disable-features=VizDisplayCompositor")
-        chrome_options.add_argument("--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+        chrome_options.add_argument("--disable-dev-tools")
+        chrome_options.add_argument("--disable-extensions")
+        chrome_options.add_argument("--disable-plugins")
+        chrome_options.add_argument("--disable-images")  # Faster loading
+        chrome_options.add_argument("--disable-javascript")  # Then re-enable selectively
+
+        # Random user agent
+        user_agent = random.choice(self.USER_AGENTS)
+        chrome_options.add_argument(f"--user-agent={user_agent}")
+
+        # Additional stealth options
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option("useAutomationExtension", False)
+
+        # Disable logging to reduce detection
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
+        chrome_options.add_argument("--log-level=3")
+        chrome_options.add_argument("--silent")
+
+        # Performance optimizations
+        prefs = {
+            "profile.default_content_setting_values": {
+                "images": 2,  # Block images
+                "plugins": 2,  # Block plugins
+                "popups": 2,  # Block popups
+                "geolocation": 2,  # Block location
+                "notifications": 2,  # Block notifications
+                "media_stream": 2,  # Block media stream
+            },
+            "profile.managed_default_content_settings": {"images": 2},
+        }
+        chrome_options.add_experimental_option("prefs", prefs)
 
         return chrome_options
 
@@ -306,7 +411,40 @@ class ManyTearsRescueScraper(BaseScraper):
         chrome_options = self._get_chrome_options()
 
         driver = webdriver.Chrome(options=chrome_options)
-        driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+
+        # Enable JavaScript after driver creation
+        driver.execute_cdp_cmd("Emulation.setScriptExecutionDisabled", {"value": False})
+
+        # Inject stealth JavaScript
+        stealth_js = """
+        Object.defineProperty(navigator, 'webdriver', {
+            get: () => undefined
+        });
+        
+        Object.defineProperty(navigator, 'plugins', {
+            get: () => [1, 2, 3, 4, 5]
+        });
+        
+        Object.defineProperty(navigator, 'languages', {
+            get: () => ['en-US', 'en']
+        });
+        
+        window.chrome = {
+            runtime: {}
+        };
+        
+        Object.defineProperty(navigator, 'permissions', {
+            get: () => ({
+                query: () => Promise.resolve({ state: 'granted' })
+            })
+        });
+        """
+
+        driver.execute_script(stealth_js)
+
+        # Set proper timeouts
+        driver.set_page_load_timeout(60)  # 60 seconds for page load
+        driver.implicitly_wait(10)  # 10 seconds implicit wait
 
         return driver
 

@@ -6,9 +6,10 @@ import { logger } from "../utils/logger";
 /**
  * Fetches a list of animals based on provided filters.
  * @param {object} params - Filtering parameters (limit, offset, breed, size, etc.)
+ * @param {object} options - Additional fetch options (e.g., signal for AbortController)
  * @returns {Promise<Array>} - Promise resolving to an array of animal objects.
  */
-export async function getAnimals(params = {}) {
+export async function getAnimals(params = {}, options = {}) {
   logger.log("Fetching animals with params:", params);
   // Remove null/undefined/default values before sending
   const cleanParams = Object.fromEntries(
@@ -20,6 +21,7 @@ export async function getAnimals(params = {}) {
         !(key === "standardized_size" && v === "Any size") && // Check standardized_size
         !(key === "age_category" && v === "Any age") &&
         !(key === "standardized_breed" && v === "Any breed") &&
+        !(key === "breed_group" && v === "Any group") &&
         !(key === "organization_id" && v === "Any organization") &&
         !(key === "location_country" && v === "Any country") &&
         !(key === "available_to_country" && v === "Any country") &&
@@ -37,7 +39,7 @@ export async function getAnimals(params = {}) {
   }
 
   logger.log("Cleaned params for API:", cleanParams);
-  return get("/api/animals", cleanParams);
+  return get("/api/animals", cleanParams, options);
 }
 
 /**
@@ -295,7 +297,7 @@ export async function getAllAnimalsForSitemap(params = {}) {
  * @param {object} params - Current filter context (search, animal_type, status, etc.)
  * @returns {Promise<object>} - Promise resolving to filter counts response.
  */
-export async function getFilterCounts(params = {}) {
+export async function getFilterCounts(params = {}, options = {}) {
   logger.log("Fetching filter counts with params:", params);
 
   // Remove null/undefined/default values before sending
@@ -325,7 +327,7 @@ export async function getFilterCounts(params = {}) {
   }
 
   logger.log("Cleaned filter count params for API:", cleanParams);
-  return get("/api/animals/meta/filter_counts", cleanParams);
+  return get("/api/animals/meta/filter_counts", cleanParams, options);
 }
 
 // --- Search Suggestions Endpoints ---
@@ -381,5 +383,74 @@ export async function getBreedSuggestions(query, limit = 5) {
   } catch (error) {
     logger.error("Error fetching breed suggestions:", error);
     return [];
+  }
+}
+
+/**
+ * Fetches dogs for a specific breed with filters.
+ * @param {string} breedSlug - The breed slug
+ * @param {object} filters - Filtering parameters
+ * @returns {Promise<object>} - Promise resolving to dogs and metadata
+ */
+export async function getBreedDogs(breedSlug, filters = {}) {
+  logger.log(`Fetching dogs for breed: ${breedSlug}`, filters);
+
+  try {
+    const breedStats = await get("/api/animals/breeds/stats");
+    const breedData = breedStats.qualifying_breeds?.find(
+      (breed) => breed.breed_slug === breedSlug,
+    );
+
+    if (!breedData) {
+      throw new Error(`Breed not found: ${breedSlug}`);
+    }
+
+    const params = {
+      breed: breedData.primary_breed,
+      limit: filters.limit || 12,
+      offset: filters.offset || 0,
+      animal_type: "dog",
+      status: "available",
+    };
+
+    if (filters.age && filters.age !== "all") params.age = filters.age;
+    if (filters.sex && filters.sex !== "all") params.sex = filters.sex;
+    if (filters.size && filters.size !== "all") params.size = filters.size;
+    if (filters.good_with_cats) params.good_with_cats = true;
+    if (filters.good_with_dogs) params.good_with_dogs = true;
+
+    return get("/api/animals", params);
+  } catch (error) {
+    logger.error(`Error fetching breed dogs for ${breedSlug}:`, error);
+    return { results: [], total: 0 };
+  }
+}
+
+/**
+ * Fetches filter counts for a specific breed.
+ * @param {string} breedSlug - The breed slug
+ * @returns {Promise<object>} - Promise resolving to filter counts
+ */
+export async function getBreedFilterCounts(breedSlug) {
+  logger.log(`Fetching filter counts for breed: ${breedSlug}`);
+
+  try {
+    const breedStats = await get("/api/animals/breeds/stats");
+    const breedData = breedStats.qualifying_breeds?.find(
+      (breed) => breed.breed_slug === breedSlug,
+    );
+
+    if (!breedData) {
+      return null;
+    }
+
+    return getFilterCounts({
+      breed: breedData.primary_breed,
+      animal_type: "dog",
+      status: "available",
+    });
+  } catch (error) {
+    logger.error(`Error fetching breed filter counts for ${breedSlug}:`, error);
+    return null;
   }
 }

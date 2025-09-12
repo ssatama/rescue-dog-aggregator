@@ -162,6 +162,7 @@ class StandardizationBackfillService:
                 OR breed_confidence IS NULL
                 OR breed_type IS NULL
                 OR primary_breed IS NULL
+                OR breed_slug IS NULL
                 ORDER BY id
             """
             if limit:
@@ -215,6 +216,11 @@ class StandardizationBackfillService:
                 set_clauses.append("secondary_breed = %s")
                 values.append(standardized_data["secondary_breed"])
 
+            # Add breed_slug field
+            if "breed_slug" in standardized_data:
+                set_clauses.append("breed_slug = %s")
+                values.append(standardized_data["breed_slug"])
+
             if not set_clauses:
                 return True  # Nothing to update
 
@@ -250,6 +256,7 @@ class StandardizationBackfillService:
             "breed_type": standardized.get("breed_type"),
             "primary_breed": standardized.get("primary_breed"),
             "secondary_breed": standardized.get("secondary_breed"),
+            "breed_slug": standardized.get("breed_slug"),  # Add breed_slug field
         }
 
     def fix_lurchers(self, dry_run: bool = False) -> Dict[str, Any]:

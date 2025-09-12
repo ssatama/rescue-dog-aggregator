@@ -11,6 +11,8 @@ from difflib import SequenceMatcher
 from functools import lru_cache
 from typing import Any, Dict, List, Optional, Tuple
 
+from utils.breed_utils import generate_breed_slug
+
 
 @dataclass(frozen=True)
 class BreedInfo:
@@ -271,6 +273,7 @@ class UnifiedStandardizer:
         size_result = self._standardize_size(size, breed) if self.enable_size_standardization else {"category": size}
 
         # Build result in the format expected by BaseScraper and tests
+        primary_breed = breed_result.get("primary_breed", breed_result.get("name", "Unknown"))
         result = {
             # Breed fields
             "breed": breed_result.get("name", "Unknown"),
@@ -278,8 +281,9 @@ class UnifiedStandardizer:
             "breed_category": breed_result.get("group", "Unknown"),
             "breed_type": breed_result.get("breed_type", "purebred"),  # Add breed_type field
             "breed_confidence": breed_result.get("confidence", 0.0),  # Add breed_confidence field
-            "primary_breed": breed_result.get("primary_breed", breed_result.get("name", "Unknown")),
+            "primary_breed": primary_breed,
             "secondary_breed": breed_result.get("secondary_breed"),
+            "breed_slug": generate_breed_slug(primary_breed),  # Generate breed_slug for breed pages
             "standardization_confidence": breed_result.get("confidence", 0.0),
             # Age fields - preserve original and add ranges
             "age": age,  # Preserve original age field

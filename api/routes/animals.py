@@ -11,10 +11,9 @@ from api.dependencies import get_pooled_db_cursor
 from api.exceptions import APIException, handle_database_error, handle_validation_error
 from api.models.dog import Animal
 from api.models.requests import AnimalFilterCountRequest, AnimalFilterRequest
-from api.models.responses import FilterCountsResponse
+from api.models.responses import BreedStatsResponse, FilterCountsResponse
 from api.services import AnimalService
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["animals"])
@@ -44,7 +43,13 @@ async def get_animals(
         raise
     except Exception as e:
         logger.exception(f"Unexpected error in get_animals: {e}")
-        raise APIException(status_code=500, detail=f"Internal server error in get_animals", error_code="INTERNAL_ERROR")
+        # In development, return the actual error for debugging
+        import os
+
+        if os.getenv("ENV", "development") == "development":
+            raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
+        else:
+            raise APIException(status_code=500, detail=f"Internal server error in get_animals", error_code="INTERNAL_ERROR")
 
 
 # --- Meta Endpoints ---
@@ -159,13 +164,14 @@ async def get_distinct_available_regions(
 ):
     """Get a distinct list of regions within a specific country organizations can adopt to."""
     try:
-        # Query distinct regions from organizations service_regions JSONB field
+        # Query distinct regions from service_regions table for consistency
         cursor.execute(
             """
-            SELECT DISTINCT jsonb_array_elements_text(service_regions) as region
-            FROM organizations
-            WHERE country = %s AND service_regions IS NOT NULL AND active = TRUE
-            ORDER BY region ASC
+            SELECT DISTINCT sr.region
+            FROM service_regions sr
+            JOIN organizations o ON sr.organization_id = o.id
+            WHERE sr.country = %s AND sr.region IS NOT NULL AND sr.region != '' AND o.active = TRUE
+            ORDER BY sr.region ASC
             """,
             (country,),  # Pass the country as a parameter
         )
@@ -180,6 +186,33 @@ async def get_distinct_available_regions(
 
 
 # --- END NEW ---
+
+
+# --- Breed Statistics Endpoint ---
+@router.get("/breeds/stats", response_model=BreedStatsResponse, summary="Get Breed Statistics")
+async def get_breed_stats(
+    cursor: RealDictCursor = Depends(get_pooled_db_cursor),
+):
+    """
+    Get breed statistics including total dogs, unique breeds, breed groups distribution,
+    and qualifying breeds with 15+ dogs.
+
+    Returns:
+        Breed statistics including:
+        - total_dogs: Total number of available dogs
+        - unique_breeds: Count of unique primary breeds
+        - breed_groups: Distribution of breed groups
+        - qualifying_breeds: Breeds with 15+ dogs including personality traits and demographics
+    """
+    try:
+        service = AnimalService(cursor)
+        stats = service.get_breed_stats()
+        return stats
+    except psycopg2.Error as db_err:
+        handle_database_error(db_err, "get_breed_stats")
+    except Exception as e:
+        logger.exception(f"Unexpected error fetching breed statistics: {e}")
+        raise APIException(status_code=500, detail="Failed to fetch breed statistics", error_code="INTERNAL_ERROR")
 
 
 # --- Search Suggestions Endpoints ---
@@ -238,6 +271,30 @@ async def get_search_suggestions(
     except Exception as e:
         logger.exception(f"Unexpected error fetching search suggestions: {e}")
         raise APIException(status_code=500, detail="Failed to fetch search suggestions", error_code="INTERNAL_ERROR")
+
+
+@router.get("/breeds/with-images")
+async def get_breeds_with_images(
+    breed_type: str = Query(None, description="Filter by breed type (mixed, purebred, crossbreed)"),
+    breed_group: str = Query(None, description="Filter by breed group"),
+    min_count: int = Query(0, ge=0, description="Minimum number of dogs per breed"),
+    limit: int = Query(10, ge=1, le=50, description="Maximum number of breeds to return"),
+    cursor: RealDictCursor = Depends(get_pooled_db_cursor),
+):
+    """
+    Get breeds with sample dog images for the breeds overview page.
+
+    Returns breeds with their counts and up to 3 sample dogs with images.
+    """
+    try:
+        service = AnimalService(cursor)
+        breeds = service.get_breeds_with_images(breed_type=breed_type, breed_group=breed_group, min_count=min_count, limit=limit)
+        return breeds
+    except psycopg2.Error as db_err:
+        handle_database_error(db_err, "get_breeds_with_images")
+    except Exception as e:
+        logger.exception(f"Unexpected error fetching breeds with images: {e}")
+        raise APIException(status_code=500, detail="Failed to fetch breeds with images", error_code="INTERNAL_ERROR")
 
 
 @router.get("/breeds/suggestions", response_model=List[str])
@@ -359,10 +416,16 @@ async def get_random_animals(
     """Get random available dogs for featured section."""
     try:
         query = """
-            SELECT id, name, slug, animal_type, breed, standardized_breed, age_text, age_min_months, age_max_months, sex, size, standardized_size, status, primary_image_url, adoption_url, organization_id, external_id, language, properties, created_at, updated_at, last_scraped_at
+            SELECT id, name, slug, animal_type, breed, standardized_breed, breed_group,
+                   primary_breed, breed_type, breed_confidence, secondary_breed, breed_slug,
+                   age_text, age_min_months, age_max_months, sex, size, standardized_size,
+                   status, primary_image_url, adoption_url, organization_id, external_id,
+                   language, properties, created_at, updated_at, last_scraped_at,
+                   availability_confidence, last_seen_at, consecutive_scrapes_missing,
+                   dog_profiler_data
             FROM animals
             WHERE animal_type = 'dog' AND status = %s
-            ORDER BY RANDOM()
+            ORDER BY (abs(hashtext(id::text || to_char(now(), 'IYYY-IW'))) %% 1000)
             LIMIT %s
         """
         params = [status, limit]
