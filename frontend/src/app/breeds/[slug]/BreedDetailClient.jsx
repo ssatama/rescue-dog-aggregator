@@ -21,6 +21,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import PersonalityBarChart from "@/components/breeds/PersonalityBarChart";
 import CommonTraits from "@/components/breeds/CommonTraits";
 import ExperienceLevelChart from "@/components/breeds/ExperienceLevelChart";
+import ExpandableText from "@/components/ui/ExpandableText";
 
 // Lazy load filter component
 const MobileFilterDrawer = dynamic(() => import("@/components/filters/MobileFilterDrawer"), {
@@ -343,9 +344,11 @@ export default function BreedDetailClient({
           return description ? (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
               <h2 className="text-2xl font-bold mb-4">About the {breedData.primary_breed}</h2>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-lg">
-                {description}
-              </p>
+              <ExpandableText 
+                text={description}
+                lines={4}
+                className="text-gray-700 dark:text-gray-300"
+              />
             </div>
           ) : null;
         })()}
