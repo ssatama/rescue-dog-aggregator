@@ -636,6 +636,11 @@ class BaseScraper(ABC):
             if "animal_type" not in animal_data:
                 animal_data["animal_type"] = self.animal_type
 
+            # CRITICAL: Validate animal data before saving to prevent invalid data in database
+            if not self._validate_animal_data(animal_data):
+                self.logger.warning(f"Skipping invalid animal: {animal_data.get('name', 'Unknown')} - validation failed")
+                continue
+
             # Save animal
             animal_id, action = self.save_animal(animal_data)
 
