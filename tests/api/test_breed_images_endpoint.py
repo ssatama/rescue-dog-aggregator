@@ -7,7 +7,6 @@ from fastapi.testclient import TestClient
 
 from api.main import app
 
-
 # Remove the client fixture as it conflicts with the global one
 # @pytest.fixture
 # def client():
