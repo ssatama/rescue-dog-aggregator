@@ -3,6 +3,8 @@
  * Provides conditional logging that only outputs in development environment
  */
 
+import * as Sentry from "@sentry/nextjs";
+
 const isDevelopment = process.env.NODE_ENV === "development";
 
 export const logger = {
@@ -37,12 +39,27 @@ export const logger = {
   },
 };
 
-// For production error reporting, you might want to integrate with a service like Sentry
+// Production error reporting with Sentry integration
 export const reportError = (error, context = {}) => {
   if (isDevelopment) {
     console.error("Error:", error, "Context:", context);
   } else {
-    // In production, you would send to error tracking service
-    // Example: Sentry.captureException(error, { extra: context });
+    // In production, report to Sentry
+    try {
+      // Preserve original error object to maintain stack traces
+      const errorToReport = error instanceof Error ? error : new Error(String(error));
+      
+      Sentry.captureException(errorToReport, { 
+        extra: context,
+        tags: {
+          source: 'frontend_api',
+          browser: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'
+        }
+      });
+    } catch (sentryError) {
+      // Fallback to console if Sentry fails
+      console.error("Sentry reporting failed:", sentryError);
+      console.error("Original error:", error, "Context:", context);
+    }
   }
 };

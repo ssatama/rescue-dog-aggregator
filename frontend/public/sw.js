@@ -3,11 +3,58 @@
  * Implements offline caching with smart network strategies
  */
 
+// Import Sentry for error reporting
+importScripts('https://browser.sentry-cdn.com/7.118.0/bundle.min.js');
+
 const CACHE_VERSION = 'v1';
 const CACHE_NAME = `rescue-dogs-${CACHE_VERSION}`;
 const API_CACHE = `api-cache-${CACHE_VERSION}`;
 const IMAGE_CACHE = `image-cache-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `dynamic-cache-${CACHE_VERSION}`;
+
+// Get API base URL from environment or fallback to production
+const getApiDomain = () => {
+  if (typeof self !== 'undefined' && self.location) {
+    const hostname = self.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'localhost:8000';
+    }
+  }
+  return 'api.rescuedogs.me';
+};
+
+const API_DOMAIN = getApiDomain();
+
+// Initialize Sentry in service worker - using environment DSN
+if (typeof Sentry !== 'undefined') {
+  // Get DSN from message from main thread (safer than hardcoding)
+  let sentryDsn = null;
+  
+  // Listen for configuration from main thread
+  self.addEventListener('message', (event) => {
+    if (event.data?.action === 'configureSentry' && event.data?.dsn) {
+      sentryDsn = event.data.dsn;
+      initializeSentry();
+    }
+  });
+  
+  function initializeSentry() {
+    if (sentryDsn) {
+      Sentry.init({
+        dsn: sentryDsn,
+        environment: self.location.hostname === 'www.rescuedogs.me' ? 'production' : 'development',
+        integrations: [],
+        beforeSend(event) {
+          // Add service worker context
+          event.tags = event.tags || {};
+          event.tags.source = 'service_worker';
+          event.tags.cache_version = CACHE_VERSION;
+          return event;
+        }
+      });
+    }
+  }
+}
 
 // Assets to cache on install
 const STATIC_ASSETS = [
@@ -74,9 +121,9 @@ self.addEventListener('fetch', (event) => {
   }
 
   // API requests - Network first, fall back to cache
-  if (url.pathname.startsWith('/api/')) {
+  if (url.pathname.startsWith('/api/') || url.hostname === API_DOMAIN) {
     event.respondWith(
-      networkFirstStrategy(request, API_CACHE, 5000) // 5 second timeout
+      networkFirstStrategy(request, API_CACHE, 8000) // 8 second timeout for Safari compatibility
     );
     return;
   }
@@ -129,6 +176,27 @@ async function networkFirstStrategy(request, cacheName, timeout = 5000) {
     return networkResponse;
   } catch (error) {
     console.log('[ServiceWorker] Network failed, falling back to cache:', error);
+    
+    // Report Safari-specific network errors to Sentry
+    if (typeof Sentry !== 'undefined') {
+      const userAgent = self.navigator?.userAgent || 'unknown';
+      const isSafari = userAgent.includes('Safari') && !userAgent.includes('Chrome');
+      
+      Sentry.captureException(error, {
+        tags: {
+          source: 'service_worker_network',
+          browser: isSafari ? 'safari' : 'other',
+          url: request.url,
+          timeout: timeout
+        },
+        extra: {
+          requestUrl: request.url,
+          userAgent: userAgent,
+          cacheName: cacheName,
+          timeoutMs: timeout
+        }
+      });
+    }
     
     const cachedResponse = await caches.match(request);
     if (cachedResponse) {
