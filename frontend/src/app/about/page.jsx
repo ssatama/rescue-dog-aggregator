@@ -1,12 +1,10 @@
-"use client";
-
 import Layout from "../../components/layout/Layout";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
 import { BreadcrumbSchema } from "../../components/seo";
 
-// Metadata export for SEO (works with client components in Next.js)
+// Metadata export for SEO
 export const metadata = {
   title: "About Us - Rescue Dog Aggregator",
   description:
