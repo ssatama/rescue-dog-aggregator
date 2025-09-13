@@ -10,6 +10,8 @@ export interface SwipeDog {
   name: string;
   breed?: string;
   age?: string;
+  age_min_months?: number;
+  age_max_months?: number;
   image?: string;
   organization?: string;
   location?: string;
@@ -56,6 +58,8 @@ export async function fetchSwipeDogs(
     name: dog.name,
     breed: dog.breed,
     age: dog.age,
+    age_min_months: dog.age_min_months,
+    age_max_months: dog.age_max_months,
     image: dog.image_url || dog.image,
     organization:
       dog.organization_name ||

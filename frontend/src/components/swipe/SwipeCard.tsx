@@ -4,6 +4,7 @@ import { useFavorites } from "../../hooks/useFavorites";
 import * as Sentry from "@sentry/nextjs";
 import { getPersonalityTraitColor } from "../../utils/personalityColors";
 import ShareButton from "../ui/ShareButton";
+import { getAgeCategory } from "../../utils/dogHelpers";
 
 interface SwipeCardProps {
   dog: {
@@ -11,6 +12,8 @@ interface SwipeCardProps {
     name: string;
     breed?: string;
     age?: string;
+    age_min_months?: number;
+    age_max_months?: number;
     image?: string;
     organization?: string;
     location?: string;
@@ -65,6 +68,13 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
   const uniqueQuirk = profileData.uniqueQuirk || "";
   const personalityTraits = profileData.personalityTraits || [];
   const favoriteActivities = profileData.favoriteActivities || [];
+  
+  // Get age category
+  const ageCategory = getAgeCategory({
+    age_min_months: dog.age_min_months,
+    age_max_months: dog.age_max_months,
+    age_text: dog.age
+  });
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl dark:shadow-gray-900/50 overflow-hidden relative group transition-colors flex flex-col">
@@ -87,7 +97,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
             title={`Check out ${dog.name} for adoption!`}
             text={
               dog.description ||
-              `${dog.name} is a ${dog.age || ""} ${dog.breed || ""} looking for a forever home!`
+              `${dog.name} is a ${ageCategory || ""} ${dog.breed || ""} looking for a forever home!`
             }
             compact={true}
             variant="ghost"
@@ -136,9 +146,9 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
           <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
             {dog.name}
           </h3>
-          {(dog.age || dog.breed) && (
+          {(ageCategory || dog.breed) && (
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {[dog.age, dog.breed].filter(Boolean).join(" • ")}
+              {[ageCategory, dog.breed].filter(Boolean).join(" • ")}
             </p>
           )}
         </div>

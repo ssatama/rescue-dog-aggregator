@@ -7,6 +7,7 @@ import { AdoptionCTA } from "./AdoptionCTA";
 import { X, Heart, Share2 } from "lucide-react";
 import { getPersonalityTraitColor } from "../../utils/personalityColors";
 import ShareButton from "../ui/ShareButton";
+import { getAgeCategory } from "../../utils/dogHelpers";
 
 interface DogProfilerData {
   description?: string;
@@ -24,6 +25,8 @@ interface Dog {
   id: number;
   name: string;
   age: string;
+  age_min_months?: number;
+  age_max_months?: number;
   sex: string;
   size: string;
   breed: string;
@@ -96,6 +99,13 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
   const allImages = [dog.image_url, ...(dog.additional_images || [])];
   const isAlreadyFavorite = isFavorited(dog.id);
   const profilerData = dog.dog_profiler_data;
+  
+  // Get age category
+  const ageCategory = getAgeCategory({
+    age_min_months: dog.age_min_months,
+    age_max_months: dog.age_max_months,
+    age_text: dog.age
+  });
 
   // Create overlay buttons
   const overlayButtons = (
@@ -200,7 +210,7 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
 
                   <div className="flex items-center gap-4 text-gray-600 dark:text-gray-400 mb-4">
                     <span className="flex items-center gap-1">
-                      <span className="text-orange-500">🐾</span> {dog.age}
+                      <span className="text-orange-500">🐾</span> {ageCategory}
                     </span>
                     <span className="flex items-center gap-1">
                       <span>♂</span> {dog.sex}

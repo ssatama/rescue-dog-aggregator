@@ -13,6 +13,7 @@ const mockDog = {
   id: 1,
   name: "Buddy",
   age: "2 years",
+  age_min_months: 24,
   sex: "Male",
   size: "Medium",
   breed: "Golden Mix",
@@ -43,6 +44,7 @@ const mockDogWithoutLLMData = {
   id: 2,
   name: "Max",
   age: "3 years",
+  age_min_months: 36,
   sex: "Male",
   size: "Large",
   breed: "German Shepherd",
@@ -220,7 +222,7 @@ describe("SwipeDetails", () => {
       <SwipeDetails dog={mockDog} isOpen={true} onClose={mockOnClose} />,
     );
 
-    expect(screen.getByText("2 years")).toBeInTheDocument();
+    expect(screen.getByText("Young")).toBeInTheDocument();
     expect(screen.getByText("Male")).toBeInTheDocument();
     expect(screen.getByText("Medium")).toBeInTheDocument();
   });
@@ -259,7 +261,7 @@ describe("SwipeDetails", () => {
     );
 
     expect(screen.getByText("Max")).toBeInTheDocument();
-    expect(screen.getByText("3 years")).toBeInTheDocument();
+    expect(screen.getByText("Adult")).toBeInTheDocument(); // Changed from "3 years" to "Adult" since age_min_months: 36
     expect(screen.getByText("Male")).toBeInTheDocument();
     expect(screen.getByText("Large")).toBeInTheDocument();
 

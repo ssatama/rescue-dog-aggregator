@@ -241,6 +241,8 @@ async def get_swipe_stack(
                 "secondary_breed": properties.get("secondary_breed"),
                 "mixed_breed": properties.get("mixed_breed", False),
                 "age": animal_dict.get("age_text") or properties.get("age_text"),
+                "age_min_months": animal_dict.get("age_min_months"),
+                "age_max_months": animal_dict.get("age_max_months"),
                 "sex": animal_dict.get("sex") or properties.get("sex"),
                 "size": animal_dict.get("size") or properties.get("size"),
                 "coat": properties.get("coat"),

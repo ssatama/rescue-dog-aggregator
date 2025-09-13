@@ -188,6 +188,7 @@ describe("DogDetailPage - Breed Display", () => {
       status: "available",
       properties: {},
       sex: "Male",
+      age_min_months: 24, // Add age data so age category is "Young" not "Unknown"
     };
     getAnimalBySlug.mockResolvedValue(mockDog);
 

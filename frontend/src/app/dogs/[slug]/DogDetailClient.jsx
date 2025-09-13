@@ -36,6 +36,7 @@ import {
   sanitizeHtml,
   safeExternalUrl,
 } from "../../../utils/security";
+import { getAgeCategory } from "../../../utils/dogHelpers";
 import DogDetailSkeleton from "../../../components/ui/DogDetailSkeleton";
 import DogDetailErrorBoundary from "../../../components/error/DogDetailErrorBoundary";
 import { ScrollAnimationWrapper } from "../../../hooks/useScrollAnimation";
@@ -284,20 +285,14 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
   }, [dogSlug]);
 
   const formatAge = (dog) => {
-    if (dog.age_min_months) {
-      if (dog.age_min_months < 12) {
-        return `${dog.age_min_months} month${dog.age_min_months === 1 ? "" : "s"} old`;
-      } else {
-        const years = Math.floor(dog.age_min_months / 12);
-        const months = dog.age_min_months % 12;
-        if (months === 0) {
-          return `${years} year${years === 1 ? "" : "s"} old`;
-        } else {
-          return `${years} year${years === 1 ? "" : "s"}, ${months} month${months === 1 ? "" : "s"} old`;
-        }
-      }
-    }
-    return dog.age_text || null;
+    // Use getAgeCategory to display age groups
+    const ageCategory = getAgeCategory({
+      age_min_months: dog.age_min_months,
+      age_max_months: dog.age_max_months,
+      age_text: dog.age_text
+    });
+    
+    return ageCategory || null;
   };
 
   // Memoized retry handler
