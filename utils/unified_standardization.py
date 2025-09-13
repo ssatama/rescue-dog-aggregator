@@ -116,6 +116,20 @@ class UnifiedStandardizer:
             "bodeguero andaluz": BreedInfo("Bodeguero Andaluz", "Terrier", "Small"),  # Spanish terrier
             "miniature schnauzer": BreedInfo("Miniature Schnauzer", "Terrier", "Small"),
             "schnauzer (miniature)": BreedInfo("Miniature Schnauzer", "Terrier", "Small"),
+            # Additional missing breeds from Dogs Trust patterns
+            "cavalier king charles spaniel": BreedInfo("Cavalier King Charles Spaniel", "Toy", "Small"),
+            "flat-coated retriever": BreedInfo("Flat-Coated Retriever", "Sporting", "Large"),
+            "german shorthaired pointer": BreedInfo("German Shorthaired Pointer", "Sporting", "Large"),
+            "german wirehaired pointer": BreedInfo("German Wirehaired Pointer", "Sporting", "Large"),
+            "standard schnauzer": BreedInfo("Standard Schnauzer", "Working", "Medium"),
+            "giant schnauzer": BreedInfo("Giant Schnauzer", "Working", "Large"),
+            "standard poodle": BreedInfo("Standard Poodle", "Non-Sporting", "Large"),
+            "miniature poodle": BreedInfo("Miniature Poodle", "Non-Sporting", "Small"),
+            "toy poodle": BreedInfo("Toy Poodle", "Toy", "Tiny"),
+            "miniature dachshund": BreedInfo("Miniature Dachshund", "Hound", "Small"),
+            "miniature pinscher": BreedInfo("Miniature Pinscher", "Toy", "Small"),
+            "belgian shepherd dog": BreedInfo("Belgian Shepherd Dog", "Herding", "Large"),
+            "boston terrier": BreedInfo("Boston Terrier", "Non-Sporting", "Small"),
             # Sporting Group
             "labrador retriever": BreedInfo("Labrador Retriever", "Sporting", "Large"),
             "golden retriever": BreedInfo("Golden Retriever", "Sporting", "Large"),
@@ -243,12 +257,88 @@ class UnifiedStandardizer:
         }
 
     def _compile_breed_patterns(self) -> Dict[str, re.Pattern]:
-        """Compile regex patterns for breed parsing."""
+        """Compile regex patterns for breed processing."""
         return {
-            "cross": re.compile(r"\b(?:cross|mix|x)\b", re.IGNORECASE),
-            "mixed": re.compile(r"\bmixed\s+breed\b", re.IGNORECASE),
-            "unknown": re.compile(r"\b(?:unknown|unbekannt|não definida)\b", re.IGNORECASE),
+            "mixed": re.compile(r"(mixed|mix|mongrel|mutt)", re.IGNORECASE),
+            "cross": re.compile(r"\b(cross|x|×)\b", re.IGNORECASE),
         }
+
+    def _parse_parenthetical_breed(self, breed: str) -> Optional[str]:
+        """
+        Parse Dogs Trust style parenthetical breed patterns.
+        Examples:
+            Terrier (jack Russell) -> Jack Russell Terrier
+            Collie (border) -> Border Collie
+            Retriever (labrador) -> Labrador Retriever
+        """
+        breed_lower = breed.lower().strip()
+
+        # Pattern: Main breed type (specific variant)
+        patterns = [
+            (r"terrier\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Terrier"),
+            (r"retriever\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Retriever"),
+            (r"collie\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Collie"),
+            (r"spaniel\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Spaniel"),
+            (r"schnauzer\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Schnauzer"),
+            (r"poodle\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Poodle"),
+            (r"pointer\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Pointer"),
+            (r"shepherd dog\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Shepherd"),
+            (r"dachshund\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Dachshund"),
+            (r"chihuahua\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Chihuahua"),
+            (r"pinscher\s*\(([\w\s]+)\)", lambda m: f"{self._capitalize_breed_name(m.group(1))} Pinscher"),
+        ]
+
+        for pattern, transformer in patterns:
+            match = re.search(pattern, breed_lower)
+            if match:
+                # Check if it's a cross
+                is_cross = " cross" in breed_lower or " x " in breed_lower
+                base_breed = transformer(match)
+
+                # Special case handling for common variants
+                replacements = {
+                    "Jack Russell Terrier": "Jack Russell Terrier",
+                    "Border Collie": "Border Collie",
+                    "Labrador Retriever": "Labrador Retriever",
+                    "Golden Retriever": "Golden Retriever",
+                    "Cocker Spaniel": "Cocker Spaniel",
+                    "Cavalier King Charles Spaniel": "Cavalier King Charles Spaniel",
+                    "English Springer Spaniel": "English Springer Spaniel",
+                    "German Shorthaired Pointer": "German Shorthaired Pointer",
+                    "German Wirehaired Pointer": "German Wirehaired Pointer",
+                    "Flat Coated Retriever": "Flat-Coated Retriever",
+                    "Miniature Schnauzer": "Miniature Schnauzer",
+                    "Giant Schnauzer": "Giant Schnauzer",
+                    "Standard Poodle": "Standard Poodle",
+                    "Miniature Poodle": "Miniature Poodle",
+                    "Smooth Haired Dachshund": "Dachshund",
+                    "Miniature Smooth Haired Dachshund": "Miniature Dachshund",
+                    "Long Coat Chihuahua": "Chihuahua",
+                    "Smooth Coat Chihuahua": "Chihuahua",
+                    "Miniature Pinscher": "Miniature Pinscher",
+                    "Malinois Shepherd": "Belgian Malinois",
+                    "Groenendael Shepherd": "Belgian Shepherd Dog",
+                    "West Highland White Terrier": "West Highland White Terrier",
+                    "Staffordshire Bull Terrier": "Staffordshire Bull Terrier",
+                    "Miniature Bull Terrier": "Miniature Bull Terrier",
+                    "Lakeland Terrier": "Lakeland Terrier",
+                    "Bedlington Terrier": "Bedlington Terrier",
+                    "Parson Russell Terrier": "Parson Russell Terrier",
+                    "Patterdale Terrier": "Patterdale Terrier",
+                    "Boston Terrier": "Boston Terrier",
+                    "Yorkshire Terrier": "Yorkshire Terrier",
+                    "Fox Wire Terrier": "Wire Fox Terrier",
+                }
+
+                # Apply replacements
+                for old, new in replacements.items():
+                    if base_breed.lower() == old.lower():
+                        base_breed = new
+                        break
+
+                return base_breed + (" Cross" if is_cross else "")
+
+        return None
 
     @lru_cache(maxsize=1000)
     def apply_full_standardization(self, breed: Optional[str] = None, age: Optional[str] = None, size: Optional[str] = None) -> Dict[str, Any]:
@@ -398,7 +488,37 @@ class UnifiedStandardizer:
             return {"name": "Unknown", "group": "Unknown", "size": None, "confidence": 0.0, "breed_type": "unknown", "is_mixed": False}
 
         breed_lower = breed.strip().lower()
-        is_mixed = bool(self.breed_patterns["cross"].search(breed_lower))
+        is_mixed = bool(self.breed_patterns["cross"].search(breed_lower) or self.breed_patterns["mixed"].search(breed_lower))
+
+        # Try parenthetical pattern first (Dogs Trust style)
+        parsed_breed = self._parse_parenthetical_breed(breed)
+        if parsed_breed:
+            # Now look up the parsed breed in our data
+            parsed_lower = parsed_breed.replace(" Cross", "").lower()
+            if parsed_lower in self.breed_data:
+                breed_info = self.breed_data[parsed_lower]
+                return {
+                    "name": parsed_breed,
+                    "group": "Mixed" if is_mixed else breed_info.breed_group,
+                    "size": breed_info.size_estimate,
+                    "confidence": 0.9 if not is_mixed else 0.7,
+                    "breed_type": "purebred" if not is_mixed else "crossbreed",
+                    "is_mixed": is_mixed,
+                    "primary_breed": parsed_breed.replace(" Cross", ""),
+                    "secondary_breed": None,
+                }
+            else:
+                # Parsed but not in breed_data - still better than unknown
+                return {
+                    "name": parsed_breed,
+                    "group": "Mixed" if is_mixed else "Unknown",
+                    "size": None,
+                    "confidence": 0.7 if not is_mixed else 0.6,
+                    "breed_type": "purebred" if not is_mixed else "crossbreed",
+                    "is_mixed": is_mixed,
+                    "primary_breed": parsed_breed.replace(" Cross", ""),
+                    "secondary_breed": None,
+                }
 
         # Check for Lurcher first (high priority fix)
         if "lurcher" in breed_lower:
@@ -454,16 +574,65 @@ class UnifiedStandardizer:
                 "is_mixed": is_mixed,
             }
 
-        # Check for mixed breed
-        if self.breed_patterns["mixed"].search(breed_lower):
-            return {"name": "Mixed Breed", "group": "Mixed", "size": None, "confidence": 0.5, "breed_type": "mixed", "is_mixed": True}
-
-        # Check for crosses with specific breed mentioned
-        if is_mixed and any(word in breed_lower for word in ["labrador", "collie", "terrier", "spaniel"]):
+        # Check for crosses with specific breed mentioned FIRST (before generic mixed breed)
+        # Include international breed terms (German: schäferhund=shepherd, hund=dog)
+        if is_mixed and any(
+            word in breed_lower
+            for word in [
+                "labrador",
+                "collie",
+                "terrier",
+                "spaniel",
+                "shepherd",
+                "retriever",
+                "pointer",
+                "setter",
+                "podenco",
+                "galgo",
+                "chihuahua",
+                "beagle",
+                "bulldog",
+                "hound",
+                "pug",
+                "ridgeback",
+                "poodle",
+                "mastiff",
+                "husky",
+                "akita",
+                "boxer",
+                "rottweiler",
+                "newfoundland",
+                "bichon",
+                "maltese",
+                "shih tzu",
+                "whippet",
+                "dalmatian",
+                "basset",
+                "australian",
+                "finnish",
+                "french",
+                "american",
+                "dutch",
+                "schäferhund",
+                "hund",
+                "dogo",
+                "gordon",
+                "lhasa",
+                "pomeranian",
+                "dachshund",
+                "great dane",
+                "irish",
+                "northern",
+            ]
+        ):
             # This is a cross with an identifiable breed component
-            # Properly capitalize breed names like "Terrier Mix", "Labrador Cross"
+            # Properly capitalize breed names like "Terrier Mix", "Labrador Cross", "German Shepherd Mix"
             breed_name = self._capitalize_breed_name(breed.strip())
             return {"name": breed_name, "group": "Mixed", "size": None, "confidence": 0.7, "breed_type": "crossbreed", "is_mixed": True}  # Medium confidence for identifiable crosses
+
+        # Check for generic mixed breed (only if no specific breed identified)
+        if self.breed_patterns["mixed"].search(breed_lower):
+            return {"name": "Mixed Breed", "group": "Mixed", "size": None, "confidence": 0.5, "breed_type": "mixed", "is_mixed": True}
 
         # Unknown breed - if it's mixed, put in Mixed group, otherwise Unknown
         breed_name = self._capitalize_breed_name(breed.strip())
@@ -708,7 +877,7 @@ class UnifiedStandardizer:
             return "Senior", 96, 240
 
         # Handle ranges (duplicate pattern for different order)
-        range_match = re.search(r"(\d+)\s*-\s*(\d+)\s*(years?|months?)", age_text)
+        range_match = re.search(r"(\d+)\s*(?:-|to)\s*(\d+)\s*(?:year|yr|month|mo)s?", age_text)
         if range_match:
             start, end, unit = range_match.groups()
             start, end = int(start), int(end)
