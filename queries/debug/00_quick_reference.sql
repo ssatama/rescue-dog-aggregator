@@ -8,6 +8,25 @@
 -- Total active dogs
 SELECT COUNT(*) as total_active_dogs FROM animals WHERE active = true;
 
+-- Today's dogs with data quality (KEY SITE COLUMNS)
+SELECT 
+    a.id,
+    a.name,
+    o.name as org,
+    a.primary_breed,
+    a.breed_type,
+    a.age_text,
+    a.standardized_size,
+    a.sex,
+    a.primary_image_url IS NOT NULL as has_img,
+    a.properties->>'description' IS NOT NULL as has_desc,
+    a.dog_profiler_data IS NOT NULL as has_ai,
+    a.created_at::time as time_added
+FROM animals a
+JOIN organizations o ON a.organization_id = o.id
+WHERE DATE(a.created_at) = CURRENT_DATE
+ORDER BY a.created_at DESC;
+
 -- Dogs by status
 SELECT status, COUNT(*) FROM animals WHERE active = true GROUP BY status;
 

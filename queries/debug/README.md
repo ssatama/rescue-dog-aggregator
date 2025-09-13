@@ -2,6 +2,16 @@
 
 This folder contains SQL queries for debugging and monitoring the Rescue Dog Aggregator database.
 
+## ⚠️ Important: Multi-Language Properties
+
+**Tierschutzverein Europa (TSV)** stores properties in German:
+- `Beschreibung` instead of `description`
+- `Rasse` instead of `breed`
+- `Geschlecht` instead of `sex`
+- etc.
+
+All queries have been updated to handle both English and German field names. TSV is scraping data correctly - it's just in German!
+
 ## Files
 
 ### 00_quick_reference.sql
@@ -13,7 +23,7 @@ This folder contains SQL queries for debugging and monitoring the Rescue Dog Agg
 - Performance monitoring
 - Template UPDATE statements (commented out for safety)
 
-### breed_master.sql ⭐ NEW
+### breed_master.sql ⭐
 **Complete breed data reference - ALL 8 breed columns explained**
 - Comprehensive breed column documentation
 - Coverage analysis for all breed fields
@@ -22,6 +32,22 @@ This folder contains SQL queries for debugging and monitoring the Rescue Dog Agg
 - Data quality checks and inconsistencies
 - Organization breed profiles
 - Breed standardization effectiveness
+
+### todays_dogs.sql ⭐ NEW
+**Daily scraping quality check for all dogs added today**
+- Summary stats with data completeness
+- Detailed view with quality indicators (✅/❌/⚠️)
+- Organization breakdown showing language (EN/DE)
+- Issue finder for missing data
+- **Important**: Handles both English and German fields (TSV uses "Beschreibung" not "description")
+
+### properties_analysis.sql ⭐ NEW
+**Understanding the properties JSONB field across organizations**
+- Property keys by organization
+- German field translations (for TSV)
+- Sample properties from each org
+- Multi-language field coverage
+- Shows that TSV stores German keys (Beschreibung, Rasse, Katzentest, etc.)
 
 ### 01_data_coverage.sql  
 **Overall data quality and completeness metrics**

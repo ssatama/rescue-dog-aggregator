@@ -21,7 +21,11 @@ SELECT
     COUNT(a.id) as total_dogs,
     ROUND(100.0 * COUNT(a.breed) / COUNT(*), 1) as pct_breed,
     ROUND(100.0 * COUNT(a.primary_image_url) / COUNT(*), 1) as pct_image,
-    ROUND(100.0 * COUNT(a.properties->>'description') / COUNT(*), 1) as pct_description,
+    -- Handle both English and German description fields
+    ROUND(100.0 * COUNT(CASE 
+        WHEN a.properties->>'description' IS NOT NULL OR a.properties->>'Beschreibung' IS NOT NULL 
+        THEN 1 
+    END) / COUNT(*), 1) as pct_description,
     ROUND(100.0 * COUNT(a.properties->>'adoption_fee') / COUNT(*), 1) as pct_fee,
     ROUND(100.0 * COUNT(a.properties->>'weight') / COUNT(*), 1) as pct_weight
 FROM animals a

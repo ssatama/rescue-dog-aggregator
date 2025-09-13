@@ -27,7 +27,7 @@ SELECT
     ROUND(100.0 * COUNT(a.breed) / NULLIF(COUNT(a.id), 0), 1) as breed_coverage,
     ROUND(100.0 * COUNT(a.primary_image_url) / NULLIF(COUNT(a.id), 0), 1) as image_coverage,
     ROUND(100.0 * COUNT(a.properties->>'description') / NULLIF(COUNT(a.id), 0), 1) as description_coverage,
-    ROUND(100.0 * COUNT(a.enriched_description) / NULLIF(COUNT(a.id), 0), 1) as llm_coverage,
+    ROUND(100.0 * COUNT(a.dog_profiler_data) / NULLIF(COUNT(a.id), 0), 1) as llm_coverage,
     ROUND(100.0 * SUM(CASE WHEN a.availability_confidence = 'high' THEN 1 ELSE 0 END) / NULLIF(COUNT(a.id), 0), 1) as high_confidence_pct,
     ROUND(AVG(
         (CASE WHEN a.breed IS NOT NULL THEN 1 ELSE 0 END +
@@ -110,3 +110,24 @@ JOIN organizations o ON a.organization_id = o.id
 WHERE a.active = true
 GROUP BY o.name
 ORDER BY total DESC;
+
+-- Most common breed by organization
+WITH org_breeds AS (
+    SELECT 
+        o.name as organization,
+        a.primary_breed,
+        COUNT(*) as breed_count,
+        ROW_NUMBER() OVER (PARTITION BY o.name ORDER BY COUNT(*) DESC) as rn
+    FROM animals a
+    JOIN organizations o ON a.organization_id = o.id
+    WHERE a.active = true
+      AND a.primary_breed NOT IN ('Mixed Breed', 'Unknown', '')
+    GROUP BY o.name, a.primary_breed
+)
+SELECT 
+    organization,
+    primary_breed as most_common_breed,
+    breed_count
+FROM org_breeds
+WHERE rn = 1
+ORDER BY breed_count DESC;

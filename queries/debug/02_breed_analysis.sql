@@ -6,7 +6,7 @@ SELECT
     breed_type,
     COUNT(*) as count,
     ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER(), 2) as percentage,
-    ROUND(AVG(CAST(breed_confidence AS FLOAT)), 2) as avg_confidence
+    ROUND(AVG(CASE WHEN breed_confidence ~ '^[0-9.]+$' THEN CAST(breed_confidence AS NUMERIC) ELSE NULL END)::numeric, 2) as avg_confidence
 FROM animals
 WHERE active = true
 GROUP BY breed_type
@@ -75,7 +75,7 @@ SELECT
     COUNT(*)
 FROM animals
 WHERE active = true
-  AND CAST(breed_confidence AS FLOAT) > 0.8
+  AND CASE WHEN breed_confidence ~ '^[0-9.]+$' THEN CAST(breed_confidence AS NUMERIC) ELSE 0 END > 0.8
   AND (primary_breed = 'Unknown' OR breed_type = 'unknown')
 UNION ALL
 SELECT 
@@ -84,7 +84,7 @@ SELECT
 FROM animals  
 WHERE active = true
   AND breed_type = 'mixed'
-  AND CAST(breed_confidence AS FLOAT) >= 0.9
+  AND CASE WHEN breed_confidence ~ '^[0-9.]+$' THEN CAST(breed_confidence AS NUMERIC) ELSE 0 END >= 0.9
 UNION ALL
 SELECT 
     'Breed contains special characters/issues',
@@ -106,6 +106,7 @@ SELECT
     ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER(), 2) as percentage
 FROM animals
 WHERE active = true
+  AND breed_group IS NOT NULL
   AND breed_group NOT IN ('Mixed', 'Unknown')
 GROUP BY breed_group
 ORDER BY count DESC;
