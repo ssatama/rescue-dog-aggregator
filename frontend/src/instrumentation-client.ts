@@ -5,8 +5,25 @@
 import * as Sentry from "@sentry/nextjs";
 
 // Determine environment early for logging decisions
-const environment =
-  process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.NODE_ENV || "development";
+const getRuntimeEnvironment = () => {
+  // Check if we're on production domain
+  if (typeof window !== "undefined" && window.location.hostname === "www.rescuedogs.me") {
+    return "production";
+  }
+  // Check Vercel environment variable
+  if (process.env.NEXT_PUBLIC_VERCEL_ENV === "production") {
+    return "production";
+  }
+  // Check if we're on localhost
+  if (typeof window !== "undefined" && window.location.hostname === "localhost") {
+    return "development";
+  }
+  // Fallback to NODE_ENV
+  return process.env.NODE_ENV || "development";
+};
+
+const environment = getRuntimeEnvironment();
+
 const isDevelopment = environment === "development";
 const isProduction = environment === "production";
 

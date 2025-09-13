@@ -11,6 +11,7 @@ jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
 }));
 jest.mock("@sentry/nextjs", () => ({
+  addBreadcrumb: jest.fn(),
   captureEvent: jest.fn(),
   captureException: jest.fn(),
 }));

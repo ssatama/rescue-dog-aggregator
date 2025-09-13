@@ -261,10 +261,16 @@ export class SwipeMetrics {
       });
 
       if (loadTime > 3000) {
-        Sentry.captureMessage(
-          `Slow swipe load time detected: ${loadTime.toFixed(0)}ms`,
-          "warning",
-        );
+        // Track as performance metric, not error
+        Sentry.addBreadcrumb({
+          message: `Slow swipe load time detected: ${loadTime.toFixed(0)}ms`,
+          category: "performance",
+          level: "warning",
+          data: {
+            loadTime,
+            threshold: 3000
+          }
+        });
       }
     } catch (error) {
       // If measure fails, just track the event without timing
@@ -339,10 +345,17 @@ export class SwipeMetrics {
     const avgFPS = this.getAverageFPS();
 
     if (avgFPS < 30) {
-      Sentry.captureMessage(
-        `Low FPS detected in swipe interface: ${avgFPS.toFixed(1)} fps`,
-        "warning",
-      );
+      // Track as performance metric, not error
+      Sentry.addBreadcrumb({
+        message: `Low FPS detected in swipe interface: ${avgFPS.toFixed(1)} fps`,
+        category: "performance",
+        level: "warning",
+        data: {
+          fps: avgFPS,
+          threshold: 30,
+          fpsHistory: this.performanceMetrics.fpsHistory.slice(-10) // Last 10 samples
+        }
+      });
     }
   }
 
@@ -370,10 +383,16 @@ export class SwipeMetrics {
     }
 
     if (duration > 500) {
-      Sentry.captureMessage(
-        `Slow swipe gesture detected: ${duration.toFixed(0)}ms`,
-        "warning",
-      );
+      // Track as performance metric, not error
+      Sentry.addBreadcrumb({
+        message: `Slow swipe gesture detected: ${duration.toFixed(0)}ms`,
+        category: "performance",
+        level: "warning",
+        data: {
+          duration,
+          threshold: 500
+        }
+      });
     }
 
     this.swipeGestureStart = null;

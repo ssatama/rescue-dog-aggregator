@@ -182,9 +182,11 @@ export function SwipeContainerWithFilters({
           });
           setOffset(0);
 
-          Sentry.captureEvent({
+          Sentry.addBreadcrumb({
             message: "swipe.queue.loaded",
-            extra: {
+            category: "swipe",
+            level: "info",
+            data: {
               filtersData: filters,
               dogCount: newDogs.length,
               filteredOut: fetchedDogs.length - newDogs.length,
@@ -206,18 +208,19 @@ export function SwipeContainerWithFilters({
 
   // Log session start
   useEffect(() => {
-    Sentry.captureEvent({
+    Sentry.addBreadcrumb({
       message: "swipe.session.started",
-      extra: { timestamp: new Date().toISOString() },
+      category: "swipe",
+      level: "info",
+      data: { timestamp: new Date().toISOString() },
     });
 
     return () => {
-      Sentry.captureEvent({
+      Sentry.addBreadcrumb({
         message: "swipe.session.ended",
-        extra: {
-          timestamp: new Date().toISOString(),
-          dogsViewed: currentIndex,
-        },
+        category: "swipe",
+        level: "info",
+        data: { timestamp: new Date().toISOString() },
       });
     };
   }, [currentIndex]);
@@ -240,9 +243,11 @@ export function SwipeContainerWithFilters({
       });
       const nextDog = dogs[currentIndex + 1];
       if (nextDog) {
-        Sentry.captureEvent({
+        Sentry.addBreadcrumb({
           message: "swipe.card.viewed",
-          extra: {
+          category: "swipe",
+          level: "info",
+          data: {
             dogId: nextDog.id,
             dogName: nextDog.name,
           },
@@ -316,11 +321,14 @@ export function SwipeContainerWithFilters({
 
       if (direction === "right") {
         await addFavorite(currentDog.id, currentDog.name);
-        Sentry.captureEvent({
+        Sentry.addBreadcrumb({
           message: "swipe.card.favorited",
-          extra: {
+          category: "swipe",
+          level: "info",
+          data: {
             dogId: currentDog.id,
             dogName: currentDog.name,
+            source: "double_tap",
           },
         });
       }
@@ -422,9 +430,11 @@ export function SwipeContainerWithFilters({
     if (now - lastTap < DOUBLE_TAP_DELAY) {
       // Double tap - quick favorite
       handleSwipeComplete("right");
-      Sentry.captureEvent({
+      Sentry.addBreadcrumb({
         message: "swipe.card.double_tapped",
-        extra: {
+        category: "swipe",
+        level: "info",
+        data: {
           dogId: currentDog.id,
           dogName: currentDog.name,
         },
@@ -434,9 +444,11 @@ export function SwipeContainerWithFilters({
       if (onCardExpanded) {
         onCardExpanded(currentDog);
       }
-      Sentry.captureEvent({
+      Sentry.addBreadcrumb({
         message: "swipe.card.expanded",
-        extra: {
+        category: "swipe",
+        level: "info",
+        data: {
           dogId: currentDog.id,
           dogName: currentDog.name,
         },

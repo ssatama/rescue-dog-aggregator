@@ -46,19 +46,21 @@ export function SwipeContainerEnhanced({
 
   // Track session start
   useEffect(() => {
-    Sentry.captureEvent({
+    Sentry.addBreadcrumb({
       message: "swipe.session.started",
+      category: "swipe",
       level: "info",
-      extra: {
+      data: {
         initialDogCount: dogs.length,
       },
     });
 
     return () => {
-      Sentry.captureEvent({
+      Sentry.addBreadcrumb({
         message: "swipe.session.ended",
+        category: "swipe",
         level: "info",
-        extra: {
+        data: {
           finalIndex: currentIndex,
         },
       });
@@ -81,19 +83,21 @@ export function SwipeContainerEnhanced({
         setTimeout(() => setShowSuccess(false), 1500);
 
         await addFavorite(currentDog.id, currentDog.name);
-        Sentry.captureEvent({
+        Sentry.addBreadcrumb({
           message: "swipe.card.swiped_right",
+          category: "swipe",
           level: "info",
-          extra: {
+          data: {
             dogId: currentDog.id,
             dogName: currentDog.name,
           },
         });
       } else {
-        Sentry.captureEvent({
+        Sentry.addBreadcrumb({
           message: "swipe.card.swiped_left",
+          category: "swipe",
           level: "info",
-          extra: {
+          data: {
             dogId: currentDog.id,
             dogName: currentDog.name,
           },
@@ -140,10 +144,11 @@ export function SwipeContainerEnhanced({
         if (currentTime - now >= DOUBLE_TAP_DELAY - 50) {
           if (currentDog) {
             onCardExpanded(currentDog);
-            Sentry.captureEvent({
+            Sentry.addBreadcrumb({
               message: "swipe.card.expanded",
+              category: "swipe",
               level: "info",
-              extra: {
+              data: {
                 dogId: currentDog.id,
                 dogName: currentDog.name,
               },
