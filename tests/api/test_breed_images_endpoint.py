@@ -8,15 +8,16 @@ from fastapi.testclient import TestClient
 from api.main import app
 
 
-@pytest.fixture
-def client():
-    """Create test client."""
-    return TestClient(app)
+# Remove the client fixture as it conflicts with the global one
+# @pytest.fixture
+# def client():
+#     """Create test client."""
+#     return TestClient(app)
 
 
 @pytest.fixture
-def mock_cursor():
-    """Create mock database cursor."""
+def mock_db_cursor():
+    """Create mock database cursor for breed tests."""
     cursor = MagicMock()
     return cursor
 
@@ -24,7 +25,7 @@ def mock_cursor():
 class TestBreedImagesEndpoint:
     """Test breed images endpoint."""
 
-    def test_get_breeds_with_images_success(self, client, mock_cursor):
+    def test_get_breeds_with_images_success(self, client, mock_db_cursor):
         """Test successful retrieval of breeds with sample dog images."""
         # Mock database response with breeds and sample dogs
         mock_breeds_data = [
@@ -52,7 +53,7 @@ class TestBreedImagesEndpoint:
             },
         ]
 
-        with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_cursor):
+        with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_db_cursor):
             with patch("api.services.animal_service.AnimalService.get_breeds_with_images", return_value=mock_breeds_data):
                 response = client.get("/api/animals/breeds/with-images?limit=10")
 
@@ -67,7 +68,7 @@ class TestBreedImagesEndpoint:
         assert data[0]["sample_dogs"][0]["name"] == "Luna"
         assert data[0]["sample_dogs"][0]["primary_image_url"] == "https://example.com/luna.jpg"
 
-    def test_get_breeds_with_images_mixed_only(self, client, mock_cursor):
+    def test_get_breeds_with_images_mixed_only(self, client, mock_db_cursor):
         """Test retrieval of only mixed breed dogs with images."""
         mock_mixed_data = [
             {
@@ -82,7 +83,7 @@ class TestBreedImagesEndpoint:
             }
         ]
 
-        with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_cursor):
+        with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_db_cursor):
             with patch("api.services.animal_service.AnimalService.get_breeds_with_images", return_value=mock_mixed_data):
                 response = client.get("/api/animals/breeds/with-images?breed_type=mixed&limit=5")
 
@@ -91,7 +92,7 @@ class TestBreedImagesEndpoint:
         assert len(data) == 1
         assert data[0]["breed_type"] == "mixed"
 
-    def test_get_breeds_with_images_popular_only(self, client, mock_cursor):
+    def test_get_breeds_with_images_popular_only(self, client, mock_db_cursor):
         """Test retrieval of popular breeds (15+ dogs) with images."""
         mock_popular_data = [
             {
@@ -116,7 +117,7 @@ class TestBreedImagesEndpoint:
             },
         ]
 
-        with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_cursor):
+        with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_db_cursor):
             with patch("api.services.animal_service.AnimalService.get_breeds_with_images", return_value=mock_popular_data):
                 response = client.get("/api/animals/breeds/with-images?min_count=15&limit=10")
 
@@ -124,7 +125,7 @@ class TestBreedImagesEndpoint:
         data = response.json()
         assert all(breed["count"] >= 15 for breed in data)
 
-    def test_get_breeds_with_images_by_group(self, client, mock_cursor):
+    def test_get_breeds_with_images_by_group(self, client, mock_db_cursor):
         """Test retrieval of breeds by group with images."""
         mock_hound_data = [
             {
@@ -139,7 +140,7 @@ class TestBreedImagesEndpoint:
             }
         ]
 
-        with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_cursor):
+        with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_db_cursor):
             with patch("api.services.animal_service.AnimalService.get_breeds_with_images", return_value=mock_hound_data):
                 response = client.get("/api/animals/breeds/with-images?breed_group=Hound&limit=5")
 
@@ -147,9 +148,9 @@ class TestBreedImagesEndpoint:
         data = response.json()
         assert all(breed["breed_group"] == "Hound" for breed in data)
 
-    def test_get_breeds_with_images_empty_result(self, client, mock_cursor):
+    def test_get_breeds_with_images_empty_result(self, client, mock_db_cursor):
         """Test empty result when no breeds match criteria."""
-        with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_cursor):
+        with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_db_cursor):
             with patch("api.services.animal_service.AnimalService.get_breeds_with_images", return_value=[]):
                 response = client.get("/api/animals/breeds/with-images?breed_group=NonExistent")
 
@@ -157,11 +158,11 @@ class TestBreedImagesEndpoint:
         data = response.json()
         assert data == []
 
-    def test_get_breeds_with_images_database_error(self, client, mock_cursor):
+    def test_get_breeds_with_images_database_error(self, client, mock_db_cursor):
         """Test database error handling."""
         import psycopg2
 
-        with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_cursor):
+        with patch("api.routes.animals.get_pooled_db_cursor", return_value=mock_db_cursor):
             with patch("api.services.animal_service.AnimalService.get_breeds_with_images", side_effect=psycopg2.Error("Database connection failed")):
                 response = client.get("/api/animals/breeds/with-images")
 
