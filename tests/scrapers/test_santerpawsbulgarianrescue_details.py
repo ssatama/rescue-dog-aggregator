@@ -126,7 +126,7 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
         self.assertIn("age", result)  # age field should exist
         self.assertEqual(result["standardized_size"], "Medium")
         self.assertEqual(result["gender"], "female")  # gender is lowercase
-        self.assertEqual(result["breed"], "Mixed")  # Raw breed value from HTML
+        self.assertEqual(result["breed"], "Mixed Breed")  # "Mixed" standardizes to "Mixed Breed"
 
     @patch("requests.get")
     def test_scrape_animal_details_detects_reserved_status(self, mock_get):

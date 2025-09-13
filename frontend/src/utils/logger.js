@@ -47,14 +47,16 @@ export const reportError = (error, context = {}) => {
     // In production, report to Sentry
     try {
       // Preserve original error object to maintain stack traces
-      const errorToReport = error instanceof Error ? error : new Error(String(error));
-      
-      Sentry.captureException(errorToReport, { 
+      const errorToReport =
+        error instanceof Error ? error : new Error(String(error));
+
+      Sentry.captureException(errorToReport, {
         extra: context,
         tags: {
-          source: 'frontend_api',
-          browser: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'
-        }
+          source: "frontend_api",
+          browser:
+            typeof navigator !== "undefined" ? navigator.userAgent : "unknown",
+        },
       });
     } catch (sentryError) {
       // Fallback to console if Sentry fails

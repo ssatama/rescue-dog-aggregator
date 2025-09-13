@@ -89,8 +89,10 @@ class TestGalgosDelSolUnifiedStandardization:
 
         result = galgosdelsol_scraper.process_animal(animal)
 
-        assert "galgo" in result["breed"].lower()
+        # Specific breed mix should be preserved as "Galgo Mix"
+        assert result["breed"] == "Galgo Mix"
         assert result["breed_category"] == "Mixed"
+        assert result["breed_type"] == "crossbreed"
         assert result["standardized_size"] == "Large"
 
     def test_age_standardization(self, galgosdelsol_scraper):
@@ -143,7 +145,7 @@ class TestGalgosDelSolUnifiedStandardization:
             ("Podenco", "Podenco", "Hound"),
             ("galgo español", "Galgo Español", "Hound"),
             ("GALGO", "Galgo", "Hound"),
-            ("podenco mix", "Podenco Mix", "Mixed"),  # Mixed breeds are capitalized properly
+            ("podenco mix", "Podenco Mix", "Mixed"),  # Mixed breeds preserve specific breed names
         ]
 
         for raw_breed, expected_breed, expected_category in test_breeds:

@@ -152,7 +152,8 @@ def main():
         logger.info("All slug repairs applied successfully!")
 
         # Verify repairs
-        cursor.execute("""
+        cursor.execute(
+            """
         SELECT COUNT(*) as remaining_mismatched
         FROM animals
         WHERE primary_breed IS NOT NULL
@@ -160,7 +161,8 @@ def main():
             AND primary_breed != 'Mixed Breed'
             AND breed_slug = 'mixed-breed'
             AND primary_breed LIKE '% Mix'
-        """)
+        """
+        )
         remaining = cursor.fetchone()["remaining_mismatched"]
         logger.info(f"Remaining mismatched slugs: {remaining}")
 

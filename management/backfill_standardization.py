@@ -155,12 +155,13 @@ class StandardizationBackfillService:
             # Updated query to get ALL animals that are missing ANY of the new fields
             query = """
                 SELECT id, name, breed, standardized_breed, breed_group, age_text, standardized_size
-                FROM animals 
-                WHERE breed_group IS NULL 
+                FROM animals
+                WHERE breed_group IS NULL
                 OR breed_group = 'Unknown'
                 OR standardized_breed IS NULL
                 OR breed_confidence IS NULL
                 OR breed_type IS NULL
+                OR breed_type = 'unknown'
                 OR primary_breed IS NULL
                 OR breed_slug IS NULL
                 ORDER BY id

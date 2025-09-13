@@ -56,7 +56,7 @@ class TestTierschutzvereinEuropaUnifiedStandardization:
         translated = translate_breed("Schäferhund-Mischling")
         assert translated == "German Shepherd Mix"
         result = standardizer.apply_full_standardization(breed=translated)
-        assert result["breed"] == "German Shepherd Mix"  # Standardizer keeps mix names as-is
+        assert result["breed"] == "German Shepherd Mix"  # Specific mix breed preserved
         assert result["breed_category"] == "Mixed"
         # Mixed breeds have breed_type as "unknown" but category as "Mixed"
 
@@ -122,7 +122,7 @@ class TestTierschutzvereinEuropaUnifiedStandardization:
         # The scraper with unified standardization should handle this
         standardizer = UnifiedStandardizer()
         result = standardizer.apply_full_standardization(breed=translated)
-        assert result["breed"] == "German Shepherd Mix"  # Standardizer keeps mix names as-is
+        assert result["breed"] == "German Shepherd Mix"  # Specific mix breed preserved
         assert result["breed_category"] == "Mixed"
         # Mixed breeds have breed_type as "unknown" but category as "Mixed"
 
