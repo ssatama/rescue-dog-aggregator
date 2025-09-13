@@ -18,6 +18,8 @@ import FilterPanel from "../../components/favorites/FilterPanel";
 import FavoritesInsights from "../../components/favorites/FavoritesInsights";
 import type { DogProfilerData } from "../../types/dogProfiler";
 import { trackFavoritesPageView } from "@/lib/monitoring/breadcrumbs";
+import Breadcrumbs from "../../components/ui/Breadcrumbs";
+import { BreadcrumbSchema } from "../../components/seo";
 
 // Type definitions
 interface Dog {
@@ -351,39 +353,59 @@ function FavoritesPageContent() {
 
   // Empty state
   if (count === 0) {
+    const breadcrumbItems = [
+      { name: "Home", url: "/" },
+      { name: "Favorites" },
+    ];
+
     return (
       <Layout>
-        <div className="min-h-[60vh] flex items-center justify-center px-4">
-          <div className="text-center max-w-md">
-            {/* Paw Icon */}
-            <div className="w-32 h-32 mx-auto mb-8 bg-yellow-100 dark:bg-yellow-900/20 rounded-full flex items-center justify-center">
-              <span className="text-6xl">🐾</span>
+        <BreadcrumbSchema items={breadcrumbItems} />
+        <div className="container mx-auto px-4 py-6">
+          <Breadcrumbs items={breadcrumbItems} />
+          <div className="min-h-[60vh] flex items-center justify-center">
+            <div className="text-center max-w-md">
+              {/* Paw Icon */}
+              <div className="w-32 h-32 mx-auto mb-8 bg-yellow-100 dark:bg-yellow-900/20 rounded-full flex items-center justify-center">
+                <span className="text-6xl">🐾</span>
+              </div>
+
+              <h1 className="text-3xl font-bold mb-4">
+                Start Building Your Collection
+              </h1>
+
+              <p className="text-gray-600 dark:text-gray-400 mb-8">
+                Save dogs you&rsquo;re interested in to compare and share them.
+                Every dog deserves consideration - find the ones that speak to
+                your heart.
+              </p>
+
+              <Link href="/dogs">
+                <Button className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-3 text-lg">
+                  Explore Dogs →
+                </Button>
+              </Link>
             </div>
-
-            <h1 className="text-3xl font-bold mb-4">
-              Start Building Your Collection
-            </h1>
-
-            <p className="text-gray-600 dark:text-gray-400 mb-8">
-              Save dogs you&rsquo;re interested in to compare and share them.
-              Every dog deserves consideration - find the ones that speak to
-              your heart.
-            </p>
-
-            <Link href="/dogs">
-              <Button className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-3 text-lg">
-                Explore Dogs →
-              </Button>
-            </Link>
           </div>
         </div>
       </Layout>
     );
   }
 
+  const breadcrumbItems = [
+    { name: "Home", url: "/" },
+    { name: "Favorites" },
+  ];
+
   return (
     <Layout>
+      <BreadcrumbSchema items={breadcrumbItems} />
       <div>
+        {/* Breadcrumbs */}
+        <div className="container mx-auto px-4 pt-6">
+          <Breadcrumbs items={breadcrumbItems} />
+        </div>
+
         {/* Styled Header Section */}
         <div className="bg-yellow-50 dark:bg-yellow-900/20 py-12 mb-8">
           <div className="container mx-auto px-4">

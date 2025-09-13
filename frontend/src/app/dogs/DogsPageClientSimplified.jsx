@@ -295,8 +295,8 @@ export default function DogsPageClientSimplified({
   }, [handleFilterChange]);
 
   const breadcrumbItems = [
-    { label: "Home", href: "/" },
-    { label: "Find Dogs", href: "/dogs", current: true },
+    { name: "Home", url: "/" },
+    { name: "Find Dogs" },
   ];
 
   const activeFilterCount = Object.entries(filters).filter(

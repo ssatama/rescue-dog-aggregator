@@ -1,7 +1,12 @@
+"use client";
+
 import Layout from "../../components/layout/Layout";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import Breadcrumbs from "../../components/ui/Breadcrumbs";
+import { BreadcrumbSchema } from "../../components/seo";
 
+// Metadata export for SEO (works with client components in Next.js)
 export const metadata = {
   title: "About Us - Rescue Dog Aggregator",
   description:
@@ -22,10 +27,19 @@ export const metadata = {
 };
 
 export default function AboutPage() {
+  const breadcrumbItems = [
+    { name: "Home", url: "/" },
+    { name: "About" },
+  ];
+
   return (
     <Layout>
+      <BreadcrumbSchema items={breadcrumbItems} />
       {/* Consistent container */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Breadcrumb Navigation */}
+        <Breadcrumbs items={breadcrumbItems} />
+        
         {/* Page Header */}
         <div className="text-center mb-12">
           <h1 className="text-title text-gray-900 dark:text-gray-100 mb-3">
