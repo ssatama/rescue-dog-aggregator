@@ -1,9 +1,43 @@
 import * as Sentry from "@sentry/nextjs";
 
-// Check if we're in development mode
-const isDevelopment = process.env.NODE_ENV === "development";
-const shouldSendEvents =
-  !isDevelopment || process.env.NEXT_PUBLIC_FORCE_SENTRY === "true";
+// Runtime env checks to avoid import-time capture
+const shouldSendEvents = (): boolean => {
+  const isDev = process.env.NODE_ENV === "development";
+  const forceSentry = process.env.NEXT_PUBLIC_FORCE_SENTRY === "true";
+  return !isDev || forceSentry;
+};
+
+// Helper to check if Sentry is initialized and ready
+const isSentryReady = (): boolean => {
+  try {
+    return (
+      typeof window !== "undefined" &&
+      Sentry &&
+      typeof Sentry.startSpan === "function" &&
+      Sentry.getCurrentScope &&
+      typeof Sentry.getCurrentScope === "function" &&
+      Sentry.getCurrentScope() !== undefined
+    );
+  } catch {
+    return false;
+  }
+};
+
+// Safe wrappers for Sentry methods (gate by env + readiness at call-time)
+const safeStartSpan = (config: any, callback?: (span: any) => void): void => {
+  if (shouldSendEvents() && isSentryReady()) {
+    Sentry.startSpan(config, callback || (() => {}));
+  } else if (callback) {
+    // Call callback with dummy span if Sentry is not ready
+    callback({ setAttribute: () => {} });
+  }
+};
+
+const safeAddBreadcrumb = (breadcrumb: any): void => {
+  if (shouldSendEvents() && isSentryReady()) {
+    Sentry.addBreadcrumb(breadcrumb);
+  }
+};
 
 // Event batching configuration
 const EVENT_BATCH_SIZE = 10;
@@ -11,21 +45,40 @@ const EVENT_BATCH_TIMEOUT = 5000; // 5 seconds
 let eventBatch: any[] = [];
 let batchTimer: NodeJS.Timeout | null = null;
 
-// Helper function to flush the event batch
+// Helper function to flush the event batch using spans
 function flushEventBatch() {
   if (eventBatch.length === 0) return;
 
-  if (shouldSendEvents) {
-    // Send a single event with all batched metrics
-    Sentry.captureEvent({
-      message: "swipe.metrics.batch",
-      level: "info",
-      extra: {
-        events: eventBatch,
-        batchSize: eventBatch.length,
-        timestamp: new Date().toISOString(),
+  if (shouldSendEvents() && isSentryReady()) {
+    // Use span with attributes instead of captureEvent
+    safeStartSpan(
+      {
+        name: "swipe.metrics.batch",
+        op: "metrics.batch",
+        attributes: {
+          "batch.size": eventBatch.length,
+          "batch.timestamp": new Date().toISOString(),
+        },
       },
-    });
+      (span) => {
+        // Add each event as span attributes
+        eventBatch.forEach((event, index) => {
+          Object.entries(event).forEach(([key, value]) => {
+            // Only add primitive values as attributes (string, number, boolean)
+            if (
+              value !== null &&
+              value !== undefined &&
+              typeof value !== "object"
+            ) {
+              // Convert to proper attribute value type
+              const attrValue =
+                typeof value === "boolean" ? value : String(value);
+              span.setAttribute(`event.${index}.${key}`, attrValue);
+            }
+          });
+        });
+      },
+    );
   }
 
   eventBatch = [];
@@ -35,11 +88,10 @@ function flushEventBatch() {
   }
 }
 
-// Helper function to send events only in production with batching
-function captureMetricEvent(event: any) {
-  // Add to batch
+// Helper function to add metrics to batch
+function addMetricToBatch(metric: any) {
   eventBatch.push({
-    ...event,
+    ...metric,
     timestamp: new Date().toISOString(),
   });
 
@@ -130,19 +182,23 @@ export class SwipeMetrics {
       );
     }
 
-    captureMetricEvent({
-      message: "swipe.session.summary",
-      level: "info",
-      contexts: {
-        session: {
-          duration: sessionDuration,
-          cardsViewed: this.sessionMetrics.cardsViewed,
-          swipeRight: this.sessionMetrics.swipeRight,
-          swipeLeft: this.sessionMetrics.swipeLeft,
-          avgTimePerCard: this.sessionMetrics.avgTimePerCard,
+    // Use span with attributes for session summary
+    safeStartSpan(
+      {
+        name: "swipe.session.summary",
+        op: "metrics.session",
+        attributes: {
+          "session.duration": sessionDuration,
+          "session.cards_viewed": this.sessionMetrics.cardsViewed,
+          "session.swipe_right": this.sessionMetrics.swipeRight,
+          "session.swipe_left": this.sessionMetrics.swipeLeft,
+          "session.avg_time_per_card": this.sessionMetrics.avgTimePerCard,
         },
       },
-    });
+      () => {
+        // Session tracking logic
+      },
+    );
 
     // Force flush any pending events when session ends
     flushEventBatch();
@@ -161,6 +217,26 @@ export class SwipeMetrics {
 
     this.sessionMetrics.cardsViewed++;
     this.cardStartTime.set(dogId, now);
+
+    // Create span for card view metrics
+    safeStartSpan(
+      {
+        name: "swipe.card_view",
+        op: "metrics.view",
+        attributes: {
+          "card.dog_id": dogId,
+          "cards.viewed_count": this.sessionMetrics.cardsViewed,
+        },
+      },
+      () => {},
+    );
+
+    // Also add to batch
+    addMetricToBatch({
+      type: "card_view",
+      dogId,
+      cardsViewed: this.sessionMetrics.cardsViewed,
+    });
   }
 
   trackSwipe(direction: "left" | "right", dogId: string): void {
@@ -176,42 +252,68 @@ export class SwipeMetrics {
       this.updateAverageTimePerCard();
       this.cardStartTime.delete(dogId);
     }
-  }
 
-  trackSwipeVelocity(velocity: number, direction: string): void {
-    captureMetricEvent({
-      message: "swipe.gesture.velocity",
-      level: "info",
-      contexts: {
-        gesture: {
-          velocity,
-          direction,
+    // Create span for swipe metrics
+    safeStartSpan(
+      {
+        name: "swipe.action",
+        op: "metrics.swipe",
+        attributes: {
+          "swipe.direction": direction,
+          "swipe.dog_id": dogId,
+          "swipe.right_count": this.sessionMetrics.swipeRight,
+          "swipe.left_count": this.sessionMetrics.swipeLeft,
         },
       },
+      () => {},
+    );
+
+    // Also add to batch
+    addMetricToBatch({
+      type: "swipe",
+      direction,
+      dogId,
+      swipeRight: this.sessionMetrics.swipeRight,
+      swipeLeft: this.sessionMetrics.swipeLeft,
     });
   }
 
-  trackQueueExhausted(totalSwiped: number): void {
-    captureMetricEvent({
-      message: "swipe.queue.exhausted",
-      level: "info",
-      contexts: {
-        queue: {
-          totalSwiped,
+  trackSwipeVelocity(velocity: number, direction: string): void {
+    // Use span for velocity tracking
+    safeStartSpan(
+      {
+        name: "swipe.gesture.velocity",
+        op: "metrics.gesture",
+        attributes: {
+          "gesture.velocity": velocity,
+          "gesture.direction": direction,
         },
+      },
+      () => {},
+    );
+  }
+
+  trackQueueExhausted(totalSwiped: number): void {
+    // Use breadcrumb for non-error telemetry
+    safeAddBreadcrumb({
+      category: "swipe.queue",
+      message: "Queue exhausted",
+      level: "info",
+      data: {
+        totalSwiped,
       },
     });
   }
 
   trackFavoriteAdded(dogId: string, source: string): void {
-    captureMetricEvent({
-      message: "swipe.favorite.added",
+    // Use breadcrumb for favorite tracking
+    safeAddBreadcrumb({
+      category: "swipe.favorite",
+      message: "Favorite added",
       level: "info",
-      contexts: {
-        favorite: {
-          dogId,
-          source,
-        },
+      data: {
+        dogId,
+        source,
       },
     });
   }
@@ -250,19 +352,23 @@ export class SwipeMetrics {
         loadTime = performance.now();
       }
 
-      captureMetricEvent({
-        message: "swipe.performance.load_time",
-        level: "info",
-        contexts: {
-          performance: {
-            loadTime,
+      // Use span for performance metrics
+      safeStartSpan(
+        {
+          name: "swipe.performance.load",
+          op: "metrics.performance",
+          attributes: {
+            "performance.load_time": loadTime,
           },
         },
-      });
+        (span) => {
+          span.setAttribute("performance.load_time", loadTime);
+        },
+      );
 
       if (loadTime > 3000) {
-        // Track as performance metric, not error
-        Sentry.addBreadcrumb({
+        // Track as performance breadcrumb, not error
+        safeAddBreadcrumb({
           message: `Slow swipe load time detected: ${loadTime.toFixed(0)}ms`,
           category: "performance",
           level: "warning",
@@ -273,16 +379,17 @@ export class SwipeMetrics {
         });
       }
     } catch (error) {
-      // If measure fails, just track the event without timing
-      captureMetricEvent({
-        message: "swipe.performance.load_time",
-        level: "info",
-        contexts: {
-          performance: {
-            loadTime: 0,
+      // If measure fails, just track without timing
+      safeStartSpan(
+        {
+          name: "swipe.performance.load",
+          op: "metrics.performance",
+          attributes: {
+            "performance.load_time": 0,
           },
         },
-      });
+        () => {},
+      );
     }
   }
 
@@ -345,8 +452,8 @@ export class SwipeMetrics {
     const avgFPS = this.getAverageFPS();
 
     if (avgFPS < 30) {
-      // Track as performance metric, not error
-      Sentry.addBreadcrumb({
+      // Track as performance breadcrumb, not error
+      safeAddBreadcrumb({
         message: `Low FPS detected in swipe interface: ${avgFPS.toFixed(1)} fps`,
         category: "performance",
         level: "warning",
@@ -383,8 +490,8 @@ export class SwipeMetrics {
     }
 
     if (duration > 500) {
-      // Track as performance metric, not error
-      Sentry.addBreadcrumb({
+      // Track as performance breadcrumb, not error
+      safeAddBreadcrumb({
         message: `Slow swipe gesture detected: ${duration.toFixed(0)}ms`,
         category: "performance",
         level: "warning",
@@ -445,4 +552,6 @@ export const swipeMetrics = new SwipeMetrics();
 // Export for testing purposes
 export const testHelpers = {
   flushEventBatch,
+  shouldSendEvents,
+  isSentryReady,
 };

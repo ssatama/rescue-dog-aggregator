@@ -1,5 +1,5 @@
-# api/main.py
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -9,8 +9,12 @@ from starlette.middleware.base import BaseHTTPMiddleware
 # Import database initialization
 from api.database import initialize_pool
 
-# Import cache headers middleware
+# Import middleware
 from api.middleware.cache_headers import CacheHeadersMiddleware
+from api.middleware.sentry_middleware import SentryPerformanceMiddleware, SentryTimeoutMiddleware
+
+# Import Sentry monitoring
+from api.monitoring import init_sentry
 
 # Import routes
 from api.routes import animals, enhanced_animals, llm, monitoring, organizations, swipe
@@ -27,6 +31,9 @@ from config import (
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+# Initialize Sentry before creating the app
+init_sentry(ENVIRONMENT)
 
 
 @asynccontextmanager
@@ -83,8 +90,36 @@ app = FastAPI(
 )
 
 
-# Enhanced health check is now handled by monitoring routes
+# Add global exception handlers for comprehensive error tracking
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    """Capture ALL unhandled exceptions in Sentry."""
+    import sentry_sdk
 
+    # Capture the exception in Sentry
+    sentry_sdk.capture_exception(exc)
+
+    # Log it
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+
+    # For test endpoints in non-production, preserve the original error message
+    from fastapi.responses import JSONResponse
+
+    # Check if this is a test endpoint and we're not in production
+    if ENVIRONMENT != "production" and "/sentry-test/" in str(request.url):
+        # Preserve the original error message for test endpoints
+        return JSONResponse(status_code=500, content={"detail": str(exc)})
+
+    # Return a generic error response for production and non-test endpoints
+    return JSONResponse(status_code=500, content={"detail": "Internal server error occurred"})
+
+
+# Add Sentry performance monitoring middleware FIRST (before other middleware)
+# This ensures ALL requests are tracked
+app.add_middleware(SentryPerformanceMiddleware)
+
+# Add timeout detection middleware
+app.add_middleware(SentryTimeoutMiddleware, timeout_seconds=30)
 
 # Add CORS middleware with secure configuration
 app.add_middleware(
@@ -93,6 +128,7 @@ app.add_middleware(
     allow_credentials=CORS_ALLOW_CREDENTIALS,  # Configurable
     allow_methods=CORS_ALLOW_METHODS,  # Environment-specific
     allow_headers=CORS_ALLOW_HEADERS,  # Environment-specific
+    expose_headers=["sentry-trace", "baggage"],  # Enable distributed tracing
     max_age=CORS_MAX_AGE,  # Preflight cache duration
 )
 
@@ -109,6 +145,22 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
 
+        # Build CSP with specific Sentry domain from environment
+        sentry_connect_src = "'self'"
+        sentry_dsn = os.getenv("SENTRY_DSN_BACKEND")
+        if sentry_dsn and ENVIRONMENT == "production":
+            try:
+                # Extract the specific ingest domain from the DSN
+                # DSN format: https://key@o12345.ingest.sentry.io/project_id
+                from urllib.parse import urlparse
+
+                parsed_dsn = urlparse(sentry_dsn)
+                if parsed_dsn.hostname:
+                    sentry_connect_src = f"'self' https://{parsed_dsn.hostname}"
+            except Exception:
+                # Fallback to wildcards if parsing fails
+                sentry_connect_src = "'self' *.sentry.io *.ingest.sentry.io"
+
         # Add Content Security Policy (CSP) for additional XSS protection
         # Restrictive policy - only allow same-origin resources by default
         csp = (
@@ -117,7 +169,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data: https:; "
             "font-src 'self'; "
-            "connect-src 'self'; "
+            f"connect-src {sentry_connect_src}; "
             "frame-ancestors 'none'; "
             "base-uri 'self'; "
             "form-action 'self'"
@@ -156,6 +208,13 @@ app.include_router(llm.router, tags=["llm"])
 
 # Include swipe routes for the swipe feature
 app.include_router(swipe.router, prefix="/api/dogs", tags=["swipe"])
+
+# Include Sentry test endpoints (only in non-production environments)
+if ENVIRONMENT != "production":
+    from api.routes import sentry_test
+
+    app.include_router(sentry_test.router, tags=["sentry-test"])
+    logger.info(f"Sentry test endpoints enabled for {ENVIRONMENT} environment")
 
 
 @app.get("/", tags=["root"])

@@ -9,6 +9,7 @@ import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import QueryProvider from "@/providers/QueryProvider";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import SentryInitializer from "@/components/SentryInitializer";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Use Inter variable font with all required weights
 const inter = Inter({
@@ -84,21 +85,38 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  // Initialize comprehensive performance monitoring on client side
+  if (typeof window !== "undefined") {
+    import("@/utils/performanceMonitoring")
+      .then(({ initPerformanceMonitoring }) => {
+        initPerformanceMonitoring();
+      })
+      .catch(console.error);
+  }
+
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-inter`}>
+    <html lang="en" className={inter.variable}>
+      <body
+        className={`${inter.className} min-h-screen bg-background font-sans`}
+      >
         <QueryProvider>
           <ThemeProvider>
             <ToastProvider>
-              <FavoritesProvider>{children}</FavoritesProvider>
+              <FavoritesProvider>
+                <ErrorBoundary
+                  showError={process.env.NODE_ENV === "development"}
+                >
+                  {children}
+                </ErrorBoundary>
+                <Analytics />
+                <SpeedInsights />
+                <ServiceWorkerRegistration />
+                <PerformanceMonitor />
+                <SentryInitializer />
+              </FavoritesProvider>
             </ToastProvider>
           </ThemeProvider>
         </QueryProvider>
-        <SentryInitializer />
-        <ServiceWorkerRegistration />
-        <PerformanceMonitor />
-        <Analytics />
-        <SpeedInsights />
       </body>
     </html>
   );

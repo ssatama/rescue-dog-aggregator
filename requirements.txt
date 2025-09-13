@@ -39,6 +39,7 @@ certifi==2025.7.9
     #   httpx
     #   requests
     #   selenium
+    #   sentry-sdk
 charset-normalizer==3.4.2
     # via requests
 click==8.2.1
@@ -49,9 +50,9 @@ click==8.2.1
 colorama==0.4.6
     # via -r requirements.in
 fastapi==0.116.1
-    # via -r requirements.in
-greenlet==3.2.4
-    # via sqlalchemy
+    # via
+    #   -r requirements.in
+    #   sentry-sdk
 h11==0.16.0
     # via
     #   httpcore
@@ -161,6 +162,8 @@ s3transfer==0.13.0
     # via boto3
 selenium==4.34.2
     # via -r requirements.in
+sentry-sdk[fastapi,sqlalchemy]==2.37.1
+    # via -r requirements.in
 six==1.17.0
     # via
     #   langdetect
@@ -177,6 +180,7 @@ sqlalchemy==2.0.41
     # via
     #   -r requirements.in
     #   alembic
+    #   sentry-sdk
 starlette==0.47.2
     # via
     #   -r requirements.in
@@ -206,6 +210,7 @@ urllib3[socks]==2.5.0
     #   botocore
     #   requests
     #   selenium
+    #   sentry-sdk
 uvicorn[standard]==0.35.0
     # via -r requirements.in
 uvloop==0.21.0

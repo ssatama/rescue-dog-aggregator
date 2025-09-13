@@ -219,6 +219,8 @@ if ENVIRONMENT == "production":
         "Accept",
         "Origin",
         "X-Requested-With",
+        "sentry-trace",  # Enable Sentry distributed tracing
+        "baggage",  # Enable Sentry trace context propagation
     ]
     CORS_MAX_AGE = 3600  # Cache preflight for 1 hour
 else:

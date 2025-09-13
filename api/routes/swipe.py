@@ -3,6 +3,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
+import sentry_sdk
 from fastapi import APIRouter, Depends, HTTPException, Query
 from psycopg2 import sql
 from psycopg2.extras import RealDictCursor
@@ -11,6 +12,7 @@ from api.dependencies import get_pooled_db_cursor
 from api.exceptions import handle_database_error
 from api.models.dog import Animal
 from api.models.requests import AnimalFilterRequest
+from api.monitoring import monitor_endpoint, track_slow_query
 from api.services.animal_service import AnimalService
 
 logger = logging.getLogger(__name__)
@@ -129,212 +131,243 @@ async def get_swipe_stack(
 
     Excludes dogs that have already been swiped (passed via excluded parameter).
     """
-    try:
-        # Parse and validate excluded IDs
-        excluded_ids = []
-        if excluded:
-            # First validate the format to prevent SQL injection
-            import re
+    # Start performance monitoring for this endpoint
+    with sentry_sdk.start_transaction(name="GET /swipe", op="http.server") as transaction:
+        transaction.set_tag("http.method", "GET")
+        transaction.set_tag("http.route", "/swipe")
+        transaction.set_tag("filters.country", adoptable_to_country or country or "none")
+        transaction.set_tag("filters.size", ",".join(size) if size else "none")
+        transaction.set_tag("filters.age", ",".join(age) if age else "none")
+        transaction.set_tag("filters.randomize", str(randomize))
 
-            if not re.match(r"^[\d,\s]*$", excluded):
-                raise HTTPException(status_code=400, detail="Invalid excluded IDs format. Only comma-separated numbers are allowed.")
-            try:
-                excluded_ids = [int(id_str.strip()) for id_str in excluded.split(",") if id_str.strip()]
-            except ValueError as e:
-                logger.warning(f"Invalid excluded IDs format: {excluded}")
-                raise HTTPException(status_code=400, detail="Invalid excluded IDs format. Each ID must be a valid integer.")
+        try:
+            # Track excluded IDs parsing
+            with sentry_sdk.start_span(op="parse", description="Parse excluded IDs"):
+                # Parse and validate excluded IDs
+                excluded_ids = []
+                if excluded:
+                    # First validate the format to prevent SQL injection
+                    import re
 
-        # Build the base query with quality filter
-        # When randomizing, we don't use DISTINCT ON because PostgreSQL requires
-        # the ORDER BY clause to start with the DISTINCT ON expression, which would
-        # make the ordering deterministic instead of random
-        if randomize:
-            query_parts = [
+                    if not re.match(r"^[\d,\s]*$", excluded):
+                        raise HTTPException(status_code=400, detail="Invalid excluded IDs format. Only comma-separated numbers are allowed.")
+                    try:
+                        excluded_ids = [int(id_str.strip()) for id_str in excluded.split(",") if id_str.strip()]
+                    except ValueError as e:
+                        logger.warning(f"Invalid excluded IDs format: {excluded}")
+                        raise HTTPException(status_code=400, detail="Invalid excluded IDs format. Each ID must be a valid integer.")
+
+            # Build the base query with quality filter
+            with sentry_sdk.start_span(op="build_query", description="Build SQL query"):
+                # When randomizing, we don't use DISTINCT ON because PostgreSQL requires
+                # the ORDER BY clause to start with the DISTINCT ON expression, which would
+                # make the ordering deterministic instead of random
+                if randomize:
+                    query_parts = [
+                        """
+                        SELECT
+                            a.*,
+                            o.name as organization_name,
+                            o.slug as organization_slug,
+                            o.logo_url as organization_logo_url,
+                            o.website_url as organization_website_url,
+                            o.country as organization_country,
+                            o.city as organization_city,
+                            o.ships_to as organization_ships_to,
+                            RANDOM() as sort_priority
+                        FROM animals a
+                        INNER JOIN organizations o ON a.organization_id = o.id
+                        WHERE a.status = 'available'
+                            AND a.animal_type = 'dog'
+                            AND a.dog_profiler_data IS NOT NULL
+                            AND (a.dog_profiler_data->>'quality_score')::float > 0.7
+                        """
+                    ]
+                    params = []
+                else:
+                    query_parts = [
+                        """
+                        SELECT DISTINCT ON (a.id)
+                            a.*,
+                            o.name as organization_name,
+                            o.slug as organization_slug,
+                            o.logo_url as organization_logo_url,
+                            o.website_url as organization_website_url,
+                            o.country as organization_country,
+                            o.city as organization_city,
+                            o.ships_to as organization_ships_to,
+                            CASE
+                                WHEN a.created_at > %s THEN 1  -- New dogs (last 7 days)
+                                WHEN a.dog_profiler_data->>'engagement_score' IS NOT NULL
+                                    THEN CAST(a.dog_profiler_data->>'engagement_score' AS FLOAT)
+                                ELSE 0.5
+                            END as sort_priority
+                        FROM animals a
+                        INNER JOIN organizations o ON a.organization_id = o.id
+                        WHERE a.status = 'available'
+                            AND a.animal_type = 'dog'
+                            AND a.dog_profiler_data IS NOT NULL
+                            AND (a.dog_profiler_data->>'quality_score')::float > 0.7
+                        """
+                    ]
+                    params = [datetime.now(timezone.utc) - timedelta(days=7)]
+
+                # Apply filters using helper function
+                filter_country = adoptable_to_country or country
+                query_parts, params = apply_filters_to_query(query_parts, params, filter_country, size, age, excluded_ids)
+
+                # Add ordering - use random if requested, otherwise deterministic
+                if randomize:
+                    query_parts.append(
+                        """
+                        ORDER BY sort_priority  -- sort_priority is RANDOM() when randomizing
+                    """
+                    )
+                else:
+                    query_parts.append(
+                        """
+                        ORDER BY a.id, sort_priority DESC,
+                                 a.id  -- Use id for stable, deterministic ordering
+                    """
+                    )
+
+                # Build final query with limit and offset
+                final_query = (
+                    " ".join(query_parts)
+                    + f"""
+                    LIMIT %s OFFSET %s
                 """
-                SELECT
-                    a.*,
-                    o.name as organization_name,
-                    o.slug as organization_slug,
-                    o.logo_url as organization_logo_url,
-                    o.website_url as organization_website_url,
-                    o.country as organization_country,
-                    o.city as organization_city,
-                    o.ships_to as organization_ships_to,
-                    RANDOM() as sort_priority
-                FROM animals a
-                INNER JOIN organizations o ON a.organization_id = o.id
-                WHERE a.status = 'available'
-                    AND a.animal_type = 'dog'
-                    AND a.dog_profiler_data IS NOT NULL
-                    AND (a.dog_profiler_data->>'quality_score')::float > 0.7
-                """
-            ]
-            params = []
-        else:
-            query_parts = [
-                """
-                SELECT DISTINCT ON (a.id)
-                    a.*,
-                    o.name as organization_name,
-                    o.slug as organization_slug,
-                    o.logo_url as organization_logo_url,
-                    o.website_url as organization_website_url,
-                    o.country as organization_country,
-                    o.city as organization_city,
-                    o.ships_to as organization_ships_to,
-                    CASE
-                        WHEN a.created_at > %s THEN 1  -- New dogs (last 7 days)
-                        WHEN a.dog_profiler_data->>'engagement_score' IS NOT NULL
-                            THEN CAST(a.dog_profiler_data->>'engagement_score' AS FLOAT)
-                        ELSE 0.5
-                    END as sort_priority
-                FROM animals a
-                INNER JOIN organizations o ON a.organization_id = o.id
-                WHERE a.status = 'available'
-                    AND a.animal_type = 'dog'
-                    AND a.dog_profiler_data IS NOT NULL
-                    AND (a.dog_profiler_data->>'quality_score')::float > 0.7
-                """
-            ]
-            params = [datetime.now(timezone.utc) - timedelta(days=7)]
+                )
+                params.extend([limit, offset])
 
-        # Apply filters using helper function
-        filter_country = adoptable_to_country or country
-        query_parts, params = apply_filters_to_query(query_parts, params, filter_country, size, age, excluded_ids)
+            # Execute main query with performance tracking
+            with sentry_sdk.start_span(op="db.query", description="Fetch swipe stack") as span:
+                import time
 
-        # Add ordering - use random if requested, otherwise deterministic
-        if randomize:
-            query_parts.append(
-                """
-                ORDER BY sort_priority  -- sort_priority is RANDOM() when randomizing
-            """
-            )
-        else:
-            query_parts.append(
-                """
-                ORDER BY a.id, sort_priority DESC,
-                         a.id  -- Use id for stable, deterministic ordering
-            """
-            )
+                start_time = time.time()
 
-        # Build final query with limit and offset
-        final_query = (
-            " ".join(query_parts)
-            + f"""
-            LIMIT %s OFFSET %s
-        """
-        )
-        params.extend([limit, offset])
+                cursor.execute(final_query, params)
+                results = cursor.fetchall()
 
-        # Execute query
-        cursor.execute(final_query, params)
-        results = cursor.fetchall()
+                query_duration_ms = (time.time() - start_time) * 1000
+                span.set_data("db.rows_returned", len(results))
 
-        # Build response
-        dogs = []
-        for row in results:
-            # Convert row to dict if it's not already
-            if hasattr(row, "_asdict"):
-                animal_dict = row._asdict()
-            else:
-                animal_dict = dict(row)
+                # Track slow queries
+                if query_duration_ms > 1000:
+                    track_slow_query(final_query[:500], query_duration_ms)
 
-            # Build organization data
-            org_data = {
-                "id": animal_dict.get("organization_id"),
-                "name": animal_dict.get("organization_name"),
-                "slug": animal_dict.get("organization_slug"),
-                "logo_url": animal_dict.get("organization_logo_url"),
-                "website_url": animal_dict.get("organization_website_url"),
-                "country": animal_dict.get("organization_country"),
-                "city": animal_dict.get("organization_city"),
-                "ships_to": animal_dict.get("organization_ships_to", []),
-            }
+            # Build response with performance tracking
+            with sentry_sdk.start_span(op="serialize", description="Build response"):
+                dogs = []
+                for row in results:
+                    # Convert row to dict if it's not already
+                    if hasattr(row, "_asdict"):
+                        animal_dict = row._asdict()
+                    else:
+                        animal_dict = dict(row)
 
-            # Process dog_profiler_data to ensure proper camelCase
-            profiler_data = animal_dict.get("dog_profiler_data", {})
-            if profiler_data:
-                # Convert snake_case keys to camelCase for frontend
-                camel_profiler_data = {}
-                for key, value in profiler_data.items():
-                    camel_key = "".join(word.capitalize() if i > 0 else word for i, word in enumerate(key.split("_")))
-                    camel_profiler_data[camel_key] = value
-                profiler_data = camel_profiler_data
+                    # Build organization data
+                    org_data = {
+                        "id": animal_dict.get("organization_id"),
+                        "name": animal_dict.get("organization_name"),
+                        "slug": animal_dict.get("organization_slug"),
+                        "logo_url": animal_dict.get("organization_logo_url"),
+                        "website_url": animal_dict.get("organization_website_url"),
+                        "country": animal_dict.get("organization_country"),
+                        "city": animal_dict.get("organization_city"),
+                        "ships_to": animal_dict.get("organization_ships_to", []),
+                    }
 
-            # Extract properties from JSONB field
-            properties = animal_dict.get("properties", {}) or {}
+                    # Process dog_profiler_data to ensure proper camelCase
+                    profiler_data = animal_dict.get("dog_profiler_data", {})
+                    if profiler_data:
+                        # Convert snake_case keys to camelCase for frontend
+                        camel_profiler_data = {}
+                        for key, value in profiler_data.items():
+                            camel_key = "".join(word.capitalize() if i > 0 else word for i, word in enumerate(key.split("_")))
+                            camel_profiler_data[camel_key] = value
+                        profiler_data = camel_profiler_data
 
-            # Build animal response
-            dog = {
-                "id": animal_dict["id"],
-                "name": animal_dict["name"],
-                "animal_type": animal_dict["animal_type"],
-                "breed": animal_dict.get("breed") or properties.get("breed"),
-                "standardized_breed": animal_dict.get("standardized_breed"),
-                "secondary_breed": properties.get("secondary_breed"),
-                "mixed_breed": properties.get("mixed_breed", False),
-                "age": animal_dict.get("age_text") or properties.get("age_text"),
-                "age_min_months": animal_dict.get("age_min_months"),
-                "age_max_months": animal_dict.get("age_max_months"),
-                "sex": animal_dict.get("sex") or properties.get("sex"),
-                "size": animal_dict.get("size") or properties.get("size"),
-                "coat": properties.get("coat"),
-                "color": properties.get("color"),
-                "spayed_neutered": properties.get("spayed_neutered"),
-                "house_trained": properties.get("house_trained"),
-                "special_needs": properties.get("special_needs", False),
-                "shots_current": properties.get("shots_current"),
-                "good_with_children": properties.get("good_with_children"),
-                "good_with_dogs": properties.get("good_with_dogs"),
-                "good_with_cats": properties.get("good_with_cats"),
-                "description": properties.get("description"),
-                "status": animal_dict["status"],
-                "adoption_url": animal_dict.get("adoption_url"),
-                "primary_image_url": animal_dict.get("primary_image_url"),
-                "images": properties.get("images", []),
-                "videos": properties.get("videos", []),
-                "location": properties.get("location"),
-                "city": properties.get("city") or org_data.get("city"),
-                "state": properties.get("state"),
-                "postcode": properties.get("postcode"),
-                "country": org_data.get("country"),
-                "created_at": animal_dict.get("created_at").isoformat() if animal_dict.get("created_at") else None,
-                "updated_at": animal_dict.get("updated_at").isoformat() if animal_dict.get("updated_at") else None,
-                "organization": org_data,
-                "dogProfilerData": profiler_data,  # camelCase for frontend
-            }
-            dogs.append(dog)
+                    # Extract properties from JSONB field
+                    properties = animal_dict.get("properties", {}) or {}
 
-        # Check if there are more dogs available
-        check_more_query_parts = [
-            """
-            SELECT COUNT(*) as total
-            FROM animals a
-            INNER JOIN organizations o ON a.organization_id = o.id
-            WHERE a.status = 'available'
-                AND a.animal_type = 'dog'
-                AND a.dog_profiler_data IS NOT NULL
-                AND (a.dog_profiler_data->>'quality_score')::float > 0.7
-            """
-        ]
-        check_params = []
+                    # Build animal response
+                    dog = {
+                        "id": animal_dict["id"],
+                        "name": animal_dict["name"],
+                        "animal_type": animal_dict["animal_type"],
+                        "breed": animal_dict.get("breed") or properties.get("breed"),
+                        "standardized_breed": animal_dict.get("standardized_breed"),
+                        "secondary_breed": properties.get("secondary_breed"),
+                        "mixed_breed": properties.get("mixed_breed", False),
+                        "age": animal_dict.get("age_text") or properties.get("age_text"),
+                        "age_min_months": animal_dict.get("age_min_months"),
+                        "age_max_months": animal_dict.get("age_max_months"),
+                        "sex": animal_dict.get("sex") or properties.get("sex"),
+                        "size": animal_dict.get("size") or properties.get("size"),
+                        "coat": properties.get("coat"),
+                        "color": properties.get("color"),
+                        "spayed_neutered": properties.get("spayed_neutered"),
+                        "house_trained": properties.get("house_trained"),
+                        "special_needs": properties.get("special_needs", False),
+                        "shots_current": properties.get("shots_current"),
+                        "good_with_children": properties.get("good_with_children"),
+                        "good_with_dogs": properties.get("good_with_dogs"),
+                        "good_with_cats": properties.get("good_with_cats"),
+                        "description": properties.get("description"),
+                        "status": animal_dict["status"],
+                        "adoption_url": animal_dict.get("adoption_url"),
+                        "primary_image_url": animal_dict.get("primary_image_url"),
+                        "images": properties.get("images", []),
+                        "videos": properties.get("videos", []),
+                        "location": properties.get("location"),
+                        "city": properties.get("city") or org_data.get("city"),
+                        "state": properties.get("state"),
+                        "postcode": properties.get("postcode"),
+                        "country": org_data.get("country"),
+                        "created_at": animal_dict.get("created_at").isoformat() if animal_dict.get("created_at") else None,
+                        "updated_at": animal_dict.get("updated_at").isoformat() if animal_dict.get("updated_at") else None,
+                        "organization": org_data,
+                        "dogProfilerData": profiler_data,  # camelCase for frontend
+                    }
+                    dogs.append(dog)
 
-        # Apply same filters using helper function
-        filter_country = adoptable_to_country or country
-        check_more_query_parts, check_params = apply_filters_to_query(check_more_query_parts, check_params, filter_country, size, age, excluded_ids)
+            # Check if there are more dogs available with performance tracking
+            with sentry_sdk.start_span(op="db.query", description="Check for more dogs"):
+                check_more_query_parts = [
+                    """
+                    SELECT COUNT(*) as total
+                    FROM animals a
+                    INNER JOIN organizations o ON a.organization_id = o.id
+                    WHERE a.status = 'available'
+                        AND a.animal_type = 'dog'
+                        AND a.dog_profiler_data IS NOT NULL
+                        AND (a.dog_profiler_data->>'quality_score')::float > 0.7
+                    """
+                ]
+                check_params = []
 
-        check_more_query = " ".join(check_more_query_parts)
+                # Apply same filters using helper function
+                filter_country = adoptable_to_country or country
+                check_more_query_parts, check_params = apply_filters_to_query(check_more_query_parts, check_params, filter_country, size, age, excluded_ids)
 
-        cursor.execute(check_more_query, check_params)
-        total_count = cursor.fetchone()["total"]
+                check_more_query = " ".join(check_more_query_parts)
 
-        has_more = (offset + limit) < total_count
+                cursor.execute(check_more_query, check_params)
+                total_count = cursor.fetchone()["total"]
 
-        return {"dogs": dogs, "hasMore": has_more, "nextOffset": offset + limit if has_more else None, "total": total_count}
+                has_more = (offset + limit) < total_count
 
-    except Exception as e:
-        logger.error(f"Error fetching swipe stack: {str(e)}")
-        handle_database_error(e, "fetching swipe stack")
+            transaction.set_data("response.dog_count", len(dogs))
+            transaction.set_data("response.total_available", total_count)
+            transaction.set_status("ok")
+
+            return {"dogs": dogs, "hasMore": has_more, "nextOffset": offset + limit if has_more else None, "total": total_count}
+
+        except Exception as e:
+            transaction.set_status("internal_error")
+            logger.error(f"Error fetching swipe stack: {str(e)}")
+            handle_database_error(e, "fetching swipe stack")
 
 
 @router.get("/available-countries")

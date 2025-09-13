@@ -10,8 +10,10 @@ const environment = process.env.VERCEL_ENV || process.env.NODE_ENV || "developme
 const isDevelopment = environment === "development";
 const isProduction = environment === "production";
 
-Sentry.init({
-  dsn: process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN || "https://3e013eea839f1016a4d06f3ec78d1407@o4509932462800896.ingest.de.sentry.io/4509932479250512",
+// ONLY initialize Sentry in production
+if (isProduction) {
+  Sentry.init({
+  dsn: process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN,
 
   // Environment configuration
   environment,
@@ -67,3 +69,6 @@ Sentry.init({
     },
   },
 });
+} else {
+  console.log(`Sentry disabled for ${environment} environment - only enabled in production`);
+}

@@ -38,8 +38,13 @@ if (isDevelopment) {
   console.log("[Sentry] Client instrumentation file loaded");
 }
 
-// Prevent multiple initializations
-if (typeof window !== "undefined" && !(window as any).__sentryInitialized) {
+// ONLY initialize Sentry in production
+if (
+  isProduction &&
+  typeof window !== "undefined" &&
+  !(window as any).__sentryInitialized
+) {
+  // Prevent multiple initializations in production
   (window as any).__sentryInitialized = true;
 
   // Only log initialization in development mode
@@ -48,9 +53,7 @@ if (typeof window !== "undefined" && !(window as any).__sentryInitialized) {
   }
 
   Sentry.init({
-    dsn:
-      process.env.NEXT_PUBLIC_SENTRY_DSN ||
-      "https://3e013eea839f1016a4d06f3ec78d1407@o4509932462800896.ingest.de.sentry.io/4509932479250512",
+    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
     // Environment configuration
     environment,
@@ -241,7 +244,13 @@ if (typeof window !== "undefined" && !(window as any).__sentryInitialized) {
       trackThemeChange();
     }
   });
+} else if (!isProduction && isDevelopment) {
+  console.log(
+    `[Sentry] Disabled for ${environment} environment - only enabled in production`,
+  );
 }
 
-// Export for router transition tracking
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+// Export for router transition tracking - no-op in non-production
+export const onRouterTransitionStart = isProduction
+  ? Sentry.captureRouterTransitionStart
+  : () => {};
