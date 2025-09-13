@@ -230,9 +230,7 @@ class TestAdoptionFeesSchema:
         """
         # This test may not be necessary if PostgreSQL automatically validates JSON
         # But it's good to verify the behavior
-
-        invalid_json = "{'invalid': json, syntax}"  # Invalid JSON syntax
-
+        invalid_json = "{invalid json syntax"  # Invalid JSON syntax - missing closing brace and quotes
         insert_query = """
             INSERT INTO organizations (name, config_id, website_url, adoption_fees, created_at, updated_at)
             VALUES (%s, %s, %s, %s::jsonb, NOW(), NOW())

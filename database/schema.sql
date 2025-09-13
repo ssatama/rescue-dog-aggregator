@@ -69,8 +69,23 @@ CREATE TABLE IF NOT EXISTS animals (
     -- Add column to store original image URLs for fallback
     original_image_url TEXT,
     
+    -- Active status
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    
     -- SEO-friendly URL slug
     slug VARCHAR(255) UNIQUE,
+    
+    -- Dog profiling and AI processing
+    dog_profiler_data JSONB,
+    translations JSONB,
+    llm_processing_flags JSONB DEFAULT '{}',
+    
+    -- Enhanced breed information
+    breed_confidence VARCHAR(50),
+    breed_type VARCHAR(50),
+    primary_breed VARCHAR(255),
+    secondary_breed VARCHAR(255),
+    breed_slug VARCHAR(255),
     
     -- Unique constraint to prevent duplicates
     UNIQUE (external_id, organization_id)
