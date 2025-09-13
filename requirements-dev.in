@@ -19,3 +19,4 @@ types-requests>=2.31.0
 ipython>=8.0.0
 watchdog>=3.0.0
 cryptography>=41.0.0
+sentry-sdk[fastapi,sqlalchemy]>=2.3.0

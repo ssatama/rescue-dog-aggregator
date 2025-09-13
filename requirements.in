@@ -16,7 +16,7 @@ PyYAML>=6.0.1
 jsonschema>=4.20.0
 
 # Monitoring & Observability
-sentry-sdk[fastapi,sqlalchemy]>=2.0.0
+sentry-sdk[fastapi,sqlalchemy]>=2.3.0
 
 # Web Scraping
 requests>=2.31.0

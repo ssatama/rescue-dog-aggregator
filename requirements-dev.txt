@@ -51,6 +51,7 @@ certifi==2025.7.9
     #   httpx
     #   requests
     #   selenium
+    #   sentry-sdk
 cffi==1.17.1
     # via cryptography
 charset-normalizer==3.4.2
@@ -76,13 +77,11 @@ execnet==2.1.1
 executing==2.2.0
     # via stack-data
 fastapi==0.116.1
-    # via -r requirements.txt
-flake8==7.3.0
-    # via -r requirements-dev.in
-greenlet==3.2.4
     # via
     #   -r requirements.txt
-    #   sqlalchemy
+    #   sentry-sdk
+flake8==7.3.0
+    # via -r requirements-dev.in
 h11==0.16.0
     # via
     #   -r requirements.txt
@@ -284,6 +283,10 @@ s3transfer==0.13.0
     #   boto3
 selenium==4.34.2
     # via -r requirements.txt
+sentry-sdk[fastapi,sqlalchemy]==2.37.1
+    # via
+    #   -r requirements-dev.in
+    #   -r requirements.txt
 six==1.17.0
     # via
     #   -r requirements.txt
@@ -306,6 +309,7 @@ sqlalchemy==2.0.41
     # via
     #   -r requirements.txt
     #   alembic
+    #   sentry-sdk
 stack-data==0.6.3
     # via ipython
 starlette==0.47.2
@@ -351,6 +355,7 @@ urllib3[socks]==2.5.0
     #   botocore
     #   requests
     #   selenium
+    #   sentry-sdk
     #   types-requests
 uvicorn[standard]==0.35.0
     # via -r requirements.txt
