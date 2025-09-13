@@ -289,9 +289,9 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
     const ageCategory = getAgeCategory({
       age_min_months: dog.age_min_months,
       age_max_months: dog.age_max_months,
-      age_text: dog.age_text
+      age_text: dog.age_text,
     });
-    
+
     return ageCategory || null;
   };
 

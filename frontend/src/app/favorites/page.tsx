@@ -353,10 +353,7 @@ function FavoritesPageContent() {
 
   // Empty state
   if (count === 0) {
-    const breadcrumbItems = [
-      { name: "Home", url: "/" },
-      { name: "Favorites" },
-    ];
+    const breadcrumbItems = [{ name: "Home", url: "/" }, { name: "Favorites" }];
 
     return (
       <Layout>
@@ -392,10 +389,7 @@ function FavoritesPageContent() {
     );
   }
 
-  const breadcrumbItems = [
-    { name: "Home", url: "/" },
-    { name: "Favorites" },
-  ];
+  const breadcrumbItems = [{ name: "Home", url: "/" }, { name: "Favorites" }];
 
   return (
     <Layout>

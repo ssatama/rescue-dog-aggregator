@@ -115,6 +115,7 @@ async def get_swipe_stack(
     excluded: Optional[str] = Query(None, description="Comma-separated list of excluded dog IDs"),
     limit: int = Query(20, ge=1, le=50, description="Number of dogs to return (default: 20, max: 50)"),
     offset: int = Query(0, ge=0, description="Offset for pagination"),
+    randomize: bool = Query(False, description="Randomize the order of dogs returned"),
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ) -> Dict[str, Any]:
     """
@@ -144,45 +145,77 @@ async def get_swipe_stack(
                 raise HTTPException(status_code=400, detail="Invalid excluded IDs format. Each ID must be a valid integer.")
 
         # Build the base query with quality filter
-        query_parts = [
-            """
-            SELECT DISTINCT ON (a.id)
-                a.*,
-                o.name as organization_name,
-                o.slug as organization_slug,
-                o.logo_url as organization_logo_url,
-                o.website_url as organization_website_url,
-                o.country as organization_country,
-                o.city as organization_city,
-                o.ships_to as organization_ships_to,
-                CASE 
-                    WHEN a.created_at > %s THEN 1  -- New dogs (last 7 days)
-                    WHEN a.dog_profiler_data->>'engagement_score' IS NOT NULL 
-                        THEN CAST(a.dog_profiler_data->>'engagement_score' AS FLOAT)
-                    ELSE 0.5
-                END as sort_priority
-            FROM animals a
-            INNER JOIN organizations o ON a.organization_id = o.id
-            WHERE a.status = 'available'
-                AND a.animal_type = 'dog'
-                AND a.dog_profiler_data IS NOT NULL
-                AND (a.dog_profiler_data->>'quality_score')::float > 0.7
-            """
-        ]
-
-        params = [datetime.now(timezone.utc) - timedelta(days=7)]
+        # When randomizing, we don't use DISTINCT ON because PostgreSQL requires
+        # the ORDER BY clause to start with the DISTINCT ON expression, which would
+        # make the ordering deterministic instead of random
+        if randomize:
+            query_parts = [
+                """
+                SELECT
+                    a.*,
+                    o.name as organization_name,
+                    o.slug as organization_slug,
+                    o.logo_url as organization_logo_url,
+                    o.website_url as organization_website_url,
+                    o.country as organization_country,
+                    o.city as organization_city,
+                    o.ships_to as organization_ships_to,
+                    RANDOM() as sort_priority
+                FROM animals a
+                INNER JOIN organizations o ON a.organization_id = o.id
+                WHERE a.status = 'available'
+                    AND a.animal_type = 'dog'
+                    AND a.dog_profiler_data IS NOT NULL
+                    AND (a.dog_profiler_data->>'quality_score')::float > 0.7
+                """
+            ]
+            params = []
+        else:
+            query_parts = [
+                """
+                SELECT DISTINCT ON (a.id)
+                    a.*,
+                    o.name as organization_name,
+                    o.slug as organization_slug,
+                    o.logo_url as organization_logo_url,
+                    o.website_url as organization_website_url,
+                    o.country as organization_country,
+                    o.city as organization_city,
+                    o.ships_to as organization_ships_to,
+                    CASE
+                        WHEN a.created_at > %s THEN 1  -- New dogs (last 7 days)
+                        WHEN a.dog_profiler_data->>'engagement_score' IS NOT NULL
+                            THEN CAST(a.dog_profiler_data->>'engagement_score' AS FLOAT)
+                        ELSE 0.5
+                    END as sort_priority
+                FROM animals a
+                INNER JOIN organizations o ON a.organization_id = o.id
+                WHERE a.status = 'available'
+                    AND a.animal_type = 'dog'
+                    AND a.dog_profiler_data IS NOT NULL
+                    AND (a.dog_profiler_data->>'quality_score')::float > 0.7
+                """
+            ]
+            params = [datetime.now(timezone.utc) - timedelta(days=7)]
 
         # Apply filters using helper function
         filter_country = adoptable_to_country or country
         query_parts, params = apply_filters_to_query(query_parts, params, filter_country, size, age, excluded_ids)
 
-        # Add ordering - deterministic algorithm with priority then id
-        query_parts.append(
+        # Add ordering - use random if requested, otherwise deterministic
+        if randomize:
+            query_parts.append(
+                """
+                ORDER BY sort_priority  -- sort_priority is RANDOM() when randomizing
             """
-            ORDER BY a.id, sort_priority DESC, 
-                     a.id  -- Use id for stable, deterministic ordering
-        """
-        )
+            )
+        else:
+            query_parts.append(
+                """
+                ORDER BY a.id, sort_priority DESC,
+                         a.id  -- Use id for stable, deterministic ordering
+            """
+            )
 
         # Build final query with limit and offset
         final_query = (

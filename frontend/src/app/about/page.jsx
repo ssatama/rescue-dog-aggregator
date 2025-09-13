@@ -25,10 +25,7 @@ export const metadata = {
 };
 
 export default function AboutPage() {
-  const breadcrumbItems = [
-    { name: "Home", url: "/" },
-    { name: "About" },
-  ];
+  const breadcrumbItems = [{ name: "Home", url: "/" }, { name: "About" }];
 
   return (
     <Layout>
@@ -37,7 +34,7 @@ export default function AboutPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Breadcrumb Navigation */}
         <Breadcrumbs items={breadcrumbItems} />
-        
+
         {/* Page Header */}
         <div className="text-center mb-12">
           <h1 className="text-title text-gray-900 dark:text-gray-100 mb-3">

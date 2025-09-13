@@ -68,12 +68,12 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
   const uniqueQuirk = profileData.uniqueQuirk || "";
   const personalityTraits = profileData.personalityTraits || [];
   const favoriteActivities = profileData.favoriteActivities || [];
-  
+
   // Get age category
   const ageCategory = getAgeCategory({
     age_min_months: dog.age_min_months,
     age_max_months: dog.age_max_months,
-    age_text: dog.age
+    age_text: dog.age,
   });
 
   return (

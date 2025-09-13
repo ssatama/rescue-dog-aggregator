@@ -265,7 +265,8 @@ export function SwipeContainerWithFilters({
         const newOffset = offset + dogs.length;
         setOffset(newOffset);
 
-        fetchDogs(queryString + `&offset=${newOffset}`)
+        // Add randomize parameter when fetching more dogs
+        fetchDogs(queryString + `&offset=${newOffset}&randomize=true`)
           .then((fetchedDogs) => {
             if (fetchedDogs && fetchedDogs.length > 0) {
               setDogs((prevDogs) => {
@@ -368,7 +369,8 @@ export function SwipeContainerWithFilters({
         const newOffset = offset + dogs.length;
         setOffset(newOffset);
 
-        fetchDogs(queryString + `&offset=${newOffset}`)
+        // Add randomize parameter when fetching more dogs
+        fetchDogs(queryString + `&offset=${newOffset}&randomize=true`)
           .then((fetchedDogs) => {
             if (fetchedDogs && fetchedDogs.length > 0) {
               // Use functional update to get latest swipedDogIds
@@ -568,7 +570,9 @@ export function SwipeContainerWithFilters({
 
                   // Fetch dogs after reset if we have valid filters
                   if (isValid && fetchDogs && queryString) {
-                    fetchDogs(queryString)
+                    // Add randomize parameter to re-randomize the queue
+                    const randomizedQuery = queryString + "&randomize=true";
+                    fetchDogs(randomizedQuery)
                       .then((fetchedDogs) => {
                         setDogs(fetchedDogs);
                         setCurrentIndex(0);

@@ -11,7 +11,7 @@ describe("FavoritesPage Breadcrumbs", () => {
   test("breadcrumbs are implemented with correct structure", () => {
     // This test verifies the breadcrumb implementation exists
     // The actual rendering is tested through integration/e2e tests
-    
+
     // Read the actual page file to verify breadcrumb imports
     const pageContent = `
       import Breadcrumbs from "../../components/ui/Breadcrumbs";
@@ -22,33 +22,27 @@ describe("FavoritesPage Breadcrumbs", () => {
         { name: "Favorites" },
       ];
     `;
-    
+
     // Verify the imports exist
-    expect(pageContent).toContain('Breadcrumbs');
-    expect(pageContent).toContain('BreadcrumbSchema');
-    expect(pageContent).toContain('breadcrumbItems');
+    expect(pageContent).toContain("Breadcrumbs");
+    expect(pageContent).toContain("BreadcrumbSchema");
+    expect(pageContent).toContain("breadcrumbItems");
   });
 
   test("breadcrumb items follow correct format", () => {
-    const breadcrumbItems = [
-      { name: "Home", url: "/" },
-      { name: "Favorites" },
-    ];
-    
+    const breadcrumbItems = [{ name: "Home", url: "/" }, { name: "Favorites" }];
+
     // Verify structure
     expect(breadcrumbItems).toHaveLength(2);
-    expect(breadcrumbItems[0]).toHaveProperty('name', 'Home');
-    expect(breadcrumbItems[0]).toHaveProperty('url', '/');
-    expect(breadcrumbItems[1]).toHaveProperty('name', 'Favorites');
-    expect(breadcrumbItems[1]).not.toHaveProperty('url'); // Current page
+    expect(breadcrumbItems[0]).toHaveProperty("name", "Home");
+    expect(breadcrumbItems[0]).toHaveProperty("url", "/");
+    expect(breadcrumbItems[1]).toHaveProperty("name", "Favorites");
+    expect(breadcrumbItems[1]).not.toHaveProperty("url"); // Current page
   });
 
   test("breadcrumb schema follows SEO best practices", () => {
-    const items = [
-      { name: "Home", url: "/" },
-      { name: "Favorites" },
-    ];
-    
+    const items = [{ name: "Home", url: "/" }, { name: "Favorites" }];
+
     const schemaData = {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
@@ -59,7 +53,7 @@ describe("FavoritesPage Breadcrumbs", () => {
         item: item.url ? `https://www.rescuedogs.me${item.url}` : undefined,
       })),
     };
-    
+
     expect(schemaData["@context"]).toBe("https://schema.org");
     expect(schemaData["@type"]).toBe("BreadcrumbList");
     expect(schemaData.itemListElement).toHaveLength(2);
@@ -73,28 +67,22 @@ describe("FavoritesPage Breadcrumbs", () => {
       { name: "Home", url: "/" },
       { name: "Favorites" },
     ];
-    
+
     expect(emptyStateBreadcrumbs).toBeDefined();
     expect(emptyStateBreadcrumbs).toHaveLength(2);
   });
 
   test("breadcrumbs maintain consistency across states", () => {
-    const withFavorites = [
-      { name: "Home", url: "/" },
-      { name: "Favorites" },
-    ];
-    
-    const emptyState = [
-      { name: "Home", url: "/" },
-      { name: "Favorites" },
-    ];
-    
+    const withFavorites = [{ name: "Home", url: "/" }, { name: "Favorites" }];
+
+    const emptyState = [{ name: "Home", url: "/" }, { name: "Favorites" }];
+
     expect(withFavorites).toEqual(emptyState);
   });
 
   test("breadcrumb navigation hierarchy is correct", () => {
     const hierarchy = ["Home", "Favorites"];
-    
+
     expect(hierarchy[0]).toBe("Home");
     expect(hierarchy[hierarchy.length - 1]).toBe("Favorites");
     expect(hierarchy).toHaveLength(2);
@@ -105,7 +93,7 @@ describe("FavoritesPage Breadcrumbs", () => {
     // Here we just verify the expected structure
     const expectedAriaLabel = "Breadcrumb";
     const expectedRole = "navigation";
-    
+
     expect(expectedAriaLabel).toBe("Breadcrumb");
     expect(expectedRole).toBe("navigation");
   });

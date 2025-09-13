@@ -34,9 +34,13 @@ describe("Sentry Configuration", () => {
       };
 
       // Track various swipe events
-      trackSwipeEvent("swipe.session.started", { timestamp: new Date().toISOString() });
+      trackSwipeEvent("swipe.session.started", {
+        timestamp: new Date().toISOString(),
+      });
       trackSwipeEvent("swipe.card.viewed", { dogId: 123, dogName: "Max" });
-      trackSwipeEvent("swipe.session.ended", { timestamp: new Date().toISOString() });
+      trackSwipeEvent("swipe.session.ended", {
+        timestamp: new Date().toISOString(),
+      });
 
       // Verify breadcrumbs were called, not captureEvent or captureException
       expect(Sentry.addBreadcrumb).toHaveBeenCalledTimes(3);
@@ -49,7 +53,7 @@ describe("Sentry Configuration", () => {
           category: "swipe",
           level: "info",
           message: expect.stringMatching(/^swipe\./),
-        })
+        }),
       );
     });
 
@@ -65,7 +69,7 @@ describe("Sentry Configuration", () => {
         "swipe.card.double_tapped",
       ];
 
-      telemetryEvents.forEach(event => {
+      telemetryEvents.forEach((event) => {
         Sentry.addBreadcrumb({
           message: event,
           category: "swipe",
@@ -78,9 +82,11 @@ describe("Sentry Configuration", () => {
       expect(Sentry.captureException).not.toHaveBeenCalled();
       expect(Sentry.captureMessage).not.toHaveBeenCalled();
       expect(Sentry.captureEvent).not.toHaveBeenCalled();
-      
+
       // All should be breadcrumbs
-      expect(Sentry.addBreadcrumb).toHaveBeenCalledTimes(telemetryEvents.length);
+      expect(Sentry.addBreadcrumb).toHaveBeenCalledTimes(
+        telemetryEvents.length,
+      );
     });
   });
 
@@ -115,7 +121,7 @@ describe("Sentry Configuration", () => {
         expect.objectContaining({
           category: "performance",
           level: "warning",
-        })
+        }),
       );
 
       // Should not be an error
@@ -144,7 +150,7 @@ describe("Sentry Configuration", () => {
             loadTime: 4500,
             threshold: 3000,
           }),
-        })
+        }),
       );
 
       // Should not trigger error capture
@@ -172,7 +178,7 @@ describe("Sentry Configuration", () => {
             duration: 750,
             threshold: 500,
           }),
-        })
+        }),
       );
 
       expect(Sentry.captureMessage).not.toHaveBeenCalled();
@@ -187,7 +193,10 @@ describe("Sentry Configuration", () => {
       (window as any).location = { hostname: "www.rescuedogs.me" };
 
       const getRuntimeEnvironment = () => {
-        if (typeof window !== "undefined" && window.location.hostname === "www.rescuedogs.me") {
+        if (
+          typeof window !== "undefined" &&
+          window.location.hostname === "www.rescuedogs.me"
+        ) {
           return "production";
         }
         return "development";
@@ -204,10 +213,16 @@ describe("Sentry Configuration", () => {
       (window as any).location = { hostname: "localhost" };
 
       const getRuntimeEnvironment = () => {
-        if (typeof window !== "undefined" && window.location.hostname === "www.rescuedogs.me") {
+        if (
+          typeof window !== "undefined" &&
+          window.location.hostname === "www.rescuedogs.me"
+        ) {
           return "production";
         }
-        if (typeof window !== "undefined" && window.location.hostname === "localhost") {
+        if (
+          typeof window !== "undefined" &&
+          window.location.hostname === "localhost"
+        ) {
           return "development";
         }
         return "development";
@@ -222,7 +237,7 @@ describe("Sentry Configuration", () => {
   describe("Error Handling", () => {
     it("should still capture real errors with captureException", () => {
       const realError = new Error("Database connection failed");
-      
+
       // Real errors should still be captured
       Sentry.captureException(realError);
 
@@ -233,7 +248,7 @@ describe("Sentry Configuration", () => {
     it("should not interfere with legitimate error boundaries", () => {
       // Error boundaries should still work
       const componentError = new Error("Component render failed");
-      
+
       Sentry.captureException(componentError);
 
       expect(Sentry.captureException).toHaveBeenCalledWith(componentError);

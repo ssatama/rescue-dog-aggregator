@@ -116,7 +116,7 @@ describe("DogsPageClientSimplified Breadcrumbs", () => {
       <DogsPageClientSimplified
         initialDogs={mockInitialDogs}
         metadata={mockMetadata}
-      />
+      />,
     );
 
     const breadcrumbs = screen.getByTestId("breadcrumbs");
@@ -129,7 +129,7 @@ describe("DogsPageClientSimplified Breadcrumbs", () => {
       <DogsPageClientSimplified
         initialDogs={mockInitialDogs}
         metadata={mockMetadata}
-      />
+      />,
     );
 
     // Check for Home link
@@ -148,7 +148,7 @@ describe("DogsPageClientSimplified Breadcrumbs", () => {
       <DogsPageClientSimplified
         initialDogs={mockInitialDogs}
         metadata={mockMetadata}
-      />
+      />,
     );
 
     const schema = screen.getByTestId("breadcrumb-schema");
@@ -164,7 +164,7 @@ describe("DogsPageClientSimplified Breadcrumbs", () => {
 
   test("should render breadcrumbs even with no dogs", () => {
     render(
-      <DogsPageClientSimplified initialDogs={[]} metadata={mockMetadata} />
+      <DogsPageClientSimplified initialDogs={[]} metadata={mockMetadata} />,
     );
 
     const breadcrumbs = screen.getByTestId("breadcrumbs");
@@ -178,7 +178,7 @@ describe("DogsPageClientSimplified Breadcrumbs", () => {
       <DogsPageClientSimplified
         initialDogs={mockInitialDogs}
         metadata={mockMetadata}
-      />
+      />,
     );
 
     // Initial check
@@ -189,7 +189,7 @@ describe("DogsPageClientSimplified Breadcrumbs", () => {
       <DogsPageClientSimplified
         initialDogs={[mockInitialDogs[0]]}
         metadata={mockMetadata}
-      />
+      />,
     );
 
     // Breadcrumbs should still be present

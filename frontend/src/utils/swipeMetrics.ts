@@ -268,8 +268,8 @@ export class SwipeMetrics {
           level: "warning",
           data: {
             loadTime,
-            threshold: 3000
-          }
+            threshold: 3000,
+          },
         });
       }
     } catch (error) {
@@ -353,8 +353,8 @@ export class SwipeMetrics {
         data: {
           fps: avgFPS,
           threshold: 30,
-          fpsHistory: this.performanceMetrics.fpsHistory.slice(-10) // Last 10 samples
-        }
+          fpsHistory: this.performanceMetrics.fpsHistory.slice(-10), // Last 10 samples
+        },
       });
     }
   }
@@ -390,8 +390,8 @@ export class SwipeMetrics {
         level: "warning",
         data: {
           duration,
-          threshold: 500
-        }
+          threshold: 500,
+        },
       });
     }
 

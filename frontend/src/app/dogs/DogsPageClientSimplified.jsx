@@ -294,10 +294,7 @@ export default function DogsPageClientSimplified({
     handleFilterChange("breedFilter", "Any breed");
   }, [handleFilterChange]);
 
-  const breadcrumbItems = [
-    { name: "Home", url: "/" },
-    { name: "Find Dogs" },
-  ];
+  const breadcrumbItems = [{ name: "Home", url: "/" }, { name: "Find Dogs" }];
 
   const activeFilterCount = Object.entries(filters).filter(
     ([key, value]) =>
