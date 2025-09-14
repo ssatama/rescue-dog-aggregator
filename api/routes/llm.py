@@ -21,7 +21,7 @@ from api.exceptions import STANDARD_RESPONSES, InvalidInputError, NotFoundError,
 from services.llm.models import ProcessingType, TranslationRequest
 from services.llm_data_service import OpenRouterLLMDataService
 
-router = APIRouter(prefix="/api/llm", tags=["llm"], responses=STANDARD_RESPONSES)
+router = APIRouter(tags=["llm"], responses=STANDARD_RESPONSES)
 
 logger = logging.getLogger(__name__)
 
