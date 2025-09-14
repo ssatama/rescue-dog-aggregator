@@ -465,3 +465,76 @@ describe("DogDetailClient Dog Detail Integration", () => {
     });
   });
 });
+
+describe("Breed Display - Simplified without legacy text", () => {
+  it("should NOT show 'originally listed as' text even when primary_breed differs from breed", async () => {
+    const mockDog = {
+      id: 1,
+      slug: "test-dog",
+      name: "Test Dog",
+      primary_breed: "German Shepherd Mix",
+      breed: "Shepherd Mix", // Different from primary_breed
+      standardized_breed: "Mixed Breed",
+      age: "2 years",
+      sex: "Male",
+      weight: "50 lbs",
+      color: "Brown",
+      location: "Test City, CA",
+      description: "A good dog",
+      organization: {
+        id: 1,
+        name: "Test Rescue",
+        slug: "test-rescue",
+      },
+      images: [],
+    };
+
+    getAnimalBySlug.mockResolvedValueOnce(mockDog);
+
+    render(<DogDetailClient params={{ slug: "test-dog" }} />);
+
+    await waitFor(() => {
+      const breedElements = screen.getAllByText("German Shepherd Mix");
+      expect(breedElements.length).toBeGreaterThan(0);
+    });
+
+    // The legacy text should NOT be present
+    expect(screen.queryByText(/originally listed as/i)).not.toBeInTheDocument();
+    // The original breed value should not be shown anywhere
+    expect(screen.queryByText("Shepherd Mix")).not.toBeInTheDocument();
+  });
+
+  it("should display only primary_breed when available", async () => {
+    const mockDog = {
+      id: 1,
+      slug: "test-dog",
+      name: "Test Dog",
+      primary_breed: "Labrador Retriever Mix",
+      breed: "Lab Mix",
+      age: "3 years",
+      sex: "Female",
+      weight: "60 lbs",
+      color: "Black",
+      location: "Test City, CA",
+      description: "A friendly dog",
+      organization: {
+        id: 1,
+        name: "Test Rescue",
+        slug: "test-rescue",
+      },
+      images: [],
+    };
+
+    getAnimalBySlug.mockResolvedValueOnce(mockDog);
+
+    render(<DogDetailClient params={{ slug: "test-dog" }} />);
+
+    await waitFor(() => {
+      const breedElements = screen.getAllByText("Labrador Retriever Mix");
+      expect(breedElements.length).toBeGreaterThan(0);
+    });
+
+    // Should not show the original breed value
+    expect(screen.queryByText("Lab Mix")).not.toBeInTheDocument();
+  });
+});

@@ -10,7 +10,8 @@ interface SwipeCardProps {
   dog: {
     id?: number;
     name: string;
-    breed?: string;
+    primary_breed?: string;
+    breed?: string; // Keep for backward compatibility
     age?: string;
     age_min_months?: number;
     age_max_months?: number;
@@ -76,6 +77,9 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
     age_text: dog.age,
   });
 
+  // Get breed, preferring primary_breed
+  const breed = dog.primary_breed || dog.breed;
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl dark:shadow-gray-900/50 overflow-hidden relative group transition-colors flex flex-col">
       {/* NEW Badge for recent dogs */}
@@ -97,7 +101,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
             title={`Check out ${dog.name} for adoption!`}
             text={
               dog.description ||
-              `${dog.name} is a ${ageCategory || ""} ${dog.breed || ""} looking for a forever home!`
+              `${dog.name} is a ${ageCategory || ""} ${breed || ""} looking for a forever home!`
             }
             compact={true}
             variant="ghost"
@@ -146,9 +150,9 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
           <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
             {dog.name}
           </h3>
-          {(ageCategory || dog.breed) && (
+          {(ageCategory || breed) && (
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {[ageCategory, dog.breed].filter(Boolean).join(" • ")}
+              {[ageCategory, breed].filter(Boolean).join(" • ")}
             </p>
           )}
         </div>

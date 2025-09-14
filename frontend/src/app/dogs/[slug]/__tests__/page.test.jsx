@@ -91,9 +91,8 @@ describe("DogDetailPage", () => {
     // image - check that there's an image with the dog's name, but don't require exact src match
     // since the component may use placeholder initially
     expect(screen.getByRole("img", { name: /Rover/i })).toBeInTheDocument();
-    // breed + group (may appear in multiple places now)
+    // breed (may appear in multiple places now)
     expect(screen.getAllByText("Beagle").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("Hound Group")).toBeInTheDocument();
     // sex (appears in metadata cards)
     expect(screen.getAllByText(/Male/i).length).toBeGreaterThanOrEqual(1);
   });
@@ -250,7 +249,6 @@ describe("DogDetailPage - Breed Display", () => {
     expect(
       screen.getAllByText("Golden Retriever").length,
     ).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("Sporting Group")).toBeInTheDocument();
   });
 });
 

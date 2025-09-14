@@ -578,7 +578,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                                     : ""
                                 }
                                 title={`Meet ${dog.name} - Available for Adoption`}
-                                text={`${dog.name} is a ${dog.standardized_breed || dog.breed || "lovely dog"} looking for a forever home.`}
+                                text={`${dog.name} is a ${dog.primary_breed || dog.standardized_breed || dog.breed || "lovely dog"} looking for a forever home.`}
                                 variant="ghost"
                                 size="sm"
                                 className="p-3 rounded-full hover:bg-gray-100 transition-all duration-200 hover:scale-110 hover:shadow-md focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
@@ -598,7 +598,10 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
 
                     {/* Only show breed section if we have a known breed */}
                     {(() => {
-                      const breed = dog.standardized_breed || dog.breed;
+                      const breed =
+                        dog.primary_breed ||
+                        dog.standardized_breed ||
+                        dog.breed;
                       const isUnknownBreed =
                         !breed ||
                         breed === "Unknown" ||
@@ -618,24 +621,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                               <span className="text-base leading-relaxed text-gray-800 dark:text-gray-100">
                                 {sanitizeText(breed)}
                               </span>
-                              {dog.standardized_breed &&
-                                dog.breed &&
-                                dog.standardized_breed !== dog.breed && (
-                                  <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
-                                    (originally listed as:{" "}
-                                    {sanitizeText(dog.breed)})
-                                  </span>
-                                )}
                             </div>
-                            {dog.breed_group &&
-                              dog.breed_group !== "Unknown" && (
-                                <Badge
-                                  variant="secondary"
-                                  className="mt-2 transition-colors duration-200"
-                                >
-                                  {sanitizeText(dog.breed_group)} Group
-                                </Badge>
-                              )}
                           </div>
                         </div>
                       );
@@ -684,10 +670,14 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                         </div>
 
                         {/* Breed Card - Only show if breed is known and not "Unknown" */}
-                        {(dog.standardized_breed || dog.breed) &&
+                        {(dog.primary_breed ||
+                          dog.standardized_breed ||
+                          dog.breed) &&
                           !(
+                            dog.primary_breed === "Unknown" ||
                             dog.standardized_breed === "Unknown" ||
                             dog.breed === "Unknown" ||
+                            dog.primary_breed?.toLowerCase() === "unknown" ||
                             dog.standardized_breed?.toLowerCase() ===
                               "unknown" ||
                             dog.breed?.toLowerCase() === "unknown"
@@ -701,7 +691,9 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                                 Breed
                               </p>
                               <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                                {dog.standardized_breed || dog.breed}
+                                {dog.primary_breed ||
+                                  dog.standardized_breed ||
+                                  dog.breed}
                               </p>
                             </div>
                           )}

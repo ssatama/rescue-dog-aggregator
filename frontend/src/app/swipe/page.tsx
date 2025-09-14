@@ -14,6 +14,7 @@ interface Dog {
   id: number;
   name: string;
   breed?: string;
+  primary_breed?: string;
   age?: string;
   age_min_months?: number;
   age_max_months?: number;
@@ -74,6 +75,7 @@ export default function SwipePage() {
     sex: dog.sex || "Unknown",
     size: dog.size || "Medium",
     breed: dog.breed || "Mixed Breed",
+    primary_breed: dog.primary_breed,
     organization_name: dog.organization || "",
     location: dog.location || "",
     adoption_url: dog.adoption_url || "",

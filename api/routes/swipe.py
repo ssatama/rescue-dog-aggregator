@@ -297,6 +297,7 @@ async def get_swipe_stack(
                         "name": animal_dict["name"],
                         "animal_type": animal_dict["animal_type"],
                         "breed": animal_dict.get("breed") or properties.get("breed"),
+                        "primary_breed": animal_dict.get("primary_breed"),
                         "standardized_breed": animal_dict.get("standardized_breed"),
                         "secondary_breed": properties.get("secondary_breed"),
                         "mixed_breed": properties.get("mixed_breed", False),

@@ -119,12 +119,12 @@ export const getAgeCategory = (dog) => {
 };
 
 /**
- * Format dog breed, preferring standardized_breed over breed
+ * Format dog breed, preferring primary_breed over standardized_breed over breed
  * @param {Object} dog - Dog object with breed information
  * @returns {string|null} Formatted breed or null if unknown
  */
 export const formatBreed = (dog) => {
-  const rawBreed = dog?.standardized_breed || dog?.breed;
+  const rawBreed = dog?.primary_breed || dog?.standardized_breed || dog?.breed;
   if (
     !rawBreed ||
     rawBreed === "Unknown" ||

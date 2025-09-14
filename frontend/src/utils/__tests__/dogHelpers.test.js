@@ -87,7 +87,16 @@ describe("dogHelpers", () => {
   });
 
   describe("formatBreed", () => {
-    it("prefers standardized_breed over breed", () => {
+    it("prefers primary_breed over all other breed fields", () => {
+      const dog = {
+        breed: "Mixed Breed",
+        standardized_breed: "Mixed Breed",
+        primary_breed: "German Shepherd Mix",
+      };
+      expect(formatBreed(dog)).toBe("German Shepherd Mix");
+    });
+
+    it("falls back to standardized_breed when primary_breed not available", () => {
       const dog = {
         breed: "Golden Retriever Mix",
         standardized_breed: "Golden Retriever",
@@ -95,11 +104,13 @@ describe("dogHelpers", () => {
       expect(formatBreed(dog)).toBe("Golden Retriever");
     });
 
-    it("falls back to breed when standardized_breed not available", () => {
+    it("falls back to breed when primary_breed and standardized_breed not available", () => {
       expect(formatBreed({ breed: "Labrador Mix" })).toBe("Labrador Mix");
     });
 
     it("returns null for unknown breeds", () => {
+      expect(formatBreed({ primary_breed: "Unknown" })).toBe(null);
+      expect(formatBreed({ primary_breed: "unknown" })).toBe(null);
       expect(formatBreed({ breed: "Unknown" })).toBe(null);
       expect(formatBreed({ breed: "unknown" })).toBe(null);
       expect(formatBreed({ standardized_breed: "Unknown" })).toBe(null);
