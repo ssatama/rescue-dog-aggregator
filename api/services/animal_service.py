@@ -262,6 +262,9 @@ class AnimalService:
                 # Parse dog_profiler_data if present (for LLM-enhanced descriptions)
                 parse_json_field(row_dict, "dog_profiler_data")
 
+                # Parse adoption_check_data if present
+                parse_json_field(row_dict, "adoption_check_data")
+
                 # Build nested organization using utility function
                 organization = build_organization_object(row_dict)
 
@@ -363,6 +366,7 @@ class AnimalService:
         row_dict = dict(row)
         parse_json_field(row_dict, "properties")
         parse_json_field(row_dict, "dog_profiler_data")
+        parse_json_field(row_dict, "adoption_check_data")
 
         # Build animal object
         animal_dict = {
@@ -402,11 +406,11 @@ class AnimalService:
         }
 
         # Add adoption check data if available
-        if row.get("adoption_check_data"):
+        if row_dict.get("adoption_check_data"):
             animal_dict["adoption_check_data"] = {
                 "checked_at": row.get("adoption_checked_at").isoformat() if row.get("adoption_checked_at") else None,
-                "evidence": row.get("adoption_check_data", {}).get("evidence"),
-                "confidence": row.get("adoption_check_data", {}).get("confidence"),
+                "evidence": row_dict.get("adoption_check_data", {}).get("evidence"),
+                "confidence": row_dict.get("adoption_check_data", {}).get("confidence"),
                 "status": row.get("status"),  # Include the detected status
             }
 

@@ -16,7 +16,7 @@ class AnimalStatus(str, Enum):
     ADOPTED = "adopted"
     PENDING = "pending"
     RESERVED = "reserved"
-    UNAVAILABLE = "unavailable"
+    UNKNOWN = "unknown"
 
 
 class AvailabilityConfidence(str, Enum):
@@ -103,6 +103,7 @@ class Animal(AnimalBase):
     dog_profiler_data: Optional[Dict[str, Any]] = Field(default_factory=dict)
     breed_slug: Optional[str] = None
     organization: Optional[Organization] = None
+    adoption_check_data: Optional[Dict[str, Any]] = None
 
 
 class AnimalFilter(BaseModel):
