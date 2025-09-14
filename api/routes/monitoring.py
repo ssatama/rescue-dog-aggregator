@@ -24,14 +24,6 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-class HealthStatus(BaseModel):
-    """Health check response model."""
-
-    status: str  # healthy, degraded, unhealthy
-    timestamp: datetime
-    version: str
-    database: Dict[str, Any]
-    components: Optional[Dict[str, Any]] = None
 
 
 class ScraperStatus(BaseModel):
@@ -56,50 +48,9 @@ class FailureSummary(BaseModel):
     failure_rate: float
 
 
-@router.get("/health", response_model=HealthStatus)
-async def health_check(db_conn=Depends(get_database_connection)):
-    """
-    Basic health check endpoint for load balancers and monitoring systems.
-
-    Returns overall system health including database connectivity.
-    """
-    try:
-        # Test database connection
-        db_start = time.time()
-        cursor = db_conn.cursor()
-        cursor.execute("SELECT 1")
-        cursor.fetchone()
-        cursor.close()
-        db_response_time = (time.time() - db_start) * 1000  # Convert to milliseconds
-
-        db_status = {
-            "status": "connected",
-            "response_time_ms": round(db_response_time, 2),
-        }
-
-        # Determine overall health
-        overall_status = "healthy"
-        if db_response_time > 1000:  # More than 1 second
-            overall_status = "degraded"
-
-    except psycopg2.Error as db_err:
-        logger.error(f"Health check database error: {db_err}")
-        db_status = {"status": "error", "error": str(db_err), "response_time_ms": None}
-        overall_status = "unhealthy"
-    except Exception as e:
-        logger.error(f"Health check unexpected error: {e}")
-        db_status = {"status": "error", "error": str(e), "response_time_ms": None}
-        overall_status = "unhealthy"
-
-    return HealthStatus(
-        status=overall_status,
-        timestamp=datetime.now(),
-        version="1.0.0",  # This could be read from a config file
-        database=db_status,
-    )
 
 
-@router.get("/monitoring/scrapers", dependencies=[Depends(verify_admin_key)])
+@router.get("/scrapers", dependencies=[Depends(verify_admin_key)])
 async def get_scraper_status(filters: MonitoringFilterRequest = Depends(), db_conn=Depends(get_database_connection)):
     """
     Get comprehensive status of all scrapers including recent performance.
@@ -272,7 +223,7 @@ async def get_scraper_status(filters: MonitoringFilterRequest = Depends(), db_co
         raise APIException(status_code=500, detail="Failed to fetch scraper status", error_code="INTERNAL_ERROR")
 
 
-@router.get("/monitoring/scrapers/{organization_id}", dependencies=[Depends(verify_admin_key)])
+@router.get("/scrapers/{organization_id}", dependencies=[Depends(verify_admin_key)])
 async def get_individual_scraper_details(organization_id: int, db_conn=Depends(get_database_connection)):
     """
     Get detailed information about a specific scraper.
@@ -400,7 +351,7 @@ async def get_individual_scraper_details(organization_id: int, db_conn=Depends(g
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/monitoring/failures", dependencies=[Depends(verify_admin_key)])
+@router.get("/failures", dependencies=[Depends(verify_admin_key)])
 async def get_failure_detection_metrics(db_conn=Depends(get_database_connection)):
     """
     Get failure detection metrics and recent failure analysis.
@@ -545,7 +496,7 @@ async def get_failure_detection_metrics(db_conn=Depends(get_database_connection)
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/monitoring/performance", dependencies=[Depends(verify_admin_key)])
+@router.get("/performance", dependencies=[Depends(verify_admin_key)])
 async def get_performance_metrics(db_conn=Depends(get_database_connection)):
     """
     Get system and scraper performance metrics.
@@ -664,7 +615,7 @@ async def get_pool_health():
         return {"status": "error", "pool": {"status": "error", "error": str(e)}, "timestamp": datetime.now()}
 
 
-@router.get("/monitoring/alerts/config", dependencies=[Depends(verify_admin_key)])
+@router.get("/alerts/config", dependencies=[Depends(verify_admin_key)])
 async def get_alerting_configuration():
     """
     Get current alerting configuration and thresholds.
@@ -698,7 +649,7 @@ async def get_alerting_configuration():
     return config
 
 
-@router.get("/monitoring/alerts/active", dependencies=[Depends(verify_admin_key)])
+@router.get("/alerts/active", dependencies=[Depends(verify_admin_key)])
 async def get_active_alerts(db_conn=Depends(get_database_connection)):
     """
     Get currently active alerts and alert summary.

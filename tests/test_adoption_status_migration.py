@@ -28,14 +28,15 @@ class TestAdoptionStatusMigration:
                 """
                 INSERT INTO animals (
                     name, external_id, organization_id, animal_type,
-                    status, availability_confidence
-                ) VALUES (%s, %s, 1, 'dog', %s, %s)
+                    status, availability_confidence, adoption_url
+                ) VALUES (%s, %s, 901, 'dog', %s, %s, %s)
                 RETURNING id
             """,
-                (f"Test Dog {status}", f"test-{status}", status, confidence),
+                (f"Test Dog {status}", f"test-{status}", status, confidence, f"https://example.com/{status}"),
             )
 
-            dog_id = test_db_cursor.fetchone()[0]
+            row = test_db_cursor.fetchone()
+            dog_id = row["id"]
             assert dog_id is not None, f"Failed to insert dog with status={status}"
 
     def test_invalid_status_rejected(self, test_db_cursor):
@@ -44,8 +45,8 @@ class TestAdoptionStatusMigration:
             test_db_cursor.execute(
                 """
                 INSERT INTO animals (
-                    name, external_id, organization_id, animal_type, status
-                ) VALUES ('Test Dog', 'test-invalid', 1, 'dog', 'invalid_status')
+                    name, external_id, organization_id, animal_type, status, adoption_url
+                ) VALUES ('Test Dog', 'test-invalid', 901, 'dog', 'invalid_status', 'https://example.com/invalid')
             """
             )
 
@@ -60,7 +61,7 @@ class TestAdoptionStatusMigration:
         """
         )
 
-        columns = [row[0] for row in test_db_cursor.fetchall()]
+        columns = [row["column_name"] for row in test_db_cursor.fetchall()]
         assert "adoption_check_data" in columns
         assert "adoption_checked_at" in columns
 
@@ -74,14 +75,16 @@ class TestAdoptionStatusMigration:
             """
             INSERT INTO animals (
                 name, external_id, organization_id, animal_type,
-                status, adoption_check_data
-            ) VALUES ('Adopted Dog', 'test-adopted', 1, 'dog', 'adopted', %s)
+                status, adoption_check_data, adoption_url
+            ) VALUES ('Adopted Dog', 'test-adopted', 901, 'dog', 'adopted', %s, 'https://example.com/adopted')
             RETURNING id, adoption_check_data
         """,
             (json.dumps(test_data),),
         )
 
-        dog_id, stored_data = test_db_cursor.fetchone()
+        row = test_db_cursor.fetchone()
+        dog_id = row["id"]
+        stored_data = row["adoption_check_data"]
         assert stored_data == test_data
         assert stored_data["confidence"] == 0.95
 
@@ -103,11 +106,11 @@ class TestAdoptionStatusMigration:
                 """
                 INSERT INTO animals (
                     name, external_id, organization_id, animal_type,
-                    status, availability_confidence, consecutive_scrapes_missing
-                ) VALUES (%s, %s, 1, 'dog', %s, %s, %s)
+                    status, availability_confidence, consecutive_scrapes_missing, adoption_url
+                ) VALUES (%s, %s, 901, 'dog', %s, %s, %s, %s)
                 RETURNING id
             """,
-                (f"Test {status}-{misses}", f"test-{status}-{misses}", status, confidence, misses),
+                (f"Test {status}-{misses}", f"test-{status}-{misses}", status, confidence, misses, f"https://example.com/{status}-{misses}"),
             )
 
             result = test_db_cursor.fetchone()
@@ -128,8 +131,8 @@ class TestAdoptionStatusMigration:
         manager = SessionManager(db_config={}, organization_id=1, logger=Mock())
         manager.conn = mock_conn
 
-        # Test mark_missing_animals_unavailable
-        manager.mark_missing_animals_unavailable(threshold=3)
+        # Test mark_animals_unavailable
+        manager.mark_animals_unavailable(threshold=3)
 
         # Verify the SQL uses 'unknown' not 'unavailable'
         calls = mock_cursor.execute.call_args_list
@@ -147,7 +150,7 @@ class TestAdoptionStatusMigration:
         mock_connect.return_value = mock_conn
         mock_conn.cursor.return_value = mock_cursor
 
-        # Mock query results
+        # Mock query results (Note: Updated dogs query 2 is skipped in dry_run mode)
         mock_cursor.fetchall.side_effect = [
             # Status distribution
             [{"status": "available", "count": 100}],
@@ -155,9 +158,13 @@ class TestAdoptionStatusMigration:
             [{"availability_confidence": "high", "count": 100}],
             # Combinations
             [{"status": "available", "availability_confidence": "high", "count": 100}],
+            # Updated dogs query 1 (rows with high misses)
+            [{"id": 1, "name": "TestDog1", "consecutive_scrapes_missing": 5}],
+            # Fixed dogs query (unknown dogs with 0 misses)
+            [{"id": 3, "name": "TestDog3", "status": "unknown", "consecutive_scrapes_missing": 0}],
             # Final state
             [{"status": "available", "availability_confidence": "high", "count": 100}],
-            # Issues check
+            # Issues check (empty means no issues)
             [],
         ]
         mock_cursor.fetchone.return_value = {"count": 0}
@@ -171,9 +178,14 @@ class TestAdoptionStatusMigration:
 
 
 @pytest.fixture
-def test_db_cursor(db_connection):
+def test_db_cursor():
     """Provide a test database cursor with proper cleanup."""
-    cursor = db_connection.cursor()
+    from tests.conftest import override_get_db_cursor
+
+    cursor_generator = override_get_db_cursor()
+    cursor = next(cursor_generator)
     yield cursor
-    cursor.close()
-    db_connection.rollback()  # Rollback any test changes
+    try:
+        next(cursor_generator)  # Trigger cleanup
+    except StopIteration:
+        pass

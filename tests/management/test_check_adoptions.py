@@ -48,14 +48,14 @@ def mock_adoption_service():
 @pytest.fixture
 def sample_organization_config():
     """Sample organization configuration."""
-    return {
-        "id": 1,
-        "name": "Dogs Trust",
-        "slug": "dogstrust",
-        "check_adoption_status": True,
-        "adoption_check_threshold": 3,
-        "adoption_check_config": {"max_checks_per_run": 50, "check_interval_hours": 24},
-    }
+    config = MagicMock()
+    config.id = 1
+    config.name = "Dogs Trust"
+    config.slug = "dogstrust"
+    config.check_adoption_status = True
+    config.adoption_check_threshold = 3
+    config.adoption_check_config = {"max_checks_per_run": 50, "check_interval_hours": 24}
+    return config
 
 
 @pytest.fixture
@@ -106,31 +106,40 @@ class TestCheckAdoptionsCommand:
         command = CheckAdoptionsCommand()
         command.config_loader = mock_config_loader
 
-        mock_config_loader.get_config.return_value = sample_organization_config
+        # Create a mock config object with the expected attributes
+        mock_config = MagicMock()
+        mock_config.slug = "dogstrust"
+        mock_config.check_adoption_status = True
+        mock_config_loader.load_config.return_value = mock_config
 
         orgs = command.get_organizations(org_slug="dogstrust")
 
         assert len(orgs) == 1
-        assert orgs[0]["slug"] == "dogstrust"
-        mock_config_loader.get_config.assert_called_once_with("dogstrust")
+        assert orgs[0].slug == "dogstrust"
+        mock_config_loader.load_config.assert_called_once_with("dogstrust")
 
     def test_get_organizations_all_enabled(self, mock_config_loader, sample_organization_config):
         """Test getting all organizations with adoption checking enabled."""
         command = CheckAdoptionsCommand()
         command.config_loader = mock_config_loader
 
-        # Create configs with different settings
-        config_enabled = sample_organization_config.copy()
-        config_disabled = sample_organization_config.copy()
-        config_disabled["check_adoption_status"] = False
-        config_disabled["slug"] = "other-org"
+        # Create mock config objects
+        mock_config_enabled = MagicMock()
+        mock_config_enabled.slug = "dogstrust"
+        mock_config_enabled.check_adoption_status = True
 
-        mock_config_loader.load_all_configs.return_value = [config_enabled, config_disabled]
+        mock_config_disabled = MagicMock()
+        mock_config_disabled.slug = "other-org"
+        mock_config_disabled.check_adoption_status = False
+
+        # load_all_configs returns a dict, not a list
+        mock_config_loader.load_all_configs.return_value = {"dogstrust": mock_config_enabled, "other-org": mock_config_disabled}
 
         orgs = command.get_organizations(all_orgs=True)
 
         assert len(orgs) == 1
-        assert orgs[0]["slug"] == "dogstrust"
+        assert orgs[0].slug == "dogstrust"
+        assert orgs[0].check_adoption_status is True
 
     def test_get_eligible_dogs(self, mock_db_connection, sample_eligible_dogs):
         """Test getting eligible dogs for checking."""

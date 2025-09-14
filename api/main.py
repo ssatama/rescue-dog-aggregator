@@ -1,13 +1,18 @@
 import logging
 import os
+import time
 from contextlib import asynccontextmanager
+from datetime import datetime
+from typing import Any, Dict
 
-from fastapi import FastAPI
+import psycopg2
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 # Import database initialization
 from api.database import initialize_pool
+from api.dependencies import get_database_connection
 
 # Import middleware
 from api.middleware.cache_headers import CacheHeadersMiddleware
@@ -217,4 +222,48 @@ async def root():
         "version": "0.1.0",
         "documentation": "/docs",
         "environment": ENVIRONMENT,  # Show current environment
+    }
+
+
+@app.get("/health", tags=["health"])
+async def health_check(db_conn=Depends(get_database_connection)):
+    """
+    Basic health check endpoint for load balancers and monitoring systems.
+
+    Returns overall system health including database connectivity.
+    This endpoint is public and does not require authentication.
+    """
+    try:
+        # Test database connection
+        db_start = time.time()
+        cursor = db_conn.cursor()
+        cursor.execute("SELECT 1")
+        cursor.fetchone()
+        cursor.close()
+        db_response_time = (time.time() - db_start) * 1000  # Convert to milliseconds
+
+        db_status = {
+            "status": "connected",
+            "response_time_ms": round(db_response_time, 2),
+        }
+
+        # Determine overall health
+        overall_status = "healthy"
+        if db_response_time > 1000:  # More than 1 second
+            overall_status = "degraded"
+
+    except psycopg2.Error as db_err:
+        logger.error(f"Health check database error: {db_err}")
+        db_status = {"status": "error", "error": str(db_err), "response_time_ms": None}
+        overall_status = "unhealthy"
+    except Exception as e:
+        logger.error(f"Health check unexpected error: {e}")
+        db_status = {"status": "error", "error": str(e), "response_time_ms": None}
+        overall_status = "unhealthy"
+
+    return {
+        "status": overall_status,
+        "timestamp": datetime.now(),
+        "version": "1.0.0",
+        "database": db_status,
     }

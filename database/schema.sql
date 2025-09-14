@@ -66,6 +66,10 @@ CREATE TABLE IF NOT EXISTS animals (
     consecutive_scrapes_missing INTEGER DEFAULT 0,
     availability_confidence VARCHAR(10) DEFAULT 'high' CHECK (availability_confidence IN ('high', 'medium', 'low')),
 
+    -- Adoption tracking columns (added in migration 013)
+    adoption_check_data JSONB,
+    adoption_checked_at TIMESTAMP,
+
     -- Add column to store original image URLs for fallback
     original_image_url TEXT,
     
@@ -88,7 +92,10 @@ CREATE TABLE IF NOT EXISTS animals (
     breed_slug VARCHAR(255),
     
     -- Unique constraint to prevent duplicates
-    UNIQUE (external_id, organization_id)
+    UNIQUE (external_id, organization_id),
+
+    -- Status constraint (added in migration 013)
+    CONSTRAINT animals_status_check CHECK (status IN ('available', 'unknown', 'adopted', 'reserved'))
 );
 
 -- Animal Images
@@ -258,6 +265,15 @@ CREATE INDEX IF NOT EXISTS idx_service_regions_country ON service_regions(countr
 CREATE INDEX IF NOT EXISTS idx_animals_last_seen_at ON animals(last_seen_at);
 CREATE INDEX IF NOT EXISTS idx_animals_consecutive_missing ON animals(consecutive_scrapes_missing);
 CREATE INDEX IF NOT EXISTS idx_animals_availability_confidence ON animals(availability_confidence);
+
+-- Adoption tracking indexes (added in migration 013)
+CREATE INDEX IF NOT EXISTS idx_animals_adoption_check
+ON animals(organization_id, consecutive_scrapes_missing, status)
+WHERE status NOT IN ('adopted', 'reserved');
+
+CREATE INDEX IF NOT EXISTS idx_animals_adoption_checked_at
+ON animals(adoption_checked_at)
+WHERE adoption_checked_at IS NOT NULL;
 
 -- Image URL indexes
 CREATE INDEX IF NOT EXISTS idx_animals_original_image_url ON animals(original_image_url);
