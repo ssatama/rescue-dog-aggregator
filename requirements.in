@@ -38,3 +38,4 @@ pip-tools
 iniconfig
 cachetools
 pytest-benchmark
+firecrawl-py

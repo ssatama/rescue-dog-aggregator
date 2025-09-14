@@ -188,7 +188,7 @@ class SessionManager:
                                 ELSE availability_confidence
                             END,
                             status = CASE
-                                WHEN consecutive_scrapes_missing >= 3 THEN 'unavailable'
+                                WHEN consecutive_scrapes_missing >= 3 THEN 'unknown'
                                 ELSE status
                             END
                         WHERE organization_id = %s
@@ -230,7 +230,7 @@ class SessionManager:
                         ELSE availability_confidence
                     END,
                     status = CASE
-                        WHEN consecutive_scrapes_missing >= 3 THEN 'unavailable'
+                        WHEN consecutive_scrapes_missing >= 3 THEN 'unknown'
                         ELSE status
                     END
                 WHERE organization_id = %s
@@ -274,10 +274,10 @@ class SessionManager:
             cursor.execute(
                 """
                 UPDATE animals
-                SET status = 'unavailable'
+                SET status = 'unknown'
                 WHERE organization_id = %s
                 AND consecutive_scrapes_missing >= %s
-                AND status != 'unavailable'
+                AND status NOT IN ('unknown', 'adopted', 'reserved')
                 """,
                 (self.organization_id, threshold),
             )
