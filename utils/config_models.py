@@ -203,6 +203,26 @@ class OrganizationConfig(BaseModel):
         config_dict = self.scraper.config.model_dump(exclude_none=True)
 
         return config_dict or {}
+    
+    def get_adoption_check_config(self) -> Optional[Dict[str, Any]]:
+        """Get adoption checking configuration.
+        
+        Returns:
+            Dictionary with adoption checking configuration or None if not configured
+        """
+        scraper_config = self.get_scraper_config_dict()
+        
+        # Check if adoption checking is enabled
+        if not scraper_config.get("check_adoption_status", False):
+            return None
+            
+        # Return adoption configuration
+        return {
+            "enabled": True,
+            "threshold": scraper_config.get("adoption_check_threshold", 3),
+            "max_checks_per_run": scraper_config.get("adoption_check_config", {}).get("max_checks_per_run", 50),
+            "check_interval_hours": scraper_config.get("adoption_check_config", {}).get("check_interval_hours", 24),
+        }
 
     def get_display_name(self) -> str:
         """Get display name for the organization.
