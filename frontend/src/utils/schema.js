@@ -8,6 +8,25 @@ const BASE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me";
 
 /**
+ * Determine Schema.org availability based on dog status
+ * @param {string} status - Dog status (available, adopted, reserved, unknown)
+ * @returns {string} Schema.org availability URL
+ */
+export const getAvailability = (status) => {
+  switch (status) {
+    case "available":
+      return "https://schema.org/InStock";
+    case "adopted":
+      return "https://schema.org/OutOfStock";
+    case "reserved":
+      return "https://schema.org/PreOrder";
+    case "unknown":
+    default:
+      return "https://schema.org/InStoreOnly";
+  }
+};
+
+/**
  * Generate Schema.org Pet markup for dog detail pages
  * @param {Object} dog - Dog data object from database
  * @returns {Object|null} Schema.org Pet markup or null if invalid
@@ -111,21 +130,6 @@ export const generatePetSchema = (dog) => {
     dog.organization.adoption_fees.usual_fee != null &&
     dog.organization.adoption_fees.usual_fee > 0 &&
     dog.organization.adoption_fees.currency;
-
-  // Determine availability based on status
-  const getAvailability = (status) => {
-    switch (status) {
-      case 'available':
-        return "https://schema.org/InStock";
-      case 'adopted':
-        return "https://schema.org/OutOfStock";
-      case 'reserved':
-        return "https://schema.org/PreOrder";
-      case 'unknown':
-      default:
-        return "https://schema.org/InStoreOnly";
-    }
-  };
 
   if (hasValidFees) {
     schema.offers = {

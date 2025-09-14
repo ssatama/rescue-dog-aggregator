@@ -10,6 +10,7 @@ describe("Schema.org Adoption Fee Functionality", () => {
     id: 1,
     name: "Buddy",
     standardized_breed: "Labrador Retriever",
+    status: "available",
     sex: "male",
     age_text: "Adult",
     primary_image_url: "https://images.rescuedogs.me/buddy.jpg",
@@ -30,6 +31,7 @@ describe("Schema.org Adoption Fee Functionality", () => {
     id: 2,
     name: "Luna",
     breed: "Mixed",
+    status: "available",
     organization: {
       name: "City Shelter",
       city: "London",
@@ -39,10 +41,11 @@ describe("Schema.org Adoption Fee Functionality", () => {
     },
   };
 
-  const mockDogWithUSDFees = {
+  const mockDogWithDifferentCurrency = {
     id: 3,
     name: "Max",
     breed: "Golden Retriever",
+    status: "available",
     organization: {
       name: "American Rescue",
       city: "New York",
@@ -51,6 +54,23 @@ describe("Schema.org Adoption Fee Functionality", () => {
       adoption_fees: {
         usual_fee: 450,
         currency: "USD",
+      },
+    },
+  };
+
+  const mockDogWithZeroFee = {
+    id: 4,
+    name: "Rocky",
+    breed: "Pit Bull",
+    status: "available",
+    organization: {
+      name: "Free Dogs Rescue",
+      city: "Paris",
+      country: "FR",
+      website_url: "https://freedogs.org",
+      adoption_fees: {
+        usual_fee: 0,
+        currency: "EUR",
       },
     },
   };
@@ -80,7 +100,7 @@ describe("Schema.org Adoption Fee Functionality", () => {
   });
 
   test("should handle different currencies correctly", () => {
-    const schema = generatePetSchema(mockDogWithUSDFees);
+    const schema = generatePetSchema(mockDogWithDifferentCurrency);
 
     expect(schema.offers).toEqual({
       "@type": "Offer",

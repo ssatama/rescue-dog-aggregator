@@ -17,7 +17,7 @@ from api.middleware.sentry_middleware import SentryPerformanceMiddleware, Sentry
 from api.monitoring import init_sentry
 
 # Import routes
-from api.routes import animals, enhanced_animals, llm, monitoring, organizations, swipe
+from api.routes import animals, enhanced_animals, llm, monitoring, organizations, sitemap, swipe
 
 # Import CORS configuration
 from config import (
@@ -193,21 +193,13 @@ logger.info(f"  Allow credentials: {CORS_ALLOW_CREDENTIALS}")
 logger.info(f"  Allowed methods: {CORS_ALLOW_METHODS}")
 
 # Include routers
-app.include_router(animals.router, prefix="/api/animals", tags=["animals"])
-
-# Enhanced animals API for LLM data (router already has /api/animals prefix)
-app.include_router(enhanced_animals.router, tags=["enhanced"])
-
-app.include_router(organizations.router, prefix="/api/organizations", tags=["organizations"])
-
-# Include monitoring routes (no prefix for health check compatibility)
-app.include_router(monitoring.router, tags=["monitoring"])
-
-# Include LLM routes
-app.include_router(llm.router, tags=["llm"])
-
-# Include swipe routes for the swipe feature
-app.include_router(swipe.router, prefix="/api/dogs", tags=["swipe"])
+app.include_router(animals.router, prefix="/api/animals")
+app.include_router(enhanced_animals.router, prefix="/api/animals/enhanced")
+app.include_router(organizations.router, prefix="/api/organizations")
+app.include_router(swipe.router, prefix="/api")
+app.include_router(llm.router, prefix="/api/llm")
+app.include_router(monitoring.router, prefix="/api/monitoring")
+app.include_router(sitemap.router, prefix="/api")
 
 # Include Sentry test endpoints (only in non-production environments)
 if ENVIRONMENT != "production":

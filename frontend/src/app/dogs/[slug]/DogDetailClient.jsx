@@ -424,7 +424,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
 
             <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden">
               {/* Show AdoptedCelebration banner for adopted dogs */}
-              {dog.status === 'adopted' && (
+              {dog.status === "adopted" && (
                 <AdoptedCelebration dogName={dog.name} />
               )}
 

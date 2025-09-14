@@ -280,25 +280,54 @@ class AnimalService:
                 raise
         return animals
 
+    def get_animal_by_slug(self, animal_slug: str) -> Optional[Animal]:
+        """
+        Get a single animal by slug, regardless of status.
+
+        This allows viewing of adopted/reserved dogs for SEO and celebration pages.
+        """
+        try:
+            # Don't filter by status - allow all dogs to be viewed
+            query = """
+                SELECT a.*, 
+                       o.name as org_name,
+                       o.slug as org_slug,
+                       o.city as org_city,
+                       o.country as org_country,
+                       o.website_url as org_website_url,
+                       o.social_media as org_social_media,
+                       o.ships_to as org_ships_to,
+                       a.adoption_check_data,
+                       a.adoption_checked_at
+                FROM animals a
+                LEFT JOIN organizations o ON a.organization_id = o.id
+                WHERE a.slug = %s
+                  AND a.animal_type = 'dog'
+                  AND o.active = TRUE
+            """
+
+            self.cursor.execute(query, [animal_slug])
+            result = self.cursor.fetchone()
+
+            if not result:
+                return None
+
+            return self._build_single_animal_response(result)
+
+        except Exception as e:
+            logger.error(f"Error fetching animal by slug {animal_slug}: {e}")
+            raise APIException(status_code=500, detail=f"Failed to fetch animal {animal_slug}", error_code="INTERNAL_ERROR")
+
     def get_animal_by_id(self, animal_id: int) -> Optional[Animal]:
         """
-        Get a specific animal by ID.
+        Get a single animal by ID, regardless of status.
 
-        Args:
-            animal_id: ID of the animal to fetch
-
-        Returns:
-            Animal or None if not found
+        This allows viewing of adopted/reserved dogs for SEO and celebration pages.
         """
         try:
+            # Don't filter by status - allow all dogs to be viewed
             query = """
-                SELECT a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
-                       a.primary_breed, a.breed_type, a.breed_confidence, a.secondary_breed, a.breed_slug,
-                       a.age_text, a.age_min_months, a.age_max_months,
-                       a.sex, a.size, a.standardized_size, a.status, a.properties,
-                       a.primary_image_url, a.adoption_url, a.created_at, a.updated_at,
-                       a.organization_id, a.external_id, a.language, a.last_scraped_at,
-                       a.dog_profiler_data,
+                SELECT a.*, 
                        o.name as org_name,
                        o.slug as org_slug,
                        o.city as org_city,
@@ -306,154 +335,82 @@ class AnimalService:
                        o.website_url as org_website_url,
                        o.social_media as org_social_media,
                        o.ships_to as org_ships_to,
-                       o.logo_url as org_logo_url,
-                       o.service_regions as org_service_regions,
-                       o.description as org_description,
-                       COUNT(a2.id) as org_total_dogs,
-                       COUNT(CASE WHEN a2.created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as org_new_this_week
+                       a.adoption_check_data,
+                       a.adoption_checked_at
                 FROM animals a
                 LEFT JOIN organizations o ON a.organization_id = o.id
-                LEFT JOIN animals a2 ON o.id = a2.organization_id
-                    AND a2.status = 'available'
-                    AND a2.availability_confidence IN ('high', 'medium')
                 WHERE a.id = %s
-                GROUP BY a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
-                         a.primary_breed, a.breed_type, a.breed_confidence, a.secondary_breed, a.breed_slug,
-                         a.age_text, a.age_min_months, a.age_max_months,
-                         a.sex, a.size, a.standardized_size, a.status, a.properties,
-                         a.primary_image_url, a.adoption_url, a.created_at, a.updated_at,
-                         a.organization_id, a.external_id, a.language, a.last_scraped_at,
-                         a.dog_profiler_data,
-                         o.id, o.slug, o.name, o.city, o.country, o.website_url, o.social_media,
-                         o.ships_to, o.logo_url, o.service_regions, o.description
+                  AND a.animal_type = 'dog'
+                  AND o.active = TRUE
             """
 
-            self.cursor.execute(query, (animal_id,))
-            animal_dict = self.cursor.fetchone()
+            self.cursor.execute(query, [animal_id])
+            result = self.cursor.fetchone()
 
-            if not animal_dict:
+            if not result:
                 return None
 
-            # Process the animal data
-            clean_dict = dict(animal_dict)
-
-            # Parse properties JSON using utility function
-            parse_json_field(clean_dict, "properties")
-
-            # Parse dog_profiler_data JSON using utility function
-            parse_json_field(clean_dict, "dog_profiler_data")
-
-            # Build organization data using utility function
-            organization_data = build_organization_object(clean_dict)
-
-            # Add extra fields specific to this endpoint
-            if organization_data:
-                organization_data.update(
-                    {
-                        "total_dogs": clean_dict["org_total_dogs"],
-                        "new_this_week": clean_dict["org_new_this_week"],
-                        "recent_dogs": [],  # Will be populated by separate query if needed
-                    }
-                )
-
-            # Remove org_ prefixed fields and add nested organization
-            final_dict = {k: v for k, v in clean_dict.items() if not k.startswith("org_")}
-            final_dict["organization"] = organization_data
-
-            # Create and return the model
-            return Animal(**final_dict)
+            return self._build_single_animal_response(result)
 
         except Exception as e:
-            logger.error(f"Error in get_animal_by_id({animal_id}): {e}")
+            logger.error(f"Error fetching animal by id {animal_id}: {e}")
             raise APIException(status_code=500, detail=f"Failed to fetch animal {animal_id}", error_code="INTERNAL_ERROR")
 
-    def get_animal_by_slug(self, slug: str) -> Optional[Animal]:
-        """
-        Get a specific animal by slug.
+    def _build_single_animal_response(self, row: dict) -> Animal:
+        """Build a single animal response with adoption data if available."""
+        # Build organization data
+        organization = build_organization_object(row) if row else None
 
-        Args:
-            slug: Slug of the animal to fetch
+        # Parse properties JSON
+        properties = parse_json_field(row.get("properties", {}))
 
-        Returns:
-            Animal or None if not found
-        """
-        try:
-            query = """
-                SELECT a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
-                       a.primary_breed, a.breed_type, a.breed_confidence, a.secondary_breed, a.breed_slug,
-                       a.age_text, a.age_min_months, a.age_max_months,
-                       a.sex, a.size, a.standardized_size, a.status, a.properties,
-                       a.primary_image_url, a.adoption_url, a.created_at, a.updated_at,
-                       a.organization_id, a.external_id, a.language, a.last_scraped_at,
-                       a.dog_profiler_data,
-                       o.name as org_name,
-                       o.slug as org_slug,
-                       o.city as org_city,
-                       o.country as org_country,
-                       o.website_url as org_website_url,
-                       o.social_media as org_social_media,
-                       o.ships_to as org_ships_to,
-                       o.logo_url as org_logo_url,
-                       o.service_regions as org_service_regions,
-                       o.description as org_description,
-                       COUNT(a2.id) as org_total_dogs,
-                       COUNT(CASE WHEN a2.created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as org_new_this_week
-                FROM animals a
-                LEFT JOIN organizations o ON a.organization_id = o.id
-                LEFT JOIN animals a2 ON o.id = a2.organization_id
-                    AND a2.status = 'available'
-                    AND a2.availability_confidence IN ('high', 'medium')
-                WHERE a.slug = %s
-                GROUP BY a.id, a.slug, a.name, a.animal_type, a.breed, a.standardized_breed, a.breed_group,
-                         a.primary_breed, a.breed_type, a.breed_confidence, a.secondary_breed, a.breed_slug,
-                         a.age_text, a.age_min_months, a.age_max_months,
-                         a.sex, a.size, a.standardized_size, a.status, a.properties,
-                         a.primary_image_url, a.adoption_url, a.created_at, a.updated_at,
-                         a.organization_id, a.external_id, a.language, a.last_scraped_at,
-                         a.dog_profiler_data,
-                         o.id, o.slug, o.name, o.city, o.country, o.website_url, o.social_media,
-                         o.ships_to, o.logo_url, o.service_regions, o.description
-            """
-            self.cursor.execute(query, (slug,))
-            animal_dict = self.cursor.fetchone()
+        # Build animal object
+        animal_dict = {
+            "id": row["id"],
+            "slug": row["slug"],
+            "name": row["name"],
+            "animal_type": row["animal_type"],
+            "breed": row.get("breed"),
+            "standardized_breed": row.get("standardized_breed"),
+            "breed_group": row.get("breed_group"),
+            "primary_breed": row.get("primary_breed"),
+            "breed_type": row.get("breed_type"),
+            "breed_confidence": row.get("breed_confidence"),
+            "secondary_breed": row.get("secondary_breed"),
+            "breed_slug": row.get("breed_slug"),
+            "age_text": row.get("age_text"),
+            "age_min_months": row.get("age_min_months"),
+            "age_max_months": row.get("age_max_months"),
+            "sex": row.get("sex"),
+            "size": row.get("size"),
+            "standardized_size": row.get("standardized_size"),
+            "status": row.get("status"),
+            "primary_image_url": row.get("primary_image_url"),
+            "adoption_url": row.get("adoption_url"),
+            "organization_id": row.get("organization_id"),
+            "external_id": row.get("external_id"),
+            "language": row.get("language"),
+            "properties": properties,
+            "created_at": row.get("created_at"),
+            "updated_at": row.get("updated_at"),
+            "last_scraped_at": row.get("last_scraped_at"),
+            "availability_confidence": row.get("availability_confidence"),
+            "last_seen_at": row.get("last_seen_at"),
+            "consecutive_scrapes_missing": row.get("consecutive_scrapes_missing"),
+            "dog_profiler_data": parse_json_field(row.get("dog_profiler_data", {})),
+            "organization": organization,
+        }
 
-            if not animal_dict:
-                return None
+        # Add adoption check data if available
+        if row.get("adoption_check_data"):
+            animal_dict["adoption_check_data"] = {
+                "checked_at": row.get("adoption_checked_at").isoformat() if row.get("adoption_checked_at") else None,
+                "evidence": row.get("adoption_check_data", {}).get("evidence"),
+                "confidence": row.get("adoption_check_data", {}).get("confidence"),
+                "status": row.get("status"),  # Include the detected status
+            }
 
-            # Process the animal data without images
-            animal_id = animal_dict["id"]
-
-            # Process the animal data
-            clean_dict = dict(animal_dict)
-            # Parse properties JSON using utility function
-            parse_json_field(clean_dict, "properties")
-
-            # Parse dog_profiler_data JSON using utility function
-            parse_json_field(clean_dict, "dog_profiler_data")
-
-            # Build organization data using utility function
-            organization_data = build_organization_object(clean_dict)
-
-            # Add extra fields specific to this endpoint
-            if organization_data:
-                organization_data.update(
-                    {
-                        "total_dogs": clean_dict["org_total_dogs"],
-                        "new_this_week": clean_dict["org_new_this_week"],
-                        "recent_dogs": [],  # Will be populated by separate query if needed
-                    }
-                )
-
-            # Remove org_ prefixed fields and add nested organization
-            final_dict = {k: v for k, v in clean_dict.items() if not k.startswith("org_")}
-            final_dict["organization"] = organization_data
-
-            # Create and return the model
-            return Animal(**final_dict)
-
-        except Exception as e:
-            logger.error(f"Error in get_animal_by_slug({slug}): {e}")
-            raise APIException(status_code=500, detail=f"Failed to fetch animal {slug}", error_code="INTERNAL_ERROR")
+        return Animal(**animal_dict)
 
     def get_distinct_breeds(self, breed_group: Optional[str] = None) -> List[str]:
         """Get distinct standardized breeds."""
@@ -1600,7 +1557,6 @@ class AnimalService:
               AND o.country IS NOT NULL
               AND o.country != ''
             GROUP BY o.country
-            HAVING COUNT(*) > 0
             ORDER BY o.country ASC
         """
 

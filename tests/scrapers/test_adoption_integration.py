@@ -58,11 +58,11 @@ class TestAdoptionIntegration:
     @pytest.fixture
     def mock_scraper_with_adoption(self, mock_config_with_adoption):
         """Create a mock scraper with adoption checking enabled."""
-        
+
         class TestScraper(BaseScraper):
             def collect_data(self):
                 return []
-        
+
         # Create scraper with organization_id to avoid config loading
         scraper = TestScraper(organization_id=1)
         # Manually set the config
@@ -75,12 +75,12 @@ class TestAdoptionIntegration:
     @pytest.fixture
     def mock_scraper_without_adoption(self, mock_config_without_adoption):
         """Create a mock scraper without adoption checking."""
-        
+
         class TestScraper(BaseScraper):
             def collect_data(self):
                 return []
-        
-        # Create scraper with organization_id to avoid config loading  
+
+        # Create scraper with organization_id to avoid config loading
         scraper = TestScraper(organization_id=1)
         # Manually set the config
         scraper.org_config = mock_config_without_adoption
@@ -92,7 +92,7 @@ class TestAdoptionIntegration:
     def test_adoption_check_config_enabled(self, mock_config_with_adoption):
         """Test getting adoption check config when enabled."""
         config = mock_config_with_adoption.get_adoption_check_config()
-        
+
         assert config is not None
         assert config["enabled"] is True
         assert config["threshold"] == 3
@@ -105,14 +105,12 @@ class TestAdoptionIntegration:
         assert config is None
 
     @patch("services.adoption_detection.AdoptionDetectionService")
-    def test_check_adoptions_if_enabled_runs(
-        self, mock_service_class, mock_scraper_with_adoption
-    ):
+    def test_check_adoptions_if_enabled_runs(self, mock_service_class, mock_scraper_with_adoption):
         """Test that adoption checking runs when enabled."""
         # Setup mock service
         mock_service = MagicMock()
         mock_service_class.return_value = mock_service
-        
+
         # Create mock results
         mock_results = [
             AdoptionCheckResult(
@@ -139,126 +137,94 @@ class TestAdoptionIntegration:
             ),
         ]
         mock_service.batch_check_adoptions.return_value = mock_results
-        
+
         # Run adoption checking
         mock_scraper_with_adoption._check_adoptions_if_enabled()
-        
+
         # Verify service was called
         mock_service_class.assert_called_once()
-        mock_service.batch_check_adoptions.assert_called_once_with(
-            mock_scraper_with_adoption.conn,
-            1,  # organization_id
-            threshold=3,
-            limit=50,
-            dry_run=False
-        )
-        
+        mock_service.batch_check_adoptions.assert_called_once_with(mock_scraper_with_adoption.conn, 1, threshold=3, limit=50, dry_run=False)  # organization_id
+
         # Verify logging
-        mock_scraper_with_adoption.logger.info.assert_any_call(
-            "🔍 Checking for adoptions (threshold: 3 missed scrapes)"
-        )
-        mock_scraper_with_adoption.logger.info.assert_any_call(
-            "✅ Adoption check complete: 2 dogs checked, 1 adopted, 1 reserved"
-        )
-        
+        mock_scraper_with_adoption.logger.info.assert_any_call("🔍 Checking for adoptions (threshold: 3 missed scrapes)")
+        mock_scraper_with_adoption.logger.info.assert_any_call("✅ Adoption check complete: 2 dogs checked, 1 adopted, 1 reserved")
+
         # Verify metrics tracking
-        mock_scraper_with_adoption.metrics_collector.track_custom_metric.assert_any_call(
-            "adoptions_checked", 2
-        )
-        mock_scraper_with_adoption.metrics_collector.track_custom_metric.assert_any_call(
-            "adoptions_detected", 1
-        )
-        mock_scraper_with_adoption.metrics_collector.track_custom_metric.assert_any_call(
-            "reservations_detected", 1
-        )
+        mock_scraper_with_adoption.metrics_collector.track_custom_metric.assert_any_call("adoptions_checked", 2)
+        mock_scraper_with_adoption.metrics_collector.track_custom_metric.assert_any_call("adoptions_detected", 1)
+        mock_scraper_with_adoption.metrics_collector.track_custom_metric.assert_any_call("reservations_detected", 1)
 
     @patch("services.adoption_detection.AdoptionDetectionService")
-    def test_check_adoptions_if_enabled_skips_when_disabled(
-        self, mock_service_class, mock_scraper_without_adoption
-    ):
+    def test_check_adoptions_if_enabled_skips_when_disabled(self, mock_service_class, mock_scraper_without_adoption):
         """Test that adoption checking is skipped when disabled."""
         # Run adoption checking
         mock_scraper_without_adoption._check_adoptions_if_enabled()
-        
+
         # Verify service was NOT called
         mock_service_class.assert_not_called()
-        
+
         # Verify no logging about adoptions
         mock_scraper_without_adoption.logger.info.assert_not_called()
 
     @patch("services.adoption_detection.AdoptionDetectionService")
-    def test_check_adoptions_handles_no_eligible_dogs(
-        self, mock_service_class, mock_scraper_with_adoption
-    ):
+    def test_check_adoptions_handles_no_eligible_dogs(self, mock_service_class, mock_scraper_with_adoption):
         """Test handling when no dogs are eligible for adoption checking."""
         # Setup mock service
         mock_service = MagicMock()
         mock_service_class.return_value = mock_service
         mock_service.batch_check_adoptions.return_value = []
-        
+
         # Run adoption checking
         mock_scraper_with_adoption._check_adoptions_if_enabled()
-        
-        # Verify logging
-        mock_scraper_with_adoption.logger.info.assert_any_call(
-            "No dogs eligible for adoption checking"
-        )
 
-    def test_check_adoptions_handles_import_error(
-        self, mock_scraper_with_adoption
-    ):
+        # Verify logging
+        mock_scraper_with_adoption.logger.info.assert_any_call("No dogs eligible for adoption checking")
+
+    def test_check_adoptions_handles_import_error(self, mock_scraper_with_adoption):
         """Test handling when AdoptionDetectionService is not available."""
         # Patch the import to raise ImportError
-        with patch('builtins.__import__', side_effect=ImportError("Module not found")):
+        with patch("builtins.__import__", side_effect=ImportError("Module not found")):
             # Run adoption checking - should not raise
             mock_scraper_with_adoption._check_adoptions_if_enabled()
-            
+
             # Verify warning was logged
             mock_scraper_with_adoption.logger.warning.assert_called_once()
-            assert "AdoptionDetectionService not available" in str(
-                mock_scraper_with_adoption.logger.warning.call_args
-            )
+            assert "AdoptionDetectionService not available" in str(mock_scraper_with_adoption.logger.warning.call_args)
 
     @patch("services.adoption_detection.AdoptionDetectionService")
-    def test_check_adoptions_handles_service_error(
-        self, mock_service_class, mock_scraper_with_adoption
-    ):
+    def test_check_adoptions_handles_service_error(self, mock_service_class, mock_scraper_with_adoption):
         """Test handling when adoption service raises an error."""
         # Setup mock service to raise error
         mock_service = MagicMock()
         mock_service_class.return_value = mock_service
         mock_service.batch_check_adoptions.side_effect = Exception("API error")
-        
+
         # Run adoption checking - should not raise
         mock_scraper_with_adoption._check_adoptions_if_enabled()
-        
+
         # Verify error was logged
         mock_scraper_with_adoption.logger.error.assert_called_once()
-        assert "Error during adoption checking" in str(
-            mock_scraper_with_adoption.logger.error.call_args
-        )
+        assert "Error during adoption checking" in str(mock_scraper_with_adoption.logger.error.call_args)
 
     def test_check_adoptions_without_config(self):
         """Test adoption checking when org_config is not set."""
-        
+
         class TestScraper(BaseScraper):
             def collect_data(self):
                 return []
-        
+
         scraper = TestScraper(organization_id=1)
         scraper.org_config = None
         scraper.logger = MagicMock()
-        
+
         # Should return early without errors
         scraper._check_adoptions_if_enabled()
-        
+
         # Verify no logging occurred
         scraper.logger.info.assert_not_called()
 
     @patch("services.adoption_detection.AdoptionDetectionService")
-    def test_finalize_scrape_calls_adoption_check(
-        self, mock_service_class, mock_scraper_with_adoption
-    ):
+    def test_finalize_scrape_calls_adoption_check(self, mock_service_class, mock_scraper_with_adoption):
         """Test that _finalize_scrape calls adoption checking."""
         # Setup mocks
         mock_scraper_with_adoption.detect_partial_failure = MagicMock(return_value=False)
@@ -266,16 +232,16 @@ class TestAdoptionIntegration:
         mock_scraper_with_adoption.update_stale_data_detection = MagicMock()
         mock_scraper_with_adoption.complete_scrape_log = MagicMock()
         mock_scraper_with_adoption.skip_existing_animals = False
-        
+
         # Setup mock adoption service
         mock_service = MagicMock()
         mock_service_class.return_value = mock_service
         mock_service.batch_check_adoptions.return_value = []
-        
+
         # Run finalize scrape
         processing_stats = {}
         mock_scraper_with_adoption._finalize_scrape([], processing_stats)
-        
+
         # Verify adoption checking was called
         mock_service_class.assert_called_once()
         mock_service.batch_check_adoptions.assert_called_once()

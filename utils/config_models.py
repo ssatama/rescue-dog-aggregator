@@ -203,19 +203,19 @@ class OrganizationConfig(BaseModel):
         config_dict = self.scraper.config.model_dump(exclude_none=True)
 
         return config_dict or {}
-    
+
     def get_adoption_check_config(self) -> Optional[Dict[str, Any]]:
         """Get adoption checking configuration.
-        
+
         Returns:
             Dictionary with adoption checking configuration or None if not configured
         """
         scraper_config = self.get_scraper_config_dict()
-        
+
         # Check if adoption checking is enabled
         if not scraper_config.get("check_adoption_status", False):
             return None
-            
+
         # Return adoption configuration
         return {
             "enabled": True,

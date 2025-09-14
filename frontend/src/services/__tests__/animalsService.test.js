@@ -3,6 +3,7 @@ import {
   getAnimalById,
   getAnimalsByStandardizedBreed,
   getRandomAnimals,
+  getSitemapData,
 } from "../animalsService";
 import { get } from "../../utils/api";
 
@@ -92,6 +93,159 @@ describe("animalsService", () => {
     // default limit = 3
     await getRandomAnimals();
     expect(get).toHaveBeenLastCalledWith("/api/animals/random", { limit: 3 });
+  });
+});
+
+describe("animalsService endpoints", () => {
+  test("getAnimals includes status parameter if provided", async () => {
+    // Setup mock
+    get.mockResolvedValue([{ id: 1, name: "Test Animal" }]);
+
+    // Call the service with explicit status
+    const result = await getAnimals({ status: "adopted" });
+
+    // Check that get was called with the provided status
+    expect(get).toHaveBeenCalledWith(
+      "/api/animals",
+      expect.objectContaining({
+        status: "adopted",
+        animal_type: "dog",
+      }),
+      {},
+    );
+
+    expect(result).toEqual([{ id: 1, name: "Test Animal" }]);
+  });
+
+  test("getAnimals defaults to available status when not provided", async () => {
+    // Setup mock
+    get.mockResolvedValue([{ id: 1, name: "Test Animal" }]);
+
+    // Call the service without status
+    const result = await getAnimals({ page: 1 });
+
+    // Check that get was called with default status
+    expect(get).toHaveBeenCalledWith(
+      "/api/animals",
+      expect.objectContaining({
+        status: "available",
+        animal_type: "dog",
+        page: 1,
+      }),
+      {},
+    );
+
+    expect(result).toEqual([{ id: 1, name: "Test Animal" }]);
+  });
+
+  test("getAnimals allows null status to fetch all dogs", async () => {
+    // Setup mock
+    get.mockResolvedValue([{ id: 1, name: "Test Animal" }]);
+
+    // Call the service with null status
+    const result = await getAnimals({ status: null });
+
+    // Check that get was called without status parameter
+    expect(get).toHaveBeenCalledWith(
+      "/api/animals",
+      expect.objectContaining({
+        animal_type: "dog",
+      }),
+      {},
+    );
+
+    // Verify status is not in the params
+    const callParams = get.mock.calls[0][1];
+    expect(callParams).not.toHaveProperty("status");
+
+    expect(result).toEqual([{ id: 1, name: "Test Animal" }]);
+  });
+
+  test("getAnimals supports all status values", async () => {
+    get.mockResolvedValue([]);
+
+    // Test available status
+    await getAnimals({ status: "available" });
+    expect(get).toHaveBeenCalledWith(
+      "/api/animals",
+      expect.objectContaining({ status: "available" }),
+      {},
+    );
+
+    // Test adopted status
+    await getAnimals({ status: "adopted" });
+    expect(get).toHaveBeenCalledWith(
+      "/api/animals",
+      expect.objectContaining({ status: "adopted" }),
+      {},
+    );
+
+    // Test reserved status
+    await getAnimals({ status: "reserved" });
+    expect(get).toHaveBeenCalledWith(
+      "/api/animals",
+      expect.objectContaining({ status: "reserved" }),
+      {},
+    );
+
+    // Test unknown status
+    await getAnimals({ status: "unknown" });
+    expect(get).toHaveBeenCalledWith(
+      "/api/animals",
+      expect.objectContaining({ status: "unknown" }),
+      {},
+    );
+  });
+});
+
+describe("animalsService sitemap", () => {
+  test("getSitemapData calls /api/sitemap endpoint", async () => {
+    // Setup mock
+    get.mockResolvedValue({
+      animals: [
+        { id: 1, name: "Dog1", status: "available" },
+        { id: 2, name: "Dog2", status: "adopted" },
+        { id: 3, name: "Dog3", status: "reserved" },
+      ],
+    });
+
+    // Call the service
+    const result = await getSitemapData();
+
+    // Check that get was called correctly
+    expect(get).toHaveBeenCalledWith("/api/sitemap");
+
+    // Check the result
+    expect(result).toEqual({
+      animals: [
+        { id: 1, name: "Dog1", status: "available" },
+        { id: 2, name: "Dog2", status: "adopted" },
+        { id: 3, name: "Dog3", status: "reserved" },
+      ],
+    });
+  });
+
+  test("getSitemapData returns all dogs regardless of status", async () => {
+    // Setup mock with mixed statuses
+    const mockData = {
+      animals: [
+        { id: 1, status: "available" },
+        { id: 2, status: "adopted" },
+        { id: 3, status: "reserved" },
+        { id: 4, status: "unknown" },
+      ],
+    };
+    get.mockResolvedValue(mockData);
+
+    const result = await getSitemapData();
+
+    expect(result.animals).toHaveLength(4);
+    expect(result.animals.map((a) => a.status)).toEqual([
+      "available",
+      "adopted",
+      "reserved",
+      "unknown",
+    ]);
   });
 });
 

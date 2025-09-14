@@ -13,6 +13,7 @@ describe("DogSchema Component", () => {
     name: "Buddy",
     standardized_breed: "Labrador Retriever",
     breed: "Labrador",
+    status: "available", // Add status property
     sex: "male",
     age_text: "Adult",
     primary_image_url: "https://images.rescuedogs.me/buddy.jpg",

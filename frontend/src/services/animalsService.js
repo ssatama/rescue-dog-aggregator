@@ -310,12 +310,12 @@ export async function getSitemapData() {
       stats: {
         total: animals.length,
         by_status: {
-          available: animals.filter(d => d.status === 'available').length,
-          unknown: animals.filter(d => d.status === 'unknown').length,
-          adopted: animals.filter(d => d.status === 'adopted').length,
-          reserved: animals.filter(d => d.status === 'reserved').length
-        }
-      }
+          available: animals.filter((d) => d.status === "available").length,
+          unknown: animals.filter((d) => d.status === "unknown").length,
+          adopted: animals.filter((d) => d.status === "adopted").length,
+          reserved: animals.filter((d) => d.status === "reserved").length,
+        },
+      },
     };
   }
 }

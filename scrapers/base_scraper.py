@@ -734,7 +734,7 @@ class BaseScraper(ABC):
 
             # Update stale data detection for animals not seen in this scrape
             self.update_stale_data_detection()
-            
+
             # Phase 2.3: Check for adoptions after stale data detection
             self._check_adoptions_if_enabled()
 
@@ -1308,62 +1308,53 @@ class BaseScraper(ABC):
             self.logger.error(f"Error during LLM enrichment post-processing: {e}")
             # Don't fail the scrape if enrichment fails
             pass
-    
+
     def _check_adoptions_if_enabled(self):
         """Check for dog adoptions if enabled in organization config.
-        
+
         This integrates with the AdoptionDetectionService to check dogs
         that have been missing for multiple scrapes.
         """
         # Check if adoption checking is enabled in config
         if not hasattr(self, "org_config") or not self.org_config:
             return
-            
+
         # Get adoption checking configuration
         adoption_config = self.org_config.get_adoption_check_config()
         if not adoption_config or not adoption_config.get("enabled", False):
             return
-            
+
         try:
             # Import here to avoid circular dependency
             from services.adoption_detection import AdoptionDetectionService
-            
+
             # Get threshold and limits from config
             threshold = adoption_config.get("threshold", 3)
             max_checks = adoption_config.get("max_checks_per_run", 50)
             check_interval_hours = adoption_config.get("check_interval_hours", 24)
-            
+
             self.logger.info(f"🔍 Checking for adoptions (threshold: {threshold} missed scrapes)")
-            
+
             # Initialize service
             service = AdoptionDetectionService()
-            
+
             # Check adoptions for this organization
-            results = service.batch_check_adoptions(
-                self.conn,
-                self.organization_id,
-                threshold=threshold,
-                limit=max_checks,
-                dry_run=False
-            )
-            
+            results = service.batch_check_adoptions(self.conn, self.organization_id, threshold=threshold, limit=max_checks, dry_run=False)
+
             if results:
                 # Log results
-                adopted_count = sum(1 for r in results if r.detected_status == 'adopted')
-                reserved_count = sum(1 for r in results if r.detected_status == 'reserved')
-                
-                self.logger.info(
-                    f"✅ Adoption check complete: {len(results)} dogs checked, "
-                    f"{adopted_count} adopted, {reserved_count} reserved"
-                )
-                
+                adopted_count = sum(1 for r in results if r.detected_status == "adopted")
+                reserved_count = sum(1 for r in results if r.detected_status == "reserved")
+
+                self.logger.info(f"✅ Adoption check complete: {len(results)} dogs checked, " f"{adopted_count} adopted, {reserved_count} reserved")
+
                 # Track metrics
                 self.metrics_collector.track_custom_metric("adoptions_checked", len(results))
                 self.metrics_collector.track_custom_metric("adoptions_detected", adopted_count)
                 self.metrics_collector.track_custom_metric("reservations_detected", reserved_count)
             else:
                 self.logger.info("No dogs eligible for adoption checking")
-                
+
         except ImportError as e:
             self.logger.warning(f"AdoptionDetectionService not available: {e}")
         except Exception as e:

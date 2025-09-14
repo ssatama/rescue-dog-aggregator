@@ -8,6 +8,7 @@ import {
   generateOrganizationSchema,
   generateBreadcrumbSchema,
   validateSchemaData,
+  getAvailability,
 } from "../schema";
 
 describe("Schema.org Pet Markup", () => {
@@ -16,6 +17,7 @@ describe("Schema.org Pet Markup", () => {
     name: "Buddy",
     standardized_breed: "Labrador Retriever",
     breed: "Labrador",
+    status: "available", // Add status property
     sex: "male",
     age_text: "Adult",
     age_min_months: 36,
@@ -316,5 +318,42 @@ describe("Schema Validation Utilities", () => {
 
     expect(validateSchemaData("JsonLD", validJsonLd)).toBe(true);
     expect(validateSchemaData("JsonLD", invalidJsonLd)).toBe(false);
+  });
+});
+
+describe("Status Availability Mapping", () => {
+  test("should map available status to InStock", () => {
+    const availability = getAvailability("available");
+    expect(availability).toBe("https://schema.org/InStock");
+  });
+
+  test("should map adopted status to OutOfStock", () => {
+    const availability = getAvailability("adopted");
+    expect(availability).toBe("https://schema.org/OutOfStock");
+  });
+
+  test("should map reserved status to PreOrder", () => {
+    const availability = getAvailability("reserved");
+    expect(availability).toBe("https://schema.org/PreOrder");
+  });
+
+  test("should map unknown status to InStoreOnly", () => {
+    const availability = getAvailability("unknown");
+    expect(availability).toBe("https://schema.org/InStoreOnly");
+  });
+
+  test("should handle undefined status", () => {
+    const availability = getAvailability(undefined);
+    expect(availability).toBe("https://schema.org/InStoreOnly");
+  });
+
+  test("should handle null status", () => {
+    const availability = getAvailability(null);
+    expect(availability).toBe("https://schema.org/InStoreOnly");
+  });
+
+  test("should handle invalid status values", () => {
+    const availability = getAvailability("invalid");
+    expect(availability).toBe("https://schema.org/InStoreOnly");
   });
 });

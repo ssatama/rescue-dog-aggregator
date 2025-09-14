@@ -28,6 +28,7 @@ describe("Structured Data Integration", () => {
       slug: "buddy-labrador-retriever-1",
       name: "Buddy",
       standardized_breed: "Labrador Retriever",
+      status: "available", // Add status property
       sex: "male",
       age_text: "Adult",
       primary_image_url: "https://images.rescuedogs.me/buddy.jpg",

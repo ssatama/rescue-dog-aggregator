@@ -178,6 +178,7 @@ async def get_swipe_stack(
                         FROM animals a
                         INNER JOIN organizations o ON a.organization_id = o.id
                         WHERE a.status = 'available'
+                            AND a.availability_confidence IN ('high', 'medium')
                             AND a.animal_type = 'dog'
                             AND a.dog_profiler_data IS NOT NULL
                             AND (a.dog_profiler_data->>'quality_score')::float > 0.7
@@ -205,6 +206,7 @@ async def get_swipe_stack(
                         FROM animals a
                         INNER JOIN organizations o ON a.organization_id = o.id
                         WHERE a.status = 'available'
+                            AND a.availability_confidence IN ('high', 'medium')
                             AND a.animal_type = 'dog'
                             AND a.dog_profiler_data IS NOT NULL
                             AND (a.dog_profiler_data->>'quality_score')::float > 0.7
@@ -341,6 +343,7 @@ async def get_swipe_stack(
                     FROM animals a
                     INNER JOIN organizations o ON a.organization_id = o.id
                     WHERE a.status = 'available'
+                        AND a.availability_confidence IN ('high', 'medium')
                         AND a.animal_type = 'dog'
                         AND a.dog_profiler_data IS NOT NULL
                         AND (a.dog_profiler_data->>'quality_score')::float > 0.7
