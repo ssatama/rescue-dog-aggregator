@@ -78,7 +78,7 @@ logger.info(f"[config.py] TESTING environment variable detected: {IS_TESTING}")
 
 # Get system username as the likely PostgreSQL user
 system_user = getpass.getuser()
-logger.info(f"[config.py] System user detected: {system_user}")
+logger.debug(f"[config.py] System user detected: {system_user}")
 
 # Read environment variables
 db_host_env = os.environ.get("DB_HOST")
@@ -86,11 +86,11 @@ db_name_env = os.environ.get("DB_NAME")
 db_user_env = os.environ.get("DB_USER")
 db_password_env = os.environ.get("DB_PASSWORD")
 
-logger.info("[config.py] Reading environment variables:")
-logger.info(f"[config.py]   DB_HOST from env: {db_host_env}")
-logger.info(f"[config.py]   DB_NAME from env: {db_name_env}")
-logger.info(f"[config.py]   DB_USER from env: {db_user_env}")
-logger.info(f"[config.py]   DB_PASSWORD from env: {'******' if db_password_env else None}")
+logger.debug("[config.py] Reading environment variables:")
+logger.debug(f"[config.py]   DB_HOST from env: {db_host_env}")
+logger.debug(f"[config.py]   DB_NAME from env: {db_name_env}")
+logger.debug(f"[config.py]   DB_USER from env: [REDACTED]")
+logger.debug(f"[config.py]   DB_PASSWORD from env: {'[SET]' if db_password_env else '[NOT SET]'}")
 
 # Determine default database name based on TESTING flag
 default_db_name = "test_rescue_dogs" if IS_TESTING else "rescue_dogs"
@@ -117,12 +117,12 @@ if not IS_TESTING and final_db_name == "test_rescue_dogs":
 
 # --- END ADD ---
 
-# Log final config (excluding password for safety)
-logger.info("[config.py] Final DB_CONFIG details:")
-logger.info(f"[config.py]   host: {DB_CONFIG['host']}")
-logger.info(f"[config.py]   database: {DB_CONFIG['database']}")
-logger.info(f"[config.py]   user: {DB_CONFIG['user']}")
-logger.info(f"[config.py]   password: {'******' if DB_CONFIG['password'] else 'None'}")
+# Log final config (excluding sensitive data for security)
+logger.debug("[config.py] Final DB_CONFIG details:")
+logger.debug(f"[config.py]   host: {DB_CONFIG['host']}")
+logger.debug(f"[config.py]   database: {DB_CONFIG['database']}")
+logger.debug(f"[config.py]   user: [REDACTED]")
+logger.debug(f"[config.py]   password: {'[SET]' if DB_CONFIG['password'] else '[NOT SET]'}")
 
 # === CORS Security Configuration ===
 # ENVIRONMENT already defined above
