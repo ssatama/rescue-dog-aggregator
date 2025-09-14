@@ -55,6 +55,8 @@ import {
   ActivitiesQuirks,
   NavigationArrows,
 } from "../../../components/dogs/detail";
+import DogStatusBadge from "../../../components/dogs/DogStatusBadge";
+import AdoptedCelebration from "../../../components/dogs/AdoptedCelebration";
 
 export default function DogDetailClient({ params = {}, initialDog = null }) {
   const urlParams = useParams();
@@ -421,14 +423,9 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
             </div>
 
             <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden">
-              {dog.status && dog.status !== "available" && (
-                <div
-                  className={`w-full py-2 text-center text-white font-semibold transition-all duration-300 ${dog.status === "adopted" ? "bg-gray-600" : "bg-yellow-500"}`}
-                  role="status"
-                  aria-live="polite"
-                >
-                  {dog.status.charAt(0).toUpperCase() + dog.status.slice(1)}
-                </div>
+              {/* Show AdoptedCelebration banner for adopted dogs */}
+              {dog.status === 'adopted' && (
+                <AdoptedCelebration dogName={dog.name} />
               )}
 
               {/* Apply swipe handlers to the entire content area */}
@@ -549,9 +546,14 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                         {/* Title and action buttons in one visual group */}
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-4">
                           <div className="flex-1">
-                            <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-                              {sanitizeText(dog.name)}
-                            </h1>
+                            <div className="flex items-center gap-3 mb-2">
+                              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 transition-colors duration-300">
+                                {sanitizeText(dog.name)}
+                              </h1>
+                              {dog.status && (
+                                <DogStatusBadge status={dog.status} />
+                              )}
+                            </div>
                           </div>
 
                           {/* Action bar with enhanced styling */}

@@ -105,19 +105,34 @@ export const generatePetSchema = (dog) => {
     schema.image = dog.primary_image_url;
   }
 
-  // Add adoption offer information with dynamic pricing
+  // Add adoption offer information with dynamic pricing and status
   const hasValidFees =
     dog.organization?.adoption_fees &&
     dog.organization.adoption_fees.usual_fee != null &&
     dog.organization.adoption_fees.usual_fee > 0 &&
     dog.organization.adoption_fees.currency;
 
+  // Determine availability based on status
+  const getAvailability = (status) => {
+    switch (status) {
+      case 'available':
+        return "https://schema.org/InStock";
+      case 'adopted':
+        return "https://schema.org/OutOfStock";
+      case 'reserved':
+        return "https://schema.org/PreOrder";
+      case 'unknown':
+      default:
+        return "https://schema.org/InStoreOnly";
+    }
+  };
+
   if (hasValidFees) {
     schema.offers = {
       "@type": "Offer",
       price: dog.organization.adoption_fees.usual_fee.toString(),
       priceCurrency: dog.organization.adoption_fees.currency,
-      availability: "https://schema.org/InStock",
+      availability: getAvailability(dog.status),
       priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
         .toISOString()
         .split("T")[0], // Valid for 1 year
@@ -128,7 +143,7 @@ export const generatePetSchema = (dog) => {
       "@type": "Offer",
       price: "500",
       priceCurrency: "EUR",
-      availability: "https://schema.org/InStock",
+      availability: getAvailability(dog.status),
       priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
         .toISOString()
         .split("T")[0],

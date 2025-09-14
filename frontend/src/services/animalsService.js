@@ -33,8 +33,8 @@ export async function getAnimals(params = {}, options = {}) {
   if (!cleanParams.animal_type) {
     cleanParams.animal_type = "dog";
   }
-  // Ensure status is 'available' if not explicitly provided otherwise
-  if (!cleanParams.status) {
+  // Only set default status if not explicitly provided
+  if (!cleanParams.status && cleanParams.status !== null) {
     cleanParams.status = "available";
   }
 
@@ -290,6 +290,34 @@ export async function getAllAnimalsForSitemap(params = {}) {
 
   logger.log(`Sitemap fetch complete: ${allAnimals.length} total animals`);
   return allAnimals;
+}
+
+/**
+ * Fetches sitemap data from the API including all dogs regardless of status.
+ * @returns {Promise<object>} - Promise resolving to sitemap data with all dogs.
+ */
+export async function getSitemapData() {
+  logger.log("Fetching sitemap data from API");
+  try {
+    const response = await get("/api/sitemap");
+    return response;
+  } catch (error) {
+    logger.error("Error fetching sitemap data:", error);
+    // Fallback to fetching all animals if sitemap endpoint fails
+    const animals = await getAllAnimalsForSitemap({ status: null });
+    return {
+      dogs: animals,
+      stats: {
+        total: animals.length,
+        by_status: {
+          available: animals.filter(d => d.status === 'available').length,
+          unknown: animals.filter(d => d.status === 'unknown').length,
+          adopted: animals.filter(d => d.status === 'adopted').length,
+          reserved: animals.filter(d => d.status === 'reserved').length
+        }
+      }
+    };
+  }
 }
 
 /**
