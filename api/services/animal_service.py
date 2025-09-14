@@ -288,6 +288,7 @@ class AnimalService:
         """
         try:
             # Don't filter by status - allow all dogs to be viewed
+            # Note: adoption_check_data columns may not exist in test database
             query = """
                 SELECT a.*, 
                        o.name as org_name,
@@ -296,9 +297,7 @@ class AnimalService:
                        o.country as org_country,
                        o.website_url as org_website_url,
                        o.social_media as org_social_media,
-                       o.ships_to as org_ships_to,
-                       a.adoption_check_data,
-                       a.adoption_checked_at
+                       o.ships_to as org_ships_to
                 FROM animals a
                 LEFT JOIN organizations o ON a.organization_id = o.id
                 WHERE a.slug = %s
@@ -326,6 +325,7 @@ class AnimalService:
         """
         try:
             # Don't filter by status - allow all dogs to be viewed
+            # Note: adoption_check_data columns may not exist in test database
             query = """
                 SELECT a.*, 
                        o.name as org_name,
@@ -334,9 +334,7 @@ class AnimalService:
                        o.country as org_country,
                        o.website_url as org_website_url,
                        o.social_media as org_social_media,
-                       o.ships_to as org_ships_to,
-                       a.adoption_check_data,
-                       a.adoption_checked_at
+                       o.ships_to as org_ships_to
                 FROM animals a
                 LEFT JOIN organizations o ON a.organization_id = o.id
                 WHERE a.id = %s
@@ -361,8 +359,10 @@ class AnimalService:
         # Build organization data
         organization = build_organization_object(row) if row else None
 
-        # Parse properties JSON
-        properties = parse_json_field(row.get("properties", {}))
+        # Parse properties JSON field properly
+        row_dict = dict(row)
+        parse_json_field(row_dict, "properties")
+        parse_json_field(row_dict, "dog_profiler_data")
 
         # Build animal object
         animal_dict = {
@@ -390,14 +390,14 @@ class AnimalService:
             "organization_id": row.get("organization_id"),
             "external_id": row.get("external_id"),
             "language": row.get("language"),
-            "properties": properties,
+            "properties": row_dict.get("properties", {}),
             "created_at": row.get("created_at"),
             "updated_at": row.get("updated_at"),
             "last_scraped_at": row.get("last_scraped_at"),
             "availability_confidence": row.get("availability_confidence"),
             "last_seen_at": row.get("last_seen_at"),
             "consecutive_scrapes_missing": row.get("consecutive_scrapes_missing"),
-            "dog_profiler_data": parse_json_field(row.get("dog_profiler_data", {})),
+            "dog_profiler_data": row_dict.get("dog_profiler_data", {}),
             "organization": organization,
         }
 

@@ -23,7 +23,7 @@ router = APIRouter(tags=["sitemap"])
 @router.get("/sitemap", summary="Get sitemap with all dogs for SEO")
 async def get_sitemap(
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
-) -> Dict[str, List[Dict]]:
+):  # Remove the type hint that might be causing validation issues
     """
     Get sitemap data for all dogs regardless of status.
 

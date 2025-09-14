@@ -193,8 +193,19 @@ class CheckAdoptionsCommand:
                 print(f"  [{i}/{len(eligible_dogs)}] Checking {dog['name']}...")
 
             try:
+                # Create an animal-like object for the service
+                # The service expects an animal object with id, name, url attributes
+                class AnimalStub:
+                    def __init__(self, id, name, url, status):
+                        self.id = id
+                        self.name = name
+                        self.url = url
+                        self.status = status
+
+                animal = AnimalStub(id=dog["id"], name=dog["name"], url=dog["url"], status=dog["status"])
+
                 # Check adoption status using Firecrawl
-                result = self.adoption_service.check_adoption_status(animal_id=dog["id"], animal_name=dog["name"], animal_url=dog["url"], conn=self.conn)
+                result = self.adoption_service.check_adoption_status(animal)
 
                 results.append(result)
 

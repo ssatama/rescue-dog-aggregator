@@ -25,7 +25,7 @@ from api.models.enhanced_animal import AttributesRequest, AttributesResponse, Bu
 from api.services.enhanced_animal_service import EnhancedAnimalService
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/animals", tags=["enhanced"])
+router = APIRouter(tags=["enhanced"])
 
 
 @router.get(
