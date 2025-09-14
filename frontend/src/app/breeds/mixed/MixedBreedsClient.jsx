@@ -14,7 +14,7 @@ import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import DogCard from "@/components/dogs/DogCard";
+import DogCardOptimized from "@/components/dogs/DogCardOptimized";
 import DogCardSkeletonOptimized from "@/components/dogs/DogCardSkeletonOptimized";
 import EmptyState from "@/components/ui/EmptyState";
 import FilterChip from "@/components/ui/FilterChip";
@@ -346,7 +346,7 @@ export default function MixedBreedsClient({
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {dogs.map((dog) => (
-                    <DogCard key={dog.id} dog={dog} />
+                    <DogCardOptimized key={dog.id} dog={dog} />
                   ))}
                 </div>
 

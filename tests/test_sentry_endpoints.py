@@ -32,7 +32,14 @@ class TestSentryEndpoints:
 
     def test_sentry_test_endpoints_not_available_in_production(self):
         """Test that Sentry test endpoints are not available in production."""
-        with patch.dict(os.environ, {"ENVIRONMENT": "production", "TESTING": "true"}):
+        with patch.dict(
+            os.environ,
+            {
+                "ENVIRONMENT": "production",
+                "TESTING": "true",
+                "ALLOWED_ORIGINS": "https://www.rescuedogs.me,https://rescuedogs.me",
+            },
+        ):
             # Clear modules to force reimport
             modules_to_clear = ["config", "api.main", "api.monitoring"]
             for module in modules_to_clear:

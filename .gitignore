@@ -205,3 +205,6 @@ migrations/railway/versions/
 
 # AI agent memory files
 .serena/
+
+# Debug SQL queries (local debugging tools)
+queries/debug/
