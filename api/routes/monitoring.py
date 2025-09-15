@@ -24,8 +24,6 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-
-
 class ScraperStatus(BaseModel):
     """Individual scraper status model."""
 
@@ -46,8 +44,6 @@ class FailureSummary(BaseModel):
     database_errors_24h: int
     total_scrapes_24h: int
     failure_rate: float
-
-
 
 
 @router.get("/scrapers", dependencies=[Depends(verify_admin_key)])

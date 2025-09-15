@@ -54,7 +54,7 @@ class AdoptionDetectionService:
         """
         self.api_key = api_key or os.getenv("FIRECRAWL_API_KEY")
         self.logger = logging.getLogger(__name__)
-        
+
         if not self.api_key:
             self.logger.warning("FIRECRAWL_API_KEY not set - adoption detection service disabled")
             self.client = None
@@ -115,9 +115,9 @@ class AdoptionDetectionService:
                 evidence="Adoption detection service not available",
                 confidence=0.0,
                 checked_at=datetime.now(timezone.utc),
-                error="FIRECRAWL_API_KEY not configured"
+                error="FIRECRAWL_API_KEY not configured",
             )
-        
+
         if not animal.url:
             return AdoptionCheckResult(
                 animal_id=animal.id,
@@ -127,9 +127,9 @@ class AdoptionDetectionService:
                 evidence="No URL available for this animal",
                 confidence=0.0,
                 checked_at=datetime.now(timezone.utc),
-                error="Missing URL"
+                error="Missing URL",
             )
-        
+
         try:
             self.logger.info(f"Checking adoption status for {animal.name} (ID: {animal.id}) at {animal.url}")
 
