@@ -692,7 +692,7 @@
   }
 
   /* Focus Ring */
-  .focus-ring:focus-visible {
+  .focus-ring {
     outline: 2px solid #f97316;
     outline-offset: 2px;
   }
@@ -792,13 +792,13 @@
 
   /* Enhanced select focus styles */
   .select-focus:focus {
-    @apply border-orange-300 ring-2 ring-orange-200 outline-none;
+    @apply border-orange-300 ring-2 ring-orange-200 outline-none dark:border-orange-600 dark:ring-orange-900;
     transition: all 200ms ease-out;
   }
 
   /* Enhanced hover feedback for interactive elements */
   .enhanced-hover:hover {
-    @apply bg-orange-50 border-orange-300;
+    @apply bg-orange-50 border-orange-300 dark:bg-gray-700 dark:border-gray-600;
     transition: all 200ms ease-out;
     transform: translateY(-1px);
   }
@@ -1053,7 +1053,7 @@
   }
 
   .enhanced-focus-input:focus {
-    @apply border-orange-400 ring-4 ring-orange-200 outline-none;
+    @apply border-orange-400 ring-4 ring-orange-200 outline-none dark:border-orange-600 dark:ring-orange-900/50;
     transition:
       border-color 200ms ease-out,
       box-shadow 200ms ease-out;
@@ -1067,7 +1067,7 @@
   }
 
   .enhanced-focus-select:focus {
-    @apply border-orange-400 ring-4 ring-orange-200 outline-none;
+    @apply border-orange-400 ring-4 ring-orange-200 outline-none dark:border-orange-600 dark:ring-orange-900/50;
     transition:
       border-color 200ms ease-out,
       box-shadow 200ms ease-out;
@@ -1862,7 +1862,7 @@
     @apply bg-red-50 dark:bg-red-950/30 text-red-900 dark:text-red-100 border-red-200 dark:border-red-800;
   }
 
-  /* Badge styling with dark mode */
+  /* Badge styling */
   .badge-default {
     @apply bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground;
   }

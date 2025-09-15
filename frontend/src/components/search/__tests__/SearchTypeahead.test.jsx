@@ -252,20 +252,20 @@ describe("SearchTypeahead", () => {
 
       // First suggestion should be highlighted (check by class)
       const firstSuggestion = screen.getByText("Bella").closest("button");
-      expect(firstSuggestion).toHaveClass("bg-accent");
+      expect(firstSuggestion).toHaveClass("bg-gray-100");
 
       // Press down arrow again
       fireEvent.keyDown(input, { key: "ArrowDown" });
 
       // Second suggestion should be highlighted
       const secondSuggestion = screen.getByText("Max").closest("button");
-      expect(secondSuggestion).toHaveClass("bg-accent");
+      expect(secondSuggestion).toHaveClass("bg-gray-100");
 
       // Press up arrow
       fireEvent.keyDown(input, { key: "ArrowUp" });
 
       // First suggestion should be highlighted again
-      expect(firstSuggestion).toHaveClass("bg-accent");
+      expect(firstSuggestion).toHaveClass("bg-gray-100");
     });
 
     it("selects suggestion with Enter key", async () => {

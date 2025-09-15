@@ -570,9 +570,9 @@ const SearchTypeahead = forwardRef(
                     <button
                       key={`suggestion-${index}`}
                       ref={(el) => (suggestionRefs.current[index] = el)}
-                      className={`w-full text-left px-3 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-accent dark:hover:bg-gray-700 focus:bg-accent dark:focus:bg-gray-700 focus:outline-none ${
+                      className={`w-full text-left px-3 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none ${
                         selectedIndex === index
-                          ? "bg-accent dark:bg-gray-700"
+                          ? "bg-gray-100 dark:bg-gray-700"
                           : ""
                       }`}
                       onClick={() => handleSuggestionSelect(suggestion)}
@@ -604,9 +604,9 @@ const SearchTypeahead = forwardRef(
                       <button
                         key={`history-${index}`}
                         ref={(el) => (suggestionRefs.current[actualIndex] = el)}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-accent dark:hover:bg-gray-700 focus:bg-accent dark:focus:bg-gray-700 focus:outline-none ${
+                        className={`w-full text-left px-3 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none ${
                           selectedIndex === actualIndex
-                            ? "bg-accent dark:bg-gray-700"
+                            ? "bg-gray-100 dark:bg-gray-700"
                             : ""
                         }`}
                         onClick={() => handleSuggestionSelect(item)}
@@ -619,7 +619,7 @@ const SearchTypeahead = forwardRef(
                             size="small"
                             className="text-muted-foreground dark:text-gray-400"
                           />
-                          <span className="text-muted-foreground dark:text-gray-500">
+                          <span className="text-gray-600 dark:text-gray-300">
                             {item}
                           </span>
                         </div>
@@ -638,7 +638,7 @@ const SearchTypeahead = forwardRef(
                   {didYouMeanSuggestions.map((suggestion, index) => (
                     <button
                       key={`didyoumean-${index}`}
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-accent dark:hover:bg-gray-700 focus:bg-accent dark:focus:bg-gray-700 focus:outline-none"
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none"
                       onClick={() => handleSuggestionSelect(suggestion)}
                       role="option"
                     >
