@@ -139,7 +139,7 @@ class TestAdoptionDetectionService:
         """Test _extract_with_retry success on first attempt."""
         # This method is deprecated but keep test for backwards compatibility
         result = service._extract_with_retry("https://example.org/dog", timeout=5000)
-        
+
         # Should return None as the method is deprecated
         assert result is None
 
@@ -147,7 +147,7 @@ class TestAdoptionDetectionService:
         """Test _extract_with_retry success on second attempt."""
         # This method is deprecated but keep test for backwards compatibility
         result = service._extract_with_retry("https://example.org/dog", timeout=5000)
-        
+
         # Should return None as the method is deprecated
         assert result is None
 
@@ -155,7 +155,7 @@ class TestAdoptionDetectionService:
         """Test _extract_with_retry all attempts fail."""
         # This method is deprecated but keep test for backwards compatibility
         result = service._extract_with_retry("https://example.org/dog", timeout=5000)
-        
+
         # Should return None as the method is deprecated
         assert result is None
 
