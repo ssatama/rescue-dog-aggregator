@@ -13,7 +13,7 @@ import argparse
 import json
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import List, Optional
 
@@ -106,7 +106,7 @@ class CheckAdoptionsCommand:
             List of eligible dogs
         """
         # Calculate cutoff time for rechecks
-        recheck_cutoff = datetime.utcnow() - timedelta(hours=check_interval_hours)
+        recheck_cutoff = datetime.now(timezone.utc) - timedelta(hours=check_interval_hours)
 
         query = """
             SELECT 

@@ -423,11 +423,6 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
             </div>
 
             <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden">
-              {/* Show AdoptedCelebration banner for adopted dogs */}
-              {dog.status === "adopted" && (
-                <AdoptedCelebration dogName={dog.name} />
-              )}
-
               {/* Apply swipe handlers to the entire content area */}
               <div className="p-4 sm:p-6" {...handlers}>
                 {/* Unified Single Column Responsive Layout */}
@@ -537,6 +532,11 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                       })()}
                     </div>
                   </div>
+
+                  {/* Show AdoptedCelebration banner for adopted dogs - moved below image */}
+                  {dog.status === "adopted" && (
+                    <AdoptedCelebration dogName={dog.name} />
+                  )}
 
                   {/* Content Section - Below Hero */}
                   <div className="w-full">

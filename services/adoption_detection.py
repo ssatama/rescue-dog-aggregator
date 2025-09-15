@@ -66,36 +66,6 @@ class AdoptionDetectionService:
                 self.logger.error(f"Failed to initialize FirecrawlApp: {e}")
                 self.client = None
 
-    def _create_detection_prompt(self) -> str:
-        """Create the prompt for Firecrawl extraction."""
-        return """
-        Analyze this rescue dog adoption page and determine the dog's current status.
-        
-        Look for these specific indicators:
-        - Words like "Adopted", "Rehomed", "Found their forever home", "Has been adopted" → return 'adopted'
-        - Words like "Reserved", "On hold", "Adoption pending", "Application approved" → return 'reserved'
-        - Words like "Available", "Looking for a home", "Ready for adoption" → return 'available'
-        - If the page is not found, shows an error, or status is unclear → return 'unknown'
-        
-        Also extract:
-        - evidence: The exact text that indicates the status (max 200 characters)
-        - confidence: A score from 0.0 to 1.0 indicating how confident you are
-        
-        Return a JSON object with these fields: status, evidence, confidence
-        """
-
-    def _create_extraction_schema(self) -> Dict[str, Any]:
-        """Create the schema for structured extraction."""
-        return {
-            "type": "object",
-            "properties": {
-                "status": {"type": "string", "enum": ["adopted", "reserved", "available", "unknown"], "description": "The detected adoption status"},
-                "evidence": {"type": "string", "description": "The text that indicates the status"},
-                "confidence": {"type": "number", "minimum": 0.0, "maximum": 1.0, "description": "Confidence score for the detection"},
-            },
-            "required": ["status", "evidence", "confidence"],
-        }
-
     def check_adoption_status(self, animal, timeout: int = 10000) -> AdoptionCheckResult:
         """Check a single dog's adoption status.
 
@@ -133,10 +103,71 @@ class AdoptionDetectionService:
         try:
             self.logger.info(f"Checking adoption status for {animal.name} (ID: {animal.id}) at {animal.url}")
 
-            # Use Firecrawl's extract API for structured data extraction
-            extraction_result = self._extract_with_retry(animal.url, timeout=timeout)
+            # Use Firecrawl's extract API with correct parameters
+            extraction_result = self.client.extract(
+                urls=[animal.url],
+                prompt="""Analyze this rescue dog adoption page (may be in German, Spanish, or English).
 
-            if not extraction_result:
+ONLY return 'adopted' if you find CLEAR evidence the dog found a new home, such as:
+- 'Adopted', 'Rehomed', 'Found their forever home'
+- 'Zuhause gefunden', 'Vermittelt' (German for found home/placed)
+- 'Adoptado', 'Encontró hogar' (Spanish for adopted/found home)
+
+ONLY return 'reserved' if explicitly marked as:
+- 'Reserved', 'On hold', 'Adoption pending'
+- 'Reserviert', 'Vorgemerkt' (German)
+- 'Reservado' (Spanish)
+
+Return 'unknown' for ALL other cases including:
+- Page marked as 'DELETED' or removed
+- Dog died/deceased ('gestorben', 'tot', 'murió', 'died')
+- Dog missing or lost
+- Page not found or error
+- Status unclear or ambiguous
+- Any other status not explicitly adopted or reserved
+
+Be very careful: death, deletion, or disappearance is NOT adoption!""",
+                schema={
+                    "type": "object",
+                    "properties": {
+                        "status": {"type": "string", "enum": ["adopted", "reserved", "unknown"], "description": "The current adoption status of the dog"},
+                        "evidence": {"type": "string", "description": "The text that indicates the status"},
+                        "confidence": {"type": "number", "minimum": 0, "maximum": 1, "description": "Confidence score for the detection"},
+                    },
+                    "required": ["status", "evidence", "confidence"],
+                },
+            )
+
+            # The extract API returns the data directly (not wrapped in 'data' array)
+            if extraction_result:
+                # Check if it's a successful extraction
+                # The response comes back as an object with a 'data' field
+                if hasattr(extraction_result, "data") and extraction_result.data:
+                    # FirecrawlResponse object with data attribute
+                    data = extraction_result.data
+                elif isinstance(extraction_result, dict) and "data" in extraction_result:
+                    # Dict with 'data' key
+                    data = extraction_result["data"]
+                elif isinstance(extraction_result, dict):
+                    # Direct dict result
+                    data = extraction_result
+                elif isinstance(extraction_result, list) and len(extraction_result) > 0:
+                    # If it returns a list, take the first item
+                    data = extraction_result[0]
+                else:
+                    data = {}
+
+                return AdoptionCheckResult(
+                    animal_id=animal.id,
+                    animal_name=animal.name,
+                    previous_status=animal.status,
+                    detected_status=data.get("status", "unknown"),
+                    evidence=data.get("evidence", "")[:200],  # Limit evidence length
+                    confidence=data.get("confidence", 0.0),
+                    checked_at=datetime.now(timezone.utc),
+                    raw_response=extraction_result if isinstance(extraction_result, dict) else str(extraction_result),
+                )
+            else:
                 return AdoptionCheckResult(
                     animal_id=animal.id,
                     animal_name=animal.name,
@@ -148,24 +179,17 @@ class AdoptionDetectionService:
                     error="Extraction failed",
                 )
 
-            # Parse the extraction result
-            data = extraction_result.get("data", [{}])[0] if "data" in extraction_result else {}
-
+        except Exception as e:
+            self.logger.error(f"Error checking adoption status for {animal.name}: {str(e)}")
             return AdoptionCheckResult(
                 animal_id=animal.id,
                 animal_name=animal.name,
                 previous_status=animal.status,
-                detected_status=data.get("status", "unknown"),
-                evidence=data.get("evidence", "")[:200],  # Limit evidence length
-                confidence=data.get("confidence", 0.0),
+                detected_status="unknown",
+                evidence=f"Error: {str(e)[:100]}",
+                confidence=0.0,
                 checked_at=datetime.now(timezone.utc),
-                raw_response=extraction_result,
-            )
-
-        except Exception as e:
-            self.logger.error(f"Error checking adoption status for {animal.name}: {str(e)}")
-            return AdoptionCheckResult(
-                animal_id=animal.id, animal_name=animal.name, previous_status=animal.status, detected_status="unknown", evidence="", confidence=0.0, checked_at=datetime.now(timezone.utc), error=str(e)
+                error=str(e),
             )
 
     def _extract_with_retry(self, url: str, timeout: int, max_retries: int = 2) -> Optional[Dict[str, Any]]:
@@ -179,21 +203,8 @@ class AdoptionDetectionService:
         Returns:
             Extraction result or None if failed
         """
-        for attempt in range(max_retries + 1):
-            try:
-                result = self.client.extract(urls=[url], prompt=self._create_detection_prompt(), schema=self._create_extraction_schema(), wait_for=timeout)
-
-                if result and "data" in result:
-                    return result
-
-            except Exception as e:
-                if attempt < max_retries:
-                    self.logger.warning(f"Extraction attempt {attempt + 1} failed for {url}: {e}")
-                    continue
-                else:
-                    self.logger.error(f"All extraction attempts failed for {url}: {e}")
-                    raise
-
+        # This method is no longer needed since we're using the simpler extract API
+        # Keeping for backwards compatibility but will be deprecated
         return None
 
     def batch_check_adoptions(self, db_connection, organization_id: int, threshold: int = 3, limit: int = 50, check_interval_hours: int = 24, dry_run: bool = False) -> List[AdoptionCheckResult]:
@@ -266,7 +277,8 @@ class AdoptionDetectionService:
                     "evidence": result.evidence,
                     "confidence": result.confidence,
                     "previous_status": result.previous_status,
-                    "raw_response": result.raw_response if result.raw_response else None,
+                    "checked_at": result.checked_at.isoformat(),
+                    "error": result.error if result.error else None,
                 }
 
                 cursor.execute(update_query, (result.detected_status, result.checked_at, json.dumps(adoption_data), dog.id))
