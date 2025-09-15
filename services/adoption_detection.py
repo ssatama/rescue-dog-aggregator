@@ -53,11 +53,18 @@ class AdoptionDetectionService:
             api_key: Firecrawl API key. If not provided, reads from FIRECRAWL_API_KEY env var.
         """
         self.api_key = api_key or os.getenv("FIRECRAWL_API_KEY")
-        if not self.api_key:
-            raise ValueError("FIRECRAWL_API_KEY not found in environment variables")
-
-        self.client = FirecrawlApp(api_key=self.api_key)
         self.logger = logging.getLogger(__name__)
+        
+        if not self.api_key:
+            self.logger.warning("FIRECRAWL_API_KEY not set - adoption detection service disabled")
+            self.client = None
+        else:
+            try:
+                self.client = FirecrawlApp(api_key=self.api_key)
+                self.logger.info("AdoptionDetectionService initialized successfully")
+            except Exception as e:
+                self.logger.error(f"Failed to initialize FirecrawlApp: {e}")
+                self.client = None
 
     def _create_detection_prompt(self) -> str:
         """Create the prompt for Firecrawl extraction."""
@@ -99,6 +106,18 @@ class AdoptionDetectionService:
         Returns:
             AdoptionCheckResult with the detection outcome
         """
+        if not self.client:
+            return AdoptionCheckResult(
+                animal_id=animal.id,
+                animal_name=animal.name,
+                previous_status=animal.status,
+                detected_status="unknown",
+                evidence="Adoption detection service not available",
+                confidence=0.0,
+                checked_at=datetime.now(timezone.utc),
+                error="FIRECRAWL_API_KEY not configured"
+            )
+        
         if not animal.url:
             return AdoptionCheckResult(
                 animal_id=animal.id,
@@ -108,9 +127,9 @@ class AdoptionDetectionService:
                 evidence="No URL available for this animal",
                 confidence=0.0,
                 checked_at=datetime.now(timezone.utc),
-                error="Missing URL",
+                error="Missing URL"
             )
-
+        
         try:
             self.logger.info(f"Checking adoption status for {animal.name} (ID: {animal.id}) at {animal.url}")
 

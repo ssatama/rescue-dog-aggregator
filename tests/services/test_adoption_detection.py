@@ -59,10 +59,11 @@ class TestAdoptionDetectionService:
             assert service.api_key == "env-key-456"
 
     def test_init_missing_api_key(self):
-        """Test initialization fails without API key."""
+        """Test initialization logs warning without API key."""
         with patch.dict(os.environ, {}, clear=True):
-            with pytest.raises(ValueError, match="FIRECRAWL_API_KEY not found"):
-                AdoptionDetectionService()
+            service = AdoptionDetectionService()
+            assert service.api_key is None
+            assert service.client is None
 
     def test_create_detection_prompt(self, service):
         """Test prompt creation for Firecrawl."""
