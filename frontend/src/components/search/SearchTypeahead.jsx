@@ -546,12 +546,12 @@ const SearchTypeahead = forwardRef(
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.15 }}
-              className={`absolute top-full left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-md border bg-popover shadow-md ${suggestionsClassName}`}
+              className={`absolute top-full left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-md ${suggestionsClassName}`}
               role="listbox"
             >
               {/* Loading state */}
               {isLoading && (
-                <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground dark:text-gray-400">
                   <Icon name="loader" size="small" className="animate-spin" />
                   Searching...
                 </div>
@@ -561,7 +561,7 @@ const SearchTypeahead = forwardRef(
               {filteredSuggestions.length > 0 && (
                 <div className="py-1">
                   {showResultCount && (
-                    <div className="px-3 py-1 text-xs text-muted-foreground border-b">
+                    <div className="px-3 py-1 text-xs text-muted-foreground dark:text-gray-400 border-b dark:border-gray-700">
                       {filteredSuggestions.length} suggestion
                       {filteredSuggestions.length !== 1 ? "s" : ""}
                     </div>
@@ -570,8 +570,10 @@ const SearchTypeahead = forwardRef(
                     <button
                       key={`suggestion-${index}`}
                       ref={(el) => (suggestionRefs.current[index] = el)}
-                      className={`w-full text-left px-3 py-2 text-sm hover:bg-accent focus:bg-accent focus:outline-none ${
-                        selectedIndex === index ? "bg-accent" : ""
+                      className={`w-full text-left px-3 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-accent dark:hover:bg-gray-700 focus:bg-accent dark:focus:bg-gray-700 focus:outline-none ${
+                        selectedIndex === index
+                          ? "bg-accent dark:bg-gray-700"
+                          : ""
                       }`}
                       onClick={() => handleSuggestionSelect(suggestion)}
                       role="option"
@@ -581,7 +583,7 @@ const SearchTypeahead = forwardRef(
                         <Icon
                           name="search"
                           size="small"
-                          className="text-muted-foreground"
+                          className="text-muted-foreground dark:text-gray-400"
                         />
                         <span>{suggestion}</span>
                       </div>
@@ -592,8 +594,8 @@ const SearchTypeahead = forwardRef(
 
               {/* Search history */}
               {searchHistory.length > 0 && !isLoading && (
-                <div className="py-1 border-t">
-                  <div className="px-3 py-1 text-xs text-muted-foreground">
+                <div className="py-1 border-t dark:border-gray-700">
+                  <div className="px-3 py-1 text-xs text-muted-foreground dark:text-gray-400">
                     Recent searches
                   </div>
                   {searchHistory.map((item, index) => {
@@ -602,8 +604,10 @@ const SearchTypeahead = forwardRef(
                       <button
                         key={`history-${index}`}
                         ref={(el) => (suggestionRefs.current[actualIndex] = el)}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-accent focus:bg-accent focus:outline-none ${
-                          selectedIndex === actualIndex ? "bg-accent" : ""
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-accent dark:hover:bg-gray-700 focus:bg-accent dark:focus:bg-gray-700 focus:outline-none ${
+                          selectedIndex === actualIndex
+                            ? "bg-accent dark:bg-gray-700"
+                            : ""
                         }`}
                         onClick={() => handleSuggestionSelect(item)}
                         role="option"
@@ -613,9 +617,11 @@ const SearchTypeahead = forwardRef(
                           <Icon
                             name="clock"
                             size="small"
-                            className="text-muted-foreground"
+                            className="text-muted-foreground dark:text-gray-400"
                           />
-                          <span className="text-muted-foreground">{item}</span>
+                          <span className="text-muted-foreground dark:text-gray-500">
+                            {item}
+                          </span>
                         </div>
                       </button>
                     );
@@ -625,14 +631,14 @@ const SearchTypeahead = forwardRef(
 
               {/* Did you mean suggestions */}
               {didYouMeanSuggestions.length > 0 && !isLoading && (
-                <div className="py-1 border-t">
-                  <div className="px-3 py-1 text-xs text-muted-foreground">
+                <div className="py-1 border-t dark:border-gray-700">
+                  <div className="px-3 py-1 text-xs text-muted-foreground dark:text-gray-400">
                     Did you mean?
                   </div>
                   {didYouMeanSuggestions.map((suggestion, index) => (
                     <button
                       key={`didyoumean-${index}`}
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-accent focus:bg-accent focus:outline-none"
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-accent dark:hover:bg-gray-700 focus:bg-accent dark:focus:bg-gray-700 focus:outline-none"
                       onClick={() => handleSuggestionSelect(suggestion)}
                       role="option"
                     >
@@ -640,9 +646,11 @@ const SearchTypeahead = forwardRef(
                         <Icon
                           name="help-circle"
                           size="small"
-                          className="text-muted-foreground"
+                          className="text-muted-foreground dark:text-gray-400"
                         />
-                        <span className="text-blue-600">{suggestion}</span>
+                        <span className="text-blue-600 dark:text-blue-400">
+                          {suggestion}
+                        </span>
                       </div>
                     </button>
                   ))}
@@ -651,7 +659,7 @@ const SearchTypeahead = forwardRef(
 
               {/* Error message in dropdown */}
               {(error || localError) && !isLoading && (
-                <div className="px-3 py-2 text-sm text-destructive flex items-center gap-1">
+                <div className="px-3 py-2 text-sm text-destructive dark:text-red-400 flex items-center gap-1">
                   <Icon name="alert-circle" size="small" />
                   {error || localError}
                 </div>
@@ -665,7 +673,7 @@ const SearchTypeahead = forwardRef(
                 inputValue.trim() &&
                 !error &&
                 !localError && (
-                  <div className="px-3 py-2 text-sm text-muted-foreground">
+                  <div className="px-3 py-2 text-sm text-muted-foreground dark:text-gray-400">
                     No suggestions found
                   </div>
                 )}
