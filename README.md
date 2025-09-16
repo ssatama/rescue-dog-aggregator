@@ -1,482 +1,355 @@
 # Rescue Dog Aggregator
 
-> An open-source platform for aggregating rescue dog listings from multiple organizations.
+An open-source platform that aggregates rescue dog listings from multiple organizations into a single searchable interface.
 
-This project provides a unified interface to search for adoptable dogs across multiple rescue organizations. It uses a data pipeline to normalize information from different sources and is built with a modern web stack for performance and maintainability.
+**Live at [www.rescuedogs.me](https://www.rescuedogs.me)**
 
-**🚀 Production Status**: Live at [www.rescuedogs.me](https://www.rescuedogs.me) with **13 rescue organizations** and comprehensive test coverage.
-
----
-
-## Motivation
-
-Potential adopters often struggle to find dogs across many disparate shelter websites, each with different interfaces and data formats. This platform addresses that challenge by providing a single search interface that aggregates listings from multiple sources, normalizes the data, and presents it in a consistent format.
-
-### Core Features
-- **🔍 Multi-Organization Search**: Single interface to search across multiple rescue organizations
-- **🧠 Data Normalization**: Automated standardization of breed, age, and size information across sources
-- **⚡ High Performance**: Built on Next.js 15 (App Router) achieving 95+ Lighthouse scores
-- **🔄 Real-Time Updates**: Availability tracking with confidence-based filtering for data freshness
-- **📱 Mobile & Accessible**: Responsive design with WCAG 2.1 AA compliance
-- **🏗️ Configuration-Driven**: Add new organizations via YAML configuration without code changes
-
-### Technical Highlights
-- **Comprehensive Test Suite**: 265+ backend test files + 516+ frontend test files supporting stable deployments
-- **Security Features**: SQL injection prevention, XSS protection, and Content Security Policy headers
-- **Error Resilience**: Partial failure detection ensures service availability during individual scraper issues
-- **Performance Optimizations**: Lazy loading, image optimization, and component memoization
-- **Hot Configuration**: Configuration changes apply without server restarts
+- 13 active rescue organizations
+- 2,900+ available dogs
+- AI-powered personality profiling
+- Test-driven development (134 backend + 239 frontend test files)
 
 ---
 
-## Technical Architecture
+## Problem Statement
 
-### Data Management
-- **Multi-Source Aggregation**: Data pipeline supporting 13 rescue organizations
-- **Normalization Engine**: Automated standardization of breed, age, and size data across sources
-- **Availability Tracking**: Confidence scoring system (high → medium → low → unavailable)
-- **Quality Assessment**: Automated data completeness scoring (0-1 scale)
-- **Session Tracking**: Multi-session availability monitoring with change detection
+Finding rescue dogs requires visiting multiple websites with different interfaces, search capabilities, and data formats. This platform solves that problem by aggregating listings from multiple organizations into one searchable interface.
 
-### Frontend Architecture
-- **Next.js 15 App Router**: Server and client component separation for SEO and performance
-- **Image Optimization**: Cloudflare R2 + Images API with global CDN delivery
-- **Progressive Enhancement**: Functional without JavaScript, enhanced with it enabled
-- **Accessibility**: WCAG 2.1 AA compliant with screen reader support
-- **Performance**: 95+ Lighthouse scores on mobile and desktop
+## Features
 
-### Security & Reliability
-- **Input Sanitization**: XSS prevention using DOMPurify integration
-- **Data Validation**: Multi-layer validation with Pydantic models
-- **Rate Limiting**: Configurable per-organization limits with exponential backoff
-- **Security Headers**: CSP, HSTS, and security headers on all endpoints
-- **Error Handling**: Error boundaries with automatic retry logic
+### Search & Discovery
 
-### Operations
-- **Monitoring**: Automated stale data detection with confidence-based filtering
-- **Resilience**: Partial failure detection maintains service availability
-- **Scheduling**: Cron-compatible scraping with logging and alerting
-- **Health Checks**: API and database health monitoring endpoints
-- **Metrics**: Real-time Core Web Vitals and performance monitoring
+- Unified search across 13 rescue organizations
+- Filter by breed, size, age, location, and personality traits
+- Swipe interface for browsing dogs (similar to dating apps)
+
+### Data Processing
+
+- Automated data collection from rescue websites
+- Standardization of breed names, ages, and sizes
+- Multi-language description translation
+- Availability tracking with confidence scoring
+- Duplicate detection across organizations
+
+### AI/LLM Integration
+
+- Personality profiling from descriptions
+- Automatic trait extraction (energy level, trainability, etc.)
+- Multi-language support (German, French, Spanish, etc.)
+- Cost-efficient processing (~$0.0015 per dog)
+- 90%+ success rate with Google Gemini 2.5 Flash
+
+### Technical Features
+
+- Configuration-based organization management (YAML)
+- RESTful API with OpenAPI documentation
+- Responsive design for mobile and desktop
+- Accessibility compliance (WCAG 2.1 AA)
+- Performance monitoring and error tracking
 
 ---
 
-## 🏗️ System Architecture
+## Architecture
+
+### Tech Stack
+
+**Backend**
+
+- FastAPI (Python 3.9+) with async/await
+- PostgreSQL 15 with JSONB for metadata
+- SQLAlchemy ORM with SQL migrations
+- pytest for testing
+- OpenRouter API for AI features (Google Gemini 2.5 Flash)
+
+**Frontend**
+
+- Next.js 15 with App Router
+- TypeScript 5.x with strict mode
+- Tailwind CSS for styling
+- Jest + React Testing Library
+- PostHog for analytics
+
+**Infrastructure**
+
+- Railway: Backend API + PostgreSQL hosting
+- Vercel: Frontend hosting
+- Sentry: Error tracking and monitoring
+- GitHub Actions: CI/CD
+
+---
+
+### System Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                     🌐 Frontend (Next.js 15 App Router)                    │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ • Server Components (SEO + Metadata)   • Client Components (Interactivity) │
-│ • Progressive Enhancement               • Accessibility Compliance (WCAG)   │
-│ • Core Web Vitals Optimization         • Mobile-First Responsive Design    │
-│ • Error Boundaries & Graceful Failover • Image Optimization & Lazy Loading │
-└─────────────────────────┬───────────────────────────────────────────────────┘
-                          │ 🔗 RESTful API Communication
-┌─────────────────────────▼───────────────────────────────────────────────────┐
-│                       ⚡ FastAPI Backend Engine                           │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ • RESTful Endpoints & OpenAPI Docs     • Input Validation (Pydantic)       │
-│ • SQL Injection Prevention & Security  • Rate Limiting & Security Headers  │
-│ • Comprehensive Error Handling         • Health Checks & Monitoring        │
-│ • Performance Optimization             • Automated Testing & Quality Gates │
-└─────────────────────────┬───────────────────────────────────────────────────┘
-                          │
-┌─────────────────────────▼───────────────────────────────────────────────────┐
-│                     🔧 Configuration Engine                               │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ • YAML-Driven Organization Setup       • Hot-Reload Configuration          │
-│ • Zero-Code Deployment Pipeline        • Validation & Schema Management    │
-│ • Automatic Database Synchronization   • Version Control Integration       │
-│ • Config Validation & Error Prevention • Production Safety Checks         │
-└─────────────────────────┬───────────────────────────────────────────────────┘
-                          │
-┌─────────────────────────▼───────────────────────────────────────────────────┐
-│                    🤖 Data Processing Pipeline                           │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ • Multi-Source Web Scraping & Parsing  • Automated Data Normalization    │
-│ • Intelligent Availability Tracking    • Quality Scoring & Confidence     │
-│ • Error Recovery & Partial Failures    • Session-Based Change Detection   │
-│ • Performance Optimization & Caching   • Automated Quality Assessment     │
-└─────────────────────────┬───────────────────────────────────────────────────┘
-                          │
-┌─────────────────────────▼───────────────────────────────────────────────────┐
-│                      🗄️ PostgreSQL Database                              │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ • JSONB Metadata Storage & Indexing    • Optimized Queries & Performance   │
-│ • Availability & Confidence Tracking   • Schema-Driven Database Management │
-│ • Quality Metrics & Analytics          • Production Monitoring & Alerting  │
-│ • Backup & Recovery Management         • Scalability & Performance Tuning  │
-└─────────────────────────────────────────────────────────────────────────────┘
+Frontend (Next.js 15)
+    ↓ API calls
+Backend (FastAPI)
+    ↓ Routes → Services → Database
+PostgreSQL 15
+    ↑ Data collection
+Scrapers (13 organizations)
+    ↑ Configuration
+YAML configs
 ```
 
-### Configuration Management
+### Project Structure
 
-**YAML-Based Setup**: Add new rescue organizations through configuration files without code changes:
-
-```yaml
-# configs/organizations/example-org.yaml
-schema_version: "1.0"
-id: "example-org"
-name: "Example Rescue Organization"
-enabled: true
-scraper:
-  class_name: "ExampleScraper"
-  module: "scrapers.example"
-  config:
-    rate_limit_delay: 2.0
-    max_retries: 3
-    batch_size: 50
-    timeout: 30
-metadata:
-  website_url: "https://example-rescue.org"
-  description: "A wonderful rescue organization helping dogs find homes"
-  location:
-    country: "US"
-    state: "CA"
-    city: "Example City"
-    coordinates: [34.0522, -118.2437]
-  contact:
-    email: "info@example-rescue.org"
-    phone: "(555) 123-4567"
-    social:
-      facebook: "https://facebook.com/example-rescue"
-      instagram: "https://instagram.com/example-rescue"
+```
+api/              # FastAPI backend
+├── routes/       # API endpoints
+├── services/     # Business logic
+scrapers/         # Organization scrapers
+frontend/         # Next.js application
+├── app/          # App Router pages
+├── components/   # React components
+tests/            # Test suites
+configs/          # Organization YAMLs
+migrations/       # Database migrations
 ```
 
-### Data Processing Pipeline
+### Data Pipeline
 
-**7-stage processing workflow for data quality and availability**:
+1. **Configuration**: YAML files define organization scrapers
+2. **Collection**: Scrapers fetch data from rescue websites
+3. **Normalization**: Standardize breeds, ages, sizes across sources
+4. **AI Enrichment**: Generate personality profiles using LLM
+5. **Storage**: PostgreSQL with JSONB for flexible metadata
+6. **API Delivery**: RESTful endpoints with filtering
 
-1. **🔧 Configuration Loading**: YAML files define organization scrapers with comprehensive validation
-2. **🔄 Organization Sync**: Configs automatically sync to database with hot-reload support
-3. **🌐 Data Collection**: Web scrapers gather listings with session tracking and error recovery
-4. **🧠 Automated Standardization**: Breed, age, size normalization with confidence scoring
-5. **📊 Availability Tracking**: Multi-session monitoring with confidence level assignment
-6. **✅ Quality Assessment**: Automatic data completeness scoring with 0-1 scale metrics
-7. **🚀 API Delivery**: Confidence-based filtering with configurable defaults
+### API Endpoints
 
-### Availability Management
+- `/api/animals` - Browse and filter dogs
+- `/api/swipe` - Swipe interface for dog discovery
+- `/api/organizations` - Organization management
+- `/api/llm/enrich` - AI enrichment endpoint
+- `/api/monitoring/health` - Health checks
+- `/docs` - Interactive API documentation
 
-**Confidence scoring system for data freshness and accuracy**:
+### Availability Tracking
 
-- **🟢 High Confidence**: Recently seen (last scrape) → Always visible to users
-- **🟡 Medium Confidence**: 1 missed scrape → Visible by default with confidence indicator
-- **🟠 Low Confidence**: 2+ missed scrapes → Available via API parameter for completeness
-- **🔴 Unavailable**: 4+ missed scrapes → Hidden from public API to prevent outdated listings
-- **🛡️ Error Recovery**: Partial failures don't affect availability status, preventing false negatives
+The system tracks dog availability with confidence levels:
+
+- **High**: Recently seen in last scrape
+- **Medium**: Missed 1 scrape session
+- **Low**: Missed 2-3 scrape sessions
+- **Unavailable**: Missed 4+ sessions (hidden from API)
 
 ---
 
-## 🚀 Quick Start Guide
+## Quick Start
 
-### 📋 Prerequisites
-- **Python 3.9+** (3.13+ recommended for optimal compatibility)
-- **PostgreSQL 13+** (14+ recommended for enhanced JSON performance)
-- **Node.js 18+** (required for Next.js 15 App Router features)
-- **Cloudflare R2 account** (for production image optimization and CDN)
+### Prerequisites
 
-### ⚡ 30-Second Setup
+- Python 3.9+
+- PostgreSQL 13+
+- Node.js 18+
 
-**1. Clone and Setup Backend**
+### Installation
+
+1. **Clone repository**
+
 ```bash
-git clone https://github.com/rescue-dog-aggregator/rescue-dog-aggregator.git
+git clone https://github.com/yourusername/rescue-dog-aggregator.git
 cd rescue-dog-aggregator
+```
+
+2. **Setup backend**
+
+```bash
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+```
+
+3. **Setup database**
+
+```bash
+# Create PostgreSQL database
+createdb rescue_dogs
+
+# Run database setup
 python database/db_setup.py
 ```
 
-**2. Configure Environment**
+4. **Configure environment**
+
 ```bash
-# Create .env file with your database credentials
-# See Installation Guide for complete environment variable reference
+cp .env.example .env
+# Edit .env with your database credentials
 ```
 
-**3. Start Development Servers**
-```bash
-# Terminal 1: Backend API Server (http://localhost:8000)
-source venv/bin/activate
-uvicorn api.main:app --reload
+5. **Start backend server**
 
-# Terminal 2: Frontend Development Server (http://localhost:3000)
+```bash
+uvicorn api.main:app --reload
+# API available at http://localhost:8000
+```
+
+6. **Setup frontend** (new terminal)
+
+```bash
 cd frontend
 npm install
 npm run dev
+# Frontend available at http://localhost:3000
 ```
-
-**4. Verify Installation**
-```bash
-# Run comprehensive test suite to ensure everything works perfectly
-source venv/bin/activate
-pytest tests/ -m "not slow" -v    # Backend tests (fast subset in ~3 seconds)
-cd frontend && npm test            # Frontend tests (full suite in ~30 seconds)
-```
-
-### 🎯 Your First Organization
-
-**Add a new rescue organization in under 2 minutes:**
-
-1. **📄 Create configuration file**:
-```bash
-cp configs/organizations/example-org.yaml configs/organizations/my-org.yaml
-# Edit my-org.yaml with your organization details
-```
-
-2. **🔄 Sync to database**:
-```bash
-python management/config_commands.py sync
-```
-
-3. **🧪 Test the scraper**:
-```bash
-python management/config_commands.py run my-org
-```
-
-4. **✅ Verify in web interface**:
-```bash
-# Visit http://localhost:3000 to see your organization's dogs
-```
-
-**For detailed setup instructions, see: [Installation Guide](docs/guides/installation.md)**
 
 ---
 
-## 🧪 Testing & Quality Excellence
+## Testing
 
-**Comprehensive test coverage with 2,400+ tests** supporting stable production deployments.
+The project follows test-driven development with comprehensive coverage.
 
-### 📊 Test Suite Overview
+### Running Tests
 
-```
-🔧 Backend Tests (434+ tests):
-├── 🧪 Unit Tests                → Core business logic & algorithms
-├── 🔗 Integration Tests         → Database & API interactions  
-├── 🌐 End-to-End Tests          → Complete user workflows
-├── ⚡ Performance Tests         → Load testing & optimization
-├── 🛡️ Security Tests           → Input validation & SQL injection prevention
-└── 🔄 Scraper Tests            → Web scraping validation & data extraction
-
-🎨 Frontend Tests (1,249 tests):
-├── 🧩 Component Tests           → UI behavior & rendering
-├── 🔗 Integration Tests         → API communication & data flow
-├── ♿ Accessibility Tests        → WCAG 2.1 AA compliance
-├── ⚡ Performance Tests         → Core Web Vitals optimization
-├── 🛡️ Security Tests           → XSS prevention & CSP validation
-└── 📱 Mobile Tests             → Responsive design & touch interactions
-```
-
-### 🔄 Test-Driven Development Workflow
-
-**TDD is mandatory for all code changes**:
+**Backend Tests**
 
 ```bash
-# 1. 🚀 Backend development cycle
-source venv/bin/activate
-pytest tests/ -m "not slow" -v     # Fast tests (2-3 seconds)
-pytest tests/ -v                   # Full suite (30-45 seconds)
+# Quick tests (unit + fast integration)
+pytest -m "unit or fast" --maxfail=5
 
-# 2. 🎨 Frontend development cycle  
+# Full test suite
+pytest
+
+# Specific test file
+pytest tests/api/test_swipe.py -v
+```
+
+**Frontend Tests**
+
+```bash
 cd frontend
-npm test                          # All tests (10-15 seconds)
-npm run test:watch                # Watch mode for active development
-
-# 3. ✅ Pre-commit validation
-npm run build && npm run lint     # Production build verification
+npm test              # Run all tests
+npm run test:watch    # Watch mode
+npm run e2e          # Playwright E2E tests
 ```
 
-### 🏆 Quality Gates
+### Test Categories
 
-**Every commit must pass these rigorous requirements**:
+- **Unit tests**: Business logic and pure functions
+- **Integration tests**: API endpoints and database operations
+- **E2E tests**: Full user workflows
+- **Performance tests**: Load testing and optimization
+- **Accessibility tests**: WCAG 2.1 AA compliance
 
-- ✅ **All tests passing** (backend + frontend with zero flaky tests)
-- ✅ **Zero linting errors** (ESLint + Black formatting + type checking)
-- ✅ **No type errors** (TypeScript strict mode + Python type hints)
-- ✅ **Build succeeds** (production-ready verification with optimization)
-- ✅ **Test count stable** (no test deletion without equivalent replacement)
-- ✅ **Performance maintained** (Core Web Vitals scores remain 95+)
+### Quality Requirements
 
-### 🚀 Advanced Testing Features
+All code must pass:
 
-- **⚡ Parallel Test Execution**: Tests run in parallel for 3x speed improvement
-- **♿ Accessibility Testing**: Automated WCAG 2.1 AA compliance with jest-axe
-- **📱 Performance Testing**: Real-time Core Web Vitals monitoring in CI/CD
-- **🛡️ Security Testing**: Comprehensive XSS prevention and CSP header validation
-- **🌐 Cross-Browser Testing**: Automated testing across Chrome, Firefox, Safari, Edge
-
-**For complete testing methodology, see: [Testing Guide](docs/guides/testing.md)**
+- Test suite (no failures)
+- Linting (ruff for Python, ESLint for TypeScript)
+- Type checking (mypy, TypeScript strict mode)
+- Build verification
 
 ---
 
-## ⚙️ Configuration Management
+## Configuration Management
 
-**Configuration system** enabling zero-code deployments and instant hot-reload capabilities.
+Organizations are managed through YAML configuration files.
 
-### 🎮 Configuration Commands
+### Commands
 
 ```bash
-# 📋 List all organizations and their current status
+# List all organizations
 python management/config_commands.py list
 
-# 🔄 Sync YAML configs to database (instant hot-reload)
+# Sync configs to database
 python management/config_commands.py sync
 
-# 🏃 Run specific organization scraper
-python management/config_commands.py run pets-turkey
+# Run specific scraper
+python management/config_commands.py run [org-name]
 
-# 🏃‍♂️ Run all enabled scrapers in parallel
+# Run all scrapers
 python management/config_commands.py run-all
 
-# ✅ Validate all configuration files
+# Validate configs
 python management/config_commands.py validate
-
-# 📊 Show detailed organization statistics
-python management/config_commands.py stats
 ```
 
-### 🌟 Configuration Features
+### Adding a New Organization
 
-- **🔄 Hot-Reload**: Configuration changes take effect immediately without server restarts
-- **✅ Schema Validation**: Automatic YAML validation with detailed error messages and suggestions
-- **📊 Status Monitoring**: Real-time organization status, health checks, and performance metrics
-- **🎯 Selective Execution**: Run individual scrapers or groups with advanced filtering
-- **🔒 Safe Deployment**: Comprehensive validation prevents invalid configurations from being deployed
-
-**For complete configuration guide, see: [Configuration System Documentation](configs/README.md)**
+1. Create YAML config in `configs/organizations/`
+2. Define scraper class in `scrapers/`
+3. Run sync command to update database
+4. Test with run command
 
 ---
 
-## 🗓️ Production Operations
+## Production Operations
 
-**Production scraping system** with monitoring, automated scheduling, and availability management.
+### Deployment
 
-### 📅 Automated Scheduling
+- **Backend**: Railway (automatic deployments from main branch)
+- **Frontend**: Vercel (automatic deployments)
+- **Database**: Railway PostgreSQL with automated backups
+
+### Monitoring
+
+- **Sentry**: Error tracking for both environments
+- **PostHog**: User analytics and feature usage
+- **Health checks**: `/api/monitoring/health` endpoint
+
+### Data Collection
+
+Scrapers run on schedule to keep data fresh:
 
 ```bash
-# 🏭 Production cron job (weekly at 2 AM Monday)
-0 2 * * 1 cd /path/to/rescue-dog-aggregator && python management/config_commands.py run-all
-
-# 🧪 Development testing (daily at 6 AM)
-0 6 * * * cd /path/to/rescue-dog-aggregator && python management/config_commands.py run-all --test-mode
-
-# 🔍 Health check monitoring (every hour)
-0 * * * * cd /path/to/rescue-dog-aggregator && python management/config_commands.py health-check
+# Example cron job (weekly)
+0 2 * * 1 python management/config_commands.py run-all
 ```
 
-### 📊 Monitoring & Alerting
+---
 
-- **📊 Real-time Metrics**: Success rates, processing times, data quality scores, and performance analytics
-- **🚨 Intelligent Alerts**: Email/Slack notifications for failures, data quality issues, and performance degradation
-- **📈 Trending Analysis**: Historical performance tracking and availability trend analysis
-- **🔍 Detailed Logging**: Comprehensive logs with error context, recovery suggestions, and performance insights
-- **📱 Mobile Notifications**: Push notifications for critical system events and maintenance alerts
+## Documentation
 
-### 🛡️ Production Features
+### Core Documentation
 
-- **🔄 Graceful Degradation**: Partial failures don't affect working scrapers or user experience
-- **⚡ Parallel Processing**: Multiple organizations processed simultaneously with optimal resource utilization
-- **🎯 Smart Retry Logic**: Exponential backoff with configurable retry policies and circuit breakers
-- **📊 Load Balancing**: Intelligent request distribution and rate limiting per organization
-- **🚀 Performance Optimization**: Automatic caching, compression, and CDN utilization
+- [System Architecture](docs/technical/architecture.md) - System design and data flow
+- [API Reference](docs/technical/api-reference.md) - REST API endpoints
+- [Testing Guide](docs/guides/testing.md) - Testing strategy and patterns
+- [Troubleshooting](docs/troubleshooting.md) - Common issues and solutions
 
-**For complete production operations guide, see: [Production Operations Guide](docs/operations/production-deployment.md)**
+### Feature Documentation
+
+- [LLM Enrichment](docs/features/llm-data-enrichment.md) - AI profiling system
+- [Unified Standardization](docs/unified_standardization_api.md) - Data normalization
 
 ---
 
-## 📚 Complete Documentation Library
+## Current Status
 
-### 🚀 Getting Started
-- **[Installation Guide](docs/guides/installation.md)** - Complete setup for development and production environments
-- **[Configuration Guide](configs/README.md)** - YAML-based organization setup and management
-- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute code, documentation, and innovative ideas
+### Metrics
 
-### 🏗️ Architecture & Development
-- **[System Architecture](docs/technical/architecture.md)** - High-level system design and comprehensive data flow
-- **[Frontend Documentation](frontend/README.md)** - Next.js 15 App Router patterns and component architecture
-- **[API Documentation](docs/technical/api-reference.md)** - FastAPI structure and comprehensive endpoint reference
-- **[Scraper Documentation](scrapers/README.md)** - Configuration-driven scraper system and best practices
-
-### 🔧 API & Integration
-- **[API Reference](docs/technical/api-reference.md)** - Complete REST API documentation with OpenAPI specification
-
-### 🧪 Testing & Quality Assurance
-- **[Testing Guide](docs/guides/testing.md)** - Comprehensive testing strategy covering all 2,400+ tests
-
-### 🚀 Production & Operations
-- **[Deployment Guide](docs/guides/deployment.md)** - Docker containerization, monitoring, and scaling
-- **[Monitoring Documentation](monitoring/README.md)** - System health and performance tracking
-- **[Troubleshooting Guide](docs/troubleshooting.md)** - Common issues and comprehensive solutions
-
-### 📱 Features & User Experience
-- **[Features Documentation](docs/features/README.md)** - Overview of platform features and capabilities
-
-### 🔍 Reference & Management
-- **[Database Schema](docs/reference/database-schema.md)** - Complete database structure and relationships
-- **[Migration History](database/migration_history.md)** - Database migration history and changes
-- **[Development Log](DEVELOPMENT_LOG.md)** - Feature timeline and architectural decision records
+- **Database**: 3,000+ total dogs, 2,900+ available
+- **API Performance**: < 100ms average response time
+- **Test Coverage**: 134 backend test files, 239 frontend test files
+- **Deployment**: Zero-downtime with automatic rollback
 
 ---
 
-## 📈 Project Status & Metrics
+## Contributing
 
-### 🏭 Current Production Status
-- **🏢 Active Organizations**: 13 rescue organizations (animalrescuebosnia, daisyfamilyrescue, dogstrust, furryrescueitaly, galgosdelsol, manytearsrescue, misisrescue, pets-in-turkey, rean, santerpawsbulgarianrescue, theunderdog, tierschutzverein-europa, woof-project)
-- **🐕 Animals Tracked**: 1,500+ rescue dogs across multiple countries
-- **🧪 Test Coverage**: Comprehensive test suite (265+ backend test files + 516+ frontend test files) with high coverage
-- **⚡ Performance**: Core Web Vitals score 95+ (mobile & desktop) with sub-second load times
-- **🔒 Security**: Zero known vulnerabilities, A+ security rating, comprehensive CSP implementation
+We welcome contributions to help rescue dogs find homes.
 
-### 🔧 Technical Specifications
-- **Backend**: FastAPI 0.104+ with Python 3.9+ and async/await architecture
-- **Frontend**: Next.js 15 with App Router, TypeScript 5.8+, and modern React patterns
-- **Database**: PostgreSQL 14+ with JSONB indexing and optimized query performance
-- **Testing**: pytest + Jest with parallel execution and comprehensive coverage reporting
-- **Deployment**: Docker containers with automated CI/CD and zero-downtime deployments
+### Development Workflow
 
-### 📊 Development & Performance Metrics
-- **🚀 Build Time**: < 30 seconds (backend), < 45 seconds (frontend) with parallel optimization
-- **🧪 Test Execution**: < 3 seconds (fast suite), < 60 seconds (full suite) with parallel execution
-- **📊 Code Quality**: 95%+ test coverage, zero linting errors, strict TypeScript compliance
-- **🔄 Deployment**: Zero-downtime deployments with configuration hot-reload and rollback capabilities
-- **📱 Mobile Performance**: 95+ Core Web Vitals score with PWA-ready architecture
+1. Fork the repository
+2. Create a feature branch
+3. Write tests first (TDD)
+4. Implement the feature
+5. Ensure all tests pass
+6. Submit a pull request
 
----
+### Code Standards
 
-## 🤝 Community & Contributing
+- Test-driven development required
+- Pure functions, no side effects
+- Small, focused functions
+- Type hints (Python) and strict TypeScript
+- No commented-out code
 
-### 🌟 Contributing to the Mission
-We welcome contributors who share our mission of helping rescue dogs find loving homes! This project follows **Test-Driven Development** with comprehensive documentation and mentorship.
+### Getting Help
 
-**Ways to Contribute**:
-- **🐛 Bug Reports**: Use GitHub issues with detailed reproduction steps and environment details
-- **💡 Feature Requests**: Join GitHub discussions to collaborate on new ideas before implementation
-- **📝 Documentation**: Help improve our guides, API documentation, and user experience
-- **🔧 Code Contributions**: Fork repository, create feature branch, add comprehensive tests, submit PR
-- **🌍 Translations**: Help make the platform accessible to more rescue organizations globally
-
-### 🆘 Getting Help & Support
-- **📚 Documentation**: Check our comprehensive guides and API reference first
-- **💬 GitHub Discussions**: Ask questions, share ideas, and collaborate with the community
-- **🐛 GitHub Issues**: Report bugs with detailed reproduction steps and system information
-- **📧 Email Support**: Contact maintainers for security issues or urgent operational concerns
-- **🎓 Learning Resources**: Access our development guides and best practices documentation
-
-### 🏆 Recognition & Community
-Special thanks to our amazing contributors and the broader open-source community for making this project possible. Every contribution helps rescue dogs find their forever homes.
-
-**Built with ❤️ for rescue dogs and their future families worldwide.**
-
----
-
-## 🌟 Join the Mission
-
-**⭐ Star this repository** if you believe in our mission to help rescue dogs find their forever homes!
-
-**🔗 Share with others** who might be interested in contributing to this meaningful cause.
-
-**🐕 Help a dog find their home** - every contribution makes a difference in a dog's life.
-
----
-
-*This project is proudly open-source and committed to helping rescue dogs worldwide. Together, we can make finding the perfect family companion easier for everyone.*
+- Check documentation first
+- Open GitHub issues for bugs
+- Use discussions for questions
