@@ -417,7 +417,7 @@ class TestSwipeEndpointWithConfidenceFilter:
             mock_db_cursor.fetchall.return_value = []
             mock_db_cursor.fetchone.return_value = {"total": 0}
 
-            response = client.get("/api/swipe")
+            response = client.get("/api/dogs/swipe")
 
             assert response.status_code == 200
 
@@ -451,7 +451,7 @@ class TestSwipeEndpointWithConfidenceFilter:
             mock_db_cursor.fetchall.return_value = []  # Empty result
             mock_db_cursor.fetchone.return_value = {"total": 0}
 
-            response = client.get("/api/swipe")
+            response = client.get("/api/dogs/swipe")
 
             assert response.status_code == 200
             data = response.json()

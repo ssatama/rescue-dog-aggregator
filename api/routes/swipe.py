@@ -464,14 +464,11 @@ async def get_available_countries(cursor: RealDictCursor = Depends(get_pooled_db
         logger.error(f"Error fetching available countries: {str(e)}")
         # Capture all errors, not just database ones
         import sentry_sdk
+
         with sentry_sdk.push_scope() as scope:
             scope.set_tag("error.type", "api")
             scope.set_tag("endpoint", "/available-countries")
-            scope.set_context("api", {
-                "operation": "fetching available countries",
-                "error_type": type(e).__name__,
-                "error_message": str(e)
-            })
+            scope.set_context("api", {"operation": "fetching available countries", "error_type": type(e).__name__, "error_message": str(e)})
             sentry_sdk.capture_exception(e)
         # Still use handle_database_error for consistency
         handle_database_error(e, "fetching available countries")

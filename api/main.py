@@ -43,6 +43,7 @@ init_sentry(ENVIRONMENT)
 # Verify Sentry initialization in production
 if ENVIRONMENT == "production":
     import sentry_sdk
+
     if sentry_sdk.Hub.current.client:
         logger.info("✅ Sentry initialized successfully")
         # Only send test message if debug mode is enabled
