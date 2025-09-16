@@ -40,6 +40,20 @@ logger = logging.getLogger(__name__)
 # Initialize Sentry before creating the app
 init_sentry(ENVIRONMENT)
 
+# Verify Sentry initialization in production
+if ENVIRONMENT == "production":
+    import sentry_sdk
+    if sentry_sdk.Hub.current.client:
+        logger.info("✅ Sentry initialized successfully")
+        # Only send test message if debug mode is enabled
+        if os.getenv("SENTRY_DEBUG", "false").lower() == "true":
+            sentry_sdk.capture_message("Backend API started - Sentry connection verified", level="info")
+    else:
+        logger.critical("❌ CRITICAL: Sentry initialization FAILED in production!")
+        logger.critical("Continuing without Sentry - errors will only be logged locally")
+        # Don't crash production - continue with local logging only
+        # Consider setting a global flag to disable Sentry calls if needed
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

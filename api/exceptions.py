@@ -80,12 +80,29 @@ class InvalidInputError(APIException):
 
 def handle_database_error(error: Exception, operation: str) -> None:
     """
-    Handle database errors with proper logging and exception raising.
+    Handle database errors with Sentry capture, logging, and exception raising.
+
+    This function captures the error to Sentry with operation context
+    before logging and raising a DatabaseError.
 
     Args:
         error: The database error that occurred
         operation: Description of the operation that failed
     """
+    # Import Sentry here to avoid circular imports with monitoring module
+    import sentry_sdk
+
+    # Capture to Sentry with context
+    with sentry_sdk.push_scope() as scope:
+        scope.set_tag("error.type", "database")
+        scope.set_tag("operation", operation)
+        scope.set_context("database", {
+            "operation": operation,
+            "error_type": type(error).__name__,
+            "error_message": str(error)
+        })
+        sentry_sdk.capture_exception(error)
+
     if isinstance(error, psycopg2.Error):
         logger.error(f"Database error during {operation}: {error}")
         raise DatabaseError(f"Failed to {operation}", original_error=error)
@@ -102,6 +119,19 @@ def handle_validation_error(error: Exception, context: str) -> None:
         error: The validation error that occurred
         context: Description of the validation context
     """
+    import sentry_sdk
+
+    # Capture to Sentry with context
+    with sentry_sdk.push_scope() as scope:
+        scope.set_tag("error.type", "validation")
+        scope.set_tag("context", context)
+        scope.set_context("validation", {
+            "context": context,
+            "error_type": type(error).__name__,
+            "error_message": str(error)
+        })
+        sentry_sdk.capture_exception(error)
+
     if isinstance(error, ValidationError):
         logger.error(f"Validation error in {context}: {error}")
         raise ValidationError(str(error))
@@ -123,6 +153,18 @@ def handle_llm_error(error: Exception, operation: str) -> None:
     """
     # Log full error details for debugging (server-side only)
     logger.error(f"LLM service error during {operation}: {type(error).__name__}: {error}")
+
+    # Capture to Sentry with rich context
+    import sentry_sdk
+    with sentry_sdk.push_scope() as scope:
+        scope.set_tag("error.type", "llm_service")
+        scope.set_tag("operation", operation)
+        scope.set_context("llm", {
+            "operation": operation,
+            "error_type": type(error).__name__,
+            "error_message": str(error)
+        })
+        sentry_sdk.capture_exception(error)
 
     # Categorize errors and provide safe client responses
     if isinstance(error, httpx.HTTPStatusError):
