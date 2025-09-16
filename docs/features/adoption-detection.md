@@ -138,7 +138,7 @@ The service uses Firecrawl's LLM extraction to analyze dog pages:
 prompt = """
 Analyze this rescue dog page and determine status:
 - Look for: "Adopted", "Rehomed", "Found home" → 'adopted'
-- Look for: "Reserved", "On hold", "Pending" → 'reserved'  
+- Look for: "Reserved", "On hold", "Pending" → 'reserved'
 - Look for: "Available", "Looking for home" → 'available'
 - If unclear or error → 'unknown'
 
@@ -171,7 +171,7 @@ Return: status, evidence (text found), confidence (0-1)
 # Unit tests for service
 pytest tests/services/test_adoption_detection.py
 
-# API endpoint tests  
+# API endpoint tests
 pytest tests/api/test_adoption_status_endpoints.py
 
 # Management command tests

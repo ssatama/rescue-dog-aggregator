@@ -13,6 +13,12 @@ scraper:
     skip_existing_animals: true
     enable_llm_profiling: true
     llm_organization_id: 11
+# Adoption detection configuration
+check_adoption_status: true
+adoption_check_threshold: 3 # Check after 3 consecutive missed scrapes
+adoption_check_config:
+  max_checks_per_run: 50 # Rate limit: max dogs to check per run
+  check_interval_hours: 24 # Minimum hours between rechecks of same dog
 metadata:
   website_url: "https://tierschutzverein-europa.de"
   description: "Since 2006, the members of Tierschutzverein Europa e.V. have been committed to helping suffering animals and spreading the idea of animal welfare. The entire team works exclusively on a voluntary basis to ensure that all donations go to the animals. To help abandoned, abused and neglected dogs and cats, we work closely with our animal welfare partners in Germany and other European countries. We see our most important task in supporting our partner animal shelters in their work where we can. We do this in different ways: we offer financial help, send donations in kind and food, and most importantly, we offer foster homes and find a good home for each of the many rescued animals."

@@ -13,14 +13,6 @@ scraper:
     skip_existing_animals: true
     enable_llm_profiling: true
     llm_organization_id: 28
-
-# Adoption detection configuration
-check_adoption_status: true
-adoption_check_threshold: 3  # Check after 3 consecutive missed scrapes
-adoption_check_config:
-  max_checks_per_run: 50  # Rate limit: max dogs to check per run
-  check_interval_hours: 24  # Minimum hours between rechecks of same dog
-
 metadata:
   website_url: "https://www.dogstrust.org.uk"
   description: |
