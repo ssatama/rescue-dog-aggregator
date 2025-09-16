@@ -6,19 +6,20 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 
 ## Tech Stack
 
-- Backend: Python/FastAPI/PostgreSQL
-- Frontend: Next.js 15/React/TypeScript
-- Testing: pytest (backend), Jest (frontend)
-- Monitoring/logging: Sentry integration for both prod and dev
-- Current: 434+ backend tests, 1,249 frontend tests, 2200 dogs
+- Backend: Python/FastAPI/PostgreSQL 15/Alembic
+- Frontend: Next.js 15 (App Router)/React 18/TypeScript 5
+- Testing: pytest (backend), Jest/Playwright (frontend)
+- AI: OpenRouter API (Google Gemini 2.5 Flash) for LLM enrichment
+- Monitoring: Sentry (dev/prod), PostHog (analytics)
+- Current: 434+ backend tests, 1,249+ frontend tests, 2,500+ dogs
 
 ## Status
 
 - Site live at www.rescuedogs.me
-- 2500 dogs and 13 organizations
-- Deployment via github integration to Vercel. Backend hosted by Railway for Postgres & API
-- We develop in dev environment, then push to main to push to prod
-- Site has been live around a month. Getting 20 daily visitors and growing fast
+- 2,500+ dogs from 13 organizations
+- Deployment: Vercel (frontend), Railway (backend + PostgreSQL)
+- Development flow: local → dev branch → main → production
+- Traffic: 20+ daily users, growing steadily
 
 ## USE SUB-AGENTS FOR CONTEXT OPTIMIZATION
 
@@ -89,129 +90,119 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Occasional pleasantries are fine.
 - Feel free to ask many questions. If you are in doubt of my intent, don't guess. Ask.
 
-# Frontend
-
-cd frontend
-npm test # All tests
-npm run build # Verify build
-
-# Config Management (Configuration-Driven Architecture)
-
-python management/config_commands.py list
-python management/config_commands.py sync
-python management/config_commands.py run pets-turkey
-
 ## Project Structure
 
 ```
-api/          # FastAPI backend
-scrapers/     # Web scrapers (see scrapers/CLAUDE.md)
-services/     # Extracted services (metrics, session, database, null objects)
-frontend/     # Next.js app (see frontend/CLAUDE.md)
-tests/        # Backend tests
-configs/      # Organization YAMLs (8 orgs)
+api/              # FastAPI backend with async routes
+├── routes/       # animals, organizations, swipe, llm, monitoring
+services/         # Core services (12 total)
+├── llm/          # AI profiling pipeline (dog_profiler.py, normalizers/)
+scrapers/         # 13+ organization scrapers
+frontend/         # Next.js 15 App Router
+├── app/          # Pages: dogs/, swipe/, favorites/, breeds/
+├── components/   # UI components organized by feature
+tests/            # Backend tests with fixtures
+configs/          # Organization YAMLs (13 active)
+migrations/       # Alembic database migrations
 ```
+
+## Key Services
+
+- `database_service.py`: Async connection pooling
+- `llm_profiler_service.py`: AI personality profiling
+- `adoption_detection.py`: Track adopted dogs
+- `metrics_collector.py`: Performance monitoring
+- `session_manager.py`: User preferences
 
 ## Quality Gates (Required for ANY commit)
 
 - All tests passing (backend + frontend)
-- Linting/formatting clean
+- Linting/formatting clean (ruff, ESLint)
 - No new type errors
 - Test count stable or increasing
-- **No JSX/TSX duplicate files** (automatically enforced by pre-commit hook)
-- **Complete database isolation in tests** (automatically enforced by global conftest.py fixture)
+- **No JSX/TSX duplicate files** (enforced by pre-commit)
+- **Database isolation in tests** (global conftest.py fixture)
 
-## Tests
+## Testing Commands
 
 ### Frontend
-
-`cd frontend && npm test`
+```bash
+cd frontend
+npm test                  # Unit tests
+npm run e2e              # Playwright E2E tests
+npm run build            # Build verification
+```
 
 ### Backend
-
-Go to the root of the repo and run:
-
-```python
-'source venv/bin/activate && pytest -m "unit or fast" --maxfail=5' # Tier 1: Developer Feedback
-'source venv/bin/activate && pytest -m "not slow and not browser and not external" --maxfail=3' # Tier 2: CI Pipeline
-'source venv/bin/activate && pytest -m "not requires_migrations" --maxfail=1' # Tier 3: Pre-merge
+```bash
+source venv/bin/activate
+pytest -m "unit or fast" --maxfail=5           # Tier 1: Quick feedback
+pytest -m "not slow and not browser" --maxfail=3  # Tier 2: CI
+pytest                                          # Tier 3: Full suite
 ```
 
-## Database Isolation for Tests
+## Config Management
 
-**CRITICAL**: All Python tests are automatically protected from writing to production database.
-
-### Global Protection
-
-- `tests/conftest.py` contains `isolate_database_writes()` fixture that runs for ALL tests
-- Automatically mocks organization sync service and scraper service injection
-- Prevents any test from creating real database connections or data
-
-### Implementation
-
-```python
-@pytest.fixture(autouse=True)
-def isolate_database_writes():
-    # Automatically mocks all database operations for every test
+```bash
+python management/config_commands.py list      # List organizations
+python management/config_commands.py sync      # Sync to database
+python management/config_commands.py profile --org-id 11  # LLM profiling
+python management/llm_commands.py generate-profiles       # Batch enrichment
 ```
 
-## When Stuck
+## Database Schema Highlights
 
-1. Check existing similar implementations
-2. Review tests for patterns
-3. Ask for clarification
-4. Break into smaller steps
-5. Use subagents and MCP tools to help you
-
-## Quick Reference - Common Tasks
-
-### Fix Failing Test
-
-```
-TASK: Fix failing test [test name]
-
-PHASE 1 - RESEARCH:
-- Read the failing test
-- Understand expected behavior
-- Check related code
-
-PHASE 2 - PLAN:
-□ Identify root cause
-□ Plan fix approach
-□ Consider edge cases
-□ Verify no side effects
-
-PHASE 3 - EXECUTE:
-[Fix properly...]
+```sql
+animals: id, name, breed, properties(JSONB), dog_profiler_data(JSONB), status, availability_confidence
+organizations: id, name, slug, config_id, active
+-- GIN indexes on JSONB columns for performance
 ```
 
 ## Emergency Commands
 
 ```bash
-# When nothing works
-source venv/bin/activate
-touch utils/__init__.py management/__init__.py
-pip install -r requirements.txt
-
-# Frontend issues
-cd frontend && rm -rf node_modules .next
-npm install && npm run build
-
-# Database issues
-psql -d rescue_dogs -c "SELECT COUNT(*) FROM animals;"
+# Database
+psql -d rescue_dogs -c "SELECT COUNT(*) FROM animals WHERE status='available';"
 python management/emergency_operations.py --reset-stale-data
 
-# Module not found (Python)
-touch utils/__init__.py
-source venv/bin/activate
-pip install -e .
+# Frontend rebuild
+cd frontend && rm -rf node_modules .next && npm install && npm run build
 
-# Cannot find module (JS)
-cd frontend
-rm -rf node_modules package-lock.json
-npm install
+# Python modules
+source venv/bin/activate && pip install -r requirements.txt
 
-# Single test execution
-pytest tests/path/to/test.py::test_name -v
-npm test -- --testNamePattern="test name"
+# Single test
+pytest tests/api/test_swipe.py::test_name -v
+npm test -- --testNamePattern="PersonalityTraits"
 ```
+
+## API Endpoints
+
+- `/api/animals`: CRUD + filtering
+- `/api/swipe`: Tinder-like interface
+- `/api/llm/enrich`: AI enrichment
+- `/api/organizations`: Org management
+- `/api/monitoring`: Health checks
+
+## LLM Integration
+
+- Model: Google Gemini 2.5 Flash via OpenRouter
+- Cost: ~$0.0015/dog
+- Success rate: 90%+
+- Config: `configs/llm_organizations.yaml`
+- Prompts: `prompts/organizations/*.yaml`
+
+## Documentation
+
+- Architecture: `docs/technical/architecture.md`
+- LLM Feature: `docs/features/llm-data-enrichment.md`
+- Scrapers: `scrapers/CLAUDE.md`
+- Frontend: `frontend/CLAUDE.md`
+
+## When Stuck
+
+1. Check existing implementations
+2. Review test patterns
+3. Use MCP tools (Sentry, Postgres, Playwright)
+4. Run subagents for complex tasks
+5. Ask for clarification - don't guess

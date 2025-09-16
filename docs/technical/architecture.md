@@ -2,7 +2,7 @@
 
 ## System Overview
 
-The Rescue Dog Aggregator is a full-stack web application that aggregates rescue dog listings from multiple organizations into a unified, searchable platform. The system follows a microservices-inspired monolithic architecture with clear separation of concerns.
+The Rescue Dog Aggregator is a full-stack web application that aggregates rescue dog listings from multiple organizations into a unified, searchable platform. The system follows a service-oriented monolithic architecture with clear separation of concerns and AI-powered enrichment capabilities.
 
 ### Core Architecture Principles
 
@@ -10,25 +10,29 @@ The Rescue Dog Aggregator is a full-stack web application that aggregates rescue
 2. **Test-Driven Development**: 434+ backend tests, 1,249+ frontend tests
 3. **Pure Functions & Immutability**: No side effects, no mutations
 4. **Service Layer Pattern**: Business logic isolated from API handlers
-5. **Null Object Pattern**: Graceful handling of missing data
+5. **AI-Powered Enrichment**: LLM integration for personality profiling and matching
 
 ## Technology Stack
 
 ### Backend
 
 - **Framework**: FastAPI (Python 3.9+)
-- **Database**: PostgreSQL with SQLAlchemy ORM
+- **Database**: PostgreSQL 15 with async drivers
+- **ORM**: SQLAlchemy with Alembic migrations
 - **Testing**: pytest with comprehensive fixtures
-- **Async**: asyncio for concurrent operations
+- **Async**: asyncio/asyncpg for concurrent operations
 - **Validation**: Pydantic models
+- **LLM Integration**: OpenRouter API (Google Gemini 2.5 Flash)
 
 ### Frontend
 
-- **Framework**: Next.js 15 with React 18
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Testing**: Jest + React Testing Library
-- **State Management**: React Context + Hooks
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript 5.x
+- **Styling**: Tailwind CSS 3.x
+- **Testing**: Jest + React Testing Library + Playwright
+- **State Management**: React Context + Server Components
+- **Analytics**: PostHog integration
+- **Components**: Custom UI library with shadcn/ui patterns
 
 ### Infrastructure
 
@@ -36,6 +40,7 @@ The Rescue Dog Aggregator is a full-stack web application that aggregates rescue
 - **Frontend Hosting**: Vercel (Next.js)
 - **Monitoring**: Sentry (dev + prod environments)
 - **CI/CD**: GitHub Actions + Vercel/Railway integrations
+- **LLM Provider**: OpenRouter for AI processing
 
 ## System Components
 
@@ -43,481 +48,502 @@ The Rescue Dog Aggregator is a full-stack web application that aggregates rescue
 
 #### Core Components
 
-- `api/main.py`: FastAPI application initialization, CORS, middleware
+- `api/main.py`: FastAPI application initialization, CORS, middleware, Sentry
 - `api/routes/`: RESTful endpoints organized by domain
-- `api/dependencies.py`: Dependency injection setup
-- `api/async_dependencies.py`: Async dependency providers
+- `api/async_dependencies.py`: Async dependency providers with transaction management
+- `api/exceptions.py`: Standardized error handling
 
 #### Key Routes
 
-- `/api/animals`: Animal CRUD operations with filtering
+- `/api/animals`: Animal CRUD with advanced filtering
+- `/api/enhanced_animals`: AI-enriched animal data endpoints
 - `/api/organizations`: Organization management
 - `/api/swipe`: Swipe-based discovery interface
-- `/api/admin`: Administrative operations
-- `/api/auth`: Authentication endpoints
-- `/api/metrics`: System metrics and analytics
+- `/api/llm`: LLM enrichment and profiling endpoints
+- `/api/monitoring`: Health checks and metrics
+- `/api/sitemap`: Dynamic sitemap generation
 
-#### Middleware Stack
+#### Middleware & Error Handling
 
-- CORS handling for frontend integration
-- Request/response logging
-- Error handling and transformation
-- Performance monitoring
+- CORS configuration for frontend origins
+- Sentry error tracking and performance monitoring
+- Standardized error responses (InvalidInputError, NotFoundError, etc.)
+- Request/response logging with correlation IDs
 
 ### 2. Service Layer (`/services`)
 
 #### Core Services
 
-##### DatabaseService
+##### DatabaseService (`database_service.py`)
+- **Purpose**: Database connection management with pooling
+- **Features**:
+  - Async connection pool (10-30 connections)
+  - Automatic retry with exponential backoff
+  - Transaction context managers
+  - Query performance tracking
 
-- **Purpose**: Database connection management and query execution
-- **Pattern**: Connection pooling with automatic retry
-- **Key Methods**:
-  - `execute_query()`: Safe query execution with error handling
-  - `get_connection()`: Connection pool management
-  - Transaction management with context managers
-
-##### MetricsCollector
-
+##### MetricsCollector (`metrics_collector.py`)
 - **Purpose**: System and business metrics aggregation
-- **Metrics Types**:
-  - Query performance metrics
+- **Metrics**:
+  - Query performance (p50, p95, p99)
   - API endpoint latencies
-  - Business metrics (dogs, orgs, searches)
+  - Business KPIs (dogs, searches, adoptions)
 - **Storage**: In-memory with periodic PostgreSQL persistence
 
-##### SessionManager
-
+##### SessionManager (`session_manager.py`)
 - **Purpose**: User session and preference management
 - **Features**:
-  - Session token generation and validation
-  - User preference storage
-  - Activity tracking
+  - UUID-based session tokens
+  - Preference storage (filters, favorites)
+  - Activity tracking for analytics
 
-##### ImageProcessingService
-
-- **Purpose**: Dog image optimization and caching
-- **Operations**:
-  - Image URL validation
-  - Thumbnail generation
-  - CDN integration preparation
-
-##### LLMDataService & LLMProfilerService
-
-- **Purpose**: AI-powered dog matching and profiling
+##### AdoptionDetection (`adoption_detection.py`)
+- **Purpose**: Detect and track adopted dogs
 - **Features**:
-  - Personality trait extraction
-  - Compatibility scoring
-  - Natural language search
+  - Pattern matching for adoption keywords
+  - Availability confidence scoring
+  - Historical tracking
 
-##### NullObjects Module
+##### LLM Services
 
-- **Pattern**: Null Object Pattern implementations
+###### LLMDataService (`llm_data_service.py`)
+- **Purpose**: Direct LLM integration for text processing
+- **Operations**:
+  - Description cleaning and enrichment
+  - Multi-language translation
+  - Content generation
+
+###### LLMProfilerService (`llm_profiler_service.py`)
+- **Purpose**: Advanced dog profiling pipeline
 - **Components**:
-  - `NullDog`: Safe default for missing animals
-  - `NullOrganization`: Default org representation
-  - `NullMetrics`: Empty metrics container
+  - `services/llm/dog_profiler.py`: Main orchestrator
+  - `services/llm/prompt_builder.py`: Organization-specific prompts
+  - `services/llm/normalizers/`: Data standardization
+  - `services/llm/scraper_integration.py`: Auto-profiling hooks
+- **Output**: Structured personality profiles in JSONB
 
-### 3. Data Layer (`/database`, `/migrations`)
+##### NullObjects (`null_objects.py`)
+- **Pattern**: Null Object Pattern for safe defaults
+- **Components**:
+  - `NullDog`: Default animal representation
+  - `NullOrganization`: Empty org object
+  - `NullMetrics`: Zero-value metrics
 
-#### Schema Design
+##### ImageProcessingService (`image_processing_service.py`)
+- **Purpose**: Image optimization and validation
+- **Operations**:
+  - URL validation and availability checking
+  - Format detection (JPEG, PNG, WebP)
+  - Dimension extraction for responsive loading
+
+### 3. Data Layer
+
+#### Database Schema
 
 ##### Core Tables
 
 ```sql
+-- Main animal data table
 animals (
   id SERIAL PRIMARY KEY,
-  name VARCHAR,
-  organization_id INTEGER,
-  breed VARCHAR[],
-  age VARCHAR,
+  external_id VARCHAR UNIQUE,
+  organization_id INTEGER REFERENCES organizations(id),
+  name VARCHAR NOT NULL,
+  slug VARCHAR UNIQUE,
+  breed VARCHAR,
+  age_text VARCHAR,
   size VARCHAR,
   gender VARCHAR,
-  description TEXT,
-  photos JSONB,
-  personality_traits JSONB,
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP
+  status VARCHAR DEFAULT 'available',
+  availability_confidence VARCHAR DEFAULT 'high',
+
+  -- JSON fields
+  properties JSONB,  -- Raw scraped data
+  photos JSONB,      -- Image URLs and metadata
+  dog_profiler_data JSONB,  -- AI-generated profile
+
+  -- LLM enrichment columns
+  enriched_description TEXT,
+  llm_processed_at TIMESTAMP,
+  llm_model_used VARCHAR,
+  translations JSONB,
+
+  -- Fees
+  adoption_fees JSONB,
+
+  -- Timestamps
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  last_seen_at TIMESTAMP
 )
 
+-- Organizations table
 organizations (
   id SERIAL PRIMARY KEY,
-  name VARCHAR UNIQUE,
+  name VARCHAR UNIQUE NOT NULL,
+  slug VARCHAR UNIQUE,
   website VARCHAR,
-  config_path VARCHAR,
-  active BOOLEAN,
-  last_sync TIMESTAMP
+  config_id VARCHAR,  -- Links to YAML config
+  active BOOLEAN DEFAULT true,
+  last_sync TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW()
 )
 
-user_sessions (
-  id UUID PRIMARY KEY,
-  preferences JSONB,
-  created_at TIMESTAMP,
-  last_activity TIMESTAMP
-)
-
+-- Indexes for performance
+CREATE INDEX idx_animals_organization ON animals(organization_id);
+CREATE INDEX idx_animals_status ON animals(status);
+CREATE INDEX idx_animals_availability ON animals(availability_confidence);
+CREATE GIN INDEX idx_animals_properties ON animals USING GIN(properties);
+CREATE GIN INDEX idx_animals_profiler ON animals USING GIN(dog_profiler_data);
 ```
 
-#### Migration Strategy
+#### Migration Management
 
-- Alembic for schema versioning
-- Automatic rollback on failure
-- Zero-downtime migrations
+- **Tool**: Alembic with Railway-specific migrations
+- **Location**: `/migrations/railway/versions/`
+- **Strategy**:
+  - Automatic migration on deployment
+  - Version-controlled schema changes
+  - Rollback capability
 
 ### 4. Scraper System (`/scrapers`)
 
 #### Architecture
 
-- **Base Classes**: Abstract scraper interfaces
-- **Organization Scrapers**: Custom implementations per org
-- **Batch Processing**: Concurrent scraping with rate limiting
-- **Data Validation**: Pydantic models for scraped data
+- **Base Classes**: `BaseScraper` with standardized interface
+- **Organization Scrapers**: 13+ custom implementations
+- **Unified Standardization**: Common data format across all scrapers
+- **LLM Integration**: Optional auto-profiling during scraping
 
 #### Key Components
 
-- `BaseScraper`: Abstract base with common functionality
-- `ScraperRegistry`: Dynamic scraper discovery and loading
-- `ScraperScheduler`: Cron-based scraping orchestration
+- `scrapers/base_scraper.py`: Abstract interface
+- `scrapers/unified_standardization.py`: Data normalization
+- Individual scrapers per organization (e.g., `many_tears.py`, `tierschutzverein_europa.py`)
 
 ### 5. Frontend Architecture (`/frontend`)
 
-#### Component Hierarchy
+#### Next.js 15 App Router Structure
 
 ```
-App
-├── Layout (Header, Navigation)
-├── Pages
-│   ├── Home (Search, Filters)
-│   ├── Swipe (SwipeInterface, SwipeDetails)
-│   ├── Browse (DogGrid, DogCard)
-│   └── Admin (Dashboard, Controls)
-├── Components
-│   ├── Common (Button, Input, Modal)
-│   ├── Dog (DogCard, DogDetails, ImageCarousel)
-│   └── Filters (FilterPanel, FilterChip)
-└── Utils
-    ├── api.js (API client)
-    ├── personalityColors.ts (Trait visualization)
-    └── helpers.ts (Utility functions)
+frontend/src/
+├── app/                    # App Router pages
+│   ├── layout.tsx         # Root layout with providers
+│   ├── page.tsx           # Home page
+│   ├── dogs/              # Dog detail pages
+│   ├── swipe/             # Swipe interface
+│   ├── favorites/         # Favorites management
+│   ├── breeds/            # Breed information
+│   ├── organizations/     # Org listings
+│   └── api/               # API route handlers
+├── components/
+│   ├── analytics/         # PostHog tracking
+│   ├── breeds/           # Breed-specific UI
+│   ├── dogs/             # Dog cards, details, grids
+│   ├── favorites/        # Favorites UI components
+│   ├── filters/          # Search and filter UI
+│   ├── home/             # Homepage components
+│   ├── layout/           # Header, footer, navigation
+│   ├── monitoring/       # Error boundaries, Sentry
+│   ├── organizations/    # Org display components
+│   ├── search/           # Search interface
+│   ├── seo/              # Meta tags, structured data
+│   ├── swipe/            # Tinder-like interface
+│   └── ui/               # Reusable UI components
+├── hooks/                 # Custom React hooks
+├── types/                 # TypeScript definitions
+├── utils/                 # Utility functions
+└── styles/               # Global styles
 ```
 
-#### State Management
+#### Key Frontend Features
 
-- **Global State**: React Context for user preferences
-- **Local State**: Component-level useState hooks
-- **Server State**: React Query for API data caching
+- **Server Components**: Default for data fetching
+- **Client Components**: Interactive features (swipe, filters)
+- **Image Optimization**: Next.js Image component with lazy loading
+- **SEO**: Dynamic meta tags, sitemaps, structured data
+- **Analytics**: PostHog event tracking
+- **Error Handling**: Sentry integration with error boundaries
 
-#### API Integration
+### 6. Configuration Management (`/configs`)
 
-- Centralized API client (`utils/api.js`)
-- Automatic retry with exponential backoff
-- Request/response interceptors for auth
-- Environment-based endpoint configuration
+#### Organization Configurations
 
-### 6. Configuration Management (`/configs`, `/management`)
+```yaml
+# configs/many_tears.yaml
+id: many_tears
+name: Many Tears Animal Rescue
+website: https://www.manytearsrescue.org
+scraper_class: ManyTearsScraper
+llm_enabled: true
+active: true
+```
 
-#### Organization Configuration
+#### LLM Configurations
 
-- YAML-based organization definitions
-- Scraper configuration per organization
-- Feature flags and toggles
+```yaml
+# configs/llm_organizations.yaml
+organizations:
+  11:
+    name: "Tierschutzverein Europa"
+    prompt_file: "tierschutzverein_europa.yaml"
+    source_language: "de"
+    target_language: "en"
+```
 
-#### Management Commands
+### 7. Management Commands (`/management`)
 
-- `config_commands.py`: YAML sync and validation
+- `config_commands.py`: Organization sync, LLM profiling
+- `llm_commands.py`: Batch enrichment operations
 - `emergency_operations.py`: Production hotfixes
-- `data_management.py`: Bulk data operations
+- `batch_processor.py`: Efficient batch database operations
 
 ## Data Flow Architecture
 
-### 1. Scraping Pipeline
+### 1. Scraping & Enrichment Pipeline
 
 ```
-YAML Config → Scraper Selection → Data Extraction →
-Validation → Deduplication → Database Storage →
-Cache Invalidation → API Updates
+YAML Config → Scraper Activation → Data Extraction →
+Unified Standardization → Deduplication →
+Database Storage → LLM Enrichment Pipeline →
+Profile Generation → JSONB Storage →
+API Availability
 ```
 
 ### 2. User Request Flow
 
 ```
-User Request → Next.js Frontend → API Gateway →
-FastAPI Router → Dependency Injection →
-Service Layer → Database Query →
-Response Transformation → JSON Response
+Browser Request → Next.js Server Component →
+API Route (or Direct DB) → FastAPI Backend →
+Async Dependencies → Service Layer →
+PostgreSQL Query → Response Transformation →
+React Server Component → Client Hydration
 ```
 
-### 3. Swipe Feature Flow
+### 3. Swipe Feature Architecture
 
 ```
-Initial Load → Get Stack (10 dogs) → User Swipe →
-Record Interaction → Update Preferences →
-Refetch Stack → Personalization Engine →
-Return Optimized Stack
+Initial Load → Fetch Stack (10-20 dogs) →
+Client-Side Rendering → Swipe Gesture →
+Optimistic UI Update → Background API Call →
+Session Update → Preference Learning →
+Next Stack Preparation
 ```
 
-## Security Architecture
+### 4. LLM Processing Flow
 
-### Authentication & Authorization
+```
+Raw Dog Data → Organization Config Loading →
+Prompt Template Selection → LLM API Call →
+Response Parsing → Data Normalization →
+Schema Validation → Database Update →
+Frontend Availability
+```
 
-- Session-based authentication
-- UUID session tokens
-- Admin role verification
-- API key management for scrapers
-
-### Data Protection
-
-- SQL injection prevention via parameterized queries
-- XSS protection through input sanitization
-- CORS configuration for frontend origin
-- Environment variable management for secrets
-
-## Performance Optimization
+## Performance Optimizations
 
 ### Database
 
-- Connection pooling (10-20 connections)
-- Query optimization with indexes
-- Materialized views for aggregates
-- Batch operations for bulk updates
-
-### Caching Strategy
-
-- In-memory caching for hot data
-- Redis preparation (connection pool ready)
-- Frontend caching with React Query
-- CDN for static assets
+- **Connection Pooling**: 10-30 async connections
+- **Query Optimization**:
+  - GIN indexes on JSONB columns
+  - Compound indexes for common queries
+  - Query result caching
+- **Batch Operations**: Bulk inserts/updates
+- **Read Replicas**: Prepared for scaling
 
 ### API Performance
 
-- Async request handling
-- Pagination for large datasets
-- Query parameter optimization
-- Response compression
+- **Async Everything**: Full async/await stack
+- **Pagination**: Cursor-based for large datasets
+- **Response Caching**: ETags and conditional requests
+- **Query Optimization**: Selective field loading
 
-## Testing Architecture
+### Frontend Performance
 
-### Backend Testing Strategy
+- **Static Generation**: Pre-rendered pages where possible
+- **ISR**: Incremental Static Regeneration for dog pages
+- **Image Optimization**: WebP with responsive sizing
+- **Bundle Splitting**: Route-based code splitting
+- **Prefetching**: Link prefetch for navigation
+
+### LLM Optimization
+
+- **Batch Processing**: 5 dogs concurrently
+- **Model Selection**: Gemini 2.5 Flash for speed/cost
+- **Prompt Caching**: Template reuse
+- **Retry Logic**: Exponential backoff with fallback models
+
+## Testing Strategy
+
+### Backend Testing
 
 #### Test Tiers
 
-1. **Tier 1 (unit/fast)**: Developer feedback loop
+1. **Tier 1**: `pytest -m "unit or fast"` (Developer loop)
+2. **Tier 2**: `pytest -m "not slow"` (CI pipeline)
+3. **Tier 3**: Full test suite (Pre-deployment)
 
-   - Unit tests for services
-   - Fast integration tests
-   - Mocked external dependencies
+#### Test Categories
 
-2. **Tier 2 (CI)**: Pipeline validation
-
-   - Full integration tests
-   - Database transaction tests
-   - API endpoint tests
-
-3. **Tier 3 (pre-merge)**: Production readiness
-   - End-to-end tests
-   - Performance benchmarks
-   - Migration tests
-
-#### Test Isolation
-
-- Global fixture for database protection
-- Automatic mocking of external services
-- Transaction rollback after each test
-- Separate test database
+- **Unit Tests**: Service logic, utilities
+- **Integration Tests**: API endpoints, database operations
+- **LLM Tests**: Mock API responses, normalizer validation
 
 ### Frontend Testing
 
-- Component unit tests with Jest
-- Integration tests with React Testing Library
-- Snapshot testing for UI consistency
-- End-to-end tests with Playwright
+- **Unit Tests**: Component logic (Jest)
+- **Integration Tests**: User flows (React Testing Library)
+- **E2E Tests**: Critical paths (Playwright)
+- **Visual Regression**: Component snapshots
+- **Mobile Tests**: Touch interactions, responsive design
 
 ## Monitoring & Observability
 
 ### Sentry Integration
 
-- Separate DSNs for dev/prod
-- Error tracking with stack traces
-- Performance monitoring
-- Custom breadcrumbs for debugging
+- **Error Tracking**: Frontend and backend errors
+- **Performance Monitoring**: Transaction tracing
+- **Custom Context**: User sessions, organization data
+- **Release Tracking**: Version-specific monitoring
 
-### Metrics Collection
+### Application Metrics
 
-- Query performance tracking
-- API endpoint latencies
-- Business metrics dashboard
-- Resource utilization monitoring
+- **Business Metrics**: Dogs viewed, searches, adoptions
+- **Technical Metrics**: API latency, database performance
+- **LLM Metrics**: Processing success rate, costs
+- **User Analytics**: PostHog event tracking
+
+## Security Architecture
+
+### Authentication & Authorization
+
+- **Session Management**: UUID tokens with expiry
+- **Admin Access**: Role-based permissions
+- **API Security**: Rate limiting, CORS policies
+
+### Data Protection
+
+- **Input Validation**: Pydantic models, SQL injection prevention
+- **Secrets Management**: Environment variables
+- **HTTPS Only**: SSL/TLS encryption
+- **PII Handling**: No personal data storage
 
 ## Deployment Architecture
 
 ### CI/CD Pipeline
 
 ```
-Git Push → GitHub Actions →
-Test Suite → Build →
-Vercel (Frontend) / Railway (Backend) →
-Health Checks → Production
+GitHub Push → GitHub Actions →
+├── Backend Tests → Railway Deploy
+└── Frontend Tests → Vercel Deploy
 ```
 
-### Environment Management
+### Environment Configuration
 
-- Development: Local PostgreSQL + FastAPI dev server
-- Staging: Railway preview environments
-- Production: Railway (API) + Vercel (Frontend)
+- **Development**: Local PostgreSQL + FastAPI dev server
+- **Staging**: Railway preview environments
+- **Production**:
+  - API: Railway (PostgreSQL + FastAPI)
+  - Frontend: Vercel (Next.js)
 
-## Scalability Considerations
+### Infrastructure Details
 
-### Horizontal Scaling
+- **Railway**: Auto-scaling, managed PostgreSQL
+- **Vercel**: Edge network, automatic HTTPS
+- **Monitoring**: Sentry for both environments
+- **DNS**: Cloudflare for www.rescuedogs.me
 
-- Stateless API design
-- Database connection pooling
-- Load balancer ready
-- Microservices migration path
+## Scalability Roadmap
 
-### Vertical Scaling
+### Current Capabilities
 
-- Async processing for heavy operations
-- Batch processing for scrapers
-- Query optimization ongoing
-- Caching layer expansion
+- **Dogs**: 2,500+ profiles
+- **Organizations**: 13+ active scrapers
+- **Traffic**: 20+ daily active users
+- **Performance**: <200ms API response time
 
-## Future Architecture Evolution
+### Future Scaling
 
-### Planned Enhancements
-
-1. **Microservices Migration**
-
-   - Extract scraper service
-   - Separate analytics service
-   - Independent auth service
-
-2. **Event-Driven Architecture**
-
-   - Message queue integration
-   - Event sourcing for interactions
-   - Real-time updates via WebSockets
-
-3. **AI/ML Pipeline**
-
-   - Dedicated ML service
-   - Model versioning
-   - A/B testing framework
-
-4. **Infrastructure**
-   - Kubernetes orchestration
-   - Service mesh implementation
-   - GraphQL federation
+1. **Database**: Read replicas, partitioning
+2. **Caching**: Redis for session/query caching
+3. **CDN**: Cloudflare for static assets
+4. **Microservices**: Extract LLM service, scraper service
+5. **Queue System**: Async job processing with Celery
 
 ## Development Workflow
 
-### Local Development Setup
+### Local Setup
 
 ```bash
 # Backend
 source venv/bin/activate
+pip install -r requirements.txt
 python run_api.py
 
 # Frontend
 cd frontend
+npm install
 npm run dev
 ```
 
-### Code Organization Principles
+### Code Quality Standards
 
-1. **Single Responsibility**: Each module has one clear purpose
-2. **Dependency Injection**: Services injected, not imported
-3. **Pure Functions**: No side effects in business logic
-4. **Early Returns**: Avoid nested conditionals
-5. **Self-Documenting**: Code clarity over comments
+- **Python**: Black formatting, ruff linting
+- **TypeScript**: ESLint, Prettier
+- **Testing**: >80% coverage requirement
+- **Pre-commit**: Automated checks
+- **Documentation**: Self-documenting code
 
-### Quality Gates
-
-- Pre-commit hooks for formatting
-- Type checking (mypy/TypeScript)
-- Test coverage requirements (>80%)
-- Linting standards (ruff/ESLint)
-- No duplicate JSX/TSX files
-
-## Emergency Procedures
-
-### Database Recovery
-
-```python
-python management/emergency_operations.py --reset-stale-data
-```
-
-### Cache Invalidation
-
-```python
-python management/cache_operations.py --flush-all
-```
-
-### Rollback Procedures
-
-- Database: Alembic downgrade
-- Frontend: Vercel instant rollback
-- Backend: Railway deployment history
-
-## Key Design Decisions
+## Key Architectural Decisions
 
 ### Why FastAPI?
+- Native async support for high concurrency
+- Automatic OpenAPI documentation
+- Pydantic integration for validation
+- Excellent performance benchmarks
 
-- Native async support
-- Automatic API documentation
-- Pydantic validation
-- High performance
-
-### Why Next.js?
-
-- Server-side rendering for SEO
-- Built-in optimization
-- Vercel integration
-- React ecosystem
+### Why Next.js 15?
+- App Router for better performance
+- Server Components reduce client bundle
+- Built-in image optimization
+- Vercel deployment integration
 
 ### Why PostgreSQL?
-
-- JSONB for flexible schemas
+- JSONB for flexible schema evolution
 - Full-text search capabilities
-- ACID compliance
-- Railway integration
+- Strong consistency guarantees
+- Railway managed hosting
 
-### Why Service Layer Pattern?
+### Why OpenRouter/Gemini?
+- Cost-effective ($0.0015/dog)
+- Fast processing (2-5 seconds)
+- High success rate (90%+)
+- Multi-language support
 
-- Business logic isolation
-- Testability
-- Reusability
-- Clear boundaries
+### Why Service Pattern?
+- Clear separation of concerns
+- Testability and maintainability
+- Dependency injection support
+- Future microservices migration path
 
-## Contact & Support
+## Recent Updates & Active Development
 
-- **Production URL**: www.rescuedogs.me
-- **GitHub**: [repository URL]
-- **Monitoring**: Sentry dashboards
-- **Database**: Railway PostgreSQL console
+### Latest Features
+- LLM-powered dog personality profiling
+- Swipe interface for dog discovery
+- Adoption detection system
+- Multi-language support
+- Enhanced search with AI
 
-## Appendix: Common Tasks
-
-### Adding New Organization
-
-1. Create YAML in `/configs`
-2. Implement scraper in `/scrapers`
-3. Run sync command
-4. Verify in admin panel
-
-### Performance Debugging
-
-1. Check Sentry for errors
-2. Review metrics collector
-3. Analyze slow queries
-4. Profile with LLMProfilerService
-
-### Database Migrations
-
-1. Create migration with Alembic
-2. Test in development
-3. Apply to staging
-4. Production deployment
+### In Development
+- Mobile app (React Native)
+- Adoption application system
+- Partner API for shelters
+- Advanced matching algorithms
+- Email notifications
 
 ---
 
-_This document is maintained for Claude Code as the primary audience. It provides comprehensive architectural understanding for AI-assisted development and maintenance._
+_Last Updated: September 2024_
+_This document serves as the authoritative technical reference for the Rescue Dog Aggregator architecture._
