@@ -33,7 +33,8 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 
 - Utilize the available MCP servers and tools
 - Use Postgres MCP to query the local dev database
-- Use Sentry MCP to analyse logs for errors and performance split by dev and prod environments
+- Use morph MCP for code edits this is much faster!
+- Use Magic MCP to create new React components or upgarde existing ones
 - Use Playwright MCP with its capabilities for taking full page screenshots as pdfs to inspect the current site via localhost browsing
 - Use zen tools for planning, debugging, test generation, code reviews and peer feedback
 - Use subagents in parallel from /agents to execute work efficiently
