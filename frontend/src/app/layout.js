@@ -10,6 +10,7 @@ import QueryProvider from "@/providers/QueryProvider";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import SentryInitializer from "@/components/SentryInitializer";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import MobileBottomNav from "@/components/navigation/MobileBottomNav";
 
 // Use Inter variable font with all required weights
 const inter = Inter({
@@ -107,6 +108,7 @@ export default function RootLayout({ children }) {
                   showError={process.env.NODE_ENV === "development"}
                 >
                   {children}
+                  <MobileBottomNav />
                 </ErrorBoundary>
                 <Analytics />
                 <SpeedInsights />

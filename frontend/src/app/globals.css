@@ -5,6 +5,9 @@
 /* Import performance-optimized animations */
 @import "../styles/animations.css";
 
+/* Import mobile/tablet dog grid styles */
+@import "../styles/dog-grid.css";
+
 /* Swipe animations */
 @keyframes heart-burst {
   0% {

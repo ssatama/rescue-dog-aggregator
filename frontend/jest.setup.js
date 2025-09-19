@@ -104,10 +104,17 @@ if (typeof window !== "undefined") {
   window.IntersectionObserver = mockIntersectionObserver;
   global.IntersectionObserver = mockIntersectionObserver;
 
-  // Mock matchMedia for responsive design tests
-  if (!window.matchMedia) {
-    window.matchMedia = jest.fn().mockImplementation((query) => ({
-      matches: false,
+  // Mock matchMedia for responsive design tests - default to desktop viewport
+  window.matchMedia = jest.fn().mockImplementation((query) => {
+    // Default to desktop viewport (1024px+) for consistent test behavior
+    // This ensures tests don't accidentally render mobile/tablet views
+    const matches = 
+      query.includes("min-width: 1024px") || // Desktop
+      query.includes("min-width: 768px") ||  // Tablet and up
+      query.includes("min-width: 375px");    // Mobile and up
+    
+    return {
+      matches,
       media: query,
       onchange: null,
       addListener: jest.fn(),
@@ -115,8 +122,8 @@ if (typeof window !== "undefined") {
       addEventListener: jest.fn(),
       removeEventListener: jest.fn(),
       dispatchEvent: jest.fn(),
-    }));
-  }
+    };
+  });
 
   // Mock requestAnimationFrame and cancelAnimationFrame for animation tests
   if (!global.requestAnimationFrame) {

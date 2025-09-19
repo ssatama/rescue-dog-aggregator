@@ -411,15 +411,14 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
             </div>
 
             <div>
-              <Link href="/dogs">
-                <Button
-                  variant="link"
-                  className="inline-flex items-center text-orange-500 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 mb-6 p-2 h-auto transition-all duration-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
-                  data-testid="back-button"
-                >
-                  ← Back to all dogs
-                </Button>
-              </Link>
+              <Button
+                onClick={() => router.back()}
+                variant="link"
+                className="inline-flex items-center text-orange-500 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 mb-6 p-2 h-auto transition-all duration-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                data-testid="back-button"
+              >
+                ← Back to all dogs
+              </Button>
             </div>
 
             <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden">
