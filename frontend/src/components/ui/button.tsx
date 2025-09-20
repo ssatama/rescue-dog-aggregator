@@ -10,15 +10,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-md hover:bg-primary/90 hover:shadow-orange-lg dark:shadow-purple-500/20 hover:dark:shadow-purple-500/30",
+          "bg-primary text-primary-foreground shadow-md hover:bg-primary/90 hover:shadow-orange-lg dark:shadow-orange-500/20 hover:dark:shadow-orange-500/30",
         destructive:
           "bg-destructive text-destructive-foreground shadow-md hover:bg-destructive/90 hover:shadow-red-500/25 dark:shadow-red-500/20 hover:dark:shadow-red-500/30",
         outline:
-          "border border-input bg-background shadow-md hover:bg-accent hover:text-accent-foreground hover:shadow-orange-md hover:border-primary/50 dark:shadow-purple-500/10 hover:dark:shadow-purple-500/20",
+          "border border-input bg-background shadow-md hover:bg-accent hover:text-accent-foreground hover:shadow-orange-md hover:border-primary/50 dark:shadow-orange-500/10 hover:dark:shadow-orange-500/20",
         secondary:
           "bg-secondary text-secondary-foreground shadow-md hover:bg-secondary/80 hover:shadow-orange-md dark:shadow-orange-500/15 hover:dark:shadow-orange-500/25",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground hover:shadow-md hover:-translate-y-0 hover:dark:shadow-purple-500/10",
+          "hover:bg-accent hover:text-accent-foreground hover:shadow-md hover:-translate-y-0 hover:dark:shadow-orange-500/10",
         link: "text-primary underline-offset-4 hover:underline hover:shadow-none hover:-translate-y-0",
       },
       size: {
