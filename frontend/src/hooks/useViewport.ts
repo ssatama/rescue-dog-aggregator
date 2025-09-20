@@ -34,12 +34,16 @@ export const useViewport = (): ViewportState => {
       setViewport({
         width,
         height,
-        isMobile: width >= VIEWPORT_BREAKPOINTS.MOBILE_MIN && width <= VIEWPORT_BREAKPOINTS.MOBILE_MAX,
-        isTablet: width >= VIEWPORT_BREAKPOINTS.TABLET_MIN && width <= VIEWPORT_BREAKPOINTS.TABLET_MAX,
+        isMobile:
+          width >= VIEWPORT_BREAKPOINTS.MOBILE_MIN &&
+          width <= VIEWPORT_BREAKPOINTS.MOBILE_MAX,
+        isTablet:
+          width >= VIEWPORT_BREAKPOINTS.TABLET_MIN &&
+          width <= VIEWPORT_BREAKPOINTS.TABLET_MAX,
         isDesktop: width >= VIEWPORT_BREAKPOINTS.DESKTOP_MIN,
       });
     },
-    100 // 100ms debounce delay
+    100, // 100ms debounce delay
   );
 
   useEffect(() => {
@@ -50,8 +54,12 @@ export const useViewport = (): ViewportState => {
     setViewport({
       width,
       height,
-      isMobile: width >= VIEWPORT_BREAKPOINTS.MOBILE_MIN && width <= VIEWPORT_BREAKPOINTS.MOBILE_MAX,
-      isTablet: width >= VIEWPORT_BREAKPOINTS.TABLET_MIN && width <= VIEWPORT_BREAKPOINTS.TABLET_MAX,
+      isMobile:
+        width >= VIEWPORT_BREAKPOINTS.MOBILE_MIN &&
+        width <= VIEWPORT_BREAKPOINTS.MOBILE_MAX,
+      isTablet:
+        width >= VIEWPORT_BREAKPOINTS.TABLET_MIN &&
+        width <= VIEWPORT_BREAKPOINTS.TABLET_MAX,
       isDesktop: width >= VIEWPORT_BREAKPOINTS.DESKTOP_MIN,
     });
 

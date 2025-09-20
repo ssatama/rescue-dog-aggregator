@@ -140,17 +140,17 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
     if (isOpen) {
       // Save current scroll position
       const scrollY = window.scrollY;
-      
+
       // Lock body scroll
-      document.body.style.position = 'fixed';
+      document.body.style.position = "fixed";
       document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
-      
+      document.body.style.width = "100%";
+
       // Cleanup on close or unmount
       return () => {
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.width = "";
         // Restore scroll position
         window.scrollTo(0, scrollY);
       };
@@ -292,7 +292,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
     dog.photos || [dog.primary_image_url, dog.main_image].filter(Boolean);
   const currentPhoto = imageError
     ? "/placeholder_dog.svg"
-    : (photos[currentPhotoIndex] || "/placeholder_dog.svg");
+    : photos[currentPhotoIndex] || "/placeholder_dog.svg";
 
   // Get all the data we need
   const traits =
@@ -406,7 +406,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
               >
                 {/* Header */}
                 <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
-                  <h1 
+                  <h1
                     id="modal-dog-name"
                     className="text-xl font-bold text-gray-900 dark:text-white"
                   >
@@ -662,7 +662,9 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                               <div className="w-3 h-0.5 bg-gray-400 dark:bg-gray-600" />
                             )}
                           </div>
-                          <span className="text-sm dark:text-gray-300">Dogs</span>
+                          <span className="text-sm dark:text-gray-300">
+                            Dogs
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <div
@@ -679,7 +681,9 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                               <div className="w-3 h-0.5 bg-gray-400 dark:bg-gray-600" />
                             )}
                           </div>
-                          <span className="text-sm dark:text-gray-300">Cats</span>
+                          <span className="text-sm dark:text-gray-300">
+                            Cats
+                          </span>
                         </div>
                         {dog.dog_profiler_data.kid_friendly !== undefined && (
                           <div className="flex items-center gap-2">
@@ -713,29 +717,35 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                         Favorite Activities
                       </h3>
                       <div className="grid grid-cols-3 gap-3">
-                        {favoriteActivities.slice(0, 3).map((activity, index) => (
-                          <div
-                            key={index}
-                            className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-750 rounded-xl p-4 text-center shadow-sm border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-md hover:scale-105"
-                          >
-                            <div className="text-xl mb-2">
-                              {activity.toLowerCase().includes("play") && "🎾"}
-                              {activity.toLowerCase().includes("cuddl") && "🤗"}
-                              {activity.toLowerCase().includes("walk") && "🚶"}
-                              {activity.toLowerCase().includes("run") && "🏃"}
-                              {activity.toLowerCase().includes("swim") && "🏊"}
-                              {!activity.toLowerCase().includes("play") &&
-                                !activity.toLowerCase().includes("cuddl") &&
-                                !activity.toLowerCase().includes("walk") &&
-                                !activity.toLowerCase().includes("run") &&
-                                !activity.toLowerCase().includes("swim") &&
-                                "🐾"}
+                        {favoriteActivities
+                          .slice(0, 3)
+                          .map((activity, index) => (
+                            <div
+                              key={index}
+                              className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-750 rounded-xl p-4 text-center shadow-sm border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-md hover:scale-105"
+                            >
+                              <div className="text-xl mb-2">
+                                {activity.toLowerCase().includes("play") &&
+                                  "🎾"}
+                                {activity.toLowerCase().includes("cuddl") &&
+                                  "🤗"}
+                                {activity.toLowerCase().includes("walk") &&
+                                  "🚶"}
+                                {activity.toLowerCase().includes("run") && "🏃"}
+                                {activity.toLowerCase().includes("swim") &&
+                                  "🏊"}
+                                {!activity.toLowerCase().includes("play") &&
+                                  !activity.toLowerCase().includes("cuddl") &&
+                                  !activity.toLowerCase().includes("walk") &&
+                                  !activity.toLowerCase().includes("run") &&
+                                  !activity.toLowerCase().includes("swim") &&
+                                  "🐾"}
+                              </div>
+                              <div className="text-xs font-semibold text-gray-700 dark:text-gray-200">
+                                {activity}
+                              </div>
                             </div>
-                            <div className="text-xs font-semibold text-gray-700 dark:text-gray-200">
-                              {activity}
-                            </div>
-                          </div>
-                        ))}
+                          ))}
                       </div>
                     </div>
                   )}

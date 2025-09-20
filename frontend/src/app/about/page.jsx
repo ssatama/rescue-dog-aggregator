@@ -113,10 +113,10 @@ export default function AboutPage() {
             you have questions or feedback for us? We'd love to hear from you.
           </p>
           {/* Contact button with enhanced functionality */}
-          <ContactButton 
-            email="rescuedogsme@gmail.com" 
-            buttonText="Contact Us" 
-            size="lg" 
+          <ContactButton
+            email="rescuedogsme@gmail.com"
+            buttonText="Contact Us"
+            size="lg"
           />
         </section>
       </div>

@@ -41,9 +41,9 @@ class MobileCatalogErrorBoundary extends React.Component<
       if (this.props.fallback) {
         const FallbackComponent = this.props.fallback;
         return (
-          <FallbackComponent 
-            error={this.state.error!} 
-            reset={this.handleReset} 
+          <FallbackComponent
+            error={this.state.error!}
+            reset={this.handleReset}
           />
         );
       }
@@ -57,19 +57,19 @@ class MobileCatalogErrorBoundary extends React.Component<
                 Something went wrong
               </AlertTitle>
               <AlertDescription className="text-red-700 dark:text-red-300">
-                {this.state.error?.message || 
-                 "An error occurred while loading the dog catalog. Please try refreshing the page."}
+                {this.state.error?.message ||
+                  "An error occurred while loading the dog catalog. Please try refreshing the page."}
               </AlertDescription>
             </Alert>
             <div className="mt-4 flex gap-2">
-              <Button 
+              <Button
                 onClick={() => window.location.reload()}
                 variant="default"
                 className="flex-1"
               >
                 Refresh Page
               </Button>
-              <Button 
+              <Button
                 onClick={this.handleReset}
                 variant="outline"
                 className="flex-1"

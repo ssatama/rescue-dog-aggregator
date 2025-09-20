@@ -145,7 +145,10 @@ const DogCard: React.FC<{
       onClick={onClick}
       onKeyDown={(e) => {
         // Only trigger on Enter or Space when focus is on the card itself
-        if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
+        if (
+          (e.key === "Enter" || e.key === " ") &&
+          e.target === e.currentTarget
+        ) {
           e.preventDefault();
           onClick();
         }
@@ -228,16 +231,19 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
   const pathname = usePathname();
   const { favorites, toggleFavorite } = useFavorites();
   const [isHydrated, setIsHydrated] = useState(false);
-  
+
   // Initialize selected dog from hash on mount
   const [selectedDog, setSelectedDog] = useState<PremiumDog | null>(() => {
-    if (typeof window === 'undefined') return null;
+    if (typeof window === "undefined") return null;
     const hash = window.location.hash.slice(1);
-    if (!hash.startsWith('dog=')) return null;
-    const slug = hash.split('=')[1];
-    return dogs.find(d => d.slug === slug || `unknown-dog-${d.id}` === slug) || null;
+    if (!hash.startsWith("dog=")) return null;
+    const slug = hash.split("=")[1];
+    return (
+      dogs.find((d) => d.slug === slug || `unknown-dog-${d.id}` === slug) ||
+      null
+    );
   });
-  
+
   const [isModalOpen, setIsModalOpen] = useState(!!selectedDog);
 
   // Track hydration for client-side features
@@ -249,33 +255,37 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.slice(1);
-      if (!hash.startsWith('dog=')) {
+      if (!hash.startsWith("dog=")) {
         setIsModalOpen(false);
         setSelectedDog(null);
         return;
       }
-      const slug = hash.split('=')[1];
-      const dog = dogs.find(d => d.slug === slug || `unknown-dog-${d.id}` === slug);
+      const slug = hash.split("=")[1];
+      const dog = dogs.find(
+        (d) => d.slug === slug || `unknown-dog-${d.id}` === slug,
+      );
       if (dog) {
         setSelectedDog(dog);
         setIsModalOpen(true);
       }
     };
-    
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
   }, [dogs]);
 
   // Re-check hash when dogs array changes (for late-loading data)
   useEffect(() => {
-    if (typeof window === 'undefined' || !dogs.length) return;
-    
+    if (typeof window === "undefined" || !dogs.length) return;
+
     const hash = window.location.hash.slice(1);
-    if (!hash.startsWith('dog=')) return;
-    
-    const slug = decodeURIComponent(hash.split('=')[1] || '');
-    const dog = dogs.find(d => d.slug === slug || `unknown-dog-${d.id}` === slug);
-    
+    if (!hash.startsWith("dog=")) return;
+
+    const slug = decodeURIComponent(hash.split("=")[1] || "");
+    const dog = dogs.find(
+      (d) => d.slug === slug || `unknown-dog-${d.id}` === slug,
+    );
+
     if (dog && !selectedDog) {
       setSelectedDog(dog);
       setIsModalOpen(true);
@@ -323,7 +333,7 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
   const handleDogClick = (dog: PremiumDog) => {
     setSelectedDog(dog);
     setIsModalOpen(true);
-    
+
     // Update hash for sharing with proper encoding
     window.location.hash = `dog=${encodeURIComponent(dog.slug || `unknown-dog-${dog.id}`)}`;
   };
@@ -331,9 +341,13 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
   const handleModalClose = () => {
     setIsModalOpen(false);
     setSelectedDog(null);
-    
+
     // Clear hash while preserving search params (use replaceState to avoid new history entry)
-    history.replaceState(null, '', window.location.pathname + window.location.search);
+    history.replaceState(
+      null,
+      "",
+      window.location.pathname + window.location.search,
+    );
   };
 
   const handleModalNavigate = (direction: "prev" | "next") => {
@@ -352,7 +366,7 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
     if (newIndex !== currentIndex) {
       const newDog = dogs[newIndex];
       setSelectedDog(newDog);
-      
+
       // Update hash with new dog (with encoding)
       window.location.hash = `dog=${encodeURIComponent(newDog.slug || `unknown-dog-${newDog.id}`)}`;
     }

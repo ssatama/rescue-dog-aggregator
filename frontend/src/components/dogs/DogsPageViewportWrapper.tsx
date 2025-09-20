@@ -14,7 +14,7 @@ interface DogCardOptimizedProps {
 // Import JavaScript component with proper typing
 const DogCardOptimized = dynamic<DogCardOptimizedProps>(
   () => import("./DogCardOptimized"),
-  { ssr: true }
+  { ssr: true },
 );
 
 const DogCardErrorBoundary = dynamic(
@@ -34,7 +34,7 @@ const PremiumMobileCatalog = dynamic(
 // Import error boundary for mobile catalog
 const MobileCatalogErrorBoundary = dynamic(
   () => import("../error/MobileCatalogErrorBoundary"),
-  { ssr: false }
+  { ssr: false },
 );
 
 // Lazy load the modal for mobile/tablet (not needed on desktop)
@@ -147,10 +147,7 @@ const DogsPageViewportWrapper: React.FC<DogsPageViewportWrapperProps> = ({
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
           {dogs.map((dog) => (
             <DogCardErrorBoundary key={dog.id}>
-              <DogCardOptimized
-                dog={dog}
-                onClick={() => handleDogClick(dog)}
-              />
+              <DogCardOptimized dog={dog} onClick={() => handleDogClick(dog)} />
             </DogCardErrorBoundary>
           ))}
         </div>
@@ -166,10 +163,7 @@ const DogsPageViewportWrapper: React.FC<DogsPageViewportWrapperProps> = ({
       >
         {dogs.map((dog) => (
           <DogCardErrorBoundary key={dog.id}>
-            <DogCardOptimized
-              dog={dog}
-              onClick={() => handleDogClick(dog)}
-            />
+            <DogCardOptimized dog={dog} onClick={() => handleDogClick(dog)} />
           </DogCardErrorBoundary>
         ))}
       </div>

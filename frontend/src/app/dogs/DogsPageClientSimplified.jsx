@@ -174,16 +174,18 @@ export default function DogsPageClientSimplified({
         sizeFilter: "size",
         ageFilter: "age",
         sexFilter: "sex",
-        breedFilter: "breed"
+        breedFilter: "breed",
       };
 
       Object.entries(newFilters).forEach(([key, value]) => {
         // Use mapped key or fall back to snake_case conversion
-        const paramKey = urlKeyMap[key] || key
-          .replace("Filter", "")
-          .replace(/([A-Z])/g, "_$1")
-          .toLowerCase();
-          
+        const paramKey =
+          urlKeyMap[key] ||
+          key
+            .replace("Filter", "")
+            .replace(/([A-Z])/g, "_$1")
+            .toLowerCase();
+
         if (
           value &&
           value !== "Any" &&
@@ -247,40 +249,31 @@ export default function DogsPageClientSimplified({
   useEffect(() => {
     // Only fetch if we don't have initialDogs or URL has changed
     const needsFetch =
-      urlPage > 1 || // Need to load multiple pages
+      urlPage > 1 || // Need to load page data
       dogs.length === 0 || // No dogs loaded
       JSON.stringify(filters) !== JSON.stringify(initialParams); // Filters changed from initial
 
     if (needsFetch) {
-      // If page > 1, we need to load all pages up to current page
+      // For deep links to specific pages, only load that page's data
+      // Users can scroll up/down to load more via infinite scroll
       if (urlPage > 1) {
-        const loadAllPages = async () => {
+        const loadCurrentPage = async () => {
           setLoading(true);
           try {
-            const allDogs = [];
+            // Only fetch the current page data
+            const params = {
+              limit: ITEMS_PER_PAGE,
+              offset: (urlPage - 1) * ITEMS_PER_PAGE,
+              ...buildAPIParams(filters),
+            };
 
-            // Load all pages up to current page
-            for (let p = 1; p <= urlPage; p++) {
-              const params = {
-                limit: ITEMS_PER_PAGE,
-                offset: (p - 1) * ITEMS_PER_PAGE,
-                ...buildAPIParams(filters),
-              };
-
-              const pageDogs = await getAnimals(params);
-              allDogs.push(...pageDogs);
-
-              // If we get less than a full page, we've reached the end
-              if (pageDogs.length < ITEMS_PER_PAGE) {
-                setHasMore(false);
-                break;
-              }
-            }
+            const pageDogs = await getAnimals(params);
 
             startTransition(() => {
-              setDogs(allDogs);
+              setDogs(pageDogs);
               setPage(urlPage);
-              setHasMore(allDogs.length === urlPage * ITEMS_PER_PAGE);
+              // Has more if we got a full page of results
+              setHasMore(pageDogs.length === ITEMS_PER_PAGE);
             });
 
             // Also fetch filter counts
@@ -293,7 +286,7 @@ export default function DogsPageClientSimplified({
           }
         };
 
-        loadAllPages();
+        loadCurrentPage();
       } else {
         // Regular single page load
         fetchDogsWithFilters(filters, 1);
