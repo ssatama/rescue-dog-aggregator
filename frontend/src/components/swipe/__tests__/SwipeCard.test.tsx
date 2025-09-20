@@ -132,7 +132,7 @@ describe("SwipeCard", () => {
   it("should apply proper styling with rounded corners and shadow", () => {
     const { container } = renderWithProvider(<SwipeCard dog={mockDog} />);
 
-    const card = container.querySelector(".rounded-2xl");
+    const card = container.querySelector(".rounded-xl");
     expect(card).toBeInTheDocument();
     expect(card).toHaveClass("shadow-xl");
   });

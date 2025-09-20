@@ -224,7 +224,7 @@ describe("Loading Transitions", () => {
       const skeletons = screen.getAllByTestId("dog-card-skeleton");
       skeletons.forEach((skeleton) => {
         expect(skeleton).toHaveClass("h-full"); // Match DogCard height
-        expect(skeleton).toHaveClass("rounded-lg"); // Match DogCard styling
+        expect(skeleton).toHaveClass("rounded-xl"); // Match DogCard styling
         expect(skeleton).toHaveClass("shadow-sm"); // Match DogCard shadow
       });
     });

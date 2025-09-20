@@ -10,7 +10,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Frontend: Next.js 15 (App Router)/React 18/TypeScript 5
 - Testing: pytest (backend), Jest/Playwright (frontend)
 - AI: OpenRouter API (Google Gemini 2.5 Flash) for LLM enrichment
-- Monitoring: Sentry (dev/prod), PostHog (analytics)
+- Monitoring: Sentry (dev/prod)
 - Current: 434+ backend tests, 1,249+ frontend tests, 2,500+ dogs
 
 ## Status
@@ -33,12 +33,11 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 
 - Utilize the available MCP servers and tools
 - Use Postgres MCP to query the local dev database
+- Use Serena MCP tools to study the code base
 - Use morph MCP for code edits this is much faster!
 - Use Magic MCP to create new React components or upgarde existing ones
-- Use Playwright MCP with its capabilities for taking full page screenshots as pdfs to inspect the current site via localhost browsing
 - Use zen tools for planning, debugging, test generation, code reviews and peer feedback
 - Use subagents in parallel from /agents to execute work efficiently
-- Use Serena MCP tools when possible, they are very powerful, Switch serena modes as appropriate using the switch mode command.
 
 ## CRITICAL: Planning-First Workflow
 
@@ -127,14 +126,15 @@ migrations/       # Alembic database migrations
 ## Testing Commands
 
 ### Frontend
+
 ```bash
 cd frontend
 npm test                  # Unit tests
-npm run e2e              # Playwright E2E tests
 npm run build            # Build verification
 ```
 
 ### Backend
+
 ```bash
 source venv/bin/activate
 pytest -m "unit or fast" --maxfail=5           # Tier 1: Quick feedback
@@ -197,13 +197,11 @@ npm test -- --testNamePattern="PersonalityTraits"
 
 - Architecture: `docs/technical/architecture.md`
 - LLM Feature: `docs/features/llm-data-enrichment.md`
-- Scrapers: `scrapers/CLAUDE.md`
-- Frontend: `frontend/CLAUDE.md`
 
 ## When Stuck
 
 1. Check existing implementations
 2. Review test patterns
-3. Use MCP tools (Sentry, Postgres, Playwright)
+3. Use MCP tools
 4. Run subagents for complex tasks
 5. Ask for clarification - don't guess

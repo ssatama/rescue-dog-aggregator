@@ -10,7 +10,8 @@ const DogCardSkeletonOptimized = React.memo(function DogCardSkeletonOptimized({
   if (compact) {
     return (
       <Card
-        className="rounded-lg bg-card text-card-foreground shadow-sm dark:shadow-lg dark:shadow-purple-500/5 hover:shadow-md transition-shadow duration-200 will-change-transform overflow-hidden flex flex-row md:flex-col h-auto md:h-full"
+        className="rounded-xl bg-card text-card-foreground shadow-sm dark:shadow-lg dark:shadow-purple-500/5 hover:shadow-md transition-shadow duration-200 will-change-transform overflow-hidden flex flex-row md:flex-col h-auto md:h-full"
+        style={{ borderRadius: "12px" }}
         data-testid="dog-card-skeleton"
         role="status"
         aria-label="Loading dog information"
@@ -32,7 +33,8 @@ const DogCardSkeletonOptimized = React.memo(function DogCardSkeletonOptimized({
 
   return (
     <Card
-      className="rounded-lg bg-card text-card-foreground shadow-sm dark:shadow-lg dark:shadow-purple-500/5 hover:shadow-md transition-shadow duration-200 will-change-transform overflow-hidden h-full"
+      className="rounded-xl bg-card text-card-foreground shadow-sm dark:shadow-lg dark:shadow-purple-500/5 hover:shadow-md transition-shadow duration-200 will-change-transform overflow-hidden h-full"
+      style={{ borderRadius: "12px" }}
       data-testid="dog-card-skeleton"
       role="status"
       aria-label="Loading dog information"
