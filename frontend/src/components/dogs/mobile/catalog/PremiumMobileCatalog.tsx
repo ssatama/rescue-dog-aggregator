@@ -71,7 +71,10 @@ interface PremiumMobileCatalogProps {
   loading?: boolean;
   error?: string | null;
   filters?: Record<string, any>;
-  onFilterChange?: (filterKeyOrBatch: string | Record<string, string>, value?: string) => void; // Support both single and batch updates
+  onFilterChange?: (
+    filterKeyOrBatch: string | Record<string, string>,
+    value?: string,
+  ) => void; // Support both single and batch updates
   onOpenFilter?: () => void;
   onLoadMore?: () => void; // Add load more handler
   hasMore?: boolean; // Add hasMore prop
@@ -242,9 +245,30 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
 
   // Update active filters when parent filters change
   useEffect(() => {
-    setActiveFilters(getActiveFilters());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters]);
+    const active: FilterChip[] = [];
+
+    // Check sex filter
+    if (filters.sexFilter && filters.sexFilter !== "Any") {
+      const sexChip = filterChips.find(
+        (chip) =>
+          chip.type === "gender" &&
+          chip.value === filters.sexFilter?.toLowerCase(),
+      );
+      if (sexChip) active.push(sexChip);
+    }
+
+    // Check age filter
+    if (filters.ageFilter && filters.ageFilter !== "Any age") {
+      const ageChip = filterChips.find(
+        (chip) =>
+          chip.type === "age" &&
+          chip.value === filters.ageFilter?.toLowerCase(),
+      );
+      if (ageChip) active.push(ageChip);
+    }
+
+    setActiveFilters(active);
+  }, [filters.sexFilter, filters.ageFilter]);
 
   // Load favorites from localStorage
   useEffect(() => {
@@ -336,11 +360,12 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
               {filterChips.map((chip) => {
                 // Determine if this chip is active based on parent filters
                 let isActive = false;
-                
+
                 if (chip.value === "all") {
                   // "All" is active when BOTH filters are cleared
-                  isActive = (!filters.sexFilter || filters.sexFilter === "Any") && 
-                            (!filters.ageFilter || filters.ageFilter === "Any age");
+                  isActive =
+                    (!filters.sexFilter || filters.sexFilter === "Any") &&
+                    (!filters.ageFilter || filters.ageFilter === "Any age");
                 } else if (chip.type === "gender") {
                   isActive = filters.sexFilter?.toLowerCase() === chip.value;
                 } else if (chip.type === "age") {
@@ -358,7 +383,7 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
                           // Use batch update to avoid multiple fetches
                           onFilterChange({
                             sexFilter: "Any",
-                            ageFilter: "Any age"
+                            ageFilter: "Any age",
                           });
                         }
                       } else {

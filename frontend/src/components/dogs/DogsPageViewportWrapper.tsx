@@ -83,7 +83,10 @@ interface DogsPageViewportWrapperProps {
   onLoadMore?: () => void; // Add load more handler
   hasMore?: boolean; // Add hasMore prop
   filters?: Record<string, any>; // Add filters prop
-  onFilterChange?: (filterKeyOrBatch: string | Record<string, string>, value?: string) => void; // Updated to match PremiumMobileCatalog
+  onFilterChange?: (
+    filterKeyOrBatch: string | Record<string, string>,
+    value?: string,
+  ) => void; // Updated to match PremiumMobileCatalog
 }
 
 /**

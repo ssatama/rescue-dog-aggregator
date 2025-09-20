@@ -121,7 +121,7 @@ export default function DogsPageClientSimplified({
     if (isRestoringScroll.current) return;
     const currentScroll = window.scrollY;
     scrollPositionRef.current = currentScroll;
-    
+
     // Update URL with scroll position without causing navigation
     const params = new URLSearchParams(searchParams.toString());
     if (currentScroll > 0) {
@@ -129,11 +129,11 @@ export default function DogsPageClientSimplified({
     } else {
       params.delete("scroll");
     }
-    
+
     const newURL = params.toString()
       ? `${pathname}?${params.toString()}`
       : pathname;
-    
+
     window.history.replaceState(null, "", newURL);
   }, 300);
 
@@ -159,51 +159,56 @@ export default function DogsPageClientSimplified({
   }, []); // Only on mount
 
   // Update URL with filters and page (debounced)
-  const updateURL = useDebouncedCallback((newFilters, newPage = 1, preserveScroll = false) => {
-    const params = new URLSearchParams();
+  const updateURL = useDebouncedCallback(
+    (newFilters, newPage = 1, preserveScroll = false) => {
+      const params = new URLSearchParams();
 
-    Object.entries(newFilters).forEach(([key, value]) => {
-      const paramKey = key
-        .replace("Filter", "")
-        .replace(/([A-Z])/g, "_$1")
-        .toLowerCase();
-      if (
-        value &&
-        value !== "Any" &&
-        value !== "Any size" &&
-        value !== "Any age" &&
-        value !== "Any breed" &&
-        value !== "Any country" &&
-        value !== "Any region" &&
-        value !== "any"
-      ) {
-        params.set(paramKey, value);
+      Object.entries(newFilters).forEach(([key, value]) => {
+        const paramKey = key
+          .replace("Filter", "")
+          .replace(/([A-Z])/g, "_$1")
+          .toLowerCase();
+        if (
+          value &&
+          value !== "Any" &&
+          value !== "Any size" &&
+          value !== "Any age" &&
+          value !== "Any breed" &&
+          value !== "Any country" &&
+          value !== "Any region" &&
+          value !== "any"
+        ) {
+          params.set(paramKey, value);
+        }
+      });
+
+      // Add page to URL if not first page
+      if (newPage > 1) {
+        params.set("page", newPage.toString());
       }
-    });
 
-    // Add page to URL if not first page
-    if (newPage > 1) {
-      params.set("page", newPage.toString());
-    }
+      // Preserve scroll position if requested
+      if (preserveScroll && scrollPositionRef.current > 0) {
+        params.set("scroll", scrollPositionRef.current.toString());
+      }
 
-    // Preserve scroll position if requested
-    if (preserveScroll && scrollPositionRef.current > 0) {
-      params.set("scroll", scrollPositionRef.current.toString());
-    }
-
-    const newURL = params.toString()
-      ? `${pathname}?${params.toString()}`
-      : pathname;
-    router.push(newURL, { scroll: false });
-  }, 500);
+      const newURL = params.toString()
+        ? `${pathname}?${params.toString()}`
+        : pathname;
+      router.push(newURL, { scroll: false });
+    },
+    500,
+  );
 
   // Build API params from filters
   const buildAPIParams = (filters) => {
     const params = {};
 
     if (filters.searchQuery) params.search = filters.searchQuery;
-    if (filters.sizeFilter !== "Any size") params.standardized_size = filters.sizeFilter;
-    if (filters.ageFilter !== "Any age") params.age_category = filters.ageFilter;
+    if (filters.sizeFilter !== "Any size")
+      params.standardized_size = filters.sizeFilter;
+    if (filters.ageFilter !== "Any age")
+      params.age_category = filters.ageFilter;
     if (filters.sexFilter !== "Any") params.sex = filters.sexFilter;
     if (filters.organizationFilter !== "any")
       params.organization_id = filters.organizationFilter;
@@ -224,11 +229,11 @@ export default function DogsPageClientSimplified({
   // Load initial dogs on mount or when URL filters/page change
   useEffect(() => {
     // Only fetch if we don't have initialDogs or URL has changed
-    const needsFetch = 
+    const needsFetch =
       urlPage > 1 || // Need to load multiple pages
       dogs.length === 0 || // No dogs loaded
       JSON.stringify(filters) !== JSON.stringify(initialParams); // Filters changed from initial
-    
+
     if (needsFetch) {
       // If page > 1, we need to load all pages up to current page
       if (urlPage > 1) {
@@ -236,7 +241,7 @@ export default function DogsPageClientSimplified({
           setLoading(true);
           try {
             const allDogs = [];
-            
+
             // Load all pages up to current page
             for (let p = 1; p <= urlPage; p++) {
               const params = {
@@ -244,23 +249,23 @@ export default function DogsPageClientSimplified({
                 offset: (p - 1) * ITEMS_PER_PAGE,
                 ...buildAPIParams(filters),
               };
-              
+
               const pageDogs = await getAnimals(params);
               allDogs.push(...pageDogs);
-              
+
               // If we get less than a full page, we've reached the end
               if (pageDogs.length < ITEMS_PER_PAGE) {
                 setHasMore(false);
                 break;
               }
             }
-            
+
             startTransition(() => {
               setDogs(allDogs);
               setPage(urlPage);
               setHasMore(allDogs.length === urlPage * ITEMS_PER_PAGE);
             });
-            
+
             // Also fetch filter counts
             const counts = await getFilterCounts(buildAPIParams(filters));
             setFilterCounts(counts);
@@ -270,7 +275,7 @@ export default function DogsPageClientSimplified({
             setLoading(false);
           }
         };
-        
+
         loadAllPages();
       } else {
         // Regular single page load
@@ -284,15 +289,15 @@ export default function DogsPageClientSimplified({
     (filterKey, value) => {
       // Check if filterKey is an object (batch update)
       let newFilters;
-      
-      if (typeof filterKey === 'object' && filterKey !== null) {
+
+      if (typeof filterKey === "object" && filterKey !== null) {
         // Batch update - filterKey is actually an object with multiple filter updates
         newFilters = { ...filters, ...filterKey };
       } else {
         // Single update
         newFilters = { ...filters, [filterKey]: value };
       }
-      
+
       // When filters change, reset to page 1 and clear scroll
       updateURL(newFilters, 1, false);
 
@@ -364,7 +369,7 @@ export default function DogsPageClientSimplified({
         setDogs((prev) => [...prev, ...newDogs]);
         setHasMore(newDogs.length === ITEMS_PER_PAGE);
         setPage(nextPage);
-        
+
         // Update URL with new page number, preserving scroll
         updateURL(filters, nextPage, true);
       });
