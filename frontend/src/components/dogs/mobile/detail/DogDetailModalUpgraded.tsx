@@ -25,7 +25,8 @@ interface Dog {
   slug?: string;
   name: string;
   breed: string;
-  breed_mix?: string;
+  primary_breed?: string;
+  standardized_breed?: string;
   age: string;
   age_text?: string;
   sex: string;
@@ -93,6 +94,15 @@ const personalityColors = {
     "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-700",
 };
 
+// Updated personality trait colors to match main page exactly
+const PERSONALITY_TRAIT_COLORS = [
+  "bg-blue-100 text-blue-800", // Index 0
+  "bg-green-100 text-green-800", // Index 1
+  "bg-purple-100 text-purple-800", // Index 2
+  "bg-yellow-100 text-yellow-800", // Index 3
+  "bg-pink-100 text-pink-800", // Index 4
+] as const;
+
 const infoCardColors = {
   age: "bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700",
   gender:
@@ -110,12 +120,12 @@ const capitalizeFirst = (str: string | undefined): string => {
 
 // Activity colors matching main page
 const ACTIVITY_COLORS = [
-  "bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300",
-  "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300",
-  "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300",
-  "bg-pink-100 dark:bg-pink-900/30 text-pink-800 dark:text-pink-300",
-  "bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300",
-  "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300",
+  "bg-orange-100 dark:bg-orange-800/40 text-orange-800 dark:text-orange-200",
+  "bg-blue-100 dark:bg-blue-800/40 text-blue-800 dark:text-blue-200",
+  "bg-green-100 dark:bg-green-800/40 text-green-800 dark:text-green-200",
+  "bg-pink-100 dark:bg-pink-800/40 text-pink-800 dark:text-pink-200",
+  "bg-purple-100 dark:bg-purple-800/40 text-purple-800 dark:text-purple-200",
+  "bg-indigo-100 dark:bg-indigo-800/40 text-indigo-800 dark:text-indigo-200",
 ];
 
 // Get activity emoji matching main page logic
@@ -605,7 +615,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                         Breed
                       </div>
                       <div className="text-xs text-gray-600 dark:text-gray-300 font-medium">
-                        {dog.breed_mix || dog.breed || "Mixed"}
+                        {dog.primary_breed || dog.standardized_breed || dog.breed || "Mixed"}
                       </div>
                     </div>
                     <div
@@ -658,15 +668,15 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                         Personality
                       </h3>
                       <div className="flex flex-wrap gap-2">
-                        {traits.map((trait, index) => (
+                        {traits.slice(0, 5).map((trait, index) => (
                           <span
                             key={index}
                             className={cn(
-                              "px-3 py-1 rounded-full text-xs font-medium border",
-                              getTraitColor(trait),
+                              "px-3 py-1.5 rounded-full text-sm font-medium",
+                              PERSONALITY_TRAIT_COLORS[index % PERSONALITY_TRAIT_COLORS.length],
                             )}
                           >
-                            {trait}
+                            {capitalizeFirst(trait)}
                           </span>
                         ))}
                       </div>
@@ -794,16 +804,16 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
 
                   {/* What Makes Me Special */}
                   {uniqueQuirk && (
-                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:bg-purple-900/20 border-l-4 border-purple-400 dark:border-purple-600 p-5 rounded-r-xl shadow-sm">
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/10 dark:to-pink-900/10 dark:bg-gray-800/50 border border-purple-200 dark:border-purple-700/50 p-5 rounded-xl shadow-sm">
                       <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 bg-purple-100 dark:bg-purple-800/50 rounded-full flex items-center justify-center">
                           <span className="text-lg">✨</span>
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-semibold text-purple-800 dark:text-purple-300 mb-2">
+                          <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-2">
                             What Makes Me Special
                           </h4>
-                          <p className="text-sm text-purple-700 dark:text-purple-300 leading-relaxed">
+                          <p className="text-sm text-purple-700 dark:text-gray-300 leading-relaxed">
                             {capitalizeFirst(uniqueQuirk)}
                           </p>
                         </div>

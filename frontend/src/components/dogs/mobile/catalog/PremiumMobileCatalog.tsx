@@ -34,7 +34,8 @@ interface PremiumDog {
   id: string;
   name: string;
   breed: string;
-  breed_mix?: string;
+  primary_breed?: string;
+  standardized_breed?: string;
   age: string;
   age_text?: string;
   sex: string;
@@ -42,6 +43,7 @@ interface PremiumDog {
   main_image?: string;
   photos?: string[];
   summary?: string;
+  llm_description?: string;
   organization: {
     id: number;
     name: string;
@@ -50,15 +52,31 @@ interface PremiumDog {
   };
   personality_traits?: string[];
   dog_profiler_data?: {
-    personality?: string[];
-    [key: string]: any;
+    description?: string;
+    tagline?: string;
+    personality_traits?: string[];
+    activity_level?: string;
+    training_level?: string;
+    kid_friendly?: boolean;
+    dog_friendly?: boolean;
+    cat_friendly?: boolean;
+    favorite_activities?: string[];
+    unique_quirk?: string;
+    energy_level?: string;
   };
   properties?: {
     location_country?: string;
     available_countries?: string[];
     fostered_in?: string;
-    [key: string]: any;
+    size?: string;
+    weight?: string;
+    description?: string;
+    raw_description?: string;
   };
+  standardized_size?: string;
+  size?: string;
+  adoption_url?: string;
+  availability_status?: string;
   slug?: string;
   standardized_age_group?: string;
   [key: string]: any;
