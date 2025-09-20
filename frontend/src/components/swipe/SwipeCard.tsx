@@ -81,7 +81,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
   const breed = dog.primary_breed || dog.breed;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl dark:shadow-gray-900/50 overflow-hidden relative group transition-colors flex flex-col">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl dark:shadow-gray-900/50 overflow-hidden relative group transition-colors flex flex-col" style={{ borderRadius: '12px' }}>
       {/* NEW Badge for recent dogs */}
       {dog.created_at &&
         new Date().getTime() - new Date(dog.created_at).getTime() <
@@ -123,7 +123,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
 
       {/* Main Image - Mobile optimized with 4:3 aspect ratio */}
       <div
-        className="relative aspect-[4/3] bg-gradient-to-br from-orange-400 to-orange-600 overflow-hidden rounded-t-2xl flex-shrink-0"
+        className="relative aspect-[4/3] bg-gradient-to-br from-orange-400 to-orange-600 overflow-hidden rounded-t-xl flex-shrink-0"
         data-testid="image-container"
       >
         {dog.image ? (
