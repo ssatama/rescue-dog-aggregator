@@ -5,20 +5,22 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Heart, Share, Star, ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { useFavorites } from "@/hooks/useFavorites";
+import ShareButton from "@/components/ui/ShareButton";
 
 interface Dog {
   id: string;
   slug?: string;
   name: string;
   breed: string;
-  breed_mix: string;
+  breed_mix?: string;
   age: string;
   age_text?: string;
   sex: string;
   primary_image_url?: string;
   main_image?: string;
   photos?: string[];
-  summary: string;
+  summary?: string;
   llm_description?: string;
   organization: {
     id: number;
@@ -94,25 +96,17 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
   hasNext = true,
   hasPrev = true,
 }) => {
+  const { isFavorited, toggleFavorite: toggleFav } = useFavorites();
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
-  const [isFavorited, setIsFavorited] = useState(false);
   const modalContentRef = useRef<HTMLDivElement>(null);
 
   // Reset states when dog changes
   useEffect(() => {
     setCurrentPhotoIndex(0);
     setIsDescriptionExpanded(false);
-
-    // Check if dog is already favorited (from localStorage)
-    if (dog?.id) {
-      const favorites = JSON.parse(
-        localStorage.getItem("favoriteDogs") || "[]",
-      );
-      setIsFavorited(favorites.includes(dog.id));
-    }
   }, [dog?.id]);
 
   // Handle keyboard navigation
@@ -176,6 +170,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
   };
 
   const handleShare = () => {
+    // Use the ShareButton logic or native share
     if (navigator.share && dog) {
       navigator.share({
         title: `Meet ${dog.name}`,
@@ -185,16 +180,12 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
     }
   };
 
-  const toggleFavorite = () => {
+  const toggleFavorite = async () => {
     if (!dog) return;
-
-    const favorites = JSON.parse(localStorage.getItem("favoriteDogs") || "[]");
-    const newFavorites = isFavorited
-      ? favorites.filter((id: string) => id !== dog.id)
-      : [...favorites, dog.id];
-
-    localStorage.setItem("favoriteDogs", JSON.stringify(newFavorites));
-    setIsFavorited(!isFavorited);
+    const numericId = parseInt(dog.id, 10);
+    if (!isNaN(numericId)) {
+      await toggleFav(numericId, dog.name);
+    }
   };
 
   const renderEnergyLevel = (level: string | undefined) => {
@@ -319,6 +310,9 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
     return "Unknown";
   };
 
+  // Check if favorited
+  const isFav = dog ? isFavorited(parseInt(dog.id, 10)) : false;
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -429,7 +423,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                       onClick={toggleFavorite}
                       className={cn(
                         "w-10 h-10 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-105 active:scale-95",
-                        isFavorited
+                        isFav
                           ? "bg-red-500 hover:bg-red-600"
                           : "bg-white/90 dark:bg-gray-900/90 hover:bg-white dark:hover:bg-gray-800",
                       )}
@@ -437,7 +431,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                       <Heart
                         className={cn(
                           "w-4 h-4",
-                          isFavorited
+                          isFav
                             ? "fill-white text-white"
                             : "text-gray-700 dark:text-gray-300",
                         )}

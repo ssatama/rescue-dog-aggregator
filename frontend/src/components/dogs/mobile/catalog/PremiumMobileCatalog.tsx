@@ -26,19 +26,21 @@ import Image from "next/image";
 import MobileFilterDrawer from "@/components/filters/MobileFilterDrawer";
 import DogDetailModalUpgraded from "@/components/dogs/mobile/detail/DogDetailModalUpgraded";
 import { Button } from "@/components/ui/button";
+import { useFavorites } from "@/hooks/useFavorites";
 
 // Types - matching your actual data structure
 interface PremiumDog {
   id: string;
   name: string;
   breed: string;
-  breed_mix: string;
+  breed_mix?: string;
   age: string;
+  age_text?: string;
   sex: string;
   primary_image_url?: string;
   main_image?: string;
   photos?: string[];
-  summary: string;
+  summary?: string;
   organization: {
     id: number;
     name: string;
@@ -48,11 +50,13 @@ interface PremiumDog {
   personality_traits?: string[];
   dog_profiler_data?: {
     personality?: string[];
+    [key: string]: any;
   };
   properties?: {
     location_country?: string;
     available_countries?: string[];
     fostered_in?: string;
+    [key: string]: any;
   };
   slug?: string;
   standardized_age_group?: string;
@@ -209,7 +213,7 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
   viewMode = "grid",
 }) => {
   const router = useRouter();
-  const [savedFavorites, setSavedFavorites] = useState<string[]>([]);
+  const { favorites, toggleFavorite } = useFavorites();
   const [isHydrated, setIsHydrated] = useState(false);
   const [selectedDog, setSelectedDog] = useState<PremiumDog | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -259,32 +263,23 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
     }
 
     // Check age filter
-    if (filters.ageFilter && filters.ageFilter !== "Any age") {
+    if (filters.ageFilter && filters.ageFilter !== "Any") {
       const ageChip = filterChips.find(
         (chip) =>
-          chip.type === "age" &&
-          chip.value === filters.ageFilter?.toLowerCase(),
+          chip.type === "age" && chip.value === filters.ageFilter?.toLowerCase(),
       );
       if (ageChip) active.push(ageChip);
     }
 
     setActiveFilters(active);
-  }, [filters.sexFilter, filters.ageFilter]);
+  }, [filters]);
 
-  // Load favorites from localStorage
+  // Track hydration for client-side features
   useEffect(() => {
-    const stored = localStorage.getItem("favoriteDogs");
-    if (stored) {
-      try {
-        setSavedFavorites(JSON.parse(stored));
-      } catch (e) {
-        console.error("Error loading favorites:", e);
-      }
-    }
     setIsHydrated(true);
   }, []);
 
-  // Handlers
+  // Quick filter toggle handler
   const handleQuickFilter = (chip: FilterChip) => {
     if (!onFilterChange) return;
 
@@ -314,18 +309,20 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
     }
   };
 
-  const handleToggleFavorite = (id: string) => {
-    const updated = savedFavorites.includes(id)
-      ? savedFavorites.filter((fid) => fid !== id)
-      : [...savedFavorites, id];
-
-    setSavedFavorites(updated);
-    localStorage.setItem("favoriteDogs", JSON.stringify(updated));
+  const handleToggleFavorite = async (dogId: string) => {
+    const numericId = parseInt(dogId, 10);
+    if (!isNaN(numericId)) {
+      const dog = dogs.find(d => d.id === dogId);
+      await toggleFavorite(numericId, dog?.name);
+    }
   };
 
   const handleDogClick = (dog: PremiumDog) => {
     setSelectedDog(dog);
     setIsModalOpen(true);
+    // Update URL to include dog slug for sharing
+    const newUrl = `/dogs?dog=${dog.slug}`;
+    window.history.pushState({}, '', newUrl);
   };
 
   const handleModalClose = () => {
@@ -461,7 +458,7 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
                     key={dog.id}
                     dog={dog}
                     index={index}
-                    isFavorite={isHydrated && savedFavorites.includes(dog.id)}
+                    isFavorite={isHydrated && favorites.includes(parseInt(dog.id, 10))}
                     onToggleFavorite={handleToggleFavorite}
                     onClick={() => handleDogClick(dog)}
                   />
