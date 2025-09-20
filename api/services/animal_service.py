@@ -302,6 +302,7 @@ class AnimalService:
                        o.logo_url as org_logo_url,
                        o.social_media as org_social_media,
                        o.ships_to as org_ships_to,
+                       o.service_regions as org_service_regions,
                        (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND status = 'available') as org_total_dogs,
                        (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND status = 'available' AND created_at >= NOW() - INTERVAL '7 days') as org_new_this_week,
                        (
@@ -365,6 +366,7 @@ class AnimalService:
                        o.logo_url as org_logo_url,
                        o.social_media as org_social_media,
                        o.ships_to as org_ships_to,
+                       o.service_regions as org_service_regions,
                        (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND status = 'available') as org_total_dogs,
                        (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND status = 'available' AND created_at >= NOW() - INTERVAL '7 days') as org_new_this_week,
                        (
@@ -411,15 +413,19 @@ class AnimalService:
 
     def _build_single_animal_response(self, row: dict) -> Animal:
         """Build a single animal response with adoption data if available."""
-        # Build organization data
-        organization = build_organization_object(row) if row else None
-
         # Parse properties JSON field properly
         row_dict = dict(row)
         parse_json_field(row_dict, "properties")
         parse_json_field(row_dict, "dog_profiler_data")
         parse_json_field(row_dict, "adoption_check_data")
-
+        
+        # Parse the org_recent_dogs JSON field if present
+        if "org_recent_dogs" in row_dict:
+            parse_json_field(row_dict, "org_recent_dogs", [])
+        
+        # Build organization data
+        organization = build_organization_object(row_dict) if row_dict else None
+        
         # Build animal object
         animal_dict = {
             "id": row["id"],
@@ -1109,6 +1115,7 @@ class AnimalService:
                    o.city as org_city,
                    o.country as org_country,
                    o.website_url as org_website_url,
+                   o.logo_url as org_logo_url,
                    o.social_media as org_social_media,
                    o.ships_to as org_ships_to
             FROM animals a
@@ -1245,6 +1252,7 @@ class AnimalService:
                        o.city as org_city,
                        o.country as org_country,
                        o.website_url as org_website_url,
+                       o.logo_url as org_logo_url,
                        o.social_media as org_social_media,
                        o.ships_to as org_ships_to
                 FROM animals a

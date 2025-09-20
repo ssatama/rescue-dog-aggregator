@@ -30,6 +30,7 @@ class Organization(BaseModel):
     service_regions: List[str] = Field(default_factory=list)
     total_dogs: Optional[int] = None
     new_this_week: Optional[int] = None
+    recent_dogs: List[Dict[str, Any]] = Field(default_factory=list)
 
     # Adoption fees for dynamic pricing
     adoption_fees: Dict[str, Any] = Field(default_factory=dict)
