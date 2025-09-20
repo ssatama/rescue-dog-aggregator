@@ -10,12 +10,14 @@ includes all fields required for the OrganizationCard component, including:
 - new_this_week: Count of dogs added in the last 7 days
 """
 
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
+
+import pytest
 from fastapi.testclient import TestClient
-from api.main import app
+
 from api.dependencies import get_pooled_db_cursor
+from api.main import app
 
 
 @pytest.fixture
@@ -79,7 +81,6 @@ class TestOrganizationCardData:
             "consecutive_scrapes_missing": 0,
             "dog_profiler_data": {},
             "adoption_check_data": None,
-
             # Organization fields - these are critical for the card
             "org_name": "Santer Paws Bulgarian Rescue",
             "org_slug": "santer-paws-bulgarian-rescue",
@@ -91,7 +92,7 @@ class TestOrganizationCardData:
                 "twitter": "https://x.com/Santerpaws20",
                 "website": "https://santerpawsbulgarianrescue.com/",
                 "facebook": "https://www.facebook.com/SanterpawsBulgarianRescue",
-                "instagram": "https://www.instagram.com/santerpaws_bulgarian_rescue/"
+                "instagram": "https://www.instagram.com/santerpaws_bulgarian_rescue/",
             },
             "org_ships_to": ["UK", "IE"],
             "org_service_regions": ["BG", "RO"],  # This is critical for "Dogs in:" display
@@ -106,7 +107,7 @@ class TestOrganizationCardData:
                     "primary_image_url": "https://images.rescuedogs.me/juniper.jpg",
                     "standardized_breed": "Unknown",
                     "age_min_months": None,
-                    "age_max_months": None
+                    "age_max_months": None,
                 },
                 {
                     "id": 5304,
@@ -115,7 +116,7 @@ class TestOrganizationCardData:
                     "primary_image_url": "https://images.rescuedogs.me/murphy.jpg",
                     "standardized_breed": "Mixed Breed",
                     "age_min_months": 3,
-                    "age_max_months": 5
+                    "age_max_months": 5,
                 },
                 {
                     "id": 5241,
@@ -124,9 +125,9 @@ class TestOrganizationCardData:
                     "primary_image_url": "https://images.rescuedogs.me/mitch.jpg",
                     "standardized_breed": "Mixed Breed",
                     "age_min_months": 34,
-                    "age_max_months": 36
-                }
-            ]
+                    "age_max_months": 36,
+                },
+            ],
         }
 
         def mock_get_cursor():
@@ -230,7 +231,7 @@ class TestOrganizationCardData:
             "org_service_regions": ["US"],
             "org_total_dogs": 1,
             "org_new_this_week": 0,
-            "org_recent_dogs": []  # Empty list
+            "org_recent_dogs": [],  # Empty list
         }
 
         def mock_get_cursor():
@@ -306,9 +307,9 @@ class TestOrganizationCardData:
                     "primary_image_url": "https://example.com/recent1.jpg",
                     "standardized_breed": "German Shepherd",
                     "age_min_months": 12,
-                    "age_max_months": 24
+                    "age_max_months": 24,
                 }
-            ]
+            ],
         }
 
         def mock_get_cursor():
@@ -395,15 +396,7 @@ class TestOrganizationCardData:
             "org_total_dogs": 45,
             "org_new_this_week": 8,  # 8 dogs added this week
             "org_recent_dogs": [
-                {
-                    "id": 3,
-                    "slug": "new-arrival",
-                    "name": "New Arrival",
-                    "primary_image_url": "https://example.com/puppy.jpg",
-                    "standardized_breed": "Beagle",
-                    "age_min_months": 3,
-                    "age_max_months": 6
-                },
+                {"id": 3, "slug": "new-arrival", "name": "New Arrival", "primary_image_url": "https://example.com/puppy.jpg", "standardized_breed": "Beagle", "age_min_months": 3, "age_max_months": 6},
                 {
                     "id": 4,
                     "slug": "another-new",
@@ -411,9 +404,9 @@ class TestOrganizationCardData:
                     "primary_image_url": "https://example.com/another.jpg",
                     "standardized_breed": "Poodle",
                     "age_min_months": 12,
-                    "age_max_months": 18
-                }
-            ]
+                    "age_max_months": 18,
+                },
+            ],
         }
 
         def mock_get_cursor():

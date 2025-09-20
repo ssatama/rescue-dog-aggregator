@@ -418,14 +418,14 @@ class AnimalService:
         parse_json_field(row_dict, "properties")
         parse_json_field(row_dict, "dog_profiler_data")
         parse_json_field(row_dict, "adoption_check_data")
-        
+
         # Parse the org_recent_dogs JSON field if present
         if "org_recent_dogs" in row_dict:
             parse_json_field(row_dict, "org_recent_dogs", [])
-        
+
         # Build organization data
         organization = build_organization_object(row_dict) if row_dict else None
-        
+
         # Build animal object
         animal_dict = {
             "id": row["id"],
