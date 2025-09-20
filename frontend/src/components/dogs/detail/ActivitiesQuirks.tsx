@@ -169,7 +169,7 @@ export default function ActivitiesQuirks({
               </div>
               <div className="ml-3">
                 <p className="text-purple-800 dark:text-purple-300 font-medium">
-                  {profilerData!.unique_quirk}
+                  {capitalizeFirst(profilerData!.unique_quirk!)}
                 </p>
               </div>
             </div>

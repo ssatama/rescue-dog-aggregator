@@ -42,14 +42,16 @@ interface Dog {
   };
   personality_traits?: string[];
   dog_profiler_data?: {
-    personality?: string[];
+    description?: string;
+    tagline?: string;
+    personality_traits?: string[];
     activity_level?: string;
     training_level?: string;
     kid_friendly?: boolean;
     dog_friendly?: boolean;
     cat_friendly?: boolean;
     favorite_activities?: string[];
-    unique_traits?: string[];
+    unique_quirk?: string;
     energy_level?: string;
   };
   properties?: {
@@ -98,6 +100,59 @@ const infoCardColors = {
   breed:
     "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700",
   size: "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700",
+};
+
+// Utility function to capitalize first letter
+const capitalizeFirst = (str: string | undefined): string => {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};
+
+// Activity colors matching main page
+const ACTIVITY_COLORS = [
+  "bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300",
+  "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300",
+  "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300",
+  "bg-pink-100 dark:bg-pink-900/30 text-pink-800 dark:text-pink-300",
+  "bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300",
+  "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300",
+];
+
+// Get activity emoji matching main page logic
+const getActivityEmoji = (activity: string): string => {
+  const lowerActivity = activity.toLowerCase();
+  
+  // Movement activities
+  if (lowerActivity.includes("running") || lowerActivity.includes("zooming") || lowerActivity.includes("zoomies")) return "🏃";
+  if (lowerActivity.includes("walk")) return "🚶";
+  if (lowerActivity.includes("swimming") || lowerActivity.includes("swim")) return "🏊";
+  
+  // Play activities
+  if (lowerActivity.includes("playing") || lowerActivity.includes("play") || lowerActivity.includes("toys") || lowerActivity.includes("fetch") || lowerActivity.includes("ball")) return "🎾";
+  
+  // Affection activities
+  if (lowerActivity.includes("cuddl") || lowerActivity.includes("snuggl") || lowerActivity.includes("pamper")) return "🤗";
+  if (lowerActivity.includes("kiss")) return "😘";
+  
+  // Adventure/exploration
+  if (lowerActivity.includes("car") || lowerActivity.includes("ride")) return "🚗";
+  if (lowerActivity.includes("beach") || lowerActivity.includes("water") || lowerActivity.includes("paddl")) return "🏖️";
+  if (lowerActivity.includes("explor") || lowerActivity.includes("adventure")) return "🧭";
+  
+  // Food
+  if (lowerActivity.includes("treat") || lowerActivity.includes("eating") || lowerActivity.includes("food")) return "🦴";
+  
+  // Learning
+  if (lowerActivity.includes("learn") || lowerActivity.includes("school") || lowerActivity.includes("train")) return "🎓";
+  
+  // Social
+  if (lowerActivity.includes("meet") || lowerActivity.includes("people") || lowerActivity.includes("interact")) return "👥";
+  
+  // Other
+  if (lowerActivity.includes("photo") || lowerActivity.includes("model")) return "📸";
+  if (lowerActivity.includes("rolling")) return "🌀";
+  
+  return "🐾"; // Default fallback
 };
 
 const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
@@ -296,17 +351,21 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
 
   // Get all the data we need
   const traits =
-    dog.personality_traits || dog.dog_profiler_data?.personality || [];
+    dog.dog_profiler_data?.personality_traits || 
+    dog.personality_traits || 
+    [];
   const size =
     dog.standardized_size || dog.size || dog.properties?.size || "Unknown";
   const description =
+    dog.dog_profiler_data?.description ||
     dog.llm_description ||
     dog.summary ||
     dog.properties?.description ||
     dog.properties?.raw_description ||
     "";
   const favoriteActivities = dog.dog_profiler_data?.favorite_activities || [];
-  const uniqueTraits = dog.dog_profiler_data?.unique_traits || [];
+  const uniqueQuirk = dog.dog_profiler_data?.unique_quirk;
+  const tagline = dog.dog_profiler_data?.tagline;
   const energyLevel =
     dog.dog_profiler_data?.energy_level ||
     dog.dog_profiler_data?.activity_level;
@@ -716,42 +775,25 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                       <h3 className="font-semibold mb-4 dark:text-white">
                         Favorite Activities
                       </h3>
-                      <div className="grid grid-cols-3 gap-3">
-                        {favoriteActivities
-                          .slice(0, 3)
-                          .map((activity, index) => (
-                            <div
-                              key={index}
-                              className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-750 rounded-xl p-4 text-center shadow-sm border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-md hover:scale-105"
-                            >
-                              <div className="text-xl mb-2">
-                                {activity.toLowerCase().includes("play") &&
-                                  "🎾"}
-                                {activity.toLowerCase().includes("cuddl") &&
-                                  "🤗"}
-                                {activity.toLowerCase().includes("walk") &&
-                                  "🚶"}
-                                {activity.toLowerCase().includes("run") && "🏃"}
-                                {activity.toLowerCase().includes("swim") &&
-                                  "🏊"}
-                                {!activity.toLowerCase().includes("play") &&
-                                  !activity.toLowerCase().includes("cuddl") &&
-                                  !activity.toLowerCase().includes("walk") &&
-                                  !activity.toLowerCase().includes("run") &&
-                                  !activity.toLowerCase().includes("swim") &&
-                                  "🐾"}
-                              </div>
-                              <div className="text-xs font-semibold text-gray-700 dark:text-gray-200">
-                                {activity}
-                              </div>
-                            </div>
-                          ))}
+                      <div className="flex flex-wrap gap-2">
+                        {favoriteActivities.map((activity, index) => (
+                          <span
+                            key={index}
+                            className={cn(
+                              "px-3 py-2 rounded-full text-sm font-medium flex items-center gap-1 transition-all duration-200 hover:scale-105",
+                              ACTIVITY_COLORS[index % ACTIVITY_COLORS.length]
+                            )}
+                          >
+                            <span>{getActivityEmoji(activity)}</span>
+                            <span>{capitalizeFirst(activity)}</span>
+                          </span>
+                        ))}
                       </div>
                     </div>
                   )}
 
                   {/* What Makes Me Special */}
-                  {uniqueTraits.length > 0 && (
+                  {uniqueQuirk && (
                     <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:bg-purple-900/20 border-l-4 border-purple-400 dark:border-purple-600 p-5 rounded-r-xl shadow-sm">
                       <div className="flex items-start gap-3">
                         <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
@@ -762,7 +804,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                             What Makes Me Special
                           </h4>
                           <p className="text-sm text-purple-700 dark:text-purple-300 leading-relaxed">
-                            {uniqueTraits[0]}
+                            {capitalizeFirst(uniqueQuirk)}
                           </p>
                         </div>
                       </div>

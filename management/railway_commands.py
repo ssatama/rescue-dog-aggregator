@@ -47,7 +47,9 @@ def safe_execute_railway_command(command: str) -> bool:
         allowed_commands = ["status", "test-connection", "migrate", "sync"]
 
         if command not in allowed_commands:
-            logger.error(f"Command '{command}' is not allowed. Allowed commands: {allowed_commands}")
+            logger.error(
+                f"Command '{command}' is not allowed. Allowed commands: {allowed_commands}"
+            )
             return False
 
         # Get the absolute path to this script to prevent path manipulation
@@ -56,7 +58,9 @@ def safe_execute_railway_command(command: str) -> bool:
         # Use subprocess.run with list arguments to prevent injection
         cmd_list = [sys.executable, script_path, command]
 
-        result = subprocess.run(cmd_list, check=True, capture_output=True, text=True, timeout=60)  # 60 second timeout
+        result = subprocess.run(
+            cmd_list, check=True, capture_output=True, text=True, timeout=60
+        )  # 60 second timeout
 
         # Print the output
         if result.stdout:
@@ -152,8 +156,17 @@ def migrate(dry_run):
 @click.option("--dry-run", is_flag=True, help="Show what would be synced without making changes")
 @click.option("--skip-validation", is_flag=True, help="Skip post-sync validation")
 @click.option("--skip-indexes", is_flag=True, help="Skip syncing database indexes")
-@click.option("--mode", type=click.Choice(["incremental", "rebuild", "force"]), default="incremental", help="Sync mode: incremental (default), rebuild, or force")
-@click.option("--confirm-destructive", is_flag=True, help="Required confirmation for destructive operations (rebuild/force modes)")
+@click.option(
+    "--mode",
+    type=click.Choice(["incremental", "rebuild", "force"]),
+    default="incremental",
+    help="Sync mode: incremental (default), rebuild, or force",
+)
+@click.option(
+    "--confirm-destructive",
+    is_flag=True,
+    help="Required confirmation for destructive operations (rebuild/force modes)",
+)
 def sync(dry_run, skip_validation, skip_indexes, mode, confirm_destructive):
     """Sync data from local database to Railway."""
     try:
@@ -173,7 +186,12 @@ def sync(dry_run, skip_validation, skip_indexes, mode, confirm_destructive):
 
         if dry_run:
             click.echo("🔍 Running Railway sync dry run...")
-            success = syncer.perform_full_sync(dry_run=True, validate_after=validate_after, sync_mode=mode, sync_indexes=sync_indexes)
+            success = syncer.perform_full_sync(
+                dry_run=True,
+                validate_after=validate_after,
+                sync_mode=mode,
+                sync_indexes=sync_indexes,
+            )
             if success:
                 click.echo("✅ Railway sync dry run completed")
                 sys.exit(0)
@@ -184,7 +202,12 @@ def sync(dry_run, skip_validation, skip_indexes, mode, confirm_destructive):
             click.echo("🚀 Starting Railway data sync...")
             if sync_indexes:
                 click.echo("📊 Index synchronization enabled")
-            success = syncer.perform_full_sync(dry_run=False, validate_after=validate_after, sync_mode=mode, sync_indexes=sync_indexes)
+            success = syncer.perform_full_sync(
+                dry_run=False,
+                validate_after=validate_after,
+                sync_mode=mode,
+                sync_indexes=sync_indexes,
+            )
             if success:
                 click.echo("✅ Railway data sync completed successfully")
                 sys.exit(0)
@@ -275,7 +298,9 @@ def setup(dry_run):
 
             # Test sync
             syncer = RailwayDataSyncer()
-            sync_success = syncer.perform_full_sync(dry_run=True, validate_after=True, sync_mode="incremental")
+            sync_success = syncer.perform_full_sync(
+                dry_run=True, validate_after=True, sync_mode="incremental"
+            )
 
             if not sync_success:
                 click.echo("❌ Railway sync dry run failed", err=True)
@@ -301,7 +326,9 @@ def setup(dry_run):
             # Step 2: Sync data
             click.echo("Step 2: Syncing data to Railway...")
             syncer = RailwayDataSyncer()
-            sync_success = syncer.perform_full_sync(dry_run=False, validate_after=True, sync_mode="incremental")
+            sync_success = syncer.perform_full_sync(
+                dry_run=False, validate_after=True, sync_mode="incremental"
+            )
 
             if not sync_success:
                 click.echo("❌ Railway data sync failed during setup", err=True)
