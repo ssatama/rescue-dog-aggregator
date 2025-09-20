@@ -1,12 +1,24 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, Share, Star, ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
+import FocusTrap from "focus-trap-react";
+import {
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Heart,
+  Share2,
+  MapPin,
+  Calendar,
+  Users,
+  Home,
+  Globe,
+  ChevronDown,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFavorites } from "@/hooks/useFavorites";
-import ShareButton from "@/components/ui/ShareButton";
 
 interface Dog {
   id: string;
@@ -98,16 +110,52 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
 }) => {
   const { isFavorited, toggleFavorite: toggleFav } = useFavorites();
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [imageError, setImageError] = useState(false);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const modalContentRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   // Reset states when dog changes
   useEffect(() => {
     setCurrentPhotoIndex(0);
     setIsDescriptionExpanded(false);
   }, [dog?.id]);
+
+  // Reset image error when photo changes
+  useEffect(() => {
+    setImageError(false);
+  }, [currentPhotoIndex, dog]);
+
+  // Focus management - set initial focus when modal opens
+  useEffect(() => {
+    if (isOpen && closeButtonRef.current) {
+      closeButtonRef.current.focus();
+    }
+  }, [isOpen]);
+
+  // Body scroll lock
+  useEffect(() => {
+    if (isOpen) {
+      // Save current scroll position
+      const scrollY = window.scrollY;
+      
+      // Lock body scroll
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      
+      // Cleanup on close or unmount
+      return () => {
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        // Restore scroll position
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isOpen]);
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -242,7 +290,9 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
   // Get photo array
   const photos =
     dog.photos || [dog.primary_image_url, dog.main_image].filter(Boolean);
-  const currentPhoto = photos[currentPhotoIndex] || "/placeholder_dog.svg";
+  const currentPhoto = imageError
+    ? "/placeholder_dog.svg"
+    : (photos[currentPhotoIndex] || "/placeholder_dog.svg");
 
   // Get all the data we need
   const traits =
@@ -327,491 +377,502 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
           />
 
           {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ type: "spring", damping: 20, stiffness: 300 }}
-            className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
+          <FocusTrap
+            active={isOpen}
+            focusTrapOptions={{
+              initialFocus: () => closeButtonRef.current,
+              allowOutsideClick: true,
+              returnFocusOnDeactivate: true,
+              escapeDeactivates: false, // We handle ESC ourselves
+            }}
           >
             <motion.div
-              className="bg-white dark:bg-gray-900 rounded-2xl w-[90vw] max-w-[600px] md:max-w-[700px] lg:max-w-[800px] h-[90vh] max-h-[800px] overflow-hidden shadow-2xl border border-gray-200/20 dark:border-gray-700/30"
-              layoutId={`dog-card-${dog.id}`}
-              onClick={(e) => e.stopPropagation()}
-              ref={modalContentRef}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="dog-name"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ type: "spring", damping: 20, stiffness: 300 }}
+              className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
             >
-              {/* Header */}
-              <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {dog.name}
-                </h1>
-                <button
-                  onClick={onClose}
-                  className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center transition-colors"
-                >
-                  <X className="w-4 h-4 dark:text-gray-400" />
-                </button>
-              </div>
+              <motion.div
+                className="bg-white dark:bg-gray-900 rounded-2xl w-[90vw] max-w-[600px] md:max-w-[700px] lg:max-w-[800px] h-[90vh] max-h-[800px] overflow-hidden shadow-2xl border border-gray-200/20 dark:border-gray-700/30"
+                layoutId={`dog-card-${dog.id}`}
+                onClick={(e) => e.stopPropagation()}
+                ref={modalContentRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="modal-dog-name"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+                  <h1 
+                    id="modal-dog-name"
+                    className="text-xl font-bold text-gray-900 dark:text-white"
+                  >
+                    {dog.name}
+                  </h1>
+                  <button
+                    ref={closeButtonRef}
+                    onClick={onClose}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                    aria-label="Close modal"
+                  >
+                    <X className="w-4 h-4 dark:text-gray-400" />
+                  </button>
+                </div>
 
-              {/* Scrollable Content */}
-              <div className="h-[calc(100%-80px)] overflow-y-auto p-5 md:p-6 lg:p-8 space-y-6 md:space-y-8 scrollbar-hide">
-                {/* Dog Image with Actions */}
-                <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 shadow-lg">
-                  <Image
-                    src={currentPhoto}
-                    alt={`${dog.name}'s photo`}
-                    fill
-                    className="object-cover"
-                    priority
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = "/placeholder_dog.svg";
-                    }}
-                  />
+                {/* Scrollable Content */}
+                <div className="h-[calc(100%-80px)] overflow-y-auto p-5 md:p-6 lg:p-8 space-y-6 md:space-y-8 scrollbar-hide">
+                  {/* Dog Image with Actions */}
+                  <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 shadow-lg">
+                    <Image
+                      src={currentPhoto}
+                      alt={`${dog.name}'s photo`}
+                      fill
+                      className="object-cover"
+                      priority
+                      onError={() => setImageError(true)}
+                    />
 
-                  {/* Photo navigation */}
-                  {photos.length > 1 && (
-                    <>
+                    {/* Photo navigation */}
+                    {photos.length > 1 && (
+                      <>
+                        <button
+                          onClick={prevPhoto}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 dark:bg-gray-900/90 hover:bg-white dark:hover:bg-gray-800 transition-colors shadow-md"
+                          aria-label="Previous photo"
+                        >
+                          <ChevronLeft className="w-5 h-5 dark:text-gray-400" />
+                        </button>
+                        <button
+                          onClick={nextPhoto}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 dark:bg-gray-900/90 hover:bg-white dark:hover:bg-gray-800 transition-colors shadow-md"
+                          aria-label="Next photo"
+                        >
+                          <ChevronRight className="w-5 h-5 dark:text-gray-400" />
+                        </button>
+
+                        {/* Photo indicators */}
+                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                          {photos.map((_, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setCurrentPhotoIndex(i)}
+                              className={cn(
+                                "w-2 h-2 rounded-full transition-all duration-200",
+                                i === currentPhotoIndex
+                                  ? "w-6 bg-white"
+                                  : "bg-white/50 dark:bg-gray-600/50 hover:bg-white/70 dark:hover:bg-gray-500/70",
+                              )}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="absolute top-3 right-3 flex gap-2">
                       <button
-                        onClick={prevPhoto}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 dark:bg-gray-900/90 hover:bg-white dark:hover:bg-gray-800 transition-colors shadow-md"
-                        aria-label="Previous photo"
+                        onClick={handleShare}
+                        className="w-10 h-10 bg-white/90 dark:bg-gray-900/90 hover:bg-white dark:hover:bg-gray-800 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"
                       >
-                        <ChevronLeft className="w-5 h-5 dark:text-gray-400" />
+                        <Share2 className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                       </button>
                       <button
-                        onClick={nextPhoto}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 dark:bg-gray-900/90 hover:bg-white dark:hover:bg-gray-800 transition-colors shadow-md"
-                        aria-label="Next photo"
+                        onClick={toggleFavorite}
+                        className={cn(
+                          "w-10 h-10 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-105 active:scale-95",
+                          isFav
+                            ? "bg-red-500 hover:bg-red-600"
+                            : "bg-white/90 dark:bg-gray-900/90 hover:bg-white dark:hover:bg-gray-800",
+                        )}
                       >
-                        <ChevronRight className="w-5 h-5 dark:text-gray-400" />
+                        <Heart
+                          className={cn(
+                            "w-4 h-4",
+                            isFav
+                              ? "fill-white text-white"
+                              : "text-gray-700 dark:text-gray-300",
+                          )}
+                        />
                       </button>
+                    </div>
 
-                      {/* Photo indicators */}
-                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-                        {photos.map((_, i) => (
-                          <button
-                            key={i}
-                            onClick={() => setCurrentPhotoIndex(i)}
-                            className={cn(
-                              "w-2 h-2 rounded-full transition-all duration-200",
-                              i === currentPhotoIndex
-                                ? "w-6 bg-white"
-                                : "bg-white/50 dark:bg-gray-600/50 hover:bg-white/70 dark:hover:bg-gray-500/70",
-                            )}
-                          />
-                        ))}
+                    {/* Gradient Overlay for better text readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+                  </div>
+
+                  {/* Info Cards Grid */}
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div
+                      className={cn(
+                        "p-4 rounded-xl border flex flex-col items-center",
+                        infoCardColors.age,
+                      )}
+                    >
+                      <div className="text-2xl mb-2">🎂</div>
+                      <div className="font-semibold text-sm mb-1 dark:text-white">
+                        Age
                       </div>
-                    </>
+                      <div className="text-xs text-gray-600 dark:text-gray-300 font-medium">
+                        {getAgeDisplay()}
+                      </div>
+                    </div>
+                    <div
+                      className={cn(
+                        "p-4 rounded-xl border flex flex-col items-center",
+                        infoCardColors.gender,
+                      )}
+                    >
+                      <div className="text-2xl mb-2">
+                        {dog.sex?.toLowerCase() === "female" ? "♀️" : "♂️"}
+                      </div>
+                      <div className="font-semibold text-sm mb-1 dark:text-white">
+                        Gender
+                      </div>
+                      <div className="text-xs text-gray-600 dark:text-gray-300 font-medium">
+                        {dog.sex || "Unknown"}
+                      </div>
+                    </div>
+                    <div
+                      className={cn(
+                        "p-4 rounded-xl border flex flex-col items-center",
+                        infoCardColors.breed,
+                      )}
+                    >
+                      <div className="text-2xl mb-2">🐕</div>
+                      <div className="font-semibold text-sm mb-1 dark:text-white">
+                        Breed
+                      </div>
+                      <div className="text-xs text-gray-600 dark:text-gray-300 font-medium">
+                        {dog.breed_mix || dog.breed || "Mixed"}
+                      </div>
+                    </div>
+                    <div
+                      className={cn(
+                        "p-4 rounded-xl border flex flex-col items-center",
+                        infoCardColors.size,
+                      )}
+                    >
+                      <div className="text-2xl mb-2">📏</div>
+                      <div className="font-semibold text-sm mb-1 dark:text-white">
+                        Size
+                      </div>
+                      <div className="text-xs text-gray-600 dark:text-gray-300 font-medium">
+                        {size}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* About Section */}
+                  {description && (
+                    <div>
+                      <h3 className="font-semibold mb-2 dark:text-white">
+                        About {dog.name}
+                      </h3>
+                      <p
+                        className={cn(
+                          "text-sm text-gray-700 dark:text-gray-300 leading-relaxed",
+                          !isDescriptionExpanded && "line-clamp-4",
+                        )}
+                      >
+                        {description}
+                      </p>
+                      {description.length > 200 && (
+                        <button
+                          onClick={() =>
+                            setIsDescriptionExpanded(!isDescriptionExpanded)
+                          }
+                          className="text-orange-500 dark:text-orange-400 text-sm mt-2 hover:underline"
+                        >
+                          {isDescriptionExpanded ? "Show less" : "Read more"}
+                        </button>
+                      )}
+                    </div>
                   )}
 
-                  {/* Action Buttons */}
-                  <div className="absolute top-3 right-3 flex gap-2">
-                    <button
-                      onClick={handleShare}
-                      className="w-10 h-10 bg-white/90 dark:bg-gray-900/90 hover:bg-white dark:hover:bg-gray-800 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"
-                    >
-                      <Share className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-                    </button>
-                    <button
-                      onClick={toggleFavorite}
-                      className={cn(
-                        "w-10 h-10 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-105 active:scale-95",
-                        isFav
-                          ? "bg-red-500 hover:bg-red-600"
-                          : "bg-white/90 dark:bg-gray-900/90 hover:bg-white dark:hover:bg-gray-800",
+                  {/* Personality */}
+                  {traits.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-3 dark:text-white">
+                        Personality
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {traits.map((trait, index) => (
+                          <span
+                            key={index}
+                            className={cn(
+                              "px-3 py-1 rounded-full text-xs font-medium border",
+                              getTraitColor(trait),
+                            )}
+                          >
+                            {trait}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Energy & Training */}
+                  {(energyLevel || trainingLevel) && (
+                    <div className="grid grid-cols-2 gap-4">
+                      {energyLevel && (
+                        <div>
+                          <h4 className="font-medium mb-2 text-sm dark:text-gray-300">
+                            Energy Level
+                          </h4>
+                          <div className="flex gap-1">
+                            {renderEnergyLevel(energyLevel)}
+                          </div>
+                        </div>
                       )}
-                    >
-                      <Heart
-                        className={cn(
-                          "w-4 h-4",
-                          isFav
-                            ? "fill-white text-white"
-                            : "text-gray-700 dark:text-gray-300",
-                        )}
-                      />
-                    </button>
-                  </div>
-
-                  {/* Gradient Overlay for better text readability */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
-                </div>
-
-                {/* Info Cards Grid */}
-                <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                  <div
-                    className={cn(
-                      "p-4 rounded-xl border flex flex-col items-center",
-                      infoCardColors.age,
-                    )}
-                  >
-                    <div className="text-2xl mb-2">🎂</div>
-                    <div className="font-semibold text-sm mb-1 dark:text-white">
-                      Age
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-300 font-medium">
-                      {getAgeDisplay()}
-                    </div>
-                  </div>
-                  <div
-                    className={cn(
-                      "p-4 rounded-xl border flex flex-col items-center",
-                      infoCardColors.gender,
-                    )}
-                  >
-                    <div className="text-2xl mb-2">
-                      {dog.sex?.toLowerCase() === "female" ? "♀️" : "♂️"}
-                    </div>
-                    <div className="font-semibold text-sm mb-1 dark:text-white">
-                      Gender
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-300 font-medium">
-                      {dog.sex || "Unknown"}
-                    </div>
-                  </div>
-                  <div
-                    className={cn(
-                      "p-4 rounded-xl border flex flex-col items-center",
-                      infoCardColors.breed,
-                    )}
-                  >
-                    <div className="text-2xl mb-2">🐕</div>
-                    <div className="font-semibold text-sm mb-1 dark:text-white">
-                      Breed
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-300 font-medium">
-                      {dog.breed_mix || dog.breed || "Mixed"}
-                    </div>
-                  </div>
-                  <div
-                    className={cn(
-                      "p-4 rounded-xl border flex flex-col items-center",
-                      infoCardColors.size,
-                    )}
-                  >
-                    <div className="text-2xl mb-2">📏</div>
-                    <div className="font-semibold text-sm mb-1 dark:text-white">
-                      Size
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-300 font-medium">
-                      {size}
-                    </div>
-                  </div>
-                </div>
-
-                {/* About Section */}
-                {description && (
-                  <div>
-                    <h3 className="font-semibold mb-2 dark:text-white">
-                      About {dog.name}
-                    </h3>
-                    <p
-                      className={cn(
-                        "text-sm text-gray-700 dark:text-gray-300 leading-relaxed",
-                        !isDescriptionExpanded && "line-clamp-4",
+                      {trainingLevel && (
+                        <div>
+                          <h4 className="font-medium mb-2 text-sm dark:text-gray-300">
+                            Training Level
+                          </h4>
+                          <div className="flex gap-1">
+                            {renderTrainingLevel(trainingLevel)}
+                          </div>
+                        </div>
                       )}
-                    >
-                      {description}
-                    </p>
-                    {description.length > 200 && (
-                      <button
-                        onClick={() =>
-                          setIsDescriptionExpanded(!isDescriptionExpanded)
-                        }
-                        className="text-orange-500 dark:text-orange-400 text-sm mt-2 hover:underline"
-                      >
-                        {isDescriptionExpanded ? "Show less" : "Read more"}
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {/* Personality */}
-                {traits.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold mb-3 dark:text-white">
-                      Personality
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {traits.map((trait, index) => (
-                        <span
-                          key={index}
-                          className={cn(
-                            "px-3 py-1 rounded-full text-xs font-medium border",
-                            getTraitColor(trait),
-                          )}
-                        >
-                          {trait}
-                        </span>
-                      ))}
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Energy & Training */}
-                {(energyLevel || trainingLevel) && (
-                  <div className="grid grid-cols-2 gap-4">
-                    {energyLevel && (
-                      <div>
-                        <h4 className="font-medium mb-2 text-sm dark:text-gray-300">
-                          Energy Level
-                        </h4>
-                        <div className="flex gap-1">
-                          {renderEnergyLevel(energyLevel)}
-                        </div>
-                      </div>
-                    )}
-                    {trainingLevel && (
-                      <div>
-                        <h4 className="font-medium mb-2 text-sm dark:text-gray-300">
-                          Training Level
-                        </h4>
-                        <div className="flex gap-1">
-                          {renderTrainingLevel(trainingLevel)}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Good With */}
-                {dog.dog_profiler_data && (
-                  <div>
-                    <h3 className="font-semibold mb-3 dark:text-white">
-                      Good With
-                    </h3>
-                    <div className="flex gap-4">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={cn(
-                            "w-5 h-5 rounded-full flex items-center justify-center",
-                            dog.dog_profiler_data.dog_friendly
-                              ? "bg-green-100 dark:bg-green-900/30"
-                              : "bg-gray-100 dark:bg-gray-800",
-                          )}
-                        >
-                          {dog.dog_profiler_data.dog_friendly ? (
-                            <div className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full" />
-                          ) : (
-                            <div className="w-3 h-0.5 bg-gray-400 dark:bg-gray-600" />
-                          )}
-                        </div>
-                        <span className="text-sm dark:text-gray-300">Dogs</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={cn(
-                            "w-5 h-5 rounded-full flex items-center justify-center",
-                            dog.dog_profiler_data.cat_friendly
-                              ? "bg-green-100 dark:bg-green-900/30"
-                              : "bg-gray-100 dark:bg-gray-800",
-                          )}
-                        >
-                          {dog.dog_profiler_data.cat_friendly ? (
-                            <div className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full" />
-                          ) : (
-                            <div className="w-3 h-0.5 bg-gray-400 dark:bg-gray-600" />
-                          )}
-                        </div>
-                        <span className="text-sm dark:text-gray-300">Cats</span>
-                      </div>
-                      {dog.dog_profiler_data.kid_friendly !== undefined && (
+                  {/* Good With */}
+                  {dog.dog_profiler_data && (
+                    <div>
+                      <h3 className="font-semibold mb-3 dark:text-white">
+                        Good With
+                      </h3>
+                      <div className="flex gap-4">
                         <div className="flex items-center gap-2">
                           <div
                             className={cn(
                               "w-5 h-5 rounded-full flex items-center justify-center",
-                              dog.dog_profiler_data.kid_friendly
+                              dog.dog_profiler_data.dog_friendly
                                 ? "bg-green-100 dark:bg-green-900/30"
                                 : "bg-gray-100 dark:bg-gray-800",
                             )}
                           >
-                            {dog.dog_profiler_data.kid_friendly ? (
+                            {dog.dog_profiler_data.dog_friendly ? (
                               <div className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full" />
                             ) : (
                               <div className="w-3 h-0.5 bg-gray-400 dark:bg-gray-600" />
                             )}
                           </div>
-                          <span className="text-sm dark:text-gray-300">
-                            Kids
-                          </span>
+                          <span className="text-sm dark:text-gray-300">Dogs</span>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Activities */}
-                {favoriteActivities.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold mb-4 dark:text-white">
-                      Favorite Activities
-                    </h3>
-                    <div className="grid grid-cols-3 gap-3">
-                      {favoriteActivities.slice(0, 3).map((activity, index) => (
-                        <div
-                          key={index}
-                          className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-750 rounded-xl p-4 text-center shadow-sm border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-md hover:scale-105"
-                        >
-                          <div className="text-xl mb-2">
-                            {activity.toLowerCase().includes("play") && "🎾"}
-                            {activity.toLowerCase().includes("cuddl") && "🤗"}
-                            {activity.toLowerCase().includes("walk") && "🚶"}
-                            {activity.toLowerCase().includes("run") && "🏃"}
-                            {activity.toLowerCase().includes("swim") && "🏊"}
-                            {!activity.toLowerCase().includes("play") &&
-                              !activity.toLowerCase().includes("cuddl") &&
-                              !activity.toLowerCase().includes("walk") &&
-                              !activity.toLowerCase().includes("run") &&
-                              !activity.toLowerCase().includes("swim") &&
-                              "🐾"}
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={cn(
+                              "w-5 h-5 rounded-full flex items-center justify-center",
+                              dog.dog_profiler_data.cat_friendly
+                                ? "bg-green-100 dark:bg-green-900/30"
+                                : "bg-gray-100 dark:bg-gray-800",
+                            )}
+                          >
+                            {dog.dog_profiler_data.cat_friendly ? (
+                              <div className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full" />
+                            ) : (
+                              <div className="w-3 h-0.5 bg-gray-400 dark:bg-gray-600" />
+                            )}
                           </div>
-                          <div className="text-xs font-semibold text-gray-700 dark:text-gray-200">
-                            {activity}
-                          </div>
+                          <span className="text-sm dark:text-gray-300">Cats</span>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* What Makes Me Special */}
-                {uniqueTraits.length > 0 && (
-                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:bg-purple-900/20 border-l-4 border-purple-400 dark:border-purple-600 p-5 rounded-r-xl shadow-sm">
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
-                        <span className="text-lg">✨</span>
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-purple-800 dark:text-purple-300 mb-2">
-                          What Makes Me Special
-                        </h4>
-                        <p className="text-sm text-purple-700 dark:text-purple-300 leading-relaxed">
-                          {uniqueTraits[0]}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Organization Info */}
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-6 h-6 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center">
-                      <span className="text-xs">🏠</span>
-                    </div>
-                    <h4 className="font-semibold text-gray-800 dark:text-gray-300">
-                      Rescue Organization
-                    </h4>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    {dog.organization.name}
-                  </p>
-                </div>
-
-                {/* CTA Button */}
-                <button
-                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 dark:bg-orange-600 hover:from-orange-600 hover:to-orange-700 dark:hover:from-orange-700 dark:hover:to-orange-800 text-white py-4 px-6 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
-                  onClick={() => {
-                    if (dog.adoption_url) {
-                      window.open(
-                        dog.adoption_url,
-                        "_blank",
-                        "noopener,noreferrer",
-                      );
-                    }
-                  }}
-                >
-                  <Heart className="w-5 h-5" />
-                  Start Adoption Process
-                </button>
-
-                {/* Paw Navigation */}
-                {onNavigate && (
-                  <div className="flex justify-between items-center pt-6 border-t border-gray-200/50 dark:border-gray-700/30">
-                    <button
-                      onClick={() => onNavigate("prev")}
-                      disabled={!hasPrev}
-                      className={cn(
-                        "flex flex-col items-center gap-2 p-3 group transition-all duration-200",
-                        hasPrev
-                          ? "hover:scale-105 active:scale-95"
-                          : "opacity-50 cursor-not-allowed",
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          "w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 dark:bg-orange-900 rounded-full shadow-lg flex items-center justify-center text-lg transition-all duration-200",
-                          hasPrev &&
-                            "group-hover:shadow-xl group-hover:from-orange-200 group-hover:to-orange-300 dark:group-hover:from-orange-800 dark:group-hover:to-orange-900",
+                        {dog.dog_profiler_data.kid_friendly !== undefined && (
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={cn(
+                                "w-5 h-5 rounded-full flex items-center justify-center",
+                                dog.dog_profiler_data.kid_friendly
+                                  ? "bg-green-100 dark:bg-green-900/30"
+                                  : "bg-gray-100 dark:bg-gray-800",
+                              )}
+                            >
+                              {dog.dog_profiler_data.kid_friendly ? (
+                                <div className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full" />
+                              ) : (
+                                <div className="w-3 h-0.5 bg-gray-400 dark:bg-gray-600" />
+                              )}
+                            </div>
+                            <span className="text-sm dark:text-gray-300">
+                              Kids
+                            </span>
+                          </div>
                         )}
-                      >
-                        🐾
                       </div>
-                      <span
+                    </div>
+                  )}
+
+                  {/* Activities */}
+                  {favoriteActivities.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-4 dark:text-white">
+                        Favorite Activities
+                      </h3>
+                      <div className="grid grid-cols-3 gap-3">
+                        {favoriteActivities.slice(0, 3).map((activity, index) => (
+                          <div
+                            key={index}
+                            className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-750 rounded-xl p-4 text-center shadow-sm border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-md hover:scale-105"
+                          >
+                            <div className="text-xl mb-2">
+                              {activity.toLowerCase().includes("play") && "🎾"}
+                              {activity.toLowerCase().includes("cuddl") && "🤗"}
+                              {activity.toLowerCase().includes("walk") && "🚶"}
+                              {activity.toLowerCase().includes("run") && "🏃"}
+                              {activity.toLowerCase().includes("swim") && "🏊"}
+                              {!activity.toLowerCase().includes("play") &&
+                                !activity.toLowerCase().includes("cuddl") &&
+                                !activity.toLowerCase().includes("walk") &&
+                                !activity.toLowerCase().includes("run") &&
+                                !activity.toLowerCase().includes("swim") &&
+                                "🐾"}
+                            </div>
+                            <div className="text-xs font-semibold text-gray-700 dark:text-gray-200">
+                              {activity}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* What Makes Me Special */}
+                  {uniqueTraits.length > 0 && (
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:bg-purple-900/20 border-l-4 border-purple-400 dark:border-purple-600 p-5 rounded-r-xl shadow-sm">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
+                          <span className="text-lg">✨</span>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-purple-800 dark:text-purple-300 mb-2">
+                            What Makes Me Special
+                          </h4>
+                          <p className="text-sm text-purple-700 dark:text-purple-300 leading-relaxed">
+                            {uniqueTraits[0]}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Organization Info */}
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center">
+                        <span className="text-xs">🏠</span>
+                      </div>
+                      <h4 className="font-semibold text-gray-800 dark:text-gray-300">
+                        Rescue Organization
+                      </h4>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      {dog.organization.name}
+                    </p>
+                  </div>
+
+                  {/* CTA Button */}
+                  <button
+                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 dark:bg-orange-600 hover:from-orange-600 hover:to-orange-700 dark:hover:from-orange-700 dark:hover:to-orange-800 text-white py-4 px-6 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+                    onClick={() => {
+                      if (dog.adoption_url) {
+                        window.open(
+                          dog.adoption_url,
+                          "_blank",
+                          "noopener,noreferrer",
+                        );
+                      }
+                    }}
+                  >
+                    <Heart className="w-5 h-5" />
+                    Start Adoption Process
+                  </button>
+
+                  {/* Paw Navigation */}
+                  {onNavigate && (
+                    <div className="flex justify-between items-center pt-6 border-t border-gray-200/50 dark:border-gray-700/30">
+                      <button
+                        onClick={() => onNavigate("prev")}
+                        disabled={!hasPrev}
                         className={cn(
-                          "text-xs font-medium transition-colors",
+                          "flex flex-col items-center gap-2 p-3 group transition-all duration-200",
                           hasPrev
-                            ? "text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-400"
-                            : "text-gray-400 dark:text-gray-600",
+                            ? "hover:scale-105 active:scale-95"
+                            : "opacity-50 cursor-not-allowed",
                         )}
                       >
-                        Previous
-                      </span>
-                    </button>
+                        <div
+                          className={cn(
+                            "w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 dark:bg-orange-900 rounded-full shadow-lg flex items-center justify-center text-lg transition-all duration-200",
+                            hasPrev &&
+                              "group-hover:shadow-xl group-hover:from-orange-200 group-hover:to-orange-300 dark:group-hover:from-orange-800 dark:group-hover:to-orange-900",
+                          )}
+                        >
+                          🐾
+                        </div>
+                        <span
+                          className={cn(
+                            "text-xs font-medium transition-colors",
+                            hasPrev
+                              ? "text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-400"
+                              : "text-gray-400 dark:text-gray-600",
+                          )}
+                        >
+                          Previous
+                        </span>
+                      </button>
 
-                    <div className="flex-1 text-center px-4">
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        Swipe to browse
+                      <div className="flex-1 text-center px-4">
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          Swipe to browse
+                        </div>
+                        <div className="flex justify-center gap-1 mt-1">
+                          <div className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-pulse" />
+                          <div className="w-1.5 h-1.5 bg-orange-200 rounded-full" />
+                          <div className="w-1.5 h-1.5 bg-orange-200 rounded-full" />
+                          <div className="w-1.5 h-1.5 bg-orange-200 rounded-full" />
+                        </div>
                       </div>
-                      <div className="flex justify-center gap-1 mt-1">
-                        <div className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-pulse" />
-                        <div className="w-1.5 h-1.5 bg-orange-200 rounded-full" />
-                        <div className="w-1.5 h-1.5 bg-orange-200 rounded-full" />
-                        <div className="w-1.5 h-1.5 bg-orange-200 rounded-full" />
-                      </div>
-                    </div>
 
-                    <button
-                      onClick={() => onNavigate("next")}
-                      disabled={!hasNext}
-                      className={cn(
-                        "flex flex-col items-center gap-2 p-3 group transition-all duration-200",
-                        hasNext
-                          ? "hover:scale-105 active:scale-95"
-                          : "opacity-50 cursor-not-allowed",
-                      )}
-                    >
-                      <div
+                      <button
+                        onClick={() => onNavigate("next")}
+                        disabled={!hasNext}
                         className={cn(
-                          "w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 dark:bg-orange-900 rounded-full shadow-lg flex items-center justify-center text-lg transition-all duration-200",
-                          hasNext &&
-                            "group-hover:shadow-xl group-hover:from-orange-200 group-hover:to-orange-300 dark:group-hover:from-orange-800 dark:group-hover:to-orange-900",
-                        )}
-                      >
-                        🐾
-                      </div>
-                      <span
-                        className={cn(
-                          "text-xs font-medium transition-colors",
+                          "flex flex-col items-center gap-2 p-3 group transition-all duration-200",
                           hasNext
-                            ? "text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-400"
-                            : "text-gray-400 dark:text-gray-600",
+                            ? "hover:scale-105 active:scale-95"
+                            : "opacity-50 cursor-not-allowed",
                         )}
                       >
-                        Next
-                      </span>
-                    </button>
-                  </div>
-                )}
-              </div>
+                        <div
+                          className={cn(
+                            "w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 dark:bg-orange-900 rounded-full shadow-lg flex items-center justify-center text-lg transition-all duration-200",
+                            hasNext &&
+                              "group-hover:shadow-xl group-hover:from-orange-200 group-hover:to-orange-300 dark:group-hover:from-orange-800 dark:group-hover:to-orange-900",
+                          )}
+                        >
+                          🐾
+                        </div>
+                        <span
+                          className={cn(
+                            "text-xs font-medium transition-colors",
+                            hasNext
+                              ? "text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-400"
+                              : "text-gray-400 dark:text-gray-600",
+                          )}
+                        >
+                          Next
+                        </span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
+          </FocusTrap>
         </>
       )}
     </AnimatePresence>

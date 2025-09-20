@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useDebouncedCallback } from "use-debounce";
 import { VIEWPORT_BREAKPOINTS } from "@/constants/viewport";
 
 interface ViewportState {
@@ -24,8 +25,9 @@ export const useViewport = (): ViewportState => {
     isDesktop: false,
   });
 
-  useEffect(() => {
-    const updateViewport = () => {
+  // Debounced update function to prevent excessive re-renders
+  const debouncedUpdateViewport = useDebouncedCallback(
+    () => {
       const width = window.innerWidth;
       const height = window.innerHeight;
 
@@ -36,17 +38,32 @@ export const useViewport = (): ViewportState => {
         isTablet: width >= VIEWPORT_BREAKPOINTS.TABLET_MIN && width <= VIEWPORT_BREAKPOINTS.TABLET_MAX,
         isDesktop: width >= VIEWPORT_BREAKPOINTS.DESKTOP_MIN,
       });
-    };
+    },
+    100 // 100ms debounce delay
+  );
 
-    // Initial check
-    updateViewport();
+  useEffect(() => {
+    // Initial check - run immediately without debounce
+    const width = window.innerWidth;
+    const height = window.innerHeight;
 
-    // Add event listener
-    window.addEventListener("resize", updateViewport);
+    setViewport({
+      width,
+      height,
+      isMobile: width >= VIEWPORT_BREAKPOINTS.MOBILE_MIN && width <= VIEWPORT_BREAKPOINTS.MOBILE_MAX,
+      isTablet: width >= VIEWPORT_BREAKPOINTS.TABLET_MIN && width <= VIEWPORT_BREAKPOINTS.TABLET_MAX,
+      isDesktop: width >= VIEWPORT_BREAKPOINTS.DESKTOP_MIN,
+    });
+
+    // Add debounced event listener for resize
+    window.addEventListener("resize", debouncedUpdateViewport);
 
     // Cleanup
-    return () => window.removeEventListener("resize", updateViewport);
-  }, []);
+    return () => {
+      window.removeEventListener("resize", debouncedUpdateViewport);
+      debouncedUpdateViewport.cancel(); // Cancel any pending debounced calls
+    };
+  }, [debouncedUpdateViewport]);
 
   return viewport;
 };

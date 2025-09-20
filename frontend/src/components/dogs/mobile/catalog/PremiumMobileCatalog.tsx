@@ -140,7 +140,17 @@ const DogCard: React.FC<{
       transition={{ delay: index * 0.05 }}
       className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow"
       style={{ borderRadius: UI_CONSTANTS.BORDER_RADIUS }}
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => {
+        // Only trigger on Enter or Space when focus is on the card itself
+        if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      aria-label={`View details for ${dog.name}`}
     >
       <div className="relative aspect-square">
         <Image
@@ -218,13 +228,59 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
   const pathname = usePathname();
   const { favorites, toggleFavorite } = useFavorites();
   const [isHydrated, setIsHydrated] = useState(false);
-  const [selectedDog, setSelectedDog] = useState<PremiumDog | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Initialize selected dog from hash on mount
+  const [selectedDog, setSelectedDog] = useState<PremiumDog | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const hash = window.location.hash.slice(1);
+    if (!hash.startsWith('dog=')) return null;
+    const slug = hash.split('=')[1];
+    return dogs.find(d => d.slug === slug || `unknown-dog-${d.id}` === slug) || null;
+  });
+  
+  const [isModalOpen, setIsModalOpen] = useState(!!selectedDog);
 
   // Track hydration for client-side features
   useEffect(() => {
     setIsHydrated(true);
   }, []);
+
+  // Listen for hash changes (back/forward navigation)
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1);
+      if (!hash.startsWith('dog=')) {
+        setIsModalOpen(false);
+        setSelectedDog(null);
+        return;
+      }
+      const slug = hash.split('=')[1];
+      const dog = dogs.find(d => d.slug === slug || `unknown-dog-${d.id}` === slug);
+      if (dog) {
+        setSelectedDog(dog);
+        setIsModalOpen(true);
+      }
+    };
+    
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [dogs]);
+
+  // Re-check hash when dogs array changes (for late-loading data)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !dogs.length) return;
+    
+    const hash = window.location.hash.slice(1);
+    if (!hash.startsWith('dog=')) return;
+    
+    const slug = decodeURIComponent(hash.split('=')[1] || '');
+    const dog = dogs.find(d => d.slug === slug || `unknown-dog-${d.id}` === slug);
+    
+    if (dog && !selectedDog) {
+      setSelectedDog(dog);
+      setIsModalOpen(true);
+    }
+  }, [dogs]); // Only depend on dogs, not selectedDog to avoid loops
 
   // Quick filter toggle handler
   const handleQuickFilter = (chip: FilterChip) => {
@@ -268,21 +324,16 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
     setSelectedDog(dog);
     setIsModalOpen(true);
     
-    // Update URL to include dog slug for sharing, preserving existing params
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('dog', dog.slug || `unknown-dog-${dog.id}`);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    // Update hash for sharing with proper encoding
+    window.location.hash = `dog=${encodeURIComponent(dog.slug || `unknown-dog-${dog.id}`)}`;
   };
 
   const handleModalClose = () => {
     setIsModalOpen(false);
     setSelectedDog(null);
     
-    // Remove dog param from URL while preserving other params
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete('dog');
-    const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
-    router.replace(newUrl, { scroll: false });
+    // Clear hash while preserving search params (use replaceState to avoid new history entry)
+    history.replaceState(null, '', window.location.pathname + window.location.search);
   };
 
   const handleModalNavigate = (direction: "prev" | "next") => {
@@ -302,10 +353,8 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
       const newDog = dogs[newIndex];
       setSelectedDog(newDog);
       
-      // Update URL with new dog while preserving other params
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('dog', newDog.slug || `unknown-dog-${newDog.id}`);
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      // Update hash with new dog (with encoding)
+      window.location.hash = `dog=${encodeURIComponent(newDog.slug || `unknown-dog-${newDog.id}`)}`;
     }
   };
 

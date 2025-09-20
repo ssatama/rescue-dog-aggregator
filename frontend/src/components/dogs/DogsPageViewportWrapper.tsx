@@ -3,7 +3,7 @@
 import React, { useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useViewport } from "@/hooks/useViewport";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 // Type declaration for the JavaScript component
 interface DogCardOptimizedProps {
@@ -120,7 +120,6 @@ const DogsPageViewportWrapper: React.FC<DogsPageViewportWrapperProps> = ({
 }) => {
   const { isDesktop, isMobile, isTablet } = useViewport();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [mounted, setMounted] = React.useState(false);
 
   // Handle client-side mounting to avoid hydration mismatch
