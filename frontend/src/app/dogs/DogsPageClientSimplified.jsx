@@ -520,7 +520,7 @@ export default function DogsPageClientSimplified({
         </div>
 
         {/* Desktop Page header */}
-        <div className="mb-6 hidden lg:block">
+        <div className="mb-6 hidden lg:block text-center">
           <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
             Find Your New Best Friend
           </h1>

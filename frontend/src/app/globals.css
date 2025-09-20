@@ -1945,4 +1945,39 @@
       box-shadow: none !important;
     }
   }
+
+  /* GPU-accelerated animations */
+  .will-change-transform {
+    will-change: transform;
+  }
+
+  /* Safari-specific fixes for sticky header */
+  @supports (-webkit-touch-callout: none) {
+    /* Safari only CSS */
+    header {
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+    }
+
+    /* Fix for sticky positioning in Safari */
+    .sticky {
+      position: -webkit-sticky;
+      position: sticky;
+    }
+
+    /* Prevent logo disappearing in Safari */
+    img {
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+    }
+  }
+
+  /* Additional fixes for production environment */
+  header img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
 }

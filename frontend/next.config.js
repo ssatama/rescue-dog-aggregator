@@ -147,23 +147,14 @@ const nextConfig = {
 
   // Enhanced webpack optimizations for production builds
   webpack: (config, { dev, isServer }) => {
-    // Production optimizations
+    // Let Next.js handle CSS extraction and optimization
+    // Only add minimal vendor splitting for better caching
     if (!dev && !isServer) {
-      // Enhanced bundle splitting for better caching and loading
       config.optimization.splitChunks = {
         ...config.optimization.splitChunks,
         chunks: 'all',
         cacheGroups: {
           ...config.optimization.splitChunks.cacheGroups,
-          // CSS files should be in their own chunks - NEVER in JS chunks
-          styles: {
-            name: 'styles',
-            test: /\.css$/,
-            chunks: 'all',
-            enforce: true,
-            priority: 30, // Highest priority to prevent CSS in JS chunks
-            type: 'css/mini-extract', // Ensure CSS extraction
-          },
           // Separate vendor libraries for better caching
           vendor: {
             test: /[\\/]node_modules[\\/]/,
@@ -180,29 +171,11 @@ const nextConfig = {
             priority: 20,
             enforce: true,
           },
-          // UI library chunk
-          ui: {
-            test: /[\\/]node_modules[\\/](@heroicons|lucide-react|framer-motion)[\\/]/,
-            name: 'ui-vendor',
-            chunks: 'all',
-            priority: 15,
-            enforce: true,
-          },
-          // Common code chunk for app-specific reused code
-          common: {
-            name: 'common',
-            minChunks: 2,
-            chunks: 'all',
-            priority: 5,
-            reuseExistingChunk: true,
-            minSize: 0,
-          },
         },
       };
 
-      // Performance optimizations
+      // Keep usedExports for tree shaking but remove sideEffects override
       config.optimization.usedExports = true;
-      config.optimization.sideEffects = false;
     }
 
     return config;
