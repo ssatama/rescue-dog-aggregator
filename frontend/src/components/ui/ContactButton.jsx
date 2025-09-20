@@ -98,12 +98,9 @@ const ContactButton = ({
 
       {showCopied && (
         <div
-          className="absolute -top-14 left-1/2 px-4 py-2 bg-gray-900 text-white text-sm rounded-lg whitespace-nowrap shadow-xl z-50 pointer-events-none"
+          className="absolute -top-14 left-1/2 px-4 py-2 bg-gray-900 text-white text-sm rounded-lg whitespace-nowrap shadow-xl z-50 pointer-events-none animate-fadeInUp"
           style={{
             transform: "translateX(-50%)",
-            WebkitTransform: "translateX(-50%)",
-            animation: "fadeInUp 0.3s ease-out",
-            WebkitAnimation: "fadeInUp 0.3s ease-out",
           }}
         >
           <div className="flex items-center gap-2">
@@ -126,7 +123,6 @@ const ContactButton = ({
             className="absolute left-1/2 top-full w-0 h-0"
             style={{
               transform: "translateX(-50%)",
-              WebkitTransform: "translateX(-50%)",
               borderLeft: "6px solid transparent",
               borderRight: "6px solid transparent",
               borderTop: "6px solid rgb(17 24 39)",
@@ -134,30 +130,6 @@ const ContactButton = ({
           />
         </div>
       )}
-
-      <style jsx>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateX(-50%) translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-          }
-        }
-
-        @-webkit-keyframes fadeInUp {
-          from {
-            opacity: 0;
-            -webkit-transform: translateX(-50%) translateY(10px);
-          }
-          to {
-            opacity: 1;
-            -webkit-transform: translateX(-50%) translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 };
