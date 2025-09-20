@@ -60,7 +60,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Type',
-            value: 'text/css',
+            value: 'text/css; charset=utf-8',
           },
           {
             key: 'Cache-Control',
