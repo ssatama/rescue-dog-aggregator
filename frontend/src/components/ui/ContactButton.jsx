@@ -14,11 +14,14 @@ const ContactButton = ({
   const handleClick = async (e) => {
     e.preventDefault();
     
+    let copySuccess = false;
+    
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(email);
+        copySuccess = true;
         setShowCopied(true);
-        setTimeout(() => setShowCopied(false), 2000);
+        setTimeout(() => setShowCopied(false), 2500);
       } else {
         // Fallback for older browsers or non-secure contexts
         const textArea = document.createElement('textarea');
@@ -32,8 +35,9 @@ const ContactButton = ({
         
         try {
           document.execCommand('copy');
+          copySuccess = true;
           setShowCopied(true);
-          setTimeout(() => setShowCopied(false), 2000);
+          setTimeout(() => setShowCopied(false), 2500);
         } catch (err) {
           console.error('Fallback copy failed:', err);
         } finally {
@@ -41,8 +45,14 @@ const ContactButton = ({
         }
       }
       
-      // Still attempt to open mailto for users with email clients
-      window.location.href = `mailto:${email}`;
+      // Only try to open mailto if copy failed or if not Safari
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      if (!copySuccess || !isSafari) {
+        // For non-Safari browsers or if copy failed, try mailto
+        setTimeout(() => {
+          window.location.href = `mailto:${email}`;
+        }, 100);
+      }
     } catch (err) {
       console.error('Failed to copy email:', err);
       // Still try mailto as fallback
@@ -68,15 +78,57 @@ const ContactButton = ({
       </Button>
       
       {showCopied && (
-        <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 px-3 py-2 bg-gray-900 text-white text-sm rounded-md whitespace-nowrap shadow-lg z-10 animate-fade-in">
-          <div className="relative">
-            Email copied: {email}
-            <div className="absolute left-1/2 transform -translate-x-1/2 top-full">
-              <div className="border-4 border-transparent border-t-gray-900"></div>
-            </div>
+        <div 
+          className="absolute -top-14 left-1/2 px-4 py-2 bg-gray-900 text-white text-sm rounded-lg whitespace-nowrap shadow-xl z-50 pointer-events-none"
+          style={{
+            transform: 'translateX(-50%)',
+            WebkitTransform: 'translateX(-50%)',
+            animation: 'fadeInUp 0.3s ease-out',
+            WebkitAnimation: 'fadeInUp 0.3s ease-out'
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Email copied: {email}</span>
           </div>
+          <div 
+            className="absolute left-1/2 top-full w-0 h-0"
+            style={{
+              transform: 'translateX(-50%)',
+              WebkitTransform: 'translateX(-50%)',
+              borderLeft: '6px solid transparent',
+              borderRight: '6px solid transparent',
+              borderTop: '6px solid rgb(17 24 39)'
+            }}
+          />
         </div>
       )}
+      
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+          }
+        }
+        
+        @-webkit-keyframes fadeInUp {
+          from {
+            opacity: 0;
+            -webkit-transform: translateX(-50%) translateY(10px);
+          }
+          to {
+            opacity: 1;
+            -webkit-transform: translateX(-50%) translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 };
