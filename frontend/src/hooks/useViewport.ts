@@ -1,50 +1,52 @@
-import { useMediaQuery } from "./useMediaQuery";
+"use client";
 
-/**
- * Viewport detection hook for the dog catalog mobile experience upgrade
- * Aligns with PRD breakpoint specifications:
- * - Mobile: 375px - 767px (2-column grid)
- * - Tablet: 768px - 1023px (3-column grid)
- * - Desktop: 1024px+ (NO CHANGES - existing 4-column layout)
- */
-export function useViewport() {
-  // Use existing media query hooks - call all hooks unconditionally
-  const isAbove768 = useMediaQuery("(min-width: 768px)");
-  const isAbove1024 = useMediaQuery("(min-width: 1024px)");
-  const isAbove375 = useMediaQuery("(min-width: 375px)");
+import { useState, useEffect } from "react";
+import { VIEWPORT_BREAKPOINTS } from "@/constants/viewport";
 
-  // Calculate the viewport states from the media query results
-  const isMobile = !isAbove768;
-  const isTablet = isAbove768 && !isAbove1024;
-  const isDesktop = isAbove1024;
-
-  return {
-    isMobile, // 375-767px
-    isTablet, // 768-1023px
-    isDesktop, // 1024px+
-    // Helper for grouping mobile/tablet together (for modal behavior)
-    isMobileOrTablet: isMobile || isTablet,
-    // Raw width check for edge cases
-    isAbove375,
-  };
+interface ViewportState {
+  width: number;
+  height: number;
+  isMobile: boolean;
+  isTablet: boolean;
+  isDesktop: boolean;
 }
 
 /**
- * Helper hook to determine grid columns based on viewport
+ * Hook to detect current viewport size and device type
+ * Returns viewport dimensions and boolean flags for device type
  */
-export function useGridColumns(): number {
-  const { isMobile, isTablet, isDesktop } = useViewport();
+export const useViewport = (): ViewportState => {
+  const [viewport, setViewport] = useState<ViewportState>({
+    width: 0,
+    height: 0,
+    isMobile: false,
+    isTablet: false,
+    isDesktop: false,
+  });
 
-  if (isMobile) return 2; // Mobile: 2 columns
-  if (isTablet) return 3; // Tablet: 3 columns
-  return 4; // Desktop: 4 columns (existing)
-}
+  useEffect(() => {
+    const updateViewport = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
 
-/**
- * Helper hook to determine if modal should be used for dog details
- */
-export function useModalBehavior(): boolean {
-  const { isDesktop } = useViewport();
-  // Modal only for mobile/tablet, desktop uses separate pages
-  return !isDesktop;
-}
+      setViewport({
+        width,
+        height,
+        isMobile: width >= VIEWPORT_BREAKPOINTS.MOBILE_MIN && width <= VIEWPORT_BREAKPOINTS.MOBILE_MAX,
+        isTablet: width >= VIEWPORT_BREAKPOINTS.TABLET_MIN && width <= VIEWPORT_BREAKPOINTS.TABLET_MAX,
+        isDesktop: width >= VIEWPORT_BREAKPOINTS.DESKTOP_MIN,
+      });
+    };
+
+    // Initial check
+    updateViewport();
+
+    // Add event listener
+    window.addEventListener("resize", updateViewport);
+
+    // Cleanup
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
+
+  return viewport;
+};

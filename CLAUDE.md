@@ -202,6 +202,6 @@ npm test -- --testNamePattern="PersonalityTraits"
 
 1. Check existing implementations
 2. Review test patterns
-3. Use MCP tools (Sentry, Postgres, Playwright)
+3. Use MCP tools
 4. Run subagents for complex tasks
 5. Ask for clarification - don't guess

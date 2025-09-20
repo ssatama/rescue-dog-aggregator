@@ -163,11 +163,27 @@ export default function DogsPageClientSimplified({
     (newFilters, newPage = 1, preserveScroll = false) => {
       const params = new URLSearchParams();
 
+      // Map filter names to URL parameters - handle special cases
+      const urlKeyMap = {
+        searchQuery: "search",
+        organizationFilter: "organization_id",
+        locationCountryFilter: "location_country",
+        availableCountryFilter: "available_country",
+        availableRegionFilter: "available_region",
+        breedGroupFilter: "breed_group",
+        sizeFilter: "size",
+        ageFilter: "age",
+        sexFilter: "sex",
+        breedFilter: "breed"
+      };
+
       Object.entries(newFilters).forEach(([key, value]) => {
-        const paramKey = key
+        // Use mapped key or fall back to snake_case conversion
+        const paramKey = urlKeyMap[key] || key
           .replace("Filter", "")
           .replace(/([A-Z])/g, "_$1")
           .toLowerCase();
+          
         if (
           value &&
           value !== "Any" &&
@@ -176,6 +192,7 @@ export default function DogsPageClientSimplified({
           value !== "Any breed" &&
           value !== "Any country" &&
           value !== "Any region" &&
+          value !== "Any group" &&
           value !== "any"
         ) {
           params.set(paramKey, value);

@@ -15,7 +15,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import {
   formatAge,
   formatBreed,
@@ -27,6 +27,7 @@ import MobileFilterDrawer from "@/components/filters/MobileFilterDrawer";
 import DogDetailModalUpgraded from "@/components/dogs/mobile/detail/DogDetailModalUpgraded";
 import { Button } from "@/components/ui/button";
 import { useFavorites } from "@/hooks/useFavorites";
+import { UI_CONSTANTS } from "@/constants/viewport";
 
 // Types - matching your actual data structure
 interface PremiumDog {
@@ -138,7 +139,7 @@ const DogCard: React.FC<{
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
       className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow"
-      style={{ borderRadius: "12px" }}
+      style={{ borderRadius: UI_CONSTANTS.BORDER_RADIUS }}
       onClick={onClick}
     >
       <div className="relative aspect-square">
@@ -213,67 +214,12 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
   viewMode = "grid",
 }) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const { favorites, toggleFavorite } = useFavorites();
   const [isHydrated, setIsHydrated] = useState(false);
   const [selectedDog, setSelectedDog] = useState<PremiumDog | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // Track active quick filters based on parent filters
-  const getActiveFilters = () => {
-    const active: FilterChip[] = [];
-
-    // Check sex filter
-    if (filters.sexFilter && filters.sexFilter !== "Any") {
-      const sexChip = filterChips.find(
-        (chip) =>
-          chip.type === "gender" &&
-          chip.value === filters.sexFilter?.toLowerCase(),
-      );
-      if (sexChip) active.push(sexChip);
-    }
-
-    // Check age filter
-    if (filters.ageFilter && filters.ageFilter !== "Any age") {
-      const ageChip = filterChips.find(
-        (chip) =>
-          chip.type === "age" &&
-          chip.value === filters.ageFilter?.toLowerCase(),
-      );
-      if (ageChip) active.push(ageChip);
-    }
-
-    return active;
-  };
-
-  const [activeFilters, setActiveFilters] =
-    useState<FilterChip[]>(getActiveFilters());
-
-  // Update active filters when parent filters change
-  useEffect(() => {
-    const active: FilterChip[] = [];
-
-    // Check sex filter
-    if (filters.sexFilter && filters.sexFilter !== "Any") {
-      const sexChip = filterChips.find(
-        (chip) =>
-          chip.type === "gender" &&
-          chip.value === filters.sexFilter?.toLowerCase(),
-      );
-      if (sexChip) active.push(sexChip);
-    }
-
-    // Check age filter
-    if (filters.ageFilter && filters.ageFilter !== "Any") {
-      const ageChip = filterChips.find(
-        (chip) =>
-          chip.type === "age" &&
-          chip.value === filters.ageFilter?.toLowerCase(),
-      );
-      if (ageChip) active.push(ageChip);
-    }
-
-    setActiveFilters(active);
-  }, [filters.sexFilter, filters.ageFilter]); // Use specific filter properties instead of entire filters object
 
   // Track hydration for client-side features
   useEffect(() => {
@@ -321,14 +267,22 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
   const handleDogClick = (dog: PremiumDog) => {
     setSelectedDog(dog);
     setIsModalOpen(true);
-    // Update URL to include dog slug for sharing
-    const newUrl = `/dogs?dog=${dog.slug}`;
-    window.history.pushState({}, "", newUrl);
+    
+    // Update URL to include dog slug for sharing, preserving existing params
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('dog', dog.slug || `unknown-dog-${dog.id}`);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   const handleModalClose = () => {
     setIsModalOpen(false);
     setSelectedDog(null);
+    
+    // Remove dog param from URL while preserving other params
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('dog');
+    const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+    router.replace(newUrl, { scroll: false });
   };
 
   const handleModalNavigate = (direction: "prev" | "next") => {
@@ -345,7 +299,13 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
     }
 
     if (newIndex !== currentIndex) {
-      setSelectedDog(dogs[newIndex]);
+      const newDog = dogs[newIndex];
+      setSelectedDog(newDog);
+      
+      // Update URL with new dog while preserving other params
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('dog', newDog.slug || `unknown-dog-${newDog.id}`);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
   };
 

@@ -81,7 +81,10 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
   const breed = dog.primary_breed || dog.breed;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl dark:shadow-gray-900/50 overflow-hidden relative group transition-colors flex flex-col" style={{ borderRadius: '12px' }}>
+    <div
+      className="bg-white dark:bg-gray-800 rounded-xl shadow-xl dark:shadow-gray-900/50 overflow-hidden relative group transition-colors flex flex-col"
+      style={{ borderRadius: "12px" }}
+    >
       {/* NEW Badge for recent dogs */}
       {dog.created_at &&
         new Date().getTime() - new Date(dog.created_at).getTime() <

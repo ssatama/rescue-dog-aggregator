@@ -25,11 +25,19 @@ jest.mock("@/hooks/useFavorites", () => ({
   }),
 }));
 
-// Mock Next.js router
-const mockPush = jest.fn();
+// Mock Next.js navigation
 jest.mock("next/navigation", () => ({
   useRouter: () => ({
-    push: mockPush,
+    push: jest.fn(),
+    replace: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    refresh: jest.fn(),
+    prefetch: jest.fn(),
+  }),
+  useSearchParams: () => ({
+    get: jest.fn(),
+    toString: jest.fn(() => ""),
   }),
   usePathname: () => "/dogs",
 }));

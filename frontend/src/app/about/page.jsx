@@ -1,6 +1,6 @@
 import Layout from "../../components/layout/Layout";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import ContactButton from "../../components/ui/ContactButton";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
 import { BreadcrumbSchema } from "../../components/seo";
 
@@ -112,10 +112,12 @@ export default function AboutPage() {
             Are you a rescue organization interested in listing your dogs? Or do
             you have questions or feedback for us? We'd love to hear from you.
           </p>
-          {/* Contact button with mailto link */}
-          <Button asChild size="lg">
-            <a href="mailto:rescuedogsme@gmail.com">Contact Us</a>
-          </Button>
+          {/* Contact button with enhanced functionality */}
+          <ContactButton 
+            email="rescuedogsme@gmail.com" 
+            buttonText="Contact Us" 
+            size="lg" 
+          />
         </section>
       </div>
     </Layout>

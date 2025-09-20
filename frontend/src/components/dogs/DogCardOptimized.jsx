@@ -85,7 +85,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
       <Card
         data-testid={dog?.id ? `dog-card-${dog.id}` : "dog-card"}
         className={`dog-card content-fade-in group transition-all duration-300 hover:shadow-xl overflow-hidden flex flex-row md:flex-col h-auto md:h-full rounded-xl ${animationClass}`}
-        style={{ borderRadius: '12px' }}
+        style={{ borderRadius: "12px" }}
       >
         {/* Compact mobile image */}
         <Link
@@ -250,7 +250,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
       data-status={status}
       data-priority={priority ? "true" : "false"}
       className={`rounded-xl bg-card text-card-foreground shadow-sm dark:shadow-lg dark:shadow-purple-500/5 will-change-transform dog-card content-fade-in group transition-all duration-300 hover:shadow-xl overflow-hidden flex flex-col h-full ${animationClass}`}
-      style={{ borderRadius: '12px' }}
+      style={{ borderRadius: "12px" }}
     >
       {/* Image container */}
       <Link
