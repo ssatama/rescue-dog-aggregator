@@ -291,7 +291,7 @@ class AnimalService:
         """
         try:
             # Don't filter by status - allow all dogs to be viewed
-            # Note: adoption_check_data columns may not exist in test database
+            # Include organization stats and recent dogs for the organization card
             query = """
                 SELECT a.*, 
                        o.name as org_name,
@@ -299,8 +299,34 @@ class AnimalService:
                        o.city as org_city,
                        o.country as org_country,
                        o.website_url as org_website_url,
+                       o.logo_url as org_logo_url,
                        o.social_media as org_social_media,
-                       o.ships_to as org_ships_to
+                       o.ships_to as org_ships_to,
+                       (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND status = 'available') as org_total_dogs,
+                       (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND status = 'available' AND created_at >= NOW() - INTERVAL '7 days') as org_new_this_week,
+                       (
+                           SELECT COALESCE(
+                               json_agg(
+                                   json_build_object(
+                                       'id', a2.id,
+                                       'slug', a2.slug,
+                                       'name', a2.name,
+                                       'primary_image_url', a2.primary_image_url,
+                                       'standardized_breed', a2.standardized_breed,
+                                       'age_min_months', a2.age_min_months,
+                                       'age_max_months', a2.age_max_months
+                                   ) ORDER BY a2.created_at DESC
+                               ),
+                               '[]'::json
+                           )
+                           FROM (
+                               SELECT * FROM animals 
+                               WHERE organization_id = o.id 
+                               AND status = 'available'
+                               ORDER BY created_at DESC
+                               LIMIT 3
+                           ) a2
+                       ) as org_recent_dogs
                 FROM animals a
                 LEFT JOIN organizations o ON a.organization_id = o.id
                 WHERE a.slug = %s
@@ -328,7 +354,7 @@ class AnimalService:
         """
         try:
             # Don't filter by status - allow all dogs to be viewed
-            # Note: adoption_check_data columns may not exist in test database
+            # Include organization stats and recent dogs for the organization card
             query = """
                 SELECT a.*, 
                        o.name as org_name,
@@ -336,8 +362,34 @@ class AnimalService:
                        o.city as org_city,
                        o.country as org_country,
                        o.website_url as org_website_url,
+                       o.logo_url as org_logo_url,
                        o.social_media as org_social_media,
-                       o.ships_to as org_ships_to
+                       o.ships_to as org_ships_to,
+                       (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND status = 'available') as org_total_dogs,
+                       (SELECT COUNT(*) FROM animals WHERE organization_id = o.id AND status = 'available' AND created_at >= NOW() - INTERVAL '7 days') as org_new_this_week,
+                       (
+                           SELECT COALESCE(
+                               json_agg(
+                                   json_build_object(
+                                       'id', a2.id,
+                                       'slug', a2.slug,
+                                       'name', a2.name,
+                                       'primary_image_url', a2.primary_image_url,
+                                       'standardized_breed', a2.standardized_breed,
+                                       'age_min_months', a2.age_min_months,
+                                       'age_max_months', a2.age_max_months
+                                   ) ORDER BY a2.created_at DESC
+                               ),
+                               '[]'::json
+                           )
+                           FROM (
+                               SELECT * FROM animals 
+                               WHERE organization_id = o.id 
+                               AND status = 'available'
+                               ORDER BY created_at DESC
+                               LIMIT 3
+                           ) a2
+                       ) as org_recent_dogs
                 FROM animals a
                 LEFT JOIN organizations o ON a.organization_id = o.id
                 WHERE a.id = %s
@@ -1607,7 +1659,6 @@ class AnimalService:
               AND sr.country IS NOT NULL
               AND sr.country != ''
             GROUP BY sr.country
-            HAVING COUNT(DISTINCT a.id) > 0
             ORDER BY sr.country ASC
         """
 

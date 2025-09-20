@@ -126,4 +126,17 @@ def build_organization_object(row_dict: Dict[str, Any]) -> Optional[Dict[str, An
     if "org_new_this_week" in row_dict:
         organization["new_this_week"] = row_dict["org_new_this_week"]
 
+    # Handle recent_dogs which could be JSON string or already parsed
+    if "org_recent_dogs" in row_dict:
+        recent_dogs = row_dict["org_recent_dogs"]
+        if isinstance(recent_dogs, str):
+            try:
+                recent_dogs = json.loads(recent_dogs)
+            except json.JSONDecodeError:
+                logger.warning(f"Could not parse recent_dogs JSON: {recent_dogs}")
+                recent_dogs = []
+        elif recent_dogs is None:
+            recent_dogs = []
+        organization["recent_dogs"] = recent_dogs
+
     return organization
