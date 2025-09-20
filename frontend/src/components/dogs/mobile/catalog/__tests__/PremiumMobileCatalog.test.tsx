@@ -9,6 +9,22 @@ jest.mock("@/hooks/useViewport", () => ({
   useViewport: jest.fn(),
 }));
 
+// Mock the useFavorites hook to avoid context provider requirement
+jest.mock("@/hooks/useFavorites", () => ({
+  useFavorites: () => ({
+    favorites: [],
+    count: 0,
+    isFavorited: () => false,
+    addFavorite: jest.fn(),
+    removeFavorite: jest.fn(),
+    toggleFavorite: jest.fn(),
+    clearFavorites: jest.fn(),
+    getShareableUrl: () => "/favorites",
+    loadFromUrl: jest.fn(),
+    isLoading: false,
+  }),
+}));
+
 // Mock Next.js router
 const mockPush = jest.fn();
 jest.mock("next/navigation", () => ({
@@ -84,6 +100,10 @@ const mockDog = {
   age_min_months: 24, // Added for getAgeCategory to work properly
 };
 
+// Create a stable filters object to avoid infinite loops
+const defaultFilters = {};
+const stableFilters = Object.freeze(defaultFilters);
+
 describe("PremiumMobileCatalog", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -100,12 +120,16 @@ describe("PremiumMobileCatalog", () => {
 
   describe("Basic rendering", () => {
     it("renders without crashing with minimal props", () => {
-      const { container } = render(<PremiumMobileCatalog dogs={[]} />);
+      const { container } = render(
+        <PremiumMobileCatalog dogs={[]} filters={stableFilters} />,
+      );
       expect(container.querySelector(".min-h-screen")).toBeInTheDocument();
     });
 
     it("displays dogs in grid format", () => {
-      const { container } = render(<PremiumMobileCatalog dogs={[mockDog]} />);
+      const { container } = render(
+        <PremiumMobileCatalog dogs={[mockDog]} filters={stableFilters} />,
+      );
 
       // Debug: log what's actually rendered
       // console.log("Container HTML:", container.innerHTML);
@@ -121,7 +145,9 @@ describe("PremiumMobileCatalog", () => {
     });
 
     it("shows organization information", () => {
-      const { container } = render(<PremiumMobileCatalog dogs={[mockDog]} />);
+      const { container } = render(
+        <PremiumMobileCatalog dogs={[mockDog]} filters={stableFilters} />,
+      );
 
       // Organization info is shown as breed text
       expect(container.textContent).toContain("Golden Retriever");
@@ -130,7 +156,9 @@ describe("PremiumMobileCatalog", () => {
 
   describe("Responsive grid behavior", () => {
     it("renders 2-column grid for mobile viewport", () => {
-      const { container } = render(<PremiumMobileCatalog dogs={[mockDog]} />);
+      const { container } = render(
+        <PremiumMobileCatalog dogs={[mockDog]} filters={stableFilters} />,
+      );
 
       const grid = container.querySelector(".grid.grid-cols-2");
       expect(grid).toBeInTheDocument();
@@ -144,7 +172,9 @@ describe("PremiumMobileCatalog", () => {
         isMobileOrTablet: true,
       });
 
-      const { container } = render(<PremiumMobileCatalog dogs={[mockDog]} />);
+      const { container } = render(
+        <PremiumMobileCatalog dogs={[mockDog]} filters={stableFilters} />,
+      );
 
       // The grid structure should still be present
       const grid = container.querySelector(".grid.grid-cols-2");
@@ -155,7 +185,7 @@ describe("PremiumMobileCatalog", () => {
   describe("Filter chips functionality", () => {
     it("displays basic filter chips", () => {
       // Use minimal props to avoid infinite loop issue
-      render(<PremiumMobileCatalog dogs={[mockDog]} />);
+      render(<PremiumMobileCatalog dogs={[mockDog]} filters={stableFilters} />);
 
       // Check that basic filter chips are rendered
       expect(screen.getByText("All")).toBeInTheDocument();
@@ -169,6 +199,7 @@ describe("PremiumMobileCatalog", () => {
       render(
         <PremiumMobileCatalog
           dogs={[mockDog]}
+          filters={stableFilters}
           onFilterChange={mockFilterChange}
         />,
       );
@@ -184,7 +215,11 @@ describe("PremiumMobileCatalog", () => {
   describe("Loading states", () => {
     it("shows skeleton loaders when loading", () => {
       const { container } = render(
-        <PremiumMobileCatalog dogs={[]} loading={true} />,
+        <PremiumMobileCatalog
+          dogs={[]}
+          loading={true}
+          filters={stableFilters}
+        />,
       );
 
       // Look for skeleton loading elements with animate-pulse class
@@ -198,6 +233,7 @@ describe("PremiumMobileCatalog", () => {
           dogs={[mockDog]}
           hasMore={true}
           onLoadMore={jest.fn()}
+          filters={stableFilters}
         />,
       );
 
@@ -212,6 +248,7 @@ describe("PremiumMobileCatalog", () => {
           dogs={[mockDog]}
           hasMore={true}
           onLoadMore={mockLoadMore}
+          filters={stableFilters}
         />,
       );
 
@@ -228,6 +265,7 @@ describe("PremiumMobileCatalog", () => {
           hasMore={true}
           loadingMore={true}
           onLoadMore={jest.fn()}
+          filters={stableFilters}
         />,
       );
 
@@ -238,13 +276,19 @@ describe("PremiumMobileCatalog", () => {
 
   describe("Error and empty states", () => {
     it("displays error message when error prop is provided", () => {
-      render(<PremiumMobileCatalog dogs={[]} error="Failed to load dogs" />);
+      render(
+        <PremiumMobileCatalog
+          dogs={[]}
+          error="Failed to load dogs"
+          filters={stableFilters}
+        />,
+      );
 
       expect(screen.getByText("Failed to load dogs")).toBeInTheDocument();
     });
 
     it("shows empty state when no dogs are provided", () => {
-      render(<PremiumMobileCatalog dogs={[]} />);
+      render(<PremiumMobileCatalog dogs={[]} filters={stableFilters} />);
 
       expect(screen.getByText(/no dogs found/i)).toBeInTheDocument();
     });
@@ -252,7 +296,9 @@ describe("PremiumMobileCatalog", () => {
 
   describe("Dog card interactions", () => {
     it("renders dog cards as clickable elements", () => {
-      const { container } = render(<PremiumMobileCatalog dogs={[mockDog]} />);
+      const { container } = render(
+        <PremiumMobileCatalog dogs={[mockDog]} filters={stableFilters} />,
+      );
 
       // Find the grid container with dog cards
       const gridContainer = container.querySelector(".grid.grid-cols-2");
@@ -263,7 +309,9 @@ describe("PremiumMobileCatalog", () => {
     });
 
     it("dog cards have proper structure", () => {
-      const { container } = render(<PremiumMobileCatalog dogs={[mockDog]} />);
+      const { container } = render(
+        <PremiumMobileCatalog dogs={[mockDog]} filters={stableFilters} />,
+      );
 
       // Check for the dog name and other elements via text content
       expect(container.textContent).toContain("Max");
@@ -274,7 +322,9 @@ describe("PremiumMobileCatalog", () => {
 
   describe("Personality traits display", () => {
     it("displays personality traits from dog_profiler_data", () => {
-      const { container } = render(<PremiumMobileCatalog dogs={[mockDog]} />);
+      const { container } = render(
+        <PremiumMobileCatalog dogs={[mockDog]} filters={stableFilters} />,
+      );
 
       expect(container.textContent).toContain("Playful");
       expect(container.textContent).toContain("Friendly");
@@ -309,7 +359,7 @@ describe("PremiumMobileCatalog", () => {
 
   describe("Navigation and filtering", () => {
     it("has filter chips", () => {
-      render(<PremiumMobileCatalog dogs={[mockDog]} />);
+      render(<PremiumMobileCatalog dogs={[mockDog]} filters={stableFilters} />);
 
       // Check for filter chip buttons
       expect(screen.getByRole("button", { name: /All/i })).toBeInTheDocument();
@@ -325,7 +375,11 @@ describe("PremiumMobileCatalog", () => {
       const mockOpenFilter = jest.fn();
 
       render(
-        <PremiumMobileCatalog dogs={[mockDog]} onOpenFilter={mockOpenFilter} />,
+        <PremiumMobileCatalog
+          dogs={[mockDog]}
+          onOpenFilter={mockOpenFilter}
+          filters={stableFilters}
+        />,
       );
 
       // No specific filter button in this component, it uses filter chips
@@ -337,7 +391,9 @@ describe("PremiumMobileCatalog", () => {
 
   describe("Grid layout accessibility", () => {
     it("renders dog cards in a grid container", () => {
-      const { container } = render(<PremiumMobileCatalog dogs={[mockDog]} />);
+      const { container } = render(
+        <PremiumMobileCatalog dogs={[mockDog]} filters={stableFilters} />,
+      );
 
       // Check for grid container
       const gridContainer = container.querySelector(".grid.grid-cols-2");
@@ -345,7 +401,9 @@ describe("PremiumMobileCatalog", () => {
     });
 
     it("has clickable dog cards", () => {
-      const { container } = render(<PremiumMobileCatalog dogs={[mockDog]} />);
+      const { container } = render(
+        <PremiumMobileCatalog dogs={[mockDog]} filters={stableFilters} />,
+      );
 
       // Dog cards should be in the grid
       const gridContainer = container.querySelector(".grid.grid-cols-2");
@@ -365,7 +423,9 @@ describe("PremiumMobileCatalog", () => {
         slug: `dog-${i}`,
       }));
 
-      const { container } = render(<PremiumMobileCatalog dogs={manyDogs} />);
+      const { container } = render(
+        <PremiumMobileCatalog dogs={manyDogs} filters={stableFilters} />,
+      );
 
       // Should render grid with dogs
       const gridContainer = container.querySelector(".grid.grid-cols-2");
@@ -383,11 +443,11 @@ describe("PremiumMobileCatalog", () => {
       ];
 
       const { rerender, container } = render(
-        <PremiumMobileCatalog dogs={dogs} />,
+        <PremiumMobileCatalog dogs={dogs} filters={stableFilters} />,
       );
 
       // Rerender with same data should not cause issues
-      rerender(<PremiumMobileCatalog dogs={dogs} />);
+      rerender(<PremiumMobileCatalog dogs={dogs} filters={stableFilters} />);
 
       expect(container.textContent).toContain("Dog 1");
       expect(container.textContent).toContain("Dog 2");

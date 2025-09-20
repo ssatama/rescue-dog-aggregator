@@ -138,7 +138,7 @@ const DogCard: React.FC<{
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
       className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow"
-      style={{ borderRadius: '12px' }}
+      style={{ borderRadius: "12px" }}
       onClick={onClick}
     >
       <div className="relative aspect-square">
@@ -266,13 +266,14 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
     if (filters.ageFilter && filters.ageFilter !== "Any") {
       const ageChip = filterChips.find(
         (chip) =>
-          chip.type === "age" && chip.value === filters.ageFilter?.toLowerCase(),
+          chip.type === "age" &&
+          chip.value === filters.ageFilter?.toLowerCase(),
       );
       if (ageChip) active.push(ageChip);
     }
 
     setActiveFilters(active);
-  }, [filters]);
+  }, [filters.sexFilter, filters.ageFilter]); // Use specific filter properties instead of entire filters object
 
   // Track hydration for client-side features
   useEffect(() => {
@@ -312,7 +313,7 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
   const handleToggleFavorite = async (dogId: string) => {
     const numericId = parseInt(dogId, 10);
     if (!isNaN(numericId)) {
-      const dog = dogs.find(d => d.id === dogId);
+      const dog = dogs.find((d) => d.id === dogId);
       await toggleFavorite(numericId, dog?.name);
     }
   };
@@ -322,7 +323,7 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
     setIsModalOpen(true);
     // Update URL to include dog slug for sharing
     const newUrl = `/dogs?dog=${dog.slug}`;
-    window.history.pushState({}, '', newUrl);
+    window.history.pushState({}, "", newUrl);
   };
 
   const handleModalClose = () => {
@@ -458,7 +459,9 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
                     key={dog.id}
                     dog={dog}
                     index={index}
-                    isFavorite={isHydrated && favorites.includes(parseInt(dog.id, 10))}
+                    isFavorite={
+                      isHydrated && favorites.includes(parseInt(dog.id, 10))
+                    }
                     onToggleFavorite={handleToggleFavorite}
                     onClick={() => handleDogClick(dog)}
                   />

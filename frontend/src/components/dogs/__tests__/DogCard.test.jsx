@@ -171,7 +171,7 @@ describe("DogCard Component", () => {
       expect(card).toHaveClass("shadow-sm");
       expect(card).toHaveClass("will-change-transform");
       expect(card).toHaveClass("group");
-      expect(card).toHaveClass("rounded-lg"); // Consistent with shadow system
+      expect(card).toHaveClass("rounded-xl"); // Consistent with shadow system
     });
 
     test("applies smooth transition effects", () => {
