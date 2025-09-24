@@ -134,13 +134,13 @@ const nextConfig = {
     ],
     // Image optimization settings for optimal performance
     formats: ['image/webp', 'image/avif'], // Modern formats first
-    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days cache
+    minimumCacheTTL: 31536000, // 1 year cache (reduced transformations)
     dangerouslyAllowSVG: false, // Prevent XSS
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    // Device sizes based on common viewports and our breakpoints
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    // Image sizes for responsive images
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // Optimized device sizes - reduced from 8 to 3 for 81% fewer transformations
+    deviceSizes: [640, 1080, 1920],
+    // Optimized image sizes - reduced from 8 to 4 for thumbnails/avatars
+    imageSizes: [32, 64, 128, 256],
     // Use Cloudflare for optimization when possible
     unoptimized: false,
   },

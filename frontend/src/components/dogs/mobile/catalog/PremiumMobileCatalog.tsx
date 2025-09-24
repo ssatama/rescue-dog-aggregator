@@ -28,6 +28,7 @@ import DogDetailModalUpgraded from "@/components/dogs/mobile/detail/DogDetailMod
 import { Button } from "@/components/ui/button";
 import { useFavorites } from "@/hooks/useFavorites";
 import { UI_CONSTANTS } from "@/constants/viewport";
+import { IMAGE_SIZES } from "../../../../constants/imageSizes";
 
 // Types - matching your actual data structure
 interface PremiumDog {
@@ -180,7 +181,7 @@ const DogCard: React.FC<{
           className="w-full h-full object-cover"
           loading="lazy"
           fill
-          sizes="(max-width: 768px) 50vw, 33vw"
+          sizes={IMAGE_SIZES.CATALOG_CARD}
         />
         <button
           className="absolute top-2 right-2 w-8 h-8 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"

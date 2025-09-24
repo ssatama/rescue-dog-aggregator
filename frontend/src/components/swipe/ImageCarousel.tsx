@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import { IMAGE_SIZES } from "../../constants/imageSizes";
 
 interface ImageCarouselProps {
   images: string[];
@@ -93,9 +94,9 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
               src={image}
               alt={`${dogName} - Photo ${index + 1}`}
               fill
-              priority={index === 0}
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-cover"
+              sizes={IMAGE_SIZES.CAROUSEL}
+              priority={index === 0}
             />
           </div>
         ))}

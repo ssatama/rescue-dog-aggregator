@@ -5,6 +5,7 @@ import * as Sentry from "@sentry/nextjs";
 import { getPersonalityTraitColor } from "../../utils/personalityColors";
 import ShareButton from "../ui/ShareButton";
 import { getAgeCategory } from "../../utils/dogHelpers";
+import { IMAGE_SIZES } from "../../constants/imageSizes";
 
 interface SwipeCardProps {
   dog: {
@@ -134,7 +135,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
             src={dog.image}
             alt={`${dog.name} - adoptable dog`}
             fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            sizes={IMAGE_SIZES.SWIPE_CARD}
             className="object-cover transition-transform duration-300 ease-out group-hover:scale-105"
             style={{ objectPosition: "center 30%" }}
             priority

@@ -101,7 +101,7 @@ const NextImage = React.memo(function NextImage({
 
   const qualityValue = useMemo(() => {
     const numericQuality = parseInt(adaptiveQuality);
-    return isNaN(numericQuality) ? 80 : numericQuality;
+    return isNaN(numericQuality) ? 75 : numericQuality;
   }, [adaptiveQuality]);
 
   const responsiveSizes = useMemo(() => {
