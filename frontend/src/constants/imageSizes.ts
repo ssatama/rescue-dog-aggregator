@@ -1,4 +1,16 @@
-export const IMAGE_SIZES = {
+// Type definitions for image sizes
+export type ImageSizeKey = 
+  | 'SWIPE_CARD'
+  | 'CATALOG_CARD' 
+  | 'CAROUSEL'
+  | 'THUMBNAIL'
+  | 'ORG_LOGO'
+  | 'HERO'
+  | 'DETAIL_IMAGE'
+  | 'MOBILE_FULL'
+  | 'DESKTOP_HALF';
+
+export const IMAGE_SIZES: Record<ImageSizeKey, string> = {
   // Swipe cards and main dog cards
   SWIPE_CARD: "(max-width: 640px) 100vw, 50vw",
   
@@ -25,8 +37,8 @@ export const IMAGE_SIZES = {
   
   // Desktop-specific sizes
   DESKTOP_HALF: "(min-width: 1080px) 50vw, 100vw"
-};
+} as const;
 
-export const getImageSize = (type) => {
+export const getImageSize = (type: ImageSizeKey): string => {
   return IMAGE_SIZES[type] || IMAGE_SIZES.CATALOG_CARD;
 };

@@ -137,8 +137,8 @@ const nextConfig = {
     minimumCacheTTL: 31536000, // 1 year cache (reduced transformations)
     dangerouslyAllowSVG: false, // Prevent XSS
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    // Optimized device sizes - reduced from 8 to 3 for 81% fewer transformations
-    deviceSizes: [640, 1080, 1920],
+    // Optimized device sizes - reduced from 8 to 4 for better coverage including tablets
+    deviceSizes: [640, 768, 1080, 1920],
     // Optimized image sizes - reduced from 8 to 4 for thumbnails/avatars
     imageSizes: [32, 64, 128, 256],
     // Use Cloudflare for optimization when possible
