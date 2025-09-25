@@ -194,14 +194,14 @@ const DogComparisonCard = ({
       className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden h-full flex flex-col"
       data-testid="card-container"
     >
-      {/* Hero Image with Fixed Height */}
-      <div className="relative h-56 w-full bg-gray-100 dark:bg-gray-700">
+      {/* Hero Image with Responsive Height */}
+      <div className="relative h-[30vh] min-h-[200px] max-h-[300px] md:h-56 w-full bg-gray-100 dark:bg-gray-700">
         {imageUrl ? (
           <Image
             src={imageUrl}
             alt={dog.name}
             fill
-            className="object-cover"
+            className="object-contain md:object-cover"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         ) : (
@@ -213,8 +213,8 @@ const DogComparisonCard = ({
           </div>
         )}
 
-        {/* Overlay Info */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        {/* Overlay Info - Desktop only */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent hidden md:block" />
         
         {/* Favorite Heart */}
         <button
@@ -225,8 +225,8 @@ const DogComparisonCard = ({
           <Heart className="w-5 h-5 text-red-500 fill-current" />
         </button>
 
-        {/* Name and Info Overlay */}
-        <div className="absolute bottom-3 left-3 right-3">
+        {/* Name and Info Overlay - Desktop only */}
+        <div className="absolute bottom-3 left-3 right-3 hidden md:block">
           <h3 className="text-xl font-bold text-white mb-1">{dog.name}</h3>
           <div className="flex items-center gap-2 text-white/90 text-sm">
             <span>{dog.breed || "Mixed Breed"}</span>
@@ -240,8 +240,22 @@ const DogComparisonCard = ({
         </div>
       </div>
 
-      {/* Content - compact to fit without scrolling */}
-      <div className="flex-1 p-4 space-y-3">
+      {/* Mobile Name/Breed/Age - shown at top of content */}
+      <div className="md:hidden px-4 pt-3 pb-2 border-b border-gray-100 dark:border-gray-700">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white">{dog.name}</h3>
+        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm mt-1">
+          <span>{dog.breed || "Mixed Breed"}</span>
+          {dog.age_text && (
+            <>
+              <span>•</span>
+              <span>{dog.age_text}</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Content - better spacing for mobile */}
+      <div className="flex-1 p-4 space-y-3 overflow-y-auto">
         {/* Personality Tagline */}
         {tagline && (
           <div className="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-3 border border-orange-100 dark:border-orange-800">
@@ -526,7 +540,7 @@ const ComparisonView = ({
           </div>
 
           {/* Cards Container */}
-          <div className="overflow-hidden" ref={containerRef}>
+          <div className="overflow-hidden px-2 md:px-0" ref={containerRef}>
             <motion.div
               className="flex gap-4 md:gap-6"
               animate={{ x: `-${currentIndex * (100 / visibleCards)}%` }}
@@ -545,14 +559,14 @@ const ComparisonView = ({
                   key={dog.id}
                   className={`flex-shrink-0 ${
                     visibleCards === 1
-                      ? "w-full"
+                      ? "w-full px-2 md:px-0"
                       : visibleCards === 2
                         ? "w-[calc(50%-12px)]"
                         : "w-[calc(33.333%-16px)]"
                   }`}
                   data-testid="card-wrapper"
                 >
-                  <div className="h-[600px] md:h-[650px]">
+                  <div className="h-auto md:min-h-[650px]">
                     <DogComparisonCard
                       dog={dog}
                       onRemoveFavorite={onRemoveFavorite}

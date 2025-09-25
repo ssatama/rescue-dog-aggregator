@@ -96,10 +96,10 @@ describe("ComparisonView", () => {
       />,
     );
 
-    // Check each dog is rendered
+    // Check each dog is rendered (may have multiple instances due to responsive design)
     mockDogs.forEach((dog) => {
-      expect(screen.getByText(dog.name)).toBeInTheDocument();
-      expect(screen.getByText(dog.breed!)).toBeInTheDocument();
+      expect(screen.getAllByText(dog.name).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(dog.breed!).length).toBeGreaterThan(0);
       expect(screen.getAllByText(dog.age_text!).length).toBeGreaterThan(0);
     });
   });
@@ -255,15 +255,15 @@ describe("ComparisonView", () => {
       />,
     );
 
-    // Initially should show first dog prominently
-    expect(screen.getByText("Luna")).toBeInTheDocument();
+    // Initially should show first dog prominently (may have multiple instances)
+    expect(screen.getAllByText("Luna").length).toBeGreaterThan(0);
 
     // Click next button
     const nextButton = screen.getByLabelText("Next dog");
     fireEvent.click(nextButton);
 
     await waitFor(() => {
-      expect(screen.getByText("Max")).toBeInTheDocument();
+      expect(screen.getAllByText("Max").length).toBeGreaterThan(0);
     });
   });
 
@@ -280,9 +280,9 @@ describe("ComparisonView", () => {
       />,
     );
 
-    // Should show multiple dogs at once
-    expect(screen.getByText("Luna")).toBeInTheDocument();
-    expect(screen.getByText("Max")).toBeInTheDocument();
+    // Should show multiple dogs at once (may have multiple instances due to responsive design)
+    expect(screen.getAllByText("Luna").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Max").length).toBeGreaterThan(0);
   });
 
   it("shows pagination dots for navigation", () => {
@@ -400,9 +400,9 @@ describe("ComparisonView", () => {
       />,
     );
 
-    // Should still render basic dog info
-    expect(screen.getByText("Luna")).toBeInTheDocument();
-    expect(screen.getByText("Golden Retriever Mix")).toBeInTheDocument();
+    // Should still render basic dog info (may have multiple instances)
+    expect(screen.getAllByText("Luna").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Golden Retriever Mix").length).toBeGreaterThan(0);
   });
 
   it("applies correct styling for mobile breakpoint", () => {
