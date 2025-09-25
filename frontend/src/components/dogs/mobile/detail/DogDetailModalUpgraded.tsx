@@ -131,37 +131,78 @@ const ACTIVITY_COLORS = [
 // Get activity emoji matching main page logic
 const getActivityEmoji = (activity: string): string => {
   const lowerActivity = activity.toLowerCase();
-  
+
   // Movement activities
-  if (lowerActivity.includes("running") || lowerActivity.includes("zooming") || lowerActivity.includes("zoomies")) return "🏃";
+  if (
+    lowerActivity.includes("running") ||
+    lowerActivity.includes("zooming") ||
+    lowerActivity.includes("zoomies")
+  )
+    return "🏃";
   if (lowerActivity.includes("walk")) return "🚶";
-  if (lowerActivity.includes("swimming") || lowerActivity.includes("swim")) return "🏊";
-  
+  if (lowerActivity.includes("swimming") || lowerActivity.includes("swim"))
+    return "🏊";
+
   // Play activities
-  if (lowerActivity.includes("playing") || lowerActivity.includes("play") || lowerActivity.includes("toys") || lowerActivity.includes("fetch") || lowerActivity.includes("ball")) return "🎾";
-  
+  if (
+    lowerActivity.includes("playing") ||
+    lowerActivity.includes("play") ||
+    lowerActivity.includes("toys") ||
+    lowerActivity.includes("fetch") ||
+    lowerActivity.includes("ball")
+  )
+    return "🎾";
+
   // Affection activities
-  if (lowerActivity.includes("cuddl") || lowerActivity.includes("snuggl") || lowerActivity.includes("pamper")) return "🤗";
+  if (
+    lowerActivity.includes("cuddl") ||
+    lowerActivity.includes("snuggl") ||
+    lowerActivity.includes("pamper")
+  )
+    return "🤗";
   if (lowerActivity.includes("kiss")) return "😘";
-  
+
   // Adventure/exploration
-  if (lowerActivity.includes("car") || lowerActivity.includes("ride")) return "🚗";
-  if (lowerActivity.includes("beach") || lowerActivity.includes("water") || lowerActivity.includes("paddl")) return "🏖️";
-  if (lowerActivity.includes("explor") || lowerActivity.includes("adventure")) return "🧭";
-  
+  if (lowerActivity.includes("car") || lowerActivity.includes("ride"))
+    return "🚗";
+  if (
+    lowerActivity.includes("beach") ||
+    lowerActivity.includes("water") ||
+    lowerActivity.includes("paddl")
+  )
+    return "🏖️";
+  if (lowerActivity.includes("explor") || lowerActivity.includes("adventure"))
+    return "🧭";
+
   // Food
-  if (lowerActivity.includes("treat") || lowerActivity.includes("eating") || lowerActivity.includes("food")) return "🦴";
-  
+  if (
+    lowerActivity.includes("treat") ||
+    lowerActivity.includes("eating") ||
+    lowerActivity.includes("food")
+  )
+    return "🦴";
+
   // Learning
-  if (lowerActivity.includes("learn") || lowerActivity.includes("school") || lowerActivity.includes("train")) return "🎓";
-  
+  if (
+    lowerActivity.includes("learn") ||
+    lowerActivity.includes("school") ||
+    lowerActivity.includes("train")
+  )
+    return "🎓";
+
   // Social
-  if (lowerActivity.includes("meet") || lowerActivity.includes("people") || lowerActivity.includes("interact")) return "👥";
-  
+  if (
+    lowerActivity.includes("meet") ||
+    lowerActivity.includes("people") ||
+    lowerActivity.includes("interact")
+  )
+    return "👥";
+
   // Other
-  if (lowerActivity.includes("photo") || lowerActivity.includes("model")) return "📸";
+  if (lowerActivity.includes("photo") || lowerActivity.includes("model"))
+    return "📸";
   if (lowerActivity.includes("rolling")) return "🌀";
-  
+
   return "🐾"; // Default fallback
 };
 
@@ -361,9 +402,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
 
   // Get all the data we need
   const traits =
-    dog.dog_profiler_data?.personality_traits || 
-    dog.personality_traits || 
-    [];
+    dog.dog_profiler_data?.personality_traits || dog.personality_traits || [];
   const size =
     dog.standardized_size || dog.size || dog.properties?.size || "Unknown";
   const description =
@@ -615,7 +654,10 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                         Breed
                       </div>
                       <div className="text-xs text-gray-600 dark:text-gray-300 font-medium">
-                        {dog.primary_breed || dog.standardized_breed || dog.breed || "Mixed"}
+                        {dog.primary_breed ||
+                          dog.standardized_breed ||
+                          dog.breed ||
+                          "Mixed"}
                       </div>
                     </div>
                     <div
@@ -673,7 +715,9 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                             key={index}
                             className={cn(
                               "px-3 py-1.5 rounded-full text-sm font-medium",
-                              PERSONALITY_TRAIT_COLORS[index % PERSONALITY_TRAIT_COLORS.length],
+                              PERSONALITY_TRAIT_COLORS[
+                                index % PERSONALITY_TRAIT_COLORS.length
+                              ],
                             )}
                           >
                             {capitalizeFirst(trait)}
@@ -791,7 +835,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                             key={index}
                             className={cn(
                               "px-3 py-2 rounded-full text-sm font-medium flex items-center gap-1 transition-all duration-200 hover:scale-105",
-                              ACTIVITY_COLORS[index % ACTIVITY_COLORS.length]
+                              ACTIVITY_COLORS[index % ACTIVITY_COLORS.length],
                             )}
                           >
                             <span>{getActivityEmoji(activity)}</span>

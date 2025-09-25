@@ -77,7 +77,7 @@ describe("CompareSelection", () => {
         />,
       );
 
-      expect(screen.getByText("2 selected")).toBeInTheDocument();
+      expect(screen.getByText("2 of 3 selected")).toBeInTheDocument();
     });
 
     it("shows dog images when available", () => {
@@ -90,7 +90,7 @@ describe("CompareSelection", () => {
         />,
       );
 
-      const buddyImage = screen.getByAltText("Buddy");
+      const buddyImage = screen.getByAltText("Buddy - Labrador Retriever");
       expect(buddyImage).toBeInTheDocument();
     });
 
@@ -104,7 +104,8 @@ describe("CompareSelection", () => {
         />,
       );
 
-      expect(screen.getByTestId("dog-placeholder-3")).toBeInTheDocument();
+      const bellaImage = screen.getByAltText("Bella - Beagle");
+      expect(bellaImage.getAttribute("src")).toContain("placeholder-dog.jpg");
     });
   });
 
@@ -119,8 +120,8 @@ describe("CompareSelection", () => {
         />,
       );
 
-      const checkbox = screen.getByRole("checkbox", { name: /Select Buddy/i });
-      fireEvent.click(checkbox);
+      const buddyCard = screen.getByTestId("dog-card-1");
+      fireEvent.click(buddyCard);
 
       expect(mockOnSelectionChange).toHaveBeenCalledWith(new Set([1]));
     });
@@ -135,10 +136,8 @@ describe("CompareSelection", () => {
         />,
       );
 
-      const checkbox = screen.getByRole("checkbox", { name: /Select Buddy/i });
-      expect(checkbox).toBeChecked();
-
-      fireEvent.click(checkbox);
+      const buddyCard = screen.getByTestId("dog-card-1");
+      fireEvent.click(buddyCard);
       expect(mockOnSelectionChange).toHaveBeenCalledWith(new Set());
     });
 
@@ -152,10 +151,11 @@ describe("CompareSelection", () => {
         />,
       );
 
-      const bellaCheckbox = screen.getByRole("checkbox", {
-        name: /Select Bella/i,
-      });
-      expect(bellaCheckbox).toBeDisabled();
+      const bellaCard = screen.getByTestId("dog-card-4");
+      expect(bellaCard).toHaveClass("opacity-40", "cursor-not-allowed");
+
+      fireEvent.click(bellaCard);
+      expect(mockOnSelectionChange).not.toHaveBeenCalled();
     });
 
     it("shows selection count", () => {
@@ -168,7 +168,7 @@ describe("CompareSelection", () => {
         />,
       );
 
-      expect(screen.getByText("2 selected")).toBeInTheDocument();
+      expect(screen.getByText("2 of 3 selected")).toBeInTheDocument();
     });
 
     it("applies selected styling to selected dogs", () => {
@@ -197,10 +197,9 @@ describe("CompareSelection", () => {
         />,
       );
 
-      const compareButton = screen.getByRole("button", {
-        name: /Compare/i,
-      });
-      expect(compareButton).toBeDisabled();
+      const compareButton = screen.getByText("Compare Selected");
+      expect(compareButton).toHaveClass("cursor-not-allowed");
+      expect(compareButton.closest("button")).toBeDisabled();
     });
 
     it("enables compare button with 2 selections", () => {
@@ -213,10 +212,8 @@ describe("CompareSelection", () => {
         />,
       );
 
-      const compareButton = screen.getByRole("button", {
-        name: /Compare/i,
-      });
-      expect(compareButton).not.toBeDisabled();
+      const compareButton = screen.getByText("Compare Selected");
+      expect(compareButton.closest("button")).not.toBeDisabled();
     });
 
     it("enables compare button with 3 selections", () => {
@@ -229,10 +226,8 @@ describe("CompareSelection", () => {
         />,
       );
 
-      const compareButton = screen.getByRole("button", {
-        name: /Compare/i,
-      });
-      expect(compareButton).not.toBeDisabled();
+      const compareButton = screen.getByText("Compare Selected");
+      expect(compareButton.closest("button")).not.toBeDisabled();
     });
 
     it("calls onCompare when clicked with valid selection", () => {
@@ -245,9 +240,7 @@ describe("CompareSelection", () => {
         />,
       );
 
-      const compareButton = screen.getByRole("button", {
-        name: /Compare/i,
-      });
+      const compareButton = screen.getByText("Compare Selected");
       fireEvent.click(compareButton);
 
       expect(mockOnCompare).toHaveBeenCalled();
@@ -255,7 +248,7 @@ describe("CompareSelection", () => {
   });
 
   describe("Accessibility", () => {
-    it("provides accessible labels for checkboxes", () => {
+    it("provides accessible labels for dog cards", () => {
       render(
         <CompareSelection
           dogs={mockDogs}
@@ -265,12 +258,10 @@ describe("CompareSelection", () => {
         />,
       );
 
-      expect(
-        screen.getByRole("checkbox", { name: /Select Buddy/i }),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("checkbox", { name: /Select Luna/i }),
-      ).toBeInTheDocument();
+      const buddyCard = screen.getByTestId("dog-card-1");
+      expect(buddyCard).toHaveAttribute("role", "button");
+      expect(buddyCard).toHaveAttribute("aria-label", "Select Buddy for comparison");
+      expect(buddyCard).toHaveAttribute("aria-pressed", "false");
     });
 
     it("indicates disabled state in aria attributes", () => {
@@ -283,10 +274,8 @@ describe("CompareSelection", () => {
         />,
       );
 
-      const bellaCheckbox = screen.getByRole("checkbox", {
-        name: /Select Bella/i,
-      });
-      expect(bellaCheckbox).toHaveAttribute("aria-disabled", "true");
+      const bellaCard = screen.getByTestId("dog-card-4");
+      expect(bellaCard).toHaveAttribute("aria-disabled", "true");
     });
   });
 });

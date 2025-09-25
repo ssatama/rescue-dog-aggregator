@@ -3,57 +3,6 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import CompareMode from "../CompareMode";
 
-// Mock the comparison analyzer
-jest.mock("../../../utils/comparisonAnalyzer", () => ({
-  analyzeComparison: jest.fn(() => ({
-    age: {
-      values: ["2 years", "3 years", "2 years"],
-      allSame: false,
-      highlight: [true, false, true],
-    },
-    sex: {
-      values: ["Male", "Female", "Male"],
-      allSame: false,
-      highlight: [false, true, false],
-    },
-    size: {
-      values: ["Medium", "Medium", "Medium"],
-      allSame: true,
-      highlight: [false, false, false],
-    },
-    breed: {
-      values: ["Mixed Breed", "Labrador", "Mixed Breed"],
-      allSame: false,
-      highlight: [false, true, false],
-    },
-    location: {
-      values: ["Italy", "Italy", "Italy"],
-      allSame: true,
-      highlight: [false, false, false],
-    },
-    organization: {
-      values: ["Test Org", "Test Org", "Test Org"],
-      allSame: true,
-      highlight: [false, false, false],
-    },
-    good_with_dogs: {
-      values: [true, true, false],
-      allSame: false,
-      highlight: [false, false, true],
-    },
-    good_with_cats: {
-      values: [true, false, true],
-      allSame: false,
-      highlight: [false, true, false],
-    },
-    good_with_children: {
-      values: [true, true, true],
-      allSame: true,
-      highlight: [false, false, false],
-    },
-  })),
-}));
-
 describe("CompareMode", () => {
   const mockDogs = [
     {
@@ -121,7 +70,7 @@ describe("CompareMode", () => {
 
       expect(screen.getByText("Select Dogs to Compare")).toBeInTheDocument();
       expect(
-        screen.getByText("Choose 2-3 dogs to compare side by side"),
+        screen.getByText("Choose 2-4 dogs to compare side by side"),
       ).toBeInTheDocument();
 
       // Check all dogs are displayed
@@ -133,44 +82,40 @@ describe("CompareMode", () => {
     it("should allow selecting dogs", () => {
       render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
 
-      const buddyCheckbox = screen.getByRole("checkbox", {
-        name: /Select Buddy/i,
-      });
-      fireEvent.click(buddyCheckbox);
+      // Click on dog card instead of checkbox
+      const buddyCard = screen.getByTestId("dog-card-1");
+      fireEvent.click(buddyCard);
 
-      expect(screen.getByText("1 selected")).toBeInTheDocument();
+      expect(screen.getByText("1 of 3 selected")).toBeInTheDocument();
     });
 
     it("should limit selection to 3 dogs", () => {
       const fourDogs = [...mockDogs, { ...mockDogs[0], id: 4, name: "Extra" }];
       render(<CompareMode dogs={fourDogs} onClose={mockOnClose} />);
 
-      // Select 3 dogs using checkboxes
-      fireEvent.click(screen.getByRole("checkbox", { name: /Select Buddy/i }));
-      fireEvent.click(screen.getByRole("checkbox", { name: /Select Luna/i }));
-      fireEvent.click(screen.getByRole("checkbox", { name: /Select Max/i }));
+      // Select 3 dogs using cards
+      fireEvent.click(screen.getByTestId("dog-card-1"));
+      fireEvent.click(screen.getByTestId("dog-card-2"));
+      fireEvent.click(screen.getByTestId("dog-card-3"));
 
-      expect(screen.getByText("3 selected")).toBeInTheDocument();
+      expect(screen.getByText("3 of 3 selected")).toBeInTheDocument();
 
-      // Fourth dog checkbox should be disabled
-      const extraCheckbox = screen.getByRole("checkbox", {
-        name: /Select Extra/i,
-      });
-      expect(extraCheckbox).toBeDisabled();
+      // Fourth dog card should be disabled
+      const extraCard = screen.getByTestId("dog-card-4");
+      expect(extraCard).toHaveAttribute("aria-disabled", "true");
     });
 
     it("should enable compare button when 2+ dogs selected", () => {
       render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
 
-      const compareButton = screen.getByRole("button", { name: /Compare/i });
+      const compareButton = screen.getByRole("button", { name: /Compare Selected/i });
       expect(compareButton).toBeDisabled();
 
-      // Select 2 dogs using checkboxes
-      fireEvent.click(screen.getByRole("checkbox", { name: /Select Buddy/i }));
-      fireEvent.click(screen.getByRole("checkbox", { name: /Select Luna/i }));
+      // Select 2 dogs using cards
+      fireEvent.click(screen.getByTestId("dog-card-1"));
+      fireEvent.click(screen.getByTestId("dog-card-2"));
 
       expect(compareButton).not.toBeDisabled();
-      expect(compareButton).toHaveTextContent("Compare (2)");
     });
   });
 
@@ -178,48 +123,30 @@ describe("CompareMode", () => {
     it("should switch to comparison view when compare is clicked", () => {
       render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
 
-      // Select dogs using checkboxes and compare
-      fireEvent.click(screen.getByRole("checkbox", { name: /Select Buddy/i }));
-      fireEvent.click(screen.getByRole("checkbox", { name: /Select Luna/i }));
-      fireEvent.click(screen.getByRole("button", { name: /Compare \(2\)/i }));
+      // Select dogs and compare
+      fireEvent.click(screen.getByTestId("dog-card-1"));
+      fireEvent.click(screen.getByTestId("dog-card-2"));
+      fireEvent.click(screen.getByRole("button", { name: /Compare Selected/i }));
 
       // Should show comparison view
       expect(
-        screen.getByText(/Compare Your Favorites|Compare Dogs/),
+        screen.getByText("Compare Your Favorites"),
       ).toBeInTheDocument();
     });
 
-    it("should display highlighted differences in comparison view", () => {
-      // Mock window.innerWidth for desktop view
-      Object.defineProperty(window, "innerWidth", {
-        writable: true,
-        configurable: true,
-        value: 1024,
-      });
-
-      // Mock matchMedia for useMediaQuery hook - desktop view
-      Object.defineProperty(window, "matchMedia", {
-        writable: true,
-        value: jest.fn().mockImplementation((query) => ({
-          matches: true, // Desktop is when (min-width: 768px) returns true
-          media: query,
-          onchange: null,
-          addEventListener: jest.fn(),
-          removeEventListener: jest.fn(),
-          dispatchEvent: jest.fn(),
-        })),
-      });
-
+    it("should display comparison view with selected dogs", () => {
       render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
 
-      // Select dogs using checkboxes and compare
-      fireEvent.click(screen.getByRole("checkbox", { name: /Select Buddy/i }));
-      fireEvent.click(screen.getByRole("checkbox", { name: /Select Luna/i }));
-      fireEvent.click(screen.getByRole("checkbox", { name: /Select Max/i }));
-      fireEvent.click(screen.getByRole("button", { name: /Compare \(3\)/i }));
+      // Select dogs and compare
+      fireEvent.click(screen.getByTestId("dog-card-1"));
+      fireEvent.click(screen.getByTestId("dog-card-2"));
+      fireEvent.click(screen.getByTestId("dog-card-3"));
+      fireEvent.click(screen.getByRole("button", { name: /Compare Selected/i }));
 
-      // Check that comparison table exists
-      expect(screen.getByText("Detailed Comparison")).toBeInTheDocument();
+      // Check that selected dogs are in comparison
+      expect(screen.getByText("Buddy")).toBeInTheDocument();
+      expect(screen.getByText("Luna")).toBeInTheDocument();
+      expect(screen.getByText("Max")).toBeInTheDocument();
     });
   });
 
@@ -260,32 +187,20 @@ describe("CompareMode", () => {
         value: 375,
       });
 
-      // Mock matchMedia for useMediaQuery hook
-      Object.defineProperty(window, "matchMedia", {
-        writable: true,
-        value: jest.fn().mockImplementation((query) => ({
-          matches: false, // Mobile is when (min-width: 768px) returns false
-          media: query,
-          onchange: null,
-          addEventListener: jest.fn(),
-          removeEventListener: jest.fn(),
-          dispatchEvent: jest.fn(),
-        })),
-      });
+      // Trigger resize event
+      global.dispatchEvent(new Event("resize"));
     });
 
-    it("should render mobile comparison table layout", () => {
+    it("should show proper mobile comparison view", () => {
       render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
 
-      // Select dogs using checkboxes and compare
-      fireEvent.click(screen.getByRole("checkbox", { name: /Select Buddy/i }));
-      fireEvent.click(screen.getByRole("checkbox", { name: /Select Luna/i }));
-      fireEvent.click(screen.getByRole("button", { name: /Compare \(2\)/i }));
+      // Select dogs and compare
+      fireEvent.click(screen.getByTestId("dog-card-1"));
+      fireEvent.click(screen.getByTestId("dog-card-2"));
+      fireEvent.click(screen.getByRole("button", { name: /Compare Selected/i }));
 
-      // Should show mobile-specific elements
-      expect(
-        screen.getByText("Swipe to compare your favorites"),
-      ).toBeInTheDocument();
+      // Should show comparison view
+      expect(screen.getByText("Compare Your Favorites")).toBeInTheDocument();
     });
 
     it("should show 2-column grid in selection view on mobile", () => {

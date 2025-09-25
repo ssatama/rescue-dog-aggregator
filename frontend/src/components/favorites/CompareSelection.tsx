@@ -25,26 +25,32 @@ export default function CompareSelection({
 }: CompareSelectionProps) {
   const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
 
-  const toggleDogSelection = useCallback((dogId: number) => {
-    const newSet = new Set(selectedDogs);
-    if (newSet.has(dogId)) {
-      newSet.delete(dogId);
-    } else if (newSet.size < MAX_SELECTIONS) {
-      newSet.add(dogId);
-    }
-    onSelectionChange(newSet);
-  }, [selectedDogs, onSelectionChange]);
+  const toggleDogSelection = useCallback(
+    (dogId: number) => {
+      const newSet = new Set(selectedDogs);
+      if (newSet.has(dogId)) {
+        newSet.delete(dogId);
+      } else if (newSet.size < MAX_SELECTIONS) {
+        newSet.add(dogId);
+      }
+      onSelectionChange(newSet);
+    },
+    [selectedDogs, onSelectionChange],
+  );
 
   const handleImageError = useCallback((dogId: number) => {
     setImageErrors((prev) => new Set(prev).add(dogId));
   }, []);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent, dogId: number, isDisabled: boolean) => {
-    if (!isDisabled && (e.key === 'Enter' || e.key === ' ')) {
-      e.preventDefault();
-      toggleDogSelection(dogId);
-    }
-  }, [toggleDogSelection]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent, dogId: number, isDisabled: boolean) => {
+      if (!isDisabled && (e.key === "Enter" || e.key === " ")) {
+        e.preventDefault();
+        toggleDogSelection(dogId);
+      }
+    },
+    [toggleDogSelection],
+  );
 
   const canCompare = selectedDogs.size >= MIN_SELECTIONS;
   const selectionCount = selectedDogs.size;
@@ -62,7 +68,9 @@ export default function CompareSelection({
             className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-100 to-orange-50 dark:from-orange-900/30 dark:to-orange-800/20 rounded-full text-sm font-semibold text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-700/50"
           >
             <div className="w-2 h-2 bg-orange-500 dark:bg-orange-400 rounded-full animate-pulse" />
-            <span>{selectionCount} of {MAX_SELECTIONS} selected</span>
+            <span>
+              {selectionCount} of {MAX_SELECTIONS} selected
+            </span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -73,9 +81,9 @@ export default function CompareSelection({
           const isSelected = selectedDogs.has(dog.id);
           const isDisabled = !isSelected && selectedDogs.size >= MAX_SELECTIONS;
           const hasImageError = imageErrors.has(dog.id);
-          const imageUrl = hasImageError 
-            ? "/placeholder-dog.jpg" 
-            : (dog.primary_image_url || dog.main_image || "/placeholder-dog.jpg");
+          const imageUrl = hasImageError
+            ? "/placeholder-dog.jpg"
+            : dog.primary_image_url || dog.main_image || "/placeholder-dog.jpg";
           const breed = dog.standardized_breed || dog.breed || "Unknown breed";
           const ageDisplay = getAgeDisplay(dog);
 
@@ -84,7 +92,11 @@ export default function CompareSelection({
               key={dog.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05, type: "spring", stiffness: 200 }}
+              transition={{
+                delay: index * 0.05,
+                type: "spring",
+                stiffness: 200,
+              }}
               whileHover={!isDisabled ? { y: -4 } : undefined}
               className="relative group"
             >
@@ -94,7 +106,7 @@ export default function CompareSelection({
                 onKeyDown={(e) => handleKeyDown(e, dog.id, isDisabled)}
                 role="button"
                 tabIndex={isDisabled ? -1 : 0}
-                aria-label={`${isSelected ? 'Deselect' : 'Select'} ${dog.name} for comparison`}
+                aria-label={`${isSelected ? "Deselect" : "Select"} ${dog.name} for comparison`}
                 aria-pressed={isSelected}
                 aria-disabled={isDisabled}
                 className={`relative cursor-pointer rounded-xl overflow-hidden transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 ${
@@ -120,7 +132,7 @@ export default function CompareSelection({
                     loading="lazy"
                     onError={() => handleImageError(dog.id)}
                   />
-                  
+
                   {/* Selection Overlay */}
                   <AnimatePresence>
                     {isSelected && (
@@ -137,7 +149,11 @@ export default function CompareSelection({
                           transition={{ type: "spring", damping: 15 }}
                           className="w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-400 dark:to-orange-500 rounded-full flex items-center justify-center shadow-2xl"
                         >
-                          <Check size={28} className="text-white" strokeWidth={3} />
+                          <Check
+                            size={28}
+                            className="text-white"
+                            strokeWidth={3}
+                          />
                         </motion.div>
                       </motion.div>
                     )}
@@ -184,7 +200,7 @@ export default function CompareSelection({
                   animate={{
                     boxShadow: isSelected
                       ? "0 0 0 4px rgba(249, 115, 22, 0.2), 0 0 20px rgba(249, 115, 22, 0.3)"
-                      : "0 0 0 0px rgba(249, 115, 22, 0)"
+                      : "0 0 0 0px rgba(249, 115, 22, 0)",
                   }}
                   transition={{ duration: 0.3 }}
                 />
@@ -197,8 +213,10 @@ export default function CompareSelection({
       {/* Action Footer */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
         <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-          {selectionCount === 0 && `Select at least ${MIN_SELECTIONS} dogs to compare`}
-          {selectionCount === 1 && `Select ${MIN_SELECTIONS - 1} more dog to compare`}
+          {selectionCount === 0 &&
+            `Select at least ${MIN_SELECTIONS} dogs to compare`}
+          {selectionCount === 1 &&
+            `Select ${MIN_SELECTIONS - 1} more dog to compare`}
           {selectionCount >= MIN_SELECTIONS && (
             <span className="text-green-600 dark:text-green-400">
               Ready to compare {selectionCount} dogs
@@ -209,9 +227,9 @@ export default function CompareSelection({
         <motion.button
           onClick={onCompare}
           disabled={!canCompare}
-          animate={{ 
+          animate={{
             scale: canCompare ? 1 : 0.95,
-            opacity: canCompare ? 1 : 0.7
+            opacity: canCompare ? 1 : 0.7,
           }}
           whileHover={canCompare ? { scale: 1.05 } : undefined}
           whileTap={canCompare ? { scale: 0.98 } : undefined}
