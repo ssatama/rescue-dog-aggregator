@@ -108,7 +108,9 @@ describe("CompareMode", () => {
     it("should enable compare button when 2+ dogs selected", () => {
       render(<CompareMode dogs={mockDogs} onClose={mockOnClose} />);
 
-      const compareButton = screen.getByRole("button", { name: /Compare Selected/i });
+      const compareButton = screen.getByRole("button", {
+        name: /Compare Selected/i,
+      });
       expect(compareButton).toBeDisabled();
 
       // Select 2 dogs using cards
@@ -126,12 +128,12 @@ describe("CompareMode", () => {
       // Select dogs and compare
       fireEvent.click(screen.getByTestId("dog-card-1"));
       fireEvent.click(screen.getByTestId("dog-card-2"));
-      fireEvent.click(screen.getByRole("button", { name: /Compare Selected/i }));
+      fireEvent.click(
+        screen.getByRole("button", { name: /Compare Selected/i }),
+      );
 
       // Should show comparison view
-      expect(
-        screen.getByText("Compare Your Favorites"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("Compare Your Favorites")).toBeInTheDocument();
     });
 
     it("should display comparison view with selected dogs", () => {
@@ -141,12 +143,14 @@ describe("CompareMode", () => {
       fireEvent.click(screen.getByTestId("dog-card-1"));
       fireEvent.click(screen.getByTestId("dog-card-2"));
       fireEvent.click(screen.getByTestId("dog-card-3"));
-      fireEvent.click(screen.getByRole("button", { name: /Compare Selected/i }));
+      fireEvent.click(
+        screen.getByRole("button", { name: /Compare Selected/i }),
+      );
 
-      // Check that selected dogs are in comparison
-      expect(screen.getByText("Buddy")).toBeInTheDocument();
-      expect(screen.getByText("Luna")).toBeInTheDocument();
-      expect(screen.getByText("Max")).toBeInTheDocument();
+      // Check that selected dogs are in comparison (may have multiple instances due to responsive design)
+      expect(screen.getAllByText("Buddy").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Luna").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Max").length).toBeGreaterThan(0);
     });
   });
 
@@ -197,7 +201,9 @@ describe("CompareMode", () => {
       // Select dogs and compare
       fireEvent.click(screen.getByTestId("dog-card-1"));
       fireEvent.click(screen.getByTestId("dog-card-2"));
-      fireEvent.click(screen.getByRole("button", { name: /Compare Selected/i }));
+      fireEvent.click(
+        screen.getByRole("button", { name: /Compare Selected/i }),
+      );
 
       // Should show comparison view
       expect(screen.getByText("Compare Your Favorites")).toBeInTheDocument();
