@@ -32,6 +32,34 @@ import {
   getPersonalityTraits,
 } from "./compareUtils";
 
+// Static color mapping for Tailwind classes (required for production builds)
+const CATEGORY_STYLE_MAP: Record<string, {
+  container: string;
+  icon: string;
+  badge: string;
+}> = {
+  blue: {
+    container: "bg-blue-100 dark:bg-blue-900/30",
+    icon: "text-blue-600 dark:text-blue-400",
+    badge: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+  },
+  purple: {
+    container: "bg-purple-100 dark:bg-purple-900/30",
+    icon: "text-purple-600 dark:text-purple-400",
+    badge: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
+  },
+  green: {
+    container: "bg-green-100 dark:bg-green-900/30",
+    icon: "text-green-600 dark:text-green-400",
+    badge: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+  },
+  orange: {
+    container: "bg-orange-100 dark:bg-orange-900/30",
+    icon: "text-orange-600 dark:text-orange-400",
+    badge: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400"
+  }
+};
+
 interface CompareModernDesktopProps {
   dogs: Dog[];
   onClose: () => void;
@@ -508,10 +536,10 @@ export default function CompareModernDesktop({
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className={`p-2 rounded-lg bg-${category.color}-100 dark:bg-${category.color}-900/30`}
+                      className={`p-2 rounded-lg ${CATEGORY_STYLE_MAP[category.color]?.container || CATEGORY_STYLE_MAP.blue.container}`}
                     >
                       <Icon
-                        className={`w-5 h-5 text-${category.color}-600 dark:text-${category.color}-400`}
+                        className={`w-5 h-5 ${CATEGORY_STYLE_MAP[category.color]?.icon || CATEGORY_STYLE_MAP.blue.icon}`}
                       />
                     </div>
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100">

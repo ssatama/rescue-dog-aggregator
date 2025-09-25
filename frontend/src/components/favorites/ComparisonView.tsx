@@ -471,16 +471,16 @@ const ComparisonView = ({
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="absolute top-0 right-0 p-3 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-600/50 shadow-lg hover:shadow-xl transition-all hover:scale-110"
+              className="absolute top-0 right-0 md:top-0 md:right-0 p-2 md:p-3 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-600/50 shadow-lg hover:shadow-xl transition-all hover:scale-110 z-10"
               aria-label="Close comparison"
             >
-              <X className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              <X className="w-5 h-5 md:w-6 md:h-6 text-gray-700 dark:text-gray-300" />
             </button>
 
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent mb-2">
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent mb-2 px-12 md:px-0">
               Compare Your Favorites
             </h1>
-            <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto px-12 md:px-4">
               Find the perfect match by comparing your favorited rescue dogs side by side
             </p>
           </div>
@@ -503,7 +503,11 @@ const ComparisonView = ({
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                Showing {Math.min(visibleCards, dogs.length)} of {dogs.length} favorites
+                {isMobile ? (
+                  <>Dog {currentIndex + 1} of {dogs.length}</>
+                ) : (
+                  <>Showing {Math.min(currentIndex + 1, dogs.length)}-{Math.min(currentIndex + visibleCards, dogs.length)} of {dogs.length} favorites</>
+                )}
               </span>
             </div>
 

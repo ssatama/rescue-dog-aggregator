@@ -298,8 +298,8 @@ describe("ComparisonView", () => {
       />,
     );
 
-    // In the new design, we show "Showing X of Y favorites" instead of pagination dots
-    expect(screen.getByText(/Showing.*of.*favorites/)).toBeInTheDocument();
+    // On mobile, we show "Dog X of Y" format
+    expect(screen.getByText(/Dog \d+ of \d+/)).toBeInTheDocument();
   });
 
   it("calls onRemoveFavorite when heart button is clicked", () => {
