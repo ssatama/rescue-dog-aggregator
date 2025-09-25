@@ -47,7 +47,7 @@ const MobileBottomNav: React.FC = () => {
   const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(true);
   const [shouldRender, setShouldRender] = useState(false);
-  
+
   // Use refs to avoid stale closures and prevent re-renders
   const lastScrollY = useRef(0);
   const idleShowTimeout = useRef<ReturnType<typeof setTimeout> | null>(null); // Renamed from hideTimeout
@@ -78,7 +78,7 @@ const MobileBottomNav: React.FC = () => {
   // Optimized scroll handler with proper direction detection
   const handleScroll = useCallback(() => {
     if (ticking.current) return;
-    
+
     ticking.current = true;
     requestAnimationFrame(() => {
       // Clamp to prevent negative values on iOS overscroll
@@ -165,11 +165,11 @@ const MobileBottomNav: React.FC = () => {
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
-          transition={{ 
-            type: "spring", 
-            damping: 30, 
+          transition={{
+            type: "spring",
+            damping: 30,
             stiffness: 300,
-            mass: 0.8
+            mass: 0.8,
           }}
           className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-t border-gray-200 dark:border-gray-700 will-change-transform"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}

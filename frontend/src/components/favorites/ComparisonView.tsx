@@ -49,24 +49,24 @@ const getExperienceLevel = (level?: string): string => {
 // Add text formatting helpers
 const formatExperienceText = (experience?: string): string => {
   if (!experience) return "First Time OK";
-  
+
   const formatMap: { [key: string]: string } = {
-    "first_time_ok": "First Time OK",
-    "some_experience": "Some Experience", 
-    "experienced_owner": "Experienced Owner",
+    first_time_ok: "First Time OK",
+    some_experience: "Some Experience",
+    experienced_owner: "Experienced Owner",
     "Beginner Friendly": "Beginner Friendly",
     "Some Experience": "Some Experience",
-    "Experienced Owner": "Experienced Owner"
+    "Experienced Owner": "Experienced Owner",
   };
-  
+
   return formatMap[experience] || experience;
 };
 
 const formatPersonalityTrait = (trait: string): string => {
   return trait
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ')
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ")
     .replace(/\b(And|Or|The|A|An)\b/g, (match) => match.toLowerCase());
 };
 
@@ -215,7 +215,7 @@ const DogComparisonCard = ({
 
         {/* Overlay Info - Desktop only */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent hidden md:block" />
-        
+
         {/* Favorite Heart */}
         <button
           onClick={() => onRemoveFavorite(dog.id)}
@@ -242,7 +242,9 @@ const DogComparisonCard = ({
 
       {/* Mobile Name/Breed/Age - shown at top of content */}
       <div className="md:hidden px-4 pt-3 pb-2 border-b border-gray-100 dark:border-gray-700">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white">{dog.name}</h3>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+          {dog.name}
+        </h3>
         <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm mt-1">
           <span>{dog.breed || "Mixed Breed"}</span>
           {dog.age_text && (
@@ -334,7 +336,9 @@ const DogComparisonCard = ({
               >
                 <Baby className="w-3.5 h-3.5" />
               </div>
-              <span className="text-xs text-gray-600 dark:text-gray-400">Kids</span>
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                Kids
+              </span>
             </div>
             <div className="flex items-center gap-1">
               <div
@@ -346,7 +350,9 @@ const DogComparisonCard = ({
               >
                 <Cat className="w-3.5 h-3.5" />
               </div>
-              <span className="text-xs text-gray-600 dark:text-gray-400">Cats</span>
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                Cats
+              </span>
             </div>
             <div className="flex items-center gap-1">
               <div
@@ -358,7 +364,9 @@ const DogComparisonCard = ({
               >
                 <DogIcon className="w-3.5 h-3.5" />
               </div>
-              <span className="text-xs text-gray-600 dark:text-gray-400">Dogs</span>
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                Dogs
+              </span>
             </div>
           </div>
         </div>
@@ -404,7 +412,7 @@ const ComparisonView = ({
     const updateLayout = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      
+
       if (window.innerWidth >= 1024) setVisibleCards(3);
       else if (window.innerWidth >= 768) setVisibleCards(2);
       else setVisibleCards(1);
@@ -419,31 +427,31 @@ const ComparisonView = ({
   useEffect(() => {
     // Try multiple selectors to find the mobile nav
     const selectors = [
-      '.bottom-navigation',
-      '.mobile-nav',
-      '.mobile-sticky-nav',
-      '[data-mobile-nav]',
+      ".bottom-navigation",
+      ".mobile-nav",
+      ".mobile-sticky-nav",
+      "[data-mobile-nav]",
       'nav[role="navigation"].fixed.bottom-0',
-      '.fixed.bottom-0.w-full'
+      ".fixed.bottom-0.w-full",
     ];
-    
+
     let mobileNav: HTMLElement | null = null;
     for (const selector of selectors) {
       mobileNav = document.querySelector(selector);
       if (mobileNav) break;
     }
-    
+
     if (mobileNav && isMobile) {
-      mobileNav.style.display = 'none';
+      mobileNav.style.display = "none";
     }
 
     // Prevent body scroll when modal is open
     const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
 
     return () => {
       if (mobileNav) {
-        mobileNav.style.display = '';
+        mobileNav.style.display = "";
       }
       // Restore body scroll
       document.body.style.overflow = originalOverflow;
@@ -495,7 +503,8 @@ const ComparisonView = ({
               Compare Your Favorites
             </h1>
             <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto px-12 md:px-4">
-              Find the perfect match by comparing your favorited rescue dogs side by side
+              Find the perfect match by comparing your favorited rescue dogs
+              side by side
             </p>
           </div>
 
@@ -518,9 +527,15 @@ const ComparisonView = ({
               <Users className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               <span className="text-sm text-gray-600 dark:text-gray-400">
                 {isMobile ? (
-                  <>Dog {currentIndex + 1} of {dogs.length}</>
+                  <>
+                    Dog {currentIndex + 1} of {dogs.length}
+                  </>
                 ) : (
-                  <>Showing {Math.min(currentIndex + 1, dogs.length)}-{Math.min(currentIndex + visibleCards, dogs.length)} of {dogs.length} favorites</>
+                  <>
+                    Showing {Math.min(currentIndex + 1, dogs.length)}-
+                    {Math.min(currentIndex + visibleCards, dogs.length)} of{" "}
+                    {dogs.length} favorites
+                  </>
                 )}
               </span>
             </div>
@@ -594,7 +609,7 @@ const ComparisonView = ({
               ))}
             </div>
           )}
-          
+
           {/* Bottom padding for mobile nav if needed */}
           {isMobile && <div className="h-20" />}
         </div>

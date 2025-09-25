@@ -222,7 +222,9 @@ describe("ComparisonView", () => {
     // Organization names might not be displayed in the new minimal design
     // Check that the Visit buttons are present instead
     mockDogs.forEach((dog) => {
-      const visitButton = screen.getByRole("button", { name: `Visit ${dog.name}` });
+      const visitButton = screen.getByRole("button", {
+        name: `Visit ${dog.name}`,
+      });
       expect(visitButton).toBeInTheDocument();
     });
   });
@@ -402,7 +404,9 @@ describe("ComparisonView", () => {
 
     // Should still render basic dog info (may have multiple instances)
     expect(screen.getAllByText("Luna").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Golden Retriever Mix").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Golden Retriever Mix").length).toBeGreaterThan(
+      0,
+    );
   });
 
   it("applies correct styling for mobile breakpoint", () => {

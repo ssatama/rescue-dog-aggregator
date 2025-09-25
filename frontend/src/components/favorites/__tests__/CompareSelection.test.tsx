@@ -260,7 +260,10 @@ describe("CompareSelection", () => {
 
       const buddyCard = screen.getByTestId("dog-card-1");
       expect(buddyCard).toHaveAttribute("role", "button");
-      expect(buddyCard).toHaveAttribute("aria-label", "Select Buddy for comparison");
+      expect(buddyCard).toHaveAttribute(
+        "aria-label",
+        "Select Buddy for comparison",
+      );
       expect(buddyCard).toHaveAttribute("aria-pressed", "false");
     });
 
