@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Dog } from "./types";
 import Image from "next/image";
+import { FallbackImage } from "../ui/FallbackImage";
 
 interface ComparisonViewProps {
   dogs: Dog[];
@@ -155,9 +156,11 @@ const ExperienceIndicator = ({ level }: { level: string }) => {
 const DogComparisonCard = ({
   dog,
   onRemoveFavorite,
+  index = 0,
 }: {
   dog: Dog;
   onRemoveFavorite: (id: number) => void;
+  index?: number;
 }) => {
   const imageUrl = dog.primary_image_url || dog.main_image;
   const tagline = dog.dog_profiler_data?.tagline;
@@ -197,12 +200,14 @@ const DogComparisonCard = ({
       {/* Hero Image with Responsive Height */}
       <div className="relative h-[30vh] min-h-[200px] max-h-[300px] md:h-56 w-full bg-gray-100 dark:bg-gray-700">
         {imageUrl ? (
-          <Image
-            src={imageUrl}
+          <FallbackImage
+            src={dog.primary_image_url || dog.image}
             alt={dog.name}
             fill
-            className="object-contain md:object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 50vw"
+            priority={index === 0}
+            fallbackSrc="/placeholder_dog.svg"
           />
         ) : (
           <div
@@ -569,7 +574,7 @@ const ComparisonView = ({
               dragElastic={0.1}
               onDragEnd={handleDragEnd}
             >
-              {dogs.map((dog) => (
+              {dogs.map((dog, index) => (
                 <div
                   key={dog.id}
                   className={`flex-shrink-0 ${
@@ -585,6 +590,7 @@ const ComparisonView = ({
                     <DogComparisonCard
                       dog={dog}
                       onRemoveFavorite={onRemoveFavorite}
+                      index={index}
                     />
                   </div>
                 </div>

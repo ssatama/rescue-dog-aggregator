@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import { FallbackImage } from "../ui/FallbackImage";
 import { IMAGE_SIZES } from "../../constants/imageSizes";
 
 interface ImageCarouselProps {
@@ -90,7 +91,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
               ${index === currentIndex ? "opacity-100" : "opacity-0"}
             `}
           >
-            <Image
+            <FallbackImage
               src={image}
               alt={`${dogName} - Photo ${index + 1}`}
               fill

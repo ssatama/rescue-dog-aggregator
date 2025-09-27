@@ -23,6 +23,13 @@ export const R2_CUSTOM_DOMAIN =
   process.env.NEXT_PUBLIC_R2_CUSTOM_DOMAIN || "images.rescuedogs.me";
 
 /**
+ * R2 Image Path - Path within R2 bucket for images
+ * Uses environment variable with fallback to default path
+ */
+export const R2_IMAGE_PATH =
+  process.env.NEXT_PUBLIC_R2_IMAGE_PATH || "rescue_dogs";
+
+/**
  * Centralized image domain configuration
  * Provides consistent domain references across the application
  */

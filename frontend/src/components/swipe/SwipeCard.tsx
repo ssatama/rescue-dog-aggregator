@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import Image from "next/image";
+import { FallbackImage } from "../ui/FallbackImage";
 import { useFavorites } from "../../hooks/useFavorites";
 import * as Sentry from "@sentry/nextjs";
 import { getPersonalityTraitColor } from "../../utils/personalityColors";
@@ -130,21 +131,15 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
         className="relative aspect-[4/3] bg-gradient-to-br from-orange-400 to-orange-600 overflow-hidden rounded-t-xl flex-shrink-0"
         data-testid="image-container"
       >
-        {dog.image ? (
-          <Image
-            src={dog.image}
-            alt={`${dog.name} - adoptable dog`}
-            fill
-            sizes={IMAGE_SIZES.SWIPE_CARD}
-            className="object-cover transition-transform duration-300 ease-out group-hover:scale-105"
-            style={{ objectPosition: "center 30%" }}
-            priority
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full text-white text-6xl">
-            🐕
-          </div>
-        )}
+        <FallbackImage
+          src={dog.image || "/placeholder_dog.svg"}
+          alt={`${dog.name} - Available for adoption`}
+          fill
+          className="object-cover"
+          sizes={IMAGE_SIZES.SWIPE_CARD}
+          priority={!isStacked}
+          fallbackSrc="/placeholder_dog.svg"
+        />
       </div>
 
       {/* Essential Info with Enriched Data */}

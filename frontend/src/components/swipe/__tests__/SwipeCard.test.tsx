@@ -112,7 +112,15 @@ describe("SwipeCard", () => {
 
     renderWithProvider(<SwipeCard dog={dogWithoutImage} />);
 
-    expect(screen.getByText("🐕")).toBeInTheDocument();
+    // The FallbackImage component will render a placeholder
+    // Check for the fallback image or placeholder element
+    const container = screen.getByTestId("image-container");
+    expect(container).toBeInTheDocument();
+    
+    // The FallbackImage should still render an img element with fallback src
+    const img = container.querySelector('img');
+    expect(img).toBeInTheDocument();
+    expect(img).toHaveAttribute('src', '/placeholder_dog.svg');
   });
 
   it("should handle missing optional fields gracefully", () => {

@@ -32,6 +32,7 @@ import PersonalityBarChart from "@/components/breeds/PersonalityBarChart";
 import CommonTraits from "@/components/breeds/CommonTraits";
 import ExperienceLevelChart from "@/components/breeds/ExperienceLevelChart";
 import ExpandableText from "@/components/ui/ExpandableText";
+import { FallbackImage } from "@/components/ui/FallbackImage";
 
 // Lazy load filter component
 const MobileFilterDrawer = dynamic(

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import Image from "next/image";
+import { FallbackImage } from "../ui/FallbackImage";
 import Link from "next/link";
 
 function BreedMobileCarousel({
@@ -56,18 +56,14 @@ function BreedMobileCarousel({
             href={`/dogs/${dog.slug}`}
             className="flex-shrink-0 w-[70vw] max-w-[280px] aspect-[4/5] relative overflow-hidden rounded-lg cursor-pointer group block snap-start"
           >
-            <Image
-              src={
-                imageErrors[dog.id]
-                  ? "/images/dog-placeholder.jpg"
-                  : dog.primary_image_url
-              }
+            <FallbackImage
+              src={dog.primary_image_url}
               alt={`${dog.name} - ${breedName} rescue dog`}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"
               priority={index < 3}
               sizes="(max-width: 640px) 70vw, 280px"
-              onError={() => handleImageError(dog.id)}
+              fallbackSrc="/images/dog-placeholder.jpg"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
             <div className="absolute bottom-2 left-2">
@@ -195,18 +191,14 @@ export default function BreedPhotoGallery({ dogs, breedName, className = "" }) {
         href={`/dogs/${dog.slug}`}
         className={`relative overflow-hidden rounded-lg cursor-pointer group block ${aspectRatios[index]}`}
       >
-        <Image
-          src={
-            imageErrors[dog.id]
-              ? "/images/dog-placeholder.jpg"
-              : dog.primary_image_url
-          }
+        <FallbackImage
+          src={dog.primary_image_url}
           alt={`${dog.name} - ${breedName} rescue dog`}
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-300"
-          priority={index < 3}
           sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          onError={() => handleImageError(dog.id)}
+          priority={index < 3}
+          fallbackSrc="/images/dog-placeholder.jpg"
         />
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
         <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
