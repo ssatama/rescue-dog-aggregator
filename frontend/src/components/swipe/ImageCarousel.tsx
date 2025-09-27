@@ -35,7 +35,9 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
     const touchEndX = e.changedTouches[0].clientX;
     const diff = touchStartX.current - touchEndX;
 
+    // Only trigger if swipe is significant (>50px) to avoid accidental triggers
     if (Math.abs(diff) > 50) {
+      e.stopPropagation(); // Prevent parent from also handling
       if (diff > 0 && currentIndex < allImages.length - 1) {
         setCurrentIndex(currentIndex + 1);
       } else if (diff < 0 && currentIndex > 0) {

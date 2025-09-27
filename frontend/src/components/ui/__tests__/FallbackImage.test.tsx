@@ -16,7 +16,6 @@ jest.mock("next/image", () => ({
     delete imgProps.placeholder;
     delete imgProps.blurDataURL;
 
-    // eslint-disable-next-line @next/next/no-img-element
     return (
       <img
         src={src}

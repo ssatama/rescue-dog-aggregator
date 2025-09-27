@@ -110,12 +110,12 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
             }
             compact={true}
             variant="ghost"
-            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/90 backdrop-blur shadow-lg hover:scale-110 transition-all"
+            className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/90 backdrop-blur shadow-lg hover:scale-110 transition-all"
           />
         </div>
         <button
           onClick={handleFavorite}
-          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow-lg hover:scale-110 transition-all ${isLiked ? "scale-125" : ""}`}
+          className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow-lg hover:scale-110 transition-all ${isLiked ? "scale-125" : ""}`}
           aria-label="Add to favorites"
         >
           <span

@@ -151,4 +151,24 @@ describe("SwipeCard", () => {
     const imageContainer = screen.getByTestId("image-container");
     expect(imageContainer).toHaveClass("aspect-[4/3]");
   });
+
+  it("should have accessible touch target sizes for action buttons", () => {
+    renderWithProvider(<SwipeCard dog={mockDog} />);
+
+    // Find the action buttons
+    const favoriteButton = screen.getByLabelText("Add to favorites");
+    const shareButton = screen.getByLabelText("Share");
+
+    // Check that buttons have minimum 48px size (w-12 h-12 in Tailwind)
+    expect(favoriteButton).toHaveClass("w-12");
+    expect(favoriteButton).toHaveClass("h-12");
+    expect(shareButton).toHaveClass("w-12");
+    expect(shareButton).toHaveClass("h-12");
+
+    // On larger screens, they should be even bigger (sm:w-14 sm:h-14)
+    expect(favoriteButton).toHaveClass("sm:w-14");
+    expect(favoriteButton).toHaveClass("sm:h-14");
+    expect(shareButton).toHaveClass("sm:w-14");
+    expect(shareButton).toHaveClass("sm:h-14");
+  });
 });

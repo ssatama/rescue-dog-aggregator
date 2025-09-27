@@ -5,7 +5,7 @@ import { SwipeContainerWithFilters } from "../../components/swipe/SwipeContainer
 import { SwipeDetails } from "../../components/swipe/SwipeDetails";
 import SwipeErrorBoundary from "../../components/swipe/SwipeErrorBoundary";
 import { useRouter } from "next/navigation";
-import { useMediaQuery } from "../../hooks/useMediaQuery";
+import { useSwipeDevice } from "../../hooks/useSwipeDevice";
 import { swipeMetrics } from "../../utils/swipeMetrics";
 import { get } from "../../utils/api";
 import * as Sentry from "@sentry/nextjs";
@@ -39,14 +39,14 @@ interface Dog {
 
 export default function SwipePage() {
   const router = useRouter();
-  const isMobile = useMediaQuery("(max-width: 1023px)");
+  const canUseSwipe = useSwipeDevice();
   const [selectedDog, setSelectedDog] = useState<Dog | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [totalSwiped, setTotalSwiped] = useState(0);
 
   // Initialize performance tracking on mount
   useEffect(() => {
-    if (isMobile) {
+    if (canUseSwipe) {
       // Track load time
       swipeMetrics.trackLoadTime();
 
@@ -63,7 +63,7 @@ export default function SwipePage() {
         swipeMetrics.stopFPSMonitoring();
       };
     }
-  }, [isMobile]);
+  }, [canUseSwipe]);
 
   // Helper function to map dog data to SwipeDetails format
   const mapDogForDetails = (dog: Dog): any => ({
@@ -95,7 +95,7 @@ export default function SwipePage() {
   });
 
   // Redirect desktop users
-  if (!isMobile && typeof window !== "undefined") {
+  if (!canUseSwipe && typeof window !== "undefined") {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-8">
         <div className="text-center max-w-md">

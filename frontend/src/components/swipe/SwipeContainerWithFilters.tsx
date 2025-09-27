@@ -614,7 +614,14 @@ export function SwipeContainerWithFilters({
           <div
             className="relative w-full flex flex-col"
             style={{
-              maxWidth: "min(calc(100vw - 2rem), 400px)",
+              maxWidth: (() => {
+                if (typeof window === "undefined") return "400px";
+                const vw = window.innerWidth;
+                if (vw < 640) return "calc(100vw - 2rem)"; // Phones: full width minus padding
+                if (vw < 768) return "min(500px, calc(100vw - 3rem))"; // Large phones
+                if (vw < 1024) return "min(600px, calc(100vw - 4rem))"; // Tablets
+                return "700px"; // Large tablets
+              })(),
               minHeight: "300px",
             }}
           >
@@ -622,7 +629,7 @@ export function SwipeContainerWithFilters({
               key={`dog-${currentDog.id}`}
               className="relative touch-none"
               onClick={handleCardTap}
-              style={{ touchAction: "none" }}
+              style={{ touchAction: "pan-y" }}
             >
               <SwipeCard dog={currentDog} />
             </div>
