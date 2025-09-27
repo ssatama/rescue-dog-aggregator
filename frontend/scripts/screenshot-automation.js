@@ -16,16 +16,6 @@ const path = require("path");
 const DEVICES = [
   // === MOBILE PHONES (< 1024px) ===
   {
-    name: "iphone-se",
-    // Source: https://gist.github.com/mfehrenbach/aaf646bee2e8880b5142d92e20b633d4 - iPhone SE
-    // CSS Viewport: 320×449 (mobile layout < 1024px)
-    width: 320,
-    height: 449,
-    deviceScaleFactor: 2,
-    userAgent:
-      "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Mobile/15E148 Safari/604.1",
-  },
-  {
     name: "iphone-15-plus",
     // Source: https://gist.github.com/mfehrenbach/aaf646bee2e8880b5142d92e20b633d4 - iPhone 15 Plus
     // CSS Viewport: 428×739 (mobile layout < 1024px)
@@ -99,8 +89,16 @@ const PAGES = [
       {
         name: "nav-open",
         action: async (page) => {
-          await page.click('[data-testid="mobile-menu-button"]');
-          await page.waitForTimeout(4000);
+          try {
+            // Check if mobile menu button is visible before clicking
+            const menuButton = await page.locator('[data-testid="mobile-menu-button"]');
+            if (await menuButton.isVisible({ timeout: 2000 })) {
+              await menuButton.click();
+              await page.waitForTimeout(4000);
+            }
+          } catch (e) {
+            console.log(`      ⚠️  Mobile menu button not visible, skipping...`);
+          }
         },
       },
     ],
@@ -112,8 +110,16 @@ const PAGES = [
       {
         name: "filters-open",
         action: async (page) => {
-          await page.click('[data-testid="mobile-filter-button"]');
-          await page.waitForTimeout(4000);
+          try {
+            // Check if mobile filter button is visible before clicking
+            const filterButton = await page.locator('[data-testid="mobile-filter-button"]');
+            if (await filterButton.isVisible({ timeout: 2000 })) {
+              await filterButton.click();
+              await page.waitForTimeout(4000);
+            }
+          } catch (e) {
+            console.log(`      ⚠️  Mobile filter button not visible, skipping...`);
+          }
         },
       },
     ],
@@ -130,11 +136,31 @@ const PAGES = [
       {
         name: "filters-open",
         action: async (page) => {
-          await page.click('[data-testid="mobile-filter-button"]');
-          await page.waitForTimeout(4000);
+          try {
+            // Check if mobile filter button is visible before clicking
+            const filterButton = await page.locator('[data-testid="mobile-filter-button"]');
+            if (await filterButton.isVisible({ timeout: 2000 })) {
+              await filterButton.click();
+              await page.waitForTimeout(4000);
+            }
+          } catch (e) {
+            console.log(`      ⚠️  Mobile filter button not visible, skipping...`);
+          }
         },
       },
     ],
+  },
+  {
+    name: "breeds",
+    url: "http://localhost:3000/breeds",
+  },
+  {
+    name: "breeds-mixed",
+    url: "http://localhost:3000/breeds/mixed",
+  },
+  {
+    name: "breed-detail",
+    url: "http://localhost:3000/breeds/galgo",
   },
   {
     name: "favorites-empty",
@@ -427,6 +453,42 @@ async function waitForPageReady(page, pageConfig) {
         page.waitForTimeout(2000),
       ]).catch(() => {
         console.log(`    ⚠️  Favorites content check timeout, continuing...`);
+      });
+    } else if (pathname === "/breeds") {
+      // Breeds page: wait for content
+      console.log(`    🐾 Waiting for breeds page content...`);
+      await page.waitForSelector("h1", {
+        state: "visible",
+        timeout: 15000,
+      });
+
+      await page.waitForSelector("main", {
+        state: "visible",
+        timeout: 10000,
+      });
+    } else if (pathname === "/breeds/mixed") {
+      // Mixed breeds page: wait for content
+      console.log(`    🐕‍🦺 Waiting for mixed breeds page content...`);
+      await page.waitForSelector("h1", {
+        state: "visible",
+        timeout: 15000,
+      });
+
+      await page.waitForSelector("main", {
+        state: "visible",
+        timeout: 10000,
+      });
+    } else if (pathname.startsWith("/breeds/") && pathname !== "/breeds/mixed") {
+      // Breed detail page: wait for content
+      console.log(`    🦮 Waiting for breed detail content...`);
+      await page.waitForSelector("h1", {
+        state: "visible",
+        timeout: 15000,
+      });
+
+      await page.waitForSelector("main", {
+        state: "visible",
+        timeout: 10000,
       });
     }
 
