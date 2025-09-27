@@ -96,28 +96,26 @@ export default function Header() {
               {/* Increased spacing for better visual separation */}
               {renderNavLink("/dogs", "Find Dogs", "dogs")}
               {renderNavLink("/breeds", "Breeds", "breeds")}
-              {/* Show Swipe on mobile and tablet, hide on desktop (lg and above) */}
-              <div className="block lg:hidden">
-                <div className="relative">
-                  <Link href="/swipe" className={getLinkClasses("/swipe")}>
-                    <span className="flex items-center gap-1">
-                      <Icon
-                        name="heart"
-                        size="default"
-                        className="text-red-500"
-                        filled
-                        aria-label="Heart icon"
-                      />
-                      Quick Browse
-                    </span>
-                  </Link>
-                  {pathname === "/swipe" && (
-                    <div
-                      data-testid="nav-underline-swipe"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"
+              {/* Show Swipe on all screen sizes */}
+              <div className="relative">
+                <Link href="/swipe" className={getLinkClasses("/swipe")}>
+                  <span className="flex items-center gap-1">
+                    <Icon
+                      name="heart"
+                      size="default"
+                      className="text-red-500"
+                      filled
+                      aria-label="Heart icon"
                     />
-                  )}
-                </div>
+                    Quick Browse
+                  </span>
+                </Link>
+                {pathname === "/swipe" && (
+                  <div
+                    data-testid="nav-underline-swipe"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"
+                  />
+                )}
               </div>
               {renderNavLink("/favorites", "Favorites", "favorites", true)}
               {renderNavLink(

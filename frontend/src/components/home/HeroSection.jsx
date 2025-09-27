@@ -100,13 +100,13 @@ export default function HeroSection({
               </Link>
             </div>
 
-            {/* Mobile-only Quick Browse CTA */}
-            <div className="mt-6 lg:hidden">
+            {/* Quick Browse CTA - Available on all devices */}
+            <div className="mt-6">
               <Link href="/swipe">
                 <Button
                   data-testid="hero-swipe-cta"
                   size="lg"
-                  className="w-full sm:w-auto sm:max-w-xs sm:mx-auto bg-white dark:bg-gray-800 text-orange-600 dark:text-orange-400 border-2 border-orange-600 dark:border-orange-500 hover:bg-orange-50 dark:hover:bg-gray-700 font-bold px-8 py-3 transition-colors"
+                  className="w-full sm:w-auto sm:max-w-xs sm:mx-auto lg:mx-0 bg-white dark:bg-gray-800 text-orange-600 dark:text-orange-400 border-2 border-orange-600 dark:border-orange-500 hover:bg-orange-50 dark:hover:bg-gray-700 font-bold px-8 py-3 transition-colors"
                   style={{ minWidth: "48px", minHeight: "48px" }}
                 >
                   <span className="mr-2 text-xl" aria-label="Paw icon">
@@ -115,7 +115,7 @@ export default function HeroSection({
                   Quick Browse Dogs
                 </Button>
               </Link>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center lg:text-left">
                 Meet dogs one at a time
               </p>
             </div>

@@ -78,23 +78,22 @@ describe("SwipePage", () => {
     expect(screen.getByText("Swipe Container")).toBeInTheDocument();
   });
 
-  it("should show desktop message for non-swipe devices", () => {
-    mockUseSwipeDevice.mockReturnValue(false);
+  it("should show swipe container for all devices", () => {
+    // Simulating an iPad
+    mockUseSwipeDevice.mockReturnValue(true);
 
     render(<SwipePage />);
-    expect(screen.getByText("Mobile Only Feature")).toBeInTheDocument();
-    expect(
-      screen.getByText(/The swipe feature is designed for mobile devices/),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Swipe Container")).toBeInTheDocument();
   });
 
-  it("should have a button to go back to homepage on desktop", () => {
-    mockUseSwipeDevice.mockReturnValue(false);
+  it("should show swipe container even on desktop devices", () => {
+    (useSwipeDevice as jest.Mock).mockReturnValue(false);
 
     render(<SwipePage />);
-    const backButton = screen.getByText("Back to Homepage");
-    expect(backButton).toBeInTheDocument();
-    backButton.click();
-    expect(mockPush).toHaveBeenCalledWith("/");
+    // Desktop users should now see the swipe container, not the blocking message
+    expect(screen.getByText("Swipe Container")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Mobile Only Feature")
+    ).not.toBeInTheDocument();
   });
 });

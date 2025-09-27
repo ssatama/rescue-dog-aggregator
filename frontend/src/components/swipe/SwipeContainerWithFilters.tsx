@@ -620,7 +620,9 @@ export function SwipeContainerWithFilters({
                 if (vw < 640) return "calc(100vw - 2rem)"; // Phones: full width minus padding
                 if (vw < 768) return "min(500px, calc(100vw - 3rem))"; // Large phones
                 if (vw < 1024) return "min(600px, calc(100vw - 4rem))"; // Tablets
-                return "700px"; // Large tablets
+                if (vw < 1280) return "700px"; // Large tablets
+                if (vw < 1536) return "600px"; // Small desktop
+                return "650px"; // Large desktop - constrained for optimal viewing
               })(),
               minHeight: "300px",
             }}
