@@ -166,113 +166,113 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
             data-testid="modal-backdrop"
           />
 
-          <motion.div
-            ref={modalRef}
-            initial={{ y: "100%" }}
-            animate={{ y: dragY }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:bottom-auto md:right-auto bg-white dark:bg-gray-800 rounded-t-3xl md:rounded-2xl z-50 max-h-[90vh] md:max-h-[85vh] overflow-y-auto md:max-w-2xl lg:max-w-4xl md:w-[90vw] lg:w-[80vw] md:shadow-2xl"
-            style={{ 
-              transform: typeof window !== 'undefined' && window.innerWidth >= 768 
-                ? `translate(-50%, -50%) translateY(${dragY}px)` 
-                : `translateY(${dragY}px)` 
-            }}
-            data-testid="modal-content"
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
+          {/* Wrapper div for positioning, motion.div for animation */}
+          <div
+            className="fixed bottom-0 left-0 right-0 md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:bottom-auto md:right-auto z-50 md:max-w-2xl lg:max-w-4xl md:w-[90vw] lg:w-[80vw]"
+            data-testid="modal-wrapper"
           >
-            <div className="sticky top-0 bg-white dark:bg-gray-800 z-10 px-4 py-3 border-b dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold dark:text-gray-100">
-                  Dog Details
-                </h2>
-                <button
-                  onClick={onClose}
-                  aria-label="Close"
-                  className="p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors mr-safe min-w-[48px] min-h-[48px] flex items-center justify-center"
-                  style={{ marginRight: "env(safe-area-inset-right, 0px)" }}
-                >
-                  <X size={24} className="dark:text-gray-300" />
-                </button>
-              </div>
-            </div>
-
-            <div className="pb-safe">
-              <ImageCarousel
-                images={allImages}
-                dogName={dog.name}
-                overlayButtons={overlayButtons}
-              />
-
-              <div className="px-4 py-6 space-y-6">
-                <div>
-                  <h1 className="text-3xl font-bold mb-2 dark:text-gray-100">
-                    {dog.name}
-                  </h1>
-
-                  <div className="flex items-center gap-4 text-gray-600 dark:text-gray-400 mb-4">
-                    <span className="flex items-center gap-1">
-                      <span className="text-orange-500">🐾</span> {ageCategory}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span>♂</span> {dog.sex}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span>📏</span> {dog.size}
-                    </span>
-                  </div>
-
-                  <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
-                    <p>{dog.organization_name}</p>
-                    <p>{dog.location}</p>
-                  </div>
+            <motion.div
+              ref={modalRef}
+              initial={{ y: typeof window !== 'undefined' && window.innerWidth >= 768 ? 0 : "100%" }}
+              animate={{ y: dragY }}
+              exit={{ y: typeof window !== 'undefined' && window.innerWidth >= 768 ? 0 : "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="bg-white dark:bg-gray-800 rounded-t-3xl md:rounded-2xl max-h-[90vh] md:max-h-[85vh] overflow-y-auto md:shadow-2xl"
+              data-testid="modal-content"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              <div className="sticky top-0 bg-white dark:bg-gray-800 z-10 px-4 py-3 border-b dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold dark:text-gray-100">
+                    Dog Details
+                  </h2>
+                  <button
+                    onClick={onClose}
+                    aria-label="Close"
+                    className="p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors mr-safe min-w-[48px] min-h-[48px] flex items-center justify-center"
+                    style={{ marginRight: "env(safe-area-inset-right, 0px)" }}
+                  >
+                    <X size={24} className="dark:text-gray-300" />
+                  </button>
                 </div>
+              </div>
 
-                {profilerData?.description && (
+              <div className="pb-safe">
+                <ImageCarousel
+                  images={allImages}
+                  dogName={dog.name}
+                  overlayButtons={overlayButtons}
+                />
+
+                <div className="px-4 py-6 space-y-6">
                   <div>
-                    <h3 className="text-lg font-semibold dark:text-gray-100 mb-2">
-                      About {dog.name}
-                    </h3>
-                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                      {profilerData.description}
-                    </p>
-                  </div>
-                )}
+                    <h1 className="text-3xl font-bold mb-2 dark:text-gray-100">
+                      {dog.name}
+                    </h1>
 
-                {profilerData?.personality_traits &&
-                  profilerData.personality_traits.length > 0 && (
+                    <div className="flex items-center gap-4 text-gray-600 dark:text-gray-400 mb-4">
+                      <span className="flex items-center gap-1">
+                        <span className="text-orange-500">🐾</span> {ageCategory}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span>♂</span> {dog.sex}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span>📏</span> {dog.size}
+                      </span>
+                    </div>
+
+                    <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
+                      <p>{dog.organization_name}</p>
+                      <p>{dog.location}</p>
+                    </div>
+                  </div>
+
+                  {profilerData?.description && (
                     <div>
-                      <h3 className="text-lg font-semibold dark:text-gray-100 mb-3">
-                        Personality
+                      <h3 className="text-lg font-semibold dark:text-gray-100 mb-2">
+                        About {dog.name}
                       </h3>
-                      <div className="flex flex-wrap gap-2">
-                        {profilerData.personality_traits
-                          .slice(0, 4)
-                          .map((trait, index) => (
-                            <span
-                              key={index}
-                              className={`px-4 py-2 rounded-full text-base font-medium ${getPersonalityTraitColor(trait)}`}
-                            >
-                              {trait.charAt(0).toUpperCase() + trait.slice(1)}
-                            </span>
-                          ))}
-                      </div>
+                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                        {profilerData.description}
+                      </p>
                     </div>
                   )}
 
-                {(profilerData?.good_with_dogs !== undefined ||
-                  profilerData?.good_with_cats !== undefined ||
-                  profilerData?.good_with_kids !== undefined) && (
-                  <div>
-                    <h3 className="text-lg font-semibold dark:text-gray-100 mb-3">
-                      Good With
-                    </h3>
-                    <div className="flex gap-3">
-                      {profilerData.good_with_dogs !== undefined && (
-                        <div
-                          className={`
+                  {profilerData?.personality_traits &&
+                    profilerData.personality_traits.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold dark:text-gray-100 mb-3">
+                          Personality
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {profilerData.personality_traits
+                            .slice(0, 4)
+                            .map((trait, index) => (
+                              <span
+                                key={index}
+                                className={`px-4 py-2 rounded-full text-base font-medium ${getPersonalityTraitColor(trait)}`}
+                              >
+                                {trait.charAt(0).toUpperCase() + trait.slice(1)}
+                              </span>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                  {(profilerData?.good_with_dogs !== undefined ||
+                    profilerData?.good_with_cats !== undefined ||
+                    profilerData?.good_with_kids !== undefined) && (
+                    <div>
+                      <h3 className="text-lg font-semibold dark:text-gray-100 mb-3">
+                        Good With
+                      </h3>
+                      <div className="flex gap-3">
+                        {profilerData.good_with_dogs !== undefined && (
+                          <div
+                            className={`
                           px-4 py-3 rounded-xl flex flex-col items-center gap-1
                           ${
                             profilerData.good_with_dogs === true
@@ -282,17 +282,17 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                                 : "bg-gray-100 dark:bg-gray-700"
                           }
                         `}
-                        >
-                          <span className="text-2xl">🐕</span>
-                          <span className="text-sm font-medium dark:text-gray-200">
-                            Dogs {getGoodWithIcon(profilerData.good_with_dogs)}
-                          </span>
-                        </div>
-                      )}
+                          >
+                            <span className="text-2xl">🐕</span>
+                            <span className="text-sm font-medium dark:text-gray-200">
+                              Dogs {getGoodWithIcon(profilerData.good_with_dogs)}
+                            </span>
+                          </div>
+                        )}
 
-                      {profilerData.good_with_cats !== undefined && (
-                        <div
-                          className={`
+                        {profilerData.good_with_cats !== undefined && (
+                          <div
+                            className={`
                           px-4 py-3 rounded-xl flex flex-col items-center gap-1
                           ${
                             profilerData.good_with_cats === true
@@ -302,17 +302,17 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                                 : "bg-gray-100 dark:bg-gray-700"
                           }
                         `}
-                        >
-                          <span className="text-2xl">🐱</span>
-                          <span className="text-sm font-medium dark:text-gray-200">
-                            Cats {getGoodWithIcon(profilerData.good_with_cats)}
-                          </span>
-                        </div>
-                      )}
+                          >
+                            <span className="text-2xl">🐱</span>
+                            <span className="text-sm font-medium dark:text-gray-200">
+                              Cats {getGoodWithIcon(profilerData.good_with_cats)}
+                            </span>
+                          </div>
+                        )}
 
-                      {profilerData.good_with_kids !== undefined && (
-                        <div
-                          className={`
+                        {profilerData.good_with_kids !== undefined && (
+                          <div
+                            className={`
                           px-4 py-3 rounded-xl flex flex-col items-center gap-1
                           ${
                             profilerData.good_with_kids === true
@@ -322,28 +322,29 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                                 : "bg-gray-100 dark:bg-gray-700"
                           }
                         `}
-                        >
-                          <span className="text-2xl">👶</span>
-                          <span className="text-sm font-medium dark:text-gray-200">
-                            Kids {getGoodWithIcon(profilerData.good_with_kids)}
-                          </span>
-                        </div>
-                      )}
+                          >
+                            <span className="text-2xl">👶</span>
+                            <span className="text-sm font-medium dark:text-gray-200">
+                              Kids {getGoodWithIcon(profilerData.good_with_kids)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                <div className="pt-4">
-                  <AdoptionCTA
-                    adoptionUrl={dog.adoption_url || ""}
-                    dogId={dog.id}
-                    dogName={dog.name}
-                    organizationName={dog.organization_name}
-                  />
+                  <div className="pt-4">
+                    <AdoptionCTA
+                      adoptionUrl={dog.adoption_url || ""}
+                      dogId={dog.id}
+                      dogName={dog.name}
+                      organizationName={dog.organization_name}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>

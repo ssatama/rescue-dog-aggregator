@@ -65,10 +65,10 @@ export default function ShareButton({
   // Determine button size and content based on compact mode
   const buttonSize = compact ? "icon" : size;
   const buttonContent = compact ? (
-    <Icon name="share" size="small" />
+    <Icon name="share" size="small" className="text-current" />
   ) : (
     <>
-      <Icon name="share" size="small" className="mr-2" />
+      <Icon name="share" size="small" className="mr-2 text-current" />
       {children}
     </>
   );

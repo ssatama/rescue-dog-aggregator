@@ -115,9 +115,6 @@ export default function HeroSection({
                   Quick Browse Dogs
                 </Button>
               </Link>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center lg:text-left">
-                Meet dogs one at a time
-              </p>
             </div>
           </div>
 
