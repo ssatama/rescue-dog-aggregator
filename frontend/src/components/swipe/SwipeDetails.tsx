@@ -172,8 +172,12 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
             animate={{ y: dragY }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-3xl z-50 max-h-[90vh] overflow-y-auto"
-            style={{ transform: `translateY(${dragY}px)` }}
+            className="fixed bottom-0 left-0 right-0 md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:bottom-auto md:right-auto bg-white dark:bg-gray-800 rounded-t-3xl md:rounded-2xl z-50 max-h-[90vh] md:max-h-[85vh] overflow-y-auto md:max-w-2xl lg:max-w-4xl md:w-[90vw] lg:w-[80vw] md:shadow-2xl"
+            style={{ 
+              transform: typeof window !== 'undefined' && window.innerWidth >= 768 
+                ? `translate(-50%, -50%) translateY(${dragY}px)` 
+                : `translateY(${dragY}px)` 
+            }}
             data-testid="modal-content"
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}

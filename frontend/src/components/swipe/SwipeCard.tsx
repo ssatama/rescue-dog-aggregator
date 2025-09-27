@@ -110,7 +110,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
             }
             compact={true}
             variant="ghost"
-            className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/90 backdrop-blur shadow-lg hover:scale-110 transition-all"
+            className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur shadow-lg hover:scale-110 transition-all text-gray-600 dark:text-white"
           />
         </div>
         <button
@@ -128,14 +128,14 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
 
       {/* Main Image - Mobile optimized with 4:3 aspect ratio */}
       <div
-        className="relative aspect-[4/3] bg-gradient-to-br from-orange-400 to-orange-600 overflow-hidden rounded-t-xl flex-shrink-0"
+        className="relative aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 overflow-hidden rounded-t-xl flex-shrink-0"
         data-testid="image-container"
       >
         <FallbackImage
           src={dog.image || "/placeholder_dog.svg"}
           alt={`${dog.name} - Available for adoption`}
           fill
-          className="object-cover"
+          className="object-cover md:object-contain"
           sizes={IMAGE_SIZES.SWIPE_CARD}
           priority={!isStacked}
           fallbackSrc="/placeholder_dog.svg"

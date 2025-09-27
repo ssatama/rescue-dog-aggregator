@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import { useFavorites } from "../../hooks/useFavorites";
 import * as Sentry from "@sentry/nextjs";
-import { Heart, ChevronRight, Home } from "lucide-react";
+import { Heart, ChevronRight, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { SwipeCard } from "./SwipeCard";
 import SwipeOnboarding from "./SwipeOnboarding";
@@ -549,7 +549,7 @@ export function SwipeContainerWithFilters({
             className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors z-50"
             aria-label="Exit to home"
           >
-            <Home className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
           </button>
 
           <div className="flex-1 flex justify-between items-center pr-12">
@@ -669,7 +669,7 @@ export function SwipeContainerWithFilters({
                 className="paw-btn paw-left w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white dark:bg-gray-600 shadow-lg dark:shadow-xl dark:shadow-black/50 border-2 border-gray-300 dark:border-gray-400 flex flex-col items-center justify-center hover:scale-110 hover:bg-gray-50 dark:hover:bg-gray-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Previous dog"
               >
-                <span className="text-2xl sm:text-3xl transform rotate-180">
+                <span className="text-2xl sm:text-3xl transform rotate-180 text-orange-500 dark:text-orange-400">
                   🐾
                 </span>
                 <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-200 font-medium mt-1">
@@ -683,7 +683,7 @@ export function SwipeContainerWithFilters({
                 className="paw-btn paw-right w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white dark:bg-gray-600 shadow-lg dark:shadow-xl dark:shadow-black/50 border-2 border-gray-300 dark:border-gray-400 flex flex-col items-center justify-center hover:scale-110 hover:bg-gray-50 dark:hover:bg-gray-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Next dog"
               >
-                <span className="text-2xl sm:text-3xl">🐾</span>
+                <span className="text-2xl sm:text-3xl text-orange-500 dark:text-orange-400">🐾</span>
                 <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-200 font-medium mt-1">
                   Next
                 </span>
