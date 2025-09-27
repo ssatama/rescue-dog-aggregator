@@ -322,7 +322,7 @@ animals (
   id SERIAL PRIMARY KEY,
   external_id VARCHAR UNIQUE NOT NULL,
   organization_id INTEGER REFERENCES organizations(id),
-  
+
   -- Basic Information
   name VARCHAR NOT NULL,
   slug VARCHAR UNIQUE,
@@ -330,34 +330,34 @@ animals (
   age_text VARCHAR,
   size VARCHAR CHECK (size IN ('small', 'medium', 'large', 'xlarge')),
   gender VARCHAR CHECK (gender IN ('male', 'female', 'unknown')),
-  
+
   -- Status Management
   status VARCHAR DEFAULT 'available',
   availability_confidence VARCHAR DEFAULT 'high',
-  
+
   -- Breed Standardization (NEW)
   breed_confidence VARCHAR(50),
   breed_type VARCHAR(50),
   primary_breed VARCHAR(100),
   secondary_breed VARCHAR(100),
-  
+
   -- JSON Storage
   properties JSONB,           -- Raw scraped data
   photos JSONB,              -- Image URLs and metadata
   dog_profiler_data JSONB,   -- AI-generated profile
   translations JSONB,         -- Multi-language content
   adoption_fees JSONB,        -- Fee structure
-  
+
   -- LLM Enrichment
   enriched_description TEXT,
   llm_processed_at TIMESTAMP,
   llm_model_used VARCHAR,
-  
+
   -- Timestamps
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
   last_seen_at TIMESTAMP,
-  
+
   -- Indexes
   INDEX idx_animals_organization (organization_id),
   INDEX idx_animals_status (status),
@@ -373,21 +373,21 @@ organizations (
   slug VARCHAR UNIQUE,
   website VARCHAR,
   config_id VARCHAR,          -- Links to YAML config
-  
+
   -- Status
   active BOOLEAN DEFAULT true,
   last_sync TIMESTAMP,
-  
+
   -- Metrics (NEW)
   total_dogs INTEGER DEFAULT 0,
   new_this_week INTEGER DEFAULT 0,
   recent_dogs JSONB,          -- Recent additions
-  
+
   -- Shipping/Service (NEW)
   ships_to JSONB,             -- Array of countries
   service_regions JSONB,      -- Service areas
   adoption_fees JSONB,        -- Default fee structure
-  
+
   -- Timestamps
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
@@ -404,7 +404,7 @@ CREATE INDEX idx_org_active ON organizations(active) WHERE active = true;
 #### Migration Strategy
 
 - **Tool**: Alembic with environment-specific migrations
-- **Locations**: 
+- **Locations**:
   - `/migrations/versions/`: Development migrations
   - `/migrations/railway/versions/`: Production migrations
 - **Features**:
@@ -780,7 +780,7 @@ GitHub Main Branch → Vercel (Frontend) + Railway (Backend)
   - Compound indexes for common queries
   - Materialized views for aggregates
   - Query result caching (5-minute TTL)
-- **Batch Operations**: 
+- **Batch Operations**:
   - Bulk inserts (100 records/batch)
   - Cursor-based pagination
   - Parallel query execution
@@ -793,7 +793,7 @@ GitHub Main Branch → Vercel (Frontend) + Railway (Backend)
   - Pagination: Cursor-based for large datasets
   - Caching: ETags and conditional requests
   - Compression: gzip for responses > 1KB
-- **Query Optimization**: 
+- **Query Optimization**:
   - Selective field loading
   - Eager loading for relationships
   - Query result streaming
@@ -949,7 +949,7 @@ Sentry.init({
 
 ### Authentication & Authorization
 
-- **Session Management**: 
+- **Session Management**:
   - UUID tokens (128-bit)
   - 30-day expiry
   - Secure cookie storage
@@ -988,7 +988,7 @@ Sentry.init({
 - **Data Volume**: 2,500+ dog profiles
 - **Organizations**: 14 active scrapers
 - **Traffic**: 20+ daily active users
-- **Performance**: 
+- **Performance**:
   - API: <200ms response time
   - Frontend: 95+ Lighthouse score
   - LLM: 90% success rate
@@ -1026,7 +1026,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 python run_api.py
 
-# Frontend  
+# Frontend
 cd frontend
 npm install
 npm run dev
@@ -1080,7 +1080,7 @@ python -m alembic upgrade head
 
 ### Why PostgreSQL?
 - JSONB for flexible schema evolution
-- Full-text search capabilities  
+- Full-text search capabilities
 - Strong ACID guarantees
 - Excellent async driver (asyncpg)
 - Railway managed hosting
@@ -1138,7 +1138,7 @@ REDIS_URL=redis://localhost:6379
 
 # Frontend
 NEXT_PUBLIC_API_URL=http://localhost:8000
-NEXT_PUBLIC_SENTRY_DSN=xxx
+sNEXT_PUBLIC_SENTRY_DSN=xxx
 NEXT_PUBLIC_R2_CUSTOM_DOMAIN=images.rescuedogs.me
 NEXT_PUBLIC_R2_IMAGE_PATH=rescue_dogs
 ```

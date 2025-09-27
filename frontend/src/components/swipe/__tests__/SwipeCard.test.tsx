@@ -116,11 +116,11 @@ describe("SwipeCard", () => {
     // Check for the fallback image or placeholder element
     const container = screen.getByTestId("image-container");
     expect(container).toBeInTheDocument();
-    
+
     // The FallbackImage should still render an img element with fallback src
-    const img = container.querySelector('img');
+    const img = container.querySelector("img");
     expect(img).toBeInTheDocument();
-    expect(img).toHaveAttribute('src', '/placeholder_dog.svg');
+    expect(img).toHaveAttribute("src", "/placeholder_dog.svg");
   });
 
   it("should handle missing optional fields gracefully", () => {

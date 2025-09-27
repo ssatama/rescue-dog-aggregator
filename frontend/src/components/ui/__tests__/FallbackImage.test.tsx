@@ -15,9 +15,17 @@ jest.mock("next/image", () => ({
     delete imgProps.quality;
     delete imgProps.placeholder;
     delete imgProps.blurDataURL;
-    
+
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={src} alt={alt} onError={onError} data-unoptimized={unoptimized ? "true" : undefined} {...imgProps} />;
+    return (
+      <img
+        src={src}
+        alt={alt}
+        onError={onError}
+        data-unoptimized={unoptimized ? "true" : undefined}
+        {...imgProps}
+      />
+    );
   }),
 }));
 
@@ -41,7 +49,7 @@ describe("FallbackImage", () => {
           alt="Test Dog"
           width={300}
           height={200}
-        />
+        />,
       );
 
       const img = screen.getByRole("img", { name: "Test Dog" });
@@ -56,7 +64,7 @@ describe("FallbackImage", () => {
           alt="R2 Dog"
           width={300}
           height={200}
-        />
+        />,
       );
 
       const img = screen.getByRole("img", { name: "R2 Dog" });
@@ -72,18 +80,18 @@ describe("FallbackImage", () => {
           alt="Test Dog"
           width={300}
           height={200}
-        />
+        />,
       );
 
       const img = screen.getByRole("img", { name: "Test Dog" });
-      
+
       // Simulate image load error
       fireEvent.error(img);
 
       await waitFor(() => {
         expect(img).toHaveAttribute(
           "src",
-          "https://images.rescuedogs.me/cdn-cgi/image/w=800,q=80,f=auto/rescue_dogs/dog.jpg"
+          "https://images.rescuedogs.me/cdn-cgi/image/w=800,q=80,f=auto/rescue_dogs/dog.jpg",
         );
       });
     });
@@ -95,18 +103,18 @@ describe("FallbackImage", () => {
           alt="Test Dog"
           width={300}
           height={200}
-        />
+        />,
       );
 
       const img = screen.getByRole("img", { name: "Test Dog" });
-      
+
       // Simulate first error (already with transformations)
       fireEvent.error(img);
 
       await waitFor(() => {
         expect(img).toHaveAttribute(
           "src",
-          "https://images.rescuedogs.me/rescue_dogs/dog.jpg"
+          "https://images.rescuedogs.me/rescue_dogs/dog.jpg",
         );
       });
     });
@@ -119,11 +127,11 @@ describe("FallbackImage", () => {
           width={300}
           height={200}
           fallbackSrc="/custom-placeholder.svg"
-        />
+        />,
       );
 
       const img = screen.getByRole("img", { name: "Test Dog" });
-      
+
       // Simulate multiple errors
       fireEvent.error(img); // First error
       await waitFor(() => {
@@ -148,11 +156,11 @@ describe("FallbackImage", () => {
           alt="Test Dog"
           width={300}
           height={200}
-        />
+        />,
       );
 
       const img = screen.getByRole("img", { name: "Test Dog" });
-      
+
       // Simulate all fallback failures
       fireEvent.error(img); // First error
       await waitFor(() => fireEvent.error(img)); // Second error
@@ -175,13 +183,13 @@ describe("FallbackImage", () => {
           alt="Test Dog"
           width={300}
           height={200}
-        />
+        />,
       );
 
       const img = screen.getByRole("img", { name: "Test Dog" });
       expect(img).toHaveAttribute(
         "src",
-        "https://images.rescuedogs.me/cdn-cgi/image/w=1200,q=90,f=auto/rescue_dogs/dog.jpg"
+        "https://images.rescuedogs.me/cdn-cgi/image/w=1200,q=90,f=auto/rescue_dogs/dog.jpg",
       );
 
       // Simulate error to test transformation removal
@@ -190,7 +198,7 @@ describe("FallbackImage", () => {
       waitFor(() => {
         expect(img).toHaveAttribute(
           "src",
-          "https://images.rescuedogs.me/rescue_dogs/dog.jpg"
+          "https://images.rescuedogs.me/rescue_dogs/dog.jpg",
         );
       });
     });
@@ -202,7 +210,7 @@ describe("FallbackImage", () => {
           alt="Test Dog"
           width={300}
           height={200}
-        />
+        />,
       );
 
       const img = screen.getByRole("img", { name: "Test Dog" });
@@ -213,7 +221,7 @@ describe("FallbackImage", () => {
   describe("Custom Error Handler", () => {
     it("calls custom onError handler when provided", async () => {
       const customOnError = jest.fn();
-      
+
       render(
         <FallbackImage
           src="https://example.com/dog.jpg"
@@ -221,7 +229,7 @@ describe("FallbackImage", () => {
           width={300}
           height={200}
           onError={customOnError}
-        />
+        />,
       );
 
       const img = screen.getByRole("img", { name: "Test Dog" });
@@ -241,11 +249,11 @@ describe("FallbackImage", () => {
           alt="Test Dog"
           width={300}
           height={200}
-        />
+        />,
       );
 
       const img = screen.getByRole("img", { name: "Test Dog" });
-      
+
       // Trigger error and fallback
       fireEvent.error(img);
       await waitFor(() => {
@@ -259,7 +267,7 @@ describe("FallbackImage", () => {
           alt="Test Dog"
           width={300}
           height={200}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -276,7 +284,7 @@ describe("FallbackImage", () => {
           alt="Test Dog"
           width={300}
           height={200}
-        />
+        />,
       );
 
       const img = screen.getByRole("img", { name: "Test Dog" });
@@ -290,7 +298,7 @@ describe("FallbackImage", () => {
           alt="Test Dog"
           width={300}
           height={200}
-        />
+        />,
       );
 
       const img = screen.getByRole("img", { name: "Test Dog" });
@@ -314,14 +322,14 @@ describe("FallbackImage", () => {
           width={300}
           height={200}
           fallbackSrc="/fallback.svg"
-        />
+        />,
       );
 
       const img = screen.getByRole("img", { name: "Test Dog" });
-      
+
       // For malformed URLs, it should skip R2 fallbacks and go directly to fallbackSrc
       fireEvent.error(img); // First error - goes directly to fallback
-      
+
       await waitFor(() => {
         expect(img).toHaveAttribute("src", "/fallback.svg");
       });
@@ -334,7 +342,7 @@ describe("FallbackImage", () => {
           alt="Test Dog"
           width={300}
           height={200}
-        />
+        />,
       );
 
       const img = screen.getByRole("img", { name: "Test Dog" });
@@ -353,18 +361,22 @@ describe("FallbackImage", () => {
           alt="Friendly Golden Retriever"
           width={300}
           height={200}
-        />
+        />,
       );
 
-      const img = screen.getByRole("img", { name: "Friendly Golden Retriever" });
-      
+      const img = screen.getByRole("img", {
+        name: "Friendly Golden Retriever",
+      });
+
       // Trigger multiple fallbacks
       fireEvent.error(img);
       await waitFor(() => fireEvent.error(img));
       await waitFor(() => fireEvent.error(img));
 
       // Alt text should remain
-      expect(screen.getByRole("img", { name: "Friendly Golden Retriever" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("img", { name: "Friendly Golden Retriever" }),
+      ).toBeInTheDocument();
     });
 
     it("provides proper ARIA attributes for emoji placeholder", async () => {
@@ -374,11 +386,11 @@ describe("FallbackImage", () => {
           alt="Test Dog"
           width={300}
           height={200}
-        />
+        />,
       );
 
       const img = screen.getByRole("img", { name: "Test Dog" });
-      
+
       // Trigger all fallbacks
       for (let i = 0; i < 4; i++) {
         fireEvent.error(img);

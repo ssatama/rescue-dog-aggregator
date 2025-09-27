@@ -67,7 +67,6 @@ Finding rescue dogs requires visiting multiple websites with different interface
 - TypeScript 5.x with strict mode
 - Tailwind CSS for styling
 - Jest + React Testing Library
-- PostHog for analytics
 
 **Infrastructure**
 
@@ -286,7 +285,6 @@ python management/config_commands.py validate
 ### Monitoring
 
 - **Sentry**: Error tracking for both environments
-- **PostHog**: User analytics and feature usage
 - **Health checks**: `/api/monitoring/health` endpoint
 
 ### Data Collection
