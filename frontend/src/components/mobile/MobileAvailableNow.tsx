@@ -214,7 +214,7 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            Available Now
+            Recently Added
           </h2>
           {totalCount !== undefined && totalCount > 0 && (
             <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -249,20 +249,6 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
               );
             })}
           </div>
-
-          {/* See More Dogs button */}
-          {totalCount && totalCount > 8 && (
-            <div className="mt-6 flex justify-center">
-              <Link href="/dogs" className="w-full max-w-xs">
-                <Button
-                  size="lg"
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-full shadow-lg"
-                >
-                  See More Dogs
-                </Button>
-              </Link>
-            </div>
-          )}
         </>
       ) : (
         /* Empty state */

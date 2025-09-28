@@ -29,30 +29,30 @@ export default function MobileNavCards() {
       title: "Browse",
       icon: <Search className="h-6 w-6 text-white" />,
       route: "/dogs",
-      gradient: "from-indigo-500 to-violet-600",
-      darkGradient: "dark:from-indigo-600 dark:to-violet-700",
+      gradient: "from-indigo-400 to-violet-500",  // Desaturated by ~10%
+      darkGradient: "dark:from-indigo-500 dark:to-violet-600",
     },
     {
       title: "Swipe",
       icon: <Heart className="h-6 w-6 text-white" />,
       route: "/swipe",
-      gradient: "from-fuchsia-500 to-pink-600",
-      darkGradient: "dark:from-fuchsia-600 dark:to-pink-700",
+      gradient: "from-fuchsia-400 to-pink-500",  // Desaturated by ~10%
+      darkGradient: "dark:from-fuchsia-500 dark:to-pink-600",
       hasNew: true,
     },
     {
       title: "Breeds",
       icon: <Dog className="h-6 w-6 text-white" />,
       route: "/breeds",
-      gradient: "from-sky-500 to-blue-600",
-      darkGradient: "dark:from-sky-600 dark:to-blue-700",
+      gradient: "from-sky-400 to-blue-500",  // Desaturated by ~10%
+      darkGradient: "dark:from-sky-500 dark:to-blue-600",
     },
     {
       title: "Favorites",
       icon: <Star className="h-6 w-6 text-white" />,
       route: "/favorites",
-      gradient: "from-orange-500 to-amber-500",
-      darkGradient: "dark:from-orange-600 dark:to-amber-600",
+      gradient: "from-[#D4714A] to-amber-400",  // Updated to use terracotta
+      darkGradient: "dark:from-[#C05F3A] dark:to-amber-500",
     },
   ];
 
@@ -68,12 +68,13 @@ export default function MobileNavCards() {
           onClick={() => handleCardClick(card.route)}
           aria-label={`Navigate to ${card.title}`}
           className={`
-            relative rounded-2xl p-4 h-28 text-white shadow-lg 
+            relative rounded-2xl p-4 h-28 text-white
             bg-gradient-to-br ${card.gradient} ${card.darkGradient}
             ring-1 ring-white/10 
-            active:scale-95 transition-transform
-            hover:shadow-xl focus-visible:ring-2 focus-visible:ring-orange-500 
+            active:scale-95 transition-all
+            hover:shadow-xl focus-visible:ring-2 focus-visible:ring-[#D4714A] 
             focus-visible:outline-none
+            shadow-[0_2px_8px_rgba(0,0,0,0.08)]
           `}
         >
           {/* NEW Badge */}

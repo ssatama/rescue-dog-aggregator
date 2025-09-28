@@ -188,15 +188,24 @@ const MobileBottomNav: React.FC = () => {
                   key={item.id}
                   href={item.path}
                   className={cn(
-                    "flex flex-col items-center justify-center min-h-[56px] min-w-[44px] px-2 py-2 rounded-lg transition-colors",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500",
+                    "relative flex flex-col items-center justify-center min-h-[56px] min-w-[44px] px-2 py-2 rounded-lg transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4714A]",
                     isActive
-                      ? "text-orange-600 dark:text-orange-400"
+                      ? "text-[#D4714A] dark:text-[#E8805A]"
                       : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100",
                   )}
                   aria-label={item.label}
                   aria-current={isActive ? "page" : undefined}
                 >
+                  {/* Active indicator bar */}
+                  {isActive && (
+                    <motion.div
+                      className="absolute top-0 left-1/2 transform -translate-x-1/2 w-12 h-[3px] bg-[#D4714A] dark:bg-[#E8805A] rounded-full"
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: 1 }}
+                      transition={{ duration: 0.2 }}
+                    />
+                  )}
                   <Icon className="w-5 h-5 mb-1" />
                   <span className="text-xs font-medium">{item.label}</span>
                 </Link>

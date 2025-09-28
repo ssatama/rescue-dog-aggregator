@@ -26,37 +26,24 @@ export default function ClientHomePage({
   initialRecentDogs,
   initialDiverseDogs,
 }) {
-  // State for random breed
-  const [randomBreed, setRandomBreed] = useState(null);
+  // State for breed stats
+  const [breedStats, setBreedStats] = useState(null);
 
-  // Fetch random breed on mount (client-side only)
+  // Fetch breed stats on mount (client-side only)
   useEffect(() => {
-    const fetchRandomBreed = async () => {
+    const fetchBreedStats = async () => {
       try {
-        const response = await fetch('/api/animals/breeds/with-images?min_count=10&limit=20');
+        const response = await fetch('/api/animals/breeds/stats');
         if (response.ok) {
-          const breeds = await response.json();
-          if (breeds && breeds.length > 0) {
-            // Select a random breed
-            const randomIndex = Math.floor(Math.random() * breeds.length);
-            const selectedBreed = breeds[randomIndex];
-            
-            // Transform to the expected format
-            setRandomBreed({
-              name: selectedBreed.primary_breed,
-              slug: selectedBreed.primary_breed.toLowerCase().replace(/\s+/g, '-'),
-              description: `Discover ${selectedBreed.count} wonderful ${selectedBreed.primary_breed}${selectedBreed.count === 1 ? '' : 's'} looking for their forever homes.`,
-              availableCount: selectedBreed.count,
-              imageUrl: selectedBreed.sample_dogs?.[0]?.primary_image_url || null
-            });
-          }
+          const stats = await response.json();
+          setBreedStats(stats);
         }
       } catch (error) {
-        console.error('Error fetching random breed:', error);
+        console.error('Error fetching breed stats:', error);
       }
     };
 
-    fetchRandomBreed();
+    fetchBreedStats();
   }, []);
 
   // Prepare data for mobile version
@@ -81,15 +68,9 @@ export default function ClientHomePage({
         totalOrganizations: initialStatistics?.total_organizations || 0,
         totalBreeds: 50, // Default to 50+ as we don't have exact breed count in basic statistics
       },
-      featuredBreed: randomBreed || {
-        name: "Labrador Retriever",
-        slug: "labrador-retriever",
-        description:
-          "Friendly, outgoing, and active dogs who love families and make perfect companions.",
-        availableCount: 20, // Default count
-      },
+      breedStats: breedStats, // Pass breed stats for random breed selection
     };
-  }, [initialRecentDogs, initialStatistics, randomBreed]);
+  }, [initialRecentDogs, initialStatistics, breedStats]);
 
 
 
