@@ -187,11 +187,7 @@ describe("MobileAvailableNow", () => {
     render(<MobileAvailableNow dogs={mockDogs.slice(0, 4)} />);
 
     // Check header section
-    expect(screen.getByText("Available Now")).toBeInTheDocument();
-
-    // Check filter button
-    const filterButton = screen.getByRole("button", { name: /open filters/i });
-    expect(filterButton).toBeInTheDocument();
+    expect(screen.getByText("Recently Added")).toBeInTheDocument();
   });
 
   it("applies mobile-only visibility classes", () => {
@@ -227,67 +223,12 @@ describe("MobileAvailableNow", () => {
     expect(screen.getByText("Gentle")).toBeInTheDocument();
   });
 
-  it("displays Load More button when more dogs are available", () => {
-    render(<MobileAvailableNow dogs={mockDogs} hasMore={true} />);
 
-    const loadMoreButton = screen.getByRole("button", {
-      name: /load more dogs/i,
-    });
-    expect(loadMoreButton).toBeInTheDocument();
-  });
-
-  it("handles Load More button click", async () => {
-    const mockOnLoadMore = jest.fn();
-    render(
-      <MobileAvailableNow
-        dogs={mockDogs.slice(0, 4)}
-        hasMore={true}
-        onLoadMore={mockOnLoadMore}
-      />,
-    );
-
-    const loadMoreButton = screen.getByRole("button", {
-      name: /load more dogs/i,
-    });
-    fireEvent.click(loadMoreButton);
-
-    expect(mockOnLoadMore).toHaveBeenCalledTimes(1);
-  });
-
-  it("shows loading state on Load More button", () => {
-    render(
-      <MobileAvailableNow
-        dogs={mockDogs.slice(0, 4)}
-        hasMore={true}
-        loadingMore={true}
-      />,
-    );
-
-    expect(screen.getByText("Loading...")).toBeInTheDocument();
-  });
-
-  it("hides Load More button when no more dogs", () => {
-    render(<MobileAvailableNow dogs={mockDogs} hasMore={false} />);
-
-    expect(
-      screen.queryByRole("button", { name: /load more dogs/i }),
-    ).not.toBeInTheDocument();
-  });
-
-  it("opens filter drawer when filter button is clicked", () => {
-    render(<MobileAvailableNow dogs={mockDogs.slice(0, 4)} />);
-
-    const filterButton = screen.getByRole("button", { name: /open filters/i });
-    fireEvent.click(filterButton);
-
-    // Should open the filter drawer
-    expect(screen.getByTestId("mobile-filter-drawer")).toBeInTheDocument();
-  });
 
   it("handles empty dogs array gracefully", () => {
     render(<MobileAvailableNow dogs={[]} />);
 
-    expect(screen.getByText("Available Now")).toBeInTheDocument();
+    expect(screen.getByText("Recently Added")).toBeInTheDocument();
     expect(
       screen.getByText("No dogs available at the moment"),
     ).toBeInTheDocument();
@@ -340,7 +281,7 @@ describe("MobileAvailableNow", () => {
     );
     const section = container.firstChild;
 
-    expect(section).toHaveClass("px-4", "py-6", "bg-white", "dark:bg-gray-900");
+    expect(section).toHaveClass("bg-[#FFF4ED]", "dark:bg-gray-900", "px-4", "pb-3", "pt-4");
   });
 
   it("displays count of available dogs", () => {

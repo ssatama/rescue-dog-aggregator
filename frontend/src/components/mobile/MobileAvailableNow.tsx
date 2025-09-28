@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 import { useFavorites } from "@/hooks/useFavorites";
+import DogDetailModalUpgraded from "@/components/dogs/mobile/detail/DogDetailModalUpgraded";
 import {
   formatAge,
   formatBreed,
@@ -16,7 +17,8 @@ import {
 } from "@/utils/dogHelpers";
 import { IMAGE_SIZES } from "../../constants/imageSizes";
 
-interface Dog {
+// Use a compatible interface that works with both string and number IDs
+interface BaseDog {
   id: number | string;
   name: string;
   breed?: string;
@@ -45,8 +47,13 @@ interface Dog {
   [key: string]: any;
 }
 
+// Modal-compatible dog with string ID
+interface ModalDog extends Omit<BaseDog, 'id'> {
+  id: string;
+}
+
 interface MobileAvailableNowProps {
-  dogs?: Dog[];
+  dogs?: BaseDog[];
   loading?: boolean;
   totalCount?: number;
 }
@@ -62,7 +69,7 @@ const traitColors = [
 ];
 
 // Helper to get dog image
-const getDogImage = (dog: Dog): string => {
+const getDogImage = (dog: BaseDog): string => {
   if (dog.primary_image_url) return dog.primary_image_url;
   if (dog.main_image) return dog.main_image;
   if (dog.photos && dog.photos.length > 0) return dog.photos[0];
@@ -71,7 +78,7 @@ const getDogImage = (dog: Dog): string => {
 
 // Dog Card Component (from PremiumMobileCatalog)
 const DogCard: React.FC<{
-  dog: Dog;
+  dog: BaseDog;
   onToggleFavorite: (id: number | string) => void;
   onClick: () => void;
   index: number;
@@ -182,6 +189,8 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
 }) => {
   const { favorites, toggleFavorite } = useFavorites();
   const [isHydrated, setIsHydrated] = useState(false);
+  const [selectedDog, setSelectedDog] = useState<ModalDog | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Track hydration for client-side features
   React.useEffect(() => {
@@ -199,63 +208,116 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
     }
   };
 
-  const handleDogClick = (dog: Dog) => {
-    // For now, just log - can be extended to open detail modal
-    console.log("Dog clicked:", dog);
+  const handleDogClick = (dog: BaseDog) => {
+    // Ensure id is a string for modal compatibility
+    const dogWithStringId: ModalDog = {
+      ...dog,
+      id: String(dog.id)
+    };
+    setSelectedDog(dogWithStringId);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedDog(null);
+  };
+
+  const handleModalNavigate = (direction: "prev" | "next") => {
+    if (!selectedDog || !safeDogs.length) return;
+
+    const currentIndex = safeDogs.findIndex((d) => String(d.id) === String(selectedDog.id));
+    let newIndex;
+
+    if (direction === "next") {
+      newIndex = currentIndex < safeDogs.length - 1 ? currentIndex + 1 : currentIndex;
+    } else {
+      newIndex = currentIndex > 0 ? currentIndex - 1 : currentIndex;
+    }
+
+    if (newIndex !== currentIndex) {
+      const newDog = safeDogs[newIndex];
+      // Ensure id is a string for modal compatibility
+      const dogWithStringId: ModalDog = {
+        ...newDog,
+        id: String(newDog.id)
+      };
+      setSelectedDog(dogWithStringId);
+    }
   };
 
   return (
-    <section className="bg-[#FFF4ED] dark:bg-gray-900 px-4 pb-3 pt-4 md:hidden">
-      {/* Header with Browse All link */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-            Recently Added
-          </h2>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-0.5">
-            {(totalCount || 0).toLocaleString()} dogs available
-          </p>
-        </div>
-      </div>
-
-      {/* Loading state */}
-      {loading && safeDogs.length === 0 ? (
-        <div data-testid="dogs-grid" className="grid grid-cols-2 gap-3">
-          {[...Array(8)].map((_, i) => (
-            <DogCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : safeDogs.length > 0 ? (
-        <>
-          {/* Dogs grid - removed max-height and overflow-y-auto */}
-          <div data-testid="dogs-grid" className="grid grid-cols-2 gap-3">
-            {safeDogs.map((dog, index) => {
-              const favId =
-                typeof dog.id === "string" ? parseInt(dog.id, 10) : dog.id;
-              return (
-                <DogCard
-                  key={String(dog.id)}
-                  dog={dog}
-                  index={index}
-                  isFavorite={isHydrated && favorites.includes(favId)}
-                  onToggleFavorite={handleToggleFavorite}
-                  onClick={() => handleDogClick(dog)}
-                />
-              );
-            })}
+    <>
+      <section className="bg-[#FFF4ED] dark:bg-gray-900 px-4 pb-3 pt-4 md:hidden">
+        {/* Header with Browse All link */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+              Recently Added
+            </h2>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-0.5">
+              {(totalCount || 0).toLocaleString()} dogs available
+            </p>
           </div>
-        </>
-      ) : (
-        /* Empty state */
-        <div className="text-center py-12">
-          <p className="text-gray-600 dark:text-gray-400 mb-2">
-            No dogs available at the moment
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-500">
-            Check back soon for new arrivals!
-          </p>
         </div>
-      )}
-    </section>
+
+        {/* Loading state */}
+        {loading && safeDogs.length === 0 ? (
+          <div data-testid="dogs-grid" className="grid grid-cols-2 gap-3">
+            {[...Array(8)].map((_, i) => (
+              <DogCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : safeDogs.length > 0 ? (
+          <>
+            {/* Dogs grid - removed max-height and overflow-y-auto */}
+            <div data-testid="dogs-grid" className="grid grid-cols-2 gap-3">
+              {safeDogs.map((dog, index) => {
+                const favId =
+                  typeof dog.id === "string" ? parseInt(dog.id, 10) : dog.id;
+                return (
+                  <DogCard
+                    key={String(dog.id)}
+                    dog={dog}
+                    index={index}
+                    isFavorite={isHydrated && favorites.includes(favId)}
+                    onToggleFavorite={handleToggleFavorite}
+                    onClick={() => handleDogClick(dog)}
+                  />
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          /* Empty state */
+          <div className="text-center py-12">
+            <p className="text-gray-600 dark:text-gray-400 mb-2">
+              No dogs available at the moment
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-500">
+              Check back soon for new arrivals!
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* Dog Detail Modal */}
+      <DogDetailModalUpgraded
+        dog={selectedDog as any}
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        onNavigate={handleModalNavigate}
+        hasNext={
+          selectedDog
+            ? safeDogs.findIndex((d) => String(d.id) === String(selectedDog.id)) < safeDogs.length - 1
+            : false
+        }
+        hasPrev={
+          selectedDog
+            ? safeDogs.findIndex((d) => String(d.id) === String(selectedDog.id)) > 0
+            : false
+        }
+      />
+    </>
   );
 };
