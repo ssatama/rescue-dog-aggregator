@@ -19,6 +19,11 @@ interface MobileBreedSpotlightProps {
   loading?: boolean;
 }
 
+// Constants for carousel behavior
+const CAROUSEL_AUTO_ADVANCE_INTERVAL = 8000;
+const CAROUSEL_DRAG_THRESHOLD = 50;
+const CAROUSEL_PAUSE_DURATION = 2000;
+
 // Helper function to pluralize breed names
 const getBreedPlural = (breedName: string): string => {
   // Handle special cases
@@ -53,53 +58,41 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
 }) => {
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const autoAdvanceRef = useRef<NodeJS.Timeout | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [isPaused, setIsPaused] = useState(false);
 
-  // Auto-advance carousel every 8 seconds
+  // Auto-advance carousel with proper pause/resume
   useEffect(() => {
-    if (breeds.length <= 1) return;
+    if (breeds.length <= 1 || isPaused) return;
 
-    const startAutoAdvance = () => {
-      autoAdvanceRef.current = setTimeout(() => {
-        setCurrentIndex((prev) => (prev + 1) % breeds.length);
-      }, 8000);
-    };
+    const intervalId = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % breeds.length);
+    }, CAROUSEL_AUTO_ADVANCE_INTERVAL);
 
-    startAutoAdvance();
-
-    return () => {
-      if (autoAdvanceRef.current) {
-        clearTimeout(autoAdvanceRef.current);
-      }
-    };
-  }, [currentIndex, breeds.length]);
+    return () => clearInterval(intervalId);
+  }, [currentIndex, breeds.length, isPaused]);
 
   const handleDragEnd = useCallback(
     (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-      const threshold = 50;
-
-      if (info.offset.x < -threshold && currentIndex < breeds.length - 1) {
-        setCurrentIndex(currentIndex + 1);
-      } else if (info.offset.x > threshold && currentIndex > 0) {
-        setCurrentIndex(currentIndex - 1);
+      setIsPaused(true);
+      
+      if (info.offset.x < -CAROUSEL_DRAG_THRESHOLD) {
+        setCurrentIndex((prev) => (prev + 1) % breeds.length);
+      } else if (info.offset.x > CAROUSEL_DRAG_THRESHOLD) {
+        setCurrentIndex((prev) => (prev - 1 + breeds.length) % breeds.length);
       }
 
-      // Reset auto-advance timer after manual interaction
-      if (autoAdvanceRef.current) {
-        clearTimeout(autoAdvanceRef.current);
-      }
+      // Resume auto-advance after delay
+      setTimeout(() => setIsPaused(false), CAROUSEL_PAUSE_DURATION);
     },
-    [currentIndex, breeds.length],
+    [breeds.length],
   );
 
-  const handleDotClick = (index: number) => {
+  const handleDotClick = useCallback((index: number) => {
+    setIsPaused(true);
     setCurrentIndex(index);
-    // Reset auto-advance timer after manual interaction
-    if (autoAdvanceRef.current) {
-      clearTimeout(autoAdvanceRef.current);
-    }
-  };
+    // Resume auto-advance after delay
+    setTimeout(() => setIsPaused(false), CAROUSEL_PAUSE_DURATION);
+  }, []);
 
   const handleExploreClick = (breed: BreedData) => {
     if (breed?.slug) {
@@ -181,12 +174,14 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
       className="px-4 pb-6 md:hidden"
       aria-label="Breed spotlight"
       role="region"
+      aria-roledescription="carousel"
+      aria-live="polite"
     >
       <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 mb-4">
         Breed Spotlight
       </h2>
 
-      <div className="relative" ref={containerRef}>
+      <div className="relative">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
@@ -240,6 +235,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
                   </div>
 
                   <button
+                    type="button"
                     onClick={() => handleExploreClick(currentBreed)}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#D68FA3] text-white hover:bg-[#C67F93] transition-all duration-300 font-medium mt-4"
                     aria-label={`Explore ${breedPlural}`}
@@ -259,8 +255,10 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
             {breeds.map((_, index) => (
               <button
                 key={index}
+                type="button"
                 onClick={() => handleDotClick(index)}
                 aria-label={`Go to breed ${index + 1}`}
+                aria-current={index === currentIndex ? "true" : undefined}
                 className={`h-2 rounded-full transition-all duration-300 ${
                   index === currentIndex
                     ? "w-6 bg-zinc-900 dark:bg-zinc-100"

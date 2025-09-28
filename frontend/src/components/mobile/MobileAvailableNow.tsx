@@ -1,16 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Heart } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import Link from "next/link";
 import { useFavorites } from "@/hooks/useFavorites";
 import DogDetailModalUpgraded from "@/components/dogs/mobile/detail/DogDetailModalUpgraded";
 import {
-  formatAge,
   formatBreed,
   getPersonalityTraits,
   getAgeCategory,
@@ -76,17 +73,18 @@ const getDogImage = (dog: BaseDog): string => {
   return "/placeholder_dog.svg";
 };
 
-// Dog Card Component (from PremiumMobileCatalog)
-const DogCard: React.FC<{
+// Dog Card Component (from PremiumMobileCatalog) - wrapped in React.memo
+const DogCard = React.memo<{
   dog: BaseDog;
-  onToggleFavorite: (id: number | string) => void;
+  onToggleFavorite: (id: string) => void;
   onClick: () => void;
   index: number;
   isFavorite: boolean;
-}> = ({ dog, onToggleFavorite, onClick, index, isFavorite }) => {
+}>(({ dog, onToggleFavorite, onClick, index, isFavorite }) => {
   const imageUrl = getDogImage(dog);
-  const displayTraits = getPersonalityTraits(dog).slice(0, 2);
-  const extraTraitsCount = getPersonalityTraits(dog).length - 2;
+  const traits = useMemo(() => getPersonalityTraits(dog), [dog]);
+  const displayTraits = traits.slice(0, 2);
+  const extraTraitsCount = Math.max(0, traits.length - 2);
   const ageGroup = getAgeCategory(dog);
   const formattedBreed = formatBreed(dog);
 
@@ -95,7 +93,7 @@ const DogCard: React.FC<{
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="bg-white dark:bg-gray-800 rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.06)] border border-gray-100 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow"
+      className="bg-white dark:bg-gray-800 rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.06)] border border-gray-100 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:outline-none"
       role="button"
       tabIndex={0}
       onClick={onClick}
@@ -113,19 +111,22 @@ const DogCard: React.FC<{
       <div className="relative aspect-square">
         <Image
           src={imageUrl}
-          alt={dog.name}
+          alt={`Photo of ${dog.name}`}
           className="w-full h-full object-cover"
           loading="lazy"
-          fill
+          width={200}
+          height={200}
           sizes={IMAGE_SIZES.CATALOG_CARD}
         />
         <button
+          type="button"
           className="absolute top-2 right-2 w-8 h-8 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
           onClick={(e) => {
             e.stopPropagation();
-            onToggleFavorite(dog.id);
+            onToggleFavorite(String(dog.id));
           }}
           aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          aria-pressed={isFavorite}
         >
           <Heart
             className={cn(
@@ -165,7 +166,9 @@ const DogCard: React.FC<{
       </div>
     </motion.div>
   );
-};
+});
+
+DogCard.displayName = 'DogCard';
 
 // Skeleton loader component for loading state
 const DogCardSkeleton = () => (
@@ -200,15 +203,18 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
   // Ensure dogs is always an array
   const safeDogs = Array.isArray(dogs) ? dogs : [];
 
-  const handleToggleFavorite = async (dogId: number | string) => {
-    const numericId = typeof dogId === "string" ? parseInt(dogId, 10) : dogId;
-    if (!Number.isNaN(numericId)) {
-      const dog = safeDogs.find((d) => d.id === dogId);
-      await toggleFavorite(numericId, dog?.name);
-    }
-  };
+  // Optimize favorites lookup with Set
+  const favoriteIds = useMemo(
+    () => new Set(favorites.map(String)),
+    [favorites]
+  );
 
-  const handleDogClick = (dog: BaseDog) => {
+  const handleToggleFavorite = useCallback(async (dogId: string) => {
+    const dog = safeDogs.find((d) => String(d.id) === dogId);
+    await toggleFavorite(parseInt(dogId, 10), dog?.name);
+  }, [safeDogs, toggleFavorite]);
+
+  const handleDogClick = useCallback((dog: BaseDog) => {
     // Ensure id is a string for modal compatibility
     const dogWithStringId: ModalDog = {
       ...dog,
@@ -216,14 +222,14 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
     };
     setSelectedDog(dogWithStringId);
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const handleModalClose = () => {
+  const handleModalClose = useCallback(() => {
     setIsModalOpen(false);
     setSelectedDog(null);
-  };
+  }, []);
 
-  const handleModalNavigate = (direction: "prev" | "next") => {
+  const handleModalNavigate = useCallback((direction: "prev" | "next") => {
     if (!selectedDog || !safeDogs.length) return;
 
     const currentIndex = safeDogs.findIndex((d) => String(d.id) === String(selectedDog.id));
@@ -244,7 +250,7 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
       };
       setSelectedDog(dogWithStringId);
     }
-  };
+  }, [selectedDog, safeDogs]);
 
   return (
     <>
@@ -273,14 +279,12 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
             {/* Dogs grid - removed max-height and overflow-y-auto */}
             <div data-testid="dogs-grid" className="grid grid-cols-2 gap-3">
               {safeDogs.map((dog, index) => {
-                const favId =
-                  typeof dog.id === "string" ? parseInt(dog.id, 10) : dog.id;
                 return (
                   <DogCard
                     key={String(dog.id)}
                     dog={dog}
                     index={index}
-                    isFavorite={isHydrated && favorites.includes(favId)}
+                    isFavorite={isHydrated && favoriteIds.has(String(dog.id))}
                     onToggleFavorite={handleToggleFavorite}
                     onClick={() => handleDogClick(dog)}
                   />

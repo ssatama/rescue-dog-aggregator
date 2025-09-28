@@ -1,91 +1,76 @@
 "use client";
 
+import React from "react";
 import { useRouter } from "next/navigation";
 import { Search, Heart, Dog, Star } from "lucide-react";
 
-interface NavCard {
-  title: string;
-  icon: React.ReactNode;
-  route: string;
-  hasNew?: boolean;
-}
-
-/**
- * MobileNavCards Component
- *
- * Premium navigation cards with Apple/Airbnb-inspired design:
- * - Clean neutral cards with subtle borders
- * - Rose accent icon chips for brand consistency
- * - Refined typography and spacing
- * - Subtle interactions and shadows
- */
-export default function MobileNavCards() {
+const MobileNavCards: React.FC = () => {
   const router = useRouter();
 
   const navItems = [
     {
-      href: "/dogs",
-      icon: <Search className="h-5 w-5" />,
+      icon: Search,
       label: "Browse",
+      path: "/dogs",
+      color: "bg-pink-100 dark:bg-pink-900/20",
+      iconColor: "text-pink-600 dark:text-pink-400",
     },
     {
-      href: "/swipe",
-      icon: <Heart className="h-5 w-5" />,
+      icon: Heart,
       label: "Swipe",
+      path: "/swipe",
+      color: "bg-red-100 dark:bg-red-900/20",
+      iconColor: "text-red-600 dark:text-red-400",
       badge: "NEW",
     },
     {
-      href: "/breeds",
-      icon: <Dog className="h-5 w-5" />,
+      icon: Dog,
       label: "Breeds",
+      path: "/breeds",
+      color: "bg-purple-100 dark:bg-purple-900/20",
+      iconColor: "text-purple-600 dark:text-purple-400",
     },
     {
-      href: "/favorites",
-      icon: <Star className="h-5 w-5" />,
+      icon: Star,
       label: "Favorites",
+      path: "/favorites",
+      color: "bg-orange-100 dark:bg-orange-900/20",
+      iconColor: "text-orange-600 dark:text-orange-400",
     },
   ];
 
-  const handleCardClick = (route: string) => {
-    router.push(route);
-  };
-
   return (
-    <div className="grid grid-cols-2 gap-3 px-4 py-4 md:hidden">
-      {navItems.map((item) => (
-        <button
-          key={item.label}
-          onClick={() => handleCardClick(item.href)}
-          aria-label={`Navigate to ${item.label}`}
-          className="
-            relative bg-white dark:bg-zinc-900 
-            ring-1 ring-zinc-200/60 dark:ring-zinc-800/60 
-            rounded-2xl h-24 p-3
-            active:scale-[0.98] transition-all duration-200
-            hover:shadow-sm focus-visible:ring-2 focus-visible:ring-rose-500 
-            focus-visible:outline-none
-            shadow-[0_1px_0_rgba(0,0,0,0.06),0_8px_20px_rgba(0,0,0,0.04)]
-          "
-        >
-          {/* NEW Badge */}
-          {item.badge && (
-            <div className="absolute top-2 right-2 rounded-full bg-[#D68FA3]/20 dark:bg-[#D68FA3]/10 text-[#D68FA3] dark:text-[#D68FA3] text-[10px] font-medium px-1.5 py-0.5 ring-1 ring-[#D68FA3]/30 dark:ring-[#D68FA3]/20">
-              {item.badge}
-            </div>
-          )}
-
-          {/* Icon and Title */}
-          <div className="flex flex-col items-center justify-center h-full space-y-2">
-            {/* Icon Chip */}
-            <div className="h-9 w-9 rounded-full bg-[#D68FA3]/10 dark:bg-[#D68FA3]/10 flex items-center justify-center text-[#D68FA3] dark:text-[#D68FA3]">
-              {item.icon}
-            </div>
-            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-              {item.label}
-            </span>
-          </div>
-        </button>
-      ))}
+    <div className="px-4 py-6">
+      <div className="grid grid-cols-2 gap-3">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.path}
+              type="button"
+              onClick={() => router.push(item.path)}
+              className="relative bg-white dark:bg-zinc-800 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border border-zinc-100 dark:border-zinc-700"
+              aria-label={`Navigate to ${item.label}`}
+            >
+              {item.badge && (
+                <span className="absolute top-2 right-2 px-2 py-0.5 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-xs font-bold rounded-full">
+                  {item.badge}
+                </span>
+              )}
+              <div
+                className={`w-12 h-12 ${item.color} rounded-xl flex items-center justify-center mb-3`}
+              >
+                <Icon className={`w-6 h-6 ${item.iconColor}`} />
+              </div>
+              <div className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                {item.label}
+              </div>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
-}
+};
+
+export default MobileNavCards;

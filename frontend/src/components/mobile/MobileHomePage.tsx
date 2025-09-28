@@ -12,7 +12,28 @@ interface Dog {
   id: number | string;
   name: string;
   breed?: string;
-  [key: string]: any;
+  primary_breed?: string;
+  standardized_breed?: string;
+  age?: string;
+  age_text?: string;
+  sex?: string;
+  primary_image_url?: string;
+  main_image?: string;
+  photos?: string[];
+  organization?: {
+    id: number;
+    name: string;
+    config_id: string;
+    slug?: string;
+  };
+  personality_traits?: string[];
+  dog_profiler_data?: {
+    description?: string;
+    tagline?: string;
+    personality_traits?: string[];
+  };
+  created_at?: string;
+  slug?: string;
 }
 
 interface Statistics {
@@ -29,11 +50,27 @@ interface FeaturedBreed {
   imageUrl?: string;
 }
 
+interface BreedStatsItem {
+  name?: string;
+  breed_name?: string;
+  slug?: string;
+  description?: string;
+  count?: number;
+  available_count?: number;
+  image_url?: string;
+  imageUrl?: string;
+}
+
+interface BreedStats {
+  qualifying_breeds?: BreedStatsItem[];
+  total_breeds?: number;
+}
+
 interface InitialData {
   dogs?: Dog[];
   statistics?: Statistics;
   featuredBreed?: FeaturedBreed;
-  breedStats?: any;
+  breedStats?: BreedStats;
 }
 
 interface MobileHomePageProps {
@@ -42,7 +79,7 @@ interface MobileHomePageProps {
 
 // Helper function to get random breeds
 const getRandomBreeds = (
-  breedStats: any,
+  breedStats: BreedStats | undefined,
   count: number = 3,
 ): FeaturedBreed[] => {
   if (
@@ -55,8 +92,8 @@ const getRandomBreeds = (
   const qualifyingBreeds = breedStats.qualifying_breeds;
   const shuffled = [...qualifyingBreeds].sort(() => 0.5 - Math.random());
 
-  return shuffled.slice(0, count).map((breed: any) => ({
-    name: breed.name || breed.breed_name,
+  return shuffled.slice(0, count).map((breed) => ({
+    name: breed.name || breed.breed_name || '',
     slug: breed.slug || breed.name?.toLowerCase().replace(/\s+/g, "-"),
     description:
       breed.description ||
@@ -74,6 +111,13 @@ export const MobileHomePage: React.FC<MobileHomePageProps> = ({
     () => getRandomBreeds(initialData?.breedStats, 3),
     [initialData?.breedStats],
   );
+
+  // Format breed count
+  const breedCount = initialData?.statistics?.totalBreeds 
+    ? initialData.statistics.totalBreeds.toString() + "+"
+    : initialData?.breedStats?.total_breeds 
+    ? initialData.breedStats.total_breeds.toString() + "+"
+    : "50+";
 
   return (
     <div
@@ -97,11 +141,11 @@ export const MobileHomePage: React.FC<MobileHomePageProps> = ({
                 initialData?.statistics?.totalDogs?.toLocaleString() || "0",
             },
             {
-              label: "Rescues",
+              label: "Rescues", 
               value:
-                initialData?.statistics?.totalOrganizations?.toString() || "0",
+                initialData?.statistics?.totalOrganizations?.toLocaleString() || "0",
             },
-            { label: "Breeds", value: "50+" },
+            { label: "Breeds", value: breedCount },
           ]}
         />
 

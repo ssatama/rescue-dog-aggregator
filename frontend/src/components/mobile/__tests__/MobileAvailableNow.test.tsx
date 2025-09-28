@@ -173,6 +173,30 @@ const mockDogs = [
   },
 ];
 
+const mockDogWithoutImage = {
+  id: "7",
+  name: "Charlie",
+  breed: "Mixed Breed",
+  primary_breed: "Mixed Breed",
+  age: "3 years",
+  age_text: "3 years",
+  age_min_months: 36,
+  sex: "male",
+  // No primary_image_url, main_image, or photos
+  organization: {
+    id: 7,
+    name: "Dog Rescue",
+    slug: "dog-rescue",
+    config_id: "dog-rescue",
+  },
+  personality_traits: ["Friendly", "Calm"],
+  dog_profiler_data: {
+    personality_traits: ["Friendly", "Calm"],
+  },
+  created_at: "2024-01-23",
+  slug: "charlie-7",
+};
+
 describe("MobileAvailableNow", () => {
   const mockPush = jest.fn();
 
@@ -257,13 +281,20 @@ describe("MobileAvailableNow", () => {
   });
 
   it("displays dog images", () => {
-    render(<MobileAvailableNow dogs={mockDogs.slice(0, 2)} />);
+    render(<MobileAvailableNow dogs={mockDogs} />);
 
-    const maxImage = screen.getByAltText("Max");
-    expect(maxImage).toHaveAttribute("src", "/dog1.jpg");
+    const image1 = screen.getByAltText("Photo of Max");
+    expect(image1).toHaveAttribute("src", "/dog1.jpg");
 
-    const lunaImage = screen.getByAltText("Luna");
-    expect(lunaImage).toHaveAttribute("src", "/dog2.jpg");
+    const image2 = screen.getByAltText("Photo of Luna");
+    expect(image2).toHaveAttribute("src", "/dog2.jpg");
+  });
+
+  it("uses placeholder image when no image available", () => {
+    render(<MobileAvailableNow dogs={[mockDogWithoutImage]} />);
+
+    const image = screen.getByAltText("Photo of Charlie");
+    expect(image).toHaveAttribute("src", "/placeholder_dog.svg");
   });
 
   it("handles loading state for initial load", () => {

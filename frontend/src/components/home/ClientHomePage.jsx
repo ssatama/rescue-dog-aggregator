@@ -6,6 +6,8 @@ import DogSection from "./DogSection";
 import DogSectionErrorBoundary from "../error/DogSectionErrorBoundary";
 import TrustSection from "./TrustSection";
 import Loading from "../ui/Loading";
+import { MobileHomePage } from "../mobile/MobileHomePage";
+import { MobileHomeSEO } from "../seo/MobileHomeSEO";
 
 // Lazy load BreedsCTA for better performance
 const BreedsCTA = lazy(() =>
@@ -15,7 +17,7 @@ const BreedsCTA = lazy(() =>
 );
 
 // Lazy load MobileHomePage for mobile devices
-const MobileHomePage = lazy(() =>
+const MobileHomePageLazy = lazy(() =>
   import("../mobile/MobileHomePage").then((module) => ({
     default: module.MobileHomePage,
   })),
@@ -117,12 +119,26 @@ export default function ClientHomePage({
     };
   }, [initialRecentDogs, initialStatistics, breedsWithImages]);
 
+  // Render mobile home page on mobile devices
+  if (isMobileView) {
+    return (
+      <>
+        <MobileHomeSEO 
+          totalDogs={initialData?.statistics?.totalDogs}
+          totalOrganizations={initialData?.statistics?.totalOrganizations}
+          totalBreeds={initialData?.statistics?.totalBreeds}
+        />
+        <MobileHomePage initialData={initialData} />
+      </>
+    );
+  }
+
   return (
     <>
       {/* Mobile Version - Shown only on mobile devices */}
       <div className="md:hidden">
         <Suspense fallback={<Loading className="h-screen" />}>
-          <MobileHomePage initialData={mobileInitialData} />
+          <MobileHomePageLazy initialData={mobileInitialData} />
         </Suspense>
       </div>
 
