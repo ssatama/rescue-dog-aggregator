@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React from "react";
 import MobileTopHeader from "./MobileTopHeader";
 import MobileNavCards from "./MobileNavCards";
 import MobileStats from "./MobileStats";
@@ -9,7 +9,7 @@ import { MobileBreedSpotlight } from "./MobileBreedSpotlight";
 import MobileBottomNav from "../navigation/MobileBottomNav";
 
 interface Dog {
-  id: number;
+  id: number | string;
   name: string;
   breed?: string;
   [key: string]: any;
@@ -37,38 +37,11 @@ interface InitialData {
 
 interface MobileHomePageProps {
   initialData?: InitialData;
-  onLoadMore?: () => Promise<Dog[]>;
-  hasMore?: boolean;
 }
 
 export const MobileHomePage: React.FC<MobileHomePageProps> = ({
   initialData,
-  onLoadMore,
-  hasMore = false,
 }) => {
-  const [dogs, setDogs] = useState<Dog[]>(initialData?.dogs || []);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [currentHasMore, setCurrentHasMore] = useState(hasMore);
-
-  const handleLoadMore = useCallback(async () => {
-    if (!onLoadMore || loadingMore) return;
-
-    setLoadingMore(true);
-    try {
-      const newDogs = await onLoadMore();
-      if (newDogs && newDogs.length > 0) {
-        setDogs((prevDogs) => [...prevDogs, ...newDogs]);
-      } else {
-        setCurrentHasMore(false);
-      }
-    } catch (error) {
-      console.error("Failed to load more dogs:", error);
-      setCurrentHasMore(false);
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [onLoadMore, loadingMore]);
-
   return (
     <div
       data-testid="mobile-home-page"
@@ -98,10 +71,7 @@ export const MobileHomePage: React.FC<MobileHomePageProps> = ({
 
         {/* Available dogs section */}
         <MobileAvailableNow
-          dogs={dogs}
-          hasMore={currentHasMore}
-          onLoadMore={handleLoadMore}
-          loadingMore={loadingMore}
+          dogs={initialData?.dogs || []}
           totalCount={initialData?.statistics?.totalDogs}
         />
 

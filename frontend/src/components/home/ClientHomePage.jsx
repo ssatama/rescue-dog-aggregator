@@ -27,13 +27,25 @@ export default function ClientHomePage({
   initialDiverseDogs,
 }) {
   // Prepare data for mobile version
-  const mobileInitialData = React.useMemo(
-    () => ({
-      dogs: initialRecentDogs?.dogs?.slice(0, 8) || [],
+  const mobileInitialData = React.useMemo(() => {
+    // Normalize whatever shape we get into a plain array
+    const list = Array.isArray(initialRecentDogs?.dogs)
+      ? initialRecentDogs.dogs
+      : Array.isArray(initialRecentDogs?.results)
+        ? initialRecentDogs.results
+        : Array.isArray(initialRecentDogs)
+          ? initialRecentDogs
+          : [];
+
+    const mobileDogs =
+      list.slice(0, 8).map((d) => ({ ...d, id: String(d.id) }));
+
+    return {
+      dogs: mobileDogs,
       statistics: {
         totalDogs: initialStatistics?.total_dogs || 0,
         totalOrganizations: initialStatistics?.total_organizations || 0,
-        totalBreeds: 50 // Default to 50+ as we don't have exact breed count in basic statistics
+        totalBreeds: 50, // Default to 50+ as we don't have exact breed count in basic statistics
       },
       featuredBreed: {
         name: "Labrador Retriever",
@@ -42,27 +54,17 @@ export default function ClientHomePage({
           "Friendly, outgoing, and active dogs who love families and make perfect companions.",
         availableCount: 20, // Default count
       },
-    }),
-    [initialRecentDogs, initialStatistics],
-  );
+    };
+  }, [initialRecentDogs, initialStatistics]);
 
-  // Handler for loading more dogs on mobile
-  const handleLoadMore = React.useCallback(async () => {
-    // This would typically fetch more dogs from the API
-    // For now, return empty array to indicate no more dogs
-    return [];
-  }, []);
+
 
   return (
     <>
       {/* Mobile Version - Shown only on mobile devices */}
       <div className="md:hidden">
         <Suspense fallback={<Loading className="h-screen" />}>
-          <MobileHomePage
-            initialData={mobileInitialData}
-            onLoadMore={handleLoadMore}
-            hasMore={initialRecentDogs?.dogs?.length > 8}
-          />
+          <MobileHomePage initialData={mobileInitialData} />
         </Suspense>
       </div>
 

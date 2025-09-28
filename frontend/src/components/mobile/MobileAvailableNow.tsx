@@ -2,11 +2,11 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Filter, Loader2, Heart } from "lucide-react";
+import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-// import MobileFilterDrawer from "@/components/filters/MobileFilterDrawer";
+import Link from "next/link";
 import { useFavorites } from "@/hooks/useFavorites";
 import {
   formatAge,
@@ -17,7 +17,7 @@ import {
 import { IMAGE_SIZES } from "../../constants/imageSizes";
 
 interface Dog {
-  id: string;
+  id: number | string;
   name: string;
   breed?: string;
   primary_breed?: string;
@@ -47,16 +47,8 @@ interface Dog {
 
 interface MobileAvailableNowProps {
   dogs?: Dog[];
-  hasMore?: boolean;
-  onLoadMore?: () => void;
-  loadingMore?: boolean;
   loading?: boolean;
   totalCount?: number;
-  filters?: Record<string, any>;
-  onFilterChange?: (
-    filterKeyOrBatch: string | Record<string, string>,
-    value?: string,
-  ) => void;
 }
 
 // Personality trait colors
@@ -80,7 +72,7 @@ const getDogImage = (dog: Dog): string => {
 // Dog Card Component (from PremiumMobileCatalog)
 const DogCard: React.FC<{
   dog: Dog;
-  onToggleFavorite: (id: string) => void;
+  onToggleFavorite: (id: number | string) => void;
   onClick: () => void;
   index: number;
   isFavorite: boolean;
@@ -185,16 +177,10 @@ const DogCardSkeleton = () => (
 
 export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
   dogs = [],
-  hasMore = false,
-  onLoadMore,
-  loadingMore = false,
   loading = false,
   totalCount,
-  filters = {},
-  onFilterChange,
 }) => {
   const { favorites, toggleFavorite } = useFavorites();
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
 
   // Track hydration for client-side features
@@ -205,9 +191,9 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
   // Ensure dogs is always an array
   const safeDogs = Array.isArray(dogs) ? dogs : [];
 
-  const handleToggleFavorite = async (dogId: string) => {
-    const numericId = parseInt(dogId, 10);
-    if (!isNaN(numericId)) {
+  const handleToggleFavorite = async (dogId: number | string) => {
+    const numericId = typeof dogId === "string" ? parseInt(dogId, 10) : dogId;
+    if (!Number.isNaN(numericId)) {
       const dog = safeDogs.find((d) => d.id === dogId);
       await toggleFavorite(numericId, dog?.name);
     }
@@ -218,107 +204,77 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
     console.log("Dog clicked:", dog);
   };
 
-  const handleFilterClick = () => {
-    setIsFilterOpen(true);
-  };
-
   return (
-    <>
-      <section
-        className="px-4 py-6 bg-white dark:bg-gray-900 md:hidden"
-        aria-label="Available dogs"
-        role="region"
-      >
-        {/* Header with filter button */}
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              Available Now
-            </h2>
-            {totalCount !== undefined && totalCount > 0 && (
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {totalCount} dogs available
-              </p>
-            )}
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleFilterClick}
-            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            aria-label="Open filters"
-          >
-            <Filter className="w-5 h-5 mr-1" />
-            Filters
-          </Button>
+    <section
+      className="px-4 py-6 bg-white dark:bg-gray-900 md:hidden"
+      aria-label="Available dogs"
+      role="region"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            Available Now
+          </h2>
+          {totalCount !== undefined && totalCount > 0 && (
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {totalCount} dogs available
+            </p>
+          )}
         </div>
+      </div>
 
-        {/* Loading state */}
-        {loading && safeDogs.length === 0 ? (
+      {/* Loading state */}
+      {loading && safeDogs.length === 0 ? (
+        <div data-testid="dogs-grid" className="grid grid-cols-2 gap-3">
+          {[...Array(6)].map((_, i) => (
+            <DogCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : safeDogs.length > 0 ? (
+        <>
+          {/* Dogs grid */}
           <div data-testid="dogs-grid" className="grid grid-cols-2 gap-3">
-            {[...Array(6)].map((_, i) => (
-              <DogCardSkeleton key={i} />
-            ))}
-          </div>
-        ) : safeDogs.length > 0 ? (
-          <>
-            {/* Dogs grid */}
-            <div data-testid="dogs-grid" className="grid grid-cols-2 gap-3">
-              {safeDogs.map((dog, index) => (
+            {safeDogs.map((dog, index) => {
+              const favId = typeof dog.id === "string" ? parseInt(dog.id, 10) : dog.id;
+              return (
                 <DogCard
-                  key={dog.id}
+                  key={String(dog.id)}
                   dog={dog}
                   index={index}
-                  isFavorite={
-                    isHydrated && favorites.includes(parseInt(dog.id, 10))
-                  }
+                  isFavorite={isHydrated && favorites.includes(favId)}
                   onToggleFavorite={handleToggleFavorite}
                   onClick={() => handleDogClick(dog)}
                 />
-              ))}
-            </div>
-
-            {/* Load More button */}
-            {hasMore && (
-              <div className="mt-6 flex justify-center">
-                <Button
-                  onClick={onLoadMore}
-                  disabled={loadingMore}
-                  size="lg"
-                  className="w-full max-w-xs bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-full shadow-lg"
-                >
-                  {loadingMore ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Loading...
-                    </>
-                  ) : (
-                    "Load More Dogs"
-                  )}
-                </Button>
-              </div>
-            )}
-          </>
-        ) : (
-          /* Empty state */
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400 mb-2">
-              No dogs available at the moment
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-500">
-              Check back soon for new arrivals!
-            </p>
+              );
+            })}
           </div>
-        )}
-      </section>
 
-      {/* Filter Drawer - TODO: Fix prop interface */}
-      {/* <MobileFilterDrawer
-        isOpen={isFilterOpen}
-        onClose={() => setIsFilterOpen(false)}
-        filters={filters}
-        onFilterChange={onFilterChange}
-      /> */}
-    </>
+          {/* See More Dogs button */}
+          {totalCount && totalCount > 8 && (
+            <div className="mt-6 flex justify-center">
+              <Link href="/dogs" className="w-full max-w-xs">
+                <Button
+                  size="lg"
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-full shadow-lg"
+                >
+                  See More Dogs
+                </Button>
+              </Link>
+            </div>
+          )}
+        </>
+      ) : (
+        /* Empty state */
+        <div className="text-center py-12">
+          <p className="text-gray-600 dark:text-gray-400 mb-2">
+            No dogs available at the moment
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-500">
+            Check back soon for new arrivals!
+          </p>
+        </div>
+      )}
+    </section>
   );
 };
