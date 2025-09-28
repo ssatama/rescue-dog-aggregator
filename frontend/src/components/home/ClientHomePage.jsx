@@ -30,14 +30,17 @@ export default function ClientHomePage({
   const mobileInitialData = React.useMemo(
     () => ({
       dogs: initialRecentDogs?.dogs?.slice(0, 8) || [],
-      statistics: initialStatistics,
+      statistics: {
+        totalDogs: initialStatistics?.total_dogs || 0,
+        totalOrganizations: initialStatistics?.total_organizations || 0,
+        totalBreeds: 50 // Default to 50+ as we don't have exact breed count in basic statistics
+      },
       featuredBreed: {
         name: "Labrador Retriever",
         slug: "labrador-retriever",
         description:
           "Friendly, outgoing, and active dogs who love families and make perfect companions.",
-        availableCount:
-          initialStatistics?.breedCounts?.["Labrador Retriever"] || 20,
+        availableCount: 20, // Default count
       },
     }),
     [initialRecentDogs, initialStatistics],
