@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import React, { useState, useCallback } from 'react';
-import { MobileTopHeader } from './MobileTopHeader';
-import { MobileNavCards } from './MobileNavCards';
-import { MobileStats } from './MobileStats';
-import { MobileAvailableNow } from './MobileAvailableNow';
-import { MobileBreedSpotlight } from './MobileBreedSpotlight';
-import MobileBottomNav from '../navigation/MobileBottomNav';
+import React, { useState, useCallback } from "react";
+import MobileTopHeader from "./MobileTopHeader";
+import MobileNavCards from "./MobileNavCards";
+import MobileStats from "./MobileStats";
+import { MobileAvailableNow } from "./MobileAvailableNow";
+import { MobileBreedSpotlight } from "./MobileBreedSpotlight";
+import MobileBottomNav from "../navigation/MobileBottomNav";
 
 interface Dog {
   id: number;
@@ -57,12 +57,12 @@ export const MobileHomePage: React.FC<MobileHomePageProps> = ({
     try {
       const newDogs = await onLoadMore();
       if (newDogs && newDogs.length > 0) {
-        setDogs(prevDogs => [...prevDogs, ...newDogs]);
+        setDogs((prevDogs) => [...prevDogs, ...newDogs]);
       } else {
         setCurrentHasMore(false);
       }
     } catch (error) {
-      console.error('Failed to load more dogs:', error);
+      console.error("Failed to load more dogs:", error);
       setCurrentHasMore(false);
     } finally {
       setLoadingMore(false);
@@ -84,9 +84,16 @@ export const MobileHomePage: React.FC<MobileHomePageProps> = ({
 
         {/* Statistics */}
         <MobileStats
-          dogsCount={initialData?.statistics?.totalDogs}
-          rescuesCount={initialData?.statistics?.totalOrganizations}
-          breedsCount={initialData?.statistics?.totalBreeds}
+          statistics={
+            initialData?.statistics
+              ? {
+                  total_dogs: initialData.statistics.totalDogs || 0,
+                  total_organizations:
+                    initialData.statistics.totalOrganizations || 0,
+                  total_breeds: initialData.statistics.totalBreeds || 0,
+                }
+              : null
+          }
         />
 
         {/* Available dogs section */}

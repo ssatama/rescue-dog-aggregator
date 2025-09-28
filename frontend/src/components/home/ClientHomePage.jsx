@@ -1,38 +1,47 @@
-'use client';
+"use client";
 
-import React, { Suspense, lazy } from 'react';
-import HeroSection from './HeroSection';
-import DogSection from './DogSection';
-import DogSectionErrorBoundary from '../error/DogSectionErrorBoundary';
-import TrustSection from './TrustSection';
-import Loading from '../ui/Loading';
+import React, { Suspense, lazy } from "react";
+import HeroSection from "./HeroSection";
+import DogSection from "./DogSection";
+import DogSectionErrorBoundary from "../error/DogSectionErrorBoundary";
+import TrustSection from "./TrustSection";
+import Loading from "../ui/Loading";
 
 // Lazy load BreedsCTA for better performance
-const BreedsCTA = lazy(() => import('./BreedsCTA').then(module => ({
-  default: module.BreedsCTA
-})));
+const BreedsCTA = lazy(() =>
+  import("./BreedsCTA").then((module) => ({
+    default: module.BreedsCTA,
+  })),
+);
 
 // Lazy load MobileHomePage for mobile devices
-const MobileHomePage = lazy(() => import('../mobile/MobileHomePage').then(module => ({
-  default: module.MobileHomePage
-})));
+const MobileHomePage = lazy(() =>
+  import("../mobile/MobileHomePage").then((module) => ({
+    default: module.MobileHomePage,
+  })),
+);
 
-export default function ClientHomePage({ 
-  initialStatistics, 
-  initialRecentDogs, 
-  initialDiverseDogs 
+export default function ClientHomePage({
+  initialStatistics,
+  initialRecentDogs,
+  initialDiverseDogs,
 }) {
   // Prepare data for mobile version
-  const mobileInitialData = React.useMemo(() => ({
-    dogs: initialRecentDogs?.dogs?.slice(0, 8) || [],
-    statistics: initialStatistics,
-    featuredBreed: {
-      name: 'Labrador Retriever',
-      slug: 'labrador-retriever',
-      description: 'Friendly, outgoing, and active dogs who love families and make perfect companions.',
-      availableCount: initialStatistics?.breedCounts?.['Labrador Retriever'] || 20,
-    }
-  }), [initialRecentDogs, initialStatistics]);
+  const mobileInitialData = React.useMemo(
+    () => ({
+      dogs: initialRecentDogs?.dogs?.slice(0, 8) || [],
+      statistics: initialStatistics,
+      featuredBreed: {
+        name: "Labrador Retriever",
+        slug: "labrador-retriever",
+        description:
+          "Friendly, outgoing, and active dogs who love families and make perfect companions.",
+        availableCount:
+          initialStatistics?.breedCounts?.["Labrador Retriever"] || 20,
+      },
+    }),
+    [initialRecentDogs, initialStatistics],
+  );
 
   // Handler for loading more dogs on mobile
   const handleLoadMore = React.useCallback(async () => {
@@ -46,7 +55,7 @@ export default function ClientHomePage({
       {/* Mobile Version - Shown only on mobile devices */}
       <div className="md:hidden">
         <Suspense fallback={<Loading className="h-screen" />}>
-          <MobileHomePage 
+          <MobileHomePage
             initialData={mobileInitialData}
             onLoadMore={handleLoadMore}
             hasMore={initialRecentDogs?.dogs?.length > 8}

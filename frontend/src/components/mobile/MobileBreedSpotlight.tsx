@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { useRouter } from 'next/navigation';
-import { ChevronRight, Dog, Sparkles } from 'lucide-react';
-import Image from 'next/image';
+import React from "react";
+import { useRouter } from "next/navigation";
+import { ChevronRight, Dog, Sparkles } from "lucide-react";
+import Image from "next/image";
 
 interface BreedData {
   name: string;
@@ -22,11 +22,11 @@ interface MobileBreedSpotlightProps {
 const getBreedPlural = (breedName: string): string => {
   // Handle special cases
   const specialCases: Record<string, string> = {
-    'German Shepherd': 'German Shepherds',
-    'Labrador Retriever': 'Labradors',
-    'Golden Retriever': 'Golden Retrievers',
-    'French Bulldog': 'French Bulldogs',
-    'Yorkshire Terrier': 'Yorkies',
+    "German Shepherd": "German Shepherds",
+    "Labrador Retriever": "Labradors",
+    "Golden Retriever": "Golden Retrievers",
+    "French Bulldog": "French Bulldogs",
+    "Yorkshire Terrier": "Yorkies",
   };
 
   if (specialCases[breedName]) {
@@ -34,16 +34,16 @@ const getBreedPlural = (breedName: string): string => {
   }
 
   // For single word breeds, just add 's'
-  const words = breedName.split(' ');
+  const words = breedName.split(" ");
   if (words.length === 1) {
-    if (breedName.endsWith('y')) {
-      return breedName.slice(0, -1) + 'ies';
+    if (breedName.endsWith("y")) {
+      return breedName.slice(0, -1) + "ies";
     }
-    return breedName + 's';
+    return breedName + "s";
   }
 
   // For multi-word breeds, pluralize the last word
-  return breedName + 's';
+  return breedName + "s";
 };
 
 export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
@@ -56,7 +56,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
     if (breed?.slug) {
       router.push(`/breeds/${breed.slug}`);
     } else {
-      router.push('/breeds');
+      router.push("/breeds");
     }
   };
 
@@ -71,7 +71,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
           Breed Spotlight
         </h2>
-        <div 
+        <div
           data-testid="breed-spotlight-skeleton"
           className="rounded-2xl bg-gray-200 dark:bg-gray-800 animate-pulse h-48"
         />
@@ -90,7 +90,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
           Breed Spotlight
         </h2>
-        <div 
+        <div
           data-testid="breed-spotlight-card"
           className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-600 text-white p-6 shadow-xl motion-safe:animate-fadeInUp"
         >
@@ -103,7 +103,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
               Explore different dog breeds and find your perfect match
             </p>
             <button
-              onClick={() => router.push('/breeds')}
+              onClick={() => router.push("/breeds")}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 text-gray-900 hover:bg-white transition-all duration-300 font-medium"
               aria-label="Explore all breeds"
             >
@@ -127,17 +127,20 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
       <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
         Breed Spotlight
       </h2>
-      
-      <div 
+
+      <div
         data-testid="breed-spotlight-card"
         className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-600 text-white shadow-xl motion-safe:animate-fadeInUp"
       >
         {/* Background decoration */}
         <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
-        
+
         {/* Sparkles decoration */}
-        <Sparkles className="absolute top-4 right-4 w-6 h-6 text-white/30" data-testid="sparkles-icon" />
-        
+        <Sparkles
+          className="absolute top-4 right-4 w-6 h-6 text-white/30"
+          data-testid="sparkles-icon"
+        />
+
         <div className="relative z-10 p-6">
           <div className="flex gap-4">
             {/* Image or icon */}
@@ -154,7 +157,10 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
                 </div>
               ) : (
                 <div className="w-20 h-20 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
-                  <Dog className="w-10 h-10 text-white/80" data-testid="dog-icon" />
+                  <Dog
+                    className="w-10 h-10 text-white/80"
+                    data-testid="dog-icon"
+                  />
                 </div>
               )}
             </div>
@@ -171,7 +177,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
               </div>
 
               {breed.description && (
-                <p 
+                <p
                   data-testid="breed-description"
                   className="text-white/90 text-sm mb-4 line-clamp-3"
                 >

@@ -1,8 +1,8 @@
 "use client";
 
-import React from 'react';
-import { useRouter } from 'next/navigation';
-import { Search, Heart, Dog, Star } from 'lucide-react';
+import React from "react";
+import { useRouter } from "next/navigation";
+import { Search, Heart, Dog, Star } from "lucide-react";
 
 interface NavCard {
   title: string;
@@ -26,33 +26,33 @@ export default function MobileNavCards() {
 
   const navCards: NavCard[] = [
     {
-      title: 'Browse',
+      title: "Browse",
       icon: <Search className="h-6 w-6 text-white" />,
-      route: '/dogs',
-      gradient: 'from-indigo-500 to-violet-600',
-      darkGradient: 'dark:from-indigo-600 dark:to-violet-700',
+      route: "/dogs",
+      gradient: "from-indigo-500 to-violet-600",
+      darkGradient: "dark:from-indigo-600 dark:to-violet-700",
     },
     {
-      title: 'Swipe',
+      title: "Swipe",
       icon: <Heart className="h-6 w-6 text-white" />,
-      route: '/swipe',
-      gradient: 'from-fuchsia-500 to-pink-600',
-      darkGradient: 'dark:from-fuchsia-600 dark:to-pink-700',
+      route: "/swipe",
+      gradient: "from-fuchsia-500 to-pink-600",
+      darkGradient: "dark:from-fuchsia-600 dark:to-pink-700",
       hasNew: true,
     },
     {
-      title: 'Breeds',
+      title: "Breeds",
       icon: <Dog className="h-6 w-6 text-white" />,
-      route: '/breeds',
-      gradient: 'from-sky-500 to-blue-600',
-      darkGradient: 'dark:from-sky-600 dark:to-blue-700',
+      route: "/breeds",
+      gradient: "from-sky-500 to-blue-600",
+      darkGradient: "dark:from-sky-600 dark:to-blue-700",
     },
     {
-      title: 'Favorites',
+      title: "Favorites",
       icon: <Star className="h-6 w-6 text-white" />,
-      route: '/favorites',
-      gradient: 'from-orange-500 to-amber-500',
-      darkGradient: 'dark:from-orange-600 dark:to-amber-600',
+      route: "/favorites",
+      gradient: "from-orange-500 to-amber-500",
+      darkGradient: "dark:from-orange-600 dark:to-amber-600",
     },
   ];
 
@@ -82,7 +82,7 @@ export default function MobileNavCards() {
               NEW
             </div>
           )}
-          
+
           {/* Icon and Title */}
           <div className="flex flex-col items-center justify-center h-full space-y-2">
             {card.icon}

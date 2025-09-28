@@ -92,8 +92,6 @@ describe("SwipePage", () => {
     render(<SwipePage />);
     // Desktop users should now see the swipe container, not the blocking message
     expect(screen.getByText("Swipe Container")).toBeInTheDocument();
-    expect(
-      screen.queryByText("Mobile Only Feature")
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Mobile Only Feature")).not.toBeInTheDocument();
   });
 });

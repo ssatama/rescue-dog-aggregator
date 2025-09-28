@@ -173,9 +173,19 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
           >
             <motion.div
               ref={modalRef}
-              initial={{ y: typeof window !== 'undefined' && window.innerWidth >= 768 ? 0 : "100%" }}
+              initial={{
+                y:
+                  typeof window !== "undefined" && window.innerWidth >= 768
+                    ? 0
+                    : "100%",
+              }}
               animate={{ y: dragY }}
-              exit={{ y: typeof window !== 'undefined' && window.innerWidth >= 768 ? 0 : "100%" }}
+              exit={{
+                y:
+                  typeof window !== "undefined" && window.innerWidth >= 768
+                    ? 0
+                    : "100%",
+              }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
               className="bg-white dark:bg-gray-800 rounded-t-3xl md:rounded-2xl max-h-[90vh] md:max-h-[85vh] overflow-y-auto md:shadow-2xl"
               data-testid="modal-content"
@@ -214,7 +224,8 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
 
                     <div className="flex items-center gap-4 text-gray-600 dark:text-gray-400 mb-4">
                       <span className="flex items-center gap-1">
-                        <span className="text-orange-500">🐾</span> {ageCategory}
+                        <span className="text-orange-500">🐾</span>{" "}
+                        {ageCategory}
                       </span>
                       <span className="flex items-center gap-1">
                         <span>♂</span> {dog.sex}
@@ -285,7 +296,8 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                           >
                             <span className="text-2xl">🐕</span>
                             <span className="text-sm font-medium dark:text-gray-200">
-                              Dogs {getGoodWithIcon(profilerData.good_with_dogs)}
+                              Dogs{" "}
+                              {getGoodWithIcon(profilerData.good_with_dogs)}
                             </span>
                           </div>
                         )}
@@ -305,7 +317,8 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                           >
                             <span className="text-2xl">🐱</span>
                             <span className="text-sm font-medium dark:text-gray-200">
-                              Cats {getGoodWithIcon(profilerData.good_with_cats)}
+                              Cats{" "}
+                              {getGoodWithIcon(profilerData.good_with_cats)}
                             </span>
                           </div>
                         )}
@@ -325,7 +338,8 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                           >
                             <span className="text-2xl">👶</span>
                             <span className="text-sm font-medium dark:text-gray-200">
-                              Kids {getGoodWithIcon(profilerData.good_with_kids)}
+                              Kids{" "}
+                              {getGoodWithIcon(profilerData.good_with_kids)}
                             </span>
                           </div>
                         )}
