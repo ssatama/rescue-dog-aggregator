@@ -89,11 +89,19 @@ export const MobileHomePage: React.FC<MobileHomePageProps> = ({
         <MobileNavCards />
 
         {/* Stats */}
-        <MobileStats 
+        <MobileStats
           stats={[
-            { label: "Dogs", value: initialData?.statistics?.totalDogs?.toLocaleString() || "0" },
-            { label: "Rescues", value: initialData?.statistics?.totalOrganizations?.toString() || "0" },
-            { label: "Breeds", value: "50+" }
+            {
+              label: "Dogs",
+              value:
+                initialData?.statistics?.totalDogs?.toLocaleString() || "0",
+            },
+            {
+              label: "Rescues",
+              value:
+                initialData?.statistics?.totalOrganizations?.toString() || "0",
+            },
+            { label: "Breeds", value: "50+" },
           ]}
         />
 

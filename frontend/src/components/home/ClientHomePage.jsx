@@ -72,18 +72,18 @@ export default function ClientHomePage({
       const validBreeds = breedsWithImages.filter((breed) => {
         const breedName = breed.primary_breed || breed.name || "";
         const lowerBreedName = breedName.toLowerCase();
-        
+
         // Exclude mixed breeds and unknown breeds
-        const isMixed = lowerBreedName.includes("mix") || 
-                        breed.breed_type === "mixed" || 
-                        breed.breed_group === "Mixed";
-        const isUnknown = lowerBreedName === "unknown" || 
-                          lowerBreedName === "" ||
-                          !breedName;
-        
+        const isMixed =
+          lowerBreedName.includes("mix") ||
+          breed.breed_type === "mixed" ||
+          breed.breed_group === "Mixed";
+        const isUnknown =
+          lowerBreedName === "unknown" || lowerBreedName === "" || !breedName;
+
         return !isMixed && !isUnknown && breed.count > 0;
       });
-      
+
       // Select 3 random valid breeds from the available breeds
       const shuffled = [...validBreeds].sort(() => 0.5 - Math.random());
       const selectedBreeds = shuffled.slice(0, 3);

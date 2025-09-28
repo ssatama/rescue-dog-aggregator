@@ -13,7 +13,7 @@ interface MobileStatsProps {
 
 /**
  * MobileStats Component
- * 
+ *
  * Premium statistics display with Apple/Airbnb-inspired design:
  * - Clean neutral card with subtle border
  * - Clear typography hierarchy
