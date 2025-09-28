@@ -176,7 +176,7 @@ const MobileBottomNav: React.FC = () => {
           role="navigation"
           aria-label="Mobile navigation"
         >
-          <div className="flex items-center justify-around px-2 py-2">
+          <div className="flex items-center justify-around px-2 py-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive =
@@ -188,7 +188,7 @@ const MobileBottomNav: React.FC = () => {
                   key={item.id}
                   href={item.path}
                   className={cn(
-                    "relative flex flex-col items-center justify-center min-h-[56px] min-w-[44px] px-2 py-2 rounded-lg transition-colors",
+                    "relative flex flex-col items-center justify-center min-h-[56px] min-w-[44px] px-2 py-1 rounded-lg transition-colors",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4714A]",
                     isActive
                       ? "text-[#D4714A] dark:text-[#E8805A]"

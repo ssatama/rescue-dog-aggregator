@@ -2,46 +2,29 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
-import Link from "next/link";
 
 /**
- * MobileTopHeader - Sticky header for mobile home page
- * Features:
- * - Site name on left
- * - Search icon on right
- * - Sticky positioning with backdrop blur
- * - Dark mode support
- * - Safe area padding for iOS
+ * MobileTopHeader Component
+ * 
+ * Premium mobile header with clean typography and spacing
+ * - Main title with subtitle
+ * - Zinc color palette for sophistication
+ * - Apple/Airbnb-inspired minimalist design
  */
 export default function MobileTopHeader() {
-  const router = useRouter();
-
-  const handleSearchClick = () => {
-    router.push("/dogs");
-  };
-
   return (
     <header
-      className="sticky top-0 z-40 bg-white/85 dark:bg-gray-900/85 backdrop-blur-md border-b border-gray-200/70 dark:border-gray-800/70 px-4 py-2 flex items-center justify-between md:hidden"
-      style={{ paddingTop: "env(safe-area-inset-top, 0.5rem)" }}
+      className="sticky top-0 z-40 bg-white/90 dark:bg-zinc-900/80 backdrop-blur-md border-b border-zinc-200/70 dark:border-zinc-800/70 px-4 py-3 md:hidden"
+      style={{ paddingTop: "env(safe-area-inset-top, 0.75rem)" }}
     >
-      {/* Site Name */}
-      <Link href="/" className="flex items-center">
-        <span className="text-lg font-bold text-gray-900 dark:text-white">
-          Rescue Dogs Aggregator
-        </span>
-      </Link>
-
-      {/* Search Icon */}
-      <div className="flex items-center">
-        <button
-          onClick={handleSearchClick}
-          className="h-11 w-11 rounded-full bg-white dark:bg-gray-800 shadow-sm border border-gray-200/60 dark:border-gray-700/60 flex items-center justify-center hover:shadow-md transition-shadow"
-          aria-label="Search dogs"
-        >
-          <Search className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-        </button>
+      {/* Site Name and Tagline */}
+      <div className="flex flex-col">
+        <h1 className="text-[17px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          Rescue Dog Aggregator
+        </h1>
+        <p className="text-xs text-[#6B7280] dark:text-zinc-400 line-clamp-1 leading-tight mt-0.5">
+          Connecting European & UK rescue dogs with loving homes
+        </p>
       </div>
     </header>
   );

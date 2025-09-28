@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { useRouter } from "next/navigation";
 import { Search, Heart, Dog, Star } from "lucide-react";
 
@@ -8,51 +7,42 @@ interface NavCard {
   title: string;
   icon: React.ReactNode;
   route: string;
-  gradient: string;
-  darkGradient: string;
   hasNew?: boolean;
 }
 
 /**
- * MobileNavCards - Navigation cards for mobile home page
- * Features:
- * - 4 colorful gradient cards in 2x2 grid
- * - Browse, Swipe, Breeds, Favorites
- * - NEW badge on Swipe
- * - Gradient backgrounds with dark mode support
+ * MobileNavCards Component
+ * 
+ * Premium navigation cards with Apple/Airbnb-inspired design:
+ * - Clean neutral cards with subtle borders
+ * - Rose accent icon chips for brand consistency
+ * - Refined typography and spacing
+ * - Subtle interactions and shadows
  */
 export default function MobileNavCards() {
   const router = useRouter();
 
-  const navCards: NavCard[] = [
+  const navItems = [
     {
-      title: "Browse",
-      icon: <Search className="h-6 w-6 text-white" />,
-      route: "/dogs",
-      gradient: "from-indigo-400 to-violet-500", // Desaturated by ~10%
-      darkGradient: "dark:from-indigo-500 dark:to-violet-600",
+      href: "/dogs",
+      icon: <Search className="h-5 w-5" />,
+      label: "Browse",
     },
     {
-      title: "Swipe",
-      icon: <Heart className="h-6 w-6 text-white" />,
-      route: "/swipe",
-      gradient: "from-fuchsia-400 to-pink-500", // Desaturated by ~10%
-      darkGradient: "dark:from-fuchsia-500 dark:to-pink-600",
-      hasNew: true,
+      href: "/swipe",
+      icon: <Heart className="h-5 w-5" />,
+      label: "Swipe",
+      badge: "NEW",
     },
     {
-      title: "Breeds",
-      icon: <Dog className="h-6 w-6 text-white" />,
-      route: "/breeds",
-      gradient: "from-sky-400 to-blue-500", // Desaturated by ~10%
-      darkGradient: "dark:from-sky-500 dark:to-blue-600",
+      href: "/breeds",
+      icon: <Dog className="h-5 w-5" />,
+      label: "Breeds",
     },
     {
-      title: "Favorites",
-      icon: <Star className="h-6 w-6 text-white" />,
-      route: "/favorites",
-      gradient: "from-[#D4714A] to-amber-400", // Updated to use terracotta
-      darkGradient: "dark:from-[#C05F3A] dark:to-amber-500",
+      href: "/favorites",
+      icon: <Star className="h-5 w-5" />,
+      label: "Favorites",
     },
   ];
 
@@ -62,32 +52,37 @@ export default function MobileNavCards() {
 
   return (
     <div className="grid grid-cols-2 gap-3 px-4 py-4 md:hidden">
-      {navCards.map((card) => (
+      {navItems.map((item) => (
         <button
-          key={card.title}
-          onClick={() => handleCardClick(card.route)}
-          aria-label={`Navigate to ${card.title}`}
-          className={`
-            relative rounded-2xl p-4 h-28 text-white
-            bg-gradient-to-br ${card.gradient} ${card.darkGradient}
-            ring-1 ring-white/10 
-            active:scale-95 transition-all
-            hover:shadow-xl focus-visible:ring-2 focus-visible:ring-[#D4714A] 
+          key={item.label}
+          onClick={() => handleCardClick(item.href)}
+          aria-label={`Navigate to ${item.label}`}
+          className="
+            relative bg-white dark:bg-zinc-900 
+            ring-1 ring-zinc-200/60 dark:ring-zinc-800/60 
+            rounded-2xl h-24 p-3
+            active:scale-[0.98] transition-all duration-200
+            hover:shadow-sm focus-visible:ring-2 focus-visible:ring-rose-500 
             focus-visible:outline-none
-            shadow-[0_2px_8px_rgba(0,0,0,0.08)]
-          `}
+            shadow-[0_1px_0_rgba(0,0,0,0.06),0_8px_20px_rgba(0,0,0,0.04)]
+          "
         >
           {/* NEW Badge */}
-          {card.hasNew && (
-            <div className="absolute top-2 right-2 rounded-full bg-white/90 text-pink-600 text-[10px] font-bold px-1.5 py-0.5 ring-1 ring-pink-200">
-              NEW
+          {item.badge && (
+            <div className="absolute top-2 right-2 rounded-full bg-[#E678A8]/20 dark:bg-[#E678A8]/10 text-[#E678A8] dark:text-[#E678A8] text-[10px] font-medium px-1.5 py-0.5 ring-1 ring-[#E678A8]/30 dark:ring-[#E678A8]/20">
+              {item.badge}
             </div>
           )}
 
           {/* Icon and Title */}
           <div className="flex flex-col items-center justify-center h-full space-y-2">
-            {card.icon}
-            <span className="text-sm font-medium">{card.title}</span>
+            {/* Icon Chip */}
+            <div className="h-9 w-9 rounded-full bg-[#E678A8]/10 dark:bg-[#E678A8]/10 flex items-center justify-center text-[#E678A8] dark:text-[#E678A8]">
+              {item.icon}
+            </div>
+            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+              {item.label}
+            </span>
           </div>
         </button>
       ))}

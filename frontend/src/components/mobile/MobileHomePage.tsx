@@ -78,7 +78,7 @@ export const MobileHomePage: React.FC<MobileHomePageProps> = ({
   return (
     <div
       data-testid="mobile-home-page"
-      className="md:hidden min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 overflow-x-hidden"
+      className="min-h-screen bg-[#FFF4ED] dark:bg-gray-900 pb-16 md:hidden overflow-x-hidden"
     >
       {/* Sticky header */}
       <MobileTopHeader />
@@ -88,26 +88,21 @@ export const MobileHomePage: React.FC<MobileHomePageProps> = ({
         {/* Navigation cards */}
         <MobileNavCards />
 
-        {/* Statistics */}
-        <MobileStats
-          statistics={
-            initialData?.statistics
-              ? {
-                  total_dogs: initialData.statistics.totalDogs || 0,
-                  total_organizations:
-                    initialData.statistics.totalOrganizations || 0,
-                  total_breeds: initialData.statistics.totalBreeds || 0,
-                }
-              : null
-          }
+        {/* Stats */}
+        <MobileStats 
+          stats={[
+            { label: "Dogs", value: initialData?.statistics?.totalDogs?.toLocaleString() || "0" },
+            { label: "Rescues", value: initialData?.statistics?.totalOrganizations?.toString() || "0" },
+            { label: "Breeds", value: "50+" }
+          ]}
         />
 
-        {/* Breed spotlight carousel - moved below stats, above Recently Added */}
+        {/* Breed Spotlight Carousel */}
         <MobileBreedSpotlight breeds={randomBreeds} />
 
-        {/* Available dogs section - now called "Recently Added" */}
+        {/* Available Now */}
         <MobileAvailableNow
-          dogs={initialData?.dogs || []}
+          dogs={initialData?.dogs}
           totalCount={initialData?.statistics?.totalDogs}
         />
       </main>

@@ -117,7 +117,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
         aria-label="Breed spotlight"
         role="region"
       >
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+        <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 mb-4">
           Breed Spotlight
         </h2>
         <div
@@ -136,24 +136,24 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
         aria-label="Breed spotlight"
         role="region"
       >
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+        <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 mb-4">
           Breed Spotlight
         </h2>
         <div
           data-testid="breed-spotlight-card"
-          className="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 shadow-sm"
+          className="relative overflow-hidden rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 p-6 shadow-sm"
         >
           <div className="relative z-10">
             <div className="flex items-center justify-center mb-4">
-              <Dog className="w-16 h-16 text-gray-400 dark:text-gray-500" />
+              <Dog className="w-16 h-16 text-zinc-400 dark:text-zinc-500" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Discover Popular Breeds</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <h3 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">Discover Popular Breeds</h3>
+            <p className="text-zinc-600 dark:text-zinc-400 mb-4">
               Explore different dog breeds and find your perfect match
             </p>
             <button
               onClick={() => router.push("/breeds")}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 transition-all duration-300 font-medium"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#E678A8] text-white hover:bg-[#D668A8] transition-all duration-300 font-medium"
               aria-label="Explore all breeds"
             >
               Explore Breeds
@@ -180,7 +180,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
       aria-label="Breed spotlight"
       role="region"
     >
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+      <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 mb-4">
         Breed Spotlight
       </h2>
 
@@ -197,7 +197,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
             dragElastic={0.2}
             onDragEnd={handleDragEnd}
             data-testid="breed-spotlight-card"
-            className="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm cursor-grab active:cursor-grabbing"
+            className="relative overflow-hidden rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 shadow-sm cursor-grab active:cursor-grabbing"
           >
             <div className="relative z-10 p-6">
               <div className="flex gap-4">
@@ -226,10 +226,10 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
                 {/* Content */}
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{currentBreed.name}</h3>
+                    <h3 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{currentBreed.name}</h3>
                     {currentBreed.availableCount &&
                       currentBreed.availableCount > 0 && (
-                        <span className="px-2 py-1 text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">
+                        <span className="px-2 py-1 text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-full">
                           {currentBreed.availableCount} available
                         </span>
                       )}
@@ -238,7 +238,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
                   {currentBreed.description && (
                     <p
                       data-testid="breed-description"
-                      className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3"
+                      className="text-zinc-600 dark:text-zinc-400 text-sm mb-4 line-clamp-3 px-2"
                     >
                       {currentBreed.description}
                     </p>
@@ -246,7 +246,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
 
                   <button
                     onClick={() => handleExploreClick(currentBreed)}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 transition-all duration-300 font-medium"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#E678A8] text-white hover:bg-[#D668A8] transition-all duration-300 font-medium"
                     aria-label={`Explore ${breedPlural}`}
                   >
                     Explore {breedPlural}
@@ -268,8 +268,8 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
                 aria-label={`Go to breed ${index + 1}`}
                 className={`h-2 rounded-full transition-all duration-300 ${
                   index === currentIndex
-                    ? "w-6 bg-gray-900 dark:bg-gray-100"
-                    : "w-2 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
+                    ? "w-6 bg-zinc-900 dark:bg-zinc-100"
+                    : "w-2 bg-zinc-400 dark:bg-zinc-600 hover:bg-zinc-500 dark:hover:bg-zinc-500"
                 }`}
               />
             ))}

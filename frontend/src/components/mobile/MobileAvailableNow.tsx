@@ -205,22 +205,16 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
   };
 
   return (
-    <section
-      className="px-4 py-6 bg-white dark:bg-gray-900 md:hidden"
-      aria-label="Available dogs"
-      role="region"
-    >
-      {/* Header */}
+    <section className="bg-[#FFF4ED] dark:bg-gray-900 px-4 py-4 md:hidden">
+      {/* Header with Browse All link */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
             Recently Added
           </h2>
-          {totalCount !== undefined && totalCount > 0 && (
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {totalCount} dogs available
-            </p>
-          )}
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-0.5">
+            {(totalCount || 0).toLocaleString()} dogs available
+          </p>
         </div>
       </div>
 
