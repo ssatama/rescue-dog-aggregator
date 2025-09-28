@@ -146,14 +146,14 @@ describe("MobileTopHeader", () => {
   describe("Safe Area Support", () => {
     it("has safe area padding for iOS devices", () => {
       render(<MobileTopHeader />);
-      
+
       const header = screen.getByRole("banner");
-      
+
       // Check that the header element exists and has expected structure
       // The safe area padding is applied via inline style in the actual component
       expect(header).toBeInTheDocument();
       expect(header.tagName.toLowerCase()).toBe("header");
-      
+
       // Note: inline styles with env() are not easily testable in jsdom
       // This test verifies the component renders correctly and would apply
       // the safe area padding in a real browser environment

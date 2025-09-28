@@ -29,9 +29,7 @@ jest.mock("next/image", () => ({
 jest.mock("../../filters/MobileFilterDrawer", () => ({
   __esModule: true,
   default: ({ isOpen, onClose }: any) =>
-    isOpen ? (
-      <div data-testid="mobile-filter-drawer">Filter Drawer</div>
-    ) : null,
+    isOpen ? <div data-testid="mobile-filter-drawer">Filter Drawer</div> : null,
 }));
 
 const mockDogs = [
@@ -45,11 +43,11 @@ const mockDogs = [
     age_min_months: 24,
     sex: "male",
     primary_image_url: "/dog1.jpg",
-    organization: { 
+    organization: {
       id: 1,
-      name: "Happy Paws", 
+      name: "Happy Paws",
       slug: "happy-paws",
-      config_id: "happy-paws"
+      config_id: "happy-paws",
     },
     personality_traits: ["Friendly", "Energetic", "Playful"],
     dog_profiler_data: {
@@ -62,17 +60,17 @@ const mockDogs = [
     id: "2",
     name: "Luna",
     breed: "Border Collie",
-    primary_breed: "Border Collie", 
+    primary_breed: "Border Collie",
     age: "3 years",
     age_text: "3 years",
     age_min_months: 36,
     sex: "female",
     primary_image_url: "/dog2.jpg",
-    organization: { 
+    organization: {
       id: 2,
-      name: "Rescue Heroes", 
+      name: "Rescue Heroes",
       slug: "rescue-heroes",
-      config_id: "rescue-heroes"
+      config_id: "rescue-heroes",
     },
     personality_traits: ["Smart", "Gentle", "Loyal"],
     dog_profiler_data: {
@@ -91,11 +89,11 @@ const mockDogs = [
     age_min_months: 12,
     sex: "male",
     primary_image_url: "/dog3.jpg",
-    organization: { 
+    organization: {
       id: 3,
-      name: "Save A Dog", 
+      name: "Save A Dog",
       slug: "save-a-dog",
-      config_id: "save-a-dog"
+      config_id: "save-a-dog",
     },
     personality_traits: ["Calm", "Good with kids", "Friendly"],
     dog_profiler_data: {
@@ -114,11 +112,11 @@ const mockDogs = [
     age_min_months: 48,
     sex: "female",
     primary_image_url: "/dog4.jpg",
-    organization: { 
+    organization: {
       id: 4,
-      name: "Happy Tails", 
+      name: "Happy Tails",
       slug: "happy-tails",
-      config_id: "happy-tails"
+      config_id: "happy-tails",
     },
     personality_traits: ["Protective", "Intelligent", "Active"],
     dog_profiler_data: {
@@ -137,11 +135,11 @@ const mockDogs = [
     age_min_months: 24,
     sex: "male",
     primary_image_url: "/dog5.jpg",
-    organization: { 
+    organization: {
       id: 5,
-      name: "Paw Patrol", 
+      name: "Paw Patrol",
       slug: "paw-patrol",
-      config_id: "paw-patrol"
+      config_id: "paw-patrol",
     },
     personality_traits: ["Curious", "Friendly", "Energetic"],
     dog_profiler_data: {
@@ -160,11 +158,11 @@ const mockDogs = [
     age_min_months: 60,
     sex: "female",
     primary_image_url: "/dog6.jpg",
-    organization: { 
+    organization: {
       id: 6,
-      name: "Furry Friends", 
+      name: "Furry Friends",
       slug: "furry-friends",
-      config_id: "furry-friends"
+      config_id: "furry-friends",
     },
     personality_traits: ["Gentle", "Calm", "Intelligent"],
     dog_profiler_data: {
@@ -312,7 +310,7 @@ describe("MobileAvailableNow", () => {
     const favoriteButtons = screen.getAllByRole("button", {
       name: /add to favorites|remove from favorites/i,
     });
-    
+
     fireEvent.click(favoriteButtons[0]);
     expect(mockToggleFavorite).toHaveBeenCalledWith(1, "Max");
   });

@@ -24,7 +24,7 @@ export default function MobileTopHeader() {
   return (
     <header
       className="sticky top-0 z-40 bg-white/85 dark:bg-gray-900/85 backdrop-blur-md border-b border-gray-200/70 dark:border-gray-800/70 px-4 py-2 flex items-center justify-between md:hidden"
-      style={{ paddingTop: 'env(safe-area-inset-top, 0.5rem)' }}
+      style={{ paddingTop: "env(safe-area-inset-top, 0.5rem)" }}
     >
       {/* Site Name */}
       <Link href="/" className="flex items-center">

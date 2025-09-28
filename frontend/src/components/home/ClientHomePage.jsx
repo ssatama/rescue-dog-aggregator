@@ -26,24 +26,27 @@ export default function ClientHomePage({
   initialRecentDogs,
   initialDiverseDogs,
 }) {
-  // State for breed stats
-  const [breedStats, setBreedStats] = useState(null);
+  // State for breeds with images
+  const [breedsWithImages, setBreedsWithImages] = useState(null);
 
-  // Fetch breed stats on mount (client-side only)
+  // Fetch breeds with images on mount (client-side only)
   useEffect(() => {
-    const fetchBreedStats = async () => {
+    const fetchBreedsWithImages = async () => {
       try {
-        const response = await fetch('/api/animals/breeds/stats');
+        // Fetch breeds that have at least 5 dogs and images
+        const response = await fetch(
+          "/api/animals/breeds/with-images?min_count=5&limit=20",
+        );
         if (response.ok) {
-          const stats = await response.json();
-          setBreedStats(stats);
+          const breeds = await response.json();
+          setBreedsWithImages(breeds);
         }
       } catch (error) {
-        console.error('Error fetching breed stats:', error);
+        console.error("Error fetching breeds with images:", error);
       }
     };
 
-    fetchBreedStats();
+    fetchBreedsWithImages();
   }, []);
 
   // Prepare data for mobile version
@@ -58,8 +61,50 @@ export default function ClientHomePage({
           : [];
 
     // Change from slice(0, 8) to slice(0, 8) - already correct, but ensure we fetch 8
-    const mobileDogs =
-      list.slice(0, 8).map((d) => ({ ...d, id: String(d.id) }));
+    const mobileDogs = list
+      .slice(0, 8)
+      .map((d) => ({ ...d, id: String(d.id) }));
+
+    // Transform breeds with images to the format expected by MobileHomePage
+    let transformedBreedStats = null;
+    if (breedsWithImages && Array.isArray(breedsWithImages)) {
+      // Filter out breeds that don't have detail pages
+      const validBreeds = breedsWithImages.filter((breed) => {
+        const breedName = breed.primary_breed || breed.name || "";
+        const lowerBreedName = breedName.toLowerCase();
+        
+        // Exclude mixed breeds and unknown breeds
+        const isMixed = lowerBreedName.includes("mix") || 
+                        breed.breed_type === "mixed" || 
+                        breed.breed_group === "Mixed";
+        const isUnknown = lowerBreedName === "unknown" || 
+                          lowerBreedName === "" ||
+                          !breedName;
+        
+        return !isMixed && !isUnknown && breed.count > 0;
+      });
+      
+      // Select 3 random valid breeds from the available breeds
+      const shuffled = [...validBreeds].sort(() => 0.5 - Math.random());
+      const selectedBreeds = shuffled.slice(0, 3);
+
+      transformedBreedStats = {
+        qualifying_breeds: selectedBreeds.map((breed) => ({
+          name: breed.primary_breed || breed.name,
+          breed_name: breed.primary_breed || breed.name,
+          slug: (breed.primary_breed || breed.name || "")
+            .toLowerCase()
+            .replace(/\s+/g, "-"),
+          description:
+            breed.description ||
+            `Discover ${breed.count || 0} wonderful ${breed.primary_breed || breed.name}s looking for their forever homes.`,
+          count: breed.count || 0,
+          available_count: breed.count || 0,
+          image_url: breed.sample_dogs?.[0]?.primary_image_url || null,
+          imageUrl: breed.sample_dogs?.[0]?.primary_image_url || null,
+        })),
+      };
+    }
 
     return {
       dogs: mobileDogs,
@@ -68,11 +113,9 @@ export default function ClientHomePage({
         totalOrganizations: initialStatistics?.total_organizations || 0,
         totalBreeds: 50, // Default to 50+ as we don't have exact breed count in basic statistics
       },
-      breedStats: breedStats, // Pass breed stats for random breed selection
+      breedStats: transformedBreedStats, // Pass transformed breed data for carousel
     };
-  }, [initialRecentDogs, initialStatistics, breedStats]);
-
-
+  }, [initialRecentDogs, initialStatistics, breedsWithImages]);
 
   return (
     <>

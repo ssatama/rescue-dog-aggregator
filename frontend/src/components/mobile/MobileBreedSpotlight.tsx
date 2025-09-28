@@ -78,19 +78,19 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
   const handleDragEnd = useCallback(
     (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
       const threshold = 50;
-      
+
       if (info.offset.x < -threshold && currentIndex < breeds.length - 1) {
         setCurrentIndex(currentIndex + 1);
       } else if (info.offset.x > threshold && currentIndex > 0) {
         setCurrentIndex(currentIndex - 1);
       }
-      
+
       // Reset auto-advance timer after manual interaction
       if (autoAdvanceRef.current) {
         clearTimeout(autoAdvanceRef.current);
       }
     },
-    [currentIndex, breeds.length]
+    [currentIndex, breeds.length],
   );
 
   const handleDotClick = (index: number) => {
@@ -141,19 +141,19 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
         </h2>
         <div
           data-testid="breed-spotlight-card"
-          className="relative overflow-hidden rounded-2xl bg-[#FFF4ED] dark:bg-gray-800 text-gray-900 dark:text-white p-6 shadow-xl motion-safe:animate-fadeInUp"
+          className="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 shadow-sm"
         >
           <div className="relative z-10">
             <div className="flex items-center justify-center mb-4">
-              <Dog className="w-16 h-16 text-[#D4714A]" />
+              <Dog className="w-16 h-16 text-gray-400 dark:text-gray-500" />
             </div>
-            <h3 className="text-2xl font-bold mb-2">Discover Popular Breeds</h3>
-            <p className="text-gray-700 dark:text-gray-300 mb-4">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Discover Popular Breeds</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
               Explore different dog breeds and find your perfect match
             </p>
             <button
               onClick={() => router.push("/breeds")}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#D4714A] text-white hover:bg-[#C05F3A] transition-all duration-300 font-medium"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 transition-all duration-300 font-medium"
               aria-label="Explore all breeds"
             >
               Explore Breeds
@@ -166,6 +166,12 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
   }
 
   const currentBreed = breeds[currentIndex];
+
+  // Guard against undefined currentBreed
+  if (!currentBreed) {
+    return null;
+  }
+
   const breedPlural = getBreedPlural(currentBreed.name);
 
   return (
@@ -191,14 +197,14 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
             dragElastic={0.2}
             onDragEnd={handleDragEnd}
             data-testid="breed-spotlight-card"
-            className="relative overflow-hidden rounded-2xl bg-[#FFF4ED] dark:bg-gray-800 text-gray-900 dark:text-white shadow-xl cursor-grab active:cursor-grabbing"
+            className="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm cursor-grab active:cursor-grabbing"
           >
             <div className="relative z-10 p-6">
               <div className="flex gap-4">
                 {/* Image or icon */}
                 <div className="flex-shrink-0">
                   {currentBreed.imageUrl ? (
-                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-white/20 dark:bg-gray-700">
+                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700">
                       <Image
                         src={currentBreed.imageUrl}
                         alt={currentBreed.name}
@@ -208,9 +214,9 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
                       />
                     </div>
                   ) : (
-                    <div className="w-20 h-20 rounded-xl bg-white/20 dark:bg-gray-700 flex items-center justify-center">
+                    <div className="w-20 h-20 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                       <Dog
-                        className="w-10 h-10 text-[#D4714A]"
+                        className="w-10 h-10 text-gray-400 dark:text-gray-500"
                         data-testid="dog-icon"
                       />
                     </div>
@@ -220,18 +226,19 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
                 {/* Content */}
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-2xl font-bold">{currentBreed.name}</h3>
-                    {currentBreed.availableCount && currentBreed.availableCount > 0 && (
-                      <span className="px-2 py-1 text-xs font-semibold bg-[#D4714A]/20 text-[#D4714A] dark:bg-[#D4714A]/30 dark:text-[#E8805A] rounded-full">
-                        {currentBreed.availableCount} available
-                      </span>
-                    )}
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{currentBreed.name}</h3>
+                    {currentBreed.availableCount &&
+                      currentBreed.availableCount > 0 && (
+                        <span className="px-2 py-1 text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">
+                          {currentBreed.availableCount} available
+                        </span>
+                      )}
                   </div>
 
                   {currentBreed.description && (
                     <p
                       data-testid="breed-description"
-                      className="text-gray-700 dark:text-gray-300 text-sm mb-4 line-clamp-3"
+                      className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3"
                     >
                       {currentBreed.description}
                     </p>
@@ -239,7 +246,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
 
                   <button
                     onClick={() => handleExploreClick(currentBreed)}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#D4714A] text-white hover:bg-[#C05F3A] transition-all duration-300 font-medium"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 transition-all duration-300 font-medium"
                     aria-label={`Explore ${breedPlural}`}
                   >
                     Explore {breedPlural}
@@ -261,7 +268,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
                 aria-label={`Go to breed ${index + 1}`}
                 className={`h-2 rounded-full transition-all duration-300 ${
                   index === currentIndex
-                    ? "w-6 bg-[#D4714A]"
+                    ? "w-6 bg-gray-900 dark:bg-gray-100"
                     : "w-2 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
                 }`}
               />

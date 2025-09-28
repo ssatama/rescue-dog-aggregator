@@ -12,16 +12,12 @@ jest.mock("next/navigation", () => ({
 // Mock child components
 jest.mock("../MobileTopHeader", () => ({
   __esModule: true,
-  default: () => (
-    <div data-testid="mobile-top-header">Mobile Top Header</div>
-  ),
+  default: () => <div data-testid="mobile-top-header">Mobile Top Header</div>,
 }));
 
 jest.mock("../MobileNavCards", () => ({
   __esModule: true,
-  default: () => (
-    <div data-testid="mobile-nav-cards">Mobile Nav Cards</div>
-  ),
+  default: () => <div data-testid="mobile-nav-cards">Mobile Nav Cards</div>,
 }));
 
 jest.mock("../MobileStats", () => ({
@@ -29,7 +25,9 @@ jest.mock("../MobileStats", () => ({
   default: ({ statistics }: any) => (
     <div data-testid="mobile-stats">
       <span data-testid="dogs-count">{statistics?.total_dogs || 0}</span>
-      <span data-testid="rescues-count">{statistics?.total_organizations || 0}</span>
+      <span data-testid="rescues-count">
+        {statistics?.total_organizations || 0}
+      </span>
       <span data-testid="breeds-count">{statistics?.total_breeds || 0}</span>
     </div>
   ),

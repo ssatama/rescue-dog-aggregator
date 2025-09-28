@@ -29,14 +29,14 @@ export default function MobileNavCards() {
       title: "Browse",
       icon: <Search className="h-6 w-6 text-white" />,
       route: "/dogs",
-      gradient: "from-indigo-400 to-violet-500",  // Desaturated by ~10%
+      gradient: "from-indigo-400 to-violet-500", // Desaturated by ~10%
       darkGradient: "dark:from-indigo-500 dark:to-violet-600",
     },
     {
       title: "Swipe",
       icon: <Heart className="h-6 w-6 text-white" />,
       route: "/swipe",
-      gradient: "from-fuchsia-400 to-pink-500",  // Desaturated by ~10%
+      gradient: "from-fuchsia-400 to-pink-500", // Desaturated by ~10%
       darkGradient: "dark:from-fuchsia-500 dark:to-pink-600",
       hasNew: true,
     },
@@ -44,14 +44,14 @@ export default function MobileNavCards() {
       title: "Breeds",
       icon: <Dog className="h-6 w-6 text-white" />,
       route: "/breeds",
-      gradient: "from-sky-400 to-blue-500",  // Desaturated by ~10%
+      gradient: "from-sky-400 to-blue-500", // Desaturated by ~10%
       darkGradient: "dark:from-sky-500 dark:to-blue-600",
     },
     {
       title: "Favorites",
       icon: <Star className="h-6 w-6 text-white" />,
       route: "/favorites",
-      gradient: "from-[#D4714A] to-amber-400",  // Updated to use terracotta
+      gradient: "from-[#D4714A] to-amber-400", // Updated to use terracotta
       darkGradient: "dark:from-[#C05F3A] dark:to-amber-500",
     },
   ];
