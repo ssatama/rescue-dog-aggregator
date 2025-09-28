@@ -319,7 +319,7 @@ export const getHomePageData = cache(async () => {
     // Fetch all data in parallel for maximum performance
     const [statistics, recentDogs, diverseDogs] = await Promise.all([
       getStatistics(),
-      getAnimalsByCuration("recent_with_fallback", 4),
+      getAnimalsByCuration("recent_with_fallback", 8), // Changed from 4 to 8 for mobile
       getAnimalsByCuration("diverse", 4),
     ]);
 

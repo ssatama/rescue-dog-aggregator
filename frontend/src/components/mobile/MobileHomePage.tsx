@@ -75,11 +75,8 @@ export const MobileHomePage: React.FC<MobileHomePageProps> = ({
           totalCount={initialData?.statistics?.totalDogs}
         />
 
-        {/* Breed spotlight */}
+        {/* Breed spotlight - removed spacing, connects directly */}
         <MobileBreedSpotlight breed={initialData?.featuredBreed} />
-
-        {/* Extra bottom padding for MobileBottomNav */}
-        <div className="h-4" />
       </main>
 
       {/* Bottom navigation */}

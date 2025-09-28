@@ -226,15 +226,15 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
 
       {/* Loading state */}
       {loading && safeDogs.length === 0 ? (
-        <div data-testid="dogs-grid" className="grid grid-cols-2 gap-3">
-          {[...Array(6)].map((_, i) => (
+        <div data-testid="dogs-grid" className="grid grid-cols-2 gap-3 max-h-[600px] overflow-y-auto">
+          {[...Array(8)].map((_, i) => (
             <DogCardSkeleton key={i} />
           ))}
         </div>
       ) : safeDogs.length > 0 ? (
         <>
           {/* Dogs grid */}
-          <div data-testid="dogs-grid" className="grid grid-cols-2 gap-3">
+          <div data-testid="dogs-grid" className="grid grid-cols-2 gap-3 max-h-[600px] overflow-y-auto">
             {safeDogs.map((dog, index) => {
               const favId = typeof dog.id === "string" ? parseInt(dog.id, 10) : dog.id;
               return (

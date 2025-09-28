@@ -64,7 +64,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
   if (loading) {
     return (
       <section
-        className="px-4 py-6 md:hidden"
+        className="px-4 pb-6 md:hidden"
         aria-label="Breed spotlight"
         role="region"
       >
@@ -83,7 +83,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
   if (!breed) {
     return (
       <section
-        className="px-4 py-6 md:hidden"
+        className="px-4 pb-6 md:hidden"
         aria-label="Breed spotlight"
         role="region"
       >
@@ -92,7 +92,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
         </h2>
         <div
           data-testid="breed-spotlight-card"
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-600 text-white p-6 shadow-xl motion-safe:animate-fadeInUp"
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white p-6 shadow-xl motion-safe:animate-fadeInUp"
         >
           <div className="relative z-10">
             <div className="flex items-center justify-center mb-4">
@@ -120,7 +120,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
 
   return (
     <section
-      className="px-4 py-6 md:hidden"
+      className="px-4 pb-6 md:hidden"
       aria-label="Breed spotlight"
       role="region"
     >
@@ -130,7 +130,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
 
       <div
         data-testid="breed-spotlight-card"
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-600 text-white shadow-xl motion-safe:animate-fadeInUp"
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white shadow-xl motion-safe:animate-fadeInUp"
       >
         {/* Background decoration */}
         <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />

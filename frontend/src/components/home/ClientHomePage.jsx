@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useEffect, useState } from "react";
 import HeroSection from "./HeroSection";
 import DogSection from "./DogSection";
 import DogSectionErrorBoundary from "../error/DogSectionErrorBoundary";
@@ -26,6 +26,39 @@ export default function ClientHomePage({
   initialRecentDogs,
   initialDiverseDogs,
 }) {
+  // State for random breed
+  const [randomBreed, setRandomBreed] = useState(null);
+
+  // Fetch random breed on mount (client-side only)
+  useEffect(() => {
+    const fetchRandomBreed = async () => {
+      try {
+        const response = await fetch('/api/animals/breeds/with-images?min_count=10&limit=20');
+        if (response.ok) {
+          const breeds = await response.json();
+          if (breeds && breeds.length > 0) {
+            // Select a random breed
+            const randomIndex = Math.floor(Math.random() * breeds.length);
+            const selectedBreed = breeds[randomIndex];
+            
+            // Transform to the expected format
+            setRandomBreed({
+              name: selectedBreed.primary_breed,
+              slug: selectedBreed.primary_breed.toLowerCase().replace(/\s+/g, '-'),
+              description: `Discover ${selectedBreed.count} wonderful ${selectedBreed.primary_breed}${selectedBreed.count === 1 ? '' : 's'} looking for their forever homes.`,
+              availableCount: selectedBreed.count,
+              imageUrl: selectedBreed.sample_dogs?.[0]?.primary_image_url || null
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching random breed:', error);
+      }
+    };
+
+    fetchRandomBreed();
+  }, []);
+
   // Prepare data for mobile version
   const mobileInitialData = React.useMemo(() => {
     // Normalize whatever shape we get into a plain array
@@ -37,6 +70,7 @@ export default function ClientHomePage({
           ? initialRecentDogs
           : [];
 
+    // Change from slice(0, 8) to slice(0, 8) - already correct, but ensure we fetch 8
     const mobileDogs =
       list.slice(0, 8).map((d) => ({ ...d, id: String(d.id) }));
 
@@ -47,7 +81,7 @@ export default function ClientHomePage({
         totalOrganizations: initialStatistics?.total_organizations || 0,
         totalBreeds: 50, // Default to 50+ as we don't have exact breed count in basic statistics
       },
-      featuredBreed: {
+      featuredBreed: randomBreed || {
         name: "Labrador Retriever",
         slug: "labrador-retriever",
         description:
@@ -55,7 +89,7 @@ export default function ClientHomePage({
         availableCount: 20, // Default count
       },
     };
-  }, [initialRecentDogs, initialStatistics]);
+  }, [initialRecentDogs, initialStatistics, randomBreed]);
 
 
 

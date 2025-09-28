@@ -11,35 +11,35 @@ jest.mock("next/navigation", () => ({
 
 // Mock child components
 jest.mock("../MobileTopHeader", () => ({
-  MobileTopHeader: () => (
+  __esModule: true,
+  default: () => (
     <div data-testid="mobile-top-header">Mobile Top Header</div>
   ),
 }));
 
 jest.mock("../MobileNavCards", () => ({
-  MobileNavCards: () => (
+  __esModule: true,
+  default: () => (
     <div data-testid="mobile-nav-cards">Mobile Nav Cards</div>
   ),
 }));
 
 jest.mock("../MobileStats", () => ({
-  MobileStats: ({ dogsCount, rescuesCount, breedsCount }: any) => (
+  __esModule: true,
+  default: ({ statistics }: any) => (
     <div data-testid="mobile-stats">
-      <span data-testid="dogs-count">{dogsCount}</span>
-      <span data-testid="rescues-count">{rescuesCount}</span>
-      <span data-testid="breeds-count">{breedsCount}</span>
+      <span data-testid="dogs-count">{statistics?.total_dogs || 0}</span>
+      <span data-testid="rescues-count">{statistics?.total_organizations || 0}</span>
+      <span data-testid="breeds-count">{statistics?.total_breeds || 0}</span>
     </div>
   ),
 }));
 
 jest.mock("../MobileAvailableNow", () => ({
-  MobileAvailableNow: ({ dogs, onLoadMore, hasMore, loadingMore }: any) => (
+  MobileAvailableNow: ({ dogs, totalCount }: any) => (
     <div data-testid="mobile-available-now">
       <span data-testid="dogs-length">{dogs?.length || 0}</span>
-      <button onClick={onLoadMore} data-testid="load-more">
-        {loadingMore ? "Loading..." : "Load More"}
-      </button>
-      {hasMore && <span data-testid="has-more">Has More</span>}
+      <span data-testid="total-count">{totalCount || 0}</span>
     </div>
   ),
 }));
