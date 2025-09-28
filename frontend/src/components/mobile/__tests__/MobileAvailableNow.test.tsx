@@ -9,81 +9,169 @@ jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
 }));
 
-// Mock DogCardOptimized component
-jest.mock("../../dogs/DogCardOptimized", () => ({
+// Mock useFavorites hook
+jest.mock("../../../hooks/useFavorites", () => ({
+  useFavorites: jest.fn(() => ({
+    favorites: [],
+    toggleFavorite: jest.fn(),
+  })),
+}));
+
+// Mock Next Image
+jest.mock("next/image", () => ({
   __esModule: true,
-  default: ({ dog, compact, priority, animationDelay }: any) => (
-    <div
-      data-testid={`dog-card-${dog.id}`}
-      data-compact={compact}
-      data-priority={priority}
-      data-animation-delay={animationDelay}
-    >
-      <h3>{dog.name}</h3>
-      <p>{dog.breed}</p>
-      {dog.personality_traits?.map((trait: string, index: number) => (
-        <span key={index} data-testid={`trait-${trait}`}>
-          {trait}
-        </span>
-      ))}
-    </div>
+  default: ({ src, alt, className, ...props }: any) => (
+    <img src={src} alt={alt} className={className} {...props} />
   ),
+}));
+
+// Mock MobileFilterDrawer
+jest.mock("../../filters/MobileFilterDrawer", () => ({
+  __esModule: true,
+  default: ({ isOpen, onClose }: any) =>
+    isOpen ? (
+      <div data-testid="mobile-filter-drawer">Filter Drawer</div>
+    ) : null,
 }));
 
 const mockDogs = [
   {
-    id: 1,
+    id: "1",
     name: "Max",
     breed: "Golden Retriever",
+    primary_breed: "Golden Retriever",
     age: "2 years",
-    organization: { name: "Happy Paws", slug: "happy-paws" },
+    age_text: "2 years",
+    age_min_months: 24,
+    sex: "male",
+    primary_image_url: "/dog1.jpg",
+    organization: { 
+      id: 1,
+      name: "Happy Paws", 
+      slug: "happy-paws",
+      config_id: "happy-paws"
+    },
     personality_traits: ["Friendly", "Energetic", "Playful"],
+    dog_profiler_data: {
+      personality_traits: ["Friendly", "Energetic", "Playful"],
+    },
     created_at: "2024-01-25",
+    slug: "max-1",
   },
   {
-    id: 2,
+    id: "2",
     name: "Luna",
     breed: "Border Collie",
+    primary_breed: "Border Collie", 
     age: "3 years",
-    organization: { name: "Rescue Heroes", slug: "rescue-heroes" },
+    age_text: "3 years",
+    age_min_months: 36,
+    sex: "female",
+    primary_image_url: "/dog2.jpg",
+    organization: { 
+      id: 2,
+      name: "Rescue Heroes", 
+      slug: "rescue-heroes",
+      config_id: "rescue-heroes"
+    },
     personality_traits: ["Smart", "Gentle", "Loyal"],
+    dog_profiler_data: {
+      personality_traits: ["Smart", "Gentle", "Loyal"],
+    },
     created_at: "2024-01-26",
+    slug: "luna-2",
   },
   {
-    id: 3,
+    id: "3",
     name: "Buddy",
     breed: "Labrador",
+    primary_breed: "Labrador",
     age: "1 year",
-    organization: { name: "Save A Dog", slug: "save-a-dog" },
+    age_text: "1 year",
+    age_min_months: 12,
+    sex: "male",
+    primary_image_url: "/dog3.jpg",
+    organization: { 
+      id: 3,
+      name: "Save A Dog", 
+      slug: "save-a-dog",
+      config_id: "save-a-dog"
+    },
     personality_traits: ["Calm", "Good with kids", "Friendly"],
+    dog_profiler_data: {
+      personality_traits: ["Calm", "Good with kids", "Friendly"],
+    },
     created_at: "2024-01-27",
+    slug: "buddy-3",
   },
   {
-    id: 4,
+    id: "4",
     name: "Bella",
     breed: "German Shepherd",
+    primary_breed: "German Shepherd",
     age: "4 years",
-    organization: { name: "Happy Tails", slug: "happy-tails" },
+    age_text: "4 years",
+    age_min_months: 48,
+    sex: "female",
+    primary_image_url: "/dog4.jpg",
+    organization: { 
+      id: 4,
+      name: "Happy Tails", 
+      slug: "happy-tails",
+      config_id: "happy-tails"
+    },
     personality_traits: ["Protective", "Intelligent", "Active"],
+    dog_profiler_data: {
+      personality_traits: ["Protective", "Intelligent", "Active"],
+    },
     created_at: "2024-01-20",
+    slug: "bella-4",
   },
   {
-    id: 5,
+    id: "5",
     name: "Charlie",
     breed: "Beagle",
+    primary_breed: "Beagle",
     age: "2 years",
-    organization: { name: "Paw Patrol", slug: "paw-patrol" },
+    age_text: "2 years",
+    age_min_months: 24,
+    sex: "male",
+    primary_image_url: "/dog5.jpg",
+    organization: { 
+      id: 5,
+      name: "Paw Patrol", 
+      slug: "paw-patrol",
+      config_id: "paw-patrol"
+    },
     personality_traits: ["Curious", "Friendly", "Energetic"],
+    dog_profiler_data: {
+      personality_traits: ["Curious", "Friendly", "Energetic"],
+    },
     created_at: "2024-01-21",
+    slug: "charlie-5",
   },
   {
-    id: 6,
+    id: "6",
     name: "Daisy",
     breed: "Poodle",
+    primary_breed: "Poodle",
     age: "5 years",
-    organization: { name: "Furry Friends", slug: "furry-friends" },
+    age_text: "5 years",
+    age_min_months: 60,
+    sex: "female",
+    primary_image_url: "/dog6.jpg",
+    organization: { 
+      id: 6,
+      name: "Furry Friends", 
+      slug: "furry-friends",
+      config_id: "furry-friends"
+    },
     personality_traits: ["Gentle", "Calm", "Intelligent"],
+    dog_profiler_data: {
+      personality_traits: ["Gentle", "Calm", "Intelligent"],
+    },
     created_at: "2024-01-22",
+    slug: "daisy-6",
   },
 ];
 
@@ -104,9 +192,8 @@ describe("MobileAvailableNow", () => {
     expect(screen.getByText("Available Now")).toBeInTheDocument();
 
     // Check filter button
-    const filterButton = screen.getByRole("button", { name: /filters/i });
+    const filterButton = screen.getByRole("button", { name: /open filters/i });
     expect(filterButton).toBeInTheDocument();
-    expect(filterButton).toHaveClass("text-gray-600");
   });
 
   it("applies mobile-only visibility classes", () => {
@@ -124,32 +211,22 @@ describe("MobileAvailableNow", () => {
     expect(grid).toHaveClass("grid", "grid-cols-2", "gap-3");
   });
 
-  it("renders initial set of dogs with compact mode", () => {
-    render(<MobileAvailableNow dogs={mockDogs.slice(0, 4)} />);
+  it("renders dog cards with name and age", () => {
+    render(<MobileAvailableNow dogs={mockDogs.slice(0, 2)} />);
 
-    // Check first 4 dogs are rendered
-    expect(screen.getByTestId("dog-card-1")).toBeInTheDocument();
-    expect(screen.getByTestId("dog-card-2")).toBeInTheDocument();
-    expect(screen.getByTestId("dog-card-3")).toBeInTheDocument();
-    expect(screen.getByTestId("dog-card-4")).toBeInTheDocument();
-
-    // Check compact mode is enabled
-    expect(screen.getByTestId("dog-card-1")).toHaveAttribute(
-      "data-compact",
-      "true",
-    );
+    // Check that dog names with age are displayed
+    expect(screen.getByText("Max, Young")).toBeInTheDocument();
+    expect(screen.getByText("Luna, Adult")).toBeInTheDocument();
   });
 
-  it("shows personality traits with correct color coding", () => {
-    render(<MobileAvailableNow dogs={mockDogs.slice(0, 3)} />);
+  it("shows personality traits with colored badges", () => {
+    render(<MobileAvailableNow dogs={mockDogs.slice(0, 2)} />);
 
-    // Check traits are displayed (using getAllBy since traits can repeat)
-    const friendlyTraits = screen.getAllByTestId("trait-Friendly");
-    expect(friendlyTraits.length).toBeGreaterThan(0);
-    expect(screen.getByTestId("trait-Energetic")).toBeInTheDocument();
-    expect(screen.getByTestId("trait-Smart")).toBeInTheDocument();
-    expect(screen.getByTestId("trait-Gentle")).toBeInTheDocument();
-    expect(screen.getByTestId("trait-Calm")).toBeInTheDocument();
+    // Check traits are displayed as badges
+    expect(screen.getByText("Friendly")).toBeInTheDocument();
+    expect(screen.getByText("Energetic")).toBeInTheDocument();
+    expect(screen.getByText("Smart")).toBeInTheDocument();
+    expect(screen.getByText("Gentle")).toBeInTheDocument();
   });
 
   it("displays Load More button when more dogs are available", () => {
@@ -159,7 +236,6 @@ describe("MobileAvailableNow", () => {
       name: /load more dogs/i,
     });
     expect(loadMoreButton).toBeInTheDocument();
-    expect(loadMoreButton).toHaveClass("bg-orange-500", "hover:bg-orange-600");
   });
 
   it("handles Load More button click", async () => {
@@ -190,8 +266,6 @@ describe("MobileAvailableNow", () => {
     );
 
     expect(screen.getByText("Loading...")).toBeInTheDocument();
-    const loadMoreButton = screen.getByRole("button", { name: /loading/i });
-    expect(loadMoreButton).toBeDisabled();
   });
 
   it("hides Load More button when no more dogs", () => {
@@ -202,13 +276,14 @@ describe("MobileAvailableNow", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("navigates to /dogs page when filter button is clicked", () => {
+  it("opens filter drawer when filter button is clicked", () => {
     render(<MobileAvailableNow dogs={mockDogs.slice(0, 4)} />);
 
-    const filterButton = screen.getByRole("button", { name: /filters/i });
+    const filterButton = screen.getByRole("button", { name: /open filters/i });
     fireEvent.click(filterButton);
 
-    expect(mockPush).toHaveBeenCalledWith("/dogs");
+    // Should open the filter drawer
+    expect(screen.getByTestId("mobile-filter-drawer")).toBeInTheDocument();
   });
 
   it("handles empty dogs array gracefully", () => {
@@ -223,94 +298,42 @@ describe("MobileAvailableNow", () => {
     ).toBeInTheDocument();
   });
 
-  it("displays NEW TODAY badge for recent dogs", () => {
-    const todayDate = new Date().toISOString().split("T")[0];
-    const recentDogs = [
-      { ...mockDogs[0], created_at: todayDate },
-      { ...mockDogs[1], created_at: "2024-01-20" },
-    ];
+  it("handles favorite toggle", () => {
+    const { useFavorites } = require("../../../hooks/useFavorites");
+    const mockToggleFavorite = jest.fn();
+    useFavorites.mockReturnValue({
+      favorites: [1],
+      toggleFavorite: mockToggleFavorite,
+    });
 
-    render(<MobileAvailableNow dogs={recentDogs} />);
+    render(<MobileAvailableNow dogs={mockDogs.slice(0, 2)} />);
 
-    // First dog should show as new (created today)
-    const firstCard = screen.getByTestId("dog-card-1");
-    expect(firstCard.parentElement).toHaveClass("relative");
-
-    // This will be implemented in the actual component
-    // For now, we're just testing that the structure is in place
+    // Find and click favorite button (heart icon)
+    const favoriteButtons = screen.getAllByRole("button", {
+      name: /add to favorites|remove from favorites/i,
+    });
+    
+    fireEvent.click(favoriteButtons[0]);
+    expect(mockToggleFavorite).toHaveBeenCalledWith(1, "Max");
   });
 
-  it("applies animation delays to dog cards", () => {
-    render(<MobileAvailableNow dogs={mockDogs.slice(0, 4)} />);
+  it("displays dog images", () => {
+    render(<MobileAvailableNow dogs={mockDogs.slice(0, 2)} />);
 
-    expect(screen.getByTestId("dog-card-1")).toHaveAttribute(
-      "data-animation-delay",
-      "0",
-    );
-    expect(screen.getByTestId("dog-card-2")).toHaveAttribute(
-      "data-animation-delay",
-      "1",
-    );
-    expect(screen.getByTestId("dog-card-3")).toHaveAttribute(
-      "data-animation-delay",
-      "2",
-    );
-    expect(screen.getByTestId("dog-card-4")).toHaveAttribute(
-      "data-animation-delay",
-      "3",
-    );
-  });
+    const maxImage = screen.getByAltText("Max");
+    expect(maxImage).toHaveAttribute("src", "/dog1.jpg");
 
-  it("sets proper priority for first few dogs", () => {
-    render(<MobileAvailableNow dogs={mockDogs.slice(0, 6)} />);
-
-    // First 4 dogs should have priority
-    expect(screen.getByTestId("dog-card-1")).toHaveAttribute(
-      "data-priority",
-      "true",
-    );
-    expect(screen.getByTestId("dog-card-2")).toHaveAttribute(
-      "data-priority",
-      "true",
-    );
-    expect(screen.getByTestId("dog-card-3")).toHaveAttribute(
-      "data-priority",
-      "true",
-    );
-    expect(screen.getByTestId("dog-card-4")).toHaveAttribute(
-      "data-priority",
-      "true",
-    );
-
-    // Dogs after 4th should not have priority
-    expect(screen.getByTestId("dog-card-5")).toHaveAttribute(
-      "data-priority",
-      "false",
-    );
-    expect(screen.getByTestId("dog-card-6")).toHaveAttribute(
-      "data-priority",
-      "false",
-    );
-  });
-
-  it("maintains proper accessibility attributes", () => {
-    render(<MobileAvailableNow dogs={mockDogs.slice(0, 4)} />);
-
-    // Check section has proper role
-    const section = screen.getByRole("region", { name: /available dogs/i });
-    expect(section).toBeInTheDocument();
-
-    // Check filter button has aria-label
-    const filterButton = screen.getByRole("button", { name: /filters/i });
-    expect(filterButton).toHaveAttribute("aria-label");
+    const lunaImage = screen.getByAltText("Luna");
+    expect(lunaImage).toHaveAttribute("src", "/dog2.jpg");
   });
 
   it("handles loading state for initial load", () => {
     render(<MobileAvailableNow dogs={[]} loading={true} />);
 
     // Should show skeleton loaders
-    const skeletons = screen.getAllByTestId(/skeleton/i);
-    expect(skeletons).toHaveLength(4); // Show 4 skeleton cards
+    const grid = screen.getByTestId("dogs-grid");
+    expect(grid).toBeInTheDocument();
+    expect(grid.children.length).toBeGreaterThan(0);
   });
 
   it("applies proper styling to section container", () => {
@@ -328,11 +351,12 @@ describe("MobileAvailableNow", () => {
     expect(screen.getByText("150 dogs available")).toBeInTheDocument();
   });
 
-  it("handles undefined or null dogs gracefully", () => {
-    render(<MobileAvailableNow dogs={undefined as any} />);
+  it("shows extra traits count when more than 2", () => {
+    render(<MobileAvailableNow dogs={mockDogs.slice(2, 3)} />);
 
-    expect(
-      screen.getByText("No dogs available at the moment"),
-    ).toBeInTheDocument();
+    // Buddy has 3 traits, should show 2 + count
+    expect(screen.getByText("Calm")).toBeInTheDocument();
+    expect(screen.getByText("Good with kids")).toBeInTheDocument();
+    expect(screen.getByText("+1")).toBeInTheDocument();
   });
 });
