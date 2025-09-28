@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import { MobileHomePage } from "../MobileHomePage";
+import MobileHomePage from "../MobileHomePage";
 import { useRouter } from "next/navigation";
 
 // Mock Next.js router

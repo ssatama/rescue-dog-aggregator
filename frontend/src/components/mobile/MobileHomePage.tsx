@@ -7,6 +7,7 @@ import MobileStats from "./MobileStats";
 import { MobileAvailableNow } from "./MobileAvailableNow";
 import { MobileBreedSpotlight } from "./MobileBreedSpotlight";
 import MobileBottomNav from "../navigation/MobileBottomNav";
+import { MobileHomeSEO } from "../seo/MobileHomeSEO";
 
 interface Dog {
   id: number | string;
@@ -79,17 +80,23 @@ interface MobileHomePageProps {
 
 // Helper function to get random breeds
 const getRandomBreeds = (
-  breedStats: BreedStats | undefined,
-  count: number = 3,
-): FeaturedBreed[] => {
-  if (
-    !breedStats?.qualifying_breeds ||
-    !Array.isArray(breedStats.qualifying_breeds)
-  ) {
-    return [];
-  }
+  breedStats: any,
+  count: number = 3
+) => {
+  if (!breedStats?.breeds?.length) return [];
 
-  const qualifyingBreeds = breedStats.qualifying_breeds;
+  // Filter breeds with good data
+  const qualifyingBreeds = breedStats.breeds.filter((breed: any) => {
+    return (
+      breed.count > 0 &&
+      (breed.name || breed.breed_name) &&
+      (breed.image_url || breed.imageUrl)
+    );
+  });
+
+  if (qualifyingBreeds.length === 0) return [];
+
+  // Shuffle and take requested count
   const shuffled = [...qualifyingBreeds].sort(() => 0.5 - Math.random());
 
   return shuffled.slice(0, count).map((breed) => ({
@@ -103,19 +110,28 @@ const getRandomBreeds = (
   }));
 };
 
-export const MobileHomePage: React.FC<MobileHomePageProps> = ({
-  initialData,
-}) => {
+export default function MobileHomePage({ initialData }: MobileHomePageProps) {
   // Get 3 random breeds for the carousel
   const randomBreeds = useMemo(
     () => getRandomBreeds(initialData?.breedStats, 3),
     [initialData?.breedStats],
   );
 
+  // Calculate unique breeds count
+  const uniqueBreedsCount = useMemo(() => {
+    if (initialData?.statistics?.totalBreeds) {
+      return initialData.statistics.totalBreeds;
+    }
+    if (initialData?.breedStats?.total_breeds) {
+      return initialData.breedStats.total_breeds;
+    }
+    return 50; // Default fallback
+  }, [initialData]);
+
   // Format breed count
   const breedCount = initialData?.statistics?.totalBreeds 
     ? initialData.statistics.totalBreeds.toString() + "+"
-    : initialData?.breedStats?.total_breeds 
+    : initialData?.breedStats?.total_breeds
     ? initialData.breedStats.total_breeds.toString() + "+"
     : "50+";
 
@@ -124,7 +140,14 @@ export const MobileHomePage: React.FC<MobileHomePageProps> = ({
       data-testid="mobile-home-page"
       className="min-h-screen bg-[#FFF4ED] dark:bg-gray-900 pb-16 md:hidden overflow-x-hidden"
     >
-      {/* Sticky header */}
+      {/* SEO Component */}
+      <MobileHomeSEO 
+        totalDogs={initialData?.statistics?.totalDogs || 0}
+        totalOrganizations={initialData?.statistics?.totalOrganizations || 0}
+        totalBreeds={uniqueBreedsCount}
+      />
+
+      {/* Top Header with branding */}
       <MobileTopHeader />
 
       {/* Main content */}
@@ -163,4 +186,4 @@ export const MobileHomePage: React.FC<MobileHomePageProps> = ({
       <MobileBottomNav />
     </div>
   );
-};
+}
