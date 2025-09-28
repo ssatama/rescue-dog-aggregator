@@ -12,7 +12,7 @@ interface NavCard {
 
 /**
  * MobileNavCards Component
- * 
+ *
  * Premium navigation cards with Apple/Airbnb-inspired design:
  * - Clean neutral cards with subtle borders
  * - Rose accent icon chips for brand consistency
@@ -69,7 +69,7 @@ export default function MobileNavCards() {
         >
           {/* NEW Badge */}
           {item.badge && (
-            <div className="absolute top-2 right-2 rounded-full bg-[#E678A8]/20 dark:bg-[#E678A8]/10 text-[#E678A8] dark:text-[#E678A8] text-[10px] font-medium px-1.5 py-0.5 ring-1 ring-[#E678A8]/30 dark:ring-[#E678A8]/20">
+            <div className="absolute top-2 right-2 rounded-full bg-[#D68FA3]/20 dark:bg-[#D68FA3]/10 text-[#D68FA3] dark:text-[#D68FA3] text-[10px] font-medium px-1.5 py-0.5 ring-1 ring-[#D68FA3]/30 dark:ring-[#D68FA3]/20">
               {item.badge}
             </div>
           )}
@@ -77,7 +77,7 @@ export default function MobileNavCards() {
           {/* Icon and Title */}
           <div className="flex flex-col items-center justify-center h-full space-y-2">
             {/* Icon Chip */}
-            <div className="h-9 w-9 rounded-full bg-[#E678A8]/10 dark:bg-[#E678A8]/10 flex items-center justify-center text-[#E678A8] dark:text-[#E678A8]">
+            <div className="h-9 w-9 rounded-full bg-[#D68FA3]/10 dark:bg-[#D68FA3]/10 flex items-center justify-center text-[#D68FA3] dark:text-[#D68FA3]">
               {item.icon}
             </div>
             <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">

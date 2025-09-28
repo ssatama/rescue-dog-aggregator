@@ -9,6 +9,15 @@ jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
 }));
 
+// Mock next/image
+jest.mock("next/image", () => ({
+  __esModule: true,
+  default: (props: any) => {
+    // eslint-disable-next-line jsx-a11y/alt-text
+    return <img {...props} />;
+  },
+}));
+
 describe("MobileTopHeader", () => {
   const mockPush = jest.fn();
 
@@ -20,26 +29,37 @@ describe("MobileTopHeader", () => {
   });
 
   describe("Rendering", () => {
-    test("renders the site name on the left", () => {
+    test("renders the site name", () => {
       render(<MobileTopHeader />);
 
-      const siteName = screen.getByText("Rescue Dogs Aggregator");
+      const siteName = screen.getByText("Rescue Dog Aggregator");
       expect(siteName).toBeInTheDocument();
     });
 
-    test("renders search icon button on the right", () => {
+    test("renders the tagline", () => {
       render(<MobileTopHeader />);
 
-      const searchButton = screen.getByRole("button", { name: /search/i });
-      expect(searchButton).toBeInTheDocument();
+      const tagline = screen.getByText("Your gateway to European rescue dogs");
+      expect(tagline).toBeInTheDocument();
     });
 
-    test("does not render favorites icon button", () => {
+    test("renders the logo image", () => {
       render(<MobileTopHeader />);
 
+      const logo = screen.getByAltText("Rescue Dog Logo");
+      expect(logo).toBeInTheDocument();
+      expect(logo).toHaveAttribute("width", "40");
+      expect(logo).toHaveAttribute("height", "40");
+    });
+
+    test("does not render search or favorites buttons", () => {
+      render(<MobileTopHeader />);
+
+      const searchButton = screen.queryByRole("button", { name: /search/i });
       const favoritesButton = screen.queryByRole("button", {
         name: /favorites/i,
       });
+      expect(searchButton).not.toBeInTheDocument();
       expect(favoritesButton).not.toBeInTheDocument();
     });
 
@@ -73,50 +93,28 @@ describe("MobileTopHeader", () => {
     });
   });
 
-  describe("Navigation", () => {
-    it("navigates to /dogs when search button is clicked", async () => {
-      const user = userEvent.setup();
-      render(<MobileTopHeader />);
+  describe("Layout", () => {
+    test("logo and text are in a flex container", () => {
+      const { container } = render(<MobileTopHeader />);
 
-      const searchButton = screen.getByRole("button", { name: /search/i });
-      await user.click(searchButton);
-
-      expect(mockPush).toHaveBeenCalledWith("/dogs");
+      const flexContainer = container.querySelector('.flex.items-center.gap-2');
+      expect(flexContainer).toBeInTheDocument();
     });
   });
 
   describe("Accessibility", () => {
-    it("has proper ARIA labels on icon buttons", () => {
+    test("logo has proper alt text", () => {
       render(<MobileTopHeader />);
 
-      const searchButton = screen.getByRole("button", { name: /search/i });
-      expect(searchButton).toHaveAttribute("aria-label", "Search dogs");
+      const logo = screen.getByAltText("Rescue Dog Logo");
+      expect(logo).toBeInTheDocument();
     });
 
-    it("has minimum touch target size of 44px", () => {
+    test("header uses semantic HTML", () => {
       render(<MobileTopHeader />);
 
-      const searchButton = screen.getByRole("button", { name: /search/i });
-      expect(searchButton).toHaveClass("h-11", "w-11");
-    });
-
-    it("supports keyboard navigation", async () => {
-      const user = userEvent.setup();
-      render(<MobileTopHeader />);
-
-      // Tab to site name link first
-      await user.tab();
-      const homeLink = screen.getByRole("link");
-      expect(homeLink).toHaveFocus();
-
-      // Tab to search button
-      await user.tab();
-      const searchButton = screen.getByRole("button", { name: /search/i });
-      expect(searchButton).toHaveFocus();
-
-      // Press Enter on search button
-      await user.keyboard("{Enter}");
-      expect(mockPush).toHaveBeenCalledWith("/dogs");
+      const header = screen.getByRole("banner");
+      expect(header).toBeInTheDocument();
     });
   });
 
@@ -125,38 +123,35 @@ describe("MobileTopHeader", () => {
       const { container } = render(<MobileTopHeader />);
 
       const header = container.firstChild as HTMLElement;
-      expect(header.className).toMatch(/dark:bg-gray-900/);
+      expect(header.className).toMatch(/dark:bg-zinc-900/);
     });
 
     it("has dark mode classes for border", () => {
       const { container } = render(<MobileTopHeader />);
 
       const header = container.firstChild as HTMLElement;
-      expect(header.className).toMatch(/dark:border-gray-800/);
+      expect(header.className).toMatch(/dark:border-zinc-800/);
     });
 
-    it("has dark mode classes for buttons", () => {
+    it("has dark mode classes for text", () => {
       render(<MobileTopHeader />);
 
-      const searchButton = screen.getByRole("button", { name: /search/i });
-      expect(searchButton.className).toMatch(/dark:bg-gray-800/);
+      const heading = screen.getByText("Rescue Dog Aggregator");
+      expect(heading.className).toMatch(/dark:text-zinc-50/);
+      
+      const tagline = screen.getByText("Your gateway to European rescue dogs");
+      expect(tagline.className).toMatch(/dark:text-zinc-400/);
     });
   });
 
   describe("Safe Area Support", () => {
     it("has safe area padding for iOS devices", () => {
-      render(<MobileTopHeader />);
+      const { container } = render(<MobileTopHeader />);
 
-      const header = screen.getByRole("banner");
-
-      // Check that the header element exists and has expected structure
-      // The safe area padding is applied via inline style in the actual component
-      expect(header).toBeInTheDocument();
-      expect(header.tagName.toLowerCase()).toBe("header");
-
-      // Note: inline styles with env() are not easily testable in jsdom
-      // This test verifies the component renders correctly and would apply
-      // the safe area padding in a real browser environment
+      const header = container.firstChild as HTMLElement;
+      expect(header).toHaveStyle({
+        paddingTop: "env(safe-area-inset-top, 0.75rem)",
+      });
     });
   });
 });

@@ -88,7 +88,7 @@ const DogCard: React.FC<{
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow"
+      className="bg-white dark:bg-gray-800 rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.06)] border border-gray-100 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-md dark:hover:shadow-lg transition-shadow"
       role="button"
       tabIndex={0}
       onClick={onClick}
@@ -205,7 +205,7 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
   };
 
   return (
-    <section className="bg-[#FFF4ED] dark:bg-gray-900 px-4 py-4 md:hidden">
+    <section className="bg-[#FFF4ED] dark:bg-gray-900 px-4 pb-3 pt-4 md:hidden">
       {/* Header with Browse All link */}
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -220,10 +220,7 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
 
       {/* Loading state */}
       {loading && safeDogs.length === 0 ? (
-        <div
-          data-testid="dogs-grid"
-          className="grid grid-cols-2 gap-3"
-        >
+        <div data-testid="dogs-grid" className="grid grid-cols-2 gap-3">
           {[...Array(8)].map((_, i) => (
             <DogCardSkeleton key={i} />
           ))}
@@ -231,10 +228,7 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
       ) : safeDogs.length > 0 ? (
         <>
           {/* Dogs grid - removed max-height and overflow-y-auto */}
-          <div
-            data-testid="dogs-grid"
-            className="grid grid-cols-2 gap-3"
-          >
+          <div data-testid="dogs-grid" className="grid grid-cols-2 gap-3">
             {safeDogs.map((dog, index) => {
               const favId =
                 typeof dog.id === "string" ? parseInt(dog.id, 10) : dog.id;

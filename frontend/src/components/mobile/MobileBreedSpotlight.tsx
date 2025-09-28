@@ -147,13 +147,15 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
             <div className="flex items-center justify-center mb-4">
               <Dog className="w-16 h-16 text-zinc-400 dark:text-zinc-500" />
             </div>
-            <h3 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">Discover Popular Breeds</h3>
+            <h3 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
+              Discover Popular Breeds
+            </h3>
             <p className="text-zinc-600 dark:text-zinc-400 mb-4">
               Explore different dog breeds and find your perfect match
             </p>
             <button
               onClick={() => router.push("/breeds")}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#E678A8] text-white hover:bg-[#D668A8] transition-all duration-300 font-medium"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#D68FA3] text-white hover:bg-[#C67F93] transition-all duration-300 font-medium"
               aria-label="Explore all breeds"
             >
               Explore Breeds
@@ -226,7 +228,9 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
                 {/* Content */}
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{currentBreed.name}</h3>
+                    <h3 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+                      {currentBreed.name}
+                    </h3>
                     {currentBreed.availableCount &&
                       currentBreed.availableCount > 0 && (
                         <span className="px-2 py-1 text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-full">
@@ -246,7 +250,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
 
                   <button
                     onClick={() => handleExploreClick(currentBreed)}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#E678A8] text-white hover:bg-[#D668A8] transition-all duration-300 font-medium"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#D68FA3] text-white hover:bg-[#C67F93] transition-all duration-300 font-medium"
                     aria-label={`Explore ${breedPlural}`}
                   >
                     Explore {breedPlural}
