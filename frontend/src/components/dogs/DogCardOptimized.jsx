@@ -113,7 +113,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
             data-testid="image-container"
           >
             <NextImage
-              src={dog.primary_image_url || dog.main_image}
+              src={dog.primary_image_url}
               alt={dog.name}
               className="dog-card-image transition-transform duration-300 ease-out group-hover:scale-105"
               priority={priority}
@@ -297,7 +297,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
             </Badge>
           )}
           <NextImage
-            src={dog.primary_image_url || dog.main_image}
+            src={dog.primary_image_url}
             alt={dog.name}
             className="dog-card-image transition-transform duration-300 ease-out group-hover:scale-105"
             priority={priority}

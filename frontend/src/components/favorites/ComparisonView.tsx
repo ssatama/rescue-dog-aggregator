@@ -162,7 +162,7 @@ const DogComparisonCard = ({
   onRemoveFavorite: (id: number) => void;
   index?: number;
 }) => {
-  const imageUrl = dog.primary_image_url || dog.main_image;
+  const imageUrl = dog.primary_image_url;
   const tagline = dog.dog_profiler_data?.tagline;
   const traits = dog.dog_profiler_data?.personality_traits || [];
   const energyLevel = getEnergyLevel(dog.dog_profiler_data?.energy_level);

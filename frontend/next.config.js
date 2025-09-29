@@ -91,7 +91,7 @@ const nextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https', 
+        protocol: 'https',
         hostname: 'flagcdn.com',
         port: '',
         pathname: '/**',
@@ -117,6 +117,12 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'cdn.rescuedogs.me',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.dogstrust.org.uk',
         port: '',
         pathname: '/**',
       }

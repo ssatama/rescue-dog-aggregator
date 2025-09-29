@@ -59,9 +59,9 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
         data-testid="related-dog-image-container"
         className="aspect-[4/3] w-full overflow-hidden rounded-t-lg bg-gray-200"
       >
-        {dog.primary_image_url || dog.main_image ? (
+        {dog.primary_image_url ? (
           <NextImage
-            src={getThumbnailImage(dog.primary_image_url || dog.main_image)}
+            src={getThumbnailImage(dog.primary_image_url)}
             alt={dog.name}
             className="group-hover:scale-105 transition-transform duration-200"
             sizes="related-dog"

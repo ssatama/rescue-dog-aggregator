@@ -68,7 +68,8 @@ export const formatAge = (dog) => {
  */
 export const getAgeCategory = (dog) => {
   // Prefer age_min_months when available (most accurate)
-  if (dog?.age_min_months) {
+  // Note: age_min_months = 0 means unknown age, not newborn
+  if (dog?.age_min_months && dog.age_min_months > 0) {
     const months = dog.age_min_months;
 
     if (months < 12) {

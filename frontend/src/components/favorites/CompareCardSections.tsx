@@ -68,7 +68,7 @@ interface DogHeaderProps {
 }
 
 export function DogHeader({ dog, tagline }: DogHeaderProps) {
-  const imageUrl = dog.main_image || dog.primary_image_url;
+  const imageUrl = dog.primary_image_url;
 
   const getAgeDisplay = () => {
     if (dog.age_text) return dog.age_text;

@@ -14,7 +14,7 @@ const completeProfileDog: Dog = {
   sex: "Male",
   standardized_size: "Large",
   organization_name: "Complete Rescue",
-  main_image: "/test-image.jpg",
+  primary_image_url: "/test-image.jpg",
   dog_profiler_data: {
     tagline: "Your adventure buddy!",
     energy_level: "high",

@@ -34,7 +34,6 @@ const traitColors = [
 // Helper to get dog image
 const getDogImage = (dog: Dog): string => {
   if (dog.primary_image_url) return dog.primary_image_url;
-  if (dog.main_image) return dog.main_image;
   if (dog.photos && dog.photos.length > 0) return dog.photos[0];
   return "/placeholder_dog.svg";
 };

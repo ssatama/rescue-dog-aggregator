@@ -15,7 +15,7 @@ const createMockDog = (overrides: Partial<Dog> = {}): Dog => ({
   sex: "Male",
   standardized_size: "Large",
   organization_name: "Test Rescue",
-  main_image: "/test-image.jpg",
+  primary_image_url: "/test-image.jpg",
   adoption_url: "https://test.com/buddy",
   dog_profiler_data: {
     tagline: "Your new adventure buddy!",
@@ -140,8 +140,8 @@ describe("CompareDesktop", () => {
 
     it("should render dog images with fixed 4:3 aspect ratio", () => {
       const dogs = [
-        createMockDog({ id: 1, name: "Buddy", main_image: "/buddy.jpg" }),
-        createMockDog({ id: 2, name: "Luna", main_image: "/luna.jpg" }),
+        createMockDog({ id: 1, name: "Buddy", primary_image_url: "/buddy.jpg" }),
+        createMockDog({ id: 2, name: "Luna", primary_image_url: "/luna.jpg" }),
       ];
 
       const { container } = render(

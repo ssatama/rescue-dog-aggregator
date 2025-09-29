@@ -83,7 +83,7 @@ export default function CompareSelection({
           const hasImageError = imageErrors.has(dog.id);
           const imageUrl = hasImageError
             ? "/placeholder-dog.jpg"
-            : dog.primary_image_url || dog.main_image || "/placeholder-dog.jpg";
+            : dog.primary_image_url || "/placeholder-dog.jpg";
           const breed = dog.standardized_breed || dog.breed || "Unknown breed";
           const ageDisplay = getAgeDisplay(dog);
 

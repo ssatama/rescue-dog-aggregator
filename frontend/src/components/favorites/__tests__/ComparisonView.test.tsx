@@ -374,7 +374,7 @@ describe("ComparisonView", () => {
 
   it("renders placeholder when dog has no image", () => {
     const dogsWithoutImages = [
-      { ...mockDogs[0], primary_image_url: undefined, main_image: undefined },
+      { ...mockDogs[0], primary_image_url: undefined, primary_image_url: undefined },
     ];
 
     render(

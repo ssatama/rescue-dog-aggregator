@@ -114,7 +114,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
       >
         <FallbackImage
           src={
-            dog.primary_image_url || dog.main_image || "/placeholder_dog.svg"
+            dog.primary_image_url || "/placeholder_dog.svg"
           }
           alt={`${dog.name} - Available for adoption`}
           fill
@@ -132,11 +132,11 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
           <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
             {dog.name}
           </h3>
-          {(ageCategory || breed) && (
+          {(ageCategory && ageCategory !== "Unknown") || breed ? (
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {[ageCategory, breed].filter(Boolean).join(" • ")}
+              {[ageCategory !== "Unknown" ? ageCategory : null, breed].filter(Boolean).join(" • ")}
             </p>
-          )}
+          ) : null}
         </div>
 
         {/* Tagline */}

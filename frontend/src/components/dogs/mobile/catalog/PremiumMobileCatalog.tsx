@@ -91,7 +91,6 @@ const traitColors = [
 // Helper to get dog image
 const getDogImage = (dog: Dog): string => {
   if (dog.primary_image_url) return dog.primary_image_url;
-  if (dog.main_image) return dog.main_image;
   if (dog.photos && dog.photos.length > 0) return dog.photos[0];
   return "/placeholder_dog.svg";
 };
@@ -161,7 +160,7 @@ const DogCard: React.FC<{
       </div>
       <div className="p-3">
         <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-          {dog.name}, {ageGroup}
+          {dog.name}{ageGroup !== "Unknown" && `, ${ageGroup}`}
         </h3>
         <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
           {formattedBreed}
@@ -349,6 +348,14 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
     }
   };
 
+  // Calculate active quick filter count (sex + age only)
+  const activeQuickFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.sexFilter && filters.sexFilter !== "Any") count++;
+    if (filters.ageFilter && filters.ageFilter !== "Any age") count++;
+    return count;
+  }, [filters.sexFilter, filters.ageFilter]);
+
   return (
     <>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
@@ -364,7 +371,7 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
                   // "All" is active when BOTH filters are cleared
                   isActive =
                     (!filters.sexFilter || filters.sexFilter === "Any") &&
-                    (!filters.ageFilter || filters.ageFilter === "All");
+                    (!filters.ageFilter || filters.ageFilter === "Any age");
                 } else if (chip.type === "gender") {
                   isActive = filters.sexFilter?.toLowerCase() === chip.value;
                 } else if (chip.type === "age") {
@@ -382,7 +389,7 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
                           // Use batch update to avoid multiple fetches
                           onFilterChange({
                             sexFilter: "Any",
-                            ageFilter: "All",
+                            ageFilter: "Any age",
                           });
                         }
                       } else {
@@ -390,13 +397,18 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
                       }
                     }}
                     className={cn(
-                      "px-3 py-2 rounded-full text-sm font-medium transition-all",
+                      "px-3 py-2 rounded-full text-sm font-medium transition-all relative",
                       isActive
                         ? "bg-orange-500 dark:bg-orange-600 text-white"
                         : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600",
                     )}
                   >
                     {chip.label}
+                    {chip.value === "all" && activeQuickFilterCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                        {activeQuickFilterCount}
+                      </span>
+                    )}
                   </button>
                 );
               })}

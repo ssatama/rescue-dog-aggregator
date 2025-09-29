@@ -137,7 +137,7 @@ export default function CompareMobile({ dogs, onClose }: CompareMobileProps) {
 
   // Render single dog card
   const renderDogCard = (dog: Dog) => {
-    const imageUrl = dog.primary_image_url || dog.main_image;
+    const imageUrl = dog.primary_image_url;
     const compatibility = getCompatibility(dog);
     const personalityTraits = getPersonalityTraits(dog);
     const tagline = dog.dog_profiler_data?.tagline;

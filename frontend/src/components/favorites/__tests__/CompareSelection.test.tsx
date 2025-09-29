@@ -12,7 +12,7 @@ const mockDogs: Dog[] = [
     age_text: "2-3 years",
     sex: "Male",
     organization_name: "Test Rescue",
-    main_image: "/test1.jpg",
+    primary_image_url: "/test1.jpg",
   },
   {
     id: 2,
@@ -21,7 +21,7 @@ const mockDogs: Dog[] = [
     age_text: "1-2 years",
     sex: "Female",
     organization_name: "Another Rescue",
-    main_image: "/test2.jpg",
+    primary_image_url: "/test2.jpg",
   },
   {
     id: 3,
@@ -30,7 +30,7 @@ const mockDogs: Dog[] = [
     age_text: "3-4 years",
     sex: "Male",
     organization_name: "Test Rescue",
-    main_image: "/test3.jpg",
+    primary_image_url: "/test3.jpg",
   },
   {
     id: 4,

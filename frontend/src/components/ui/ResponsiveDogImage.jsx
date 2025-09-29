@@ -12,7 +12,7 @@ const ResponsiveDogImage = React.memo(
     layout = "fill",
     ...props
   }) => {
-    const imageUrl = dog.primary_image_url || dog.main_image;
+    const imageUrl = dog.primary_image_url;
 
     return (
       <NextImage

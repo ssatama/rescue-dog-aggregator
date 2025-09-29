@@ -15,7 +15,7 @@ const mockDog: Dog = {
   sex: "Male",
   standardized_size: "Large",
   organization_name: "Test Rescue",
-  main_image: "/test-image.jpg",
+  primary_image_url: "/test-image.jpg",
   adoption_url: "https://test.com/buddy",
   dog_profiler_data: {
     tagline: "Your new adventure buddy!",
@@ -195,7 +195,7 @@ describe("CompareCard", () => {
     });
 
     it("shows placeholder when no image available", () => {
-      const dogNoImage = { ...mockDog, main_image: undefined };
+      const dogNoImage = { ...mockDog, primary_image_url: undefined };
       render(<CompareCard dog={dogNoImage} />);
       expect(screen.getByTestId("dog-placeholder-icon")).toBeInTheDocument();
     });
