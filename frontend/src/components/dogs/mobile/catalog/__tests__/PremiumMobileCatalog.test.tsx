@@ -461,4 +461,64 @@ describe("PremiumMobileCatalog", () => {
       expect(container.textContent).toContain("Dog 2");
     });
   });
+
+  describe("Reset Filters functionality", () => {
+    it("shows Clear All Filters button in empty state when onResetFilters is provided", () => {
+      const mockOnResetFilters = jest.fn();
+      
+      render(
+        <PremiumMobileCatalog
+          dogs={[]}
+          filters={stableFilters}
+          onResetFilters={mockOnResetFilters}
+        />,
+      );
+
+      const clearButton = screen.getByRole("button", {
+        name: /clear all filters/i,
+      });
+      expect(clearButton).toBeInTheDocument();
+    });
+
+    it("does not show Clear All Filters button when onResetFilters is not provided", () => {
+      render(
+        <PremiumMobileCatalog dogs={[]} filters={stableFilters} />,
+      );
+
+      const clearButton = screen.queryByRole("button", {
+        name: /clear all filters/i,
+      });
+      expect(clearButton).not.toBeInTheDocument();
+    });
+
+    it("calls onResetFilters when Clear All Filters button is clicked", () => {
+      const mockOnResetFilters = jest.fn();
+      
+      render(
+        <PremiumMobileCatalog
+          dogs={[]}
+          filters={stableFilters}
+          onResetFilters={mockOnResetFilters}
+        />,
+      );
+
+      const clearButton = screen.getByRole("button", {
+        name: /clear all filters/i,
+      });
+      fireEvent.click(clearButton);
+
+      expect(mockOnResetFilters).toHaveBeenCalledTimes(1);
+    });
+
+    it("shows empty state with proper messaging when no dogs found", () => {
+      render(
+        <PremiumMobileCatalog dogs={[]} filters={stableFilters} />,
+      );
+
+      expect(screen.getByText("No dogs found")).toBeInTheDocument();
+      expect(
+        screen.getByText("Try adjusting your filters to see more dogs"),
+      ).toBeInTheDocument();
+    });
+  });
 });

@@ -455,8 +455,8 @@ export default function MobileFilterDrawer({
                 </Button>
               </div>
 
-              {/* Apply Filters Button in Header */}
-              <div className="px-4 pb-3">
+              {/* Action Buttons in Header */}
+              <div className="px-4 pb-3 space-y-2">
                 <Button
                   onClick={onClose}
                   className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-3"
@@ -464,6 +464,18 @@ export default function MobileFilterDrawer({
                   Apply Filters{" "}
                   {totalDogsCount > 0 && `(${totalDogsCount} dogs)`}
                 </Button>
+                {activeFilterCount > 0 && (
+                  <Button
+                    onClick={() => {
+                      resetFilters();
+                      onClose();
+                    }}
+                    variant="outline"
+                    className="w-full border-orange-600 text-orange-600 hover:bg-orange-50 dark:border-orange-400 dark:text-orange-400 dark:hover:bg-orange-950/30 font-medium py-3"
+                  >
+                    Reset All Filters
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -949,7 +961,10 @@ export default function MobileFilterDrawer({
                 <button
                   data-testid="clear-all-filters"
                   className="w-full text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950/30 font-medium py-3 px-4 rounded-lg transition-colors duration-200 interactive-enhanced enhanced-focus-button focus:ring-2 focus:ring-orange-600"
-                  onClick={resetFilters}
+                  onClick={() => {
+                    resetFilters();
+                    onClose();
+                  }}
                 >
                   Clear All Filters
                 </button>

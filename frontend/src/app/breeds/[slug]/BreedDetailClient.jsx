@@ -65,7 +65,7 @@ export default function BreedDetailClient({
       sexFilter: searchParams.get("sex") || "Any",
       organizationFilter: searchParams.get("organization_id") || "any",
       availableCountryFilter:
-        searchParams.get("available_country") || "Any country",
+        searchParams.get("available_to_country") || "Any country",
       // Note: breed filter is locked to current breed
     }),
     [searchParams],
@@ -278,7 +278,7 @@ export default function BreedDetailClient({
         ageFilter: "age",
         sexFilter: "sex",
         organizationFilter: "organization_id",
-        availableCountryFilter: "available_country",
+        availableCountryFilter: "available_to_country",
       };
 
       Object.entries(newFilters).forEach(([key, value]) => {
@@ -351,6 +351,46 @@ export default function BreedDetailClient({
       setLoadingMore(false);
     }
   }, [page, hasMore, filters, loadingMore, buildAPIParams]);
+
+  // CRITICAL FIX: Proper reset filters handler
+  const handleResetFilters = useCallback(() => {
+    // Cancel debounced updates to avoid stale URL pushes
+    if (updateURL.cancel) updateURL.cancel();
+    if (debouncedFetchDogs.cancel) debouncedFetchDogs.cancel();
+
+    // Navigate to clean URL using replace (no extra history entry)
+    router.replace(pathname, { scroll: false });
+
+    // Reset component state immediately
+    startTransition(() => {
+      setDogs([]);
+      setPage(1);
+      setHasMore(true);
+      setError(null);
+    });
+
+    // Default filters for breed page
+    const defaultFilters = {
+      searchQuery: "",
+      sizeFilter: "Any size",
+      ageFilter: "Any age",
+      sexFilter: "Any",
+      organizationFilter: "any",
+      availableCountryFilter: "Any country",
+    };
+
+    // Force fresh fetch with default filters
+    fetchDogsWithFilters(defaultFilters);
+  }, [router, pathname, updateURL, debouncedFetchDogs, fetchDogsWithFilters]);
+
+  // Cleanup effect: cancel debouncers on unmount
+  useEffect(() => {
+    return () => {
+      if (updateURL.cancel) updateURL.cancel();
+      if (debouncedFetchDogs.cancel) debouncedFetchDogs.cancel();
+      if (abortControllerRef.current) abortControllerRef.current.abort();
+    };
+  }, [updateURL, debouncedFetchDogs]);
 
   // Initial load with filter counts - only on mount
   useEffect(() => {
@@ -462,7 +502,7 @@ export default function BreedDetailClient({
           filters={filters}
           filterCounts={filterCounts}
           onFilterChange={handleFilterChange}
-          onClearFilters={() => router.push(pathname)}
+          onClearFilters={handleResetFilters}
           onOpenMobileFilters={() => setIsFilterDrawerOpen(true)}
           activeFilterCount={activeFilterCount}
         />
@@ -478,17 +518,19 @@ export default function BreedDetailClient({
             </div>
           )}
           {dogs.length === 0 && !loading ? (
-            <EmptyState
-              {...getBreedEmptyStateConfig(breedData, activeFilterCount > 0)}
-              onAction={() => {
-                if (activeFilterCount > 0) {
-                  router.push(pathname);
-                } else {
-                  // Trigger breed alert save via ref
-                  breedAlertButtonRef.current?.click();
-                }
-              }}
-            />
+            activeFilterCount > 0 ? (
+              <EmptyState
+                variant="noDogsFiltered"
+                title={`No ${breedData.primary_breed}s match your filters`}
+                description={`Try adjusting your filters to see more ${breedData.primary_breed} rescue dogs.`}
+                onClearFilters={handleResetFilters}
+              />
+            ) : (
+              <EmptyState
+                title={`No ${breedData.primary_breed}s available`}
+                description={`There are currently no ${breedData.primary_breed} dogs available for adoption at the moment. Check back soon!`}
+              />
+            )
           ) : (
             <div id="dogs-grid">
               <BreedDogsViewportWrapper
@@ -593,7 +635,7 @@ export default function BreedDetailClient({
           }
           availableCountries={["Any country"]}
           // Filter management
-          resetFilters={() => router.push(pathname)}
+          resetFilters={handleResetFilters}
           // Dynamic filter counts
           filterCounts={filterCounts}
         />

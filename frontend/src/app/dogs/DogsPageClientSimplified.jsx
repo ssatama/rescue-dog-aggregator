@@ -223,24 +223,57 @@ export default function DogsPageClientSimplified({
   const buildAPIParams = (filters) => {
     const params = {};
 
-    if (filters.searchQuery) params.search = filters.searchQuery;
-    if (filters.sizeFilter !== "Any size")
-      params.standardized_size = filters.sizeFilter;
-    if (filters.ageFilter !== "Any age")
-      params.age_category = filters.ageFilter;
-    if (filters.sexFilter !== "Any") params.sex = filters.sexFilter;
-    if (filters.organizationFilter !== "any")
-      params.organization_id = filters.organizationFilter;
-    if (filters.breedFilter !== "Any breed")
-      params.standardized_breed = filters.breedFilter;
-    if (filters.breedGroupFilter !== "Any group")
-      params.breed_group = filters.breedGroupFilter;
-    if (filters.locationCountryFilter !== "Any country")
-      params.location_country = filters.locationCountryFilter;
-    if (filters.availableCountryFilter !== "Any country")
-      params.available_country = filters.availableCountryFilter;
-    if (filters.availableRegionFilter !== "Any region")
-      params.available_region = filters.availableRegionFilter;
+    // Guard all filter values - only send to API if non-empty and not "Any..." defaults
+    const searchQuery = (filters.searchQuery || "").trim();
+    if (searchQuery) {
+      params.search = searchQuery;
+    }
+
+    const size = (filters.sizeFilter || "").trim();
+    if (size && size !== "Any size") {
+      params.standardized_size = size;
+    }
+
+    const age = (filters.ageFilter || "").trim();
+    if (age && age !== "Any age") {
+      params.age_category = age;
+    }
+
+    const sex = (filters.sexFilter || "").trim();
+    if (sex && sex !== "Any") {
+      params.sex = sex;
+    }
+
+    const orgId = (filters.organizationFilter || "").toString().trim();
+    if (orgId && orgId !== "any") {
+      params.organization_id = orgId;
+    }
+
+    // CRITICAL FIX: Guard breed to prevent empty string being sent to API
+    const breed = (filters.breedFilter || "").trim();
+    if (breed && breed !== "Any breed") {
+      params.standardized_breed = breed;
+    }
+
+    const breedGroup = (filters.breedGroupFilter || "").trim();
+    if (breedGroup && breedGroup !== "Any group") {
+      params.breed_group = breedGroup;
+    }
+
+    const locationCountry = (filters.locationCountryFilter || "").trim();
+    if (locationCountry && locationCountry !== "Any country") {
+      params.location_country = locationCountry;
+    }
+
+    const availableCountry = (filters.availableCountryFilter || "").trim();
+    if (availableCountry && availableCountry !== "Any country") {
+      params.available_country = availableCountry;
+    }
+
+    const availableRegion = (filters.availableRegionFilter || "").trim();
+    if (availableRegion && availableRegion !== "Any region") {
+      params.available_region = availableRegion;
+    }
 
     return params;
   };
@@ -293,6 +326,28 @@ export default function DogsPageClientSimplified({
       }
     }
   }, []); // Only on mount
+
+  // CRITICAL FIX: Listen to URL changes and refetch when searchParams change
+  // This ensures reset and browser back/forward navigation trigger fresh fetches
+  const lastQueryKey = useRef("");
+  useEffect(() => {
+    // Ignore scroll-only changes to avoid unnecessary refetches
+    const sp = new URLSearchParams(searchParams.toString());
+    sp.delete("scroll");
+    const key = sp.toString();
+
+    // If query hasn't changed, skip refetch
+    if (key === lastQueryKey.current) return;
+    lastQueryKey.current = key;
+
+    // Parse page from URL
+    const newPage = parseInt(searchParams.get("page") || "1", 10);
+    
+    // Filters object is already updated from searchParams above
+    // This will trigger when reset navigates to clean URL
+    fetchDogsWithFilters(filters, newPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, pathname]);
 
   // Handle filter changes - support both single and batch updates
   const handleFilterChange = useCallback(
@@ -451,6 +506,54 @@ export default function DogsPageClientSimplified({
     handleFilterChange("breedFilter", "Any breed");
   }, [handleFilterChange]);
 
+  // Proper reset filters handler that clears state and forces fresh fetch
+  const handleResetFilters = useCallback(() => {
+    // Define default/empty filters
+    const defaultFilters = {
+      searchQuery: "",
+      sizeFilter: "Any size",
+      ageFilter: "Any age",
+      sexFilter: "Any",
+      organizationFilter: "any",
+      breedFilter: "Any breed",
+      breedGroupFilter: "Any group",
+      locationCountryFilter: "Any country",
+      availableCountryFilter: "Any country",
+      availableRegionFilter: "Any region",
+    };
+
+    // CRITICAL FIX: Cancel debounced updates to avoid stale URL pushes
+    if (updateURL.cancel) updateURL.cancel();
+    if (saveScrollPosition.cancel) saveScrollPosition.cancel();
+
+    // Clear local breed input
+    setLocalBreedInput("");
+
+    // Navigate to clean URL using replace (no extra history entry)
+    router.replace("/dogs", { scroll: false });
+
+    // Reset component state immediately
+    startTransition(() => {
+      setDogs([]);
+      setPage(1);
+      setHasMore(true);
+      setError(null);
+      scrollPositionRef.current = 0;
+    });
+
+    // Force fresh fetch with default filters now
+    // The URL listener will also refetch, but this makes it immediate
+    fetchDogsWithFilters(defaultFilters, 1);
+  }, [router, updateURL, saveScrollPosition, fetchDogsWithFilters]);
+
+  // Cleanup effect: cancel debouncers on unmount
+  useEffect(() => {
+    return () => {
+      if (updateURL.cancel) updateURL.cancel();
+      if (saveScrollPosition.cancel) saveScrollPosition.cancel();
+    };
+  }, [updateURL, saveScrollPosition]);
+
   const breadcrumbItems = [{ name: "Home", url: "/" }, { name: "Find Dogs" }];
 
   const activeFilterCount = Object.entries(filters).filter(
@@ -594,7 +697,7 @@ export default function DogsPageClientSimplified({
               }
               availableRegions={availableRegions}
               // Filter management
-              resetFilters={() => router.push("/dogs")}
+              resetFilters={handleResetFilters}
               // Dynamic filter counts
               filterCounts={filterCounts}
             />
@@ -630,6 +733,7 @@ export default function DogsPageClientSimplified({
                   loading={loading}
                   loadingMore={loadingMore}
                   onOpenFilter={() => setIsSheetOpen(true)}
+                  onResetFilters={handleResetFilters}
                   onLoadMore={loadMoreDogs}
                   hasMore={hasMore}
                   filters={filters}
@@ -638,7 +742,12 @@ export default function DogsPageClientSimplified({
               )}
 
               {/* Empty state */}
-              {!loading && dogs.length === 0 && <EmptyState />}
+              {!loading && dogs.length === 0 && (
+                <EmptyState
+                  variant="noDogsFiltered"
+                  onClearFilters={handleResetFilters}
+                />
+              )}
 
               {/* Load more button - Hidden on mobile since it's handled in PremiumMobileCatalog */}
               <div className="hidden lg:block">
@@ -731,7 +840,7 @@ export default function DogsPageClientSimplified({
         }
         availableRegions={availableRegions}
         // Filter management
-        resetFilters={() => router.push("/dogs")}
+        resetFilters={handleResetFilters}
         // Dynamic filter counts
         filterCounts={filterCounts}
       />

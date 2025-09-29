@@ -66,6 +66,7 @@ interface DogsPageViewportWrapperProps {
   loadingMore?: boolean;
   className?: string;
   onOpenFilter?: () => void; // Add this prop
+  onResetFilters?: () => void; // Add reset filters handler
   onLoadMore?: () => void; // Add load more handler
   hasMore?: boolean; // Add hasMore prop
   filters?: Record<string, any>; // Add filters prop
@@ -86,6 +87,7 @@ const DogsPageViewportWrapper: React.FC<DogsPageViewportWrapperProps> = ({
   loadingMore = false,
   className = "",
   onOpenFilter,
+  onResetFilters,
   onLoadMore,
   hasMore = false,
   filters = {},
@@ -153,6 +155,7 @@ const DogsPageViewportWrapper: React.FC<DogsPageViewportWrapperProps> = ({
         filters={filters}
         onFilterChange={onFilterChange}
         onOpenFilter={onOpenFilter}
+        onResetFilters={onResetFilters}
         onLoadMore={onLoadMore}
         hasMore={hasMore}
         loadingMore={loadingMore}

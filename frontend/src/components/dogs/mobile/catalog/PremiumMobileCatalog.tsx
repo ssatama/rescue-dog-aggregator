@@ -58,6 +58,7 @@ interface PremiumMobileCatalogProps {
     value?: string,
   ) => void;
   onOpenFilter?: () => void;
+  onResetFilters?: () => void;
   onLoadMore?: () => void;
   hasMore?: boolean;
   loadingMore?: boolean;
@@ -196,6 +197,7 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
   filters = {},
   onFilterChange,
   onOpenFilter,
+  onResetFilters,
   onLoadMore,
   hasMore = false,
   loadingMore = false,
@@ -458,9 +460,19 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
               <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
                 No dogs found
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 text-center px-8">
+              <p className="text-gray-600 dark:text-gray-400 text-center px-8 mb-6">
                 Try adjusting your filters to see more dogs
               </p>
+              {onResetFilters && (
+                <Button
+                  onClick={onResetFilters}
+                  variant="default"
+                  size="lg"
+                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                >
+                  Clear All Filters
+                </Button>
+              )}
             </div>
           ) : (
             <>
