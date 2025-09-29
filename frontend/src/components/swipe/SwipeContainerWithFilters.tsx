@@ -65,6 +65,7 @@ export function SwipeContainerWithFilters({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [lastTap, setLastTap] = useState<number>(0);
+  const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [swipedDogIds, setSwipedDogIds] = useState<Set<number>>(() => {
     const stored = safeStorage.get("swipedDogIds");
     if (stored) {
@@ -216,6 +217,12 @@ export function SwipeContainerWithFilters({
     });
 
     return () => {
+      // Clear any pending tap timeout on unmount
+      if (tapTimeoutRef.current) {
+        clearTimeout(tapTimeoutRef.current);
+        tapTimeoutRef.current = null;
+      }
+      
       Sentry.addBreadcrumb({
         message: "swipe.session.ended",
         category: "swipe",
@@ -223,7 +230,7 @@ export function SwipeContainerWithFilters({
         data: { timestamp: new Date().toISOString() },
       });
     };
-  }, [currentIndex]);
+  }, []);
 
   const handleOnboardingComplete = useCallback(
     (skipped: boolean, onboardingFilters?: Filters) => {
@@ -280,7 +287,12 @@ export function SwipeContainerWithFilters({
                 });
 
                 if (newDogs.length > 0) {
-                  return [...prevDogs, ...newDogs];
+                  const updatedDogs = [...prevDogs, ...newDogs];
+                  // Notify parent of updated dogs array for modal navigation
+                  if (onDogsLoaded) {
+                    onDogsLoaded(updatedDogs);
+                  }
+                  return updatedDogs;
                 }
                 return prevDogs;
               });
@@ -293,7 +305,7 @@ export function SwipeContainerWithFilters({
           });
       }
     }
-  }, [currentIndex, dogs, fetchDogs, queryString, isLoadingMore, offset]);
+  }, [currentIndex, dogs, fetchDogs, queryString, isLoadingMore, offset, onDogsLoaded]);
 
   const goToPrevious = useCallback(() => {
     if (currentIndex > 0) {
@@ -439,8 +451,14 @@ export function SwipeContainerWithFilters({
     if (!currentDog) return;
 
     const now = Date.now();
-    if (now - lastTap < DOUBLE_TAP_DELAY) {
-      // Double tap - quick favorite
+    
+    // Check if this is a double tap
+    if (now - lastTap < DOUBLE_TAP_DELAY && tapTimeoutRef.current) {
+      // Double tap detected - clear the pending single tap and favorite
+      clearTimeout(tapTimeoutRef.current);
+      tapTimeoutRef.current = null;
+      setLastTap(0);
+      
       handleSwipeComplete("right");
       Sentry.addBreadcrumb({
         message: "swipe.card.double_tapped",
@@ -452,22 +470,27 @@ export function SwipeContainerWithFilters({
         },
       });
     } else {
-      // Single tap - expand details
-      if (onCardExpanded) {
-        onCardExpanded(currentDog, currentIndex);
-      }
-      Sentry.addBreadcrumb({
-        message: "swipe.card.expanded",
-        category: "swipe",
-        level: "info",
-        data: {
-          dogId: currentDog.id,
-          dogName: currentDog.name,
-        },
-      });
+      // First tap - set timeout to open details if no second tap comes
+      setLastTap(now);
+      
+      tapTimeoutRef.current = setTimeout(() => {
+        // Single tap confirmed - expand details
+        if (onCardExpanded) {
+          onCardExpanded(currentDog, currentIndex);
+        }
+        Sentry.addBreadcrumb({
+          message: "swipe.card.expanded",
+          category: "swipe",
+          level: "info",
+          data: {
+            dogId: currentDog.id,
+            dogName: currentDog.name,
+          },
+        });
+        tapTimeoutRef.current = null;
+      }, DOUBLE_TAP_DELAY);
     }
-    setLastTap(now);
-  }, [currentIndex, dogs, lastTap, handleSwipeComplete, onCardExpanded]);
+  }, [dogs, currentIndex, lastTap, onCardExpanded, handleSwipeComplete]);
 
   // Onboarding state - check this first, before loading or empty states
   if (needsOnboarding) {
