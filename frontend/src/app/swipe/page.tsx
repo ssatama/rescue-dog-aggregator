@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { SwipeContainerWithFilters } from "../../components/swipe/SwipeContainerWithFilters";
-import { SwipeDetails } from "../../components/swipe/SwipeDetails";
 import SwipeErrorBoundary from "../../components/swipe/SwipeErrorBoundary";
 import { useRouter } from "next/navigation";
 import { useSwipeDevice } from "../../hooks/useSwipeDevice";
@@ -10,6 +9,7 @@ import { swipeMetrics } from "../../utils/swipeMetrics";
 import { get } from "../../utils/api";
 import * as Sentry from "@sentry/nextjs";
 import { type Dog } from "../../types/dog";
+import DogDetailModalUpgraded from "../../components/dogs/mobile/detail/DogDetailModalUpgraded";
 
 export default function SwipePage() {
   const router = useRouter();
@@ -17,6 +17,8 @@ export default function SwipePage() {
   const [selectedDog, setSelectedDog] = useState<Dog | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [totalSwiped, setTotalSwiped] = useState(0);
+  const [dogs, setDogs] = useState<Dog[]>([]);
+  const [currentDogIndex, setCurrentDogIndex] = useState<number>(0);
 
   // Initialize performance tracking on mount
   useEffect(() => {
@@ -39,63 +41,36 @@ export default function SwipePage() {
     }
   }, [canUseSwipe]);
 
-  // Helper function to map dog data to SwipeDetails format
-  const mapDogForDetails = (dog: Dog): any => ({
-    id: dog.id,
-    name: dog.name,
-    age: dog.age || "Unknown",
-    age_min_months: dog.age_min_months,
-    age_max_months: dog.age_max_months,
-    sex: dog.sex || "Unknown",
-    size: dog.size || "Medium",
-    breed: dog.breed || "Mixed Breed",
-    primary_breed: dog.primary_breed,
-    organization_name: dog.organization || "",
-    location: dog.location || "",
-    adoption_url: dog.adoption_url || "",
-    image_url: dog.primary_image_url || dog.main_image || "",
-    additional_images: dog.photos || [],
-    dog_profiler_data:
-      dog.dog_profiler_data ||
-      (dog.description
-        ? {
-            description: dog.description,
-            personality_traits: dog.personality_traits || [],
-          }
-        : undefined),
-  });
+  const fetchDogsWithFilters = React.useCallback(
+    async (queryString: string): Promise<Dog[]> => {
+      try {
+        const params = Object.fromEntries(new URLSearchParams(queryString));
+        const data = await get("/api/dogs/swipe", params);
 
-  const fetchDogsWithFilters = async (queryString: string): Promise<Dog[]> => {
-    try {
-      // Parse query string into params object for the get function
-      const params = Object.fromEntries(new URLSearchParams(queryString));
-      const data = await get("/api/dogs/swipe", params);
+        const transformedDogs = (data.dogs || []).map((dog: any) => ({
+          ...dog,
+          organization:
+            typeof dog.organization === "object" && dog.organization
+              ? dog.organization.name
+              : dog.organization,
+          image: dog.primary_image_url || dog.image,
+          traits: dog.dogProfilerData?.personalityTraits || dog.traits || [],
+          description: dog.dogProfilerData?.description || dog.description,
+          energy_level: dog.dogProfilerData?.energyLevel || dog.energy_level,
+          special_characteristic:
+            dog.dogProfilerData?.uniqueQuirk || dog.special_characteristic,
+          quality_score: dog.dogProfilerData?.qualityScore || dog.quality_score,
+          additional_images: dog.images || dog.additional_images || [],
+        }));
 
-      // Transform the dogs data to ensure organization is a string
-      const transformedDogs = (data.dogs || []).map((dog: any) => ({
-        ...dog,
-        // Extract organization name from object if it exists
-        organization:
-          typeof dog.organization === "object" && dog.organization
-            ? dog.organization.name
-            : dog.organization,
-        // Ensure other fields are properly mapped
-        image: dog.primary_image_url || dog.image,
-        traits: dog.dogProfilerData?.personalityTraits || dog.traits || [],
-        description: dog.dogProfilerData?.description || dog.description,
-        energy_level: dog.dogProfilerData?.energyLevel || dog.energy_level,
-        special_characteristic:
-          dog.dogProfilerData?.uniqueQuirk || dog.special_characteristic,
-        quality_score: dog.dogProfilerData?.qualityScore || dog.quality_score,
-        additional_images: dog.images || dog.additional_images || [],
-      }));
-
-      return transformedDogs;
-    } catch (error) {
-      console.error("Error fetching dogs:", error);
-      return [];
-    }
-  };
+        return transformedDogs;
+      } catch (error) {
+        console.error("Error fetching dogs:", error);
+        return [];
+      }
+    },
+    [],
+  );
 
   const handleSwipe = (direction: "left" | "right", dog: Dog) => {
     console.log(`Swiped ${direction} on ${dog.name}`);
@@ -133,9 +108,22 @@ export default function SwipePage() {
     }
   };
 
-  const handleCardExpanded = (dog: Dog) => {
+  const handleCardExpanded = (dog: Dog, index: number) => {
     setSelectedDog(dog);
+    setCurrentDogIndex(index);
     setShowDetails(true);
+  };
+
+  const handleNavigate = (direction: "prev" | "next") => {
+    if (direction === "next" && currentDogIndex < dogs.length - 1) {
+      const nextDog = dogs[currentDogIndex + 1];
+      setSelectedDog(nextDog);
+      setCurrentDogIndex(currentDogIndex + 1);
+    } else if (direction === "prev" && currentDogIndex > 0) {
+      const prevDog = dogs[currentDogIndex - 1];
+      setSelectedDog(prevDog);
+      setCurrentDogIndex(currentDogIndex - 1);
+    }
   };
 
   return (
@@ -145,16 +133,20 @@ export default function SwipePage() {
           fetchDogs={fetchDogsWithFilters}
           onSwipe={handleSwipe}
           onCardExpanded={handleCardExpanded}
+          onDogsLoaded={setDogs}
         />
 
         {selectedDog && (
-          <SwipeDetails
-            dog={mapDogForDetails(selectedDog)}
+          <DogDetailModalUpgraded
+            dog={selectedDog}
             isOpen={showDetails}
             onClose={() => {
               setShowDetails(false);
               setSelectedDog(null);
             }}
+            onNavigate={handleNavigate}
+            hasNext={currentDogIndex < dogs.length - 1}
+            hasPrev={currentDogIndex > 0}
           />
         )}
       </div>

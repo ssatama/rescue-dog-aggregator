@@ -29,13 +29,15 @@ const DOUBLE_TAP_DELAY = 300;
 interface SwipeContainerWithFiltersProps {
   fetchDogs?: (queryString: string) => Promise<Dog[]>;
   onSwipe?: (direction: "left" | "right", dog: Dog) => void;
-  onCardExpanded?: (dog: Dog) => void;
+  onCardExpanded?: (dog: Dog, index: number) => void;
+  onDogsLoaded?: (dogs: Dog[]) => void;
 }
 
 export function SwipeContainerWithFilters({
   fetchDogs,
   onSwipe,
   onCardExpanded,
+  onDogsLoaded,
 }: SwipeContainerWithFiltersProps) {
   const router = useRouter();
   const { theme } = useTheme();
@@ -145,54 +147,64 @@ export function SwipeContainerWithFilters({
 
   // Fetch dogs when filters change
   useEffect(() => {
-    if (isValid && fetchDogs && queryString) {
-      const loadDogs = async () => {
-        setIsLoading(true);
-        try {
-          const fetchedDogs = await fetchDogs(queryString);
-          // Get swiped IDs from storage instead of state to avoid stale closure
-          const storedSwipedIds = safeStorage.get("swipedDogIds");
-          const swipedIds = new Set(
-            storedSwipedIds ? JSON.parse(storedSwipedIds) : [],
+    if (!isValid || !fetchDogs || !queryString) return;
+    let cancelled = false;
+
+    const loadDogs = async () => {
+      setIsLoading(true);
+      try {
+        const fetchedDogs = await fetchDogs(queryString);
+        if (cancelled) return;
+
+        const storedSwipedIds = safeStorage.get("swipedDogIds");
+        const swipedIds = new Set(
+          storedSwipedIds ? JSON.parse(storedSwipedIds) : [],
+        );
+
+        const newDogs = fetchedDogs.filter((dog) => {
+          const dogId = safeToNumber(dog.id);
+          return dogId !== null && !swipedIds.has(dogId);
+        });
+
+        setDogs(newDogs);
+        if (onDogsLoaded) {
+          onDogsLoaded(newDogs);
+        }
+
+        setCurrentIndex((prevIndex) => {
+          const clampedIndex = Math.min(
+            prevIndex,
+            Math.max(0, newDogs.length - 1),
           );
+          safeStorage.set("swipeCurrentIndex", clampedIndex.toString());
+          return clampedIndex;
+        });
+        setOffset(0);
 
-          // Filter out only dogs that have been swiped
-          const newDogs = fetchedDogs.filter((dog) => {
-            const dogId = safeToNumber(dog.id);
-            return dogId !== null && !swipedIds.has(dogId);
-          });
-
-          setDogs(newDogs);
-          // Preserve current position or clamp if needed when filters change
-          setCurrentIndex((prevIndex) => {
-            const clampedIndex = Math.min(
-              prevIndex,
-              Math.max(0, newDogs.length - 1),
-            );
-            safeStorage.set("swipeCurrentIndex", clampedIndex.toString());
-            return clampedIndex;
-          });
-          setOffset(0);
-
-          Sentry.addBreadcrumb({
-            message: "swipe.queue.loaded",
-            category: "swipe",
-            level: "info",
-            data: {
-              filtersData: filters,
-              dogCount: newDogs.length,
-              filteredOut: fetchedDogs.length - newDogs.length,
-            },
-          });
-        } catch (error) {
-          Sentry.captureException(error);
-        } finally {
+        Sentry.addBreadcrumb({
+          message: "swipe.queue.loaded",
+          category: "swipe",
+          level: "info",
+          data: {
+            filtersData: filters,
+            dogCount: newDogs.length,
+            filteredOut: fetchedDogs.length - newDogs.length,
+          },
+        });
+      } catch (error) {
+        Sentry.captureException(error);
+      } finally {
+        if (!cancelled) {
           setIsLoading(false);
         }
-      };
-      loadDogs();
-    }
-  }, [filters, isValid, queryString, fetchDogs]);
+      }
+    };
+
+    loadDogs();
+    return () => {
+      cancelled = true;
+    };
+  }, [isValid, queryString, fetchDogs]);
 
   // Allow natural scrolling - no swipe gestures used
   // Body scroll lock removed to enable vertical scrolling to reach all controls
@@ -445,7 +457,7 @@ export function SwipeContainerWithFilters({
     } else {
       // Single tap - expand details
       if (onCardExpanded) {
-        onCardExpanded(currentDog);
+        onCardExpanded(currentDog, currentIndex);
       }
       Sentry.addBreadcrumb({
         message: "swipe.card.expanded",
