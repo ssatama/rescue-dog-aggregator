@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Layout from "../../../components/layout/Layout";
-import DogsGrid from "../../../components/dogs/DogsGrid";
 import DogFilters from "../../../components/filters/DogFilters";
 import OrganizationHero from "../../../components/organizations/OrganizationHero";
 import MobileFilterDrawer from "../../../components/filters/MobileFilterDrawer";
@@ -20,6 +19,8 @@ import { reportError } from "../../../utils/logger";
 import { OrganizationSchema, BreadcrumbSchema } from "../../../components/seo";
 import Breadcrumbs from "../../../components/ui/Breadcrumbs";
 import { trackOrgPageView } from "@/lib/monitoring/breadcrumbs";
+import OrganizationDogsViewportWrapper from "../../../components/organizations/OrganizationDogsViewportWrapper";
+import DogsGrid from "../../../components/dogs/DogsGrid";
 
 export default function OrganizationDetailClient({ params = {} }) {
   const urlParams = useParams();
@@ -85,6 +86,35 @@ export default function OrganizationDetailClient({ params = {} }) {
       sort: "newest", // Default back to "newest" - PostgreSQL issue resolved
     });
   };
+
+  // Handle filter changes from mobile catalog quick filters
+  const handleFilterChange = useCallback((filterKeyOrBatch, value) => {
+    if (typeof filterKeyOrBatch === "object") {
+      // Batch update (multiple filters at once)
+      // Map PremiumMobileCatalog keys to OrganizationDetailClient keys
+      const mappedBatch = {};
+      Object.entries(filterKeyOrBatch).forEach(([key, val]) => {
+        if (key === "sexFilter") {
+          mappedBatch.sex = val;
+        } else if (key === "ageFilter") {
+          mappedBatch.age = val;
+        } else {
+          mappedBatch[key] = val;
+        }
+      });
+      setFilters((prev) => ({ ...prev, ...mappedBatch }));
+    } else {
+      // Single filter update
+      // Map PremiumMobileCatalog keys to OrganizationDetailClient keys
+      const mappedKey =
+        filterKeyOrBatch === "sexFilter"
+          ? "sex"
+          : filterKeyOrBatch === "ageFilter"
+            ? "age"
+            : filterKeyOrBatch;
+      setFilters((prev) => ({ ...prev, [mappedKey]: value }));
+    }
+  }, []);
 
   // Fetch organization dogs with pagination and filtering
   const fetchOrganizationDogs = useCallback(
@@ -374,10 +404,15 @@ export default function OrganizationDetailClient({ params = {} }) {
 
           {/* Dogs Grid with filtered results */}
           <div className="mt-6">
-            <DogsGrid
+            <OrganizationDogsViewportWrapper
               dogs={filteredDogs}
-              loading={loading}
-              loadingType="initial"
+              loading={loading && dogs.length === 0}
+              loadingMore={loadingMore}
+              onLoadMore={handleLoadMore}
+              hasMore={hasMore}
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onOpenFilter={handleMobileFilterOpen}
               emptyStateVariant={
                 hasActiveFilters ? "noDogsFiltered" : "noDogsOrganization"
               }
@@ -388,9 +423,9 @@ export default function OrganizationDetailClient({ params = {} }) {
               listContext="org-page"
             />
 
-            {/* Load More Button */}
+            {/* Load More Button - Hidden on mobile since PremiumMobileCatalog handles it */}
             {hasMore && !loading && !loadingMore && (
-              <div className="text-center mt-8 mb-12">
+              <div className="hidden lg:flex justify-center mt-8 mb-12">
                 <button
                   data-testid="load-more-button"
                   onClick={handleLoadMore}
@@ -400,17 +435,6 @@ export default function OrganizationDetailClient({ params = {} }) {
                   Load More Dogs →
                 </button>
               </div>
-            )}
-
-            {/* Loading More State */}
-            {loadingMore && (
-              <DogsGrid
-                dogs={[]}
-                loading={true}
-                loadingType="pagination"
-                skeletonCount={6}
-                className="mt-8"
-              />
             )}
           </div>
         </div>

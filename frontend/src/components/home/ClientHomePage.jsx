@@ -28,7 +28,8 @@ export default function ClientHomePage({
   useEffect(() => {
     const fetchBreedsWithImages = async () => {
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        const API_URL =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
         const response = await fetch(
           `${API_URL}/api/animals/breeds/with-images?min_count=5&limit=20`,
         );
