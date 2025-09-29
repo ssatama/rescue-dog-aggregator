@@ -69,7 +69,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
     }, CAROUSEL_AUTO_ADVANCE_INTERVAL);
 
     return () => clearInterval(intervalId);
-  }, [currentIndex, breeds.length, isPaused]);
+  }, [breeds.length, isPaused]);
 
   const handleDragEnd = useCallback(
     (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
