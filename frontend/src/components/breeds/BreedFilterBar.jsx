@@ -40,7 +40,12 @@ export default function BreedFilterBar({
             (opt) => opt.value === "Female",
           )?.count,
         },
-      ].filter((opt) => opt.count == null || opt.count > 0),
+      ].filter((opt) => {
+        // If counts haven't loaded yet, show all options
+        if (filterCounts == null) return true;
+        // If counts are loaded, only show options that exist in the response
+        return opt.count != null && opt.count > 0;
+      }),
     },
     // Size filters second (small to large)
     {
@@ -68,7 +73,12 @@ export default function BreedFilterBar({
             (opt) => opt.value === "Large",
           )?.count,
         },
-      ].filter((opt) => opt.count == null || opt.count > 0),
+      ].filter((opt) => {
+        // If counts haven't loaded yet, show all options
+        if (filterCounts == null) return true;
+        // If counts are loaded, only show options that exist in the response
+        return opt.count != null && opt.count > 0;
+      }),
     },
     // Age filters third (young to old)
     {
@@ -100,7 +110,12 @@ export default function BreedFilterBar({
             (opt) => opt.value === "Senior",
           )?.count,
         },
-      ].filter((opt) => opt.count == null || opt.count > 0),
+      ].filter((opt) => {
+        // If counts haven't loaded yet, show all options
+        if (filterCounts == null) return true;
+        // If counts are loaded, only show options that exist in the response
+        return opt.count != null && opt.count > 0;
+      }),
     },
   ];
 
