@@ -20,26 +20,10 @@ import useSwipeFilters from "../../hooks/useSwipeFilters";
 import type { SwipeFilters as Filters } from "../../hooks/useSwipeFilters";
 import { safeStorage } from "../../utils/safeStorage";
 import { useTheme } from "../providers/ThemeProvider";
+import { type Dog } from "../../types/dog";
 
 // Constants
 const DOUBLE_TAP_DELAY = 300;
-
-interface Dog {
-  id: number;
-  name: string;
-  breed?: string;
-  age?: string;
-  image?: string;
-  organization?: string;
-  location?: string;
-  slug: string;
-  description?: string;
-  traits?: string[];
-  energy_level?: number;
-  special_characteristic?: string;
-  quality_score?: number;
-  created_at?: string;
-}
 
 interface SwipeContainerWithFiltersProps {
   fetchDogs?: (queryString: string) => Promise<Dog[]>;
@@ -168,7 +152,7 @@ export function SwipeContainerWithFilters({
           );
 
           // Filter out only dogs that have been swiped
-          const newDogs = fetchedDogs.filter((dog) => !swipedIds.has(dog.id));
+          const newDogs = fetchedDogs.filter((dog) => !swipedIds.has(Number(dog.id)));
 
           setDogs(newDogs);
           // Preserve current position or clamp if needed when filters change
@@ -193,7 +177,6 @@ export function SwipeContainerWithFilters({
             },
           });
         } catch (error) {
-          console.error("Failed to fetch dogs:", error);
           Sentry.captureException(error);
         } finally {
           setIsLoading(false);
@@ -275,7 +258,7 @@ export function SwipeContainerWithFilters({
                   storedSwipedIds ? JSON.parse(storedSwipedIds) : [],
                 );
                 const newDogs = fetchedDogs.filter((dog) => {
-                  return !swipedIds.has(dog.id);
+                  return !swipedIds.has(Number(dog.id));
                 });
 
                 if (newDogs.length > 0) {
@@ -287,7 +270,7 @@ export function SwipeContainerWithFilters({
             setIsLoadingMore(false);
           })
           .catch((error) => {
-            console.error("Failed to load more dogs:", error);
+            Sentry.captureException(error);
             setIsLoadingMore(false);
           });
       }
@@ -321,7 +304,7 @@ export function SwipeContainerWithFilters({
       const currentDogId = currentDog.id;
 
       if (direction === "right") {
-        await addFavorite(currentDog.id, currentDog.name);
+        await addFavorite(Number(currentDog.id), currentDog.name);
         Sentry.addBreadcrumb({
           message: "swipe.card.favorited",
           category: "swipe",
@@ -351,7 +334,7 @@ export function SwipeContainerWithFilters({
       if (dogToTrack?.id) {
         setSwipedDogIds((prev) => {
           const newSet = new Set(prev);
-          newSet.add(dogToTrack.id);
+          newSet.add(Number(dogToTrack.id));
           // Save to storage safely
           safeStorage.stringify("swipedDogIds", Array.from(newSet));
           return newSet;
@@ -388,7 +371,7 @@ export function SwipeContainerWithFilters({
                   if (idx === 0 && currentViewingIndex === prevDogs.length) {
                     return true;
                   }
-                  return !swipedIds.has(dog.id);
+                  return !swipedIds.has(Number(dog.id));
                 });
 
                 if (newDogs.length > 0) {
@@ -400,7 +383,7 @@ export function SwipeContainerWithFilters({
             setIsLoadingMore(false);
           })
           .catch((error) => {
-            console.error("Failed to load more dogs:", error);
+            Sentry.captureException(error);
             setIsLoadingMore(false);
           })
           .finally(() => {
@@ -580,10 +563,7 @@ export function SwipeContainerWithFilters({
                         setIsLoading(false);
                       })
                       .catch((error) => {
-                        console.error(
-                          "Failed to fetch dogs after reset:",
-                          error,
-                        );
+                        Sentry.captureException(error);
                         setIsLoading(false);
                       });
                   } else {

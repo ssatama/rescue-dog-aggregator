@@ -49,9 +49,9 @@ export default function MobileStats({
     <div className="px-4 pb-4 md:hidden">
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 shadow-[0_1px_0_rgba(0,0,0,0.06),0_8px_20px_rgba(0,0,0,0.04)]">
         <div className="flex items-center justify-around">
-          {stats.map((stat, index) => (
+          {stats.map((stat) => (
             <div
-              key={index}
+              key={stat.label}
               className="text-center flex-1"
               data-testid={`stat-${stat.label.toLowerCase()}`}
             >

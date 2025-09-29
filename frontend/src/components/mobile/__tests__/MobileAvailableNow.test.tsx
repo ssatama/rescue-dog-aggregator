@@ -13,6 +13,7 @@ jest.mock("next/navigation", () => ({
 jest.mock("../../../hooks/useFavorites", () => ({
   useFavorites: jest.fn(() => ({
     favorites: [],
+    isFavorited: jest.fn((id: number) => false),
     toggleFavorite: jest.fn(),
   })),
 }));
@@ -266,6 +267,7 @@ describe("MobileAvailableNow", () => {
     const mockToggleFavorite = jest.fn();
     useFavorites.mockReturnValue({
       favorites: [1],
+      isFavorited: jest.fn((id: number) => id === 1),
       toggleFavorite: mockToggleFavorite,
     });
 
@@ -316,9 +318,9 @@ describe("MobileAvailableNow", () => {
   });
 
   it("displays count of available dogs", () => {
-    render(<MobileAvailableNow dogs={mockDogs} totalCount={150} />);
+    render(<MobileAvailableNow dogs={mockDogs} />);
 
-    expect(screen.getByText("150 dogs available")).toBeInTheDocument();
+    expect(screen.getByText("6 dogs available")).toBeInTheDocument();
   });
 
   it("shows extra traits count when more than 2", () => {

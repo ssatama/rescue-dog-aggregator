@@ -13,46 +13,12 @@ import {
   getAgeCategory,
 } from "@/utils/dogHelpers";
 import { IMAGE_SIZES } from "../../constants/imageSizes";
-
-// Use a compatible interface that works with both string and number IDs
-interface BaseDog {
-  id: number | string;
-  name: string;
-  breed?: string;
-  primary_breed?: string;
-  standardized_breed?: string;
-  age?: string;
-  age_text?: string;
-  sex?: string;
-  primary_image_url?: string;
-  main_image?: string;
-  photos?: string[];
-  organization?: {
-    id: number;
-    name: string;
-    config_id: string;
-    slug?: string;
-  };
-  personality_traits?: string[];
-  dog_profiler_data?: {
-    description?: string;
-    tagline?: string;
-    personality_traits?: string[];
-  };
-  created_at?: string;
-  slug?: string;
-  [key: string]: any;
-}
-
-// Modal-compatible dog with string ID
-interface ModalDog extends Omit<BaseDog, 'id'> {
-  id: string;
-}
+import { type Dog } from "../../types/dog";
+import { useRouter } from "next/navigation";
 
 interface MobileAvailableNowProps {
-  dogs?: BaseDog[];
+  dogs?: Dog[];
   loading?: boolean;
-  totalCount?: number;
 }
 
 // Personality trait colors
@@ -66,7 +32,7 @@ const traitColors = [
 ];
 
 // Helper to get dog image
-const getDogImage = (dog: BaseDog): string => {
+const getDogImage = (dog: Dog): string => {
   if (dog.primary_image_url) return dog.primary_image_url;
   if (dog.main_image) return dog.main_image;
   if (dog.photos && dog.photos.length > 0) return dog.photos[0];
@@ -75,12 +41,12 @@ const getDogImage = (dog: BaseDog): string => {
 
 // Dog Card Component (from PremiumMobileCatalog) - wrapped in React.memo
 const DogCard = React.memo<{
-  dog: BaseDog;
-  onToggleFavorite: (id: string) => void;
-  onClick: () => void;
-  index: number;
-  isFavorite: boolean;
-}>(({ dog, onToggleFavorite, onClick, index, isFavorite }) => {
+  dog: Dog;
+  onFavoriteToggle?: (dogId: string) => Promise<void>;
+  isFavorite?: boolean;
+  onClick?: () => void;
+  index?: number;
+}>(({ dog, onFavoriteToggle, isFavorite = false, onClick, index = 0 }) => {
   const imageUrl = getDogImage(dog);
   const traits = useMemo(() => getPersonalityTraits(dog), [dog]);
   const displayTraits = traits.slice(0, 2);
@@ -103,7 +69,7 @@ const DogCard = React.memo<{
           e.target === e.currentTarget
         ) {
           e.preventDefault();
-          onClick();
+          onClick?.();
         }
       }}
       aria-label={`View details for ${dog.name}`}
@@ -123,7 +89,7 @@ const DogCard = React.memo<{
           className="absolute top-2 right-2 w-8 h-8 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
           onClick={(e) => {
             e.stopPropagation();
-            onToggleFavorite(String(dog.id));
+            onFavoriteToggle?.(String(dog.id));
           }}
           aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
           aria-pressed={isFavorite}
@@ -188,39 +154,25 @@ const DogCardSkeleton = () => (
 export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
   dogs = [],
   loading = false,
-  totalCount,
 }) => {
-  const { favorites, toggleFavorite } = useFavorites();
-  const [isHydrated, setIsHydrated] = useState(false);
-  const [selectedDog, setSelectedDog] = useState<ModalDog | null>(null);
+  const router = useRouter();
+  const { isFavorited, toggleFavorite } = useFavorites();
+  const [selectedDog, setSelectedDog] = useState<Dog | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // Track hydration for client-side features
-  React.useEffect(() => {
-    setIsHydrated(true);
-  }, []);
 
   // Ensure dogs is always an array
   const safeDogs = Array.isArray(dogs) ? dogs : [];
 
-  // Optimize favorites lookup with Set
-  const favoriteIds = useMemo(
-    () => new Set(favorites.map(String)),
-    [favorites]
-  );
-
   const handleToggleFavorite = useCallback(async (dogId: string) => {
     const dog = safeDogs.find((d) => String(d.id) === dogId);
-    await toggleFavorite(parseInt(dogId, 10), dog?.name);
+    if (dog) {
+      await toggleFavorite(parseInt(dogId, 10), dog.name);
+    }
   }, [safeDogs, toggleFavorite]);
 
-  const handleDogClick = useCallback((dog: BaseDog) => {
-    // Ensure id is a string for modal compatibility
-    const dogWithStringId: ModalDog = {
-      ...dog,
-      id: String(dog.id)
-    };
-    setSelectedDog(dogWithStringId);
+  const handleDogClick = useCallback((dog: Dog) => {
+    // Just set the dog directly, ensuring ID is string when needed
+    setSelectedDog(dog);
     setIsModalOpen(true);
   }, []);
 
@@ -243,12 +195,8 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
 
     if (newIndex !== currentIndex) {
       const newDog = safeDogs[newIndex];
-      // Ensure id is a string for modal compatibility
-      const dogWithStringId: ModalDog = {
-        ...newDog,
-        id: String(newDog.id)
-      };
-      setSelectedDog(dogWithStringId);
+      // Just set the dog directly
+      setSelectedDog(newDog);
     }
   }, [selectedDog, safeDogs]);
 
@@ -262,7 +210,7 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
               Recently Added
             </h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-0.5">
-              {(totalCount || 0).toLocaleString()} dogs available
+              {(safeDogs.length || 0).toLocaleString()} dogs available
             </p>
           </div>
         </div>
@@ -284,8 +232,8 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
                     key={String(dog.id)}
                     dog={dog}
                     index={index}
-                    isFavorite={isHydrated && favoriteIds.has(String(dog.id))}
-                    onToggleFavorite={handleToggleFavorite}
+                    isFavorite={isFavorited(Number(dog.id))}
+                    onFavoriteToggle={handleToggleFavorite}
                     onClick={() => handleDogClick(dog)}
                   />
                 );
@@ -307,7 +255,7 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
 
       {/* Dog Detail Modal */}
       <DogDetailModalUpgraded
-        dog={selectedDog as any}
+        dog={selectedDog}
         isOpen={isModalOpen}
         onClose={handleModalClose}
         onNavigate={handleModalNavigate}

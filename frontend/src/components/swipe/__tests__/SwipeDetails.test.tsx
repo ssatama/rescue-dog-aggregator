@@ -33,7 +33,7 @@ const mockDog = {
     energy_level: 4,
     good_with_dogs: true,
     good_with_cats: "maybe",
-    good_with_kids: true,
+    good_with_children: true,
     exercise_needs: "High",
     special_needs: "",
     unique_quirk: "Loves to carry his favorite toy everywhere",

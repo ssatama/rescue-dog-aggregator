@@ -9,33 +9,7 @@ import { useSwipeDevice } from "../../hooks/useSwipeDevice";
 import { swipeMetrics } from "../../utils/swipeMetrics";
 import { get } from "../../utils/api";
 import * as Sentry from "@sentry/nextjs";
-
-interface Dog {
-  id: number;
-  name: string;
-  breed?: string;
-  primary_breed?: string;
-  age?: string;
-  age_min_months?: number;
-  age_max_months?: number;
-  image?: string;
-  organization?: string;
-  location?: string;
-  slug: string;
-  description?: string;
-  traits?: string[];
-  energy_level?: number;
-  special_characteristic?: string;
-  quality_score?: number;
-  created_at?: string;
-  sex?: string;
-  size?: string;
-  good_with_dogs?: boolean | string;
-  good_with_cats?: boolean | string;
-  good_with_kids?: boolean | string;
-  additional_images?: string[];
-  adoption_url?: string;
-}
+import { type Dog } from "../../types/dog";
 
 export default function SwipePage() {
   const router = useRouter();

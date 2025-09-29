@@ -8,34 +8,7 @@ import { MobileAvailableNow } from "./MobileAvailableNow";
 import { MobileBreedSpotlight } from "./MobileBreedSpotlight";
 import MobileBottomNav from "../navigation/MobileBottomNav";
 import { MobileHomeSEO } from "../seo/MobileHomeSEO";
-
-interface Dog {
-  id: number | string;
-  name: string;
-  breed?: string;
-  primary_breed?: string;
-  standardized_breed?: string;
-  age?: string;
-  age_text?: string;
-  sex?: string;
-  primary_image_url?: string;
-  main_image?: string;
-  photos?: string[];
-  organization?: {
-    id: number;
-    name: string;
-    config_id: string;
-    slug?: string;
-  };
-  personality_traits?: string[];
-  dog_profiler_data?: {
-    description?: string;
-    tagline?: string;
-    personality_traits?: string[];
-  };
-  created_at?: string;
-  slug?: string;
-}
+import { type Dog } from "../../types/dog";
 
 interface Statistics {
   totalDogs?: number;
@@ -178,7 +151,6 @@ export default function MobileHomePage({ initialData }: MobileHomePageProps) {
         {/* Available Now */}
         <MobileAvailableNow
           dogs={initialData?.dogs}
-          totalCount={initialData?.statistics?.totalDogs}
         />
       </main>
 

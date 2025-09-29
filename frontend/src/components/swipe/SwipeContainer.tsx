@@ -12,29 +12,13 @@ import { useFavorites } from "../../hooks/useFavorites";
 import * as Sentry from "@sentry/nextjs";
 import { Heart, X } from "lucide-react";
 import { SwipeCard } from "./SwipeCard";
+import { type Dog } from "../../types/dog";
 
 // Constants
 const SWIPE_THRESHOLD = 50;
 const VELOCITY_THRESHOLD = 0.5;
 const ROTATION_MULTIPLIER = 0.2;
 const DOUBLE_TAP_DELAY = 300;
-
-interface Dog {
-  id: number;
-  name: string;
-  breed?: string;
-  age?: string;
-  image?: string;
-  organization?: string;
-  location?: string;
-  slug: string;
-  description?: string;
-  traits?: string[];
-  energy_level?: number;
-  special_characteristic?: string;
-  quality_score?: number;
-  created_at?: string;
-}
 
 interface SwipeContainerProps {
   dogs: Dog[];
@@ -76,7 +60,7 @@ export function SwipeContainer({
       if (!currentDog) return;
 
       if (direction === "right") {
-        await addFavorite(currentDog.id, currentDog.name);
+        await addFavorite(Number(currentDog.id), currentDog.name);
         Sentry.captureEvent({
           message: "swipe.card.swiped_right",
           extra: {
@@ -131,7 +115,7 @@ export function SwipeContainer({
     if (timeSinceLastTap < DOUBLE_TAP_DELAY && timeSinceLastTap > 0) {
       // Double tap - add to favorites
       if (currentDog) {
-        addFavorite(currentDog.id, currentDog.name);
+        addFavorite(Number(currentDog.id), currentDog.name);
       }
     } else {
       // Single tap - expand card after delay to check for double tap

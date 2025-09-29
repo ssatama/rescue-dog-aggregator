@@ -1,39 +1,20 @@
 import React, { useState, useCallback } from "react";
 import Image from "next/image";
-import { FallbackImage } from "../ui/FallbackImage";
+import { Heart, X, MapPin, Calendar, Info } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useFavorites } from "../../hooks/useFavorites";
-import * as Sentry from "@sentry/nextjs";
+import { cn } from "@/lib/utils";
+import { safeStorage } from "../../utils/safeStorage";
+import { type Dog } from "../../types/dog";
+import { FallbackImage } from "../ui/FallbackImage";
 import { getPersonalityTraitColor } from "../../utils/personalityColors";
 import ShareButton from "../ui/ShareButton";
 import { getAgeCategory } from "../../utils/dogHelpers";
 import { IMAGE_SIZES } from "../../constants/imageSizes";
+import * as Sentry from "@sentry/nextjs";
 
 interface SwipeCardProps {
-  dog: {
-    id?: number;
-    name: string;
-    primary_breed?: string;
-    breed?: string; // Keep for backward compatibility
-    age?: string;
-    age_min_months?: number;
-    age_max_months?: number;
-    image?: string;
-    organization?: string;
-    location?: string;
-    slug: string;
-    description?: string;
-    special_characteristic?: string;
-    quality_score?: number;
-    created_at?: string;
-    dogProfilerData?: {
-      tagline?: string;
-      uniqueQuirk?: string;
-      personalityTraits?: string[];
-      favoriteActivities?: string[];
-      engagement_score?: number;
-      quality_score?: number;
-    };
-  };
+  dog: Dog;
   isStacked?: boolean;
 }
 
@@ -50,7 +31,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
       setIsLiked(true);
       setShowHeartAnimation(true);
 
-      await addFavorite(dog.id, dog.name);
+      await addFavorite(Number(dog.id), dog.name);
 
       Sentry.captureEvent({
         message: "swipe.card.favorited_via_button",
@@ -166,7 +147,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
         {/* Top 3 Personality Traits with consistent colors */}
         {personalityTraits.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            {personalityTraits.slice(0, 3).map((trait, idx) => (
+            {personalityTraits.slice(0, 3).map((trait: string, idx: number) => (
               <span
                 key={idx}
                 className={`px-3 py-1.5 rounded-full text-sm font-medium ${getPersonalityTraitColor(trait)}`}
