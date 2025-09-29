@@ -14,7 +14,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import Layout from "@/components/layout/Layout";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
-import DogsGrid from "@/components/dogs/DogsGrid";
+
 import { Button } from "@/components/ui/button";
 import { Filter, Loader2 } from "lucide-react";
 import BreedPhotoGallery from "@/components/breeds/BreedPhotoGallery";
@@ -33,6 +33,7 @@ import CommonTraits from "@/components/breeds/CommonTraits";
 import ExperienceLevelChart from "@/components/breeds/ExperienceLevelChart";
 import ExpandableText from "@/components/ui/ExpandableText";
 import { FallbackImage } from "@/components/ui/FallbackImage";
+import BreedDogsViewportWrapper from "@/components/breeds/BreedDogsViewportWrapper";
 
 // Lazy load filter component
 const MobileFilterDrawer = dynamic(
@@ -461,18 +462,22 @@ export default function BreedDetailClient({
             />
           ) : (
             <div id="dogs-grid">
-              <DogsGrid
+              <BreedDogsViewportWrapper
                 dogs={dogs}
                 loading={loading && dogs.length === 0}
-                loadingType="filter"
-                listContext="breed-page"
+                loadingMore={loadingMore}
+                onLoadMore={loadMoreDogs}
+                hasMore={hasMore}
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                onOpenFilter={() => setIsFilterDrawerOpen(true)}
               />
             </div>
           )}
 
-          {/* Load more button */}
+          {/* Load more button - Hidden on mobile since PremiumMobileCatalog handles it */}
           {hasMore && !loading && dogs.length > 0 && (
-            <div className="flex justify-center mt-8">
+            <div className="hidden lg:flex justify-center mt-8">
               <Button
                 onClick={loadMoreDogs}
                 disabled={loadingMore}
