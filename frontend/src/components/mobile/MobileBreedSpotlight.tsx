@@ -106,7 +106,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
   if (loading) {
     return (
       <section
-        className="px-4 pb-6 md:hidden"
+        className="px-4 pb-6 sm:hidden"
         aria-label="Breed spotlight"
         role="region"
       >
@@ -125,7 +125,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
   if (!breeds || breeds.length === 0) {
     return (
       <section
-        className="px-4 pb-6 md:hidden"
+        className="px-4 pb-6 sm:hidden"
         aria-label="Breed spotlight"
         role="region"
       >
@@ -171,7 +171,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
 
   return (
     <section
-      className="px-4 pb-6 md:hidden"
+      className="px-4 pb-6 sm:hidden"
       aria-label="Breed spotlight"
       role="region"
       aria-roledescription="carousel"

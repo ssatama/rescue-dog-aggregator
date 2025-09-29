@@ -220,7 +220,7 @@ describe("MobileAvailableNow", () => {
       <MobileAvailableNow dogs={mockDogs.slice(0, 4)} />,
     );
     const section = container.firstChild;
-    expect(section).toHaveClass("md:hidden");
+    expect(section).toHaveClass("sm:hidden");
   });
 
   it("displays dogs in a 2-column grid on mobile", () => {

@@ -67,7 +67,7 @@ describe("MobileTopHeader", () => {
       const { container } = render(<MobileTopHeader />);
 
       const header = container.firstChild as HTMLElement;
-      expect(header).toHaveClass("md:hidden");
+      expect(header).toHaveClass("sm:hidden");
     });
 
     it("has sticky positioning", () => {

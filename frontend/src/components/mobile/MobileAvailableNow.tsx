@@ -211,7 +211,7 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
 
   return (
     <>
-      <section className="bg-[#FFF4ED] dark:bg-gray-900 px-4 pb-3 pt-4 md:hidden">
+      <section className="bg-[#FFF4ED] dark:bg-gray-900 px-4 pb-3 pt-4 sm:hidden">
         {/* Header with Browse All link */}
         <div className="flex items-center justify-between mb-4">
           <div>

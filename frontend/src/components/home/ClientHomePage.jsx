@@ -115,14 +115,14 @@ export default function ClientHomePage({
   return (
     <>
       {/* Mobile Version - Shown only on mobile devices */}
-      <div className="md:hidden">
+      <div className="sm:hidden">
         <Suspense fallback={<Loading className="h-screen" />}>
           <MobileHomePage initialData={mobileInitialData} />
         </Suspense>
       </div>
 
       {/* Desktop Version - Hidden on mobile devices */}
-      <div className="hidden md:block">
+      <div className="hidden sm:block">
         <HeroSection initialStatistics={initialStatistics} priority={true} />
 
         {/* Breeds CTA Section - New feature promotion */}

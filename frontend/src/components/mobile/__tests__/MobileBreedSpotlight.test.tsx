@@ -116,7 +116,7 @@ describe("MobileBreedSpotlight", () => {
   it("applies mobile-only visibility classes", () => {
     const { container } = render(<MobileBreedSpotlight breeds={mockBreeds} />);
     const section = container.firstChild;
-    expect(section).toHaveClass("md:hidden");
+    expect(section).toHaveClass("sm:hidden");
   });
 
   it("applies white/zinc background classes instead of gradient", () => {

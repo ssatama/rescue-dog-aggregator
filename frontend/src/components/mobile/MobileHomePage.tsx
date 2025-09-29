@@ -108,7 +108,7 @@ export default function MobileHomePage({ initialData }: MobileHomePageProps) {
   return (
     <div
       data-testid="mobile-home-page"
-      className="min-h-screen bg-[#FFF4ED] dark:bg-gray-900 pb-16 md:hidden overflow-x-hidden"
+      className="min-h-screen bg-[#FFF4ED] dark:bg-gray-900 pb-16 sm:hidden overflow-x-hidden"
     >
       {/* SEO Component */}
       <MobileHomeSEO

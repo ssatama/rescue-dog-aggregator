@@ -126,7 +126,7 @@ describe("MobileHomePage", () => {
     render(<MobileHomePage initialData={mockInitialData} />);
 
     const container = screen.getByTestId("mobile-home-page");
-    expect(container).toHaveClass("md:hidden");
+    expect(container).toHaveClass("sm:hidden");
   });
 
   it("passes correct data to MobileStats component", () => {

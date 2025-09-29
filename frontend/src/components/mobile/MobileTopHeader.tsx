@@ -15,7 +15,7 @@ import logo from "../../../public/logo.jpeg";
 export default function MobileTopHeader() {
   return (
     <header
-      className="sticky top-0 z-40 bg-white/90 dark:bg-zinc-900/80 backdrop-blur-md border-b border-zinc-200/70 dark:border-zinc-800/70 px-4 py-3 pb-4 md:hidden"
+      className="sticky top-0 z-40 bg-white/90 dark:bg-zinc-900/80 backdrop-blur-md border-b border-zinc-200/70 dark:border-zinc-800/70 px-4 py-3 pb-4 sm:hidden"
       style={{ paddingTop: "env(safe-area-inset-top, 0.75rem)" }}
     >
       {/* Logo, Site Name and Tagline */}

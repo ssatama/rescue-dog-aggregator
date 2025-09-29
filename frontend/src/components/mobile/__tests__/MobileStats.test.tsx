@@ -42,7 +42,7 @@ describe("MobileStats", () => {
       const { container } = render(<MobileStats stats={mockStats} />);
 
       const statsSection = container.firstChild as HTMLElement;
-      expect(statsSection).toHaveClass("md:hidden");
+      expect(statsSection).toHaveClass("sm:hidden");
     });
 
     it("has white background with border", () => {
