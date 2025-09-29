@@ -9,13 +9,11 @@ import React, {
 } from "react";
 import { useFavorites } from "../../hooks/useFavorites";
 import * as Sentry from "@sentry/nextjs";
-import { Heart, ChevronRight, X, PawPrint } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { X, PawPrint } from "lucide-react";
 import { SwipeCard } from "./SwipeCard";
 import SwipeOnboarding from "./SwipeOnboarding";
 import { FilterModal } from "./FilterModal";
 import SwipeFilters from "./SwipeFilters";
-import { SwipeContainerEnhanced } from "./SwipeContainerEnhanced";
 import useSwipeFilters from "../../hooks/useSwipeFilters";
 import type { SwipeFilters as Filters } from "../../hooks/useSwipeFilters";
 import { safeStorage } from "../../utils/safeStorage";
@@ -39,7 +37,6 @@ export function SwipeContainerWithFilters({
   onCardExpanded,
   onDogsLoaded,
 }: SwipeContainerWithFiltersProps) {
-  const router = useRouter();
   const { theme } = useTheme();
   const { addFavorite, isFavorited } = useFavorites();
   const {

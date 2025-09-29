@@ -21,10 +21,6 @@ jest.mock("../../../components/swipe/SwipeContainerWithFilters", () => ({
   SwipeContainerWithFilters: () => <div>Swipe Container</div>,
 }));
 
-jest.mock("../../../components/swipe/SwipeDetails", () => ({
-  SwipeDetails: () => <div>Swipe Details</div>,
-}));
-
 jest.mock("../../../components/swipe/SwipeErrorBoundary", () => ({
   __esModule: true,
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
