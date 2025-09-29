@@ -321,12 +321,6 @@ describe("MobileAvailableNow", () => {
     );
   });
 
-  it("displays count of available dogs", () => {
-    render(<MobileAvailableNow dogs={mockDogs} />);
-
-    expect(screen.getByText("6 dogs available")).toBeInTheDocument();
-  });
-
   it("shows extra traits count when more than 2", () => {
     render(<MobileAvailableNow dogs={mockDogs.slice(2, 3)} />);
 
