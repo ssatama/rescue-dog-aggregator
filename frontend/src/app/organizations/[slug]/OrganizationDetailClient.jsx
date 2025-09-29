@@ -232,7 +232,7 @@ export default function OrganizationDetailClient({ params = {} }) {
           setHasMore(dogsData.length === limit);
           setPage(1);
         }
-        
+
         if (isInitialLoad) {
           setLoading(false);
         }

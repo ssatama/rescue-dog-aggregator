@@ -87,7 +87,9 @@ describe("OrganizationHero", () => {
       render(<OrganizationHero organization={mockOrganization} />);
 
       // Should render description for both desktop and mobile
-      const descriptions = screen.getAllByText(/Dedicated to rescuing street dogs/);
+      const descriptions = screen.getAllByText(
+        /Dedicated to rescuing street dogs/,
+      );
       expect(descriptions.length).toBeGreaterThan(0);
       descriptions.forEach((desc) => expect(desc).toBeInTheDocument());
     });

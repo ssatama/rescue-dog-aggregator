@@ -250,7 +250,7 @@ export default function BreedDetailClient({
   const handleMobileFilterChange = useCallback(
     (filterKeyOrBatch, value) => {
       let newFilters;
-      
+
       // Handle batch updates (e.g., from "All" button)
       if (typeof filterKeyOrBatch === "object") {
         // Map PremiumMobileCatalog keys to BreedDetailClient keys
