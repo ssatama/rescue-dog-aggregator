@@ -28,9 +28,9 @@ export default function ClientHomePage({
   useEffect(() => {
     const fetchBreedsWithImages = async () => {
       try {
-        // Fetch breeds that have at least 5 dogs and images
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
         const response = await fetch(
-          "/api/animals/breeds/with-images?min_count=5&limit=20",
+          `${API_URL}/api/animals/breeds/with-images?min_count=5&limit=20`,
         );
         if (response.ok) {
           const breeds = await response.json();
