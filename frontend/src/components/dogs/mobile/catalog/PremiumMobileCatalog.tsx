@@ -1,87 +1,45 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+} from "react";
+import Image from "next/image";
 import {
   Heart,
-  Filter,
-  Home,
-  Grid3X3,
-  Heart as FavoritesIcon,
-  Building2,
-  Dog,
-  Dna,
+  X,
   MapPin,
+  Calendar,
+  ChevronDown,
+  ChevronLeft,
+  Filter,
+  Grid3X3,
+  Building2,
+  Dog as DogIcon,
   Loader2,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useFavorites } from "@/hooks/useFavorites";
+import { cn } from "@/lib/utils";
+import { safeStorage } from "@/utils/safeStorage";
+
+import DogDetailModalUpgraded from "../detail/DogDetailModalUpgraded";
+import { getPersonalityTraitColor } from "@/utils/personalityColors";
 import {
-  formatAge,
   formatBreed,
   getPersonalityTraits,
   getAgeCategory,
+  formatAge,
 } from "@/utils/dogHelpers";
-import Image from "next/image";
+import { IMAGE_SIZES } from "@/constants/imageSizes";
+import { type Dog } from "@/types/dog";
 import MobileFilterDrawer from "@/components/filters/MobileFilterDrawer";
-import DogDetailModalUpgraded from "@/components/dogs/mobile/detail/DogDetailModalUpgraded";
 import { Button } from "@/components/ui/button";
-import { useFavorites } from "@/hooks/useFavorites";
 import { UI_CONSTANTS } from "@/constants/viewport";
-import { IMAGE_SIZES } from "../../../../constants/imageSizes";
-
-// Types - matching your actual data structure
-interface PremiumDog {
-  id: string;
-  name: string;
-  breed: string;
-  primary_breed?: string;
-  standardized_breed?: string;
-  age: string;
-  age_text?: string;
-  sex: string;
-  primary_image_url?: string;
-  main_image?: string;
-  photos?: string[];
-  summary?: string;
-  llm_description?: string;
-  organization: {
-    id: number;
-    name: string;
-    config_id: string;
-    slug?: string;
-  };
-  personality_traits?: string[];
-  dog_profiler_data?: {
-    description?: string;
-    tagline?: string;
-    personality_traits?: string[];
-    activity_level?: string;
-    training_level?: string;
-    kid_friendly?: boolean;
-    dog_friendly?: boolean;
-    cat_friendly?: boolean;
-    favorite_activities?: string[];
-    unique_quirk?: string;
-    energy_level?: string;
-  };
-  properties?: {
-    location_country?: string;
-    available_countries?: string[];
-    fostered_in?: string;
-    size?: string;
-    weight?: string;
-    description?: string;
-    raw_description?: string;
-  };
-  standardized_size?: string;
-  size?: string;
-  adoption_url?: string;
-  availability_status?: string;
-  slug?: string;
-  standardized_age_group?: string;
-  [key: string]: any;
-}
 
 interface FilterChip {
   id: string;
@@ -91,18 +49,18 @@ interface FilterChip {
 }
 
 interface PremiumMobileCatalogProps {
-  dogs: PremiumDog[];
+  dogs: Dog[];
   loading?: boolean;
   error?: string | null;
   filters?: Record<string, any>;
   onFilterChange?: (
     filterKeyOrBatch: string | Record<string, string>,
     value?: string,
-  ) => void; // Support both single and batch updates
+  ) => void;
   onOpenFilter?: () => void;
-  onLoadMore?: () => void; // Add load more handler
-  hasMore?: boolean; // Add hasMore prop
-  loadingMore?: boolean; // Add loadingMore prop
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
   totalCount?: number;
   viewMode?: "grid" | "list";
 }
@@ -131,7 +89,7 @@ const traitColors = [
 ];
 
 // Helper to get dog image
-const getDogImage = (dog: PremiumDog): string => {
+const getDogImage = (dog: Dog): string => {
   if (dog.primary_image_url) return dog.primary_image_url;
   if (dog.main_image) return dog.main_image;
   if (dog.photos && dog.photos.length > 0) return dog.photos[0];
@@ -140,7 +98,7 @@ const getDogImage = (dog: PremiumDog): string => {
 
 // Dog Card Component
 const DogCard: React.FC<{
-  dog: PremiumDog;
+  dog: Dog;
   onToggleFavorite: (id: string) => void;
   onClick: () => void;
   index: number;
@@ -187,7 +145,7 @@ const DogCard: React.FC<{
           className="absolute top-2 right-2 w-8 h-8 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
           onClick={(e) => {
             e.stopPropagation();
-            onToggleFavorite(dog.id);
+            onToggleFavorite(String(dog.id));
           }}
           aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
         >
@@ -252,7 +210,7 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
   const [isHydrated, setIsHydrated] = useState(false);
 
   // Initialize selected dog from hash on mount
-  const [selectedDog, setSelectedDog] = useState<PremiumDog | null>(() => {
+  const [selectedDog, setSelectedDog] = useState<Dog | null>(() => {
     if (typeof window === "undefined") return null;
     const hash = window.location.hash.slice(1);
     if (!hash.startsWith("dog=")) return null;
@@ -349,7 +307,7 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
     }
   };
 
-  const handleDogClick = (dog: PremiumDog) => {
+  const handleDogClick = (dog: Dog) => {
     setSelectedDog(dog);
     setIsModalOpen(true);
 
@@ -502,7 +460,8 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
                     dog={dog}
                     index={index}
                     isFavorite={
-                      isHydrated && favorites.includes(parseInt(dog.id, 10))
+                      isHydrated &&
+                      favorites.includes(parseInt(String(dog.id), 10))
                     }
                     onToggleFavorite={handleToggleFavorite}
                     onClick={() => handleDogClick(dog)}

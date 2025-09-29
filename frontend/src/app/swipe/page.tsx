@@ -9,33 +9,7 @@ import { useSwipeDevice } from "../../hooks/useSwipeDevice";
 import { swipeMetrics } from "../../utils/swipeMetrics";
 import { get } from "../../utils/api";
 import * as Sentry from "@sentry/nextjs";
-
-interface Dog {
-  id: number;
-  name: string;
-  breed?: string;
-  primary_breed?: string;
-  age?: string;
-  age_min_months?: number;
-  age_max_months?: number;
-  image?: string;
-  organization?: string;
-  location?: string;
-  slug: string;
-  description?: string;
-  traits?: string[];
-  energy_level?: number;
-  special_characteristic?: string;
-  quality_score?: number;
-  created_at?: string;
-  sex?: string;
-  size?: string;
-  good_with_dogs?: boolean | string;
-  good_with_cats?: boolean | string;
-  good_with_kids?: boolean | string;
-  additional_images?: string[];
-  adoption_url?: string;
-}
+import { type Dog } from "../../types/dog";
 
 export default function SwipePage() {
   const router = useRouter();
@@ -79,19 +53,16 @@ export default function SwipePage() {
     organization_name: dog.organization || "",
     location: dog.location || "",
     adoption_url: dog.adoption_url || "",
-    image_url: dog.image || "",
-    additional_images: dog.additional_images || [],
-    dog_profiler_data: dog.description
-      ? {
-          description: dog.description,
-          personality_traits: dog.traits || [],
-          energy_level: dog.energy_level,
-          good_with_dogs: dog.good_with_dogs,
-          good_with_cats: dog.good_with_cats,
-          good_with_kids: dog.good_with_kids,
-          unique_quirk: dog.special_characteristic,
-        }
-      : undefined,
+    image_url: dog.primary_image_url || dog.main_image || "",
+    additional_images: dog.photos || [],
+    dog_profiler_data:
+      dog.dog_profiler_data ||
+      (dog.description
+        ? {
+            description: dog.description,
+            personality_traits: dog.personality_traits || [],
+          }
+        : undefined),
   });
 
   const fetchDogsWithFilters = async (queryString: string): Promise<Dog[]> => {

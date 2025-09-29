@@ -16,59 +16,11 @@ import {
   Home,
   Globe,
   ChevronDown,
+  PawPrint,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFavorites } from "@/hooks/useFavorites";
-
-interface Dog {
-  id: string;
-  slug?: string;
-  name: string;
-  breed: string;
-  primary_breed?: string;
-  standardized_breed?: string;
-  age: string;
-  age_text?: string;
-  sex: string;
-  primary_image_url?: string;
-  main_image?: string;
-  photos?: string[];
-  summary?: string;
-  llm_description?: string;
-  organization: {
-    id: number;
-    name: string;
-    config_id: string;
-    slug?: string;
-  };
-  personality_traits?: string[];
-  dog_profiler_data?: {
-    description?: string;
-    tagline?: string;
-    personality_traits?: string[];
-    activity_level?: string;
-    training_level?: string;
-    kid_friendly?: boolean;
-    dog_friendly?: boolean;
-    cat_friendly?: boolean;
-    favorite_activities?: string[];
-    unique_quirk?: string;
-    energy_level?: string;
-  };
-  properties?: {
-    location_country?: string;
-    available_countries?: string[];
-    fostered_in?: string;
-    size?: string;
-    weight?: string;
-    description?: string;
-    raw_description?: string;
-  };
-  standardized_size?: string;
-  size?: string;
-  adoption_url?: string;
-  availability_status?: string;
-}
+import { type Dog } from "@/types/dog";
 
 interface DogDetailModalUpgradedProps {
   dog: Dog | null;
@@ -336,7 +288,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
 
   const toggleFavorite = async () => {
     if (!dog) return;
-    const numericId = parseInt(dog.id, 10);
+    const numericId = parseInt(String(dog.id), 10);
     if (!isNaN(numericId)) {
       await toggleFav(numericId, dog.name);
     }
@@ -415,10 +367,8 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
   const favoriteActivities = dog.dog_profiler_data?.favorite_activities || [];
   const uniqueQuirk = dog.dog_profiler_data?.unique_quirk;
   const tagline = dog.dog_profiler_data?.tagline;
-  const energyLevel =
-    dog.dog_profiler_data?.energy_level ||
-    dog.dog_profiler_data?.activity_level;
-  const trainingLevel = dog.dog_profiler_data?.training_level;
+  const energyLevel = dog.dog_profiler_data?.energy_level;
+  const trainingLevel = dog.dog_profiler_data?.trainability;
 
   // Get age display text - convert to age groups
   const getAgeDisplay = () => {
@@ -469,7 +419,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
   };
 
   // Check if favorited
-  const isFav = dog ? isFavorited(parseInt(dog.id, 10)) : false;
+  const isFav = dog ? isFavorited(parseInt(String(dog.id), 10)) : false;
 
   return (
     <AnimatePresence>
@@ -764,12 +714,12 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                           <div
                             className={cn(
                               "w-5 h-5 rounded-full flex items-center justify-center",
-                              dog.dog_profiler_data.dog_friendly
+                              dog.dog_profiler_data.good_with_dogs === "yes"
                                 ? "bg-green-100 dark:bg-green-900/30"
                                 : "bg-gray-100 dark:bg-gray-800",
                             )}
                           >
-                            {dog.dog_profiler_data.dog_friendly ? (
+                            {dog.dog_profiler_data.good_with_dogs === "yes" ? (
                               <div className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full" />
                             ) : (
                               <div className="w-3 h-0.5 bg-gray-400 dark:bg-gray-600" />
@@ -783,12 +733,12 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                           <div
                             className={cn(
                               "w-5 h-5 rounded-full flex items-center justify-center",
-                              dog.dog_profiler_data.cat_friendly
+                              dog.dog_profiler_data.good_with_cats === "yes"
                                 ? "bg-green-100 dark:bg-green-900/30"
                                 : "bg-gray-100 dark:bg-gray-800",
                             )}
                           >
-                            {dog.dog_profiler_data.cat_friendly ? (
+                            {dog.dog_profiler_data.good_with_cats === "yes" ? (
                               <div className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full" />
                             ) : (
                               <div className="w-3 h-0.5 bg-gray-400 dark:bg-gray-600" />
@@ -798,17 +748,20 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                             Cats
                           </span>
                         </div>
-                        {dog.dog_profiler_data.kid_friendly !== undefined && (
+                        {dog.dog_profiler_data.good_with_children !==
+                          undefined && (
                           <div className="flex items-center gap-2">
                             <div
                               className={cn(
                                 "w-5 h-5 rounded-full flex items-center justify-center",
-                                dog.dog_profiler_data.kid_friendly
+                                dog.dog_profiler_data.good_with_children ===
+                                  "yes"
                                   ? "bg-green-100 dark:bg-green-900/30"
                                   : "bg-gray-100 dark:bg-gray-800",
                               )}
                             >
-                              {dog.dog_profiler_data.kid_friendly ? (
+                              {dog.dog_profiler_data.good_with_children ===
+                              "yes" ? (
                                 <div className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full" />
                               ) : (
                                 <div className="w-3 h-0.5 bg-gray-400 dark:bg-gray-600" />
@@ -876,7 +829,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                       </h4>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-300">
-                      {dog.organization.name}
+                      {dog.organization?.name}
                     </p>
                   </div>
 

@@ -20,12 +20,9 @@ const mockDog = {
   organization_name: "Happy Paws Rescue",
   location: "Berlin, Germany",
   adoption_url: "https://example.com/adopt/buddy",
-  image_url: "https://example.com/buddy1.jpg",
+  primary_image_url: "https://example.com/buddy1.jpg",
   slug: "buddy-golden-mix",
-  additional_images: [
-    "https://example.com/buddy2.jpg",
-    "https://example.com/buddy3.jpg",
-  ],
+  photos: ["https://example.com/buddy2.jpg", "https://example.com/buddy3.jpg"],
   dog_profiler_data: {
     description:
       "Buddy is a lovable 2-year-old Golden Mix seeking his forever home. This playful pup has a heart of gold and endless energy for adventures.",
@@ -33,7 +30,7 @@ const mockDog = {
     energy_level: 4,
     good_with_dogs: true,
     good_with_cats: "maybe",
-    good_with_kids: true,
+    good_with_children: true,
     exercise_needs: "High",
     special_needs: "",
     unique_quirk: "Loves to carry his favorite toy everywhere",
@@ -51,9 +48,9 @@ const mockDogWithoutLLMData = {
   organization_name: "Pet Rescue",
   location: "Munich, Germany",
   adoption_url: "https://example.com/adopt/max",
-  image_url: "https://example.com/max.jpg",
+  primary_image_url: "https://example.com/max.jpg",
   slug: "max-german-shepherd",
-  additional_images: [],
+  photos: [],
 };
 
 describe("SwipeDetails", () => {

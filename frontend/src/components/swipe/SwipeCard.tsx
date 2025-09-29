@@ -1,39 +1,20 @@
 import React, { useState, useCallback } from "react";
 import Image from "next/image";
-import { FallbackImage } from "../ui/FallbackImage";
+import { Heart, X, MapPin, Calendar, Info } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useFavorites } from "../../hooks/useFavorites";
-import * as Sentry from "@sentry/nextjs";
+import { cn } from "@/lib/utils";
+import { safeStorage } from "../../utils/safeStorage";
+import { type Dog } from "../../types/dog";
+import { FallbackImage } from "../ui/FallbackImage";
 import { getPersonalityTraitColor } from "../../utils/personalityColors";
 import ShareButton from "../ui/ShareButton";
 import { getAgeCategory } from "../../utils/dogHelpers";
 import { IMAGE_SIZES } from "../../constants/imageSizes";
+import * as Sentry from "@sentry/nextjs";
 
 interface SwipeCardProps {
-  dog: {
-    id?: number;
-    name: string;
-    primary_breed?: string;
-    breed?: string; // Keep for backward compatibility
-    age?: string;
-    age_min_months?: number;
-    age_max_months?: number;
-    image?: string;
-    organization?: string;
-    location?: string;
-    slug: string;
-    description?: string;
-    special_characteristic?: string;
-    quality_score?: number;
-    created_at?: string;
-    dogProfilerData?: {
-      tagline?: string;
-      uniqueQuirk?: string;
-      personalityTraits?: string[];
-      favoriteActivities?: string[];
-      engagement_score?: number;
-      quality_score?: number;
-    };
-  };
+  dog: Dog;
   isStacked?: boolean;
 }
 
@@ -50,7 +31,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
       setIsLiked(true);
       setShowHeartAnimation(true);
 
-      await addFavorite(dog.id, dog.name);
+      await addFavorite(Number(dog.id), dog.name);
 
       Sentry.captureEvent({
         message: "swipe.card.favorited_via_button",
@@ -66,11 +47,11 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
   );
 
   // Access enriched LLM data
-  const profileData = dog.dogProfilerData || {};
+  const profileData = dog.dog_profiler_data || {};
   const tagline = profileData.tagline || "";
-  const uniqueQuirk = profileData.uniqueQuirk || "";
-  const personalityTraits = profileData.personalityTraits || [];
-  const favoriteActivities = profileData.favoriteActivities || [];
+  const uniqueQuirk = profileData.unique_quirk || "";
+  const personalityTraits = profileData.personality_traits || [];
+  const favoriteActivities = profileData.favorite_activities || [];
 
   // Get age category
   const ageCategory = getAgeCategory({
@@ -132,7 +113,9 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
         data-testid="image-container"
       >
         <FallbackImage
-          src={dog.image || "/placeholder_dog.svg"}
+          src={
+            dog.primary_image_url || dog.main_image || "/placeholder_dog.svg"
+          }
           alt={`${dog.name} - Available for adoption`}
           fill
           className="object-cover md:object-contain"
@@ -166,7 +149,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
         {/* Top 3 Personality Traits with consistent colors */}
         {personalityTraits.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            {personalityTraits.slice(0, 3).map((trait, idx) => (
+            {personalityTraits.slice(0, 3).map((trait: string, idx: number) => (
               <span
                 key={idx}
                 className={`px-3 py-1.5 rounded-full text-sm font-medium ${getPersonalityTraitColor(trait)}`}
@@ -178,7 +161,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
         )}
 
         {/* Energy Level Indicator - Visual bars */}
-        {dog.dogProfilerData?.engagement_score && (
+        {dog.dog_profiler_data?.energy_level && (
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-600 dark:text-gray-400">
               Energy:
@@ -188,7 +171,16 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
                 <div
                   key={level}
                   className={`h-2 w-6 rounded-full ${
-                    level <= (dog.dogProfilerData?.engagement_score || 0) / 20
+                    level <=
+                    (dog.dog_profiler_data?.energy_level === "low"
+                      ? 1
+                      : dog.dog_profiler_data?.energy_level === "medium"
+                        ? 3
+                        : dog.dog_profiler_data?.energy_level === "high"
+                          ? 4
+                          : dog.dog_profiler_data?.energy_level === "very_high"
+                            ? 5
+                            : 0)
                       ? "bg-orange-500"
                       : "bg-gray-200 dark:bg-gray-700"
                   }`}

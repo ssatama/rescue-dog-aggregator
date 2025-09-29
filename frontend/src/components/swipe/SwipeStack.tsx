@@ -2,11 +2,11 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { DogWithProfiler } from "@/types/dogProfiler";
+import { type Dog } from "../../types/dog";
 import { SwipeCard } from "./SwipeCard";
 
 interface SwipeStackProps {
-  dogs: DogWithProfiler[];
+  dogs: Dog[];
   currentIndex: number;
 }
 
@@ -55,23 +55,7 @@ export function SwipeStack({ dogs, currentIndex }: SwipeStackProps) {
               damping: 25,
             }}
           >
-            <SwipeCard
-              dog={{
-                id: dog.id,
-                name: dog.name,
-                breed: dog.breed || dog.standardized_breed,
-                age: dog.age_text,
-                image: dog.main_image || dog.primary_image_url,
-                organization: dog.organization_name,
-                location: dog.location,
-                slug: dog.slug || `dog-${dog.id}`,
-                description: dog.dog_profiler_data?.description,
-                special_characteristic: dog.dog_profiler_data?.unique_quirk,
-                quality_score: dog.dog_profiler_data?.quality_score,
-                created_at: dog.created_at,
-              }}
-              isStacked={!isActive}
-            />
+            <SwipeCard dog={dog} isStacked={!isActive} />
           </motion.div>
         );
       })}

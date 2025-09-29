@@ -1,7 +1,61 @@
-// Simple cache implementation for server-side request deduplication
-// Since we're having issues with React.cache, we'll use a simple identity function
-// Next.js will handle ISR caching with the 'next' option in fetch
-const cache = (fn) => fn;
+// Simple in-memory cache implementation for server-side request deduplication
+// Uses TTL-based cache with 5 minute expiration
+const cacheMap = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+// Counter to ensure unique IDs for anonymous functions
+let functionCounter = 0;
+const functionIds = new WeakMap();
+
+// Function to clear cache for testing purposes
+export const clearCache = () => {
+  cacheMap.clear();
+  // Reset function counter to ensure clean state between tests
+  functionCounter = 0;
+};
+
+const cache = (fn) => {
+  // In test environment, bypass caching entirely
+  if (process.env.NODE_ENV === "test") {
+    return fn;
+  }
+
+  // Assign a unique ID to each function if it doesn't have one
+  if (!functionIds.has(fn)) {
+    functionIds.set(fn, functionCounter++);
+  }
+  const functionId = functionIds.get(fn);
+
+  return async (...args) => {
+    // Create cache key from function ID and arguments
+    const key = `fn_${functionId}_${JSON.stringify(args)}`;
+
+    // Check if we have a cached result
+    const cached = cacheMap.get(key);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.data;
+    }
+
+    // Execute the function and cache the result
+    const result = await fn(...args);
+    cacheMap.set(key, {
+      data: result,
+      timestamp: Date.now(),
+    });
+
+    // Clean up old entries periodically (every 100 requests)
+    if (cacheMap.size > 100) {
+      const now = Date.now();
+      for (const [k, v] of cacheMap.entries()) {
+        if (now - v.timestamp > CACHE_TTL) {
+          cacheMap.delete(k);
+        }
+      }
+    }
+
+    return result;
+  };
+};
 
 // Use internal URL for server-side requests in development
 const API_URL =
@@ -319,7 +373,7 @@ export const getHomePageData = cache(async () => {
     // Fetch all data in parallel for maximum performance
     const [statistics, recentDogs, diverseDogs] = await Promise.all([
       getStatistics(),
-      getAnimalsByCuration("recent_with_fallback", 4),
+      getAnimalsByCuration("recent", 8), // Changed to 'recent' for last 14 days, and 8 dogs for mobile
       getAnimalsByCuration("diverse", 4),
     ]);
 
