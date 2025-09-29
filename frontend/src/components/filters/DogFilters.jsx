@@ -119,6 +119,7 @@ export default function DogFilters({
     let count = 0;
     if (filters.age && filters.age !== "All") count++;
     if (filters.breed && filters.breed.trim() !== "") count++;
+    if (filters.sex && filters.sex !== "Any") count++;
     if (showShipsToFilter && filters.shipsTo && filters.shipsTo !== "All")
       count++;
     return count;

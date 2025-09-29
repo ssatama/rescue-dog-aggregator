@@ -364,7 +364,7 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
                   // "All" is active when BOTH filters are cleared
                   isActive =
                     (!filters.sexFilter || filters.sexFilter === "Any") &&
-                    (!filters.ageFilter || filters.ageFilter === "Any age");
+                    (!filters.ageFilter || filters.ageFilter === "All");
                 } else if (chip.type === "gender") {
                   isActive = filters.sexFilter?.toLowerCase() === chip.value;
                 } else if (chip.type === "age") {
@@ -382,7 +382,7 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
                           // Use batch update to avoid multiple fetches
                           onFilterChange({
                             sexFilter: "Any",
-                            ageFilter: "Any age",
+                            ageFilter: "All",
                           });
                         }
                       } else {

@@ -188,20 +188,25 @@ export default function OrganizationDetailClient({ params = {} }) {
       if (!organizationSlug) return;
 
       try {
-        setLoading(true);
+        const isInitialLoad = !organization;
+        if (isInitialLoad) {
+          setLoading(true);
+        }
         setError(null);
 
-        // Fetch organization details
-        const orgData = await getOrganizationBySlug(organizationSlug);
-        setOrganization(orgData);
-        setTotalDogs(orgData.total_dogs || 0);
+        // Fetch organization details (only on initial load)
+        if (isInitialLoad) {
+          const orgData = await getOrganizationBySlug(organizationSlug);
+          setOrganization(orgData);
+          setTotalDogs(orgData.total_dogs || 0);
 
-        // Track organization page view
-        if (orgData?.slug) {
-          try {
-            trackOrgPageView(orgData.slug, orgData.total_dogs || 0);
-          } catch (error) {
-            console.error("Failed to track organization page view:", error);
+          // Track organization page view
+          if (orgData?.slug) {
+            try {
+              trackOrgPageView(orgData.slug, orgData.total_dogs || 0);
+            } catch (error) {
+              console.error("Failed to track organization page view:", error);
+            }
           }
         }
 
@@ -220,11 +225,17 @@ export default function OrganizationDetailClient({ params = {} }) {
           apiParams.sex = filters.sex;
         }
 
-        const dogsData = await getOrganizationDogs(orgData.id, apiParams);
-        setDogs(dogsData);
-        setHasMore(dogsData.length === limit);
-        setPage(1);
-        setLoading(false);
+        const orgId = organization?.id;
+        if (orgId) {
+          const dogsData = await getOrganizationDogs(orgId, apiParams);
+          setDogs(dogsData);
+          setHasMore(dogsData.length === limit);
+          setPage(1);
+        }
+        
+        if (isInitialLoad) {
+          setLoading(false);
+        }
       } catch (err) {
         reportError("Error fetching organization data", {
           error: err.message,
@@ -236,7 +247,7 @@ export default function OrganizationDetailClient({ params = {} }) {
     };
 
     fetchData();
-  }, [organizationSlug, filters]);
+  }, [organizationSlug, filters, organization]);
 
   // Reset pagination when filters change
   useEffect(() => {

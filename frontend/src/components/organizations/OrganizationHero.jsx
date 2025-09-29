@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import StyledLink from "../ui/StyledLink";
@@ -47,6 +47,11 @@ export default function OrganizationHero({ organization }) {
   const totalDogs = organization.total_dogs || 0;
   const countriesServed = organization.ships_to?.length || 0;
   const newThisWeek = organization.new_this_week || 0;
+
+  // State for expandable description on mobile
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const descriptionLength = organization.description?.length || 0;
+  const shouldShowReadMore = descriptionLength > 200; // Show "Read more" if description is longer than 200 chars
 
   return (
     <div
@@ -170,9 +175,32 @@ export default function OrganizationHero({ organization }) {
 
                 {/* Organization Description */}
                 {organization.description && (
-                  <p className="mt-4 text-gray-700 dark:text-gray-300 leading-relaxed max-w-2xl">
-                    {organization.description}
-                  </p>
+                  <div className="mt-4 max-w-2xl">
+                    {/* Desktop: Always show full description */}
+                    <p className="hidden sm:block text-gray-700 dark:text-gray-300 leading-relaxed">
+                      {organization.description}
+                    </p>
+
+                    {/* Mobile: Expandable description for long text */}
+                    <div className="sm:hidden">
+                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                        {shouldShowReadMore && !isDescriptionExpanded
+                          ? `${organization.description.substring(0, 200)}...`
+                          : organization.description}
+                      </p>
+                      {shouldShowReadMore && (
+                        <button
+                          onClick={() =>
+                            setIsDescriptionExpanded(!isDescriptionExpanded)
+                          }
+                          className="mt-2 text-sm font-medium text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors"
+                          aria-expanded={isDescriptionExpanded}
+                        >
+                          {isDescriptionExpanded ? "Show less" : "Read more"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

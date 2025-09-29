@@ -85,6 +85,14 @@ const OrganizationDogsViewportWrapper: React.FC<
     [router],
   );
 
+  // Map organization filter keys to mobile catalog keys
+  const mappedFilters = React.useMemo(() => {
+    return {
+      sexFilter: filters.sex || "Any",
+      ageFilter: filters.age || "Any age",
+    };
+  }, [filters.sex, filters.age]);
+
   // During SSR or initial mount, show responsive grid that works for all viewports
   // This prevents hydration mismatch and ensures mobile users see content immediately
   if (!mounted) {
@@ -119,14 +127,6 @@ const OrganizationDogsViewportWrapper: React.FC<
   }
 
   // MOBILE/TABLET: Use PremiumMobileCatalog with grid overlay cards
-  // Map organization filter keys to mobile catalog keys
-  const mappedFilters = React.useMemo(() => {
-    return {
-      sexFilter: filters.sex || "Any",
-      ageFilter: filters.age || "Any age",
-    };
-  }, [filters.sex, filters.age]);
-
   return (
     <MobileCatalogErrorBoundary>
       <PremiumMobileCatalog

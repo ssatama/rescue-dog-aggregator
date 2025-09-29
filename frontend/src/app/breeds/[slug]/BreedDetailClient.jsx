@@ -172,7 +172,12 @@ export default function BreedDetailClient({
       }
       abortControllerRef.current = new AbortController();
 
-      setLoading(true);
+      // Only show loading spinner on initial page load (when dogs array is empty)
+      // Keep current dogs visible during filter changes to prevent flashing
+      const isInitialLoad = dogs.length === 0;
+      if (isInitialLoad) {
+        setLoading(true);
+      }
       setError(null);
 
       try {
@@ -199,6 +204,9 @@ export default function BreedDetailClient({
           setHasMore(newDogs.length === ITEMS_PER_PAGE);
           setFilterCounts(counts);
           setPage(1);
+          if (isInitialLoad) {
+            setLoading(false);
+          }
         });
       } catch (err) {
         // Ignore abort errors
@@ -209,14 +217,13 @@ export default function BreedDetailClient({
         }
         if (requestId === requestIdRef.current) {
           setError("Could not load dogs. Please try again.");
-        }
-      } finally {
-        if (requestId === requestIdRef.current) {
-          setLoading(false);
+          if (isInitialLoad) {
+            setLoading(false);
+          }
         }
       }
     },
-    [buildAPIParams],
+    [buildAPIParams, dogs.length],
   );
 
   // Debounced version of fetchDogsWithFilters
@@ -228,9 +235,8 @@ export default function BreedDetailClient({
       const newFilters = { ...filters, [filterKey]: value };
       updateURL(newFilters);
 
-      // Reset and reload with new filters
+      // Reset pagination state but keep existing dogs to prevent flash
       startTransition(() => {
-        setDogs([]);
         setPage(1);
         setHasMore(true);
       });
@@ -242,8 +248,27 @@ export default function BreedDetailClient({
 
   // Immediate filter change handler for mobile drawer (no debouncing)
   const handleMobileFilterChange = useCallback(
-    (filterKey, value) => {
-      const newFilters = { ...filters, [filterKey]: value };
+    (filterKeyOrBatch, value) => {
+      let newFilters;
+      
+      // Handle batch updates (e.g., from "All" button)
+      if (typeof filterKeyOrBatch === "object") {
+        // Map PremiumMobileCatalog keys to BreedDetailClient keys
+        const mappedBatch = {};
+        Object.entries(filterKeyOrBatch).forEach(([key, val]) => {
+          if (key === "sexFilter") {
+            mappedBatch.sexFilter = val;
+          } else if (key === "ageFilter") {
+            mappedBatch.ageFilter = val;
+          } else {
+            mappedBatch[key] = val;
+          }
+        });
+        newFilters = { ...filters, ...mappedBatch };
+      } else {
+        // Single filter update
+        newFilters = { ...filters, [filterKeyOrBatch]: value };
+      }
 
       // Update URL immediately without debounce
       const params = new URLSearchParams();
@@ -358,7 +383,11 @@ export default function BreedDetailClient({
   // Calculate active filter count
   const activeFilterCount = Object.entries(filters).filter(
     ([key, value]) =>
-      value && !value.includes("Any") && value !== "any" && value !== "",
+      value &&
+      !value.includes("Any") &&
+      !value.includes("All") &&
+      value !== "any" &&
+      value !== "",
   ).length;
 
   const breadcrumbItems = [
@@ -469,7 +498,7 @@ export default function BreedDetailClient({
                 onLoadMore={loadMoreDogs}
                 hasMore={hasMore}
                 filters={filters}
-                onFilterChange={handleFilterChange}
+                onFilterChange={handleMobileFilterChange}
                 onOpenFilter={() => setIsFilterDrawerOpen(true)}
               />
             </div>
