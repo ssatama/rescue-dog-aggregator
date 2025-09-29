@@ -55,10 +55,7 @@ export function SwipeStack({ dogs, currentIndex }: SwipeStackProps) {
               damping: 25,
             }}
           >
-            <SwipeCard
-              dog={dog}
-              isStacked={!isActive}
-            />
+            <SwipeCard dog={dog} isStacked={!isActive} />
           </motion.div>
         );
       })}

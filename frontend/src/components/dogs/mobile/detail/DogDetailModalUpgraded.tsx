@@ -748,17 +748,20 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
                             Cats
                           </span>
                         </div>
-                        {dog.dog_profiler_data.good_with_children !== undefined && (
+                        {dog.dog_profiler_data.good_with_children !==
+                          undefined && (
                           <div className="flex items-center gap-2">
                             <div
                               className={cn(
                                 "w-5 h-5 rounded-full flex items-center justify-center",
-                                dog.dog_profiler_data.good_with_children === "yes"
+                                dog.dog_profiler_data.good_with_children ===
+                                  "yes"
                                   ? "bg-green-100 dark:bg-green-900/30"
                                   : "bg-gray-100 dark:bg-gray-800",
                               )}
                             >
-                              {dog.dog_profiler_data.good_with_children === "yes" ? (
+                              {dog.dog_profiler_data.good_with_children ===
+                              "yes" ? (
                                 <div className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full" />
                               ) : (
                                 <div className="w-3 h-0.5 bg-gray-400 dark:bg-gray-600" />

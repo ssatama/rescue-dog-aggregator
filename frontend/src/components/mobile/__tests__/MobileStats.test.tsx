@@ -29,9 +29,11 @@ describe("MobileStats", () => {
     it("has flex layout with 3 columns", () => {
       const { container } = render(<MobileStats stats={mockStats} />);
 
-      const flexContainer = container.querySelector(".flex.items-center.justify-around");
+      const flexContainer = container.querySelector(
+        ".flex.items-center.justify-around",
+      );
       expect(flexContainer).toBeInTheDocument();
-      
+
       const statItems = container.querySelectorAll("[data-testid^='stat-']");
       expect(statItems).toHaveLength(3);
     });

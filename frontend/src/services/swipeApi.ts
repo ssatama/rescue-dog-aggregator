@@ -60,7 +60,7 @@ export async function fetchSwipeDogs(
     age: dog.age,
     age_min_months: dog.age_min_months,
     age_max_months: dog.age_max_months,
-    image: dog.image_url || dog.image,
+    image: dog.image_url || dog.primary_image_url || dog.main_image || dog.image,
     organization:
       dog.organization_name ||
       (typeof dog.organization === "object"

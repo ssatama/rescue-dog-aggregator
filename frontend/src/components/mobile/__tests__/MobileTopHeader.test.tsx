@@ -97,7 +97,7 @@ describe("MobileTopHeader", () => {
     test("logo and text are in a flex container", () => {
       const { container } = render(<MobileTopHeader />);
 
-      const flexContainer = container.querySelector('.flex.items-center.gap-2');
+      const flexContainer = container.querySelector(".flex.items-center.gap-2");
       expect(flexContainer).toBeInTheDocument();
     });
   });
@@ -138,7 +138,7 @@ describe("MobileTopHeader", () => {
 
       const heading = screen.getByText("Rescue Dog Aggregator");
       expect(heading.className).toMatch(/dark:text-zinc-50/);
-      
+
       const tagline = screen.getByText("Your gateway to European rescue dogs");
       expect(tagline.className).toMatch(/dark:text-zinc-400/);
     });

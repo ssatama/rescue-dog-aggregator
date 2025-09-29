@@ -47,11 +47,11 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
   );
 
   // Access enriched LLM data
-  const profileData = dog.dogProfilerData || {};
+  const profileData = dog.dog_profiler_data || {};
   const tagline = profileData.tagline || "";
-  const uniqueQuirk = profileData.uniqueQuirk || "";
-  const personalityTraits = profileData.personalityTraits || [];
-  const favoriteActivities = profileData.favoriteActivities || [];
+  const uniqueQuirk = profileData.unique_quirk || "";
+  const personalityTraits = profileData.personality_traits || [];
+  const favoriteActivities = profileData.favorite_activities || [];
 
   // Get age category
   const ageCategory = getAgeCategory({
@@ -113,7 +113,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
         data-testid="image-container"
       >
         <FallbackImage
-          src={dog.image || "/placeholder_dog.svg"}
+          src={dog.primary_image_url || dog.main_image || "/placeholder_dog.svg"}
           alt={`${dog.name} - Available for adoption`}
           fill
           className="object-cover md:object-contain"
@@ -159,7 +159,7 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
         )}
 
         {/* Energy Level Indicator - Visual bars */}
-        {dog.dogProfilerData?.engagement_score && (
+        {dog.dog_profiler_data?.energy_level && (
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-600 dark:text-gray-400">
               Energy:
@@ -169,7 +169,10 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
                 <div
                   key={level}
                   className={`h-2 w-6 rounded-full ${
-                    level <= (dog.dogProfilerData?.engagement_score || 0) / 20
+                    level <= (dog.dog_profiler_data?.energy_level === "low" ? 1 :
+                             dog.dog_profiler_data?.energy_level === "medium" ? 3 :
+                             dog.dog_profiler_data?.energy_level === "high" ? 4 :
+                             dog.dog_profiler_data?.energy_level === "very_high" ? 5 : 0)
                       ? "bg-orange-500"
                       : "bg-gray-200 dark:bg-gray-700"
                   }`}

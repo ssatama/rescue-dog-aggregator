@@ -71,8 +71,7 @@ export default function HeroSection({
               className="text-body text-muted-foreground mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed"
             >
               Browse available dogs from trusted rescue organizations across
-              Europe & UK. Every dog deserves a second chance at
-              happiness.
+              Europe & UK. Every dog deserves a second chance at happiness.
             </p>
 
             {/* CTA Buttons */}

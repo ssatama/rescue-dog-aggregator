@@ -20,9 +20,9 @@ const mockDog = {
   organization_name: "Happy Paws Rescue",
   location: "Berlin, Germany",
   adoption_url: "https://example.com/adopt/buddy",
-  image_url: "https://example.com/buddy1.jpg",
+  primary_image_url: "https://example.com/buddy1.jpg",
   slug: "buddy-golden-mix",
-  additional_images: [
+  photos: [
     "https://example.com/buddy2.jpg",
     "https://example.com/buddy3.jpg",
   ],
@@ -51,9 +51,9 @@ const mockDogWithoutLLMData = {
   organization_name: "Pet Rescue",
   location: "Munich, Germany",
   adoption_url: "https://example.com/adopt/max",
-  image_url: "https://example.com/max.jpg",
+  primary_image_url: "https://example.com/max.jpg",
   slug: "max-german-shepherd",
-  additional_images: [],
+  photos: [],
 };
 
 describe("SwipeDetails", () => {

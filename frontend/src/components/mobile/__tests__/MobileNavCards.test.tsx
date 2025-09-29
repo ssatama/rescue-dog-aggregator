@@ -41,11 +41,11 @@ describe("MobileNavCards", () => {
 
     it("NEW badge has proper styling", () => {
       const { container } = render(<MobileNavCards />);
-      
+
       const newBadge = screen.getByText("NEW");
       expect(newBadge).toHaveClass(
         "absolute",
-        "top-2", 
+        "top-2",
         "right-2",
         "px-2",
         "py-0.5",
@@ -55,7 +55,7 @@ describe("MobileNavCards", () => {
         "text-white",
         "text-xs",
         "font-bold",
-        "rounded-full"
+        "rounded-full",
       );
     });
 
@@ -70,19 +70,19 @@ describe("MobileNavCards", () => {
     it("is hidden on desktop viewports (md and above)", () => {
       // This component is now always visible - update test to check for mobile-optimized container
       const { container } = render(<MobileNavCards />);
-      
+
       const navCards = container.firstChild as HTMLElement;
       expect(navCards).toHaveClass("px-4", "py-6");
     });
 
     it("has uniform white/zinc styling for all cards", () => {
       render(<MobileNavCards />);
-      
+
       const browseCard = screen.getByLabelText("Navigate to Browse");
       const swipeCard = screen.getByLabelText("Navigate to Swipe");
       const breedsCard = screen.getByLabelText("Navigate to Breeds");
       const favoritesCard = screen.getByLabelText("Navigate to Favorites");
-      
+
       // All cards should have uniform white/zinc backgrounds
       [browseCard, swipeCard, breedsCard, favoritesCard].forEach((card) => {
         expect(card).toHaveClass("bg-white", "dark:bg-zinc-800");
@@ -91,19 +91,19 @@ describe("MobileNavCards", () => {
 
     it("displays rose-colored icon chips for each card", () => {
       const { container } = render(<MobileNavCards />);
-      
+
       // Updated to check for the actual icon containers with their specific colors
       const iconContainers = container.querySelectorAll("div.rounded-xl");
       expect(iconContainers).toHaveLength(4);
-      
+
       // Check that each has the expected color classes
       const expectedColors = [
         "bg-pink-100",
-        "bg-red-100", 
+        "bg-red-100",
         "bg-purple-100",
-        "bg-orange-100"
+        "bg-orange-100",
       ];
-      
+
       iconContainers.forEach((container, index) => {
         expect(container).toHaveClass("w-12", "h-12", "rounded-xl");
         // Check for the light mode color
@@ -242,7 +242,11 @@ describe("MobileNavCards", () => {
       render(<MobileNavCards />);
       const cards = screen.getAllByRole("button");
       cards.forEach((card) => {
-        expect(card).toHaveClass("border", "border-zinc-100", "dark:border-zinc-700");
+        expect(card).toHaveClass(
+          "border",
+          "border-zinc-100",
+          "dark:border-zinc-700",
+        );
       });
     });
 
@@ -259,7 +263,11 @@ describe("MobileNavCards", () => {
       render(<MobileNavCards />);
       const cards = screen.getAllByRole("button");
       cards.forEach((card) => {
-        expect(card).toHaveClass("hover:shadow-md", "hover:scale-[1.02]", "active:scale-[0.98]");
+        expect(card).toHaveClass(
+          "hover:shadow-md",
+          "hover:scale-[1.02]",
+          "active:scale-[0.98]",
+        );
       });
     });
   });

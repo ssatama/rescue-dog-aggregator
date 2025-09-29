@@ -26,13 +26,25 @@ jest.mock("../MobileStats", () => ({
     <div data-testid="mobile-stats">
       {stats?.map((stat: any) => {
         if (stat.label === "Dogs") {
-          return <span key="dogs" data-testid="dogs-count">{stat.value}</span>;
+          return (
+            <span key="dogs" data-testid="dogs-count">
+              {stat.value}
+            </span>
+          );
         }
         if (stat.label === "Rescues") {
-          return <span key="rescues" data-testid="rescues-count">{stat.value}</span>;
+          return (
+            <span key="rescues" data-testid="rescues-count">
+              {stat.value}
+            </span>
+          );
         }
         if (stat.label === "Breeds") {
-          return <span key="breeds" data-testid="breeds-count">{stat.value}</span>;
+          return (
+            <span key="breeds" data-testid="breeds-count">
+              {stat.value}
+            </span>
+          );
         }
         return null;
       })}
@@ -236,24 +248,24 @@ describe("MobileHomePage", () => {
             slug: "golden-retriever",
             count: 15,
             description: "Friendly dogs",
-            image_url: "/images/golden.jpg"
+            image_url: "/images/golden.jpg",
           },
           {
             name: "Labrador",
             slug: "labrador",
             count: 20,
             description: "Loyal companions",
-            image_url: "/images/lab.jpg"
+            image_url: "/images/lab.jpg",
           },
           {
             name: "Beagle",
             slug: "beagle",
             count: 8,
             description: "Small hounds",
-            image_url: "/images/beagle.jpg"
-          }
-        ]
-      }
+            image_url: "/images/beagle.jpg",
+          },
+        ],
+      },
     };
 
     render(<MobileHomePage initialData={dataWithBreedStats} />);
@@ -261,7 +273,7 @@ describe("MobileHomePage", () => {
     // MobileBreedSpotlight should receive breeds from breedStats
     const breedSpotlight = screen.getByTestId("mobile-breed-spotlight");
     expect(breedSpotlight).toBeInTheDocument();
-    
+
     // Should show one of the breeds (component randomly selects 3)
     const breedName = screen.queryByTestId("breed-name");
     if (breedName) {

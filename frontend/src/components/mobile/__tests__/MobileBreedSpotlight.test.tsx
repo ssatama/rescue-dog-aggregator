@@ -1,5 +1,11 @@
 import React from "react";
-import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  act,
+  waitFor,
+} from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { MobileBreedSpotlight } from "../MobileBreedSpotlight";
 import { useRouter } from "next/navigation";
@@ -26,7 +32,15 @@ jest.mock("lucide-react", () => ({
 // Mock framer-motion
 jest.mock("framer-motion", () => ({
   motion: {
-    div: ({ children, className, drag, dragConstraints, dragElastic, onDragEnd, ...props }: any) => (
+    div: ({
+      children,
+      className,
+      drag,
+      dragConstraints,
+      dragElastic,
+      onDragEnd,
+      ...props
+    }: any) => (
       <div className={className} {...props}>
         {children}
       </div>
@@ -243,7 +257,7 @@ describe("MobileBreedSpotlight", () => {
     const badge = screen.getByText("20 available");
     expect(badge).toHaveClass(
       "bg-green-100",
-      "dark:bg-green-900/30", 
+      "dark:bg-green-900/30",
       "text-green-700",
       "dark:text-green-400",
     );

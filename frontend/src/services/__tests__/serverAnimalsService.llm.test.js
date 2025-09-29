@@ -5,6 +5,7 @@
 import {
   getEnhancedDogContent,
   getAnimalBySlug,
+  clearCache,
 } from "../serverAnimalsService";
 
 // Mock fetch globally
@@ -18,6 +19,7 @@ jest.mock("react", () => ({
 describe("getEnhancedDogContent", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    clearCache();
     global.fetch.mockReset();
   });
 

@@ -19,17 +19,17 @@ describe("SwipeCard", () => {
     name: "Buddy",
     breed: "Golden Retriever",
     age: "2 years",
-    image: "https://example.com/buddy.jpg",
+    primary_image_url: "https://example.com/buddy.jpg",
     organization: "Happy Paws Rescue",
     location: "San Francisco, CA",
     slug: "buddy-golden",
     description: "A friendly and energetic companion",
-    dogProfilerData: {
+    dog_profiler_data: {
       tagline: "Buddy: Your next adventure companion!",
-      uniqueQuirk: "Loves to play fetch for hours",
-      personalityTraits: ["Playful", "Loyal", "Gentle"],
-      favoriteActivities: ["fetch", "swimming"],
-      qualityScore: 90,
+      unique_quirk: "Loves to play fetch for hours",
+      personality_traits: ["Playful", "Loyal", "Gentle"],
+      favorite_activities: ["fetch", "swimming"],
+      quality_score: 90,
     },
     created_at: new Date().toISOString(),
   };
@@ -107,7 +107,8 @@ describe("SwipeCard", () => {
   it("should show placeholder when no image provided", () => {
     const dogWithoutImage = {
       ...mockDog,
-      image: undefined,
+      primary_image_url: undefined,
+      main_image: undefined,
     };
 
     renderWithProvider(<SwipeCard dog={dogWithoutImage} />);

@@ -10,6 +10,7 @@ import { X, Heart, Share2 } from "lucide-react";
 import { getPersonalityTraitColor } from "../../utils/personalityColors";
 import ShareButton from "../ui/ShareButton";
 import { getAgeCategory } from "../../utils/dogHelpers";
+import { getAllImages, safeToNumber } from "../../utils/dogImageHelpers";
 import { type Dog } from "../../types/dog";
 
 interface SwipeDetailsProps {
@@ -43,7 +44,10 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
   }, [isOpen, dog.id, dog.name]);
 
   const handleSave = () => {
-    toggleFavorite(Number(dog.id));
+    const dogId = safeToNumber(dog.id);
+    if (dogId !== null) {
+      toggleFavorite(dogId);
+    }
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -70,8 +74,9 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
 
   if (!isOpen) return null;
 
-  const allImages = [dog.image_url, ...(dog.additional_images || [])];
-  const isAlreadyFavorite = isFavorited(Number(dog.id));
+  const allImages = getAllImages(dog);
+  const dogId = safeToNumber(dog.id);
+  const isAlreadyFavorite = dogId !== null ? isFavorited(dogId) : false;
   const profilerData = dog.dog_profiler_data;
 
   // Get age category
@@ -122,13 +127,13 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
   );
 
   const getGoodWithIcon = (value: boolean | string | undefined) => {
-    if (value === true || value === 'true') return "✓";
+    if (value === true || value === "true") return "✓";
     if (value === "maybe" || value === "?") return "?";
     return "✗";
   };
 
   const getGoodWithClass = (value: boolean | string | undefined) => {
-    if (value === true || value === 'true') {
+    if (value === true || value === "true") {
       return "bg-green-100 dark:bg-green-900/30";
     }
     if (value === "maybe" || value === "?") {
@@ -297,7 +302,9 @@ export const SwipeDetails: React.FC<SwipeDetailsProps> = ({
                               <span className="text-2xl">👶</span>
                               <span className="text-sm font-medium dark:text-gray-200">
                                 Kids{" "}
-                                {getGoodWithIcon(profilerData.good_with_children)}
+                                {getGoodWithIcon(
+                                  profilerData.good_with_children,
+                                )}
                               </span>
                             </div>
                           </div>

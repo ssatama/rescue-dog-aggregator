@@ -107,6 +107,7 @@ const MobileBottomNav: React.FC = () => {
           // Show with slight delay when scrolling up
           showTimeout.current = setTimeout(() => {
             setIsVisible(true);
+            showTimeout.current = null; // Clear ref after execution
           }, SHOW_DELAY);
         }
       }
@@ -120,6 +121,7 @@ const MobileBottomNav: React.FC = () => {
       if (currentScrollY > TOP_Y_SHOW && !isVisibleRef.current) {
         idleShowTimeout.current = setTimeout(() => {
           setIsVisible(true);
+          idleShowTimeout.current = null; // Clear ref after execution
         }, IDLE_SHOW_DELAY);
       }
 

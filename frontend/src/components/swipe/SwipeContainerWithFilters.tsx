@@ -20,6 +20,7 @@ import useSwipeFilters from "../../hooks/useSwipeFilters";
 import type { SwipeFilters as Filters } from "../../hooks/useSwipeFilters";
 import { safeStorage } from "../../utils/safeStorage";
 import { useTheme } from "../providers/ThemeProvider";
+import { safeToNumber } from "../../utils/dogImageHelpers";
 import { type Dog } from "../../types/dog";
 
 // Constants
@@ -98,8 +99,12 @@ export function SwipeContainerWithFilters({
 
     for (let i = 1; i <= preloadCount; i++) {
       const nextIndex = currentIndex + i;
-      if (nextIndex < dogs.length && dogs[nextIndex]?.image) {
-        imagesToPreload.push(dogs[nextIndex].image);
+      const nextDog = dogs[nextIndex];
+      if (nextDog) {
+        const imageUrl = nextDog.primary_image_url || nextDog.main_image;
+        if (imageUrl) {
+          imagesToPreload.push(imageUrl);
+        }
       }
     }
 
@@ -152,7 +157,10 @@ export function SwipeContainerWithFilters({
           );
 
           // Filter out only dogs that have been swiped
-          const newDogs = fetchedDogs.filter((dog) => !swipedIds.has(Number(dog.id)));
+          const newDogs = fetchedDogs.filter((dog) => {
+            const dogId = safeToNumber(dog.id);
+            return dogId !== null && !swipedIds.has(dogId);
+          });
 
           setDogs(newDogs);
           // Preserve current position or clamp if needed when filters change
@@ -258,7 +266,8 @@ export function SwipeContainerWithFilters({
                   storedSwipedIds ? JSON.parse(storedSwipedIds) : [],
                 );
                 const newDogs = fetchedDogs.filter((dog) => {
-                  return !swipedIds.has(Number(dog.id));
+                  const dogId = safeToNumber(dog.id);
+                  return dogId !== null && !swipedIds.has(dogId);
                 });
 
                 if (newDogs.length > 0) {
@@ -301,10 +310,15 @@ export function SwipeContainerWithFilters({
 
       // Track this dog as swiped AFTER we move to next index
       // to avoid filtering issues
-      const currentDogId = currentDog.id;
+      const currentDogId = safeToNumber(currentDog.id);
+
+      if (!currentDogId) {
+        console.warn("Invalid dog ID:", currentDog.id);
+        return;
+      }
 
       if (direction === "right") {
-        await addFavorite(Number(currentDog.id), currentDog.name);
+        await addFavorite(currentDogId, currentDog.name);
         Sentry.addBreadcrumb({
           message: "swipe.card.favorited",
           category: "swipe",
@@ -332,13 +346,16 @@ export function SwipeContainerWithFilters({
       // This ensures we track the correct dog even if a re-render happens
       const dogToTrack = dogs[currentIndex];
       if (dogToTrack?.id) {
-        setSwipedDogIds((prev) => {
-          const newSet = new Set(prev);
-          newSet.add(Number(dogToTrack.id));
-          // Save to storage safely
-          safeStorage.stringify("swipedDogIds", Array.from(newSet));
-          return newSet;
-        });
+        const trackId = safeToNumber(dogToTrack.id);
+        if (trackId !== null) {
+          setSwipedDogIds((prev) => {
+            const newSet = new Set(prev);
+            newSet.add(trackId);
+            // Save to storage safely
+            safeStorage.stringify("swipedDogIds", Array.from(newSet));
+            return newSet;
+          });
+        }
       }
 
       // Check if we need to load more dogs
@@ -371,7 +388,8 @@ export function SwipeContainerWithFilters({
                   if (idx === 0 && currentViewingIndex === prevDogs.length) {
                     return true;
                   }
-                  return !swipedIds.has(Number(dog.id));
+                  const dogId = safeToNumber(dog.id);
+                  return dogId !== null && !swipedIds.has(dogId);
                 });
 
                 if (newDogs.length > 0) {

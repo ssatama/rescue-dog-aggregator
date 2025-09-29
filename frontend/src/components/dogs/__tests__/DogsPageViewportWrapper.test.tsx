@@ -87,7 +87,11 @@ const mockDogs = [
       slug: "happy-tails",
     },
     personality_traits: ["Playful", "Friendly"],
-    dog_profiler_data: { personality: ["Playful", "Friendly"] },
+    dog_profiler_data: {
+      personality_traits: ["Playful", "Friendly"],
+      energy_level: "medium" as const,
+      trainability: "easy" as const
+    },
     properties: { location_country: "UK" },
   },
   {
@@ -108,7 +112,11 @@ const mockDogs = [
       slug: "happy-tails",
     },
     personality_traits: ["Gentle", "Calm"],
-    dog_profiler_data: { personality: ["Gentle", "Calm"] },
+    dog_profiler_data: {
+      personality_traits: ["Gentle", "Calm"],
+      energy_level: "low" as const,
+      trainability: "moderate" as const
+    },
     properties: { location_country: "UK" },
   },
 ];

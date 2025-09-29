@@ -6,7 +6,7 @@ import logo from "../../../public/logo.jpeg";
 
 /**
  * MobileTopHeader Component
- * 
+ *
  * Premium mobile header with clean typography and spacing
  * - Main title with subtitle
  * - Zinc color palette for sophistication
@@ -28,7 +28,7 @@ export default function MobileTopHeader() {
           height={40}
           className="rounded-lg object-cover flex-shrink-0"
         />
-        
+
         {/* Text Content */}
         <div className="flex flex-col">
           <h1 className="text-[17px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">

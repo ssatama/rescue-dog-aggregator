@@ -4,7 +4,7 @@ jest.mock("react", () => ({
   cache: (fn) => fn, // Simple pass-through for tests
 }));
 
-import { getAnimals, getAllMetadata } from "../serverAnimalsService";
+import { getAnimals, getAllMetadata, clearCache } from "../serverAnimalsService";
 
 // Mock fetch for testing
 global.fetch = jest.fn();
@@ -12,6 +12,7 @@ global.fetch = jest.fn();
 describe("Server Animals Service", () => {
   beforeEach(() => {
     fetch.mockClear();
+    clearCache();
   });
 
   it("should fetch animals with correct parameters", async () => {

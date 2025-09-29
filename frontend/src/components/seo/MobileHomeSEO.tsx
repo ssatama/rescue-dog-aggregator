@@ -118,7 +118,10 @@ export const MobileHomeSEO: React.FC<MobileHomeSEOProps> = ({
       <title>{title}</title>
       <meta name="title" content={title} />
       <meta name="description" content={description} />
-      <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+      <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=5"
+      />
       <meta name="robots" content="index, follow" />
       <meta name="language" content="English" />
       <meta name="author" content="Rescue Dog Aggregator" />
@@ -158,7 +161,11 @@ export const MobileHomeSEO: React.FC<MobileHomeSEOProps> = ({
       <link rel="canonical" href={url} />
 
       {/* Alternate for mobile */}
-      <link rel="alternate" media="only screen and (max-width: 640px)" href={`${url}/m`} />
+      <link
+        rel="alternate"
+        media="only screen and (max-width: 640px)"
+        href={`${url}/m`}
+      />
 
       {/* JSON-LD Structured Data */}
       <script

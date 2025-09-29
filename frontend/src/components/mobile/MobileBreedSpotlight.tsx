@@ -74,7 +74,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
   const handleDragEnd = useCallback(
     (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
       setIsPaused(true);
-      
+
       if (info.offset.x < -CAROUSEL_DRAG_THRESHOLD) {
         setCurrentIndex((prev) => (prev + 1) % breeds.length);
       } else if (info.offset.x > CAROUSEL_DRAG_THRESHOLD) {

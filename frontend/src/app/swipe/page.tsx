@@ -53,19 +53,14 @@ export default function SwipePage() {
     organization_name: dog.organization || "",
     location: dog.location || "",
     adoption_url: dog.adoption_url || "",
-    image_url: dog.image || "",
-    additional_images: dog.additional_images || [],
-    dog_profiler_data: dog.description
+    image_url: dog.primary_image_url || dog.main_image || "",
+    additional_images: dog.photos || [],
+    dog_profiler_data: dog.dog_profiler_data || (dog.description
       ? {
           description: dog.description,
-          personality_traits: dog.traits || [],
-          energy_level: dog.energy_level,
-          good_with_dogs: dog.good_with_dogs,
-          good_with_cats: dog.good_with_cats,
-          good_with_kids: dog.good_with_kids,
-          unique_quirk: dog.special_characteristic,
+          personality_traits: dog.personality_traits || [],
         }
-      : undefined,
+      : undefined),
   });
 
   const fetchDogsWithFilters = async (queryString: string): Promise<Dog[]> => {

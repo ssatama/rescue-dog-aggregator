@@ -1,8 +1,26 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+} from "react";
 import Image from "next/image";
-import { Heart, X, MapPin, Calendar, ChevronDown, ChevronLeft, Filter, Grid3X3, Building2, Dog as DogIcon, Loader2 } from "lucide-react";
+import {
+  Heart,
+  X,
+  MapPin,
+  Calendar,
+  ChevronDown,
+  ChevronLeft,
+  Filter,
+  Grid3X3,
+  Building2,
+  Dog as DogIcon,
+  Loader2,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -11,7 +29,12 @@ import { safeStorage } from "@/utils/safeStorage";
 
 import DogDetailModalUpgraded from "../detail/DogDetailModalUpgraded";
 import { getPersonalityTraitColor } from "@/utils/personalityColors";
-import { formatBreed, getPersonalityTraits, getAgeCategory, formatAge } from "@/utils/dogHelpers";
+import {
+  formatBreed,
+  getPersonalityTraits,
+  getAgeCategory,
+  formatAge,
+} from "@/utils/dogHelpers";
 import { IMAGE_SIZES } from "@/constants/imageSizes";
 import { type Dog } from "@/types/dog";
 import MobileFilterDrawer from "@/components/filters/MobileFilterDrawer";
@@ -437,7 +460,8 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
                     dog={dog}
                     index={index}
                     isFavorite={
-                      isHydrated && favorites.includes(parseInt(String(dog.id), 10))
+                      isHydrated &&
+                      favorites.includes(parseInt(String(dog.id), 10))
                     }
                     onToggleFavorite={handleToggleFavorite}
                     onClick={() => handleDogClick(dog)}

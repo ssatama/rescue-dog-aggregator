@@ -52,10 +52,7 @@ interface MobileHomePageProps {
 }
 
 // Helper function to get random breeds
-const getRandomBreeds = (
-  breedStats: any,
-  count: number = 3
-) => {
+const getRandomBreeds = (breedStats: any, count: number = 3) => {
   if (!breedStats?.breeds?.length) return [];
 
   // Filter breeds with good data
@@ -73,7 +70,7 @@ const getRandomBreeds = (
   const shuffled = [...qualifyingBreeds].sort(() => 0.5 - Math.random());
 
   return shuffled.slice(0, count).map((breed) => ({
-    name: breed.name || breed.breed_name || '',
+    name: breed.name || breed.breed_name || "",
     slug: breed.slug || breed.name?.toLowerCase().replace(/\s+/g, "-"),
     description:
       breed.description ||
@@ -102,11 +99,11 @@ export default function MobileHomePage({ initialData }: MobileHomePageProps) {
   }, [initialData]);
 
   // Format breed count
-  const breedCount = initialData?.statistics?.totalBreeds 
+  const breedCount = initialData?.statistics?.totalBreeds
     ? initialData.statistics.totalBreeds.toString() + "+"
     : initialData?.breedStats?.total_breeds
-    ? initialData.breedStats.total_breeds.toString() + "+"
-    : "50+";
+      ? initialData.breedStats.total_breeds.toString() + "+"
+      : "50+";
 
   return (
     <div
@@ -114,7 +111,7 @@ export default function MobileHomePage({ initialData }: MobileHomePageProps) {
       className="min-h-screen bg-[#FFF4ED] dark:bg-gray-900 pb-16 md:hidden overflow-x-hidden"
     >
       {/* SEO Component */}
-      <MobileHomeSEO 
+      <MobileHomeSEO
         totalDogs={initialData?.statistics?.totalDogs || 0}
         totalOrganizations={initialData?.statistics?.totalOrganizations || 0}
         totalBreeds={uniqueBreedsCount}
@@ -137,9 +134,10 @@ export default function MobileHomePage({ initialData }: MobileHomePageProps) {
                 initialData?.statistics?.totalDogs?.toLocaleString() || "0",
             },
             {
-              label: "Rescues", 
+              label: "Rescues",
               value:
-                initialData?.statistics?.totalOrganizations?.toLocaleString() || "0",
+                initialData?.statistics?.totalOrganizations?.toLocaleString() ||
+                "0",
             },
             { label: "Breeds", value: breedCount },
           ]}
@@ -149,9 +147,7 @@ export default function MobileHomePage({ initialData }: MobileHomePageProps) {
         <MobileBreedSpotlight breeds={randomBreeds} />
 
         {/* Available Now */}
-        <MobileAvailableNow
-          dogs={initialData?.dogs}
-        />
+        <MobileAvailableNow dogs={initialData?.dogs} />
       </main>
 
       {/* Bottom navigation */}

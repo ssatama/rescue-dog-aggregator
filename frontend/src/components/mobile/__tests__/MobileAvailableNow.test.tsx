@@ -248,8 +248,6 @@ describe("MobileAvailableNow", () => {
     expect(screen.getByText("Gentle")).toBeInTheDocument();
   });
 
-
-
   it("handles empty dogs array gracefully", () => {
     render(<MobileAvailableNow dogs={[]} />);
 
@@ -314,7 +312,13 @@ describe("MobileAvailableNow", () => {
     );
     const section = container.firstChild;
 
-    expect(section).toHaveClass("bg-[#FFF4ED]", "dark:bg-gray-900", "px-4", "pb-3", "pt-4");
+    expect(section).toHaveClass(
+      "bg-[#FFF4ED]",
+      "dark:bg-gray-900",
+      "px-4",
+      "pb-3",
+      "pt-4",
+    );
   });
 
   it("displays count of available dogs", () => {

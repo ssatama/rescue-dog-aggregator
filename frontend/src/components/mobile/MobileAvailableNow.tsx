@@ -134,7 +134,7 @@ const DogCard = React.memo<{
   );
 });
 
-DogCard.displayName = 'DogCard';
+DogCard.displayName = "DogCard";
 
 // Skeleton loader component for loading state
 const DogCardSkeleton = () => (
@@ -163,12 +163,15 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
   // Ensure dogs is always an array
   const safeDogs = Array.isArray(dogs) ? dogs : [];
 
-  const handleToggleFavorite = useCallback(async (dogId: string) => {
-    const dog = safeDogs.find((d) => String(d.id) === dogId);
-    if (dog) {
-      await toggleFavorite(parseInt(dogId, 10), dog.name);
-    }
-  }, [safeDogs, toggleFavorite]);
+  const handleToggleFavorite = useCallback(
+    async (dogId: string) => {
+      const dog = safeDogs.find((d) => String(d.id) === dogId);
+      if (dog) {
+        await toggleFavorite(parseInt(dogId, 10), dog.name);
+      }
+    },
+    [safeDogs, toggleFavorite],
+  );
 
   const handleDogClick = useCallback((dog: Dog) => {
     // Just set the dog directly, ensuring ID is string when needed
@@ -181,24 +184,30 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
     setSelectedDog(null);
   }, []);
 
-  const handleModalNavigate = useCallback((direction: "prev" | "next") => {
-    if (!selectedDog || !safeDogs.length) return;
+  const handleModalNavigate = useCallback(
+    (direction: "prev" | "next") => {
+      if (!selectedDog || !safeDogs.length) return;
 
-    const currentIndex = safeDogs.findIndex((d) => String(d.id) === String(selectedDog.id));
-    let newIndex;
+      const currentIndex = safeDogs.findIndex(
+        (d) => String(d.id) === String(selectedDog.id),
+      );
+      let newIndex;
 
-    if (direction === "next") {
-      newIndex = currentIndex < safeDogs.length - 1 ? currentIndex + 1 : currentIndex;
-    } else {
-      newIndex = currentIndex > 0 ? currentIndex - 1 : currentIndex;
-    }
+      if (direction === "next") {
+        newIndex =
+          currentIndex < safeDogs.length - 1 ? currentIndex + 1 : currentIndex;
+      } else {
+        newIndex = currentIndex > 0 ? currentIndex - 1 : currentIndex;
+      }
 
-    if (newIndex !== currentIndex) {
-      const newDog = safeDogs[newIndex];
-      // Just set the dog directly
-      setSelectedDog(newDog);
-    }
-  }, [selectedDog, safeDogs]);
+      if (newIndex !== currentIndex) {
+        const newDog = safeDogs[newIndex];
+        // Just set the dog directly
+        setSelectedDog(newDog);
+      }
+    },
+    [selectedDog, safeDogs],
+  );
 
   return (
     <>
@@ -261,12 +270,17 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
         onNavigate={handleModalNavigate}
         hasNext={
           selectedDog
-            ? safeDogs.findIndex((d) => String(d.id) === String(selectedDog.id)) < safeDogs.length - 1
+            ? safeDogs.findIndex(
+                (d) => String(d.id) === String(selectedDog.id),
+              ) <
+              safeDogs.length - 1
             : false
         }
         hasPrev={
           selectedDog
-            ? safeDogs.findIndex((d) => String(d.id) === String(selectedDog.id)) > 0
+            ? safeDogs.findIndex(
+                (d) => String(d.id) === String(selectedDog.id),
+              ) > 0
             : false
         }
       />
