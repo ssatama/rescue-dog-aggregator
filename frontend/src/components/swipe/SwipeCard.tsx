@@ -113,7 +113,9 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
         data-testid="image-container"
       >
         <FallbackImage
-          src={dog.primary_image_url || dog.main_image || "/placeholder_dog.svg"}
+          src={
+            dog.primary_image_url || dog.main_image || "/placeholder_dog.svg"
+          }
           alt={`${dog.name} - Available for adoption`}
           fill
           className="object-cover md:object-contain"
@@ -169,10 +171,16 @@ const SwipeCardComponent = ({ dog, isStacked = false }: SwipeCardProps) => {
                 <div
                   key={level}
                   className={`h-2 w-6 rounded-full ${
-                    level <= (dog.dog_profiler_data?.energy_level === "low" ? 1 :
-                             dog.dog_profiler_data?.energy_level === "medium" ? 3 :
-                             dog.dog_profiler_data?.energy_level === "high" ? 4 :
-                             dog.dog_profiler_data?.energy_level === "very_high" ? 5 : 0)
+                    level <=
+                    (dog.dog_profiler_data?.energy_level === "low"
+                      ? 1
+                      : dog.dog_profiler_data?.energy_level === "medium"
+                        ? 3
+                        : dog.dog_profiler_data?.energy_level === "high"
+                          ? 4
+                          : dog.dog_profiler_data?.energy_level === "very_high"
+                            ? 5
+                            : 0)
                       ? "bg-orange-500"
                       : "bg-gray-200 dark:bg-gray-700"
                   }`}

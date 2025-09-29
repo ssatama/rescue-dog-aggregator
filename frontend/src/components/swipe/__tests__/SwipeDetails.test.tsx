@@ -22,10 +22,7 @@ const mockDog = {
   adoption_url: "https://example.com/adopt/buddy",
   primary_image_url: "https://example.com/buddy1.jpg",
   slug: "buddy-golden-mix",
-  photos: [
-    "https://example.com/buddy2.jpg",
-    "https://example.com/buddy3.jpg",
-  ],
+  photos: ["https://example.com/buddy2.jpg", "https://example.com/buddy3.jpg"],
   dog_profiler_data: {
     description:
       "Buddy is a lovable 2-year-old Golden Mix seeking his forever home. This playful pup has a heart of gold and endless energy for adventures.",

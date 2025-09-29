@@ -55,12 +55,14 @@ export default function SwipePage() {
     adoption_url: dog.adoption_url || "",
     image_url: dog.primary_image_url || dog.main_image || "",
     additional_images: dog.photos || [],
-    dog_profiler_data: dog.dog_profiler_data || (dog.description
-      ? {
-          description: dog.description,
-          personality_traits: dog.personality_traits || [],
-        }
-      : undefined),
+    dog_profiler_data:
+      dog.dog_profiler_data ||
+      (dog.description
+        ? {
+            description: dog.description,
+            personality_traits: dog.personality_traits || [],
+          }
+        : undefined),
   });
 
   const fetchDogsWithFilters = async (queryString: string): Promise<Dog[]> => {

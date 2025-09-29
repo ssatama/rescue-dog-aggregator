@@ -16,7 +16,7 @@ export const clearCache = () => {
 
 const cache = (fn) => {
   // In test environment, bypass caching entirely
-  if (process.env.NODE_ENV === 'test') {
+  if (process.env.NODE_ENV === "test") {
     return fn;
   }
 
@@ -40,7 +40,7 @@ const cache = (fn) => {
     const result = await fn(...args);
     cacheMap.set(key, {
       data: result,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     // Clean up old entries periodically (every 100 requests)

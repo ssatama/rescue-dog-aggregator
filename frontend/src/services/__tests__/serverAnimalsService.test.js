@@ -4,7 +4,11 @@ jest.mock("react", () => ({
   cache: (fn) => fn, // Simple pass-through for tests
 }));
 
-import { getAnimals, getAllMetadata, clearCache } from "../serverAnimalsService";
+import {
+  getAnimals,
+  getAllMetadata,
+  clearCache,
+} from "../serverAnimalsService";
 
 // Mock fetch for testing
 global.fetch = jest.fn();
