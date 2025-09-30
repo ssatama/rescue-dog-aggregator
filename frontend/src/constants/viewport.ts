@@ -7,19 +7,6 @@ export const VIEWPORT_BREAKPOINTS = {
   DESKTOP_MIN: 1024,
 } as const;
 
-// Layout constants
-export const GRID_COLUMNS = {
-  MOBILE: 2,
-  TABLET: 3,
-  DESKTOP: 4,
-} as const;
-
-// Animation durations
-export const ANIMATION_DURATION = {
-  CARD_DELAY: 0.05,
-  MODAL_TRANSITION: 200,
-} as const;
-
 // UI Constants
 export const UI_CONSTANTS = {
   BORDER_RADIUS: "12px",
