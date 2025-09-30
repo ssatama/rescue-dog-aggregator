@@ -12,4 +12,3 @@
 export const BREAKPOINTS = {
   mobile: 1024, // Tailwind's lg breakpoint - when 3-column grids start
 } as const;
-

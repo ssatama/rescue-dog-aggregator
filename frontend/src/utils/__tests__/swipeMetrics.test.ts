@@ -29,10 +29,10 @@ describe("SwipeMetrics", () => {
 
     // Save original NODE_ENV and set to production to ensure events are sent
     originalNodeEnv = process.env.NODE_ENV;
-    Object.defineProperty(process.env, 'NODE_ENV', {
-      value: 'production',
+    Object.defineProperty(process.env, "NODE_ENV", {
+      value: "production",
       writable: true,
-      configurable: true
+      configurable: true,
     });
 
     // Ensure window is defined for isSentryReady check
@@ -52,20 +52,20 @@ describe("SwipeMetrics", () => {
 
   afterEach(() => {
     // Restore original NODE_ENV
-    Object.defineProperty(process.env, 'NODE_ENV', {
+    Object.defineProperty(process.env, "NODE_ENV", {
       value: originalNodeEnv,
       writable: true,
-      configurable: true
+      configurable: true,
     });
     jest.restoreAllMocks();
   });
 
   describe("Helper function validation", () => {
     it("shouldSendEvents should return true in production", () => {
-      Object.defineProperty(process.env, 'NODE_ENV', {
-        value: 'production',
+      Object.defineProperty(process.env, "NODE_ENV", {
+        value: "production",
         writable: true,
-        configurable: true
+        configurable: true,
       });
       expect(testHelpers.shouldSendEvents()).toBe(true);
     });
@@ -143,16 +143,18 @@ describe("SwipeMetrics", () => {
       const mockSetAttribute = jest.fn();
       const mockSetAttributes = jest.fn();
 
-      (Sentry as any).startSpan.mockImplementation((options: any, callback: any) => {
-        const span = {
-          setAttribute: mockSetAttribute,
-          setAttributes: mockSetAttributes,
-        };
-        if (callback) {
-          return callback(span);
-        }
-        return span;
-      });
+      (Sentry as any).startSpan.mockImplementation(
+        (options: any, callback: any) => {
+          const span = {
+            setAttribute: mockSetAttribute,
+            setAttributes: mockSetAttributes,
+          };
+          if (callback) {
+            return callback(span);
+          }
+          return span;
+        },
+      );
 
       metrics.trackSwipe("left", "dog-456");
       metrics.trackCardView("dog-456");
@@ -187,16 +189,18 @@ describe("SwipeMetrics", () => {
       // has issues with the SwipeMetrics instance caching the performance API state
       const mockSetAttribute = jest.fn();
 
-      (Sentry as any).startSpan.mockImplementation((options: any, callback: any) => {
-        const span = {
-          setAttribute: mockSetAttribute,
-          setAttributes: jest.fn(),
-        };
-        if (callback) {
-          return callback(span);
-        }
-        return span;
-      });
+      (Sentry as any).startSpan.mockImplementation(
+        (options: any, callback: any) => {
+          const span = {
+            setAttribute: mockSetAttribute,
+            setAttributes: jest.fn(),
+          };
+          if (callback) {
+            return callback(span);
+          }
+          return span;
+        },
+      );
 
       // Setup performance mock to ensure hasPerformanceAPI() returns true
       const localPerformanceMock = {

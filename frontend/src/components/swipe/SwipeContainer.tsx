@@ -139,7 +139,9 @@ export function SwipeContainer({
         const fetchedDogs = await fetchDogs(queryString);
         if (cancelled) return;
 
-        const swipedIds = new Set(safeStorage.parse<number[]>("swipedDogIds", []));
+        const swipedIds = new Set(
+          safeStorage.parse<number[]>("swipedDogIds", []),
+        );
 
         const newDogs = fetchedDogs.filter((dog) => {
           const dogId = safeToNumber(dog.id);
@@ -259,7 +261,9 @@ export function SwipeContainer({
           .then((fetchedDogs) => {
             if (fetchedDogs && fetchedDogs.length > 0) {
               setDogs((prevDogs) => {
-                const swipedIds = new Set(safeStorage.parse<number[]>("swipedDogIds", []));
+                const swipedIds = new Set(
+                  safeStorage.parse<number[]>("swipedDogIds", []),
+                );
                 const newDogs = fetchedDogs.filter((dog) => {
                   const dogId = safeToNumber(dog.id);
                   return dogId !== null && !swipedIds.has(dogId);
@@ -384,7 +388,9 @@ export function SwipeContainer({
               // Use functional update to get latest swipedDogIds
               setDogs((prevDogs) => {
                 // Get the current swiped IDs from storage to be safe
-                const swipedIds = new Set(safeStorage.parse<number[]>("swipedDogIds", []));
+                const swipedIds = new Set(
+                  safeStorage.parse<number[]>("swipedDogIds", []),
+                );
 
                 // Filter out dogs that have been swiped, but NOT the dog at current viewing index
                 const currentViewingIndex = prevDogs.length; // This will be the index after we append

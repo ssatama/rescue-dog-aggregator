@@ -40,8 +40,11 @@ const COUNTRY_MIGRATION: Record<string, string> = {
 
 export default function useSwipeFilters(): UseSwipeFiltersReturn {
   const [filters, setFiltersState] = useState<SwipeFilters>(() => {
-    const parsed = safeStorage.parse<SwipeFilters>(STORAGE_KEY, DEFAULT_FILTERS);
-    
+    const parsed = safeStorage.parse<SwipeFilters>(
+      STORAGE_KEY,
+      DEFAULT_FILTERS,
+    );
+
     // Migrate old country names to country codes
     if (parsed.country && COUNTRY_MIGRATION[parsed.country]) {
       parsed.country = COUNTRY_MIGRATION[parsed.country];

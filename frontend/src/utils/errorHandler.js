@@ -199,7 +199,6 @@ export function withRetry(fn, maxAttempts = 3, onRetry = null) {
   };
 }
 
-
 /**
  * Get user-friendly title for error type
  * @param {String} errorType - Error type from parsed error

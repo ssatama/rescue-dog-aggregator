@@ -62,4 +62,3 @@ export const getCountryName = (countryCode) => {
   const upperCode = countryCode.toUpperCase();
   return COUNTRY_NAMES[upperCode] || countryCode;
 };
-

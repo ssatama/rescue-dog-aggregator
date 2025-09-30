@@ -549,18 +549,18 @@ describe("Breadcrumb Tracking Functions", () => {
       const originalEnv = process.env.NODE_ENV;
 
       afterEach(() => {
-        Object.defineProperty(process.env, 'NODE_ENV', {
+        Object.defineProperty(process.env, "NODE_ENV", {
           value: originalEnv,
           writable: true,
-          configurable: true
+          configurable: true,
         });
       });
 
       it("should add test breadcrumb in development", () => {
-        Object.defineProperty(process.env, 'NODE_ENV', {
-          value: 'development',
+        Object.defineProperty(process.env, "NODE_ENV", {
+          value: "development",
           writable: true,
-          configurable: true
+          configurable: true,
         });
         const data = { testId: "123", action: "test" };
 
@@ -576,10 +576,10 @@ describe("Breadcrumb Tracking Functions", () => {
       });
 
       it("should not add breadcrumb in production", () => {
-        Object.defineProperty(process.env, 'NODE_ENV', {
-          value: 'production',
+        Object.defineProperty(process.env, "NODE_ENV", {
+          value: "production",
           writable: true,
-          configurable: true
+          configurable: true,
         });
 
         addTestBreadcrumb("Test message");
@@ -588,10 +588,10 @@ describe("Breadcrumb Tracking Functions", () => {
       });
 
       it("should handle missing data parameter", () => {
-        Object.defineProperty(process.env, 'NODE_ENV', {
-          value: 'development',
+        Object.defineProperty(process.env, "NODE_ENV", {
+          value: "development",
           writable: true,
-          configurable: true
+          configurable: true,
         });
 
         addTestBreadcrumb("Test without data");
@@ -604,10 +604,10 @@ describe("Breadcrumb Tracking Functions", () => {
       });
 
       it("should handle errors gracefully without throwing", () => {
-        Object.defineProperty(process.env, 'NODE_ENV', {
-          value: 'development',
+        Object.defineProperty(process.env, "NODE_ENV", {
+          value: "development",
           writable: true,
-          configurable: true
+          configurable: true,
         });
         const mockError = new Error("Test error");
         (Sentry.addBreadcrumb as jest.Mock).mockImplementationOnce(() => {

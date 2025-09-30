@@ -40,4 +40,3 @@ export function triggerHaptic(pattern: HapticPattern = "light"): void {
     console.debug("Haptic feedback not available:", error);
   }
 }
-

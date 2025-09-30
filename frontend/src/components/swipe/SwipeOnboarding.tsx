@@ -151,10 +151,10 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
   useEffect(() => {
     const onboardingComplete =
       safeStorage.get("swipeOnboardingComplete") === "true";
-    const filters = safeStorage.parse<SwipeFilters>("swipeFilters", { 
-      country: "", 
-      sizes: [], 
-      ages: [] 
+    const filters = safeStorage.parse<SwipeFilters>("swipeFilters", {
+      country: "",
+      sizes: [],
+      ages: [],
     });
 
     if (onboardingComplete && filters.country) {

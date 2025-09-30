@@ -147,10 +147,10 @@ describe("SwipeErrorBoundary", () => {
 
   it("should include error details in development mode", () => {
     const originalEnv = process.env.NODE_ENV;
-    Object.defineProperty(process.env, 'NODE_ENV', {
-      value: 'development',
+    Object.defineProperty(process.env, "NODE_ENV", {
+      value: "development",
       writable: true,
-      configurable: true
+      configurable: true,
     });
 
     render(
@@ -162,19 +162,19 @@ describe("SwipeErrorBoundary", () => {
     expect(screen.getByText(/Error details:/)).toBeInTheDocument();
     expect(screen.getByText(/Test error/)).toBeInTheDocument();
 
-    Object.defineProperty(process.env, 'NODE_ENV', {
+    Object.defineProperty(process.env, "NODE_ENV", {
       value: originalEnv,
       writable: true,
-      configurable: true
+      configurable: true,
     });
   });
 
   it("should not include error details in production mode", () => {
     const originalEnv = process.env.NODE_ENV;
-    Object.defineProperty(process.env, 'NODE_ENV', {
-      value: 'production',
+    Object.defineProperty(process.env, "NODE_ENV", {
+      value: "production",
       writable: true,
-      configurable: true
+      configurable: true,
     });
 
     render(
@@ -185,10 +185,10 @@ describe("SwipeErrorBoundary", () => {
 
     expect(screen.queryByText(/Error details:/)).not.toBeInTheDocument();
 
-    Object.defineProperty(process.env, 'NODE_ENV', {
+    Object.defineProperty(process.env, "NODE_ENV", {
       value: originalEnv,
       writable: true,
-      configurable: true
+      configurable: true,
     });
   });
 
