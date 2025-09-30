@@ -549,11 +549,19 @@ describe("Breadcrumb Tracking Functions", () => {
       const originalEnv = process.env.NODE_ENV;
 
       afterEach(() => {
-        process.env.NODE_ENV = originalEnv;
+        Object.defineProperty(process.env, 'NODE_ENV', {
+          value: originalEnv,
+          writable: true,
+          configurable: true
+        });
       });
 
       it("should add test breadcrumb in development", () => {
-        process.env.NODE_ENV = "development";
+        Object.defineProperty(process.env, 'NODE_ENV', {
+          value: 'development',
+          writable: true,
+          configurable: true
+        });
         const data = { testId: "123", action: "test" };
 
         addTestBreadcrumb("Test message", data);
@@ -568,7 +576,11 @@ describe("Breadcrumb Tracking Functions", () => {
       });
 
       it("should not add breadcrumb in production", () => {
-        process.env.NODE_ENV = "production";
+        Object.defineProperty(process.env, 'NODE_ENV', {
+          value: 'production',
+          writable: true,
+          configurable: true
+        });
 
         addTestBreadcrumb("Test message");
 
@@ -576,7 +588,11 @@ describe("Breadcrumb Tracking Functions", () => {
       });
 
       it("should handle missing data parameter", () => {
-        process.env.NODE_ENV = "development";
+        Object.defineProperty(process.env, 'NODE_ENV', {
+          value: 'development',
+          writable: true,
+          configurable: true
+        });
 
         addTestBreadcrumb("Test without data");
 
@@ -588,7 +604,11 @@ describe("Breadcrumb Tracking Functions", () => {
       });
 
       it("should handle errors gracefully without throwing", () => {
-        process.env.NODE_ENV = "development";
+        Object.defineProperty(process.env, 'NODE_ENV', {
+          value: 'development',
+          writable: true,
+          configurable: true
+        });
         const mockError = new Error("Test error");
         (Sentry.addBreadcrumb as jest.Mock).mockImplementationOnce(() => {
           throw mockError;

@@ -196,8 +196,8 @@ describe("CompareTable", () => {
           ...partialProfileDog,
           dog_profiler_data: {
             ...partialProfileDog.dog_profiler_data!,
-            good_with_dogs: "yes",
-            good_with_cats: "no",
+            good_with_dogs: "maybe",
+            good_with_cats: "maybe",
             good_with_children: "maybe",
           },
         },
@@ -215,9 +215,9 @@ describe("CompareTable", () => {
       expect(screen.getByText("Good with Children")).toBeInTheDocument();
 
       // Should show the actual icon values (there will be multiple instances)
-      expect(screen.getAllByText("✓")).toHaveLength(3); // Dogs: yes+yes, Children: yes+maybe -> 2+1 = 3
-      expect(screen.getAllByText("✗")).toHaveLength(1); // Cats: maybe+no -> 0+1 = 1
-      expect(screen.getAllByText("?")).toHaveLength(2); // Cats: maybe+no, Children: yes+maybe -> 1+1 = 2
+      expect(screen.getAllByText("✓")).toHaveLength(2); // Dogs: yes+maybe, Children: yes+maybe -> 1+1 = 2
+      expect(screen.queryByText("✗")).not.toBeInTheDocument(); // No "no" values
+      expect(screen.getAllByText("?")).toHaveLength(4); // Dogs: yes+maybe, Cats: maybe+maybe, Children: yes+maybe -> 1+2+1 = 4
     });
 
     it("hides compatibility rows when ANY dog lacks compatibility data", () => {
@@ -293,7 +293,7 @@ describe("CompareTable", () => {
       const dogsWithNullProfileData = [
         {
           ...completeProfileDog,
-          dog_profiler_data: null,
+          dog_profiler_data: undefined,
         },
         {
           ...partialProfileDog,

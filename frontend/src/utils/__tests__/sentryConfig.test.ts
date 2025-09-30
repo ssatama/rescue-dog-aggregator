@@ -6,13 +6,10 @@ jest.mock("@sentry/nextjs", () => ({
   captureEvent: jest.fn(),
   captureException: jest.fn(),
   captureMessage: jest.fn(),
-  getCurrentHub: jest.fn(() => ({
-    getScope: jest.fn(() => ({
-      getTransaction: jest.fn(() => ({
-        setMeasurement: jest.fn(),
-        setTag: jest.fn(),
-      })),
-    })),
+  getActiveSpan: jest.fn(() => ({
+    setAttribute: jest.fn(),
+    setMeasurement: jest.fn(),
+    setTag: jest.fn(),
   })),
 }));
 
@@ -92,16 +89,13 @@ describe("Sentry Configuration", () => {
 
   describe("Performance Monitoring", () => {
     it("should track FPS issues as performance metrics, not errors", () => {
-      const mockTransaction = {
+      const mockSpan = {
         setMeasurement: jest.fn(),
         setTag: jest.fn(),
+        setAttribute: jest.fn(),
       };
 
-      (Sentry.getCurrentHub as jest.Mock).mockReturnValue({
-        getScope: jest.fn(() => ({
-          getTransaction: jest.fn(() => mockTransaction),
-        })),
-      });
+      (Sentry.getActiveSpan as jest.Mock).mockReturnValue(mockSpan);
 
       // Simulate low FPS detection
       const avgFPS = 25;

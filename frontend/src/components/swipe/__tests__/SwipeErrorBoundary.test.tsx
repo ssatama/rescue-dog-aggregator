@@ -147,7 +147,11 @@ describe("SwipeErrorBoundary", () => {
 
   it("should include error details in development mode", () => {
     const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "development";
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value: 'development',
+      writable: true,
+      configurable: true
+    });
 
     render(
       <SwipeErrorBoundary>
@@ -158,12 +162,20 @@ describe("SwipeErrorBoundary", () => {
     expect(screen.getByText(/Error details:/)).toBeInTheDocument();
     expect(screen.getByText(/Test error/)).toBeInTheDocument();
 
-    process.env.NODE_ENV = originalEnv;
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value: originalEnv,
+      writable: true,
+      configurable: true
+    });
   });
 
   it("should not include error details in production mode", () => {
     const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "production";
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value: 'production',
+      writable: true,
+      configurable: true
+    });
 
     render(
       <SwipeErrorBoundary>
@@ -173,7 +185,11 @@ describe("SwipeErrorBoundary", () => {
 
     expect(screen.queryByText(/Error details:/)).not.toBeInTheDocument();
 
-    process.env.NODE_ENV = originalEnv;
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value: originalEnv,
+      writable: true,
+      configurable: true
+    });
   });
 
   it("should handle async errors", async () => {

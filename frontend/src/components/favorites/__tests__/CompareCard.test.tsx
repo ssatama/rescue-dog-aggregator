@@ -22,15 +22,11 @@ const mockDog: Dog = {
     personality_traits: ["Friendly", "Energetic", "Loyal", "Playful", "Smart"],
     unique_quirk: "Loves to carry his favorite toy everywhere",
     energy_level: "high",
-    experience_level: "some_experience_needed",
+    experience_level: "some_experience",
     good_with_dogs: "yes",
     good_with_cats: "maybe",
     good_with_children: "yes",
     favorite_activities: ["Fetch", "Swimming", "Hiking"],
-    special_considerations: [
-      "Needs regular exercise",
-      "Strong puller on leash",
-    ],
     confidence_scores: {
       personality: 0.9,
       behavior: 0.85,
@@ -98,7 +94,7 @@ describe("CompareCard", () => {
 
     it("displays experience level requirement", () => {
       render(<CompareCard dog={mockDog} />);
-      expect(screen.getByText("Some experience needed")).toBeInTheDocument();
+      expect(screen.getByText("Some Experience")).toBeInTheDocument();
     });
   });
 

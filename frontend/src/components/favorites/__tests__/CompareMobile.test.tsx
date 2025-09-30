@@ -28,9 +28,9 @@ const mockDogWithNonStandardValues: Dog = {
   sex: "Female",
   organization_name: "Another Rescue",
   dog_profiler_data: {
-    good_with_dogs: "selective",
-    good_with_cats: "with_training",
-    good_with_children: "older_children",
+    good_with_dogs: "selective" as any, // Non-standard DB value
+    good_with_cats: "with_training" as any, // Non-standard DB value
+    good_with_children: "older_children" as any, // Non-standard DB value
     tagline: "Needs special attention",
   },
   properties: {},

@@ -19,7 +19,7 @@ describe("dogProfilerAnalyzer", () => {
     size: "medium",
     organization_name: "Test Org",
     url: "https://example.com",
-    dog_profiler_data: null,
+    dog_profiler_data: undefined,
     ...overrides,
   });
 
@@ -299,8 +299,8 @@ describe("dogProfilerAnalyzer", () => {
             trainability: "easy",
             grooming_needs: "minimal",
             exercise_needs: "minimal",
-            medical_needs: false,
-            special_needs: false,
+            medical_needs: "",
+            special_needs: "",
           },
         }),
       ];
@@ -317,8 +317,8 @@ describe("dogProfilerAnalyzer", () => {
             trainability: "challenging",
             grooming_needs: "frequent",
             exercise_needs: "high",
-            medical_needs: true,
-            special_needs: true,
+            medical_needs: "Requires medication",
+            special_needs: "Needs special care",
           },
         }),
       ];

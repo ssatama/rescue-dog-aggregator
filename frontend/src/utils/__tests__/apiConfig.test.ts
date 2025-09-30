@@ -3,19 +3,27 @@ import { getApiUrl } from "../apiConfig";
 describe("apiConfig", () => {
   describe("getApiUrl", () => {
     const originalWindow = global.window;
-    const originalEnv = process.env;
+    const originalEnv = process.env.NODE_ENV;
 
     beforeEach(() => {
-      process.env = { ...originalEnv };
+      process.env = { ...process.env };
     });
 
     afterEach(() => {
       global.window = originalWindow;
-      process.env = originalEnv;
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: originalEnv,
+        writable: true,
+        configurable: true
+      });
     });
 
     it("returns localhost for server-side in development", () => {
-      process.env.NODE_ENV = "development";
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        writable: true,
+        configurable: true
+      });
       delete (global as any).window;
 
       const url = getApiUrl();
@@ -24,7 +32,11 @@ describe("apiConfig", () => {
     });
 
     it("returns NEXT_PUBLIC_API_URL for client-side in development", () => {
-      process.env.NODE_ENV = "development";
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        writable: true,
+        configurable: true
+      });
       process.env.NEXT_PUBLIC_API_URL = "https://dev-api.rescuedogs.me";
       (global as any).window = {};
 
@@ -34,7 +46,11 @@ describe("apiConfig", () => {
     });
 
     it("returns NEXT_PUBLIC_API_URL for server-side in production", () => {
-      process.env.NODE_ENV = "production";
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'production',
+        writable: true,
+        configurable: true
+      });
       process.env.NEXT_PUBLIC_API_URL = "https://api.rescuedogs.me";
       delete (global as any).window;
 
@@ -44,7 +60,11 @@ describe("apiConfig", () => {
     });
 
     it("returns NEXT_PUBLIC_API_URL for client-side in production", () => {
-      process.env.NODE_ENV = "production";
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'production',
+        writable: true,
+        configurable: true
+      });
       process.env.NEXT_PUBLIC_API_URL = "https://api.rescuedogs.me";
       (global as any).window = {};
 
@@ -54,7 +74,11 @@ describe("apiConfig", () => {
     });
 
     it("falls back to production URL when NEXT_PUBLIC_API_URL is not set", () => {
-      process.env.NODE_ENV = "production";
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'production',
+        writable: true,
+        configurable: true
+      });
       delete process.env.NEXT_PUBLIC_API_URL;
       (global as any).window = {};
 
@@ -64,7 +88,11 @@ describe("apiConfig", () => {
     });
 
     it("returns localhost for server-side when NODE_ENV is test", () => {
-      process.env.NODE_ENV = "test";
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'test',
+        writable: true,
+        configurable: true
+      });
       delete (global as any).window;
 
       const url = getApiUrl();
@@ -73,7 +101,11 @@ describe("apiConfig", () => {
     });
 
     it("handles undefined NODE_ENV as production", () => {
-      delete process.env.NODE_ENV;
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: undefined,
+        writable: true,
+        configurable: true
+      });
       process.env.NEXT_PUBLIC_API_URL = "https://api.rescuedogs.me";
       (global as any).window = {};
 

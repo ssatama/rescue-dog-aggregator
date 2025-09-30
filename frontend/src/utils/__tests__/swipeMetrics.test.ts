@@ -29,7 +29,11 @@ describe("SwipeMetrics", () => {
 
     // Save original NODE_ENV and set to production to ensure events are sent
     originalNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "production";
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value: 'production',
+      writable: true,
+      configurable: true
+    });
 
     // Ensure window is defined for isSentryReady check
     global.window = {} as any;
@@ -48,17 +52,21 @@ describe("SwipeMetrics", () => {
 
   afterEach(() => {
     // Restore original NODE_ENV
-    if (originalNodeEnv !== undefined) {
-      process.env.NODE_ENV = originalNodeEnv;
-    } else {
-      delete process.env.NODE_ENV;
-    }
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value: originalNodeEnv,
+      writable: true,
+      configurable: true
+    });
     jest.restoreAllMocks();
   });
 
   describe("Helper function validation", () => {
     it("shouldSendEvents should return true in production", () => {
-      process.env.NODE_ENV = "production";
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'production',
+        writable: true,
+        configurable: true
+      });
       expect(testHelpers.shouldSendEvents()).toBe(true);
     });
 
@@ -135,7 +143,7 @@ describe("SwipeMetrics", () => {
       const mockSetAttribute = jest.fn();
       const mockSetAttributes = jest.fn();
 
-      (Sentry as any).startSpan.mockImplementation((options, callback) => {
+      (Sentry as any).startSpan.mockImplementation((options: any, callback: any) => {
         const span = {
           setAttribute: mockSetAttribute,
           setAttributes: mockSetAttributes,
@@ -179,7 +187,7 @@ describe("SwipeMetrics", () => {
       // has issues with the SwipeMetrics instance caching the performance API state
       const mockSetAttribute = jest.fn();
 
-      (Sentry as any).startSpan.mockImplementation((options, callback) => {
+      (Sentry as any).startSpan.mockImplementation((options: any, callback: any) => {
         const span = {
           setAttribute: mockSetAttribute,
           setAttributes: jest.fn(),
@@ -356,7 +364,7 @@ describe("SwipeMetrics", () => {
 
       // Check that batch span was created
       const batchCall = (Sentry as any).startSpan.mock.calls.find(
-        (call) => call[0].name === "swipe.metrics.batch",
+        (call: any) => call[0].name === "swipe.metrics.batch",
       );
       expect(batchCall).toBeDefined();
       expect(batchCall[0].attributes["batch.size"]).toBe(10);

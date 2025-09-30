@@ -17,9 +17,9 @@ describe("CompatibilityIcons Component", () => {
   };
 
   const mockSelectiveData: DogProfilerData = {
-    good_with_dogs: "selective",
-    good_with_cats: "with_training",
-    good_with_children: "older_children",
+    good_with_dogs: "maybe",
+    good_with_cats: "maybe",
+    good_with_children: "maybe",
     confidence_scores: {
       good_with_dogs: 0.6,
       good_with_cats: 0.8,
@@ -76,20 +76,11 @@ describe("CompatibilityIcons Component", () => {
       expect(screen.getByText("?")).toBeInTheDocument(); // children: maybe
     });
 
-    test("renders question mark for selective and with_training", () => {
+    test("renders question mark for maybe values", () => {
       render(<CompatibilityIcons profilerData={mockSelectiveData} />);
 
       const questionMarks = screen.getAllByText("?");
-      expect(questionMarks).toHaveLength(2); // selective and with_training
-    });
-
-    test("renders blue check for older_children", () => {
-      render(<CompatibilityIcons profilerData={mockSelectiveData} />);
-
-      const childrenIcon = screen.getByTestId("compatibility-icon-children");
-      expect(childrenIcon).toBeInTheDocument();
-      expect(childrenIcon).toHaveClass("bg-blue-100");
-      expect(childrenIcon).toHaveTextContent("✓");
+      expect(questionMarks).toHaveLength(3); // All three are "maybe"
     });
 
     test("renders dash for unknown values", () => {

@@ -5,7 +5,7 @@ import { SwipeCard } from "../SwipeCard";
 import { FavoritesProvider } from "../../../contexts/FavoritesContext";
 import { ToastProvider } from "../../../contexts/ToastContext";
 
-const renderWithProvider = (component) => {
+const renderWithProvider = (component: React.ReactElement) => {
   return render(
     <ToastProvider>
       <FavoritesProvider>{component}</FavoritesProvider>
@@ -20,7 +20,7 @@ describe("SwipeCard", () => {
     breed: "Golden Retriever",
     age: "2 years",
     primary_image_url: "https://example.com/buddy.jpg",
-    organization: "Happy Paws Rescue",
+    organization: { name: "Happy Paws Rescue" },
     location: "San Francisco, CA",
     slug: "buddy-golden",
     description: "A friendly and energetic companion",
