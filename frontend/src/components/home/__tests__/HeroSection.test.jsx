@@ -234,6 +234,35 @@ describe("HeroSection", () => {
       expect(heroSection).toHaveClass("hero-gradient");
     });
 
+    test("should render new headline", () => {
+      getStatistics.mockResolvedValue(mockStatistics);
+
+      render(<HeroSection />);
+
+      const heroTitle = screen.getByTestId("hero-title");
+      expect(heroTitle).toHaveTextContent("Find Your Perfect Rescue Dog");
+    });
+
+    test("should render new subtitle with dynamic counts", async () => {
+      getStatistics.mockResolvedValue(mockStatistics);
+
+      render(<HeroSection />);
+
+      await waitFor(() => {
+        const heroSubtitle = screen.getByTestId("hero-subtitle");
+        expect(heroSubtitle).toHaveTextContent("Browse 412 dogs aggregated from 3 rescue organizations across Europe & UK. Adopt Don't Shop.");
+      });
+    });
+
+    test("should render subtitle with fallback counts when statistics not loaded", () => {
+      getStatistics.mockReturnValue(new Promise(() => {})); // Never resolves
+
+      render(<HeroSection />);
+
+      const heroSubtitle = screen.getByTestId("hero-subtitle");
+      expect(heroSubtitle).toHaveTextContent("Browse 3,186 dogs aggregated from 13 rescue organizations across Europe & UK. Adopt Don't Shop.");
+    });
+
     test("should have responsive typography", () => {
       getStatistics.mockResolvedValue(mockStatistics);
 
@@ -246,14 +275,14 @@ describe("HeroSection", () => {
       expect(heroSubtitle).toHaveClass("text-body");
     });
 
-    test("should display CTA buttons", () => {
+    test("should display CTA buttons with correct text", () => {
       getStatistics.mockResolvedValue(mockStatistics);
 
       render(<HeroSection />);
 
       const primaryCta = screen.getByTestId("hero-primary-cta");
       expect(primaryCta).toBeInTheDocument();
-      expect(primaryCta).toHaveTextContent("Find Your New Best Friend");
+      expect(primaryCta).toHaveTextContent("Browse All Dogs");
 
       // Check that the button is inside a link with correct href
       const linkElement = primaryCta.closest("a");
@@ -261,7 +290,23 @@ describe("HeroSection", () => {
 
       const secondaryCta = screen.getByTestId("hero-secondary-cta");
       expect(secondaryCta).toBeInTheDocument();
-      expect(secondaryCta).toHaveTextContent("About Our Mission");
+      expect(secondaryCta).toHaveTextContent("🐾");
+      expect(secondaryCta).toHaveTextContent("Quick Browse Dogs");
+    });
+
+    test("should have only 2 CTA buttons", () => {
+      getStatistics.mockResolvedValue(mockStatistics);
+
+      render(<HeroSection />);
+
+      const primaryCta = screen.getByTestId("hero-primary-cta");
+      const secondaryCta = screen.getByTestId("hero-secondary-cta");
+      
+      expect(primaryCta).toBeInTheDocument();
+      expect(secondaryCta).toBeInTheDocument();
+      
+      // The third button (hero-swipe-cta) should not exist
+      expect(screen.queryByTestId("hero-swipe-cta")).not.toBeInTheDocument();
     });
   });
 
@@ -412,12 +457,12 @@ describe("HeroSection", () => {
         // Primary CTA should link to dogs page
         const primaryCTA = screen.getByTestId("hero-primary-cta");
         expect(primaryCTA.closest("a")).toHaveAttribute("href", "/dogs");
-        expect(primaryCTA).toHaveTextContent("Find Your New Best Friend");
+        expect(primaryCTA).toHaveTextContent("Browse All Dogs");
 
-        // Secondary CTA should link to about page
+        // Secondary CTA should link to swipe page
         const secondaryCTA = screen.getByTestId("hero-secondary-cta");
-        expect(secondaryCTA.closest("a")).toHaveAttribute("href", "/about");
-        expect(secondaryCTA).toHaveTextContent("About Our Mission");
+        expect(secondaryCTA.closest("a")).toHaveAttribute("href", "/swipe");
+        expect(secondaryCTA).toHaveTextContent("Quick Browse Dogs");
       });
     });
 

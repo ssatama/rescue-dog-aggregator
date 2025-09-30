@@ -64,14 +64,13 @@ export default function HeroSection({
               data-testid="hero-title"
               className="text-hero font-bold text-foreground mb-6 leading-tight"
             >
-              Helping rescue dogs find loving homes
+              Find Your Perfect Rescue Dog
             </h1>
             <p
               data-testid="hero-subtitle"
               className="text-body text-muted-foreground mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed"
             >
-              Browse available dogs from trusted rescue organizations across
-              Europe & UK. Every dog deserves a second chance at happiness.
+              Browse {statistics?.total_dogs?.toLocaleString() || '3,186'} dogs aggregated from {statistics?.total_organizations || '13'} rescue organizations across Europe & UK. Adopt Don't Shop.
             </p>
 
             {/* CTA Buttons */}
@@ -83,29 +82,14 @@ export default function HeroSection({
                   className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white px-8 py-3"
                   style={{ minWidth: "48px", minHeight: "48px" }}
                 >
-                  Find Your New Best Friend
+                  Browse All Dogs
                 </Button>
               </Link>
-              <Link href="/about">
-                <Button
-                  data-testid="hero-secondary-cta"
-                  variant="outline"
-                  size="lg"
-                  className="w-full sm:w-auto border-orange-600 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/30 px-8 py-3"
-                  style={{ minWidth: "48px", minHeight: "48px" }}
-                >
-                  About Our Mission
-                </Button>
-              </Link>
-            </div>
-
-            {/* Quick Browse CTA - Available on all devices */}
-            <div className="mt-6">
               <Link href="/swipe">
                 <Button
-                  data-testid="hero-swipe-cta"
+                  data-testid="hero-secondary-cta"
                   size="lg"
-                  className="w-full sm:w-auto sm:max-w-xs sm:mx-auto lg:mx-0 bg-white dark:bg-gray-800 text-orange-600 dark:text-orange-400 border-2 border-orange-600 dark:border-orange-500 hover:bg-orange-50 dark:hover:bg-gray-700 font-bold px-8 py-3 transition-colors"
+                  className="w-full sm:w-auto bg-white dark:bg-gray-800 text-orange-600 dark:text-orange-400 border-2 border-orange-600 dark:border-orange-500 hover:bg-orange-50 dark:hover:bg-gray-700 font-bold px-8 py-3 transition-colors"
                   style={{ minWidth: "48px", minHeight: "48px" }}
                 >
                   <span className="mr-2 text-xl" aria-label="Paw icon">
