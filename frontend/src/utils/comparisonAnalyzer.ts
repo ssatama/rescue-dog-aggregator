@@ -1,26 +1,4 @@
-export interface Dog {
-  id: number;
-  name: string;
-  age_months?: number;
-  age_text?: string;
-  sex?: string;
-  standardized_size?: string;
-  size?: string;
-  standardized_breed?: string;
-  breed?: string;
-  location?: string;
-  organization_name?: string;
-  organization?: {
-    name: string;
-    country?: string;
-  };
-  properties?: {
-    good_with_dogs?: boolean | string;
-    good_with_cats?: boolean | string;
-    good_with_children?: boolean | string;
-    [key: string]: any;
-  };
-}
+import type { Dog } from "../types/dog";
 
 export interface AttributeComparison {
   values: any[];

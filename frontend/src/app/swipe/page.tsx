@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { SwipeContainerWithFilters } from "../../components/swipe/SwipeContainerWithFilters";
+import { SwipeContainer } from "../../components/swipe/SwipeContainer";
 import SwipeErrorBoundary from "../../components/swipe/SwipeErrorBoundary";
 import { useSwipeDevice } from "../../hooks/useSwipeDevice";
 import { swipeMetrics } from "../../utils/swipeMetrics";
@@ -114,7 +114,7 @@ export default function SwipePage() {
   return (
     <SwipeErrorBoundary>
       <div className="min-h-[100dvh] bg-gray-50">
-        <SwipeContainerWithFilters
+        <SwipeContainer
           fetchDogs={fetchDogsWithFilters}
           onSwipe={handleSwipe}
           onCardExpanded={handleCardExpanded}

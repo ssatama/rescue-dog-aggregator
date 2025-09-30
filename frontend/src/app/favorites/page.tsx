@@ -20,37 +20,9 @@ import type { DogProfilerData } from "../../types/dogProfiler";
 import { trackFavoritesPageView } from "@/lib/monitoring/breadcrumbs";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
 import { BreadcrumbSchema } from "../../components/seo";
+import type { Dog } from "../../types/dog";
 
 // Type definitions
-interface Dog {
-  id: number;
-  name: string;
-  breed?: string;
-  standardized_breed?: string;
-  age_months?: number;
-  age_min_months?: number;
-  age_max_months?: number;
-  age_text?: string;
-  sex?: string;
-  size?: string;
-  standardized_size?: string;
-  organization_name?: string;
-  organization?: {
-    name: string;
-    country: string;
-  };
-  location?: string;
-  images?: Array<{ url: string }>;
-  dog_profiler_data?: DogProfilerData;
-  properties?: {
-    good_with_dogs?: boolean | string;
-    good_with_cats?: boolean | string;
-    good_with_children?: boolean | string;
-    good_with_list?: string[];
-    [key: string]: any;
-  };
-}
-
 interface Insights {
   hasEnhancedData: boolean;
   commonOrganizations?: Array<{ name: string; count: number }>;
@@ -63,7 +35,7 @@ interface Insights {
     large: number;
     "extra-large": number;
   };
-  [key: string]: any; // For additional enhanced insights
+  [key: string]: any;
 }
 
 function FavoritesPageContent() {

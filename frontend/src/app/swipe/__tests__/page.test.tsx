@@ -17,10 +17,6 @@ jest.mock("../../../hooks/useMediaQuery", () => ({
   useMediaQuery: jest.fn(),
 }));
 
-jest.mock("../../../components/swipe/SwipeContainerWithFilters", () => ({
-  SwipeContainerWithFilters: () => <div>Swipe Container</div>,
-}));
-
 jest.mock("../../../components/swipe/SwipeErrorBoundary", () => ({
   __esModule: true,
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -40,6 +36,10 @@ jest.mock("../../../utils/swipeMetrics", () => ({
 
 jest.mock("@sentry/nextjs", () => ({
   captureEvent: jest.fn(),
+}));
+
+jest.mock("../../../components/swipe/SwipeContainer", () => ({
+  SwipeContainer: () => <div>Swipe Container</div>,
 }));
 
 describe("SwipePage", () => {

@@ -1,6 +1,6 @@
 import React from "react";
-import { render, waitFor } from "@testing-library/react";
-import { SwipeContainerWithFilters } from "../SwipeContainerWithFilters";
+import { render } from "@testing-library/react";
+import { SwipeContainer } from "../SwipeContainer";
 import { useFavorites } from "../../../hooks/useFavorites";
 import useSwipeFilters from "../../../hooks/useSwipeFilters";
 import { useRouter } from "next/navigation";
@@ -32,7 +32,7 @@ jest.mock("../SwipeFilters", () => {
   };
 });
 
-describe("SwipeContainerWithFilters - Paw Navigation", () => {
+describe("SwipeContainer - Paw Navigation", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     window.sessionStorage.clear();
@@ -58,7 +58,7 @@ describe("SwipeContainerWithFilters - Paw Navigation", () => {
     const mockFetchDogs = jest.fn(() => Promise.resolve([]));
 
     const { container } = render(
-      <SwipeContainerWithFilters
+      <SwipeContainer
         fetchDogs={mockFetchDogs}
         onSwipe={jest.fn()}
         onCardExpanded={jest.fn()}

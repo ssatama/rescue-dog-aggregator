@@ -3,17 +3,7 @@
 import React from "react";
 import { Button } from "./button";
 import { Icon } from "./Icon";
-
-interface Dog {
-  id: string | number;
-  name: string;
-  breed?: string;
-  standardized_breed?: string;
-  primary_image_url?: string;
-  organization?: string;
-  status?: string;
-  adoption_url?: string;
-}
+import type { Dog } from "../../types/dog";
 
 interface MobileStickyBarProps {
   dog: Dog;

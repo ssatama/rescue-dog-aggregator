@@ -7,6 +7,7 @@
 import React from "react";
 import Image from "next/image";
 import { useSwipeNavigation } from "./useSwipeNavigation";
+import type { Dog } from "../types/dog";
 
 interface DogDetailWithNavigationProps {
   dogSlug: string;
@@ -134,15 +135,6 @@ export function DogDetailWithFilters({
 }
 
 // TypeScript usage with proper typing
-interface Dog {
-  id: number;
-  slug: string;
-  name: string;
-  primary_image_url?: string;
-  breed?: string;
-  [key: string]: any;
-}
-
 export function TypedDogNavigation({ dogSlug }: { dogSlug: string }) {
   const { handlers, prevDog, nextDog, isLoading } = useSwipeNavigation({
     currentDogSlug: dogSlug,

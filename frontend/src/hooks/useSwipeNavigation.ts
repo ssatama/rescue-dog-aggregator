@@ -2,16 +2,9 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSwipeable } from "react-swipeable";
 import { getAnimals } from "../services/animalsService";
+import type { Dog } from "../types/dog";
 
 // Types
-interface Dog {
-  id: number;
-  slug: string;
-  name: string;
-  breed?: string;
-  [key: string]: any;
-}
-
 interface UseSwipeNavigationProps {
   currentDogSlug: string;
   searchParams: Record<string, string>;

@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import type { Dog as DogType } from "../../types/dog";
 
 // Debounce hook for filter performance
 function useDebounce<T>(value: T, delay: number): T {
@@ -43,33 +44,13 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-interface Dog {
-  id: number;
-  name: string;
-  breed?: string;
-  standardized_breed?: string;
-  age_months?: number;
-  age_min_months?: number;
-  age_max_months?: number;
-  age_text?: string;
-  age_category?: string;
-  sex?: string;
-  size?: string;
-  standardized_size?: string;
-  organization_name?: string;
-  organization?: {
-    name: string;
-    country: string;
-  };
-}
-
 interface FilterPanelProps {
-  dogs: Dog[];
-  onFilter: (filteredDogs: Dog[], isUserInitiated?: boolean) => void;
+  dogs: DogType[];
+  onFilter: (filteredDogs: DogType[], isUserInitiated?: boolean) => void;
 }
 
 // Helper function to get age category using the same logic as main catalog
-const getAgeCategory = (dog: Dog): string => {
+const getAgeCategory = (dog: DogType): string => {
   // Use age_min and age_max if available (same as main catalog)
   const ageMin = dog.age_min_months || dog.age_months;
   const ageMax = dog.age_max_months || dog.age_months;
@@ -240,7 +221,7 @@ export default function FilterPanel({ dogs, onFilter }: FilterPanelProps) {
   };
 
   // Use a ref to track the previous filteredDogs to avoid infinite loops
-  const prevFilteredDogsRef = useRef<Dog[] | null>(null);
+  const prevFilteredDogsRef = useRef<DogType[] | null>(null);
 
   // Auto-apply filters on desktop only (mobile uses Apply button)
   useEffect(() => {
