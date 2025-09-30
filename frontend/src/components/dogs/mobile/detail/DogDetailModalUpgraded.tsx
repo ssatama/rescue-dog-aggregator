@@ -346,8 +346,7 @@ const DogDetailModalUpgraded: React.FC<DogDetailModalUpgradedProps> = ({
   if (!dog) return null;
 
   // Get photo array
-  const photos =
-    dog.photos || [dog.primary_image_url].filter(Boolean);
+  const photos = dog.photos || [dog.primary_image_url].filter(Boolean);
   const currentPhoto = imageError
     ? "/placeholder_dog.svg"
     : photos[currentPhotoIndex] || "/placeholder_dog.svg";

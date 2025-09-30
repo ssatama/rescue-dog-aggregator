@@ -465,7 +465,7 @@ describe("PremiumMobileCatalog", () => {
   describe("Reset Filters functionality", () => {
     it("shows Clear All Filters button in empty state when onResetFilters is provided", () => {
       const mockOnResetFilters = jest.fn();
-      
+
       render(
         <PremiumMobileCatalog
           dogs={[]}
@@ -481,9 +481,7 @@ describe("PremiumMobileCatalog", () => {
     });
 
     it("does not show Clear All Filters button when onResetFilters is not provided", () => {
-      render(
-        <PremiumMobileCatalog dogs={[]} filters={stableFilters} />,
-      );
+      render(<PremiumMobileCatalog dogs={[]} filters={stableFilters} />);
 
       const clearButton = screen.queryByRole("button", {
         name: /clear all filters/i,
@@ -493,7 +491,7 @@ describe("PremiumMobileCatalog", () => {
 
     it("calls onResetFilters when Clear All Filters button is clicked", () => {
       const mockOnResetFilters = jest.fn();
-      
+
       render(
         <PremiumMobileCatalog
           dogs={[]}
@@ -511,9 +509,7 @@ describe("PremiumMobileCatalog", () => {
     });
 
     it("shows empty state with proper messaging when no dogs found", () => {
-      render(
-        <PremiumMobileCatalog dogs={[]} filters={stableFilters} />,
-      );
+      render(<PremiumMobileCatalog dogs={[]} filters={stableFilters} />);
 
       expect(screen.getByText("No dogs found")).toBeInTheDocument();
       expect(

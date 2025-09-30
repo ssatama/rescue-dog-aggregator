@@ -161,7 +161,8 @@ const DogCard: React.FC<{
       </div>
       <div className="p-3">
         <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-          {dog.name}{ageGroup !== "Unknown" && `, ${ageGroup}`}
+          {dog.name}
+          {ageGroup !== "Unknown" && `, ${ageGroup}`}
         </h3>
         <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
           {formattedBreed}

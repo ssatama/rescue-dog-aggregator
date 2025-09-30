@@ -140,7 +140,11 @@ describe("CompareDesktop", () => {
 
     it("should render dog images with fixed 4:3 aspect ratio", () => {
       const dogs = [
-        createMockDog({ id: 1, name: "Buddy", primary_image_url: "/buddy.jpg" }),
+        createMockDog({
+          id: 1,
+          name: "Buddy",
+          primary_image_url: "/buddy.jpg",
+        }),
         createMockDog({ id: 2, name: "Luna", primary_image_url: "/luna.jpg" }),
       ];
 

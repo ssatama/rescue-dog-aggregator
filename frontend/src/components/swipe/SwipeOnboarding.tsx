@@ -151,18 +151,15 @@ export default function SwipeOnboarding({ onComplete }: SwipeOnboardingProps) {
   useEffect(() => {
     const onboardingComplete =
       safeStorage.get("swipeOnboardingComplete") === "true";
-    const savedFilters = safeStorage.get("swipeFilters");
+    const filters = safeStorage.parse<SwipeFilters>("swipeFilters", { 
+      country: "", 
+      sizes: [], 
+      ages: [] 
+    });
 
-    if (onboardingComplete && savedFilters) {
-      try {
-        const filters = JSON.parse(savedFilters);
-        if (filters.country) {
-          onComplete(true);
-          return;
-        }
-      } catch (error) {
-        console.error("Failed to parse saved filters:", error);
-      }
+    if (onboardingComplete && filters.country) {
+      onComplete(true);
+      return;
     }
 
     setShowOnboarding(true);

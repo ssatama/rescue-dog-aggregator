@@ -95,7 +95,11 @@ export function fuzzySearch(query, items, maxResults = 5) {
  * @param {number} maxSuggestions - Maximum number of suggestions to return (default: 3)
  * @returns {string[]} Array of suggested corrections
  */
-export function generateDidYouMeanSuggestions(query, items, maxSuggestions = 3) {
+export function generateDidYouMeanSuggestions(
+  query,
+  items,
+  maxSuggestions = 3,
+) {
   if (!query || query.length < 3) return [];
 
   const suggestions = items

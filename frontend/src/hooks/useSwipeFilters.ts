@@ -40,26 +40,19 @@ const COUNTRY_MIGRATION: Record<string, string> = {
 
 export default function useSwipeFilters(): UseSwipeFiltersReturn {
   const [filters, setFiltersState] = useState<SwipeFilters>(() => {
-    try {
-      const stored = safeStorage.get(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        // Migrate old country names to country codes
-        if (parsed.country && COUNTRY_MIGRATION[parsed.country]) {
-          parsed.country = COUNTRY_MIGRATION[parsed.country];
-          // Save the migrated version back
-          safeStorage.stringify(STORAGE_KEY, parsed);
-        }
-        // Ensure ages field exists (migration for old data)
-        if (!parsed.ages) {
-          parsed.ages = [];
-        }
-        return parsed;
-      }
-    } catch (error) {
-      console.error("Failed to load filters from storage:", error);
+    const parsed = safeStorage.parse<SwipeFilters>(STORAGE_KEY, DEFAULT_FILTERS);
+    
+    // Migrate old country names to country codes
+    if (parsed.country && COUNTRY_MIGRATION[parsed.country]) {
+      parsed.country = COUNTRY_MIGRATION[parsed.country];
+      // Save the migrated version back
+      safeStorage.stringify(STORAGE_KEY, parsed);
     }
-    return DEFAULT_FILTERS;
+    // Ensure ages field exists (migration for old data)
+    if (!parsed.ages) {
+      parsed.ages = [];
+    }
+    return parsed;
   });
 
   const [needsOnboarding, setNeedsOnboarding] = useState(() => {

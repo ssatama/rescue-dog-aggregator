@@ -51,15 +51,7 @@ export function SwipeContainer({
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [currentIndex, setCurrentIndex] = useState(() => {
     // Initialize from sessionStorage to preserve navigation state
-    const stored = safeStorage.get("swipeCurrentIndex");
-    if (stored) {
-      try {
-        return parseInt(stored, 10) || 0;
-      } catch {
-        return 0;
-      }
-    }
-    return 0;
+    return safeStorage.parse("swipeCurrentIndex", 0);
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -67,15 +59,8 @@ export function SwipeContainer({
   const [lastTap, setLastTap] = useState<number>(0);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [swipedDogIds, setSwipedDogIds] = useState<Set<number>>(() => {
-    const stored = safeStorage.get("swipedDogIds");
-    if (stored) {
-      try {
-        return new Set(JSON.parse(stored));
-      } catch {
-        return new Set();
-      }
-    }
-    return new Set();
+    const storedIds = safeStorage.parse<number[]>("swipedDogIds", []);
+    return new Set(storedIds);
   });
   const swipedDogIdsRef = useRef(swipedDogIds);
   swipedDogIdsRef.current = swipedDogIds;
@@ -154,10 +139,7 @@ export function SwipeContainer({
         const fetchedDogs = await fetchDogs(queryString);
         if (cancelled) return;
 
-        const storedSwipedIds = safeStorage.get("swipedDogIds");
-        const swipedIds = new Set(
-          storedSwipedIds ? JSON.parse(storedSwipedIds) : [],
-        );
+        const swipedIds = new Set(safeStorage.parse<number[]>("swipedDogIds", []));
 
         const newDogs = fetchedDogs.filter((dog) => {
           const dogId = safeToNumber(dog.id);
@@ -222,7 +204,7 @@ export function SwipeContainer({
         clearTimeout(tapTimeoutRef.current);
         tapTimeoutRef.current = null;
       }
-      
+
       Sentry.addBreadcrumb({
         message: "swipe.session.ended",
         category: "swipe",
@@ -277,10 +259,7 @@ export function SwipeContainer({
           .then((fetchedDogs) => {
             if (fetchedDogs && fetchedDogs.length > 0) {
               setDogs((prevDogs) => {
-                const storedSwipedIds = safeStorage.get("swipedDogIds");
-                const swipedIds = new Set(
-                  storedSwipedIds ? JSON.parse(storedSwipedIds) : [],
-                );
+                const swipedIds = new Set(safeStorage.parse<number[]>("swipedDogIds", []));
                 const newDogs = fetchedDogs.filter((dog) => {
                   const dogId = safeToNumber(dog.id);
                   return dogId !== null && !swipedIds.has(dogId);
@@ -305,7 +284,15 @@ export function SwipeContainer({
           });
       }
     }
-  }, [currentIndex, dogs, fetchDogs, queryString, isLoadingMore, offset, onDogsLoaded]);
+  }, [
+    currentIndex,
+    dogs,
+    fetchDogs,
+    queryString,
+    isLoadingMore,
+    offset,
+    onDogsLoaded,
+  ]);
 
   const goToPrevious = useCallback(() => {
     if (currentIndex > 0) {
@@ -397,10 +384,7 @@ export function SwipeContainer({
               // Use functional update to get latest swipedDogIds
               setDogs((prevDogs) => {
                 // Get the current swiped IDs from storage to be safe
-                const storedSwipedIds = safeStorage.get("swipedDogIds");
-                const swipedIds = new Set(
-                  storedSwipedIds ? JSON.parse(storedSwipedIds) : [],
-                );
+                const swipedIds = new Set(safeStorage.parse<number[]>("swipedDogIds", []));
 
                 // Filter out dogs that have been swiped, but NOT the dog at current viewing index
                 const currentViewingIndex = prevDogs.length; // This will be the index after we append
@@ -451,14 +435,14 @@ export function SwipeContainer({
     if (!currentDog) return;
 
     const now = Date.now();
-    
+
     // Check if this is a double tap
     if (now - lastTap < DOUBLE_TAP_DELAY && tapTimeoutRef.current) {
       // Double tap detected - clear the pending single tap and favorite
       clearTimeout(tapTimeoutRef.current);
       tapTimeoutRef.current = null;
       setLastTap(0);
-      
+
       handleSwipeComplete("right");
       Sentry.addBreadcrumb({
         message: "swipe.card.double_tapped",
@@ -472,7 +456,7 @@ export function SwipeContainer({
     } else {
       // First tap - set timeout to open details if no second tap comes
       setLastTap(now);
-      
+
       tapTimeoutRef.current = setTimeout(() => {
         // Single tap confirmed - expand details
         if (onCardExpanded) {

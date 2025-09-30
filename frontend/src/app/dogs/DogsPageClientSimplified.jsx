@@ -342,7 +342,7 @@ export default function DogsPageClientSimplified({
 
     // Parse page from URL
     const newPage = parseInt(searchParams.get("page") || "1", 10);
-    
+
     // Filters object is already updated from searchParams above
     // This will trigger when reset navigates to clean URL
     fetchDogsWithFilters(filters, newPage);
