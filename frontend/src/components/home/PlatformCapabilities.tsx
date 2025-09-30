@@ -7,11 +7,11 @@ import SwipePreview from './previews/SwipePreview';
 
 export default function PlatformCapabilities() {
   return (
-    <section className="bg-[#FFF8F0] dark:bg-gray-900 py-24">
+    <section className="bg-[#FFF8F0] dark:bg-gray-900 py-24" aria-labelledby="platform-capabilities-heading">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-16">
-          <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          <h2 id="platform-capabilities-heading" className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
             Three Ways to Find Your Dog
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-400">

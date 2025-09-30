@@ -34,7 +34,7 @@ export default function TrustBand() {
   }, []);
 
   return (
-    <section className="bg-gray-100 dark:bg-gray-800 py-12">
+    <section className="bg-gray-100 dark:bg-gray-800 py-12" aria-label="Partner rescue organizations">
       <div className="max-w-7xl mx-auto px-4 text-center">
         <p className="text-lg text-gray-700 dark:text-gray-300 mb-8">
           Aggregating rescue dogs from {totalCount} organizations across Europe & UK

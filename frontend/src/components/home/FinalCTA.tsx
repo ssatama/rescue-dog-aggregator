@@ -25,10 +25,10 @@ export default function FinalCTA() {
   ];
 
   return (
-    <section className="bg-orange-600 dark:bg-orange-700 py-24">
+    <section className="bg-orange-600 dark:bg-orange-700 py-24" aria-labelledby="final-cta-heading">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Headline */}
-        <h2 className="text-4xl lg:text-5xl font-bold text-white text-center mb-16">
+        <h2 id="final-cta-heading" className="text-4xl lg:text-5xl font-bold text-white text-center mb-16">
           Ready to Find Your Dog?
         </h2>
 

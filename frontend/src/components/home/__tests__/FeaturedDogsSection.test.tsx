@@ -193,6 +193,20 @@ describe('FeaturedDogsSection', () => {
       expect(section).toBeInTheDocument();
     });
 
+    test('should have aria-labelledby on section', () => {
+      const { container } = render(<FeaturedDogsSection dogs={mockDogs} totalCount={totalCount} />);
+      
+      const section = container.querySelector('section');
+      expect(section).toHaveAttribute('aria-labelledby', 'featured-dogs-heading');
+    });
+
+    test('should have id on h2 for aria-labelledby', () => {
+      render(<FeaturedDogsSection dogs={mockDogs} totalCount={totalCount} />);
+      
+      const h2 = screen.getByRole('heading', { level: 2 });
+      expect(h2).toHaveAttribute('id', 'featured-dogs-heading');
+    });
+
     test('should have proper heading hierarchy', () => {
       render(<FeaturedDogsSection dogs={mockDogs} totalCount={totalCount} />);
       

@@ -34,14 +34,14 @@ export default function CapabilityCard({
         <p className="text-gray-600 dark:text-gray-400 mb-4 flex-grow">
           {description}
         </p>
-        <div className="text-sm text-gray-500 dark:text-gray-500 mb-4">
+        <div className="text-sm text-gray-500 dark:text-gray-400 mb-4">
           {badge}
         </div>
         
-        {/* CTA Button */}
-        <button className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+        {/* CTA Text */}
+        <div className="w-full bg-orange-600 group-hover:bg-orange-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors text-center">
           {ctaText}
-        </button>
+        </div>
       </div>
     </Link>
   );

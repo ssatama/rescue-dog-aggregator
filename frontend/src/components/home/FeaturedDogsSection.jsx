@@ -6,11 +6,11 @@ import { Button } from '../ui/button';
 
 export default function FeaturedDogsSection({ dogs, totalCount }) {
   return (
-    <section className="bg-white dark:bg-gray-900 py-24">
+    <section className="bg-white dark:bg-gray-900 py-24" aria-labelledby="featured-dogs-heading">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-3">
+          <h2 id="featured-dogs-heading" className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-3">
             Dogs Waiting for Homes
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-400">

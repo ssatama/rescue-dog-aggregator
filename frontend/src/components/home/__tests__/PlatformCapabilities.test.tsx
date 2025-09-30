@@ -174,6 +174,20 @@ describe('PlatformCapabilities', () => {
       expect(section).toBeInTheDocument();
     });
 
+    test('should have aria-labelledby on section', () => {
+      const { container } = render(<PlatformCapabilities />);
+      
+      const section = container.querySelector('section');
+      expect(section).toHaveAttribute('aria-labelledby', 'platform-capabilities-heading');
+    });
+
+    test('should have id on h2 for aria-labelledby', () => {
+      render(<PlatformCapabilities />);
+      
+      const h2 = screen.getByRole('heading', { level: 2 });
+      expect(h2).toHaveAttribute('id', 'platform-capabilities-heading');
+    });
+
     test('should have proper heading hierarchy', () => {
       render(<PlatformCapabilities />);
       
@@ -190,6 +204,26 @@ describe('PlatformCapabilities', () => {
       links.forEach(link => {
         expect(link).toHaveAttribute('href');
       });
+    });
+
+    test('should have aria-labels on preview inputs', () => {
+      render(<PlatformCapabilities />);
+      
+      const breedInput = screen.getByLabelText('Search breeds (preview)');
+      const locationInput = screen.getByLabelText('Location filter (preview)');
+      
+      expect(breedInput).toBeInTheDocument();
+      expect(locationInput).toBeInTheDocument();
+    });
+
+    test('should have aria-labels on swipe preview buttons', () => {
+      render(<PlatformCapabilities />);
+      
+      const passButton = screen.getByLabelText('Pass on dog');
+      const likeButton = screen.getByLabelText('Like dog');
+      
+      expect(passButton).toBeInTheDocument();
+      expect(likeButton).toBeInTheDocument();
     });
   });
 

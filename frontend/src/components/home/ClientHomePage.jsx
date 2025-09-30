@@ -11,6 +11,7 @@ import Loading from "../ui/Loading";
 import MobileHomePage from "../mobile/MobileHomePage";
 import { MobileHomeSEO } from "../seo/MobileHomeSEO";
 import { getBreedsWithImagesForHomePage } from "../../services/breedImagesService";
+import ErrorBoundary from "../ui/ErrorBoundary";
 
 // Lazy load BreedsCTA for better performance
 const BreedsCTA = lazy(() =>
@@ -124,22 +125,30 @@ export default function ClientHomePage({
         <HeroSection initialStatistics={initialStatistics} priority={true} />
 
         {/* Platform Capabilities Section - Three Ways to Find Your Dog */}
-        <PlatformCapabilities />
+        <ErrorBoundary fallbackMessage="Unable to load platform capabilities section. Please refresh the page.">
+          <PlatformCapabilities />
+        </ErrorBoundary>
 
         {/* Trust Band - Organization Logos */}
-        <TrustBand />
+        <ErrorBoundary fallbackMessage="Unable to load organization logos. Please refresh the page.">
+          <TrustBand />
+        </ErrorBoundary>
 
         {/* Featured Dogs Section - 6 dogs */}
-        <FeaturedDogsSection 
-          dogs={initialRecentDogs || []}
-          totalCount={initialStatistics?.total_dogs || 0}
-        />
+        <ErrorBoundary fallbackMessage="Unable to load featured dogs. Please refresh the page.">
+          <FeaturedDogsSection 
+            dogs={initialRecentDogs || []}
+            totalCount={initialStatistics?.total_dogs || 0}
+          />
+        </ErrorBoundary>
 
         {/* Trust Section - Organization Statistics */}
         <TrustSection initialStatistics={initialStatistics} />
 
         {/* Final CTA - Ready to Find Your Dog? */}
-        <FinalCTA />
+        <ErrorBoundary fallbackMessage="Unable to load call-to-action section. Please refresh the page.">
+          <FinalCTA />
+        </ErrorBoundary>
       </div>
     </>
   );

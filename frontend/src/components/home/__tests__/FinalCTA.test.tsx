@@ -232,6 +232,20 @@ describe('FinalCTA', () => {
       expect(section).toBeInTheDocument();
     });
 
+    test('should have aria-labelledby on section', () => {
+      const { container } = render(<FinalCTA />);
+      
+      const section = container.querySelector('section');
+      expect(section).toHaveAttribute('aria-labelledby', 'final-cta-heading');
+    });
+
+    test('should have id on h2 for aria-labelledby', () => {
+      render(<FinalCTA />);
+      
+      const h2 = screen.getByRole('heading', { level: 2 });
+      expect(h2).toHaveAttribute('id', 'final-cta-heading');
+    });
+
     test('should have proper heading hierarchy', () => {
       render(<FinalCTA />);
       

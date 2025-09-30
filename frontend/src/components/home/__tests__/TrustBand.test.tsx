@@ -271,6 +271,15 @@ describe('TrustBand', () => {
       expect(section).toBeInTheDocument();
     });
 
+    test('should have aria-label on section', async () => {
+      mockGetOrganizations.mockResolvedValueOnce(mockOrganizations);
+
+      const { container } = render(<TrustBand />);
+
+      const section = container.querySelector('section');
+      expect(section).toHaveAttribute('aria-label', 'Partner rescue organizations');
+    });
+
     test('should have alt text for all logos', async () => {
       mockGetOrganizations.mockResolvedValueOnce(mockOrganizations);
 
