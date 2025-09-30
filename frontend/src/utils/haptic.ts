@@ -41,28 +41,3 @@ export function triggerHaptic(pattern: HapticPattern = "light"): void {
   }
 }
 
-/**
- * Check if haptic feedback is supported
- */
-export function isHapticSupported(): boolean {
-  return typeof window !== "undefined" && "vibrate" in window.navigator;
-}
-
-/**
- * Trigger haptic feedback for swipe gestures
- * @param direction - The swipe direction
- */
-export function triggerSwipeHaptic(direction: "left" | "right"): void {
-  if (direction === "right") {
-    triggerHaptic("success");
-  } else {
-    triggerHaptic("light");
-  }
-}
-
-/**
- * Trigger haptic feedback for double tap
- */
-export function triggerDoubleTapHaptic(): void {
-  triggerHaptic("double");
-}

@@ -63,24 +63,3 @@ export const getCountryName = (countryCode) => {
   return COUNTRY_NAMES[upperCode] || countryCode;
 };
 
-/**
- * Get all available country mappings
- * @returns {Object} Object with country code keys and name values
- */
-export const getAllCountryMappings = () => {
-  return { ...COUNTRY_NAMES };
-};
-
-/**
- * Check if a country code is valid
- * @param {string} countryCode - Two-letter country code
- * @returns {boolean} True if the country code is recognized
- */
-export const isValidCountryCode = (countryCode) => {
-  if (!countryCode || typeof countryCode !== "string") {
-    return false;
-  }
-
-  const upperCode = countryCode.toUpperCase();
-  return upperCode in COUNTRY_NAMES;
-};

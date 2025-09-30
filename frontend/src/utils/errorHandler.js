@@ -154,23 +154,6 @@ export function formatErrorMessage(parsedError) {
 }
 
 /**
- * Determine if error is related to connection pool
- * @param {Object} parsedError - Parsed error from parseApiError
- * @returns {Boolean} True if pool-related error
- */
-export function isPoolError(parsedError) {
-  const poolCodes = [
-    "POOL_INIT_FAILED",
-    "POOL_NOT_INITIALIZED",
-    "POOL_EXHAUSTED",
-    "CONNECTION_REFUSED",
-    "CONNECTION_TIMEOUT",
-  ];
-
-  return poolCodes.includes(parsedError.code);
-}
-
-/**
  * Create retry handler with exponential backoff
  * @param {Function} fn - Function to retry
  * @param {Number} maxAttempts - Maximum retry attempts
@@ -216,23 +199,6 @@ export function withRetry(fn, maxAttempts = 3, onRetry = null) {
   };
 }
 
-/**
- * Error boundary fallback component props builder
- * @param {Object} error - Error that triggered the boundary
- * @returns {Object} Props for error display component
- */
-export function buildErrorProps(error) {
-  const parsed = parseApiError(error);
-
-  return {
-    title: getErrorTitle(parsed.type),
-    message: formatErrorMessage(parsed),
-    retryable: parsed.retryable,
-    correlationId: parsed.correlationId,
-    showDetails: process.env.NODE_ENV === "development",
-    details: parsed.detail,
-  };
-}
 
 /**
  * Get user-friendly title for error type
