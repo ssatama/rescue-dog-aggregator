@@ -3,7 +3,7 @@
  */
 import React from "react";
 import { render, screen } from "../../test-utils";
-import ErrorBoundary from "../../components/error/ErrorBoundary";
+import { ErrorBoundary } from "../../components/ErrorBoundary";
 import DogCardErrorBoundary from "../../components/error/DogCardErrorBoundary";
 
 // Component that throws an error for testing
@@ -43,14 +43,14 @@ describe("Error Boundaries", () => {
       );
 
       expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
-      expect(screen.getByText(/try refreshing the page/i)).toBeInTheDocument();
+      expect(screen.getByText(/try again/i)).toBeInTheDocument();
     });
 
     test("should display custom fallback component", () => {
       const CustomFallback = () => <div>Custom error message</div>;
 
       render(
-        <ErrorBoundary fallback={CustomFallback}>
+        <ErrorBoundary fallback={<CustomFallback />}>
           <ThrowError shouldThrow={true} />
         </ErrorBoundary>,
       );
@@ -63,7 +63,7 @@ describe("Error Boundaries", () => {
       process.env.NODE_ENV = "development";
 
       render(
-        <ErrorBoundary>
+        <ErrorBoundary showError={true}>
           <ThrowError shouldThrow={true} />
         </ErrorBoundary>,
       );

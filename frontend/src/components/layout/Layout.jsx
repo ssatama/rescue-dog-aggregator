@@ -1,7 +1,7 @@
 "use client";
 import Header from "./Header";
 import Footer from "./Footer";
-import ErrorBoundary from "../error/ErrorBoundary";
+import { ErrorBoundary } from "../ErrorBoundary";
 
 export default function Layout({ children }) {
   return (
