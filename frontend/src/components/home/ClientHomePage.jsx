@@ -8,6 +8,7 @@ import TrustSection from "./TrustSection";
 import Loading from "../ui/Loading";
 import MobileHomePage from "../mobile/MobileHomePage";
 import { MobileHomeSEO } from "../seo/MobileHomeSEO";
+import { getBreedsWithImagesForHomePage } from "../../services/breedImagesService";
 
 // Lazy load BreedsCTA for better performance
 const BreedsCTA = lazy(() =>
@@ -27,18 +28,12 @@ export default function ClientHomePage({
   // Fetch breeds with images on mount (client-side only)
   useEffect(() => {
     const fetchBreedsWithImages = async () => {
-      try {
-        const API_URL =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-        const response = await fetch(
-          `${API_URL}/api/animals/breeds/with-images?min_count=5&limit=20`,
-        );
-        if (response.ok) {
-          const breeds = await response.json();
-          setBreedsWithImages(breeds);
-        }
-      } catch (error) {
-        console.error("Error fetching breeds with images:", error);
+      const breeds = await getBreedsWithImagesForHomePage({
+        minCount: 5,
+        limit: 20,
+      });
+      if (breeds) {
+        setBreedsWithImages(breeds);
       }
     };
 

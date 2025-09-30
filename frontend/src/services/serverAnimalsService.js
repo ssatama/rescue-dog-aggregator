@@ -57,11 +57,10 @@ const cache = (fn) => {
   };
 };
 
-// Use internal URL for server-side requests in development
-const API_URL =
-  process.env.NODE_ENV === "development" && typeof window === "undefined"
-    ? "http://localhost:8000" // Server-side in dev
-    : process.env.NEXT_PUBLIC_API_URL || "https://api.rescuedogs.me";
+import { getApiUrl } from "../utils/apiConfig";
+
+// Use centralized API URL configuration
+const API_URL = getApiUrl();
 
 // Cache functions for deduplication within request lifecycle
 export const getAnimals = cache(async (params = {}) => {

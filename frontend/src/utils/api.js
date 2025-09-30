@@ -2,9 +2,10 @@
 
 import { logger, reportError } from "./logger";
 import { parseApiError, formatErrorMessage, withRetry } from "./errorHandler";
+import { getApiUrl } from "./apiConfig";
 
 // Base API URL - configurable based on environment
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = getApiUrl();
 
 /**
  * Base fetch function with error handling

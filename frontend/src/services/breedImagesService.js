@@ -1,8 +1,7 @@
-// Use internal URL for server-side requests in development
-const API_URL =
-  process.env.NODE_ENV === "development" && typeof window === "undefined"
-    ? "http://localhost:8000" // Server-side in dev
-    : process.env.NEXT_PUBLIC_API_URL || "https://api.rescuedogs.me";
+import { getApiUrl } from "../utils/apiConfig";
+
+// Use centralized API URL configuration
+const API_URL = getApiUrl();
 
 export async function getBreedsWithImages(params = {}) {
   const queryParams = new URLSearchParams();
@@ -160,5 +159,34 @@ export async function getBreedGroupsWithTopBreeds() {
   } catch (error) {
     console.error("Error fetching breed groups:", error);
     return [];
+  }
+}
+
+export async function getBreedsWithImagesForHomePage(params = {}) {
+  const queryParams = new URLSearchParams();
+
+  if (params.minCount) queryParams.append("min_count", params.minCount);
+  if (params.limit) queryParams.append("limit", params.limit);
+
+  const queryString = queryParams.toString();
+  const url = `${API_URL}/api/animals/breeds/with-images${queryString ? `?${queryString}` : ""}`;
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      next: { revalidate: 300 },
+    });
+
+    if (!response.ok) {
+      console.error(`Failed to fetch breeds with images: ${response.status}`);
+      return null;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching breeds with images:", error);
+    return null;
   }
 }
