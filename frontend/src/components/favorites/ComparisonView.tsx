@@ -23,7 +23,7 @@ import { FallbackImage } from "../ui/FallbackImage";
 interface ComparisonViewProps {
   dogs: Dog[];
   onClose: () => void;
-  onRemoveFavorite: (dogId: number) => void;
+  onRemoveFavorite: (dogId: string | number) => void;
 }
 
 const getEnergyLevel = (level?: string): number => {
@@ -159,7 +159,7 @@ const DogComparisonCard = ({
   index = 0,
 }: {
   dog: Dog;
-  onRemoveFavorite: (id: number) => void;
+  onRemoveFavorite: (id: string | number) => void;
   index?: number;
 }) => {
   const imageUrl = dog.primary_image_url;
@@ -201,7 +201,7 @@ const DogComparisonCard = ({
       <div className="relative h-[30vh] min-h-[200px] max-h-[300px] md:h-56 w-full bg-gray-100 dark:bg-gray-700">
         {imageUrl ? (
           <FallbackImage
-            src={dog.primary_image_url || dog.image}
+            src={dog.primary_image_url || "/placeholder-dog.jpg"}
             alt={dog.name}
             fill
             className="object-cover"

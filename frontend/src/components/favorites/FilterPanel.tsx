@@ -56,10 +56,7 @@ const getAgeCategory = (dog: DogType): string => {
   const ageMax = dog.age_max_months || dog.age_months;
 
   // Handle Unknown age case
-  if (!ageMin && ageMin !== 0 && !ageMax && !dog.age_category) return "Unknown";
-
-  // If dog has explicit age_category, use it
-  if (dog.age_category) return dog.age_category;
+  if (!ageMin && ageMin !== 0 && !ageMax) return "Unknown";
 
   // If no age data at all
   if (!ageMin && ageMin !== 0) return "Unknown";

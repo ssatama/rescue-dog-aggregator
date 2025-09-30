@@ -12,7 +12,9 @@ interface CompareModeProps {
 }
 
 export default function CompareMode({ dogs, onClose }: CompareModeProps) {
-  const [selectedDogs, setSelectedDogs] = useState<Set<number>>(new Set());
+  const [selectedDogs, setSelectedDogs] = useState<Set<string | number>>(
+    new Set(),
+  );
   const [isComparing, setIsComparing] = useState(false);
 
   // Handle backdrop click
@@ -37,7 +39,7 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
     return () => document.removeEventListener("keydown", handleEscape);
   }, [onClose]);
 
-  const handleSelectionChange = (selected: Set<number>) => {
+  const handleSelectionChange = (selected: Set<string | number>) => {
     setSelectedDogs(selected);
   };
 
@@ -55,7 +57,7 @@ export default function CompareMode({ dogs, onClose }: CompareModeProps) {
     return dogs.filter((dog) => selectedDogs.has(dog.id));
   };
 
-  const handleRemoveFavorite = (dogId: number) => {
+  const handleRemoveFavorite = (dogId: string | number) => {
     const newSelection = new Set(selectedDogs);
     newSelection.delete(dogId);
     setSelectedDogs(newSelection);

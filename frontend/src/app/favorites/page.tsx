@@ -172,7 +172,8 @@ function FavoritesPageContent() {
     const timer = setTimeout(() => {
       try {
         // Use statically imported function
-        const enhancedInsights = getEnhancedInsights(filteredDogs);
+        // Cast to DogWithProfiler[] since favorites are always fetched from API with numeric IDs
+        const enhancedInsights = getEnhancedInsights(filteredDogs as any);
         const basicInsights = getBasicInsights(filteredDogs);
 
         setInsights({

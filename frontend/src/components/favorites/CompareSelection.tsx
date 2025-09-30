@@ -9,8 +9,8 @@ import { getAgeDisplay } from "./compareUtils";
 
 interface CompareSelectionProps {
   dogs: Dog[];
-  selectedDogs: Set<number>;
-  onSelectionChange: (selected: Set<number>) => void;
+  selectedDogs: Set<string | number>;
+  onSelectionChange: (selected: Set<string | number>) => void;
   onCompare: () => void;
 }
 
@@ -23,10 +23,12 @@ export default function CompareSelection({
   onSelectionChange,
   onCompare,
 }: CompareSelectionProps) {
-  const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
+  const [imageErrors, setImageErrors] = useState<Set<string | number>>(
+    new Set(),
+  );
 
   const toggleDogSelection = useCallback(
-    (dogId: number) => {
+    (dogId: string | number) => {
       const newSet = new Set(selectedDogs);
       if (newSet.has(dogId)) {
         newSet.delete(dogId);
@@ -38,12 +40,12 @@ export default function CompareSelection({
     [selectedDogs, onSelectionChange],
   );
 
-  const handleImageError = useCallback((dogId: number) => {
+  const handleImageError = useCallback((dogId: string | number) => {
     setImageErrors((prev) => new Set(prev).add(dogId));
   }, []);
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent, dogId: number, isDisabled: boolean) => {
+    (e: React.KeyboardEvent, dogId: string | number, isDisabled: boolean) => {
       if (!isDisabled && (e.key === "Enter" || e.key === " ")) {
         e.preventDefault();
         toggleDogSelection(dogId);

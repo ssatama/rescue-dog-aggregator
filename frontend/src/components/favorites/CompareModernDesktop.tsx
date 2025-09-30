@@ -104,7 +104,7 @@ export default function CompareModernDesktop({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["highlights"]),
   );
-  const [hoveredDog, setHoveredDog] = useState<number | null>(null);
+  const [hoveredDog, setHoveredDog] = useState<string | number | null>(null);
   const [selectedComparisonMode, setSelectedComparisonMode] = useState<
     "grid" | "focus"
   >("grid");

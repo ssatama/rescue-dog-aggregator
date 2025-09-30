@@ -223,14 +223,14 @@ export function useSwipeNavigation({
 
   // Navigation functions
   const navigateToPrev = useCallback(() => {
-    if (prevDog) {
+    if (prevDog && prevDog.slug) {
       const url = buildNavigationUrl(prevDog.slug, searchParams);
       router.push(url);
     }
   }, [prevDog, searchParams, router]);
 
   const navigateToNext = useCallback(() => {
-    if (nextDog) {
+    if (nextDog && nextDog.slug) {
       const url = buildNavigationUrl(nextDog.slug, searchParams);
       router.push(url);
     }
