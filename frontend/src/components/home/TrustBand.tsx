@@ -25,7 +25,9 @@ export default function TrustBand() {
         setOrganizations(data || []);
         setTotalCount(data?.length || 13);
       } catch (error) {
-        reportError("Failed to fetch organizations", { error: error.message });
+        reportError("Failed to fetch organizations", {
+          error: error instanceof Error ? error.message : String(error),
+        });
       } finally {
         setIsLoading(false);
       }
