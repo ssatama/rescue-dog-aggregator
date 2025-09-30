@@ -1,21 +1,10 @@
-// frontend/src/components/home/FeaturedDogsSection.tsx
+// frontend/src/components/home/FeaturedDogsSection.jsx
 
 import Link from 'next/link';
 import DogCardOptimized from '../dogs/DogCardOptimized';
 import { Button } from '../ui/button';
 
-interface Dog {
-  id: number;
-  name: string;
-  [key: string]: any;
-}
-
-interface FeaturedDogsSectionProps {
-  dogs: Dog[];
-  totalCount: number;
-}
-
-export default function FeaturedDogsSection({ dogs, totalCount }: FeaturedDogsSectionProps) {
+export default function FeaturedDogsSection({ dogs, totalCount }) {
   return (
     <section className="bg-white dark:bg-gray-900 py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

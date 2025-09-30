@@ -2,9 +2,11 @@
 
 import React, { Suspense, lazy, useEffect, useState } from "react";
 import HeroSection from "./HeroSection";
-import DogSection from "./DogSection";
-import DogSectionErrorBoundary from "../error/DogSectionErrorBoundary";
+import PlatformCapabilities from "./PlatformCapabilities";
+import TrustBand from "./TrustBand";
+import FeaturedDogsSection from "./FeaturedDogsSection";
 import TrustSection from "./TrustSection";
+import FinalCTA from "./FinalCTA";
 import Loading from "../ui/Loading";
 import MobileHomePage from "../mobile/MobileHomePage";
 import { MobileHomeSEO } from "../seo/MobileHomeSEO";
@@ -121,42 +123,23 @@ export default function ClientHomePage({
       <div className="hidden sm:block">
         <HeroSection initialStatistics={initialStatistics} priority={true} />
 
-        {/* Breeds CTA Section - New feature promotion */}
-        <DogSectionErrorBoundary>
-          <Suspense fallback={<Loading className="h-64" />}>
-            <BreedsCTA />
-          </Suspense>
-        </DogSectionErrorBoundary>
+        {/* Platform Capabilities Section - Three Ways to Find Your Dog */}
+        <PlatformCapabilities />
 
-        {/* Just Added Section - with pre-fetched dogs */}
-        <DogSectionErrorBoundary>
-          <Suspense fallback={<Loading className="h-64" />}>
-            <DogSection
-              title="Just Added"
-              subtitle="New dogs looking for homes"
-              curationType="recent_with_fallback"
-              viewAllHref="/dogs?curation=recent"
-              initialDogs={initialRecentDogs}
-              priority={true}
-            />
-          </Suspense>
-        </DogSectionErrorBoundary>
+        {/* Trust Band - Organization Logos */}
+        <TrustBand />
 
-        {/* From Different Rescues Section - with pre-fetched dogs */}
-        <DogSectionErrorBoundary>
-          <Suspense fallback={<Loading className="h-64" />}>
-            <DogSection
-              title="From Different Rescues"
-              subtitle="Dogs from each organization"
-              curationType="diverse"
-              viewAllHref="/dogs?curation=diverse"
-              initialDogs={initialDiverseDogs}
-            />
-          </Suspense>
-        </DogSectionErrorBoundary>
+        {/* Featured Dogs Section - 6 dogs */}
+        <FeaturedDogsSection 
+          dogs={initialRecentDogs || []}
+          totalCount={initialStatistics?.total_dogs || 0}
+        />
 
-        {/* Trust Section - with pre-fetched statistics */}
+        {/* Trust Section - Organization Statistics */}
         <TrustSection initialStatistics={initialStatistics} />
+
+        {/* Final CTA - Ready to Find Your Dog? */}
+        <FinalCTA />
       </div>
     </>
   );
