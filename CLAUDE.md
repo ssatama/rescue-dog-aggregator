@@ -11,33 +11,52 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Testing: pytest (backend), Jest/Playwright (frontend)
 - AI: OpenRouter API (Google Gemini 2.5 Flash) for LLM enrichment
 - Monitoring: Sentry (dev/prod)
-- Current: 434+ backend tests, 1,249+ frontend tests, 2,500+ dogs
+- Current: 134 backend test files, 260 frontend test files, 3,246 dogs
 
 ## Status
 
 - Site live at www.rescuedogs.me
-- 2,500+ dogs from 13 organizations
+- 3,246 dogs from 13 organizations
 - Deployment: Vercel (frontend), Railway (backend + PostgreSQL)
 - Development flow: local → dev branch → main → production
 - Traffic: 20+ daily users, growing steadily
 
 ## USE SUB-AGENTS FOR CONTEXT OPTIMIZATION
 
-1. Always use the file-analyzer sub-agent when asked to read files.
-   The file-analyzer agent is an expert in extracting and summarizing critical information from files, particularly log files and verbose outputs. It provides concise, actionable summaries that preserve essential information while dramatically reducing context usage.
+**CRITICAL**: Use sub-agents to reduce context usage and improve efficiency.
 
-2. Always use the code-analyzer sub-agent when asked to search code, analyze code, research bugs, or trace logic flow.
-   The code-analyzer agent is an expert in code analysis, logic tracing, and vulnerability detection. It provides concise, actionable summaries that preserve essential information while dramatically reducing context usage.
+1. **file-analyzer**: Always use when reading files (especially logs, verbose outputs)
+   - Expert in extracting critical information
+   - Provides concise, actionable summaries
+   - Dramatically reduces context usage
+
+2. **code-analyzer**: Always use when searching/analyzing code, researching bugs, tracing logic
+   - Expert in code analysis, logic tracing, vulnerability detection
+   - Provides concise summaries while preserving essential information
+   - Optimizes context window usage
 
 ## MCP Tools for Claude Code
 
-- Utilize the available MCP servers and tools
-- Use Postgres MCP to query the local dev database
-- Use Serena MCP tools to study the code base
-- Use morph MCP for code edits this is much faster!
-- Use Magic MCP to create new React components or upgarde existing ones
-- Use zen tools for planning, debugging, test generation, code reviews and peer feedback
-- Use subagents in parallel from /agents to execute work efficiently
+**Priority order for efficiency:**
+
+1. **Serena MCP**: Study codebase with symbolic tools (avoid reading entire files)
+   - `get_symbols_overview`, `find_symbol`, `search_for_pattern`
+   - `check_onboarding_performed`, `list_memories`, `read_memory`
+
+2. **Morph MCP**: Fast, precise code edits (preferred over Edit tool)
+   - `edit_file`, `tiny_edit_file` for line-based changes
+
+3. **Postgres MCP**: Query local dev database directly
+   - `query` tool for SELECT statements
+
+4. **Magic MCP**: Create/upgrade React components
+   - `21st_magic_component_builder`, `21st_magic_component_refiner`
+
+5. **Zen MCP**: Planning, debugging, code reviews, deep thinking
+   - `planner`, `debug`, `codereview`, `chat`
+
+6. **Sub-agents**: Parallel execution for complex tasks
+   - file-analyzer, code-analyzer (see above)
 
 ## CRITICAL: Planning-First Workflow
 
@@ -97,7 +116,7 @@ api/              # FastAPI backend with async routes
 ├── routes/       # animals, organizations, swipe, llm, monitoring
 services/         # Core services (12 total)
 ├── llm/          # AI profiling pipeline (dog_profiler.py, normalizers/)
-scrapers/         # 13+ organization scrapers
+scrapers/         # 13 organization scrapers
 frontend/         # Next.js 15 App Router
 ├── app/          # Pages: dogs/, swipe/, favorites/, breeds/
 ├── components/   # UI components organized by feature
@@ -154,16 +173,19 @@ python management/llm_commands.py generate-profiles       # Batch enrichment
 ## Database Schema Highlights
 
 ```sql
-animals: id, name, breed, properties(JSONB), dog_profiler_data(JSONB), status, availability_confidence
-organizations: id, name, slug, config_id, active
+animals: 37 columns including id, name, breed, standardized_breed, properties(JSONB),
+         dog_profiler_data(JSONB), status, availability_confidence, slug
+organizations: 13 columns including id, name, slug, config_id, active, ships_to(JSONB)
 -- GIN indexes on JSONB columns for performance
+-- See docs/technical/architecture.md for complete schema
 ```
 
 ## Emergency Commands
 
 ```bash
 # Database
-psql -d rescue_dogs -c "SELECT COUNT(*) FROM animals WHERE status='available';"
+psql -d rescue_dogs -c "SELECT COUNT(*) FROM animals WHERE active = true;"
+# Or use Postgres MCP: mcp__postgres__query tool
 python management/emergency_operations.py --reset-stale-data
 
 # Frontend rebuild
@@ -179,11 +201,14 @@ npm test -- --testNamePattern="PersonalityTraits"
 
 ## API Endpoints
 
-- `/api/animals`: CRUD + filtering
-- `/api/swipe`: Tinder-like interface
-- `/api/llm/enrich`: AI enrichment
-- `/api/organizations`: Org management
-- `/api/monitoring`: Health checks
+- `/api/animals`: CRUD + filtering, search, stats, breeds
+- `/api/enhanced_animals`: AI-enriched data, semantic search
+- `/api/swipe`: Tinder-like discovery interface
+- `/api/llm`: Enrichment, translation, batch processing
+- `/api/organizations`: Org management, metrics, stats
+- `/api/monitoring`: Health checks, scraper status, metrics
+- `/api/sitemap`: Dynamic XML sitemaps
+- `/api/sentry-test`: Error tracking debug endpoints
 
 ## LLM Integration
 
