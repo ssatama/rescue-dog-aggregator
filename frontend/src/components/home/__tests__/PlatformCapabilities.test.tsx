@@ -148,7 +148,7 @@ describe("PlatformCapabilities", () => {
       const { container } = render(<PlatformCapabilities />);
 
       const section = container.querySelector("section");
-      expect(section).toHaveClass("py-24");
+      expect(section).toHaveClass("py-32");
     });
 
     test("should have responsive max-width container", () => {

@@ -77,13 +77,13 @@ export default function CapabilityCard({
         </p>
         
         {/* Badge with icon and enhanced styling */}
-        <div className="inline-flex items-center gap-1.5 text-sm text-orange-700 dark:text-orange-400 mb-4 bg-orange-50/60 dark:bg-orange-900/30 px-3 py-1.5 rounded-full w-fit">
-          <span className="text-xs" aria-hidden="true">✨</span>
-          <span>{badge}</span>
+        <div className="inline-flex items-center gap-2 text-sm text-orange-700 dark:text-orange-400 mb-4 bg-orange-50/80 dark:bg-orange-900/40 px-4 py-2 rounded-full w-fit border border-orange-200/50 dark:border-orange-800/50">
+          <span className="text-base" aria-hidden="true">✨</span>
+          <span className="font-medium">{badge}</span>
         </div>
 
         {/* CTA Button */}
-        <div className="w-full bg-orange-600 group-hover:bg-orange-700 dark:bg-orange-700 dark:group-hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 text-center shadow-md group-hover:shadow-lg">
+        <div className="w-full bg-orange-600 group-hover:bg-orange-700 dark:bg-orange-700 dark:group-hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 text-center shadow-md group-hover:shadow-lg group-hover:scale-105">
           {ctaText}
         </div>
       </div>

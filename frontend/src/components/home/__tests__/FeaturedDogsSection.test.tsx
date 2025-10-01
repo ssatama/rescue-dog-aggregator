@@ -112,33 +112,23 @@ describe("FeaturedDogsSection", () => {
     test("should render CTA button with correct text", () => {
       render(<FeaturedDogsSection dogs={mockDogs} totalCount={totalCount} />);
 
-      const button = screen.getByText("Browse All 2,500 Dogs →");
-      expect(button).toBeInTheDocument();
+      expect(screen.getByText(/Browse All 2,500 Dogs/)).toBeInTheDocument();
+      expect(screen.getByText("→")).toBeInTheDocument();
     });
 
     test("should link to /dogs page", () => {
       render(<FeaturedDogsSection dogs={mockDogs} totalCount={totalCount} />);
 
-      const button = screen.getByText("Browse All 2,500 Dogs →");
+      const button = screen.getByText(/Browse All 2,500 Dogs/);
       const link = button.closest("a");
       expect(link).toHaveAttribute("href", "/dogs");
     });
 
-    test("should format count with commas in button", () => {
-      render(<FeaturedDogsSection dogs={mockDogs} totalCount={3186} />);
-
-      expect(screen.getByText("Browse All 3,186 Dogs →")).toBeInTheDocument();
-    });
-
-    test("should have orange button styling", () => {
+    test("should have large button size", () => {
       render(<FeaturedDogsSection dogs={mockDogs} totalCount={totalCount} />);
 
-      const button = screen.getByText("Browse All 2,500 Dogs →");
-      expect(button).toHaveClass(
-        "bg-orange-600",
-        "hover:bg-orange-700",
-        "text-white",
-      );
+      const button = screen.getByRole("button");
+      expect(button).toHaveClass("px-16", "py-6", "text-lg");
     });
 
     test("should be centered", () => {
@@ -146,10 +136,37 @@ describe("FeaturedDogsSection", () => {
         <FeaturedDogsSection dogs={mockDogs} totalCount={totalCount} />,
       );
 
-      const buttonContainer = container.querySelector(
-        ".text-center:last-child",
+      const buttonWrapper = container.querySelector(".text-center");
+      expect(buttonWrapper).toBeInTheDocument();
+    });
+
+    test("should have orange styling", () => {
+      render(<FeaturedDogsSection dogs={mockDogs} totalCount={totalCount} />);
+
+      const button = screen.getByRole("button");
+      expect(button).toHaveClass(
+        "bg-orange-600",
+        "hover:bg-orange-700",
+        "text-white",
       );
-      expect(buttonContainer).toBeInTheDocument();
+    });
+
+    test("should display formatted count", () => {
+      render(<FeaturedDogsSection dogs={mockDogs} totalCount={2500} />);
+
+      expect(screen.getByText(/Browse All 2,500 Dogs/)).toBeInTheDocument();
+    });
+
+    test("should display count for large numbers", () => {
+      render(<FeaturedDogsSection dogs={mockDogs} totalCount={10000} />);
+
+      expect(screen.getByText(/Browse All 10,000 Dogs/)).toBeInTheDocument();
+    });
+
+    test("should display count for zero dogs", () => {
+      render(<FeaturedDogsSection dogs={mockDogs} totalCount={0} />);
+
+      expect(screen.getByText(/Browse All 0 Dogs/)).toBeInTheDocument();
     });
   });
 
@@ -160,7 +177,7 @@ describe("FeaturedDogsSection", () => {
       );
 
       const section = container.querySelector("section");
-      expect(section).toHaveClass("py-24");
+      expect(section).toHaveClass("py-32");
     });
 
     test("should have max-width container", () => {
@@ -262,7 +279,7 @@ describe("FeaturedDogsSection", () => {
     test("should handle zero total count", () => {
       render(<FeaturedDogsSection dogs={mockDogs} totalCount={0} />);
 
-      expect(screen.getByText("Browse All 0 Dogs →")).toBeInTheDocument();
+      expect(screen.getByText(/Browse All 0 Dogs/)).toBeInTheDocument();
     });
 
     test("should slice even if array has exactly 6 dogs", () => {

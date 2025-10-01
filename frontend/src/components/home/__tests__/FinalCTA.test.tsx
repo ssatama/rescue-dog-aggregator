@@ -163,18 +163,18 @@ describe("FinalCTA", () => {
   });
 
   describe("Responsive Design", () => {
-    test("should have orange background", () => {
+    test("should have gradient background", () => {
       const { container } = render(<FinalCTA />);
 
       const section = container.querySelector("section");
-      expect(section).toHaveClass("bg-orange-600", "dark:bg-orange-700");
+      expect(section).toHaveClass("bg-gradient-to-br", "from-slate-800", "via-slate-700", "to-slate-900");
     });
 
     test("should have section padding", () => {
       const { container } = render(<FinalCTA />);
 
       const section = container.querySelector("section");
-      expect(section).toHaveClass("py-24");
+      expect(section).toHaveClass("py-32");
     });
 
     test("should have max-width container", () => {
@@ -218,7 +218,7 @@ describe("FinalCTA", () => {
       const { container } = render(<FinalCTA />);
 
       const section = container.querySelector("section");
-      expect(section).toHaveClass("dark:bg-orange-700");
+      expect(section).toHaveClass("dark:from-slate-900", "dark:via-slate-800", "dark:to-black");
     });
 
     test("should have dark mode card styling", () => {

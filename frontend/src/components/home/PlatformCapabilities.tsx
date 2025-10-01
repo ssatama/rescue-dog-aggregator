@@ -8,19 +8,19 @@ import SwipePreview from "./previews/SwipePreview";
 export default function PlatformCapabilities() {
   return (
     <section
-      className="bg-[#FFF8F0] dark:bg-gray-900 py-24"
+      className="bg-[#FFF8F0] dark:bg-gray-900 py-32"
       aria-labelledby="platform-capabilities-heading"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-20">
           <h2
             id="platform-capabilities-heading"
-            className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4"
+            className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-6"
           >
             Three Ways to Find Your Dog
           </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-400">
+          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             Choose the approach that fits your search style
           </p>
         </div>

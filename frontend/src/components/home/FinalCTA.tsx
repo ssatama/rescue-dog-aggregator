@@ -30,14 +30,14 @@ export default function FinalCTA({ totalCount = 3186 }: FinalCTAProps) {
 
   return (
     <section
-      className="bg-orange-600 dark:bg-orange-700 py-24"
+      className="bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 dark:from-slate-900 dark:via-slate-800 dark:to-black py-32"
       aria-labelledby="final-cta-heading"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Headline */}
         <h2
           id="final-cta-heading"
-          className="text-4xl lg:text-5xl font-bold text-white text-center mb-16"
+          className="text-4xl lg:text-5xl font-bold text-white text-center mb-20"
         >
           Ready to Find Your Dog?
         </h2>

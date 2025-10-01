@@ -123,10 +123,10 @@
     --stagger-delay-5: 250ms;
     --stagger-delay-6: 300ms;
 
-    /* Typography Scale - Responsive with clamp() */
-    --font-size-hero: clamp(2.25rem, 4vw + 1rem, 3.75rem); /* 36px-60px */
+    /* Typography Scale - Responsive with clamp() - ENHANCED for Priority 3 */
+    --font-size-hero: clamp(2.5rem, 4.5vw + 1rem, 4.25rem); /* 40px-68px (increased from 36px-60px) */
     --font-size-title: clamp(2rem, 3vw + 1rem, 3rem); /* 32px-48px */
-    --font-size-section: clamp(1.5rem, 2.5vw + 0.5rem, 2rem); /* 24px-32px */
+    --font-size-section: clamp(1.75rem, 3vw + 0.5rem, 2.25rem); /* 28px-36px (increased from 24px-32px) */
     --font-size-card: 1.25rem; /* 20px */
     --font-size-body: 1rem; /* 16px */
     --font-size-small: 0.875rem; /* 14px */
@@ -451,6 +451,7 @@
     color: hsl(
       var(--foreground)
     ); /* Use CSS variable for dark mode compatibility */
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Added subtle depth */
   }
 
   .text-section {
