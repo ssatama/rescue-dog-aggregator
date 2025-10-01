@@ -1,6 +1,6 @@
 // frontend/src/components/home/previews/SwipePreview.tsx
 
-'use client';
+"use client";
 
 export default function SwipePreview() {
   return (
@@ -29,10 +29,16 @@ export default function SwipePreview() {
       </div>
 
       {/* Swipe gesture hints with arrows */}
-      <div className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-600 animate-pulse" aria-hidden="true">
+      <div
+        className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-600 animate-pulse"
+        aria-hidden="true"
+      >
         <span className="text-2xl">←</span>
       </div>
-      <div className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-600 animate-pulse" aria-hidden="true">
+      <div
+        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-600 animate-pulse"
+        aria-hidden="true"
+      >
         <span className="text-2xl">→</span>
       </div>
 

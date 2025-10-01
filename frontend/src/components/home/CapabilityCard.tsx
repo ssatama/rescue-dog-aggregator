@@ -25,19 +25,22 @@ export default function CapabilityCard({
   const accentStyles = {
     blue: {
       border: "border-l-blue-500 dark:border-l-blue-400",
-      hoverBorder: "group-hover:border-l-blue-600 dark:group-hover:border-l-blue-300",
+      hoverBorder:
+        "group-hover:border-l-blue-600 dark:group-hover:border-l-blue-300",
       shadow: "shadow-blue-500/20",
       hoverShadow: "group-hover:shadow-blue-500/40",
     },
     purple: {
       border: "border-l-purple-500 dark:border-l-purple-400",
-      hoverBorder: "group-hover:border-l-purple-600 dark:group-hover:border-l-purple-300",
+      hoverBorder:
+        "group-hover:border-l-purple-600 dark:group-hover:border-l-purple-300",
       shadow: "shadow-purple-500/20",
       hoverShadow: "group-hover:shadow-purple-500/40",
     },
     orange: {
       border: "border-l-orange-500 dark:border-l-orange-400",
-      hoverBorder: "group-hover:border-l-orange-600 dark:group-hover:border-l-orange-300",
+      hoverBorder:
+        "group-hover:border-l-orange-600 dark:group-hover:border-l-orange-300",
       shadow: "shadow-orange-500/20",
       hoverShadow: "group-hover:shadow-orange-500/40",
     },
@@ -75,10 +78,12 @@ export default function CapabilityCard({
         <p className="text-gray-600 dark:text-gray-400 mb-4 flex-grow">
           {description}
         </p>
-        
+
         {/* Badge with icon and enhanced styling */}
         <div className="inline-flex items-center gap-2 text-sm text-orange-700 dark:text-orange-400 mb-4 bg-orange-50/80 dark:bg-orange-900/40 px-4 py-2 rounded-full w-fit border border-orange-200/50 dark:border-orange-800/50">
-          <span className="text-base" aria-hidden="true">✨</span>
+          <span className="text-base" aria-hidden="true">
+            ✨
+          </span>
           <span className="font-medium">{badge}</span>
         </div>
 

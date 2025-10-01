@@ -167,7 +167,12 @@ describe("FinalCTA", () => {
       const { container } = render(<FinalCTA />);
 
       const section = container.querySelector("section");
-      expect(section).toHaveClass("bg-gradient-to-br", "from-slate-800", "via-slate-700", "to-slate-900");
+      expect(section).toHaveClass(
+        "bg-gradient-to-br",
+        "from-slate-800",
+        "via-slate-700",
+        "to-slate-900",
+      );
     });
 
     test("should have section padding", () => {
@@ -218,7 +223,11 @@ describe("FinalCTA", () => {
       const { container } = render(<FinalCTA />);
 
       const section = container.querySelector("section");
-      expect(section).toHaveClass("dark:from-slate-900", "dark:via-slate-800", "dark:to-black");
+      expect(section).toHaveClass(
+        "dark:from-slate-900",
+        "dark:via-slate-800",
+        "dark:to-black",
+      );
     });
 
     test("should have dark mode card styling", () => {

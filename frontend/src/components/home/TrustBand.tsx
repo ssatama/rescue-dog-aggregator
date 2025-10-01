@@ -51,16 +51,20 @@ export default function TrustBand() {
       }}
     >
       {/* Subtle pattern overlay for dark mode */}
-      <div className="absolute inset-0 dark:opacity-30 opacity-0" style={{
-        backgroundImage: `repeating-linear-gradient(
+      <div
+        className="absolute inset-0 dark:opacity-30 opacity-0"
+        style={{
+          backgroundImage: `repeating-linear-gradient(
           45deg,
           transparent,
           transparent 10px,
           rgba(255, 255, 255, 0.03) 10px,
           rgba(255, 255, 255, 0.03) 20px
         )`,
-      }} aria-hidden="true" />
-      
+        }}
+        aria-hidden="true"
+      />
+
       <div className="max-w-7xl mx-auto px-4 text-center relative z-10">
         <p className="text-lg text-gray-700 dark:text-gray-300 mb-12">
           Aggregating rescue dogs from {totalCount} organizations across Europe
@@ -79,13 +83,13 @@ export default function TrustBand() {
         ) : (
           <div className="flex justify-center items-center gap-12 flex-wrap">
             {organizations.slice(0, 5).map((org, index) => (
-              <div 
-                key={org.id} 
+              <div
+                key={org.id}
                 className="h-16 animate-fadeIn"
                 style={{
                   animationDelay: `${index * 100}ms`,
-                  animationDuration: '600ms',
-                  animationFillMode: 'both'
+                  animationDuration: "600ms",
+                  animationFillMode: "both",
                 }}
               >
                 {org.logo_url && (

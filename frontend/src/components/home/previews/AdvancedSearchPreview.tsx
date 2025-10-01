@@ -8,7 +8,12 @@ export default function AdvancedSearchPreview() {
         <label htmlFor="preview-breed-search" className="sr-only">
           Search breeds
         </label>
-        <span className="absolute left-3 top-2.5 text-blue-500 dark:text-blue-400" aria-hidden="true">🔍</span>
+        <span
+          className="absolute left-3 top-2.5 text-blue-500 dark:text-blue-400"
+          aria-hidden="true"
+        >
+          🔍
+        </span>
         <input
           id="preview-breed-search"
           type="text"
@@ -65,7 +70,10 @@ export default function AdvancedSearchPreview() {
       </div>
 
       {/* Fade gradient at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-gray-50 to-transparent dark:from-gray-700/80 dark:to-transparent pointer-events-none" aria-hidden="true" />
+      <div
+        className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-gray-50 to-transparent dark:from-gray-700/80 dark:to-transparent pointer-events-none"
+        aria-hidden="true"
+      />
     </div>
   );
 }

@@ -1,8 +1,8 @@
 // frontend/src/components/home/previews/PersonalityBarsPreview.tsx
 
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 
 const traits = [
   {
@@ -26,7 +26,7 @@ export default function PersonalityBarsPreview() {
           setIsVisible(true);
         }
       },
-      { threshold: 0.3 }
+      { threshold: 0.3 },
     );
 
     if (containerRef.current) {
@@ -51,9 +51,9 @@ export default function PersonalityBarsPreview() {
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 shadow-inner">
             <div
               className={`h-3 rounded-full bg-gradient-to-r ${trait.gradient} shadow-lg transition-all duration-1000 ease-out`}
-              style={{ 
-                width: isVisible ? `${trait.value}%` : '0%',
-                transitionDelay: `${index * 150}ms`
+              style={{
+                width: isVisible ? `${trait.value}%` : "0%",
+                transitionDelay: `${index * 150}ms`,
               }}
             />
           </div>
