@@ -2,7 +2,7 @@
 
 export default function AdvancedSearchPreview() {
   return (
-    <div className="w-full space-y-3">
+    <div className="relative w-full space-y-3">
       {/* Breed Search with icon */}
       <div className="relative">
         <label htmlFor="preview-breed-search" className="sr-only">

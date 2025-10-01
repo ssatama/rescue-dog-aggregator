@@ -38,7 +38,7 @@ export default function TrustBand() {
 
   return (
     <section
-      className="bg-gray-100 dark:bg-gray-800 py-28 relative overflow-hidden"
+      className="bg-gray-100 dark:bg-gray-800 py-32 relative overflow-hidden"
       aria-label="Partner rescue organizations"
       style={{
         backgroundImage: `repeating-linear-gradient(
@@ -72,38 +72,46 @@ export default function TrustBand() {
         </p>
 
         {isLoading ? (
-          <div className="flex justify-center items-center gap-12 flex-wrap h-16">
-            {[...Array(5)].map((_, i) => (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 justify-items-center">
+            {[...Array(8)].map((_, i) => (
               <div
                 key={i}
-                className="h-16 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                className="h-20 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
               />
             ))}
           </div>
         ) : (
-          <div className="flex justify-center items-center gap-12 flex-wrap">
-            {organizations.slice(0, 5).map((org, index) => (
-              <div
-                key={org.id}
-                className="h-16 animate-fadeIn"
-                style={{
-                  animationDelay: `${index * 100}ms`,
-                  animationDuration: "600ms",
-                  animationFillMode: "both",
-                }}
-              >
-                {org.logo_url && (
-                  <Image
-                    src={org.logo_url}
-                    alt={org.name}
-                    width={180}
-                    height={60}
-                    className="max-h-16 w-auto object-contain grayscale-[50%] opacity-70 hover:opacity-100 hover:grayscale-0 hover:scale-110 transition-all duration-300 cursor-pointer"
-                  />
-                )}
-              </div>
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 justify-items-center">
+              {organizations.slice(0, 8).map((org, index) => (
+                <div
+                  key={org.id}
+                  className="h-20 animate-fadeIn"
+                  style={{
+                    animationDelay: `${index * 100}ms`,
+                    animationDuration: "600ms",
+                    animationFillMode: "both",
+                  }}
+                >
+                  {org.logo_url && (
+                    <Image
+                      src={org.logo_url}
+                      alt={org.name}
+                      width={240}
+                      height={80}
+                      className="max-h-20 w-auto object-contain grayscale-[50%] opacity-70 hover:opacity-100 hover:grayscale-0 hover:scale-110 transition-all duration-300 cursor-pointer"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            {totalCount > 8 && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-8">
+                + {totalCount - 8} more organizations
+              </p>
+            )}
+          </>
         )}
       </div>
     </section>

@@ -107,8 +107,8 @@ describe("TrustBand", () => {
       });
     });
 
-    test("should show max 5 logos", async () => {
-      const manyOrgs = Array.from({ length: 10 }, (_, i) => ({
+    test("should show max 8 logos", async () => {
+      const manyOrgs = Array.from({ length: 15 }, (_, i) => ({
         id: i,
         name: `Org ${i}`,
         logo_url: `/logo${i}.png`,
@@ -120,7 +120,7 @@ describe("TrustBand", () => {
 
       await waitFor(() => {
         const logos = screen.getAllByRole("img");
-        expect(logos).toHaveLength(5);
+        expect(logos).toHaveLength(8);
       });
     });
 
@@ -225,7 +225,7 @@ describe("TrustBand", () => {
       const { container } = render(<TrustBand />);
 
       const section = container.querySelector("section");
-      expect(section).toHaveClass("py-28");
+      expect(section).toHaveClass("py-32");
     });
 
     test("should have centered layout", async () => {
@@ -237,14 +237,15 @@ describe("TrustBand", () => {
       expect(innerDiv).toHaveClass("mx-auto", "px-4", "text-center");
     });
 
-    test("should allow logos to wrap on smaller screens", async () => {
+    test("should use grid layout for responsive display", async () => {
       mockGetOrganizations.mockResolvedValueOnce(mockOrganizations);
 
       const { container } = render(<TrustBand />);
 
       await waitFor(() => {
-        const logosContainer = container.querySelector(".flex-wrap");
+        const logosContainer = container.querySelector(".grid");
         expect(logosContainer).toBeInTheDocument();
+        expect(logosContainer).toHaveClass("grid-cols-2", "md:grid-cols-4");
       });
     });
   });
