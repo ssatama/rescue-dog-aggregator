@@ -250,7 +250,9 @@ describe("HeroSection", () => {
 
       await waitFor(() => {
         const heroSubtitle = screen.getByTestId("hero-subtitle");
-        expect(heroSubtitle).toHaveTextContent("Browse 412 dogs aggregated from 3 rescue organizations across Europe & UK. Adopt Don't Shop.");
+        expect(heroSubtitle).toHaveTextContent(
+          "Browse 412 dogs aggregated from 3 rescue organizations across Europe & UK. Adopt Don't Shop.",
+        );
       });
     });
 
@@ -260,7 +262,9 @@ describe("HeroSection", () => {
       render(<HeroSection />);
 
       const heroSubtitle = screen.getByTestId("hero-subtitle");
-      expect(heroSubtitle).toHaveTextContent("Browse 3,186 dogs aggregated from 13 rescue organizations across Europe & UK. Adopt Don't Shop.");
+      expect(heroSubtitle).toHaveTextContent(
+        "Browse 3,186 dogs aggregated from 13 rescue organizations across Europe & UK. Adopt Don't Shop.",
+      );
     });
 
     test("should have responsive typography", () => {
@@ -301,10 +305,10 @@ describe("HeroSection", () => {
 
       const primaryCta = screen.getByTestId("hero-primary-cta");
       const secondaryCta = screen.getByTestId("hero-secondary-cta");
-      
+
       expect(primaryCta).toBeInTheDocument();
       expect(secondaryCta).toBeInTheDocument();
-      
+
       // The third button (hero-swipe-cta) should not exist
       expect(screen.queryByTestId("hero-swipe-cta")).not.toBeInTheDocument();
     });
