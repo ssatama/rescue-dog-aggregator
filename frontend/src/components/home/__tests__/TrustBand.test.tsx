@@ -131,7 +131,7 @@ describe("TrustBand", () => {
 
       await waitFor(() => {
         const logo = screen.getByAltText("Rescue Org 1");
-        expect(logo).toHaveClass("grayscale", "opacity-60");
+        expect(logo).toHaveClass("grayscale-[50%]", "opacity-70");
       });
     });
 
@@ -145,6 +145,7 @@ describe("TrustBand", () => {
         expect(logo).toHaveClass(
           "hover:opacity-100",
           "hover:grayscale-0",
+          "hover:scale-110",
           "transition-all",
         );
       });
@@ -224,7 +225,7 @@ describe("TrustBand", () => {
       const { container } = render(<TrustBand />);
 
       const section = container.querySelector("section");
-      expect(section).toHaveClass("py-12");
+      expect(section).toHaveClass("py-28");
     });
 
     test("should have centered layout", async () => {
