@@ -98,7 +98,6 @@ created_at, updated_at
 /api/swipe            # Tinder-like discovery interface
 /api/llm              # Enrichment, translation, batch processing
 /api/monitoring       # Health, metrics, scraper status
-/api/sitemap          # Dynamic XML sitemaps
 /api/sentry-test      # Monitoring debug endpoints
 ```
 

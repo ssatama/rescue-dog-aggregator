@@ -207,7 +207,6 @@ npm test -- --testNamePattern="PersonalityTraits"
 - `/api/llm`: Enrichment, translation, batch processing
 - `/api/organizations`: Org management, metrics, stats
 - `/api/monitoring`: Health checks, scraper status, metrics
-- `/api/sitemap`: Dynamic XML sitemaps
 - `/api/sentry-test`: Error tracking debug endpoints
 
 ## LLM Integration
