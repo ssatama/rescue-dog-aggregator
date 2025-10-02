@@ -105,7 +105,7 @@ export default function TrustBand() {
                 </div>
               ))}
             </div>
-            
+
             {totalCount > 8 && (
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-8">
                 + {totalCount - 8} more organizations

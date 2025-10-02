@@ -388,7 +388,9 @@ export const generateSitemapIndex = (sitemaps) => {
   const indexClose = "</sitemapindex>";
 
   const sitemapEntries = sitemaps.map((sitemap) => {
-    const lastmod = sitemap.lastmod || new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00");
+    const lastmod =
+      sitemap.lastmod ||
+      new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00");
     return `  <sitemap>
     <loc>${escapeXml(`${baseUrl}/${sitemap.filename}`)}</loc>
     <lastmod>${lastmod}</lastmod>

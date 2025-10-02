@@ -554,9 +554,13 @@ describe("Dynamic Sitemap Generation", () => {
       const sitemapIndex = generateSitemapIndex();
 
       // Should have proper XML structure
-      expect(sitemapIndex.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true);
-      expect(sitemapIndex).toContain('<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
-      expect(sitemapIndex).toContain('</sitemapindex>');
+      expect(
+        sitemapIndex.startsWith('<?xml version="1.0" encoding="UTF-8"?>'),
+      ).toBe(true);
+      expect(sitemapIndex).toContain(
+        '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+      );
+      expect(sitemapIndex).toContain("</sitemapindex>");
     });
 
     test("should include all 4 sitemaps", () => {
@@ -564,16 +568,24 @@ describe("Dynamic Sitemap Generation", () => {
       const sitemapIndex = generateSitemapIndex();
 
       // Should include main sitemap
-      expect(sitemapIndex).toContain('<loc>https://www.rescuedogs.me/sitemap.xml</loc>');
+      expect(sitemapIndex).toContain(
+        "<loc>https://www.rescuedogs.me/sitemap.xml</loc>",
+      );
 
       // Should include dogs sitemap
-      expect(sitemapIndex).toContain('<loc>https://www.rescuedogs.me/sitemap-dogs.xml</loc>');
+      expect(sitemapIndex).toContain(
+        "<loc>https://www.rescuedogs.me/sitemap-dogs.xml</loc>",
+      );
 
       // Should include organizations sitemap
-      expect(sitemapIndex).toContain('<loc>https://www.rescuedogs.me/sitemap-organizations.xml</loc>');
+      expect(sitemapIndex).toContain(
+        "<loc>https://www.rescuedogs.me/sitemap-organizations.xml</loc>",
+      );
 
       // Should include images sitemap
-      expect(sitemapIndex).toContain('<loc>https://www.rescuedogs.me/sitemap-images.xml</loc>');
+      expect(sitemapIndex).toContain(
+        "<loc>https://www.rescuedogs.me/sitemap-images.xml</loc>",
+      );
     });
 
     test("should include lastmod dates for all sitemaps", () => {
@@ -585,7 +597,9 @@ describe("Dynamic Sitemap Generation", () => {
       expect(lastmodCount).toBe(4); // One for each sitemap
 
       // Should have proper date format (W3C datetime)
-      expect(sitemapIndex).toMatch(/<lastmod>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00<\/lastmod>/);
+      expect(sitemapIndex).toMatch(
+        /<lastmod>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00<\/lastmod>/,
+      );
     });
 
     test("should have matching opening and closing tags", () => {
@@ -594,7 +608,8 @@ describe("Dynamic Sitemap Generation", () => {
 
       // Count sitemap tags
       const openSitemapTags = (sitemapIndex.match(/<sitemap>/g) || []).length;
-      const closeSitemapTags = (sitemapIndex.match(/<\/sitemap>/g) || []).length;
+      const closeSitemapTags = (sitemapIndex.match(/<\/sitemap>/g) || [])
+        .length;
       expect(openSitemapTags).toBe(4);
       expect(closeSitemapTags).toBe(4);
       expect(openSitemapTags).toBe(closeSitemapTags);
