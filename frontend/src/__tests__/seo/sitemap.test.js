@@ -547,4 +547,57 @@ describe("Dynamic Sitemap Generation", () => {
       expect(sitemap).not.toContain("2025-07-10T15:30:45.123456");
     });
   });
+
+  describe("generateSitemapIndex", () => {
+    test("should generate valid sitemap index XML", () => {
+      const { generateSitemapIndex } = require("../../utils/sitemap");
+      const sitemapIndex = generateSitemapIndex();
+
+      // Should have proper XML structure
+      expect(sitemapIndex.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true);
+      expect(sitemapIndex).toContain('<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
+      expect(sitemapIndex).toContain('</sitemapindex>');
+    });
+
+    test("should include all 4 sitemaps", () => {
+      const { generateSitemapIndex } = require("../../utils/sitemap");
+      const sitemapIndex = generateSitemapIndex();
+
+      // Should include main sitemap
+      expect(sitemapIndex).toContain('<loc>https://www.rescuedogs.me/sitemap.xml</loc>');
+
+      // Should include dogs sitemap
+      expect(sitemapIndex).toContain('<loc>https://www.rescuedogs.me/sitemap-dogs.xml</loc>');
+
+      // Should include organizations sitemap
+      expect(sitemapIndex).toContain('<loc>https://www.rescuedogs.me/sitemap-organizations.xml</loc>');
+
+      // Should include images sitemap
+      expect(sitemapIndex).toContain('<loc>https://www.rescuedogs.me/sitemap-images.xml</loc>');
+    });
+
+    test("should include lastmod dates for all sitemaps", () => {
+      const { generateSitemapIndex } = require("../../utils/sitemap");
+      const sitemapIndex = generateSitemapIndex();
+
+      // Should have lastmod tags
+      const lastmodCount = (sitemapIndex.match(/<lastmod>/g) || []).length;
+      expect(lastmodCount).toBe(4); // One for each sitemap
+
+      // Should have proper date format (W3C datetime)
+      expect(sitemapIndex).toMatch(/<lastmod>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00<\/lastmod>/);
+    });
+
+    test("should have matching opening and closing tags", () => {
+      const { generateSitemapIndex } = require("../../utils/sitemap");
+      const sitemapIndex = generateSitemapIndex();
+
+      // Count sitemap tags
+      const openSitemapTags = (sitemapIndex.match(/<sitemap>/g) || []).length;
+      const closeSitemapTags = (sitemapIndex.match(/<\/sitemap>/g) || []).length;
+      expect(openSitemapTags).toBe(4);
+      expect(closeSitemapTags).toBe(4);
+      expect(openSitemapTags).toBe(closeSitemapTags);
+    });
+  });
 });

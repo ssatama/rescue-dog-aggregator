@@ -135,7 +135,7 @@ describe("Dynamic Sitemap Route", () => {
       "application/xml; charset=utf-8",
     );
     expect(response.headers["Cache-Control"]).toBe(
-      "no-cache, no-store, must-revalidate",
+      "public, max-age=3600, s-maxage=86400",
     );
   });
 

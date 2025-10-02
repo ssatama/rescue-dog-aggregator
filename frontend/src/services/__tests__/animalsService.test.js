@@ -3,7 +3,6 @@ import {
   getAnimalById,
   getAnimalsByStandardizedBreed,
   getRandomAnimals,
-  getSitemapData,
 } from "../animalsService";
 import { get } from "../../utils/api";
 
@@ -195,57 +194,6 @@ describe("animalsService endpoints", () => {
       expect.objectContaining({ status: "unknown" }),
       {},
     );
-  });
-});
-
-describe("animalsService sitemap", () => {
-  test("getSitemapData calls /api/sitemap endpoint", async () => {
-    // Setup mock
-    get.mockResolvedValue({
-      animals: [
-        { id: 1, name: "Dog1", status: "available" },
-        { id: 2, name: "Dog2", status: "adopted" },
-        { id: 3, name: "Dog3", status: "reserved" },
-      ],
-    });
-
-    // Call the service
-    const result = await getSitemapData();
-
-    // Check that get was called correctly
-    expect(get).toHaveBeenCalledWith("/api/sitemap");
-
-    // Check the result
-    expect(result).toEqual({
-      animals: [
-        { id: 1, name: "Dog1", status: "available" },
-        { id: 2, name: "Dog2", status: "adopted" },
-        { id: 3, name: "Dog3", status: "reserved" },
-      ],
-    });
-  });
-
-  test("getSitemapData returns all dogs regardless of status", async () => {
-    // Setup mock with mixed statuses
-    const mockData = {
-      animals: [
-        { id: 1, status: "available" },
-        { id: 2, status: "adopted" },
-        { id: 3, status: "reserved" },
-        { id: 4, status: "unknown" },
-      ],
-    };
-    get.mockResolvedValue(mockData);
-
-    const result = await getSitemapData();
-
-    expect(result.animals).toHaveLength(4);
-    expect(result.animals.map((a) => a.status)).toEqual([
-      "available",
-      "adopted",
-      "reserved",
-      "unknown",
-    ]);
   });
 });
 

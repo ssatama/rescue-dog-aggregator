@@ -263,27 +263,7 @@ const generateOrganizationPages = (organizations) => {
 };
 
 /**
- * Get European locales for hreflang tags
- * @returns {Array<string>} Array of European locale codes
- */
-// getEuropeanLocales function removed - no longer needed without hreflang
-
-/**
- * Generate hreflang alternate URLs for European markets
- * @param {string} baseUrl - Base URL without locale
- * @returns {Array<Object>} Array of hreflang alternate entries
- */
-const generateHreflangAlternates = (baseUrl) => {
-  const locales = getEuropeanLocales();
-  return locales.map((locale) => ({
-    rel: "alternate",
-    hreflang: locale,
-    href: `${getBaseUrl()}/${locale}${baseUrl.replace(getBaseUrl(), "")}`,
-  }));
-};
-
-/**
- * Convert sitemap entries to XML format with European hreflang support
+ * Convert sitemap entries to XML format
  * @param {Array<Object>} entries - Array of validated sitemap entries
  * @returns {string} XML sitemap content
  */
@@ -384,11 +364,23 @@ const escapeXml = (str) => {
 };
 
 /**
- * Generate sitemap index for multiple sitemaps
- * @param {Array<Object>} sitemaps - Array of sitemap metadata
+ * Generate sitemap index XML listing all available sitemaps
+ * If no sitemaps array provided, uses default list of all sitemaps
+ * @param {Array<Object>} [sitemaps] - Optional array of sitemap metadata objects with {filename, lastmod?}
  * @returns {string} XML sitemap index content
  */
-const generateSitemapIndex = (sitemaps) => {
+export const generateSitemapIndex = (sitemaps) => {
+  // Use default sitemap list if none provided
+  if (!sitemaps || sitemaps.length === 0) {
+    const lastmod = new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00");
+    sitemaps = [
+      { filename: "sitemap.xml", lastmod },
+      { filename: "sitemap-dogs.xml", lastmod },
+      { filename: "sitemap-organizations.xml", lastmod },
+      { filename: "sitemap-images.xml", lastmod },
+    ];
+  }
+
   const baseUrl = getBaseUrl();
   const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>';
   const indexOpen =
@@ -396,9 +388,10 @@ const generateSitemapIndex = (sitemaps) => {
   const indexClose = "</sitemapindex>";
 
   const sitemapEntries = sitemaps.map((sitemap) => {
+    const lastmod = sitemap.lastmod || new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00");
     return `  <sitemap>
     <loc>${escapeXml(`${baseUrl}/${sitemap.filename}`)}</loc>
-    <lastmod>${new Date().toISOString().replace(/\.\d{3}Z$/, "+00:00")}</lastmod>
+    <lastmod>${lastmod}</lastmod>
   </sitemap>`;
   });
 

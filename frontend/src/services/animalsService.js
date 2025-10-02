@@ -293,34 +293,6 @@ export async function getAllAnimalsForSitemap(params = {}) {
 }
 
 /**
- * Fetches sitemap data from the API including all dogs regardless of status.
- * @returns {Promise<object>} - Promise resolving to sitemap data with all dogs.
- */
-export async function getSitemapData() {
-  logger.log("Fetching sitemap data from API");
-  try {
-    const response = await get("/api/sitemap");
-    return response;
-  } catch (error) {
-    logger.error("Error fetching sitemap data:", error);
-    // Fallback to fetching all animals if sitemap endpoint fails
-    const animals = await getAllAnimalsForSitemap({ status: null });
-    return {
-      dogs: animals,
-      stats: {
-        total: animals.length,
-        by_status: {
-          available: animals.filter((d) => d.status === "available").length,
-          unknown: animals.filter((d) => d.status === "unknown").length,
-          adopted: animals.filter((d) => d.status === "adopted").length,
-          reserved: animals.filter((d) => d.status === "reserved").length,
-        },
-      },
-    };
-  }
-}
-
-/**
  * Fetches filter counts for each option based on current filter context.
  * @param {object} params - Current filter context (search, animal_type, status, etc.)
  * @returns {Promise<object>} - Promise resolving to filter counts response.

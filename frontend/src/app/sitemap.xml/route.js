@@ -20,7 +20,7 @@ export async function GET() {
       status: 200,
       headers: {
         "Content-Type": "application/xml; charset=utf-8",
-        "Cache-Control": "no-cache, no-store, must-revalidate", // Force fresh generation
+        "Cache-Control": "public, max-age=3600, s-maxage=86400", // 1 hour client, 24 hours CDN
         Vary: "Accept-Encoding",
       },
     });

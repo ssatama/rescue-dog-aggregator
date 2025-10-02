@@ -51,7 +51,13 @@ describe("Static Robots.txt File", () => {
     expect(robotsTxtContent).toContain("Disallow: /private/");
   });
 
-  test("should include all sitemaps", () => {
+  test("should include sitemap index as primary entry point", () => {
+    expect(robotsTxtContent).toContain(
+      "Sitemap: https://www.rescuedogs.me/sitemap_index.xml",
+    );
+  });
+
+  test("should include all individual sitemaps", () => {
     expect(robotsTxtContent).toContain(
       "Sitemap: https://www.rescuedogs.me/sitemap.xml",
     );
