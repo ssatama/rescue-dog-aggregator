@@ -9,9 +9,8 @@ import {
 } from "react-simple-maps";
 import { getOrganizations } from "../../services/organizationsService";
 
-// Europe TopoJSON from public CDN
-const geoUrl =
-  "https://raw.githubusercontent.com/deldersveld/topojson/master/continents/europe.json";
+// World TopoJSON from reliable CDN (will filter to Europe countries)
+const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json";
 
 // Map country codes to display names
 const COUNTRY_NAMES: Record<string, string> = {
@@ -39,6 +38,52 @@ const COUNTRY_CODE_MAP: Record<string, string> = {
   CY: "Cyprus",
 };
 
+// European country names to filter from world map
+const EUROPEAN_COUNTRIES = new Set([
+  "Albania",
+  "Austria",
+  "Belarus",
+  "Belgium",
+  "Bosnia and Herzegovina",
+  "Bulgaria",
+  "Croatia",
+  "Cyprus",
+  "Czech Republic",
+  "Denmark",
+  "Estonia",
+  "Finland",
+  "France",
+  "Germany",
+  "Greece",
+  "Hungary",
+  "Iceland",
+  "Ireland",
+  "Italy",
+  "Kosovo",
+  "Latvia",
+  "Lithuania",
+  "Luxembourg",
+  "Malta",
+  "Moldova",
+  "Montenegro",
+  "Netherlands",
+  "North Macedonia",
+  "Norway",
+  "Poland",
+  "Portugal",
+  "Romania",
+  "Russia",
+  "Serbia",
+  "Slovakia",
+  "Slovenia",
+  "Spain",
+  "Sweden",
+  "Switzerland",
+  "Turkey",
+  "Ukraine",
+  "United Kingdom",
+]);
+
 interface Organization {
   id: number;
   name: string;
@@ -57,7 +102,16 @@ export default function EuropeMap() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const orgs = await getOrganizations();
+        const response = await getOrganizations();
+        const orgs = Array.isArray(response) ? response : [];
+
+        if (!orgs.length) {
+          console.warn("No organizations returned from API");
+          setOrgsByCountry({});
+          setLoading(false);
+          return;
+        }
+
         // Group organizations by country
         const grouped: OrganizationData = {};
         orgs.forEach((org: Organization) => {
@@ -136,39 +190,41 @@ export default function EuropeMap() {
               <ZoomableGroup>
                 <Geographies geography={geoUrl}>
                   {({ geographies }) =>
-                    geographies.map((geo) => {
-                      const countryName = geo.properties.geounit;
-                      const countryCode = getCountryCodeFromName(countryName);
-                      const orgCount = countryCode ? getOrgCount(countryCode) : 0;
+                    geographies
+                      .filter((geo) => EUROPEAN_COUNTRIES.has(geo.properties.name))
+                      .map((geo) => {
+                        const countryName = geo.properties.name;
+                        const countryCode = getCountryCodeFromName(countryName);
+                        const orgCount = countryCode ? getOrgCount(countryCode) : 0;
 
-                      return (
-                        <Geography
-                          key={geo.rsmKey}
-                          geography={geo}
-                          fill={getCountryFill(countryName)}
-                          stroke="hsl(var(--border))"
-                          strokeWidth={0.5}
-                          style={{
-                            default: { outline: "none" },
-                            hover: { outline: "none", opacity: 0.8 },
-                            pressed: { outline: "none" },
-                          }}
-                          onMouseEnter={() => {
-                            if (orgCount > 0 && countryCode) {
-                              setHoveredCountry(countryCode);
+                        return (
+                          <Geography
+                            key={geo.rsmKey}
+                            geography={geo}
+                            fill={getCountryFill(countryName)}
+                            stroke="hsl(var(--border))"
+                            strokeWidth={0.5}
+                            style={{
+                              default: { outline: "none" },
+                              hover: { outline: "none", opacity: 0.8 },
+                              pressed: { outline: "none" },
+                            }}
+                            onMouseEnter={() => {
+                              if (orgCount > 0 && countryCode) {
+                                setHoveredCountry(countryCode);
+                              }
+                            }}
+                            onMouseLeave={() => setHoveredCountry(null)}
+                            className="transition-opacity duration-200 cursor-pointer"
+                            role="button"
+                            aria-label={
+                              orgCount > 0
+                                ? `${COUNTRY_NAMES[countryCode!] || countryName}: ${orgCount} organization(s) based here`
+                                : countryName
                             }
-                          }}
-                          onMouseLeave={() => setHoveredCountry(null)}
-                          className="transition-opacity duration-200 cursor-pointer"
-                          role="button"
-                          aria-label={
-                            orgCount > 0
-                              ? `${COUNTRY_NAMES[countryCode!] || countryName}: ${orgCount} organization(s) based here`
-                              : countryName
-                          }
-                        />
-                      );
-                    })
+                          />
+                        );
+                      })
                   }
                 </Geographies>
               </ZoomableGroup>

@@ -35,12 +35,14 @@ export default function StatsDisplay() {
     return <div className="text-center py-8 text-gray-600 dark:text-gray-400">{error}</div>;
   }
 
+  const totalCountries = stats.countries?.length || 0;
+
   return (
     <section className="mb-16 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/20 dark:to-orange-900/10 rounded-xl p-8">
       <div className="flex flex-col md:flex-row justify-center items-center gap-12">
         <StatItem value={stats.total_dogs} label="Dogs" />
         <StatItem value={stats.total_organizations} label="Organizations" />
-        <StatItem value={stats.total_countries} label="Countries" />
+        <StatItem value={totalCountries} label="Countries" />
       </div>
       <p className="text-sm text-gray-600 dark:text-gray-400 text-center mt-4">
         Updated Daily
