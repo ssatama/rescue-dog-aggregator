@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import { getStatistics } from "../../services/animalsService";
 import AnimatedCounter from "../ui/AnimatedCounter";
 
@@ -32,7 +33,18 @@ export default function StatsDisplay() {
   }
 
   if (error) {
-    return <div className="text-center py-8 text-gray-600 dark:text-gray-400">{error}</div>;
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 underline transition-colors"
+          type="button"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   const totalCountries = stats.countries?.length || 0;
@@ -63,3 +75,8 @@ function StatItem({ value, label }) {
     </div>
   );
 }
+
+StatItem.propTypes = {
+  value: PropTypes.number.isRequired,
+  label: PropTypes.string.isRequired,
+};

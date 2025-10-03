@@ -12,21 +12,8 @@ import { getOrganizations } from "../../services/organizationsService";
 // World TopoJSON from reliable CDN (will filter to Europe countries)
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json";
 
-// Map country codes to display names
-const COUNTRY_NAMES: Record<string, string> = {
-  UK: "United Kingdom",
-  ES: "Spain",
-  BA: "Bosnia and Herzegovina",
-  BG: "Bulgaria",
-  IT: "Italy",
-  SR: "Serbia",
-  TR: "Turkey",
-  DE: "Germany",
-  CY: "Cyprus",
-};
-
-// Map our country codes to TopoJSON country names
-const COUNTRY_CODE_MAP: Record<string, string> = {
+// Map country codes to display names (single source of truth)
+const COUNTRY_CODE_TO_NAME: Record<string, string> = {
   UK: "United Kingdom",
   ES: "Spain",
   BA: "Bosnia and Herzegovina",
@@ -138,8 +125,8 @@ export default function EuropeMap() {
 
   function getCountryFill(countryName: string): string {
     // Find country code for this country name
-    const countryCode = Object.keys(COUNTRY_CODE_MAP).find(
-      (code) => COUNTRY_CODE_MAP[code] === countryName,
+    const countryCode = Object.keys(COUNTRY_CODE_TO_NAME).find(
+      (code) => COUNTRY_CODE_TO_NAME[code] === countryName,
     );
 
     if (!countryCode) {
@@ -157,8 +144,8 @@ export default function EuropeMap() {
   }
 
   function getCountryCodeFromName(countryName: string): string | null {
-    const code = Object.keys(COUNTRY_CODE_MAP).find(
-      (key) => COUNTRY_CODE_MAP[key] === countryName,
+    const code = Object.keys(COUNTRY_CODE_TO_NAME).find(
+      (key) => COUNTRY_CODE_TO_NAME[key] === countryName,
     );
     return code || null;
   }
@@ -209,17 +196,36 @@ export default function EuropeMap() {
                               hover: { outline: "none", opacity: 0.8 },
                               pressed: { outline: "none" },
                             }}
+                            tabIndex={orgCount > 0 ? 0 : -1}
                             onMouseEnter={() => {
                               if (orgCount > 0 && countryCode) {
                                 setHoveredCountry(countryCode);
                               }
                             }}
                             onMouseLeave={() => setHoveredCountry(null)}
-                            className="transition-opacity duration-200 cursor-pointer"
+                            onFocus={() => {
+                              if (orgCount > 0 && countryCode) {
+                                setHoveredCountry(countryCode);
+                              }
+                            }}
+                            onBlur={() => setHoveredCountry(null)}
+                            onKeyDown={(e) => {
+                              if (
+                                orgCount > 0 &&
+                                countryCode &&
+                                (e.key === "Enter" || e.key === " ")
+                              ) {
+                                e.preventDefault();
+                                setHoveredCountry(
+                                  hoveredCountry === countryCode ? null : countryCode,
+                                );
+                              }
+                            }}
+                            className="transition-opacity duration-200 cursor-pointer focus:outline-orange-500 focus:outline-offset-2"
                             role="button"
                             aria-label={
                               orgCount > 0
-                                ? `${COUNTRY_NAMES[countryCode!] || countryName}: ${orgCount} organization(s) based here`
+                                ? `${COUNTRY_CODE_TO_NAME[countryCode!] || countryName}: ${orgCount} organization(s) based here`
                                 : countryName
                             }
                           />
@@ -233,7 +239,7 @@ export default function EuropeMap() {
             {hoveredCountry && (
               <div className="absolute top-4 left-4 bg-white dark:bg-gray-800 p-3 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
                 <p className="font-bold text-gray-900 dark:text-gray-100">
-                  {COUNTRY_NAMES[hoveredCountry] || hoveredCountry}
+                  {COUNTRY_CODE_TO_NAME[hoveredCountry] || hoveredCountry}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {getOrgCount(hoveredCountry)} organization(s) based here
