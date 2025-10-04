@@ -3,6 +3,10 @@ import Link from "next/link";
 import ContactButton from "../../components/ui/ContactButton";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
 import { BreadcrumbSchema } from "../../components/seo";
+import HarleyStory from "../../components/about/HarleyStory";
+import StatsDisplay from "../../components/about/StatsDisplay";
+import EuropeMap from "../../components/about/EuropeMap";
+import ContactSection from "../../components/about/ContactSection";
 
 // Metadata export for SEO
 export const metadata = {
@@ -30,8 +34,7 @@ export default function AboutPage() {
   return (
     <Layout>
       <BreadcrumbSchema items={breadcrumbItems} />
-      {/* Consistent container */}
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb Navigation */}
         <Breadcrumbs items={breadcrumbItems} />
 
@@ -45,80 +48,75 @@ export default function AboutPage() {
           </p>
         </div>
 
-        {/* Section: Our Mission */}
-        <section className="mb-12">
-          <h2 className="text-section text-gray-800 dark:text-gray-200 mb-4">
-            Our Mission
-          </h2>
-          <p className="text-body text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-            Our mission is to simplify the process of finding and adopting
-            rescue dogs. We partner with various animal shelters and rescue
-            organizations to bring their available dogs into one centralized
-            platform.
-          </p>
-          <p className="text-body text-gray-700 dark:text-gray-300 leading-relaxed">
-            We believe every dog deserves a second chance in a loving forever
-            home. By making it easier for potential adopters to discover dogs
-            from different sources, we hope to increase adoption rates and
-            support the incredible work of rescue organizations.
-          </p>
-        </section>
+        {/* All sections with consistent vertical rhythm */}
+        <div className="space-y-12 sm:space-y-16 md:space-y-24 lg:space-y-32 py-8 sm:py-12 md:py-16 lg:py-24">
+          {/* NEW: Harley Story */}
+          <HarleyStory />
 
-        {/* Section: How It Works */}
-        <section className="mb-12 bg-gray-50 dark:bg-gray-800 p-8 rounded-lg">
-          <h2 className="text-section text-gray-800 dark:text-gray-200 mb-6 text-center">
-            How It Works
-          </h2>
-          <div className="grid md:grid-cols-3 gap-8 text-center">
-            <div>
-              <div className="text-4xl mb-2">🐾</div> {/* Placeholder Icon */}
-              <h3 className="text-card-title text-gray-900 dark:text-gray-100 mb-2">
-                1. Browse Dogs
-              </h3>
-              <p className="text-body text-gray-600 dark:text-gray-400">
-                Use our search and filter tools to find dogs based on breed,
-                age, size, location, and more.
-              </p>
-            </div>
-            <div>
-              <div className="text-4xl mb-2">❤️</div> {/* Placeholder Icon */}
-              <h3 className="text-card-title text-gray-900 dark:text-gray-100 mb-2">
-                2. View Details
-              </h3>
-              <p className="text-body text-gray-600 dark:text-gray-400">
-                Click on a dog's profile to see more photos, read their story,
-                and learn about their personality.
-              </p>
-            </div>
-            <div>
-              <div className="text-4xl mb-2">🏠</div> {/* Placeholder Icon */}
-              <h3 className="text-card-title text-gray-900 dark:text-gray-100 mb-2">
-                3. Connect & Adopt
-              </h3>
-              <p className="text-body text-gray-600 dark:text-gray-400">
-                Use the provided links to connect directly with the rescue
-                organization to start the adoption process.
-              </p>
-            </div>
-          </div>
-        </section>
+          {/* NEW: Stats Display */}
+          <StatsDisplay />
 
-        {/* Section: Get Involved / Contact (Optional) */}
-        <section className="text-center">
-          <h2 className="text-section text-gray-800 dark:text-gray-200 mb-4">
-            Get Involved
-          </h2>
-          <p className="text-body text-gray-700 dark:text-gray-300 leading-relaxed mb-6 max-w-2xl mx-auto">
-            Are you a rescue organization interested in listing your dogs? Or do
-            you have questions or feedback for us? We'd love to hear from you.
-          </p>
-          {/* Contact button with enhanced functionality */}
-          <ContactButton
-            email="rescuedogsme@gmail.com"
-            buttonText="Contact Us"
-            size="lg"
-          />
-        </section>
+          {/* NEW: Europe Map */}
+          <EuropeMap />
+
+          {/* Section: Our Mission (EXPANDED) */}
+          <section>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-200 mb-6">
+              Our Mission
+            </h2>
+            <p className="text-lg md:text-xl lg:text-2xl leading-relaxed text-gray-700 dark:text-gray-300 mb-4">
+              Our mission is to connect loving homes in the UK and across Europe with rescue dogs
+              in need. We bring rescue dogs from trusted rescue organizations from Spain to Romania,
+              Malta to Montenegro, bringing thousands of dogs into one beautifully designed platform.
+              Rescue organizations are not technology experts - they are experts at rescuing dogs
+              in need. By bridging the gap between high-demand adoption markets and regions with
+              shelter overpopulation, we help more dogs find their forever homes while supporting
+              the incredible work of rescue organizations across Europe and UK.
+            </p>
+          </section>
+
+          {/* Section: How It Works */}
+          <section className="bg-gray-50 dark:bg-gray-800 p-6 sm:p-8 md:p-10 rounded-lg">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-200 mb-6 text-center">
+              How It Works
+            </h2>
+            <div className="grid md:grid-cols-3 gap-8 text-center">
+              <div>
+                <div className="text-4xl mb-2">🐾</div>
+                <h3 className="text-card-title text-gray-900 dark:text-gray-100 mb-2">
+                  1. Browse Dogs
+                </h3>
+                <p className="text-body text-gray-600 dark:text-gray-400">
+                  Use our search and filter tools to find dogs based on breed,
+                  age, size, location, and more.
+                </p>
+              </div>
+              <div>
+                <div className="text-4xl mb-2">❤️</div>
+                <h3 className="text-card-title text-gray-900 dark:text-gray-100 mb-2">
+                  2. View Details
+                </h3>
+                <p className="text-body text-gray-600 dark:text-gray-400">
+                  Click on a dog's profile to see more photos, read their story,
+                  and learn about their personality.
+                </p>
+              </div>
+              <div>
+                <div className="text-4xl mb-2">🏠</div>
+                <h3 className="text-card-title text-gray-900 dark:text-gray-100 mb-2">
+                  3. Connect & Adopt
+                </h3>
+                <p className="text-body text-gray-600 dark:text-gray-400">
+                  Use the provided links to connect directly with the rescue
+                  organization to start the adoption process.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* NEW: Contact Section (REPLACES Get Involved) */}
+          <ContactSection />
+        </div>
       </div>
     </Layout>
   );

@@ -223,6 +223,15 @@ jest.mock("@vercel/speed-insights/react", () => ({
   }
 }));
 
+// Mock react-simple-maps to avoid d3 ES module issues in Jest
+jest.mock("react-simple-maps", () => ({
+  ComposableMap: ({ children }) => <div data-testid="composable-map">{children}</div>,
+  Geographies: ({ children }) => <div>{children([])}</div>,
+  Geography: () => <path data-testid="geography" />,
+  ZoomableGroup: ({ children }) => <div>{children}</div>,
+  Marker: ({ children }) => <g data-testid="marker">{children}</g>,
+}));
+
 // Suppress React act() warnings for startTransition in tests
 // These warnings occur because startTransition is async but test environment
 // doesn't always wait for all transitions to complete
