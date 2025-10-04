@@ -248,7 +248,7 @@ export default function EuropeMap() {
                                   );
                                 }
                               }}
-                              className="transition-all duration-200"
+                              className="transition-all duration-200 motion-reduce:transition-none focus-visible:outline-orange-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                               role="button"
                               aria-label={
                                 orgCount > 0
@@ -264,7 +264,7 @@ export default function EuropeMap() {
               </ComposableMap>
 
               {hoveredCountry && (
-                <div className="absolute top-6 left-6 animate-in fade-in slide-in-from-left-2 duration-200">
+                <div className="absolute top-6 left-6 animate-in fade-in slide-in-from-left-2 duration-200 motion-reduce:animate-none">
                   <div className="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl overflow-hidden">
                     {/* Orange accent border */}
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-orange-400 to-orange-600"></div>

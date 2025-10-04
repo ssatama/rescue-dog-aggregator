@@ -40,20 +40,20 @@ export default function ContactSection() {
               href={contact.href}
               target={contact.external ? "_blank" : undefined}
               rel={contact.external ? "noopener noreferrer" : undefined}
-              className="group flex flex-col items-center gap-3 transition-all duration-200"
+              className="group flex flex-col items-center gap-3 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 rounded-2xl"
             >
               {/* Icon container with background */}
-              <div className="relative w-16 h-16 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-2xl group-hover:bg-orange-100 dark:group-hover:bg-orange-900/30 transition-all duration-200 group-hover:scale-110 group-hover:-translate-y-1 shadow-md group-hover:shadow-xl">
-                <Icon className="w-7 h-7 text-gray-600 dark:text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors duration-200" />
+              <div className="relative w-16 h-16 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-2xl group-hover:bg-orange-100 dark:group-hover:bg-orange-900/30 transition-all duration-200 group-hover:scale-110 group-hover:-translate-y-1 shadow-md group-hover:shadow-xl motion-reduce:transition-none motion-reduce:transform-none">
+                <Icon className="w-7 h-7 text-gray-600 dark:text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors duration-200 motion-reduce:transition-none" />
 
                 {/* Subtle glow on hover */}
-                <div className="absolute inset-0 rounded-2xl bg-orange-400/0 group-hover:bg-orange-400/10 blur-xl transition-all duration-200"></div>
+                <div className="absolute inset-0 rounded-2xl bg-orange-400/0 group-hover:bg-orange-400/10 blur-xl transition-all duration-200 motion-reduce:transition-none"></div>
               </div>
 
               {/* Label with underline effect */}
               <span className="text-base font-medium text-gray-700 dark:text-gray-300 relative">
                 {contact.label}
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300"></span>
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300 motion-reduce:transition-none"></span>
               </span>
             </a>
           );
