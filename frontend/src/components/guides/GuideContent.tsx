@@ -11,6 +11,8 @@ import { GuideSchema } from './GuideSchema';
 import { TableOfContents } from './TableOfContents';
 import { ReadingProgress } from './ReadingProgress';
 import { RelatedGuides } from './RelatedGuides';
+import { FontSizeProvider } from '@/contexts/FontSizeContext';
+import { FontSizeControl } from './FontSizeControl';
 
 interface GuideContentProps {
   guide: Guide;
@@ -89,9 +91,10 @@ export function GuideContent({ guide, fullPage = false, relatedGuides = [] }: Gu
   }, []);
 
   return (
-    <>
+    <FontSizeProvider>
       <ReadingProgress />
       <GuideSchema guide={guide} />
+      {fullPage && <FontSizeControl />}
       <div className={fullPage ? "container mx-auto px-4 py-12" : "px-8 py-6"}>
         <div className="flex gap-8 max-w-7xl mx-auto">
           {/* Desktop TOC Sidebar */}
@@ -128,7 +131,8 @@ export function GuideContent({ guide, fullPage = false, relatedGuides = [] }: Gu
             <div className="prose prose-lg dark:prose-invert max-w-none
               dark:prose-headings:text-gray-100
               dark:prose-p:text-gray-300
-              dark:prose-a:text-orange-400">
+              dark:prose-a:text-orange-400"
+              style={{ fontSize: 'var(--guide-font-size, 16px)' }}>
               {serializedContent && <MDXRemote {...serializedContent} components={components} />}
             </div>
 
@@ -139,6 +143,6 @@ export function GuideContent({ guide, fullPage = false, relatedGuides = [] }: Gu
           </article>
         </div>
       </div>
-    </>
+    </FontSizeProvider>
   );
 }
