@@ -23,7 +23,7 @@ const contacts = [
 
 export default function ContactSection() {
   return (
-    <section className="mb-16">
+    <section>
       <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-200 mb-6 text-center">
         Get in Touch
       </h2>

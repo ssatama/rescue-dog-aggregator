@@ -50,7 +50,7 @@ export default function StatsDisplay() {
   const totalCountries = stats.countries?.length || 0;
 
   return (
-    <section className="mb-16 relative overflow-hidden">
+    <section className="relative overflow-hidden">
       {/* Gradient background */}
       <div className="bg-gradient-to-br from-orange-50 via-orange-100/50 to-transparent dark:from-orange-950/20 dark:via-orange-900/10 dark:to-transparent rounded-2xl p-12 md:p-16 border border-orange-200/50 dark:border-orange-800/30 shadow-lg">
         

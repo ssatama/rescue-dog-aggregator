@@ -162,7 +162,7 @@ export default function EuropeMap() {
   }
 
   return (
-    <section className="mb-16">
+    <section>
       <h2 className="text-5xl md:text-6xl font-bold text-gray-800 dark:text-gray-200 mb-8 text-center">
         Where We Help Dogs
       </h2>
