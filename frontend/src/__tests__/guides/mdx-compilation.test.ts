@@ -108,4 +108,47 @@ describe('MDX Guide Compilation', () => {
 
     expect(slugs.length).toBe(uniqueSlugs.size);
   });
+
+  it('should not have unescaped < followed by digits (invalid JSX)', async () => {
+    const fs = require('fs');
+    const path = require('path');
+
+    const guidesDir = path.join(process.cwd(), 'content', 'guides');
+    const files = fs.readdirSync(guidesDir).filter((f: string) => f.endsWith('.mdx'));
+
+    files.forEach((file: string) => {
+      const content = fs.readFileSync(path.join(guidesDir, file), 'utf-8');
+      const lines = content.split('\n');
+      let inFrontmatter = false;
+      let inCodeBlock = false;
+
+      lines.forEach((line: string, index: number) => {
+        // Track frontmatter boundaries
+        if (line.trim() === '---') {
+          inFrontmatter = !inFrontmatter;
+          return;
+        }
+
+        // Track code block boundaries (both ``` and `)
+        if (line.trim().startsWith('```') || line.includes('`')) {
+          // Skip lines with inline code or code blocks
+          return;
+        }
+
+        // Skip lines inside frontmatter
+        if (inFrontmatter) return;
+
+        // Check for < followed by digit (e.g., p<0.001)
+        // This causes MDX to try parsing <0 as JSX tag
+        const hasUnescapedLessThanDigit = /<\d/.test(line);
+
+        if (hasUnescapedLessThanDigit) {
+          throw new Error(
+            `${file}:${index + 1} - Unescaped '<' followed by digit (invalid JSX): "${line.substring(0, 80)}..."\n` +
+              `Wrap in code backticks or use &lt; instead`
+          );
+        }
+      });
+    });
+  });
 });
