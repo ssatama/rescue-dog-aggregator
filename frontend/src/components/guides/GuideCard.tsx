@@ -5,9 +5,10 @@ import { Badge } from '@/components/ui/badge';
 
 interface GuideCardProps {
   guide: Guide;
+  priority?: boolean;
 }
 
-export function GuideCard({ guide }: GuideCardProps) {
+export function GuideCard({ guide, priority = false }: GuideCardProps) {
   const { slug, frontmatter } = guide;
   const formattedDate = new Date(frontmatter.lastUpdated).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -28,6 +29,7 @@ export function GuideCard({ guide }: GuideCardProps) {
           alt={frontmatter.heroImageAlt || frontmatter.title}
           fill
           className="object-cover transition-transform duration-300 group-hover:scale-105"
+          priority={priority}
         />
       </div>
 

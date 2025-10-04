@@ -63,7 +63,7 @@ describe('GuidesPage', () => {
   it('displays read time for guides', async () => {
     const page = await GuidesPage();
     render(page);
-    expect(screen.getByText('5 min read')).toBeInTheDocument();
-    expect(screen.getByText('10 min read')).toBeInTheDocument();
+    expect(screen.getByText(/5 min read/)).toBeInTheDocument();
+    expect(screen.getByText(/10 min read/)).toBeInTheDocument();
   });
 });

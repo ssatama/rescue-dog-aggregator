@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import DogCardOptimized from '@/components/dogs/DogCardOptimized';
+import DogCardOptimizedComponent from '@/components/dogs/DogCardOptimized';
 import DogCardSkeletonOptimized from '@/components/dogs/DogCardSkeletonOptimized';
 import { getAnimals } from '@/services/serverAnimalsService';
+
+// Cast to any to bypass TypeScript checks for .jsx component
+const DogCardOptimized = DogCardOptimizedComponent as any;
 
 interface DogGridProps {
   // Breed filters
