@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -16,6 +16,7 @@ interface GuideOverlayProps {
 
 export function GuideOverlay({ children }: GuideOverlayProps) {
   const router = useRouter();
+  const [isOpen, setIsOpen] = useState(true);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -25,11 +26,15 @@ export function GuideOverlay({ children }: GuideOverlayProps) {
   }, []);
 
   const handleClose = () => {
-    router.back();
+    setIsOpen(false);
+    // Small delay to allow animation before navigation
+    setTimeout(() => {
+      router.back();
+    }, 200);
   };
 
   return (
-    <Sheet open={true} onOpenChange={(open) => !open && handleClose()}>
+    <Sheet open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <SheetContent
         side="bottom"
         className="h-[100vh] md:h-[95vh] w-full max-w-full md:max-w-4xl mx-auto p-0 overflow-y-auto"
