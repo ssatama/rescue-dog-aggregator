@@ -208,3 +208,5 @@ migrations/railway/versions/
 
 # Debug SQL queries (local debugging tools)
 queries/debug/
+
+docs/feature_implementation/
