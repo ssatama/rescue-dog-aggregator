@@ -175,7 +175,7 @@ export default function EuropeMap() {
         Where We Help Dogs
       </h2>
       <p className="text-sm text-center text-gray-600 dark:text-gray-400 mb-4">
-        Map shows organization home countries, not dog locations
+        Rescue organizations working together across borders to help dogs in need
       </p>
       <div className="relative max-w-5xl mx-auto">
         {/* Subtle background */}
