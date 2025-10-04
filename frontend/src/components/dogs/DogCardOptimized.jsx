@@ -33,6 +33,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
   priority = false,
   animationDelay = 0,
   compact = false,
+  embedded = false, // Ultra-compact mode for guide pages
   isVirtualized = false,
   position = 0,
   listContext = "home",
@@ -78,6 +79,87 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
   const animationClass = !isVirtualized
     ? `animate-fadeInUp animate-delay-${Math.min(animationDelay * 100, 400)}`
     : "";
+
+  // Ultra-compact embedded mode for guide pages
+  if (embedded) {
+    return (
+      <Card
+        data-testid={dog?.id ? `dog-card-${dog.id}` : "dog-card"}
+        data-embedded="true"
+        className={`dog-card content-fade-in group transition-all duration-300 hover:shadow-xl overflow-hidden rounded-xl max-h-[280px] ${animationClass}`}
+        style={{ borderRadius: "12px" }}
+      >
+        <Link
+          href={`/dogs/${slug}`}
+          className="block h-full"
+          prefetch={priority ? true : false}
+          onClick={() => {
+            if (dog?.id && dog?.name) {
+              try {
+                trackDogCardClick(
+                  dog.id.toString(),
+                  dog.name,
+                  position,
+                  listContext,
+                );
+              } catch (error) {
+                console.error("Failed to track dog card click:", error);
+              }
+            }
+          }}
+        >
+          {/* Compact 16:9 image */}
+          <div
+            className="aspect-[16/9] relative overflow-hidden bg-muted dark:bg-muted/50"
+            data-testid="image-container"
+          >
+            <NextImage
+              src={dog.primary_image_url}
+              alt={dog.name}
+              className="dog-card-image transition-transform duration-300 ease-out group-hover:scale-105"
+              priority={priority}
+              sizes="(max-width: 768px) 100vw, 50vw"
+              aspectRatio="16/9"
+              layout="fill"
+              objectFit="cover"
+              objectPosition="center 30%"
+            />
+          </div>
+
+          {/* Minimal info */}
+          <div className="p-4 space-y-2">
+            <CardTitle className="text-lg hover:underline truncate">
+              {name}
+            </CardTitle>
+
+            <div className="space-y-1 text-sm text-muted-foreground">
+              {breed && <p className="truncate">{breed}</p>}
+              <p className="flex items-center gap-2">
+                {formattedAge && ageCategory !== "Unknown" && (
+                  <span>🎂 {ageCategory}</span>
+                )}
+                <span>{genderData.icon} {genderData.text}</span>
+              </p>
+              {organizationName && (
+                <p className="truncate">{organizationName}</p>
+              )}
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full mt-2"
+              asChild
+            >
+              <span className="inline-flex items-center justify-center">
+                Meet {name} →
+              </span>
+            </Button>
+          </div>
+        </Link>
+      </Card>
+    );
+  }
 
   // Compact mobile list view for better space utilization
   if (compact) {

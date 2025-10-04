@@ -36,6 +36,7 @@ interface DogGridProps {
   limit?: number;
   caption?: string;
   layout?: 'grid' | 'carousel';
+  embedded?: boolean; // Compact mode for guide pages (default true)
 }
 
 export function DogGrid({
@@ -55,6 +56,7 @@ export function DogGrid({
   limit = 4,
   caption,
   layout = 'grid',
+  embedded = true, // Default to compact for guide pages
 }: DogGridProps) {
   const [dogs, setDogs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -153,6 +155,7 @@ export function DogGrid({
             dog={dog}
             priority={index < 2}
             compact={layout === 'carousel'}
+            embedded={embedded}
           />
         ))}
       </div>
