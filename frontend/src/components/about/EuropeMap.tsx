@@ -86,6 +86,7 @@ export default function EuropeMap() {
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
   const [orgsByCountry, setOrgsByCountry] = useState<OrganizationData>({});
   const [loading, setLoading] = useState(true);
+  const [mapError, setMapError] = useState<string | null>(null);
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
 
@@ -115,6 +116,7 @@ export default function EuropeMap() {
         setOrgsByCountry(grouped);
       } catch (error) {
         console.error("Failed to load organization data", error);
+        setMapError("Failed to load organization data");
       } finally {
         setLoading(false);
       }
@@ -178,90 +180,105 @@ export default function EuropeMap() {
             <div className="h-96 flex items-center justify-center">
               <p className="text-gray-600 dark:text-gray-400">Loading map...</p>
             </div>
+          ) : mapError ? (
+            <div className="h-96 flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-red-600 dark:text-red-400 mb-2">{mapError}</p>
+                <button 
+                  onClick={() => window.location.reload()} 
+                  className="text-orange-600 hover:text-orange-700 underline"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
           ) : (
             <>
-              <ComposableMap
-                projection="geoAzimuthalEqualArea"
-                projectionConfig={{
-                  rotate: [-10.0, -52.0, 0],
-                  scale: 900,
-                }}
-                className="w-full h-auto"
-                data-testid="europe-map"
-              >
-                <ZoomableGroup>
-                  <Geographies geography={geoUrl}>
-                    {({ geographies }) =>
-                      geographies
-                        .filter((geo) => EUROPEAN_COUNTRIES.has(geo.properties.name))
-                        .map((geo) => {
-                          const countryName = geo.properties.name;
-                          const countryCode = getCountryCodeFromName(countryName);
-                          const orgCount = countryCode ? getOrgCount(countryCode) : 0;
+              <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
+                <ComposableMap
+                  projection="geoAzimuthalEqualArea"
+                  projectionConfig={{
+                    rotate: [-10.0, -52.0, 0],
+                    scale: 900,
+                  }}
+                  width={800}
+                  height={600}
+                  data-testid="europe-map"
+                >
+                  <ZoomableGroup>
+                    <Geographies geography={geoUrl}>
+                      {({ geographies }) =>
+                        geographies
+                          .filter((geo) => EUROPEAN_COUNTRIES.has(geo.properties.name))
+                          .map((geo) => {
+                            const countryName = geo.properties.name;
+                            const countryCode = getCountryCodeFromName(countryName);
+                            const orgCount = countryCode ? getOrgCount(countryCode) : 0;
 
-                          return (
-                            <Geography
-                              key={geo.rsmKey}
-                              geography={geo}
-                              fill={getCountryFill(countryName, isDarkMode)}
-                              stroke={isDarkMode ? '#374151' : '#E5E7EB'}
-                              strokeWidth={0.5}
-                              style={{
-                                default: {
-                                  outline: 'none',
-                                  transition: 'all 200ms ease-in-out',
-                                },
-                                hover: {
-                                  outline: 'none',
-                                  filter: 'brightness(1.1)',
-                                  stroke: '#F97316',
-                                  strokeWidth: 2,
-                                  cursor: 'pointer',
-                                },
-                                pressed: {
-                                  outline: 'none',
-                                  filter: 'brightness(0.9)',
+                            return (
+                              <Geography
+                                key={geo.rsmKey}
+                                geography={geo}
+                                fill={getCountryFill(countryName, isDarkMode)}
+                                stroke={isDarkMode ? '#374151' : '#E5E7EB'}
+                                strokeWidth={0.5}
+                                style={{
+                                  default: {
+                                    outline: 'none',
+                                    transition: 'all 200ms ease-in-out',
+                                  },
+                                  hover: {
+                                    outline: 'none',
+                                    filter: 'brightness(1.1)',
+                                    stroke: '#F97316',
+                                    strokeWidth: 2,
+                                    cursor: 'pointer',
+                                  },
+                                  pressed: {
+                                    outline: 'none',
+                                    filter: 'brightness(0.9)',
+                                  }
+                                }}
+                                tabIndex={orgCount > 0 ? 0 : -1}
+                                onMouseEnter={() => {
+                                  if (orgCount > 0 && countryCode) {
+                                    setHoveredCountry(countryCode);
+                                  }
+                                }}
+                                onMouseLeave={() => setHoveredCountry(null)}
+                                onFocus={() => {
+                                  if (orgCount > 0 && countryCode) {
+                                    setHoveredCountry(countryCode);
+                                  }
+                                }}
+                                onBlur={() => setHoveredCountry(null)}
+                                onKeyDown={(e) => {
+                                  if (
+                                    orgCount > 0 &&
+                                    countryCode &&
+                                    (e.key === "Enter" || e.key === " ")
+                                  ) {
+                                    e.preventDefault();
+                                    setHoveredCountry(
+                                      hoveredCountry === countryCode ? null : countryCode,
+                                    );
+                                  }
+                                }}
+                                className="transition-all duration-200 motion-reduce:transition-none focus-visible:outline-orange-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                                role="button"
+                                aria-label={
+                                  orgCount > 0
+                                    ? `${COUNTRY_CODE_TO_NAME[countryCode!] || countryName}: ${orgCount} organization(s) based here`
+                                    : countryName
                                 }
-                              }}
-                              tabIndex={orgCount > 0 ? 0 : -1}
-                              onMouseEnter={() => {
-                                if (orgCount > 0 && countryCode) {
-                                  setHoveredCountry(countryCode);
-                                }
-                              }}
-                              onMouseLeave={() => setHoveredCountry(null)}
-                              onFocus={() => {
-                                if (orgCount > 0 && countryCode) {
-                                  setHoveredCountry(countryCode);
-                                }
-                              }}
-                              onBlur={() => setHoveredCountry(null)}
-                              onKeyDown={(e) => {
-                                if (
-                                  orgCount > 0 &&
-                                  countryCode &&
-                                  (e.key === "Enter" || e.key === " ")
-                                ) {
-                                  e.preventDefault();
-                                  setHoveredCountry(
-                                    hoveredCountry === countryCode ? null : countryCode,
-                                  );
-                                }
-                              }}
-                              className="transition-all duration-200 motion-reduce:transition-none focus-visible:outline-orange-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                              role="button"
-                              aria-label={
-                                orgCount > 0
-                                  ? `${COUNTRY_CODE_TO_NAME[countryCode!] || countryName}: ${orgCount} organization(s) based here`
-                                  : countryName
-                              }
-                            />
-                          );
-                        })
-                    }
-                  </Geographies>
-                </ZoomableGroup>
-              </ComposableMap>
+                              />
+                            );
+                          })
+                      }
+                    </Geographies>
+                  </ZoomableGroup>
+                </ComposableMap>
+              </div>
 
               {hoveredCountry && (
                 <div className="absolute top-6 left-6 animate-in fade-in slide-in-from-left-2 duration-200 motion-reduce:animate-none">
