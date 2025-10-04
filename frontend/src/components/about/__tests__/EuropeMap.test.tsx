@@ -4,15 +4,6 @@ import { getOrganizations } from "../../../services/organizationsService";
 
 jest.mock("../../../services/organizationsService");
 
-// Mock react-simple-maps to avoid d3 ES module issues in Jest
-jest.mock("react-simple-maps", () => ({
-  ComposableMap: ({ children }: any) => <div data-testid="composable-map">{children}</div>,
-  Geographies: ({ children }: any) => <div>{children([])}</div>,
-  Geography: () => <path data-testid="geography" />,
-  ZoomableGroup: ({ children }: any) => <div>{children}</div>,
-  Marker: ({ children }: any) => <g data-testid="marker">{children}</g>,
-}));
-
 const mockOrgs = [
   { id: 1, name: "Dogs Trust", country: "UK" },
   { id: 2, name: "Many Tears", country: "UK" },
