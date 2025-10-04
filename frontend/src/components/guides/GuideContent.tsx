@@ -9,6 +9,7 @@ import { Callout } from './Callout';
 import { Stats } from './Stats';
 import { GuideSchema } from './GuideSchema';
 import { TableOfContents } from './TableOfContents';
+import { ReadingProgress } from './ReadingProgress';
 
 interface GuideContentProps {
   guide: Guide;
@@ -87,6 +88,7 @@ export function GuideContent({ guide, fullPage = false }: GuideContentProps) {
 
   return (
     <>
+      <ReadingProgress />
       <GuideSchema guide={guide} />
       <div className={fullPage ? "container mx-auto px-4 py-12" : "px-8 py-6"}>
         <div className="flex gap-8 max-w-7xl mx-auto">
