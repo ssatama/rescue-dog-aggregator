@@ -196,16 +196,12 @@ export default function EuropeMap() {
             <>
               <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
                 <ComposableMap
-                  projection="geoAzimuthalEqualArea"
-                  projectionConfig={{
-                    rotate: [-10.0, -52.0, 0],
-                    scale: 900,
-                  }}
+                  projection="geoMercator"
                   width={800}
                   height={600}
                   data-testid="europe-map"
                 >
-                  <ZoomableGroup>
+                  <ZoomableGroup center={[15, 55]} zoom={3}>
                     <Geographies geography={geoUrl}>
                       {({ geographies }) =>
                         geographies
