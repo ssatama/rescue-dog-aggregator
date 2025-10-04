@@ -96,6 +96,7 @@ export default function Header() {
               {/* Increased spacing for better visual separation */}
               {renderNavLink("/dogs", "Find Dogs", "dogs")}
               {renderNavLink("/breeds", "Breeds", "breeds")}
+              {renderNavLink("/guides", "Guides", "guides")}
               {/* Show Swipe on all screen sizes */}
               <div className="relative">
                 <Link href="/swipe" className={getLinkClasses("/swipe")}>
@@ -186,6 +187,21 @@ export default function Header() {
                 {pathname === "/breeds" && (
                   <div
                     data-testid="nav-underline-breeds"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"
+                  />
+                )}
+              </div>
+              <div className="relative">
+                <Link
+                  href="/guides"
+                  className={`block ${getLinkClasses("/guides")}`}
+                  onClick={handleMobileLinkClick}
+                >
+                  Guides
+                </Link>
+                {pathname === "/guides" && (
+                  <div
+                    data-testid="nav-underline-guides"
                     className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"
                   />
                 )}
