@@ -11,13 +11,39 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const guide = await getGuide(slug);
+  const { frontmatter } = guide;
+
   return {
-    title: `${guide.frontmatter.title} | Rescue Dog Aggregator`,
-    description: guide.frontmatter.description,
+    title: `${frontmatter.title} | Rescue Dog Aggregator`,
+    description: frontmatter.description,
+    keywords: frontmatter.keywords,
+    authors: [{ name: frontmatter.author }],
+
     openGraph: {
-      title: guide.frontmatter.title,
-      description: guide.frontmatter.description,
-      images: [guide.frontmatter.heroImage],
+      title: frontmatter.title,
+      description: frontmatter.description,
+      type: 'article',
+      publishedTime: frontmatter.lastUpdated,
+      authors: [frontmatter.author],
+      images: [
+        {
+          url: frontmatter.heroImage,
+          width: 1200,
+          height: 630,
+          alt: frontmatter.heroImageAlt || frontmatter.title,
+        },
+      ],
+    },
+
+    twitter: {
+      card: 'summary_large_image',
+      title: frontmatter.title,
+      description: frontmatter.description,
+      images: [frontmatter.heroImage],
+    },
+
+    alternates: {
+      canonical: `https://rescuedogs.me/guides/${slug}`,
     },
   };
 }

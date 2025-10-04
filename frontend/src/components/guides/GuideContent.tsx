@@ -6,6 +6,7 @@ import { Guide } from '@/types/guide';
 import { DogGrid } from './DogGrid';
 import { Callout } from './Callout';
 import { Stats } from './Stats';
+import { GuideSchema } from './GuideSchema';
 
 interface GuideContentProps {
   guide: Guide;
@@ -33,7 +34,9 @@ export function GuideContent({ guide, fullPage = false }: GuideContentProps) {
   const { frontmatter, serializedContent } = guide;
 
   return (
-    <article className={fullPage ? "container mx-auto px-4 py-12 max-w-4xl" : "px-8 py-6"}>
+    <>
+      <GuideSchema guide={guide} />
+      <article className={fullPage ? "container mx-auto px-4 py-12 max-w-4xl" : "px-8 py-6"}>
       {/* Hero Image */}
       <div className="relative w-full h-64 md:h-96 rounded-xl overflow-hidden mb-8">
         <Image
@@ -74,6 +77,7 @@ export function GuideContent({ guide, fullPage = false }: GuideContentProps) {
           </div>
         </footer>
       )}
-    </article>
+      </article>
+    </>
   );
 }
