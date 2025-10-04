@@ -10,6 +10,7 @@ import { Stats } from './Stats';
 import { GuideSchema } from './GuideSchema';
 import { TableOfContents } from './TableOfContents';
 import { ReadingProgress } from './ReadingProgress';
+import { RelatedGuides } from './RelatedGuides';
 
 interface GuideContentProps {
   guide: Guide;
@@ -132,12 +133,7 @@ export function GuideContent({ guide, fullPage = false }: GuideContentProps) {
 
             {/* Related Guides */}
             {frontmatter.relatedGuides?.length > 0 && (
-              <footer className="mt-12 pt-8 border-t">
-                <h3 className="text-2xl font-bold mb-4">Related Guides</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* TODO: Render related guide cards */}
-                </div>
-              </footer>
+              <RelatedGuides relatedSlugs={frontmatter.relatedGuides} />
             )}
           </article>
         </div>
