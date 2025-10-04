@@ -240,7 +240,7 @@ export const MobileBreedSpotlight: React.FC<MobileBreedSpotlightProps> = ({
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#D68FA3] text-white hover:bg-[#C67F93] transition-all duration-300 font-medium mt-4"
                     aria-label={`Explore ${breedPlural}`}
                   >
-                    Explore {breedPlural}
+                    Explore
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
