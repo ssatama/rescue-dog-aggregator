@@ -152,7 +152,7 @@ export default function EuropeMap() {
 
   return (
     <section className="mb-16">
-      <h2 className="text-section text-gray-800 dark:text-gray-200 mb-8 text-center">
+      <h2 className="text-5xl md:text-6xl font-bold text-gray-800 dark:text-gray-200 mb-8 text-center">
         Where We Help Dogs
       </h2>
       <p className="text-sm text-center text-gray-600 dark:text-gray-400 mb-4">

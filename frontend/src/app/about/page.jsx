@@ -60,10 +60,10 @@ export default function AboutPage() {
 
         {/* Section: Our Mission (EXPANDED) */}
         <section className="mb-12">
-          <h2 className="text-section text-gray-800 dark:text-gray-200 mb-4">
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-200 mb-6">
             Our Mission
           </h2>
-          <p className="text-body text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+          <p className="text-xl leading-relaxed text-gray-700 dark:text-gray-300 mb-4">
             Our mission is to connect loving homes in the UK and across Europe with rescue dogs
             in need. We bring rescue dogs from trusted rescue organizations from Spain to Romania,
             Malta to Montenegro, bringing thousands of dogs into one beautifully designed platform.
@@ -76,7 +76,7 @@ export default function AboutPage() {
 
         {/* Section: How It Works */}
         <section className="mb-12 bg-gray-50 dark:bg-gray-800 p-8 rounded-lg">
-          <h2 className="text-section text-gray-800 dark:text-gray-200 mb-6 text-center">
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-200 mb-6 text-center">
             How It Works
           </h2>
           <div className="grid md:grid-cols-3 gap-8 text-center">
