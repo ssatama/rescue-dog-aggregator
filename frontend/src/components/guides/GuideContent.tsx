@@ -13,6 +13,7 @@ import { ReadingProgress } from './ReadingProgress';
 import { RelatedGuides } from './RelatedGuides';
 import { FontSizeProvider } from '@/contexts/FontSizeContext';
 import { FontSizeControl } from './FontSizeControl';
+import { Breadcrumb } from './Breadcrumb';
 
 interface GuideContentProps {
   guide: Guide;
@@ -104,6 +105,9 @@ export function GuideContent({ guide, fullPage = false, relatedGuides = [] }: Gu
 
           {/* Main Content */}
           <article className="flex-1 max-w-4xl">
+            {/* Breadcrumb Navigation */}
+            {fullPage && <Breadcrumb guideName={frontmatter.title} />}
+
             {/* Hero Image */}
             <div className="relative w-full h-64 md:h-96 rounded-xl overflow-hidden mb-8">
               <Image
