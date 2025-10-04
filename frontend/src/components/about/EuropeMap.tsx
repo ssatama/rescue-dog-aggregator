@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   ComposableMap,
   Geographies,
@@ -25,6 +25,14 @@ const COUNTRY_CODE_TO_NAME: Record<string, string> = {
   DE: "Germany",
   CY: "Cyprus",
 };
+
+// Reverse mapping for O(1) lookups (name → code)
+const COUNTRY_NAME_TO_CODE: Record<string, string> = Object.entries(
+  COUNTRY_CODE_TO_NAME
+).reduce((acc, [code, name]) => {
+  acc[name] = code;
+  return acc;
+}, {} as Record<string, string>);
 
 // European country names to filter from world map
 const EUROPEAN_COUNTRIES = new Set([
@@ -90,49 +98,50 @@ export default function EuropeMap() {
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const response = await getOrganizations();
-        const orgs = Array.isArray(response) ? response : [];
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setMapError(null);
+    try {
+      const response = await getOrganizations();
+      const orgs = Array.isArray(response) ? response : [];
 
-        if (!orgs.length) {
-          console.warn("No organizations returned from API");
-          setOrgsByCountry({});
-          setLoading(false);
-          return;
-        }
-
-        // Group organizations by country
-        const grouped: OrganizationData = {};
-        orgs.forEach((org: Organization) => {
-          if (org.country) {
-            if (!grouped[org.country]) {
-              grouped[org.country] = [];
-            }
-            grouped[org.country].push(org);
-          }
-        });
-        setOrgsByCountry(grouped);
-      } catch (error) {
-        console.error("Failed to load organization data", error);
-        setMapError("Failed to load organization data");
-      } finally {
+      if (!orgs.length) {
+        console.warn("No organizations returned from API");
+        setOrgsByCountry({});
         setLoading(false);
+        return;
       }
+
+      // Group organizations by country
+      const grouped: OrganizationData = {};
+      orgs.forEach((org: Organization) => {
+        if (org.country) {
+          if (!grouped[org.country]) {
+            grouped[org.country] = [];
+          }
+          grouped[org.country].push(org);
+        }
+      });
+      setOrgsByCountry(grouped);
+    } catch (error) {
+      console.error("Failed to load organization data", error);
+      setMapError("Failed to load organization data");
+    } finally {
+      setLoading(false);
     }
-    fetchData();
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   function getOrgCount(countryCode: string): number {
     return orgsByCountry[countryCode]?.length || 0;
   }
 
   function getCountryFill(countryName: string, isDarkMode: boolean): string {
-    // Find country code for this country name
-    const countryCode = Object.keys(COUNTRY_CODE_TO_NAME).find(
-      (code) => COUNTRY_CODE_TO_NAME[code] === countryName,
-    );
+    // O(1) lookup using reverse mapping
+    const countryCode = COUNTRY_NAME_TO_CODE[countryName];
 
     if (!countryCode) {
       return isDarkMode ? '#1F2937' : '#F3F4F6'; // gray-800 : gray-100
@@ -157,10 +166,7 @@ export default function EuropeMap() {
   }
 
   function getCountryCodeFromName(countryName: string): string | null {
-    const code = Object.keys(COUNTRY_CODE_TO_NAME).find(
-      (key) => COUNTRY_CODE_TO_NAME[key] === countryName,
-    );
-    return code || null;
+    return COUNTRY_NAME_TO_CODE[countryName] || null;
   }
 
   return (
@@ -184,8 +190,8 @@ export default function EuropeMap() {
             <div className="h-96 flex items-center justify-center">
               <div className="text-center">
                 <p className="text-red-600 dark:text-red-400 mb-2">{mapError}</p>
-                <button 
-                  onClick={() => window.location.reload()} 
+                <button
+                  onClick={fetchData}
                   className="text-orange-600 hover:text-orange-700 underline"
                 >
                   Retry

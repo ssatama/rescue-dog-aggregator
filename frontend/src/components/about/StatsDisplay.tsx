@@ -1,28 +1,41 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import PropTypes from "prop-types";
+import { useState, useEffect, useCallback } from "react";
 import { getStatistics } from "../../services/animalsService";
 import AnimatedCounter from "../ui/AnimatedCounter";
 
+interface StatsData {
+  total_dogs: number;
+  total_organizations: number;
+  countries?: string[];
+}
+
+interface StatItemProps {
+  value: number;
+  label: string;
+}
+
 export default function StatsDisplay() {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [stats, setStats] = useState<StatsData | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchStats = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getStatistics();
+      setStats(data as StatsData);
+    } catch (err) {
+      setError("Unable to load statistics");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    async function fetchStats() {
-      try {
-        const data = await getStatistics();
-        setStats(data);
-      } catch (err) {
-        setError("Unable to load statistics");
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchStats();
-  }, []);
+  }, [fetchStats]);
 
   if (loading) {
     return (
@@ -37,7 +50,7 @@ export default function StatsDisplay() {
       <div className="text-center py-8">
         <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
         <button
-          onClick={() => window.location.reload()}
+          onClick={fetchStats}
           className="text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 underline transition-colors"
           type="button"
         >
@@ -45,6 +58,10 @@ export default function StatsDisplay() {
         </button>
       </div>
     );
+  }
+
+  if (!stats) {
+    return null;
   }
 
   const totalCountries = stats.countries?.length || 0;
@@ -76,7 +93,7 @@ export default function StatsDisplay() {
   );
 }
 
-function StatItem({ value, label }) {
+function StatItem({ value, label }: StatItemProps) {
   return (
     <div className="text-center">
       <div className="relative">
@@ -94,8 +111,3 @@ function StatItem({ value, label }) {
     </div>
   );
 }
-
-StatItem.propTypes = {
-  value: PropTypes.number.isRequired,
-  label: PropTypes.string.isRequired,
-};
