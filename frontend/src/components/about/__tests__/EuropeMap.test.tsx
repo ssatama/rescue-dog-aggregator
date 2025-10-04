@@ -34,4 +34,30 @@ describe("EuropeMap", () => {
     render(<EuropeMap />);
     expect(screen.getByText(/Loading map/i)).toBeInTheDocument();
   });
+
+  test("map container has gradient background", async () => {
+    (getOrganizations as jest.Mock).mockResolvedValue(mockOrgs);
+    const { container } = render(<EuropeMap />);
+    
+    await waitFor(() => {
+      const gradient = container.querySelector(".bg-gradient-to-br.from-blue-50\\/30");
+      expect(gradient).toBeInTheDocument();
+    });
+  });
+
+  test("map has rounded corners", async () => {
+    (getOrganizations as jest.Mock).mockResolvedValue(mockOrgs);
+    const { container } = render(<EuropeMap />);
+    
+    await waitFor(() => {
+      const gradientBg = container.querySelector(".rounded-3xl");
+      expect(gradientBg).toBeInTheDocument();
+    });
+  });
+
+  test("displays disclaimer about organization locations", () => {
+    (getOrganizations as jest.Mock).mockResolvedValue(mockOrgs);
+    render(<EuropeMap />);
+    expect(screen.getByText(/organization home countries/i)).toBeInTheDocument();
+  });
 });
