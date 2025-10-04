@@ -52,12 +52,12 @@ export default function StatsDisplay() {
   return (
     <section className="relative overflow-hidden">
       {/* Gradient background */}
-      <div className="bg-gradient-to-br from-orange-50 via-orange-100/50 to-transparent dark:from-orange-950/20 dark:via-orange-900/10 dark:to-transparent rounded-2xl p-12 md:p-16 border border-orange-200/50 dark:border-orange-800/30 shadow-lg">
-        
+      <div className="bg-gradient-to-br from-orange-50 via-orange-100/50 to-transparent dark:from-orange-950/20 dark:via-orange-900/10 dark:to-transparent rounded-2xl p-6 sm:p-8 md:p-12 lg:p-16 border border-orange-200/50 dark:border-orange-800/30 shadow-lg">
+
         {/* Grid lines (subtle) */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(251,146,60,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(251,146,60,0.03)_1px,transparent_1px)] bg-[size:32px_32px]"></div>
 
-        <div className="relative flex flex-col md:flex-row justify-center items-center gap-16 md:gap-24">
+        <div className="relative flex flex-col md:flex-row justify-center items-center gap-8 sm:gap-12 md:gap-16 lg:gap-24">
           <StatItem value={stats.total_dogs} label="Dogs" />
           <StatItem value={stats.total_organizations} label="Organizations" />
           <StatItem value={totalCountries} label="Countries" />
@@ -83,7 +83,7 @@ function StatItem({ value, label }) {
         <AnimatedCounter
           value={value}
           label={label}
-          className="text-6xl md:text-7xl font-extrabold bg-gradient-to-br from-orange-600 to-orange-500 dark:from-orange-400 dark:to-orange-300 bg-clip-text text-transparent"
+          className="text-5xl sm:text-6xl lg:text-7xl font-extrabold bg-gradient-to-br from-orange-600 to-orange-500 dark:from-orange-400 dark:to-orange-300 bg-clip-text text-transparent"
         />
         {/* Subtle glow effect */}
         <div className="absolute inset-0 blur-2xl bg-orange-400/20 dark:bg-orange-400/10 -z-10"></div>

@@ -4,7 +4,7 @@ import { HARLEY_PHOTOS } from "../../constants/images";
 export default function HarleyStory() {
   return (
     <section>
-      <h2 className="text-5xl md:text-6xl font-bold text-gray-800 dark:text-gray-200 mb-8 text-center">
+      <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-800 dark:text-gray-200 mb-8 text-center">
         Why This Exists
       </h2>
       <div className="grid md:grid-cols-2 gap-8 mb-8">
@@ -47,9 +47,9 @@ export default function HarleyStory() {
       </div>
       <div className="relative">
         {/* Add accent border */}
-        <div className="absolute left-0 top-0 w-1 h-24 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full"></div>
-        
-        <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 leading-relaxed pl-8 max-w-4xl mx-auto">
+        <div className="absolute left-0 top-0 w-1 h-20 md:h-24 lg:h-28 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full"></div>
+
+        <p className="text-lg sm:text-xl md:text-2xl text-gray-700 dark:text-gray-300 leading-relaxed pl-8 max-w-4xl mx-auto">
           I built this platform after struggling to find Harley through cluttered rescue sites in 2023.
           Most platforms buried dogs under poor design and confusing navigation. Rescue organizations are
           not tech experts - they are experts at rescuing dogs. Every rescue dog deserves to be presented

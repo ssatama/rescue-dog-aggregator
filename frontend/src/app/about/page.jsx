@@ -49,7 +49,7 @@ export default function AboutPage() {
         </div>
 
         {/* All sections with consistent vertical rhythm */}
-        <div className="space-y-32 py-16 md:py-24">
+        <div className="space-y-12 sm:space-y-16 md:space-y-24 lg:space-y-32 py-8 sm:py-12 md:py-16 lg:py-24">
           {/* NEW: Harley Story */}
           <HarleyStory />
 
@@ -61,10 +61,10 @@ export default function AboutPage() {
 
           {/* Section: Our Mission (EXPANDED) */}
           <section>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-200 mb-6">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-200 mb-6">
               Our Mission
             </h2>
-            <p className="text-xl leading-relaxed text-gray-700 dark:text-gray-300 mb-4">
+            <p className="text-lg md:text-xl lg:text-2xl leading-relaxed text-gray-700 dark:text-gray-300 mb-4">
               Our mission is to connect loving homes in the UK and across Europe with rescue dogs
               in need. We bring rescue dogs from trusted rescue organizations from Spain to Romania,
               Malta to Montenegro, bringing thousands of dogs into one beautifully designed platform.
@@ -76,8 +76,8 @@ export default function AboutPage() {
           </section>
 
           {/* Section: How It Works */}
-          <section className="bg-gray-50 dark:bg-gray-800 p-8 rounded-lg">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-200 mb-6 text-center">
+          <section className="bg-gray-50 dark:bg-gray-800 p-6 sm:p-8 md:p-10 rounded-lg">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-200 mb-6 text-center">
               How It Works
             </h2>
             <div className="grid md:grid-cols-3 gap-8 text-center">

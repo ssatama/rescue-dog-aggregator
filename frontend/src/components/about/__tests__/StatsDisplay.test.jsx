@@ -136,7 +136,7 @@ describe("StatsDisplay", () => {
     const { container } = render(<StatsDisplay />);
 
     await waitFor(() => {
-      const numbers = container.querySelectorAll(".text-6xl.md\\:text-7xl");
+      const numbers = container.querySelectorAll(".text-5xl.sm\\:text-6xl.lg\\:text-7xl");
       expect(numbers.length).toBe(3);
     });
   });

@@ -175,7 +175,7 @@ export default function EuropeMap() {
         {/* Subtle background */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-transparent dark:from-blue-950/10 rounded-3xl"></div>
 
-        <div className="relative p-8 md:p-12">
+        <div className="relative p-4 sm:p-6 md:p-8 lg:p-12">
           {loading ? (
             <div className="h-96 flex items-center justify-center">
               <p className="text-gray-600 dark:text-gray-400">Loading map...</p>
@@ -197,8 +197,7 @@ export default function EuropeMap() {
               <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
                 <ComposableMap
                   projection="geoMercator"
-                  width={800}
-                  height={600}
+                  viewBox="0 0 800 600"
                   data-testid="europe-map"
                 >
                   <ZoomableGroup center={[15, 55]} zoom={3}>
