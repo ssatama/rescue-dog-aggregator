@@ -120,5 +120,8 @@
     "typescript": "5.8.2",
     "unimport": "^5.2.0",
     "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "d3-color": "^3.1.0"
   }
 }
