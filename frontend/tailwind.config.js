@@ -99,6 +99,16 @@ module.exports = {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		colors: {
+  			'guide-dark': {
+  				base: '#1a1a1a',
+  				elevated: '#242424',
+  				higher: '#2e2e2e',
+  				border: '#3f3f46',
+  			},
+  			'guide-text': {
+  				primary: '#e4e4e7',
+  				secondary: '#a1a1aa',
+  			},
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {
