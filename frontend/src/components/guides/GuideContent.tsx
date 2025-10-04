@@ -15,6 +15,7 @@ import { RelatedGuides } from './RelatedGuides';
 interface GuideContentProps {
   guide: Guide;
   fullPage?: boolean;
+  relatedGuides?: Guide[];
 }
 
 interface TOCSection {
@@ -40,7 +41,7 @@ const components = {
   code: (props: any) => <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded" {...props} />,
 };
 
-export function GuideContent({ guide, fullPage = false }: GuideContentProps) {
+export function GuideContent({ guide, fullPage = false, relatedGuides = [] }: GuideContentProps) {
   const { frontmatter, serializedContent } = guide;
   const [sections, setSections] = useState<TOCSection[]>([]);
   const [readingProgress, setReadingProgress] = useState(0);
@@ -132,8 +133,8 @@ export function GuideContent({ guide, fullPage = false }: GuideContentProps) {
             </div>
 
             {/* Related Guides */}
-            {frontmatter.relatedGuides?.length > 0 && (
-              <RelatedGuides relatedSlugs={frontmatter.relatedGuides} />
+            {relatedGuides.length > 0 && (
+              <RelatedGuides relatedGuides={relatedGuides} />
             )}
           </article>
         </div>

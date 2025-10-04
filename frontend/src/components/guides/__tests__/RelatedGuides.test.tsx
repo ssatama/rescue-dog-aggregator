@@ -1,9 +1,5 @@
 import { render, screen } from '@testing-library/react';
 import { RelatedGuides } from '../RelatedGuides';
-import * as guidesLib from '@/lib/guides';
-
-// Mock the guides library
-jest.mock('@/lib/guides');
 
 const mockGuides = [
   {
@@ -45,63 +41,36 @@ const mockGuides = [
 ];
 
 describe('RelatedGuides', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it('renders related guides when slugs match', async () => {
-    (guidesLib.getAllGuides as jest.Mock).mockResolvedValue(mockGuides);
-
-    const { container } = render(
-      await RelatedGuides({ relatedSlugs: ['european-rescue-guide', 'first-time-owner-guide'] })
-    );
+  it('renders related guides when provided', () => {
+    const { container } = render(<RelatedGuides relatedGuides={mockGuides} />);
 
     expect(screen.getByText('Related Guides')).toBeInTheDocument();
     expect(screen.getByText('European Rescue Guide')).toBeInTheDocument();
     expect(screen.getByText('First Time Owner Guide')).toBeInTheDocument();
   });
 
-  it('returns null when no related slugs provided', async () => {
-    const { container } = render(await RelatedGuides({ relatedSlugs: [] }));
+  it('returns null when no related guides provided', () => {
+    const { container } = render(<RelatedGuides relatedGuides={[]} />);
     expect(container.firstChild).toBeNull();
   });
 
-  it('returns null when related slugs do not match any guides', async () => {
-    (guidesLib.getAllGuides as jest.Mock).mockResolvedValue(mockGuides);
-
-    const { container } = render(await RelatedGuides({ relatedSlugs: ['non-existent-guide'] }));
-    expect(container.firstChild).toBeNull();
-  });
-
-  it('renders only matching guides', async () => {
-    (guidesLib.getAllGuides as jest.Mock).mockResolvedValue(mockGuides);
-
-    const { container } = render(
-      await RelatedGuides({ relatedSlugs: ['european-rescue-guide'] })
-    );
+  it('renders only provided guides', () => {
+    const { container } = render(<RelatedGuides relatedGuides={[mockGuides[0]]} />);
 
     expect(screen.getByText('European Rescue Guide')).toBeInTheDocument();
     expect(screen.queryByText('First Time Owner Guide')).not.toBeInTheDocument();
   });
 
-  it('renders guides in a grid layout', async () => {
-    (guidesLib.getAllGuides as jest.Mock).mockResolvedValue(mockGuides);
-
-    const { container } = render(
-      await RelatedGuides({ relatedSlugs: ['european-rescue-guide', 'first-time-owner-guide'] })
-    );
+  it('renders guides in a grid layout', () => {
+    const { container } = render(<RelatedGuides relatedGuides={mockGuides} />);
 
     const grid = container.querySelector('.grid');
     expect(grid).toBeInTheDocument();
     expect(grid).toHaveClass('grid-cols-1', 'md:grid-cols-2');
   });
 
-  it('applies proper styling to footer section', async () => {
-    (guidesLib.getAllGuides as jest.Mock).mockResolvedValue(mockGuides);
-
-    const { container } = render(
-      await RelatedGuides({ relatedSlugs: ['european-rescue-guide'] })
-    );
+  it('applies proper styling to footer section', () => {
+    const { container } = render(<RelatedGuides relatedGuides={[mockGuides[0]]} />);
 
     const footer = container.querySelector('footer');
     expect(footer).toHaveClass('mt-12', 'pt-8', 'border-t');

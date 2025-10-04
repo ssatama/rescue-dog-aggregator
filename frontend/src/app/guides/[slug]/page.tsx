@@ -1,7 +1,8 @@
-import { getGuide, getAllGuideSlugs } from '@/lib/guides';
+import { getGuide, getAllGuideSlugs, getAllGuides } from '@/lib/guides';
 import { GuideContent } from '@/components/guides/GuideContent';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { Guide } from '@/types/guide';
 
 export async function generateStaticParams() {
   const slugs = getAllGuideSlugs();
@@ -53,7 +54,15 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
 
   try {
     const guide = await getGuide(slug);
-    return <GuideContent guide={guide} />;
+
+    // Fetch related guides if specified in frontmatter
+    let relatedGuides: Guide[] = [];
+    if (guide.frontmatter.relatedGuides && guide.frontmatter.relatedGuides.length > 0) {
+      const allGuides = await getAllGuides();
+      relatedGuides = allGuides.filter(g => guide.frontmatter.relatedGuides?.includes(g.slug));
+    }
+
+    return <GuideContent guide={guide} fullPage={true} relatedGuides={relatedGuides} />;
   } catch (error) {
     notFound();
   }

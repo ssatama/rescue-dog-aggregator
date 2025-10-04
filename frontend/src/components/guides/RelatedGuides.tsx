@@ -1,19 +1,14 @@
-import { getAllGuides } from '@/lib/guides';
+'use client';
+
+import { Guide } from '@/types/guide';
 import { GuideCard } from './GuideCard';
 
 interface RelatedGuidesProps {
-  relatedSlugs: string[];
+  relatedGuides: Guide[];
 }
 
-export async function RelatedGuides({ relatedSlugs }: RelatedGuidesProps) {
-  if (!relatedSlugs || relatedSlugs.length === 0) {
-    return null;
-  }
-
-  const allGuides = await getAllGuides();
-  const relatedGuides = allGuides.filter(guide => relatedSlugs.includes(guide.slug));
-
-  if (relatedGuides.length === 0) {
+export function RelatedGuides({ relatedGuides }: RelatedGuidesProps) {
+  if (!relatedGuides || relatedGuides.length === 0) {
     return null;
   }
 
