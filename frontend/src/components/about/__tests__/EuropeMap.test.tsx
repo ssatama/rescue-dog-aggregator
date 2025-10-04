@@ -58,9 +58,9 @@ describe("EuropeMap", () => {
     });
   });
 
-  test("displays disclaimer about organization locations", () => {
+  test("displays mission statement about rescue organizations", () => {
     (getOrganizations as jest.Mock).mockResolvedValue(mockOrgs);
     render(<EuropeMap />);
-    expect(screen.getByText(/organization home countries/i)).toBeInTheDocument();
+    expect(screen.getByText(/rescue organizations working together across borders/i)).toBeInTheDocument();
   });
 });
