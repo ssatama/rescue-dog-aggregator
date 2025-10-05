@@ -1,5 +1,8 @@
 import { getGuide, getAllGuideSlugs, getAllGuides } from '@/lib/guides';
 import { GuideContent } from '@/components/guides/GuideContent';
+import { ReadingProgress } from '@/components/guides/ReadingProgress';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { Guide } from '@/types/guide';
@@ -62,7 +65,14 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
       relatedGuides = allGuides.filter(g => guide.frontmatter.relatedGuides?.includes(g.slug));
     }
 
-    return <GuideContent guide={guide} fullPage={true} relatedGuides={relatedGuides} />;
+    return (
+      <>
+        <Header />
+        <ReadingProgress />
+        <GuideContent guide={guide} fullPage={true} relatedGuides={relatedGuides} />
+        <Footer />
+      </>
+    );
   } catch (error) {
     notFound();
   }

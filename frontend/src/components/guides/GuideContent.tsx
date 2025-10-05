@@ -9,7 +9,6 @@ import { Callout } from './Callout';
 import { Stats } from './Stats';
 import { GuideSchema } from './GuideSchema';
 import { TableOfContents } from './TableOfContents';
-import { ReadingProgress } from './ReadingProgress';
 import { RelatedGuides } from './RelatedGuides';
 import { FontSizeProvider } from '@/contexts/FontSizeContext';
 import { FontSizeControl } from './FontSizeControl';
@@ -93,7 +92,6 @@ export function GuideContent({ guide, fullPage = false, relatedGuides = [] }: Gu
 
   return (
     <FontSizeProvider>
-      <ReadingProgress />
       <GuideSchema guide={guide} />
       {fullPage && <FontSizeControl />}
       <div className={fullPage ? "container mx-auto px-4 py-12" : "px-8 py-6"}>

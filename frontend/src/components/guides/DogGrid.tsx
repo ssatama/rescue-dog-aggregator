@@ -19,7 +19,7 @@ interface DogGridProps {
   // Physical characteristics
   sex?: string;
   size?: string;
-  age?: string;
+  age_category?: string;
 
   // Location filters
   location_country?: string;
@@ -47,7 +47,7 @@ export function DogGrid({
   breed_type,
   sex,
   size,
-  age,
+  age_category,
   location_country,
   available_to_country,
   available_to_region,
@@ -81,7 +81,7 @@ export function DogGrid({
         if (breed_type) params.breed_type = breed_type;
         if (sex) params.sex = sex;
         if (size) params.size = size;
-        if (age) params.age = age;
+        if (age_category) params.age_category = age_category;
         if (location_country) params.location_country = location_country;
         if (available_to_country) params.available_to_country = available_to_country;
         if (available_to_region) params.available_to_region = available_to_region;
@@ -97,13 +97,13 @@ export function DogGrid({
     }
 
     fetchDogs();
-  }, [breed, standardized_breed, breed_group, primary_breed, breed_type, sex, size, age, location_country, available_to_country, available_to_region, organization_id, status, limit]);
+  }, [breed, standardized_breed, breed_group, primary_breed, breed_type, sex, size, age_category, location_country, available_to_country, available_to_region, organization_id, status, limit]);
 
   if (isLoading) {
     return (
-      <div className="my-8">
+      <div className="my-8 not-prose">
         {caption && <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 italic">{caption}</p>}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4 sm:gap-6">
           {Array.from({ length: limit }).map((_, i) => (
             <DogCardSkeletonOptimized key={i} />
           ))}
@@ -114,7 +114,7 @@ export function DogGrid({
 
   if (error) {
     return (
-      <div className="my-8 p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
+      <div className="my-8 not-prose p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
         <p className="text-red-800 dark:text-red-200">
           Unable to load dogs. Please try again later.
         </p>
@@ -124,7 +124,7 @@ export function DogGrid({
 
   if (dogs.length === 0) {
     return (
-      <div className="my-8 p-6 bg-gray-50 dark:bg-gray-900 rounded-lg text-center">
+      <div className="my-8 not-prose p-6 bg-gray-50 dark:bg-gray-900 rounded-lg text-center">
         <p className="text-gray-600 dark:text-gray-400 mb-3">
           Currently no {breed || 'dogs'} available matching these criteria.
         </p>
@@ -139,26 +139,38 @@ export function DogGrid({
   }
 
   return (
-    <div className="my-8">
+    <div className="my-8 not-prose">
       {caption && (
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 italic">
           {caption}
         </p>
       )}
-      <div className={layout === 'grid'
-        ? "grid grid-cols-1 md:grid-cols-2 gap-4"
-        : "flex gap-4 overflow-x-auto"
-      }>
-        {dogs.map((dog, index) => (
-          <DogCardOptimized
-            key={dog.id}
-            dog={dog}
-            priority={index < 2}
-            compact={layout === 'carousel'}
-            embedded={embedded}
-          />
-        ))}
-      </div>
+      {layout === 'grid' ? (
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4 sm:gap-6">
+          {dogs.map((dog, index) => (
+            <DogCardOptimized
+              key={dog.id}
+              dog={dog}
+              priority={index < 2}
+              compact={false}
+              embedded={embedded}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory -mx-4 px-4">
+          {dogs.map((dog, index) => (
+            <div key={dog.id} className="flex-none min-w-[260px] max-w-[360px] w-[80%] sm:w-[320px] snap-start">
+              <DogCardOptimized
+                dog={dog}
+                priority={index < 2}
+                compact={true}
+                embedded={embedded}
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

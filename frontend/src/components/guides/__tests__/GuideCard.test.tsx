@@ -33,7 +33,7 @@ describe('GuideCard', () => {
 
   it('displays read time', () => {
     render(<GuideCard guide={mockGuide} />);
-    expect(screen.getByText(/10 min read/i)).toBeInTheDocument();
+    expect(screen.getByText(/10 min/i)).toBeInTheDocument();
   });
 
   it('displays category badge', () => {

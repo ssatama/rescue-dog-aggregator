@@ -22,8 +22,8 @@ export function GuideCard({ guide, priority = false }: GuideCardProps) {
       className="group block overflow-hidden rounded-xl h-[400px] transition-all duration-300
                  hover:shadow-2xl hover:-translate-y-1 focus:outline-2 focus:outline-orange-500"
     >
-      {/* Hero Image - Top 60% (55% on lg, 50% on xl for text space) */}
-      <div className="relative h-[60%] lg:h-[55%] xl:h-[50%] overflow-hidden">
+      {/* Hero Image - Responsive heights for better text space */}
+      <div className="relative h-[55%] md:h-[50%] lg:h-[48%] overflow-hidden">
         <Image
           src={frontmatter.heroImage}
           alt={frontmatter.heroImageAlt || frontmatter.title}
@@ -33,28 +33,34 @@ export function GuideCard({ guide, priority = false }: GuideCardProps) {
         />
       </div>
 
-      {/* Solid Panel - Bottom 40% (45% on lg, 50% on xl - WCAG AAA compliant) */}
-      <div className="h-[40%] lg:h-[45%] xl:h-[50%] bg-white dark:bg-guide-dark-elevated p-4 md:p-6 flex flex-col justify-between">
+      {/* Content Panel - More space allocated for text clarity */}
+      <div className="h-[45%] md:h-[50%] lg:h-[52%] bg-white dark:bg-guide-dark-elevated p-4 md:p-6 flex flex-col justify-between">
         <div className="flex-1 min-h-0">
-          <Badge className="mb-2 bg-orange-500 text-white uppercase text-xs">
+          <Badge className="mb-3 bg-orange-500 text-white uppercase text-xs font-semibold tracking-wide">
             {frontmatter.category}
           </Badge>
 
-          <h3 className="text-lg md:text-xl lg:text-2xl font-bold leading-tight mb-1.5 line-clamp-2
+          {/* Larger title with 3-line clamp for better readability */}
+          <h3 className="text-xl md:text-2xl lg:text-2xl font-bold leading-tight line-clamp-3
                          text-gray-900 dark:text-white overflow-hidden">
             {frontmatter.title}
           </h3>
-
-          <p className="text-sm text-gray-600 dark:text-guide-text-secondary line-clamp-2 overflow-hidden">
-            {frontmatter.description}
-          </p>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-guide-text-secondary mt-3 flex-shrink-0">
-          <span>📖 {frontmatter.readTime} min</span>
-          <span>•</span>
-          <span className="hidden sm:inline">Updated {formattedDate}</span>
-          <span className="sm:hidden">{formattedDate.split(',')[0]}</span>
+        {/* Meta section pinned to bottom with better spacing */}
+        <div className="flex items-center gap-3 text-xs md:text-sm text-gray-500 dark:text-guide-text-secondary 
+                        mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 flex-shrink-0">
+          <span className="flex items-center gap-1">
+            <span className="text-base" aria-hidden="true">📖</span>
+            <span>{frontmatter.readTime} min</span>
+          </span>
+          <span aria-hidden="true">•</span>
+          <time dateTime={frontmatter.lastUpdated} className="hidden sm:inline">
+            Updated {formattedDate}
+          </time>
+          <time dateTime={frontmatter.lastUpdated} className="sm:hidden">
+            {formattedDate.split(',')[0]}
+          </time>
         </div>
       </div>
     </Link>

@@ -1,6 +1,17 @@
 import { render, screen } from '@testing-library/react';
 import GuidesPage from '../page';
 
+// Mock the layout components
+jest.mock('@/components/layout/Header', () => ({
+  __esModule: true,
+  default: () => <div data-testid="header">Header</div>,
+}));
+
+jest.mock('@/components/layout/Footer', () => ({
+  __esModule: true,
+  default: () => <div data-testid="footer">Footer</div>,
+}));
+
 // Mock the guides utilities
 jest.mock('@/lib/guides', () => ({
   getAllGuides: jest.fn(() => [
@@ -46,6 +57,20 @@ describe('GuidesPage', () => {
     expect(screen.getByText('Adoption Guides')).toBeInTheDocument();
   });
 
+  it('renders header and footer', async () => {
+    const page = await GuidesPage();
+    render(page);
+    expect(screen.getByTestId('header')).toBeInTheDocument();
+    expect(screen.getByTestId('footer')).toBeInTheDocument();
+  });
+
+  it('renders breadcrumbs', async () => {
+    const page = await GuidesPage();
+    render(page);
+    expect(screen.getByText('Home')).toBeInTheDocument();
+    expect(screen.getByText('Guides')).toBeInTheDocument();
+  });
+
   it('renders all guide cards', async () => {
     const page = await GuidesPage();
     render(page);
@@ -63,7 +88,7 @@ describe('GuidesPage', () => {
   it('displays read time for guides', async () => {
     const page = await GuidesPage();
     render(page);
-    expect(screen.getByText(/5 min read/)).toBeInTheDocument();
-    expect(screen.getByText(/10 min read/)).toBeInTheDocument();
+    expect(screen.getByText(/5 min/)).toBeInTheDocument();
+    expect(screen.getByText(/10 min/)).toBeInTheDocument();
   });
 });

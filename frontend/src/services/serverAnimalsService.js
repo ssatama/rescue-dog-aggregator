@@ -70,7 +70,7 @@ export const getAnimals = cache(async (params = {}) => {
   if (params.offset) queryParams.append("offset", params.offset);
   if (params.search) queryParams.append("search", params.search);
   if (params.size) queryParams.append("size", params.size);
-  if (params.age) queryParams.append("age", params.age);
+  if (params.age_category) queryParams.append("age_category", params.age_category);
   if (params.sex) queryParams.append("sex", params.sex);
   if (params.organization_id)
     queryParams.append("organization_id", params.organization_id);
@@ -81,10 +81,10 @@ export const getAnimals = cache(async (params = {}) => {
     queryParams.append("primary_breed", params.primary_breed);
   if (params.location_country)
     queryParams.append("location_country", params.location_country);
-  if (params.available_country)
-    queryParams.append("available_country", params.available_country);
-  if (params.available_region)
-    queryParams.append("available_region", params.available_region);
+  if (params.available_to_country)
+    queryParams.append("available_to_country", params.available_to_country);
+  if (params.available_to_region)
+    queryParams.append("available_to_region", params.available_to_region);
   if (params.sort_by) queryParams.append("sort_by", params.sort_by);
   if (params.sort_order) queryParams.append("sort_order", params.sort_order);
 
