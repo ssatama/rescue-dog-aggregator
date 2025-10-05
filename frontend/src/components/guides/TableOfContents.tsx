@@ -1,10 +1,15 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useActiveSection } from './hooks/useActiveSection';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Badge } from '@/components/ui/badge';
-import { List } from 'lucide-react';
+import { useState } from "react";
+import { useActiveSection } from "./hooks/useActiveSection";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { List } from "lucide-react";
 
 interface TOCSection {
   id: string;
@@ -17,14 +22,17 @@ interface TableOfContentsProps {
   readingProgress: number;
 }
 
-export function TableOfContents({ sections, readingProgress }: TableOfContentsProps) {
+export function TableOfContents({
+  sections,
+  readingProgress,
+}: TableOfContentsProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const activeId = useActiveSection(sections.map(s => s.id));
-  const currentSectionIndex = sections.findIndex(s => s.id === activeId);
+  const activeId = useActiveSection(sections.map((s) => s.id));
+  const currentSectionIndex = sections.findIndex((s) => s.id === activeId);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
-    element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    element?.scrollIntoView({ behavior: "smooth", block: "start" });
     setIsMobileOpen(false);
   };
 
@@ -71,8 +79,8 @@ export function TableOfContents({ sections, readingProgress }: TableOfContentsPr
               onClick={() => scrollToSection(section.id)}
               className={`block w-full text-left py-2 px-3 rounded transition text-sm ${
                 activeId === section.id
-                  ? 'bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 font-semibold border-l-2 border-orange-500'
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                  ? "bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 font-semibold border-l-2 border-orange-500"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-800"
               }`}
             >
               <span className="text-xs text-gray-500 dark:text-gray-400 mr-2">
@@ -132,8 +140,8 @@ export function TableOfContents({ sections, readingProgress }: TableOfContentsPr
                   onClick={() => scrollToSection(section.id)}
                   className={`block w-full text-left py-3 px-4 rounded-lg transition ${
                     activeId === section.id
-                      ? 'bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 font-semibold'
-                      : 'bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      ? "bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 font-semibold"
+                      : "bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
                   }`}
                 >
                   <span className="text-xs text-gray-500 dark:text-gray-400 mr-2">

@@ -1,16 +1,27 @@
-'use client';
+"use client";
 
-import { useFontSize } from '@/contexts/FontSizeContext';
-import { Button } from '@/components/ui/button';
-import { Minus, Type, Plus } from 'lucide-react';
+import { useFontSize } from "@/contexts/FontSizeContext";
+import { Button } from "@/components/ui/button";
+import { Minus, Type, Plus } from "lucide-react";
 
 export function FontSizeControl() {
-  const { fontSize, setFontSize, increaseFontSize, decreaseFontSize } = useFontSize();
+  const { fontSize, setFontSize, increaseFontSize, decreaseFontSize } =
+    useFontSize();
 
   const sizes = [
-    { value: 'comfortable' as const, label: 'A', title: 'Comfortable (16px)' },
-    { value: 'large' as const, label: 'A', title: 'Large (18px)', larger: true },
-    { value: 'extraLarge' as const, label: 'A', title: 'Extra Large (20px)', largest: true },
+    { value: "comfortable" as const, label: "A", title: "Comfortable (16px)" },
+    {
+      value: "large" as const,
+      label: "A",
+      title: "Large (18px)",
+      larger: true,
+    },
+    {
+      value: "extraLarge" as const,
+      label: "A",
+      title: "Extra Large (20px)",
+      largest: true,
+    },
   ];
 
   return (
@@ -20,7 +31,7 @@ export function FontSizeControl() {
         variant="ghost"
         size="sm"
         onClick={decreaseFontSize}
-        disabled={fontSize === 'comfortable'}
+        disabled={fontSize === "comfortable"}
         className="h-8 w-8 p-0"
         title="Decrease font size (Ctrl/Cmd + -)"
         aria-label="Decrease font size"
@@ -35,14 +46,16 @@ export function FontSizeControl() {
       {sizes.map((size) => (
         <Button
           key={size.value}
-          variant={fontSize === size.value ? 'default' : 'ghost'}
+          variant={fontSize === size.value ? "default" : "ghost"}
           size="sm"
           onClick={() => setFontSize(size.value)}
-          className={`h-8 w-8 p-0 ${fontSize === size.value ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
+          className={`h-8 w-8 p-0 ${fontSize === size.value ? "bg-orange-500 hover:bg-orange-600" : ""}`}
           title={size.title}
           aria-label={size.title}
         >
-          <span className={`font-bold ${size.larger ? 'text-lg' : size.largest ? 'text-xl' : 'text-base'}`}>
+          <span
+            className={`font-bold ${size.larger ? "text-lg" : size.largest ? "text-xl" : "text-base"}`}
+          >
             {size.label}
           </span>
         </Button>
@@ -56,7 +69,7 @@ export function FontSizeControl() {
         variant="ghost"
         size="sm"
         onClick={increaseFontSize}
-        disabled={fontSize === 'extraLarge'}
+        disabled={fontSize === "extraLarge"}
         className="h-8 w-8 p-0"
         title="Increase font size (Ctrl/Cmd + +)"
         aria-label="Increase font size"

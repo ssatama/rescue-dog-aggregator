@@ -69,14 +69,9 @@ describe("Header Navigation Enhancement - Orange Theme", () => {
   });
 
   describe("Focus States", () => {
-    it("should use orange focus rings", () => {
-      render(<Header />);
-
-      const mobileMenuButton = screen.getByRole("button", {
-        name: /open menu/i,
-      });
-      expect(mobileMenuButton).toHaveClass("focus:ring-orange-600");
-      expect(mobileMenuButton).not.toHaveClass("focus:ring-red-500");
+    it.skip("mobile menu button removed - focus handled by bottom nav", () => {
+      // Mobile menu button was removed from Header component
+      // Mobile navigation now uses MobileBottomNav and MobileMenuDrawer
     });
   });
 
@@ -123,47 +118,9 @@ describe("Header Navigation Enhancement - Orange Theme", () => {
   });
 
   describe("Mobile Menu Styling", () => {
-    it("should have proper touch targets for mobile links", () => {
-      usePathname.mockReturnValue("/dogs");
-      render(<Header />);
-
-      // Check that mobile menu links have proper minimum height
-      const mobileLinks = screen
-        .getAllByRole("link")
-        .filter(
-          (link) =>
-            link.className.includes("block") &&
-            ["Dogs", "Organizations", "About"].includes(link.textContent),
-        );
-
-      mobileLinks.forEach((link) => {
-        // Should have adequate padding for 44px minimum touch target
-        expect(link).toHaveClass("py-2");
-        expect(link).toHaveClass("px-3");
-      });
-    });
-
-    it("should use same orange theme in mobile menu", () => {
-      usePathname.mockReturnValue("/dogs");
-      render(<Header />);
-
-      // Open the mobile menu first
-      const mobileMenuButton = screen.getByRole("button", {
-        name: /open menu/i,
-      });
-      fireEvent.click(mobileMenuButton);
-
-      // Now find the mobile navigation link
-      const mobileFindDogsLink = screen
-        .getAllByRole("link")
-        .find(
-          (link) =>
-            link.textContent === "Dogs" && link.className.includes("block"),
-        );
-
-      expect(mobileFindDogsLink).toHaveClass("text-orange-600");
-      expect(mobileFindDogsLink).toHaveClass("font-semibold");
-      expect(mobileFindDogsLink).toHaveClass("transition-colors");
+    it.skip("mobile menu removed - now using MobileBottomNav component", () => {
+      // Mobile menu was removed from Header component
+      // Mobile navigation now uses MobileBottomNav and MobileMenuDrawer components
     });
   });
 

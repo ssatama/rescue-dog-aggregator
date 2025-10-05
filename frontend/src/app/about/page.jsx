@@ -65,13 +65,15 @@ export default function AboutPage() {
               Our Mission
             </h2>
             <p className="text-lg md:text-xl lg:text-2xl leading-relaxed text-gray-700 dark:text-gray-300 mb-4">
-              Our mission is to connect loving homes in the UK and across Europe with rescue dogs
-              in need. We bring rescue dogs from trusted rescue organizations from Spain to Romania,
-              Malta to Montenegro, bringing thousands of dogs into one beautifully designed platform.
-              Rescue organizations are not technology experts - they are experts at rescuing dogs
-              in need. By bridging the gap between high-demand adoption markets and regions with
-              shelter overpopulation, we help more dogs find their forever homes while supporting
-              the incredible work of rescue organizations across Europe and UK.
+              Our mission is to connect loving homes in the UK and across Europe
+              with rescue dogs in need. We bring rescue dogs from trusted rescue
+              organizations from Spain to Romania, Malta to Montenegro, bringing
+              thousands of dogs into one beautifully designed platform. Rescue
+              organizations are not technology experts - they are experts at
+              rescuing dogs in need. By bridging the gap between high-demand
+              adoption markets and regions with shelter overpopulation, we help
+              more dogs find their forever homes while supporting the incredible
+              work of rescue organizations across Europe and UK.
             </p>
           </section>
 

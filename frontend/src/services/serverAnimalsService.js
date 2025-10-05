@@ -70,7 +70,8 @@ export const getAnimals = cache(async (params = {}) => {
   if (params.offset) queryParams.append("offset", params.offset);
   if (params.search) queryParams.append("search", params.search);
   if (params.size) queryParams.append("size", params.size);
-  if (params.age_category) queryParams.append("age_category", params.age_category);
+  if (params.age_category)
+    queryParams.append("age_category", params.age_category);
   if (params.sex) queryParams.append("sex", params.sex);
   if (params.organization_id)
     queryParams.append("organization_id", params.organization_id);

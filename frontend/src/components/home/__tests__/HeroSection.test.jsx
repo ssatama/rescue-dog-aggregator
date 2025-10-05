@@ -295,7 +295,7 @@ describe("HeroSection", () => {
       const secondaryCta = screen.getByTestId("hero-secondary-cta");
       expect(secondaryCta).toBeInTheDocument();
       expect(secondaryCta).toHaveTextContent("🐾");
-      expect(secondaryCta).toHaveTextContent("Quick Browse Dogs");
+      expect(secondaryCta).toHaveTextContent("Start Swiping");
     });
 
     test("should have only 2 CTA buttons", () => {
@@ -466,7 +466,7 @@ describe("HeroSection", () => {
         // Secondary CTA should link to swipe page
         const secondaryCTA = screen.getByTestId("hero-secondary-cta");
         expect(secondaryCTA.closest("a")).toHaveAttribute("href", "/swipe");
-        expect(secondaryCTA).toHaveTextContent("Quick Browse Dogs");
+        expect(secondaryCTA).toHaveTextContent("Start Swiping");
       });
     });
 

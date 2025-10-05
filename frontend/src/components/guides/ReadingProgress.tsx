@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 export function ReadingProgress() {
   const [progress, setProgress] = useState(0);
@@ -24,11 +24,11 @@ export function ReadingProgress() {
       timeoutId = setTimeout(handleScroll, 100);
     };
 
-    window.addEventListener('scroll', debouncedScroll);
+    window.addEventListener("scroll", debouncedScroll);
     handleScroll(); // Initial calculation
 
     return () => {
-      window.removeEventListener('scroll', debouncedScroll);
+      window.removeEventListener("scroll", debouncedScroll);
       clearTimeout(timeoutId);
     };
   }, []);
@@ -39,7 +39,7 @@ export function ReadingProgress() {
         className="h-full bg-orange-500 transition-all duration-150 ease-out"
         style={{
           width: `${progress}%`,
-          boxShadow: progress > 0 ? '0 0 8px rgba(251, 146, 60, 0.5)' : 'none'
+          boxShadow: progress > 0 ? "0 0 8px rgba(251, 146, 60, 0.5)" : "none",
         }}
       />
     </div>

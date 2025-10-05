@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 
 interface BreadcrumbProps {
   guideName: string;
@@ -9,17 +9,17 @@ interface BreadcrumbProps {
 
 export function Breadcrumb({ guideName }: BreadcrumbProps) {
   const breadcrumbs = [
-    { label: 'Home', href: '/' },
-    { label: 'Guides', href: '/guides' },
+    { label: "Home", href: "/" },
+    { label: "Guides", href: "/guides" },
     { label: guideName, href: null },
   ];
 
   // BreadcrumbList structured data for SEO
   const breadcrumbSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
     itemListElement: breadcrumbs.map((item, index) => ({
-      '@type': 'ListItem',
+      "@type": "ListItem",
       position: index + 1,
       name: item.label,
       ...(item.href && { item: `https://rescuedogs.me${item.href}` }),
@@ -50,13 +50,19 @@ export function Breadcrumb({ guideName }: BreadcrumbProps) {
                     {item.label}
                   </Link>
                 ) : (
-                  <span className="text-gray-600 dark:text-guide-text-secondary" aria-current="page">
+                  <span
+                    className="text-gray-600 dark:text-guide-text-secondary"
+                    aria-current="page"
+                  >
                     {item.label}
                   </span>
                 )}
 
                 {!isLast && (
-                  <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-600" aria-hidden="true" />
+                  <ChevronRight
+                    className="h-4 w-4 text-gray-400 dark:text-gray-600"
+                    aria-hidden="true"
+                  />
                 )}
               </li>
             );

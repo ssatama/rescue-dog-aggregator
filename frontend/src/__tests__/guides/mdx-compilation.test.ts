@@ -1,7 +1,7 @@
-import { getAllGuides, getGuide } from '@/lib/guides';
+import { getAllGuides, getGuide } from "@/lib/guides";
 
-describe('MDX Guide Compilation', () => {
-  it('should compile all guide MDX files without errors', async () => {
+describe("MDX Guide Compilation", () => {
+  it("should compile all guide MDX files without errors", async () => {
     // Get all guides (this triggers MDX compilation)
     const guides = await getAllGuides();
 
@@ -21,7 +21,7 @@ describe('MDX Guide Compilation', () => {
     }
   });
 
-  it('should have valid frontmatter for all guides', async () => {
+  it("should have valid frontmatter for all guides", async () => {
     const guides = await getAllGuides();
 
     guides.forEach((guide) => {
@@ -38,31 +38,37 @@ describe('MDX Guide Compilation', () => {
     });
   });
 
+  it("should not have text immediately after closing JSX tags", async () => {
+    const fs = require("fs");
+    const path = require("path");
 
-  it('should not have text immediately after closing JSX tags', async () => {
-    const fs = require('fs');
-    const path = require('path');
-
-    const guidesDir = path.join(process.cwd(), 'content', 'guides');
-    const files = fs.readdirSync(guidesDir).filter((f: string) => f.endsWith('.mdx'));
+    const guidesDir = path.join(process.cwd(), "content", "guides");
+    const files = fs
+      .readdirSync(guidesDir)
+      .filter((f: string) => f.endsWith(".mdx"));
 
     files.forEach((file: string) => {
-      const content = fs.readFileSync(path.join(guidesDir, file), 'utf-8');
-      const lines = content.split('\n');
+      const content = fs.readFileSync(path.join(guidesDir, file), "utf-8");
+      const lines = content.split("\n");
 
       lines.forEach((line: string, index: number) => {
         // Check for </div> followed by text on the same line
-        if (line.includes('</div>') && line.split('</div>')[1]?.trim().length > 0) {
-          const textAfter = line.split('</div>')[1].trim();
-          if (textAfter && !textAfter.startsWith('<')) {
-            throw new Error(`${file}:${index + 1} - Text after closing tag: "${line.substring(0, 80)}..."`);
+        if (
+          line.includes("</div>") &&
+          line.split("</div>")[1]?.trim().length > 0
+        ) {
+          const textAfter = line.split("</div>")[1].trim();
+          if (textAfter && !textAfter.startsWith("<")) {
+            throw new Error(
+              `${file}:${index + 1} - Text after closing tag: "${line.substring(0, 80)}..."`,
+            );
           }
         }
       });
     });
   });
 
-  it('should have unique slugs', async () => {
+  it("should have unique slugs", async () => {
     const guides = await getAllGuides();
     const slugs = guides.map((g) => g.slug);
     const uniqueSlugs = new Set(slugs);
@@ -70,28 +76,30 @@ describe('MDX Guide Compilation', () => {
     expect(slugs.length).toBe(uniqueSlugs.size);
   });
 
-  it('should not have unescaped < followed by digits (invalid JSX)', async () => {
-    const fs = require('fs');
-    const path = require('path');
+  it("should not have unescaped < followed by digits (invalid JSX)", async () => {
+    const fs = require("fs");
+    const path = require("path");
 
-    const guidesDir = path.join(process.cwd(), 'content', 'guides');
-    const files = fs.readdirSync(guidesDir).filter((f: string) => f.endsWith('.mdx'));
+    const guidesDir = path.join(process.cwd(), "content", "guides");
+    const files = fs
+      .readdirSync(guidesDir)
+      .filter((f: string) => f.endsWith(".mdx"));
 
     files.forEach((file: string) => {
-      const content = fs.readFileSync(path.join(guidesDir, file), 'utf-8');
-      const lines = content.split('\n');
+      const content = fs.readFileSync(path.join(guidesDir, file), "utf-8");
+      const lines = content.split("\n");
       let inFrontmatter = false;
       let inCodeBlock = false;
 
       lines.forEach((line: string, index: number) => {
         // Track frontmatter boundaries
-        if (line.trim() === '---') {
+        if (line.trim() === "---") {
           inFrontmatter = !inFrontmatter;
           return;
         }
 
         // Track code block boundaries (both ``` and `)
-        if (line.trim().startsWith('```') || line.includes('`')) {
+        if (line.trim().startsWith("```") || line.includes("`")) {
           // Skip lines with inline code or code blocks
           return;
         }
@@ -106,7 +114,7 @@ describe('MDX Guide Compilation', () => {
         if (hasUnescapedLessThanDigit) {
           throw new Error(
             `${file}:${index + 1} - Unescaped '<' followed by digit (invalid JSX): "${line.substring(0, 80)}..."\n` +
-              `Wrap in code backticks or use &lt; instead`
+              `Wrap in code backticks or use &lt; instead`,
           );
         }
       });

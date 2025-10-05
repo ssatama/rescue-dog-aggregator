@@ -40,9 +40,11 @@ describe("EuropeMap", () => {
   test.skip("map container has gradient background", async () => {
     (getOrganizations as jest.Mock).mockResolvedValue(mockOrgs);
     const { container } = render(<EuropeMap />);
-    
+
     await waitFor(() => {
-      const gradient = container.querySelector(".bg-gradient-to-br.from-blue-50\\/30");
+      const gradient = container.querySelector(
+        ".bg-gradient-to-br.from-blue-50\\/30",
+      );
       expect(gradient).toBeInTheDocument();
     });
   });
@@ -51,7 +53,7 @@ describe("EuropeMap", () => {
   test.skip("map has rounded corners", async () => {
     (getOrganizations as jest.Mock).mockResolvedValue(mockOrgs);
     const { container } = render(<EuropeMap />);
-    
+
     await waitFor(() => {
       const gradientBg = container.querySelector(".rounded-3xl");
       expect(gradientBg).toBeInTheDocument();
@@ -61,6 +63,8 @@ describe("EuropeMap", () => {
   test("displays mission statement about rescue organizations", () => {
     (getOrganizations as jest.Mock).mockResolvedValue(mockOrgs);
     render(<EuropeMap />);
-    expect(screen.getByText(/rescue organizations working together across borders/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/rescue organizations working together across borders/i),
+    ).toBeInTheDocument();
   });
 });

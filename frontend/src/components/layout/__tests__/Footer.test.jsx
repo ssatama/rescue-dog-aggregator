@@ -80,9 +80,9 @@ describe("<Footer />", () => {
   });
 
   describe("Contact Link", () => {
-    it("renders a mailto Contact link", () => {
+    it("renders Contact link to About page contact section", () => {
       const contact = screen.getByRole("link", { name: /Contact/i });
-      expect(contact).toHaveAttribute("href", "mailto:rescuedogsme@gmail.com");
+      expect(contact).toHaveAttribute("href", "/about#contact");
     });
   });
 

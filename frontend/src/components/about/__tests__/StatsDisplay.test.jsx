@@ -59,7 +59,9 @@ describe("StatsDisplay", () => {
     const { container } = render(<StatsDisplay />);
 
     await waitFor(() => {
-      const gradient = container.querySelector(".bg-gradient-to-br.from-orange-50");
+      const gradient = container.querySelector(
+        ".bg-gradient-to-br.from-orange-50",
+      );
       expect(gradient).toBeInTheDocument();
       expect(gradient.className).toContain("rounded-2xl");
       expect(gradient.className).toContain("shadow-lg");
@@ -94,9 +96,11 @@ describe("StatsDisplay", () => {
     const { container } = render(<StatsDisplay />);
 
     await waitFor(() => {
-      const gradientTexts = container.querySelectorAll(".bg-gradient-to-br.from-orange-600");
+      const gradientTexts = container.querySelectorAll(
+        ".bg-gradient-to-br.from-orange-600",
+      );
       expect(gradientTexts.length).toBe(3);
-      
+
       gradientTexts.forEach((el) => {
         expect(el.className).toContain("bg-clip-text");
         expect(el.className).toContain("text-transparent");
@@ -116,12 +120,14 @@ describe("StatsDisplay", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Updated Daily")).toBeInTheDocument();
-      
+
       const badge = container.querySelector(".bg-green-100");
       expect(badge).toBeInTheDocument();
       expect(badge.className).toContain("rounded-full");
-      
-      const pulseIndicator = container.querySelector(".animate-pulse.bg-green-500");
+
+      const pulseIndicator = container.querySelector(
+        ".animate-pulse.bg-green-500",
+      );
       expect(pulseIndicator).toBeInTheDocument();
     });
   });
@@ -136,7 +142,9 @@ describe("StatsDisplay", () => {
     const { container } = render(<StatsDisplay />);
 
     await waitFor(() => {
-      const numbers = container.querySelectorAll(".text-5xl.sm\\:text-6xl.lg\\:text-7xl");
+      const numbers = container.querySelectorAll(
+        ".text-5xl.sm\\:text-6xl.lg\\:text-7xl",
+      );
       expect(numbers.length).toBe(3);
     });
   });

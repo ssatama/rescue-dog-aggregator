@@ -1,11 +1,11 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import { DogGrid } from '../DogGrid';
-import * as serverAnimalsService from '@/services/serverAnimalsService';
-import { ToastProvider } from '@/contexts/ToastContext';
-import { FavoritesProvider } from '@/contexts/FavoritesContext';
+import { render, screen, waitFor } from "@testing-library/react";
+import { DogGrid } from "../DogGrid";
+import * as serverAnimalsService from "@/services/serverAnimalsService";
+import { ToastProvider } from "@/contexts/ToastContext";
+import { FavoritesProvider } from "@/contexts/FavoritesContext";
 
 // Mock the serverAnimalsService
-jest.mock('@/services/serverAnimalsService');
+jest.mock("@/services/serverAnimalsService");
 
 // Wrapper with required providers (ToastProvider must be outer since FavoritesProvider uses useToast)
 const Wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -17,34 +17,34 @@ const Wrapper = ({ children }: { children: React.ReactNode }) => (
 const mockDogs = [
   {
     id: 1,
-    name: 'Buddy',
-    slug: 'buddy',
-    breed: 'Galgo',
-    size: 'large',
-    age_category: 'adult',
-    location_country: 'ES',
-    images: [{ image_url: '/buddy.jpg' }],
+    name: "Buddy",
+    slug: "buddy",
+    breed: "Galgo",
+    size: "large",
+    age_category: "adult",
+    location_country: "ES",
+    images: [{ image_url: "/buddy.jpg" }],
   },
   {
     id: 2,
-    name: 'Luna',
-    slug: 'luna',
-    breed: 'Podenco',
-    size: 'medium',
-    age_category: 'young',
-    location_country: 'ES',
-    images: [{ image_url: '/luna.jpg' }],
+    name: "Luna",
+    slug: "luna",
+    breed: "Podenco",
+    size: "medium",
+    age_category: "young",
+    location_country: "ES",
+    images: [{ image_url: "/luna.jpg" }],
   },
 ];
 
-describe('DogGrid', () => {
+describe("DogGrid", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('shows loading skeletons initially', () => {
+  it("shows loading skeletons initially", () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockImplementation(
-      () => new Promise(() => {}) // Never resolves
+      () => new Promise(() => {}), // Never resolves
     );
 
     const { container } = render(<DogGrid breed="galgo" limit={4} />);
@@ -54,18 +54,18 @@ describe('DogGrid', () => {
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
-  it('fetches and displays dogs', async () => {
+  it("fetches and displays dogs", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue(mockDogs);
 
     render(<DogGrid breed="galgo" limit={2} />, { wrapper: Wrapper });
 
     await waitFor(() => {
-      expect(screen.getByText('Buddy')).toBeInTheDocument();
-      expect(screen.getByText('Luna')).toBeInTheDocument();
+      expect(screen.getByText("Buddy")).toBeInTheDocument();
+      expect(screen.getByText("Luna")).toBeInTheDocument();
     });
   });
 
-  it('passes correct API parameters', async () => {
+  it("passes correct API parameters", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
 
     render(
@@ -75,35 +75,37 @@ describe('DogGrid', () => {
         size="large"
         age_category="adult"
         limit={4}
-      />
+      />,
     );
 
     await waitFor(() => {
       expect(serverAnimalsService.getAnimals).toHaveBeenCalledWith({
-        breed: 'galgo',
-        location_country: 'ES',
-        size: 'large',
-        age_category: 'adult',
+        breed: "galgo",
+        location_country: "ES",
+        size: "large",
+        age_category: "adult",
         limit: 4,
-        status: 'available',
+        status: "available",
       });
     });
   });
 
-  it('shows empty state when no dogs match', async () => {
+  it("shows empty state when no dogs match", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
 
     render(<DogGrid breed="rare-breed" limit={4} />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Currently no rare-breed available/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Currently no rare-breed available/i),
+      ).toBeInTheDocument();
       expect(screen.getByText(/Browse all rare-breed/i)).toBeInTheDocument();
     });
   });
 
-  it('shows error state on API failure', async () => {
+  it("shows error state on API failure", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockRejectedValue(
-      new Error('API Error')
+      new Error("API Error"),
     );
 
     render(<DogGrid breed="galgo" />);
@@ -113,104 +115,115 @@ describe('DogGrid', () => {
     });
   });
 
-  it('displays caption when provided', async () => {
+  it("displays caption when provided", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue(mockDogs);
 
-    render(<DogGrid breed="galgo" caption="Galgos available for adoption" />, { wrapper: Wrapper });
+    render(<DogGrid breed="galgo" caption="Galgos available for adoption" />, {
+      wrapper: Wrapper,
+    });
 
     await waitFor(() => {
-      expect(screen.getByText('Galgos available for adoption')).toBeInTheDocument();
+      expect(
+        screen.getByText("Galgos available for adoption"),
+      ).toBeInTheDocument();
     });
   });
 
-  it('renders in grid layout by default', async () => {
+  it("renders in grid layout by default", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue(mockDogs);
 
-    const { container } = render(<DogGrid breed="galgo" />, { wrapper: Wrapper });
+    const { container } = render(<DogGrid breed="galgo" />, {
+      wrapper: Wrapper,
+    });
 
     await waitFor(() => {
-      const grid = container.querySelector('.grid');
+      const grid = container.querySelector(".grid");
       expect(grid).toBeInTheDocument();
-      expect(grid?.className).toContain('grid');
+      expect(grid?.className).toContain("grid");
     });
   });
 
-  it('renders in carousel layout when specified', async () => {
+  it("renders in carousel layout when specified", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue(mockDogs);
 
-    const { container } = render(<DogGrid breed="galgo" layout="carousel" />, { wrapper: Wrapper });
+    const { container } = render(<DogGrid breed="galgo" layout="carousel" />, {
+      wrapper: Wrapper,
+    });
 
     await waitFor(() => {
-      const carousel = container.querySelector('.flex.gap-4.overflow-x-auto');
+      const carousel = container.querySelector(".flex.gap-4.overflow-x-auto");
       expect(carousel).toBeInTheDocument();
     });
   });
 
-  it('provides fallback link in empty state', async () => {
+  it("provides fallback link in empty state", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
 
     render(<DogGrid breed="galgo" />);
 
     await waitFor(() => {
       const link = screen.getByText(/Browse all/i);
-      expect(link).toHaveAttribute('href', '/breeds/galgo');
+      expect(link).toHaveAttribute("href", "/breeds/galgo");
     });
   });
 
-  it('uses generic fallback link when no breed specified', async () => {
+  it("uses generic fallback link when no breed specified", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
 
     render(<DogGrid size="small" />);
 
     await waitFor(() => {
       const link = screen.getByText(/Browse all/i);
-      expect(link).toHaveAttribute('href', '/dogs');
+      expect(link).toHaveAttribute("href", "/dogs");
     });
   });
 
-  it('defaults to available status', async () => {
+  it("defaults to available status", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
 
     render(<DogGrid breed="galgo" />);
 
     await waitFor(() => {
       expect(serverAnimalsService.getAnimals).toHaveBeenCalledWith(
-        expect.objectContaining({ status: 'available' })
+        expect.objectContaining({ status: "available" }),
       );
     });
   });
 
-  it('supports custom status parameter', async () => {
+  it("supports custom status parameter", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
 
     render(<DogGrid breed="galgo" status="all" />);
 
     await waitFor(() => {
       expect(serverAnimalsService.getAnimals).toHaveBeenCalledWith(
-        expect.objectContaining({ status: 'all' })
+        expect.objectContaining({ status: "all" }),
       );
     });
   });
 
-  it('only includes defined parameters in API call', async () => {
+  it("only includes defined parameters in API call", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue([]);
 
     render(<DogGrid breed="galgo" limit={4} />);
 
     await waitFor(() => {
-      const call = (serverAnimalsService.getAnimals as jest.Mock).mock.calls[0][0];
-      expect(call).toHaveProperty('breed', 'galgo');
-      expect(call).toHaveProperty('limit', 4);
-      expect(call).toHaveProperty('status', 'available');
-      expect(call).not.toHaveProperty('size');
-      expect(call).not.toHaveProperty('age');
+      const call = (serverAnimalsService.getAnimals as jest.Mock).mock
+        .calls[0][0];
+      expect(call).toHaveProperty("breed", "galgo");
+      expect(call).toHaveProperty("limit", 4);
+      expect(call).toHaveProperty("status", "available");
+      expect(call).not.toHaveProperty("size");
+      expect(call).not.toHaveProperty("age");
     });
   });
 
-  it('renders in embedded mode when embedded prop is true', async () => {
+  it("renders in embedded mode when embedded prop is true", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue(mockDogs);
 
-    const { container } = render(<DogGrid breed="galgo" embedded={true} />, { wrapper: Wrapper });
+    const { container } = render(<DogGrid breed="galgo" embedded={true} />, {
+      wrapper: Wrapper,
+    });
 
     await waitFor(() => {
       // Embedded cards should have max height constraint
@@ -223,25 +236,25 @@ describe('DogGrid', () => {
     });
   });
 
-  it('uses embedded mode by default (for guide pages)', async () => {
+  it("uses embedded mode by default (for guide pages)", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue(mockDogs);
 
     // When no embedded prop is provided, it should default to true
     render(<DogGrid breed="galgo" />, { wrapper: Wrapper });
 
     await waitFor(() => {
-      expect(screen.getByText('Buddy')).toBeInTheDocument();
+      expect(screen.getByText("Buddy")).toBeInTheDocument();
       // Component should render dogs successfully
     });
   });
 
-  it('can disable embedded mode with embedded=false', async () => {
+  it("can disable embedded mode with embedded=false", async () => {
     (serverAnimalsService.getAnimals as jest.Mock).mockResolvedValue(mockDogs);
 
     render(<DogGrid breed="galgo" embedded={false} />, { wrapper: Wrapper });
 
     await waitFor(() => {
-      expect(screen.getByText('Buddy')).toBeInTheDocument();
+      expect(screen.getByText("Buddy")).toBeInTheDocument();
       // Full cards should be rendered
     });
   });

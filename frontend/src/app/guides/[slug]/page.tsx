@@ -1,18 +1,22 @@
-import { getGuide, getAllGuideSlugs, getAllGuides } from '@/lib/guides';
-import { GuideContent } from '@/components/guides/GuideContent';
-import { ReadingProgress } from '@/components/guides/ReadingProgress';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
-import { notFound } from 'next/navigation';
-import type { Metadata } from 'next';
-import { Guide } from '@/types/guide';
+import { getGuide, getAllGuideSlugs, getAllGuides } from "@/lib/guides";
+import { GuideContent } from "@/components/guides/GuideContent";
+import { ReadingProgress } from "@/components/guides/ReadingProgress";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import { Guide } from "@/types/guide";
 
 export async function generateStaticParams() {
   const slugs = getAllGuideSlugs();
   return slugs.map((slug) => ({ slug }));
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
   const { slug } = await params;
   const guide = await getGuide(slug);
   const { frontmatter } = guide;
@@ -26,7 +30,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     openGraph: {
       title: frontmatter.title,
       description: frontmatter.description,
-      type: 'article',
+      type: "article",
       publishedTime: frontmatter.lastUpdated,
       authors: [frontmatter.author],
       images: [
@@ -40,7 +44,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     },
 
     twitter: {
-      card: 'summary_large_image',
+      card: "summary_large_image",
       title: frontmatter.title,
       description: frontmatter.description,
       images: [frontmatter.heroImage],
@@ -52,7 +56,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-export default async function GuidePage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function GuidePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const { slug } = await params;
 
   try {
@@ -60,16 +68,25 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
 
     // Fetch related guides if specified in frontmatter
     let relatedGuides: Guide[] = [];
-    if (guide.frontmatter.relatedGuides && guide.frontmatter.relatedGuides.length > 0) {
+    if (
+      guide.frontmatter.relatedGuides &&
+      guide.frontmatter.relatedGuides.length > 0
+    ) {
       const allGuides = await getAllGuides();
-      relatedGuides = allGuides.filter(g => guide.frontmatter.relatedGuides?.includes(g.slug));
+      relatedGuides = allGuides.filter((g) =>
+        guide.frontmatter.relatedGuides?.includes(g.slug),
+      );
     }
 
     return (
       <>
         <Header />
         <ReadingProgress />
-        <GuideContent guide={guide} fullPage={true} relatedGuides={relatedGuides} />
+        <GuideContent
+          guide={guide}
+          fullPage={true}
+          relatedGuides={relatedGuides}
+        />
         <Footer />
       </>
     );

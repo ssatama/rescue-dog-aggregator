@@ -138,19 +138,16 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
                 {formattedAge && ageCategory !== "Unknown" && (
                   <span>🎂 {ageCategory}</span>
                 )}
-                <span>{genderData.icon} {genderData.text}</span>
+                <span>
+                  {genderData.icon} {genderData.text}
+                </span>
               </p>
               {organizationName && (
                 <p className="truncate">{organizationName}</p>
               )}
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full mt-2"
-              asChild
-            >
+            <Button variant="outline" size="sm" className="w-full mt-2" asChild>
               <span className="inline-flex items-center justify-center">
                 Meet {name} →
               </span>

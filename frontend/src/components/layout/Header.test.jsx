@@ -89,30 +89,10 @@ describe("Header", () => {
   });
 
   describe("Mobile Navigation", () => {
-    it("should show heart icon and count in mobile menu", () => {
-      render(<Header />);
-
-      // Open mobile menu
-      const mobileMenuButton = screen.getByRole("button", {
-        name: /open menu/i,
-      });
-      mobileMenuButton.click();
-
-      // Check mobile favorites link exists
-      const mobileFavoritesLinks = screen.getAllByRole("link", {
-        name: /favorites/i,
-      });
-      expect(mobileFavoritesLinks.length).toBeGreaterThan(0);
-
-      // The mobile link should be present
-      const mobileLink = mobileFavoritesLinks[0];
-      expect(mobileLink).toBeInTheDocument();
-
-      // Check for badge if present in the mobile menu
-      const badges = screen.queryAllByTestId("favorite-badge");
-      if (badges.length > 0) {
-        expect(badges[0]).toBeInTheDocument();
-      }
+    it.skip("mobile menu removed - now using MobileBottomNav component", () => {
+      // Mobile menu was removed from Header component
+      // Mobile navigation now uses MobileBottomNav and MobileMenuDrawer components
+      // The Favorites link with heart icon and badge is now in the bottom nav
     });
   });
 });

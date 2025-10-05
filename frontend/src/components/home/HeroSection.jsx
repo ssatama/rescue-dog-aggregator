@@ -97,7 +97,7 @@ export default function HeroSection({
                   <span className="mr-2 text-xl" aria-label="Paw icon">
                     🐾
                   </span>
-                  Quick Browse Dogs
+                  Start Swiping
                 </Button>
               </Link>
             </div>

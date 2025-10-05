@@ -70,7 +70,6 @@ export default function StatsDisplay() {
     <section className="relative overflow-hidden">
       {/* Gradient background */}
       <div className="bg-gradient-to-br from-orange-50 via-orange-100/50 to-transparent dark:from-orange-950/20 dark:via-orange-900/10 dark:to-transparent rounded-2xl p-6 sm:p-8 md:p-12 lg:p-16 border border-orange-200/50 dark:border-orange-800/30 shadow-lg">
-
         {/* Grid lines (subtle) */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(251,146,60,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(251,146,60,0.03)_1px,transparent_1px)] bg-[size:32px_32px]"></div>
 
@@ -84,10 +83,11 @@ export default function StatsDisplay() {
         <div className="mt-6 flex justify-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-full">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <p className="text-sm font-medium text-green-800 dark:text-green-300">Updated Daily</p>
+            <p className="text-sm font-medium text-green-800 dark:text-green-300">
+              Updated Daily
+            </p>
           </div>
         </div>
-
       </div>
     </section>
   );

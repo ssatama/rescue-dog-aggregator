@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import DogCardOptimizedComponent from '@/components/dogs/DogCardOptimized';
-import DogCardSkeletonOptimized from '@/components/dogs/DogCardSkeletonOptimized';
-import { getAnimals } from '@/services/serverAnimalsService';
-import type { Dog } from '@/types/dog';
+import { useState, useEffect } from "react";
+import DogCardOptimizedComponent from "@/components/dogs/DogCardOptimized";
+import DogCardSkeletonOptimized from "@/components/dogs/DogCardSkeletonOptimized";
+import { getAnimals } from "@/services/serverAnimalsService";
+import type { Dog } from "@/types/dog";
 
 // Type-safe wrapper for JSX component
 const DogCardOptimized = DogCardOptimizedComponent as React.ComponentType<{
@@ -53,12 +53,12 @@ interface DogGridProps {
   organization_id?: number;
 
   // Status
-  status?: 'available' | 'adopted' | 'pending' | 'all';
+  status?: "available" | "adopted" | "pending" | "all";
 
   // Display options
   limit?: number;
   caption?: string;
-  layout?: 'grid' | 'carousel';
+  layout?: "grid" | "carousel";
   embedded?: boolean; // Compact mode for guide pages (default true)
 }
 
@@ -75,10 +75,10 @@ export function DogGrid({
   available_to_country,
   available_to_region,
   organization_id,
-  status = 'available',
+  status = "available",
   limit = 4,
   caption,
-  layout = 'grid',
+  layout = "grid",
   embedded = true, // Default to compact for guide pages
 }: DogGridProps) {
   const [dogs, setDogs] = useState<Dog[]>([]);
@@ -106,26 +106,47 @@ export function DogGrid({
         if (size) params.size = size;
         if (age_category) params.age_category = age_category;
         if (location_country) params.location_country = location_country;
-        if (available_to_country) params.available_to_country = available_to_country;
-        if (available_to_region) params.available_to_region = available_to_region;
+        if (available_to_country)
+          params.available_to_country = available_to_country;
+        if (available_to_region)
+          params.available_to_region = available_to_region;
         if (organization_id) params.organization_id = organization_id;
 
         const data = await getAnimals(params);
         setDogs(data || []);
       } catch (err: any) {
-        setError(err.message || 'Failed to load dogs');
+        setError(err.message || "Failed to load dogs");
       } finally {
         setIsLoading(false);
       }
     }
 
     fetchDogs();
-  }, [breed, standardized_breed, breed_group, primary_breed, breed_type, sex, size, age_category, location_country, available_to_country, available_to_region, organization_id, status, limit]);
+  }, [
+    breed,
+    standardized_breed,
+    breed_group,
+    primary_breed,
+    breed_type,
+    sex,
+    size,
+    age_category,
+    location_country,
+    available_to_country,
+    available_to_region,
+    organization_id,
+    status,
+    limit,
+  ]);
 
   if (isLoading) {
     return (
       <div className="my-8 not-prose">
-        {caption && <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 italic">{caption}</p>}
+        {caption && (
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 italic">
+            {caption}
+          </p>
+        )}
         <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4 sm:gap-6">
           {Array.from({ length: limit }).map((_, i) => (
             <DogCardSkeletonOptimized key={i} />
@@ -149,13 +170,13 @@ export function DogGrid({
     return (
       <div className="my-8 not-prose p-6 bg-gray-50 dark:bg-gray-900 rounded-lg text-center">
         <p className="text-gray-600 dark:text-gray-400 mb-3">
-          Currently no {breed || 'dogs'} available matching these criteria.
+          Currently no {breed || "dogs"} available matching these criteria.
         </p>
         <a
-          href={breed ? `/breeds/${breed}` : '/dogs'}
+          href={breed ? `/breeds/${breed}` : "/dogs"}
           className="text-orange-500 hover:underline"
         >
-          Browse all {breed || 'available dogs'} →
+          Browse all {breed || "available dogs"} →
         </a>
       </div>
     );
@@ -168,7 +189,7 @@ export function DogGrid({
           {caption}
         </p>
       )}
-      {layout === 'grid' ? (
+      {layout === "grid" ? (
         <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4 sm:gap-6">
           {dogs.map((dog, index) => (
             <DogCardOptimized
@@ -183,7 +204,10 @@ export function DogGrid({
       ) : (
         <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory -mx-4 px-4">
           {dogs.map((dog, index) => (
-            <div key={dog.id} className="flex-none min-w-[260px] max-w-[360px] w-[80%] sm:w-[320px] snap-start">
+            <div
+              key={dog.id}
+              className="flex-none min-w-[260px] max-w-[360px] w-[80%] sm:w-[320px] snap-start"
+            >
               <DogCardOptimized
                 dog={dog}
                 priority={index < 2}

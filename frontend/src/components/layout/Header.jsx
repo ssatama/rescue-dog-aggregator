@@ -1,7 +1,6 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Icon } from "../ui/Icon";
 import { ThemeToggle } from "../ui/ThemeToggle";
@@ -9,7 +8,6 @@ import { FavoriteBadge } from "../favorites/FavoriteBadge";
 import logo from "../../../public/logo.jpeg";
 
 export default function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
   // Helper function to determine link classes
@@ -123,144 +121,11 @@ export default function Header() {
               <ThemeToggle className="ml-4" />
             </div>
 
-            {/* Mobile menu button and theme toggle */}
+            {/* Mobile: Only show theme toggle (no hamburger menu) */}
             <div className="md:hidden flex items-center gap-2">
               <ThemeToggle />
-              <button
-                data-testid="mobile-menu-button"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="inline-flex items-center justify-center p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange-600 dark:focus:ring-orange-400"
-                aria-expanded={mobileMenuOpen}
-                aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-              >
-                <span className="sr-only">Open menu</span>
-                {mobileMenuOpen ? (
-                  <Icon
-                    name="x"
-                    size="medium"
-                    color="interactive"
-                    aria-label="Close menu"
-                  />
-                ) : (
-                  <Icon
-                    name="menu"
-                    size="medium"
-                    color="interactive"
-                    aria-label="Open menu"
-                  />
-                )}
-              </button>
             </div>
           </div>
-
-          {/* Mobile Navigation */}
-          {mobileMenuOpen && (
-            <div className="md:hidden mt-2 py-2 space-y-1">
-              <div className="relative">
-                <Link
-                  href="/dogs"
-                  className={`block ${getLinkClasses("/dogs")}`}
-                  onClick={handleMobileLinkClick}
-                >
-                  Dogs
-                </Link>
-                {pathname === "/dogs" && (
-                  <div
-                    data-testid="nav-underline-dogs"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"
-                  />
-                )}
-              </div>
-              <div className="relative">
-                <Link
-                  href="/breeds"
-                  className={`block ${getLinkClasses("/breeds")}`}
-                  onClick={handleMobileLinkClick}
-                >
-                  Breeds
-                </Link>
-                {pathname === "/breeds" && (
-                  <div
-                    data-testid="nav-underline-breeds"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"
-                  />
-                )}
-              </div>
-              <div className="relative">
-                <Link
-                  href="/guides"
-                  className={`block ${getLinkClasses("/guides")}`}
-                  onClick={handleMobileLinkClick}
-                >
-                  Guides
-                </Link>
-                {pathname === "/guides" && (
-                  <div
-                    data-testid="nav-underline-guides"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"
-                  />
-                )}
-              </div>
-              <div className="relative">
-                <Link
-                  href="/swipe"
-                  className={`block ${getLinkClasses("/swipe")}`}
-                  onClick={handleMobileLinkClick}
-                >
-                  <span className="flex items-center gap-1">
-                    <Icon
-                      name="heart"
-                      size="default"
-                      className="text-red-500"
-                      filled
-                      aria-label="Heart icon"
-                    />
-                    Swipe
-                  </span>
-                </Link>
-                {pathname === "/swipe" && (
-                  <div
-                    data-testid="nav-underline-swipe"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"
-                  />
-                )}
-              </div>
-              <div className="relative" data-mobile-menu>
-                <Link
-                  href="/favorites"
-                  className={`block ${getLinkClasses("/favorites")}`}
-                  onClick={handleMobileLinkClick}
-                >
-                  <span className="flex items-center gap-1">
-                    <span className="heart-icon text-red-500">❤️</span>
-                    Favorites
-                    <FavoriteBadge />
-                  </span>
-                </Link>
-                {pathname === "/favorites" && (
-                  <div
-                    data-testid="nav-underline-favorites"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"
-                  />
-                )}
-              </div>
-              <div className="relative">
-                <Link
-                  href="/about"
-                  className={`block ${getLinkClasses("/about")}`}
-                  onClick={handleMobileLinkClick}
-                >
-                  About
-                </Link>
-                {pathname === "/about" && (
-                  <div
-                    data-testid="nav-underline-about"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"
-                  />
-                )}
-              </div>
-            </div>
-          )}
         </nav>
       </header>
     </>

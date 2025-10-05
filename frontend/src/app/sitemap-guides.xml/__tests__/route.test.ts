@@ -1,56 +1,68 @@
-import { GET } from '../route';
+import { GET } from "../route";
 
 // Mock guides utilities
-jest.mock('@/lib/guides', () => ({
-  getAllGuideSlugs: jest.fn(() => ['test-guide-1', 'test-guide-2', 'european-rescue-guide']),
+jest.mock("@/lib/guides", () => ({
+  getAllGuideSlugs: jest.fn(() => [
+    "test-guide-1",
+    "test-guide-2",
+    "european-rescue-guide",
+  ]),
 }));
 
 // Helper function to read Response body
 function getResponseText(response: any): string {
   // In test environment, body is directly accessible
-  return response.body || '';
+  return response.body || "";
 }
 
-describe('Sitemap Guides Route', () => {
-  it('returns XML response', async () => {
+describe("Sitemap Guides Route", () => {
+  it("returns XML response", async () => {
     const response = await GET();
-    const contentType = response.headers.get('Content-Type');
+    const contentType = response.headers.get("Content-Type");
 
-    expect(contentType).toBe('application/xml');
+    expect(contentType).toBe("application/xml");
   });
 
-  it('includes XML declaration', async () => {
+  it("includes XML declaration", async () => {
     const response = await GET();
     const text = getResponseText(response);
 
     expect(text).toContain('<?xml version="1.0" encoding="UTF-8"?>');
   });
 
-  it('includes urlset with correct namespace', async () => {
+  it("includes urlset with correct namespace", async () => {
     const response = await GET();
     const text = getResponseText(response);
 
-    expect(text).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
-    expect(text).toContain('</urlset>');
+    expect(text).toContain(
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    );
+    expect(text).toContain("</urlset>");
   });
 
-  it('includes guides listing page', async () => {
+  it("includes guides listing page", async () => {
     const response = await GET();
     const text = getResponseText(response);
 
-    expect(text).toContain('<loc>https://rescuedogs.me/guides</loc>');
+    expect(text).toContain("<loc>https://rescuedogs.me/guides</loc>");
   });
 
-  it('includes all guide slugs as URLs', async () => {
+  it("includes all guide slugs as URLs", async () => {
     const response = await GET();
     const text = getResponseText(response);
 
-    expect(text).toContain('<loc>https://rescuedogs.me/guides/test-guide-1</loc>');
-    expect(text).toContain('<loc>https://rescuedogs.me/guides/test-guide-2</loc>');
-    expect(text).toContain('<loc>https://rescuedogs.me/guides/european-rescue-guide</loc>');
+    expect(text).toContain(
+      "<loc>https://rescuedogs.me/guides/test-guide-1</loc>",
+    );
+    expect(text).toContain(
+      "<loc>https://rescuedogs.me/guides/test-guide-2</loc>",
+    );
+    expect(text).toContain(
+      "<loc>https://rescuedogs.me/guides/european-rescue-guide</loc>",
+    );
   });
 
-  it('includes lastmod dates for all URLs', async () => {
+  it("includes lastmod dates for all URLs", async () => {
     const response = await GET();
     const text = getResponseText(response);
 
@@ -59,35 +71,35 @@ describe('Sitemap Guides Route', () => {
     expect(lastmodCount).toBeGreaterThanOrEqual(4);
   });
 
-  it('includes changefreq for guides listing', async () => {
+  it("includes changefreq for guides listing", async () => {
     const response = await GET();
     const text = getResponseText(response);
 
-    expect(text).toContain('<changefreq>weekly</changefreq>');
+    expect(text).toContain("<changefreq>weekly</changefreq>");
   });
 
-  it('includes changefreq for guide pages', async () => {
+  it("includes changefreq for guide pages", async () => {
     const response = await GET();
     const text = getResponseText(response);
 
-    expect(text).toContain('<changefreq>monthly</changefreq>');
+    expect(text).toContain("<changefreq>monthly</changefreq>");
   });
 
-  it('includes priority for guides listing (0.9)', async () => {
+  it("includes priority for guides listing (0.9)", async () => {
     const response = await GET();
     const text = getResponseText(response);
 
-    expect(text).toContain('<priority>0.9</priority>');
+    expect(text).toContain("<priority>0.9</priority>");
   });
 
-  it('includes priority for guide pages (0.8)', async () => {
+  it("includes priority for guide pages (0.8)", async () => {
     const response = await GET();
     const text = getResponseText(response);
 
-    expect(text).toContain('<priority>0.8</priority>');
+    expect(text).toContain("<priority>0.8</priority>");
   });
 
-  it('returns well-formed XML', async () => {
+  it("returns well-formed XML", async () => {
     const response = await GET();
     const text = getResponseText(response);
 

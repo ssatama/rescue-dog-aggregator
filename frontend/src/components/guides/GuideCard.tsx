@@ -1,7 +1,7 @@
-import Link from 'next/link';
-import Image from 'next/image';
-import { Guide } from '@/types/guide';
-import { Badge } from '@/components/ui/badge';
+import Link from "next/link";
+import Image from "next/image";
+import { Guide } from "@/types/guide";
+import { Badge } from "@/components/ui/badge";
 
 interface GuideCardProps {
   guide: Guide;
@@ -10,11 +10,14 @@ interface GuideCardProps {
 
 export function GuideCard({ guide, priority = false }: GuideCardProps) {
   const { slug, frontmatter } = guide;
-  const formattedDate = new Date(frontmatter.lastUpdated).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  const formattedDate = new Date(frontmatter.lastUpdated).toLocaleDateString(
+    "en-US",
+    {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    },
+  );
 
   return (
     <Link
@@ -41,17 +44,23 @@ export function GuideCard({ guide, priority = false }: GuideCardProps) {
           </Badge>
 
           {/* Larger title with 3-line clamp for better readability */}
-          <h3 className="text-xl md:text-2xl lg:text-2xl font-bold leading-tight line-clamp-3
-                         text-gray-900 dark:text-white overflow-hidden">
+          <h3
+            className="text-xl md:text-2xl lg:text-2xl font-bold leading-tight line-clamp-3
+                         text-gray-900 dark:text-white overflow-hidden"
+          >
             {frontmatter.title}
           </h3>
         </div>
 
         {/* Meta section pinned to bottom with better spacing */}
-        <div className="flex items-center gap-3 text-xs md:text-sm text-gray-500 dark:text-guide-text-secondary 
-                        mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 flex-shrink-0">
+        <div
+          className="flex items-center gap-3 text-xs md:text-sm text-gray-500 dark:text-guide-text-secondary 
+                        mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 flex-shrink-0"
+        >
           <span className="flex items-center gap-1">
-            <span className="text-base" aria-hidden="true">📖</span>
+            <span className="text-base" aria-hidden="true">
+              📖
+            </span>
             <span>{frontmatter.readTime} min</span>
           </span>
           <span aria-hidden="true">•</span>
@@ -59,7 +68,7 @@ export function GuideCard({ guide, priority = false }: GuideCardProps) {
             Updated {formattedDate}
           </time>
           <time dateTime={frontmatter.lastUpdated} className="sm:hidden">
-            {formattedDate.split(',')[0]}
+            {formattedDate.split(",")[0]}
           </time>
         </div>
       </div>

@@ -87,21 +87,9 @@ describe("Header - Swipe Navigation Visibility", () => {
       });
     });
 
-    it("should show Swipe link in mobile hamburger menu", () => {
-      render(<Header />);
-
-      // Open mobile menu
-      const menuButton = screen.getByTestId("mobile-menu-button");
-      menuButton.click();
-
-      // Should find Swipe link in mobile menu
-      const swipeLink = screen.getByRole("link", { name: /swipe/i });
-      expect(swipeLink).toBeInTheDocument();
-      expect(swipeLink).toHaveAttribute("href", "/swipe");
-
-      // Should have heart icon
-      const heartIcon = screen.getByTestId("icon-heart");
-      expect(heartIcon).toBeInTheDocument();
+    it.skip("mobile menu removed - Swipe now in MobileBottomNav", () => {
+      // Mobile menu was removed from Header component
+      // Swipe link is now in the MobileBottomNav component
     });
   });
 
@@ -110,11 +98,7 @@ describe("Header - Swipe Navigation Visibility", () => {
       usePathname.mockReturnValue("/swipe");
       render(<Header />);
 
-      // Open mobile menu to check
-      const menuButton = screen.getByTestId("mobile-menu-button");
-      menuButton.click();
-
-      // Should have underline indicator
+      // Should have underline indicator (visible in desktop nav)
       const underline = screen.getByTestId("nav-underline-swipe");
       expect(underline).toBeInTheDocument();
       expect(underline).toHaveClass("bg-orange-600");

@@ -28,11 +28,14 @@ const COUNTRY_CODE_TO_NAME: Record<string, string> = {
 
 // Reverse mapping for O(1) lookups (name → code)
 const COUNTRY_NAME_TO_CODE: Record<string, string> = Object.entries(
-  COUNTRY_CODE_TO_NAME
-).reduce((acc, [code, name]) => {
-  acc[name] = code;
-  return acc;
-}, {} as Record<string, string>);
+  COUNTRY_CODE_TO_NAME,
+).reduce(
+  (acc, [code, name]) => {
+    acc[name] = code;
+    return acc;
+  },
+  {} as Record<string, string>,
+);
 
 // European country names to filter from world map
 const EUROPEAN_COUNTRIES = new Set([
@@ -96,7 +99,7 @@ export default function EuropeMap() {
   const [loading, setLoading] = useState(true);
   const [mapError, setMapError] = useState<string | null>(null);
   const { theme } = useTheme();
-  const isDarkMode = theme === 'dark';
+  const isDarkMode = theme === "dark";
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -117,7 +120,7 @@ export default function EuropeMap() {
         if (org.country) {
           return {
             ...acc,
-            [org.country]: [...(acc[org.country] || []), org]
+            [org.country]: [...(acc[org.country] || []), org],
           };
         }
         return acc;
@@ -144,12 +147,12 @@ export default function EuropeMap() {
     const countryCode = COUNTRY_NAME_TO_CODE[countryName];
 
     if (!countryCode) {
-      return isDarkMode ? '#1F2937' : '#F3F4F6'; // gray-800 : gray-100
+      return isDarkMode ? "#1F2937" : "#F3F4F6"; // gray-800 : gray-100
     }
 
     const orgCount = getOrgCount(countryCode);
     if (orgCount === 0) {
-      return isDarkMode ? '#1F2937' : '#F3F4F6'; // gray-800 : gray-100
+      return isDarkMode ? "#1F2937" : "#F3F4F6"; // gray-800 : gray-100
     }
 
     // Progressive orange gradient
@@ -160,7 +163,7 @@ export default function EuropeMap() {
     };
 
     const opacity = opacityMap[Math.min(orgCount, 3)] || 0.85;
-    const baseColor = isDarkMode ? '251, 146, 60' : '249, 115, 22'; // orange-400 : orange-600
+    const baseColor = isDarkMode ? "251, 146, 60" : "249, 115, 22"; // orange-400 : orange-600
 
     return `rgba(${baseColor}, ${opacity})`;
   }
@@ -175,7 +178,8 @@ export default function EuropeMap() {
         Where We Help Dogs
       </h2>
       <p className="text-sm text-center text-gray-600 dark:text-gray-400 mb-4">
-        Rescue organizations working together across borders to help dogs in need
+        Rescue organizations working together across borders to help dogs in
+        need
       </p>
       <div className="relative max-w-5xl mx-auto">
         {/* Subtle background */}
@@ -189,7 +193,9 @@ export default function EuropeMap() {
           ) : mapError ? (
             <div className="h-96 flex items-center justify-center">
               <div className="text-center">
-                <p className="text-red-600 dark:text-red-400 mb-2">{mapError}</p>
+                <p className="text-red-600 dark:text-red-400 mb-2">
+                  {mapError}
+                </p>
                 <button
                   onClick={fetchData}
                   className="text-orange-600 hover:text-orange-700 underline"
@@ -200,7 +206,9 @@ export default function EuropeMap() {
             </div>
           ) : (
             <>
-              <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
+              <div
+                style={{ width: "100%", maxWidth: "800px", margin: "0 auto" }}
+              >
                 <ComposableMap
                   projection="geoMercator"
                   viewBox="0 0 800 600"
@@ -210,35 +218,40 @@ export default function EuropeMap() {
                     <Geographies geography={geoUrl}>
                       {({ geographies }) =>
                         geographies
-                          .filter((geo) => EUROPEAN_COUNTRIES.has(geo.properties.name))
+                          .filter((geo) =>
+                            EUROPEAN_COUNTRIES.has(geo.properties.name),
+                          )
                           .map((geo) => {
                             const countryName = geo.properties.name;
-                            const countryCode = getCountryCodeFromName(countryName);
-                            const orgCount = countryCode ? getOrgCount(countryCode) : 0;
+                            const countryCode =
+                              getCountryCodeFromName(countryName);
+                            const orgCount = countryCode
+                              ? getOrgCount(countryCode)
+                              : 0;
 
                             return (
                               <Geography
                                 key={geo.rsmKey}
                                 geography={geo}
                                 fill={getCountryFill(countryName, isDarkMode)}
-                                stroke={isDarkMode ? '#374151' : '#E5E7EB'}
+                                stroke={isDarkMode ? "#374151" : "#E5E7EB"}
                                 strokeWidth={0.5}
                                 style={{
                                   default: {
-                                    outline: 'none',
-                                    transition: 'all 200ms ease-in-out',
+                                    outline: "none",
+                                    transition: "all 200ms ease-in-out",
                                   },
                                   hover: {
-                                    outline: 'none',
-                                    filter: 'brightness(1.1)',
-                                    stroke: '#F97316',
+                                    outline: "none",
+                                    filter: "brightness(1.1)",
+                                    stroke: "#F97316",
                                     strokeWidth: 2,
-                                    cursor: 'pointer',
+                                    cursor: "pointer",
                                   },
                                   pressed: {
-                                    outline: 'none',
-                                    filter: 'brightness(0.9)',
-                                  }
+                                    outline: "none",
+                                    filter: "brightness(0.9)",
+                                  },
                                 }}
                                 tabIndex={orgCount > 0 ? 0 : -1}
                                 onMouseEnter={() => {
@@ -261,7 +274,9 @@ export default function EuropeMap() {
                                   ) {
                                     e.preventDefault();
                                     setHoveredCountry(
-                                      hoveredCountry === countryCode ? null : countryCode,
+                                      hoveredCountry === countryCode
+                                        ? null
+                                        : countryCode,
                                     );
                                   }
                                 }}

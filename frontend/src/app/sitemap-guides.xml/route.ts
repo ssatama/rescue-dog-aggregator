@@ -1,14 +1,14 @@
-import { getAllGuideSlugs } from '@/lib/guides';
+import { getAllGuideSlugs } from "@/lib/guides";
 
 export async function GET() {
   const slugs = getAllGuideSlugs();
-  const baseUrl = 'https://rescuedogs.me';
+  const baseUrl = "https://rescuedogs.me";
   const now = new Date().toISOString();
 
-  const urls = slugs.map(slug => ({
+  const urls = slugs.map((slug) => ({
     url: `${baseUrl}/guides/${slug}`,
     lastModified: now,
-    changeFrequency: 'monthly',
+    changeFrequency: "monthly",
     priority: 0.8,
   }));
 
@@ -16,24 +16,28 @@ export async function GET() {
   urls.unshift({
     url: `${baseUrl}/guides`,
     lastModified: now,
-    changeFrequency: 'weekly',
+    changeFrequency: "weekly",
     priority: 0.9,
   });
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  ${urls.map(({ url, lastModified, changeFrequency, priority }) => `
+  ${urls
+    .map(
+      ({ url, lastModified, changeFrequency, priority }) => `
   <url>
     <loc>${url}</loc>
     <lastmod>${lastModified}</lastmod>
     <changefreq>${changeFrequency}</changefreq>
     <priority>${priority}</priority>
-  </url>`).join('')}
+  </url>`,
+    )
+    .join("")}
 </urlset>`;
 
   return new Response(sitemap, {
     headers: {
-      'Content-Type': 'application/xml',
+      "Content-Type": "application/xml",
     },
   });
 }

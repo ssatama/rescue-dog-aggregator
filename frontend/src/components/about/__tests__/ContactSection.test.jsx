@@ -11,7 +11,9 @@ describe("ContactSection", () => {
 
   test("email link has mailto href", () => {
     render(<ContactSection />);
-    const emailLink = screen.getByRole("link", { name: /rescuedogsme@gmail.com/i });
+    const emailLink = screen.getByRole("link", {
+      name: /rescuedogsme@gmail.com/i,
+    });
     expect(emailLink).toHaveAttribute("href", "mailto:rescuedogsme@gmail.com");
   });
 
@@ -49,7 +51,7 @@ describe("ContactSection", () => {
     const { container } = render(<ContactSection />);
     const iconContainers = container.querySelectorAll(".w-16.h-16");
     expect(iconContainers.length).toBe(3);
-    
+
     iconContainers.forEach((el) => {
       expect(el.className).toContain("shadow-md");
       expect(el.className).toContain("group-hover:shadow-xl");
@@ -69,7 +71,7 @@ describe("ContactSection", () => {
     const { container } = render(<ContactSection />);
     const underlines = container.querySelectorAll(".h-0\\.5.bg-orange-500");
     expect(underlines.length).toBe(3);
-    
+
     underlines.forEach((el) => {
       expect(el.className).toContain("transition-all");
       expect(el.className).toContain("motion-reduce:transition-none");

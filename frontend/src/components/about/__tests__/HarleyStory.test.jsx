@@ -31,7 +31,7 @@ describe("HarleyStory", () => {
     const { container } = render(<HarleyStory />);
     const imageContainers = container.querySelectorAll(".shadow-xl");
     expect(imageContainers.length).toBeGreaterThan(0);
-    
+
     imageContainers.forEach((el) => {
       expect(el.className).toContain("rounded-xl");
       expect(el.className).toContain("shadow-xl");
@@ -42,7 +42,7 @@ describe("HarleyStory", () => {
     const { container } = render(<HarleyStory />);
     const hoverContainers = container.querySelectorAll(".hover\\:shadow-2xl");
     expect(hoverContainers.length).toBe(2);
-    
+
     hoverContainers.forEach((el) => {
       expect(el.className).toContain("transition-all");
       expect(el.className).toContain("hover:-translate-y-1");
@@ -51,7 +51,9 @@ describe("HarleyStory", () => {
 
   test("story text has orange gradient accent", () => {
     const { container } = render(<HarleyStory />);
-    const gradientAccent = container.querySelector(".bg-gradient-to-b.from-orange-400.to-orange-600");
+    const gradientAccent = container.querySelector(
+      ".bg-gradient-to-b.from-orange-400.to-orange-600",
+    );
     expect(gradientAccent).toBeInTheDocument();
   });
 });

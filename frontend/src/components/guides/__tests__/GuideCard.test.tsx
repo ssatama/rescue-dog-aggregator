@@ -1,62 +1,61 @@
-import { render, screen } from '@testing-library/react';
-import { GuideCard } from '../GuideCard';
-import type { Guide } from '@/types/guide';
+import { render, screen } from "@testing-library/react";
+import { GuideCard } from "../GuideCard";
+import type { Guide } from "@/types/guide";
 
 const mockGuide: Guide = {
-  slug: 'test-guide',
+  slug: "test-guide",
   frontmatter: {
-    title: 'Test Guide Title',
-    slug: 'test-guide',
-    description: 'This is a test guide description',
-    heroImage: '/test-hero.jpg',
-    heroImageAlt: 'Test hero image',
+    title: "Test Guide Title",
+    slug: "test-guide",
+    description: "This is a test guide description",
+    heroImage: "/test-hero.jpg",
+    heroImageAlt: "Test hero image",
     readTime: 10,
-    category: 'Getting Started',
-    keywords: ['test', 'guide'],
-    lastUpdated: '2025-10-03',
-    author: 'Test Author',
+    category: "Getting Started",
+    keywords: ["test", "guide"],
+    lastUpdated: "2025-10-03",
+    author: "Test Author",
     relatedGuides: [],
   },
-  content: '',
+  content: "",
 };
 
-describe('GuideCard', () => {
-  it('renders guide title', () => {
+describe("GuideCard", () => {
+  it("renders guide title", () => {
     render(<GuideCard guide={mockGuide} />);
-    expect(screen.getByText('Test Guide Title')).toBeInTheDocument();
+    expect(screen.getByText("Test Guide Title")).toBeInTheDocument();
   });
 
-
-  it('displays read time', () => {
+  it("displays read time", () => {
     render(<GuideCard guide={mockGuide} />);
     expect(screen.getByText(/10 min/i)).toBeInTheDocument();
   });
 
-  it('displays category badge', () => {
+  it("displays category badge", () => {
     render(<GuideCard guide={mockGuide} />);
-    expect(screen.getByText('Getting Started')).toBeInTheDocument();
+    expect(screen.getByText("Getting Started")).toBeInTheDocument();
   });
 
-  it('displays last updated date', () => {
+  it("displays last updated date", () => {
     render(<GuideCard guide={mockGuide} />);
     expect(screen.getByText(/Updated/i)).toBeInTheDocument();
   });
 
-  it('links to correct guide page', () => {
+  it("links to correct guide page", () => {
     render(<GuideCard guide={mockGuide} />);
-    const link = screen.getByRole('link');
-    expect(link).toHaveAttribute('href', '/guides/test-guide');
+    const link = screen.getByRole("link");
+    expect(link).toHaveAttribute("href", "/guides/test-guide");
   });
 
-  it('has proper accessibility attributes', () => {
+  it("has proper accessibility attributes", () => {
     render(<GuideCard guide={mockGuide} />);
-    const link = screen.getByRole('link');
-    expect(link).toHaveClass('group');
+    const link = screen.getByRole("link");
+    expect(link).toHaveClass("group");
   });
 
-  it('renders hero image with alt text', () => {
+  it("renders hero image with alt text", () => {
     render(<GuideCard guide={mockGuide} />);
-    const image = screen.getByAltText('Test hero image');
+    const image = screen.getByAltText("Test hero image");
     expect(image).toBeInTheDocument();
   });
 });
