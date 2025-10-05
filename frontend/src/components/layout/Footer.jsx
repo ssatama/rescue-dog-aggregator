@@ -4,48 +4,157 @@ import Link from "next/link";
 export default function Footer() {
   return (
     <footer className="bg-card text-card-foreground border-t border-border mt-auto">
-      {/* Mobile-optimized padding and spacing */}
-      <div className="max-w-7xl mx-auto py-3 md:py-8 px-4 sm:px-6 lg:px-8">
-        <div className="md:flex md:justify-between md:items-center">
-          {/* Left Side: Brand/Mission - Mobile optimized */}
-          <div className="mb-3 md:mb-0">
+      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        {/* Desktop: Grid with logo + 3 columns */}
+        <div className="hidden md:grid md:grid-cols-4 gap-8 mb-8">
+          {/* Brand Column */}
+          <div>
             <Link
               href="/"
-              className="flex items-center gap-2 md:gap-3 text-card-title font-semibold text-foreground hover:text-muted-foreground"
+              className="flex items-center gap-3 text-card-title font-semibold text-foreground hover:text-muted-foreground"
             >
               <Image
                 src="/logo.jpeg"
                 alt="Rescue Dog Aggregator logo"
-                width={80}
-                height={80}
-                className="rounded-full object-cover w-10 h-10 md:w-20 md:h-20"
+                width={60}
+                height={60}
+                className="rounded-full object-cover"
               />
               <div>
-                <span className="block text-sm md:text-base">
+                <span className="block text-base font-semibold">
                   Rescue Dog Aggregator
                 </span>
-                <p className="mt-0.5 md:mt-1 text-xs md:text-small text-muted-foreground font-normal">
+                <p className="mt-1 text-sm text-muted-foreground font-normal">
                   Helping rescue dogs find loving homes.
                 </p>
               </div>
             </Link>
           </div>
 
-          {/* Right Side: Navigation Links - Hidden on mobile */}
-          <div className="hidden md:flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-6">
-            <Link
-              href="/about"
-              className="text-small text-muted-foreground hover:text-foreground"
-            >
-              About
-            </Link>
-            <a
-              href="mailto:rescuedogsme@gmail.com"
-              className="text-small text-muted-foreground hover:text-foreground"
-            >
-              Contact
-            </a>
+          {/* Discover Column */}
+          <div>
+            <h3 className="font-semibold text-foreground mb-4">Discover</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link
+                  href="/dogs"
+                  className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                >
+                  Browse Dogs
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/breeds"
+                  className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                >
+                  Breeds
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/swipe"
+                  className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                >
+                  Swipe
+                </Link>
+              </li>
+            </ul>
           </div>
+
+          {/* Guides Column */}
+          <div>
+            <h3 className="font-semibold text-foreground mb-4">Guides</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link
+                  href="/guides/european-rescue-guide"
+                  className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                >
+                  European Rescue
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/guides/why-rescue-from-abroad"
+                  className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                >
+                  Why Rescue
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/guides/first-time-owner-guide"
+                  className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                >
+                  First-Time Owner
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/guides/costs-and-preparation"
+                  className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                >
+                  Costs
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Support Column */}
+          <div>
+            <h3 className="font-semibold text-foreground mb-4">Support</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link
+                  href="/about"
+                  className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                >
+                  About
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/organizations"
+                  className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                >
+                  Organizations
+                </Link>
+              </li>
+              <li>
+                <a
+                  href="mailto:rescuedogsme@gmail.com"
+                  className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                >
+                  Contact
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Mobile: Simplified logo only */}
+        <div className="md:hidden">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-card-title font-semibold text-foreground hover:text-muted-foreground"
+          >
+            <Image
+              src="/logo.jpeg"
+              alt="Rescue Dog Aggregator logo"
+              width={40}
+              height={40}
+              className="rounded-full object-cover"
+            />
+            <div>
+              <span className="text-sm font-semibold">
+                Rescue Dog Aggregator
+              </span>
+              <p className="text-xs text-muted-foreground font-normal">
+                Helping rescue dogs find loving homes.
+              </p>
+            </div>
+          </Link>
         </div>
       </div>
     </footer>

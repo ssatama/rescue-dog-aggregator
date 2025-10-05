@@ -94,7 +94,7 @@ export default function Header() {
             <div className="hidden md:flex gap-6 items-center">
               {" "}
               {/* Increased spacing for better visual separation */}
-              {renderNavLink("/dogs", "Find Dogs", "dogs")}
+              {renderNavLink("/dogs", "Dogs", "dogs")}
               {renderNavLink("/breeds", "Breeds", "breeds")}
               {renderNavLink("/guides", "Guides", "guides")}
               {/* Show Swipe on all screen sizes */}
@@ -108,7 +108,7 @@ export default function Header() {
                       filled
                       aria-label="Heart icon"
                     />
-                    Quick Browse
+                    Swipe
                   </span>
                 </Link>
                 {pathname === "/swipe" && (
@@ -119,11 +119,6 @@ export default function Header() {
                 )}
               </div>
               {renderNavLink("/favorites", "Favorites", "favorites", true)}
-              {renderNavLink(
-                "/organizations",
-                "Organizations",
-                "organizations",
-              )}
               {renderNavLink("/about", "About", "about")}
               <ThemeToggle className="ml-4" />
             </div>
@@ -167,7 +162,7 @@ export default function Header() {
                   className={`block ${getLinkClasses("/dogs")}`}
                   onClick={handleMobileLinkClick}
                 >
-                  Find Dogs
+                  Dogs
                 </Link>
                 {pathname === "/dogs" && (
                   <div
@@ -220,7 +215,7 @@ export default function Header() {
                       filled
                       aria-label="Heart icon"
                     />
-                    Quick Browse
+                    Swipe
                   </span>
                 </Link>
                 {pathname === "/swipe" && (
@@ -245,21 +240,6 @@ export default function Header() {
                 {pathname === "/favorites" && (
                   <div
                     data-testid="nav-underline-favorites"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"
-                  />
-                )}
-              </div>
-              <div className="relative">
-                <Link
-                  href="/organizations"
-                  className={`block ${getLinkClasses("/organizations")}`}
-                  onClick={handleMobileLinkClick}
-                >
-                  Organizations
-                </Link>
-                {pathname === "/organizations" && (
-                  <div
-                    data-testid="nav-underline-organizations"
                     className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"
                   />
                 )}

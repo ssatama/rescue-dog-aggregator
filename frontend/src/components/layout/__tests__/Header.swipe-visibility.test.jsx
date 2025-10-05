@@ -23,7 +23,7 @@ jest.mock("../../favorites/FavoriteBadge", () => ({
   FavoriteBadge: () => <span data-testid="favorite-badge">0</span>,
 }));
 
-describe("Header - Quick Browse Navigation Visibility", () => {
+describe("Header - Swipe Navigation Visibility", () => {
   beforeEach(() => {
     usePathname.mockReturnValue("/");
   });
@@ -37,14 +37,14 @@ describe("Header - Quick Browse Navigation Visibility", () => {
       });
     });
 
-    it("should NOT show Quick Browse link in desktop navigation", () => {
+    it("should NOT show Swipe link in desktop navigation", () => {
       render(<Header />);
 
       // Check desktop navigation area
       const desktopNav = screen.getByRole("navigation");
-      const swipeLinks = screen.queryAllByText("Quick Browse");
+      const swipeLinks = screen.queryAllByText("Swipe");
 
-      // Should not find any Quick Browse links in the visible desktop navigation
+      // Should not find any Swipe links in the visible desktop navigation
       // (they should have lg:hidden class applied)
       swipeLinks.forEach((link) => {
         const parent = link.closest(".lg\\:hidden");
@@ -64,11 +64,11 @@ describe("Header - Quick Browse Navigation Visibility", () => {
       });
     });
 
-    it("should show Quick Browse link in tablet navigation", () => {
+    it("should show Swipe link in tablet navigation", () => {
       render(<Header />);
 
-      // Should find Quick Browse link that's visible on tablets
-      const swipeLink = screen.getByRole("link", { name: /quick browse/i });
+      // Should find Swipe link that's visible on tablets
+      const swipeLink = screen.getByRole("link", { name: /swipe/i });
       expect(swipeLink).toBeInTheDocument();
       expect(swipeLink).toHaveAttribute("href", "/swipe");
 
@@ -87,15 +87,15 @@ describe("Header - Quick Browse Navigation Visibility", () => {
       });
     });
 
-    it("should show Quick Browse link in mobile hamburger menu", () => {
+    it("should show Swipe link in mobile hamburger menu", () => {
       render(<Header />);
 
       // Open mobile menu
       const menuButton = screen.getByTestId("mobile-menu-button");
       menuButton.click();
 
-      // Should find Quick Browse link in mobile menu
-      const swipeLink = screen.getByRole("link", { name: /quick browse/i });
+      // Should find Swipe link in mobile menu
+      const swipeLink = screen.getByRole("link", { name: /swipe/i });
       expect(swipeLink).toBeInTheDocument();
       expect(swipeLink).toHaveAttribute("href", "/swipe");
 

@@ -2,17 +2,11 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Home,
-  Grid3X3,
-  Heart as FavoritesIcon,
-  Building2,
-  Dna,
-  MapPin,
-} from "lucide-react";
+import { Grid3X3, Heart, Dna, Star, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import { MobileMenuDrawer } from "./MobileMenuDrawer";
 
 interface NavItem {
   id: string;
@@ -29,17 +23,11 @@ const TOP_Y_SHOW = 20; // Always show nav when scrolled to top
 
 // Navigation items configuration
 const navItems: NavItem[] = [
-  { id: "home", label: "Home", icon: Home, path: "/" },
   { id: "browse", label: "Browse", icon: Grid3X3, path: "/dogs" },
-  { id: "swipe", label: "Swipe", icon: MapPin, path: "/swipe" },
   { id: "breeds", label: "Breeds", icon: Dna, path: "/breeds" },
-  {
-    id: "favorites",
-    label: "Favorites",
-    icon: FavoritesIcon,
-    path: "/favorites",
-  },
-  { id: "orgs", label: "Orgs", icon: Building2, path: "/organizations" },
+  { id: "swipe", label: "Swipe", icon: Heart, path: "/swipe" },
+  { id: "saved", label: "Saved", icon: Star, path: "/favorites" },
+  { id: "menu", label: "Menu", icon: Menu, path: "#" },
 ];
 
 const MobileBottomNav: React.FC = () => {
@@ -47,6 +35,7 @@ const MobileBottomNav: React.FC = () => {
   const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(true);
   const [shouldRender, setShouldRender] = useState(false);
+  const [menuDrawerOpen, setMenuDrawerOpen] = useState(false);
 
   // Use refs to avoid stale closures and prevent re-renders
   const lastScrollY = useRef(0);
@@ -185,6 +174,26 @@ const MobileBottomNav: React.FC = () => {
                 pathname === item.path ||
                 (item.path !== "/" && pathname?.startsWith(item.path));
 
+              // Render button for Menu item
+              if (item.id === "menu") {
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setMenuDrawerOpen(true)}
+                    className={cn(
+                      "relative flex flex-col items-center justify-center min-h-[56px] min-w-[44px] px-2 py-1 rounded-lg transition-colors",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4714A]",
+                      "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100",
+                    )}
+                    aria-label={item.label}
+                  >
+                    <Icon className="w-5 h-5 mb-1" />
+                    <span className="text-xs font-medium">{item.label}</span>
+                  </button>
+                );
+              }
+
+              // Render link for other items
               return (
                 <Link
                   key={item.id}
@@ -216,6 +225,12 @@ const MobileBottomNav: React.FC = () => {
           </div>
         </motion.div>
       )}
+
+      {/* Mobile Menu Drawer */}
+      <MobileMenuDrawer
+        isOpen={menuDrawerOpen}
+        onClose={() => setMenuDrawerOpen(false)}
+      />
     </AnimatePresence>
   );
 };

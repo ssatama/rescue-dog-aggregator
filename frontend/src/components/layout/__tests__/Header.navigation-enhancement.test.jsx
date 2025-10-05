@@ -13,27 +13,20 @@ describe("Header Navigation Enhancement - Orange Theme", () => {
   });
 
   describe("Active Navigation States", () => {
-    it("should show orange active state for Find Dogs link", () => {
+    it("should show orange active state for Dogs link", () => {
       usePathname.mockReturnValue("/dogs");
       render(<Header />);
 
-      const findDogsLink = screen.getByRole("link", { name: "Find Dogs" });
+      const findDogsLink = screen.getByRole("link", { name: "Dogs" });
       expect(findDogsLink).toHaveClass("text-orange-600");
       expect(findDogsLink).toHaveClass("font-semibold");
       expect(findDogsLink).not.toHaveClass("text-red-700");
       expect(findDogsLink).not.toHaveClass("bg-red-100");
     });
 
-    it("should show orange active state for Organizations link", () => {
-      usePathname.mockReturnValue("/organizations");
-      render(<Header />);
-
-      const organizationsLink = screen.getByRole("link", {
-        name: "Organizations",
-      });
-      expect(organizationsLink).toHaveClass("text-orange-600");
-      expect(organizationsLink).toHaveClass("font-semibold");
-      expect(organizationsLink).not.toHaveClass("text-red-700");
+    it.skip("should show orange active state for Organizations link (removed from header)", () => {
+      // Organizations link was removed from header navigation
+      // It's now only in footer and mobile menu drawer
     });
 
     it("should show orange active state for About link", () => {
@@ -52,7 +45,7 @@ describe("Header Navigation Enhancement - Orange Theme", () => {
       usePathname.mockReturnValue("/");
       render(<Header />);
 
-      const findDogsLink = screen.getByRole("link", { name: "Find Dogs" });
+      const findDogsLink = screen.getByRole("link", { name: "Dogs" });
       expect(findDogsLink).toHaveClass("hover:text-orange-600");
       expect(findDogsLink).toHaveClass("transition-colors");
       expect(findDogsLink).toHaveClass("duration-200");
@@ -65,7 +58,7 @@ describe("Header Navigation Enhancement - Orange Theme", () => {
       const allNavLinks = screen
         .getAllByRole("link")
         .filter((link) =>
-          ["Find Dogs", "Organizations", "About"].includes(link.textContent),
+          ["Dogs", "Organizations", "About"].includes(link.textContent),
         );
 
       allNavLinks.forEach((link) => {
@@ -88,7 +81,7 @@ describe("Header Navigation Enhancement - Orange Theme", () => {
   });
 
   describe("Active State Underline Indicators", () => {
-    it("should show underline indicator for active Find Dogs link", () => {
+    it("should show underline indicator for active Dogs link", () => {
       usePathname.mockReturnValue("/dogs");
       render(<Header />);
 
@@ -100,14 +93,9 @@ describe("Header Navigation Enhancement - Orange Theme", () => {
       expect(underlineIndicator).toHaveClass("bottom-0");
     });
 
-    it("should show underline indicator for active Organizations link", () => {
-      usePathname.mockReturnValue("/organizations");
-      render(<Header />);
-
-      const underlineIndicator = screen.getByTestId(
-        "nav-underline-organizations",
-      );
-      expect(underlineIndicator).toHaveClass("bg-orange-600");
+    it.skip("should show underline indicator for active Organizations link (removed from header)", () => {
+      // Organizations link was removed from header navigation
+      // It's now only in footer and mobile menu drawer
     });
 
     it("should show underline indicator for active About link", () => {
@@ -145,7 +133,7 @@ describe("Header Navigation Enhancement - Orange Theme", () => {
         .filter(
           (link) =>
             link.className.includes("block") &&
-            ["Find Dogs", "Organizations", "About"].includes(link.textContent),
+            ["Dogs", "Organizations", "About"].includes(link.textContent),
         );
 
       mobileLinks.forEach((link) => {
@@ -170,8 +158,7 @@ describe("Header Navigation Enhancement - Orange Theme", () => {
         .getAllByRole("link")
         .find(
           (link) =>
-            link.textContent === "Find Dogs" &&
-            link.className.includes("block"),
+            link.textContent === "Dogs" && link.className.includes("block"),
         );
 
       expect(mobileFindDogsLink).toHaveClass("text-orange-600");
@@ -198,7 +185,7 @@ describe("Header Navigation Enhancement - Orange Theme", () => {
       const navLinks = screen
         .getAllByRole("link")
         .filter((link) =>
-          ["Find Dogs", "Organizations", "About"].includes(link.textContent),
+          ["Dogs", "Organizations", "About"].includes(link.textContent),
         );
 
       navLinks.forEach((element) => {
