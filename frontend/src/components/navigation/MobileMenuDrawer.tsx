@@ -42,6 +42,7 @@ export function MobileMenuDrawer({ isOpen, onClose }: MobileMenuDrawerProps) {
         <>
           {/* Backdrop */}
           <motion.div
+            key="backdrop"
             data-testid="menu-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -54,6 +55,7 @@ export function MobileMenuDrawer({ isOpen, onClose }: MobileMenuDrawerProps) {
 
           {/* Drawer */}
           <motion.div
+            key="drawer"
             role="dialog"
             aria-modal="true"
             aria-label="Mobile menu"
@@ -65,6 +67,7 @@ export function MobileMenuDrawer({ isOpen, onClose }: MobileMenuDrawerProps) {
           >
             {/* Close button */}
             <button
+              type="button"
               onClick={onClose}
               className="absolute top-4 right-4 p-2 rounded-lg hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-orange-600"
               aria-label="Close menu"

@@ -30,13 +30,13 @@ const contacts: ContactItem[] = [
 
 export default function ContactSection() {
   return (
-    <section>
+    <section id="contact">
       <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-200 mb-6 text-center">
         Get in Touch
       </h2>
       <p className="text-lg md:text-xl leading-relaxed text-gray-700 dark:text-gray-300 mb-8 max-w-2xl mx-auto text-center">
-        Questions about the platform? Interested in listing your rescue organization?
-        We&apos;d love to hear from you.
+        Questions about the platform? Interested in listing your rescue
+        organization? We&apos;d love to hear from you.
       </p>
       <div className="flex flex-col md:flex-row justify-center items-center gap-6 sm:gap-8 md:gap-12">
         {contacts.map((contact) => {

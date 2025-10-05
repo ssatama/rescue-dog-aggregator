@@ -122,12 +122,12 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a
-                  href="mailto:rescuedogsme@gmail.com"
+                <Link
+                  href="/about#contact"
                   className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
                 >
                   Contact
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
