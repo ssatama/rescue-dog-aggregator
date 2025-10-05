@@ -4,9 +4,32 @@ import { useState, useEffect } from 'react';
 import DogCardOptimizedComponent from '@/components/dogs/DogCardOptimized';
 import DogCardSkeletonOptimized from '@/components/dogs/DogCardSkeletonOptimized';
 import { getAnimals } from '@/services/serverAnimalsService';
+import type { Dog } from '@/types/dog';
 
-// Cast to any to bypass TypeScript checks for .jsx component
-const DogCardOptimized = DogCardOptimizedComponent as any;
+// Type-safe wrapper for JSX component
+const DogCardOptimized = DogCardOptimizedComponent as React.ComponentType<{
+  dog: Dog;
+  priority?: boolean;
+  compact?: boolean;
+  embedded?: boolean;
+}>;
+
+interface AnimalApiParams {
+  limit: number;
+  status: string;
+  breed?: string;
+  standardized_breed?: string;
+  breed_group?: string;
+  primary_breed?: string;
+  breed_type?: string;
+  sex?: string;
+  size?: string;
+  age_category?: string;
+  location_country?: string;
+  available_to_country?: string;
+  available_to_region?: string;
+  organization_id?: number;
+}
 
 interface DogGridProps {
   // Breed filters
@@ -58,7 +81,7 @@ export function DogGrid({
   layout = 'grid',
   embedded = true, // Default to compact for guide pages
 }: DogGridProps) {
-  const [dogs, setDogs] = useState<any[]>([]);
+  const [dogs, setDogs] = useState<Dog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,7 +91,7 @@ export function DogGrid({
         setIsLoading(true);
         setError(null);
 
-        const params: any = {
+        const params: AnimalApiParams = {
           limit,
           status,
         };

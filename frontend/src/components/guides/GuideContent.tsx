@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ComponentPropsWithoutRef } from 'react';
 import { MDXRemote } from 'next-mdx-remote';
 import Image from 'next/image';
 import { Guide } from '@/types/guide';
@@ -27,7 +27,7 @@ interface TOCSection {
 }
 
 const components = {
-  h2: ({ children, ...props }: any) => {
+  h2: ({ children, ...props }: ComponentPropsWithoutRef<'h2'>) => {
     const id = children?.toString().toLowerCase().replace(/[^a-z0-9]+/g, '-');
     return <h2 id={id} className="text-3xl font-bold mt-8 mb-4" {...props}>{children}</h2>;
   },
@@ -36,11 +36,11 @@ const components = {
   Callout,
   Stats,
 
-  p: (props: any) => <p className="mb-4 leading-relaxed" {...props} />,
-  ul: (props: any) => <ul className="list-disc list-inside mb-4 space-y-2" {...props} />,
-  ol: (props: any) => <ol className="list-decimal list-inside mb-4 space-y-2" {...props} />,
-  a: (props: any) => <a className="text-orange-500 hover:underline" {...props} />,
-  code: (props: any) => <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded" {...props} />,
+  p: (props: ComponentPropsWithoutRef<'p'>) => <p className="mb-4 leading-relaxed" {...props} />,
+  ul: (props: ComponentPropsWithoutRef<'ul'>) => <ul className="list-disc list-inside mb-4 space-y-2" {...props} />,
+  ol: (props: ComponentPropsWithoutRef<'ol'>) => <ol className="list-decimal list-inside mb-4 space-y-2" {...props} />,
+  a: (props: ComponentPropsWithoutRef<'a'>) => <a className="text-orange-500 hover:underline" {...props} />,
+  code: (props: ComponentPropsWithoutRef<'code'>) => <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded" {...props} />,
 };
 
 export function GuideContent({ guide, fullPage = false, relatedGuides = [] }: GuideContentProps) {

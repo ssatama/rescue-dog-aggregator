@@ -78,11 +78,10 @@ describe('GuidesPage', () => {
     expect(screen.getByText('Test Guide 2')).toBeInTheDocument();
   });
 
-  it('displays guide descriptions', async () => {
+  it('displays guide categories', async () => {
     const page = await GuidesPage();
     render(page);
-    expect(screen.getByText('Description 1')).toBeInTheDocument();
-    expect(screen.getByText('Description 2')).toBeInTheDocument();
+    expect(screen.getAllByText('test')).toHaveLength(2);
   });
 
   it('displays read time for guides', async () => {

@@ -24,15 +24,14 @@ const fontSizeMap: Record<FontSize, string> = {
 };
 
 export function FontSizeProvider({ children }: { children: ReactNode }) {
-  const [fontSize, setFontSizeState] = useState<FontSize>('comfortable');
+  // SSR-safe initialization with localStorage
+  const [fontSize, setFontSizeState] = useState<FontSize>(() => {
+    // Guard against SSR - return default if no window
+    if (typeof window === 'undefined') return 'comfortable';
 
-  // Load from localStorage on mount
-  useEffect(() => {
     const savedSize = localStorage.getItem(FONT_SIZE_KEY) as FontSize | null;
-    if (savedSize && fontSizes.includes(savedSize)) {
-      setFontSizeState(savedSize);
-    }
-  }, []);
+    return (savedSize && fontSizes.includes(savedSize)) ? savedSize : 'comfortable';
+  });
 
   // Apply font size to CSS variable
   useEffect(() => {
@@ -44,16 +43,34 @@ export function FontSizeProvider({ children }: { children: ReactNode }) {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && (e.key === '+' || e.key === '=')) {
         e.preventDefault();
-        increaseFontSize();
+        // Use functional setState to avoid fontSize dependency
+        setFontSizeState(prev => {
+          const currentIndex = fontSizes.indexOf(prev);
+          if (currentIndex < fontSizes.length - 1) {
+            const newSize = fontSizes[currentIndex + 1];
+            localStorage.setItem(FONT_SIZE_KEY, newSize);
+            return newSize;
+          }
+          return prev;
+        });
       } else if ((e.metaKey || e.ctrlKey) && e.key === '-') {
         e.preventDefault();
-        decreaseFontSize();
+        // Use functional setState to avoid fontSize dependency
+        setFontSizeState(prev => {
+          const currentIndex = fontSizes.indexOf(prev);
+          if (currentIndex > 0) {
+            const newSize = fontSizes[currentIndex - 1];
+            localStorage.setItem(FONT_SIZE_KEY, newSize);
+            return newSize;
+          }
+          return prev;
+        });
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [fontSize]);
+  }, []); // Empty deps - handler only registers once
 
   const setFontSize = (size: FontSize) => {
     setFontSizeState(size);

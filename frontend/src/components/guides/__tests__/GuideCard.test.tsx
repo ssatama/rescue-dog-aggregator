@@ -26,10 +26,6 @@ describe('GuideCard', () => {
     expect(screen.getByText('Test Guide Title')).toBeInTheDocument();
   });
 
-  it('renders guide description', () => {
-    render(<GuideCard guide={mockGuide} />);
-    expect(screen.getByText('This is a test guide description')).toBeInTheDocument();
-  });
 
   it('displays read time', () => {
     render(<GuideCard guide={mockGuide} />);

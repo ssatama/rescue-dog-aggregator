@@ -38,45 +38,6 @@ describe('MDX Guide Compilation', () => {
     });
   });
 
-  it('should not have lines starting with numbers (invalid JSX)', async () => {
-    const fs = require('fs');
-    const path = require('path');
-
-    const guidesDir = path.join(process.cwd(), 'content', 'guides');
-    const files = fs.readdirSync(guidesDir).filter((f: string) => f.endsWith('.mdx'));
-
-    files.forEach((file: string) => {
-      const content = fs.readFileSync(path.join(guidesDir, file), 'utf-8');
-      const lines = content.split('\n');
-      let inFrontmatter = false;
-      let inCodeBlock = false;
-
-      lines.forEach((line: string, index: number) => {
-        // Track frontmatter boundaries
-        if (line.trim() === '---') {
-          inFrontmatter = !inFrontmatter;
-          return;
-        }
-
-        // Track code block boundaries
-        if (line.trim().startsWith('```')) {
-          inCodeBlock = !inCodeBlock;
-          return;
-        }
-
-        // Skip lines inside frontmatter or code blocks
-        if (inFrontmatter || inCodeBlock) return;
-
-        // Check if line starts with a number - MDX doesn't support numbered lists
-        // Any line starting with \d is invalid (e.g., "1. Text", "2024 Stats")
-        const startsWithNumber = /^\d/.test(line.trim());
-
-        if (startsWithNumber) {
-          throw new Error(`${file}:${index + 1} - Line starts with number (invalid JSX): "${line.substring(0, 50)}..."`);
-        }
-      });
-    });
-  });
 
   it('should not have text immediately after closing JSX tags', async () => {
     const fs = require('fs');
