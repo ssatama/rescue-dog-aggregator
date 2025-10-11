@@ -28,10 +28,10 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
     def test_extract_dog_name_from_url(self):
         """Test extracting dog name from adoption URL."""
         test_cases = [
-            ("https://santerpawsbulgarianrescue.com/adoption/pepper/", "Pepper"),
-            ("https://santerpawsbulgarianrescue.com/adoption/daisy/", "Daisy"),
-            ("https://santerpawsbulgarianrescue.com/adoption/summer-breeze/", "Summer Breeze"),
-            ("https://santerpawsbulgarianrescue.com/adoption/ruby-red/", "Ruby Red"),
+            ("https://santerpawsbulgarianrescue.com/dog/pepper/", "Pepper"),
+            ("https://santerpawsbulgarianrescue.com/dog/daisy/", "Daisy"),
+            ("https://santerpawsbulgarianrescue.com/dog/summer-breeze/", "Summer Breeze"),
+            ("https://santerpawsbulgarianrescue.com/dog/ruby-red/", "Ruby Red"),
         ]
 
         for url, expected_name in test_cases:
@@ -42,10 +42,10 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
     def test_extract_external_id_from_url(self):
         """Test external ID extraction from URLs."""
         test_cases = [
-            ("https://santerpawsbulgarianrescue.com/adoption/pepper/", "spbr-pepper"),
-            ("https://santerpawsbulgarianrescue.com/adoption/daisy/", "spbr-daisy"),
-            ("https://santerpawsbulgarianrescue.com/adoption/summer-breeze/", "spbr-summer-breeze"),
-            ("https://santerpawsbulgarianrescue.com/adoption/ruby-red/", "spbr-ruby-red"),
+            ("https://santerpawsbulgarianrescue.com/dog/pepper/", "spbr-pepper"),
+            ("https://santerpawsbulgarianrescue.com/dog/daisy/", "spbr-daisy"),
+            ("https://santerpawsbulgarianrescue.com/dog/summer-breeze/", "spbr-summer-breeze"),
+            ("https://santerpawsbulgarianrescue.com/dog/ruby-red/", "spbr-ruby-red"),
         ]
 
         for url, expected_id in test_cases:
@@ -53,55 +53,64 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
                 result = self.scraper._extract_external_id(url)
                 self.assertEqual(result, expected_id)
 
-    @patch("requests.post")
-    def test_get_animal_list_ajax_request(self, mock_post):
-        """Test that get_animal_list makes correct AJAX request."""
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.text = "<html></html>"
-        mock_post.return_value = mock_response
+    @patch("requests.get")
+    def test_get_animal_list_pagination_request(self, mock_get):
+        """Test that get_animal_list makes paginated GET requests."""
+        # Mock response for page 1 with dogs
+        mock_response_page1 = Mock()
+        mock_response_page1.status_code = 200
+        mock_response_page1.text = """
+        <html><body>
+            <article class="bde-loop-item"><a href="/dog/dog1/">Dog1</a></article>
+        </body></html>
+        """
+        mock_response_page1.raise_for_status = Mock()
+
+        # Mock response for page 2 with no dogs (stop pagination)
+        mock_response_page2 = Mock()
+        mock_response_page2.status_code = 200
+        mock_response_page2.text = "<html><body></body></html>"
+        mock_response_page2.raise_for_status = Mock()
+
+        mock_get.side_effect = [mock_response_page1, mock_response_page2]
 
         self.scraper.get_animal_list()
 
-        # Verify POST request was made to correct URL with correct data
-        mock_post.assert_called_once()
-        call_args = mock_post.call_args
+        # Verify GET requests were made for pages 1 and 2
+        self.assertEqual(mock_get.call_count, 2)
 
-        # Check URL
-        self.assertEqual(call_args[0][0], "https://santerpawsbulgarianrescue.com/adopt/")
+        # Check first call (page 1)
+        first_call_args = mock_get.call_args_list[0]
+        self.assertEqual(first_call_args[0][0], "https://santerpawsbulgarianrescue.com/adopt/")
 
-        # Check POST data
-        self.assertEqual(call_args[1]["data"]["wpgb-ajax"], "render")
-        self.assertEqual(call_args[1]["data"]["_adoption_status_adopt"], "available")
+        # Check second call (page 2)
+        second_call_args = mock_get.call_args_list[1]
+        self.assertEqual(second_call_args[0][0], "https://santerpawsbulgarianrescue.com/adopt/page/2/")
 
-        # Check headers
-        self.assertIn("X-Requested-With", call_args[1]["headers"])
-        self.assertEqual(call_args[1]["headers"]["X-Requested-With"], "XMLHttpRequest")
-
-    @patch("requests.post")
-    def test_get_animal_list_parses_dogs(self, mock_post):
+    @patch("requests.get")
+    def test_get_animal_list_parses_dogs(self, mock_get):
         """Test that get_animal_list correctly parses dog information."""
-        # Mock HTML response with sample dog cards
-        mock_html = """
+        # Mock HTML response with sample dog cards for page 1
+        mock_html_page1 = """
         <html>
         <body>
             <article class="bde-loop-item ee-post">
                 <div class="breakdance">
-                    <a class="bde-container-link" href="https://santerpawsbulgarianrescue.com/adoption/pepper/">
+                    <a class="bde-container-link" href="https://santerpawsbulgarianrescue.com/dog/pepper/">
                         <div>Pepper</div>
                     </a>
                 </div>
             </article>
             <article class="bde-loop-item ee-post">
                 <div class="breakdance">
-                    <a class="bde-container-link" href="https://santerpawsbulgarianrescue.com/adoption/daisy/">
+                    <a class="bde-container-link" href="https://santerpawsbulgarianrescue.com/dog/daisy/">
                         <div>Daisy</div>
                     </a>
                 </div>
             </article>
             <article class="bde-loop-item ee-post">
                 <div class="breakdance">
-                    <a class="bde-container-link" href="https://santerpawsbulgarianrescue.com/adoption/summer-breeze/">
+                    <a class="bde-container-link" href="https://santerpawsbulgarianrescue.com/dog/summer-breeze/">
                         <div>Summer Breeze</div>
                     </a>
                 </div>
@@ -110,11 +119,20 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
         </html>
         """
 
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.text = mock_html
-        mock_response.raise_for_status = Mock()
-        mock_post.return_value = mock_response
+        # Mock empty page 2 to stop pagination
+        mock_html_page2 = "<html><body></body></html>"
+
+        mock_response_page1 = Mock()
+        mock_response_page1.status_code = 200
+        mock_response_page1.text = mock_html_page1
+        mock_response_page1.raise_for_status = Mock()
+
+        mock_response_page2 = Mock()
+        mock_response_page2.status_code = 200
+        mock_response_page2.text = mock_html_page2
+        mock_response_page2.raise_for_status = Mock()
+
+        mock_get.side_effect = [mock_response_page1, mock_response_page2]
 
         animals = self.scraper.get_animal_list()
 
@@ -124,72 +142,75 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
         # Check first dog
         self.assertEqual(animals[0]["name"], "Pepper")
         self.assertEqual(animals[0]["external_id"], "spbr-pepper")
-        self.assertEqual(animals[0]["adoption_url"], "https://santerpawsbulgarianrescue.com/adoption/pepper/")
+        self.assertEqual(animals[0]["adoption_url"], "https://santerpawsbulgarianrescue.com/dog/pepper/")
         self.assertEqual(animals[0]["animal_type"], "dog")
         self.assertEqual(animals[0]["status"], "available")
 
         # Check second dog
         self.assertEqual(animals[1]["name"], "Daisy")
         self.assertEqual(animals[1]["external_id"], "spbr-daisy")
-        self.assertEqual(animals[1]["adoption_url"], "https://santerpawsbulgarianrescue.com/adoption/daisy/")
+        self.assertEqual(animals[1]["adoption_url"], "https://santerpawsbulgarianrescue.com/dog/daisy/")
 
         # Check third dog with hyphenated name
         self.assertEqual(animals[2]["name"], "Summer Breeze")
         self.assertEqual(animals[2]["external_id"], "spbr-summer-breeze")
-        self.assertEqual(animals[2]["adoption_url"], "https://santerpawsbulgarianrescue.com/adoption/summer-breeze/")
+        self.assertEqual(animals[2]["adoption_url"], "https://santerpawsbulgarianrescue.com/dog/summer-breeze/")
 
-    @patch("requests.post")
-    def test_get_animal_list_handles_empty_response(self, mock_post):
+    @patch("requests.get")
+    def test_get_animal_list_handles_empty_response(self, mock_get):
         """Test that get_animal_list handles empty response gracefully."""
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.text = "<html><body></body></html>"
         mock_response.raise_for_status = Mock()
-        mock_post.return_value = mock_response
+        mock_get.return_value = mock_response
 
         animals = self.scraper.get_animal_list()
 
         # Should return empty list
         self.assertEqual(len(animals), 0)
 
-    @patch("requests.post")
-    def test_get_animal_list_handles_network_error(self, mock_post):
+    @patch("requests.get")
+    def test_get_animal_list_handles_network_error(self, mock_get):
         """Test that get_animal_list handles network errors gracefully."""
-        mock_post.side_effect = Exception("Network error")
+        mock_get.side_effect = Exception("Network error")
 
         animals = self.scraper.get_animal_list()
 
         # Should return empty list on error
         self.assertEqual(len(animals), 0)
 
-    @patch("requests.post")
-    def test_filters_only_available_dogs(self, mock_post):
-        """Test that only available dogs are returned (filter parameter works)."""
-        # This is implicitly tested by the AJAX parameters
-        # The _adoption_status_adopt=available parameter ensures only available dogs
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.text = """
+    @patch("requests.get")
+    def test_all_scraped_dogs_marked_available(self, mock_get):
+        """Test that all scraped dogs are marked as available."""
+        # Mock page 1 with one dog
+        mock_html = """
         <html>
         <body>
             <article class="bde-loop-item ee-post">
-                <a href="https://santerpawsbulgarianrescue.com/adoption/available-dog/">
+                <a href="https://santerpawsbulgarianrescue.com/dog/available-dog/">
                     Available Dog
                 </a>
             </article>
         </body>
         </html>
         """
-        mock_response.raise_for_status = Mock()
-        mock_post.return_value = mock_response
+        mock_response_page1 = Mock()
+        mock_response_page1.status_code = 200
+        mock_response_page1.text = mock_html
+        mock_response_page1.raise_for_status = Mock()
+
+        # Mock empty page 2
+        mock_response_page2 = Mock()
+        mock_response_page2.status_code = 200
+        mock_response_page2.text = "<html><body></body></html>"
+        mock_response_page2.raise_for_status = Mock()
+
+        mock_get.side_effect = [mock_response_page1, mock_response_page2]
 
         animals = self.scraper.get_animal_list()
 
-        # Check that AJAX request includes availability filter
-        call_args = mock_post.call_args
-        self.assertEqual(call_args[1]["data"]["_adoption_status_adopt"], "available")
-
-        # All returned dogs should be available
+        # All returned dogs should be marked as available
         for animal in animals:
             self.assertEqual(animal["status"], "available")
 
@@ -220,7 +241,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
                 {
                     "name": "Test Dog",
                     "external_id": "test-dog",
-                    "adoption_url": "https://santerpawsbulgarianrescue.com/adoption/test-dog/",
+                    "adoption_url": "https://santerpawsbulgarianrescue.com/dog/test-dog/",
                     "animal_type": "dog",
                     "status": "available",
                 }
@@ -240,14 +261,14 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
                 {
                     "name": "Test Dog 1",
                     "external_id": "test-dog-1",
-                    "adoption_url": "https://santerpawsbulgarianrescue.com/adoption/test-dog-1/",
+                    "adoption_url": "https://santerpawsbulgarianrescue.com/dog/test-dog-1/",
                     "animal_type": "dog",
                     "status": "available",
                 },
                 {
                     "name": "Test Dog 2",
                     "external_id": "test-dog-2",
-                    "adoption_url": "https://santerpawsbulgarianrescue.com/adoption/test-dog-2/",
+                    "adoption_url": "https://santerpawsbulgarianrescue.com/dog/test-dog-2/",
                     "animal_type": "dog",
                     "status": "available",
                 },
@@ -275,13 +296,13 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
             with patch.object(scraper, "get_animal_list") as mock_get_list, patch.object(scraper, "_filter_existing_urls") as mock_filter_urls:
 
                 mock_animals = [
-                    {"name": "Existing Dog", "adoption_url": "https://santerpawsbulgarianrescue.com/adoption/existing/", "external_id": "existing"},
-                    {"name": "New Dog", "adoption_url": "https://santerpawsbulgarianrescue.com/adoption/new/", "external_id": "new"},
+                    {"name": "Existing Dog", "adoption_url": "https://santerpawsbulgarianrescue.com/dog/existing/", "external_id": "existing"},
+                    {"name": "New Dog", "adoption_url": "https://santerpawsbulgarianrescue.com/dog/new/", "external_id": "new"},
                 ]
                 mock_get_list.return_value = mock_animals
 
                 # Mock that only "new" URL should be processed (existing one filtered out)
-                mock_filter_urls.return_value = ["https://santerpawsbulgarianrescue.com/adoption/new/"]
+                mock_filter_urls.return_value = ["https://santerpawsbulgarianrescue.com/dog/new/"]
 
                 result = scraper._get_filtered_animals()
 
@@ -290,7 +311,7 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
                 self.assertEqual(result[0]["name"], "New Dog")
 
                 # Verify _filter_existing_urls was called with correct URLs
-                expected_urls = ["https://santerpawsbulgarianrescue.com/adoption/existing/", "https://santerpawsbulgarianrescue.com/adoption/new/"]
+                expected_urls = ["https://santerpawsbulgarianrescue.com/dog/existing/", "https://santerpawsbulgarianrescue.com/dog/new/"]
                 mock_filter_urls.assert_called_once_with(expected_urls)
 
     def test_filtering_stats_tracked(self):
@@ -334,21 +355,21 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
                 {
                     "name": "Pepper",
                     "external_id": "spbr-pepper",
-                    "adoption_url": "https://santerpawsbulgarianrescue.com/adoption/pepper/",
+                    "adoption_url": "https://santerpawsbulgarianrescue.com/dog/pepper/",
                     "animal_type": "dog",
                     "status": "available",
                 },
                 {
                     "name": "Daisy",
                     "external_id": "daisy",
-                    "adoption_url": "https://santerpawsbulgarianrescue.com/adoption/daisy/",
+                    "adoption_url": "https://santerpawsbulgarianrescue.com/dog/daisy/",
                     "animal_type": "dog",
                     "status": "available",
                 },
                 {
                     "name": "Pepper",  # Duplicate
                     "external_id": "spbr-pepper",
-                    "adoption_url": "https://santerpawsbulgarianrescue.com/adoption/pepper/",
+                    "adoption_url": "https://santerpawsbulgarianrescue.com/dog/pepper/",
                     "animal_type": "dog",
                     "status": "available",
                 },
@@ -366,8 +387,8 @@ class TestSanterPawsBulgarianRescueScraper(unittest.TestCase):
         # Test with batch_size=6, animals=3 (should use single-threaded)
         with patch.object(self.scraper, "_scrape_animal_details") as mock_scrape_details:
             mock_animals = [
-                {"name": "Dog1", "adoption_url": "https://santerpawsbulgarianrescue.com/adoption/dog1/", "external_id": "dog1"},
-                {"name": "Dog2", "adoption_url": "https://santerpawsbulgarianrescue.com/adoption/dog2/", "external_id": "dog2"},
+                {"name": "Dog1", "adoption_url": "https://santerpawsbulgarianrescue.com/dog/dog1/", "external_id": "dog1"},
+                {"name": "Dog2", "adoption_url": "https://santerpawsbulgarianrescue.com/dog/dog2/", "external_id": "dog2"},
             ]
 
             mock_scrape_details.return_value = {"breed": "Mixed Breed", "size": "Medium"}

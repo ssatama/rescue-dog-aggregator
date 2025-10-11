@@ -1,7 +1,7 @@
 schema_version: "1.0"
 id: "galgosdelsol"
 name: "Galgos del Sol"
-enabled: true
+enabled: false
 scraper:
   class_name: "GalgosDelSolScraper"
   module: "scrapers.galgosdelsol.galgosdelsol_scraper"

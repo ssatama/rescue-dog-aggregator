@@ -43,7 +43,7 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/adoption/anastasia/")
+        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/anastasia/")
 
         # Should extract first image as hero image
         self.assertIn("primary_image_url", result)
@@ -71,7 +71,7 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/adoption/anastasia/")
+        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/anastasia/")
 
         # Should extract combined about text
         self.assertIn("description", result)
@@ -119,7 +119,7 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/adoption/anastasia/")
+        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/anastasia/")
 
         # Should extract structured information
         # Note: age field name changed from age_text to age
@@ -153,7 +153,7 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/adoption/test/")
+        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
 
         # Should detect reserved status
         self.assertEqual(result.get("status"), "reserved")
@@ -178,7 +178,7 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/adoption/test/")
+        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
 
         # Should handle missing fields gracefully
         self.assertIn("description", result)
@@ -192,7 +192,7 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
         """Test that network errors are handled gracefully."""
         mock_get.side_effect = Exception("Network error")
 
-        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/adoption/test/")
+        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
 
         # Should return empty dict on error
         self.assertEqual(result, {})
@@ -217,7 +217,7 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/adoption/test/")
+        result = self.scraper._scrape_animal_details("https://santerpawsbulgarianrescue.com/dog/test/")
 
         # Should return result with zero NULLs compliance defaults
         # When sections are missing, scraper should still return data
@@ -239,7 +239,7 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
         mock_animal_data = {
             "name": "Test Dog",
             "external_id": "test-dog",
-            "adoption_url": "https://santerpawsbulgarianrescue.com/adoption/test-dog/",
+            "adoption_url": "https://santerpawsbulgarianrescue.com/dog/test-dog/",
             "animal_type": "dog",
             "status": "available",
         }
@@ -252,7 +252,7 @@ class TestSanterPawsBulgarianRescueDetailScraping(unittest.TestCase):
             result = self.scraper.collect_data()
 
             # Should have called detail scraping and merged data
-            mock_scrape_details.assert_called_once_with("https://santerpawsbulgarianrescue.com/adoption/test-dog/")
+            mock_scrape_details.assert_called_once_with("https://santerpawsbulgarianrescue.com/dog/test-dog/")
 
             self.assertEqual(len(result), 1)
             dog_data = result[0]

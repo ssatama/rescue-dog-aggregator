@@ -239,103 +239,121 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
             return []
 
     def get_animal_list(self) -> List[Dict[str, Any]]:
-        """Fetch list of available dogs using WP Grid Builder AJAX endpoint.
+        """Fetch list of available dogs by paginating through all listing pages.
 
-        Makes a POST request to the AJAX endpoint with availability filter
-        to get all available dogs in a single request.
+        Loops through paginated listing pages (/adopt/page/1/, /adopt/page/2/, etc.)
+        to collect all available dogs. Stops when a page returns no dogs.
 
         Returns:
-            List of dictionaries containing basic dog information
+            List of dictionaries containing basic dog information from all pages
         """
-        try:
-            # Prepare AJAX request
-            data = {
-                "wpgb-ajax": "render",
-                "_adoption_status_adopt": "available",  # Filter for available dogs only
-            }
+        all_animals = []
+        page_num = 1
+        max_pages = 20  # Safety limit to prevent infinite loops
 
+        try:
             headers = {
                 "User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)",
-                "X-Requested-With": "XMLHttpRequest",
-                "Content-Type": "application/x-www-form-urlencoded",
             }
 
-            self.logger.debug(f"Fetching dogs from AJAX endpoint: {self.listing_url}")
+            while page_num <= max_pages:
+                # Construct page URL
+                if page_num == 1:
+                    page_url = self.listing_url
+                else:
+                    page_url = f"{self.listing_url}page/{page_num}/"
 
-            # Make POST request to AJAX endpoint
-            response = requests.post(
-                self.listing_url,
-                data=data,
-                headers=headers,
-                timeout=30,
-            )
-            response.raise_for_status()
+                self.logger.debug(f"Fetching page {page_num}: {page_url}")
 
-            # Parse HTML response
-            soup = BeautifulSoup(response.text, "html.parser")
+                # Make GET request to page
+                response = requests.get(
+                    page_url,
+                    headers=headers,
+                    timeout=30,
+                )
+                response.raise_for_status()
 
-            # Find all dog cards
-            dog_cards = soup.find_all("article", class_="bde-loop-item")
-            self.logger.debug(f"Found {len(dog_cards)} dog cards")
+                # Parse HTML response
+                soup = BeautifulSoup(response.text, "html.parser")
 
-            animals = []
+                # Find all dog cards
+                dog_cards = soup.find_all("article", class_="bde-loop-item")
+                self.logger.debug(f"Found {len(dog_cards)} dog cards on page {page_num}")
 
-            for card in dog_cards:
-                try:
-                    # Skip if not a Tag element
-                    if not hasattr(card, "find"):
+                # Stop if no dogs found on this page
+                if not dog_cards:
+                    self.logger.info(f"No dogs found on page {page_num}, stopping pagination")
+                    break
+
+                # Process dogs from this page
+                page_animals = []
+                for card in dog_cards:
+                    try:
+                        # Skip if not a Tag element
+                        if not hasattr(card, "find"):
+                            continue
+
+                        # Find the link to the adoption page
+                        link = card.find("a", href=lambda x: x and "/dog/" in x)
+                        if not link:
+                            continue
+
+                        # Extract URL
+                        adoption_url = link.get("href")
+                        if not adoption_url:
+                            continue
+
+                        # Make URL absolute if needed
+                        if not adoption_url.startswith("http"):
+                            adoption_url = urljoin(self.base_url, adoption_url)
+
+                        # Extract name from URL
+                        name = self._extract_dog_name_from_url(adoption_url)
+                        if not name:
+                            self.logger.warning(f"Could not extract name from URL: {adoption_url}")
+                            continue
+
+                        # Extract external ID from URL
+                        external_id = self._extract_external_id(adoption_url)
+
+                        # Create animal data structure
+                        animal_data = {
+                            "name": name,
+                            "external_id": external_id,
+                            "adoption_url": adoption_url,
+                            "animal_type": "dog",
+                            "status": "available",
+                            "primary_image_url": None,
+                            "original_image_url": None,
+                        }
+
+                        page_animals.append(animal_data)
+                        self.logger.debug(f"Added dog: {name} ({external_id})")
+
+                    except Exception as e:
+                        self.logger.error(f"Error processing dog card: {e}")
                         continue
 
-                    # Find the link to the adoption page
-                    link = card.find("a", href=lambda x: x and "/adoption/" in x)
-                    if not link:
-                        continue
+                # Add this page's animals to the total
+                all_animals.extend(page_animals)
+                self.logger.info(f"Page {page_num}: extracted {len(page_animals)} dogs (total so far: {len(all_animals)})")
 
-                    # Extract URL
-                    adoption_url = link.get("href")
-                    if not adoption_url:
-                        continue
+                # Move to next page
+                page_num += 1
 
-                    # Make URL absolute if needed
-                    if not adoption_url.startswith("http"):
-                        adoption_url = urljoin(self.base_url, adoption_url)
+                # Small delay between pages to be respectful
+                if page_num <= max_pages:
+                    time.sleep(0.5)
 
-                    # Extract name from URL
-                    name = self._extract_dog_name_from_url(adoption_url)
-                    if not name:
-                        self.logger.warning(f"Could not extract name from URL: {adoption_url}")
-                        continue
-
-                    # Extract external ID from URL
-                    external_id = self._extract_external_id(adoption_url)
-
-                    # Create animal data structure
-                    animal_data = {
-                        "name": name,
-                        "external_id": external_id,
-                        "adoption_url": adoption_url,
-                        "animal_type": "dog",
-                        "status": "available",  # All dogs from this endpoint are available
-                        "primary_image_url": None,  # Will be extracted in detail page (future)
-                        "original_image_url": None,
-                    }
-
-                    animals.append(animal_data)
-                    self.logger.debug(f"Added dog: {name} ({external_id})")
-
-                except Exception as e:
-                    self.logger.error(f"Error processing dog card: {e}")
-                    continue
-
-            self.logger.info(f"Successfully extracted {len(animals)} available dogs")
-            return animals
+            self.logger.info(f"Successfully extracted {len(all_animals)} available dogs from {page_num - 1} pages")
+            return all_animals
 
         except requests.RequestException as e:
             self.logger.error(f"Network error fetching animal list: {e}")
-            return []
+            return all_animals  # Return what we have so far
         except Exception as e:
             self.logger.error(f"Error fetching animal list: {e}")
-            return []
+            return all_animals  # Return what we have so far
 
     def _extract_dog_name_from_url(self, url: str) -> str:
         """Extract and format dog name from adoption URL.
