@@ -6,6 +6,7 @@ import React, {
   useCallback,
   useRef,
   startTransition,
+  useMemo,
 } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -128,13 +129,17 @@ export default function DogsPageClientSimplified({
   // CRITICAL FIX: Track pagination state to prevent race conditions
   const isPaginatingRef = useRef(false);
 
+  // Track current AbortController for cleanup
+  const currentAbortControllerRef = useRef(null);
+
   // CRITICAL FIX: Prevent searchParams useEffect from running on initial mount
   // Mount useEffect already handles initial data loading
   const isInitialMount = useRef(true);
 
   // Local breed input state for fallback handling
-  const [localBreedInput, setLocalBreedInput] = useState(
-    filters.breedFilter === "Any breed" ? "" : filters.breedFilter,
+  const localBreedInput = useMemo(
+    () => (filters.breedFilter === "Any breed" ? "" : filters.breedFilter),
+    [filters.breedFilter]
   );
 
   // Track scroll position
@@ -308,6 +313,10 @@ export default function DogsPageClientSimplified({
     setLoadingMore(false);
     setError(null);
 
+    // Create AbortController for cleanup
+    const abortController = new AbortController();
+    currentAbortControllerRef.current = abortController;
+
     try {
       const baseParams = buildAPIParams(currentFilters);
 
@@ -319,6 +328,7 @@ export default function DogsPageClientSimplified({
         limit: ITEMS_PER_PAGE,
         offset: 0,
         ...baseParams,
+        signal: abortController.signal,
       };
       const firstPageDogs = await getAnimals(firstPageParams);
 
@@ -339,6 +349,7 @@ export default function DogsPageClientSimplified({
               limit: ITEMS_PER_PAGE,
               offset: (p - 1) * ITEMS_PER_PAGE,
               ...baseParams,
+              signal: abortController.signal,
             }),
           );
         }
@@ -363,12 +374,18 @@ export default function DogsPageClientSimplified({
       const counts = await countsPromise;
       setFilterCounts(counts);
     } catch (err) {
+      // Ignore aborted requests
+      if (err.name === 'AbortError') return;
       setError("Failed to load dogs");
     } finally {
       setLoading(false);
       isPaginatingRef.current = false;
+      // Clear ref if this is still the current controller
+      if (currentAbortControllerRef.current === abortController) {
+        currentAbortControllerRef.current = null;
+      }
     }
-  };
+  };;
 
   // Load initial dogs on mount or when URL filters/page change
   useEffect(() => {
@@ -387,11 +404,30 @@ export default function DogsPageClientSimplified({
         fetchDogsWithFilters(filters, 1);
       }
     }
+
+    // Cleanup: abort any ongoing requests on unmount
+    return () => {
+      if (currentAbortControllerRef.current) {
+        currentAbortControllerRef.current.abort();
+        currentAbortControllerRef.current = null;
+      }
+    };
+    // INTENTIONAL: Only run on mount for initial load/deep links
+    // Changes after mount are handled by searchParams useEffect
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only on mount
 
   // CRITICAL FIX: Listen to URL changes and refetch when searchParams change
   // This ensures reset and browser back/forward navigation trigger fresh fetches
   const lastQueryKey = useRef("");
+  
+  // Memoize query key computation to avoid recalculating on every render
+  const queryKey = useMemo(() => {
+    const sp = new URLSearchParams(searchParams.toString());
+    sp.delete("scroll");
+    return sp.toString();
+  }, [searchParams]);
+  
   useEffect(() => {
     // CRITICAL FIX: Skip on initial mount - mount useEffect handles initial load
     if (isInitialMount.current) {
@@ -406,17 +442,18 @@ export default function DogsPageClientSimplified({
       return;
     }
 
-    // Ignore scroll-only changes to avoid unnecessary refetches
-    const sp = new URLSearchParams(searchParams.toString());
-    sp.delete("scroll");
-    const key = sp.toString();
-
     // If query hasn't changed, skip refetch
-    if (key === lastQueryKey.current) return;
-    lastQueryKey.current = key;
+    if (queryKey === lastQueryKey.current) return;
+    lastQueryKey.current = queryKey;
 
     // Parse page from URL
     const newPage = parseInt(searchParams.get("page") || "1", 10);
+
+    // Abort any ongoing request before starting a new one
+    if (currentAbortControllerRef.current) {
+      currentAbortControllerRef.current.abort();
+      currentAbortControllerRef.current = null;
+    }
 
     // Filters object is already updated from searchParams above
     // This will trigger when reset navigates to clean URL
@@ -433,6 +470,12 @@ export default function DogsPageClientSimplified({
   // Handle filter changes - support both single and batch updates
   const handleFilterChange = useCallback(
     (filterKey, value) => {
+      // Abort any ongoing request before starting a new filter search
+      if (currentAbortControllerRef.current) {
+        currentAbortControllerRef.current.abort();
+        currentAbortControllerRef.current = null;
+      }
+
       // Check if filterKey is an object (batch update)
       let newFilters;
 
@@ -459,7 +502,7 @@ export default function DogsPageClientSimplified({
       fetchDogsWithFilters(newFilters, 1);
     },
     [filters, updateURL],
-  );
+  );;
 
   // CRITICAL FIX: Fetch dogs with current filters and page
   // Added shouldAppend parameter to explicitly control append vs replace behavior
@@ -468,11 +511,16 @@ export default function DogsPageClientSimplified({
     setLoadingMore(pageNum > 1 || shouldAppend);
     setError(null);
 
+    // Create AbortController for cleanup
+    const abortController = new AbortController();
+    currentAbortControllerRef.current = abortController;
+
     try {
       const params = {
         limit: ITEMS_PER_PAGE,
         offset: (pageNum - 1) * ITEMS_PER_PAGE,
         ...buildAPIParams(currentFilters),
+        signal: abortController.signal,
       };
 
       const [newDogs, counts] = await Promise.all([
@@ -492,12 +540,18 @@ export default function DogsPageClientSimplified({
         setPage(pageNum);
       });
     } catch (err) {
+      // Ignore aborted requests
+      if (err.name === 'AbortError') return;
       setError("Failed to load dogs");
     } finally {
       setLoading(false);
       setLoadingMore(false);
+      // Clear ref if this is still the current controller
+      if (currentAbortControllerRef.current === abortController) {
+        currentAbortControllerRef.current = null;
+      }
     }
-  };
+  };;
 
   // Load more dogs
   const loadMoreDogs = useCallback(async () => {
@@ -509,6 +563,10 @@ export default function DogsPageClientSimplified({
 
     setLoadingMore(true);
 
+    // Create AbortController for cleanup
+    const abortController = new AbortController();
+    currentAbortControllerRef.current = abortController;
+
     try {
       const nextPage = page + 1;
       const offset = (nextPage - 1) * ITEMS_PER_PAGE;
@@ -517,6 +575,7 @@ export default function DogsPageClientSimplified({
         limit: ITEMS_PER_PAGE,
         offset,
         ...buildAPIParams(filters),
+        signal: abortController.signal,
       };
 
       const newDogs = await getAnimals(params);
@@ -530,13 +589,19 @@ export default function DogsPageClientSimplified({
         updateURL(filters, nextPage, true);
       });
     } catch (err) {
+      // Ignore aborted requests
+      if (err.name === 'AbortError') return;
       setError("Failed to load more dogs");
     } finally {
       setLoadingMore(false);
       // Reset pagination flag immediately to prevent race condition
       isPaginatingRef.current = false;
+      // Clear ref if this is still the current controller
+      if (currentAbortControllerRef.current === abortController) {
+        currentAbortControllerRef.current = null;
+      }
     }
-  }, [page, hasMore, filters, loadingMore, updateURL]);
+  }, [page, hasMore, filters, loadingMore, updateURL]);;
 
   // Sync local breed input with URL filter changes (e.g., browser back/forward)
   useEffect(() => {
@@ -568,7 +633,6 @@ export default function DogsPageClientSimplified({
   // Local breed handlers to prevent heavy parent logic interference during typing
   const handleBreedSuggestionSelect = useCallback(
     (breed) => {
-      setLocalBreedInput(breed);
       // Only trigger heavy parent logic when user actually selects a suggestion
       handleFilterChange("breedFilter", breed);
     },
@@ -577,7 +641,6 @@ export default function DogsPageClientSimplified({
 
   const handleBreedSearch = useCallback(
     (breed) => {
-      setLocalBreedInput(breed);
       // Only trigger heavy parent logic when user performs explicit search (Enter key)
       handleFilterChange("breedFilter", breed);
     },
@@ -587,15 +650,13 @@ export default function DogsPageClientSimplified({
   // Handler for real-time typing that updates filter immediately like Name filter
   const handleBreedValueChange = useCallback(
     (breed) => {
-      // Update both local state and actual filter, just like Name filter does
-      setLocalBreedInput(breed);
+      // Update actual filter, localBreedInput will be derived automatically
       handleFilterChange("breedFilter", breed);
     },
     [handleFilterChange],
   );
 
   const handleBreedClear = useCallback(() => {
-    setLocalBreedInput("");
     handleFilterChange("breedFilter", "Any breed");
   }, [handleFilterChange]);
 
