@@ -502,7 +502,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                           <HeroImageWithBlurredBackground
                             key={`hero-${dogSlug}-${dog.id}`}
                             src={dog.primary_image_url}
-                            alt={`${sanitizeText(dog.name)} - Hero Image`}
+                            alt={`${dog.name} - Hero Image`}
                             className="mb-6 shadow-xl"
                             onClick={() => {
                               // Track image view when hero image is clicked
@@ -547,7 +547,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                               <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 transition-colors duration-300">
-                                {sanitizeText(dog.name)}
+                                {dog.name}
                               </h1>
                               {dog.status && (
                                 <DogStatusBadge status={dog.status} />
@@ -721,7 +721,7 @@ export default function DogDetailClient({ params = {}, initialDog = null }) {
                     <section aria-label="About the Dog">
                       <div className="mb-8" data-testid="about-section">
                         <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">
-                          About {sanitizeText(dog.name)}
+                          About {dog.name}
                         </h2>
 
                         <DogDescription

@@ -862,15 +862,34 @@ class BaseScraper(ABC):
         return None
 
     def _is_invalid_name(self, name: str) -> bool:
-        """Check if extracted name indicates a scraping error.
+        """Check if extracted name indicates a scraping error or invalid data.
 
         Args:
             name: Animal name to validate
 
         Returns:
-            True if name indicates an error, False if valid
+            True if name indicates an error or is invalid, False if valid
         """
         if not name or not isinstance(name, str):
+            return True
+
+        # Reject pure numeric names (likely extraction errors)
+        # Allow names with numbers (e.g., "Max 2") but reject pure digits
+        if name.strip().isdigit():
+            return True
+
+        # Reject names with excessive digits (>60% of characters are digits)
+        # This catches cases like "251abc" or "123dog456"
+        digit_count = sum(c.isdigit() for c in name)
+        alpha_count = sum(c.isalpha() for c in name)
+        if digit_count > 0 and alpha_count > 0:
+            digit_ratio = digit_count / len(name)
+            if digit_ratio > 0.6:
+                return True
+
+        # Reject names that are too short (< 2 chars) after normalization
+        # This catches single-char names or whitespace-only
+        if len(name.strip()) < 2:
             return True
 
         # Normalize the name for checking - remove apostrophes and special chars
@@ -898,6 +917,43 @@ class BaseScraper(ABC):
 
         return any(pattern in name_normalized for pattern in error_patterns)
 
+    def _normalize_animal_name(self, name: str) -> str:
+        """Normalize animal name by fixing encoding issues and HTML entities.
+
+        Args:
+            name: Raw animal name
+
+        Returns:
+            Normalized name with fixed encoding and decoded HTML entities
+        """
+        if not name or not isinstance(name, str):
+            return name
+
+        import html
+        import unicodedata
+
+        # Step 1: Decode HTML entities (&amp; → &, &quot; → ")
+        name = html.unescape(name)
+
+        # Step 2: Fix UTF-8 double-encoding (Ã« → ë)
+        # Common issue: UTF-8 bytes interpreted as Latin-1 then re-encoded
+        try:
+            # Check if name contains mojibake patterns
+            if "Ã" in name:
+                # Try to fix by encoding as Latin-1 and decoding as UTF-8
+                name = name.encode("latin1").decode("utf-8")
+        except (UnicodeDecodeError, UnicodeEncodeError):
+            # If fix fails, keep original (better than crashing)
+            pass
+
+        # Step 3: Normalize Unicode (é → é, combining chars)
+        name = unicodedata.normalize("NFC", name)
+
+        # Step 4: Strip whitespace
+        name = name.strip()
+
+        return name
+
     def _validate_animal_data(self, animal_data: Dict[str, Any]) -> bool:
         """Validate animal data dictionary for required fields and invalid names."""
         if not animal_data or not isinstance(animal_data, dict):
@@ -909,21 +965,27 @@ class BaseScraper(ABC):
             if not animal_data.get(field):
                 return False
 
-        # Check for invalid names (connection errors)
+        # Normalize name before validation
         name = animal_data.get("name", "")
-        if self._is_invalid_name(name):
+        normalized_name = self._normalize_animal_name(name)
+
+        # Check for invalid names (connection errors, numeric-only, etc.)
+        if self._is_invalid_name(normalized_name):
             self.logger.warning(f"Rejecting animal with invalid name: {name}")
             return False
+
+        # Update animal_data with normalized name
+        animal_data["name"] = normalized_name
 
         # Check for invalid image URLs (empty strings are not valid URLs)
         primary_image_url = animal_data.get("primary_image_url")
         if primary_image_url == "":
-            self.logger.error(f"Rejecting animal '{name}' (ID: {animal_data.get('external_id')}) with empty image URL")
+            self.logger.error(f"Rejecting animal '{normalized_name}' (ID: {animal_data.get('external_id')}) with empty image URL")
             return False
-        
+
         # Check for missing image URLs (None is not valid)
         if primary_image_url is None:
-            self.logger.warning(f"Skipping animal '{name}' (ID: {animal_data.get('external_id')}) - no valid image URL found")
+            self.logger.warning(f"Skipping animal '{normalized_name}' (ID: {animal_data.get('external_id')}) - no valid image URL found")
             return False
 
         return True

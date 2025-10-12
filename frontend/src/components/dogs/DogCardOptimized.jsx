@@ -39,7 +39,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
   listContext = "home",
 }) {
   // Enhanced data processing using helper functions
-  const name = sanitizeText(dog?.name || "Unknown Dog");
+  const name = dog?.name || "Unknown Dog";
   const breed = formatBreed(dog);
   const breedGroup = sanitizeText(dog?.breed_group);
 

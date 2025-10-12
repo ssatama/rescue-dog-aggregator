@@ -84,17 +84,17 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
           data-testid="related-dog-name"
           className="text-card-title text-gray-900 dark:text-gray-100 hover:text-orange-600 transition-colors duration-300 mb-1"
         >
-          {sanitizeText(dog.name)}
+          {dog.name}
         </h3>
 
         {/* Breed */}
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-          {sanitizeText(formatBreed(dog))}
+          {formatBreed(dog)}
         </p>
 
         {/* Age */}
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          {sanitizeText(formatAge(dog))}
+          {formatAge(dog)}
         </p>
       </div>
     </div>
