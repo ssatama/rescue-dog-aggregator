@@ -59,6 +59,23 @@ const ITEMS_PER_PAGE = 20;
 const DEBOUNCE_URL_UPDATE_MS = 500;
 const DEBOUNCE_SCROLL_SAVE_MS = 300;
 
+// Development-only assertion helper for detecting duplicate dog IDs
+const assertNoDuplicateDogIds = (dogs, context = '') => {
+  if (process.env.NODE_ENV === 'development') {
+    const ids = dogs.map(d => d.id);
+    const uniqueIds = new Set(ids);
+    if (ids.length !== uniqueIds.size) {
+      const duplicates = ids.filter((id, i) => ids.indexOf(id) !== i);
+      console.error(`🐛 DUPLICATE DOG IDS ${context}`, {
+        totalDogs: ids.length,
+        uniqueDogs: uniqueIds.size,
+        duplicateIds: [...new Set(duplicates)],
+        allIds: ids,
+      });
+    }
+  }
+};
+
 export default function DogsPageClientSimplified({
   initialDogs = [],
   metadata = {},
@@ -307,6 +324,15 @@ export default function DogsPageClientSimplified({
   // CRITICAL FIX: Hydrate deep links by loading pages 1..targetPage
   // When URL has page=4, load ALL dogs from pages 1-4 so user can scroll through everything
   const hydrateDeepLinkPages = async (targetPage, currentFilters) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[hydrateDeepLinkPages] START', {
+        targetPage,
+        currentFilters,
+        currentDogs: dogs.length,
+        isPaginating: isPaginatingRef.current,
+      });
+    }
+
     // Prevent the URL-change effect from overwriting while we hydrate
     isPaginatingRef.current = true;
     setLoading(true);
@@ -323,53 +349,55 @@ export default function DogsPageClientSimplified({
       // Kick off counts immediately
       const countsPromise = getFilterCounts(baseParams);
 
-      // 1) Fetch page 1 first for fast first paint
-      const firstPageParams = {
-        limit: ITEMS_PER_PAGE,
-        offset: 0,
-        ...baseParams,
-        signal: abortController.signal,
-      };
-      const firstPageDogs = await getAnimals(firstPageParams);
-
-      startTransition(() => {
-        setDogs(firstPageDogs);
-        setPage(1);
-        setHasMore(true);
-      });
-
-      // 2) Hydrate remaining pages (2..targetPage) in parallel
-      if (targetPage > 1) {
-        setLoadingMore(true);
-
-        const requests = [];
-        for (let p = 2; p <= targetPage; p++) {
-          requests.push(
-            getAnimals({
-              limit: ITEMS_PER_PAGE,
-              offset: (p - 1) * ITEMS_PER_PAGE,
-              ...baseParams,
-              signal: abortController.signal,
-            }),
-          );
-        }
-
-        const remainingPages = await Promise.all(requests);
-        // Append in correct order
-        const combined = remainingPages.flat();
-
-        startTransition(() => {
-          setDogs((prev) => [...prev, ...combined]);
-          setPage(targetPage);
-          const lastPage = remainingPages[remainingPages.length - 1] || [];
-          setHasMore(lastPage.length === ITEMS_PER_PAGE);
-        });
-
-        setLoadingMore(false);
-      } else {
-        // Deep link was page=1
-        setHasMore(firstPageDogs.length === ITEMS_PER_PAGE);
+      // BUG A FIX: Fetch ALL pages (1..targetPage) in parallel and accumulate locally
+      // This prevents the setState race condition where prev might be stale SSR cache
+      const requests = [];
+      for (let p = 1; p <= targetPage; p++) {
+        requests.push(
+          getAnimals({
+            limit: ITEMS_PER_PAGE,
+            offset: (p - 1) * ITEMS_PER_PAGE,
+            ...baseParams,
+            signal: abortController.signal,
+          }),
+        );
       }
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[hydrateDeepLinkPages] Fetching pages 1 to', targetPage);
+      }
+
+      const allPages = await Promise.all(requests);
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[hydrateDeepLinkPages] All pages fetched', {
+          pageCount: allPages.length,
+          pagesData: allPages.map((page, i) => ({
+            pageNum: i + 1,
+            dogCount: page.length,
+            dogIds: page.map(d => d.id),
+          })),
+        });
+      }
+
+      // Accumulate all dogs locally BEFORE calling setState
+      const allDogs = allPages.flat();
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[hydrateDeepLinkPages] Dogs accumulated', {
+          totalDogs: allDogs.length,
+          dogIds: allDogs.map(d => d.id),
+        });
+        assertNoDuplicateDogIds(allDogs, '[hydrateDeepLinkPages] All dogs');
+      }
+
+      // Single setState with all accumulated dogs - no race condition
+      startTransition(() => {
+        setDogs(allDogs);
+        setPage(targetPage);
+        const lastPage = allPages[allPages.length - 1] || [];
+        setHasMore(lastPage.length === ITEMS_PER_PAGE);
+      });
 
       const counts = await countsPromise;
       setFilterCounts(counts);
@@ -383,6 +411,13 @@ export default function DogsPageClientSimplified({
       // Clear ref if this is still the current controller
       if (currentAbortControllerRef.current === abortController) {
         currentAbortControllerRef.current = null;
+      }
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[hydrateDeepLinkPages] END', {
+          finalDogCount: dogs.length,
+          isPaginating: isPaginatingRef.current,
+        });
       }
     }
   };;
@@ -429,9 +464,22 @@ export default function DogsPageClientSimplified({
   }, [searchParams]);
   
   useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[searchParams useEffect] FIRED', {
+        isInitialMount: isInitialMount.current,
+        isPaginating: isPaginatingRef.current,
+        queryKey,
+        lastQueryKey: lastQueryKey.current,
+        searchParams: searchParams.toString(),
+      });
+    }
+
     // CRITICAL FIX: Skip on initial mount - mount useEffect handles initial load
     if (isInitialMount.current) {
       isInitialMount.current = false;
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[searchParams useEffect] SKIPPED - initial mount');
+      }
       return;
     }
 
@@ -439,12 +487,24 @@ export default function DogsPageClientSimplified({
     // This prevents the race condition where loadMoreDogs appends data
     // but then this useEffect immediately overwrites it
     if (isPaginatingRef.current) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[searchParams useEffect] SKIPPED - isPaginating=true');
+      }
       return;
     }
 
     // If query hasn't changed, skip refetch
-    if (queryKey === lastQueryKey.current) return;
+    if (queryKey === lastQueryKey.current) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[searchParams useEffect] SKIPPED - query unchanged');
+      }
+      return;
+    }
     lastQueryKey.current = queryKey;
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[searchParams useEffect] PROCEEDING with fetch');
+    }
 
     // Parse page from URL
     const newPage = parseInt(searchParams.get("page") || "1", 10);
@@ -558,6 +618,15 @@ export default function DogsPageClientSimplified({
     // Guard against concurrent operations using both state and ref
     if (loadingMore || !hasMore || isPaginatingRef.current) return;
 
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[loadMoreDogs] START', {
+        scrollY: window.scrollY,
+        isPaginating: isPaginatingRef.current,
+        currentPage: page,
+        dogsLength: dogs.length,
+      });
+    }
+
     // Set pagination flag BEFORE any async operations
     isPaginatingRef.current = true;
 
@@ -578,15 +647,66 @@ export default function DogsPageClientSimplified({
         signal: abortController.signal,
       };
 
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[loadMoreDogs] Fetching page', {
+          nextPage,
+          offset,
+        });
+      }
+
       const newDogs = await getAnimals(params);
 
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[loadMoreDogs] Fetched dogs', {
+          newDogsCount: newDogs.length,
+          scrollY: window.scrollY,
+        });
+      }
+
       startTransition(() => {
-        setDogs((prev) => [...prev, ...newDogs]);
+        setDogs((prev) => {
+          const updated = [...prev, ...newDogs];
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[loadMoreDogs] setDogs updating', {
+              prevLength: prev.length,
+              newDogsLength: newDogs.length,
+              updatedLength: updated.length,
+              scrollY: window.scrollY,
+            });
+            assertNoDuplicateDogIds(updated, '[loadMoreDogs] After append');
+          }
+          return updated;
+        });
         setHasMore(newDogs.length === ITEMS_PER_PAGE);
         setPage(nextPage);
 
-        // Update URL with new page number, preserving scroll
-        updateURL(filters, nextPage, true);
+        // BUG B FIX: Use window.history.replaceState directly instead of debounced updateURL
+        // This avoids triggering searchParams useEffect which would refetch and cause position jump
+        const params = new URLSearchParams(searchParams.toString());
+        if (nextPage > 1) {
+          params.set("page", nextPage.toString());
+        } else {
+          params.delete("page");
+        }
+        // Preserve scroll position in URL
+        if (scrollPositionRef.current > 0) {
+          params.set("scroll", scrollPositionRef.current.toString());
+        }
+
+        const newURL = params.toString()
+          ? `${pathname}?${params.toString()}`
+          : pathname;
+
+        window.history.replaceState(null, "", newURL);
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[loadMoreDogs] Updated URL directly', {
+            nextPage,
+            newURL,
+            scrollY: window.scrollY,
+            isPaginating: isPaginatingRef.current,
+          });
+        }
       });
     } catch (err) {
       // Ignore aborted requests
@@ -599,6 +719,14 @@ export default function DogsPageClientSimplified({
       // Clear ref if this is still the current controller
       if (currentAbortControllerRef.current === abortController) {
         currentAbortControllerRef.current = null;
+      }
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[loadMoreDogs] END', {
+          scrollY: window.scrollY,
+          isPaginating: isPaginatingRef.current,
+          dogsLength: dogs.length,
+        });
       }
     }
   }, [page, hasMore, filters, loadingMore, updateURL]);;
