@@ -292,7 +292,7 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                         # Skip if not a Tag element
                         if not hasattr(card, "find"):
                             continue
-                        
+
                         # Skip reserved/on-hold dogs (check for status badge text)
                         card_text = card.get_text().lower()
                         if "reserved" in card_text or "on hold" in card_text:
@@ -462,7 +462,7 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                     if not label:
                         i += 1
                         continue
-                    
+
                     # Normalize label by removing trailing colons
                     label = label.rstrip(":")
 
@@ -566,12 +566,12 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
             img = hero_image.find("img")
             if img and img.get("src"):
                 src = img["src"]
-                
+
                 # Filter out data URI placeholders (lazy loading)
                 if src.startswith("data:"):
                     self.logger.debug(f"Skipping data URI placeholder: {src[:100]}...")
                     return None
-                    
+
                 return src
 
         return None

@@ -1,5 +1,53 @@
 # Railway Database Sync Feature
 
+## Quick Start
+
+**⚠️ Important**: Commands must be run from the project root directory with virtual environment activated.
+
+### Essential Commands
+
+```bash
+# Activate virtual environment first
+source venv/bin/activate
+
+# Check Railway connection and data sync status
+python management/railway_commands.py status
+
+# Test Railway connection
+python management/railway_commands.py test-connection
+
+# Run database migrations
+python management/railway_commands.py migrate
+python management/railway_commands.py migrate --dry-run  # Preview changes
+
+# Sync data (incremental mode - default)
+python management/railway_commands.py sync
+python management/railway_commands.py sync --dry-run     # Preview sync
+
+# Sync modes
+python management/railway_commands.py sync --mode incremental              # Default: safe updates
+python management/railway_commands.py sync --mode rebuild --confirm-destructive  # Complete rebuild
+python management/railway_commands.py sync --mode force --confirm-destructive    # Emergency bypass
+
+# Sync options
+python management/railway_commands.py sync --skip-validation  # Skip post-sync checks
+python management/railway_commands.py sync --skip-indexes     # Skip index sync
+
+# Complete setup (migration + initial sync)
+python management/railway_commands.py setup
+python management/railway_commands.py setup --dry-run        # Preview setup
+```
+
+### Command Arguments Reference
+
+| Command | Arguments | Description |
+|---------|-----------|-------------|
+| `status` | None | Shows connection status and data counts |
+| `test-connection` | None | Tests Railway database connection |
+| `migrate` | `--dry-run` | Runs Alembic migrations |
+| `sync` | `--dry-run`<br>`--skip-validation`<br>`--skip-indexes`<br>`--mode [incremental\|rebuild\|force]`<br>`--confirm-destructive` | Syncs local data to Railway |
+| `setup` | `--dry-run` | Complete setup: migration + sync |
+
 ## Overview
 
 The Railway Database Sync is a critical infrastructure component that synchronizes data from the local development database to the production Railway database. It provides a robust, multi-phase synchronization process with strong safety mechanisms and data integrity guarantees.
@@ -221,20 +269,29 @@ with railway_session() as session:
 
 ## Usage
 
-### Manual Sync Commands
+### CLI Commands
 
 ```bash
+# Check status before syncing
+python management/railway_commands.py status
+
 # Standard incremental sync
-python -c "from services.railway.sync import sync_all_data_to_railway; sync_all_data_to_railway()"
+python management/railway_commands.py sync
 
 # Rebuild mode (complete replacement)
-python -c "from services.railway.sync import sync_all_data_to_railway; sync_all_data_to_railway(mode='REBUILD')"
+python management/railway_commands.py sync --mode rebuild --confirm-destructive
 
 # Force mode (emergency bypass)
-python -c "from services.railway.sync import sync_all_data_to_railway; sync_all_data_to_railway(mode='FORCE')"
+python management/railway_commands.py sync --mode force --confirm-destructive
 
-# Validation only (no sync)
-python -c "from services.railway.sync import validate_sync_integrity; validate_sync_integrity()"
+# Dry run to preview changes
+python management/railway_commands.py sync --dry-run
+
+# Skip post-sync validation (faster but less safe)
+python management/railway_commands.py sync --skip-validation
+
+# Skip index synchronization
+python management/railway_commands.py sync --skip-indexes
 ```
 
 ### Programmatic Usage
@@ -423,17 +480,20 @@ WHERE updated_at > last_sync_timestamp
 ### Diagnostic Commands
 
 ```bash
-# Check connection
-python -c "from services.railway.connection import test_railway_connection; test_railway_connection()"
+# Check connection and data sync status
+python management/railway_commands.py status
 
-# Validate schemas
-python -c "from services.railway.sync import _validate_table_schemas; _validate_table_schemas()"
+# Test Railway connection
+python management/railway_commands.py test-connection
 
-# Check record counts
-python -c "from services.railway.sync import get_sync_statistics; print(get_sync_statistics())"
+# Validate schemas (dry run)
+python management/railway_commands.py migrate --dry-run
 
-# View ID mapping
-python -c "from services.railway.sync import _build_organization_id_mapping; print(_build_organization_id_mapping())"
+# Preview sync without making changes
+python management/railway_commands.py sync --dry-run
+
+# Complete diagnostic (preview full setup)
+python management/railway_commands.py setup --dry-run
 ```
 
 ### Common Issues
