@@ -111,6 +111,13 @@ export default function DogsPageClientSimplified({
   const scrollPositionRef = useRef(urlScroll);
   const isRestoringScroll = useRef(false);
 
+  // CRITICAL FIX: Track pagination state to prevent race conditions
+  const isPaginatingRef = useRef(false);
+
+  // CRITICAL FIX: Prevent searchParams useEffect from running on initial mount
+  // Mount useEffect already handles initial data loading
+  const isInitialMount = useRef(true);
+
   // Local breed input state for fallback handling
   const [localBreedInput, setLocalBreedInput] = useState(
     filters.breedFilter === "Any breed" ? "" : filters.breedFilter,
@@ -278,6 +285,77 @@ export default function DogsPageClientSimplified({
     return params;
   };
 
+  // CRITICAL FIX: Hydrate deep links by loading pages 1..targetPage
+  // When URL has page=4, load ALL dogs from pages 1-4 so user can scroll through everything
+  const hydrateDeepLinkPages = async (targetPage, currentFilters) => {
+    // Prevent the URL-change effect from overwriting while we hydrate
+    isPaginatingRef.current = true;
+    setLoading(true);
+    setLoadingMore(false);
+    setError(null);
+
+    try {
+      const baseParams = buildAPIParams(currentFilters);
+
+      // Kick off counts immediately
+      const countsPromise = getFilterCounts(baseParams);
+
+      // 1) Fetch page 1 first for fast first paint
+      const firstPageParams = {
+        limit: ITEMS_PER_PAGE,
+        offset: 0,
+        ...baseParams,
+      };
+      const firstPageDogs = await getAnimals(firstPageParams);
+
+      startTransition(() => {
+        setDogs(firstPageDogs);
+        setPage(1);
+        setHasMore(true);
+      });
+
+      // 2) Hydrate remaining pages (2..targetPage) in parallel
+      if (targetPage > 1) {
+        setLoadingMore(true);
+
+        const requests = [];
+        for (let p = 2; p <= targetPage; p++) {
+          requests.push(
+            getAnimals({
+              limit: ITEMS_PER_PAGE,
+              offset: (p - 1) * ITEMS_PER_PAGE,
+              ...baseParams,
+            }),
+          );
+        }
+
+        const remainingPages = await Promise.all(requests);
+        // Append in correct order
+        const combined = remainingPages.flat();
+
+        startTransition(() => {
+          setDogs((prev) => [...prev, ...combined]);
+          setPage(targetPage);
+          const lastPage = remainingPages[remainingPages.length - 1] || [];
+          setHasMore(lastPage.length === ITEMS_PER_PAGE);
+        });
+
+        setLoadingMore(false);
+      } else {
+        // Deep link was page=1
+        setHasMore(firstPageDogs.length === ITEMS_PER_PAGE);
+      }
+
+      const counts = await countsPromise;
+      setFilterCounts(counts);
+    } catch (err) {
+      setError("Failed to load dogs");
+    } finally {
+      setLoading(false);
+      isPaginatingRef.current = false;
+    }
+  };
+
   // Load initial dogs on mount or when URL filters/page change
   useEffect(() => {
     // Only fetch if we don't have initialDogs or URL has changed
@@ -287,39 +365,9 @@ export default function DogsPageClientSimplified({
       JSON.stringify(filters) !== JSON.stringify(initialParams); // Filters changed from initial
 
     if (needsFetch) {
-      // For deep links to specific pages, only load that page's data
-      // Users can scroll up/down to load more via infinite scroll
       if (urlPage > 1) {
-        const loadCurrentPage = async () => {
-          setLoading(true);
-          try {
-            // Only fetch the current page data
-            const params = {
-              limit: ITEMS_PER_PAGE,
-              offset: (urlPage - 1) * ITEMS_PER_PAGE,
-              ...buildAPIParams(filters),
-            };
-
-            const pageDogs = await getAnimals(params);
-
-            startTransition(() => {
-              setDogs(pageDogs);
-              setPage(urlPage);
-              // Has more if we got a full page of results
-              setHasMore(pageDogs.length === ITEMS_PER_PAGE);
-            });
-
-            // Also fetch filter counts
-            const counts = await getFilterCounts(buildAPIParams(filters));
-            setFilterCounts(counts);
-          } catch (err) {
-            setError("Failed to load dogs");
-          } finally {
-            setLoading(false);
-          }
-        };
-
-        loadCurrentPage();
+        // CRITICAL FIX: Hydrate pages 1..urlPage so user can scroll through all results
+        hydrateDeepLinkPages(urlPage, filters);
       } else {
         // Regular single page load
         fetchDogsWithFilters(filters, 1);
@@ -331,6 +379,19 @@ export default function DogsPageClientSimplified({
   // This ensures reset and browser back/forward navigation trigger fresh fetches
   const lastQueryKey = useRef("");
   useEffect(() => {
+    // CRITICAL FIX: Skip on initial mount - mount useEffect handles initial load
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // CRITICAL FIX: Don't refetch if we're currently paginating
+    // This prevents the race condition where loadMoreDogs appends data
+    // but then this useEffect immediately overwrites it
+    if (isPaginatingRef.current) {
+      return;
+    }
+
     // Ignore scroll-only changes to avoid unnecessary refetches
     const sp = new URLSearchParams(searchParams.toString());
     sp.delete("scroll");
@@ -345,7 +406,13 @@ export default function DogsPageClientSimplified({
 
     // Filters object is already updated from searchParams above
     // This will trigger when reset navigates to clean URL
-    fetchDogsWithFilters(filters, newPage);
+    // CRITICAL FIX: Use same branching logic as mount useEffect
+    // Hydrate pages 1-N when page > 1 to show accumulated results
+    if (newPage > 1) {
+      hydrateDeepLinkPages(newPage, filters);
+    } else {
+      fetchDogsWithFilters(filters, newPage, false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, pathname]);
 
@@ -380,10 +447,11 @@ export default function DogsPageClientSimplified({
     [filters, updateURL],
   );
 
-  // Fetch dogs with current filters and page
-  const fetchDogsWithFilters = async (currentFilters, pageNum = 1) => {
-    setLoading(pageNum === 1);
-    setLoadingMore(pageNum > 1);
+  // CRITICAL FIX: Fetch dogs with current filters and page
+  // Added shouldAppend parameter to explicitly control append vs replace behavior
+  const fetchDogsWithFilters = async (currentFilters, pageNum = 1, shouldAppend = false) => {
+    setLoading(pageNum === 1 && !shouldAppend);
+    setLoadingMore(pageNum > 1 || shouldAppend);
     setError(null);
 
     try {
@@ -399,7 +467,12 @@ export default function DogsPageClientSimplified({
       ]);
 
       startTransition(() => {
-        setDogs(newDogs);
+        // CRITICAL FIX: Append or replace based on explicit parameter
+        if (shouldAppend) {
+          setDogs((prev) => [...prev, ...newDogs]);
+        } else {
+          setDogs(newDogs);
+        }
         setHasMore(newDogs.length === ITEMS_PER_PAGE);
         setFilterCounts(counts);
         setPage(pageNum);
@@ -415,6 +488,9 @@ export default function DogsPageClientSimplified({
   // Load more dogs
   const loadMoreDogs = useCallback(async () => {
     if (loadingMore || !hasMore) return;
+
+    // CRITICAL FIX: Set pagination flag BEFORE any async operations
+    isPaginatingRef.current = true;
 
     setLoadingMore(true);
 
@@ -442,6 +518,12 @@ export default function DogsPageClientSimplified({
       setError("Failed to load more dogs");
     } finally {
       setLoadingMore(false);
+
+      // CRITICAL FIX: Reset pagination flag after debounce completes
+      // Use 1000ms to ensure it's after the 500ms debounce + router.push + React scheduling
+      setTimeout(() => {
+        isPaginatingRef.current = false;
+      }, 1000);
     }
   }, [page, hasMore, filters, loadingMore, updateURL]);
 
