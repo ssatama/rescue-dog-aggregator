@@ -51,7 +51,7 @@ class TestBaseScraperImageValidation:
             {
                 "name": "Invalid Dog - None",
                 "external_id": "test-4",
-                "primary_image_url": None,  # None - should be allowed (optional field)
+                "primary_image_url": None,  # None - should be rejected (no valid image)
                 "adoption_url": "https://example.com/adopt/dog4",
                 "description": "No image field",
             },
@@ -61,8 +61,8 @@ class TestBaseScraperImageValidation:
         stats = scraper._process_animals_data(animals_data)
 
         # Verify that save_animal was called only for valid animals
-        # Empty string should be rejected, but None is allowed (optional field)
-        assert save_animal_mock.call_count == 3  # Valid Dog 1, Valid Dog 2, and the None case
+        # Both empty string and None should be rejected
+        assert save_animal_mock.call_count == 2  # Valid Dog 1 and Valid Dog 2 only
 
         # Verify warning was logged for invalid animal
         warning_calls = [call for call in scraper.logger.warning.call_args_list if "Invalid Dog - Empty String" in str(call)]
@@ -90,11 +90,11 @@ class TestBaseScraperImageValidation:
         # Should accept valid URL
         assert scraper._validate_animal_data(valid_animal) == True
 
-        # Test with None (optional field)
-        optional_animal = {"name": "Test Dog", "external_id": "test-3", "primary_image_url": None, "adoption_url": "https://example.com/adopt/test3", "description": "Test description"}
+        # Test with None (no valid image)
+        none_animal = {"name": "Test Dog", "external_id": "test-3", "primary_image_url": None, "adoption_url": "https://example.com/adopt/test3", "description": "Test description"}
 
-        # Should accept None (field is optional)
-        assert scraper._validate_animal_data(optional_animal) == True
+        # Should reject None (no valid image URL)
+        assert scraper._validate_animal_data(none_animal) == False
 
     def test_integration_no_dogs_saved_with_empty_images(self):
         """Integration test ensuring no dogs with empty images reach the database."""
