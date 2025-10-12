@@ -292,6 +292,12 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                         # Skip if not a Tag element
                         if not hasattr(card, "find"):
                             continue
+                        
+                        # Skip reserved/on-hold dogs (check for status badge text)
+                        card_text = card.get_text().lower()
+                        if "reserved" in card_text or "on hold" in card_text:
+                            self.logger.debug(f"Skipping reserved/on-hold dog from listing page")
+                            continue
 
                         # Find the link to the adoption page
                         link = card.find("a", href=lambda x: x and "/dog/" in x)
@@ -456,6 +462,9 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
                     if not label:
                         i += 1
                         continue
+                    
+                    # Normalize label by removing trailing colons
+                    label = label.rstrip(":")
 
                     # Get value (next element if exists, otherwise empty string)
                     value = ""
@@ -549,14 +558,21 @@ class SanterPawsBulgarianRescueScraper(BaseScraper):
             soup: BeautifulSoup object of the detail page
 
         Returns:
-            Hero image URL or None if not found
+            Hero image URL or None if not found or invalid
         """
         # Extract hero image (first image from carousel)
         hero_image = soup.find("figure")
         if hero_image and hasattr(hero_image, "find"):
             img = hero_image.find("img")
             if img and img.get("src"):
-                return img["src"]
+                src = img["src"]
+                
+                # Filter out data URI placeholders (lazy loading)
+                if src.startswith("data:"):
+                    self.logger.debug(f"Skipping data URI placeholder: {src[:100]}...")
+                    return None
+                    
+                return src
 
         return None
 

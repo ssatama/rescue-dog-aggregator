@@ -920,6 +920,11 @@ class BaseScraper(ABC):
         if primary_image_url == "":
             self.logger.error(f"Rejecting animal '{name}' (ID: {animal_data.get('external_id')}) with empty image URL")
             return False
+        
+        # Check for missing image URLs (None is not valid)
+        if primary_image_url is None:
+            self.logger.warning(f"Skipping animal '{name}' (ID: {animal_data.get('external_id')}) - no valid image URL found")
+            return False
 
         return True
 
