@@ -412,7 +412,7 @@ const SearchTypeahead = forwardRef(
             onKeyDown={handleKeyDown}
             disabled={disabled || loading}
             autoFocus={autoFocus}
-            className={`pl-10 pr-${showClearButton && inputValue ? "20" : "4"} ${
+            className={`pl-12 pr-${showClearButton && inputValue ? "20" : "4"} ${
               sizeClasses[size]
             } ${variantClasses[variant]} ${inputClassName}`}
             aria-expanded={isOpen}

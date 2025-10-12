@@ -287,7 +287,7 @@ export default function MobileFilterBottomSheet({
                       onChange={(e) => setLocalBreedInput(e.target.value)}
                       data-testid="breed-search-input"
                       aria-label="Search for specific breed"
-                      className="pl-10 min-h-[48px] border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-orange-600 dark:focus:border-orange-400 focus:ring-orange-600 focus:ring-2 transition-colors duration-200"
+                      className="pl-12 min-h-[48px] border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-orange-600 dark:focus:border-orange-400 focus:ring-orange-600 focus:ring-2 transition-colors duration-200"
                     />
                   </div>
                   {localBreedInput && (
