@@ -53,7 +53,10 @@ const PremiumMobileCatalog = dynamic(
   },
 );
 
+// Constants
 const ITEMS_PER_PAGE = 20;
+const DEBOUNCE_URL_UPDATE_MS = 500;
+const DEBOUNCE_SCROLL_SAVE_MS = 300;
 
 export default function DogsPageClientSimplified({
   initialDogs = [],
@@ -98,8 +101,19 @@ export default function DogsPageClientSimplified({
   const urlPage = parseInt(searchParams.get("page") || "1", 10);
   const urlScroll = parseInt(searchParams.get("scroll") || "0", 10);
 
-  // State management
-  const [dogs, setDogs] = useState(initialDogs);
+  // State management with smart initialization to prevent SSR cache conflicts
+  const [dogs, setDogs] = useState(() => {
+    // Smart initialization: only trust initialDogs for page=1 with no filters
+    if (typeof window === 'undefined') return initialDogs; // SSR
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('page');
+    params.delete('scroll');
+    const hasFilters = params.toString().length > 0;
+
+    // Only trust initialDogs for page=1 with no filters
+    return (urlPage === 1 && !hasFilters) ? initialDogs : [];
+  });
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
@@ -142,7 +156,7 @@ export default function DogsPageClientSimplified({
       : pathname;
 
     window.history.replaceState(null, "", newURL);
-  }, 300);
+  }, DEBOUNCE_SCROLL_SAVE_MS);
 
   // Listen to scroll events
   useEffect(() => {
@@ -223,7 +237,7 @@ export default function DogsPageClientSimplified({
         : pathname;
       router.push(newURL, { scroll: false });
     },
-    500,
+    DEBOUNCE_URL_UPDATE_MS,
   );
 
   // Build API params from filters
@@ -487,9 +501,10 @@ export default function DogsPageClientSimplified({
 
   // Load more dogs
   const loadMoreDogs = useCallback(async () => {
-    if (loadingMore || !hasMore) return;
+    // Guard against concurrent operations using both state and ref
+    if (loadingMore || !hasMore || isPaginatingRef.current) return;
 
-    // CRITICAL FIX: Set pagination flag BEFORE any async operations
+    // Set pagination flag BEFORE any async operations
     isPaginatingRef.current = true;
 
     setLoadingMore(true);
@@ -518,12 +533,8 @@ export default function DogsPageClientSimplified({
       setError("Failed to load more dogs");
     } finally {
       setLoadingMore(false);
-
-      // CRITICAL FIX: Reset pagination flag after debounce completes
-      // Use 1000ms to ensure it's after the 500ms debounce + router.push + React scheduling
-      setTimeout(() => {
-        isPaginatingRef.current = false;
-      }, 1000);
+      // Reset pagination flag immediately to prevent race condition
+      isPaginatingRef.current = false;
     }
   }, [page, hasMore, filters, loadingMore, updateURL]);
 
@@ -604,9 +615,9 @@ export default function DogsPageClientSimplified({
       availableRegionFilter: "Any region",
     };
 
-    // CRITICAL FIX: Cancel debounced updates to avoid stale URL pushes
-    if (updateURL.cancel) updateURL.cancel();
-    if (saveScrollPosition.cancel) saveScrollPosition.cancel();
+    // Cancel debounced updates to avoid stale URL pushes
+    updateURL?.cancel?.();
+    saveScrollPosition?.cancel?.();
 
     // Clear local breed input
     setLocalBreedInput("");
@@ -631,8 +642,8 @@ export default function DogsPageClientSimplified({
   // Cleanup effect: cancel debouncers on unmount
   useEffect(() => {
     return () => {
-      if (updateURL.cancel) updateURL.cancel();
-      if (saveScrollPosition.cancel) saveScrollPosition.cancel();
+      updateURL?.cancel?.();
+      saveScrollPosition?.cancel?.();
     };
   }, [updateURL, saveScrollPosition]);
 
