@@ -41,7 +41,8 @@ def create_photo_analysis_table():
         print("Creating dog_photo_analysis table...")
 
         # Create table
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS dog_photo_analysis (
                 id SERIAL PRIMARY KEY,
                 dog_id INTEGER NOT NULL UNIQUE REFERENCES animals(id) ON DELETE CASCADE,
@@ -68,27 +69,35 @@ def create_photo_analysis_table():
                 api_cost_usd NUMERIC(10,6),
 
                 -- Constraints
-                CHECK (overall_score = (quality_score + visibility_score + appeal_score + background_score) / 4.0)
+                -- Note: Cast calculation to NUMERIC(3,1) to match column precision
+                CHECK (overall_score = ((quality_score + visibility_score + appeal_score + background_score)::numeric / 4.0)::numeric(3,1))
             )
-        """)
+        """
+        )
 
         print("Creating indexes...")
 
         # Create indexes
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_dog_photo_ig_ready
                 ON dog_photo_analysis(ig_ready)
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_dog_photo_overall_score
                 ON dog_photo_analysis(overall_score DESC)
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_dog_photo_analyzed_at
                 ON dog_photo_analysis(analyzed_at)
-        """)
+        """
+        )
 
         # Commit changes
         conn.commit()
@@ -96,11 +105,13 @@ def create_photo_analysis_table():
         print("✅ Successfully created dog_photo_analysis table with indexes")
 
         # Verify table exists
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT COUNT(*)
             FROM information_schema.tables
             WHERE table_name = 'dog_photo_analysis'
-        """)
+        """
+        )
         count = cursor.fetchone()[0]
 
         if count == 1:
