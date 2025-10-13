@@ -1,0 +1,80 @@
+[
+  {
+    "dog": "Bruno",
+    "id": 726,
+    "scores": {
+      "quality": 7,
+      "visibility": 9,
+      "appeal": 7,
+      "background": 6,
+      "overall": 7.25
+    },
+    "ig_ready": false,
+    "confidence": "high",
+    "reasoning": "A good quality close-up of the dog with a pleasant expression, though the background is a bit plain and the lighting could be improved.",
+    "flags": []
+  },
+  {
+    "dog": "Otter",
+    "id": 2025,
+    "scores": {
+      "quality": 7,
+      "visibility": 9,
+      "appeal": 8,
+      "background": 7,
+      "overall": 7.75
+    },
+    "ig_ready": false,
+    "confidence": "high",
+    "reasoning": "The photo is well-composed with good visibility of the dog, but the exposure is a bit flat and the background is slightly uninteresting, preventing an 'IG-ready' score.",
+    "flags": []
+  },
+  {
+    "dog": "Eliot",
+    "id": 1436,
+    "scores": {
+      "quality": 8,
+      "visibility": 9,
+      "appeal": 7,
+      "background": 6,
+      "overall": 7.5
+    },
+    "ig_ready": false,
+    "confidence": "high",
+    "reasoning": "A well-focused and framed photo of an appealing dog, slightly let down by a somewhat busy background.",
+    "flags": []
+  },
+  {
+    "dog": "Toastie",
+    "id": 2383,
+    "scores": {
+      "quality": 7,
+      "visibility": 9,
+      "appeal": 7,
+      "background": 4,
+      "overall": 6.75
+    },
+    "ig_ready": false,
+    "confidence": "high",
+    "reasoning": "A clear photo of an appealing dog, but the distracting background with kennel elements lowers its overall Instagram readiness.",
+    "flags": [
+      "kennel_bars",
+      "busy_background"
+    ]
+  },
+  {
+    "dog": "Bruce",
+    "id": 4958,
+    "scores": {
+      "quality": 8,
+      "visibility": 9,
+      "appeal": 9,
+      "background": 8,
+      "overall": 8.5
+    },
+    "ig_ready": true,
+    "confidence": "high",
+    "reasoning": "This is a high-quality, well-framed photo of an appealing dog with a pleasant, non-distracting background, making it very suitable for Instagram.",
+    "flags": []
+  }
+]
