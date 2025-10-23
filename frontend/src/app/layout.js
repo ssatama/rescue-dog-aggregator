@@ -83,6 +83,9 @@ export const metadata = {
       "max-snippet": -1,
     },
   },
+  // Note: Next.js 15.2+ supports metadata.jsonLd for native JSON-LD
+  // Current implementation uses metadata.other which is stable and works well
+  // Future enhancement: migrate to metadata.jsonLd when it's fully stable
   other: {
     "application/ld+json": JSON.stringify({
       "@context": "https://schema.org",
