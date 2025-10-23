@@ -228,8 +228,8 @@ async function DogDetailPageAsync(props) {
 export const revalidate = 3600; // 1 hour in seconds
 
 /**
- * Generate static parameters for all dog pages at build time
- * This enables static generation of individual dog pages for better SEO
+ * Generate static parameters for top dog pages at build time
+ * This enables static generation of high-value dog pages for better SEO
  * @returns {Promise<Array<{slug: string}>>} Array of slug objects for static generation
  */
 export async function generateStaticParams() {
@@ -240,24 +240,57 @@ export async function generateStaticParams() {
     }
 
     // Import the correct service based on environment
-    let getAllAnimals;
     if (process.env.NODE_ENV === "test" && process.env.JEST_WORKER_ID) {
-      // Use client service for Jest tests
-      getAllAnimals = require("../../../services/animalsService").getAllAnimals;
-    } else {
-      // For production/build, we'll return empty array to enable dynamic rendering
-      return [];
-    }
-
-    // Generate static params for all animals (used in tests)
-    if (getAllAnimals) {
+      // Use client service for Jest tests - generate for all dogs
+      const { getAllAnimals } = require("../../../services/animalsService");
       const dogs = await getAllAnimals();
       return dogs.filter((dog) => dog?.slug).map((dog) => ({ slug: dog.slug }));
     }
 
-    return [];
+    // Production: Pre-render top 100 most valuable dogs at build time
+    const { getAllAnimalsForSitemap } = require("../../../services/animalsService");
+    const dogs = await getAllAnimalsForSitemap();
+
+    // Helper function to check if dog was added recently (within last 30 days)
+    const isRecent = (dateStr) => {
+      if (!dateStr) return false;
+      const date = new Date(dateStr);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      return date > thirtyDaysAgo;
+    };
+
+    // Calculate priority score for each dog
+    // Higher priority = more valuable for SEO
+    const prioritizedDogs = dogs
+      .map(dog => {
+        // LLM content is most valuable (10 points)
+        const hasLLMContent = !!(dog.llm_description || dog.dog_profiler_data?.description);
+
+        // Images are important for engagement (5 points)
+        const hasImage = !!dog.primary_image_url;
+
+        // Recent dogs are more likely to still be available (3 points)
+        const isRecentDog = isRecent(dog.created_at);
+
+        return {
+          ...dog,
+          priority: (hasLLMContent ? 10 : 0) + (hasImage ? 5 : 0) + (isRecentDog ? 3 : 0)
+        };
+      })
+      .sort((a, b) => b.priority - a.priority)
+      .slice(0, 100); // Top 100 most valuable dogs
+
+    console.log(`[generateStaticParams] Pre-rendering ${prioritizedDogs.length} high-priority dog pages`);
+
+    return prioritizedDogs
+      .filter(dog => dog?.slug)
+      .map(dog => ({ slug: dog.slug }));
+
   } catch (error) {
+    console.error('[generateStaticParams] Error:', error);
     // Return empty array on error to prevent build failure
+    // Dogs will still be available via ISR
     return [];
   }
 }
