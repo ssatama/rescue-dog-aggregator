@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, lazy, useEffect, useState } from "react";
+import React, { Suspense, lazy } from "react";
 import HeroSection from "./HeroSection";
 import PlatformCapabilities from "./PlatformCapabilities";
 import TrustBand from "./TrustBand";
@@ -10,7 +10,6 @@ import FinalCTA from "./FinalCTA";
 import Loading from "../ui/Loading";
 import MobileHomePage from "../mobile/MobileHomePage";
 import { MobileHomeSEO } from "../seo/MobileHomeSEO";
-import { getBreedsWithImagesForHomePage } from "../../services/breedImagesService";
 import ErrorBoundary from "../ui/ErrorBoundary";
 import { transformMobileHomePageData } from "../../utils/homePageTransformers";
 
@@ -25,34 +24,18 @@ export default function ClientHomePage({
   initialStatistics,
   initialRecentDogs,
   initialDiverseDogs,
+  initialBreedsWithImages = null,
+  initialOrganizations = [],
 }) {
-  // State for breeds with images
-  const [breedsWithImages, setBreedsWithImages] = useState(null);
-
-  // Fetch breeds with images on mount (client-side only)
-  useEffect(() => {
-    const fetchBreedsWithImages = async () => {
-      const breeds = await getBreedsWithImagesForHomePage({
-        minCount: 5,
-        limit: 20,
-      });
-      if (breeds) {
-        setBreedsWithImages(breeds);
-      }
-    };
-
-    fetchBreedsWithImages();
-  }, []);
-
   // Prepare data for mobile version
   const mobileInitialData = React.useMemo(
     () =>
       transformMobileHomePageData({
         initialRecentDogs,
         initialStatistics,
-        breedsWithImages,
+        breedsWithImages: initialBreedsWithImages,
       }),
-    [initialRecentDogs, initialStatistics, breedsWithImages],
+    [initialRecentDogs, initialStatistics, initialBreedsWithImages],
   );
 
   return (
@@ -75,7 +58,7 @@ export default function ClientHomePage({
 
         {/* Trust Band - Organization Logos */}
         <ErrorBoundary fallbackMessage="Unable to load organization logos. Please refresh the page.">
-          <TrustBand />
+          <TrustBand initialOrganizations={initialOrganizations} />
         </ErrorBoundary>
 
         {/* Featured Dogs Section - 6 dogs */}

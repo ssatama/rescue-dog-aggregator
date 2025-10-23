@@ -1,11 +1,6 @@
 // frontend/src/components/home/TrustBand.tsx
 
-"use client";
-
-import { useEffect, useState } from "react";
 import Image from "next/image";
-import { getOrganizations } from "../../services/organizationsService";
-import { reportError } from "../../utils/logger";
 
 interface Organization {
   id: number;
@@ -13,28 +8,13 @@ interface Organization {
   logo_url?: string;
 }
 
-export default function TrustBand() {
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [totalCount, setTotalCount] = useState(13);
-  const [isLoading, setIsLoading] = useState(true);
+interface TrustBandProps {
+  initialOrganizations?: Organization[];
+}
 
-  useEffect(() => {
-    const fetchOrganizations = async () => {
-      try {
-        const data = await getOrganizations();
-        setOrganizations(data || []);
-        setTotalCount(data?.length || 13);
-      } catch (error) {
-        reportError("Failed to fetch organizations", {
-          error: error instanceof Error ? error.message : String(error),
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchOrganizations();
-  }, []);
+export default function TrustBand({ initialOrganizations = [] }: TrustBandProps) {
+  const organizations = initialOrganizations;
+  const totalCount = organizations.length || 13;
 
   return (
     <section
@@ -71,7 +51,7 @@ export default function TrustBand() {
           & UK
         </p>
 
-        {isLoading ? (
+        {organizations.length === 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 justify-items-center">
             {[...Array(8)].map((_, i) => (
               <div
