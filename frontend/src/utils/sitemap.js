@@ -455,15 +455,7 @@ export const generateSitemap = async () => {
     allEntries.push(...generateStaticPages());
 
     // Fetch and add dynamic content
-    try {
-      const dogs = await getAllAnimalsForSitemap();
-      allEntries.push(...generateDogPages(dogs));
-    } catch (error) {
-      if (process.env.NODE_ENV !== "production") {
-        console.warn("Failed to fetch dogs for sitemap:", error.message);
-      }
-    }
-
+    // Note: Dog pages are in sitemap-dogs.xml to avoid duplication
     try {
       const organizations = await getAllOrganizations();
       allEntries.push(...generateOrganizationPages(organizations));
@@ -553,7 +545,6 @@ export const generateImageSitemap = async () => {
     // Filter dogs with images and create image entries
     const imageEntries = dogs
       .filter((dog) => dog.primary_image_url)
-      .slice(0, 1000) // Limit to 1000 most recent dogs with images
       .map((dog) => {
         const dogUrl = `${baseUrl}/dogs/${dog.slug || `unknown-dog-${dog.id}`}`;
         const imageTitle = `${dog.name} - ${dog.breed || "Mixed Breed"} for Adoption`;
