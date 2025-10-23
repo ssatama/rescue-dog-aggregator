@@ -83,11 +83,11 @@ class TestMisisRescueRetryMechanism:
     def test_data_validation_rejects_invalid_names(self):
         """Test that _validate_dog_data rejects invalid names."""
         # Valid dog data
-        valid_data = {"name": "Lilly", "external_id": "test123", "adoption_url": "http://test.com"}
+        valid_data = {"name": "Lilly", "external_id": "test123", "adoption_url": "http://test.com", "primary_image_url": "http://test.com/image.jpg"}
         assert self.scraper._validate_dog_data(valid_data)
 
         # Invalid name should be rejected
-        invalid_data = {"name": "This Site Cant Be Reached", "external_id": "test123", "adoption_url": "http://test.com"}
+        invalid_data = {"name": "This Site Cant Be Reached", "external_id": "test123", "adoption_url": "http://test.com", "primary_image_url": "http://test.com/image.jpg"}
         assert not self.scraper._validate_dog_data(invalid_data)
 
     @patch("time.sleep")  # Mock sleep to speed up tests
@@ -114,7 +114,7 @@ class TestMisisRescueRetryMechanism:
                 mock_listing.return_value = [{"name": "Test Dog", "url": "/test"}]
 
                 # Mock retry to succeed
-                mock_retry.return_value = {"name": "Test Dog", "external_id": "test123", "adoption_url": "http://test.com"}
+                mock_retry.return_value = {"name": "Test Dog", "external_id": "test123", "adoption_url": "http://test.com", "primary_image_url": "http://test.com/image.jpg"}
 
                 result = self.scraper.collect_data()
 

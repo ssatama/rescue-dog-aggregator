@@ -34,7 +34,7 @@ class TestMisisRescueBatchProcessing:
 
         with patch.object(self.scraper, "_scrape_with_retry") as mock_scrape:
             # Mock successful scraping for all URLs
-            mock_scrape.side_effect = [{"name": f"Dog{i}", "external_id": f"test{i}", "adoption_url": url} for i, url in enumerate(test_urls, 1)]
+            mock_scrape.side_effect = [{"name": f"Dog{i}", "external_id": f"test{i}", "adoption_url": url, "primary_image_url": f"http://example.com/image{i}.jpg"} for i, url in enumerate(test_urls, 1)]
 
             results = self.scraper._process_dogs_in_batches(test_urls)
 
@@ -58,9 +58,9 @@ class TestMisisRescueBatchProcessing:
         with patch.object(self.scraper, "_scrape_with_retry") as mock_scrape:
             # Mock mixed success/failure
             mock_scrape.side_effect = [
-                {"name": "Dog1", "external_id": "test1", "adoption_url": test_urls[0]},
+                {"name": "Dog1", "external_id": "test1", "adoption_url": test_urls[0], "primary_image_url": "http://example.com/image1.jpg"},
                 None,  # Failure
-                {"name": "Dog3", "external_id": "test3", "adoption_url": test_urls[2]},
+                {"name": "Dog3", "external_id": "test3", "adoption_url": test_urls[2], "primary_image_url": "http://example.com/image3.jpg"},
             ]
 
             results = self.scraper._process_dogs_in_batches(test_urls)
@@ -118,7 +118,7 @@ class TestMisisRescueBatchProcessing:
 
         with patch.object(self.scraper, "_scrape_with_retry") as mock_scrape:
             # First succeeds, second times out (returns None)
-            mock_scrape.side_effect = [{"name": "Dog1", "external_id": "test1", "adoption_url": test_urls[0]}, None]  # Timeout result
+            mock_scrape.side_effect = [{"name": "Dog1", "external_id": "test1", "adoption_url": test_urls[0], "primary_image_url": "http://example.com/image1.jpg"}, None]  # Timeout result
 
             results = self.scraper._process_dogs_in_batches(test_urls)
 
