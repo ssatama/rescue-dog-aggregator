@@ -22,9 +22,9 @@ const inter = Inter({
 
 export const metadata = {
   metadataBase: new URL(
-    process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
+    process.env.NODE_ENV === 'production'
+      ? 'https://www.rescuedogs.me'
+      : (process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000')
   ),
   title: "Rescue Dog Aggregator - Find Your Perfect Rescue Dog",
   description:
