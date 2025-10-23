@@ -199,3 +199,42 @@ class LLMClient:
             result["model_used"] = response_data["model"]
 
         return result
+
+    async def call_vision_api(
+        self,
+        image_url: str,
+        prompt: str,
+        model: str = "google/gemini-2.5-flash-image",
+        temperature: float = 0.3,
+        max_tokens: int = 1000,
+        timeout: float = 30.0,
+    ) -> Dict[str, Any]:
+        """
+        Call OpenRouter vision API for image analysis.
+
+        Args:
+            image_url: URL of image to analyze
+            prompt: Text prompt for analysis
+            model: Vision model to use (default: gemini-2.5-flash-image)
+            temperature: Lower temperature for consistent scoring (default: 0.3)
+            max_tokens: Max response tokens (default: 1000)
+            timeout: Request timeout in seconds (default: 30.0)
+
+        Returns:
+            Parsed JSON response with analysis results
+
+        Raises:
+            httpx.HTTPStatusError: If API returns error status
+            json.JSONDecodeError: If response is not valid JSON
+        """
+        # Format messages for vision API
+        messages = [{"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": image_url}}]}]
+
+        # Delegate to existing call_api_and_parse for consistency
+        return await self.call_api_and_parse(
+            messages=messages,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            timeout=timeout,
+        )

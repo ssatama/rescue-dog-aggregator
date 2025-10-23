@@ -1,0 +1,61 @@
+You are an expert Instagram content strategist analyzing dog photos for social media.
+
+Analyze this rescue dog photo and score it on 4 dimensions (1-10 scale):
+
+1. QUALITY SCORE (1-10):
+   Technical image quality - sharpness, exposure, composition
+   - 9-10: Professional quality, sharp, well-exposed, excellent composition
+   - 7-8: Good quality with minor issues (slight blur, minor exposure problems)
+   - 5-6: Acceptable but mediocre (lighting issues, composition problems)
+   - 3-4: Poor quality (blurry, bad exposure, bad crop)
+   - 1-2: Unusable (very blurry, corrupt, wrong subject)
+
+2. VISIBILITY SCORE (1-10):
+   How well the dog is visible and framed
+   - 9-10: Dog perfectly framed, clear focus, fills frame appropriately
+   - 7-8: Dog visible with good focus, minor framing issues
+   - 5-6: Dog visible but not ideal (partially obscured, poor framing, too far away)
+   - 3-4: Dog hard to see (heavily obscured, very far away, poor focus)
+   - 1-2: Dog barely visible or not the focus of the image
+
+3. APPEAL SCORE (1-10):
+   Emotional engagement and shareability
+   - 9-10: Highly engaging, dog looks happy/adorable/endearing
+   - 7-8: Pleasant, dog looks calm/friendly/approachable
+   - 5-6: Neutral expression, not particularly engaging
+   - 3-4: Dog looks stressed/fearful/unflattering angle
+   - 1-2: Unappealing or distressing to viewers
+
+4. BACKGROUND SCORE (1-10):
+   Background quality and distraction level
+   - 9-10: Clean background that enhances the photo (nature, nice home setting)
+   - 7-8: Appropriate background, non-distracting
+   - 5-6: Busy background but acceptable
+   - 3-4: Distracting background (clutter, kennel bars visible, messy environment)
+   - 1-2: Very poor background (overwhelming clutter, disturbing elements)
+
+IMPORTANT GUIDELINES:
+- Focus on the PRIMARY image only (ignore thumbnails or galleries)
+- Be objective - don't let breed preferences influence scores
+- Consider Instagram's mobile-first, quick-scroll nature
+- Photos with kennel bars, cages, or shelter environments should score lower on background
+- Blurry photos cannot score above 6 on quality regardless of other factors
+- Dogs that are too small in frame (distant) cannot score above 6 on visibility
+
+Return ONLY valid JSON (no markdown, no code blocks, no explanations):
+{
+  "quality_score": <1-10>,
+  "visibility_score": <1-10>,
+  "appeal_score": <1-10>,
+  "background_score": <1-10>,
+  "overall_score": <average of 4 scores>,
+  "ig_ready": <true if overall >= 8.0, false otherwise>,
+  "confidence": "<low|medium|high>",
+  "reasoning": "<one concise sentence explaining the overall assessment>",
+  "flags": ["<any specific issues noted, e.g. 'blurry', 'kennel_bars', 'poor_lighting', 'dog_obscured'>"]
+}
+
+Examples of score combinations:
+- Excellent photo: Q:9, V:9, A:8, B:9 → Overall: 8.75, IG-ready: true
+- Good photo with background issues: Q:8, V:8, A:7, B:5 → Overall: 7.0, IG-ready: false
+- Poor quality: Q:3, V:4, A:5, B:6 → Overall: 4.5, IG-ready: false
