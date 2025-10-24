@@ -34,7 +34,9 @@ class TestMisisRescueBatchProcessing:
 
         with patch.object(self.scraper, "_scrape_with_retry") as mock_scrape:
             # Mock successful scraping for all URLs
-            mock_scrape.side_effect = [{"name": f"Dog{i}", "external_id": f"test{i}", "adoption_url": url, "primary_image_url": f"http://example.com/image{i}.jpg"} for i, url in enumerate(test_urls, 1)]
+            mock_scrape.side_effect = [
+                {"name": f"Dog{i}", "external_id": f"test{i}", "adoption_url": url, "primary_image_url": f"http://example.com/image{i}.jpg"} for i, url in enumerate(test_urls, 1)
+            ]
 
             results = self.scraper._process_dogs_in_batches(test_urls)
 
