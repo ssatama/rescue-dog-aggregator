@@ -22,9 +22,9 @@ const inter = Inter({
 
 export const metadata = {
   metadataBase: new URL(
-    process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
+    process.env.NODE_ENV === 'production'
+      ? 'https://www.rescuedogs.me'
+      : (process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000')
   ),
   title: "Rescue Dog Aggregator - Find Your Perfect Rescue Dog",
   description:
@@ -83,6 +83,39 @@ export const metadata = {
       "max-snippet": -1,
     },
   },
+  // Note: Next.js 15.2+ supports metadata.jsonLd for native JSON-LD
+  // Current implementation uses metadata.other which is stable and works well
+  // Future enhancement: migrate to metadata.jsonLd when it's fully stable
+  other: {
+    "application/ld+json": JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Rescue Dog Aggregator",
+      "url": "https://www.rescuedogs.me",
+      "description": "Find adoptable rescue dogs from 13 organizations across 9 countries. Browse 3,000+ dogs available for adoption.",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://www.rescuedogs.me/dogs?search={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Rescue Dog Aggregator",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.rescuedogs.me/logo.png",
+          "width": 512,
+          "height": 512
+        }
+      },
+      "inLanguage": "en-US",
+      "copyrightYear": 2025,
+      "keywords": "rescue dogs, dog adoption, pet rescue, animal shelter, adopt a dog"
+    })
+  }
 };
 
 export default function RootLayout({ children }) {

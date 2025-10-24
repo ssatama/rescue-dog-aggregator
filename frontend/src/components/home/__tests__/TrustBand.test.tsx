@@ -1,10 +1,8 @@
 // frontend/src/components/home/__tests__/TrustBand.test.tsx
 
 import React from "react";
-import { render, screen, waitFor } from "../../../test-utils";
+import { render, screen } from "../../../test-utils";
 import TrustBand from "../TrustBand";
-import { getOrganizations } from "../../../services/organizationsService";
-import { reportError } from "../../../utils/logger";
 
 // Mock Next.js Image component
 jest.mock("next/image", () => ({
@@ -14,18 +12,6 @@ jest.mock("next/image", () => ({
     return <img {...props} />;
   },
 }));
-
-// Mock organizations service
-jest.mock("../../../services/organizationsService");
-
-// Mock logger
-jest.mock("../../../utils/logger");
-
-const mockGetOrganizations = getOrganizations as jest.MockedFunction<
-  typeof getOrganizations
->;
-
-const mockReportError = reportError as jest.MockedFunction<typeof reportError>;
 
 describe("TrustBand", () => {
   const mockOrganizations = [
@@ -45,12 +31,8 @@ describe("TrustBand", () => {
   });
 
   describe("Loading State", () => {
-    test("should show loading skeleton while fetching", () => {
-      mockGetOrganizations.mockImplementation(
-        () => new Promise(() => {}), // Never resolves
-      );
-
-      render(<TrustBand />);
+    test("should show loading skeleton when no organizations provided", () => {
+      render(<TrustBand initialOrganizations={[]} />);
 
       // Should show loading placeholders
       const placeholders = screen
@@ -59,233 +41,164 @@ describe("TrustBand", () => {
       expect(placeholders.length).toBeGreaterThan(0);
     });
 
-    test("should display default count during loading", () => {
-      mockGetOrganizations.mockImplementation(() => new Promise(() => {}));
-
+    test("should display default count when no organizations provided", () => {
       render(<TrustBand />);
 
       expect(
-        screen.getByText(/Aggregating rescue dogs from 13 organizations/),
+        screen.getByText(/Aggregating rescue dogs from multiple organizations/),
       ).toBeInTheDocument();
     });
   });
 
-  describe("Successful Data Loading", () => {
-    test("should render text with organization count", async () => {
-      mockGetOrganizations.mockResolvedValueOnce(mockOrganizations);
+  describe("Successful Data Display", () => {
+    test("should render text with organization count", () => {
+      render(<TrustBand initialOrganizations={mockOrganizations} />);
 
-      render(<TrustBand />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText(
-            /Aggregating rescue dogs from 5 organizations across Europe & UK/,
-          ),
-        ).toBeInTheDocument();
-      });
+      expect(
+        screen.getByText(
+          /Aggregating rescue dogs from 5 organizations across Europe & UK/,
+        ),
+      ).toBeInTheDocument();
     });
 
-    test("should call getOrganizations service", async () => {
-      mockGetOrganizations.mockResolvedValueOnce(mockOrganizations);
+    test("should display organization logos", () => {
+      render(<TrustBand initialOrganizations={mockOrganizations} />);
 
-      render(<TrustBand />);
-
-      await waitFor(() => {
-        expect(mockGetOrganizations).toHaveBeenCalledTimes(1);
-      });
+      const logo1 = screen.getByAltText("Rescue Org 1");
+      expect(logo1).toBeInTheDocument();
+      expect(logo1).toHaveAttribute("src", "/logos/org1.png");
     });
 
-    test("should display organization logos", async () => {
-      mockGetOrganizations.mockResolvedValueOnce(mockOrganizations);
-
-      render(<TrustBand />);
-
-      await waitFor(() => {
-        const logo1 = screen.getByAltText("Rescue Org 1");
-        expect(logo1).toBeInTheDocument();
-        expect(logo1).toHaveAttribute("src", "/logos/org1.png");
-      });
-    });
-
-    test("should show max 8 logos", async () => {
+    test("should show max 8 logos", () => {
       const manyOrgs = Array.from({ length: 15 }, (_, i) => ({
         id: i,
         name: `Org ${i}`,
         logo_url: `/logo${i}.png`,
       }));
 
-      mockGetOrganizations.mockResolvedValueOnce(manyOrgs);
+      render(<TrustBand initialOrganizations={manyOrgs} />);
 
-      render(<TrustBand />);
-
-      await waitFor(() => {
-        const logos = screen.getAllByRole("img");
-        expect(logos).toHaveLength(8);
-      });
+      const logos = screen.getAllByRole("img");
+      expect(logos).toHaveLength(8);
     });
 
-    test("should apply grayscale filter to logos", async () => {
-      mockGetOrganizations.mockResolvedValueOnce(mockOrganizations);
+    test("should apply grayscale filter to logos", () => {
+      render(<TrustBand initialOrganizations={mockOrganizations} />);
 
-      render(<TrustBand />);
-
-      await waitFor(() => {
-        const logo = screen.getByAltText("Rescue Org 1");
-        expect(logo).toHaveClass("grayscale-[50%]", "opacity-70");
-      });
+      const logo = screen.getByAltText("Rescue Org 1");
+      expect(logo).toHaveClass("grayscale-[50%]", "opacity-70");
     });
 
-    test("should have hover effect on logos", async () => {
-      mockGetOrganizations.mockResolvedValueOnce(mockOrganizations);
+    test("should have hover effect on logos", () => {
+      render(<TrustBand initialOrganizations={mockOrganizations} />);
 
-      render(<TrustBand />);
-
-      await waitFor(() => {
-        const logo = screen.getByAltText("Rescue Org 1");
-        expect(logo).toHaveClass(
-          "hover:opacity-100",
-          "hover:grayscale-0",
-          "hover:scale-110",
-          "transition-all",
-        );
-      });
+      const logo = screen.getByAltText("Rescue Org 1");
+      expect(logo).toHaveClass(
+        "hover:opacity-100",
+        "hover:grayscale-0",
+        "hover:scale-110",
+        "transition-all",
+      );
     });
 
-    test("should update total count from API", async () => {
+    test("should update total count from props", () => {
       const customOrgs = Array.from({ length: 20 }, (_, i) => ({
         id: i,
         name: `Org ${i}`,
         logo_url: `/logo${i}.png`,
       }));
 
-      mockGetOrganizations.mockResolvedValueOnce(customOrgs);
+      render(<TrustBand initialOrganizations={customOrgs} />);
 
-      render(<TrustBand />);
+      expect(
+        screen.getByText(/Aggregating rescue dogs from 20 organizations/),
+      ).toBeInTheDocument();
+    });
 
-      await waitFor(() => {
-        expect(
-          screen.getByText(/Aggregating rescue dogs from 20 organizations/),
-        ).toBeInTheDocument();
-      });
+    test("should show additional organizations message when more than 8", () => {
+      const manyOrgs = Array.from({ length: 15 }, (_, i) => ({
+        id: i,
+        name: `Org ${i}`,
+        logo_url: `/logo${i}.png`,
+      }));
+
+      render(<TrustBand initialOrganizations={manyOrgs} />);
+
+      expect(screen.getByText(/\+ 7 more organizations/)).toBeInTheDocument();
     });
   });
 
   describe("Error Handling", () => {
-    test("should handle API errors gracefully", async () => {
-      const networkError = new Error("Network error");
-      mockGetOrganizations.mockRejectedValueOnce(networkError);
+    test("should handle empty organizations array", () => {
+      render(<TrustBand initialOrganizations={[]} />);
 
-      render(<TrustBand />);
-
-      await waitFor(() => {
-        expect(mockReportError).toHaveBeenCalledWith(
-          "Failed to fetch organizations",
-          { error: networkError.message },
-        );
-      });
-
-      // Should still show default text
-      expect(
-        screen.getByText(/Aggregating rescue dogs from 13 organizations/),
-      ).toBeInTheDocument();
+      const logos = screen.queryAllByRole("img");
+      expect(logos).toHaveLength(0);
     });
 
-    test("should handle empty organizations array", async () => {
-      mockGetOrganizations.mockResolvedValueOnce([]);
-
-      render(<TrustBand />);
-
-      await waitFor(() => {
-        const logos = screen.queryAllByRole("img");
-        expect(logos).toHaveLength(0);
-      });
-    });
-
-    test("should handle missing logo_url", async () => {
+    test("should handle missing logo_url", () => {
       const orgsWithoutLogos = [
-        { id: 1, name: "Org 1" }, // No logo_url
+        { id: 1, name: "Org 1" } as any, // No logo_url
         { id: 2, name: "Org 2", logo_url: "/logo.png" },
       ];
 
-      mockGetOrganizations.mockResolvedValueOnce(orgsWithoutLogos);
+      render(<TrustBand initialOrganizations={orgsWithoutLogos} />);
 
-      render(<TrustBand />);
-
-      await waitFor(() => {
-        const logos = screen.queryAllByRole("img");
-        expect(logos).toHaveLength(1); // Only the one with logo_url
-      });
+      const logos = screen.queryAllByRole("img");
+      expect(logos).toHaveLength(1); // Only the one with logo_url
     });
   });
 
   describe("Responsive Design", () => {
-    test("should have responsive padding", async () => {
-      mockGetOrganizations.mockResolvedValueOnce(mockOrganizations);
-
-      const { container } = render(<TrustBand />);
+    test("should have responsive padding", () => {
+      const { container } = render(<TrustBand initialOrganizations={mockOrganizations} />);
 
       const section = container.querySelector("section");
       expect(section).toHaveClass("py-32");
     });
 
-    test("should have centered layout", async () => {
-      mockGetOrganizations.mockResolvedValueOnce(mockOrganizations);
-
-      const { container } = render(<TrustBand />);
+    test("should have centered layout", () => {
+      const { container } = render(<TrustBand initialOrganizations={mockOrganizations} />);
 
       const innerDiv = container.querySelector(".max-w-7xl");
       expect(innerDiv).toHaveClass("mx-auto", "px-4", "text-center");
     });
 
-    test("should use grid layout for responsive display", async () => {
-      mockGetOrganizations.mockResolvedValueOnce(mockOrganizations);
+    test("should use grid layout for responsive display", () => {
+      const { container } = render(<TrustBand initialOrganizations={mockOrganizations} />);
 
-      const { container } = render(<TrustBand />);
-
-      await waitFor(() => {
-        const logosContainer = container.querySelector(".grid");
-        expect(logosContainer).toBeInTheDocument();
-        expect(logosContainer).toHaveClass("grid-cols-2", "md:grid-cols-4");
-      });
+      const logosContainer = container.querySelector(".grid");
+      expect(logosContainer).toBeInTheDocument();
+      expect(logosContainer).toHaveClass("grid-cols-2", "md:grid-cols-4");
     });
   });
 
   describe("Dark Mode", () => {
-    test("should have dark mode classes", async () => {
-      mockGetOrganizations.mockResolvedValueOnce(mockOrganizations);
-
-      const { container } = render(<TrustBand />);
+    test("should have dark mode classes", () => {
+      const { container } = render(<TrustBand initialOrganizations={mockOrganizations} />);
 
       const section = container.querySelector("section");
       expect(section).toHaveClass("bg-gray-100", "dark:bg-gray-800");
     });
 
-    test("should have dark mode text colors", async () => {
-      mockGetOrganizations.mockResolvedValueOnce(mockOrganizations);
+    test("should have dark mode text colors", () => {
+      render(<TrustBand initialOrganizations={mockOrganizations} />);
 
-      render(<TrustBand />);
-
-      await waitFor(() => {
-        const text = screen.getByText(/Aggregating rescue dogs from/);
-        expect(text).toHaveClass("text-gray-700", "dark:text-gray-300");
-      });
+      const text = screen.getByText(/Aggregating rescue dogs from/);
+      expect(text).toHaveClass("text-gray-700", "dark:text-gray-300");
     });
   });
 
   describe("Accessibility", () => {
-    test("should use semantic section element", async () => {
-      mockGetOrganizations.mockResolvedValueOnce(mockOrganizations);
-
-      const { container } = render(<TrustBand />);
+    test("should use semantic section element", () => {
+      const { container } = render(<TrustBand initialOrganizations={mockOrganizations} />);
 
       const section = container.querySelector("section");
       expect(section).toBeInTheDocument();
     });
 
-    test("should have aria-label on section", async () => {
-      mockGetOrganizations.mockResolvedValueOnce(mockOrganizations);
-
-      const { container } = render(<TrustBand />);
+    test("should have aria-label on section", () => {
+      const { container } = render(<TrustBand initialOrganizations={mockOrganizations} />);
 
       const section = container.querySelector("section");
       expect(section).toHaveAttribute(
@@ -294,16 +207,12 @@ describe("TrustBand", () => {
       );
     });
 
-    test("should have alt text for all logos", async () => {
-      mockGetOrganizations.mockResolvedValueOnce(mockOrganizations);
+    test("should have alt text for all logos", () => {
+      render(<TrustBand initialOrganizations={mockOrganizations} />);
 
-      render(<TrustBand />);
-
-      await waitFor(() => {
-        mockOrganizations.forEach((org) => {
-          const logo = screen.getByAltText(org.name);
-          expect(logo).toBeInTheDocument();
-        });
+      mockOrganizations.forEach((org) => {
+        const logo = screen.getByAltText(org.name);
+        expect(logo).toBeInTheDocument();
       });
     });
   });

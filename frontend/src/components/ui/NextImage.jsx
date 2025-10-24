@@ -19,6 +19,7 @@ const NextImage = React.memo(function NextImage({
   quality = null,
   fallbackSrc = "/images/dog-placeholder.svg",
   onError = null,
+  blurDataURL: providedBlurDataURL = null, // NEW: Accept blur data from database
   ...props
 }) {
   const [imageSrc, setImageSrc] = useState(src || fallbackSrc);
@@ -40,10 +41,17 @@ const NextImage = React.memo(function NextImage({
   }, [quality]);
 
   const blurDataURL = useMemo(() => {
+    // Priority 1: Use database-stored blur URL if provided (best performance)
+    if (providedBlurDataURL && placeholder === "blur") {
+      return providedBlurDataURL;
+    }
+
+    // Priority 2: Skip blur for non-R2 images or fallback images
     if (placeholder !== "blur" || !isR2Image || imageSrc === fallbackSrc) {
       return "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q==";
     }
 
+    // Priority 3: Generate Cloudflare CDN blur URL (fallback)
     try {
       const url = new URL(imageSrc);
       const domain = url.origin;
@@ -64,9 +72,10 @@ const NextImage = React.memo(function NextImage({
 
       return `${domain}/cdn-cgi/image/${params}/${imagePath}`;
     } catch (e) {
+      // Priority 4: Default fallback blur placeholder
       return "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q==";
     }
-  }, [placeholder, isR2Image, imageSrc, fallbackSrc]);
+  }, [providedBlurDataURL, placeholder, isR2Image, imageSrc, fallbackSrc]);
 
   const handleError = (error) => {
     if (!hasError && imageSrc !== fallbackSrc) {
@@ -230,6 +239,7 @@ NextImage.propTypes = {
   quality: PropTypes.number,
   fallbackSrc: PropTypes.string,
   onError: PropTypes.func,
+  blurDataURL: PropTypes.string, // NEW: Database-stored blur placeholder
 };
 
 NextImage.displayName = "NextImage";

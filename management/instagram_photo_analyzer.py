@@ -159,13 +159,8 @@ class InstagramPhotoAnalyzer:
             # The constraint checks: overall_score = (q + v + a + b) / 4.0
             # We must provide the EXACT unrounded value for the constraint check
             # The NUMERIC(3,1) column will round it after the constraint passes
-            calculated_overall = (
-                analysis.quality_score + 
-                analysis.visibility_score + 
-                analysis.appeal_score + 
-                analysis.background_score
-            ) / 4.0
-            
+            calculated_overall = (analysis.quality_score + analysis.visibility_score + analysis.appeal_score + analysis.background_score) / 4.0
+
             query = """
                 INSERT INTO dog_photo_analysis (
                     dog_id,

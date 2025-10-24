@@ -26,8 +26,12 @@ export default function FeaturedDogsSection({ dogs, totalCount }) {
 
         {/* Dogs Grid */}
         <div className="grid grid-cols-2 xl:grid-cols-3 gap-6 mb-12">
-          {dogs.slice(0, 6).map((dog) => (
-            <DogCardOptimized key={dog.id} dog={dog} />
+          {dogs.slice(0, 6).map((dog, index) => (
+            <DogCardOptimized
+              key={dog.id}
+              dog={dog}
+              priority={index < 3}
+            />
           ))}
         </div>
 

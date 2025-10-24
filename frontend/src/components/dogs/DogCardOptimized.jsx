@@ -123,6 +123,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
               layout="fill"
               objectFit="cover"
               objectPosition="center 30%"
+              blurDataURL={dog.blur_data_url}
             />
           </div>
 
@@ -201,6 +202,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
               layout="fill"
               objectFit="cover"
               objectPosition="center 30%"
+              blurDataURL={dog.blur_data_url}
             />
           </div>
         </Link>
@@ -385,6 +387,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
             layout="fill"
             objectFit="cover"
             objectPosition="center 30%"
+            blurDataURL={dog.blur_data_url}
           />
         </div>
       </Link>

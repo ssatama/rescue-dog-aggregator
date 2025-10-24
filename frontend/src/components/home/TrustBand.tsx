@@ -1,11 +1,6 @@
 // frontend/src/components/home/TrustBand.tsx
 
-"use client";
-
-import { useEffect, useState } from "react";
 import Image from "next/image";
-import { getOrganizations } from "../../services/organizationsService";
-import { reportError } from "../../utils/logger";
 
 interface Organization {
   id: number;
@@ -13,29 +8,11 @@ interface Organization {
   logo_url?: string;
 }
 
-export default function TrustBand() {
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [totalCount, setTotalCount] = useState(13);
-  const [isLoading, setIsLoading] = useState(true);
+interface TrustBandProps {
+  initialOrganizations?: Organization[];
+}
 
-  useEffect(() => {
-    const fetchOrganizations = async () => {
-      try {
-        const data = await getOrganizations();
-        setOrganizations(data || []);
-        setTotalCount(data?.length || 13);
-      } catch (error) {
-        reportError("Failed to fetch organizations", {
-          error: error instanceof Error ? error.message : String(error),
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchOrganizations();
-  }, []);
-
+export default function TrustBand({ initialOrganizations = [] }: TrustBandProps) {
   return (
     <section
       className="bg-gray-100 dark:bg-gray-800 py-32 relative overflow-hidden"
@@ -67,11 +44,11 @@ export default function TrustBand() {
 
       <div className="max-w-7xl mx-auto px-4 text-center relative z-10">
         <p className="text-lg text-gray-700 dark:text-gray-300 mb-12">
-          Aggregating rescue dogs from {totalCount} organizations across Europe
+          Aggregating rescue dogs from {initialOrganizations.length > 0 ? initialOrganizations.length : 'multiple'} organizations across Europe
           & UK
         </p>
 
-        {isLoading ? (
+        {initialOrganizations.length === 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 justify-items-center">
             {[...Array(8)].map((_, i) => (
               <div
@@ -83,7 +60,7 @@ export default function TrustBand() {
         ) : (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 justify-items-center">
-              {organizations.slice(0, 8).map((org, index) => (
+              {initialOrganizations.slice(0, 8).map((org, index) => (
                 <div
                   key={org.id}
                   className="h-20 animate-fadeIn"
@@ -106,9 +83,9 @@ export default function TrustBand() {
               ))}
             </div>
 
-            {totalCount > 8 && (
+            {initialOrganizations.length > 8 && (
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-8">
-                + {totalCount - 8} more organizations
+                + {initialOrganizations.length - 8} more organizations
               </p>
             )}
           </>
