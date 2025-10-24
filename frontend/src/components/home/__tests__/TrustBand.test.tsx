@@ -45,7 +45,7 @@ describe("TrustBand", () => {
       render(<TrustBand />);
 
       expect(
-        screen.getByText(/Aggregating rescue dogs from 13 organizations/),
+        screen.getByText(/Aggregating rescue dogs from multiple organizations/),
       ).toBeInTheDocument();
     });
   });

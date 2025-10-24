@@ -80,12 +80,17 @@ describe("Dynamic Sitemap Route", () => {
     // Should include homepage
     expect(response.body).toContain("<loc>https://www.rescuedogs.me/</loc>");
 
-    // Should include dog pages
-    expect(response.body).toContain(
+    // Should NOT include individual dog pages (they're in sitemap-dogs.xml to avoid duplication)
+    expect(response.body).not.toContain(
       "<loc>https://www.rescuedogs.me/dogs/buddy-mixed-breed-1</loc>",
     );
-    expect(response.body).toContain(
+    expect(response.body).not.toContain(
       "<loc>https://www.rescuedogs.me/dogs/luna-labrador-2</loc>",
+    );
+    
+    // But SHOULD include the /dogs listing page
+    expect(response.body).toContain(
+      "<loc>https://www.rescuedogs.me/dogs</loc>",
     );
 
     // Should include organization pages
@@ -97,9 +102,6 @@ describe("Dynamic Sitemap Route", () => {
     );
 
     // Should include static pages
-    expect(response.body).toContain(
-      "<loc>https://www.rescuedogs.me/dogs</loc>",
-    );
     expect(response.body).toContain(
       "<loc>https://www.rescuedogs.me/organizations</loc>",
     );
@@ -119,8 +121,9 @@ describe("Dynamic Sitemap Route", () => {
     expect(response.body).toContain(
       "<loc>https://staging.rescuedogs.me/</loc>",
     );
+    // Individual dog pages are in sitemap-dogs.xml, not main sitemap
     expect(response.body).toContain(
-      "<loc>https://staging.rescuedogs.me/dogs/buddy-mixed-breed-1</loc>",
+      "<loc>https://staging.rescuedogs.me/dogs</loc>",
     );
   });
 
@@ -159,12 +162,13 @@ describe("Dynamic Sitemap Route", () => {
     const { GET } = await import("../route");
     const response = await GET();
 
-    // Should include formatted lastmod dates - just check format, not exact date
+    // Should include formatted lastmod dates for organizations
     expect(response.body).toMatch(
       /<lastmod>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00<\/lastmod>/,
     );
+    // Organization dates should be present
     expect(response.body).toContain(
-      "<lastmod>2025-07-13T10:30:15+00:00</lastmod>",
+      "<lastmod>2025-07-12T15:22:45+00:00</lastmod>",
     );
   });
 
@@ -186,26 +190,28 @@ describe("Dynamic Sitemap Route", () => {
   });
 
   test("should filter out invalid slugs", async () => {
-    const dogsWithInvalidSlugs = [
-      { id: 1, slug: "valid-dog-1", name: "Valid Dog" },
-      { id: 2, slug: null, name: "No Slug Dog" },
-      { id: 3, slug: "", name: "Empty Slug Dog" },
+    const orgsWithInvalidSlugs = [
+      { id: 1, slug: "valid-org-1", name: "Valid Org" },
+      { id: 2, slug: null, name: "No Slug Org" },
+      { id: 3, slug: "", name: "Empty Slug Org" },
     ];
 
-    getAllAnimalsForSitemap.mockResolvedValue(dogsWithInvalidSlugs);
-    getAllOrganizations.mockResolvedValue([]);
+    getAllAnimalsForSitemap.mockResolvedValue([]);
+    getAllOrganizations.mockResolvedValue(orgsWithInvalidSlugs);
 
     const { GET } = await import("../route");
     const response = await GET();
 
+    // Should include valid organization
     expect(response.body).toContain(
-      "<loc>https://www.rescuedogs.me/dogs/valid-dog-1</loc>",
+      "<loc>https://www.rescuedogs.me/organizations/valid-org-1</loc>",
+    );
+    // Should NOT include invalid slugs
+    expect(response.body).not.toContain(
+      "<loc>https://www.rescuedogs.me/organizations/null</loc>",
     );
     expect(response.body).not.toContain(
-      "<loc>https://www.rescuedogs.me/dogs/null</loc>",
-    );
-    expect(response.body).not.toContain(
-      "<loc>https://www.rescuedogs.me/dogs/</loc>",
+      "<loc>https://www.rescuedogs.me/organizations/</loc>",
     );
   });
 
@@ -221,10 +227,9 @@ describe("Dynamic Sitemap Route", () => {
       /<url>[\s\S]*?<loc>https:\/\/www\.rescuedogs\.me\/<\/loc>[\s\S]*?<priority>1\.0<\/priority>[\s\S]*?<\/url>/,
     );
 
-    // Dog pages should have appropriate priority (Phase 2A: dynamic calculation)
-    // buddy-mixed-breed-1: base 0.3 + recent 0.1 = 0.4 (no image, no description)
+    // /dogs listing page should have high priority
     expect(response.body).toMatch(
-      /<url>[\s\S]*?<loc>https:\/\/www\.rescuedogs\.me\/dogs\/buddy-mixed-breed-1<\/loc>[\s\S]*?<priority>0\.4<\/priority>[\s\S]*?<\/url>/,
+      /<url>[\s\S]*?<loc>https:\/\/www\.rescuedogs\.me\/dogs<\/loc>[\s\S]*?<priority>0\.9<\/priority>[\s\S]*?<\/url>/,
     );
 
     // Should include updated realistic changefreq values

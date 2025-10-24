@@ -13,9 +13,6 @@ interface TrustBandProps {
 }
 
 export default function TrustBand({ initialOrganizations = [] }: TrustBandProps) {
-  const organizations = initialOrganizations;
-  const totalCount = organizations.length || 13;
-
   return (
     <section
       className="bg-gray-100 dark:bg-gray-800 py-32 relative overflow-hidden"
@@ -47,11 +44,11 @@ export default function TrustBand({ initialOrganizations = [] }: TrustBandProps)
 
       <div className="max-w-7xl mx-auto px-4 text-center relative z-10">
         <p className="text-lg text-gray-700 dark:text-gray-300 mb-12">
-          Aggregating rescue dogs from {totalCount} organizations across Europe
+          Aggregating rescue dogs from {initialOrganizations.length > 0 ? initialOrganizations.length : 'multiple'} organizations across Europe
           & UK
         </p>
 
-        {organizations.length === 0 ? (
+        {initialOrganizations.length === 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 justify-items-center">
             {[...Array(8)].map((_, i) => (
               <div
@@ -63,7 +60,7 @@ export default function TrustBand({ initialOrganizations = [] }: TrustBandProps)
         ) : (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 justify-items-center">
-              {organizations.slice(0, 8).map((org, index) => (
+              {initialOrganizations.slice(0, 8).map((org, index) => (
                 <div
                   key={org.id}
                   className="h-20 animate-fadeIn"
@@ -86,9 +83,9 @@ export default function TrustBand({ initialOrganizations = [] }: TrustBandProps)
               ))}
             </div>
 
-            {totalCount > 8 && (
+            {initialOrganizations.length > 8 && (
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-8">
-                + {totalCount - 8} more organizations
+                + {initialOrganizations.length - 8} more organizations
               </p>
             )}
           </>
