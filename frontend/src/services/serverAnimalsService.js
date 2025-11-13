@@ -62,6 +62,11 @@ import { getApiUrl } from "../utils/apiConfig";
 // Use centralized API URL configuration
 const API_URL = getApiUrl();
 
+// Debug: Log API URL during build/runtime
+console.log('[serverAnimalsService] API_URL:', API_URL);
+console.log('[serverAnimalsService] NODE_ENV:', process.env.NODE_ENV);
+console.log('[serverAnimalsService] NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+
 // Cache functions for deduplication within request lifecycle
 export const getAnimals = cache(async (params = {}) => {
   const queryParams = new URLSearchParams();
