@@ -15,6 +15,7 @@ from typing import AsyncGenerator
 
 import asyncpg
 from fastapi import HTTPException
+from fastapi.exceptions import RequestValidationError
 
 from config import DB_CONFIG
 
@@ -54,6 +55,10 @@ async def get_async_db_connection() -> AsyncGenerator[asyncpg.Connection, None]:
     except HTTPException as http_exc:
         logger.warning(f"[async_dependencies.py] HTTPException caught: {http_exc.detail}")
         raise http_exc
+    except RequestValidationError as validation_err:
+        # Let FastAPI handle validation errors with proper 422 response
+        logger.debug(f"[async_dependencies.py] Validation error in async dependency")
+        raise validation_err
     except asyncpg.PostgresError as db_err:
         logger.error(f"[async_dependencies.py] AsyncPG error: {db_err}")
         raise HTTPException(status_code=500, detail=f"Async database connection error: {db_err}")
@@ -107,6 +112,12 @@ async def get_async_db_transaction() -> AsyncGenerator[asyncpg.Connection, None]
             await transaction.rollback()
             logger.warning(f"[async_dependencies.py] HTTPException caught, transaction rolled back: {http_exc.detail}")
         raise http_exc
+    except RequestValidationError as validation_err:
+        # Let FastAPI handle validation errors with proper 422 response
+        if transaction:
+            await transaction.rollback()
+            logger.debug(f"[async_dependencies.py] Validation error, transaction rolled back")
+        raise validation_err
     except asyncpg.PostgresError as db_err:
         if transaction:
             await transaction.rollback()

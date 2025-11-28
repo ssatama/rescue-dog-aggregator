@@ -237,6 +237,12 @@ jest.mock("react-simple-maps", () => ({
 // doesn't always wait for all transitions to complete
 const originalError = console.error;
 beforeEach(() => {
+  // Clear all mocks to prevent state leaking between tests
+  jest.clearAllMocks();
+
+  // Clear any pending timers from previous tests
+  jest.clearAllTimers();
+
   console.error = (...args) => {
     if (
       typeof args[0] === "string" &&
@@ -263,4 +269,7 @@ beforeEach(() => {
 
 afterEach(() => {
   console.error = originalError;
+
+  // Ensure no timers leak to the next test
+  jest.useRealTimers();
 });

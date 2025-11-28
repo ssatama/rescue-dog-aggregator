@@ -33,8 +33,8 @@ export async function getAnimals(params = {}, options = {}) {
   if (!cleanParams.animal_type) {
     cleanParams.animal_type = "dog";
   }
-  // Only set default status if not explicitly provided
-  if (!cleanParams.status && cleanParams.status !== null) {
+  // Only set default status if not explicitly provided (passing null means "fetch all")
+  if (!('status' in params) && !cleanParams.status) {
     cleanParams.status = "available";
   }
 
