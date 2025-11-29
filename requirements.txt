@@ -68,6 +68,8 @@ frozenlist==1.7.0
     # via
     #   aiohttp
     #   aiosignal
+greenlet==3.2.4
+    # via sqlalchemy
 h11==0.16.0
     # via
     #   httpcore
@@ -212,7 +214,7 @@ sqlalchemy==2.0.41
     #   -r requirements.in
     #   alembic
     #   sentry-sdk
-starlette==0.50.0
+starlette==0.49.1
     # via
     #   -r requirements.in
     #   fastapi

@@ -18,6 +18,10 @@ aiosignal==1.4.0
     #   aiohttp
 alembic==1.16.4
     # via -r requirements.txt
+annotated-doc==0.0.4
+    # via
+    #   -r requirements.txt
+    #   fastapi
 annotated-types==0.7.0
     # via
     #   -r requirements.txt
@@ -89,7 +93,7 @@ execnet==2.1.1
     # via pytest-xdist
 executing==2.2.0
     # via stack-data
-fastapi==0.116.1
+fastapi==0.122.0
     # via
     #   -r requirements.txt
     #   sentry-sdk
@@ -104,6 +108,10 @@ frozenlist==1.7.0
     #   -r requirements.txt
     #   aiohttp
     #   aiosignal
+greenlet==3.2.4
+    # via
+    #   -r requirements.txt
+    #   sqlalchemy
 h11==0.16.0
     # via
     #   -r requirements.txt
