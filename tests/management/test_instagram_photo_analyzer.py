@@ -11,6 +11,7 @@ They should ALL FAIL until the batch analyzer is implemented (Task 3.2).
 """
 
 import asyncio
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,6 +19,9 @@ from typing import Any, Dict, List
 from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
+
+# Skip all tests in this module if OPENROUTER_API_KEY is not set
+pytestmark = pytest.mark.skipif(not os.environ.get("OPENROUTER_API_KEY"), reason="OPENROUTER_API_KEY not set - skipping Instagram analyzer tests")
 
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent.parent))
