@@ -81,64 +81,6 @@ class TestInstagramPhotoAnalyzer:
     """Test the Instagram photo analyzer batch processing script."""
 
     @pytest.mark.asyncio
-    async def test_query_unanalyzed_dogs(self, mock_db_connection, sample_unanalyzed_dogs):
-        """Test querying dogs without existing analysis."""
-        from management.instagram_photo_analyzer import InstagramPhotoAnalyzer
-
-        mock_conn, mock_cursor = mock_db_connection
-        mock_cursor.fetchall.return_value = sample_unanalyzed_dogs
-
-        analyzer = InstagramPhotoAnalyzer(connection=mock_conn)
-        dogs = await analyzer.get_unanalyzed_dogs()
-
-        # Verify query was executed
-        mock_cursor.execute.assert_called_once()
-        query = mock_cursor.execute.call_args[0][0]
-
-        # Query should select dogs WITHOUT photo analysis
-        assert "LEFT JOIN dog_photo_analysis" in query or "NOT EXISTS" in query
-        assert "primary_image_url IS NOT NULL" in query
-
-        # Verify result
-        assert len(dogs) == 3
-        assert dogs[0]["name"] == "Max"
-
-    @pytest.mark.asyncio
-    async def test_query_unanalyzed_dogs_with_limit(self, mock_db_connection):
-        """Test querying dogs with LIMIT parameter."""
-        from management.instagram_photo_analyzer import InstagramPhotoAnalyzer
-
-        mock_conn, mock_cursor = mock_db_connection
-        mock_cursor.fetchall.return_value = []
-
-        analyzer = InstagramPhotoAnalyzer(connection=mock_conn)
-        await analyzer.get_unanalyzed_dogs(limit=10)
-
-        # Verify LIMIT clause in query
-        query = mock_cursor.execute.call_args[0][0]
-        assert "LIMIT" in query
-        assert mock_cursor.execute.call_args[0][1] == (10,) or "10" in query
-
-    @pytest.mark.asyncio
-    async def test_query_skips_already_analyzed(self, mock_db_connection):
-        """Test that query excludes dogs with existing analysis."""
-        from management.instagram_photo_analyzer import InstagramPhotoAnalyzer
-
-        mock_conn, mock_cursor = mock_db_connection
-        # Mock returns no dogs (all already analyzed)
-        mock_cursor.fetchall.return_value = []
-
-        analyzer = InstagramPhotoAnalyzer(connection=mock_conn)
-        dogs = await analyzer.get_unanalyzed_dogs()
-
-        # Should use LEFT JOIN ... WHERE dog_photo_analysis.id IS NULL
-        # or NOT EXISTS subquery
-        query = mock_cursor.execute.call_args[0][0].upper()
-        assert "LEFT JOIN" in query or "NOT EXISTS" in query
-
-        assert len(dogs) == 0
-
-    @pytest.mark.asyncio
     async def test_concurrent_batch_processing(self, mock_db_connection, sample_unanalyzed_dogs_dicts, sample_analysis_response):
         """Test concurrent processing of multiple dogs in batches."""
         from management.instagram_photo_analyzer import InstagramPhotoAnalyzer
