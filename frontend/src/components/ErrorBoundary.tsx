@@ -2,6 +2,10 @@
 
 import React, { Component, ReactNode } from "react";
 import * as Sentry from "@sentry/nextjs";
+import {
+  isChunkLoadError,
+  clearCacheAndReload,
+} from "@/lib/chunkLoadError";
 
 interface Props {
   children: ReactNode;
@@ -12,20 +16,26 @@ interface Props {
 interface State {
   hasError: boolean;
   error?: Error;
+  isChunkError: boolean;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, isChunkError: false };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    const chunkError = isChunkLoadError(error);
+    return { hasError: true, error, isChunkError: chunkError };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Log error to Sentry with component stack
+    if (this.state.isChunkError) {
+      clearCacheAndReload();
+      return;
+    }
+
     Sentry.withScope((scope) => {
       scope.setContext("component", {
         componentStack: errorInfo.componentStack,
@@ -40,6 +50,20 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      if (this.state.isChunkError) {
+        return (
+          <div className="flex flex-col items-center justify-center min-h-[400px] p-8 bg-blue-50 rounded-lg">
+            <div className="text-4xl mb-4">🔄</div>
+            <h2 className="text-xl font-semibold mb-2 text-gray-900">
+              Updating...
+            </h2>
+            <p className="text-gray-600 text-center mb-4">
+              Loading the latest version of the site.
+            </p>
+          </div>
+        );
+      }
+
       if (this.props.fallback) {
         return this.props.fallback;
       }
@@ -60,7 +84,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </details>
           )}
           <button
-            onClick={() => this.setState({ hasError: false })}
+            onClick={() => this.setState({ hasError: false, isChunkError: false })}
             className="mt-3 px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
           >
             Try again

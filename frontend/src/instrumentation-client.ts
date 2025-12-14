@@ -3,6 +3,10 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from "@sentry/nextjs";
+import {
+  isChunkLoadError,
+  setupChunkErrorHandler,
+} from "@/lib/chunkLoadError";
 
 // Determine environment early for logging decisions
 const getRuntimeEnvironment = () => {
@@ -112,20 +116,32 @@ if (
       "Failed to fetch",
       // Common browser errors
       "Non-Error promise rejection captured",
+      // Chunk load errors (handled separately with auto-reload)
+      "Loading chunk",
+      "ChunkLoadError",
+      /e\[n\]\.call/,
+      /e\[n\] is not a function/,
+      /undefined is not an object.*e\[n\]/,
     ],
 
     // Data scrubbing and filtering
     beforeSend(event, hint) {
+      // Filter out chunk load errors - these are handled by auto-reload
+      const error = hint.originalException;
+      if (isChunkLoadError(error)) {
+        return null;
+      }
+
       // In development, always send events
       if (isDevelopment) {
         return event;
       }
 
       // Filter out specific errors in production
-      const error = hint.originalException as Error;
+      const errorObj = hint.originalException as Error;
 
       // Don't send cancelled fetch requests
-      if (error?.name === "AbortError") {
+      if (errorObj?.name === "AbortError") {
         return null;
       }
 
@@ -244,6 +260,9 @@ if (
       trackThemeChange();
     }
   });
+
+  // Setup chunk error handler for auto-reload on stale chunks
+  setupChunkErrorHandler();
 } else if (!isProduction && isDevelopment) {
   console.log(
     `[Sentry] Disabled for ${environment} environment - only enabled in production`,

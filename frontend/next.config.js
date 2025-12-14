@@ -3,6 +3,22 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   
+  // Generate unique build IDs for better chunk cache invalidation
+  generateBuildId: async () => {
+    // Use git commit SHA if available (Vercel provides this)
+    if (process.env.VERCEL_GIT_COMMIT_SHA) {
+      return process.env.VERCEL_GIT_COMMIT_SHA;
+    }
+    // Use local git SHA for development builds
+    try {
+      const { execSync } = require('child_process');
+      return execSync('git rev-parse HEAD').toString().trim();
+    } catch {
+      // Fallback to timestamp only if git is unavailable
+      return `build-${Date.now()}`;
+    }
+  },
+  
   env: (process.env.NODE_ENV === 'test' || process.env.NEXT_PUBLIC_API_URL === 'http://localhost:3000') ? {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
   } : {},
@@ -138,6 +154,12 @@ const nextConfig = {
 
   webpack: (config, { dev, isServer }) => {
     if (!dev && !isServer) {
+      // Custom chunk loading global for better error identification
+      config.output = {
+        ...config.output,
+        chunkLoadingGlobal: 'rescueDogsChunkLoader',
+      };
+
       config.optimization.splitChunks = {
         ...config.optimization.splitChunks,
         chunks: 'all',
@@ -179,8 +201,6 @@ module.exports = withSentryConfig(
     silent: !process.env.CI,
     widenClientFileUpload: false,
     tunnelRoute: "/monitoring",
-    disableLogger: true,
-    automaticVercelMonitors: true,
     sourcemaps: {
       deleteSourcemapsAfterUpload: process.env.NODE_ENV === 'production',
     },
