@@ -16,7 +16,7 @@ from api.dependencies import get_database_connection
 
 # Import middleware
 from api.middleware.cache_headers import CacheHeadersMiddleware
-from api.middleware.sentry_middleware import SentryPerformanceMiddleware, SentryTimeoutMiddleware
+from api.middleware.sentry_middleware import SentryTimeoutMiddleware  # Only keep timeout middleware
 
 # Import Sentry monitoring
 from api.monitoring import init_sentry
@@ -44,7 +44,7 @@ init_sentry(ENVIRONMENT)
 if ENVIRONMENT == "production":
     import sentry_sdk
 
-    if sentry_sdk.Hub.current.client:
+    if sentry_sdk.get_client().is_active():  # Fixed: Use modern API instead of deprecated Hub
         logger.info("✅ Sentry initialized successfully")
         # Only send test message if debug mode is enabled
         if os.getenv("SENTRY_DEBUG", "false").lower() == "true":
@@ -134,11 +134,8 @@ async def global_exception_handler(request, exc):
     return JSONResponse(status_code=500, content={"detail": "Internal server error occurred"})
 
 
-# Add Sentry performance monitoring middleware FIRST (before other middleware)
-# This ensures ALL requests are tracked
-app.add_middleware(SentryPerformanceMiddleware)
-
-# Add timeout detection middleware
+# Sentry performance tracking is handled by FastApiIntegration - no need for custom middleware
+# Only add timeout detection middleware for custom timeout handling
 app.add_middleware(SentryTimeoutMiddleware, timeout_seconds=30)
 
 # Add CORS middleware with secure configuration

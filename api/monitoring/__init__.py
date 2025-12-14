@@ -30,6 +30,24 @@ def scrub_sensitive_data(event: Dict[str, Any], hint: Dict[str, Any]) -> Optiona
     return event
 
 
+def filter_transactions(event: Dict[str, Any], hint: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Filter out noisy transactions from performance monitoring."""
+    transaction_name = event.get("transaction", "")
+
+    # Skip health check and internal monitoring routes
+    noisy_endpoints = [
+        "/health",
+        "/api/monitoring/health",
+        "GET /health",
+        "GET /api/monitoring/health",
+    ]
+
+    if transaction_name in noisy_endpoints:
+        return None
+
+    return event
+
+
 def init_sentry(app_environment: str) -> None:
     dsn = os.getenv("SENTRY_DSN_BACKEND")
 
@@ -65,6 +83,7 @@ def init_sentry(app_environment: str) -> None:
         attach_stacktrace=True,
         send_default_pii=False,
         before_send=scrub_sensitive_data,
+        before_send_transaction=filter_transactions,  # Filter noisy transactions
         release=os.getenv("SENTRY_RELEASE", "unknown"),
         server_name=os.getenv("SERVER_NAME", "api"),
         max_breadcrumbs=50,
