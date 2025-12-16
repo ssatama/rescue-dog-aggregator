@@ -5,9 +5,15 @@ Database connection pool manager for improved performance.
 
 This module provides connection pooling to reduce connection overhead
 and improve database performance for high-traffic scenarios.
+
+Pool Configuration:
+- minconn: 5 (warm connections ready for immediate use)
+- maxconn: 50 (handles traffic bursts without exhaustion)
+- Retry logic with exponential backoff when pool is temporarily exhausted
 """
 
 import logging
+import os
 import threading
 import time
 from contextlib import contextmanager
@@ -20,6 +26,11 @@ from psycopg2.extras import RealDictCursor
 from config import DB_CONFIG
 
 logger = logging.getLogger(__name__)
+
+POOL_MIN_CONN = int(os.getenv("DB_POOL_MIN_CONN", "5"))
+POOL_MAX_CONN = int(os.getenv("DB_POOL_MAX_CONN", "50"))
+POOL_ACQUIRE_RETRIES = int(os.getenv("DB_POOL_ACQUIRE_RETRIES", "3"))
+POOL_ACQUIRE_RETRY_DELAY = float(os.getenv("DB_POOL_ACQUIRE_RETRY_DELAY", "0.1"))
 
 
 class ConnectionPool:
@@ -98,7 +109,6 @@ class ConnectionPool:
 
     def _create_pool(self):
         """Create the connection pool with configuration."""
-        # Build connection parameters
         conn_params = {
             "host": DB_CONFIG["host"],
             "user": DB_CONFIG["user"],
@@ -107,10 +117,13 @@ class ConnectionPool:
         if DB_CONFIG["password"]:
             conn_params["password"] = DB_CONFIG["password"]
 
-        # Create threaded connection pool
-        self._pool = psycopg2.pool.ThreadedConnectionPool(minconn=2, maxconn=20, **conn_params)  # Minimum connections  # Maximum connections
+        self._pool = psycopg2.pool.ThreadedConnectionPool(
+            minconn=POOL_MIN_CONN,
+            maxconn=POOL_MAX_CONN,
+            **conn_params,
+        )
 
-        logger.info(f"Connection pool created: min=2, max=20, database={DB_CONFIG['database']}")
+        logger.info(f"Connection pool created: min={POOL_MIN_CONN}, max={POOL_MAX_CONN}, database={DB_CONFIG['database']}")
 
     def _validate_pool(self):
         """Validate that the pool can provide working connections."""
@@ -132,9 +145,31 @@ class ConnectionPool:
             if test_conn and self._pool:
                 self._pool.putconn(test_conn)
 
+    def _acquire_connection_with_retry(self) -> psycopg2.extensions.connection:
+        """Acquire a connection with retry logic for pool exhaustion."""
+        last_error = None
+
+        for attempt in range(POOL_ACQUIRE_RETRIES):
+            try:
+                conn = self._pool.getconn()
+                if conn is not None:
+                    if attempt > 0:
+                        logger.info(f"Connection acquired after {attempt + 1} attempts")
+                    return conn
+                raise pool.PoolError("Pool returned None connection")
+            except pool.PoolError as e:
+                last_error = e
+                if attempt < POOL_ACQUIRE_RETRIES - 1:
+                    delay = POOL_ACQUIRE_RETRY_DELAY * (2**attempt)
+                    logger.warning(f"Pool exhausted, retrying in {delay:.2f}s (attempt {attempt + 1}/{POOL_ACQUIRE_RETRIES})")
+                    time.sleep(delay)
+
+        logger.error(f"Failed to acquire connection after {POOL_ACQUIRE_RETRIES} retries: {last_error}")
+        raise RuntimeError(f"Connection pool exhausted after {POOL_ACQUIRE_RETRIES} retries")
+
     @contextmanager
     def get_connection(self) -> Generator[psycopg2.extensions.connection, None, None]:
-        """Get a connection from the pool."""
+        """Get a connection from the pool with retry on exhaustion."""
         conn = None
         try:
             if not ConnectionPool._initialized or self._pool is None:
@@ -142,20 +177,14 @@ class ConnectionPool:
                     raise RuntimeError(f"Connection pool initialization failed: {ConnectionPool._initialization_error}")
                 raise RuntimeError("Connection pool not initialized. Call initialize() first.")
 
-            conn = self._pool.getconn()
-            if conn is None:
-                raise RuntimeError("Could not get connection from pool - pool may be exhausted")
-
+            conn = self._acquire_connection_with_retry()
             logger.debug(f"Connection acquired from pool: {id(conn)}")
             yield conn
-
-            # Commit transaction on success
             conn.commit()
 
         except Exception as e:
             if conn:
                 conn.rollback()
-            # Only log non-HTTPExceptions (HTTPExceptions are expected for 404s, etc.)
             from fastapi import HTTPException
 
             if not isinstance(e, HTTPException):
@@ -196,13 +225,13 @@ class ConnectionPool:
                 "initialization_error": str(ConnectionPool._initialization_error) if ConnectionPool._initialization_error else None,
             }
 
-        # Note: psycopg2 ThreadedConnectionPool doesn't expose these stats directly
-        # This is a simplified version for monitoring
         return {
             "status": "active",
             "initialized": True,
-            "min_connections": 2,
-            "max_connections": 20,
+            "min_connections": POOL_MIN_CONN,
+            "max_connections": POOL_MAX_CONN,
+            "acquire_retries": POOL_ACQUIRE_RETRIES,
+            "acquire_retry_delay": POOL_ACQUIRE_RETRY_DELAY,
             "pool_type": "ThreadedConnectionPool",
         }
 
