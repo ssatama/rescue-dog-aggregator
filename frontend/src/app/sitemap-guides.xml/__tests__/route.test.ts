@@ -44,7 +44,7 @@ describe("Sitemap Guides Route", () => {
     const response = await GET();
     const text = getResponseText(response);
 
-    expect(text).toContain("<loc>https://rescuedogs.me/guides</loc>");
+    expect(text).toContain("<loc>https://www.rescuedogs.me/guides</loc>");
   });
 
   it("includes all guide slugs as URLs", async () => {
@@ -52,13 +52,13 @@ describe("Sitemap Guides Route", () => {
     const text = getResponseText(response);
 
     expect(text).toContain(
-      "<loc>https://rescuedogs.me/guides/test-guide-1</loc>",
+      "<loc>https://www.rescuedogs.me/guides/test-guide-1</loc>",
     );
     expect(text).toContain(
-      "<loc>https://rescuedogs.me/guides/test-guide-2</loc>",
+      "<loc>https://www.rescuedogs.me/guides/test-guide-2</loc>",
     );
     expect(text).toContain(
-      "<loc>https://rescuedogs.me/guides/european-rescue-guide</loc>",
+      "<loc>https://www.rescuedogs.me/guides/european-rescue-guide</loc>",
     );
   });
 

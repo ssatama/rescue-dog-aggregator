@@ -378,6 +378,8 @@ export const generateSitemapIndex = (sitemaps) => {
       { filename: "sitemap-dogs.xml", lastmod },
       { filename: "sitemap-organizations.xml", lastmod },
       { filename: "sitemap-images.xml", lastmod },
+      { filename: "sitemap-guides.xml", lastmod },
+      { filename: "sitemap-breeds.xml", lastmod },
     ];
   }
 
