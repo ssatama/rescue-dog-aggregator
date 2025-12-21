@@ -12,15 +12,34 @@ export const revalidate = 300;
 
 // Generate metadata for SEO
 export async function generateMetadata() {
+  const collectionSchema = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Available Rescue Dogs",
+    description: "Browse rescue dogs available for adoption from verified European rescue organizations",
+    url: "https://www.rescuedogs.me/dogs",
+  };
+
   return {
     title: "Find Your New Best Friend | Rescue Dog Aggregator",
     description:
-      "Browse hundreds of rescue dogs looking for their forever homes. Filter by size, age, location, and more.",
+      "Browse hundreds of rescue dogs looking for their forever homes. Filter by breed, size, age, location, and personality traits from 13 verified European organizations.",
+    alternates: {
+      canonical: "https://www.rescuedogs.me/dogs",
+    },
     openGraph: {
       title: "Find Rescue Dogs",
       description:
         "Browse hundreds of rescue dogs looking for their forever homes.",
-      images: ["/og-dogs.jpg"],
+      images: ["/og-image.png"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Find Rescue Dogs",
+      description: "Browse hundreds of rescue dogs looking for their forever homes.",
+    },
+    other: {
+      "application/ld+json": JSON.stringify(collectionSchema),
     },
   };
 }

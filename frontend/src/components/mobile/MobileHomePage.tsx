@@ -7,7 +7,6 @@ import MobileStats from "./MobileStats";
 import { MobileAvailableNow } from "./MobileAvailableNow";
 import { MobileBreedSpotlight } from "./MobileBreedSpotlight";
 import MobileBottomNav from "../navigation/MobileBottomNav";
-import { MobileHomeSEO } from "../seo/MobileHomeSEO";
 import { type Dog } from "../../types/dog";
 
 interface Statistics {
@@ -110,13 +109,6 @@ export default function MobileHomePage({ initialData }: MobileHomePageProps) {
       data-testid="mobile-home-page"
       className="min-h-screen bg-[#FFF4ED] dark:bg-gray-900 pb-16 sm:hidden overflow-x-hidden"
     >
-      {/* SEO Component */}
-      <MobileHomeSEO
-        totalDogs={initialData?.statistics?.totalDogs || 0}
-        totalOrganizations={initialData?.statistics?.totalOrganizations || 0}
-        totalBreeds={uniqueBreedsCount}
-      />
-
       {/* Top Header with branding */}
       <MobileTopHeader />
 

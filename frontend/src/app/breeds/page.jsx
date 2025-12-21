@@ -14,18 +14,19 @@ export async function generateMetadata() {
   const breedStats = await getBreedStats();
   const totalDogs = Number(breedStats?.total_dogs || 2717);
   const uniqueBreeds = Number(breedStats?.unique_breeds || 259);
+  const qualifyingBreedsCount = breedStats?.qualifying_breeds?.length || 26;
 
   return {
     title: `Dog Breeds | ${totalDogs.toLocaleString()} Rescue Dogs Across ${uniqueBreeds} Breeds`,
     description:
-      "Discover rescue dogs by breed. Browse 26 popular breeds with dedicated pages, personality profiles, and real-time availability from verified rescue organizations.",
+      `Discover rescue dogs by breed. Browse ${qualifyingBreedsCount} popular breeds with dedicated pages, personality profiles, and real-time availability from verified rescue organizations.`,
     keywords:
       "rescue dogs by breed, dog breeds for adoption, breed-specific rescue, purebred rescue dogs, mixed breed dogs, dog breed finder, rescue dog breeds, adoptable dog breeds",
     openGraph: {
       title: "Find Rescue Dogs by Breed",
       description:
         "Browse rescue dogs by breed with personality profiles and real-time availability.",
-      images: ["/og-breeds.jpg"],
+      images: ["/og-image.png"],
     },
     alternates: {
       canonical: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me"}/breeds`,

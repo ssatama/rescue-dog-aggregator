@@ -9,7 +9,6 @@ import TrustSection from "./TrustSection";
 import FinalCTA from "./FinalCTA";
 import Loading from "../ui/Loading";
 import MobileHomePage from "../mobile/MobileHomePage";
-import { MobileHomeSEO } from "../seo/MobileHomeSEO";
 import ErrorBoundary from "../ui/ErrorBoundary";
 import { transformMobileHomePageData } from "../../utils/homePageTransformers";
 

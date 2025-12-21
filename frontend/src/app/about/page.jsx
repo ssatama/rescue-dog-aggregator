@@ -10,9 +10,12 @@ import ContactSection from "../../components/about/ContactSection";
 
 // Metadata export for SEO
 export const metadata = {
-  title: "About Us - Rescue Dog Aggregator",
+  title: "About Us | European Rescue Dog Platform - Rescue Dogs",
   description:
     "Learn about our mission to connect loving homes with rescue dogs in need. Discover how we work with rescue organizations to simplify the dog adoption process.",
+  alternates: {
+    canonical: "https://www.rescuedogs.me/about",
+  },
   openGraph: {
     title: "About Rescue Dog Aggregator",
     description:

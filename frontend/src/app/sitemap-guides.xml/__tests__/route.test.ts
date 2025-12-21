@@ -75,7 +75,7 @@ describe("Sitemap Guides Route", () => {
     const response = await GET();
     const text = getResponseText(response);
 
-    expect(text).toContain("<changefreq>weekly</changefreq>");
+    expect(text).toContain("<changefreq>monthly</changefreq>");
   });
 
   it("includes changefreq for guide pages", async () => {

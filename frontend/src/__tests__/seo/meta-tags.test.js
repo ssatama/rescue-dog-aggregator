@@ -258,7 +258,7 @@ describe("SEO Meta Tags", () => {
     test("should have proper meta tags for about page", async () => {
       const { metadata } = await import("../../app/about/page.jsx");
 
-      expect(metadata.title).toBe("About Us - Rescue Dog Aggregator");
+      expect(metadata.title).toBe("About Us | European Rescue Dog Platform - Rescue Dogs");
       expect(metadata.description).toContain("Learn about our mission");
       expect(metadata.openGraph.title).toBe("About Rescue Dog Aggregator");
     });
