@@ -269,8 +269,8 @@ def generate_profiles(organization: Optional[int], limit: Optional[int], batch_s
         stats = pipeline.get_statistics()
         console.print(f"  ✓ Processed: {stats['processed']}, Successful: {stats['successful']} ({stats['success_rate']:.1f}%)")
 
-        total_processed += stats['processed']
-        total_successful += stats['successful']
+        total_processed += stats["processed"]
+        total_successful += stats["successful"]
 
     cursor.close()
     conn.close()

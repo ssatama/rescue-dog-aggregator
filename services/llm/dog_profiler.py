@@ -142,7 +142,11 @@ class DogProfilerPipeline:
 
             # Use retry handler to call the API with automatic retries and model fallback
             profiler_result = await self.retry_handler.execute_with_retry(
-                self._call_llm_api, dog_data=dog_data, model="google/gemini-3-flash-preview", timeout=30.0, prompt_adjustment=""  # Start with preferred model  # Will be modified by retry handler if needed
+                self._call_llm_api,
+                dog_data=dog_data,
+                model="google/gemini-3-flash-preview",
+                timeout=30.0,
+                prompt_adjustment="",  # Start with preferred model  # Will be modified by retry handler if needed
             )
 
             # Calculate processing time

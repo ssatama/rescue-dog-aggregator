@@ -43,7 +43,7 @@ class TestOrganizationConfig:
 
         assert config.source_language == "en"
         assert config.target_language == "en"
-        assert config.model_preference == "google/gemini-2.5-flash"
+        assert config.model_preference == "google/gemini-3-flash-preview"
 
     def test_prompt_template(self):
         """Test prompt template structure."""
