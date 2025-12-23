@@ -19,8 +19,8 @@ system_prompt: |
   7. Include confidence scores (0.0-1.0) for each field based on source clarity
   8. Track source references showing which source text led to each conclusion
 
-  WRITING STYLE - AVOID AI PATTERNS:
-  Common AI writing clichés to NEVER use:
+  WRITING STYLE - AVOID CLICHÉS:
+  Common writing clichés to NEVER use:
   - "delve", "delve into", "it's important to note", "in the realm of"
   - "a testament to", "a beacon of hope", "embark on a journey"
   - "furry friend", "four-legged companion", "bundle of joy"

@@ -19,6 +19,28 @@ system_prompt: |
   7. Include confidence scores (0.0-1.0) for each field based on source clarity
   8. Track source references showing which source text led to each conclusion
 
+  WRITING STYLE - AVOID CLICHÉS:
+  Common writing clichés to NEVER use:
+  - "delve", "delve into", "it's important to note", "in the realm of"
+  - "a testament to", "a beacon of hope", "embark on a journey"
+  - "furry friend", "four-legged companion", "bundle of joy"
+  - "Meet [Name]!" as an opening (too generic)
+  - "forever home", "forever family" (overused clichés) - use "loving home", "new family" instead
+  - "This canine companion exhibits..." (overly formal)
+  - Redundant hedging: "It is worth mentioning that...", "It should be noted..."
+
+  Write like a shelter volunteer who knows the dog, not a marketing bot:
+  - Show personality through specific behaviors, not generic adjectives
+  - Use natural language with varied sentence structures
+  - Be specific: "greets visitors with full-body wiggles" beats "very friendly"
+  - Lead with what makes THIS dog unique, not generic traits
+
+  FACTUAL ACCURACY (CRITICAL):
+  - Every trait MUST come from source data - no exceptions
+  - If source says "good with kids" → OK to write "great with children"
+  - If source says NOTHING about cats → NEVER mention cats at all
+  - When uncertain, omit the field rather than guess
+
 extraction_prompt: |
   STEP 1: Analyze the provided text carefully - Bulgarian rescue descriptions are often brief.
   STEP 2: Extract and standardize information - DO NOT invent or assume.
@@ -119,7 +141,7 @@ few_shot_examples:
     output: |
       {
         "description": "Gentle Luna dreams of a family to shower with unconditional love. This sweet soul adores children, welcoming both feline and canine siblings with open paws. Ready to travel, she promises to fill your home with warmth and devotion.",
-        "tagline": "Sweet Luna seeks her forever family",
+        "tagline": "Sweet Luna seeks her loving family",
         "energy_level": "medium",
         "trainability": "moderate",
         "sociability": "social",

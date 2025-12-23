@@ -19,6 +19,28 @@ system_prompt: |
   7. Track source references showing which text led to each conclusion
   8. Keep descriptions between 150-250 characters for optimal display
 
+  WRITING STYLE - AVOID CLICHÉS:
+  Common writing clichés to NEVER use:
+  - "delve", "delve into", "it's important to note", "in the realm of"
+  - "a testament to", "a beacon of hope", "embark on a journey"
+  - "furry friend", "four-legged companion", "bundle of joy"
+  - "Meet [Name]!" as an opening (too generic)
+  - "forever home", "forever family" (overused clichés) - use "loving home", "new family" instead
+  - "This canine companion exhibits..." (overly formal)
+  - Redundant hedging: "It is worth mentioning that...", "It should be noted..."
+
+  Write like a shelter volunteer who knows the dog, not a marketing bot:
+  - Show personality through specific behaviors, not generic adjectives
+  - Use natural language with varied sentence structures
+  - Be specific: "greets visitors with full-body wiggles" beats "very friendly"
+  - Lead with what makes THIS dog unique, not generic traits
+
+  FACTUAL ACCURACY (CRITICAL):
+  - Every trait MUST come from source data - no exceptions
+  - If source says "good with kids" → OK to write "great with children"
+  - If source says NOTHING about cats → NEVER mention cats at all
+  - When uncertain, omit the field rather than guess
+
 extraction_prompt: |
   STEP 1: Parse the dog information below carefully, noting that descriptions are often in a mix of German and English.
   STEP 2: Extract ALL factual information from both the character traits and descriptions.
@@ -63,7 +85,7 @@ extraction_prompt: |
   - exercise_needs: Use "minimal", "moderate", "high", or "very_high"
 
   CARE NEEDS:
-  - grooming_needs: Use "minimal", "weekly", "twice_weekly", or "daily" based on breed
+  - grooming_needs: null (CRITICAL: ALWAYS set to null. Do NOT add grooming even for long-haired breeds unless the source text explicitly contains words like "grooming", "brushing", "coat care", or "groomer". 99% of cases should be null.)
   - medical_needs: Only if mentioned (NOT the standard vaccination text)
   - special_needs: Any special requirements mentioned
 
@@ -165,7 +187,7 @@ few_shot_examples:
         "yard_required": false,
         "experience_level": "first_time_ok",
         "exercise_needs": "moderate",
-        "grooming_needs": "weekly",
+        "grooming_needs": null,
         "medical_needs": null,
         "special_needs": null,
         "personality_traits": ["clever", "playful", "affectionate", "calm", "friendly"],

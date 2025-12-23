@@ -19,6 +19,28 @@ system_prompt: |
   7. Track source references showing which text led to each conclusion
   8. Keep descriptions between 150-500 characters for optimal display
 
+  WRITING STYLE - AVOID CLICHÉS:
+  Common writing clichés to NEVER use:
+  - "delve", "delve into", "it's important to note", "in the realm of"
+  - "a testament to", "a beacon of hope", "embark on a journey"
+  - "furry friend", "four-legged companion", "bundle of joy"
+  - "Meet [Name]!" as an opening (too generic)
+  - "forever home", "forever family" (overused clichés) - use "loving home", "new family" instead
+  - "This canine companion exhibits..." (overly formal)
+  - Redundant hedging: "It is worth mentioning that...", "It should be noted..."
+
+  Write like a shelter volunteer who knows the dog, not a marketing bot:
+  - Show personality through specific behaviors, not generic adjectives
+  - Use natural language with varied sentence structures
+  - Be specific: "greets visitors with full-body wiggles" beats "very friendly"
+  - Lead with what makes THIS dog unique, not generic traits
+
+  FACTUAL ACCURACY (CRITICAL):
+  - Every trait MUST come from source data - no exceptions
+  - If source says "good with kids" → OK to write "great with children"
+  - If source says NOTHING about cats → NEVER mention cats at all
+  - When uncertain, omit the field rather than guess
+
 extraction_prompt: |
   STEP 1: Analyze the provided English description for key facts and personality traits.
   STEP 2: Extract all available information while preserving factual accuracy.
@@ -54,7 +76,7 @@ extraction_prompt: |
   - exercise_needs: "minimal", "moderate", "high", or "very_high" - Based on age, breed, energy
 
   CARE NEEDS:
-  - grooming_needs: "minimal", "weekly", "frequent", or "professional" - Based on breed type
+  - grooming_needs: null (CRITICAL: ALWAYS set to null. Do NOT add grooming even for long-haired breeds unless the source text explicitly contains words like "grooming", "brushing", "coat care", or "groomer". 99% of cases should be null.)
   - medical_needs: Only if explicitly mentioned (Leishmania, special medication, etc.)
   - special_needs: Any special requirements mentioned (diet, training needs, etc.)
 
@@ -96,8 +118,8 @@ few_shot_examples:
 
     output: |
       {
-        "description": "Meet Bounty, a young Labrador with an irresistible smile who transforms from shy to devoted friend. This treat-loving explorer adores giving kisses, gets along wonderfully with dogs and cats, and promises lifelong loyalty once she trusts you. Her playful spirit and affectionate nature make her the perfect family companion.",
-        "tagline": "Smiling sweetheart ready for forever kisses!",
+        "description": "Young Bounty, a Labrador with an irresistible smile, transforms from shy to devoted friend. This treat-loving explorer adores giving kisses, gets along wonderfully with dogs and cats, and promises lifelong loyalty once she trusts you. Her playful spirit and affectionate nature make her the perfect family companion.",
+        "tagline": "Smiling sweetheart ready for endless kisses!",
         "energy_level": "high",
         "trainability": "moderate",
         "sociability": "social",
@@ -109,7 +131,7 @@ few_shot_examples:
         "yard_required": true,
         "experience_level": "some_experience",
         "exercise_needs": "high",
-        "grooming_needs": "weekly",
+        "grooming_needs": null,
         "medical_needs": null,
         "special_needs": "needs patience during initial adjustment period",
         "personality_traits": ["affectionate", "playful", "loyal", "treat-motivated", "shy at first"],
