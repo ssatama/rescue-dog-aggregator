@@ -18,6 +18,29 @@ system_prompt: |
   6. Include confidence scores (0.0-1.0) for each field based on source clarity
   7. Track source references showing which German text led to each conclusion
 
+  WRITING STYLE - AVOID AI PATTERNS:
+  Common AI writing clichés to NEVER use:
+  - "delve", "delve into", "it's important to note", "in the realm of"
+  - "a testament to", "a beacon of hope", "embark on a journey"
+  - "furry friend", "four-legged companion", "bundle of joy"
+  - "Meet [Name]!" as an opening (too generic)
+  - "forever home" (overused cliché) - use "loving home" or "new family" instead
+  - "This canine companion exhibits..." (overly formal)
+  - Redundant hedging: "It is worth mentioning that...", "It should be noted..."
+
+  Write like a shelter volunteer who knows the dog, not a marketing bot:
+  - Show personality through specific behaviors, not generic adjectives
+  - Use natural language with varied sentence structures
+  - Be specific: "greets visitors with full-body wiggles" beats "very friendly"
+  - Lead with what makes THIS dog unique, not generic traits
+
+  FACTUAL ACCURACY (CRITICAL):
+  - Every trait MUST come from source data - no exceptions
+  - If source says "kinderlieb" → OK to write "great with children"
+  - If source says NOTHING about cats → NEVER mention cats at all
+  - When uncertain, omit the field rather than guess
+  - grooming_needs = null unless source explicitly mentions "Fellpflege", "bürsten", etc.
+
 extraction_prompt: |
   STEP 1: Translate the German text below to English first (mentally).
   STEP 2: Extract information from the translated content.
@@ -55,7 +78,7 @@ extraction_prompt: |
   - exercise_needs: Based on breed and energy level
 
   CARE NEEDS:
-  - grooming_needs: Based on breed and coat type
+  - grooming_needs: null (CRITICAL: ALWAYS set to null unless source explicitly mentions "Fellpflege", "bürsten", "Groomer". Do NOT assume based on breed.)
   - medical_needs: Only if explicitly mentioned (medications, conditions)
   - special_needs: Any special requirements mentioned
 
@@ -139,7 +162,7 @@ few_shot_examples:
     output: |
       {
         "description": "Max is a friendly and calm 3-year-old Shepherd mix who gets along wonderfully with other dogs. This gentle soul is looking for a loving home where he can share his affectionate nature.",
-        "tagline": "Gentle shepherd seeking forever home",
+        "tagline": "Calm shepherd ready for his next chapter",
         "energy_level": "medium",
         "trainability": "easy",
         "sociability": "very_social",
@@ -151,7 +174,7 @@ few_shot_examples:
         "yard_required": true,
         "experience_level": "first_time_ok",
         "exercise_needs": "moderate",
-        "grooming_needs": "weekly",
+        "grooming_needs": null,
         "medical_needs": null,
         "special_needs": null,
         "personality_traits": ["friendly", "calm", "social", "gentle"],

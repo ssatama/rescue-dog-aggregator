@@ -36,7 +36,7 @@ class OrganizationConfig:
     prompt_file: str
     source_language: str = "en"
     target_language: str = "en"
-    model_preference: str = "google/gemini-2.5-flash"
+    model_preference: str = "google/gemini-3-flash-preview"
 
     def __post_init__(self):
         """Post-initialization validation."""

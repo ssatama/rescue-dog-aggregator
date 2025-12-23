@@ -19,6 +19,28 @@ system_prompt: |
   7. Include confidence scores (0.0-1.0) for each field based on source clarity
   8. Track source references showing which source text led to each conclusion
 
+  WRITING STYLE - AVOID AI PATTERNS:
+  Common AI writing clichés to NEVER use:
+  - "delve", "delve into", "it's important to note", "in the realm of"
+  - "a testament to", "a beacon of hope", "embark on a journey"
+  - "furry friend", "four-legged companion", "bundle of joy"
+  - "Meet [Name]!" as an opening (too generic)
+  - "forever home", "forever family" (overused clichés) - use "loving home", "new family" instead
+  - "This canine companion exhibits..." (overly formal)
+  - Redundant hedging: "It is worth mentioning that...", "It should be noted..."
+
+  Write like a shelter volunteer who knows the dog, not a marketing bot:
+  - Show personality through specific behaviors, not generic adjectives
+  - Use natural language with varied sentence structures
+  - Be specific: "greets visitors with full-body wiggles" beats "very friendly"
+  - Lead with what makes THIS dog unique, not generic traits
+
+  FACTUAL ACCURACY (CRITICAL):
+  - Every trait MUST come from source data - no exceptions
+  - If source says "good with kids" → OK to write "great with children"
+  - If source says NOTHING about cats → NEVER mention cats at all
+  - When uncertain, omit the field rather than guess
+
 extraction_prompt: |
   STEP 1: Analyze the provided detailed English text carefully.
   STEP 2: Extract and standardize information - DO NOT invent or assume.
@@ -94,7 +116,7 @@ extraction_prompt: |
   4. Keep under 400 characters - be concise but deeply compelling
   5. Example transformations:
      - Basic: "Parker is a young hound mix from Cyprus now in foster care"
-     - World-class: "Playful Parker brings boundless hound enthusiasm to life! This Cyprus charmer gallops through open spaces with pure joy, ready to share adventures and snuggles with his forever family."
+     - World-class: "Playful Parker brings boundless hound enthusiasm to life! This Cyprus charmer gallops through open spaces with pure joy, ready to share adventures and snuggles with his new family."
      - Basic: "Bonnie and Clyde are senior spaniels looking for a home together"
      - World-class: "After surviving together through hardship, devoted Bonnie & Clyde's unbreakable bond melts hearts. These resilient senior spaniels seek a peaceful retirement filled with love they've always deserved."
 
@@ -140,7 +162,7 @@ few_shot_examples:
 
     output: |
       {
-        "description": "Brilliant Luna transforms from street survivor to devoted companion! This shepherd beauty combines intelligence with playful fetch obsession, warming hearts with treat-motivated trust. Ready for adventures with her active forever family.",
+        "description": "Brilliant Luna transforms from street survivor to devoted companion! This shepherd beauty combines intelligence with playful fetch obsession, warming hearts with treat-motivated trust. Ready for adventures with her active new family.",
         "tagline": "Smart shepherd seeks adventure partners",
         "energy_level": "high",
         "trainability": "easy",

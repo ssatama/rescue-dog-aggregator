@@ -1,7 +1,7 @@
 """
 Dog Profiler Pipeline for enriching dog data with LLM.
 
-Default Model: google/gemini-2.5-flash
+Default Model: google/gemini-3-flash-preview
 - 2.5x faster than GPT-4
 - 85% cheaper (~$0.0015/dog vs $0.01/dog)
 - 90% success rate (with retry logic can reach 100%)
@@ -73,7 +73,7 @@ class DogProfilerPipeline:
 
         # Setup retry handler with fallback models
         if retry_config is None:
-            retry_config = RetryConfig(max_attempts=3, initial_delay=2.0, backoff_factor=2.0, fallback_models=["google/gemini-2.5-flash", "openai/gpt-4-turbo-preview"])
+            retry_config = RetryConfig(max_attempts=3, initial_delay=2.0, backoff_factor=2.0, fallback_models=["google/gemini-3-flash-preview", "openai/gpt-4-turbo-preview"])
         self.retry_handler = RetryHandler(retry_config)
 
     def _normalize_profile_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -94,7 +94,7 @@ class DogProfilerPipeline:
     async def _call_llm_api(
         self,
         dog_data: Dict[str, Any],
-        model: str = "google/gemini-2.5-flash",
+        model: str = "google/gemini-3-flash-preview",
         timeout: float = 30.0,
         prompt_adjustment: str = "",
     ) -> Dict[str, Any]:
@@ -142,7 +142,7 @@ class DogProfilerPipeline:
 
             # Use retry handler to call the API with automatic retries and model fallback
             profiler_result = await self.retry_handler.execute_with_retry(
-                self._call_llm_api, dog_data=dog_data, model="google/gemini-2.5-flash", timeout=30.0, prompt_adjustment=""  # Start with preferred model  # Will be modified by retry handler if needed
+                self._call_llm_api, dog_data=dog_data, model="google/gemini-3-flash-preview", timeout=30.0, prompt_adjustment=""  # Start with preferred model  # Will be modified by retry handler if needed
             )
 
             # Calculate processing time
@@ -163,7 +163,7 @@ class DogProfilerPipeline:
             # Add/update metadata fields
             profile_data["profiled_at"] = datetime.utcnow().isoformat()
             profile_data["prompt_version"] = self.prompt_builder.get_prompt_version()
-            profile_data["model_used"] = profiler_result.get("model_used", "google/gemini-2.5-flash")
+            profile_data["model_used"] = profiler_result.get("model_used", "google/gemini-3-flash-preview")
 
             # Add confidence scores if not present (using defaults)
             if "confidence_scores" not in profile_data:

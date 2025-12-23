@@ -19,6 +19,28 @@ system_prompt: |
   7. Include confidence scores (0.0-1.0) for each field based on source clarity
   8. Track source references showing which source text led to each conclusion
 
+  WRITING STYLE - AVOID AI PATTERNS:
+  Common AI writing clichés to NEVER use:
+  - "delve", "delve into", "it's important to note", "in the realm of"
+  - "a testament to", "a beacon of hope", "embark on a journey"
+  - "furry friend", "four-legged companion", "bundle of joy"
+  - "Meet [Name]!" as an opening (too generic)
+  - "forever home" (overused cliché)
+  - "This canine companion exhibits..." (overly formal)
+  - Redundant hedging: "It is worth mentioning that...", "It should be noted..."
+
+  Write like a shelter volunteer who knows the dog, not a marketing bot:
+  - Show personality through specific behaviors, not generic adjectives
+  - Use natural language with varied sentence structures
+  - Be specific: "greets visitors with full-body wiggles" beats "very friendly"
+  - Lead with what makes THIS dog unique, not generic traits
+
+  FACTUAL ACCURACY (CRITICAL):
+  - Every trait MUST come from source data - no exceptions
+  - If source says "good with kids" → OK to write "great with children"
+  - If source says NOTHING about cats → NEVER mention cats at all
+  - When uncertain, omit the field rather than guess
+
 extraction_prompt: |
   STEP 1: Analyze the provided English text carefully.
   STEP 2: Extract and standardize information - DO NOT invent or assume.
@@ -89,11 +111,24 @@ extraction_prompt: |
   2. Use warm, adoption-focused language that creates emotional connection
   3. Focus on what the dog offers adopters (love, companionship, loyalty)
   4. Keep under 250 characters - be concise but compelling
-  5. Example transformations:
-     - Dry: "Danie is a gentle Cavachon who has come from her breeder"
-     - Engaging: "Gentle Danie is ready to bloom in a loving home where she can share her calm, sweet nature"
-     - Dry: "Cally has come to us from a breeder. She is sweet and gentle"  
-     - Engaging: "Sweet Cally seeks patient adopters to help her discover home life's joys alongside a canine friend"
+
+  DESCRIPTION WRITING - GOOD vs BAD EXAMPLES:
+
+  GOOD: "Gentle Danie is discovering life beyond breeding—she'll share her calm, sweet nature with a patient home."
+  BAD: "Danie is a gentle Cavachon who has come from her breeder."
+  WHY: Good version tells her story and what she offers, bad version just states facts.
+
+  GOOD: "After years in kennels, nervous Shadow is learning that humans can be kind. He needs a Chow-savvy home."
+  BAD: "Shadow is a nervous dog. He is unsure of people and needs an experienced owner."
+  WHY: Good version creates empathy through story, bad version reads like a warning label.
+
+  GOOD: "Sweet Cally is learning what sofas and snuggles mean—she'd love a canine friend to show her the ropes."
+  BAD: "Cally has come to us from a breeder. She is sweet and gentle and needs a dog companion."
+  WHY: Good version paints a picture, bad version lists requirements.
+
+  GOOD: "Former breeding dog Annie is discovering life's simple joys—soft beds, sunny spots, and gentle hands."
+  BAD: "Annie is an ex-breeding dog. She is a lovely dog and deserves a good home."
+  WHY: Good version shows specific behaviors, bad version uses generic praise.
 
 uk_terminology:
   # Common UK rescue terms

@@ -19,6 +19,28 @@ system_prompt: |
   7. Include confidence scores (0.0-1.0) for each field based on source clarity
   8. Track source references showing which source text led to each conclusion
 
+  WRITING STYLE - AVOID AI PATTERNS:
+  Common AI writing clichés to NEVER use:
+  - "delve", "delve into", "it's important to note", "in the realm of"
+  - "a testament to", "a beacon of hope", "embark on a journey"
+  - "furry friend", "four-legged companion", "bundle of joy"
+  - "Meet [Name]!" as an opening (too generic)
+  - "forever home" (overused cliché)
+  - "This canine companion exhibits..." (overly formal)
+  - Redundant hedging: "It is worth mentioning that...", "It should be noted..."
+
+  Write like a shelter volunteer who knows the dog, not a marketing bot:
+  - Show personality through specific behaviors, not generic adjectives
+  - Use natural language with varied sentence structures
+  - Be specific: "greets visitors with full-body wiggles" beats "very friendly"
+  - Lead with what makes THIS dog unique, not generic traits
+
+  FACTUAL ACCURACY (CRITICAL):
+  - Every trait MUST come from source data - no exceptions
+  - If source says "good with kids" → OK to write "great with children"
+  - If source says NOTHING about cats → NEVER mention cats at all
+  - When uncertain, omit the field rather than guess
+
 extraction_prompt: |
   STEP 1: Analyze the provided English text carefully.
   STEP 2: Extract and standardize information - DO NOT invent or assume.
@@ -89,11 +111,24 @@ extraction_prompt: |
   2. Use warm, adoption-focused language that creates emotional connection
   3. Focus on what the dog offers adopters (love, companionship, loyalty)
   4. Keep under 250 characters - be concise but compelling
-  5. Example transformations:
-     - Dry: "Lilo is a 6-month-old Jack Russell mix who is standoffish at first"
-     - Engaging: "Playful Lilo is ready to bloom with patient adopters who'll help her confidence soar with treats and time"
-     - Dry: "Baloo needs an adult-only home and no other pets"  
-     - Engaging: "Sweet Baloo seeks a peaceful adult home where he can be your one and only devoted companion"
+
+  DESCRIPTION WRITING - GOOD vs BAD EXAMPLES:
+
+  GOOD: "Luna greets visitors with full-body wiggles—she hasn't met a stranger yet."
+  BAD: "Luna is a friendly and sociable dog who loves meeting new people."
+  WHY: Good version shows behavior, bad version tells generic traits.
+
+  GOOD: "Playful Lilo is ready to bloom with patient adopters who'll help her confidence soar."
+  BAD: "Lilo is a 6-month-old Jack Russell mix who is standoffish at first."
+  WHY: Good version focuses on potential and what she offers, bad version lists facts.
+
+  GOOD: "Sweet Baloo seeks a peaceful adult home where he can be your one and only."
+  BAD: "Baloo needs an adult-only home and no other pets."
+  WHY: Good version frames requirements positively, bad version reads like a warning.
+
+  GOOD: "After years in a puppy farm, gentle Annie is discovering the joy of soft beds and kind hands."
+  BAD: "Annie is an ex-breeding dog looking for a home. She is a lovely dog."
+  WHY: Good version tells her story with specific details, bad version is generic.
 
 uk_terminology:
   # Common UK rescue terms

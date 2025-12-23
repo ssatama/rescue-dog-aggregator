@@ -42,7 +42,7 @@ class LLMClient:
     async def call_openrouter_api(
         self,
         messages: List[Dict[str, str]],
-        model: str = "google/gemini-2.5-flash",
+        model: str = "google/gemini-3-flash-preview",
         temperature: float = 0.7,
         max_tokens: int = 4000,
         timeout: float = 30.0,
@@ -157,7 +157,7 @@ class LLMClient:
     async def call_api_and_parse(
         self,
         messages: List[Dict[str, str]],
-        model: str = "google/gemini-2.5-flash",
+        model: str = "google/gemini-3-flash-preview",
         temperature: float = 0.7,
         max_tokens: int = 4000,
         timeout: float = 30.0,

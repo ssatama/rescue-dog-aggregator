@@ -7,7 +7,7 @@ organizations:
     prompt_file: "tierschutzverein_europa.yaml"
     source_language: "de"
     target_language: "en"
-    model_preference: "google/gemini-2.5-flash"
+    model_preference: "google/gemini-3-flash-preview"
     enabled: true
 
   12:
@@ -15,7 +15,7 @@ organizations:
     prompt_file: "daisyfamilyrescue.yaml"
     source_language: "de"
     target_language: "en"
-    model_preference: "google/gemini-2.5-flash"
+    model_preference: "google/gemini-3-flash-preview"
     enabled: true
 
   13:
@@ -23,7 +23,7 @@ organizations:
     prompt_file: "misisrescue.yaml"
     source_language: "en"
     target_language: "en"
-    model_preference: "google/gemini-2.5-flash"
+    model_preference: "google/gemini-3-flash-preview"
     enabled: true
 
   27:
@@ -31,7 +31,7 @@ organizations:
     prompt_file: "many_tears.yaml"
     source_language: "en"
     target_language: "en"
-    model_preference: "google/gemini-2.5-flash"
+    model_preference: "google/gemini-3-flash-preview"
     enabled: true # Configured and ready for testing
 
   28:
@@ -39,7 +39,7 @@ organizations:
     prompt_file: "dogs_trust.yaml"
     source_language: "en"
     target_language: "en"
-    model_preference: "google/gemini-2.5-flash"
+    model_preference: "google/gemini-3-flash-preview"
     enabled: true # Configured and ready for testing
 
   29:
@@ -47,7 +47,7 @@ organizations:
     prompt_file: "furry_rescue_italy.yaml"
     source_language: "it"
     target_language: "en"
-    model_preference: "google/gemini-2.5-flash"
+    model_preference: "google/gemini-3-flash-preview"
     enabled: false # Not yet configured - needs separate prompt development
 
   26:
@@ -55,7 +55,7 @@ organizations:
     prompt_file: "santerpawsbulgarianrescue.yaml"
     source_language: "en"
     target_language: "en"
-    model_preference: "google/gemini-2.5-flash"
+    model_preference: "google/gemini-3-flash-preview"
     enabled: true # Configured and ready for testing
 
   25:
@@ -63,7 +63,7 @@ organizations:
     prompt_file: "galgosdelsol.yaml"
     source_language: "en"
     target_language: "en"
-    model_preference: "google/gemini-2.5-flash"
+    model_preference: "google/gemini-3-flash-preview"
     enabled: true # Configured and ready for testing
 
   5:
@@ -71,7 +71,7 @@ organizations:
     prompt_file: "rean.yaml"
     source_language: "en"
     target_language: "en"
-    model_preference: "google/gemini-2.5-flash"
+    model_preference: "google/gemini-3-flash-preview"
     enabled: true # Configured and ready for testing
 
   15:
@@ -79,7 +79,7 @@ organizations:
     prompt_file: "animalrescuebosnia.yaml"
     source_language: "en"
     target_language: "en"
-    model_preference: "google/gemini-2.5-flash"
+    model_preference: "google/gemini-3-flash-preview"
     enabled: true # Configured and ready for testing
 
   14:
@@ -87,7 +87,7 @@ organizations:
     prompt_file: "theunderdog.yaml"
     source_language: "en"
     target_language: "en"
-    model_preference: "google/gemini-2.5-flash"
+    model_preference: "google/gemini-3-flash-preview"
     enabled: true # Configured and ready for testing
 
   17:
@@ -95,12 +95,12 @@ organizations:
     prompt_file: "woof-project.yaml"
     source_language: "en"
     target_language: "en"
-    model_preference: "google/gemini-2.5-flash"
+    model_preference: "google/gemini-3-flash-preview"
     enabled: true # Configured and ready for testing
 
 # Model configuration
 models:
-  default: "google/gemini-2.5-flash"
+  default: "google/gemini-3-flash-preview"
   fallback: "openai/gpt-3.5-turbo"
   high_quality: "openai/gpt-4"
 
