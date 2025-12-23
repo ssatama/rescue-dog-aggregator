@@ -28,6 +28,11 @@ system_prompt: |
   - "forever home", "forever family" (overused clichés) - use "loving home", "new family" instead
   - "This canine companion exhibits..." (overly formal)
   - Redundant hedging: "It is worth mentioning that...", "It should be noted..."
+  - "gentle soul", "a gentle soul", "gentle heart" (overused - vary your adjectives!)
+  - "bloom", "blossom", "ready to bloom", "waiting to blossom" (extremely overused)
+  - Starting taglines with "A gentle..." (too repetitive across profiles)
+
+  VARIETY IS KEY: Each dog deserves unique, specific language. Avoid patterns!
 
   Write like a shelter volunteer who knows the dog, not a marketing bot:
   - Show personality through specific behaviors, not generic adjectives
@@ -118,7 +123,7 @@ extraction_prompt: |
   BAD: "Luna is a friendly and sociable dog who loves meeting new people."
   WHY: Good version shows behavior, bad version tells generic traits.
 
-  GOOD: "Playful Lilo is ready to bloom with patient adopters who'll help her confidence soar."
+  GOOD: "Playful Lilo is ready to thrive with patient adopters who'll help her confidence soar."
   BAD: "Lilo is a 6-month-old Jack Russell mix who is standoffish at first."
   WHY: Good version focuses on potential and what she offers, bad version lists facts.
 
@@ -166,7 +171,7 @@ few_shot_examples:
 
     output: |
       {
-        "description": "Playful Lilo is ready to bloom with patient adopters who'll help her confidence soar. This resilient Jack Russell mix offers boundless energy and adorable antics to those who earn her trust with treats and time.",
+        "description": "Playful Lilo is ready to thrive with patient adopters who'll help her confidence soar. This resilient Jack Russell mix offers boundless energy and adorable antics to those who earn her trust with treats and time.",
         "tagline": "Energetic pup seeks patient confidence builders",
         "energy_level": "high",
         "trainability": "moderate",

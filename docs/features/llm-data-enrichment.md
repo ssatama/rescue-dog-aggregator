@@ -6,11 +6,11 @@ The LLM Data Enrichment feature powers the intelligence behind www.rescuedogs.me
 
 ### Key Capabilities
 
-- **Automated Profile Generation**: Converts raw dog descriptions into structured profiles with 90%+ success rate
+- **Automated Profile Generation**: Converts raw dog descriptions into structured profiles with 97%+ success rate
 - **Multi-language Support**: Processes descriptions in German, French, Spanish, and other languages
 - **Smart Matching**: Enables personality-based filtering and compatibility assessment
 - **Swipe Interface**: Powers the Tinder-like swipe feature with AI-generated insights
-- **Cost Efficiency**: Processes dogs at ~$0.0015 each using Google Gemini 2.5 Flash
+- **Cost Efficiency**: Processes dogs at ~$0.005 each using Google Gemini 3 Flash
 
 ## Architecture
 
@@ -95,7 +95,7 @@ extraction_prompt: |
 ```
 
 #### b. LLM Processing
-Sends structured prompts to OpenRouter API (Google Gemini 2.5 Flash):
+Sends structured prompts to OpenRouter API (Google Gemini 3 Flash):
 
 ```python
 # DogProfilerPipeline processes dogs
@@ -267,9 +267,9 @@ LLM_MODEL_OVERRIDE=openai/gpt-4-turbo  # Override default model
 
 ### Success Metrics
 
-- **Processing Success Rate**: 90-95% (100% with retries)
+- **Processing Success Rate**: 97%+ (with automatic retries)
 - **Quality Score Average**: 85-95% per profile
-- **Cost per Dog**: ~$0.0015 (Gemini 2.5 Flash)
+- **Cost per Dog**: ~$0.005 (Gemini 3 Flash)
 - **Processing Time**: 2-5 seconds per dog
 - **Batch Efficiency**: 5 dogs concurrent processing
 
@@ -450,9 +450,9 @@ npm test -- dogProfilerAnalyzer
 
 ### Site Metrics
 
-- **2500+ dogs** enriched with AI profiles
+- **4,500+ dogs** enriched with AI profiles
 - **20+ daily users** using personality-based search
-- **90% profile coverage** for active dogs
+- **97% profile coverage** for active dogs
 - **3x engagement** on dogs with enriched profiles
 
 ### User Benefits
@@ -467,3 +467,8 @@ npm test -- dogProfilerAnalyzer
 The LLM Data Enrichment feature transforms www.rescuedogs.me from a simple listing site into an intelligent matching platform. By leveraging AI to understand each dog's unique personality and needs, we help connect rescue dogs with their perfect families while reducing the burden on rescue organizations.
 
 The system's modular design allows easy addition of new organizations, continuous improvement of profile quality, and expansion into new features as the site grows.
+
+---
+
+**Last Updated**: 2025-12-23
+**Related Docs**: [Architecture Reference](../technical/architecture.md)

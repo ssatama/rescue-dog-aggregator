@@ -9,14 +9,14 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 - Backend: Python/FastAPI/PostgreSQL 15/Alembic
 - Frontend: Next.js 15 (App Router)/React 18/TypeScript 5
 - Testing: pytest (backend), Jest/Playwright (frontend)
-- AI: OpenRouter API (Google Gemini 2.5 Flash) for LLM enrichment
+- AI: OpenRouter API (Google Gemini 3 Flash) for LLM enrichment
 - Monitoring: Sentry (dev/prod)
-- Current: 134 backend test files, 260 frontend test files, 3,246 dogs
+- Current: 152 backend test files, 284 frontend test files, 4,568 dogs
 
 ## Status
 
 - Site live at www.rescuedogs.me
-- 3,246 dogs from 13 organizations
+- 4,568 dogs from 13 organizations
 - Deployment: Vercel (frontend), Railway (backend + PostgreSQL)
 - Development flow: local → dev branch → main → production
 - Traffic: 20+ daily users, growing steadily
@@ -24,16 +24,6 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 ## USE SUB-AGENTS FOR CONTEXT OPTIMIZATION
 
 **CRITICAL**: Use sub-agents to reduce context usage and improve efficiency.
-
-1. **file-analyzer**: Always use when reading files (especially logs, verbose outputs)
-   - Expert in extracting critical information
-   - Provides concise, actionable summaries
-   - Dramatically reduces context usage
-
-2. **code-analyzer**: Always use when searching/analyzing code, researching bugs, tracing logic
-   - Expert in code analysis, logic tracing, vulnerability detection
-   - Provides concise summaries while preserving essential information
-   - Optimizes context window usage
 
 ## MCP Tools for Claude Code
 
@@ -48,15 +38,6 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 
 3. **Postgres MCP**: Query local dev database directly
    - `query` tool for SELECT statements
-
-4. **Magic MCP**: Create/upgrade React components
-   - `21st_magic_component_builder`, `21st_magic_component_refiner`
-
-5. **Zen MCP**: Planning, debugging, code reviews, deep thinking
-   - `planner`, `debug`, `codereview`, `chat`
-
-6. **Sub-agents**: Parallel execution for complex tasks
-   - file-analyzer, code-analyzer (see above)
 
 ## CRITICAL: Planning-First Workflow
 
@@ -114,15 +95,16 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 ```
 api/              # FastAPI backend with async routes
 ├── routes/       # animals, organizations, swipe, llm, monitoring
-services/         # Core services (12 total)
-├── llm/          # AI profiling pipeline (dog_profiler.py, normalizers/)
+services/         # Core services (14 total)
+├── llm/          # AI profiling pipeline (20 files)
 scrapers/         # 13 organization scrapers
 frontend/         # Next.js 15 App Router
-├── app/          # Pages: dogs/, swipe/, favorites/, breeds/
-├── components/   # UI components organized by feature
+├── app/          # Pages: dogs/, swipe/, favorites/, breeds/, guides/
+├── components/   # UI components organized by feature (20 dirs)
 tests/            # Backend tests with fixtures
 configs/          # Organization YAMLs (13 active)
 migrations/       # Alembic database migrations
+management/       # CLI tools (18 scripts)
 ```
 
 ## Key Services
@@ -136,11 +118,27 @@ migrations/       # Alembic database migrations
 ## Quality Gates (Required for ANY commit)
 
 - All tests passing (backend + frontend)
-- Linting/formatting clean (ruff, ESLint)
+- Linting/formatting clean (black, isort, ESLint)
 - No new type errors
 - Test count stable or increasing
 - **No JSX/TSX duplicate files** (enforced by pre-commit)
 - **Database isolation in tests** (global conftest.py fixture)
+
+### Pre-Commit Validation (MANDATORY)
+
+**Run this before every commit:**
+
+```bash
+source venv/bin/activate && echo '🐍 BACKEND CHECKS' && black . && isort . && pytest -m 'not slow and not browser and not external' --maxfail=3 && echo '⚛️ FRONTEND CHECKS' && cd frontend && npm run lint && npm test -- --passWithNoTests --watchAll=false && echo '✅ PRE-COMMIT VALIDATION PASSED - SAFE TO COMMIT!'
+```
+
+This validates:
+- Python formatting (black, isort)
+- Backend tests (excluding slow/browser/external)
+- Frontend linting (ESLint)
+- Frontend tests (Jest)
+
+**Do not commit if this command fails.**
 
 ## Testing Commands
 
@@ -173,9 +171,10 @@ python management/llm_commands.py generate-profiles       # Batch enrichment
 ## Database Schema Highlights
 
 ```sql
-animals: 37 columns including id, name, breed, standardized_breed, properties(JSONB),
-         dog_profiler_data(JSONB), status, availability_confidence, slug
-organizations: 13 columns including id, name, slug, config_id, active, ships_to(JSONB)
+animals: 39 columns including id, name, breed, standardized_breed, properties(JSONB),
+         dog_profiler_data(JSONB), status, availability_confidence, slug, blur_data_url
+organizations: 21 columns including id, name, slug, config_id, active, ships_to(JSONB),
+               website_url, country, city, social_media(JSONB)
 -- GIN indexes on JSONB columns for performance
 -- See docs/technical/architecture.md for complete schema
 ```
@@ -211,9 +210,9 @@ npm test -- --testNamePattern="PersonalityTraits"
 
 ## LLM Integration
 
-- Model: Google Gemini 2.5 Flash via OpenRouter
-- Cost: ~$0.0015/dog
-- Success rate: 90%+
+- Model: Google Gemini 3 Flash via OpenRouter
+- Cost: ~$0.005/dog
+- Success rate: 97%+
 - Config: `configs/llm_organizations.yaml`
 - Prompts: `prompts/organizations/*.yaml`
 

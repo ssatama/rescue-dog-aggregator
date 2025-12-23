@@ -6,7 +6,7 @@
 
 ```
 Production:    www.rescuedogs.me
-Data:          3,246 dogs | 13 active scrapers
+Data:          4,568 dogs | 12 active organizations (13 scrapers)
 Backend:       Python/FastAPI + PostgreSQL 15 + Alembic
 Frontend:      Next.js 15 App Router + React 18 + TypeScript 5
 LLM:           OpenRouter (Gemini 2.5 Flash primary)
@@ -18,24 +18,24 @@ Hosting:       Vercel (frontend) + Railway (backend + DB)
 
 ```
 /api                    # FastAPI routes + middleware
-  /routes               # 8 route modules (animals, swipe, llm, etc.)
-/services               # 12 core services + llm/ subdirectory
-  /llm                  # LLM profiling pipeline (19 files)
+  /routes               # 7 route modules (animals, swipe, llm, etc.)
+/services               # 14 core services + llm/ subdirectory
+  /llm                  # LLM profiling pipeline (20 files)
 /scrapers               # 13 organization scrapers + base classes
 /frontend/src
   /app                  # Next.js App Router pages
-  /components           # Feature-organized UI components
+  /components           # Feature-organized UI components (20 dirs)
 /configs/organizations  # YAML configs (13 active orgs)
-/tests                  # 134 backend test files
-/frontend/__tests__     # 260 frontend test files
+/tests                  # 152 backend test files
+/frontend/__tests__     # 284 frontend test files
 /migrations/versions    # Alembic migrations (dev)
 /migrations/railway     # Production migrations
-/management             # CLI tools (config, llm, emergency ops)
+/management             # CLI tools (18 scripts)
 ```
 
 ## Core Data Models
 
-### animals (37 columns)
+### animals (39 columns)
 
 ```sql
 -- Identity
@@ -45,15 +45,15 @@ id, external_id, organization_id, slug, animal_type
 name, breed, standardized_breed, age_text, age_min_months, age_max_months
 sex, size, standardized_size, language
 
--- Breed Standardization (NEW)
+-- Breed Standardization
 breed_confidence, breed_type, primary_breed, secondary_breed, breed_slug, breed_group
 
 -- Status & Availability
 status, availability_confidence, active
 last_seen_at, consecutive_scrapes_missing
 
--- URLs
-adoption_url, primary_image_url, original_image_url
+-- URLs & Images
+adoption_url, primary_image_url, original_image_url, blur_data_url
 
 -- JSONB Fields (GIN indexed)
 properties              -- Raw scraped data
@@ -66,13 +66,25 @@ adoption_check_data    -- Adoption detection results
 created_at, updated_at, last_scraped_at, adoption_checked_at
 ```
 
-### organizations (13 columns)
+### organizations (21 columns)
 
 ```sql
-id, name, slug, website, config_id
-active, last_sync
+-- Identity
+id, name, slug, config_id
+
+-- Location & Contact
+website_url, country, city, logo_url, description
+
+-- Status
+active, established_year, last_config_sync
+
+-- Stats (computed)
 total_dogs, new_this_week, recent_dogs (JSONB)
-ships_to (JSONB), service_regions (JSONB), adoption_fees (JSONB)
+
+-- Service Areas (JSONB)
+ships_to, service_regions, adoption_fees, social_media
+
+-- Timestamps
 created_at, updated_at
 ```
 
@@ -81,6 +93,7 @@ created_at, updated_at
 - `animal_images`: Separate image storage
 - `breed_standards`: Breed classification rules
 - `size_standards`: Size normalization rules
+- `dog_photo_analysis`: AI photo analysis results
 - `llm_processing_logs`: LLM operation tracking
 - `scrape_logs`: Scraper execution history
 - `scrape_sessions`: Scraping session metadata
@@ -103,7 +116,7 @@ created_at, updated_at
 
 ## Service Layer Pattern
 
-### Core Services (12 root files)
+### Core Services (14 root files)
 
 ```python
 database_service.py          # Connection pool, transactions, retries
@@ -112,27 +125,32 @@ metrics_collector.py         # Performance + business metrics
 session_manager.py           # User sessions, preferences
 adoption_detection.py        # Detect adopted dogs via patterns
 image_processing_service.py  # Image validation, optimization
+image_processing.py          # Core image utilities
 progress_tracker.py          # Long-running operation tracking
 llm_profiler_service.py      # Main LLM orchestration
-llm_data_service.py         # LLM data access layer
+llm_data_service.py          # LLM data access layer
 config.py                    # Service configuration
 models.py                    # Pydantic validation models
 null_objects.py              # Null Object pattern implementations
+__init__.py                  # Package exports
 ```
 
-### LLM Pipeline (services/llm/, 19 files)
+### LLM Pipeline (services/llm/, 20 files)
 
 **Core**: `dog_profiler.py` orchestrates the pipeline
 **Client**: `llm_client.py` handles OpenRouter API
 **Prompts**: `prompt_builder.py` generates org-specific prompts
+**Config**: `organization_config_loader.py` loads org settings
 **Resilience**: `retry_handler.py` with exponential backoff
-**Normalization**: `field_normalizers.py`, `profile_normalizer.py`
+**Normalization**: `field_normalizers.py`, `profile_normalizer.py`, `extracted_profile_normalizer.py`
 **Storage**: `database_updater.py`, `async_database_pool.py`
-**Quality**: `monitoring.py`, `quality_rubric.py`
+**Quality**: `monitoring.py`, `quality_rubric.py`, `statistics_tracker.py`
+**Integration**: `scraper_integration.py`, `photo_analysis_models.py`
+**Utilities**: `text_utilities.py`, `models.py`, `config.py`
 
 ## Scraper Architecture
 
-### Active Organizations (13)
+### Active Organizations (12)
 
 ```
 manytearsrescue          UK
@@ -143,12 +161,13 @@ daisy_family_rescue      Greece
 woof_project             UK
 furryrescueitaly         Italy
 pets_in_turkey           Turkey
-galgosdelsol             Spain
 dogstrust                UK/Ireland
 animalrescuebosnia       Bosnia
 santerpawsbulgarianrescue Bulgaria
 misis_rescue             Montenegro
 ```
+
+Note: `galgosdelsol` (Spain) scraper exists but organization is currently inactive.
 
 ### Scraper Pattern
 
@@ -167,34 +186,51 @@ scrapers/[org_name]/
 
 ```
 /                     # Homepage with hero, stats, featured dogs
-/dogs                # Dog listing with filters
-/dogs/[id]           # Individual dog detail page
-/swipe               # Tinder-like discovery interface
-/favorites           # User's saved dogs
-/favorites/compare   # Side-by-side comparison
-/breeds              # Breed directory
-/breeds/[breed]      # Breed-specific listings
-/breeds/mixed        # Mixed breed section
-/organizations       # Organization directory
+/dogs                 # Dog listing with filters
+/dogs/[id]            # Individual dog detail page
+/swipe                # Tinder-like discovery interface
+/favorites            # User's saved dogs
+/favorites/compare    # Side-by-side comparison
+/breeds               # Breed directory
+/breeds/[breed]       # Breed-specific listings
+/breeds/mixed         # Mixed breed section
+/organizations        # Organization directory
 /organizations/[slug] # Organization details
-/about               # About page
-/sitemap.xml         # Dynamic sitemap generation
+/guides               # Adoption guides
+/about                # About page
+/api/*                # API routes (Next.js)
+/sitemap.xml          # Sitemap index
+/sitemap-dogs.xml     # Dogs sitemap
+/sitemap-breeds.xml   # Breeds sitemap
+/sitemap-organizations.xml  # Orgs sitemap
+/sitemap-guides.xml   # Guides sitemap
+/sitemap-images.xml   # Image sitemap
 ```
 
 ### Component Organization
 
 ```
 /components
+  /about             # About page content
+  /analytics         # Analytics tracking components
+  /breeds            # BreedCard, BreedGrid, BreedFilter
   /dogs              # DogCard, DogGrid, DogDetail, PersonalityTraits
-  /swipe             # SwipeCard, SwipeStack, SwipeControls
+  /error             # Error boundaries and displays
   /favorites         # FavoriteButton, FavoritesList, CompareMode
   /filters           # FilterBar, AdvancedFilters, SearchInput
-  /breeds            # BreedCard, BreedGrid, BreedFilter
-  /organizations     # OrgCard, OrgGrid, OrgStats
-  /layout            # Header, Footer, Navigation, MobileMenu
-  /ui                # Button, Card, Modal, FallbackImage
-  /seo               # MetaTags, StructuredData, OpenGraph
+  /guides            # Adoption guide content
+  /home              # Homepage hero, stats, featured
+  /layout            # Header, Footer, Navigation
+  /mobile            # Mobile-specific components
   /monitoring        # ErrorBoundary, SentryProvider
+  /navigation        # Nav components, MobileMenu
+  /organizations     # OrgCard, OrgGrid, OrgStats
+  /providers         # Context providers (theme, favorites)
+  /search            # Search components
+  /seo               # MetaTags, StructuredData, OpenGraph
+  /swipe             # SwipeCard, SwipeStack, SwipeControls
+  /test              # Test utilities
+  /ui                # Button, Card, Modal, FallbackImage
 ```
 
 ### Image Fallback Strategy
@@ -298,11 +334,12 @@ update_frequency: daily
 # configs/llm_organizations.yaml
 organizations:
   11:
-    name: "Org Name"
-    prompt_file: "org_prompt.yaml"
+    name: "Tierschutzverein Europa"
+    prompt_file: "tierschutzverein_europa.yaml"
     source_language: "de"
     target_language: "en"
-    model_preference: "gemini-flash"
+    model_preference: "google/gemini-2.5-flash"
+    enabled: true
 ```
 
 ### Sync Commands
@@ -319,10 +356,10 @@ python management/llm_commands.py generate-profiles   # Batch enrichment
 ### Current Metrics
 
 ```
-Dogs:           3,246 active
+Dogs:           4,568 active
 Scrapers:       13 active organizations
-Backend Tests:  134 test files
-Frontend Tests: 260 test files
+Backend Tests:  152 test files
+Frontend Tests: 284 test files
 Daily Users:    20+
 
 API Response Times (p50/p95):
@@ -340,8 +377,8 @@ Database:
 
 LLM Processing:
   Cost: ~$0.0015/dog
-  Success rate: 90%+
-  Model: Gemini 2.5 Flash (primary), GPT-4 (fallback)
+  Success rate: 97%+
+  Model: Gemini 2.5 Flash (primary)
 ```
 
 ## Common Operations
@@ -497,6 +534,6 @@ NEXT_PUBLIC_R2_IMAGE_PATH=rescue_dogs
 
 ---
 
-**Last Updated**: 2025-01-27
-**Current Scale**: 3,246 dogs | 13 scrapers | 134 backend tests | 260 frontend tests
+**Last Updated**: 2025-12-23
+**Current Scale**: 4,568 dogs | 12 active organizations | 152 backend tests | 284 frontend tests
 **Production**: www.rescuedogs.me

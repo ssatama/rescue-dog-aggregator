@@ -11,7 +11,7 @@ Following CLAUDE.md principles:
 from datetime import datetime
 from typing import Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class DogProfilerData(BaseModel):
@@ -74,15 +74,17 @@ class DogProfilerData(BaseModel):
 
     # ===== VALIDATORS =====
 
-    @validator("personality_traits", "favorite_activities")
-    def validate_list_items(cls, v):
+    @field_validator("personality_traits", "favorite_activities")
+    @classmethod
+    def validate_list_items(cls, v: List[str]) -> List[str]:
         """Ensure list items are non-empty strings."""
         if not v:
             return v
         return [item.strip() for item in v if item and item.strip()]
 
-    @validator("description")
-    def validate_description_quality(cls, v):
+    @field_validator("description")
+    @classmethod
+    def validate_description_quality(cls, v: str) -> str:
         """Ensure description is engaging and complete."""
         if not v:
             raise ValueError("Description is required")
@@ -98,8 +100,9 @@ class DogProfilerData(BaseModel):
 
         return v
 
-    @validator("confidence_scores")
-    def validate_confidence_scores(cls, v):
+    @field_validator("confidence_scores")
+    @classmethod
+    def validate_confidence_scores(cls, v: Dict[str, float]) -> Dict[str, float]:
         """Ensure confidence scores are valid probabilities."""
         if not v:
             raise ValueError("Confidence scores are required")
@@ -116,8 +119,9 @@ class DogProfilerData(BaseModel):
 
         return v
 
-    @validator("source_references")
-    def validate_source_references(cls, v):
+    @field_validator("source_references")
+    @classmethod
+    def validate_source_references(cls, v: Dict[str, str]) -> Dict[str, str]:
         """Ensure source references prevent hallucination."""
         if not v:
             raise ValueError("Source references are required for transparency")
@@ -130,15 +134,12 @@ class DogProfilerData(BaseModel):
 
         return v
 
-    class Config:
-        """Pydantic configuration."""
-
-        use_enum_values = True
-        json_encoders = {datetime: lambda v: v.isoformat()}
-        schema_extra = {
+    model_config = ConfigDict(
+        use_enum_values=True,
+        json_schema_extra={
             "example": {
-                "description": "Max is a gentle giant with a heart of gold. This lovable 3-year-old German Shepherd mix combines intelligence with a calm demeanor, making him perfect for families. He's mastered basic commands and is eager to learn more, always looking to please his humans with his attentive nature.",
-                "tagline": "Gentle giant seeking loving family",
+                "description": "Max is a loyal companion with a heart of gold. This lovable 3-year-old German Shepherd mix combines intelligence with a calm demeanor, making him perfect for families. He's mastered basic commands and is eager to learn more, always looking to please his humans with his attentive nature.",
+                "tagline": "Loyal companion seeking loving family",
                 "energy_level": "medium",
                 "trainability": "easy",
                 "sociability": "very_social",
@@ -153,7 +154,7 @@ class DogProfilerData(BaseModel):
                 "grooming_needs": "weekly",
                 "medical_needs": None,
                 "special_needs": None,
-                "personality_traits": ["gentle", "intelligent", "loyal", "calm"],
+                "personality_traits": ["loyal", "intelligent", "calm", "attentive"],
                 "favorite_activities": ["walks", "fetch", "cuddles"],
                 "unique_quirk": "Carries his favorite toy everywhere",
                 "adoption_fee_euros": 350,
@@ -175,6 +176,7 @@ class DogProfilerData(BaseModel):
                     "good_with_dogs": "verträglich mit anderen Hunden",
                 },
                 "prompt_version": "1.0.0",
-                "model_used": "anthropic/claude-3-haiku",
+                "model_used": "google/gemini-3-flash-preview",
             }
-        }
+        },
+    )

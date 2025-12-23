@@ -10,7 +10,7 @@ Following CLAUDE.md principles:
 
 from typing import List, Literal
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class PhotoAnalysisResponse(BaseModel):
@@ -37,24 +37,15 @@ class PhotoAnalysisResponse(BaseModel):
     reasoning: str = Field(..., description="Explanation of the scores")
     flags: List[str] = Field(default_factory=list, description="Issues or notable features")
 
-    @validator("overall_score")
-    def validate_overall_score(cls, v, values):
+    @model_validator(mode="after")
+    def validate_overall_score(self) -> "PhotoAnalysisResponse":
         """Ensure overall_score equals the average of the 4 dimension scores."""
-        quality = values.get("quality_score", 0)
-        visibility = values.get("visibility_score", 0)
-        appeal = values.get("appeal_score", 0)
-        background = values.get("background_score", 0)
-
-        expected = (quality + visibility + appeal + background) / 4.0
+        expected = (self.quality_score + self.visibility_score + self.appeal_score + self.background_score) / 4.0
 
         # Allow small floating point tolerance
-        if abs(v - expected) > 0.01:
-            raise ValueError(f"overall_score {v} does not equal average {expected:.2f}")
+        if abs(self.overall_score - expected) > 0.01:
+            raise ValueError(f"overall_score {self.overall_score} does not equal average {expected:.2f}")
 
-        return v
+        return self
 
-    class Config:
-        """Pydantic configuration."""
-
-        # Ensure strict validation
-        validate_assignment = True
+    model_config = ConfigDict(validate_assignment=True)

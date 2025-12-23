@@ -28,6 +28,11 @@ system_prompt: |
   - "forever home", "forever family" (overused clichés) - use "loving home", "new family" instead
   - "This canine companion exhibits..." (overly formal)
   - Redundant hedging: "It is worth mentioning that...", "It should be noted..."
+  - "gentle soul", "a gentle soul", "gentle heart" (overused - vary your adjectives!)
+  - "bloom", "blossom", "ready to bloom", "waiting to blossom" (extremely overused)
+  - Starting taglines with "A gentle..." (too repetitive across profiles)
+
+  VARIETY IS KEY: Each dog deserves unique, specific language. Avoid patterns!
 
   Write like a shelter volunteer who knows the dog, not a marketing bot:
   - Show personality through specific behaviors, not generic adjectives
@@ -112,8 +117,8 @@ extraction_prompt: |
 
   METADATA (required):
   - processing_time_ms: (system will fill)
-  - confidence_scores: Rate 0.0-1.0 for each field
-  - source_references: Map to exact source text
+  - confidence_scores: MUST be a dict with AT LEAST these required keys: "description", "energy_level", "trainability". Add more fields as appropriate. All values 0.0-1.0.
+  - source_references: MUST be a dict (NOT a string!) with AT LEAST these required keys: "description", "personality_traits". Each value should be a brief quote from the source text.
   - prompt_version: "1.0.0"
 
   MISIS RESCUE SPECIFIC PATTERNS:
@@ -208,6 +213,7 @@ few_shot_examples:
         "confidence_scores": {
           "description": 0.9,
           "energy_level": 0.7,
+          "trainability": 0.8,
           "sociability": 1.0,
           "confidence": 1.0,
           "good_with_dogs": 0.9,
@@ -217,6 +223,7 @@ few_shot_examples:
         },
         "source_references": {
           "description": "life and soul of the party & a really cheeky character",
+          "personality_traits": "cheeky, funny, life and soul of the party, boss of shelter",
           "confidence": "boss of our shelter",
           "good_with_dogs": "can be a bit dominant with male dogs",
           "good_with_cats": "Could be rehomed with a dog savvy cat",

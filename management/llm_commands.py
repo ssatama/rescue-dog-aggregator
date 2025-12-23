@@ -172,14 +172,12 @@ async def _enrich_descriptions_async(animals, effective_batch_size, batch_proces
                 def create_update_query(item: Tuple[int, str]) -> Tuple[str, Tuple]:
                     animal_id, enriched_description = item
                     query = """
-                        UPDATE animals 
+                        UPDATE animals
                         SET enriched_description = %s,
-                            llm_processed_at = CURRENT_TIMESTAMP,
-                            llm_model_used = %s,
                             updated_at = CURRENT_TIMESTAMP
                         WHERE id = %s
                     """
-                    return query, (enriched_description, llm_config.models.default_model, animal_id)
+                    return query, (enriched_description, animal_id)
 
                 db_task = progress.add_task("Updating database...", total=len(enriched_animals))
 
@@ -205,136 +203,79 @@ async def _enrich_descriptions_async(animals, effective_batch_size, batch_proces
 
 
 @llm.command()
-@click.option("--organization", "-o", help="Process only specific organization")
-@click.option("--limit", "-l", default=None, type=int, help="Limit number of animals to process")
-@click.option("--batch-size", "-b", default=25, type=int, help="Number of items to process per batch (default: 25)")
-def generate_profiles(organization: Optional[str], limit: Optional[int], batch_size: Optional[int]):
-    """Generate dog profiler data for matching feature."""
+@click.option("--organization", "-o", type=int, help="Process only specific organization ID")
+@click.option("--limit", "-l", default=None, type=int, help="Limit number of animals to process per organization")
+@click.option("--batch-size", "-b", default=10, type=int, help="Number of items to process per batch (default: 10)")
+def generate_profiles(organization: Optional[int], limit: Optional[int], batch_size: int):
+    """Generate dog profiler data using org-specific prompts."""
+    from services.llm.dog_profiler import DogProfilerPipeline
+    from services.llm.organization_config_loader import get_config_loader
 
-    console.print("[bold cyan]Starting dog profiler generation...[/bold cyan]")
+    console.print("[bold cyan]Starting dog profiler generation with org-specific prompts...[/bold cyan]")
 
-    # Connect to database
     conn = psycopg2.connect(**DB_CONFIG)
     cursor = conn.cursor()
 
-    # Build query - only process dogs with high availability confidence
-    query = """
-        SELECT a.id, a.name, a.breed, a.age_text, a.properties->>'description' as description, o.name as org_name
-        FROM animals a
-        JOIN organizations o ON a.organization_id = o.id
-        WHERE a.status = 'available'
-        AND a.availability_confidence = 'high'
-        AND a.dog_profiler_data IS NULL
-    """
-
-    params = []
+    loader = get_config_loader()
+    supported_orgs = loader.get_supported_organizations()
 
     if organization:
-        query += " AND o.config_id = %s"
-        params.append(organization)
+        org_ids = [organization] if organization in supported_orgs else []
+        if not org_ids:
+            console.print(f"[red]Organization {organization} not configured for LLM profiling[/red]")
+            console.print(f"Available: {supported_orgs}")
+            return
+    else:
+        org_ids = supported_orgs
 
-    query += " ORDER BY a.created_at DESC"
+    total_processed = 0
+    total_successful = 0
 
-    if limit:
-        query += " LIMIT %s"
-        params.append(limit)
+    for org_id in org_ids:
+        org_config = loader.load_config(org_id)
+        if not org_config or not org_config.enabled:
+            continue
 
-    cursor.execute(query, params)
-    animals = cursor.fetchall()
+        console.print(f"\n[bold blue]Processing {org_config.organization_name} (ID: {org_id})[/bold blue]")
+        console.print(f"  Model: {org_config.model_preference}")
 
-    if not animals:
-        console.print("[yellow]No animals found to process[/yellow]")
-        return
+        query = """
+            SELECT id, name, breed, age_text, properties
+            FROM animals
+            WHERE organization_id = %s
+            AND (dog_profiler_data IS NULL OR dog_profiler_data = '{}')
+            AND availability_confidence = 'high'
+            AND status = 'available'
+            ORDER BY id DESC
+        """
+        if limit:
+            query += f" LIMIT {limit}"
 
-    console.print(f"Found [bold green]{len(animals)}[/bold green] animals to process")
+        cursor.execute(query, (org_id,))
+        dogs = [{"id": r[0], "name": r[1], "breed": r[2], "age_text": r[3], "properties": r[4]} for r in cursor.fetchall()]
 
-    # Load configuration
-    llm_config = get_llm_config()
+        if not dogs:
+            console.print(f"  [yellow]No dogs need profiling[/yellow]")
+            continue
 
-    # Use provided batch_size or config default
-    effective_batch_size = batch_size or llm_config.batch.default_size
+        console.print(f"  Found [green]{len(dogs)}[/green] dogs to profile")
 
-    # Initialize batch processor
-    batch_processor = create_batch_processor(connection=conn, batch_size=effective_batch_size, max_retries=llm_config.retry.max_attempts, retry_delay=llm_config.retry.base_delay, commit_frequency=1)
+        pipeline = DogProfilerPipeline(organization_id=org_id)
+        results = asyncio.run(pipeline.process_batch(dogs, batch_size=batch_size))
 
-    # Run async operations synchronously for Click compatibility
-    asyncio.run(_generate_profiles_async(animals, effective_batch_size, batch_processor, llm_config))
+        if results:
+            asyncio.run(pipeline.save_results(results))
+
+        stats = pipeline.get_statistics()
+        console.print(f"  ✓ Processed: {stats['processed']}, Successful: {stats['successful']} ({stats['success_rate']:.1f}%)")
+
+        total_processed += stats['processed']
+        total_successful += stats['successful']
 
     cursor.close()
     conn.close()
 
-    console.print(f"\n[bold green]✓[/bold green] Profile generation complete")
-
-
-async def _generate_profiles_async(animals, effective_batch_size, batch_processor, llm_config):
-    """Async helper for profile generation."""
-    # Initialize LLM service
-    async with OpenRouterLLMDataService() as llm_service:
-
-        # Pre-process all animals to generate profiles
-        profiled_animals = []
-
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=console,
-        ) as progress:
-
-            # Step 1: LLM Processing
-            llm_task = progress.add_task("Generating profiles with LLM...", total=len(animals))
-
-            for animal_id, name, breed, age_text, description, org_name in animals:
-                progress.update(llm_task, description=f"Generating profile for {name}...")
-
-                try:
-                    # Generate dog profiler data
-                    profile_data = await llm_service.generate_dog_profiler({"name": name, "breed": breed, "age_text": age_text, "description": description})
-
-                    if profile_data:
-                        profiled_animals.append((animal_id, json.dumps(profile_data)))
-
-                except Exception as e:
-                    logger.error(f"Failed to generate profile for animal {animal_id}: {e}")
-
-                progress.advance(llm_task)
-
-            # Step 2: Batch Database Updates
-            if profiled_animals:
-                console.print(f"[bold green]✓[/bold green] Profile generation complete. Updating {len(profiled_animals)} records in database...")
-
-                def create_update_query(item: Tuple[int, str]) -> Tuple[str, Tuple]:
-                    animal_id, profile_json = item
-                    query = """
-                        UPDATE animals 
-                        SET dog_profiler_data = %s,
-                            llm_processed_at = CURRENT_TIMESTAMP,
-                            llm_model_used = %s,
-                            updated_at = CURRENT_TIMESTAMP
-                        WHERE id = %s
-                    """
-                    return query, (profile_json, llm_config.models.default_model, animal_id)
-
-                db_task = progress.add_task("Updating database...", total=len(profiled_animals))
-
-                batch_result = batch_processor.process_batch(profiled_animals, create_update_query, progress, db_task)
-
-                success_count = batch_result.total_processed
-                error_count = len(batch_result.errors)
-
-                # Log batch processing results
-                console.print(f"[bold blue]Batch Processing Results:[/bold blue]")
-                console.print(f"  • Processing time: {batch_result.processing_time:.2f}s")
-                console.print(f"  • Success rate: {batch_result.success_rate:.1f}%")
-                console.print(f"  • Successful batches: {batch_result.successful_batches}")
-                console.print(f"  • Failed batches: {batch_result.failed_batches}")
-
-            else:
-                success_count = 0
-                error_count = 0
-
-        console.print(f"\n[bold green]✓[/bold green] Generated {success_count} profiles successfully")
-        if error_count > 0:
-            console.print(f"[bold red]✗[/bold red] Failed to generate {error_count} profiles")
+    console.print(f"\n[bold green]✓ Total: {total_successful}/{total_processed} profiles generated[/bold green]")
 
 
 @llm.command()

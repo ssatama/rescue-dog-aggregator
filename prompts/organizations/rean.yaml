@@ -28,6 +28,11 @@ system_prompt: |
   - "forever home", "forever family" (overused clichés) - use "loving home", "new family" instead
   - "This canine companion exhibits..." (overly formal)
   - Redundant hedging: "It is worth mentioning that...", "It should be noted..."
+  - "gentle soul", "a gentle soul", "gentle heart" (overused - vary your adjectives!)
+  - "bloom", "blossom", "ready to bloom", "waiting to blossom" (extremely overused)
+  - Starting taglines with "A gentle..." (too repetitive across profiles)
+
+  VARIETY IS KEY: Each dog deserves unique, specific language. Avoid patterns!
 
   Write like a shelter volunteer who knows the dog, not a marketing bot:
   - Show personality through specific behaviors, not generic adjectives
@@ -102,8 +107,8 @@ extraction_prompt: |
 
   METADATA (required for transparency):
   - processing_time_ms: Time taken (will be filled by system)
-  - confidence_scores: Rate 0.0-1.0 for each field based on source clarity
-  - source_references: Map each conclusion to the source text that supports it
+  - confidence_scores: MUST be a dict with AT LEAST these required keys: "description", "energy_level", "trainability". Add more fields as appropriate. All values 0.0-1.0.
+  - source_references: MUST be a dict (NOT a string!) with AT LEAST these required keys: "description", "personality_traits". Map each to the source text that supports it.
   - prompt_version: "1.0.0"
 
   CRITICAL RULES FOR DATA INTEGRITY:
@@ -156,12 +161,15 @@ few_shot_examples:
         "confidence_scores": {
           "description": 0.95,
           "energy_level": 1.0,
+          "trainability": 0.6,
+          "sociability": 0.9,
           "good_with_dogs": 0.0,
           "vaccinated": 1.0,
           "neutered": 1.0
         },
         "source_references": {
           "description": "stuck in kennels for over a year... friendly boy, very excitable, loves attention",
+          "personality_traits": "friendly boy, very excitable, loves attention, funny boy making us laugh",
           "energy_level": "very high energy doggy",
           "neutered": "Neutered, vaccinated and chipped",
           "yard_required": "needs a home who like long walks and a big garden"
