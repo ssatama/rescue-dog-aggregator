@@ -252,11 +252,10 @@ describe("Dynamic Sitemap Generation", () => {
       expect(sitemap).toContain(
         "<loc>https://www.rescuedogs.me/organizations</loc>",
       );
-      // /search route should NOT be in sitemap (doesn't exist)
 
       // Informational pages should have medium priority
       expect(sitemap).toContain("<loc>https://www.rescuedogs.me/about</loc>");
-      expect(sitemap).toContain("<loc>https://www.rescuedogs.me/contact</loc>");
+      expect(sitemap).toContain("<loc>https://www.rescuedogs.me/privacy</loc>");
     });
 
     test("should NOT include /search route (non-existent page)", async () => {
