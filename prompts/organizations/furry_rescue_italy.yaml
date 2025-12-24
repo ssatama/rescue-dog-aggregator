@@ -178,10 +178,15 @@ few_shot_examples:
         "processing_time_ms": 1250,
         "confidence_scores": {
           "description": 1.0,
+          "tagline": 0.9,
+          "energy_level": 0.7,
+          "trainability": 0.7,
           "sociability": 1.0,
           "good_with_dogs": 1.0,
           "good_with_cats": 1.0,
-          "personality_traits": 1.0
+          "personality_traits": 1.0,
+          "favorite_activities": 0.8,
+          "unique_quirk": 0.85
         },
         "source_references": {
           "description": "sweet, affectionate and sociable with people, dogs and even cats",

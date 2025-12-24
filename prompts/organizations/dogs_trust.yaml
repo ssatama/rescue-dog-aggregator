@@ -197,12 +197,18 @@ few_shot_examples:
         "processing_time_ms": 1250,
         "confidence_scores": {
           "description": 1.0,
+          "tagline": 0.9,
           "energy_level": 1.0,
+          "trainability": 0.8,
           "sociability": 0.9,
           "confidence": 0.8,
           "good_with_dogs": 1.0,
+          "good_with_cats": 1.0,
           "good_with_children": 1.0,
-          "yard_required": 1.0
+          "yard_required": 1.0,
+          "personality_traits": 0.9,
+          "favorite_activities": 0.8,
+          "unique_quirk": 0.9
         },
         "source_references": {
           "energy_level": "full of personality and full of energy",

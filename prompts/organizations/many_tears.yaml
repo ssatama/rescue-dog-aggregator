@@ -195,11 +195,17 @@ few_shot_examples:
         "processing_time_ms": 1250,
         "confidence_scores": {
           "description": 1.0,
+          "tagline": 0.9,
+          "energy_level": 0.7,
+          "trainability": 0.8,
           "sociability": 0.9,
           "confidence": 1.0,
           "good_with_dogs": 0.8,
           "good_with_children": 0.9,
-          "experience_level": 1.0
+          "experience_level": 1.0,
+          "personality_traits": 0.9,
+          "favorite_activities": 0.8,
+          "unique_quirk": 0.85
         },
         "source_references": {
           "description": "Shadow originally came to us from a breeder as a puppy",

@@ -168,9 +168,12 @@ few_shot_examples:
         "confidence_scores": {
           "description": 1.0,
           "tagline": 0.9,
+          "energy_level": 0.7,
+          "trainability": 0.7,
           "sociability": 0.9,
           "confidence": 0.9,
           "personality_traits": 1.0,
+          "favorite_activities": 0.8,
           "unique_quirk": 1.0
         },
         "source_references": {

@@ -212,6 +212,7 @@ few_shot_examples:
         "neutered": true,
         "confidence_scores": {
           "description": 0.9,
+          "tagline": 0.9,
           "energy_level": 0.7,
           "trainability": 0.8,
           "sociability": 1.0,
@@ -219,7 +220,10 @@ few_shot_examples:
           "good_with_dogs": 0.9,
           "good_with_cats": 0.8,
           "vaccinated": 1.0,
-          "neutered": 1.0
+          "neutered": 1.0,
+          "personality_traits": 0.9,
+          "favorite_activities": 0.85,
+          "unique_quirk": 0.9
         },
         "source_references": {
           "description": "life and soul of the party & a really cheeky character",

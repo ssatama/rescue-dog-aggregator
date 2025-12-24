@@ -205,10 +205,16 @@ few_shot_examples:
         "processing_time_ms": 1250,
         "confidence_scores": {
           "description": 0.95,
+          "tagline": 0.9,
           "energy_level": 0.9,
+          "trainability": 0.8,
+          "sociability": 0.85,
           "good_with_dogs": 1.0,
           "vaccinated": 0.9,
-          "neutered": 1.0
+          "neutered": 1.0,
+          "personality_traits": 0.9,
+          "favorite_activities": 0.8,
+          "unique_quirk": 0.85
         },
         "source_references": {
           "description": "aufgeschlossen, friendly, active, clever, calm, playful, cuddly",

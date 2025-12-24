@@ -160,12 +160,17 @@ few_shot_examples:
         "processing_time_ms": 1250,
         "confidence_scores": {
           "description": 0.95,
+          "tagline": 0.9,
           "energy_level": 1.0,
           "trainability": 0.6,
           "sociability": 0.9,
+          "confidence": 0.8,
           "good_with_dogs": 0.0,
           "vaccinated": 1.0,
-          "neutered": 1.0
+          "neutered": 1.0,
+          "personality_traits": 0.9,
+          "favorite_activities": 0.85,
+          "unique_quirk": 0.9
         },
         "source_references": {
           "description": "stuck in kennels for over a year... friendly boy, very excitable, loves attention",
