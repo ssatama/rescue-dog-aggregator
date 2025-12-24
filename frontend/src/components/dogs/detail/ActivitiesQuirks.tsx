@@ -88,13 +88,19 @@ const shouldShowActivities = (
 ): boolean => {
   if (!profilerData) return false;
 
-  const confidenceScore = profilerData.confidence_scores?.favorite_activities;
-  if (typeof confidenceScore !== "number" || confidenceScore <= 0.5) {
+  const activities = profilerData.favorite_activities;
+  if (!Array.isArray(activities) || activities.length === 0) {
     return false;
   }
 
-  const activities = profilerData.favorite_activities;
-  return Array.isArray(activities) && activities.length > 0;
+  // Show if confidence score is missing OR > 0.5
+  // Only hide if confidence score is explicitly present AND low
+  const confidenceScore = profilerData.confidence_scores?.favorite_activities;
+  if (typeof confidenceScore === "number" && confidenceScore <= 0.5) {
+    return false;
+  }
+
+  return true;
 };
 
 const shouldShowQuirk = (
@@ -102,13 +108,19 @@ const shouldShowQuirk = (
 ): boolean => {
   if (!profilerData) return false;
 
-  const confidenceScore = profilerData.confidence_scores?.unique_quirk;
-  if (typeof confidenceScore !== "number" || confidenceScore <= 0.5) {
+  const quirk = profilerData.unique_quirk;
+  if (typeof quirk !== "string" || quirk.trim().length === 0) {
     return false;
   }
 
-  const quirk = profilerData.unique_quirk;
-  return typeof quirk === "string" && quirk.trim().length > 0;
+  // Show if confidence score is missing OR > 0.5
+  // Only hide if confidence score is explicitly present AND low
+  const confidenceScore = profilerData.confidence_scores?.unique_quirk;
+  if (typeof confidenceScore === "number" && confidenceScore <= 0.5) {
+    return false;
+  }
+
+  return true;
 };
 
 const shouldShowComponent = (

@@ -37,13 +37,19 @@ const shouldShowTraits = (
 ): boolean => {
   if (!profilerData) return false;
 
-  const confidenceScore = profilerData.confidence_scores?.personality_traits;
-  if (typeof confidenceScore !== "number" || confidenceScore <= 0.5) {
+  const traits = profilerData.personality_traits;
+  if (!Array.isArray(traits) || traits.length === 0) {
     return false;
   }
 
-  const traits = profilerData.personality_traits;
-  return Array.isArray(traits) && traits.length > 0;
+  // Show if confidence score is missing OR > 0.5
+  // Only hide if confidence score is explicitly present AND low
+  const confidenceScore = profilerData.confidence_scores?.personality_traits;
+  if (typeof confidenceScore === "number" && confidenceScore <= 0.5) {
+    return false;
+  }
+
+  return true;
 };
 
 export default function PersonalityTraits({

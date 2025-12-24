@@ -63,12 +63,15 @@ describe("PersonalityTraits Component", () => {
     expect(screen.queryByTestId("personality-traits")).not.toBeInTheDocument();
   });
 
-  test("does not render when confidence score is missing", () => {
+  test("renders when confidence score is missing (data should show)", () => {
     render(
       <PersonalityTraits profilerData={mockProfileDataWithNoConfidence} />,
     );
 
-    expect(screen.queryByTestId("personality-traits")).not.toBeInTheDocument();
+    // With new behavior: show data if it exists, even without confidence scores
+    expect(screen.getByTestId("personality-traits")).toBeInTheDocument();
+    expect(screen.getByTestId("trait-friendly")).toBeInTheDocument();
+    expect(screen.getByTestId("trait-loyal")).toBeInTheDocument();
   });
 
   test("displays max 5 traits only", () => {

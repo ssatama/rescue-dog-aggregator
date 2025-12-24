@@ -101,10 +101,11 @@ describe("EnergyTrainability Component", () => {
       expect(screen.queryByTestId("energy-progress")).not.toBeInTheDocument();
     });
 
-    test("does not render energy level when confidence score is missing", () => {
+    test("renders energy level when confidence score is missing (data should show)", () => {
       render(<EnergyTrainability profilerData={mockMissingConfidenceData} />);
 
-      expect(screen.queryByTestId("energy-progress")).not.toBeInTheDocument();
+      // With new behavior: show data if it exists, even without confidence scores
+      expect(screen.getByTestId("energy-progress")).toBeInTheDocument();
     });
 
     test("shows correct progress fill for low energy (25%)", () => {

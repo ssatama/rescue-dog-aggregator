@@ -150,18 +150,13 @@ describe("CompatibilityIcons Component", () => {
       ).not.toBeInTheDocument();
     });
 
-    test("does not show icons when confidence scores are missing", () => {
+    test("shows icons when confidence scores are missing (data should show)", () => {
       render(<CompatibilityIcons profilerData={mockMissingConfidenceData} />);
 
-      expect(
-        screen.queryByTestId("dogs-compatibility"),
-      ).not.toBeInTheDocument();
-      expect(
-        screen.queryByTestId("cats-compatibility"),
-      ).not.toBeInTheDocument();
-      expect(
-        screen.queryByTestId("children-compatibility"),
-      ).not.toBeInTheDocument();
+      // With new behavior: show data if it exists, even without confidence scores
+      expect(screen.getByTestId("dogs-compatibility")).toBeInTheDocument();
+      expect(screen.getByTestId("cats-compatibility")).toBeInTheDocument();
+      expect(screen.getByTestId("children-compatibility")).toBeInTheDocument();
     });
 
     test("shows only icons with high enough confidence", () => {

@@ -120,10 +120,13 @@ describe("ActivitiesQuirks Component", () => {
     expect(screen.queryByTestId("quirk-section")).not.toBeInTheDocument();
   });
 
-  test("does not render when confidence scores are missing", () => {
+  test("renders when confidence scores are missing (data should show)", () => {
     render(<ActivitiesQuirks profilerData={mockProfileDataWithNoConfidence} />);
 
-    expect(screen.queryByTestId("activities-quirks")).not.toBeInTheDocument();
+    // With new behavior: show data if it exists, even without confidence scores
+    expect(screen.getByTestId("activities-quirks")).toBeInTheDocument();
+    expect(screen.getByTestId("activities-section")).toBeInTheDocument();
+    expect(screen.getByTestId("quirk-section")).toBeInTheDocument();
   });
 
   test("handles empty profiler data gracefully", () => {

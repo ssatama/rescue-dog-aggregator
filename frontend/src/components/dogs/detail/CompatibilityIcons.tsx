@@ -49,15 +49,13 @@ const getCompatibilityColor = (value: string): string => {
   }
 };
 
-const hasHighConfidence = (
+const shouldHideDueToLowConfidence = (
   profilerData: DogProfilerData | null | undefined,
   confidenceKey: string,
 ): boolean => {
-  if (!profilerData?.confidence_scores) {
-    return false;
-  }
-  const score = profilerData.confidence_scores[confidenceKey];
-  return typeof score === "number" && score > 0.5;
+  // Only hide if confidence score is explicitly present AND low (<=0.5)
+  const score = profilerData?.confidence_scores?.[confidenceKey];
+  return typeof score === "number" && score <= 0.5;
 };
 
 const CompatibilityIcons: React.FC<CompatibilityIconsProps> = ({
@@ -91,8 +89,9 @@ const CompatibilityIcons: React.FC<CompatibilityIconsProps> = ({
     },
   ];
 
+  // Show items if data exists, unless confidence score is explicitly low
   const validItems = compatibilityItems.filter(
-    (item) => item.value && hasHighConfidence(profilerData, item.confidenceKey),
+    (item) => item.value && !shouldHideDueToLowConfidence(profilerData, item.confidenceKey),
   );
 
   if (validItems.length === 0) {

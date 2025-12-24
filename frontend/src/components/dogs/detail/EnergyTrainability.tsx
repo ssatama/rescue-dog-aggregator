@@ -37,9 +37,10 @@ const getTrainabilityConfig = (level: TrainabilityLevel): ProgressBarConfig => {
   return configs[level];
 };
 
-// Pure function to check if confidence score is valid
-const isValidConfidence = (score: number | undefined): boolean => {
-  return score !== undefined && score > 0.5;
+// Pure function to check if confidence score should hide content
+// Only hide if score is explicitly present AND low (<=0.5)
+const shouldHideDueToLowConfidence = (score: number | undefined): boolean => {
+  return typeof score === "number" && score <= 0.5;
 };
 
 // Pure component for rendering a single progress bar
@@ -77,19 +78,21 @@ const EnergyTrainability: React.FC<EnergyTrainabilityProps> = ({
   profilerData,
 }) => {
   // Early return for invalid data
-  if (!profilerData?.confidence_scores) {
+  if (!profilerData) {
     return null;
   }
 
   const { energy_level, trainability, confidence_scores } = profilerData;
 
   // Check if we should show energy level
+  // Show if data exists, unless confidence score is explicitly low
   const shouldShowEnergy =
-    energy_level && isValidConfidence(confidence_scores.energy_level);
+    energy_level && !shouldHideDueToLowConfidence(confidence_scores?.energy_level);
 
   // Check if we should show trainability
+  // Show if data exists, unless confidence score is explicitly low
   const shouldShowTrainability =
-    trainability && isValidConfidence(confidence_scores.trainability);
+    trainability && !shouldHideDueToLowConfidence(confidence_scores?.trainability);
 
   // Return null if neither should be shown
   if (!shouldShowEnergy && !shouldShowTrainability) {
