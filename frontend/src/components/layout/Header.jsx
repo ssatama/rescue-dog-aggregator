@@ -2,9 +2,16 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { ChevronDown } from "lucide-react";
 import { Icon } from "../ui/Icon";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import { FavoriteBadge } from "../favorites/FavoriteBadge";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import logo from "../../../public/logo.jpeg";
 
 export default function Header() {
@@ -92,7 +99,35 @@ export default function Header() {
             <div className="hidden md:flex gap-6 items-center">
               {" "}
               {/* Increased spacing for better visual separation */}
-              {renderNavLink("/dogs", "Dogs", "dogs")}
+              {/* Dogs Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className={`${getLinkClasses("/dogs")} flex items-center gap-1`}
+                >
+                  Dogs
+                  <ChevronDown className="h-4 w-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem asChild>
+                    <Link href="/dogs" className="w-full cursor-pointer">
+                      Browse All
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dogs/country" className="w-full cursor-pointer">
+                      By Country
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/dogs?sort_by=created_at&sort_order=desc"
+                      className="w-full cursor-pointer"
+                    >
+                      New Arrivals
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               {renderNavLink("/breeds", "Breeds", "breeds")}
               {renderNavLink("/guides", "Guides", "guides")}
               {/* Show Swipe on all screen sizes */}

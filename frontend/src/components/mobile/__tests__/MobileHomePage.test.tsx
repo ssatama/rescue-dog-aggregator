@@ -39,15 +39,24 @@ jest.mock("../MobileStats", () => ({
             </span>
           );
         }
-        if (stat.label === "Breeds") {
+        if (stat.label === "Countries") {
           return (
-            <span key="breeds" data-testid="breeds-count">
+            <span key="countries" data-testid="countries-count">
               {stat.value}
             </span>
           );
         }
         return null;
       })}
+    </div>
+  ),
+}));
+
+jest.mock("../MobileCountryBrowse", () => ({
+  __esModule: true,
+  default: ({ countryStats }: any) => (
+    <div data-testid="mobile-country-browse">
+      <span data-testid="country-count">{countryStats?.length || 0}</span>
     </div>
   ),
 }));
@@ -134,7 +143,7 @@ describe("MobileHomePage", () => {
 
     expect(screen.getByTestId("dogs-count")).toHaveTextContent("2,860");
     expect(screen.getByTestId("rescues-count")).toHaveTextContent("13");
-    expect(screen.getByTestId("breeds-count")).toHaveTextContent("50");
+    expect(screen.getByTestId("countries-count")).toHaveTextContent("8");
   });
 
   it("passes initial dogs to MobileAvailableNow", () => {

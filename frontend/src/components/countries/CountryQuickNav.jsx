@@ -1,16 +1,23 @@
 "use client";
 
-import { useRef, useEffect, useMemo } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ChevronLeft, ChevronRight, ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function CountryQuickNav({ currentCountry, allCountries }) {
   const scrollRef = useRef(null);
+  const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
 
   const countries = useMemo(() => {
     return Object.values(allCountries).filter((c) => c.code);
   }, [allCountries]);
+
+  const currentCountryData = useMemo(() => {
+    return countries.find((c) => c.code === currentCountry);
+  }, [countries, currentCountry]);
 
   useEffect(() => {
     const activeEl = scrollRef.current?.querySelector('[data-active="true"]');
@@ -33,13 +40,100 @@ export default function CountryQuickNav({ currentCountry, allCountries }) {
     }
   };
 
+  const handleCountrySelect = (countryCode) => {
+    setIsOpen(false);
+    if (countryCode) {
+      router.push(`/dogs/country/${countryCode.toLowerCase()}`);
+    } else {
+      router.push("/dogs/country");
+    }
+  };
+
   return (
     <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b">
       <div className="container mx-auto px-4 py-3">
-        <div className="flex items-center gap-2">
+        {/* Mobile: Dropdown selector */}
+        <div className="md:hidden relative">
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
+            aria-expanded={isOpen}
+            aria-haspopup="listbox"
+          >
+            <div className="flex items-center gap-2">
+              {currentCountryData ? (
+                <>
+                  <span className="text-lg">{currentCountryData.flag}</span>
+                  <span className="font-medium">{currentCountryData.name}</span>
+                </>
+              ) : (
+                <span className="font-medium">All Countries</span>
+              )}
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-5 w-5 text-muted-foreground transition-transform",
+                isOpen && "rotate-180"
+              )}
+            />
+          </button>
+
+          {isOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setIsOpen(false)}
+              />
+              <div
+                role="listbox"
+                className="absolute top-full left-0 right-0 mt-1 z-50 bg-background rounded-lg border shadow-lg max-h-[60vh] overflow-y-auto"
+              >
+                <button
+                  onClick={() => handleCountrySelect(null)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors border-b",
+                    !currentCountry && "bg-orange-50 dark:bg-orange-900/20"
+                  )}
+                  role="option"
+                  aria-selected={!currentCountry}
+                >
+                  <span className="font-medium">All Countries</span>
+                  {!currentCountry && (
+                    <Check className="h-5 w-5 text-orange-500" />
+                  )}
+                </button>
+
+                {countries.map((country) => (
+                  <button
+                    key={country.code}
+                    onClick={() => handleCountrySelect(country.code)}
+                    className={cn(
+                      "w-full flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors",
+                      currentCountry === country.code &&
+                        "bg-orange-50 dark:bg-orange-900/20"
+                    )}
+                    role="option"
+                    aria-selected={currentCountry === country.code}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg">{country.flag}</span>
+                      <span className="font-medium">{country.name}</span>
+                    </div>
+                    {currentCountry === country.code && (
+                      <Check className="h-5 w-5 text-orange-500" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Desktop: Horizontal pills */}
+        <div className="hidden md:flex items-center gap-2">
           <button
             onClick={() => scroll("left")}
-            className="shrink-0 p-1.5 rounded-full hover:bg-muted transition-colors hidden md:flex"
+            className="shrink-0 p-1.5 rounded-full hover:bg-muted transition-colors"
             aria-label="Scroll left"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -85,7 +179,7 @@ export default function CountryQuickNav({ currentCountry, allCountries }) {
 
           <button
             onClick={() => scroll("right")}
-            className="shrink-0 p-1.5 rounded-full hover:bg-muted transition-colors hidden md:flex"
+            className="shrink-0 p-1.5 rounded-full hover:bg-muted transition-colors"
             aria-label="Scroll right"
           >
             <ChevronRight className="h-5 w-5" />

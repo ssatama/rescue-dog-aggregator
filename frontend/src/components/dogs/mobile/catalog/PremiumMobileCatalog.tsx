@@ -41,13 +41,6 @@ import MobileFilterDrawer from "@/components/filters/MobileFilterDrawer";
 import { Button } from "@/components/ui/button";
 import { UI_CONSTANTS } from "@/constants/viewport";
 
-interface FilterChip {
-  id: string;
-  label: string;
-  value: string;
-  type: "gender" | "age";
-}
-
 interface PremiumMobileCatalogProps {
   dogs: Dog[];
   loading?: boolean;
@@ -65,19 +58,6 @@ interface PremiumMobileCatalogProps {
   totalCount?: number;
   viewMode?: "grid" | "list";
 }
-
-// Filter chips configuration - reordered for 2-row layout
-const filterChips: FilterChip[] = [
-  // Row 1
-  { id: "all", label: "All", value: "all", type: "gender" },
-  { id: "male", label: "Male", value: "male", type: "gender" },
-  { id: "female", label: "Female", value: "female", type: "gender" },
-  { id: "puppy", label: "Puppy", value: "puppy", type: "age" },
-  // Row 2
-  { id: "young", label: "Young", value: "young", type: "age" },
-  { id: "adult", label: "Adult", value: "adult", type: "age" },
-  { id: "senior", label: "Senior", value: "senior", type: "age" },
-];
 
 // Personality trait colors
 const traitColors = [
@@ -271,36 +251,6 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
     }
   }, [dogs]); // Only depend on dogs, not selectedDog to avoid loops
 
-  // Quick filter toggle handler
-  const handleQuickFilter = (chip: FilterChip) => {
-    if (!onFilterChange) return;
-
-    // Determine the filter key and value
-    let filterKey = "";
-    let filterValue = "";
-
-    if (chip.type === "gender") {
-      filterKey = "sexFilter";
-      // For gender filters, clicking the same one again clears it, clicking a different one switches
-      const isActive = filters.sexFilter?.toLowerCase() === chip.value;
-      filterValue = isActive
-        ? "Any"
-        : chip.value.charAt(0).toUpperCase() + chip.value.slice(1);
-    } else if (chip.type === "age") {
-      filterKey = "ageFilter";
-      // For age filters, clicking the same one again clears it, clicking a different one switches
-      const isActive = filters.ageFilter?.toLowerCase() === chip.value;
-      filterValue = isActive
-        ? "Any age"
-        : chip.value.charAt(0).toUpperCase() + chip.value.slice(1);
-    }
-
-    // Call parent's filter change handler - this will trigger server-side filtering
-    if (filterKey && filterValue) {
-      onFilterChange(filterKey, filterValue);
-    }
-  };
-
   const handleToggleFavorite = async (dogId: string) => {
     const numericId = parseInt(dogId, 10);
     if (!isNaN(numericId)) {
@@ -351,76 +301,9 @@ const PremiumMobileCatalog: React.FC<PremiumMobileCatalogProps> = ({
     }
   };
 
-  // Calculate active quick filter count (sex + age only)
-  const activeQuickFilterCount = useMemo(() => {
-    let count = 0;
-    if (filters.sexFilter && filters.sexFilter !== "Any") count++;
-    if (filters.ageFilter && filters.ageFilter !== "Any age") count++;
-    return count;
-  }, [filters.sexFilter, filters.ageFilter]);
-
   return (
     <>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
-        {/* Quick Filter Chips Section */}
-        <div className="sticky top-0 z-10 bg-background dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 pb-3">
-          <div className="px-4 pt-3">
-            <div className="grid grid-cols-4 gap-2">
-              {filterChips.map((chip) => {
-                // Determine if this chip is active based on parent filters
-                let isActive = false;
-
-                if (chip.value === "all") {
-                  // "All" is active when BOTH filters are cleared
-                  isActive =
-                    (!filters.sexFilter || filters.sexFilter === "Any") &&
-                    (!filters.ageFilter || filters.ageFilter === "Any age");
-                } else if (chip.type === "gender") {
-                  isActive = filters.sexFilter?.toLowerCase() === chip.value;
-                } else if (chip.type === "age") {
-                  isActive = filters.ageFilter?.toLowerCase() === chip.value;
-                }
-
-                return (
-                  <button
-                    key={chip.id}
-                    onClick={() => {
-                      // Special handling for "All" button
-                      if (chip.value === "all") {
-                        // Clear both sex and age filters in a single batch update
-                        if (onFilterChange) {
-                          // Use batch update to avoid multiple fetches
-                          onFilterChange({
-                            sexFilter: "Any",
-                            ageFilter: "Any age",
-                          });
-                        }
-                      } else {
-                        handleQuickFilter(chip);
-                      }
-                    }}
-                    className={cn(
-                      "px-3 py-2 rounded-full text-sm font-medium transition-all relative",
-                      isActive
-                        ? "bg-orange-500 dark:bg-orange-600 text-white"
-                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600",
-                    )}
-                  >
-                    {chip.label}
-                    {chip.value === "all" && activeQuickFilterCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                        {activeQuickFilterCount}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-              {/* Empty cell for alignment in second row */}
-              <div className="col-span-1"></div>
-            </div>
-          </div>
-        </div>
-
         {/* Main Content */}
         <div className="px-4 py-4">
           {loading && dogs.length === 0 ? (

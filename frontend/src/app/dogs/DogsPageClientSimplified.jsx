@@ -112,9 +112,13 @@ export default function DogsPageClientSimplified({
     breedFilter: searchParams.get("breed") || "Any breed",
     breedGroupFilter: searchParams.get("breed_group") || "Any group",
     locationCountryFilter:
-      searchParams.get("location_country") || "Any country",
+      searchParams.get("location_country") ||
+      initialParams?.location_country ||
+      "Any country",
     availableCountryFilter:
-      searchParams.get("available_country") || "Any country",
+      searchParams.get("available_country") ||
+      initialParams?.available_country ||
+      "Any country",
     availableRegionFilter: searchParams.get("available_region") || "Any region",
   };
 

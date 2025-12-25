@@ -81,6 +81,13 @@ export function MobileMenuDrawer({ isOpen, onClose }: MobileMenuDrawerProps) {
               aria-label="Mobile drawer navigation"
             >
               <Link
+                href="/dogs/country"
+                onClick={handleLinkClick}
+                className="block text-lg font-medium text-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors py-2"
+              >
+                Countries
+              </Link>
+              <Link
                 href="/guides"
                 onClick={handleLinkClick}
                 className="block text-lg font-medium text-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors py-2"

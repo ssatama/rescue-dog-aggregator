@@ -93,4 +93,5 @@ Sitemap: https://www.rescuedogs.me/sitemap-dogs.xml
 Sitemap: https://www.rescuedogs.me/sitemap-breeds.xml
 Sitemap: https://www.rescuedogs.me/sitemap-guides.xml
 Sitemap: https://www.rescuedogs.me/sitemap-organizations.xml
+Sitemap: https://www.rescuedogs.me/sitemap-countries.xml
 Sitemap: https://www.rescuedogs.me/sitemap-images.xml

@@ -2,7 +2,11 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import CountryDogsClient from "./CountryDogsClient";
 import CountryStructuredData from "@/components/countries/CountryStructuredData";
-import { getAnimals, getAllMetadata } from "@/services/serverAnimalsService";
+import {
+  getAnimals,
+  getAllMetadata,
+  getCountryStats,
+} from "@/services/serverAnimalsService";
 import {
   getCountryByCode,
   getAllCountryCodes,
@@ -26,11 +30,9 @@ export async function generateMetadata(props) {
     return { title: "Country Not Found" };
   }
 
-  const response = await getAnimals({
-    location_country: country.code,
-    limit: 1,
-  });
-  const count = response?.total || 0;
+  const countryStats = await getCountryStats();
+  const count =
+    countryStats?.countries?.find((c) => c.code === country.code)?.count || 0;
 
   return {
     title: `${count.toLocaleString()} Rescue Dogs in ${country.name} | Adopt from ${country.shortName}`,
@@ -73,31 +75,33 @@ export default async function CountryDogsPage(props) {
     notFound();
   }
 
-  const [initialDogs, metadata] = await Promise.all([
+  const [initialDogs, metadata, countryStats] = await Promise.all([
     getAnimals({
       location_country: country.code,
       limit: 20,
       offset: 0,
     }),
     getAllMetadata(),
+    getCountryStats(),
   ]);
 
-  const featuredDogs = initialDogs?.results?.slice(0, 4) || [];
+  const countryCount =
+    countryStats?.countries?.find((c) => c.code === country.code)?.count || 0;
 
   return (
     <>
       <CountryStructuredData
         country={country}
-        dogCount={initialDogs?.total || 0}
+        dogCount={countryCount}
         pageType="detail"
       />
       <Suspense fallback={<LoadingFallback />}>
         <CountryDogsClient
           country={country}
           initialDogs={initialDogs}
-          featuredDogs={featuredDogs}
           metadata={metadata}
           allCountries={COUNTRIES}
+          totalCount={countryCount}
         />
       </Suspense>
     </>

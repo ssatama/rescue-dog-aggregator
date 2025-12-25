@@ -13,15 +13,16 @@ describe("Header Navigation Enhancement - Orange Theme", () => {
   });
 
   describe("Active Navigation States", () => {
-    it("should show orange active state for Dogs link", () => {
+    it("should show orange active state for Dogs dropdown trigger", () => {
       usePathname.mockReturnValue("/dogs");
       render(<Header />);
 
-      const findDogsLink = screen.getByRole("link", { name: "Dogs" });
-      expect(findDogsLink).toHaveClass("text-orange-600");
-      expect(findDogsLink).toHaveClass("font-semibold");
-      expect(findDogsLink).not.toHaveClass("text-red-700");
-      expect(findDogsLink).not.toHaveClass("bg-red-100");
+      // Dogs is now a dropdown trigger button
+      const dogsButton = screen.getByRole("button", { name: /dogs/i });
+      expect(dogsButton).toHaveClass("text-orange-600");
+      expect(dogsButton).toHaveClass("font-semibold");
+      expect(dogsButton).not.toHaveClass("text-red-700");
+      expect(dogsButton).not.toHaveClass("bg-red-100");
     });
 
     it.skip("should show orange active state for Organizations link (removed from header)", () => {
@@ -41,24 +42,25 @@ describe("Header Navigation Enhancement - Orange Theme", () => {
   });
 
   describe("Hover and Transition States", () => {
-    it("should have orange hover states for inactive links", () => {
+    it("should have orange hover states for Dogs dropdown trigger", () => {
       usePathname.mockReturnValue("/");
       render(<Header />);
 
-      const findDogsLink = screen.getByRole("link", { name: "Dogs" });
-      expect(findDogsLink).toHaveClass("hover:text-orange-600");
-      expect(findDogsLink).toHaveClass("transition-colors");
-      expect(findDogsLink).toHaveClass("duration-200");
-      expect(findDogsLink).not.toHaveClass("hover:text-red-500");
+      // Dogs is now a dropdown trigger button
+      const dogsButton = screen.getByRole("button", { name: /dogs/i });
+      expect(dogsButton).toHaveClass("hover:text-orange-600");
+      expect(dogsButton).toHaveClass("transition-colors");
+      expect(dogsButton).toHaveClass("duration-200");
+      expect(dogsButton).not.toHaveClass("hover:text-red-500");
     });
 
-    it("should have smooth transitions on all navigation links", () => {
+    it("should have smooth transitions on navigation links", () => {
       render(<Header />);
 
       const allNavLinks = screen
         .getAllByRole("link")
         .filter((link) =>
-          ["Dogs", "Organizations", "About"].includes(link.textContent),
+          ["About", "Breeds", "Guides"].includes(link.textContent?.trim()),
         );
 
       allNavLinks.forEach((link) => {
@@ -76,16 +78,9 @@ describe("Header Navigation Enhancement - Orange Theme", () => {
   });
 
   describe("Active State Underline Indicators", () => {
-    it("should show underline indicator for active Dogs link", () => {
-      usePathname.mockReturnValue("/dogs");
-      render(<Header />);
-
-      // Look for the underline div that should be present for active state
-      const underlineIndicator = screen.getByTestId("nav-underline-dogs");
-      expect(underlineIndicator).toHaveClass("bg-orange-600");
-      expect(underlineIndicator).toHaveClass("h-0.5");
-      expect(underlineIndicator).toHaveClass("absolute");
-      expect(underlineIndicator).toHaveClass("bottom-0");
+    it.skip("Dogs dropdown trigger does not use underline indicator pattern", () => {
+      // Dogs is now a dropdown, not a simple nav link
+      // Dropdown triggers don't use the underline indicator pattern
     });
 
     it.skip("should show underline indicator for active Organizations link (removed from header)", () => {
@@ -105,9 +100,7 @@ describe("Header Navigation Enhancement - Orange Theme", () => {
       usePathname.mockReturnValue("/");
       render(<Header />);
 
-      expect(
-        screen.queryByTestId("nav-underline-dogs"),
-      ).not.toBeInTheDocument();
+      // Dogs no longer uses underline indicator (it's a dropdown)
       expect(
         screen.queryByTestId("nav-underline-organizations"),
       ).not.toBeInTheDocument();
@@ -139,10 +132,11 @@ describe("Header Navigation Enhancement - Orange Theme", () => {
     it("should not contain red navigation colors (except logo)", () => {
       render(<Header />);
 
+      // Filter for nav links (excluding Dogs which is now a dropdown button)
       const navLinks = screen
         .getAllByRole("link")
         .filter((link) =>
-          ["Dogs", "Organizations", "About"].includes(link.textContent),
+          ["About", "Breeds", "Guides"].includes(link.textContent?.trim()),
         );
 
       navLinks.forEach((element) => {

@@ -1,13 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import CountryDogsClient from "../CountryDogsClient";
 
-// Mock next/link
-jest.mock("next/link", () => {
-  return function MockLink({ children, href }) {
-    return <a href={href}>{children}</a>;
-  };
-});
-
 // Mock Layout component
 jest.mock("@/components/layout/Layout", () => {
   return function MockLayout({ children }) {
@@ -40,13 +33,6 @@ jest.mock("../../../DogsPageClientSimplified", () => {
   };
 });
 
-// Mock FallbackImage component
-jest.mock("@/components/ui/FallbackImage", () => {
-  return function MockFallbackImage({ alt }) {
-    return <img alt={alt} data-testid="fallback-image" />;
-  };
-});
-
 const mockCountry = {
   code: "UK",
   name: "United Kingdom",
@@ -56,17 +42,9 @@ const mockCountry = {
   tagline: "From the British Isles with love",
 };
 
-const mockInitialDogs = {
-  total: 3000,
-  dogs: [
-    { slug: "max-1", name: "Max", breed: "Labrador" },
-    { slug: "bella-2", name: "Bella", breed: "German Shepherd" },
-  ],
-};
-
-const mockFeaturedDogs = [
-  { slug: "max-1", name: "Max", breed: "Labrador", primary_image_url: "/img1.jpg" },
-  { slug: "bella-2", name: "Bella", breed: "German Shepherd", primary_image_url: "/img2.jpg" },
+const mockInitialDogs = [
+  { slug: "max-1", name: "Max", breed: "Labrador" },
+  { slug: "bella-2", name: "Bella", breed: "German Shepherd" },
 ];
 
 const mockAllCountries = [
@@ -84,9 +62,9 @@ describe("CountryDogsClient", () => {
   const defaultProps = {
     country: mockCountry,
     initialDogs: mockInitialDogs,
-    featuredDogs: mockFeaturedDogs,
     metadata: mockMetadata,
     allCountries: mockAllCountries,
+    totalCount: 3000,
   };
 
   it("renders country name in hero", () => {
@@ -130,26 +108,6 @@ describe("CountryDogsClient", () => {
     render(<CountryDogsClient {...defaultProps} />);
 
     expect(screen.getByTestId("dogs-page-client")).toHaveTextContent("Filter: UK");
-  });
-
-  it("renders featured dogs", () => {
-    render(<CountryDogsClient {...defaultProps} />);
-
-    expect(screen.getByText("Max")).toBeInTheDocument();
-    expect(screen.getByText("Bella")).toBeInTheDocument();
-  });
-
-  it("renders featured dog links", () => {
-    render(<CountryDogsClient {...defaultProps} />);
-
-    const maxLink = screen.getByRole("link", { name: /Max/i });
-    expect(maxLink).toHaveAttribute("href", "/dogs/max-1");
-  });
-
-  it("handles empty featured dogs", () => {
-    render(<CountryDogsClient {...defaultProps} featuredDogs={[]} />);
-
-    expect(screen.getByText(/Rescue Dogs in United Kingdom/i)).toBeInTheDocument();
   });
 
   it("wraps content in Layout", () => {

@@ -190,21 +190,20 @@ describe("PremiumMobileCatalog", () => {
     });
   });
 
-  describe("Filter chips functionality", () => {
-    it("displays basic filter chips", () => {
-      // Use minimal props to avoid infinite loop issue
+  describe("Filter drawer functionality", () => {
+    it("renders without filter chips on mobile", () => {
+      // Quick filter chips have been removed from mobile - filters are in the drawer
       render(<PremiumMobileCatalog dogs={[mockDog]} filters={stableFilters} />);
 
-      // Check that basic filter chips are rendered
-      expect(screen.getByText("All")).toBeInTheDocument();
-      expect(screen.getByText("Male")).toBeInTheDocument();
-      expect(screen.getByText("Female")).toBeInTheDocument();
+      // Filter chips should NOT be present - filters are now in filter drawer only
+      expect(screen.queryByText(/^All$/)).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /^Male$/ })).not.toBeInTheDocument();
     });
 
-    it("handles filter interaction without crashing", () => {
+    it("accepts onFilterChange prop", () => {
       const mockFilterChange = jest.fn();
 
-      render(
+      const { container } = render(
         <PremiumMobileCatalog
           dogs={[mockDog]}
           filters={stableFilters}
@@ -212,11 +211,8 @@ describe("PremiumMobileCatalog", () => {
         />,
       );
 
-      const maleFilter = screen.getByText("Male");
-      fireEvent.click(maleFilter);
-
-      // Function should be called (exact parameters may vary)
-      expect(mockFilterChange).toHaveBeenCalled();
+      // Component should render without crashing with onFilterChange prop
+      expect(container.querySelector(".min-h-screen")).toBeInTheDocument();
     });
   });
 
@@ -366,23 +362,20 @@ describe("PremiumMobileCatalog", () => {
   });
 
   describe("Navigation and filtering", () => {
-    it("has filter chips", () => {
+    it("does not have inline filter chips (filters moved to drawer)", () => {
       render(<PremiumMobileCatalog dogs={[mockDog]} filters={stableFilters} />);
 
-      // Check for filter chip buttons
-      expect(screen.getByRole("button", { name: /All/i })).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: /^Male$/i }),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: /^Female$/i }),
-      ).toBeInTheDocument();
+      // Filter chips have been removed from mobile catalog
+      // Filters are now accessed via the filter drawer only
+      expect(screen.queryByRole("button", { name: /^All$/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /^Male$/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /^Female$/i })).not.toBeInTheDocument();
     });
 
-    it("calls onOpenFilter when available", () => {
+    it("accepts onOpenFilter prop for filter drawer", () => {
       const mockOpenFilter = jest.fn();
 
-      render(
+      const { container } = render(
         <PremiumMobileCatalog
           dogs={[mockDog]}
           onOpenFilter={mockOpenFilter}
@@ -390,10 +383,8 @@ describe("PremiumMobileCatalog", () => {
         />,
       );
 
-      // No specific filter button in this component, it uses filter chips
-      // Test filter chip interaction instead
-      const maleFilter = screen.getByRole("button", { name: /^Male$/i });
-      expect(maleFilter).toBeInTheDocument();
+      // Component should render properly with onOpenFilter prop
+      expect(container.querySelector(".min-h-screen")).toBeInTheDocument();
     });
   });
 

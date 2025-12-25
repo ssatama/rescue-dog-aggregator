@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Layout from "../components/layout/Layout";
 import ClientHomePage from "../components/home/ClientHomePage";
-import { getHomePageData } from "../services/serverAnimalsService";
+import { getHomePageData, getCountryStats } from "../services/serverAnimalsService";
 import { getBreedsWithImagesForHomePage } from "../services/breedImagesService";
 import { getEnhancedOrganizationsSSR } from "../services/organizationsService";
 
@@ -46,6 +46,7 @@ export default async function Home() {
   let homePageData;
   let breedsWithImages = null;
   let organizations = [];
+  let countryStats = [];
 
   try {
     homePageData = await getHomePageData();
@@ -82,6 +83,15 @@ export default async function Home() {
     // Will be empty array, client can handle gracefully
   }
 
+  // Fetch country stats for CountryBrowseSection (server-side)
+  try {
+    const countryData = await getCountryStats();
+    countryStats = countryData?.countries || [];
+  } catch (error) {
+    console.error("Failed to fetch country stats:", error);
+    // Will be empty array, client can handle gracefully
+  }
+
   const { statistics, recentDogs, diverseDogs } = homePageData;
 
   return (
@@ -92,6 +102,7 @@ export default async function Home() {
         initialDiverseDogs={diverseDogs}
         initialBreedsWithImages={breedsWithImages}
         initialOrganizations={organizations}
+        initialCountryStats={countryStats}
       />
     </Layout>
   );

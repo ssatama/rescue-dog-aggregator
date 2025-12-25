@@ -8,12 +8,14 @@
  * @param {Array|Object} params.initialRecentDogs - Recent dogs data (various formats)
  * @param {Object} params.initialStatistics - Statistics data
  * @param {Array} params.breedsWithImages - Breeds data with images
+ * @param {Array} params.countryStats - Country statistics data
  * @returns {Object} Transformed data for MobileHomePage component
  */
 export function transformMobileHomePageData({
   initialRecentDogs,
   initialStatistics,
   breedsWithImages,
+  countryStats = [],
 }) {
   // Normalize whatever shape we get into a plain array
   const list = Array.isArray(initialRecentDogs?.dogs)
@@ -76,5 +78,6 @@ export function transformMobileHomePageData({
       totalBreeds: 50, // Default to 50+ as we don't have exact breed count in basic statistics
     },
     breedStats: transformedBreedStats, // Pass transformed breed data for carousel
+    countryStats, // Pass country stats for country browse section
   };
 }

@@ -4,6 +4,7 @@ import React, { useMemo } from "react";
 import MobileTopHeader from "./MobileTopHeader";
 import MobileNavCards from "./MobileNavCards";
 import MobileStats from "./MobileStats";
+import MobileCountryBrowse from "./MobileCountryBrowse";
 import { MobileAvailableNow } from "./MobileAvailableNow";
 import { MobileBreedSpotlight } from "./MobileBreedSpotlight";
 import MobileBottomNav from "../navigation/MobileBottomNav";
@@ -39,11 +40,17 @@ interface BreedStats {
   total_breeds?: number;
 }
 
+interface CountryStat {
+  code: string;
+  count: number;
+}
+
 interface InitialData {
   dogs?: Dog[];
   statistics?: Statistics;
   featuredBreed?: FeaturedBreed;
   breedStats?: BreedStats;
+  countryStats?: CountryStat[];
 }
 
 interface MobileHomePageProps {
@@ -131,9 +138,16 @@ export default function MobileHomePage({ initialData }: MobileHomePageProps) {
                 initialData?.statistics?.totalOrganizations?.toLocaleString() ||
                 "0",
             },
-            { label: "Breeds", value: breedCount },
+            {
+              label: "Countries",
+              value: initialData?.countryStats?.length?.toString() || "8",
+              href: "/dogs/country",
+            },
           ]}
         />
+
+        {/* Browse by Country */}
+        <MobileCountryBrowse countryStats={initialData?.countryStats} />
 
         {/* Breed Spotlight Carousel */}
         <MobileBreedSpotlight breeds={randomBreeds} />

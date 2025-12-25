@@ -183,18 +183,20 @@ export default function HeroSection({
                   </div>
 
                   {/* Countries Count */}
-                  <div className="bg-card/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm dark:shadow-purple-500/10">
-                    <div className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">
-                      <AnimatedCounter
-                        value={statistics.countries.length}
-                        label="Countries"
-                        className="block"
-                      />
+                  <Link href="/dogs/country" className="group">
+                    <div className="bg-card/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-6 text-center shadow-sm dark:shadow-purple-500/10 hover:bg-orange-50 dark:hover:bg-orange-950/30 transition-colors cursor-pointer">
+                      <div className="text-3xl md:text-4xl font-bold text-orange-600 mb-2">
+                        <AnimatedCounter
+                          value={statistics.countries.length}
+                          label="Countries"
+                          className="block"
+                        />
+                      </div>
+                      <div className="text-sm text-muted-foreground font-medium group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                        Countries
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground font-medium">
-                      Countries
-                    </div>
-                  </div>
+                  </Link>
                 </div>
 
                 {/* Organizations Breakdown */}

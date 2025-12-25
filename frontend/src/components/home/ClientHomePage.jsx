@@ -3,6 +3,7 @@
 import React, { Suspense, lazy } from "react";
 import HeroSection from "./HeroSection";
 import PlatformCapabilities from "./PlatformCapabilities";
+import CountryBrowseSection from "./CountryBrowseSection";
 import TrustBand from "./TrustBand";
 import FeaturedDogsSection from "./FeaturedDogsSection";
 import TrustSection from "./TrustSection";
@@ -25,6 +26,7 @@ export default function ClientHomePage({
   initialDiverseDogs,
   initialBreedsWithImages = null,
   initialOrganizations = [],
+  initialCountryStats = [],
 }) {
   // Prepare data for mobile version
   const mobileInitialData = React.useMemo(
@@ -33,8 +35,9 @@ export default function ClientHomePage({
         initialRecentDogs,
         initialStatistics,
         breedsWithImages: initialBreedsWithImages,
+        countryStats: initialCountryStats,
       }),
-    [initialRecentDogs, initialStatistics, initialBreedsWithImages],
+    [initialRecentDogs, initialStatistics, initialBreedsWithImages, initialCountryStats],
   );
 
   return (
@@ -53,6 +56,11 @@ export default function ClientHomePage({
         {/* Platform Capabilities Section - Three Ways to Find Your Dog */}
         <ErrorBoundary fallbackMessage="Unable to load platform capabilities section. Please refresh the page.">
           <PlatformCapabilities />
+        </ErrorBoundary>
+
+        {/* Country Browse Section - Dogs from Across Europe */}
+        <ErrorBoundary fallbackMessage="Unable to load country browse section. Please refresh the page.">
+          <CountryBrowseSection countryStats={initialCountryStats} />
         </ErrorBoundary>
 
         {/* Trust Band - Organization Logos */}

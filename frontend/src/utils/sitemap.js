@@ -550,19 +550,19 @@ export const generateCountrySitemap = async () => {
   try {
     const countryEntries = [
       // Index page
-      {
-        loc: `${baseUrl}/dogs/country`,
-        lastmod: formatDateForSitemap(new Date()),
+      formatSitemapEntry({
+        url: `${baseUrl}/dogs/country`,
         changefreq: "daily",
-        priority: "0.8",
-      },
+        priority: 0.8,
+      }),
       // Individual country pages
-      ...countries.map((code) => ({
-        loc: `${baseUrl}/dogs/country/${code}`,
-        lastmod: formatDateForSitemap(new Date()),
-        changefreq: "daily",
-        priority: "0.7",
-      })),
+      ...countries.map((code) =>
+        formatSitemapEntry({
+          url: `${baseUrl}/dogs/country/${code}`,
+          changefreq: "daily",
+          priority: 0.7,
+        })
+      ),
     ];
 
     return entriesToXml(countryEntries);

@@ -29,10 +29,11 @@ describe("Header", () => {
   });
 
   describe("Desktop Navigation Labels", () => {
-    it("should display 'Dogs' instead of 'Find Dogs'", () => {
+    it("should display 'Dogs' dropdown trigger instead of a simple link", () => {
       render(<Header />);
 
-      expect(screen.getByRole("link", { name: /^dogs$/i })).toBeInTheDocument();
+      // Dogs is now a dropdown trigger button, not a link
+      expect(screen.getByRole("button", { name: /dogs/i })).toBeInTheDocument();
       expect(
         screen.queryByRole("link", { name: /find dogs/i }),
       ).not.toBeInTheDocument();
