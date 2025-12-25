@@ -7,6 +7,9 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Guide } from "@/types/guide";
 
+// Force static generation for guides (content doesn't change frequently)
+export const dynamic = "force-static";
+
 export async function generateStaticParams() {
   const slugs = getAllGuideSlugs();
   return slugs.map((slug) => ({ slug }));

@@ -110,14 +110,16 @@ describe('Bug #4: AbortController Cleanup', () => {
         expect(api.getAnimals).toHaveBeenCalled();
       });
 
-      // Unmount before fetch completes
+      // Capture signals before unmount
+      const signalsBeforeUnmount = [...abortSignals];
+      expect(signalsBeforeUnmount.length).toBeGreaterThan(0);
+
+      // Unmount before fetch completes - this triggers cleanup synchronously
       unmount();
 
-      // Check if signal was aborted (AbortController implemented in Bug #4 fix)
-      await waitFor(() => {
-        expect(abortSignals.length).toBeGreaterThan(0);
-        expect(abortSignals[0].aborted).toBe(true);
-      });
+      // Abort happens synchronously in the cleanup function
+      // So we can check immediately without waitFor
+      expect(signalsBeforeUnmount[0].aborted).toBe(true);
     });
   });
 

@@ -8,12 +8,14 @@ if (process.env.NODE_ENV === "test" && process.env.JEST_WORKER_ID) {
   getAnimalBySlug =
     require("../../../services/serverAnimalsService").getAnimalBySlug;
 }
+import { Suspense } from "react";
 import { generatePetSchema, generateJsonLdScript } from "../../../utils/schema";
 import {
   generateSEODescription,
   generateFallbackDescription,
 } from "../../../utils/descriptionQuality";
 import DogDetailClient from "./DogDetailClient";
+import DogDetailSkeleton from "../../../components/ui/DogDetailSkeleton";
 
 /**
  * Generate metadata for dog detail page
@@ -221,7 +223,11 @@ async function DogDetailPageAsync(props) {
     }
   }
 
-  return <DogDetailClient initialDog={initialDog} />;
+  return (
+    <Suspense fallback={<DogDetailSkeleton />}>
+      <DogDetailClient initialDog={initialDog} />
+    </Suspense>
+  );
 }
 
 // Incremental Static Regeneration - revalidate every hour for fresh content
@@ -247,7 +253,7 @@ export async function generateStaticParams() {
       return dogs.filter((dog) => dog?.slug).map((dog) => ({ slug: dog.slug }));
     }
 
-    // Production: Pre-render top 100 most valuable dogs at build time
+    // Production: Pre-render top 500 most valuable dogs at build time
     const { getAllAnimalsForSitemap } = require("../../../services/animalsService");
     const dogs = await getAllAnimalsForSitemap();
 
@@ -279,7 +285,7 @@ export async function generateStaticParams() {
         };
       })
       .sort((a, b) => b.priority - a.priority)
-      .slice(0, 100); // Top 100 most valuable dogs
+      .slice(0, 500); // Top 500 most valuable dogs for better first-visit performance
 
     console.log(`[generateStaticParams] Pre-rendering ${prioritizedDogs.length} high-priority dog pages`);
 

@@ -15,10 +15,18 @@ const getBaseUrl = () =>
 /**
  * Calculate dynamic priority for dog pages based on content quality attributes
  * Higher priority for dogs with better content (LLM descriptions, images, recent listings)
+ * Lower priority for adopted dogs (preserves backlink equity but saves crawl budget)
  * @param {Object} dog - Dog data object
  * @returns {number} Priority value between 0.3 and 1.0
  */
 const calculateDogPriority = (dog) => {
+  // Adopted and unknown status dogs get reduced priority to save crawl budget
+  // They still appear in sitemap to preserve backlink equity
+  // Unknown = dogs not seen in recent scrapes (consecutive_scrapes_missing >= 3)
+  if (dog.status === "adopted" || dog.status === "unknown") {
+    return 0.5;
+  }
+
   let priority = 0.3; // Base priority for all dogs
 
   // Check for LLM-enhanced content (highest priority signal)
