@@ -385,6 +385,7 @@ export const generateSitemapIndex = (sitemaps) => {
       { filename: "sitemap.xml", lastmod },
       { filename: "sitemap-dogs.xml", lastmod },
       { filename: "sitemap-organizations.xml", lastmod },
+      { filename: "sitemap-countries.xml", lastmod },
       { filename: "sitemap-images.xml", lastmod },
       { filename: "sitemap-guides.xml", lastmod },
       { filename: "sitemap-breeds.xml", lastmod },
@@ -533,6 +534,41 @@ export const generateOrganizationSitemap = async () => {
   } catch (error) {
     if (process.env.NODE_ENV !== "production") {
       console.error("Error generating organization sitemap:", error);
+    }
+    return entriesToXml([]);
+  }
+};
+
+/**
+ * Generate country-specific sitemap for country hub pages
+ * @returns {Promise<string>} XML sitemap for countries
+ */
+export const generateCountrySitemap = async () => {
+  const baseUrl = getBaseUrl();
+  const countries = ["uk", "de", "sr", "ba", "bg", "it", "tr", "cy"];
+
+  try {
+    const countryEntries = [
+      // Index page
+      {
+        loc: `${baseUrl}/dogs/country`,
+        lastmod: formatDateForSitemap(new Date()),
+        changefreq: "daily",
+        priority: "0.8",
+      },
+      // Individual country pages
+      ...countries.map((code) => ({
+        loc: `${baseUrl}/dogs/country/${code}`,
+        lastmod: formatDateForSitemap(new Date()),
+        changefreq: "daily",
+        priority: "0.7",
+      })),
+    ];
+
+    return entriesToXml(countryEntries);
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("Error generating country sitemap:", error);
     }
     return entriesToXml([]);
   }

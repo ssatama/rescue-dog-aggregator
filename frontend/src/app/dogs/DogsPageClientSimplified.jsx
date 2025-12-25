@@ -80,6 +80,9 @@ export default function DogsPageClientSimplified({
   initialDogs = [],
   metadata = {},
   initialParams = {},
+  hideHero = false,
+  hideBreadcrumbs = false,
+  wrapWithLayout = true,
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -843,38 +846,65 @@ export default function DogsPageClientSimplified({
       value && !value.includes("Any") && value !== "any" && value !== "",
   ).length;
 
-  return (
-    <Layout>
-      <BreadcrumbSchema items={breadcrumbItems} />
+  const content = (
+    <>
+      {!hideBreadcrumbs && <BreadcrumbSchema items={breadcrumbItems} />}
 
       {/* Mobile Sticky Header with Breadcrumb and Filter Button */}
-      <div className="lg:hidden sticky top-[80px] z-20 bg-background dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-        {/* Add spacing at the top */}
-        <div className="h-2 bg-background dark:bg-gray-900"></div>
+      {!hideHero && (
+        <div className="lg:hidden sticky top-[80px] z-20 bg-background dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+          {/* Add spacing at the top */}
+          <div className="h-2 bg-background dark:bg-gray-900"></div>
 
-        <div className="flex justify-between items-center px-4 py-3">
-          {/* Breadcrumb Navigation (left side) */}
-          <nav className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <span
-              className="hover:text-gray-900 dark:hover:text-white cursor-pointer transition-colors"
-              onClick={() => router.push("/")}
+          {!hideBreadcrumbs && (
+            <div className="flex justify-between items-center px-4 py-3">
+              {/* Breadcrumb Navigation (left side) */}
+              <nav className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                <span
+                  className="hover:text-gray-900 dark:hover:text-white cursor-pointer transition-colors"
+                  onClick={() => router.push("/")}
+                >
+                  Home
+                </span>
+                <span>/</span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  Find Dogs
+                </span>
+              </nav>
+            </div>
+          )}
+
+          {/* Mobile Page Title with Filter Button */}
+          <div className="px-4 pb-3 bg-background dark:bg-gray-900 flex justify-between items-center">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+              Find Your New Best Friend
+            </h1>
+
+            {/* Enhanced Filter Button - inline with title */}
+            <Button
+              onClick={() => setIsSheetOpen(true)}
+              variant="default"
+              size="lg"
+              className="rounded-full shadow-lg bg-orange-500 hover:bg-orange-600 text-white p-3 relative"
+              aria-label="Open filters"
             >
-              Home
-            </span>
-            <span>/</span>
-            <span className="font-medium text-gray-900 dark:text-white">
-              Find Dogs
-            </span>
-          </nav>
+              <Filter className="w-6 h-6" />
+              {activeFilterCount > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -top-2 -right-2 px-2 py-0.5 text-xs font-bold min-w-[20px] h-5"
+                >
+                  {activeFilterCount}
+                </Badge>
+              )}
+            </Button>
+          </div>
         </div>
+      )}
 
-        {/* Mobile Page Title with Filter Button */}
-        <div className="px-4 pb-3 bg-background dark:bg-gray-900 flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-            Find Your New Best Friend
-          </h1>
-
-          {/* Enhanced Filter Button - inline with title */}
+      {/* Mobile Filter Button (when hero is hidden) */}
+      {hideHero && (
+        <div className="lg:hidden sticky top-[80px] z-20 bg-background dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex justify-end">
           <Button
             onClick={() => setIsSheetOpen(true)}
             variant="default"
@@ -893,26 +923,30 @@ export default function DogsPageClientSimplified({
             )}
           </Button>
         </div>
-      </div>
+      )}
 
       <div
         data-testid="dogs-page-container"
         className="container mx-auto px-4 py-6 lg:py-8"
       >
         {/* Desktop Breadcrumbs - Hidden on Mobile */}
-        <div className="hidden lg:block">
-          <Breadcrumbs items={breadcrumbItems} />
-        </div>
+        {!hideBreadcrumbs && (
+          <div className="hidden lg:block">
+            <Breadcrumbs items={breadcrumbItems} />
+          </div>
+        )}
 
         {/* Desktop Page header */}
-        <div className="mb-6 hidden lg:block text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Find Your New Best Friend
-          </h1>
-          <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
-            Browse adoptable dogs from trusted rescue organizations
-          </p>
-        </div>
+        {!hideHero && (
+          <div className="mb-6 hidden lg:block text-center">
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+              Find Your New Best Friend
+            </h1>
+            <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
+              Browse adoptable dogs from trusted rescue organizations
+            </p>
+          </div>
+        )}
 
         <div className="flex gap-8">
           {/* Desktop filters sidebar */}
@@ -1126,6 +1160,8 @@ export default function DogsPageClientSimplified({
         // Dynamic filter counts
         filterCounts={filterCounts}
       />
-    </Layout>
+    </>
   );
+
+  return wrapWithLayout ? <Layout>{content}</Layout> : content;
 }

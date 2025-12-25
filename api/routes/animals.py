@@ -215,6 +215,48 @@ async def get_breed_stats(
         raise APIException(status_code=500, detail="Failed to fetch breed statistics", error_code="INTERNAL_ERROR")
 
 
+# --- Country Statistics Endpoint ---
+@router.get("/stats/by-country", summary="Get Country Statistics")
+async def get_stats_by_country(
+    cursor: RealDictCursor = Depends(get_pooled_db_cursor),
+):
+    """
+    Get dog counts grouped by country for country hub pages.
+
+    Returns:
+        Country statistics including:
+        - total: Total number of available dogs
+        - countries: List of countries with dog counts and organization counts
+    """
+    try:
+        query = """
+            SELECT
+                o.country as code,
+                o.country as name,
+                COUNT(a.id) as count,
+                COUNT(DISTINCT a.organization_id) as organizations
+            FROM animals a
+            JOIN organizations o ON a.organization_id = o.id
+            WHERE a.active = true AND o.active = true AND a.animal_type = 'dog'
+            GROUP BY o.country
+            ORDER BY COUNT(a.id) DESC
+        """
+        cursor.execute(query)
+        countries = cursor.fetchall()
+
+        total = sum(c["count"] for c in countries)
+
+        return {
+            "total": total,
+            "countries": countries,
+        }
+    except psycopg2.Error as db_err:
+        handle_database_error(db_err, "get_stats_by_country")
+    except Exception as e:
+        logger.exception(f"Unexpected error fetching country statistics: {e}")
+        raise APIException(status_code=500, detail="Failed to fetch country statistics", error_code="INTERNAL_ERROR")
+
+
 # --- Search Suggestions Endpoints ---
 @router.get("/search/suggestions", response_model=List[str])
 async def get_search_suggestions(

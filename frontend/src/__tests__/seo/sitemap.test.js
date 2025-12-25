@@ -675,7 +675,7 @@ describe("Dynamic Sitemap Generation", () => {
 
       // Should have lastmod tags
       const lastmodCount = (sitemapIndex.match(/<lastmod>/g) || []).length;
-      expect(lastmodCount).toBe(6); // One for each sitemap
+      expect(lastmodCount).toBe(7); // One for each sitemap (including countries)
 
       // Should have proper date format (W3C datetime)
       expect(sitemapIndex).toMatch(
@@ -691,8 +691,8 @@ describe("Dynamic Sitemap Generation", () => {
       const openSitemapTags = (sitemapIndex.match(/<sitemap>/g) || []).length;
       const closeSitemapTags = (sitemapIndex.match(/<\/sitemap>/g) || [])
         .length;
-      expect(openSitemapTags).toBe(6);
-      expect(closeSitemapTags).toBe(6);
+      expect(openSitemapTags).toBe(7);
+      expect(closeSitemapTags).toBe(7);
       expect(openSitemapTags).toBe(closeSitemapTags);
     });
   });

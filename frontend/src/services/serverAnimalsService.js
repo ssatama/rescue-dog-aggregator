@@ -965,3 +965,30 @@ export const getAnimalBySlug = cache(async (slug) => {
     throw error;
   }
 });
+
+// Get country statistics for country hub pages
+export const getCountryStats = cache(async () => {
+  try {
+    const response = await fetch(`${API_URL}/api/animals/stats/by-country`, {
+      next: {
+        revalidate: 300, // 5 minutes
+        tags: ["country-stats"],
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch country stats: ${response.statusText}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error("Error fetching country stats:", error);
+    return {
+      total: 0,
+      countries: [],
+    };
+  }
+});
