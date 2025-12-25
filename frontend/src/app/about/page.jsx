@@ -2,7 +2,7 @@ import Layout from "../../components/layout/Layout";
 import Link from "next/link";
 import ContactButton from "../../components/ui/ContactButton";
 import Breadcrumbs from "../../components/ui/Breadcrumbs";
-import { BreadcrumbSchema } from "../../components/seo";
+import { BreadcrumbSchema, PersonSchema } from "../../components/seo";
 import HarleyStory from "../../components/about/HarleyStory";
 import StatsDisplay from "../../components/about/StatsDisplay";
 import EuropeMap from "../../components/about/EuropeMap";
@@ -37,6 +37,15 @@ export default function AboutPage() {
   return (
     <Layout>
       <BreadcrumbSchema items={breadcrumbItems} />
+      <PersonSchema
+        name="Sampo Satama"
+        jobTitle="Founder"
+        organization={{ name: "RescueDogs.me", url: "https://www.rescuedogs.me" }}
+        sameAs={[
+          "https://www.linkedin.com/in/sampo-satama-data-scientist/",
+          "https://github.com/ssatama",
+        ]}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb Navigation */}
         <Breadcrumbs items={breadcrumbItems} />

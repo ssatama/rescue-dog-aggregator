@@ -115,7 +115,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
           >
             <NextImage
               src={dog.primary_image_url}
-              alt={dog.name}
+              alt={`${name} - ${breed || "Dog"} available for adoption`}
               className="dog-card-image transition-transform duration-300 ease-out group-hover:scale-105"
               priority={priority}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -194,7 +194,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
           >
             <NextImage
               src={dog.primary_image_url}
-              alt={dog.name}
+              alt={`${name} - ${breed || "Dog"} available for adoption`}
               className="dog-card-image transition-transform duration-300 ease-out group-hover:scale-105"
               priority={priority}
               sizes="128px"
@@ -379,7 +379,7 @@ const DogCardOptimized = React.memo(function DogCardOptimized({
           )}
           <NextImage
             src={dog.primary_image_url}
-            alt={dog.name}
+            alt={`${name} - ${breed || "Dog"} available for adoption`}
             className="dog-card-image transition-transform duration-300 ease-out group-hover:scale-105"
             priority={priority}
             sizes="dog-card"

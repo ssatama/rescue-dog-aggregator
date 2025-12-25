@@ -55,6 +55,22 @@ jest.mock("../../../components/seo", () => ({
       }}
     />
   ),
+  PersonSchema: ({ name, jobTitle, organization, sameAs }) => (
+    <script
+      type="application/ld+json"
+      data-testid="person-schema"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Person",
+          name,
+          jobTitle,
+          worksFor: organization,
+          sameAs,
+        }),
+      }}
+    />
+  ),
 }));
 
 // Mock Next.js Link

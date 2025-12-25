@@ -62,7 +62,7 @@ const RelatedDogsCard = memo(function RelatedDogsCard({ dog }) {
         {dog.primary_image_url ? (
           <NextImage
             src={getThumbnailImage(dog.primary_image_url)}
-            alt={dog.name}
+            alt={`${dog.name} - ${formatBreed(dog)} available for adoption`}
             className="group-hover:scale-105 transition-transform duration-200"
             sizes="related-dog"
             aspectRatio="4/3"
