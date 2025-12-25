@@ -114,12 +114,13 @@ describe('Bug #4: AbortController Cleanup', () => {
       const signalsBeforeUnmount = [...abortSignals];
       expect(signalsBeforeUnmount.length).toBeGreaterThan(0);
 
-      // Unmount before fetch completes - this triggers cleanup synchronously
+      // Unmount before fetch completes - this triggers cleanup
       unmount();
 
-      // Abort happens synchronously in the cleanup function
-      // So we can check immediately without waitFor
-      expect(signalsBeforeUnmount[0].aborted).toBe(true);
+      // Wait for cleanup to complete (React may batch cleanup operations)
+      await waitFor(() => {
+        expect(signalsBeforeUnmount[0].aborted).toBe(true);
+      });
     });
   });
 
