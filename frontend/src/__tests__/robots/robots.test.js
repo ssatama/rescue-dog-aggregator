@@ -65,6 +65,12 @@ describe("Static Robots.txt File", () => {
       "Sitemap: https://www.rescuedogs.me/sitemap-dogs.xml",
     );
     expect(robotsTxtContent).toContain(
+      "Sitemap: https://www.rescuedogs.me/sitemap-breeds.xml",
+    );
+    expect(robotsTxtContent).toContain(
+      "Sitemap: https://www.rescuedogs.me/sitemap-guides.xml",
+    );
+    expect(robotsTxtContent).toContain(
       "Sitemap: https://www.rescuedogs.me/sitemap-organizations.xml",
     );
     expect(robotsTxtContent).toContain(

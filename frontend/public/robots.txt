@@ -90,5 +90,7 @@ Sitemap: https://www.rescuedogs.me/sitemap_index.xml
 # Individual sitemaps (also accessible directly)
 Sitemap: https://www.rescuedogs.me/sitemap.xml
 Sitemap: https://www.rescuedogs.me/sitemap-dogs.xml
+Sitemap: https://www.rescuedogs.me/sitemap-breeds.xml
+Sitemap: https://www.rescuedogs.me/sitemap-guides.xml
 Sitemap: https://www.rescuedogs.me/sitemap-organizations.xml
 Sitemap: https://www.rescuedogs.me/sitemap-images.xml
