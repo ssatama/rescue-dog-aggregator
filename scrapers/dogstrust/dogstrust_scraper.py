@@ -567,12 +567,14 @@ class DogsTrustScraper(BaseScraper):
                         self.logger.debug("OneTrust overlay dismissed")
                     except Exception:
                         # Force remove the overlay if it persists
-                        await page.evaluate("""
+                        await page.evaluate(
+                            """
                             const overlay = document.querySelector('#onetrust-consent-sdk');
                             if (overlay) overlay.remove();
                             const darkFilter = document.querySelector('.onetrust-pc-dark-filter');
                             if (darkFilter) darkFilter.remove();
-                        """)
+                        """
+                        )
                         self.logger.debug("Force-removed OneTrust overlay via JavaScript")
                 except Exception as e:
                     self.logger.debug(f"No cookie consent banner found: {e}")

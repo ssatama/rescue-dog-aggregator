@@ -312,16 +312,21 @@ class REANScraper(BaseScraper):
                 viewport_height=1080,
             )
 
-            result = await playwright_service.get_page_content(url, options)
+            async with playwright_service.get_browser(options) as browser_result:
+                page = browser_result.page
 
-            if not result.success:
-                self.logger.error(f"Playwright failed to load page: {result.error}")
-                return []
+                await page.goto(url, wait_until="domcontentloaded", timeout=60000)
 
-            # Parse with BeautifulSoup
-            soup = BeautifulSoup(result.content, "html.parser")
+                await asyncio.sleep(2)
 
-            # Extract all image elements
+                await self._trigger_lazy_loading_playwright(page)
+
+                await asyncio.sleep(2)
+
+                content = await page.content()
+
+            soup = BeautifulSoup(content, "html.parser")
+
             actual_images = []
             for img in soup.find_all("img"):
                 src = img.get("src", "")
@@ -642,16 +647,21 @@ class REANScraper(BaseScraper):
                 viewport_height=1080,
             )
 
-            result = await playwright_service.get_page_content(url, options)
+            async with playwright_service.get_browser(options) as browser_result:
+                page = browser_result.page
 
-            if not result.success:
-                self.logger.error(f"Playwright failed to load page: {result.error}")
-                return self._extract_dogs_legacy_fallback(url, page_type)
+                await page.goto(url, wait_until="domcontentloaded", timeout=60000)
 
-            # Parse with BeautifulSoup
-            soup = BeautifulSoup(result.content, "html.parser")
+                await asyncio.sleep(2)
 
-            # Extract dogs using unified approach
+                await self._trigger_lazy_loading_playwright(page)
+
+                await asyncio.sleep(2)
+
+                content = await page.content()
+
+            soup = BeautifulSoup(content, "html.parser")
+
             dogs_data = self._extract_dogs_from_dom_soup(soup, page_type)
 
             return dogs_data
@@ -659,6 +669,34 @@ class REANScraper(BaseScraper):
         except Exception as e:
             self.logger.error(f"Error during Playwright unified extraction: {e}")
             return self._extract_dogs_legacy_fallback(url, page_type)
+
+    async def _trigger_lazy_loading_playwright(self, page) -> None:
+        """Trigger lazy loading for images using Playwright page scrolling."""
+        try:
+            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            await asyncio.sleep(2)
+
+            await page.evaluate("window.scrollTo(0, 0)")
+            await asyncio.sleep(1)
+
+            height = await page.evaluate("document.body.scrollHeight")
+            current = 0
+            scroll_increment = 300
+
+            while current < height:
+                await page.evaluate(f"window.scrollTo(0, {current})")
+                await asyncio.sleep(0.5)
+                current += scroll_increment
+
+            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            await asyncio.sleep(2)
+            await page.evaluate("window.scrollTo(0, 0)")
+            await asyncio.sleep(1)
+
+            self.logger.debug("Playwright lazy loading trigger completed")
+
+        except Exception as e:
+            self.logger.warning(f"Error during Playwright lazy loading trigger: {e}")
 
     def _extract_dogs_from_dom_soup(self, soup: BeautifulSoup, page_type: str) -> List[Dict[str, Any]]:
         """Extract dog data from BeautifulSoup parsed DOM."""
