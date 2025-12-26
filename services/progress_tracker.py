@@ -333,13 +333,14 @@ class ProgressTracker:
         if total_images > 0:
             self.stats["images"]["image_success_rate"] = (images_uploaded / total_images) * 100.0
 
-    def track_performance_stats(self, phase_durations: Dict[str, float] = None, memory_usage: int = 0, retry_attempts: int = 0) -> None:
+    def track_performance_stats(self, phase_durations: Dict[str, float] = None, memory_usage: int = 0, retry_attempts: int = 0, total_duration: float = None) -> None:
         """Track performance statistics.
 
         Args:
             phase_durations: Dictionary of phase names to duration in seconds
             memory_usage: Peak memory usage in MB
             retry_attempts: Total number of retry attempts
+            total_duration: Override duration (use when start_time doesn't capture full scrape)
         """
         if phase_durations:
             self.stats["performance"]["phase_durations"].update(phase_durations)
@@ -350,10 +351,13 @@ class ProgressTracker:
         if retry_attempts > 0:
             self.stats["performance"]["retry_attempts"] = retry_attempts
 
-        # Update total duration and throughput
-        elapsed = (datetime.now() - self.start_time).total_seconds()
+        # Update total duration - use provided value or calculate from start_time
+        if total_duration is not None:
+            elapsed = total_duration
+        else:
+            elapsed = (datetime.now() - self.start_time).total_seconds()
         self.stats["performance"]["total_duration"] = elapsed
-        self.stats["performance"]["throughput"] = self.get_throughput()
+        self.stats["performance"]["throughput"] = self.total_items / max(elapsed, 0.1)
 
     def track_quality_stats(self, data_quality_score: float, completion_rate: float = 100.0) -> None:
         """Track quality statistics.
@@ -392,7 +396,7 @@ class ProgressTracker:
             "🎯 SCRAPE COMPLETED",
             "=" * 50,
             f"📊 Discovery: {stats['discovery']['dogs_found']} dogs found, {stats['discovery']['extraction_failures']} extraction failures",
-            f"🔍 Filtering: {stats['filtering']['dogs_skipped']} skipped, {stats['filtering']['new_dogs']} new ({stats['filtering']['skip_rate']:.1f}% skip rate)",
+            f"🔍 Filtering: {stats['filtering']['dogs_skipped']} existing (skipped), {stats['filtering']['new_dogs']} new ({stats['filtering']['skip_rate']:.1f}% skip rate)",
             f"💾 Processing: {stats['processing']['dogs_added']} added, {stats['processing']['dogs_updated']} updated, {stats['processing']['dogs_unchanged']} unchanged",
             f"🖼️  Images: {stats['images']['images_uploaded']} uploaded, {stats['images']['images_failed']} failed ({stats['images']['image_success_rate']:.1f}% success)",
             f"⚡ Performance: {duration:.1f}s duration, {stats['performance']['throughput']:.1f} dogs/sec",

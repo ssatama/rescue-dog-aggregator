@@ -523,9 +523,10 @@ class BaseScraper(ABC):
                 self.progress_tracker.track_discovery_stats(dogs_found=correct_animals_found, pages_processed=1, extraction_failures=0)  # Single page scrape
 
                 # Track filtering phase stats
+                # Note: animals_data already contains only NEW dogs (after filtering in collect_data)
                 self.progress_tracker.track_filtering_stats(
                     dogs_skipped=self.total_animals_skipped,
-                    new_dogs=len(animals_data) - self.total_animals_skipped,
+                    new_dogs=len(animals_data),
                 )
 
                 # Log discovery completion
@@ -842,6 +843,8 @@ class BaseScraper(ABC):
             )
 
             self.progress_tracker.track_quality_stats(data_quality_score=quality_score, completion_rate=100.0)
+
+            self.progress_tracker.track_performance_stats(total_duration=duration)
 
             # Log comprehensive completion summary
             self.progress_tracker.log_completion_summary()

@@ -147,7 +147,7 @@ class TestWorldClassLogging:
         # Verify comprehensive summary (check actual format from implementation)
         assert "🎯 SCRAPE COMPLETED" in summary
         assert "Discovery: 100 dogs found" in summary
-        assert "Filtering: 20 skipped, 80 new" in summary
+        assert "Filtering: 20 existing (skipped), 80 new" in summary
         assert "Processing: 15 added, 60 updated, 5 unchanged" in summary
         assert "Images: 75 uploaded, 3 failed" in summary
         assert "Performance:" in summary  # Check for performance section
