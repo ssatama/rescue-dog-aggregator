@@ -16,6 +16,7 @@ if USE_PLAYWRIGHT:
     from services.playwright_browser_service import PlaywrightOptions, get_playwright_service
 else:
     from selenium.webdriver.common.by import By
+
     from services.browser_service import BrowserOptions, get_browser_service
 
 # Import shared extraction utilities for consolidation

@@ -420,11 +420,13 @@ class TestREANScraper:
         assert len(images) == 1
         assert images[0] == "https://img1.wsimg.com/isteam/ip/abc123/dog.jpg"
 
-    @patch("scrapers.rean.dogs_scraper.webdriver.Chrome")
-    def test_extract_images_with_browser_handles_errors(self, mock_chrome, scraper):
+    @patch("scrapers.rean.dogs_scraper.get_browser_service")
+    def test_extract_images_with_browser_handles_errors(self, mock_browser_service, scraper):
         """Test browser extraction handles WebDriver errors gracefully."""
-        # Mock WebDriver that raises exception
-        mock_chrome.side_effect = Exception("WebDriver failed to start")
+        # Mock browser service that raises exception when creating driver
+        mock_service = MagicMock()
+        mock_browser_service.return_value = mock_service
+        mock_service.create_driver.side_effect = Exception("WebDriver failed to start")
 
         images = scraper.extract_images_with_browser("https://rean.org.uk/test")
 

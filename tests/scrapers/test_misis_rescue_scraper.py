@@ -33,16 +33,17 @@ class TestMisisRescueScraper(ScraperTestBase):
         available_dogs = scraper._extract_dogs_before_reserved(soup)
         assert len(available_dogs) == 2
 
-    @patch("scrapers.misis_rescue.scraper.webdriver.Chrome")
-    def test_extract_dog_urls_from_page(self, mock_driver, scraper):
+    def test_extract_dog_urls_from_page(self, scraper):
         """Test extracting dog URLs from listing page."""
         mock_html = '<html><main class="PAGES_CONTAINER"><a href="/post/dog-1" class="O16KGI">Dog 1</a><a href="/post/dog-2" class="O16KGI">Dog 2</a></main></html>'
         mock_driver_instance = Mock()
-        mock_driver.return_value = mock_driver_instance
         mock_driver_instance.page_source = mock_html
-        urls = scraper._extract_dog_urls_from_page(1)
-        assert len(urls) == 2
-        assert all("/post/" in url for url in urls)
+        mock_driver_instance.quit = Mock()
+
+        with patch.object(scraper, "_setup_selenium_driver", return_value=mock_driver_instance):
+            urls = scraper._extract_dog_urls_from_page(1)
+            assert len(urls) == 2
+            assert all("/post/" in url for url in urls)
 
     def test_pagination_logic(self, scraper):
         """Test pagination handling for multiple pages."""
@@ -66,14 +67,15 @@ class TestMisisRescueScraper(ScraperTestBase):
             mock_element.get_text.return_value = reserved_text
             assert scraper._is_reserved_section(mock_element)
 
-    @patch("scrapers.misis_rescue.scraper.webdriver.Chrome")
-    def test_detail_page_scraping(self, mock_driver, scraper):
+    def test_detail_page_scraping(self, scraper):
         """Test individual detail page scraping."""
         mock_html = "<html><body><h1>Test Dog</h1><div><ul><li>DOB: 2022</li><li>Mixed breed</li><li>weighs 15kg</li></ul></div></body></html>"
         mock_driver_instance = Mock()
-        mock_driver.return_value = mock_driver_instance
         mock_driver_instance.page_source = mock_html
         mock_driver_instance.title = "Test Dog - MISIs Animal Rescue"
-        dog_data = scraper._scrape_dog_detail("https://example.com/post/test-dog")
-        assert dog_data["name"] == "Test Dog"
-        assert dog_data["external_id"] == "mar-test-dog"
+        mock_driver_instance.quit = Mock()
+
+        with patch.object(scraper, "_setup_selenium_driver", return_value=mock_driver_instance):
+            dog_data = scraper._scrape_dog_detail("https://example.com/post/test-dog")
+            assert dog_data["name"] == "Test Dog"
+            assert dog_data["external_id"] == "mar-test-dog"

@@ -114,13 +114,21 @@ describe('Bug #4: AbortController Cleanup', () => {
       const signalsBeforeUnmount = [...abortSignals];
       expect(signalsBeforeUnmount.length).toBeGreaterThan(0);
 
+      // Record if signal was aborted before unmount (should be false)
+      const wasAbortedBeforeUnmount = signalsBeforeUnmount[0].aborted;
+      expect(wasAbortedBeforeUnmount).toBe(false);
+
       // Unmount before fetch completes - this triggers cleanup
       unmount();
 
-      // Wait for cleanup to complete (React may batch cleanup operations)
-      await waitFor(() => {
-        expect(signalsBeforeUnmount[0].aborted).toBe(true);
-      });
+      // The component's cleanup should abort the controller.
+      // In some React test environments, the cleanup is synchronous.
+      // We verify the signal IS aborted after unmount (may need a small wait).
+      // Give React time to process the cleanup
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // After unmount, the signal should be aborted
+      expect(signalsBeforeUnmount[0].aborted).toBe(true);
     });
   });
 

@@ -61,6 +61,16 @@ class PlaywrightResult:
             pass
 
 
+@dataclass
+class PageContentResult:
+    """Result of page content fetch operation."""
+
+    success: bool
+    content: str = ""
+    error: Optional[str] = None
+    url: Optional[str] = None
+
+
 class PlaywrightBrowserService:
     """Service for creating and managing Playwright browser instances.
 
@@ -101,9 +111,7 @@ class PlaywrightBrowserService:
 
         return url
 
-    async def create_browser(
-        self, options: Optional[PlaywrightOptions] = None
-    ) -> PlaywrightResult:
+    async def create_browser(self, options: Optional[PlaywrightOptions] = None) -> PlaywrightResult:
         """Create a Playwright browser instance based on environment.
 
         Args:
@@ -168,9 +176,7 @@ class PlaywrightBrowserService:
             is_remote=True,
         )
 
-    async def _create_context(
-        self, browser: Browser, opts: PlaywrightOptions
-    ) -> BrowserContext:
+    async def _create_context(self, browser: Browser, opts: PlaywrightOptions) -> BrowserContext:
         """Create browser context with configured options."""
         user_agent = opts.user_agent
         if not user_agent and opts.random_user_agent:
@@ -217,9 +223,7 @@ class PlaywrightBrowserService:
             logger.warning(f"Failed to apply stealth mode: {e}")
 
     @asynccontextmanager
-    async def get_browser(
-        self, options: Optional[PlaywrightOptions] = None
-    ) -> AsyncIterator[PlaywrightResult]:
+    async def get_browser(self, options: Optional[PlaywrightOptions] = None) -> AsyncIterator[PlaywrightResult]:
         """Async context manager for browser lifecycle.
 
         Usage:
@@ -241,6 +245,38 @@ class PlaywrightBrowserService:
         finally:
             if browser_result:
                 await browser_result.close()
+
+    async def get_page_content(self, url: str, options: Optional[PlaywrightOptions] = None) -> PageContentResult:
+        """Convenience method to fetch page content with automatic browser lifecycle.
+
+        Creates browser, navigates to URL, gets content, then closes browser.
+        This is the common pattern used by most scrapers.
+
+        Args:
+            url: URL to navigate to and fetch content from.
+            options: Browser configuration options.
+
+        Returns:
+            PageContentResult with success status, content, and error info.
+        """
+        try:
+            async with self.get_browser(options) as browser_result:
+                page = browser_result.page
+                await page.goto(url, wait_until="networkidle", timeout=options.timeout if options else 60000)
+                content = await page.content()
+                return PageContentResult(
+                    success=True,
+                    content=content,
+                    url=url,
+                )
+        except Exception as e:
+            logger.error(f"Failed to get page content from {url}: {e}")
+            return PageContentResult(
+                success=False,
+                content="",
+                error=str(e),
+                url=url,
+            )
 
     def health_check(self) -> dict:
         """Check browser service health.

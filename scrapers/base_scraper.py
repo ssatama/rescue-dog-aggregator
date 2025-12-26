@@ -875,13 +875,14 @@ class BaseScraper(ABC):
         """
         # Import browser-specific exceptions based on USE_PLAYWRIGHT flag
         use_playwright = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
-        
+
         if use_playwright:
             # For Playwright, we catch generic exceptions since async errors
             # are already handled in the Playwright methods themselves
             browser_exceptions = (Exception,)
         else:
             from selenium.common.exceptions import TimeoutException, WebDriverException
+
             browser_exceptions = (TimeoutException, WebDriverException, ValueError)
 
         for attempt in range(self.max_retries):

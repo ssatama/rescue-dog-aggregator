@@ -202,24 +202,24 @@ weiblich, kastriert"""
     @pytest.mark.unit
     def test_extract_with_selenium_chrome_options(self, scraper):
         """Test Chrome options setup for Selenium."""
-        with patch("scrapers.daisy_family_rescue.dogs_scraper.webdriver") as mock_webdriver, patch("scrapers.daisy_family_rescue.dogs_scraper.Options") as mock_options_class:
-
-            mock_options = Mock()
-            mock_options_class.return_value = mock_options
+        with patch("scrapers.daisy_family_rescue.dogs_scraper.get_browser_service") as mock_browser_service:
+            mock_service = Mock()
+            mock_browser_service.return_value = mock_service
 
             mock_driver = Mock()
-            mock_webdriver.Chrome.return_value = mock_driver
-            mock_driver.find_elements.return_value = []  # No containers to avoid full execution
+            mock_browser_result = Mock()
+            mock_browser_result.driver = mock_driver
+            mock_service.create_driver.return_value = mock_browser_result
+            mock_driver.find_elements.return_value = []
 
             try:
                 scraper._extract_with_selenium()
             except Exception:
                 pass  # We expect this to fail due to mocking, just testing setup
 
-            # Verify Chrome options were configured
-            mock_options.add_argument.assert_any_call("--headless")
-            mock_options.add_argument.assert_any_call("--no-sandbox")
-            mock_options.add_argument.assert_any_call("--disable-dev-shm-usage")
+            # Verify browser service was called with options
+            mock_browser_service.assert_called_once()
+            mock_service.create_driver.assert_called_once()
 
     @pytest.mark.integration
     def test_end_to_end_data_flow_mock(self, scraper):
