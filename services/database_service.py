@@ -55,6 +55,7 @@ class DatabaseService:
                 "host": self.db_config["host"],
                 "user": self.db_config["user"],
                 "database": self.db_config["database"],
+                "port": self.db_config.get("port", 5432),
             }
 
             # Only add password if it's not empty

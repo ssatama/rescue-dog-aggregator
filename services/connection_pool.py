@@ -55,6 +55,7 @@ class ConnectionPoolService:
             "host": self.db_config["host"],
             "user": self.db_config["user"],
             "database": self.db_config["database"],
+            "port": self.db_config.get("port", 5432),
         }
 
         # Only add password if not empty
@@ -63,7 +64,7 @@ class ConnectionPoolService:
 
         try:
             pool = psycopg2.pool.ThreadedConnectionPool(self.pool_config.min_connections, self.pool_config.max_connections, **conn_params)
-            self.logger.info(f"Connection pool created: min={self.pool_config.min_connections}, " f"max={self.pool_config.max_connections}, database={self.db_config['database']}")
+            self.logger.info(f"Connection pool created: min={self.pool_config.min_connections}, " f"max={self.pool_config.max_connections}, host={conn_params['host']}:{conn_params['port']}, database={self.db_config['database']}")
             return pool
         except Exception as e:
             self.logger.error(f"Failed to create connection pool: {e}")

@@ -24,6 +24,7 @@ def get_organization_id(organization_name="Pets in Turkey"):
             "host": DB_CONFIG["host"],
             "user": DB_CONFIG["user"],
             "database": DB_CONFIG["database"],
+            "port": DB_CONFIG.get("port", 5432),
         }
 
         # Only add password if it's not empty

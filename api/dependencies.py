@@ -35,6 +35,7 @@ def get_db_cursor() -> Generator[RealDictCursor, None, None]:
             "host": DB_CONFIG["host"],
             "user": DB_CONFIG["user"],
             "database": DB_CONFIG["database"],
+            "port": DB_CONFIG.get("port", 5432),
         }
         if DB_CONFIG["password"]:
             conn_params["password"] = DB_CONFIG["password"]
@@ -89,6 +90,7 @@ def get_database_connection() -> Generator[psycopg2.extensions.connection, None,
             "host": DB_CONFIG["host"],
             "user": DB_CONFIG["user"],
             "database": DB_CONFIG["database"],
+            "port": DB_CONFIG.get("port", 5432),
         }
         if DB_CONFIG["password"]:
             conn_params["password"] = DB_CONFIG["password"]

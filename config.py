@@ -115,14 +115,12 @@ def get_database_config() -> dict:
     if database_url:
         logger.info("[config.py] Using DATABASE_URL for database configuration")
         config = parse_database_url(database_url)
-        # Add port to host if non-standard
-        if config["port"] != 5432:
-            config["host"] = f"{config['host']}:{config['port']}"
         return {
             "host": config["host"],
             "database": config["database"],
             "user": config["user"],
             "password": config["password"],
+            "port": config["port"],
         }
 
     logger.info("[config.py] Using individual DB_* environment variables")
@@ -138,6 +136,7 @@ def get_database_config() -> dict:
         "database": db_name_env or default_db_name,
         "user": db_user_env or ("test_user" if IS_TESTING else system_user),
         "password": db_password_env or ("test_password" if IS_TESTING else ""),
+        "port": int(os.environ.get("DB_PORT", 5432)),
     }
 
 
