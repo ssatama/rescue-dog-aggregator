@@ -9,11 +9,11 @@ Following CLAUDE.md principles:
 
 import json
 import logging
-import os
 from typing import Any, Dict, List, Optional
 
 import psycopg2
-from dotenv import load_dotenv
+
+from config import get_database_config
 
 logger = logging.getLogger(__name__)
 
@@ -52,10 +52,9 @@ class DatabaseUpdater:
                 with self.connection_pool.get_connection_context() as conn:
                     self._save_with_connection(conn, results)
             else:
-                # Fallback to direct connection for backward compatibility
-                load_dotenv()
-
-                conn = psycopg2.connect(host="localhost", database="rescue_dogs", user=os.environ.get("USER"), password="")
+                # Fallback to direct connection using config
+                db_config = get_database_config()
+                conn = psycopg2.connect(**db_config)
                 try:
                     self._save_with_connection(conn, results)
                     conn.commit()
