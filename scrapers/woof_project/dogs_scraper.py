@@ -1,5 +1,7 @@
 """Scraper implementation for Woof Project organization."""
 
+import asyncio
+import os
 import re
 import time
 from typing import Any, Dict, List, Optional
@@ -9,6 +11,11 @@ import requests
 from bs4 import BeautifulSoup, Tag
 
 from scrapers.base_scraper import BaseScraper
+
+USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
+
+if USE_PLAYWRIGHT:
+    from services.playwright_browser_service import PlaywrightOptions, get_playwright_service
 
 
 class WoofProjectScraper(BaseScraper):
@@ -349,7 +356,15 @@ class WoofProjectScraper(BaseScraper):
 
             # Try browser automation for lazy loading first
             try:
-                return self._fetch_with_browser(url)
+                if USE_PLAYWRIGHT:
+                    result = asyncio.run(self._fetch_with_browser_playwright(url))
+                    if result is not None:
+                        return result
+                    self.logger.warning("Playwright returned None, falling back to requests")
+                else:
+                    result = self._fetch_with_browser(url)
+                    if result is not None:
+                        return result
             except Exception as browser_error:
                 self.logger.warning(f"Browser automation failed: {browser_error}, falling back to requests")
 
@@ -495,6 +510,105 @@ class WoofProjectScraper(BaseScraper):
 
         except Exception as e:
             self.logger.warning(f"Error waiting for elements: {e}")
+
+    async def _fetch_with_browser_playwright(self, url: str) -> Optional[BeautifulSoup]:
+        """Fetch page using Playwright browser automation to handle lazy loading.
+
+        Args:
+            url: URL to fetch
+
+        Returns:
+            BeautifulSoup object or None if error
+        """
+        try:
+            playwright_service = get_playwright_service()
+            options = PlaywrightOptions(
+                headless=True,
+                viewport_width=1920,
+                viewport_height=1080,
+                timeout=60000,
+                stealth_mode=False,
+            )
+
+            async with playwright_service.get_browser(options) as browser_result:
+                page = browser_result.page
+                self.logger.info(f"Using {'remote Browserless' if browser_result.is_remote else 'local Chromium'} " f"for Woof Project scraping")
+
+                self.logger.debug(f"Starting Playwright browser automation for {url}")
+                await page.goto(url, wait_until="domcontentloaded")
+                self.logger.debug("Page loaded, starting comprehensive lazy loading")
+
+                await self._trigger_comprehensive_lazy_loading_playwright(page)
+                await self._wait_for_essential_elements_playwright(page)
+
+                page_source = await page.content()
+                self.logger.debug(f"Retrieved page source ({len(page_source)} characters)")
+                return BeautifulSoup(page_source, "html.parser")
+
+        except Exception as e:
+            self.logger.warning(f"Playwright browser automation error: {e}")
+            return None
+
+    async def _trigger_comprehensive_lazy_loading_playwright(self, page):
+        """Trigger comprehensive lazy loading with progressive scrolling using Playwright.
+
+        Args:
+            page: Playwright Page instance
+        """
+        try:
+            await asyncio.sleep(2)
+
+            self.logger.debug("Scrolling to bottom to trigger initial lazy loading")
+            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            await asyncio.sleep(2)
+
+            self.logger.debug("Scrolling back to top")
+            await page.evaluate("window.scrollTo(0, 0)")
+            await asyncio.sleep(1)
+
+            self.logger.debug("Starting progressive scrolling")
+            total_height = await page.evaluate("document.body.scrollHeight")
+
+            for i in range(0, total_height, 300):
+                await page.evaluate(f"window.scrollTo(0, {i})")
+                await asyncio.sleep(0.5)
+
+            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            await asyncio.sleep(2)
+
+            await page.evaluate("window.scrollTo(0, 0)")
+            await asyncio.sleep(1)
+
+            self.logger.debug("Comprehensive lazy loading completed")
+
+        except Exception as e:
+            self.logger.warning(f"Error during Playwright lazy loading: {e}")
+
+    async def _wait_for_essential_elements_playwright(self, page):
+        """Wait for essential elements to be present on the page using Playwright.
+
+        Args:
+            page: Playwright Page instance
+        """
+        try:
+            try:
+                self.logger.debug("Waiting for H2 elements (dog names)")
+                await page.wait_for_selector("h2", timeout=10000)
+                h2_count = await page.locator("h2").count()
+                self.logger.debug(f"Found {h2_count} H2 elements")
+            except Exception:
+                self.logger.debug("No H2 elements found within timeout")
+
+            try:
+                self.logger.debug("Waiting for adoption links")
+                await page.wait_for_selector('a[href*="/adoption/"]', timeout=10000)
+                link_count = await page.locator('a[href*="/adoption/"]').count()
+                self.logger.debug(f"Found {link_count} adoption links")
+            except Exception:
+                self.logger.debug("No adoption links found within timeout")
+
+        except Exception as e:
+            self.logger.warning(f"Error waiting for elements (Playwright): {e}")
 
     def _extract_dogs_from_page(self, soup: BeautifulSoup) -> List[Dict[str, str]]:
         """Extract available dogs from a single listing page.

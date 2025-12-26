@@ -1,6 +1,6 @@
 """Optimized tests for Woof Project scraper - essential functionality only."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from bs4 import BeautifulSoup
@@ -175,8 +175,12 @@ class TestWoofProjectScraperOptimized:
             assert scraper._generate_external_id(url) == expected_id
 
     def test_network_error_handling(self, scraper):
-        """Test network failure handling and fallbacks."""
-        with patch.object(scraper, "_fetch_with_browser") as mock_browser, patch("scrapers.woof_project.dogs_scraper.requests.get") as mock_get:
+        """Test network failure handling and fallbacks (Selenium path)."""
+        with (
+            patch("scrapers.woof_project.dogs_scraper.USE_PLAYWRIGHT", False),
+            patch.object(scraper, "_fetch_with_browser") as mock_browser,
+            patch("scrapers.woof_project.dogs_scraper.requests.get") as mock_get,
+        ):
 
             # Mock browser automation to fail
             mock_browser.side_effect = Exception("Browser not available")
@@ -195,6 +199,25 @@ class TestWoofProjectScraperOptimized:
             mock_get.side_effect = Exception("Network error")
             soup = scraper._fetch_listing_page("https://woofproject.eu/adoption/")
             assert soup is None
+
+    def test_network_error_handling_playwright(self, scraper):
+        """Test network failure handling and fallbacks (Playwright path)."""
+        mock_playwright = AsyncMock(return_value=None)
+        with (
+            patch("scrapers.woof_project.dogs_scraper.USE_PLAYWRIGHT", True),
+            patch.object(scraper, "_fetch_with_browser_playwright", mock_playwright),
+            patch("scrapers.woof_project.dogs_scraper.requests.get") as mock_get,
+        ):
+
+            # Test successful requests fallback
+            mock_response = Mock()
+            mock_response.text = '<html><body><div class="fusion-text">Dogs</div></body></html>'
+            mock_response.raise_for_status.return_value = None
+            mock_get.return_value = mock_response
+
+            soup = scraper._fetch_listing_page("https://woofproject.eu/adoption/")
+            assert soup is not None
+            assert soup.find("div", class_="fusion-text") is not None
 
     def test_edge_case_handling(self, scraper):
         """Test handling of edge cases and malformed data."""
