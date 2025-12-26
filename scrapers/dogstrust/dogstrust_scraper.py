@@ -1,6 +1,8 @@
 """Scraper implementation for Dogs Trust organization."""
 
+import asyncio
 import concurrent.futures
+import os
 import random
 import re
 import time
@@ -9,12 +11,18 @@ from typing import Any, Dict, List
 
 import requests
 from bs4 import BeautifulSoup
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.wait import WebDriverWait
 
 from scrapers.base_scraper import BaseScraper
-from services.browser_service import BrowserOptions, get_browser_service
+
+USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
+
+if USE_PLAYWRIGHT:
+    from services.playwright_browser_service import PlaywrightOptions, get_playwright_service
+else:
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.support.wait import WebDriverWait
+    from services.browser_service import BrowserOptions, get_browser_service
 
 
 class DogsTrustScraper(BaseScraper):
@@ -214,9 +222,10 @@ class DogsTrustScraper(BaseScraper):
             return []
 
     def get_animal_list(self, max_pages_to_scrape: int = None) -> List[Dict[str, Any]]:
-        """Fetch list of available dogs using Selenium WebDriver with pagination.
+        """Fetch list of available dogs using browser automation with pagination.
 
-        Handles JavaScript-rendered listing pages by using headless Chrome.
+        Handles JavaScript-rendered listing pages by using headless browser.
+        Uses Playwright when USE_PLAYWRIGHT=true, otherwise Selenium.
         Applies filters to hide reserved dogs and iterates through all pages
         using navigation buttons.
 
@@ -227,6 +236,12 @@ class DogsTrustScraper(BaseScraper):
         Returns:
             List of dictionaries containing basic dog information from all pages
         """
+        if USE_PLAYWRIGHT:
+            return asyncio.run(self._get_animal_list_playwright(max_pages_to_scrape))
+        return self._get_animal_list_selenium(max_pages_to_scrape)
+
+    def _get_animal_list_selenium(self, max_pages_to_scrape: int = None) -> List[Dict[str, Any]]:
+        """Fetch list of available dogs using Selenium WebDriver with pagination."""
         driver = self._setup_selenium_driver()
         all_dogs = []
 
@@ -491,6 +506,215 @@ class DogsTrustScraper(BaseScraper):
             self.logger.error(f"Error during pagination scraping: {e}")
         finally:
             driver.quit()
+
+        self.logger.info(f"Total dogs collected across all pages: {len(all_dogs)}")
+        return all_dogs
+
+    async def _get_animal_list_playwright(self, max_pages_to_scrape: int = None) -> List[Dict[str, Any]]:
+        """Fetch list of available dogs using Playwright with pagination.
+
+        Async implementation using Playwright for Browserless v2 compatibility.
+        """
+        all_dogs = []
+
+        if max_pages_to_scrape:
+            self.logger.info(f"DEBUG MODE: Limiting scrape to {max_pages_to_scrape} pages")
+        else:
+            self.logger.info("Scraping all available pages (Playwright)")
+
+        playwright_service = get_playwright_service()
+        options = PlaywrightOptions(
+            headless=True,
+            viewport_width=1920,
+            viewport_height=1080,
+            timeout=30000,
+            stealth_mode=True,
+        )
+
+        async with playwright_service.get_browser(options) as browser_result:
+            page = browser_result.page
+            self.logger.info(f"Using {'remote Browserless' if browser_result.is_remote else 'local Chromium'} for Dogs Trust scraping")
+
+            try:
+                url = self.listing_url
+                self.logger.debug(f"Loading initial page: {url}")
+                await page.goto(url, wait_until="domcontentloaded")
+
+                # Handle cookie consent banner if present
+                try:
+                    await asyncio.sleep(0.5)
+                    cookie_selectors = [
+                        "button:has-text('Accept all')",
+                        "button:has-text('Accept All')",
+                        "button:has-text('Accept')",
+                        "#onetrust-accept-btn-handler",
+                    ]
+                    for selector in cookie_selectors:
+                        try:
+                            cookie_button = page.locator(selector).first
+                            if await cookie_button.is_visible():
+                                await cookie_button.click()
+                                self.logger.info("Accepted cookie consent")
+                                await asyncio.sleep(0.3)
+                                break
+                        except Exception:
+                            continue
+                except Exception as e:
+                    self.logger.debug(f"No cookie consent banner found: {e}")
+
+                # Wait for dog cards to appear
+                try:
+                    await page.wait_for_selector('a[href*="/rehoming/dogs/"]', timeout=15000)
+                    self.logger.info("Initial page loaded successfully")
+                except Exception as e:
+                    self.logger.warning(f"Timeout waiting for initial page load: {e}")
+
+                # Apply filter to hide reserved dogs
+                try:
+                    self.logger.info("Applying filter to hide reserved dogs...")
+                    filter_selectors = [
+                        "button:has-text('Filters')",
+                        "button:has-text('Filter')",
+                    ]
+                    filters_button = None
+                    for selector in filter_selectors:
+                        try:
+                            btn = page.locator(selector).first
+                            if await btn.is_visible():
+                                filters_button = btn
+                                break
+                        except Exception:
+                            continue
+
+                    if filters_button:
+                        await filters_button.scroll_into_view_if_needed()
+                        await asyncio.sleep(0.5)
+                        await filters_button.click()
+                        self.logger.info("Clicked filters button")
+                        await asyncio.sleep(1)
+
+                        reserved_selectors = [
+                            "label:has-text('Hide reserved')",
+                            "input[name*='reserved']",
+                            "span:has-text('Hide reserved')",
+                        ]
+                        checkbox_clicked = False
+                        for selector in reserved_selectors:
+                            try:
+                                element = page.locator(selector).first
+                                if await element.is_visible():
+                                    await element.click()
+                                    checkbox_clicked = True
+                                    self.logger.info("Clicked 'Hide reserved dogs' option")
+                                    break
+                            except Exception:
+                                continue
+
+                        if checkbox_clicked:
+                            apply_selectors = [
+                                "button:has-text('Show')",
+                                "button:has-text('Apply')",
+                                "button:has-text('Update')",
+                                "button[type='submit']",
+                            ]
+                            for selector in apply_selectors:
+                                try:
+                                    apply_button = page.locator(selector).first
+                                    if await apply_button.is_visible():
+                                        await apply_button.click()
+                                        self.logger.info("Applied filter to hide reserved dogs")
+                                        await asyncio.sleep(1)
+                                        break
+                                except Exception:
+                                    continue
+                except Exception as e:
+                    self.logger.warning(f"Could not apply filter: {e}")
+
+                # Scroll to trigger lazy-loaded content
+                await page.evaluate("window.scrollTo(0, document.body.scrollHeight / 2)")
+                await asyncio.sleep(0.3)
+                await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                await asyncio.sleep(0.3)
+                await page.evaluate("window.scrollTo(0, 0)")
+                await asyncio.sleep(0.2)
+
+                # Pagination loop
+                page_num = 0
+                max_pages = None
+                pages_scraped = 0
+
+                while True:
+                    html_content = await page.content()
+                    soup = BeautifulSoup(html_content, "html.parser")
+
+                    if max_pages is None:
+                        max_pages = self._detect_max_pages(soup)
+                        self.logger.info(f"Detected maximum pages: {max_pages}")
+
+                    page_dogs = self._extract_dogs_from_page(soup)
+                    if page_dogs:
+                        all_dogs.extend(page_dogs)
+                        self.logger.info(f"Page {page_num}: Found {len(page_dogs)} dogs (total so far: {len(all_dogs)})")
+                    else:
+                        self.logger.warning(f"Page {page_num}: No dogs found")
+
+                    pages_scraped += 1
+
+                    if max_pages_to_scrape and pages_scraped >= max_pages_to_scrape:
+                        self.logger.info(f"Reached debug limit of {max_pages_to_scrape} pages")
+                        break
+
+                    if max_pages is not None and page_num >= max_pages - 1:
+                        self.logger.info(f"Reached last page ({max_pages} total)")
+                        break
+
+                    # Navigate to next page
+                    try:
+                        await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                        await asyncio.sleep(0.5)
+
+                        next_selectors = [
+                            "button[aria-label='Next']",
+                            "button:has-text('Next')",
+                            "a[aria-label='Next page']",
+                        ]
+                        next_button = None
+                        for selector in next_selectors:
+                            try:
+                                btn = page.locator(selector).first
+                                if await btn.is_visible() and await btn.is_enabled():
+                                    next_button = btn
+                                    break
+                            except Exception:
+                                continue
+
+                        if next_button:
+                            self.logger.debug(f"Clicking Next button to navigate to page {page_num + 1}")
+                            await next_button.scroll_into_view_if_needed()
+                            await asyncio.sleep(0.2)
+                            await next_button.click()
+                            await asyncio.sleep(self.rate_limit_delay + random.uniform(0, 0.5))
+
+                            try:
+                                await page.wait_for_selector('a[href*="/rehoming/dogs/"]', timeout=10000)
+                            except Exception:
+                                self.logger.warning(f"Timeout waiting for page {page_num + 1}")
+
+                            await page.evaluate("window.scrollTo(0, document.body.scrollHeight / 2)")
+                            await asyncio.sleep(0.2)
+                            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                            await asyncio.sleep(0.2)
+
+                            page_num += 1
+                        else:
+                            self.logger.info("No enabled Next button found - reached end of results")
+                            break
+                    except Exception as e:
+                        self.logger.info(f"Could not find or click Next button: {e}")
+                        break
+
+            except Exception as e:
+                self.logger.error(f"Error during Playwright pagination scraping: {e}")
 
         self.logger.info(f"Total dogs collected across all pages: {len(all_dogs)}")
         return all_dogs

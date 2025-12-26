@@ -1,16 +1,25 @@
+import asyncio
 import hashlib
+import os
 import re
 import time
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
+from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
-from services.browser_service import BrowserOptions, get_browser_service
+
+USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
+
+if USE_PLAYWRIGHT:
+    from services.playwright_browser_service import PlaywrightOptions, get_playwright_service
+else:
+    from selenium.common.exceptions import NoSuchElementException
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.support.ui import WebDriverWait
+    from services.browser_service import BrowserOptions, get_browser_service
 
 from .dog_detail_scraper import DaisyFamilyRescueDogDetailScraper
 from .translations import normalize_name, translate_dog_data
@@ -62,8 +71,11 @@ class DaisyFamilyRescueScraper(BaseScraper):
         try:
             # World-class logging: Scrape initiation handled by centralized system
 
-            # Step 1: Extract dogs using Selenium with section filtering
-            all_dogs = self._extract_with_selenium()
+            # Step 1: Extract dogs using browser automation with section filtering
+            if USE_PLAYWRIGHT:
+                all_dogs = asyncio.run(self._extract_with_playwright())
+            else:
+                all_dogs = self._extract_with_selenium()
 
             if len(all_dogs) == 0:
                 self.logger.warning("No dogs extracted from main listing")
@@ -238,6 +250,230 @@ class DaisyFamilyRescueScraper(BaseScraper):
                 driver.quit()
 
         return all_dogs
+
+    async def _extract_with_playwright(self) -> List[Dict[str, Any]]:
+        """Extract dogs using Playwright with section filtering.
+
+        Async implementation using Playwright for Browserless v2 compatibility.
+        """
+        all_dogs = []
+
+        headless = True
+        if hasattr(self, "org_config") and self.org_config:
+            scraper_config = self.org_config.get_scraper_config_dict()
+            headless = scraper_config.get("headless", True)
+
+        playwright_service = get_playwright_service()
+        options = PlaywrightOptions(
+            headless=headless,
+            viewport_width=1920,
+            viewport_height=1080,
+            timeout=30000,
+            stealth_mode=True,
+        )
+
+        async with playwright_service.get_browser(options) as browser_result:
+            page = browser_result.page
+            self.logger.info(f"Using {'remote Browserless' if browser_result.is_remote else 'local Chromium'} for Daisy Family Rescue scraping")
+
+            try:
+                await page.goto(self.listing_url, wait_until="domcontentloaded")
+                await page.wait_for_selector("body", timeout=30000)
+
+                # Handle lazy loading
+                await self._handle_lazy_loading_playwright(page)
+
+                # Get page content and parse with BeautifulSoup
+                html_content = await page.content()
+                soup = BeautifulSoup(html_content, "html.parser")
+
+                # Find and filter sections using BeautifulSoup
+                valid_dog_containers = self._filter_dogs_by_section_soup(soup)
+
+                # First pass: Extract basic dog data from containers
+                basic_dogs_data = []
+                total_containers = len(valid_dog_containers)
+
+                for i, container in enumerate(valid_dog_containers):
+                    try:
+                        dog_data = self._extract_dog_from_container_soup(container, i + 1)
+                        if dog_data:
+                            basic_dogs_data.append(dog_data)
+                    except Exception as e:
+                        self.logger.warning(f"Error processing dog container {i+1}: {e}")
+                        continue
+
+                # Apply skip_existing_animals filtering
+                if self.skip_existing_animals and basic_dogs_data:
+                    all_urls = [dog.get("adoption_url") for dog in basic_dogs_data if dog.get("adoption_url")]
+                    filtered_urls = self._filter_existing_urls(all_urls)
+                    filtered_urls_set = set(filtered_urls)
+
+                    original_count = len(basic_dogs_data)
+                    basic_dogs_data = [dog for dog in basic_dogs_data if dog.get("adoption_url") in filtered_urls_set]
+                    skipped_count = original_count - len(basic_dogs_data)
+
+                    self.set_filtering_stats(original_count, skipped_count)
+                else:
+                    self.set_filtering_stats(len(basic_dogs_data), 0)
+
+                # Second pass: Process the filtered dogs with detail page enhancement
+                processed_count = 0
+                for dog_data in basic_dogs_data:
+                    try:
+                        enhanced_data = self._enhance_with_detail_page(dog_data)
+                        if enhanced_data:
+                            all_dogs.append(enhanced_data)
+                            processed_count += 1
+                            self.logger.debug(f"Processed {processed_count}/{len(basic_dogs_data)}: {enhanced_data.get('name')}")
+                        else:
+                            all_dogs.append(dog_data)
+                            processed_count += 1
+                    except Exception as e:
+                        self.logger.warning(f"Error processing dog {dog_data.get('name', 'unknown')}: {e}")
+                        continue
+
+                self.respect_rate_limit()
+
+            except Exception as e:
+                self.logger.error(f"Failed to extract dogs with Playwright: {e}")
+                raise
+
+        return all_dogs
+
+    async def _handle_lazy_loading_playwright(self, page):
+        """Handle lazy loading with Playwright."""
+        last_height = await page.evaluate("document.body.scrollHeight")
+
+        for i in range(3):
+            await page.evaluate(f"window.scrollTo(0, {(i+1) * last_height // 3})")
+            await asyncio.sleep(2)
+
+        await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+        await asyncio.sleep(2)
+
+        await page.evaluate("window.scrollTo(0, 0)")
+        await asyncio.sleep(1)
+
+    def _filter_dogs_by_section_soup(self, soup: BeautifulSoup) -> List:
+        """Filter dog containers to only include those from target sections using BeautifulSoup."""
+        valid_containers = []
+
+        try:
+            section_headers = soup.select("h2.elementor-heading-title.elementor-size-default")
+            all_dog_containers = soup.select("article.elementor-post.elementor-grid-item.ecs-post-loop")
+
+            all_elements = list(soup.find_all(True))
+
+            section_positions = {}
+            for header in section_headers:
+                section_text = header.get_text(strip=True)
+                if section_text in self.target_sections or section_text in self.skip_sections:
+                    try:
+                        header_position = all_elements.index(header)
+                        section_positions[section_text] = header_position
+                    except ValueError:
+                        continue
+
+            for container in all_dog_containers:
+                try:
+                    container_position = all_elements.index(container)
+                except ValueError:
+                    valid_containers.append(container)
+                    continue
+
+                container_section = self._find_container_section(container_position, section_positions)
+
+                if container_section in self.target_sections:
+                    valid_containers.append(container)
+                elif container_section in self.skip_sections:
+                    self.logger.debug(f"Skipping container in section: {container_section}")
+                else:
+                    valid_containers.append(container)
+
+        except Exception as e:
+            self.logger.warning(f"Section filtering failed, using all containers: {e}")
+            valid_containers = soup.select("article.elementor-post.elementor-grid-item.ecs-post-loop")
+
+        return valid_containers
+
+    def _extract_dog_from_container_soup(self, container, container_num: int) -> Optional[Dict[str, Any]]:
+        """Extract dog data from a single container element using BeautifulSoup."""
+        try:
+            dog_link = None
+            dog_url = None
+            link_text = ""
+
+            link_selectors = ["a[href*='/hund-']", "a[href*='/dog']", "a"]
+
+            for selector in link_selectors:
+                links = container.select(selector)
+                for link in links:
+                    href = link.get("href", "")
+                    if href and ("hund-" in href or "/hund" in href):
+                        text = link.get_text(strip=True)
+                        if text:
+                            link_text = text
+                            dog_link = link
+                            dog_url = href
+                            break
+                if dog_link:
+                    break
+
+            if not dog_link or not dog_url:
+                self.logger.warning(f"Could not find dog link in container {container_num}")
+                return None
+
+            name, location = self._parse_name_and_location(link_text)
+            if not name:
+                self.logger.warning(f"Could not extract name from container {container_num}")
+                return None
+
+            image_url = self._extract_image_from_container_soup(container)
+            external_id = self._extract_external_id_from_url(dog_url)
+            container_text = container.get_text(separator=" ", strip=True)
+            additional_info = self._extract_additional_info_from_text(container_text)
+
+            dog_data = {
+                "name": name,
+                "external_id": external_id,
+                "adoption_url": dog_url,
+                "primary_image_url": image_url,
+                "status": "available",
+                "animal_type": "dog",
+                "properties": {
+                    "source": "daisyfamilyrescue.de",
+                    "country": "DE",
+                    "extraction_method": "playwright_listing",
+                    "language": "de",
+                    "location": location,
+                    "container_text": container_text[:200],
+                },
+            }
+
+            dog_data.update(additional_info)
+
+            if self._validate_dog_data(dog_data):
+                return dog_data
+            else:
+                self.logger.warning(f"Data validation failed for dog in container {container_num}")
+                return None
+
+        except Exception as e:
+            self.logger.error(f"Error extracting dog from container {container_num}: {e}")
+            return None
+
+    def _extract_image_from_container_soup(self, container) -> Optional[str]:
+        """Extract image URL from container using BeautifulSoup."""
+        try:
+            img_element = container.find("img")
+            if img_element:
+                img_src = img_element.get("src", "")
+                if img_src and self._is_valid_image_url(img_src):
+                    return img_src
+        except Exception as e:
+            self.logger.warning(f"Error extracting image: {e}")
+        return None
 
     def _enhance_with_detail_page(self, basic_dog_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Enhance basic dog data with detailed information from the dog's detail page.

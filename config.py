@@ -106,11 +106,14 @@ def get_database_config() -> dict:
     """Get database configuration from environment.
 
     Priority order:
-    1. DATABASE_URL (Railway standard) or RAILWAY_DATABASE_URL
+    1. DATABASE_URL (Railway standard for main app)
     2. Individual DB_* environment variables
     3. Defaults based on TESTING flag
+
+    Note: RAILWAY_DATABASE_URL is NOT used here - it's only for sync commands
+    via services/railway/connection.py to avoid local DB pointing to Railway.
     """
-    database_url = os.environ.get("DATABASE_URL") or os.environ.get("RAILWAY_DATABASE_URL")
+    database_url = os.environ.get("DATABASE_URL")
 
     if database_url:
         logger.info("[config.py] Using DATABASE_URL for database configuration")

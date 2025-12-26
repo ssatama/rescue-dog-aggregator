@@ -1,14 +1,25 @@
+import asyncio
+import os
 import re
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 from urllib.parse import urlparse
 
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
+from bs4 import BeautifulSoup
 
-from services.browser_service import BrowserOptions, get_browser_service
+USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
+
+if TYPE_CHECKING:
+    from selenium.webdriver.remote.webdriver import WebDriver
+
+if USE_PLAYWRIGHT:
+    from services.playwright_browser_service import PlaywrightOptions, get_playwright_service
+else:
+    from selenium.common.exceptions import NoSuchElementException, TimeoutException
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.remote.webdriver import WebDriver
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.support.ui import WebDriverWait
+    from services.browser_service import BrowserOptions, get_browser_service
 
 
 class DaisyFamilyRescueDogDetailScraper:
@@ -53,7 +64,7 @@ class DaisyFamilyRescueDogDetailScraper:
         # Size categories based on height (cm)
         self.size_categories = {"small": (0, 40), "medium": (40, 60), "large": (60, 100)}
 
-    def setup_driver(self, headless: bool = True) -> WebDriver:
+    def setup_driver(self, headless: bool = True) -> "WebDriver":
         """Setup WebDriver for scraping.
 
         Uses centralized browser service that auto-detects environment:
@@ -70,6 +81,12 @@ class DaisyFamilyRescueDogDetailScraper:
 
     def extract_dog_details(self, dog_url: str, logger=None) -> Optional[Dict[str, Any]]:
         """Extract detailed information from a single dog's detail page."""
+        if USE_PLAYWRIGHT:
+            return asyncio.run(self._extract_dog_details_playwright(dog_url, logger))
+        return self._extract_dog_details_selenium(dog_url, logger)
+
+    def _extract_dog_details_selenium(self, dog_url: str, logger=None) -> Optional[Dict[str, Any]]:
+        """Extract detailed information using Selenium."""
         driver = None
 
         try:
@@ -134,7 +151,191 @@ class DaisyFamilyRescueDogDetailScraper:
             if driver:
                 driver.quit()
 
-    def _extract_steckbrief_data(self, driver: WebDriver, logger=None) -> Dict[str, str]:
+    async def _extract_dog_details_playwright(self, dog_url: str, logger=None) -> Optional[Dict[str, Any]]:
+        """Extract detailed information using Playwright."""
+        playwright_service = get_playwright_service()
+        options = PlaywrightOptions(
+            headless=True,
+            viewport_width=1920,
+            viewport_height=1080,
+            timeout=30000,
+        )
+
+        async with playwright_service.get_browser(options) as browser_result:
+            page = browser_result.page
+
+            try:
+                if logger:
+                    logger.info(f"Loading dog detail page (Playwright): {dog_url}")
+
+                await page.goto(dog_url, wait_until="domcontentloaded")
+                await page.wait_for_selector("body", timeout=30000)
+
+                html_content = await page.content()
+                soup = BeautifulSoup(html_content, "html.parser")
+
+                dog_data = {
+                    "adoption_url": dog_url,
+                    "external_id": self._extract_external_id_from_url(dog_url),
+                    "properties": {
+                        "source": "daisyfamilyrescue.de",
+                        "extraction_method": "playwright_detail_page",
+                        "language": "de",
+                    },
+                }
+
+                # Extract Steckbrief data using BeautifulSoup
+                steckbrief_data = self._extract_steckbrief_data_soup(soup, logger)
+                if steckbrief_data:
+                    processed_data = self._process_steckbrief_data(steckbrief_data, logger)
+                    dog_data.update(processed_data)
+
+                # Extract main dog image
+                image_url = self._extract_main_image_soup(soup, logger)
+                if image_url:
+                    dog_data["primary_image_url"] = image_url
+
+                # Extract description
+                description = self._extract_description_soup(soup, logger)
+                if description:
+                    if "properties" not in dog_data:
+                        dog_data["properties"] = {}
+                    if isinstance(dog_data["properties"], dict):
+                        dog_data["properties"]["german_description"] = description
+
+                # Extract dog name
+                name = self._extract_dog_name_soup(soup, logger)
+                if name:
+                    dog_data["name"] = name
+
+                if logger:
+                    logger.debug(f"Extracted details for dog: {dog_data.get('name', 'Unknown')}")
+
+                return dog_data
+
+            except Exception as e:
+                if logger:
+                    logger.error(f"Error extracting details from {dog_url}: {e}")
+                return None
+
+    def _extract_steckbrief_data_soup(self, soup: BeautifulSoup, logger=None) -> Dict[str, str]:
+        """Extract structured data from the Steckbrief section using BeautifulSoup."""
+        steckbrief_data = {}
+
+        try:
+            steckbrief_header = soup.find("h4", string=lambda t: t and "Steckbrief" in t)
+
+            if not steckbrief_header:
+                if logger:
+                    logger.warning("Steckbrief section not found")
+                return steckbrief_data
+
+            if logger:
+                logger.debug("Found Steckbrief section")
+
+            # Get the parent container
+            steckbrief_container = steckbrief_header.find_parent("section")
+            if not steckbrief_container:
+                steckbrief_container = steckbrief_header.find_parent("div", class_=lambda x: x and "elementor" in x)
+            if not steckbrief_container:
+                steckbrief_container = steckbrief_header.parent.parent.parent
+
+            if steckbrief_container:
+                container_text = steckbrief_container.get_text(separator="\n", strip=True)
+
+                for pattern in self.steckbrief_patterns:
+                    value = self._extract_field_value(container_text, pattern)
+                    if value:
+                        steckbrief_data[pattern] = value
+                        if logger:
+                            logger.debug(f"Extracted {pattern} {value}")
+
+        except Exception as e:
+            if logger:
+                logger.error(f"Error extracting Steckbrief data: {e}")
+
+        return steckbrief_data
+
+    def _extract_main_image_soup(self, soup: BeautifulSoup, logger=None) -> Optional[str]:
+        """Extract main dog image using BeautifulSoup."""
+        try:
+            image_selectors = [
+                "figure.elementor-widget-image img",
+                ".elementor-widget-image img",
+                "img.attachment-full",
+                "article img",
+                ".post-thumbnail img",
+            ]
+
+            for selector in image_selectors:
+                img_elements = soup.select(selector)
+                for img in img_elements:
+                    src = img.get("src", "")
+                    alt = img.get("alt", "").lower()
+
+                    if src and not any(skip in alt for skip in ["logo", "icon", "banner"]):
+                        if any(ext in src.lower() for ext in [".jpg", ".jpeg", ".png", ".gif", ".webp"]):
+                            if logger:
+                                logger.debug(f"Found main image: {src}")
+                            return src
+
+        except Exception as e:
+            if logger:
+                logger.error(f"Error extracting main image: {e}")
+        return None
+
+    def _extract_description_soup(self, soup: BeautifulSoup, logger=None) -> Optional[str]:
+        """Extract dog description using BeautifulSoup."""
+        try:
+            description_selectors = [
+                ".elementor-widget-text-editor",
+                ".entry-content p",
+                "article p",
+            ]
+
+            for selector in description_selectors:
+                elements = soup.select(selector)
+                if elements:
+                    texts = [el.get_text(strip=True) for el in elements if el.get_text(strip=True)]
+                    if texts:
+                        description = " ".join(texts[:5])
+                        if len(description) > 50:
+                            if logger:
+                                logger.debug(f"Found description ({len(description)} chars)")
+                            return description
+
+        except Exception as e:
+            if logger:
+                logger.error(f"Error extracting description: {e}")
+        return None
+
+    def _extract_dog_name_soup(self, soup: BeautifulSoup, logger=None) -> Optional[str]:
+        """Extract dog name using BeautifulSoup."""
+        try:
+            heading_selectors = [
+                "h1.elementor-heading-title",
+                "h1.entry-title",
+                "article h1",
+                ".post-title",
+            ]
+
+            for selector in heading_selectors:
+                heading = soup.select_one(selector)
+                if heading:
+                    name = heading.get_text(strip=True)
+                    if name and len(name) < 100:
+                        clean_name = re.sub(r"^(hund[-\s]*)", "", name, flags=re.IGNORECASE).strip()
+                        if clean_name:
+                            if logger:
+                                logger.debug(f"Found dog name: {clean_name}")
+                            return clean_name
+
+        except Exception as e:
+            if logger:
+                logger.error(f"Error extracting dog name: {e}")
+        return None
+
+    def _extract_steckbrief_data(self, driver, logger=None) -> Dict[str, str]:
         """Extract structured data from the Steckbrief section."""
         steckbrief_data = {}
 
@@ -380,7 +581,7 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return None
 
-    def _extract_main_image(self, driver: WebDriver, logger=None) -> Optional[str]:
+    def _extract_main_image(self, driver: "WebDriver", logger=None) -> Optional[str]:
         """Extract the main dog image from the page."""
         try:
             # Look for images with specific patterns (found in inspection)
@@ -456,7 +657,7 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return False
 
-    def _extract_description(self, driver: WebDriver, logger=None) -> Optional[str]:
+    def _extract_description(self, driver: "WebDriver", logger=None) -> Optional[str]:
         """Extract additional description text from the page."""
         try:
             # Look for content areas that might contain descriptions
@@ -494,7 +695,7 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return None
 
-    def _extract_dog_name(self, driver: WebDriver, logger=None) -> Optional[str]:
+    def _extract_dog_name(self, driver: "WebDriver", logger=None) -> Optional[str]:
         """Extract dog name from page title or content."""
         try:
             # Try to get name from page title

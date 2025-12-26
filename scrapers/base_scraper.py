@@ -873,7 +873,16 @@ class BaseScraper(ABC):
         Returns:
             Result from scrape_method or None if all retries exhausted
         """
-        from selenium.common.exceptions import TimeoutException, WebDriverException
+        # Import browser-specific exceptions based on USE_PLAYWRIGHT flag
+        use_playwright = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
+        
+        if use_playwright:
+            # For Playwright, we catch generic exceptions since async errors
+            # are already handled in the Playwright methods themselves
+            browser_exceptions = (Exception,)
+        else:
+            from selenium.common.exceptions import TimeoutException, WebDriverException
+            browser_exceptions = (TimeoutException, WebDriverException, ValueError)
 
         for attempt in range(self.max_retries):
             try:
@@ -892,7 +901,7 @@ class BaseScraper(ABC):
 
                 return result
 
-            except (TimeoutException, WebDriverException, ValueError) as e:
+            except browser_exceptions as e:
                 self.metrics_collector.track_retry(success=False)
                 self.logger.warning(f"Scraping attempt {attempt + 1}/{self.max_retries} failed: {e}")
 

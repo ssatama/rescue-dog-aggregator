@@ -1,14 +1,22 @@
+import asyncio
 import hashlib
+import os
 import re
 import time
 from typing import Any, Dict, List, Optional
 
 import requests
 from bs4 import BeautifulSoup
-from selenium.webdriver.common.by import By
 
 from scrapers.base_scraper import BaseScraper
-from services.browser_service import BrowserOptions, get_browser_service
+
+USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
+
+if USE_PLAYWRIGHT:
+    from services.playwright_browser_service import PlaywrightOptions, get_playwright_service
+else:
+    from selenium.webdriver.common.by import By
+    from services.browser_service import BrowserOptions, get_browser_service
 
 # Import shared extraction utilities for consolidation
 from utils.shared_extraction_patterns import extract_age_from_text as shared_extract_age
@@ -206,7 +214,7 @@ class REANScraper(BaseScraper):
 
     def extract_images_with_browser(self, url: str) -> List[str]:
         """
-        Extract image URLs using Selenium WebDriver to handle JavaScript-loaded images.
+        Extract image URLs using browser automation to handle JavaScript-loaded images.
 
         This method uses browser automation to:
         1. Load the page and wait for JavaScript execution
@@ -220,6 +228,12 @@ class REANScraper(BaseScraper):
         Returns:
             List of actual image URLs from REAN's CDN (wsimg.com)
         """
+        if USE_PLAYWRIGHT:
+            return asyncio.run(self._extract_images_with_browser_playwright(url))
+        return self._extract_images_with_browser_selenium(url)
+
+    def _extract_images_with_browser_selenium(self, url: str) -> List[str]:
+        """Selenium implementation of extract_images_with_browser."""
         try:
             browser_service = get_browser_service()
             browser_options = BrowserOptions(
@@ -285,6 +299,40 @@ class REANScraper(BaseScraper):
 
         except Exception as e:
             self.logger.error(f"Error during browser-based image extraction: {e}")
+            return []
+
+    async def _extract_images_with_browser_playwright(self, url: str) -> List[str]:
+        """Playwright implementation of extract_images_with_browser."""
+        try:
+            playwright_service = get_playwright_service()
+            options = PlaywrightOptions(
+                headless=True,
+                viewport_width=1920,
+                viewport_height=1080,
+            )
+
+            result = await playwright_service.get_page_content(url, options)
+
+            if not result.success:
+                self.logger.error(f"Playwright failed to load page: {result.error}")
+                return []
+
+            # Parse with BeautifulSoup
+            soup = BeautifulSoup(result.content, "html.parser")
+
+            # Extract all image elements
+            actual_images = []
+            for img in soup.find_all("img"):
+                src = img.get("src", "")
+                if src and self._is_valid_rean_image(src):
+                    cleaned_src = self._clean_wsimg_url(src)
+                    actual_images.append(cleaned_src)
+                    self.logger.debug(f"Found valid REAN image: {cleaned_src[:80]}...")
+
+            return actual_images
+
+        except Exception as e:
+            self.logger.error(f"Error during Playwright image extraction: {e}")
             return []
 
     def _is_valid_rean_image(self, src: str) -> bool:
@@ -537,6 +585,12 @@ class REANScraper(BaseScraper):
         Returns:
             List of dog data dictionaries with correctly associated images
         """
+        if USE_PLAYWRIGHT:
+            return asyncio.run(self._extract_dogs_with_images_unified_playwright(url, page_type))
+        return self._extract_dogs_with_images_unified_selenium(url, page_type)
+
+    def _extract_dogs_with_images_unified_selenium(self, url: str, page_type: str) -> List[Dict[str, Any]]:
+        """Selenium implementation of extract_dogs_with_images_unified."""
         try:
             browser_service = get_browser_service()
             browser_options = BrowserOptions(
@@ -576,6 +630,163 @@ class REANScraper(BaseScraper):
             # Fallback to legacy method if unified approach fails
             # World-class logging: Fallback handled by centralized system
             return self._extract_dogs_legacy_fallback(url, page_type)
+
+    async def _extract_dogs_with_images_unified_playwright(self, url: str, page_type: str) -> List[Dict[str, Any]]:
+        """Playwright implementation of extract_dogs_with_images_unified."""
+        try:
+            playwright_service = get_playwright_service()
+            options = PlaywrightOptions(
+                headless=True,
+                viewport_width=1920,
+                viewport_height=1080,
+            )
+
+            result = await playwright_service.get_page_content(url, options)
+
+            if not result.success:
+                self.logger.error(f"Playwright failed to load page: {result.error}")
+                return self._extract_dogs_legacy_fallback(url, page_type)
+
+            # Parse with BeautifulSoup
+            soup = BeautifulSoup(result.content, "html.parser")
+
+            # Extract dogs using unified approach
+            dogs_data = self._extract_dogs_from_dom_soup(soup, page_type)
+
+            return dogs_data
+
+        except Exception as e:
+            self.logger.error(f"Error during Playwright unified extraction: {e}")
+            return self._extract_dogs_legacy_fallback(url, page_type)
+
+    def _extract_dogs_from_dom_soup(self, soup: BeautifulSoup, page_type: str) -> List[Dict[str, Any]]:
+        """Extract dog data from BeautifulSoup parsed DOM."""
+        dogs_data = []
+
+        try:
+            # Find all dog containers using the discovered DOM structure
+            dog_containers = self._find_dog_containers_soup(soup)
+
+            for i, container in enumerate(dog_containers):
+                try:
+                    dog_data = self._extract_single_dog_from_container_soup(container, page_type, i + 1)
+
+                    if dog_data and dog_data.get("name"):
+                        dogs_data.append(dog_data)
+                        self.logger.debug(f"Successfully extracted dog: {dog_data.get('name')}")
+                    else:
+                        self.logger.warning(f"Container {i+1} did not yield valid dog data")
+
+                except Exception as e:
+                    self.logger.error(f"Error extracting from container {i+1}: {e}")
+                    continue
+
+            return dogs_data
+
+        except Exception as e:
+            self.logger.error(f"Error during DOM extraction: {e}")
+            return []
+
+    def _find_dog_containers_soup(self, soup: BeautifulSoup) -> List:
+        """Find dog containers using BeautifulSoup."""
+        selectors_to_try = [
+            {"class_": "x-el-article"},
+            {"class_": re.compile(r"x.*c1-5")},
+        ]
+
+        for selector in selectors_to_try:
+            try:
+                containers = soup.find_all("div", **selector)
+                if containers:
+                    self.logger.debug(f"Found {len(containers)} containers")
+                    valid_containers = self._validate_dog_containers_soup(containers)
+                    if valid_containers:
+                        return valid_containers
+            except Exception as e:
+                self.logger.debug(f"Selector failed: {e}")
+                continue
+
+        # Fallback: find containers with h3 headers containing dog info
+        self.logger.warning("Primary selectors failed, trying fallback approach...")
+        try:
+            h3_elements = soup.find_all("h3")
+            containers = []
+            for h3 in h3_elements:
+                text = h3.get_text().strip()
+                if any(pattern in text.lower() for pattern in ["months old", "years old"]):
+                    parent = h3.find_parent()
+                    if parent:
+                        containers.append(parent)
+            if containers:
+                return containers
+        except Exception as e:
+            self.logger.error(f"Fallback container detection failed: {e}")
+
+        return []
+
+    def _validate_dog_containers_soup(self, containers) -> List:
+        """Validate that containers actually contain dog information."""
+        valid_containers = []
+
+        for container in containers:
+            try:
+                text_content = container.get_text().strip()
+                if any(pattern in text_content.lower() for pattern in ["months old", "years old", "vaccinated", "chipped"]):
+                    valid_containers.append(container)
+            except Exception as e:
+                self.logger.debug(f"Error validating container: {e}")
+                continue
+
+        return valid_containers
+
+    def _extract_single_dog_from_container_soup(self, container, page_type: str, container_num: int) -> Dict[str, Any]:
+        """Extract complete dog data from a single BeautifulSoup container."""
+        try:
+            full_text = container.get_text().strip()
+
+            dog_data = self.extract_dog_data(full_text, page_type)
+
+            if not dog_data or not dog_data.get("name"):
+                self.logger.debug(f"Container {container_num} did not yield valid dog data from text: {full_text[:100]}...")
+                return None
+
+            # Extract image from the same container
+            image_url = self._extract_image_from_container_soup(container, dog_data.get("name"), container_num)
+
+            if image_url:
+                dog_data["primary_image_url"] = image_url
+                self.logger.debug(f"Successfully associated image for {dog_data.get('name')}: {image_url[:50]}...")
+            else:
+                self.logger.debug(f"No valid image found for {dog_data.get('name')} in container {container_num}")
+
+            return dog_data
+
+        except Exception as e:
+            self.logger.error(f"Error extracting dog from container {container_num}: {e}")
+            return None
+
+    def _extract_image_from_container_soup(self, container, dog_name: str, container_num: int) -> Optional[str]:
+        """Extract image URL from a BeautifulSoup dog container."""
+        try:
+            img_elements = container.find_all("img")
+
+            for img in img_elements:
+                img_src = img.get("src", "")
+                data_src = img.get("data-src", "")
+
+                actual_src = data_src if data_src else img_src
+
+                if actual_src and self._is_valid_rean_image(actual_src):
+                    cleaned_url = self._clean_wsimg_url(actual_src)
+                    self.logger.debug(f"Found valid image for {dog_name}: {cleaned_url[:50]}...")
+                    return cleaned_url
+
+            self.logger.debug(f"No valid images found in container {container_num} for {dog_name}")
+            return None
+
+        except Exception as e:
+            self.logger.error(f"Error extracting image from container {container_num}: {e}")
+            return None
 
     def _trigger_comprehensive_lazy_loading(self, driver):
         """

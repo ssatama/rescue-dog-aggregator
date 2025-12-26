@@ -5,22 +5,33 @@ scraping process for MisisRescue website, including pagination handling,
 Reserved section detection, and data collection.
 """
 
+import asyncio
+import os
 import time
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup, Tag
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
 
 from scrapers.base_scraper import BaseScraper
-from services.browser_service import BrowserOptions, get_browser_service
 
 from .detail_parser import MisisRescueDetailParser
+
+USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
+
+if TYPE_CHECKING:
+    from selenium.webdriver.remote.webdriver import WebDriver
+
+if USE_PLAYWRIGHT:
+    from services.playwright_browser_service import PlaywrightOptions, get_playwright_service
+else:
+    from selenium.common.exceptions import NoSuchElementException, TimeoutException
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.remote.webdriver import WebDriver
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.support.ui import WebDriverWait
+    from services.browser_service import BrowserOptions, get_browser_service
 
 
 class MisisRescueScraper(BaseScraper):
@@ -121,12 +132,15 @@ class MisisRescueScraper(BaseScraper):
         Returns:
             List of dog dictionaries with url, name, and image_url
         """
-        # World-class logging: Pagination extraction handled by centralized system
+        if USE_PLAYWRIGHT:
+            return asyncio.run(self._get_all_dogs_from_listing_playwright())
+        return self._get_all_dogs_from_listing_selenium()
 
+    def _get_all_dogs_from_listing_selenium(self) -> List[Dict[str, str]]:
+        """Selenium implementation of _get_all_dogs_from_listing."""
         all_dogs = []
         page_num = 1
 
-        # Use a single driver session for all pages
         driver = None
         try:
             driver = self._setup_selenium_driver()
@@ -197,6 +211,40 @@ class MisisRescueScraper(BaseScraper):
 
         # World-class logging: Total unique dogs handled by centralized system
         return unique_dogs
+
+    async def _get_all_dogs_from_listing_playwright(self) -> List[Dict[str, str]]:
+        """Playwright implementation of _get_all_dogs_from_listing."""
+        try:
+            playwright_service = get_playwright_service()
+            options = PlaywrightOptions(
+                headless=True,
+                viewport_width=1920,
+                viewport_height=1080,
+            )
+
+            result = await playwright_service.get_page_content(self.listing_url, options)
+
+            if not result.success:
+                self.logger.error(f"Playwright failed to load listing page: {result.error}")
+                return []
+
+            soup = BeautifulSoup(result.content, "html.parser")
+            page_dogs = self._extract_dogs_before_reserved(soup)
+            self._assign_images_to_dogs(page_dogs, soup)
+
+            # Remove duplicates
+            unique_dogs = []
+            seen_urls = set()
+            for dog in page_dogs:
+                if dog["url"] not in seen_urls:
+                    unique_dogs.append(dog)
+                    seen_urls.add(dog["url"])
+
+            return unique_dogs
+
+        except Exception as e:
+            self.logger.error(f"Error in Playwright listing extraction: {e}")
+            return []
 
     def _get_all_dog_urls(self) -> List[str]:
         """Get all dog URLs from all pages, handling pagination.
@@ -543,6 +591,12 @@ class MisisRescueScraper(BaseScraper):
         Returns:
             Dog data dictionary or None if error
         """
+        if USE_PLAYWRIGHT:
+            return asyncio.run(self._scrape_dog_detail_playwright(url))
+        return self._scrape_dog_detail_selenium(url)
+
+    def _scrape_dog_detail_selenium(self, url: str) -> Optional[Dict[str, Any]]:
+        """Selenium implementation of _scrape_dog_detail."""
         driver = None
 
         try:
@@ -638,6 +692,112 @@ class MisisRescueScraper(BaseScraper):
         finally:
             if driver:
                 driver.quit()
+
+    async def _scrape_dog_detail_playwright(self, url: str) -> Optional[Dict[str, Any]]:
+        """Playwright implementation of _scrape_dog_detail."""
+        try:
+            playwright_service = get_playwright_service()
+            options = PlaywrightOptions(
+                headless=True,
+                viewport_width=1920,
+                viewport_height=1080,
+            )
+
+            self.logger.debug(f"Loading detail page with Playwright: {url}")
+            result = await playwright_service.get_page_content(url, options)
+
+            if not result.success:
+                self.logger.error(f"Playwright failed to load detail page: {result.error}")
+                return None
+
+            # Check for error pages in content
+            content_lower = result.content.lower()[:2000]
+            error_indicators = [
+                "this site can't be reached",
+                "this site cant be reached",
+                "dns_probe_finished",
+                "err_name_not_resolved",
+                "404",
+                "500",
+                "not found",
+            ]
+
+            for indicator in error_indicators:
+                if indicator in content_lower:
+                    self.logger.warning(f"Error page detected for {url}")
+                    return None
+
+            # Parse with BeautifulSoup
+            soup = BeautifulSoup(result.content, "html.parser")
+
+            # Check h1 for errors
+            h1_text = soup.find("h1").get_text(strip=True).lower() if soup.find("h1") else ""
+            if any(err in h1_text for err in ["can't be reached", "cant be reached", "not found"]):
+                self.logger.warning(f"Error page h1 detected: '{h1_text}'")
+                return None
+
+            dog_data = self.detail_parser.parse_detail_page(soup)
+
+            # Add required fields for BaseScraper
+            dog_data["external_id"] = self._generate_external_id(url)
+            dog_data["adoption_url"] = url
+            dog_data["organization_id"] = self.organization_id
+
+            # If size was calculated from weight, copy it to top level for database
+            if dog_data.get("properties", {}).get("standardized_size"):
+                dog_data["standardized_size"] = dog_data["properties"]["standardized_size"]
+
+            # Extract the main image using BeautifulSoup-only method
+            main_image_url = self._extract_main_image_soup(soup)
+            if main_image_url:
+                dog_data["image_urls"] = [main_image_url]
+                dog_data["primary_image_url"] = main_image_url
+            else:
+                self.logger.warning(f"No image found for dog at {url}")
+
+            # Apply unified standardization
+            return self.process_animal(dog_data)
+
+        except Exception as e:
+            self.logger.error(f"Error scraping dog detail with Playwright {url}: {e}")
+            return None
+
+    def _extract_main_image_soup(self, soup: BeautifulSoup) -> Optional[str]:
+        """Extract main image using only BeautifulSoup (for Playwright)."""
+        # First try hero image
+        hero_url = self._extract_hero_image(soup)
+        if hero_url and self._is_high_quality_image(hero_url):
+            return hero_url
+
+        # Try grid images from soup
+        grid_url = self._extract_first_grid_image_soup(soup)
+        if grid_url:
+            return grid_url
+
+        # Fallback to any hero image
+        return hero_url
+
+    def _extract_first_grid_image_soup(self, soup: BeautifulSoup) -> Optional[str]:
+        """Extract first grid image using BeautifulSoup only."""
+        try:
+            # Find all wixstatic images
+            all_images = soup.find_all("img", src=lambda x: x and "wixstatic.com" in x)
+
+            for img in all_images:
+                src = img.get("src", "")
+                # Skip small thumbnails
+                if "w_50" in src or "w_100" in src or "h_50" in src or "h_100" in src:
+                    continue
+                # Skip if in related posts section
+                parent = img.find_parent(text=lambda x: x and "related" in x.lower() if isinstance(x, str) else False)
+                if parent:
+                    continue
+                return src
+
+            return None
+        except Exception as e:
+            self.logger.debug(f"Error extracting grid image from soup: {e}")
+            return None
 
     def _scrape_dog_detail_fast(self, url: str) -> Optional[Dict[str, Any]]:
         """Fast scraping method using requests instead of Selenium.
@@ -916,7 +1076,7 @@ class MisisRescueScraper(BaseScraper):
         # Use enhanced validation from BaseScraper that includes invalid name detection
         return self._validate_animal_data(dog_data)
 
-    def _setup_selenium_driver(self) -> WebDriver:
+    def _setup_selenium_driver(self) -> "WebDriver":
         """Setup WebDriver with appropriate options.
 
         Uses centralized browser service that auto-detects environment:
@@ -934,7 +1094,7 @@ class MisisRescueScraper(BaseScraper):
         browser_result = browser_service.create_driver(browser_options)
         return browser_result.driver
 
-    def _click_pagination_button(self, driver: WebDriver, page_num: int) -> bool:
+    def _click_pagination_button(self, driver: "WebDriver", page_num: int) -> bool:
         """Click a pagination button to navigate to a specific page.
 
         Args:
@@ -970,7 +1130,7 @@ class MisisRescueScraper(BaseScraper):
             self.logger.error(f"Error clicking page {page_num} button: {e}")
             return False
 
-    def _scroll_to_load_all_content(self, driver: WebDriver) -> None:
+    def _scroll_to_load_all_content(self, driver: "WebDriver") -> None:
         """Scroll to bottom of page to trigger lazy loading of all dogs.
 
         Args:
@@ -1007,7 +1167,7 @@ class MisisRescueScraper(BaseScraper):
         final_dogs = len(driver.find_elements(By.XPATH, '//a[contains(@href, "/post/")]'))
         # World-class logging: Scrolling completion handled by centralized system
 
-    def _scroll_detail_page_for_content(self, driver: WebDriver) -> None:
+    def _scroll_detail_page_for_content(self, driver: "WebDriver") -> None:
         """Scroll detail page to load all content including images.
 
         Args:
@@ -1031,7 +1191,7 @@ class MisisRescueScraper(BaseScraper):
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight * 0.5);")
         time.sleep(1)
 
-    def _extract_main_image(self, driver: WebDriver, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_main_image(self, driver: "WebDriver", soup: BeautifulSoup) -> Optional[str]:
         """Extract the main image for the dog - hero image or enhanced grid fallback.
 
         Args:
@@ -1079,7 +1239,7 @@ class MisisRescueScraper(BaseScraper):
         width = self._extract_image_width(image_url)
         return width is not None and width >= 600
 
-    def _extract_first_grid_image(self, driver: WebDriver, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_first_grid_image(self, driver: "WebDriver", soup: BeautifulSoup) -> Optional[str]:
         """Extract the first image from the image grid with click-and-wait for high-res.
 
         IMPORTANT: Avoid images from 'Related Posts' section at bottom of page.
@@ -1434,7 +1594,7 @@ class MisisRescueScraper(BaseScraper):
         except (IndexError, ValueError):
             return None
 
-    def _wait_for_high_res_image(self, driver: WebDriver, img_element, initial_src: str, max_wait: int = 5) -> Optional[str]:
+    def _wait_for_high_res_image(self, driver: "WebDriver", img_element, initial_src: str, max_wait: int = 5) -> Optional[str]:
         """Wait for image src to change to high-res version after clicking.
 
         Args:

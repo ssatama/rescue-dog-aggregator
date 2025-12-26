@@ -1,5 +1,7 @@
 """Scraper implementation for Many Tears Rescue organization."""
 
+import asyncio
+import os
 import random
 import re
 import time
@@ -7,13 +9,19 @@ from typing import Any, Dict, List, Union, cast
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, Tag
-from selenium.common.exceptions import TimeoutException, WebDriverException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.wait import WebDriverWait
 
 from scrapers.base_scraper import BaseScraper
-from services.browser_service import BrowserOptions, get_browser_service
+
+USE_PLAYWRIGHT = os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true"
+
+if USE_PLAYWRIGHT:
+    from services.playwright_browser_service import PlaywrightOptions, get_playwright_service
+else:
+    from selenium.common.exceptions import TimeoutException, WebDriverException
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.support.wait import WebDriverWait
+    from services.browser_service import BrowserOptions, get_browser_service
 
 
 class ManyTearsRescueScraper(BaseScraper):
@@ -110,6 +118,43 @@ class ManyTearsRescueScraper(BaseScraper):
         Returns:
             List of processed animals with detailed data
         """
+        if USE_PLAYWRIGHT:
+            return asyncio.run(self._process_animals_parallel_playwright(animals))
+        return self._process_animals_parallel_selenium(animals)
+
+    async def _process_animals_parallel_playwright(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Playwright implementation of parallel animal processing."""
+        all_dogs_data = []
+        seen_urls = set()
+
+        self.logger.info(f"Starting detail scraping for {len(animals)} animals using Playwright")
+
+        # Process animals sequentially to avoid overwhelming the server
+        # (could be made concurrent with asyncio.gather in batches if needed)
+        for animal in animals:
+            adoption_url = animal["adoption_url"]
+
+            if adoption_url in seen_urls:
+                self.logger.debug(f"Skipping duplicate dog: {animal['name']} ({adoption_url})")
+                continue
+            seen_urls.add(adoption_url)
+
+            # Respectful delay between requests
+            await asyncio.sleep(random.uniform(self.rate_limit_delay + 1, self.rate_limit_delay + 3))
+
+            detail_data = await self._scrape_animal_details_playwright(adoption_url)
+
+            if detail_data:
+                animal.update(detail_data)
+
+            all_dogs_data.append(animal)
+            self.logger.debug(f"Processed {len(all_dogs_data)}/{len(animals)} animals")
+
+        self.logger.info(f"Completed detail scraping: {len(all_dogs_data)} animals processed")
+        return all_dogs_data
+
+    def _process_animals_parallel_selenium(self, animals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Selenium implementation of parallel animal processing."""
         all_dogs_data = []
         seen_urls = set()  # Track URLs to prevent duplicates
 
@@ -145,7 +190,7 @@ class ManyTearsRescueScraper(BaseScraper):
                     time.sleep(random.uniform(self.rate_limit_delay + 1, self.rate_limit_delay + 3))
 
                     # Use thread-local WebDriver (no locking needed)
-                    detail_data = self._scrape_animal_details(adoption_url, driver=local_driver)
+                    detail_data = self._scrape_animal_details_selenium(adoption_url, driver=local_driver)
 
                     if detail_data:
                         # Merge detail data with listing data (detail data takes precedence)
@@ -221,7 +266,7 @@ class ManyTearsRescueScraper(BaseScraper):
             return []
 
     def get_animal_list(self) -> List[Dict[str, Any]]:
-        """Fetch list of available dogs using Selenium WebDriver with pagination.
+        """Fetch list of available dogs using browser automation with pagination.
 
         Handles Cloudflare Bot Management by using headless Chrome with proper options.
         Iterates through all pages dynamically detecting the maximum page count.
@@ -229,6 +274,12 @@ class ManyTearsRescueScraper(BaseScraper):
         Returns:
             List of dictionaries containing basic dog information from all pages
         """
+        if USE_PLAYWRIGHT:
+            return asyncio.run(self._get_animal_list_playwright())
+        return self._get_animal_list_selenium()
+
+    def _get_animal_list_selenium(self) -> List[Dict[str, Any]]:
+        """Selenium implementation of get_animal_list."""
         driver = None
         all_dogs = []
 
@@ -332,6 +383,85 @@ class ManyTearsRescueScraper(BaseScraper):
                     driver.quit()
                 except:
                     pass
+
+        self.logger.info(f"Total dogs collected across all pages: {len(all_dogs)}")
+        return all_dogs
+
+    async def _get_animal_list_playwright(self) -> List[Dict[str, Any]]:
+        """Playwright implementation of get_animal_list."""
+        all_dogs = []
+
+        try:
+            playwright_service = get_playwright_service()
+            page_num = 1
+            max_pages = None
+            consecutive_empty_pages = 0
+            max_empty_pages = 2
+
+            while True:
+                try:
+                    if page_num == 1:
+                        url = self.listing_url
+                    else:
+                        url = f"{self.listing_url}?page={page_num}"
+
+                    self.logger.info(f"Fetching page {page_num} with Playwright: {url}")
+
+                    options = PlaywrightOptions(
+                        headless=True,
+                        viewport_width=random.randint(1366, 1920),
+                        viewport_height=random.randint(768, 1080),
+                    )
+
+                    result = await playwright_service.get_page_content(url, options)
+
+                    if not result.success:
+                        self.logger.error(f"Playwright failed to load page {page_num}: {result.error}")
+                        consecutive_empty_pages += 1
+                        if consecutive_empty_pages >= max_empty_pages:
+                            break
+                        page_num += 1
+                        continue
+
+                    soup = BeautifulSoup(result.content, "html.parser")
+
+                    # Detect max pages on first page
+                    if max_pages is None:
+                        max_pages = self._detect_max_pages(soup)
+                        self.logger.info(f"Detected maximum pages: {max_pages}")
+
+                    # Extract dogs from current page
+                    page_dogs = self._extract_dogs_from_page(soup)
+                    if page_dogs:
+                        all_dogs.extend(page_dogs)
+                        self.logger.info(f"Found {len(page_dogs)} dogs on page {page_num}")
+                        consecutive_empty_pages = 0
+                    else:
+                        self.logger.warning(f"No dogs found on page {page_num}")
+                        consecutive_empty_pages += 1
+                        if consecutive_empty_pages >= max_empty_pages:
+                            break
+
+                    # Check if we should continue
+                    if page_num >= max_pages:
+                        self.logger.info(f"Reached max page {max_pages}")
+                        break
+
+                    page_num += 1
+
+                    # Rate limiting
+                    delay = random.uniform(self.rate_limit_delay + 2, self.rate_limit_delay + 5)
+                    await asyncio.sleep(delay)
+
+                except Exception as e:
+                    self.logger.error(f"Error processing page {page_num}: {e}")
+                    consecutive_empty_pages += 1
+                    if consecutive_empty_pages >= max_empty_pages:
+                        break
+                    continue
+
+        except Exception as e:
+            self.logger.error(f"Error during Playwright pagination scraping: {e}")
 
         self.logger.info(f"Total dogs collected across all pages: {len(all_dogs)}")
         return all_dogs
@@ -546,7 +676,7 @@ class ManyTearsRescueScraper(BaseScraper):
         return match.group(1) if match else url.split("/")[-2] if url.split("/")[-2].isdigit() else "unknown"
 
     def _scrape_animal_details(self, adoption_url: str, driver=None) -> Dict[str, Any]:
-        """Scrape detailed information from individual dog page using Selenium.
+        """Scrape detailed information from individual dog page.
 
         Extracts comprehensive data including name, requirements sections, diary entries,
         compatibility sections, description, and hero image following the detailed
@@ -554,11 +684,17 @@ class ManyTearsRescueScraper(BaseScraper):
 
         Args:
             adoption_url: URL of the individual dog adoption page
-            driver: Optional WebDriver instance (for testing)
+            driver: Optional WebDriver instance (for testing, Selenium only)
 
         Returns:
             Dictionary with detailed dog information following BaseScraper format
         """
+        if USE_PLAYWRIGHT:
+            return asyncio.run(self._scrape_animal_details_playwright(adoption_url))
+        return self._scrape_animal_details_selenium(adoption_url, driver)
+
+    def _scrape_animal_details_selenium(self, adoption_url: str, driver=None) -> Dict[str, Any]:
+        """Selenium implementation of _scrape_animal_details."""
         local_driver = None
         try:
             self.logger.debug(f"Scraping details from: {adoption_url}")
@@ -653,6 +789,95 @@ class ManyTearsRescueScraper(BaseScraper):
         finally:
             if local_driver:
                 local_driver.quit()
+
+    async def _scrape_animal_details_playwright(self, adoption_url: str) -> Dict[str, Any]:
+        """Playwright implementation of _scrape_animal_details."""
+        try:
+            self.logger.debug(f"Scraping details from: {adoption_url}")
+
+            playwright_service = get_playwright_service()
+            options = PlaywrightOptions(
+                headless=True,
+                user_agent=random.choice(self.USER_AGENTS),
+            )
+
+            html_content = await playwright_service.get_page_content(adoption_url, options)
+            if not html_content:
+                self.logger.error(f"Failed to get page content from {adoption_url}")
+                return {}
+
+            soup = BeautifulSoup(html_content, "html.parser")
+
+            # Extract core fields
+            name = self._extract_name(soup)
+            hero_image_url = self._extract_hero_image(soup)
+            description = self._extract_description(soup)
+
+            # Extract structured data (age, breed, sex) from DOM
+            structured_data = self._extract_structured_data_from_detail_page(soup)
+
+            # Extract properties using comprehensive extraction methods
+            properties = {}
+
+            # Add structured data to properties
+            properties.update(structured_data)
+
+            # Extract 6 requirements sections
+            requirements = self._extract_requirements_sections(soup)
+            properties.update(requirements)
+
+            # Extract diary entries (basic extraction without driver)
+            diary_entries = self._extract_diary_entries(soup, driver=None)
+            if diary_entries:
+                properties["diary_entries"] = diary_entries
+
+            # Extract compatibility sections (optional)
+            compatibility = self._extract_compatibility_sections(soup)
+            properties.update(compatibility)
+
+            # Filter sponsor text from description
+            description = self._filter_sponsor_text(description)
+
+            # CRITICAL FIX: Store description in properties so it gets saved to database
+            properties["description"] = description or ""
+
+            # Build result following SanterPaws pattern with Zero NULLs compliance
+            result = {
+                "name": name or "Unknown",
+                "description": description or "",
+                "primary_image_url": hero_image_url,
+                "original_image_url": hero_image_url,
+                "properties": properties,
+                "animal_type": "dog",
+                "status": "available",
+                "location": "Wales, UK",
+            }
+
+            # Extract individual fields from structured_data for compatibility with BaseScraper
+            # Zero NULLs compliance - always provide defaults
+            result["breed"] = structured_data.get("breed") or "Mixed Breed"
+            result["sex"] = structured_data.get("sex") or "Unknown"
+            result["age"] = structured_data.get("age") or "Unknown"
+            result["age_text"] = structured_data.get("age_text") or structured_data.get("age") or "Unknown"
+
+            # Size will be handled by unified standardization
+            result["size"] = structured_data.get("size")
+
+            # Add image_urls for R2 integration
+            if hero_image_url:
+                result["image_urls"] = [hero_image_url]
+            else:
+                result["image_urls"] = []
+
+            # Apply unified standardization
+            result = self.process_animal(result)
+
+            self.logger.debug(f"Successfully extracted details for {name}")
+            return result
+
+        except Exception as e:
+            self.logger.error(f"Error scraping details from {adoption_url}: {e}")
+            return {}
 
     def _extract_name(self, soup: BeautifulSoup) -> str:
         """Extract dog name from h1 heading.
