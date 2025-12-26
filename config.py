@@ -3,7 +3,8 @@ import logging
 import os
 import socket
 import sys
-from typing import List
+from typing import List, Optional
+from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
@@ -80,7 +81,67 @@ logger.info(f"[config.py] TESTING environment variable detected: {IS_TESTING}")
 system_user = getpass.getuser()
 logger.debug(f"[config.py] System user detected: {system_user}")
 
-# Read environment variables
+
+def parse_database_url(url: str) -> dict:
+    """Parse a DATABASE_URL into individual connection components.
+
+    Supports both 'postgresql://' and 'postgres://' schemes.
+    Returns dict with host, database, user, password, port.
+    """
+    parsed = urlparse(url)
+
+    if parsed.scheme not in ("postgresql", "postgres"):
+        raise ValueError(f"Invalid database URL scheme: {parsed.scheme}")
+
+    return {
+        "host": parsed.hostname or "localhost",
+        "database": parsed.path.lstrip("/") if parsed.path else "rescue_dogs",
+        "user": parsed.username or system_user,
+        "password": parsed.password or "",
+        "port": parsed.port or 5432,
+    }
+
+
+def get_database_config() -> dict:
+    """Get database configuration from environment.
+
+    Priority order:
+    1. DATABASE_URL (Railway standard) or RAILWAY_DATABASE_URL
+    2. Individual DB_* environment variables
+    3. Defaults based on TESTING flag
+    """
+    database_url = os.environ.get("DATABASE_URL") or os.environ.get("RAILWAY_DATABASE_URL")
+
+    if database_url:
+        logger.info("[config.py] Using DATABASE_URL for database configuration")
+        config = parse_database_url(database_url)
+        # Add port to host if non-standard
+        if config["port"] != 5432:
+            config["host"] = f"{config['host']}:{config['port']}"
+        return {
+            "host": config["host"],
+            "database": config["database"],
+            "user": config["user"],
+            "password": config["password"],
+        }
+
+    logger.info("[config.py] Using individual DB_* environment variables")
+    db_host_env = os.environ.get("DB_HOST")
+    db_name_env = os.environ.get("DB_NAME")
+    db_user_env = os.environ.get("DB_USER")
+    db_password_env = os.environ.get("DB_PASSWORD")
+
+    default_db_name = "test_rescue_dogs" if IS_TESTING else "rescue_dogs"
+
+    return {
+        "host": db_host_env or "localhost",
+        "database": db_name_env or default_db_name,
+        "user": db_user_env or ("test_user" if IS_TESTING else system_user),
+        "password": db_password_env or ("test_password" if IS_TESTING else ""),
+    }
+
+
+# Read environment variables (legacy logging for backwards compatibility)
 db_host_env = os.environ.get("DB_HOST")
 db_name_env = os.environ.get("DB_NAME")
 db_user_env = os.environ.get("DB_USER")
@@ -96,13 +157,8 @@ logger.debug(f"[config.py]   DB_PASSWORD from env: {'[SET]' if db_password_env e
 default_db_name = "test_rescue_dogs" if IS_TESTING else "rescue_dogs"
 logger.info(f"[config.py] Default DB name based on TESTING flag: {default_db_name}")
 
-# Database configuration
-DB_CONFIG = {
-    "host": db_host_env or "localhost",
-    "database": db_name_env or default_db_name,
-    "user": db_user_env or ("test_user" if IS_TESTING else system_user),
-    "password": db_password_env or ("test_password" if IS_TESTING else ""),
-}
+# Database configuration - now supports DATABASE_URL for Railway
+DB_CONFIG = get_database_config()
 
 # --- ADD: Final Safety Check ---
 final_db_name = DB_CONFIG["database"]

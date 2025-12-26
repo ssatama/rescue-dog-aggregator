@@ -1,9 +1,12 @@
 # scrapers/base_scraper.py
 
+import html
 import logging
 import os
+import re
 import sys
 import time
+import unicodedata
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -13,6 +16,15 @@ from langdetect import detect
 
 # Import config
 from config import DB_CONFIG, enable_world_class_scraper_logging
+
+# Import Sentry integration for error tracking
+from scrapers.sentry_integration import (
+    add_scrape_breadcrumb,
+    alert_llm_enrichment_failure,
+    alert_zero_dogs_found,
+    capture_scraper_error,
+    scrape_transaction,
+)
 
 # Import services and utilities
 from services.null_objects import NullMetricsCollector
@@ -465,64 +477,96 @@ class BaseScraper(ABC):
 
     def _run_with_connection(self):
         """Template method orchestrating the scrape lifecycle with world-class logging."""
-        try:
-            # Initialize comprehensive progress tracker for entire scrape lifecycle
-            self.progress_tracker = None
+        # Wrap entire scrape in Sentry transaction for performance monitoring
+        with scrape_transaction(self.get_organization_name(), self.organization_id) as transaction:
+            try:
+                # Initialize comprehensive progress tracker for entire scrape lifecycle
+                self.progress_tracker = None
 
-            # Phase 1: Setup
-            if not self._setup_scrape():
+                # Phase 1: Setup
+                add_scrape_breadcrumb("Starting setup phase", data={"org_name": self.get_organization_name()})
+                if not self._setup_scrape():
+                    return False
+
+                # Phase 2: Data Collection
+                add_scrape_breadcrumb("Starting data collection phase")
+                animals_data = self._collect_and_time_data()
+
+                # Store count for scraper runner interface
+                # Use the same logic as database logging to ensure consistency
+                self.animals_found = self._get_correct_animals_found_count(animals_data)
+
+                # Alert if zero dogs found - likely indicates website change
+                if self.animals_found == 0:
+                    alert_zero_dogs_found(
+                        org_name=self.get_organization_name(),
+                        org_id=self.organization_id,
+                        scrape_log_id=getattr(self, "scrape_log_id", None),
+                    )
+
+                # Set transaction data for Sentry performance view
+                transaction.set_data("dogs_found", self.animals_found)
+
+                # Initialize comprehensive progress tracker for consistent logging
+                # Always create progress_tracker to ensure consistent terminal output across all scrapers
+                # Use discovery count (not filtered count) to ensure proper verbosity level for completion summary
+                self.progress_tracker = ProgressTracker(
+                    total_items=max(self.animals_found, 1),
+                    logger=logging.getLogger("scraper"),
+                    config=self._get_logging_config(),
+                )  # Use central scraper logger
+
+                # Track discovery phase stats
+                # Use correct animals found count to show actual discovery metrics
+                correct_animals_found = self._get_correct_animals_found_count(animals_data)
+                self.progress_tracker.track_discovery_stats(dogs_found=correct_animals_found, pages_processed=1, extraction_failures=0)  # Single page scrape
+
+                # Track filtering phase stats
+                self.progress_tracker.track_filtering_stats(
+                    dogs_skipped=self.total_animals_skipped,
+                    new_dogs=len(animals_data) - self.total_animals_skipped,
+                )
+
+                # Log discovery completion
+                self.progress_tracker.log_phase_complete("Discovery", 0.0, f"{correct_animals_found} dogs found")  # Will be updated with actual timing
+
+                # Phase 3: Database Operations
+                add_scrape_breadcrumb("Starting database operations phase", data={"animals_count": len(animals_data)})
+                processing_stats = self._process_animals_data(animals_data)
+
+                # Phase 4: Stale Data Detection
+                add_scrape_breadcrumb("Starting stale data detection phase")
+                self._finalize_scrape(animals_data, processing_stats)
+
+                # Phase 5: LLM Enrichment (if enabled)
+                add_scrape_breadcrumb("Starting LLM enrichment phase")
+                self._post_process_llm_enrichment()
+
+                # Phase 6: Metrics & Logging
+                self._log_completion_metrics(animals_data, processing_stats)
+
+                # Set final transaction data
+                transaction.set_data("dogs_added", processing_stats.get("animals_added", 0))
+                transaction.set_data("dogs_updated", processing_stats.get("animals_updated", 0))
+
+                return True
+
+            except Exception as e:
+                # Use centralized logger for errors
+                central_logger = logging.getLogger("scraper")
+                central_logger.error(f"🚨 Scrape failed for {self.get_organization_name()}: {e}")
+
+                # Capture exception to Sentry with context
+                capture_scraper_error(
+                    error=e,
+                    org_name=self.get_organization_name(),
+                    org_id=self.organization_id,
+                    scrape_log_id=getattr(self, "scrape_log_id", None),
+                    phase="run_with_connection",
+                )
+
+                self.handle_scraper_failure(str(e))
                 return False
-
-            # Phase 2: Data Collection
-            animals_data = self._collect_and_time_data()
-
-            # Store count for scraper runner interface
-            # Use the same logic as database logging to ensure consistency
-            self.animals_found = self._get_correct_animals_found_count(animals_data)
-
-            # Initialize comprehensive progress tracker for consistent logging
-            # Always create progress_tracker to ensure consistent terminal output across all scrapers
-            # Use discovery count (not filtered count) to ensure proper verbosity level for completion summary
-            self.progress_tracker = ProgressTracker(
-                total_items=max(self.animals_found, 1),
-                logger=logging.getLogger("scraper"),
-                config=self._get_logging_config(),
-            )  # Use central scraper logger
-
-            # Track discovery phase stats
-            # Use correct animals found count to show actual discovery metrics
-            correct_animals_found = self._get_correct_animals_found_count(animals_data)
-            self.progress_tracker.track_discovery_stats(dogs_found=correct_animals_found, pages_processed=1, extraction_failures=0)  # Single page scrape
-
-            # Track filtering phase stats
-            self.progress_tracker.track_filtering_stats(
-                dogs_skipped=self.total_animals_skipped,
-                new_dogs=len(animals_data) - self.total_animals_skipped,
-            )
-
-            # Log discovery completion
-            self.progress_tracker.log_phase_complete("Discovery", 0.0, f"{correct_animals_found} dogs found")  # Will be updated with actual timing
-
-            # Phase 3: Database Operations
-            processing_stats = self._process_animals_data(animals_data)
-
-            # Phase 4: Stale Data Detection
-            self._finalize_scrape(animals_data, processing_stats)
-
-            # Phase 5: LLM Enrichment (if enabled)
-            self._post_process_llm_enrichment()
-
-            # Phase 6: Metrics & Logging
-            self._log_completion_metrics(animals_data, processing_stats)
-
-            return True
-
-        except Exception as e:
-            # Use centralized logger for errors
-            central_logger = logging.getLogger("scraper")
-            central_logger.error(f"🚨 Scrape failed for {self.get_organization_name()}: {e}")
-            self.handle_scraper_failure(str(e))
-            return False
 
     def _setup_scrape(self):
         """Setup phase: Initialize scrape log, session, and timing with world-class logging."""
@@ -912,10 +956,47 @@ class BaseScraper(ABC):
             "timeout",
             "unavailable",
             "access denied",
-            "not found",
         ]
 
-        return any(pattern in name_normalized for pattern in error_patterns)
+        if any(pattern in name_normalized for pattern in error_patterns):
+            return True
+
+        # Gift card and promotional patterns (not dog names)
+        gift_card_patterns = [
+            "gift card",
+            "giftcard",
+            "gift certificate",
+            "voucher",
+            "coupon",
+            "promo code",
+            "discount",
+        ]
+
+        if any(pattern in name_normalized for pattern in gift_card_patterns):
+            return True
+
+        # URL patterns (extraction error - got URL instead of name)
+        if "http://" in name_normalized or "https://" in name_normalized or "www." in name_normalized:
+            return True
+
+        # Price patterns (e.g., "$50", "€100", "£25", "50€")
+        price_pattern = re.compile(r"[$€£¥₹]\s*\d+|\d+\s*[$€£¥₹]")
+        if price_pattern.search(name):
+            return True
+
+        # Product SKU patterns (e.g., "ABC-123-XYZ", "DOG123ABC")
+        sku_pattern = re.compile(r"^[A-Z]{2,4}-?\d{3,}-?[A-Z]{2,4}$", re.IGNORECASE)
+        if sku_pattern.match(name.strip()):
+            return True
+
+        # Promo codes with known marketing keywords (SAVE20, FREE100, GET50OFF, etc.)
+        # Using specific keywords to avoid false positives on dog names like MAX3, REX2
+        promo_keywords = r"^(SAVE|GET|CODE|FREE|SALE|DEAL|BUY|WIN|DISCOUNT|OFF)\d+"
+        promo_pattern = re.compile(promo_keywords, re.IGNORECASE)
+        if promo_pattern.match(name.strip()):
+            return True
+
+        return False
 
     def _normalize_animal_name(self, name: str) -> str:
         """Normalize animal name by fixing encoding issues and HTML entities.
@@ -928,9 +1009,6 @@ class BaseScraper(ABC):
         """
         if not name or not isinstance(name, str):
             return name
-
-        import html
-        import unicodedata
 
         # Step 1: Decode HTML entities (&amp; → &, &quot; → ")
         name = html.unescape(name)
@@ -1245,6 +1323,14 @@ class BaseScraper(ABC):
             return True
         except Exception as e:
             self.logger.error(f"Error handling scraper failure: {e}")
+            # Capture the handler error to Sentry as well
+            capture_scraper_error(
+                error=e,
+                org_name=self.get_organization_name(),
+                org_id=self.organization_id,
+                scrape_log_id=getattr(self, "scrape_log_id", None),
+                phase="handle_failure",
+            )
             return False
 
     def log_detailed_metrics(self, metrics: Dict[str, Any]):
@@ -1368,13 +1454,27 @@ class BaseScraper(ABC):
                 self.logger.info(
                     f"LLM enrichment stats - Success rate: {stats.get('success_rate', 0):.1f}%, " f"Processed: {stats.get('total_processed', 0)}, " f"Failed: {stats.get('total_failed', 0)}"
                 )
+                failed_count = stats.get("total_failed", 0)
+                if failed_count > 0:
+                    alert_llm_enrichment_failure(
+                        org_name=self.organization_name,
+                        batch_size=stats.get("total_processed", 0) + failed_count,
+                        failed_count=failed_count,
+                        error_message=f"Partial LLM enrichment failure - {stats.get('success_rate', 0):.1f}% success rate",
+                        org_id=self.organization_id,
+                    )
 
         except ImportError as e:
             self.logger.warning(f"LLM profiler modules not available: {e}")
         except Exception as e:
             self.logger.error(f"Error during LLM enrichment post-processing: {e}")
-            # Don't fail the scrape if enrichment fails
-            pass
+            alert_llm_enrichment_failure(
+                org_name=self.organization_name,
+                batch_size=len(self.animals_for_llm_enrichment),
+                failed_count=len(self.animals_for_llm_enrichment),
+                error_message=str(e),
+                org_id=self.organization_id,
+            )
 
     def _check_adoptions_if_enabled(self):
         """Check for dog adoptions if enabled in organization config.

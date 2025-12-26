@@ -219,3 +219,63 @@ class TestNameValidationAndNormalization:
         is_valid = scraper._validate_animal_data(animal_data)
         assert is_valid
         assert animal_data["name"] == "Echo & Pixel"
+
+    def test_rejects_connection_error_patterns(self, scraper):
+        """Test that connection error messages are rejected."""
+        assert scraper._is_invalid_name("This site can't be reached")
+        assert scraper._is_invalid_name("Connection failed")
+        assert scraper._is_invalid_name("DNS_PROBE_FINISHED_NXDOMAIN")
+        assert scraper._is_invalid_name("ERR_NAME_NOT_RESOLVED")
+        assert scraper._is_invalid_name("ERR_CONNECTION_REFUSED")
+
+    def test_rejects_http_error_patterns(self, scraper):
+        """Test that HTTP error messages are rejected."""
+        assert scraper._is_invalid_name("Page not found")
+        assert scraper._is_invalid_name("Error 404")
+        assert scraper._is_invalid_name("Error 500")
+        assert scraper._is_invalid_name("Access denied")
+
+    def test_rejects_gift_card_patterns(self, scraper):
+        """Test that gift card/promotional content is rejected."""
+        assert scraper._is_invalid_name("Gift Card")
+        assert scraper._is_invalid_name("$50 Voucher")
+        assert scraper._is_invalid_name("Coupon Code")
+        assert scraper._is_invalid_name("Promo code discount")
+
+    def test_rejects_url_patterns(self, scraper):
+        """Test that URLs embedded as names are rejected."""
+        assert scraper._is_invalid_name("https://example.com/dog")
+        assert scraper._is_invalid_name("http://rescue.org")
+        assert scraper._is_invalid_name("www.dogs.com")
+
+    def test_rejects_price_patterns(self, scraper):
+        """Test that price values are rejected."""
+        assert scraper._is_invalid_name("$50")
+        assert scraper._is_invalid_name("€100")
+        assert scraper._is_invalid_name("£25")
+        assert scraper._is_invalid_name("50€")
+
+    def test_accepts_two_character_names(self, scraper):
+        """Test that legitimate 2-character dog names are accepted."""
+        assert not scraper._is_invalid_name("Bo")
+        assert not scraper._is_invalid_name("Jo")
+        assert not scraper._is_invalid_name("BJ")
+        assert not scraper._is_invalid_name("DJ")
+        assert not scraper._is_invalid_name("Al")
+
+    def test_accepts_names_with_trailing_numbers(self, scraper):
+        """Test that legitimate dog names with numbers are accepted."""
+        assert not scraper._is_invalid_name("Max3")
+        assert not scraper._is_invalid_name("Rex2")
+        assert not scraper._is_invalid_name("Luna 2023")
+        assert not scraper._is_invalid_name("MAX3")
+        assert not scraper._is_invalid_name("REX2")
+
+    def test_rejects_actual_promo_codes(self, scraper):
+        """Test that real promo codes are still rejected."""
+        assert scraper._is_invalid_name("SAVE20")
+        assert scraper._is_invalid_name("GET50OFF")
+        assert scraper._is_invalid_name("FREE100")
+        assert scraper._is_invalid_name("CODE123")
+        assert scraper._is_invalid_name("DISCOUNT50")
+        assert scraper._is_invalid_name("SALE50")
