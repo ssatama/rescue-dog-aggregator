@@ -4,14 +4,13 @@ import time
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
-from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from scrapers.base_scraper import BaseScraper
+from services.browser_service import BrowserOptions, get_browser_service
 
 from .dog_detail_scraper import DaisyFamilyRescueDogDetailScraper
 from .translations import normalize_name, translate_dog_data
@@ -141,29 +140,20 @@ class DaisyFamilyRescueScraper(BaseScraper):
         driver = None
 
         try:
-            # Setup Chrome options with config-driven settings
-            chrome_options = Options()
-
             # Check for headless setting from config (default: True for production)
             headless = True
             if hasattr(self, "org_config") and self.org_config:
                 scraper_config = self.org_config.get_scraper_config_dict()
                 headless = scraper_config.get("headless", True)
 
-            if headless:
-                chrome_options.add_argument("--headless")
-
-            # Production-ready Chrome options
-            chrome_options.add_argument("--no-sandbox")
-            chrome_options.add_argument("--disable-dev-shm-usage")
-            chrome_options.add_argument("--disable-gpu")
-            chrome_options.add_argument("--window-size=1920,1080")
-            chrome_options.add_argument("--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-            chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-            chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-            chrome_options.add_experimental_option("useAutomationExtension", False)
-
-            driver = webdriver.Chrome(options=chrome_options)
+            browser_service = get_browser_service()
+            browser_options = BrowserOptions(
+                headless=headless,
+                window_size=(1920, 1080),
+                stealth_mode=True,
+            )
+            browser_result = browser_service.create_driver(browser_options)
+            driver = browser_result.driver
 
             # World-class logging: Page loading handled by centralized system
             driver.get(self.listing_url)
@@ -302,7 +292,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
             # Return basic data on error rather than losing the dog entirely
             return basic_dog_data
 
-    def _handle_lazy_loading(self, driver: webdriver.Chrome):
+    def _handle_lazy_loading(self, driver):
         """Handle lazy loading based on inspection findings."""
         # World-class logging: Lazy loading handled by centralized system
 
@@ -323,7 +313,7 @@ class DaisyFamilyRescueScraper(BaseScraper):
         driver.execute_script("window.scrollTo(0, 0);")
         time.sleep(1)
 
-    def _filter_dogs_by_section(self, driver: webdriver.Chrome) -> List:
+    def _filter_dogs_by_section(self, driver) -> List:
         """Filter dog containers to only include those from target sections."""
         valid_containers = []
 

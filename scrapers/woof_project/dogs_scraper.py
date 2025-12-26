@@ -382,22 +382,18 @@ class WoofProjectScraper(BaseScraper):
             BeautifulSoup object or None if error
         """
         try:
-            from selenium import webdriver
-            from selenium.webdriver.chrome.options import Options
+            from services.browser_service import BrowserOptions, get_browser_service
 
-            # Setup enhanced Chrome options for headless browsing
-            chrome_options = Options()
-            chrome_options.add_argument("--headless")
-            chrome_options.add_argument("--no-sandbox")
-            chrome_options.add_argument("--disable-dev-shm-usage")
-            chrome_options.add_argument("--disable-gpu")
-            chrome_options.add_argument("--window-size=1920,1080")
-            chrome_options.add_argument("--disable-web-security")
-            chrome_options.add_argument("--disable-features=VizDisplayCompositor")
-            chrome_options.add_argument("--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+            browser_service = get_browser_service()
+            browser_options = BrowserOptions(
+                headless=True,
+                window_size=(1920, 1080),
+                extra_arguments=["--disable-web-security", "--disable-features=VizDisplayCompositor"],
+            )
+            browser_result = browser_service.create_driver(browser_options)
 
             self.logger.debug(f"Starting browser automation for {url}")
-            driver = webdriver.Chrome(options=chrome_options)
+            driver = browser_result.driver
 
             try:
                 driver.get(url)

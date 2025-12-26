@@ -11,14 +11,14 @@ from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup, Tag
-from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from scrapers.base_scraper import BaseScraper
+from services.browser_service import BrowserOptions, get_browser_service
 
 from .detail_parser import MisisRescueDetailParser
 
@@ -916,23 +916,25 @@ class MisisRescueScraper(BaseScraper):
         # Use enhanced validation from BaseScraper that includes invalid name detection
         return self._validate_animal_data(dog_data)
 
-    def _setup_selenium_driver(self) -> webdriver.Chrome:
-        """Setup Chrome WebDriver with appropriate options.
+    def _setup_selenium_driver(self) -> WebDriver:
+        """Setup WebDriver with appropriate options.
+
+        Uses centralized browser service that auto-detects environment:
+        - Local: Uses Chrome
+        - Railway: Uses Browserless
 
         Returns:
-            Configured Chrome WebDriver instance
+            Configured WebDriver instance
         """
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--window-size=1920,1080")
-        chrome_options.add_argument("--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+        browser_service = get_browser_service()
+        browser_options = BrowserOptions(
+            headless=True,
+            window_size=(1920, 1080),
+        )
+        browser_result = browser_service.create_driver(browser_options)
+        return browser_result.driver
 
-        return webdriver.Chrome(options=chrome_options)
-
-    def _click_pagination_button(self, driver: webdriver.Chrome, page_num: int) -> bool:
+    def _click_pagination_button(self, driver: WebDriver, page_num: int) -> bool:
         """Click a pagination button to navigate to a specific page.
 
         Args:
@@ -968,7 +970,7 @@ class MisisRescueScraper(BaseScraper):
             self.logger.error(f"Error clicking page {page_num} button: {e}")
             return False
 
-    def _scroll_to_load_all_content(self, driver: webdriver.Chrome) -> None:
+    def _scroll_to_load_all_content(self, driver: WebDriver) -> None:
         """Scroll to bottom of page to trigger lazy loading of all dogs.
 
         Args:
@@ -1005,7 +1007,7 @@ class MisisRescueScraper(BaseScraper):
         final_dogs = len(driver.find_elements(By.XPATH, '//a[contains(@href, "/post/")]'))
         # World-class logging: Scrolling completion handled by centralized system
 
-    def _scroll_detail_page_for_content(self, driver: webdriver.Chrome) -> None:
+    def _scroll_detail_page_for_content(self, driver: WebDriver) -> None:
         """Scroll detail page to load all content including images.
 
         Args:
@@ -1029,7 +1031,7 @@ class MisisRescueScraper(BaseScraper):
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight * 0.5);")
         time.sleep(1)
 
-    def _extract_main_image(self, driver: webdriver.Chrome, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_main_image(self, driver: WebDriver, soup: BeautifulSoup) -> Optional[str]:
         """Extract the main image for the dog - hero image or enhanced grid fallback.
 
         Args:
@@ -1077,7 +1079,7 @@ class MisisRescueScraper(BaseScraper):
         width = self._extract_image_width(image_url)
         return width is not None and width >= 600
 
-    def _extract_first_grid_image(self, driver: webdriver.Chrome, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_first_grid_image(self, driver: WebDriver, soup: BeautifulSoup) -> Optional[str]:
         """Extract the first image from the image grid with click-and-wait for high-res.
 
         IMPORTANT: Avoid images from 'Related Posts' section at bottom of page.
@@ -1432,7 +1434,7 @@ class MisisRescueScraper(BaseScraper):
         except (IndexError, ValueError):
             return None
 
-    def _wait_for_high_res_image(self, driver: webdriver.Chrome, img_element, initial_src: str, max_wait: int = 5) -> Optional[str]:
+    def _wait_for_high_res_image(self, driver: WebDriver, img_element, initial_src: str, max_wait: int = 5) -> Optional[str]:
         """Wait for image src to change to high-res version after clicking.
 
         Args:

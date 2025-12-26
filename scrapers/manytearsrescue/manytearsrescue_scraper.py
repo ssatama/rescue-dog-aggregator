@@ -7,14 +7,13 @@ from typing import Any, Dict, List, Union, cast
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, Tag
-from selenium import webdriver
 from selenium.common.exceptions import TimeoutException, WebDriverException
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
 from scrapers.base_scraper import BaseScraper
+from services.browser_service import BrowserOptions, get_browser_service
 
 
 class ManyTearsRescueScraper(BaseScraper):
@@ -400,53 +399,40 @@ class ManyTearsRescueScraper(BaseScraper):
         return chrome_options
 
     def _setup_selenium_driver(self):
-        """Setup Selenium Chrome WebDriver with Cloudflare bypass options.
+        """Setup Selenium WebDriver with Cloudflare bypass options.
 
-        Configures headless Chrome with options to bypass bot detection.
-        Based on successful patterns from Session 1 analysis.
+        Uses centralized browser service that auto-detects environment:
+        - Local: Uses Chrome with CDP stealth commands
+        - Railway: Uses Browserless (CDP stealth not available)
 
         Returns:
-            Configured Chrome WebDriver instance
+            Configured WebDriver instance
         """
-        chrome_options = self._get_chrome_options()
+        browser_service = get_browser_service()
 
-        driver = webdriver.Chrome(options=chrome_options)
+        width = random.randint(1366, 1920)
+        height = random.randint(768, 1080)
 
-        # Enable JavaScript after driver creation
-        driver.execute_cdp_cmd("Emulation.setScriptExecutionDisabled", {"value": False})
+        browser_options = BrowserOptions(
+            headless=True,
+            window_size=(width, height),
+            user_agent=random.choice(self.USER_AGENTS),
+            random_user_agent=False,
+            page_load_timeout=60,
+            implicit_wait=10,
+            stealth_mode=True,
+            disable_images=True,
+        )
 
-        # Inject stealth JavaScript
-        stealth_js = """
-        Object.defineProperty(navigator, 'webdriver', {
-            get: () => undefined
-        });
-        
-        Object.defineProperty(navigator, 'plugins', {
-            get: () => [1, 2, 3, 4, 5]
-        });
-        
-        Object.defineProperty(navigator, 'languages', {
-            get: () => ['en-US', 'en']
-        });
-        
-        window.chrome = {
-            runtime: {}
-        };
-        
-        Object.defineProperty(navigator, 'permissions', {
-            get: () => ({
-                query: () => Promise.resolve({ state: 'granted' })
-            })
-        });
-        """
+        browser_result = browser_service.create_driver(browser_options)
+        self._browser_supports_cdp = browser_result.supports_cdp
 
-        driver.execute_script(stealth_js)
+        if browser_result.supports_cdp:
+            self.logger.debug("Using local Chrome with CDP stealth mode")
+        else:
+            self.logger.info("Using remote Browserless (CDP stealth not available)")
 
-        # Set proper timeouts
-        driver.set_page_load_timeout(60)  # 60 seconds for page load
-        driver.implicitly_wait(10)  # 10 seconds implicit wait
-
-        return driver
+        return browser_result.driver
 
     def _detect_max_pages(self, soup: BeautifulSoup) -> int:
         """Detect maximum page count from pagination links.
@@ -579,19 +565,15 @@ class ManyTearsRescueScraper(BaseScraper):
 
             # Use provided driver (for testing) or create new one
             if driver is None:
-                # Use centralized Chrome options
-                chrome_options = self._get_chrome_options()
-
-                # Initialize WebDriver
-                local_driver = webdriver.Chrome(options=chrome_options)
+                # Use browser service for driver creation
+                local_driver = self._setup_selenium_driver()
                 driver = local_driver
                 driver.get(adoption_url)
-                # Wait for page to load
                 time.sleep(2)
             else:
                 # Using shared WebDriver - navigate to the URL
                 driver.get(adoption_url)
-                time.sleep(2)  # Wait for page to load
+                time.sleep(2)
 
             # Parse HTML with BeautifulSoup
             soup = BeautifulSoup(driver.page_source, "html.parser")

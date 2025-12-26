@@ -9,13 +9,12 @@ from typing import Any, Dict, List
 
 import requests
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
 from scrapers.base_scraper import BaseScraper
+from services.browser_service import BrowserOptions, get_browser_service
 
 
 class DogsTrustScraper(BaseScraper):
@@ -497,26 +496,30 @@ class DogsTrustScraper(BaseScraper):
         return all_dogs
 
     def _setup_selenium_driver(self):
-        """Setup Selenium Chrome WebDriver for JavaScript-rendered pages.
+        """Setup Selenium WebDriver for JavaScript-rendered pages.
 
-        Configures headless Chrome with options optimized for Dogs Trust site.
-        Based on successful patterns from Many Tears Rescue implementation.
+        Uses centralized browser service that auto-detects environment:
+        - Local: Uses Chrome
+        - Railway: Uses Browserless
 
         Returns:
-            Configured Chrome WebDriver instance
+            Configured WebDriver instance
         """
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--window-size=1920,1080")
-        chrome_options.add_argument("--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        browser_service = get_browser_service()
 
-        driver = webdriver.Chrome(options=chrome_options)
-        driver.set_page_load_timeout(30)
+        browser_options = BrowserOptions(
+            headless=True,
+            window_size=(1920, 1080),
+            page_load_timeout=30,
+            implicit_wait=10,
+        )
 
-        return driver
+        browser_result = browser_service.create_driver(browser_options)
+
+        if browser_result.is_remote:
+            self.logger.info("Using remote Browserless for Dogs Trust scraping")
+
+        return browser_result.driver
 
     def _detect_max_pages(self, soup: BeautifulSoup) -> int:
         """Detect maximum page count from pagination indicator.

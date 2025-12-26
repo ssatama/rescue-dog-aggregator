@@ -5,11 +5,10 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
 from scrapers.base_scraper import BaseScraper
+from services.browser_service import BrowserOptions, get_browser_service
 
 # Import shared extraction utilities for consolidation
 from utils.shared_extraction_patterns import extract_age_from_text as shared_extract_age
@@ -222,18 +221,15 @@ class REANScraper(BaseScraper):
             List of actual image URLs from REAN's CDN (wsimg.com)
         """
         try:
-            # Configure Chrome options for headless operation
-            chrome_options = Options()
-            chrome_options.add_argument("--headless")  # Run in background
-            chrome_options.add_argument("--no-sandbox")
-            chrome_options.add_argument("--disable-dev-shm-usage")
-            chrome_options.add_argument("--disable-gpu")
-            chrome_options.add_argument("--window-size=1920,1080")
-            chrome_options.add_argument("--user-agent=Mozilla/5.0 (compatible; RescueDogAggregator/1.0)")
-
-            # Initialize WebDriver
-            # World-class logging: Browser automation handled by centralized system
-            driver = webdriver.Chrome(options=chrome_options)
+            browser_service = get_browser_service()
+            browser_options = BrowserOptions(
+                headless=True,
+                window_size=(1920, 1080),
+                user_agent="Mozilla/5.0 (compatible; RescueDogAggregator/1.0)",
+                random_user_agent=False,
+            )
+            browser_result = browser_service.create_driver(browser_options)
+            driver = browser_result.driver
 
             try:
                 # Load the page
@@ -542,17 +538,15 @@ class REANScraper(BaseScraper):
             List of dog data dictionaries with correctly associated images
         """
         try:
-            # Configure Chrome options for headless operation
-            chrome_options = Options()
-            chrome_options.add_argument("--headless")
-            chrome_options.add_argument("--no-sandbox")
-            chrome_options.add_argument("--disable-dev-shm-usage")
-            chrome_options.add_argument("--disable-gpu")
-            chrome_options.add_argument("--window-size=1920,1080")
-            chrome_options.add_argument("--user-agent=Mozilla/5.0 (compatible; RescueDogAggregator/1.0)")
-
-            # World-class logging: Browser extraction handled by centralized system
-            driver = webdriver.Chrome(options=chrome_options)
+            browser_service = get_browser_service()
+            browser_options = BrowserOptions(
+                headless=True,
+                window_size=(1920, 1080),
+                user_agent="Mozilla/5.0 (compatible; RescueDogAggregator/1.0)",
+                random_user_agent=False,
+            )
+            browser_result = browser_service.create_driver(browser_options)
+            driver = browser_result.driver
 
             try:
                 # Load the page

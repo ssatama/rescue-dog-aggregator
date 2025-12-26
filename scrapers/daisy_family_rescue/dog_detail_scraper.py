@@ -2,12 +2,13 @@ import re
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
-from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+
+from services.browser_service import BrowserOptions, get_browser_service
 
 
 class DaisyFamilyRescueDogDetailScraper:
@@ -52,18 +53,20 @@ class DaisyFamilyRescueDogDetailScraper:
         # Size categories based on height (cm)
         self.size_categories = {"small": (0, 40), "medium": (40, 60), "large": (60, 100)}
 
-    def setup_driver(self, headless: bool = True) -> webdriver.Chrome:
-        """Setup Chrome driver for scraping."""
-        chrome_options = Options()
-        if headless:
-            chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--window-size=1920,1080")
-        chrome_options.add_argument("--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+    def setup_driver(self, headless: bool = True) -> WebDriver:
+        """Setup WebDriver for scraping.
 
-        return webdriver.Chrome(options=chrome_options)
+        Uses centralized browser service that auto-detects environment:
+        - Local: Uses Chrome
+        - Railway: Uses Browserless
+        """
+        browser_service = get_browser_service()
+        browser_options = BrowserOptions(
+            headless=headless,
+            window_size=(1920, 1080),
+        )
+        browser_result = browser_service.create_driver(browser_options)
+        return browser_result.driver
 
     def extract_dog_details(self, dog_url: str, logger=None) -> Optional[Dict[str, Any]]:
         """Extract detailed information from a single dog's detail page."""
@@ -131,7 +134,7 @@ class DaisyFamilyRescueDogDetailScraper:
             if driver:
                 driver.quit()
 
-    def _extract_steckbrief_data(self, driver: webdriver.Chrome, logger=None) -> Dict[str, str]:
+    def _extract_steckbrief_data(self, driver: WebDriver, logger=None) -> Dict[str, str]:
         """Extract structured data from the Steckbrief section."""
         steckbrief_data = {}
 
@@ -377,7 +380,7 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return None
 
-    def _extract_main_image(self, driver: webdriver.Chrome, logger=None) -> Optional[str]:
+    def _extract_main_image(self, driver: WebDriver, logger=None) -> Optional[str]:
         """Extract the main dog image from the page."""
         try:
             # Look for images with specific patterns (found in inspection)
@@ -453,7 +456,7 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return False
 
-    def _extract_description(self, driver: webdriver.Chrome, logger=None) -> Optional[str]:
+    def _extract_description(self, driver: WebDriver, logger=None) -> Optional[str]:
         """Extract additional description text from the page."""
         try:
             # Look for content areas that might contain descriptions
@@ -491,7 +494,7 @@ class DaisyFamilyRescueDogDetailScraper:
 
         return None
 
-    def _extract_dog_name(self, driver: webdriver.Chrome, logger=None) -> Optional[str]:
+    def _extract_dog_name(self, driver: WebDriver, logger=None) -> Optional[str]:
         """Extract dog name from page title or content."""
         try:
             # Try to get name from page title
