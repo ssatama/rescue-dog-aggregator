@@ -16,6 +16,10 @@ Environment Variables Required:
     OPENROUTER_API_KEY: For LLM enrichment
     R2_*: For image uploads to Cloudflare R2
 """
+import nest_asyncio
+
+nest_asyncio.apply()
+
 import argparse
 import json
 import logging

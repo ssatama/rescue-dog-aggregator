@@ -132,7 +132,9 @@ multidict==6.6.4
     #   aiohttp
     #   yarl
 nest-asyncio==1.6.0
-    # via firecrawl-py
+    # via
+    #   -r requirements.in
+    #   firecrawl-py
 outcome==1.3.0.post0
     # via
     #   trio

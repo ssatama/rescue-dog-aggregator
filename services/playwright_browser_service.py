@@ -40,6 +40,7 @@ class PlaywrightOptions:
     stealth_mode: bool = False
     disable_images: bool = False
     extra_args: List[str] = field(default_factory=list)
+    wait_until: str = "domcontentloaded"  # networkidle, load, domcontentloaded, commit
 
 
 @dataclass
@@ -260,9 +261,10 @@ class PlaywrightBrowserService:
             PageContentResult with success status, content, and error info.
         """
         try:
-            async with self.get_browser(options) as browser_result:
+            opts = options or PlaywrightOptions()
+            async with self.get_browser(opts) as browser_result:
                 page = browser_result.page
-                await page.goto(url, wait_until="networkidle", timeout=options.timeout if options else 60000)
+                await page.goto(url, wait_until=opts.wait_until, timeout=opts.timeout)
                 content = await page.content()
                 return PageContentResult(
                     success=True,
