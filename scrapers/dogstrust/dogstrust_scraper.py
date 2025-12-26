@@ -541,14 +541,14 @@ class DogsTrustScraper(BaseScraper):
                 self.logger.debug(f"Loading initial page: {url}")
                 await page.goto(url, wait_until="domcontentloaded")
 
-                # Handle cookie consent banner if present
+                # Handle cookie consent banner if present (OneTrust)
                 try:
-                    await asyncio.sleep(0.5)
+                    await asyncio.sleep(1.0)
                     cookie_selectors = [
+                        "#onetrust-accept-btn-handler",
                         "button:has-text('Accept all')",
                         "button:has-text('Accept All')",
                         "button:has-text('Accept')",
-                        "#onetrust-accept-btn-handler",
                     ]
                     for selector in cookie_selectors:
                         try:
@@ -556,10 +556,24 @@ class DogsTrustScraper(BaseScraper):
                             if await cookie_button.is_visible():
                                 await cookie_button.click()
                                 self.logger.info("Accepted cookie consent")
-                                await asyncio.sleep(0.3)
+                                await asyncio.sleep(1.0)
                                 break
                         except Exception:
                             continue
+
+                    # Wait for OneTrust overlay to disappear
+                    try:
+                        await page.wait_for_selector("#onetrust-consent-sdk", state="hidden", timeout=5000)
+                        self.logger.debug("OneTrust overlay dismissed")
+                    except Exception:
+                        # Force remove the overlay if it persists
+                        await page.evaluate("""
+                            const overlay = document.querySelector('#onetrust-consent-sdk');
+                            if (overlay) overlay.remove();
+                            const darkFilter = document.querySelector('.onetrust-pc-dark-filter');
+                            if (darkFilter) darkFilter.remove();
+                        """)
+                        self.logger.debug("Force-removed OneTrust overlay via JavaScript")
                 except Exception as e:
                     self.logger.debug(f"No cookie consent banner found: {e}")
 
