@@ -221,6 +221,7 @@ class MisisRescueScraper(BaseScraper):
                 headless=True,
                 viewport_width=1920,
                 viewport_height=1080,
+                wait_until="networkidle",
             )
 
             result = await playwright_service.get_page_content(self.listing_url, options)
@@ -702,6 +703,7 @@ class MisisRescueScraper(BaseScraper):
                 headless=True,
                 viewport_width=1920,
                 viewport_height=1080,
+                wait_until="networkidle",
             )
 
             self.logger.debug(f"Loading detail page with Playwright: {url}")
