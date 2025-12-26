@@ -34,15 +34,15 @@ attrs==25.3.0
     #   trio
 beautifulsoup4==4.14.3
     # via -r requirements.in
-boto3==1.42.4
+boto3==1.42.17
     # via -r requirements.in
-botocore==1.42.4
+botocore==1.42.17
     # via
     #   boto3
     #   s3transfer
 build==1.3.0
     # via pip-tools
-cachetools==6.2.2
+cachetools==6.2.4
     # via -r requirements.in
 certifi==2025.11.12
     # via
@@ -64,16 +64,18 @@ colorama==0.4.6
     # via -r requirements.in
 cryptography==46.0.3
     # via pyjwt
-fastapi==0.123.10
+fastapi==0.127.1
     # via
     #   -r requirements.in
     #   sentry-sdk
-firecrawl-py==4.10.2
+firecrawl-py==4.12.0
     # via -r requirements.in
 frozenlist==1.7.0
     # via
     #   aiohttp
     #   aiosignal
+greenlet==3.3.0
+    # via playwright
 h11==0.16.0
     # via
     #   httpcore
@@ -144,6 +146,8 @@ pillow==12.0.0
     # via -r requirements.in
 pip-tools==7.5.2
     # via -r requirements.in
+playwright==1.57.0
+    # via -r requirements.in
 pluggy==1.6.0
     # via pytest
 propcache==0.3.2
@@ -167,6 +171,8 @@ pydantic-core==2.41.5
     # via pydantic
 pydantic-settings==2.12.0
     # via mcp
+pyee==13.0.0
+    # via playwright
 pygments==2.19.2
     # via
     #   pytest
@@ -261,6 +267,7 @@ typing-extensions==4.15.0
     #   mcp
     #   pydantic
     #   pydantic-core
+    #   pyee
     #   selenium
     #   sqlalchemy
     #   typing-inspection
