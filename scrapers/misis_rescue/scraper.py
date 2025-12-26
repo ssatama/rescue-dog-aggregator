@@ -215,29 +215,63 @@ class MisisRescueScraper(BaseScraper):
 
     async def _get_all_dogs_from_listing_playwright(self) -> List[Dict[str, str]]:
         """Playwright implementation of _get_all_dogs_from_listing."""
+        all_dogs = []
+        page_num = 1
+
         try:
             playwright_service = get_playwright_service()
             options = PlaywrightOptions(
                 headless=True,
                 viewport_width=1920,
                 viewport_height=1080,
-                wait_until="networkidle",
             )
 
-            result = await playwright_service.get_page_content(self.listing_url, options)
+            async with playwright_service.get_browser(options) as browser_result:
+                page = browser_result.page
 
-            if not result.success:
-                self.logger.error(f"Playwright failed to load listing page: {result.error}")
-                return []
+                # Load first page
+                await page.goto(self.listing_url, wait_until="load", timeout=60000)
+                await asyncio.sleep(5)  # Give Wix time to load dynamic content
 
-            soup = BeautifulSoup(result.content, "html.parser")
-            page_dogs = self._extract_dogs_before_reserved(soup)
-            self._assign_images_to_dogs(page_dogs, soup)
+                # Scroll to trigger lazy loading on page 1
+                await self._scroll_to_load_all_content_playwright(page)
+
+                # Extract dogs from page 1
+                content = await page.content()
+                soup = BeautifulSoup(content, "html.parser")
+                page_dogs = self._extract_dogs_before_reserved(soup)
+                self._assign_images_to_dogs(page_dogs, soup)
+                all_dogs.extend(page_dogs)
+
+                # Click through pages 2, 3, 4, etc.
+                page_num = 2
+                while page_num <= 10:  # Safety limit
+                    try:
+                        if not await self._click_pagination_button_playwright(page, page_num):
+                            break
+
+                        await asyncio.sleep(5)  # Wait for page to load after click
+                        await self._scroll_to_load_all_content_playwright(page)
+
+                        content = await page.content()
+                        soup = BeautifulSoup(content, "html.parser")
+                        page_dogs = self._extract_dogs_before_reserved(soup)
+                        self._assign_images_to_dogs(page_dogs, soup)
+
+                        if not page_dogs:
+                            break
+
+                        all_dogs.extend(page_dogs)
+                        page_num += 1
+
+                    except Exception as e:
+                        self.logger.error(f"Error processing page {page_num}: {e}")
+                        break
 
             # Remove duplicates
             unique_dogs = []
             seen_urls = set()
-            for dog in page_dogs:
+            for dog in all_dogs:
                 if dog["url"] not in seen_urls:
                     unique_dogs.append(dog)
                     seen_urls.add(dog["url"])
@@ -247,6 +281,59 @@ class MisisRescueScraper(BaseScraper):
         except Exception as e:
             self.logger.error(f"Error in Playwright listing extraction: {e}")
             return []
+
+    async def _scroll_to_load_all_content_playwright(self, page) -> None:
+        """Scroll to bottom of page to trigger lazy loading (Playwright version)."""
+        initial_dogs = await page.locator('a[href*="/post/"]').count()
+        self.logger.debug(f"Initial dogs visible: {initial_dogs}")
+
+        scroll_attempts = 0
+        max_scrolls = 20
+
+        while scroll_attempts < max_scrolls:
+            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            await asyncio.sleep(2)
+
+            current_dogs = await page.locator('a[href*="/post/"]').count()
+
+            if current_dogs > initial_dogs:
+                self.logger.debug(f"New dogs loaded: {current_dogs} (was {initial_dogs})")
+                initial_dogs = current_dogs
+                scroll_attempts = 0
+            else:
+                scroll_attempts += 1
+                if scroll_attempts >= 3:
+                    break
+
+        self.logger.debug(f"Lazy loading complete. Total dogs visible: {initial_dogs}")
+
+    async def _click_pagination_button_playwright(self, page, page_num: int) -> bool:
+        """Click a pagination button to navigate to a specific page (Playwright version)."""
+        try:
+            selectors = [
+                f'button:text-is("{page_num}")',
+                f'a:text-is("{page_num}")',
+                f'span:text-is("{page_num}")',
+            ]
+
+            for selector in selectors:
+                try:
+                    element = page.locator(selector).first
+                    if await element.is_visible():
+                        await element.scroll_into_view_if_needed()
+                        await asyncio.sleep(1)
+                        await element.click()
+                        self.logger.debug(f"Clicked pagination button for page {page_num}")
+                        return True
+                except Exception:
+                    continue
+
+            self.logger.debug(f"No pagination button found for page {page_num}")
+            return False
+
+        except Exception as e:
+            self.logger.error(f"Error clicking pagination button for page {page_num}: {e}")
+            return False
 
     def _get_all_dog_urls(self) -> List[str]:
         """Get all dog URLs from all pages, handling pagination.
@@ -703,18 +790,22 @@ class MisisRescueScraper(BaseScraper):
                 headless=True,
                 viewport_width=1920,
                 viewport_height=1080,
-                wait_until="networkidle",
             )
 
             self.logger.debug(f"Loading detail page with Playwright: {url}")
-            result = await playwright_service.get_page_content(url, options)
 
-            if not result.success:
-                self.logger.error(f"Playwright failed to load detail page: {result.error}")
-                return None
+            async with playwright_service.get_browser(options) as browser_result:
+                page = browser_result.page
+
+                await page.goto(url, wait_until="load", timeout=60000)
+
+                # Give Wix time to load dynamic content (same as Selenium)
+                await asyncio.sleep(3)
+
+                content = await page.content()
 
             # Check for error pages in content
-            content_lower = result.content.lower()[:2000]
+            content_lower = content.lower()[:2000]
             error_indicators = [
                 "this site can't be reached",
                 "this site cant be reached",
@@ -731,7 +822,7 @@ class MisisRescueScraper(BaseScraper):
                     return None
 
             # Parse with BeautifulSoup
-            soup = BeautifulSoup(result.content, "html.parser")
+            soup = BeautifulSoup(content, "html.parser")
 
             # Check h1 for errors
             h1_text = soup.find("h1").get_text(strip=True).lower() if soup.find("h1") else ""
