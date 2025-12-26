@@ -27,6 +27,21 @@ from utils.slug_generator import generate_unique_animal_slug
 from utils.standardization import standardize_breed
 
 
+def _sanitize_for_postgres(value: Any) -> Any:
+    """Remove null bytes from strings that PostgreSQL cannot store.
+
+    PostgreSQL rejects \\u0000 (null bytes) in text/JSON fields.
+    This recursively sanitizes strings in dicts, lists, and plain values.
+    """
+    if isinstance(value, str):
+        return value.replace("\x00", "").replace("\u0000", "")
+    if isinstance(value, dict):
+        return {k: _sanitize_for_postgres(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_sanitize_for_postgres(item) for item in value]
+    return value
+
+
 class DatabaseService:
     """Service for all database operations extracted from BaseScraper."""
 
@@ -253,7 +268,7 @@ class DatabaseService:
                 final_size,
                 final_standardized_size,
                 language,
-                (json.dumps(animal_data.get("properties")) if animal_data.get("properties") else None),
+                (json.dumps(_sanitize_for_postgres(animal_data.get("properties"))) if animal_data.get("properties") else None),
                 animal_slug,  # slug
                 current_time,  # created_at
                 current_time,  # updated_at
@@ -346,9 +361,9 @@ class DatabaseService:
                 current_breed_confidence,
             ) = current_data
 
-            # Process the properties
-            current_properties_json = json.dumps(current_properties) if current_properties else None
-            new_properties_json = json.dumps(animal_data.get("properties")) if animal_data.get("properties") else None
+            # Process the properties (sanitize to remove null bytes that PostgreSQL rejects)
+            current_properties_json = json.dumps(_sanitize_for_postgres(current_properties)) if current_properties else None
+            new_properties_json = json.dumps(_sanitize_for_postgres(animal_data.get("properties"))) if animal_data.get("properties") else None
 
             # Apply standardization for new values - KEEP OLD LOGIC FOR BACKWARDS COMPATIBILITY
             new_standardized_breed, new_breed_group, size_estimate = standardize_breed(animal_data.get("breed", ""))
