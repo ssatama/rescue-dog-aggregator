@@ -24,6 +24,13 @@ from utils.breed_utils import generate_breed_slug
 logger = logging.getLogger(__name__)
 
 
+def _normalize_url(url: str | None) -> str | None:
+    """Normalize protocol-relative URLs to HTTPS."""
+    if url and url.startswith("//"):
+        return "https:" + url
+    return url
+
+
 class AnimalService:
     """Service layer for animal operations."""
 
@@ -271,6 +278,10 @@ class AnimalService:
                 # Strip out raw org_* keys and add organization
                 clean = {k: v for k, v in row_dict.items() if not k.startswith("org_")}
                 clean["organization"] = organization
+
+                # Normalize protocol-relative URLs (e.g., //example.com -> https://example.com)
+                clean["primary_image_url"] = _normalize_url(clean.get("primary_image_url"))
+                clean["adoption_url"] = _normalize_url(clean.get("adoption_url"))
 
                 animals.append(Animal(**clean))
             except Exception as e:
