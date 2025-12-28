@@ -3,14 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Check, Sparkles, Heart, Dog } from "lucide-react";
+import { ChevronDown, Check, Dog } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AGE_CATEGORIES, getAgeCategoriesArray } from "@/utils/ageData";
-
-const ICONS = {
-  sparkles: Sparkles,
-  heart: Heart,
-};
 
 export default function AgeQuickNav({ currentSlug }) {
   const router = useRouter();
@@ -89,7 +84,6 @@ export default function AgeQuickNav({ currentSlug }) {
                 </button>
 
                 {categories.map((category) => {
-                  const IconComponent = ICONS[category.icon];
                   return (
                     <button
                       key={category.slug}
@@ -137,7 +131,6 @@ export default function AgeQuickNav({ currentSlug }) {
           </Link>
 
           {categories.map((category) => {
-            const IconComponent = ICONS[category.icon];
             const isActive = currentSlug === category.slug;
 
             return (

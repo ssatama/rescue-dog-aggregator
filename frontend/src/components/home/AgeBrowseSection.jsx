@@ -65,7 +65,7 @@ export default function AgeBrowseSection({ ageStats = [] }) {
               <article className="relative h-full min-h-[320px] rounded-3xl overflow-hidden shadow-xl shadow-pink-500/10 dark:shadow-pink-900/20 transition-all duration-500 group-hover:shadow-2xl group-hover:shadow-pink-500/20 dark:group-hover:shadow-pink-800/30 group-hover:-translate-y-1">
                 {/* Gradient Background */}
                 <div
-                  className={`absolute inset-0 bg-gradient-to-br ${puppies.gradient} dark:${puppies.darkGradient} transition-all duration-500`}
+                  className={`absolute inset-0 bg-gradient-to-br ${puppies.gradient} ${puppies.darkGradient} transition-all duration-500`}
                 />
 
                 {/* Animated floating elements */}
@@ -164,7 +164,7 @@ export default function AgeBrowseSection({ ageStats = [] }) {
               <article className="relative h-full min-h-[320px] rounded-3xl overflow-hidden shadow-xl shadow-amber-500/10 dark:shadow-amber-900/20 transition-all duration-500 group-hover:shadow-2xl group-hover:shadow-amber-500/20 dark:group-hover:shadow-amber-800/30 group-hover:-translate-y-1">
                 {/* Gradient Background */}
                 <div
-                  className={`absolute inset-0 bg-gradient-to-br ${seniors.gradient} dark:${seniors.darkGradient} transition-all duration-500`}
+                  className={`absolute inset-0 bg-gradient-to-br ${seniors.gradient} ${seniors.darkGradient} transition-all duration-500`}
                 />
 
                 {/* Animated floating elements */}

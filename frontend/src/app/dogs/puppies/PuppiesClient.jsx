@@ -25,7 +25,7 @@ export default function PuppiesClient({
       </div>
 
       <section
-        className={`relative bg-gradient-to-br ${ageCategory.gradient} dark:${ageCategory.darkGradient} py-8 md:py-12 px-4 overflow-hidden`}
+        className={`relative bg-gradient-to-br ${ageCategory.gradient} ${ageCategory.darkGradient} py-8 md:py-12 px-4 overflow-hidden`}
       >
         {/* Decorative pattern - playful dots */}
         <div className="absolute inset-0 opacity-[0.08]">
