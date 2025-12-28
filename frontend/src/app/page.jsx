@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Layout from "../components/layout/Layout";
 import ClientHomePage from "../components/home/ClientHomePage";
-import { getHomePageData, getCountryStats } from "../services/serverAnimalsService";
+import { getHomePageData, getCountryStats, getAgeStats } from "../services/serverAnimalsService";
 import { getBreedsWithImagesForHomePage } from "../services/breedImagesService";
 import { getEnhancedOrganizationsSSR } from "../services/organizationsService";
 
@@ -47,6 +47,7 @@ export default async function Home() {
   let breedsWithImages = null;
   let organizations = [];
   let countryStats = [];
+  let ageStats = [];
 
   try {
     homePageData = await getHomePageData();
@@ -92,6 +93,15 @@ export default async function Home() {
     // Will be empty array, client can handle gracefully
   }
 
+  // Fetch age stats for AgeBrowseSection (server-side)
+  try {
+    const ageData = await getAgeStats();
+    ageStats = ageData?.ageCategories || [];
+  } catch (error) {
+    console.error("Failed to fetch age stats:", error);
+    // Will be empty array, client can handle gracefully
+  }
+
   const { statistics, recentDogs, diverseDogs } = homePageData;
 
   return (
@@ -103,6 +113,7 @@ export default async function Home() {
         initialBreedsWithImages={breedsWithImages}
         initialOrganizations={organizations}
         initialCountryStats={countryStats}
+        initialAgeStats={ageStats}
       />
     </Layout>
   );

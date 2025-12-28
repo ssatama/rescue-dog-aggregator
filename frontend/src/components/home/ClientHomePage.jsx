@@ -4,6 +4,7 @@ import React, { Suspense, lazy } from "react";
 import HeroSection from "./HeroSection";
 import PlatformCapabilities from "./PlatformCapabilities";
 import CountryBrowseSection from "./CountryBrowseSection";
+import AgeBrowseSection from "./AgeBrowseSection";
 import TrustBand from "./TrustBand";
 import FeaturedDogsSection from "./FeaturedDogsSection";
 import TrustSection from "./TrustSection";
@@ -27,6 +28,7 @@ export default function ClientHomePage({
   initialBreedsWithImages = null,
   initialOrganizations = [],
   initialCountryStats = [],
+  initialAgeStats = [],
 }) {
   // Prepare data for mobile version
   const mobileInitialData = React.useMemo(
@@ -36,8 +38,9 @@ export default function ClientHomePage({
         initialStatistics,
         breedsWithImages: initialBreedsWithImages,
         countryStats: initialCountryStats,
+        ageStats: initialAgeStats,
       }),
-    [initialRecentDogs, initialStatistics, initialBreedsWithImages, initialCountryStats],
+    [initialRecentDogs, initialStatistics, initialBreedsWithImages, initialCountryStats, initialAgeStats],
   );
 
   return (
@@ -61,6 +64,11 @@ export default function ClientHomePage({
         {/* Country Browse Section - Dogs from Across Europe */}
         <ErrorBoundary fallbackMessage="Unable to load country browse section. Please refresh the page.">
           <CountryBrowseSection countryStats={initialCountryStats} />
+        </ErrorBoundary>
+
+        {/* Age Browse Section - Puppies & Seniors */}
+        <ErrorBoundary fallbackMessage="Unable to load age browse section. Please refresh the page.">
+          <AgeBrowseSection ageStats={initialAgeStats} />
         </ErrorBoundary>
 
         {/* Trust Band - Organization Logos */}

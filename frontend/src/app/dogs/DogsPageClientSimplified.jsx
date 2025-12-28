@@ -104,7 +104,8 @@ export default function DogsPageClientSimplified({
   const filters = {
     searchQuery: searchParams.get("search") || "",
     sizeFilter: searchParams.get("size") || "Any size",
-    ageFilter: searchParams.get("age") || "Any age",
+    ageFilter:
+      searchParams.get("age") || initialParams?.age_category || "Any age",
     sexFilter: searchParams.get("sex") || "Any",
     organizationFilter: validateOrganizationId(
       searchParams.get("organization_id"),

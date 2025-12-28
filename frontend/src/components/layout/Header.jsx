@@ -119,6 +119,21 @@ export default function Header() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
+                    <Link href="/dogs/age" className="w-full cursor-pointer">
+                      By Age
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dogs/puppies" className="w-full cursor-pointer">
+                      🐶 Puppies
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dogs/senior" className="w-full cursor-pointer">
+                      🦴 Senior Dogs
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
                     <Link
                       href="/dogs?sort_by=created_at&sort_order=desc"
                       className="w-full cursor-pointer"

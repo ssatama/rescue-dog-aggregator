@@ -992,3 +992,52 @@ export const getCountryStats = cache(async () => {
     };
   }
 });
+
+// Get age category statistics for age hub pages
+export const getAgeStats = cache(async () => {
+  try {
+    // Use filter_counts endpoint to get age category breakdown
+    const response = await fetch(`${API_URL}/api/animals/meta/filter_counts`, {
+      next: {
+        revalidate: 300, // 5 minutes
+        tags: ["age-stats"],
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch age stats: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // Extract age options from API response (array of {value, label, count})
+    const ageOptions = data?.age_options || [];
+    const puppyOption = ageOptions.find((opt) => opt.value === "Puppy");
+    const seniorOption = ageOptions.find((opt) => opt.value === "Senior");
+
+    // Map API values to our slug format
+    const ageCategories = [
+      { slug: "puppies", apiValue: "Puppy", count: puppyOption?.count || 0 },
+      { slug: "senior", apiValue: "Senior", count: seniorOption?.count || 0 },
+    ];
+
+    const total = ageCategories.reduce((sum, cat) => sum + cat.count, 0);
+
+    return {
+      total,
+      ageCategories,
+    };
+  } catch (error) {
+    console.error("Error fetching age stats:", error);
+    return {
+      total: 0,
+      ageCategories: [
+        { slug: "puppies", apiValue: "Puppy", count: 0 },
+        { slug: "senior", apiValue: "Senior", count: 0 },
+      ],
+    };
+  }
+});

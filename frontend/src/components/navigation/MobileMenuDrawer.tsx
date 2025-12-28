@@ -88,6 +88,20 @@ export function MobileMenuDrawer({ isOpen, onClose }: MobileMenuDrawerProps) {
                 Countries
               </Link>
               <Link
+                href="/dogs/puppies"
+                onClick={handleLinkClick}
+                className="block text-lg font-medium text-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors py-2"
+              >
+                🐶 Puppies
+              </Link>
+              <Link
+                href="/dogs/senior"
+                onClick={handleLinkClick}
+                className="block text-lg font-medium text-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors py-2"
+              >
+                🦴 Senior Dogs
+              </Link>
+              <Link
                 href="/guides"
                 onClick={handleLinkClick}
                 className="block text-lg font-medium text-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors py-2"

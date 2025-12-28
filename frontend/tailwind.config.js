@@ -14,6 +14,12 @@ module.exports = {
   			'fade-in': 'fadeIn 0.3s ease-in-out',
   			'slide-up': 'slideUp 0.3s ease-out',
   			'slide-down': 'slideDown 0.3s ease-in',
+  			'bounce-gentle': 'bounceGentle 2s ease-in-out infinite',
+  			'float-slow': 'floatSlow 4s ease-in-out infinite',
+  			'float-medium': 'floatMedium 3s ease-in-out infinite',
+  			'float-fast': 'floatFast 2.5s ease-in-out infinite',
+  			'pulse-gentle': 'pulseGentle 3s ease-in-out infinite',
+  			'pulse-slow': 'pulseSlow 4s ease-in-out infinite',
   		},
   		keyframes: {
   			shimmer: {
@@ -31,6 +37,30 @@ module.exports = {
   			slideDown: {
   				'0%': { transform: 'translateY(0)', opacity: '1' },
   				'100%': { transform: 'translateY(20px)', opacity: '0' },
+  			},
+  			bounceGentle: {
+  				'0%, 100%': { transform: 'translateY(0)' },
+  				'50%': { transform: 'translateY(-8px)' },
+  			},
+  			floatSlow: {
+  				'0%, 100%': { transform: 'translateY(0) rotate(0deg)' },
+  				'50%': { transform: 'translateY(-10px) rotate(5deg)' },
+  			},
+  			floatMedium: {
+  				'0%, 100%': { transform: 'translateY(0) rotate(0deg)' },
+  				'50%': { transform: 'translateY(-8px) rotate(-5deg)' },
+  			},
+  			floatFast: {
+  				'0%, 100%': { transform: 'translateY(0) scale(1)' },
+  				'50%': { transform: 'translateY(-6px) scale(1.1)' },
+  			},
+  			pulseGentle: {
+  				'0%, 100%': { transform: 'scale(1)', opacity: '0.4' },
+  				'50%': { transform: 'scale(1.15)', opacity: '0.6' },
+  			},
+  			pulseSlow: {
+  				'0%, 100%': { transform: 'scale(1)' },
+  				'50%': { transform: 'scale(1.05)' },
   			},
   		},
   		fontFamily: {

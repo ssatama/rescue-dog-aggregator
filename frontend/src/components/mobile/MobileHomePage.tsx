@@ -5,6 +5,7 @@ import MobileTopHeader from "./MobileTopHeader";
 import MobileNavCards from "./MobileNavCards";
 import MobileStats from "./MobileStats";
 import MobileCountryBrowse from "./MobileCountryBrowse";
+import MobileAgeBrowse from "./MobileAgeBrowse";
 import { MobileAvailableNow } from "./MobileAvailableNow";
 import { MobileBreedSpotlight } from "./MobileBreedSpotlight";
 import MobileBottomNav from "../navigation/MobileBottomNav";
@@ -45,12 +46,18 @@ interface CountryStat {
   count: number;
 }
 
+interface AgeStat {
+  slug: string;
+  count: number;
+}
+
 interface InitialData {
   dogs?: Dog[];
   statistics?: Statistics;
   featuredBreed?: FeaturedBreed;
   breedStats?: BreedStats;
   countryStats?: CountryStat[];
+  ageStats?: AgeStat[];
 }
 
 interface MobileHomePageProps {
@@ -148,6 +155,9 @@ export default function MobileHomePage({ initialData }: MobileHomePageProps) {
 
         {/* Browse by Country */}
         <MobileCountryBrowse countryStats={initialData?.countryStats} />
+
+        {/* Browse by Age */}
+        <MobileAgeBrowse ageStats={initialData?.ageStats} />
 
         {/* Breed Spotlight Carousel */}
         <MobileBreedSpotlight breeds={randomBreeds} />

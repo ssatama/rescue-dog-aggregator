@@ -9,6 +9,7 @@
  * @param {Object} params.initialStatistics - Statistics data
  * @param {Array} params.breedsWithImages - Breeds data with images
  * @param {Array} params.countryStats - Country statistics data
+ * @param {Array} params.ageStats - Age category statistics data
  * @returns {Object} Transformed data for MobileHomePage component
  */
 export function transformMobileHomePageData({
@@ -16,6 +17,7 @@ export function transformMobileHomePageData({
   initialStatistics,
   breedsWithImages,
   countryStats = [],
+  ageStats = [],
 }) {
   // Normalize whatever shape we get into a plain array
   const list = Array.isArray(initialRecentDogs?.dogs)
@@ -79,5 +81,6 @@ export function transformMobileHomePageData({
     },
     breedStats: transformedBreedStats, // Pass transformed breed data for carousel
     countryStats, // Pass country stats for country browse section
+    ageStats, // Pass age stats for age browse section
   };
 }

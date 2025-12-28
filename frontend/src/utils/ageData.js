@@ -1,0 +1,55 @@
+export const AGE_CATEGORIES = {
+  puppies: {
+    slug: "puppies",
+    name: "Puppies",
+    shortName: "Puppies",
+    apiValue: "Puppy",
+    icon: "sparkles",
+    gradient: "from-pink-400 via-rose-500 to-orange-400",
+    darkGradient: "from-pink-600 via-rose-700 to-orange-600",
+    accentColor: "#f43f5e",
+    emoji: "\u{1F436}",
+    tagline: "Little bundles of joy, 0-12 months of pure love",
+    description:
+      "Young rescue puppies full of energy and playfulness, ready to grow with you",
+    ageRange: "Under 1 year",
+    ageMonths: { min: 0, max: 11 },
+    seoKeywords:
+      "rescue puppies, puppies for adoption, adopt puppy, young dogs for adoption",
+  },
+  senior: {
+    slug: "senior",
+    name: "Senior Dogs",
+    shortName: "Seniors",
+    apiValue: "Senior",
+    icon: "heart",
+    gradient: "from-amber-500 via-orange-600 to-rose-600",
+    darkGradient: "from-amber-700 via-orange-800 to-rose-800",
+    accentColor: "#f59e0b",
+    emoji: "\u{1F9B4}",
+    tagline: "Wise companions with so much love to give",
+    description:
+      "Gentle, mature dogs seeking their forever home for their golden years",
+    ageRange: "8+ years",
+    ageMonths: { min: 96 },
+    seoKeywords:
+      "senior rescue dogs, older dogs for adoption, adopt senior dog, elderly dogs, retired dogs",
+  },
+};
+
+export const getAgeCategoryBySlug = (slug) =>
+  AGE_CATEGORIES[slug?.toLowerCase()] || null;
+
+export const getAllAgeSlugs = () => Object.keys(AGE_CATEGORIES);
+
+export const getAgeCategoriesArray = () => Object.values(AGE_CATEGORIES);
+
+export const getOtherAgeCategory = (currentSlug) => {
+  const normalizedSlug = currentSlug?.toLowerCase();
+  if (!AGE_CATEGORIES[normalizedSlug]) {
+    return null;
+  }
+  const slugs = getAllAgeSlugs();
+  const otherSlug = slugs.find((s) => s !== normalizedSlug);
+  return otherSlug ? AGE_CATEGORIES[otherSlug] : null;
+};
