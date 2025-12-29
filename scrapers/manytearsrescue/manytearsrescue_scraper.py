@@ -802,12 +802,12 @@ class ManyTearsRescueScraper(BaseScraper):
                 user_agent=random.choice(self.USER_AGENTS),
             )
 
-            html_content = await playwright_service.get_page_content(adoption_url, options)
-            if not html_content:
-                self.logger.error(f"Failed to get page content from {adoption_url}")
+            result = await playwright_service.get_page_content(adoption_url, options)
+            if not result.success:
+                self.logger.error(f"Failed to get page content from {adoption_url}: {result.error}")
                 return {}
 
-            soup = BeautifulSoup(html_content, "html.parser")
+            soup = BeautifulSoup(result.content, "html.parser")
 
             # Extract core fields
             name = self._extract_name(soup)

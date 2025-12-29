@@ -542,42 +542,67 @@ class DogsTrustScraper(BaseScraper):
                 await page.goto(url, wait_until="domcontentloaded")
 
                 # Handle cookie consent banner if present (OneTrust)
+                # CRITICAL: Remote Browserless may have timing differences - be aggressive with overlay removal
                 try:
-                    await asyncio.sleep(1.0)
+                    await asyncio.sleep(2.0)  # Longer wait for remote browsers to render overlay
                     cookie_selectors = [
                         "#onetrust-accept-btn-handler",
                         "button:has-text('Accept all')",
                         "button:has-text('Accept All')",
                         "button:has-text('Accept')",
                     ]
+                    cookie_clicked = False
                     for selector in cookie_selectors:
                         try:
                             cookie_button = page.locator(selector).first
-                            if await cookie_button.is_visible():
-                                await cookie_button.click()
-                                self.logger.info("Accepted cookie consent")
-                                await asyncio.sleep(1.0)
+                            if await cookie_button.is_visible(timeout=3000):
+                                # Use JavaScript click to bypass any overlay issues
+                                await page.evaluate(f"document.querySelector('{selector}')?.click()")
+                                self.logger.info("Accepted cookie consent via JavaScript click")
+                                cookie_clicked = True
+                                await asyncio.sleep(1.5)
                                 break
                         except Exception:
                             continue
 
-                    # Wait for OneTrust overlay to disappear
-                    try:
-                        await page.wait_for_selector("#onetrust-consent-sdk", state="hidden", timeout=5000)
-                        self.logger.debug("OneTrust overlay dismissed")
-                    except Exception:
-                        # Force remove the overlay if it persists
-                        await page.evaluate(
-                            """
-                            const overlay = document.querySelector('#onetrust-consent-sdk');
-                            if (overlay) overlay.remove();
-                            const darkFilter = document.querySelector('.onetrust-pc-dark-filter');
-                            if (darkFilter) darkFilter.remove();
-                        """
-                        )
-                        self.logger.debug("Force-removed OneTrust overlay via JavaScript")
+                    # Wait briefly for overlay to start disappearing
+                    if cookie_clicked:
+                        try:
+                            await page.wait_for_selector("#onetrust-consent-sdk", state="hidden", timeout=3000)
+                            self.logger.debug("OneTrust overlay dismissed naturally")
+                        except Exception:
+                            pass  # Will force-remove below
+
                 except Exception as e:
-                    self.logger.debug(f"No cookie consent banner found: {e}")
+                    self.logger.debug(f"Cookie consent handling exception: {e}")
+
+                # ALWAYS force-remove OneTrust overlays (even if click seemed successful)
+                # This ensures no overlay blocks subsequent interactions on remote browsers
+                try:
+                    removed = await page.evaluate(
+                        """
+                        (() => {
+                            let removed = 0;
+                            const overlay = document.querySelector('#onetrust-consent-sdk');
+                            if (overlay) { overlay.remove(); removed++; }
+                            const darkFilter = document.querySelector('.onetrust-pc-dark-filter');
+                            if (darkFilter) { darkFilter.remove(); removed++; }
+                            // Also remove any other OneTrust elements that might block clicks
+                            document.querySelectorAll('[class*="onetrust"]').forEach(el => {
+                                if (el.style.position === 'fixed' || getComputedStyle(el).position === 'fixed') {
+                                    el.remove();
+                                    removed++;
+                                }
+                            });
+                            return removed;
+                        })()
+                    """
+                    )
+                    if removed > 0:
+                        self.logger.debug(f"Force-removed {removed} OneTrust overlay element(s)")
+                    await asyncio.sleep(0.5)  # Brief pause for DOM to update
+                except Exception as e:
+                    self.logger.debug(f"Overlay removal error (non-critical): {e}")
 
                 # Wait for dog cards to appear
                 try:
@@ -606,8 +631,23 @@ class DogsTrustScraper(BaseScraper):
                     if filters_button:
                         await filters_button.scroll_into_view_if_needed()
                         await asyncio.sleep(0.5)
-                        await filters_button.click()
-                        self.logger.info("Clicked filters button")
+                        # Use JavaScript click to bypass any remaining overlay issues
+                        try:
+                            await page.evaluate(
+                                """
+                                (() => {
+                                    const btn = document.querySelector('#dogs-filter-button')
+                                        || document.querySelector('button[id*="filter"]')
+                                        || [...document.querySelectorAll('button')].find(b => b.textContent.includes('Filter'));
+                                    if (btn) btn.click();
+                                })()
+                            """
+                            )
+                            self.logger.info("Clicked filters button via JavaScript")
+                        except Exception:
+                            # Fallback to Playwright click
+                            await filters_button.click()
+                            self.logger.info("Clicked filters button via Playwright")
                         await asyncio.sleep(1)
 
                         reserved_selectors = [
@@ -708,9 +748,23 @@ class DogsTrustScraper(BaseScraper):
                         if next_button:
                             self.logger.debug(f"Clicking Next button to navigate to page {page_num + 1}")
                             await next_button.scroll_into_view_if_needed()
-                            await asyncio.sleep(0.2)
-                            await next_button.click()
-                            await asyncio.sleep(self.rate_limit_delay + random.uniform(0, 0.5))
+                            await asyncio.sleep(0.3)
+                            # Use JavaScript click to bypass any overlay issues
+                            try:
+                                await page.evaluate(
+                                    """
+                                    (() => {
+                                        const btn = document.querySelector('button[aria-label="Next"]')
+                                            || document.querySelector('a[aria-label="Next page"]')
+                                            || [...document.querySelectorAll('button')].find(b => b.textContent.includes('Next'));
+                                        if (btn) btn.click();
+                                    })()
+                                """
+                                )
+                            except Exception:
+                                # Fallback to Playwright click with force
+                                await next_button.click(force=True, timeout=10000)
+                            await asyncio.sleep(self.rate_limit_delay + random.uniform(0.3, 0.8))
 
                             try:
                                 await page.wait_for_selector('a[href*="/rehoming/dogs/"]', timeout=10000)
