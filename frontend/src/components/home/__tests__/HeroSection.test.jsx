@@ -417,7 +417,7 @@ describe("HeroSection", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Some dogs looking for homes:"),
+          screen.getByText("Ready for their forever home"),
         ).toBeInTheDocument();
       });
 
