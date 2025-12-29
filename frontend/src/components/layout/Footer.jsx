@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Heart } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -31,16 +32,16 @@ export default function Footer() {
             </Link>
           </div>
 
-          {/* Discover Column */}
+          {/* Find Dogs Column */}
           <div>
-            <h3 className="font-semibold text-foreground mb-4">Discover</h3>
+            <h3 className="font-semibold text-foreground mb-4">Find Dogs</h3>
             <ul className="space-y-2">
               <li>
                 <Link
                   href="/dogs"
                   className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
                 >
-                  Browse Dogs
+                  All Dogs
                 </Link>
               </li>
               <li>
@@ -59,13 +60,37 @@ export default function Footer() {
                   Swipe
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/dogs/puppies"
+                  className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                >
+                  Puppies
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/dogs/senior"
+                  className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                >
+                  Seniors
+                </Link>
+              </li>
             </ul>
           </div>
 
-          {/* Guides Column */}
+          {/* Learn Column */}
           <div>
-            <h3 className="font-semibold text-foreground mb-4">Guides</h3>
+            <h3 className="font-semibold text-foreground mb-4">Learn</h3>
             <ul className="space-y-2">
+              <li>
+                <Link
+                  href="/guides"
+                  className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                >
+                  Guides
+                </Link>
+              </li>
               <li>
                 <Link
                   href="/guides/european-rescue-guide"
@@ -101,16 +126,16 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Support Column */}
+          {/* About Column */}
           <div>
-            <h3 className="font-semibold text-foreground mb-4">Support</h3>
+            <h3 className="font-semibold text-foreground mb-4">About</h3>
             <ul className="space-y-2">
               <li>
                 <Link
                   href="/about"
                   className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
                 >
-                  About
+                  About Us
                 </Link>
               </li>
               <li>
@@ -123,22 +148,6 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/about#contact"
-                  className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
-                >
-                  Contact
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/privacy"
-                  className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
-                >
-                  Privacy
-                </Link>
-              </li>
-              <li>
-                <Link
                   href="/faq"
                   className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
                 >
@@ -147,6 +156,19 @@ export default function Footer() {
               </li>
             </ul>
           </div>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="hidden md:flex items-center justify-between pt-6 border-t border-border">
+          <p className="text-sm text-muted-foreground flex items-center gap-1">
+            Made with <Heart aria-hidden="true" className="h-4 w-4 text-red-500 inline" fill="currentColor" /> in Europe
+          </p>
+          <Link
+            href="/privacy"
+            className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+          >
+            Privacy Policy
+          </Link>
         </div>
 
         {/* Mobile: Simplified logo only */}
@@ -171,6 +193,9 @@ export default function Footer() {
               </p>
             </div>
           </Link>
+          <p className="mt-4 text-xs text-muted-foreground flex items-center gap-1">
+            Made with <Heart aria-hidden="true" className="h-3 w-3 text-red-500 inline" fill="currentColor" /> in Europe
+          </p>
         </div>
       </div>
     </footer>

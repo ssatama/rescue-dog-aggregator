@@ -15,10 +15,6 @@ jest.mock("../favorites/FavoriteBadge", () => ({
 
 // Mock other dependencies
 
-jest.mock("../ui/Icon", () => ({
-  Icon: ({ name }) => <span>{name}</span>,
-}));
-
 jest.mock("../ui/ThemeToggle", () => ({
   ThemeToggle: () => <button>Theme</button>,
 }));
@@ -39,11 +35,12 @@ describe("Header", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("should display 'Swipe' instead of 'Quick Browse'", () => {
+    it("should display 'Start Swiping' CTA button instead of 'Quick Browse'", () => {
       render(<Header />);
 
-      const swipeLink = screen.getByRole("link", { name: /swipe/i });
-      expect(swipeLink).toBeInTheDocument();
+      const swipeButton = screen.getByRole("link", { name: /start swiping/i });
+      expect(swipeButton).toBeInTheDocument();
+      expect(swipeButton).toHaveAttribute("href", "/swipe");
       expect(screen.queryByText(/quick browse/i)).not.toBeInTheDocument();
     });
 
@@ -59,33 +56,46 @@ describe("Header", () => {
   });
 
   describe("Favorites Navigation Link", () => {
-    it("should display heart icon inline with Favorites text", () => {
+    it("should display heart icon without text label", () => {
       render(<Header />);
 
+      // Favorites is now icon-only with aria-label
       const favoritesLink = screen.getByRole("link", { name: /favorites/i });
       expect(favoritesLink).toBeInTheDocument();
-
-      // Check that heart icon is rendered inline
-      const heartIcon = favoritesLink.querySelector(".heart-icon");
-      expect(heartIcon).toBeInTheDocument();
+      expect(favoritesLink).toHaveAttribute("href", "/favorites");
     });
 
-    it("should show count badge inline when favorites exist", () => {
+    it("should show count badge on favorites icon", () => {
       render(<Header />);
 
       const favoritesLink = screen.getByRole("link", { name: /favorites/i });
       const badge = screen.getByTestId("favorite-badge");
 
-      // Badge should be within the link, not absolutely positioned outside
+      // Badge should be within the link
       expect(favoritesLink.contains(badge)).toBe(true);
     });
 
-    it("should style favorites link with red heart when active", () => {
-      usePathname.mockReturnValue("/favorites");
+    it.skip("favorites icon styling is consistent regardless of route", () => {
+      // Favorites is now icon-only with consistent red heart styling
+      // No longer changes based on active route
+    });
+  });
+
+  describe("About Dropdown", () => {
+    it("should display About as dropdown trigger", () => {
       render(<Header />);
 
-      const favoritesLink = screen.getByRole("link", { name: /favorites/i });
-      expect(favoritesLink).toHaveClass("text-orange-600");
+      // About is now a dropdown trigger button
+      const aboutButton = screen.getByRole("button", { name: /about/i });
+      expect(aboutButton).toBeInTheDocument();
+    });
+
+    it("should show orange active state when on /about route", () => {
+      usePathname.mockReturnValue("/about");
+      render(<Header />);
+
+      const aboutButton = screen.getByRole("button", { name: /about/i });
+      expect(aboutButton).toHaveClass("text-orange-600");
     });
   });
 

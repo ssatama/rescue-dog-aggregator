@@ -34,10 +34,10 @@ describe("<Footer />", () => {
   });
 
   describe("Desktop Navigation Sections", () => {
-    it("renders Discover section with links", () => {
-      expect(screen.getByText("Discover")).toBeInTheDocument();
+    it("renders Find Dogs section with links", () => {
+      expect(screen.getByText("Find Dogs")).toBeInTheDocument();
       expect(
-        screen.getByRole("link", { name: /browse dogs/i }),
+        screen.getByRole("link", { name: /^all dogs$/i }),
       ).toHaveAttribute("href", "/dogs");
       expect(screen.getByRole("link", { name: /^breeds$/i })).toHaveAttribute(
         "href",
@@ -47,10 +47,22 @@ describe("<Footer />", () => {
         "href",
         "/swipe",
       );
+      expect(screen.getByRole("link", { name: /^puppies$/i })).toHaveAttribute(
+        "href",
+        "/dogs/puppies",
+      );
+      expect(screen.getByRole("link", { name: /^seniors$/i })).toHaveAttribute(
+        "href",
+        "/dogs/senior",
+      );
     });
 
-    it("renders Guides section with all 4 guide links", () => {
-      expect(screen.getByText("Guides")).toBeInTheDocument();
+    it("renders Learn section with Guides hub and 4 guide links", () => {
+      expect(screen.getByText("Learn")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /^guides$/i })).toHaveAttribute(
+        "href",
+        "/guides",
+      );
       expect(
         screen.getByRole("link", { name: /european rescue/i }),
       ).toHaveAttribute("href", "/guides/european-rescue-guide");
@@ -67,19 +79,15 @@ describe("<Footer />", () => {
       );
     });
 
-    it("renders Support section with links", () => {
-      expect(screen.getByText("Support")).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: /^about$/i })).toHaveAttribute(
+    it("renders About section with links", () => {
+      expect(screen.getByText("About")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /^about us$/i })).toHaveAttribute(
         "href",
         "/about",
       );
       expect(
         screen.getByRole("link", { name: /organizations/i }),
       ).toHaveAttribute("href", "/organizations");
-      expect(screen.getByRole("link", { name: /^privacy$/i })).toHaveAttribute(
-        "href",
-        "/privacy",
-      );
       expect(screen.getByRole("link", { name: /^faq$/i })).toHaveAttribute(
         "href",
         "/faq",
@@ -87,19 +95,19 @@ describe("<Footer />", () => {
     });
   });
 
-  describe("Contact Link", () => {
-    it("renders Contact link to About page contact section", () => {
-      const contact = screen.getByRole("link", { name: /Contact/i });
-      expect(contact).toHaveAttribute("href", "/about#contact");
+  describe("Bottom Bar", () => {
+    it("renders Made with heart in Europe text", () => {
+      const madeWithTexts = screen.getAllByText(/made with/i);
+      expect(madeWithTexts.length).toBeGreaterThan(0);
+    });
+
+    it("renders Privacy Policy link in bottom bar", () => {
+      const privacyLink = screen.getByRole("link", { name: /privacy policy/i });
+      expect(privacyLink).toHaveAttribute("href", "/privacy");
     });
   });
 
   describe("Privacy and Copyright", () => {
-    it("renders Privacy link in Support section", () => {
-      const privacy = screen.getByRole("link", { name: /^privacy$/i });
-      expect(privacy).toHaveAttribute("href", "/privacy");
-    });
-
     it("does not render copyright text", () => {
       expect(screen.queryByText(/© 2025/i)).not.toBeInTheDocument();
       expect(screen.queryByText(/copyright/i)).not.toBeInTheDocument();

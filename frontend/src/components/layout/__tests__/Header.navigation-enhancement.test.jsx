@@ -30,14 +30,15 @@ describe("Header Navigation Enhancement - Orange Theme", () => {
       // It's now only in footer and mobile menu drawer
     });
 
-    it("should show orange active state for About link", () => {
+    it("should show orange active state for About dropdown trigger", () => {
       usePathname.mockReturnValue("/about");
       render(<Header />);
 
-      const aboutLink = screen.getByRole("link", { name: "About" });
-      expect(aboutLink).toHaveClass("text-orange-600");
-      expect(aboutLink).toHaveClass("font-semibold");
-      expect(aboutLink).not.toHaveClass("text-red-700");
+      // About is now a dropdown trigger button
+      const aboutButton = screen.getByRole("button", { name: /about/i });
+      expect(aboutButton).toHaveClass("text-orange-600");
+      expect(aboutButton).toHaveClass("font-semibold");
+      expect(aboutButton).not.toHaveClass("text-red-700");
     });
   });
 
@@ -88,12 +89,9 @@ describe("Header Navigation Enhancement - Orange Theme", () => {
       // It's now only in footer and mobile menu drawer
     });
 
-    it("should show underline indicator for active About link", () => {
-      usePathname.mockReturnValue("/about");
-      render(<Header />);
-
-      const underlineIndicator = screen.getByTestId("nav-underline-about");
-      expect(underlineIndicator).toHaveClass("bg-orange-600");
+    it.skip("About is now a dropdown trigger, not a simple link", () => {
+      // About is now a dropdown, not a simple nav link
+      // Dropdown triggers don't use the underline indicator pattern
     });
 
     it("should not show underline indicators for inactive links", () => {

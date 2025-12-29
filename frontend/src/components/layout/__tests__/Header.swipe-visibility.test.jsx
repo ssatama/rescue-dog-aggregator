@@ -7,14 +7,6 @@ jest.mock("next/navigation", () => ({
   usePathname: jest.fn(),
 }));
 
-jest.mock("../../ui/Icon", () => ({
-  Icon: ({ name, "aria-label": ariaLabel }) => (
-    <span data-testid={`icon-${name}`} aria-label={ariaLabel}>
-      {name}
-    </span>
-  ),
-}));
-
 jest.mock("../../ui/ThemeToggle", () => ({
   ThemeToggle: () => <div data-testid="theme-toggle">Theme Toggle</div>,
 }));
@@ -37,21 +29,15 @@ describe("Header - Swipe Navigation Visibility", () => {
       });
     });
 
-    it("should NOT show Swipe link in desktop navigation", () => {
+    it("should show Start Swiping CTA button in desktop navigation", () => {
       render(<Header />);
 
-      // Check desktop navigation area
-      const desktopNav = screen.getByRole("navigation");
-      const swipeLinks = screen.queryAllByText("Swipe");
-
-      // Should not find any Swipe links in the visible desktop navigation
-      // (they should have lg:hidden class applied)
-      swipeLinks.forEach((link) => {
-        const parent = link.closest(".lg\\:hidden");
-        if (parent) {
-          expect(parent).toBeInTheDocument();
-        }
-      });
+      // Swipe is now a CTA button with "Start Swiping" text
+      const swipeButton = screen.getByRole("link", { name: /start swiping/i });
+      expect(swipeButton).toBeInTheDocument();
+      expect(swipeButton).toHaveAttribute("href", "/swipe");
+      // Should have orange button styling
+      expect(swipeButton).toHaveClass("bg-orange-600");
     });
   });
 
@@ -64,17 +50,13 @@ describe("Header - Swipe Navigation Visibility", () => {
       });
     });
 
-    it("should show Swipe link in tablet navigation", () => {
+    it("should show Start Swiping button in tablet navigation", () => {
       render(<Header />);
 
-      // Should find Swipe link that's visible on tablets
-      const swipeLink = screen.getByRole("link", { name: /swipe/i });
-      expect(swipeLink).toBeInTheDocument();
-      expect(swipeLink).toHaveAttribute("href", "/swipe");
-
-      // Should have heart icon
-      const heartIcon = screen.getByTestId("icon-heart");
-      expect(heartIcon).toBeInTheDocument();
+      // Should find Start Swiping button that's visible on tablets
+      const swipeButton = screen.getByRole("link", { name: /start swiping/i });
+      expect(swipeButton).toBeInTheDocument();
+      expect(swipeButton).toHaveAttribute("href", "/swipe");
     });
   });
 
@@ -94,14 +76,9 @@ describe("Header - Swipe Navigation Visibility", () => {
   });
 
   describe("Active state styling", () => {
-    it("should show active underline when on /swipe route", () => {
-      usePathname.mockReturnValue("/swipe");
-      render(<Header />);
-
-      // Should have underline indicator (visible in desktop nav)
-      const underline = screen.getByTestId("nav-underline-swipe");
-      expect(underline).toBeInTheDocument();
-      expect(underline).toHaveClass("bg-orange-600");
+    it.skip("Start Swiping button is always styled as CTA, no underline indicator", () => {
+      // Swipe is now a CTA button, not a nav link
+      // It doesn't use the underline indicator pattern
     });
   });
 });

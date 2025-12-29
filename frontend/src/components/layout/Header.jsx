@@ -2,8 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ChevronDown } from "lucide-react";
-import { Icon } from "../ui/Icon";
+import { ChevronDown, Heart, ArrowRight } from "lucide-react";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import { FavoriteBadge } from "../favorites/FavoriteBadge";
 import {
@@ -11,6 +10,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import logo from "../../../public/logo.jpeg";
 
@@ -28,21 +29,12 @@ export default function Header() {
   };
 
   // Helper function to create navigation link with underline indicator
-  const renderNavLink = (href, label, testId, showBadge = false) => {
+  const renderNavLink = (href, label, testId) => {
     const isActive = pathname === href;
     return (
       <div className="relative">
         <Link href={href} className={getLinkClasses(href)}>
-          <span className="flex items-center gap-1">
-            {showBadge && (
-              <>
-                <span className="heart-icon text-red-500">❤️</span>
-                {label}
-                <FavoriteBadge />
-              </>
-            )}
-            {!showBadge && label}
-          </span>
+          {label}
         </Link>
         {isActive && (
           <div
@@ -52,11 +44,6 @@ export default function Header() {
         )}
       </div>
     );
-  };
-
-  // Helper function for mobile links (closes menu on click)
-  const handleMobileLinkClick = () => {
-    setMobileMenuOpen(false);
   };
 
   return (
@@ -96,9 +83,7 @@ export default function Header() {
             </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex gap-6 items-center">
-              {" "}
-              {/* Increased spacing for better visual separation */}
+            <div className="hidden md:flex gap-4 items-center">
               {/* Dogs Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger
@@ -107,30 +92,13 @@ export default function Header() {
                   Dogs
                   <ChevronDown className="h-4 w-4" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
+                <DropdownMenuContent align="start" className="w-48">
+                  <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Browse
+                  </DropdownMenuLabel>
                   <DropdownMenuItem asChild>
                     <Link href="/dogs" className="w-full cursor-pointer">
-                      Browse All
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/dogs/country" className="w-full cursor-pointer">
-                      By Country
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/dogs/age" className="w-full cursor-pointer">
-                      By Age
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/dogs/puppies" className="w-full cursor-pointer">
-                      🐶 Puppies
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/dogs/senior" className="w-full cursor-pointer">
-                      🦴 Senior Dogs
+                      All Dogs
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -141,34 +109,95 @@ export default function Header() {
                       New Arrivals
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Filter By
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dogs/country" className="w-full cursor-pointer">
+                      Country
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dogs/age" className="w-full cursor-pointer">
+                      Age
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Popular
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dogs/puppies" className="w-full cursor-pointer">
+                      🐶 Puppies
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dogs/senior" className="w-full cursor-pointer">
+                      🦴 Senior Dogs
+                    </Link>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+
               {renderNavLink("/breeds", "Breeds", "breeds")}
               {renderNavLink("/guides", "Guides", "guides")}
-              {/* Show Swipe on all screen sizes */}
-              <div className="relative">
-                <Link href="/swipe" className={getLinkClasses("/swipe")}>
-                  <span className="flex items-center gap-1">
-                    <Icon
-                      name="heart"
-                      size="default"
-                      className="text-red-500"
-                      filled
-                      aria-label="Heart icon"
-                    />
-                    Swipe
-                  </span>
-                </Link>
-                {pathname === "/swipe" && (
-                  <div
-                    data-testid="nav-underline-swipe"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"
-                  />
-                )}
-              </div>
-              {renderNavLink("/favorites", "Favorites", "favorites", true)}
-              {renderNavLink("/about", "About", "about")}
-              <ThemeToggle className="ml-4" />
+
+              {/* About Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className={`${getLinkClasses("/about")} flex items-center gap-1`}
+                >
+                  About
+                  <ChevronDown className="h-4 w-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem asChild>
+                    <Link href="/about" className="w-full cursor-pointer">
+                      About Us
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/faq" className="w-full cursor-pointer">
+                      FAQ
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/privacy" className="w-full cursor-pointer">
+                      Privacy
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/about#contact" className="w-full cursor-pointer">
+                      Contact
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Favorites - icon only with badge */}
+              <Link
+                href="/favorites"
+                className="relative p-2 rounded-md hover:bg-muted transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-600/50"
+                aria-label="Favorites"
+              >
+                <Heart
+                  className="h-5 w-5 text-red-500"
+                  fill="currentColor"
+                />
+                <FavoriteBadge />
+              </Link>
+
+              {/* Start Swiping CTA Button */}
+              <Link
+                href="/swipe"
+                className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-600/50 focus-visible:ring-offset-2"
+              >
+                Start Swiping
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+
+              <ThemeToggle />
             </div>
 
             {/* Mobile: Only show theme toggle (no hamburger menu) */}
