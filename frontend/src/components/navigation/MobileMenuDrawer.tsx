@@ -1,7 +1,19 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { X } from "lucide-react";
+import {
+  X,
+  Filter,
+  Sparkles,
+  Heart,
+  Globe,
+  BookOpen,
+  HelpCircle,
+  Building2,
+  Users,
+  Shield,
+  LucideIcon,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { ThemeToggle } from "../ui/ThemeToggle";
@@ -11,8 +23,90 @@ interface MobileMenuDrawerProps {
   onClose: () => void;
 }
 
+interface MenuItem {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+}
+
+interface MenuSection {
+  id: string;
+  title: string;
+  icon: LucideIcon;
+  items: MenuItem[];
+}
+
+const menuSections: MenuSection[] = [
+  {
+    id: "quick-filters",
+    title: "Quick Filters",
+    icon: Filter,
+    items: [
+      { label: "Browse Puppies", href: "/dogs/puppies", icon: Sparkles },
+      { label: "Browse Seniors", href: "/dogs/senior", icon: Heart },
+      { label: "By Country", href: "/dogs/country", icon: Globe },
+    ],
+  },
+  {
+    id: "learn-explore",
+    title: "Learn & Explore",
+    icon: BookOpen,
+    items: [
+      { label: "Guides", href: "/guides", icon: BookOpen },
+      { label: "FAQ", href: "/faq", icon: HelpCircle },
+      { label: "Organizations", href: "/organizations", icon: Building2 },
+    ],
+  },
+  {
+    id: "about",
+    title: "About",
+    icon: Users,
+    items: [{ label: "About Us", href: "/about", icon: Users }],
+  },
+];
+
+const footerItems: MenuItem[] = [
+  { label: "Privacy", href: "/privacy", icon: Shield },
+];
+
+function SectionHeader({
+  title,
+  icon: Icon,
+}: {
+  title: string;
+  icon: LucideIcon;
+}) {
+  return (
+    <div className="flex items-center gap-2 mb-2">
+      <Icon className="w-4 h-4 text-muted-foreground" />
+      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        {title}
+      </h3>
+    </div>
+  );
+}
+
+function MenuLink({
+  item,
+  onClose,
+}: {
+  item: MenuItem;
+  onClose: () => void;
+}) {
+  const Icon = item.icon;
+  return (
+    <Link
+      href={item.href}
+      onClick={onClose}
+      className="flex items-center gap-3 text-base font-medium text-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors py-2.5 px-2 -mx-2 rounded-lg hover:bg-muted/50"
+    >
+      <Icon className="w-5 h-5 text-muted-foreground" />
+      <span>{item.label}</span>
+    </Link>
+  );
+}
+
 export function MobileMenuDrawer({ isOpen, onClose }: MobileMenuDrawerProps) {
-  // Handle ESC key press
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
@@ -22,7 +116,6 @@ export function MobileMenuDrawer({ isOpen, onClose }: MobileMenuDrawerProps) {
 
     if (isOpen) {
       document.addEventListener("keydown", handleEscape);
-      // Prevent body scroll when menu is open
       document.body.style.overflow = "hidden";
     }
 
@@ -31,10 +124,6 @@ export function MobileMenuDrawer({ isOpen, onClose }: MobileMenuDrawerProps) {
       document.body.style.overflow = "unset";
     };
   }, [isOpen, onClose]);
-
-  const handleLinkClick = () => {
-    onClose();
-  };
 
   return (
     <AnimatePresence>
@@ -63,90 +152,60 @@ export function MobileMenuDrawer({ isOpen, onClose }: MobileMenuDrawerProps) {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 bottom-0 w-4/5 max-w-sm bg-background dark:bg-gray-900 z-[70] shadow-2xl overflow-y-auto"
+            className="fixed right-0 top-0 bottom-0 w-4/5 max-w-sm bg-background dark:bg-gray-900 z-[70] shadow-2xl flex flex-col"
           >
             {/* Close button */}
             <button
               type="button"
               onClick={onClose}
-              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-orange-600"
+              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-orange-600 z-10"
               aria-label="Close menu"
             >
               <X size={24} className="text-foreground" />
             </button>
 
-            {/* Menu items */}
+            {/* Scrollable content area */}
             <nav
-              className="p-8 pt-16 space-y-6"
+              className="flex-1 overflow-y-auto p-6 pt-14"
               aria-label="Mobile drawer navigation"
             >
-              <Link
-                href="/dogs/country"
-                onClick={handleLinkClick}
-                className="block text-lg font-medium text-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors py-2"
-              >
-                Countries
-              </Link>
-              <Link
-                href="/dogs/puppies"
-                onClick={handleLinkClick}
-                className="block text-lg font-medium text-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors py-2"
-              >
-                🐶 Puppies
-              </Link>
-              <Link
-                href="/dogs/senior"
-                onClick={handleLinkClick}
-                className="block text-lg font-medium text-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors py-2"
-              >
-                🦴 Senior Dogs
-              </Link>
-              <Link
-                href="/guides"
-                onClick={handleLinkClick}
-                className="block text-lg font-medium text-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors py-2"
-              >
-                Guides
-              </Link>
-              <Link
-                href="/organizations"
-                onClick={handleLinkClick}
-                className="block text-lg font-medium text-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors py-2"
-              >
-                Organizations
-              </Link>
-              <Link
-                href="/about"
-                onClick={handleLinkClick}
-                className="block text-lg font-medium text-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors py-2"
-              >
-                About
-              </Link>
-              <Link
-                href="/privacy"
-                onClick={handleLinkClick}
-                className="block text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors py-2"
-              >
-                Privacy
-              </Link>
-              <Link
-                href="/faq"
-                onClick={handleLinkClick}
-                className="block text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors py-2"
-              >
-                FAQ
-              </Link>
-
-              {/* Theme Toggle Section */}
-              <div className="pt-6 border-t border-border">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-foreground">
-                    Theme
-                  </span>
-                  <ThemeToggle />
+              {menuSections.map((section, index) => (
+                <div key={section.id} className={index > 0 ? "mt-6" : ""}>
+                  <SectionHeader title={section.title} icon={section.icon} />
+                  <div className="space-y-1">
+                    {section.items.map((item) => (
+                      <MenuLink key={item.href} item={item} onClose={onClose} />
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ))}
             </nav>
+
+            {/* Footer area - fixed at bottom */}
+            <div className="border-t border-border p-6 space-y-4">
+              {footerItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={onClose}
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+
+              {/* Theme Toggle */}
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-sm font-medium text-foreground">
+                  Theme
+                </span>
+                <ThemeToggle />
+              </div>
+            </div>
           </motion.div>
         </>
       )}

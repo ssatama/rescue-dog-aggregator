@@ -36,29 +36,79 @@ describe("MobileMenuDrawer", () => {
   });
 
   describe("Menu Items", () => {
-    it("should contain Guides, Organizations, About, Privacy, and FAQ links", () => {
+    it("should contain all Quick Filters links", () => {
+      render(<MobileMenuDrawer isOpen={true} onClose={mockOnClose} />);
+
+      expect(
+        screen.getByRole("link", { name: /browse puppies/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: /browse seniors/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: /by country/i }),
+      ).toBeInTheDocument();
+    });
+
+    it("should contain all Learn & Explore links", () => {
       render(<MobileMenuDrawer isOpen={true} onClose={mockOnClose} />);
 
       expect(screen.getByRole("link", { name: /guides/i })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /faq/i })).toBeInTheDocument();
       expect(
         screen.getByRole("link", { name: /organizations/i }),
       ).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: /about/i })).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: /privacy/i })).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: /faq/i })).toBeInTheDocument();
     });
 
-    it("should have correct href attributes", () => {
+    it("should contain About section link", () => {
+      render(<MobileMenuDrawer isOpen={true} onClose={mockOnClose} />);
+
+      expect(
+        screen.getByRole("link", { name: /about us/i }),
+      ).toBeInTheDocument();
+    });
+
+    it("should contain Privacy in footer area", () => {
+      render(<MobileMenuDrawer isOpen={true} onClose={mockOnClose} />);
+
+      expect(screen.getByRole("link", { name: /privacy/i })).toBeInTheDocument();
+    });
+
+    it("should have correct href attributes for Quick Filters", () => {
+      render(<MobileMenuDrawer isOpen={true} onClose={mockOnClose} />);
+
+      expect(
+        screen.getByRole("link", { name: /browse puppies/i }),
+      ).toHaveAttribute("href", "/dogs/puppies");
+      expect(
+        screen.getByRole("link", { name: /browse seniors/i }),
+      ).toHaveAttribute("href", "/dogs/senior");
+      expect(screen.getByRole("link", { name: /by country/i })).toHaveAttribute(
+        "href",
+        "/dogs/country",
+      );
+    });
+
+    it("should have correct href attributes for Learn & Explore", () => {
       render(<MobileMenuDrawer isOpen={true} onClose={mockOnClose} />);
 
       expect(screen.getByRole("link", { name: /guides/i })).toHaveAttribute(
         "href",
         "/guides",
       );
+      expect(screen.getByRole("link", { name: /faq/i })).toHaveAttribute(
+        "href",
+        "/faq",
+      );
       expect(
         screen.getByRole("link", { name: /organizations/i }),
       ).toHaveAttribute("href", "/organizations");
-      expect(screen.getByRole("link", { name: /about/i })).toHaveAttribute(
+    });
+
+    it("should have correct href attributes for About and Footer", () => {
+      render(<MobileMenuDrawer isOpen={true} onClose={mockOnClose} />);
+
+      expect(screen.getByRole("link", { name: /about us/i })).toHaveAttribute(
         "href",
         "/about",
       );
@@ -66,16 +116,19 @@ describe("MobileMenuDrawer", () => {
         "href",
         "/privacy",
       );
-      expect(screen.getByRole("link", { name: /faq/i })).toHaveAttribute(
-        "href",
-        "/faq",
-      );
+    });
+
+    it("should display section headers", () => {
+      render(<MobileMenuDrawer isOpen={true} onClose={mockOnClose} />);
+
+      expect(screen.getByText("Quick Filters")).toBeInTheDocument();
+      expect(screen.getByText("Learn & Explore")).toBeInTheDocument();
+      expect(screen.getByText("About")).toBeInTheDocument();
     });
 
     it("should include ThemeToggle component", () => {
       render(<MobileMenuDrawer isOpen={true} onClose={mockOnClose} />);
 
-      // ThemeToggle should be present (we'll check for common theme toggle elements)
       expect(screen.getByText(/theme/i)).toBeInTheDocument();
     });
   });
@@ -102,8 +155,25 @@ describe("MobileMenuDrawer", () => {
     it("should close menu when clicking a link", () => {
       render(<MobileMenuDrawer isOpen={true} onClose={mockOnClose} />);
 
-      const guidesLink = screen.getByRole("link", { name: /guides/i });
-      fireEvent.click(guidesLink);
+      const puppiesLink = screen.getByRole("link", { name: /browse puppies/i });
+      fireEvent.click(puppiesLink);
+
+      expect(mockOnClose).toHaveBeenCalledTimes(1);
+    });
+
+    it("should close menu when clicking footer link", () => {
+      render(<MobileMenuDrawer isOpen={true} onClose={mockOnClose} />);
+
+      const privacyLink = screen.getByRole("link", { name: /privacy/i });
+      fireEvent.click(privacyLink);
+
+      expect(mockOnClose).toHaveBeenCalledTimes(1);
+    });
+
+    it("should call onClose when Escape key is pressed", () => {
+      render(<MobileMenuDrawer isOpen={true} onClose={mockOnClose} />);
+
+      fireEvent.keyDown(document, { key: "Escape", code: "Escape" });
 
       expect(mockOnClose).toHaveBeenCalledTimes(1);
     });
