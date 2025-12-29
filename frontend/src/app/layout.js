@@ -1,6 +1,6 @@
 // src/app/layout.js
 import "./globals.css";
-import { Inter } from "next/font/google";
+import { Inter, Caveat } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
@@ -17,6 +17,14 @@ const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-inter",
+  display: "swap",
+});
+
+// Handwritten font for polaroid-style dog name cards
+const caveat = Caveat({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-caveat",
   display: "swap",
 });
 
@@ -129,7 +137,7 @@ export default function RootLayout({ children }) {
   }
 
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${inter.variable} ${caveat.variable}`}>
       <body
         className={`${inter.className} min-h-screen bg-background font-sans`}
       >

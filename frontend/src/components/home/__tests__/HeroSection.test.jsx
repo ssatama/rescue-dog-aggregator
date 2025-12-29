@@ -39,6 +39,32 @@ jest.mock("../../../utils/logger", () => ({
   reportError: jest.fn(),
 }));
 
+// Mock next/image for testing
+jest.mock("next/image", () => {
+  return function MockImage({ src, alt, priority, ...props }) {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        data-priority={priority ? "true" : "false"}
+        {...props}
+      />
+    );
+  };
+});
+
+// Mock HeroDogPreviewCard
+jest.mock("../HeroDogPreviewCard", () => {
+  return function MockHeroDogPreviewCard({ dog, priority }) {
+    return (
+      <div data-testid="hero-dog-preview-card" data-dog-name={dog.name}>
+        <span>{dog.name}</span>
+        <a href={`/dogs/${dog.slug || `dog-${dog.id}`}`}>Meet {dog.name}</a>
+      </div>
+    );
+  };
+});
+
 describe("HeroSection", () => {
   const mockStatistics = {
     total_dogs: 412,
@@ -52,6 +78,12 @@ describe("HeroSection", () => {
       { id: 2, name: "Pets in Turkey", dog_count: 33 },
     ],
   };
+
+  const mockPreviewDogs = [
+    { id: 1, name: "Bella", slug: "bella-123", primary_image_url: "/test.jpg" },
+    { id: 2, name: "Max", slug: "max-456", primary_image_url: "/test2.jpg" },
+    { id: 3, name: "Luna", slug: "luna-789", primary_image_url: "/test3.jpg" },
+  ];
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -116,42 +148,42 @@ describe("HeroSection", () => {
       });
     });
 
-    test("should show organization breakdown", async () => {
+    test("should render 3 dog preview cards when previewDogs provided", async () => {
       getStatistics.mockResolvedValue(mockStatistics);
 
-      render(<HeroSection />);
+      render(<HeroSection previewDogs={mockPreviewDogs} />);
 
       await waitFor(() => {
-        expect(
-          screen.getByText("Dogs available from these organizations:"),
-        ).toBeInTheDocument();
-        expect(
-          screen.getByText("Tierschutzverein Europa e.V."),
-        ).toBeInTheDocument();
-        expect(screen.getByText("(353)")).toBeInTheDocument();
-        expect(screen.getByText("Pets in Turkey")).toBeInTheDocument();
-        expect(screen.getByText("(33)")).toBeInTheDocument();
+        const dogCards = screen.getAllByTestId("hero-dog-preview-card");
+        expect(dogCards).toHaveLength(3);
+        expect(screen.getByText("Bella")).toBeInTheDocument();
+        expect(screen.getByText("Max")).toBeInTheDocument();
+        expect(screen.getByText("Luna")).toBeInTheDocument();
       });
     });
 
-    test("should limit organization display to top 4", async () => {
-      const manyOrgsStats = {
-        ...mockStatistics,
-        organizations: Array.from({ length: 10 }, (_, i) => ({
-          id: i,
-          name: `Organization ${i}`,
-          dog_count: 50 - i,
-        })),
-      };
+    test("should render fallback link when no dogs provided", async () => {
+      getStatistics.mockResolvedValue(mockStatistics);
 
-      getStatistics.mockResolvedValue(manyOrgsStats);
-
-      render(<HeroSection />);
+      render(<HeroSection previewDogs={[]} />);
 
       await waitFor(() => {
-        const orgElements = screen.getAllByText(/Organization \d+/);
-        expect(orgElements).toHaveLength(4);
-        expect(screen.getByText("+ 6 more organizations")).toBeInTheDocument();
+        expect(screen.getByText("Browse all dogs →")).toBeInTheDocument();
+        expect(
+          screen.queryByTestId("hero-dog-preview-card"),
+        ).not.toBeInTheDocument();
+      });
+    });
+
+    test("should handle fewer than 3 dogs gracefully", async () => {
+      getStatistics.mockResolvedValue(mockStatistics);
+      const twoDogs = mockPreviewDogs.slice(0, 2);
+
+      render(<HeroSection previewDogs={twoDogs} />);
+
+      await waitFor(() => {
+        const dogCards = screen.getAllByTestId("hero-dog-preview-card");
+        expect(dogCards).toHaveLength(2);
       });
     });
   });
@@ -213,13 +245,11 @@ describe("HeroSection", () => {
 
       getStatistics.mockResolvedValue(emptyStats);
 
-      render(<HeroSection />);
+      render(<HeroSection previewDogs={[]} />);
 
       await waitFor(() => {
         expect(screen.getAllByText("0")).toHaveLength(3); // Three counters showing 0
-        expect(
-          screen.getByText("No organizations currently available"),
-        ).toBeInTheDocument();
+        expect(screen.getByText("Browse all dogs →")).toBeInTheDocument();
       });
     });
   });
@@ -383,11 +413,11 @@ describe("HeroSection", () => {
     test("should have descriptive text for screen readers", async () => {
       getStatistics.mockResolvedValue(mockStatistics);
 
-      render(<HeroSection />);
+      render(<HeroSection previewDogs={mockPreviewDogs} />);
 
       await waitFor(() => {
         expect(
-          screen.getByText("Dogs available from these organizations:"),
+          screen.getByText("Some dogs looking for homes:"),
         ).toBeInTheDocument();
       });
 

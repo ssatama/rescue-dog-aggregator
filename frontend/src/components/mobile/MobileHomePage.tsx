@@ -153,6 +153,9 @@ export default function MobileHomePage({ initialData }: MobileHomePageProps) {
           ]}
         />
 
+        {/* Dogs first - the main attraction */}
+        <MobileAvailableNow dogs={initialData?.dogs} />
+
         {/* Browse by Country */}
         <MobileCountryBrowse countryStats={initialData?.countryStats} />
 
@@ -161,9 +164,6 @@ export default function MobileHomePage({ initialData }: MobileHomePageProps) {
 
         {/* Breed Spotlight Carousel */}
         <MobileBreedSpotlight breeds={randomBreeds} />
-
-        {/* Available Now */}
-        <MobileAvailableNow dogs={initialData?.dogs} />
       </main>
 
       {/* Bottom navigation */}

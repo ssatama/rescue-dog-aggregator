@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/Icon";
 import AnimatedCounter from "../ui/AnimatedCounter";
+import HeroDogPreviewCard from "./HeroDogPreviewCard";
 import { getStatistics } from "../../services/animalsService";
 import { reportError } from "../../utils/logger";
 
@@ -14,10 +15,12 @@ import { reportError } from "../../utils/logger";
  * Hero section with animated statistics and call-to-action buttons
  * @param {Object} props - Component props
  * @param {Object} props.initialStatistics - Pre-fetched statistics data from SSR
+ * @param {Array} props.previewDogs - Dogs to show in hero preview cards
  * @param {boolean} props.priority - Whether this section should load with priority
  */
 export default function HeroSection({
   initialStatistics = null,
+  previewDogs = [],
   priority = false,
 }) {
   const [statistics, setStatistics] = useState(initialStatistics);
@@ -199,39 +202,33 @@ export default function HeroSection({
                   </Link>
                 </div>
 
-                {/* Organizations Breakdown */}
-                <div className="bg-card/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-6 shadow-sm dark:shadow-purple-500/10">
+                {/* Dog Preview Cards - Floating Polaroids */}
+                <div className="mt-4">
                   <div className="text-center mb-4">
-                    <div className="text-sm text-muted-foreground font-medium">
-                      Dogs available from these organizations:
-                    </div>
+                    <p className="text-sm text-muted-foreground font-medium">
+                      Ready for their forever home
+                    </p>
                   </div>
 
-                  {statistics.organizations.length > 0 ? (
-                    <div className="space-y-2">
-                      {statistics.organizations.slice(0, 4).map((org) => (
-                        <div
-                          key={org.id}
-                          className="flex justify-between items-center text-sm"
-                        >
-                          <span className="text-foreground truncate flex-1 mr-2">
-                            {org.name}
-                          </span>
-                          <span className="text-orange-600 font-medium">
-                            ({org.dog_count})
-                          </span>
-                        </div>
+                  {previewDogs.length > 0 ? (
+                    <div className="flex justify-center items-start gap-0 -space-x-3 py-4">
+                      {previewDogs.slice(0, 3).map((dog, index) => (
+                        <HeroDogPreviewCard
+                          key={dog.id}
+                          dog={dog}
+                          index={index}
+                          priority={index === 0}
+                        />
                       ))}
-                      {statistics.organizations.length > 4 && (
-                        <div className="text-xs text-muted-foreground text-center pt-2">
-                          + {statistics.organizations.length - 4} more
-                          organizations
-                        </div>
-                      )}
                     </div>
                   ) : (
-                    <div className="text-sm text-muted-foreground text-center">
-                      No organizations currently available
+                    <div className="text-sm text-muted-foreground text-center py-4">
+                      <Link
+                        href="/dogs"
+                        className="text-orange-600 hover:text-orange-700 hover:underline transition-colors"
+                      >
+                        Browse all dogs →
+                      </Link>
                     </div>
                   )}
                 </div>

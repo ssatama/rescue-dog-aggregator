@@ -54,11 +54,23 @@ export default function ClientHomePage({
 
       {/* Desktop Version - Hidden on mobile devices */}
       <div className="hidden sm:block">
-        <HeroSection initialStatistics={initialStatistics} priority={true} />
+        <HeroSection
+          initialStatistics={initialStatistics}
+          previewDogs={initialRecentDogs?.slice(0, 3) || []}
+          priority={true}
+        />
 
         {/* Platform Capabilities Section - Three Ways to Find Your Dog */}
         <ErrorBoundary fallbackMessage="Unable to load platform capabilities section. Please refresh the page.">
           <PlatformCapabilities />
+        </ErrorBoundary>
+
+        {/* Featured Dogs Section - 6 dogs (moved up for better UX) */}
+        <ErrorBoundary fallbackMessage="Unable to load featured dogs. Please refresh the page.">
+          <FeaturedDogsSection
+            dogs={initialRecentDogs || []}
+            totalCount={initialStatistics?.total_dogs || 0}
+          />
         </ErrorBoundary>
 
         {/* Country Browse Section - Dogs from Across Europe */}
@@ -74,14 +86,6 @@ export default function ClientHomePage({
         {/* Trust Band - Organization Logos */}
         <ErrorBoundary fallbackMessage="Unable to load organization logos. Please refresh the page.">
           <TrustBand initialOrganizations={initialOrganizations} />
-        </ErrorBoundary>
-
-        {/* Featured Dogs Section - 6 dogs */}
-        <ErrorBoundary fallbackMessage="Unable to load featured dogs. Please refresh the page.">
-          <FeaturedDogsSection
-            dogs={initialRecentDogs || []}
-            totalCount={initialStatistics?.total_dogs || 0}
-          />
         </ErrorBoundary>
 
         {/* Trust Section - Organization Statistics */}

@@ -215,7 +215,7 @@ export const MobileAvailableNow: React.FC<MobileAvailableNowProps> = ({
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-              Recently Added
+              Meet Your Match
             </h2>
           </div>
         </div>

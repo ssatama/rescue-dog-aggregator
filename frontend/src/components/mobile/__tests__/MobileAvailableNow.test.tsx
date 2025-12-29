@@ -212,7 +212,7 @@ describe("MobileAvailableNow", () => {
     render(<MobileAvailableNow dogs={mockDogs.slice(0, 4)} />);
 
     // Check header section
-    expect(screen.getByText("Recently Added")).toBeInTheDocument();
+    expect(screen.getByText("Meet Your Match")).toBeInTheDocument();
   });
 
   it("applies mobile-only visibility classes", () => {
@@ -251,7 +251,7 @@ describe("MobileAvailableNow", () => {
   it("handles empty dogs array gracefully", () => {
     render(<MobileAvailableNow dogs={[]} />);
 
-    expect(screen.getByText("Recently Added")).toBeInTheDocument();
+    expect(screen.getByText("Meet Your Match")).toBeInTheDocument();
     expect(
       screen.getByText("No dogs available at the moment"),
     ).toBeInTheDocument();
