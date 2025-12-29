@@ -76,6 +76,14 @@ describe("<Footer />", () => {
       expect(
         screen.getByRole("link", { name: /organizations/i }),
       ).toHaveAttribute("href", "/organizations");
+      expect(screen.getByRole("link", { name: /^privacy$/i })).toHaveAttribute(
+        "href",
+        "/privacy",
+      );
+      expect(screen.getByRole("link", { name: /^faq$/i })).toHaveAttribute(
+        "href",
+        "/faq",
+      );
     });
   });
 
@@ -87,9 +95,9 @@ describe("<Footer />", () => {
   });
 
   describe("Privacy and Copyright", () => {
-    it("does not render a Privacy Policy link", () => {
-      const privacy = screen.queryByRole("link", { name: /Privacy Policy/i });
-      expect(privacy).toBeNull();
+    it("renders Privacy link in Support section", () => {
+      const privacy = screen.getByRole("link", { name: /^privacy$/i });
+      expect(privacy).toHaveAttribute("href", "/privacy");
     });
 
     it("does not render copyright text", () => {

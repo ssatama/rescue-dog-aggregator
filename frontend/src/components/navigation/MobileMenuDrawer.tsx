@@ -129,6 +129,13 @@ export function MobileMenuDrawer({ isOpen, onClose }: MobileMenuDrawerProps) {
               >
                 Privacy
               </Link>
+              <Link
+                href="/faq"
+                onClick={handleLinkClick}
+                className="block text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors py-2"
+              >
+                FAQ
+              </Link>
 
               {/* Theme Toggle Section */}
               <div className="pt-6 border-t border-border">

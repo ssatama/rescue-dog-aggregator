@@ -36,7 +36,7 @@ describe("MobileMenuDrawer", () => {
   });
 
   describe("Menu Items", () => {
-    it("should contain Guides, Organizations, and About links", () => {
+    it("should contain Guides, Organizations, About, Privacy, and FAQ links", () => {
       render(<MobileMenuDrawer isOpen={true} onClose={mockOnClose} />);
 
       expect(screen.getByRole("link", { name: /guides/i })).toBeInTheDocument();
@@ -44,6 +44,8 @@ describe("MobileMenuDrawer", () => {
         screen.getByRole("link", { name: /organizations/i }),
       ).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /about/i })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /privacy/i })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /faq/i })).toBeInTheDocument();
     });
 
     it("should have correct href attributes", () => {
@@ -59,6 +61,14 @@ describe("MobileMenuDrawer", () => {
       expect(screen.getByRole("link", { name: /about/i })).toHaveAttribute(
         "href",
         "/about",
+      );
+      expect(screen.getByRole("link", { name: /privacy/i })).toHaveAttribute(
+        "href",
+        "/privacy",
+      );
+      expect(screen.getByRole("link", { name: /faq/i })).toHaveAttribute(
+        "href",
+        "/faq",
       );
     });
 

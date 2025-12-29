@@ -137,6 +137,14 @@ export default function Footer() {
                   Privacy
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/faq"
+                  className="text-sm text-muted-foreground hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                >
+                  FAQ
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
