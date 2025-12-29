@@ -4,6 +4,8 @@
 
 The scraper system follows a **Template Method Pattern** with a base class (`BaseScraper`) providing common functionality and organization-specific scrapers implementing extraction logic for each rescue organization's website.
 
+**Current Status:** 13 scrapers, 12 active organizations, ~4,568 dogs aggregated.
+
 ## Architecture Diagram
 
 ```
@@ -18,21 +20,179 @@ The scraper system follows a **Template Method Pattern** with a base class (`Bas
     |DogsTrust| |  REAN  | | Galgos  | |  Woof  | | ManyTears| |Tierschutz| |TheUnder |
     | Scraper | |Scraper | |del Sol  | |Project | | Rescue   | |verein    | |  dog    |
     +---------+ +--------+ +---------+ +--------+ +----------+ +----------+ +---------+
+         |           |           |           |           |           |
+    +----+----+  +---+----+  +---+----+  +---+----+  +----+----+  +---+----+
+    | Daisy   | |  MISIS  | | Furry  | |  Pets  | | Animal   | |Santerpaws|
+    | Family  | | Rescue  | |Rescue  | |Turkey  | |Bosnia    | | Bulgarian|
+    +---------+ +---------+ +--------+ +--------+ +----------+ +----------+
 ```
+
+## Production Deployment
+
+### Railway Cron Job
+
+Scrapers run automatically on Railway as a cron service:
+
+**Schedule:** Tue/Thu/Sat at 6am UTC
+
+**Entry Point:** `management/railway_scraper_cron.py`
+
+**Multi-Service Architecture:**
+
+```bash
+# start.sh routes based on SERVICE_TYPE env var
+if [ "$SERVICE_TYPE" = "cron" ]; then
+    exec python management/railway_scraper_cron.py
+else
+    exec uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8080}
+fi
+```
+
+**Cron Job Features:**
+
+- Graceful shutdown handling (SIGTERM/SIGINT)
+- JSON summary output for monitoring
+- Per-organization error isolation
+- Sentry integration for error tracking
+- Dry-run mode for testing
+
+```bash
+# Usage
+python management/railway_scraper_cron.py           # Run all enabled
+python management/railway_scraper_cron.py --org=misisrescue  # Single org
+python management/railway_scraper_cron.py --dry-run # Preview
+python management/railway_scraper_cron.py --list    # List scrapers
+python management/railway_scraper_cron.py --json    # JSON output only
+```
+
+### Sentry Integration
+
+Dedicated scraper error tracking via `scrapers/sentry_integration.py`:
+
+```python
+from scrapers.sentry_integration import (
+    init_scraper_sentry,      # Initialize for scraper context
+    capture_scraper_error,    # Capture with org context
+    alert_zero_dogs_found,    # Warning when no dogs found
+    alert_partial_failure,    # Warning when fewer dogs than expected
+    scrape_transaction,       # Performance tracking context
+    add_scrape_breadcrumb,    # Debug breadcrumbs
+)
+```
+
+**Alert Types:**
+
+| Alert                    | Trigger                          | Severity |
+| ------------------------ | -------------------------------- | -------- |
+| `zero_dogs_found`        | Scraper returns 0 dogs           | Warning  |
+| `partial_failure`        | Dogs < 50% of historical average | Warning  |
+| `llm_enrichment_failure` | LLM fails for multiple dogs      | Warning  |
+| `scraper_error`          | Exception during scraping        | Error    |
+
+---
+
+## Browser Automation: Playwright Migration
+
+### Overview
+
+All browser-dependent scrapers have been migrated from **Selenium** to **Playwright** for Browserless v2 compatibility.
+
+**Why Playwright?**
+
+- Browserless v2 dropped Selenium/WebDriver support
+- Only Playwright/Puppeteer work via CDP (Chrome DevTools Protocol)
+- Better async support for production workloads
+- Unified API across local and remote browsers
+
+### PlaywrightBrowserService
+
+**Location:** `services/playwright_browser_service.py`
+
+```python
+from services.playwright_browser_service import (
+    PlaywrightBrowserService,
+    PlaywrightOptions,
+    PlaywrightResult,
+    get_playwright_service,
+)
+```
+
+**Environment Detection:**
+
+| Environment Variable      | Value         | Behavior                       |
+| ------------------------- | ------------- | ------------------------------ |
+| `USE_PLAYWRIGHT`          | `true`        | Enables Playwright (required)  |
+| `BROWSERLESS_WS_ENDPOINT` | WebSocket URL | Uses remote Browserless        |
+| `BROWSERLESS_TOKEN`       | Auth token    | Authentication for Browserless |
+
+**Configuration Options:**
+
+```python
+@dataclass
+class PlaywrightOptions:
+    headless: bool = True
+    viewport_width: int = 1920
+    viewport_height: int = 1080
+    user_agent: Optional[str] = None
+    random_user_agent: bool = True
+    timeout: int = 60000
+    stealth_mode: bool = False
+    disable_images: bool = False
+    wait_until: str = "domcontentloaded"  # networkidle, load, domcontentloaded
+```
+
+**Usage Pattern in Scrapers:**
+
+```python
+if os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true":
+    # Playwright path (Railway/production)
+    playwright_service = get_playwright_service()
+    options = PlaywrightOptions(headless=True, timeout=60000)
+
+    async with playwright_service.get_browser(options) as browser_result:
+        page = browser_result.page
+        await page.goto(url, wait_until="networkidle")
+        content = await page.content()
+else:
+    # Selenium fallback (local development)
+    driver = webdriver.Chrome()
+    driver.get(url)
+    content = driver.page_source
+```
+
+### Browserless v2 Integration
+
+**Production Configuration:**
+
+```bash
+BROWSERLESS_WS_ENDPOINT=wss://chrome.browserless.io
+BROWSERLESS_TOKEN=<your-token>
+USE_PLAYWRIGHT=true
+```
+
+**Connection Flow:**
+
+1. Service checks for `BROWSERLESS_WS_ENDPOINT`
+2. Builds WebSocket URL with token: `wss://host?token=xxx`
+3. Connects via CDP: `playwright.chromium.connect_over_cdp(ws_url)`
+4. Returns `PlaywrightResult` with browser, context, page
+
+---
 
 ## BaseScraper (`scrapers/base_scraper.py`)
 
 ### Purpose
+
 Provides common scraping infrastructure, configuration loading, error handling, rate limiting, and data standardization for all organization scrapers.
 
 ### Key Design Patterns
 
-| Pattern | Implementation |
-|---------|----------------|
-| **Template Method** | `run()` orchestrates scraping phases, subclasses override `collect_data()` |
-| **Context Manager** | `__enter__`/`__exit__` for automatic resource cleanup |
-| **Null Object** | Default services prevent null checks throughout code |
-| **Dependency Injection** | Services passed via constructor for testability |
+| Pattern                  | Implementation                                                             |
+| ------------------------ | -------------------------------------------------------------------------- |
+| **Template Method**      | `run()` orchestrates scraping phases, subclasses override `collect_data()` |
+| **Context Manager**      | `__enter__`/`__exit__` for automatic resource cleanup                      |
+| **Null Object**          | Default services prevent null checks throughout code                       |
+| **Dependency Injection** | Services passed via constructor for testability                            |
 
 ### Constructor Parameters
 
@@ -49,16 +209,16 @@ def __init__(
 
 ### Core Configuration (Loaded from YAML)
 
-| Property | Type | Source | Description |
-|----------|------|--------|-------------|
-| `organization_id` | `int` | YAML/DB | Database organization ID |
-| `organization_name` | `str` | YAML | Display name |
-| `base_url` | `str` | YAML | Website base URL |
-| `rate_limit_delay` | `float` | YAML | Seconds between requests (default: 1.0) |
-| `batch_size` | `int` | YAML | Animals per batch (default: 10) |
-| `timeout` | `int` | YAML | HTTP timeout seconds (default: 30) |
-| `max_retries` | `int` | YAML | Retry attempts (default: 3) |
-| `skip_existing_animals` | `bool` | YAML | Filter already-scraped animals |
+| Property                | Type    | Source  | Description                             |
+| ----------------------- | ------- | ------- | --------------------------------------- |
+| `organization_id`       | `int`   | YAML/DB | Database organization ID                |
+| `organization_name`     | `str`   | YAML    | Display name                            |
+| `base_url`              | `str`   | YAML    | Website base URL                        |
+| `rate_limit_delay`      | `float` | YAML    | Seconds between requests (default: 1.0) |
+| `batch_size`            | `int`   | YAML    | Animals per batch (default: 10)         |
+| `timeout`               | `int`   | YAML    | HTTP timeout seconds (default: 30)      |
+| `max_retries`           | `int`   | YAML    | Retry attempts (default: 3)             |
+| `skip_existing_animals` | `bool`  | YAML    | Filter already-scraped animals          |
 
 ### Main Entry Point: `run()`
 
@@ -79,6 +239,7 @@ def run(self) -> Dict[str, Any]:
 ```
 
 **Return Value:**
+
 ```python
 {
     "animals_added": int,
@@ -177,11 +338,36 @@ def update_stale_data_detection(self) -> None:
 
 ## Organization-Specific Scrapers
 
+### Active Organizations (12)
+
+| Config ID                   | Country    | Technology | Notes                           |
+| --------------------------- | ---------- | ---------- | ------------------------------- |
+| `dogstrust`                 | UK/Ireland | Playwright | JavaScript-rendered, pagination |
+| `manytearsrescue`           | UK         | Playwright | High volume, batch processing   |
+| `rean`                      | Romania/UK | Playwright | Multi-page, lazy-loaded images  |
+| `woof_project`              | UK         | Playwright | Elementor lazy loading          |
+| `misis_rescue`              | Montenegro | Playwright | Pagination, scrolling           |
+| `daisy_family_rescue`       | Greece     | Playwright | Two-phase scraping              |
+| `tierschutzverein_europa`   | Germany    | HTTP       | Translation layer               |
+| `theunderdog`               | Malta      | HTTP       | Standard WordPress              |
+| `furryrescueitaly`          | Italy      | HTTP       | Standard HTML                   |
+| `pets_in_turkey`            | Turkey     | HTTP       | Standard HTML                   |
+| `animalrescuebosnia`        | Bosnia     | HTTP       | Standard HTML                   |
+| `santerpawsbulgarianrescue` | Bulgaria   | HTTP       | Standard HTML                   |
+
+**Inactive:** `galgosdelsol` (Spain) - scraper exists but organization disabled.
+
 ### Common Implementation Pattern
 
-All scrapers follow this structure:
+All scrapers follow this structure with Playwright/Selenium dual-mode support:
 
 ```python
+import os
+from scrapers.base_scraper import BaseScraper
+
+if os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true":
+    from services.playwright_browser_service import PlaywrightOptions, get_playwright_service
+
 class OrganizationScraper(BaseScraper):
     def __init__(self, config_id: str = "org-id", ...):
         super().__init__(config_id=config_id, ...)
@@ -189,23 +375,18 @@ class OrganizationScraper(BaseScraper):
         self.listing_url = f"{self.base_url}/dogs"
 
     def collect_data(self) -> List[Dict[str, Any]]:
-        # 1. Get filtered animal list
-        animals = self._get_filtered_animals()
+        if os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true":
+            return self._collect_with_playwright()
+        return self._collect_with_selenium()
 
-        # 2. Process in batches
-        return self._process_animals_in_batches(animals)
+    async def _collect_with_playwright(self) -> List[Dict[str, Any]]:
+        playwright_service = get_playwright_service()
+        options = PlaywrightOptions(headless=True, timeout=60000)
 
-    def _get_filtered_animals(self) -> List[Dict]:
-        # Get listing page(s)
-        # Extract basic animal info
-        # Apply skip_existing_animals filter
-        pass
-
-    def scrape_animal_details(self, url: str) -> Dict[str, Any]:
-        # Fetch detail page
-        # Extract all fields
-        # Call self.process_animal() for standardization
-        pass
+        async with playwright_service.get_browser(options) as browser_result:
+            page = browser_result.page
+            await page.goto(self.listing_url, wait_until="networkidle")
+            # ... scraping logic
 ```
 
 ---
@@ -214,40 +395,31 @@ class OrganizationScraper(BaseScraper):
 
 **Organization:** Dogs Trust UK - Large UK charity with JavaScript-rendered listings.
 
-**Scraping Strategy:** Hybrid Selenium + HTTP
+**Scraping Strategy:** Hybrid Playwright + HTTP
 
-| Phase | Technology | Reason |
-|-------|------------|--------|
-| Listing pages | Selenium | JavaScript-rendered, pagination |
-| Detail pages | HTTP/requests | Static HTML, faster |
+| Phase         | Technology | Reason                          |
+| ------------- | ---------- | ------------------------------- |
+| Listing pages | Playwright | JavaScript-rendered, pagination |
+| Detail pages  | HTTP       | Static HTML, faster             |
 
 **Key Methods:**
 
 ```python
 def get_animal_list(self, max_pages_to_scrape: int = None) -> List[Dict]:
     """
-    Uses Selenium to:
+    Uses Playwright to:
     1. Navigate to listing page
-    2. Accept cookies
+    2. Handle OneTrust cookie overlay
     3. Apply "Hide reserved dogs" filter
     4. Scroll to trigger lazy loading
     5. Click through pagination (detected from "X of Y")
     6. Extract dog cards from each page
     """
-
-def _scrape_animal_details_http(self, adoption_url: str) -> Dict:
-    """
-    HTTP request with retry logic to extract:
-    - Name (h1)
-    - Breed, Age, Sex, Size (filter links)
-    - Location (center filter)
-    - Description (two-part: "Are you right for..." + "Is X right for you...")
-    - Behavioral traits (good_with_children/dogs/cats)
-    - Primary image
-    """
 ```
 
 **Special Features:**
+
+- OneTrust cookie consent overlay handling
 - `_extract_behavioral_traits()` - Parses "Can live with" section
 - `_normalize_text()` - Handles smart quotes from Windows encoding
 - Parallel processing with ThreadPoolExecutor
@@ -260,42 +432,26 @@ def _scrape_animal_details_http(self, adoption_url: str) -> Dict:
 
 **Organization:** Rescuing European Animals in Need - Romania/UK rescue.
 
-**Scraping Strategy:** Multi-page Selenium with unified image association
+**Scraping Strategy:** Multi-page Playwright with scrolling for lazy-loaded images
 
-| Phase | Technology | Reason |
-|-------|------------|--------|
-| Both pages | Selenium | wsimg.com CDN lazy-loads images |
+| Phase      | Technology | Reason                          |
+| ---------- | ---------- | ------------------------------- |
+| Both pages | Playwright | wsimg.com CDN lazy-loads images |
 
 **Key Methods:**
 
 ```python
 def scrape_animals(self) -> List[Dict]:
     """
-    Scrapes two pages:
+    Scrapes two pages with progressive scrolling:
     - /dogs-%26-puppies-in-romania
     - /dogs-in-foster-in-the-uk
-    """
-
-def extract_dogs_with_images_unified(self, url: str, page_type: str) -> List[Dict]:
-    """
-    Unified DOM approach to maintain image-to-dog association:
-    1. Find dog containers
-    2. Extract text + image from same container
-    3. Prevents "off by one" image misassociation
-    """
-
-def extract_dog_data(self, entry_text: str, page_type: str) -> Dict:
-    """
-    Regex-based extraction from unstructured text:
-    - Name: "Our Lucky is..." patterns
-    - Age: "X months/years old"
-    - Weight: "X kg"
-    - Medical: "spayed, vaccinated and chipped"
-    - Urgency: keywords like "desperately", "urgent"
     """
 ```
 
 **Special Features:**
+
+- Progressive scrolling for lazy-loaded images
 - `_clean_wsimg_url()` - Removes CDN transformation parameters for R2
 - `_detect_image_offset()` - Corrects for header images
 - `extract_description_for_about_section()` - Cleans contact info from descriptions
@@ -304,51 +460,34 @@ def extract_dog_data(self, entry_text: str, page_type: str) -> Dict:
 
 ---
 
-### 3. Galgos del Sol (`scrapers/galgosdelsol/galgosdelsol_scraper.py`)
+### 3. MISIS Rescue (`scrapers/misis_rescue/scraper.py`)
 
-**Organization:** Spanish Galgo/Podenco rescue.
+**Organization:** Montenegro rescue with paginated listings.
 
-**Scraping Strategy:** Pure HTTP with detail page scraping
+**Scraping Strategy:** Playwright with pagination and scrolling
 
-| Phase | Technology | Reason |
-|-------|------------|--------|
-| All pages | HTTP/requests | Static WordPress site |
+| Phase   | Technology | Reason                  |
+| ------- | ---------- | ----------------------- |
+| Listing | Playwright | AJAX pagination         |
+| Detail  | Playwright | Dynamic content loading |
 
-**Key Methods:**
+**Key Features:**
+
+- Multi-page navigation via AJAX pagination
+- Progressive scrolling per page
+- `networkidle` wait strategy for dynamic content
+- Detail page scraping with Playwright
+
+**Special Handling:**
 
 ```python
-def __init__(self, ...):
-    self.listing_urls = [
-        ".../adoptables/galgos/",
-        ".../adoptables/podencos/",
-        ".../adoptables/pups-teens/",
-        ".../adoptables/other-dogs/",
-    ]
+# Wait for network idle to ensure all content loaded
+await page.goto(url, wait_until="networkidle", timeout=60000)
 
-def _scrape_listing_page(self, url: str) -> List[Dict]:
-    """
-    Finds <a> tags with /adoptable-dogs/ in href.
-    Filters out "Reserved" names.
-    """
-
-def scrape_animal_details(self, url: str) -> Dict:
-    """
-    Extracts:
-    - Name (h2, cleaned of location data like "/ FINLAND")
-    - Breed (strong>Breed: pattern)
-    - Age from date_of_birth calculation
-    - Description (longest paragraph)
-    - Hero image (figure > img)
-    """
+# Scroll to trigger lazy loading
+await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+await page.wait_for_timeout(2000)
 ```
-
-**Special Features:**
-- `_clean_dog_name()` - Removes location suffixes ("/ FINLAND", "IN UK")
-- `_clean_breed()` - Converts age categories to "Mixed Breed"
-- `_calculate_age_from_birth_date()` - Date parsing with multiple formats
-- `_clean_image_url()` - Security validation blocking dangerous protocols
-
-**External ID Pattern:** `gds-apollo` (slug-based)
 
 ---
 
@@ -356,21 +495,22 @@ def scrape_animal_details(self, url: str) -> Dict:
 
 **Organization:** EU rescue aggregator (Cyprus, etc.)
 
-**Scraping Strategy:** Hybrid Selenium + HTTP with robust DOM parsing
+**Scraping Strategy:** Playwright for Elementor lazy loading
 
-| Phase | Technology | Reason |
-|-------|------------|--------|
-| Listing | Selenium (preferred) | Elementor lazy loading |
-| Detail | HTTP | Static content |
+| Phase   | Technology | Reason                 |
+| ------- | ---------- | ---------------------- |
+| Listing | Playwright | Elementor lazy loading |
+| Detail  | HTTP       | Static content         |
 
 **Key Methods:**
 
 ```python
-def get_animal_list(self) -> List[Dict]:
+def _trigger_comprehensive_lazy_loading(self, page) -> None:
     """
-    1. Auto-discover pagination URLs
-    2. Fetch each page with browser automation
-    3. Use robust container-first extraction
+    Progressive scrolling for Elementor:
+    1. Scroll in increments
+    2. Wait for images to load
+    3. Check for new content
     """
 
 def _extract_dogs_by_widget_containers(self, soup) -> List[Dict]:
@@ -380,19 +520,10 @@ def _extract_dogs_by_widget_containers(self, soup) -> List[Dict]:
     - H2 dog names
     Filters ADOPTED/RESERVED by checking proximity to name.
     """
-
-def scrape_animal_details(self, url: str) -> Dict:
-    """
-    Multi-pattern extraction:
-    - Breed: Pattern matching + common breed keywords
-    - Age: Multiple regex patterns ("X years old", "♡ NAME, 2 years")
-    - Sex: Pronoun analysis from description
-    - Size: Pattern matching + weight-based estimation
-    """
 ```
 
 **Special Features:**
-- `_trigger_comprehensive_lazy_loading()` - Progressive scrolling
+
 - `_is_dog_available_in_container()` - Proximity-based ADOPTED/RESERVED detection
 - `_extract_filtered_description()` - 3-stage pipeline removing navigation/metadata
 - `_score_image_priority()` - Weighted scoring for best dog photo
@@ -405,37 +536,112 @@ def scrape_animal_details(self, url: str) -> Dict:
 
 **Organization:** Large UK rescue with high volume.
 
-**Scraping Strategy:** Selenium for JavaScript-heavy site
+**Scraping Strategy:** Playwright for JavaScript-heavy site
+
+| Phase   | Technology | Reason                |
+| ------- | ---------- | --------------------- |
+| Listing | Playwright | JavaScript pagination |
+| Detail  | Playwright | Dynamic content       |
 
 **Key Features:**
-- Parallel batch processing
-- Image URL cleaning for R2
+
+- Pagination handling with Playwright
+- Parallel batch processing for detail pages
 - Comprehensive behavioral trait extraction
+- Image URL cleaning for R2
 
 ---
 
-### 6. Tierschutzverein Europa (`scrapers/tierschutzverein_europa/`)
+### 6. Daisy Family Rescue (`scrapers/daisy_family_rescue/`)
+
+**Organization:** Greek rescue with two-phase scraping.
+
+**Files:**
+
+- `dogs_scraper.py` - Listing page scraper (Playwright)
+- `dog_detail_scraper.py` - Detail page scraper (Playwright)
+
+**Key Features:**
+
+- Separated listing and detail scrapers
+- Full Playwright for both phases
+- Greek text handling
+
+---
+
+### 7. Tierschutzverein Europa (`scrapers/tierschutzverein_europa/`)
 
 **Organization:** German rescue with translation support.
 
 **Files:**
-- `dogs_scraper.py` - Main scraper
+
+- `dogs_scraper.py` - Main scraper (HTTP)
 - `translations.py` - German→English field mappings
 
 **Key Features:**
+
 - German text handling
 - Translation layer for breed/size terms
-- `validate_data_quality.sql` - Quality checks
+- HTTP-only (no browser needed)
 
 ---
 
-### 7. The Underdog (`scrapers/theunderdog/`)
+### 8. The Underdog (`scrapers/theunderdog/`)
 
-**Organization:** UK rescue organization.
+**Organization:** Malta rescue organization.
 
 **Files:**
-- `theunderdog_scraper.py` - Main scraper
+
+- `theunderdog_scraper.py` - Main scraper (HTTP)
 - `normalizer.py` - Data normalization utilities
+
+---
+
+### 9. Galgos del Sol (`scrapers/galgosdelsol/galgosdelsol_scraper.py`)
+
+**Organization:** Spanish Galgo/Podenco rescue. **Currently inactive.**
+
+**Scraping Strategy:** Pure HTTP with detail page scraping
+
+**Special Features:**
+
+- `_clean_dog_name()` - Removes location suffixes ("/ FINLAND", "IN UK")
+- `_calculate_age_from_birth_date()` - Date parsing with multiple formats
+
+---
+
+## Secure Config Scraper Runner
+
+**Location:** `utils/secure_config_scraper_runner.py`
+
+Orchestrates batch scraper execution with safety features:
+
+```python
+from utils.secure_config_scraper_runner import (
+    SecureConfigScraperRunner,
+    ScraperRunResult,
+    BatchRunResult,
+    ScraperInfo,
+)
+
+runner = SecureConfigScraperRunner()
+
+# List available scrapers
+scrapers = runner.list_available_scrapers()
+
+# Run single scraper
+result = runner.run_scraper("dogstrust", sync_first=True)
+
+# Run all enabled scrapers
+batch_result = runner.run_all_enabled_scrapers()
+```
+
+**Features:**
+
+- Config validation before execution
+- Database sync before scraping
+- Error isolation per organization
+- Batch result aggregation
 
 ---
 
@@ -473,7 +679,11 @@ scrapers/
 ### Step 3: Implement Scraper
 
 ```python
+import os
 from scrapers.base_scraper import BaseScraper
+
+if os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true":
+    from services.playwright_browser_service import PlaywrightOptions, get_playwright_service
 
 class NewOrgScraper(BaseScraper):
     def __init__(self, config_id: str = "new-org", **kwargs):
@@ -482,55 +692,32 @@ class NewOrgScraper(BaseScraper):
         self.listing_url = f"{self.base_url}/dogs"
 
     def collect_data(self) -> List[Dict[str, Any]]:
-        animals = self._get_filtered_animals()
-        return self._process_animals_in_batches(animals)
+        if os.environ.get("USE_PLAYWRIGHT", "false").lower() == "true":
+            return self._collect_with_playwright()
+        return self._collect_with_http()
 
-    def _get_filtered_animals(self) -> List[Dict[str, Any]]:
-        # Get listing URLs
-        all_urls = [...]
+    async def _collect_with_playwright(self) -> List[Dict[str, Any]]:
+        playwright_service = get_playwright_service()
+        options = PlaywrightOptions(
+            headless=True,
+            timeout=60000,
+            wait_until="networkidle",
+        )
 
-        # Apply filtering
-        if self.skip_existing_animals:
-            filtered_urls = self._filter_existing_urls(all_urls)
-            skipped = len(all_urls) - len(filtered_urls)
-            self.set_filtering_stats(len(all_urls), skipped)
-            return [...]
-        return [...]
+        async with playwright_service.get_browser(options) as browser_result:
+            page = browser_result.page
+            await page.goto(self.listing_url, wait_until="networkidle")
 
-    def _process_animals_in_batches(self, animals: List) -> List[Dict]:
-        results = []
-        for i in range(0, len(animals), self.batch_size):
-            batch = animals[i:i + self.batch_size]
-            for animal in batch:
-                time.sleep(self.rate_limit_delay)
-                detail = self.scrape_animal_details(animal["url"])
-                if detail:
-                    results.append(detail)
-        return results
+            # Scroll for lazy loading
+            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            await page.wait_for_timeout(2000)
 
-    def scrape_animal_details(self, url: str) -> Dict[str, Any]:
-        # Fetch and parse
-        response = requests.get(url, timeout=self.timeout)
-        soup = BeautifulSoup(response.content, "html.parser")
+            content = await page.content()
+            return self._parse_listing(content)
 
-        # Extract fields
-        result = {
-            "name": self._extract_name(soup),
-            "external_id": self._generate_id(url),
-            "adoption_url": url,
-            "breed": self._extract_breed(soup),
-            "age": self._extract_age(soup),
-            "sex": self._extract_sex(soup),
-            "size": self._extract_size(soup),
-            "description": self._extract_description(soup),
-            "primary_image_url": self._extract_image(soup),
-            "animal_type": "dog",
-            "status": "available",
-            "properties": {...},
-        }
-
-        # Apply unified standardization
-        return self.process_animal(result)
+    def _collect_with_http(self) -> List[Dict[str, Any]]:
+        response = requests.get(self.listing_url, timeout=self.timeout)
+        return self._parse_listing(response.text)
 ```
 
 ### Step 4: Write Tests (TDD)
@@ -542,12 +729,112 @@ def test_extract_name():
     scraper = NewOrgScraper(config_id="new-org")
     html = '<h1>Buddy</h1>'
     soup = BeautifulSoup(html, "html.parser")
-
     assert scraper._extract_name(soup) == "Buddy"
 
-def test_skip_existing_animals():
-    # Test filtering logic
+@pytest.mark.browser
+def test_playwright_scraping():
+    # Test with live site (marked as browser test)
     pass
+```
+
+---
+
+## Technology Decision Matrix
+
+| Site Characteristic         | Recommended Technology                   |
+| --------------------------- | ---------------------------------------- |
+| Static HTML                 | HTTP/requests                            |
+| JavaScript-rendered listing | Playwright for listing, HTTP for details |
+| Lazy-loaded images          | Playwright with scroll triggers          |
+| Pagination via JS/AJAX      | Playwright with networkidle wait         |
+| Simple WordPress            | HTTP/requests                            |
+| Elementor-based             | Playwright with comprehensive scrolling  |
+| Cookie consent overlays     | Playwright with overlay handling         |
+
+---
+
+## Environment Variables
+
+### Required for Production (Railway)
+
+```bash
+# Database
+DATABASE_URL=postgresql://user:pass@host/db
+# or
+RAILWAY_DATABASE_URL=postgresql://...
+
+# Browser automation
+USE_PLAYWRIGHT=true
+BROWSERLESS_WS_ENDPOINT=wss://chrome.browserless.io
+BROWSERLESS_TOKEN=<token>
+
+# Monitoring
+SENTRY_DSN_BACKEND=https://xxx@sentry.io/xxx
+ENVIRONMENT=production
+
+# Image storage
+R2_ACCESS_KEY_ID=xxx
+R2_SECRET_ACCESS_KEY=xxx
+R2_BUCKET_NAME=xxx
+R2_ENDPOINT_URL=xxx
+
+# LLM enrichment
+OPENROUTER_API_KEY=xxx
+```
+
+### Local Development
+
+```bash
+# No browser service needed - uses local Chromium or Selenium
+USE_PLAYWRIGHT=false  # or unset
+
+# Local database
+DATABASE_URL=postgresql://localhost/rescue_dogs
+```
+
+---
+
+## Testing Scrapers
+
+### Unit Tests
+
+```bash
+pytest tests/scrapers/test_<org>_scraper.py -v
+```
+
+### Integration Tests (with live sites)
+
+```bash
+pytest tests/scrapers/test_<org>_scraper.py -m browser -v
+```
+
+### Test Markers
+
+```python
+@pytest.mark.unit        # Pure logic, no IO
+@pytest.mark.fast        # < 1 second
+@pytest.mark.browser     # Playwright/Selenium required
+@pytest.mark.external    # Hits live sites
+@pytest.mark.slow        # > 5 seconds
+```
+
+### Running Scrapers
+
+```bash
+# Via Railway cron runner
+python management/railway_scraper_cron.py --org=dogstrust
+
+# Via config commands
+python management/config_commands.py run <config-id>
+
+# All organizations
+python management/config_commands.py run --all
+
+# Test mode (no DB writes)
+python management/config_commands.py run <config-id> --test
+
+# List available scrapers
+python management/railway_scraper_cron.py --list
 ```
 
 ---
@@ -579,73 +866,40 @@ def standardize_breed(breed: str) -> str:
 
 ---
 
-## Technology Decision Matrix
-
-| Site Characteristic | Recommended Technology |
-|---------------------|----------------------|
-| Static HTML | HTTP/requests |
-| JavaScript-rendered listing | Selenium for listing, HTTP for details |
-| Lazy-loaded images | Selenium with scroll triggers |
-| Pagination via JS | Selenium with click navigation |
-| Simple WordPress | HTTP/requests |
-| Elementor-based | Selenium with comprehensive scrolling |
-
----
-
-## Testing Scrapers
-
-### Unit Tests
-```bash
-pytest tests/scrapers/test_<org>_scraper.py -v
-```
-
-### Integration Tests (with live sites)
-```bash
-pytest tests/scrapers/test_<org>_scraper.py -m browser -v
-```
-
-### Running Scrapers
-```bash
-# Single organization
-python management/config_commands.py run <config-id>
-
-# All organizations
-python management/config_commands.py run --all
-
-# Test mode (no DB writes)
-python management/config_commands.py run <config-id> --test
-```
-
----
-
 ## Appendix: Field Mappings
 
 ### Required Database Fields
 
-| Field | Type | Source |
-|-------|------|--------|
-| `external_id` | `str` | Unique per org, from URL or hash |
-| `name` | `str` | Page title or heading |
-| `organization_id` | `int` | From config |
-| `adoption_url` | `str` | Detail page URL |
-| `animal_type` | `str` | Always "dog" |
-| `status` | `str` | "available" unless reserved |
+| Field             | Type  | Source                           |
+| ----------------- | ----- | -------------------------------- |
+| `external_id`     | `str` | Unique per org, from URL or hash |
+| `name`            | `str` | Page title or heading            |
+| `organization_id` | `int` | From config                      |
+| `adoption_url`    | `str` | Detail page URL                  |
+| `animal_type`     | `str` | Always "dog"                     |
+| `status`          | `str` | "available" unless reserved      |
 
 ### Standardized Fields (via `process_animal()`)
 
-| Raw Field | Standardized Field |
-|-----------|-------------------|
+| Raw Field         | Standardized Field                                 |
+| ----------------- | -------------------------------------------------- |
 | `age`, `age_text` | `age_min_months`, `age_max_months`, `age_category` |
-| `size` | `standardized_size` |
-| `breed` | `standardized_breed` |
-| `sex` | `standardized_sex` |
-| `name` | `slug` |
+| `size`            | `standardized_size`                                |
+| `breed`           | `standardized_breed`                               |
+| `sex`             | `standardized_sex`                                 |
+| `name`            | `slug`                                             |
 
 ### Properties JSONB
 
 Arbitrary organization-specific data stored in `properties` column:
+
 - `description` - About text
 - `medical_status` - Vaccination info
 - `behavioral_traits` - good_with_children/dogs/cats
 - `source_page` - Which listing page
 - `raw_text` - Original content for debugging
+
+---
+
+**Last Updated:** 2025-12-29
+**Current Scale:** 13 scrapers | 12 active organizations | ~4,568 dogs

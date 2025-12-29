@@ -7,6 +7,7 @@
 The API uses `psycopg2` with `ThreadedConnectionPool` for database connections. While functional, this approach has fundamental limitations under high concurrency:
 
 **Issues Identified (Sentry - Dec 14, 2025):**
+
 - Connection pool exhaustion errors during traffic spikes
 - `PoolError("connection pool exhausted")` - pool fails immediately without queueing
 - 113+ error events traced to `api.routes.enhanced_animals.get_detail_content`
@@ -17,6 +18,7 @@ The API uses `psycopg2` with `ThreadedConnectionPool` for database connections. 
 ### Phase 1 Mitigation (Implemented)
 
 We've increased pool capacity and added retry logic:
+
 - Pool size: `minconn=5, maxconn=50` (was 2/20)
 - Added exponential backoff retry (3 attempts, 100ms base delay)
 - Configurable via environment variables
@@ -64,14 +66,14 @@ This helps but doesn't solve the fundamental architecture issue.
 
 ### Benefits of Asyncpg
 
-| Feature | psycopg2 | asyncpg |
-|---------|----------|---------|
-| Async support | Via threadpool (overhead) | Native async/await |
-| Connection queueing | None (fail-fast) | Built-in with timeout |
-| Performance | ~10k queries/sec | ~50k+ queries/sec |
-| Memory per connection | Higher (thread stack) | Lower (coroutine) |
-| Prepared statements | Manual | Automatic caching |
-| Type conversion | Basic | Comprehensive |
+| Feature               | psycopg2                  | asyncpg               |
+| --------------------- | ------------------------- | --------------------- |
+| Async support         | Via threadpool (overhead) | Native async/await    |
+| Connection queueing   | None (fail-fast)          | Built-in with timeout |
+| Performance           | ~10k queries/sec          | ~50k+ queries/sec     |
+| Memory per connection | Higher (thread stack)     | Lower (coroutine)     |
+| Prepared statements   | Manual                    | Automatic caching     |
+| Type conversion       | Basic                     | Comprehensive         |
 
 ---
 
@@ -80,16 +82,19 @@ This helps but doesn't solve the fundamental architecture issue.
 ### Phase 1: Preparation (1-2 days)
 
 1. **Add asyncpg to dependencies**
+
    ```bash
    pip install asyncpg
    ```
 
 2. **Create async connection pool module**
+
    ```
    api/database/async_pool.py
    ```
 
 3. **Create async database dependency**
+
    ```
    api/dependencies_async.py
    ```
@@ -99,6 +104,7 @@ This helps but doesn't solve the fundamental architecture issue.
 Run both pools simultaneously to validate the new implementation.
 
 1. **Create `AsyncConnectionPool` class**
+
    ```python
    # api/database/async_pool.py
    import asyncpg
@@ -132,6 +138,7 @@ Run both pools simultaneously to validate the new implementation.
    ```
 
 2. **Create async dependency**
+
    ```python
    # api/dependencies_async.py
    from typing import AsyncGenerator
@@ -144,6 +151,7 @@ Run both pools simultaneously to validate the new implementation.
    ```
 
 3. **Migrate one endpoint as proof-of-concept**
+
    ```python
    # Example: enhanced_animals.py
    @router.post("/enhanced/detail-content-v2")
@@ -161,11 +169,13 @@ Run both pools simultaneously to validate the new implementation.
 ### Phase 3: Gradual Migration (1-2 weeks)
 
 1. **Migrate endpoints by priority**
+
    - High traffic: `/api/swipe`, `/api/animals`, `/enhanced/detail-content`
    - Medium traffic: `/api/animals/{slug}`, `/api/breeds/*`
    - Low traffic: `/api/organizations`, `/api/monitoring`
 
 2. **Update services to use async patterns**
+
    ```python
    class EnhancedAnimalServiceAsync:
        def __init__(self, conn: asyncpg.Connection):
@@ -204,11 +214,11 @@ result = await conn.fetchrow("SELECT * FROM animals WHERE id = $1", animal_id)
 
 ### Parameter Binding
 
-| psycopg2 | asyncpg |
-|----------|---------|
-| `%s` placeholders | `$1, $2, $3` positional |
-| Tuple params | Individual args |
-| `cursor.fetchall()` | `await conn.fetch()` |
+| psycopg2            | asyncpg                 |
+| ------------------- | ----------------------- |
+| `%s` placeholders   | `$1, $2, $3` positional |
+| Tuple params        | Individual args         |
+| `cursor.fetchall()` | `await conn.fetch()`    |
 | `cursor.fetchone()` | `await conn.fetchrow()` |
 
 ### Transaction Management
@@ -266,24 +276,24 @@ ASYNC_DB_POOL_MAX_QUERIES=50000
 
 ## Success Metrics
 
-| Metric | Current (psycopg2) | Target (asyncpg) |
-|--------|-------------------|------------------|
-| Pool exhaustion errors | 37+/month | 0 |
-| P99 latency | ~200ms | <100ms |
-| Max concurrent requests | ~50 | ~500+ |
-| Memory per connection | ~8MB | ~1MB |
+| Metric                  | Current (psycopg2) | Target (asyncpg) |
+| ----------------------- | ------------------ | ---------------- |
+| Pool exhaustion errors  | 37+/month          | 0                |
+| P99 latency             | ~200ms             | <100ms           |
+| Max concurrent requests | ~50                | ~500+            |
+| Memory per connection   | ~8MB               | ~1MB             |
 
 ---
 
 ## Timeline Estimate
 
-| Phase | Duration | Effort |
-|-------|----------|--------|
-| Phase 1: Preparation | 1-2 days | Low |
-| Phase 2: Parallel Implementation | 2-3 days | Medium |
-| Phase 3: Gradual Migration | 1-2 weeks | High |
-| Phase 4: Cleanup | 1 day | Low |
-| **Total** | **2-3 weeks** | |
+| Phase                            | Duration      | Effort |
+| -------------------------------- | ------------- | ------ |
+| Phase 1: Preparation             | 1-2 days      | Low    |
+| Phase 2: Parallel Implementation | 2-3 days      | Medium |
+| Phase 3: Gradual Migration       | 1-2 weeks     | High   |
+| Phase 4: Cleanup                 | 1 day         | Low    |
+| **Total**                        | **2-3 weeks** |        |
 
 ---
 

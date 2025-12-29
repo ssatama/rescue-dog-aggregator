@@ -116,11 +116,12 @@ created_at, updated_at
 
 ## Service Layer Pattern
 
-### Core Services (14 root files)
+### Core Services (15 root files)
 
 ```python
 database_service.py          # Connection pool, transactions, retries
 connection_pool.py           # Enhanced pooling (10-30 connections)
+playwright_browser_service.py # Centralized Playwright browser automation
 metrics_collector.py         # Performance + business metrics
 session_manager.py           # User sessions, preferences
 adoption_detection.py        # Detect adopted dogs via patterns
@@ -150,22 +151,40 @@ __init__.py                  # Package exports
 
 ## Scraper Architecture
 
+### Browser Automation: Playwright
+
+All browser-dependent scrapers use **Playwright** (migrated from Selenium for Browserless v2 compatibility):
+
+- **Local**: Uses local Chromium via `playwright`
+- **Production**: Uses Browserless v2 via WebSocket CDP connection
+- **Service**: `services/playwright_browser_service.py` provides unified API
+
+Environment variables: `USE_PLAYWRIGHT=true`, `BROWSERLESS_WS_ENDPOINT`, `BROWSERLESS_TOKEN`
+
+### Railway Cron Job
+
+Scrapers run automatically on Railway as a cron service (Tue/Thu/Sat 6am UTC):
+
+- **Entry**: `management/railway_scraper_cron.py`
+- **Routing**: `start.sh` routes via `SERVICE_TYPE` env var
+- **Monitoring**: Sentry integration via `scrapers/sentry_integration.py`
+
 ### Active Organizations (12)
 
-```
-manytearsrescue          UK
-tierschutzverein_europa  Germany
-theunderdog              Malta
-rean                     Romania
-daisy_family_rescue      Greece
-woof_project             UK
-furryrescueitaly         Italy
-pets_in_turkey           Turkey
-dogstrust                UK/Ireland
-animalrescuebosnia       Bosnia
-santerpawsbulgarianrescue Bulgaria
-misis_rescue             Montenegro
-```
+| Organization              | Country    | Technology |
+| ------------------------- | ---------- | ---------- |
+| dogstrust                 | UK/Ireland | Playwright |
+| manytearsrescue           | UK         | Playwright |
+| rean                      | Romania/UK | Playwright |
+| woof_project              | UK         | Playwright |
+| misis_rescue              | Montenegro | Playwright |
+| daisy_family_rescue       | Greece     | Playwright |
+| tierschutzverein_europa   | Germany    | HTTP       |
+| theunderdog               | Malta      | HTTP       |
+| furryrescueitaly          | Italy      | HTTP       |
+| pets_in_turkey            | Turkey     | HTTP       |
+| animalrescuebosnia        | Bosnia     | HTTP       |
+| santerpawsbulgarianrescue | Bulgaria   | HTTP       |
 
 Note: `galgosdelsol` (Spain) scraper exists but organization is currently inactive.
 
@@ -179,6 +198,8 @@ scrapers/[org_name]/
   normalizer.py        # Data standardization
   validator.py         # Data validation
 ```
+
+See `docs/technical/scraper-architecture.md` for detailed scraper documentation.
 
 ## Frontend Architecture
 
@@ -236,6 +257,7 @@ scrapers/[org_name]/
 ### Image Fallback Strategy
 
 **FallbackImage Component** (multi-level resilience):
+
 1. Next.js Image (Vercel optimization)
 2. Cloudflare R2 with transforms (`/cdn-cgi/image/`)
 3. Direct R2 URL (no transforms)
@@ -434,6 +456,10 @@ Main Branch Merge:
   ├─ Vercel: Automatic frontend deployment
   └─ Railway: Automatic backend + migrations
 
+Railway Multi-Service Architecture:
+  ├─ API Service: SERVICE_TYPE unset → uvicorn
+  └─ Cron Service: SERVICE_TYPE=cron → railway_scraper_cron.py
+
 Health Checks → Rollback on Failure
 ```
 
@@ -500,7 +526,12 @@ python management/emergency_operations.py --reset-stale-data
 # Backend (required)
 DATABASE_URL=postgresql://user:pass@localhost/rescue_dogs
 OPENROUTER_API_KEY=xxx
-SENTRY_DSN=xxx
+SENTRY_DSN_BACKEND=xxx
+
+# Browser automation (production)
+USE_PLAYWRIGHT=true
+BROWSERLESS_WS_ENDPOINT=wss://chrome.browserless.io
+BROWSERLESS_TOKEN=xxx
 
 # Frontend (required)
 NEXT_PUBLIC_API_URL=http://localhost:8000
@@ -534,6 +565,6 @@ NEXT_PUBLIC_R2_IMAGE_PATH=rescue_dogs
 
 ---
 
-**Last Updated**: 2025-12-23
+**Last Updated**: 2025-12-29
 **Current Scale**: 4,568 dogs | 12 active organizations | 152 backend tests | 284 frontend tests
 **Production**: www.rescuedogs.me
