@@ -63,7 +63,7 @@ export default function Header() {
         >
           <div className="flex justify-between items-center">
             {/* Logo/Home link */}
-            <div>
+            <div className="shrink-0 max-w-fit">
               <Link
                 href="/"
                 className="flex items-center gap-2 text-section font-extrabold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors duration-300 hover:scale-105 transform focus:outline-none focus:ring-2 focus:ring-orange-600 dark:focus:ring-orange-400 focus:ring-offset-2 rounded"
@@ -83,7 +83,7 @@ export default function Header() {
             </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex gap-4 items-center">
+            <div className="hidden md:flex gap-4 items-center relative z-10">
               {/* Dogs Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger
