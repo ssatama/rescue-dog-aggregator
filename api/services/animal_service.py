@@ -1147,6 +1147,7 @@ class AnimalService:
         joins = ""
         conditions = [
             "a.animal_type = %s",
+            "a.active = true",
             "o.active = TRUE",
         ]
         params = [filters.animal_type]

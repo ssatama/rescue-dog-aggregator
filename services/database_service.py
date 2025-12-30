@@ -427,7 +427,8 @@ class DatabaseService:
                     size = %s, standardized_size = %s, properties = %s,
                     updated_at = %s, last_scraped_at = %s, last_seen_at = %s,
                     consecutive_scrapes_missing = 0, availability_confidence = 'high',
-                    breed_type = %s, primary_breed = %s, secondary_breed = %s, 
+                    active = true,
+                    breed_type = %s, primary_breed = %s, secondary_breed = %s,
                     breed_slug = %s, breed_confidence = %s
                 WHERE id = %s
                 """,

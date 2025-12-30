@@ -351,6 +351,7 @@ class SessionManager:
                 """
                 UPDATE animals
                 SET status = 'available',
+                    active = true,
                     consecutive_scrapes_missing = 0,
                     availability_confidence = 'high',
                     last_seen_at = %s,
