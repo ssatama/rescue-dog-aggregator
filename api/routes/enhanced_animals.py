@@ -170,6 +170,7 @@ async def get_enhanced_stats(organization_id: Optional[int] = Query(None, ge=1),
                 END) as avg_quality_score
             FROM animals
             WHERE status = 'available'
+            AND active = true
         """
 
         params = []

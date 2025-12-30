@@ -605,6 +605,10 @@ class BaseScraper(ABC):
 
         animals_data = self.collect_data()
 
+        # Record all found external_ids for accurate stale detection
+        # This must happen BEFORE any skip_existing_animals filtering
+        self._record_all_found_external_ids(animals_data)
+
         phase_duration = (datetime.now() - phase_start).total_seconds()
         self.metrics_collector.track_phase_timing("data_collection", phase_duration)
 
@@ -1234,6 +1238,30 @@ class BaseScraper(ABC):
 
         self._log_service_unavailable("SessionManager", "skipped animals marking disabled")
         return 0
+
+    def _record_all_found_external_ids(self, animals_data):
+        """Record all external_ids from discovered animals for accurate stale detection.
+
+        This must be called BEFORE any skip_existing_animals filtering happens.
+        It records which animals were actually found on the website so that
+        mark_skipped_animals_as_seen() only marks those specific animals as seen,
+        not ALL available animals in the database.
+
+        Args:
+            animals_data: List of animal data dictionaries from collect_data()
+        """
+        if not self.session_manager:
+            return
+
+        recorded_count = 0
+        for animal_data in animals_data:
+            external_id = animal_data.get("external_id")
+            if external_id:
+                self.session_manager.record_found_animal(external_id)
+                recorded_count += 1
+
+        if recorded_count > 0:
+            self.logger.debug(f"Recorded {recorded_count} external IDs as found for stale detection")
 
     def get_stale_animals_summary(self):
         """Get summary of animals by availability confidence and status."""

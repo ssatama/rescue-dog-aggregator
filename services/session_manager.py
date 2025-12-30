@@ -16,7 +16,7 @@ Following CLAUDE.md principles:
 
 import logging
 from datetime import datetime
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Set, Tuple
 
 import psycopg2
 
@@ -41,6 +41,7 @@ class SessionManager:
         self.connection_pool = connection_pool
         self.conn = None
         self.current_scrape_session: Optional[datetime] = None
+        self.found_external_ids: Set[str] = set()
 
     def connect(self) -> bool:
         """Establish database connection.
@@ -82,6 +83,7 @@ class SessionManager:
         """
         try:
             self.current_scrape_session = datetime.now()
+            self.found_external_ids = set()
             self.logger.info(f"Started scrape session at {self.current_scrape_session}")
             return True
         except Exception as e:
@@ -95,6 +97,26 @@ class SessionManager:
             Current session timestamp or None if no active session
         """
         return self.current_scrape_session
+
+    def record_found_animal(self, external_id: str) -> None:
+        """Record that an animal with given external_id was found during this scrape.
+
+        This is used by mark_skipped_animals_as_seen() to only mark animals
+        that were actually found by the scraper, not all available animals.
+
+        Args:
+            external_id: The external_id of the animal found during scraping
+        """
+        if external_id:
+            self.found_external_ids.add(external_id)
+
+    def get_found_external_ids_count(self) -> int:
+        """Get the count of external IDs recorded as found in this session.
+
+        Returns:
+            Number of unique external IDs found
+        """
+        return len(self.found_external_ids)
 
     def mark_animal_as_seen(self, animal_id: int) -> bool:
         """Mark an animal as seen in the current scrape session.
@@ -177,6 +199,7 @@ class SessionManager:
 
                     # Update animals not seen in current scrape
                     # FIXED: Use original consecutive_scrapes_missing value in CASE statements
+                    # FIXED: Also set active=false when status becomes 'unknown'
                     cursor.execute(
                         """
                         UPDATE animals
@@ -190,6 +213,10 @@ class SessionManager:
                             status = CASE
                                 WHEN consecutive_scrapes_missing >= 3 THEN 'unknown'
                                 ELSE status
+                            END,
+                            active = CASE
+                                WHEN consecutive_scrapes_missing >= 3 THEN false
+                                ELSE active
                             END
                         WHERE organization_id = %s
                         AND (last_seen_at IS NULL OR last_seen_at < %s)
@@ -219,6 +246,7 @@ class SessionManager:
 
             # Update animals not seen in current scrape
             # FIXED: Use original consecutive_scrapes_missing value in CASE statements
+            # FIXED: Also set active=false when status becomes 'unknown'
             cursor.execute(
                 """
                 UPDATE animals
@@ -232,6 +260,10 @@ class SessionManager:
                     status = CASE
                         WHEN consecutive_scrapes_missing >= 3 THEN 'unknown'
                         ELSE status
+                    END,
+                    active = CASE
+                        WHEN consecutive_scrapes_missing >= 3 THEN false
+                        ELSE active
                     END
                 WHERE organization_id = %s
                 AND (last_seen_at IS NULL OR last_seen_at < %s)
@@ -274,7 +306,8 @@ class SessionManager:
             cursor.execute(
                 """
                 UPDATE animals
-                SET status = 'unknown'
+                SET status = 'unknown',
+                    active = false
                 WHERE organization_id = %s
                 AND consecutive_scrapes_missing >= %s
                 AND status NOT IN ('unknown', 'adopted', 'reserved')
@@ -344,12 +377,11 @@ class SessionManager:
             return False
 
     def mark_skipped_animals_as_seen(self) -> int:
-        """Mark animals that were skipped due to skip_existing_animals as seen.
+        """Mark animals that were found but skipped due to skip_existing_animals as seen.
 
-        This method fixes the critical bug where skip_existing_animals=true causes
-        existing animals to be incorrectly marked as unavailable after 3 consecutive
-        scrapes. The bug occurs because skipped animals never reach update_animal()
-        which would update their last_seen_at timestamp.
+        IMPORTANT: Only marks animals whose external_id was recorded via record_found_animal().
+        This prevents marking ALL available animals as seen, which was causing the stale
+        detection bug where dogs not found by scrapers would incorrectly stay available.
 
         Returns:
             Number of animals marked as seen
@@ -357,14 +389,19 @@ class SessionManager:
         if not self.skip_existing_animals or not self.current_scrape_session:
             return 0
 
+        if not self.found_external_ids:
+            self.logger.info("No external IDs recorded as found - skipping mark_skipped_animals_as_seen")
+            return 0
+
+        found_ids_tuple = tuple(self.found_external_ids)
+
         # Use connection pool if available
         if self.connection_pool:
             try:
                 with self.connection_pool.get_connection_context() as conn:
                     cursor = conn.cursor()
 
-                    # Mark all existing animals as seen in the current scrape session
-                    # This prevents them from being counted as "missing" in stale data detection
+                    # Only mark animals that were ACTUALLY FOUND by the scraper
                     cursor.execute(
                         """
                         UPDATE animals
@@ -373,8 +410,9 @@ class SessionManager:
                             availability_confidence = 'high'
                         WHERE organization_id = %s
                         AND status = 'available'
+                        AND external_id = ANY(%s)
                         """,
-                        (self.current_scrape_session, self.organization_id),
+                        (self.current_scrape_session, self.organization_id, list(found_ids_tuple)),
                     )
 
                     rows_affected = cursor.rowcount
@@ -382,7 +420,10 @@ class SessionManager:
                     cursor.close()
 
                     if rows_affected > 0:
-                        self.logger.info(f"Marked {rows_affected} skipped animals as seen in current scrape session")
+                        self.logger.info(
+                            f"Marked {rows_affected} actually-found animals as seen "
+                            f"(from {len(self.found_external_ids)} found external IDs)"
+                        )
 
                     return rows_affected
             except Exception as e:
@@ -391,7 +432,6 @@ class SessionManager:
 
         # Fallback to direct connection
         if not self.conn:
-            # Try to establish connection before failing
             if not self.connect():
                 self.logger.error("No database connection available for marking skipped animals")
                 return 0
@@ -399,8 +439,7 @@ class SessionManager:
         try:
             cursor = self.conn.cursor()
 
-            # Mark all existing animals as seen in the current scrape session
-            # This prevents them from being counted as "missing" in stale data detection
+            # Only mark animals that were ACTUALLY FOUND by the scraper
             cursor.execute(
                 """
                 UPDATE animals
@@ -409,8 +448,9 @@ class SessionManager:
                     availability_confidence = 'high'
                 WHERE organization_id = %s
                 AND status = 'available'
+                AND external_id = ANY(%s)
                 """,
-                (self.current_scrape_session, self.organization_id),
+                (self.current_scrape_session, self.organization_id, list(found_ids_tuple)),
             )
 
             rows_affected = cursor.rowcount
@@ -418,7 +458,10 @@ class SessionManager:
             cursor.close()
 
             if rows_affected > 0:
-                self.logger.info(f"Marked {rows_affected} skipped animals as seen in current scrape session")
+                self.logger.info(
+                    f"Marked {rows_affected} actually-found animals as seen "
+                    f"(from {len(self.found_external_ids)} found external IDs)"
+                )
 
             return rows_affected
 

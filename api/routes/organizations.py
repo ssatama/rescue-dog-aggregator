@@ -36,7 +36,7 @@ def get_organizations(filters: OrganizationFilterRequest = Depends(), cursor: Re
                 COUNT(DISTINCT a.id) as total_dogs,
                 COUNT(DISTINCT a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '7 days') as new_this_week
             FROM organizations o
-            LEFT JOIN animals a ON o.id = a.organization_id AND a.status = 'available'
+            LEFT JOIN animals a ON o.id = a.organization_id AND a.status = 'available' AND a.active = true
         """
 
         # Build conditions
@@ -128,7 +128,7 @@ def get_enhanced_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
                     COUNT(DISTINCT a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '7 days') as new_this_week,
                     COUNT(DISTINCT a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '30 days') as new_this_month
                 FROM organizations o
-                LEFT JOIN animals a ON o.id = a.organization_id AND a.status = 'available'
+                LEFT JOIN animals a ON o.id = a.organization_id AND a.status = 'available' AND a.active = true
                 WHERE o.active = true
                 GROUP BY o.id
             ),
@@ -147,6 +147,7 @@ def get_enhanced_organizations(cursor: RealDictCursor = Depends(get_db_cursor)):
                     ROW_NUMBER() OVER (PARTITION BY a.organization_id ORDER BY a.created_at DESC) as rn
                 FROM animals a
                 WHERE a.status = 'available'
+                    AND a.active = true
                     AND a.organization_id IN (SELECT id FROM org_stats)
             )
             SELECT 
@@ -232,7 +233,7 @@ def get_organization_by_slug(organization_slug: str, cursor: RealDictCursor = De
                 COUNT(DISTINCT a.id) as total_dogs,
                 COUNT(DISTINCT a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '7 days') as new_this_week
             FROM organizations o
-            LEFT JOIN animals a ON o.id = a.organization_id AND a.status = 'available'
+            LEFT JOIN animals a ON o.id = a.organization_id AND a.status = 'available' AND a.active = true
             WHERE o.slug = %s AND o.active = true
             GROUP BY o.id, o.slug, o.name, o.website_url, o.description, o.country, o.city,
                      o.logo_url, o.social_media, o.active, o.created_at, o.updated_at,
@@ -301,7 +302,7 @@ def get_organization_recent_dogs(
             """
             SELECT id, name, primary_image_url
             FROM animals
-            WHERE organization_id = %s AND status = 'available' AND primary_image_url IS NOT NULL
+            WHERE organization_id = %s AND status = 'available' AND active = true AND primary_image_url IS NOT NULL
             ORDER BY created_at DESC
             LIMIT %s
             """,
@@ -342,7 +343,7 @@ def get_organization_statistics(organization_id: int, cursor: RealDictCursor = D
                 COUNT(a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '7 days') as new_this_week,
                 COUNT(a.id) FILTER (WHERE a.created_at >= NOW() - INTERVAL '30 days') as new_this_month
             FROM animals a
-            WHERE a.organization_id = %s AND a.status = 'available'
+            WHERE a.organization_id = %s AND a.status = 'available' AND a.active = true
             """,
             (organization_id,),
         )

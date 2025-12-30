@@ -496,6 +496,7 @@ class AnimalService:
                   AND standardized_breed NOT IN ('Yes', 'No', 'Unknown')
                   AND LENGTH(standardized_breed) > 1
                   AND status = 'available'
+                  AND active = true
             """
             params = []
 
@@ -524,6 +525,7 @@ class AnimalService:
                   AND properties->>'breed_group' != ''
                   AND properties->>'breed_group' NOT IN ('Unknown')
                   AND status = 'available'
+                  AND active = true
                 ORDER BY breed_group
             """
             )
@@ -560,6 +562,7 @@ class AnimalService:
                 SELECT COUNT(*) as total
                 FROM animals
                 WHERE status = 'available'
+                  AND active = true
                   AND availability_confidence IN ('high', 'medium')
             """
             )
@@ -582,6 +585,7 @@ class AnimalService:
                 FROM animals a
                 JOIN organizations o ON a.organization_id = o.id
                 WHERE a.status = 'available'
+                  AND a.active = true
                   AND a.availability_confidence IN ('high', 'medium')
                   AND o.active = TRUE
                   AND o.country IS NOT NULL
@@ -601,6 +605,7 @@ class AnimalService:
                 FROM organizations o
                 LEFT JOIN animals a ON o.id = a.organization_id
                     AND a.status = 'available'
+                    AND a.active = true
                     AND a.availability_confidence IN ('high', 'medium')
                 WHERE o.active = TRUE
                 GROUP BY o.id, o.name, o.slug, o.logo_url, o.country, o.city, o.ships_to, o.service_regions,
@@ -648,11 +653,12 @@ class AnimalService:
             # Get total dog count
             self.cursor.execute(
                 """
-                SELECT COUNT(*) as total 
+                SELECT COUNT(*) as total
                 FROM animals a
                 JOIN organizations o ON a.organization_id = o.id
-                WHERE a.animal_type = 'dog' 
+                WHERE a.animal_type = 'dog'
                 AND a.status = 'available'
+                AND a.active = true
                 AND o.active = TRUE
             """
             )
@@ -664,8 +670,9 @@ class AnimalService:
                 SELECT COUNT(DISTINCT primary_breed) as count
                 FROM animals a
                 JOIN organizations o ON a.organization_id = o.id
-                WHERE a.animal_type = 'dog' 
+                WHERE a.animal_type = 'dog'
                 AND a.status = 'available'
+                AND a.active = true
                 AND o.active = TRUE
                 AND a.primary_breed IS NOT NULL
             """
@@ -675,13 +682,14 @@ class AnimalService:
             # Get breed groups distribution
             self.cursor.execute(
                 """
-                SELECT 
+                SELECT
                     COALESCE(breed_group, 'Unknown') as group_name,
                     COUNT(*) as count
                 FROM animals a
                 JOIN organizations o ON a.organization_id = o.id
-                WHERE a.animal_type = 'dog' 
+                WHERE a.animal_type = 'dog'
                 AND a.status = 'available'
+                AND a.active = true
                 AND o.active = TRUE
                 GROUP BY COALESCE(breed_group, 'Unknown')
                 ORDER BY count DESC
@@ -737,8 +745,9 @@ class AnimalService:
                         COUNT(*) FILTER (WHERE a.dog_profiler_data->>'good_with_dogs' = 'no') as good_with_dogs_no_count
                     FROM animals a
                     JOIN organizations o ON a.organization_id = o.id
-                    WHERE a.animal_type = 'dog' 
+                    WHERE a.animal_type = 'dog'
                     AND a.status = 'available'
+                    AND a.active = true
                     AND o.active = TRUE
                     AND a.primary_breed IS NOT NULL
                     GROUP BY a.primary_breed, a.breed_slug, a.breed_type, a.breed_group
@@ -754,11 +763,12 @@ class AnimalService:
                     CROSS JOIN LATERAL jsonb_array_elements_text(
                         COALESCE(a.dog_profiler_data->'personality_traits', '[]'::jsonb)
                     ) AS trait
-                    WHERE a.animal_type = 'dog' 
+                    WHERE a.animal_type = 'dog'
                     AND a.status = 'available'
+                    AND a.active = true
                     AND o.active = TRUE
                     AND a.primary_breed IS NOT NULL
-                    AND a.dog_profiler_data IS NOT NULL 
+                    AND a.dog_profiler_data IS NOT NULL
                     AND a.dog_profiler_data != '{}'::jsonb
                     AND jsonb_typeof(a.dog_profiler_data->'personality_traits') = 'array'
                     GROUP BY a.primary_breed, trait
@@ -923,10 +933,10 @@ class AnimalService:
         """Get breeds with sample dog images for the breeds overview page."""
         try:
             # Build WHERE conditions for counting ALL dogs (not just with images)
-            count_conditions = ["a.animal_type = 'dog'", "a.status = 'available'", "o.active = TRUE"]
+            count_conditions = ["a.animal_type = 'dog'", "a.status = 'available'", "a.active = true", "o.active = TRUE"]
 
             # Build WHERE conditions for sample dogs (must have images)
-            sample_conditions = ["a.animal_type = 'dog'", "a.status = 'available'", "o.active = TRUE", "a.primary_image_url IS NOT NULL"]
+            sample_conditions = ["a.animal_type = 'dog'", "a.status = 'available'", "a.active = true", "o.active = TRUE", "a.primary_image_url IS NOT NULL"]
             params = []
 
             if breed_type:

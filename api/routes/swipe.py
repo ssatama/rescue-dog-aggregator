@@ -178,6 +178,7 @@ async def get_swipe_stack(
                         FROM animals a
                         INNER JOIN organizations o ON a.organization_id = o.id
                         WHERE a.status = 'available'
+                            AND a.active = true
                             AND a.availability_confidence IN ('high', 'medium')
                             AND a.animal_type = 'dog'
                             AND a.dog_profiler_data IS NOT NULL
@@ -206,6 +207,7 @@ async def get_swipe_stack(
                         FROM animals a
                         INNER JOIN organizations o ON a.organization_id = o.id
                         WHERE a.status = 'available'
+                            AND a.active = true
                             AND a.availability_confidence IN ('high', 'medium')
                             AND a.animal_type = 'dog'
                             AND a.dog_profiler_data IS NOT NULL
@@ -343,6 +345,7 @@ async def get_swipe_stack(
                     FROM animals a
                     INNER JOIN organizations o ON a.organization_id = o.id
                     WHERE a.status = 'available'
+                        AND a.active = true
                         AND a.availability_confidence IN ('high', 'medium')
                         AND a.animal_type = 'dog'
                         AND a.dog_profiler_data IS NOT NULL
@@ -387,19 +390,21 @@ async def get_available_countries(cursor: RealDictCursor = Depends(get_pooled_db
         # Query to get all unique countries from ships_to arrays with dog counts
         query = """
             WITH country_dogs AS (
-                SELECT 
+                SELECT
                     jsonb_array_elements_text(o.ships_to) as country,
                     COUNT(DISTINCT a.id) as dog_count
                 FROM organizations o
                 INNER JOIN animals a ON a.organization_id = o.id
                 WHERE a.status = 'available'
+                    AND a.active = true
                     AND a.animal_type = 'dog'
                     AND a.dog_profiler_data IS NOT NULL
                     AND (a.dog_profiler_data->>'quality_score')::float > 0.7
                     AND o.ships_to IS NOT NULL
+                    AND o.active = true
                 GROUP BY jsonb_array_elements_text(o.ships_to)
             )
-            SELECT 
+            SELECT
                 country,
                 SUM(dog_count) as total_dogs
             FROM country_dogs

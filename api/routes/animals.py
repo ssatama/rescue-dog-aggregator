@@ -279,12 +279,13 @@ async def get_search_suggestions(
                 END as priority,
                 LENGTH(name) as name_length
             FROM animals
-            WHERE 
-                animal_type = 'dog' 
+            WHERE
+                animal_type = 'dog'
                 AND status = 'available'
+                AND active = true
                 AND name IS NOT NULL
                 AND (
-                    LOWER(name) LIKE LOWER(%s) 
+                    LOWER(name) LIKE LOWER(%s)
                     OR LOWER(name) LIKE LOWER(%s)
                 )
             ORDER BY priority, name_length, name
@@ -360,9 +361,10 @@ async def get_breed_suggestions(
                 END as priority,
                 LENGTH(standardized_breed) as breed_length
             FROM animals
-            WHERE 
-                animal_type = 'dog' 
+            WHERE
+                animal_type = 'dog'
                 AND status = 'available'
+                AND active = true
                 AND standardized_breed IS NOT NULL
                 AND standardized_breed != ''
                 AND standardized_breed != 'Unknown'
@@ -466,7 +468,7 @@ async def get_random_animals(
                    availability_confidence, last_seen_at, consecutive_scrapes_missing,
                    dog_profiler_data
             FROM animals
-            WHERE animal_type = 'dog' AND status = %s
+            WHERE animal_type = 'dog' AND status = %s AND active = true
             ORDER BY (abs(hashtext(id::text || to_char(now(), 'IYYY-IW'))) %% 1000)
             LIMIT %s
         """
